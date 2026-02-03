@@ -477,20 +477,8 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
               </div>
             )}
 
-            {/* En-têtes des colonnes */}
-            <div className="grid grid-cols-[1fr_90px_70px_70px_80px_70px_70px_32px] gap-2 px-3 py-2 bg-muted/50 rounded-lg text-xs font-medium text-muted-foreground mb-2">
-              <div>Apprenant</div>
-              <div>Financement</div>
-              <div>Début</div>
-              <div>Fin</div>
-              <div>À payer</div>
-              <div>Reste</div>
-              <div>Examen</div>
-              <div></div>
-            </div>
-            
-            <ScrollArea className="h-[350px]">
-              <div className="space-y-2">
+            <ScrollArea className="h-[400px]">
+              <div className="space-y-3">
                 {apprenantsInSession.map((apprenant) => {
                   const sessionData = getApprenantSessionData(apprenant.id);
                   const isPersonnel = sessionData?.modeFinancement === "personnel";
@@ -499,254 +487,283 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                   return (
                     <div 
                       key={apprenant.id}
-                      className="grid grid-cols-[1fr_90px_70px_70px_80px_70px_70px_32px] gap-2 items-center p-2 rounded-lg border bg-card hover:shadow-sm transition-shadow"
+                      className="p-4 rounded-xl border bg-card hover:shadow-md transition-shadow space-y-3"
                     >
-                      
-                      {/* Infos apprenant */}
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-medium text-foreground truncate">{apprenant.prenom} {apprenant.nom}</p>
-                          <Badge 
-                            className={`text-xs ${
-                              apprenant.typeFormation === "TAXI" 
-                                ? "bg-blue-100 text-blue-700 hover:bg-blue-100" 
-                                : apprenant.typeFormation === "VTC"
-                                  ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
-                                  : "bg-amber-100 text-amber-700 hover:bg-amber-100"
-                            }`}
-                          >
-                            {apprenant.typeFormation}
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">
-                            <FileText className="w-3 h-3 mr-1" />
-                            {apprenant.numeroCMA}
-                          </Badge>
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
-                          <div className="flex items-center gap-1 truncate">
-                            <Mail className="w-3 h-3 flex-shrink-0" />
-                            <span className="truncate">{apprenant.email}</span>
+                      {/* Ligne 1: Identité + Badge type + Actions */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="w-10 h-10">
+                            <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                              {apprenant.prenom[0]}{apprenant.nom[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-foreground">{apprenant.prenom} {apprenant.nom}</span>
+                              <Badge 
+                                className={`text-xs ${
+                                  apprenant.typeFormation === "TAXI" 
+                                    ? "bg-blue-100 text-blue-700 hover:bg-blue-100" 
+                                    : apprenant.typeFormation === "VTC"
+                                      ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
+                                      : "bg-amber-100 text-amber-700 hover:bg-amber-100"
+                                }`}
+                              >
+                                {apprenant.typeFormation}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                              <span className="flex items-center gap-1">
+                                <FileText className="w-3 h-3" />
+                                {apprenant.numeroCMA}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Mail className="w-3 h-3" />
+                                {apprenant.email}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Phone className="w-3 h-3" />
+                                {apprenant.telephone}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <Phone className="w-3 h-3" />
-                            {apprenant.telephone}
-                          </div>
                         </div>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
+                          onClick={() => removeApprenant(apprenant.id)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
                       </div>
                       
-                      {/* Financement */}
-                      <Select 
-                        value={sessionData?.modeFinancement || "personnel"}
-                        onValueChange={(value) => updateApprenantFinancement(apprenant.id, value)}
-                      >
-                        <SelectTrigger className="h-8">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {modesFinancement.map((mode) => (
-                            <SelectItem key={mode.value} value={mode.value}>
-                              <span className={`px-2 py-0.5 rounded text-xs ${mode.color}`}>
-                                {mode.label}
-                              </span>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      
-                      {/* Date début */}
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className={cn(
-                              "h-8 justify-start text-left font-normal text-xs",
-                              !sessionData?.dateDebut && "text-muted-foreground"
-                            )}
+                      {/* Ligne 2: Tous les champs */}
+                      <div className="grid grid-cols-6 gap-3 pt-2 border-t">
+                        {/* Financement */}
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">Financement</Label>
+                          <Select 
+                            value={sessionData?.modeFinancement || "personnel"}
+                            onValueChange={(value) => updateApprenantFinancement(apprenant.id, value)}
                           >
-                            {sessionData?.dateDebut 
-                              ? format(sessionData.dateDebut, "dd/MM/yy") 
-                              : "Début"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <CalendarComponent
-                            mode="single"
-                            selected={sessionData?.dateDebut || undefined}
-                            onSelect={(date) => updateApprenantDates(apprenant.id, date || null, sessionData?.dateFin || null)}
-                            initialFocus
-                            className="p-3 pointer-events-auto"
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      
-                      {/* Date fin */}
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className={cn(
-                              "h-8 justify-start text-left font-normal text-xs",
-                              !sessionData?.dateFin && "text-muted-foreground"
-                            )}
-                          >
-                            {sessionData?.dateFin 
-                              ? format(sessionData.dateFin, "dd/MM/yy") 
-                              : "Fin"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <CalendarComponent
-                            mode="single"
-                            selected={sessionData?.dateFin || undefined}
-                            onSelect={(date) => updateApprenantDates(apprenant.id, sessionData?.dateDebut || null, date || null)}
-                            initialFocus
-                            className="p-3 pointer-events-auto"
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      
-                      {/* À payer (montant + date) - seulement pour financement personnel */}
-                      {isPersonnel ? (
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 justify-start text-left font-normal text-xs"
-                            >
-                              <CreditCard className="w-3 h-3 mr-1" />
-                              {sessionData?.montantAPayer ? `${sessionData.montantAPayer}€` : "0€"}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-3" align="start">
-                            <div className="space-y-3">
-                              <div className="space-y-1">
-                                <Label className="text-xs">Montant à payer (€)</Label>
-                                <Input
-                                  type="number"
-                                  value={sessionData?.montantAPayer || 0}
-                                  onChange={(e) => updateApprenantPaiement(
-                                    apprenant.id, 
-                                    Number(e.target.value), 
-                                    sessionData?.montantPaye || 0, 
-                                    sessionData?.datePaiement || null,
-                                    sessionData?.moyenPaiement || null
-                                  )}
-                                  className="h-8"
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <Label className="text-xs">Montant payé (€)</Label>
-                                <Input
-                                  type="number"
-                                  value={sessionData?.montantPaye || 0}
-                                  onChange={(e) => updateApprenantPaiement(
-                                    apprenant.id, 
-                                    sessionData?.montantAPayer || 0, 
-                                    Number(e.target.value), 
-                                    sessionData?.datePaiement || null,
-                                    sessionData?.moyenPaiement || null
-                                  )}
-                                  className="h-8"
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <Label className="text-xs">Moyen de paiement</Label>
-                                <Select
-                                  value={sessionData?.moyenPaiement || ""}
-                                  onValueChange={(value) => updateApprenantPaiement(
-                                    apprenant.id, 
-                                    sessionData?.montantAPayer || 0, 
-                                    sessionData?.montantPaye || 0, 
-                                    sessionData?.datePaiement || null,
-                                    value
-                                  )}
-                                >
-                                  <SelectTrigger className="h-8">
-                                    <SelectValue placeholder="Sélectionner..." />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {moyensPaiement.map((moyen) => (
-                                      <SelectItem key={moyen.value} value={moyen.value}>
-                                        {moyen.label}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div className="space-y-1">
-                                <Label className="text-xs">Date du paiement</Label>
-                                <CalendarComponent
-                                  mode="single"
-                                  selected={sessionData?.datePaiement || undefined}
-                                  onSelect={(date) => updateApprenantPaiement(
-                                    apprenant.id, 
-                                    sessionData?.montantAPayer || 0, 
-                                    sessionData?.montantPaye || 0, 
-                                    date || null,
-                                    sessionData?.moyenPaiement || null
-                                  )}
-                                  className="p-2 pointer-events-auto"
-                                />
-                              </div>
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                      ) : (
-                        <div className="text-xs text-muted-foreground text-center">—</div>
-                      )}
-                      
-                      {/* Reste à payer - seulement pour financement personnel */}
-                      {isPersonnel ? (
-                        <div className={cn(
-                          "text-xs font-medium text-center px-2 py-1 rounded",
-                          resteAPayer > 0 
-                            ? "bg-red-100 text-red-700" 
-                            : "bg-green-100 text-green-700"
-                        )}>
-                          {resteAPayer}€
+                            <SelectTrigger className="h-9">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {modesFinancement.map((mode) => (
+                                <SelectItem key={mode.value} value={mode.value}>
+                                  <span className={`px-2 py-0.5 rounded text-xs ${mode.color}`}>
+                                    {mode.label}
+                                  </span>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
-                      ) : (
-                        <div className="text-xs text-muted-foreground text-center">—</div>
-                      )}
-                      
-                      {/* Examen théorique réussi */}
-                      <Select 
-                        value={sessionData?.examenTheoriqueReussi || ""}
-                        onValueChange={(value: "oui" | "non") => {
-                          setApprenantSessionData(prev => 
-                            prev.map(a => a.apprenantId === apprenant.id ? { ...a, examenTheoriqueReussi: value } : a)
-                          );
-                        }}
-                      >
-                        <SelectTrigger className={cn(
-                          "h-8 text-xs",
-                          sessionData?.examenTheoriqueReussi === "oui" && "bg-green-100 text-green-700 border-green-300",
-                          sessionData?.examenTheoriqueReussi === "non" && "bg-red-100 text-red-700 border-red-300"
-                        )}>
-                          <SelectValue placeholder="—" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="oui">
-                            <span className="text-green-700">Oui ✓</span>
-                          </SelectItem>
-                          <SelectItem value="non">
-                            <span className="text-red-700">Non ✗</span>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                      
-                      {/* Bouton supprimer */}
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
-                        onClick={() => removeApprenant(apprenant.id)}
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
+                        
+                        {/* Date début */}
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">Début</Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className={cn(
+                                  "h-9 w-full justify-start text-left font-normal text-xs",
+                                  !sessionData?.dateDebut && "text-muted-foreground"
+                                )}
+                              >
+                                <CalendarIcon className="w-3 h-3 mr-1.5" />
+                                {sessionData?.dateDebut 
+                                  ? format(sessionData.dateDebut, "dd/MM/yy") 
+                                  : "Choisir"}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <CalendarComponent
+                                mode="single"
+                                selected={sessionData?.dateDebut || undefined}
+                                onSelect={(date) => updateApprenantDates(apprenant.id, date || null, sessionData?.dateFin || null)}
+                                initialFocus
+                                className="p-3 pointer-events-auto"
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        
+                        {/* Date fin */}
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">Fin</Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className={cn(
+                                  "h-9 w-full justify-start text-left font-normal text-xs",
+                                  !sessionData?.dateFin && "text-muted-foreground"
+                                )}
+                              >
+                                <CalendarIcon className="w-3 h-3 mr-1.5" />
+                                {sessionData?.dateFin 
+                                  ? format(sessionData.dateFin, "dd/MM/yy") 
+                                  : "Choisir"}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <CalendarComponent
+                                mode="single"
+                                selected={sessionData?.dateFin || undefined}
+                                onSelect={(date) => updateApprenantDates(apprenant.id, sessionData?.dateDebut || null, date || null)}
+                                initialFocus
+                                className="p-3 pointer-events-auto"
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        
+                        {/* À payer */}
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">À payer</Label>
+                          {isPersonnel ? (
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-9 w-full justify-start text-left font-normal text-xs"
+                                >
+                                  <CreditCard className="w-3 h-3 mr-1.5" />
+                                  {sessionData?.montantAPayer ? `${sessionData.montantAPayer}€` : "0€"}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-3" align="start">
+                                <div className="space-y-3">
+                                  <div className="space-y-1">
+                                    <Label className="text-xs">Montant à payer (€)</Label>
+                                    <Input
+                                      type="number"
+                                      value={sessionData?.montantAPayer || 0}
+                                      onChange={(e) => updateApprenantPaiement(
+                                        apprenant.id, 
+                                        Number(e.target.value), 
+                                        sessionData?.montantPaye || 0, 
+                                        sessionData?.datePaiement || null,
+                                        sessionData?.moyenPaiement || null
+                                      )}
+                                      className="h-8"
+                                    />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <Label className="text-xs">Montant payé (€)</Label>
+                                    <Input
+                                      type="number"
+                                      value={sessionData?.montantPaye || 0}
+                                      onChange={(e) => updateApprenantPaiement(
+                                        apprenant.id, 
+                                        sessionData?.montantAPayer || 0, 
+                                        Number(e.target.value), 
+                                        sessionData?.datePaiement || null,
+                                        sessionData?.moyenPaiement || null
+                                      )}
+                                      className="h-8"
+                                    />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <Label className="text-xs">Moyen de paiement</Label>
+                                    <Select
+                                      value={sessionData?.moyenPaiement || ""}
+                                      onValueChange={(value) => updateApprenantPaiement(
+                                        apprenant.id, 
+                                        sessionData?.montantAPayer || 0, 
+                                        sessionData?.montantPaye || 0, 
+                                        sessionData?.datePaiement || null,
+                                        value
+                                      )}
+                                    >
+                                      <SelectTrigger className="h-8">
+                                        <SelectValue placeholder="Sélectionner..." />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {moyensPaiement.map((moyen) => (
+                                          <SelectItem key={moyen.value} value={moyen.value}>
+                                            {moyen.label}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <Label className="text-xs">Date du paiement</Label>
+                                    <CalendarComponent
+                                      mode="single"
+                                      selected={sessionData?.datePaiement || undefined}
+                                      onSelect={(date) => updateApprenantPaiement(
+                                        apprenant.id, 
+                                        sessionData?.montantAPayer || 0, 
+                                        sessionData?.montantPaye || 0, 
+                                        date || null,
+                                        sessionData?.moyenPaiement || null
+                                      )}
+                                      className="p-2 pointer-events-auto"
+                                    />
+                                  </div>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          ) : (
+                            <div className="h-9 flex items-center justify-center text-xs text-muted-foreground bg-muted/50 rounded-md">—</div>
+                          )}
+                        </div>
+                        
+                        {/* Reste à payer */}
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">Reste</Label>
+                          {isPersonnel ? (
+                            <div className={cn(
+                              "h-9 flex items-center justify-center text-xs font-medium rounded-md",
+                              resteAPayer > 0 
+                                ? "bg-red-100 text-red-700" 
+                                : "bg-green-100 text-green-700"
+                            )}>
+                              {resteAPayer}€
+                            </div>
+                          ) : (
+                            <div className="h-9 flex items-center justify-center text-xs text-muted-foreground bg-muted/50 rounded-md">—</div>
+                          )}
+                        </div>
+                        
+                        {/* Examen théorique */}
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">Examen</Label>
+                          <Select 
+                            value={sessionData?.examenTheoriqueReussi || ""}
+                            onValueChange={(value: "oui" | "non") => {
+                              setApprenantSessionData(prev => 
+                                prev.map(a => a.apprenantId === apprenant.id ? { ...a, examenTheoriqueReussi: value } : a)
+                              );
+                            }}
+                          >
+                            <SelectTrigger className={cn(
+                              "h-9 text-xs",
+                              sessionData?.examenTheoriqueReussi === "oui" && "bg-green-100 text-green-700 border-green-300",
+                              sessionData?.examenTheoriqueReussi === "non" && "bg-red-100 text-red-700 border-red-300"
+                            )}>
+                              <SelectValue placeholder="—" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="oui">
+                                <span className="text-green-700">Oui ✓</span>
+                              </SelectItem>
+                              <SelectItem value="non">
+                                <span className="text-red-700">Non ✗</span>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
                     </div>
                   );
                 })}
