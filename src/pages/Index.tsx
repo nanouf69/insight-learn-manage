@@ -12,6 +12,7 @@ import { DocumentsList } from "@/components/documents/DocumentsList";
 import { SettingsPage } from "@/components/settings/SettingsPage";
 import { SessionsList } from "@/components/sessions/SessionsList";
 import { OrganisationsList } from "@/components/organisations/OrganisationsList";
+import { BPFForm } from "@/components/bpf/BPFForm";
 import { GraduationCap, Users, Euro, TrendingUp } from "lucide-react";
 
 const pageConfig = {
@@ -24,6 +25,7 @@ const pageConfig = {
   crm: { title: "CRM", subtitle: "Gérez vos contacts et prospects" },
   documents: { title: "Documents", subtitle: "Gérez vos documents administratifs" },
   settings: { title: "Paramètres", subtitle: "Configurez votre espace" },
+  bpf: { title: "BPF", subtitle: "Bilan Pédagogique et Financier" },
 };
 
 const Index = () => {
@@ -88,6 +90,8 @@ const Index = () => {
         return <OrganisationsList />;
       case "documents":
         return <DocumentsList />;
+      case "bpf":
+        return <BPFForm />;
       case "settings":
         return <SettingsPage />;
       default:
