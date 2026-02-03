@@ -30,7 +30,8 @@ import {
   CalendarIcon,
   Pencil,
   BookOpen,
-  ChevronDown
+  ChevronDown,
+  StickyNote
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { generateEmargementPDF } from "./EmargementGenerator";
@@ -96,6 +97,8 @@ interface ApprenantSession {
   moyenPaiement: string | null;
   // Examen théorique
   examenTheoriqueReussi: "oui" | "non" | null;
+  // Note personnalisée
+  note: string;
 }
 
 // Moyens de paiement disponibles
@@ -158,12 +161,12 @@ const allFormateurs = [
 export function SessionDetail({ session, open, onOpenChange }: SessionDetailProps) {
   // Données des apprenants dans la session avec financement et dates personnalisées
   const [apprenantSessionData, setApprenantSessionData] = useState<ApprenantSession[]>([
-    { apprenantId: 1, modeFinancement: "cpf", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null, moyenPaiement: null, examenTheoriqueReussi: null },
-    { apprenantId: 2, modeFinancement: "personnel", dateDebut: null, dateFin: null, montantAPayer: 1500, montantPaye: 500, datePaiement: new Date(), moyenPaiement: "cb", examenTheoriqueReussi: "oui" },
-    { apprenantId: 3, modeFinancement: "opco", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null, moyenPaiement: null, examenTheoriqueReussi: "non" },
-    { apprenantId: 5, modeFinancement: "cpf", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null, moyenPaiement: null, examenTheoriqueReussi: null },
-    { apprenantId: 6, modeFinancement: "france_travail", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null, moyenPaiement: null, examenTheoriqueReussi: "oui" },
-    { apprenantId: 8, modeFinancement: "personnel", dateDebut: null, dateFin: null, montantAPayer: 1500, montantPaye: 1500, datePaiement: new Date(), moyenPaiement: "especes", examenTheoriqueReussi: null },
+    { apprenantId: 1, modeFinancement: "cpf", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null, moyenPaiement: null, examenTheoriqueReussi: null, note: "" },
+    { apprenantId: 2, modeFinancement: "personnel", dateDebut: null, dateFin: null, montantAPayer: 1500, montantPaye: 500, datePaiement: new Date(), moyenPaiement: "cb", examenTheoriqueReussi: "oui", note: "Premier versement effectué" },
+    { apprenantId: 3, modeFinancement: "opco", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null, moyenPaiement: null, examenTheoriqueReussi: "non", note: "" },
+    { apprenantId: 5, modeFinancement: "cpf", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null, moyenPaiement: null, examenTheoriqueReussi: null, note: "" },
+    { apprenantId: 6, modeFinancement: "france_travail", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null, moyenPaiement: null, examenTheoriqueReussi: "oui", note: "" },
+    { apprenantId: 8, modeFinancement: "personnel", dateDebut: null, dateFin: null, montantAPayer: 1500, montantPaye: 1500, datePaiement: new Date(), moyenPaiement: "especes", examenTheoriqueReussi: null, note: "Paiement complet" },
   ]);
   
   // Données des formateurs dans la session avec leurs matières
@@ -237,7 +240,8 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
       montantPaye: 0,
       datePaiement: null,
       moyenPaiement: null,
-      examenTheoriqueReussi: null
+      examenTheoriqueReussi: null,
+      note: ""
     }]);
     toast({
       title: "Apprenant ajouté",
@@ -525,6 +529,36 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                                 <Phone className="w-3 h-3" />
                                 {apprenant.telephone}
                               </span>
+                              {/* Bouton note */}
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className={cn(
+                                      "h-6 w-6 p-0 hover:bg-muted",
+                                      sessionData?.note && "text-amber-600"
+                                    )}
+                                  >
+                                    <StickyNote className="w-3.5 h-3.5" />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-64 p-3" align="start">
+                                  <div className="space-y-2">
+                                    <Label className="text-xs font-medium">Note</Label>
+                                    <textarea
+                                      value={sessionData?.note || ""}
+                                      onChange={(e) => {
+                                        setApprenantSessionData(prev => 
+                                          prev.map(a => a.apprenantId === apprenant.id ? { ...a, note: e.target.value } : a)
+                                        );
+                                      }}
+                                      placeholder="Ajouter une note..."
+                                      className="w-full h-20 text-sm p-2 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                    />
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
                             </div>
                           </div>
                         </div>
