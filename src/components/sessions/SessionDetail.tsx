@@ -518,25 +518,37 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
               </div>
             </ScrollArea>
 
-            {/* Récapitulatif par type de formation */}
+            {/* Récapitulatif par type de formation - TAXI + VTC = max 18 */}
             <div className="mt-4 p-3 rounded-lg bg-muted/50 border">
               <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
                 <div className="flex items-center gap-2">
                   <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">🚕 TAXI</Badge>
                   <span className="font-medium">{apprenantsInSession.filter(a => a.typeFormation === "TAXI").length}</span>
-                  <span className="text-muted-foreground text-xs">Initial</span>
                 </div>
-                <div className="h-4 w-px bg-border" />
+                <span className="text-muted-foreground">+</span>
                 <div className="flex items-center gap-2">
                   <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">🚗 VTC</Badge>
                   <span className="font-medium">{apprenantsInSession.filter(a => a.typeFormation === "VTC").length}</span>
-                  <span className="text-muted-foreground text-xs">Initial</span>
                 </div>
-                <div className="h-4 w-px bg-border" />
+                <span className="text-muted-foreground">=</span>
                 <div className="flex items-center gap-2">
-                  <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">🔄 TA</Badge>
-                  <span className="font-medium">{apprenantsInSession.filter(a => a.typeFormation === "TA").length}</span>
-                  <span className="text-muted-foreground text-xs">Passerelle</span>
+                  <Badge 
+                    className={`${
+                      apprenantsInSession.filter(a => a.typeFormation === "TAXI" || a.typeFormation === "VTC").length > 18 
+                        ? "bg-red-100 text-red-700 hover:bg-red-100" 
+                        : "bg-primary/10 text-primary hover:bg-primary/10"
+                    }`}
+                  >
+                    📊 TOTAL
+                  </Badge>
+                  <span className={`font-bold ${
+                    apprenantsInSession.filter(a => a.typeFormation === "TAXI" || a.typeFormation === "VTC").length > 18 
+                      ? "text-red-600" 
+                      : ""
+                  }`}>
+                    {apprenantsInSession.filter(a => a.typeFormation === "TAXI" || a.typeFormation === "VTC").length}
+                  </span>
+                  <span className="text-muted-foreground">/ 18 max</span>
                 </div>
               </div>
             </div>

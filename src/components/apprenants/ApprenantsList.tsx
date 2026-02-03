@@ -35,7 +35,16 @@ interface Apprenant {
   status: "inscrit" | "en_cours" | "termine";
   type: "prospect" | "client";
   avatar: string;
+  modeFinancement: "cpf" | "personnel" | "opco" | "france_travail" | "autre";
 }
+
+const modesFinancementLabels = {
+  cpf: { label: "CPF", class: "bg-purple-100 text-purple-700" },
+  personnel: { label: "Personnel", class: "bg-gray-100 text-gray-700" },
+  opco: { label: "OPCO", class: "bg-blue-100 text-blue-700" },
+  france_travail: { label: "France Travail", class: "bg-orange-100 text-orange-700" },
+  autre: { label: "Autre", class: "bg-slate-100 text-slate-700" },
+};
 
 const apprenants: Apprenant[] = [
   {
@@ -52,6 +61,7 @@ const apprenants: Apprenant[] = [
     status: "en_cours",
     type: "client",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Jean",
+    modeFinancement: "cpf",
   },
   {
     id: 2,
@@ -67,6 +77,7 @@ const apprenants: Apprenant[] = [
     status: "termine",
     type: "client",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sophie",
+    modeFinancement: "opco",
   },
   {
     id: 3,
@@ -82,6 +93,7 @@ const apprenants: Apprenant[] = [
     status: "en_cours",
     type: "client",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Pierre",
+    modeFinancement: "cpf",
   },
   {
     id: 4,
@@ -97,6 +109,7 @@ const apprenants: Apprenant[] = [
     status: "inscrit",
     type: "prospect",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Marie",
+    modeFinancement: "personnel",
   },
   {
     id: 5,
@@ -112,6 +125,7 @@ const apprenants: Apprenant[] = [
     status: "en_cours",
     type: "client",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Lucas",
+    modeFinancement: "france_travail",
   },
   {
     id: 6,
@@ -127,6 +141,7 @@ const apprenants: Apprenant[] = [
     status: "inscrit",
     type: "prospect",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmed",
+    modeFinancement: "personnel",
   },
   {
     id: 7,
@@ -142,6 +157,7 @@ const apprenants: Apprenant[] = [
     status: "inscrit",
     type: "prospect",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Fatima",
+    modeFinancement: "cpf",
   },
 ];
 
@@ -161,6 +177,7 @@ function ApprenantTable({ data, showType = false }: { data: Apprenant[]; showTyp
             <TableHead className="font-semibold">Contact</TableHead>
             <TableHead className="font-semibold">Adresse</TableHead>
             <TableHead className="font-semibold">Formations</TableHead>
+            <TableHead className="font-semibold">Financement</TableHead>
             {showType && <TableHead className="font-semibold">Type</TableHead>}
             <TableHead className="font-semibold">Progression</TableHead>
             <TableHead className="font-semibold">Statut</TableHead>
@@ -208,6 +225,11 @@ function ApprenantTable({ data, showType = false }: { data: Apprenant[]; showTyp
                     </Badge>
                   ))}
                 </div>
+              </TableCell>
+              <TableCell>
+                <Badge className={modesFinancementLabels[apprenant.modeFinancement].class}>
+                  {modesFinancementLabels[apprenant.modeFinancement].label}
+                </Badge>
               </TableCell>
               {showType && (
                 <TableCell>
