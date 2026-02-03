@@ -42,17 +42,22 @@ interface SessionDetailProps {
 }
 
 // Liste des apprenants avec numéro de dossier CMA et type de formation
-// typeFormation: "TA" = Formation TAXI pour chauffeur VTC (devient TAXI)
-// typeFormation: "VA" = Formation VTC pour chauffeur TAXI (devient VTC)
+// typeFormation: "TAXI" = Formation initiale TAXI, "VTC" = Formation initiale VTC
+// typeFormation: "TA" = Formation TAXI pour chauffeur VTC (passerelle)
 const allApprenants = [
-  { id: 1, nom: "Martin", prenom: "Lucas", email: "lucas.martin@email.com", telephone: "06 11 22 33 44", numeroCMA: "CMA-2026-001", type: "client", typeFormation: "TA" as const },
-  { id: 2, nom: "Bernard", prenom: "Sophie", email: "sophie.bernard@email.com", telephone: "06 22 33 44 55", numeroCMA: "CMA-2026-002", type: "client", typeFormation: "VA" as const },
-  { id: 3, nom: "Petit", prenom: "Thomas", email: "thomas.petit@email.com", telephone: "06 33 44 55 66", numeroCMA: "CMA-2026-003", type: "client", typeFormation: "TA" as const },
-  { id: 4, nom: "Robert", prenom: "Julie", email: "julie.robert@email.com", telephone: "06 44 55 66 77", numeroCMA: "CMA-2026-004", type: "prospect", typeFormation: "VA" as const },
-  { id: 5, nom: "Durand", prenom: "Antoine", email: "antoine.durand@email.com", telephone: "06 55 66 77 88", numeroCMA: "CMA-2026-005", type: "client", typeFormation: "TA" as const },
-  { id: 6, nom: "Moreau", prenom: "Emma", email: "emma.moreau@email.com", telephone: "06 66 77 88 99", numeroCMA: "CMA-2026-006", type: "client", typeFormation: "VA" as const },
-  { id: 7, nom: "Laurent", prenom: "Nicolas", email: "nicolas.laurent@email.com", telephone: "06 77 88 99 00", numeroCMA: "CMA-2026-007", type: "prospect", typeFormation: "TA" as const },
-  { id: 8, nom: "Simon", prenom: "Camille", email: "camille.simon@email.com", telephone: "06 88 99 00 11", numeroCMA: "CMA-2026-008", type: "client", typeFormation: "VA" as const },
+  // Apprenants formation initiale TAXI (présentiel)
+  { id: 1, nom: "Martin", prenom: "Lucas", email: "lucas.martin@email.com", telephone: "06 11 22 33 44", numeroCMA: "CMA-2026-001", type: "client", typeFormation: "TAXI" as const },
+  { id: 2, nom: "Bernard", prenom: "Sophie", email: "sophie.bernard@email.com", telephone: "06 22 33 44 55", numeroCMA: "CMA-2026-002", type: "client", typeFormation: "TAXI" as const },
+  { id: 3, nom: "Petit", prenom: "Thomas", email: "thomas.petit@email.com", telephone: "06 33 44 55 66", numeroCMA: "CMA-2026-003", type: "client", typeFormation: "TAXI" as const },
+  // Apprenants formation initiale VTC (présentiel)
+  { id: 4, nom: "Robert", prenom: "Julie", email: "julie.robert@email.com", telephone: "06 44 55 66 77", numeroCMA: "CMA-2026-004", type: "client", typeFormation: "VTC" as const },
+  { id: 5, nom: "Durand", prenom: "Antoine", email: "antoine.durand@email.com", telephone: "06 55 66 77 88", numeroCMA: "CMA-2026-005", type: "client", typeFormation: "VTC" as const },
+  { id: 6, nom: "Moreau", prenom: "Emma", email: "emma.moreau@email.com", telephone: "06 66 77 88 99", numeroCMA: "CMA-2026-006", type: "client", typeFormation: "VTC" as const },
+  // Apprenants passerelle TA (chauffeur VTC → TAXI)
+  { id: 7, nom: "Laurent", prenom: "Nicolas", email: "nicolas.laurent@email.com", telephone: "06 77 88 99 00", numeroCMA: "CMA-2026-007", type: "client", typeFormation: "TA" as const },
+  { id: 8, nom: "Simon", prenom: "Camille", email: "camille.simon@email.com", telephone: "06 88 99 00 11", numeroCMA: "CMA-2026-008", type: "client", typeFormation: "TA" as const },
+  { id: 9, nom: "Leroy", prenom: "Maxime", email: "maxime.leroy@email.com", telephone: "06 99 00 11 22", numeroCMA: "CMA-2026-009", type: "client", typeFormation: "TA" as const },
+  { id: 10, nom: "Garcia", prenom: "Marie", email: "marie.garcia@email.com", telephone: "06 10 11 12 13", numeroCMA: "CMA-2026-010", type: "client", typeFormation: "TA" as const },
 ];
 
 // Liste des formateurs disponibles
@@ -313,9 +318,11 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                           <p className="font-medium text-foreground">{apprenant.prenom} {apprenant.nom}</p>
                           <Badge 
                             className={`text-xs ${
-                              apprenant.typeFormation === "TA" 
+                              apprenant.typeFormation === "TAXI" 
                                 ? "bg-blue-100 text-blue-700 hover:bg-blue-100" 
-                                : "bg-purple-100 text-purple-700 hover:bg-purple-100"
+                                : apprenant.typeFormation === "VTC"
+                                  ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
+                                  : "bg-amber-100 text-amber-700 hover:bg-amber-100"
                             }`}
                           >
                             {apprenant.typeFormation}
@@ -350,19 +357,25 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
               </div>
             </ScrollArea>
 
-            {/* Récapitulatif TA/VA et élèves TAXI/VTC */}
+            {/* Récapitulatif par type de formation */}
             <div className="mt-4 p-3 rounded-lg bg-muted/50 border">
               <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
                 <div className="flex items-center gap-2">
-                  <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">🚕 TA</Badge>
-                  <span className="font-medium">{apprenantsInSession.filter(a => a.typeFormation === "TA").length}</span>
-                  <span className="text-muted-foreground text-xs">Passerelle TAXI</span>
+                  <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">🚕 TAXI</Badge>
+                  <span className="font-medium">{apprenantsInSession.filter(a => a.typeFormation === "TAXI").length}</span>
+                  <span className="text-muted-foreground text-xs">Initial</span>
                 </div>
                 <div className="h-4 w-px bg-border" />
                 <div className="flex items-center gap-2">
-                  <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">🚗 VA</Badge>
-                  <span className="font-medium">{apprenantsInSession.filter(a => a.typeFormation === "VA").length}</span>
-                  <span className="text-muted-foreground text-xs">Passerelle VTC</span>
+                  <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">🚗 VTC</Badge>
+                  <span className="font-medium">{apprenantsInSession.filter(a => a.typeFormation === "VTC").length}</span>
+                  <span className="text-muted-foreground text-xs">Initial</span>
+                </div>
+                <div className="h-4 w-px bg-border" />
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">🔄 TA</Badge>
+                  <span className="font-medium">{apprenantsInSession.filter(a => a.typeFormation === "TA").length}</span>
+                  <span className="text-muted-foreground text-xs">Passerelle</span>
                 </div>
               </div>
             </div>
