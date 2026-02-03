@@ -465,8 +465,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
             )}
 
             {/* En-têtes des colonnes */}
-            <div className="grid grid-cols-[auto_1fr_100px_80px_80px_90px_80px_32px] gap-2 px-3 py-2 bg-muted/50 rounded-lg text-xs font-medium text-muted-foreground mb-2">
-              <div className="w-10"></div>
+            <div className="grid grid-cols-[1fr_100px_80px_80px_90px_80px_32px] gap-2 px-3 py-2 bg-muted/50 rounded-lg text-xs font-medium text-muted-foreground mb-2">
               <div>Apprenant</div>
               <div>Financement</div>
               <div>Début</div>
@@ -486,14 +485,8 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                   return (
                     <div 
                       key={apprenant.id}
-                      className="grid grid-cols-[auto_1fr_100px_80px_80px_90px_80px_32px] gap-2 items-center p-2 rounded-lg border bg-card hover:shadow-sm transition-shadow"
+                      className="grid grid-cols-[1fr_100px_80px_80px_90px_80px_32px] gap-2 items-center p-2 rounded-lg border bg-card hover:shadow-sm transition-shadow"
                     >
-                      {/* Avatar */}
-                      <Avatar className="w-10 h-10">
-                        <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                          {apprenant.prenom[0]}{apprenant.nom[0]}
-                        </AvatarFallback>
-                      </Avatar>
                       
                       {/* Infos apprenant */}
                       <div className="min-w-0">
