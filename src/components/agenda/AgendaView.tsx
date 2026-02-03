@@ -1,14 +1,21 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, Plus, X, User, Clock, BookOpen } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, X, User, Clock, BookOpen, Layers } from "lucide-react";
 import { format, addDays, startOfWeek, isSameDay } from "date-fns";
 import { fr } from "date-fns/locale";
+import { toast } from "sonner";
+
+interface Discipline {
+  id: string;
+  nom: string;
+  color: string;
+}
 
 interface CourseBlock {
   id: string;
@@ -19,6 +26,8 @@ interface CourseBlock {
   endHour: number;
   date: Date;
   formation: string;
+  discipline?: string;
+  disciplineColor?: string;
 }
 
 const formateursList = [
@@ -36,10 +45,26 @@ const formationsList = [
   "Anglais professionnel",
 ];
 
+const disciplineColors = [
+  "bg-red-500",
+  "bg-yellow-500",
+  "bg-teal-500",
+  "bg-pink-500",
+  "bg-indigo-500",
+  "bg-cyan-500",
+  "bg-lime-500",
+  "bg-amber-500",
+];
+
 const hours = Array.from({ length: 12 }, (_, i) => i + 8); // 8h à 19h
 
 export function AgendaView() {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [disciplines, setDisciplines] = useState<Discipline[]>([
+    { id: "1", nom: "Réglementation", color: "bg-red-500" },
+    { id: "2", nom: "Sécurité routière", color: "bg-yellow-500" },
+    { id: "3", nom: "Gestion", color: "bg-teal-500" },
+  ]);
   const [courseBlocks, setCourseBlocks] = useState<CourseBlock[]>([
     {
       id: "1",
@@ -50,6 +75,8 @@ export function AgendaView() {
       endHour: 12,
       date: new Date(),
       formation: "Formation VTC Initiale",
+      discipline: "Réglementation",
+      disciplineColor: "bg-red-500",
     },
     {
       id: "2",
@@ -60,15 +87,23 @@ export function AgendaView() {
       endHour: 17,
       date: new Date(),
       formation: "Capacité de Transport",
+      discipline: "Gestion",
+      disciplineColor: "bg-teal-500",
     },
   ]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDisciplineDialogOpen, setIsDisciplineDialogOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<{ date: Date; hour: number } | null>(null);
   const [newBlock, setNewBlock] = useState({
     title: "",
     formateur: "",
     formation: "",
     duration: "2",
+    discipline: "",
+  });
+  const [newDiscipline, setNewDiscipline] = useState({
+    nom: "",
+    color: "bg-red-500",
   });
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
@@ -80,7 +115,7 @@ export function AgendaView() {
 
   const handleSlotClick = (date: Date, hour: number) => {
     setSelectedSlot({ date, hour });
-    setNewBlock({ title: "", formateur: "", formation: "", duration: "2" });
+    setNewBlock({ title: "", formateur: "", formation: "", duration: "2", discipline: "" });
     setIsDialogOpen(true);
   };
 
@@ -88,6 +123,7 @@ export function AgendaView() {
     if (!selectedSlot || !newBlock.formation || !newBlock.formateur) return;
 
     const formateurData = formateursList.find((f) => f.id === newBlock.formateur);
+    const disciplineData = disciplines.find((d) => d.id === newBlock.discipline);
     const duration = parseInt(newBlock.duration);
 
     const block: CourseBlock = {
@@ -99,11 +135,33 @@ export function AgendaView() {
       endHour: selectedSlot.hour + duration,
       date: selectedSlot.date,
       formation: newBlock.formation,
+      discipline: disciplineData?.nom,
+      disciplineColor: disciplineData?.color,
     };
 
     setCourseBlocks([...courseBlocks, block]);
     setIsDialogOpen(false);
     setSelectedSlot(null);
+  };
+
+  const handleAddDiscipline = () => {
+    if (!newDiscipline.nom.trim()) return;
+
+    const discipline: Discipline = {
+      id: Date.now().toString(),
+      nom: newDiscipline.nom.trim(),
+      color: newDiscipline.color,
+    };
+
+    setDisciplines([...disciplines, discipline]);
+    setNewDiscipline({ nom: "", color: "bg-red-500" });
+    setIsDisciplineDialogOpen(false);
+    toast.success("Discipline ajoutée avec succès");
+  };
+
+  const handleRemoveDiscipline = (id: string) => {
+    setDisciplines(disciplines.filter((d) => d.id !== id));
+    toast.success("Discipline supprimée");
   };
 
   const handleRemoveBlock = (blockId: string) => {
@@ -132,6 +190,10 @@ export function AgendaView() {
             Agenda des cours
           </CardTitle>
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setIsDisciplineDialogOpen(true)}>
+              <Layers className="h-4 w-4 mr-2" />
+              Disciplines
+            </Button>
             <Button variant="outline" size="sm" onClick={handlePrevWeek}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -148,14 +210,26 @@ export function AgendaView() {
         </p>
       </CardHeader>
       <CardContent>
-        {/* Légende des formateurs */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          {formateursList.map((formateur) => (
-            <Badge key={formateur.id} variant="outline" className="flex items-center gap-1">
-              <div className={`w-3 h-3 rounded-full ${formateur.color}`} />
-              {formateur.nom}
-            </Badge>
-          ))}
+        {/* Légende des formateurs et disciplines */}
+        <div className="flex flex-wrap gap-4 mb-4">
+          <div className="flex flex-wrap gap-2">
+            <span className="text-xs text-muted-foreground font-medium mr-1">Formateurs:</span>
+            {formateursList.map((formateur) => (
+              <Badge key={formateur.id} variant="outline" className="flex items-center gap-1">
+                <div className={`w-3 h-3 rounded-full ${formateur.color}`} />
+                {formateur.nom}
+              </Badge>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <span className="text-xs text-muted-foreground font-medium mr-1">Disciplines:</span>
+            {disciplines.map((discipline) => (
+              <Badge key={discipline.id} variant="secondary" className="flex items-center gap-1">
+                <div className={`w-3 h-3 rounded-full ${discipline.color}`} />
+                {discipline.nom}
+              </Badge>
+            ))}
+          </div>
         </div>
 
         {/* Grille horaire */}
@@ -234,6 +308,14 @@ export function AgendaView() {
                                 {block.formateur}
                               </span>
                             </div>
+                            {block.discipline && (
+                              <div className="flex items-center gap-1 mt-0.5">
+                                <Layers className="h-3 w-3" />
+                                <span className="text-xs opacity-90 truncate">
+                                  {block.discipline}
+                                </span>
+                              </div>
+                            )}
                             <div className="text-xs opacity-75 mt-0.5">
                               {block.startHour}:00 - {block.endHour}:00
                             </div>
@@ -324,6 +406,28 @@ export function AgendaView() {
                 </div>
 
                 <div className="space-y-2">
+                  <Label>Discipline / Bloc de compétences</Label>
+                  <Select
+                    value={newBlock.discipline}
+                    onValueChange={(value) => setNewBlock({ ...newBlock, discipline: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner une discipline" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {disciplines.map((discipline) => (
+                        <SelectItem key={discipline.id} value={discipline.id}>
+                          <div className="flex items-center gap-2">
+                            <div className={`w-3 h-3 rounded-full ${discipline.color}`} />
+                            {discipline.nom}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
                   <Label>Durée</Label>
                   <Select
                     value={newBlock.duration}
@@ -358,6 +462,89 @@ export function AgendaView() {
                 </div>
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog pour gérer les disciplines */}
+        <Dialog open={isDisciplineDialogOpen} onOpenChange={setIsDisciplineDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Layers className="h-5 w-5" />
+                Gérer les disciplines / Blocs de compétences
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {/* Liste des disciplines existantes */}
+              <div className="space-y-2">
+                <Label>Disciplines existantes</Label>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {disciplines.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Aucune discipline créée</p>
+                  ) : (
+                    disciplines.map((discipline) => (
+                      <div
+                        key={discipline.id}
+                        className="flex items-center justify-between p-2 bg-muted rounded-lg"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className={`w-4 h-4 rounded-full ${discipline.color}`} />
+                          <span className="text-sm font-medium">{discipline.nom}</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveDiscipline(discipline.id)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Ajouter une nouvelle discipline */}
+              <div className="border-t pt-4 space-y-3">
+                <Label>Ajouter une discipline</Label>
+                <Input
+                  value={newDiscipline.nom}
+                  onChange={(e) => setNewDiscipline({ ...newDiscipline, nom: e.target.value })}
+                  placeholder="Nom de la discipline"
+                />
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Couleur</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {disciplineColors.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        className={`w-8 h-8 rounded-full ${color} transition-transform ${
+                          newDiscipline.color === color
+                            ? "ring-2 ring-offset-2 ring-primary scale-110"
+                            : "hover:scale-105"
+                        }`}
+                        onClick={() => setNewDiscipline({ ...newDiscipline, color })}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <Button
+                  onClick={handleAddDiscipline}
+                  disabled={!newDiscipline.nom.trim()}
+                  className="w-full"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Ajouter la discipline
+                </Button>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <Button variant="outline" onClick={() => setIsDisciplineDialogOpen(false)}>
+                  Fermer
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </CardContent>
