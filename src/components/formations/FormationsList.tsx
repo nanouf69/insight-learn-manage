@@ -97,7 +97,8 @@ const formations: Formation[] = [
       "Pièce d'identité ou carte de séjour ou résident",
       "Justificatif de domicile de moins de 3 mois",
       "Permis de conduire",
-      "Certificat médical tamponné par un médecin agréé conduite"
+      "Photo d'identité",
+      "Signature sur papier blanc"
     ],
     examDuration: "Théorique: 3h50 | Pratique: ~45 min",
     accessibility: true
@@ -148,7 +149,8 @@ const formations: Formation[] = [
       "Pièce d'identité",
       "Justificatif de domicile",
       "Permis de conduire",
-      "Certificat médical"
+      "Photo d'identité",
+      "Signature sur papier blanc"
     ],
     examDuration: "Théorique: 3h50 | Pratique: ~45 min",
     accessibility: true
@@ -201,7 +203,8 @@ const formations: Formation[] = [
       "Pièce d'identité ou carte de séjour ou résident",
       "Justificatif de domicile de moins de 3 mois",
       "Permis de conduire",
-      "Certificat médical tamponné par un médecin agréé conduite"
+      "Photo d'identité",
+      "Signature sur papier blanc"
     ],
     examDuration: "Théorique: 3h50 | Pratique: ~45 min",
     accessibility: true
@@ -253,7 +256,8 @@ const formations: Formation[] = [
       "Pièce d'identité",
       "Justificatif de domicile",
       "Permis de conduire",
-      "Certificat médical"
+      "Photo d'identité",
+      "Signature sur papier blanc"
     ],
     examDuration: "Théorique: 3h50 | Pratique: ~45 min",
     accessibility: true
@@ -293,7 +297,9 @@ const formations: Formation[] = [
     documents: [
       "Carte professionnelle VTC",
       "Pièce d'identité",
-      "Justificatif de domicile"
+      "Justificatif de domicile",
+      "Photo d'identité",
+      "Signature sur papier blanc"
     ],
     examDuration: "Examen spécifique TAXI",
     accessibility: true
@@ -341,7 +347,8 @@ const formations: Formation[] = [
       "Pièce d'identité",
       "Justificatif de domicile",
       "Permis de conduire",
-      "Certificat médical"
+      "Photo d'identité",
+      "Signature sur papier blanc"
     ],
     examDuration: "Théorique: 3h50 | Pratique: ~45 min",
     accessibility: true
@@ -389,7 +396,8 @@ const formations: Formation[] = [
       "Pièce d'identité",
       "Justificatif de domicile",
       "Permis de conduire",
-      "Certificat médical"
+      "Photo d'identité",
+      "Signature sur papier blanc"
     ],
     examDuration: "Théorique: 3h50 | Pratique: ~45 min",
     accessibility: true
@@ -426,7 +434,9 @@ const formations: Formation[] = [
     },
     documents: [
       "Carte professionnelle VTC",
-      "Pièce d'identité"
+      "Pièce d'identité",
+      "Photo d'identité",
+      "Signature sur papier blanc"
     ],
     examDuration: "Examen spécifique TAXI",
     accessibility: true
@@ -463,7 +473,9 @@ const formations: Formation[] = [
     },
     documents: [
       "Carte professionnelle TAXI",
-      "Pièce d'identité"
+      "Pièce d'identité",
+      "Photo d'identité",
+      "Signature sur papier blanc"
     ],
     examDuration: "Examen spécifique VTC",
     accessibility: true
