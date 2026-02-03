@@ -45,10 +45,15 @@ export function SessionForm() {
                 <SelectValue placeholder="Sélectionner une formation" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="react">React Avancé</SelectItem>
-                <SelectItem value="ux">UX/UI Design</SelectItem>
-                <SelectItem value="python">Python Data Science</SelectItem>
-                <SelectItem value="management">Management d'équipe</SelectItem>
+                <SelectItem value="vtc-initial">Formation initiale VTC (250H) - 1 799€</SelectItem>
+                <SelectItem value="taxi-initial">Formation initiale TAXI (200H) - 1 599€</SelectItem>
+                <SelectItem value="taxi-vtc">Passerelle TAXI vers VTC (14H) - 490€</SelectItem>
+                <SelectItem value="vtc-taxi">Passerelle VTC vers TAXI (14H) - 490€</SelectItem>
+                <SelectItem value="vtc-continue">Formation continue VTC (14H) - 280€</SelectItem>
+                <SelectItem value="taxi-continue">Formation continue TAXI (14H) - 280€</SelectItem>
+                <SelectItem value="pmr">Mobilité - Capacité PMR (21H) - 490€</SelectItem>
+                <SelectItem value="vtc-elearning">E-learning VTC Initial (250H) - 1 099€</SelectItem>
+                <SelectItem value="taxi-elearning">E-learning TAXI Initial (200H) - 1 099€</SelectItem>
               </SelectContent>
             </Select>
           </div>
