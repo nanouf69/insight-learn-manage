@@ -36,6 +36,7 @@ interface Formation {
   status: string;
   image: string;
   cpfEligible: boolean;
+  cpfLink?: string;
   dates: string[];
   prerequisites: string[];
   objectives: string;
@@ -62,6 +63,7 @@ const formations: Formation[] = [
     status: "active",
     image: "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=400&h=250&fit=crop",
     cpfEligible: true,
+    cpfLink: "https://www.moncompteformation.gouv.fr/espace-prive/html/#/formation/recherche/53516371400044/53516371400044_VTC01",
     dates: [
       "Du 12 au 25 janvier 2026",
       "Du 16 au 30 mars 2026",
@@ -115,6 +117,7 @@ const formations: Formation[] = [
     status: "active",
     image: "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=400&h=250&fit=crop",
     cpfEligible: true,
+    cpfLink: "https://www.moncompteformation.gouv.fr/espace-prive/html/#/formation/recherche/53516371400044/53516371400044_VTC02",
     dates: [
       "Du 12 au 25 janvier 2026",
       "Du 16 au 30 mars 2026",
@@ -168,6 +171,7 @@ const formations: Formation[] = [
     status: "active",
     image: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=400&h=250&fit=crop",
     cpfEligible: true,
+    cpfLink: "https://www.moncompteformation.gouv.fr/espace-prive/html/#/formation/recherche/53516371400044/53516371400044_TAXI01",
     dates: [
       "Du 5 au 26 janvier 2026",
       "Du 9 au 30 mars 2026",
@@ -221,6 +225,7 @@ const formations: Formation[] = [
     status: "active",
     image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400&h=250&fit=crop",
     cpfEligible: true,
+    cpfLink: "https://www.moncompteformation.gouv.fr/espace-prive/html/#/formation/recherche/53516371400044/53516371400044_TAXI02",
     dates: [
       "Du 5 au 26 janvier 2026",
       "Du 9 au 30 mars 2026",
@@ -274,6 +279,7 @@ const formations: Formation[] = [
     status: "active",
     image: "https://images.unsplash.com/photo-1594535182038-1f8d4c5d4e60?w=400&h=250&fit=crop",
     cpfEligible: true,
+    cpfLink: "https://www.moncompteformation.gouv.fr/espace-prive/html/#/formation/recherche/53516371400044/53516371400044_PASSERELLE01",
     dates: [
       "Sessions sur demande",
       "Contactez-nous pour les prochaines dates"
@@ -316,6 +322,7 @@ const formations: Formation[] = [
     status: "active",
     image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=250&fit=crop",
     cpfEligible: true,
+    cpfLink: "https://www.moncompteformation.gouv.fr/espace-prive/html/#/formation/recherche/53516371400044/53516371400044_VTC_ELEARNING01",
     dates: [
       "Démarrage immédiat",
       "Formation accessible 24h/24"
@@ -364,6 +371,7 @@ const formations: Formation[] = [
     status: "active",
     image: "https://images.unsplash.com/photo-1501504905252-473c47e087f8?w=400&h=250&fit=crop",
     cpfEligible: true,
+    cpfLink: "https://www.moncompteformation.gouv.fr/espace-prive/html/#/formation/recherche/53516371400044/53516371400044_TAXI_ELEARNING01",
     dates: [
       "Démarrage immédiat",
       "Formation accessible 24h/24"
@@ -413,6 +421,7 @@ const formations: Formation[] = [
     status: "active",
     image: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=400&h=250&fit=crop",
     cpfEligible: true,
+    cpfLink: "https://www.moncompteformation.gouv.fr/espace-prive/html/#/formation/recherche/53516371400044/53516371400044_PASSERELLE_ELEARNING01",
     dates: [
       "Démarrage immédiat",
       "Formation accessible 24h/24"
@@ -452,6 +461,7 @@ const formations: Formation[] = [
     status: "active",
     image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=250&fit=crop",
     cpfEligible: true,
+    cpfLink: "https://www.moncompteformation.gouv.fr/espace-prive/html/#/formation/recherche/53516371400044/53516371400044_PASSERELLE_VTC_ELEARNING01",
     dates: [
       "Démarrage immédiat",
       "Formation accessible 24h/24"
@@ -697,15 +707,26 @@ Cordialement`);
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 pt-4 border-t">
-            <Button onClick={handleDownloadProgram} variant="outline" className="flex-1">
-              <Download className="w-4 h-4 mr-2" />
-              Télécharger le programme
-            </Button>
-            <Button onClick={handleSendProgram} className="flex-1">
-              <Send className="w-4 h-4 mr-2" />
-              Demander des infos
-            </Button>
+          <div className="flex flex-col gap-3 pt-4 border-t">
+            {formation.cpfEligible && formation.cpfLink && (
+              <Button 
+                onClick={() => window.open(formation.cpfLink, '_blank')} 
+                className="w-full bg-green-600 hover:bg-green-700"
+              >
+                <Euro className="w-4 h-4 mr-2" />
+                S'inscrire via Mon Compte CPF
+              </Button>
+            )}
+            <div className="flex gap-3">
+              <Button onClick={handleDownloadProgram} variant="outline" className="flex-1">
+                <Download className="w-4 h-4 mr-2" />
+                Télécharger le programme
+              </Button>
+              <Button onClick={handleSendProgram} className="flex-1">
+                <Send className="w-4 h-4 mr-2" />
+                Demander des infos
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>
