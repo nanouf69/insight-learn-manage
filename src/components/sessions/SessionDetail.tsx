@@ -348,6 +348,23 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                 ))}
               </div>
             </ScrollArea>
+
+            {/* Récapitulatif TA/VA */}
+            <div className="mt-4 p-3 rounded-lg bg-muted/50 border">
+              <div className="flex items-center justify-center gap-6 text-sm">
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">TA</Badge>
+                  <span className="font-medium">{apprenantsInSession.filter(a => a.typeFormation === "TA").length}</span>
+                  <span className="text-muted-foreground">Taxi pour VTC</span>
+                </div>
+                <div className="h-4 w-px bg-border" />
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100">VA</Badge>
+                  <span className="font-medium">{apprenantsInSession.filter(a => a.typeFormation === "VA").length}</span>
+                  <span className="text-muted-foreground">VTC pour Taxi</span>
+                </div>
+              </div>
+            </div>
           </TabsContent>
 
           {/* Formateurs Tab */}
