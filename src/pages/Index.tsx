@@ -12,6 +12,7 @@ import { DocumentsList } from "@/components/documents/DocumentsList";
 import { SettingsPage } from "@/components/settings/SettingsPage";
 import { SessionsList } from "@/components/sessions/SessionsList";
 import { OrganisationsList } from "@/components/organisations/OrganisationsList";
+import { FormateursList } from "@/components/formateurs/FormateursList";
 import { BPFForm } from "@/components/bpf/BPFForm";
 import { FactureForm } from "@/components/factures/FactureForm";
 import { GraduationCap, Users, Euro, TrendingUp } from "lucide-react";
@@ -21,6 +22,7 @@ const pageConfig = {
   planning: { title: "Planning", subtitle: "Planifiez vos sessions de formation" },
   sessions: { title: "Sessions", subtitle: "Gérez vos sessions de formation" },
   formations: { title: "Formations", subtitle: "Gérez votre catalogue de formations" },
+  formateurs: { title: "Formateurs", subtitle: "Gérez votre équipe de formateurs" },
   organisations: { title: "Organisations", subtitle: "Gérez vos organisations clientes" },
   apprenants: { title: "Apprenants", subtitle: "Suivez vos apprenants" },
   crm: { title: "CRM", subtitle: "Gérez vos contacts et prospects" },
@@ -88,6 +90,8 @@ const Index = () => {
         return <PlanningCalendar />;
       case "sessions":
         return <SessionsList />;
+      case "formateurs":
+        return <FormateursList />;
       case "organisations":
         return <OrganisationsList />;
       case "documents":
