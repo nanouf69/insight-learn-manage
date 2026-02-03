@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Users, MapPin } from "lucide-react";
+import { Calendar, Users, MapPin } from "lucide-react";
 import { SessionForm } from "./SessionForm";
+import { SessionDetail } from "./SessionDetail";
 
 const sessions = [
   // Formation VTC Initial (250H = ~7 semaines)
@@ -195,6 +197,14 @@ const getStatusBadge = (status: string) => {
 };
 
 export function SessionsList() {
+  const [selectedSession, setSelectedSession] = useState<typeof sessions[0] | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+
+  const openSessionDetail = (session: typeof sessions[0]) => {
+    setSelectedSession(session);
+    setDetailOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -207,7 +217,11 @@ export function SessionsList() {
 
       <div className="grid gap-4">
         {sessions.map((session) => (
-          <Card key={session.id} className="hover:shadow-md transition-shadow cursor-pointer">
+          <Card 
+            key={session.id} 
+            className="hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => openSessionDetail(session)}
+          >
             <CardContent className="p-5">
               <div className="flex items-start gap-5">
                 {/* Dates début - fin */}
@@ -246,6 +260,12 @@ export function SessionsList() {
           </Card>
         ))}
       </div>
+
+      <SessionDetail 
+        session={selectedSession}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+      />
     </div>
   );
 }
