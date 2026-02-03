@@ -10,7 +10,8 @@ import {
   LogOut,
   CalendarDays,
   Building2,
-  ClipboardList
+  ClipboardList,
+  Receipt
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +31,7 @@ const menuItems = [
   { id: "apprenants", label: "Apprenants", icon: Users },
   { id: "crm", label: "CRM", icon: UserCircle },
   { id: "documents", label: "Documents", icon: FileText },
+  { id: "factures", label: "Factures", icon: Receipt },
   { id: "bpf", label: "BPF", icon: ClipboardList },
 ];
 
