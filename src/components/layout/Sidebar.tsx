@@ -11,7 +11,8 @@ import {
   CalendarDays,
   Building2,
   ClipboardList,
-  Receipt
+  Receipt,
+  UserCog
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +28,7 @@ const menuItems = [
   { id: "planning", label: "Planning", icon: Calendar },
   { id: "sessions", label: "Sessions", icon: CalendarDays },
   { id: "formations", label: "Formations", icon: GraduationCap },
+  { id: "formateurs", label: "Formateurs", icon: UserCog },
   { id: "organisations", label: "Organisations", icon: Building2 },
   { id: "apprenants", label: "Apprenants", icon: Users },
   { id: "crm", label: "CRM", icon: UserCircle },
