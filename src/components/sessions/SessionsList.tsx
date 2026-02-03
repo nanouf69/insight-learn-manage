@@ -4,13 +4,13 @@ import { Calendar, Clock, Users, MapPin } from "lucide-react";
 import { SessionForm } from "./SessionForm";
 
 const sessions = [
-  // Formation VTC Initial
+  // Formation VTC Initial (250H = ~7 semaines)
   {
     id: 1,
     title: "Formation VTC Initial - Session 1",
     formation: "Formation initiale VTC (250H)",
-    date: "20 Jan 2026",
-    horaire: "09:00 - 17:00",
+    dateDebut: "20 Jan 2026",
+    dateFin: "06 Mars 2026",
     lieu: "Présentiel",
     formateur: "Jean Dupont",
     participants: 8,
@@ -21,8 +21,8 @@ const sessions = [
     id: 2,
     title: "Formation VTC Initial - Session 2",
     formation: "Formation initiale VTC (250H)",
-    date: "03 Fév 2026",
-    horaire: "09:00 - 17:00",
+    dateDebut: "03 Fév 2026",
+    dateFin: "20 Mars 2026",
     lieu: "Présentiel",
     formateur: "Jean Dupont",
     participants: 10,
@@ -33,8 +33,8 @@ const sessions = [
     id: 3,
     title: "Formation VTC Initial - Session 3",
     formation: "Formation initiale VTC (250H)",
-    date: "17 Fév 2026",
-    horaire: "09:00 - 17:00",
+    dateDebut: "17 Fév 2026",
+    dateFin: "03 Avr 2026",
     lieu: "Présentiel",
     formateur: "Marie Martin",
     participants: 5,
@@ -45,21 +45,21 @@ const sessions = [
     id: 4,
     title: "Formation VTC Initial - Session 4",
     formation: "Formation initiale VTC (250H)",
-    date: "03 Mars 2026",
-    horaire: "09:00 - 17:00",
+    dateDebut: "03 Mars 2026",
+    dateFin: "17 Avr 2026",
     lieu: "Présentiel",
     formateur: "Jean Dupont",
     participants: 0,
     maxParticipants: 12,
     status: "pending"
   },
-  // Formation TAXI Initial
+  // Formation TAXI Initial (200H = ~6 semaines)
   {
     id: 5,
     title: "Formation TAXI Initial - Session 1",
     formation: "Formation initiale TAXI (200H)",
-    date: "27 Jan 2026",
-    horaire: "09:00 - 17:00",
+    dateDebut: "27 Jan 2026",
+    dateFin: "06 Mars 2026",
     lieu: "Présentiel",
     formateur: "Pierre Bernard",
     participants: 6,
@@ -70,8 +70,8 @@ const sessions = [
     id: 6,
     title: "Formation TAXI Initial - Session 2",
     formation: "Formation initiale TAXI (200H)",
-    date: "10 Fév 2026",
-    horaire: "09:00 - 17:00",
+    dateDebut: "10 Fév 2026",
+    dateFin: "20 Mars 2026",
     lieu: "Présentiel",
     formateur: "Pierre Bernard",
     participants: 4,
@@ -82,21 +82,21 @@ const sessions = [
     id: 7,
     title: "Formation TAXI Initial - Session 3",
     formation: "Formation initiale TAXI (200H)",
-    date: "24 Fév 2026",
-    horaire: "09:00 - 17:00",
+    dateDebut: "24 Fév 2026",
+    dateFin: "03 Avr 2026",
     lieu: "Présentiel",
     formateur: "Sophie Lefebvre",
     participants: 0,
     maxParticipants: 10,
     status: "pending"
   },
-  // Passerelle TAXI vers VTC
+  // Passerelle TAXI vers VTC (14H = 2 jours)
   {
     id: 8,
     title: "Passerelle TAXI vers VTC - Session 1",
     formation: "Passerelle TAXI vers VTC (14H)",
-    date: "05 Jan 2026",
-    horaire: "09:00 - 17:00",
+    dateDebut: "05 Jan 2026",
+    dateFin: "06 Jan 2026",
     lieu: "Présentiel",
     formateur: "Jean Dupont",
     participants: 5,
@@ -107,21 +107,21 @@ const sessions = [
     id: 9,
     title: "Passerelle TAXI vers VTC - Session 2",
     formation: "Passerelle TAXI vers VTC (14H)",
-    date: "02 Fév 2026",
-    horaire: "09:00 - 17:00",
+    dateDebut: "02 Fév 2026",
+    dateFin: "03 Fév 2026",
     lieu: "Présentiel",
     formateur: "Marie Martin",
     participants: 3,
     maxParticipants: 8,
     status: "pending"
   },
-  // Passerelle VTC vers TAXI
+  // Passerelle VTC vers TAXI (14H = 2 jours)
   {
     id: 10,
     title: "Passerelle VTC vers TAXI - Session 1",
     formation: "Passerelle VTC vers TAXI (14H)",
-    date: "12 Jan 2026",
-    horaire: "09:00 - 17:00",
+    dateDebut: "12 Jan 2026",
+    dateFin: "13 Jan 2026",
     lieu: "Présentiel",
     formateur: "Pierre Bernard",
     participants: 4,
@@ -132,47 +132,47 @@ const sessions = [
     id: 11,
     title: "Passerelle VTC vers TAXI - Session 2",
     formation: "Passerelle VTC vers TAXI (14H)",
-    date: "09 Fév 2026",
-    horaire: "09:00 - 17:00",
+    dateDebut: "09 Fév 2026",
+    dateFin: "10 Fév 2026",
     lieu: "Présentiel",
     formateur: "Sophie Lefebvre",
     participants: 0,
     maxParticipants: 8,
     status: "pending"
   },
-  // Formation continue VTC
+  // Formation continue VTC (14H = 2 jours)
   {
     id: 12,
     title: "Formation continue VTC - Session 1",
     formation: "Formation continue VTC (14H)",
-    date: "19 Jan 2026",
-    horaire: "09:00 - 17:00",
+    dateDebut: "19 Jan 2026",
+    dateFin: "20 Jan 2026",
     lieu: "Présentiel",
     formateur: "Jean Dupont",
     participants: 7,
     maxParticipants: 15,
     status: "confirmed"
   },
-  // Formation continue TAXI
+  // Formation continue TAXI (14H = 2 jours)
   {
     id: 13,
     title: "Formation continue TAXI - Session 1",
     formation: "Formation continue TAXI (14H)",
-    date: "26 Jan 2026",
-    horaire: "09:00 - 17:00",
+    dateDebut: "26 Jan 2026",
+    dateFin: "27 Jan 2026",
     lieu: "Présentiel",
     formateur: "Marie Martin",
     participants: 6,
     maxParticipants: 15,
     status: "confirmed"
   },
-  // Mobilité PMR
+  // Mobilité PMR (21H = 3 jours)
   {
     id: 14,
     title: "Mobilité PMR - Session 1",
     formation: "Mobilité - Capacité PMR (21H)",
-    date: "16 Fév 2026",
-    horaire: "09:00 - 17:00",
+    dateDebut: "16 Fév 2026",
+    dateFin: "18 Fév 2026",
     lieu: "Présentiel",
     formateur: "Sophie Lefebvre",
     participants: 8,
@@ -210,11 +210,12 @@ export function SessionsList() {
           <Card key={session.id} className="hover:shadow-md transition-shadow cursor-pointer">
             <CardContent className="p-5">
               <div className="flex items-start gap-5">
-                {/* Date en gros */}
-                <div className="flex flex-col items-center justify-center min-w-[80px] p-3 rounded-xl bg-primary/10 text-primary">
+                {/* Dates début - fin */}
+                <div className="flex flex-col items-center justify-center min-w-[140px] p-3 rounded-xl bg-primary/10 text-primary">
                   <Calendar className="w-5 h-5 mb-1" />
-                  <span className="text-xl font-bold">{session.date.split(' ')[0]}</span>
-                  <span className="text-sm font-medium">{session.date.split(' ').slice(1).join(' ')}</span>
+                  <span className="text-sm font-bold">{session.dateDebut}</span>
+                  <span className="text-xs text-primary/70">au</span>
+                  <span className="text-sm font-bold">{session.dateFin}</span>
                 </div>
                 
                 <div className="space-y-2 flex-1">
