@@ -93,9 +93,18 @@ interface ApprenantSession {
   montantAPayer: number;
   montantPaye: number;
   datePaiement: Date | null;
+  moyenPaiement: string | null;
   // Examen théorique
   examenTheoriqueReussi: "oui" | "non" | null;
 }
+
+// Moyens de paiement disponibles
+const moyensPaiement = [
+  { value: "especes", label: "Espèces" },
+  { value: "cb", label: "Carte bancaire" },
+  { value: "cheque", label: "Chèque" },
+  { value: "virement", label: "Virement" },
+];
 
 // Type pour les données de formateur dans une session
 interface FormateurSession {
@@ -149,12 +158,12 @@ const allFormateurs = [
 export function SessionDetail({ session, open, onOpenChange }: SessionDetailProps) {
   // Données des apprenants dans la session avec financement et dates personnalisées
   const [apprenantSessionData, setApprenantSessionData] = useState<ApprenantSession[]>([
-    { apprenantId: 1, modeFinancement: "cpf", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null, examenTheoriqueReussi: null },
-    { apprenantId: 2, modeFinancement: "personnel", dateDebut: null, dateFin: null, montantAPayer: 1500, montantPaye: 500, datePaiement: new Date(), examenTheoriqueReussi: "oui" },
-    { apprenantId: 3, modeFinancement: "opco", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null, examenTheoriqueReussi: "non" },
-    { apprenantId: 5, modeFinancement: "cpf", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null, examenTheoriqueReussi: null },
-    { apprenantId: 6, modeFinancement: "france_travail", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null, examenTheoriqueReussi: "oui" },
-    { apprenantId: 8, modeFinancement: "personnel", dateDebut: null, dateFin: null, montantAPayer: 1500, montantPaye: 1500, datePaiement: new Date(), examenTheoriqueReussi: null },
+    { apprenantId: 1, modeFinancement: "cpf", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null, moyenPaiement: null, examenTheoriqueReussi: null },
+    { apprenantId: 2, modeFinancement: "personnel", dateDebut: null, dateFin: null, montantAPayer: 1500, montantPaye: 500, datePaiement: new Date(), moyenPaiement: "cb", examenTheoriqueReussi: "oui" },
+    { apprenantId: 3, modeFinancement: "opco", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null, moyenPaiement: null, examenTheoriqueReussi: "non" },
+    { apprenantId: 5, modeFinancement: "cpf", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null, moyenPaiement: null, examenTheoriqueReussi: null },
+    { apprenantId: 6, modeFinancement: "france_travail", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null, moyenPaiement: null, examenTheoriqueReussi: "oui" },
+    { apprenantId: 8, modeFinancement: "personnel", dateDebut: null, dateFin: null, montantAPayer: 1500, montantPaye: 1500, datePaiement: new Date(), moyenPaiement: "especes", examenTheoriqueReussi: null },
   ]);
   
   // Données des formateurs dans la session avec leurs matières
@@ -207,9 +216,9 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
     });
   };
 
-  const updateApprenantPaiement = (apprenantId: number, montantAPayer: number, montantPaye: number, datePaiement: Date | null) => {
+  const updateApprenantPaiement = (apprenantId: number, montantAPayer: number, montantPaye: number, datePaiement: Date | null, moyenPaiement: string | null) => {
     setApprenantSessionData(prev => 
-      prev.map(a => a.apprenantId === apprenantId ? { ...a, montantAPayer, montantPaye, datePaiement } : a)
+      prev.map(a => a.apprenantId === apprenantId ? { ...a, montantAPayer, montantPaye, datePaiement, moyenPaiement } : a)
     );
     toast({
       title: "Paiement mis à jour",
@@ -227,6 +236,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
       montantAPayer: 0,
       montantPaye: 0,
       datePaiement: null,
+      moyenPaiement: null,
       examenTheoriqueReussi: null
     }]);
     toast({
@@ -621,7 +631,8 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                                     apprenant.id, 
                                     Number(e.target.value), 
                                     sessionData?.montantPaye || 0, 
-                                    sessionData?.datePaiement || null
+                                    sessionData?.datePaiement || null,
+                                    sessionData?.moyenPaiement || null
                                   )}
                                   className="h-8"
                                 />
@@ -635,10 +646,35 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                                     apprenant.id, 
                                     sessionData?.montantAPayer || 0, 
                                     Number(e.target.value), 
-                                    sessionData?.datePaiement || null
+                                    sessionData?.datePaiement || null,
+                                    sessionData?.moyenPaiement || null
                                   )}
                                   className="h-8"
                                 />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">Moyen de paiement</Label>
+                                <Select
+                                  value={sessionData?.moyenPaiement || ""}
+                                  onValueChange={(value) => updateApprenantPaiement(
+                                    apprenant.id, 
+                                    sessionData?.montantAPayer || 0, 
+                                    sessionData?.montantPaye || 0, 
+                                    sessionData?.datePaiement || null,
+                                    value
+                                  )}
+                                >
+                                  <SelectTrigger className="h-8">
+                                    <SelectValue placeholder="Sélectionner..." />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {moyensPaiement.map((moyen) => (
+                                      <SelectItem key={moyen.value} value={moyen.value}>
+                                        {moyen.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                               </div>
                               <div className="space-y-1">
                                 <Label className="text-xs">Date du paiement</Label>
@@ -649,7 +685,8 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                                     apprenant.id, 
                                     sessionData?.montantAPayer || 0, 
                                     sessionData?.montantPaye || 0, 
-                                    date || null
+                                    date || null,
+                                    sessionData?.moyenPaiement || null
                                   )}
                                   className="p-2 pointer-events-auto"
                                 />
