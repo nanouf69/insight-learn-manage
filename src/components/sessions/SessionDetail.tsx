@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -26,7 +27,9 @@ import {
   Download,
   CreditCard,
   CalendarIcon,
-  Pencil
+  Pencil,
+  BookOpen,
+  ChevronDown
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { generateEmargementPDF } from "./EmargementGenerator";
@@ -87,6 +90,47 @@ interface ApprenantSession {
   dateFin: Date | null;
 }
 
+// Type pour les données de formateur dans une session
+interface FormateurSession {
+  formateurId: number;
+  formateurNom: string;
+  matieres: string[];
+}
+
+// Liste complète des matières/disciplines
+const allMatieres = [
+  { id: "anglais", label: "Anglais", color: "#6d7bf4" },
+  { id: "bilan_qcm", label: "Bilan QCM Examen", color: "#f2ef0c" },
+  { id: "bilan_qrc", label: "Bilan QRC Examen", color: "#ec9060" },
+  { id: "correction_bilan", label: "Correction Bilan Examen", color: "#29acf0" },
+  { id: "dev_commercial_vtc", label: "Développement commercial Réglementation VTC", color: "#f8a53d" },
+  { id: "examen_blanc_1", label: "Examen blanc 1", color: "#3f4494" },
+  { id: "examen_blanc_2", label: "Examen blanc 2", color: "#4ca8a0" },
+  { id: "examen_blanc_3", label: "Examen blanc 3", color: "#3beeff" },
+  { id: "examen_blanc_4", label: "Examen blanc 4", color: "#eedfee" },
+  { id: "examen_blanc_5", label: "Examen blanc 5", color: "#749459" },
+  { id: "examen_blanc_6", label: "Examen blanc 6", color: "#ea67dd" },
+  { id: "formation_vtc", label: "Formation VTC", color: "#16263b" },
+  { id: "formation_continue_vtc", label: "Formation continue VTC", color: "#2a4a6b" },
+  { id: "formation_taxi", label: "Formation TAXI", color: "#1e40af" },
+  { id: "gestion_1", label: "Gestion 1", color: "#7612ec" },
+  { id: "gestion_2", label: "Gestion 2", color: "#8db32e" },
+  { id: "gestion_3", label: "Gestion 3", color: "#59e379" },
+  { id: "pratique_taxi", label: "Pratique TAXI", color: "#464c04" },
+  { id: "pratique_vtc", label: "Pratique VTC", color: "#c15050" },
+  { id: "presentation", label: "Présentation", color: "#6b7280" },
+  { id: "reglementation_locale_1", label: "Réglementation locale 1", color: "#f59e0b" },
+  { id: "reglementation_locale_2", label: "Réglementation locale 2", color: "#d97706" },
+  { id: "reglementation_nationale_1", label: "Réglementation nationale 1", color: "#10b981" },
+  { id: "reglementation_nationale_2", label: "Réglementation nationale 2", color: "#059669" },
+  { id: "revision", label: "Révision", color: "#8b5cf6" },
+  { id: "securite_routiere_1", label: "Sécurité routière 1", color: "#ef4444" },
+  { id: "securite_routiere_2", label: "Sécurité routière 2", color: "#dc2626" },
+  { id: "securite_routiere_3", label: "Sécurité routière 3", color: "#b91c1c" },
+  { id: "t3p_1", label: "T3P 1", color: "#0ea5e9" },
+  { id: "t3p_2", label: "T3P 2", color: "#0284c7" },
+];
+
 // Liste des formateurs disponibles
 const allFormateurs = [
   { id: 1, nom: "Jean Dupont", email: "jean.dupont@ftransport.fr", telephone: "06 12 34 56 78", specialites: ["VTC Initial", "Formation continue VTC"] },
@@ -105,11 +149,14 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
     { apprenantId: 6, modeFinancement: "france_travail", dateDebut: null, dateFin: null },
     { apprenantId: 8, modeFinancement: "personnel", dateDebut: null, dateFin: null },
   ]);
-  const [sessionFormateurs, setSessionFormateurs] = useState<string[]>(session?.formateur ? [session.formateur] : []);
+  
+  // Données des formateurs dans la session avec leurs matières
+  const [formateurSessionData, setFormateurSessionData] = useState<FormateurSession[]>([]);
   const [searchApprenant, setSearchApprenant] = useState("");
   const [searchFormateur, setSearchFormateur] = useState("");
   const [showAddApprenant, setShowAddApprenant] = useState(false);
   const [showAddFormateur, setShowAddFormateur] = useState(false);
+  const [expandedFormateur, setExpandedFormateur] = useState<number | null>(null);
   const { toast } = useToast();
 
   if (!session) return null;
@@ -123,8 +170,9 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
      a.email.toLowerCase().includes(searchApprenant.toLowerCase()))
   );
 
+  const sessionFormateurIds = formateurSessionData.map(f => f.formateurId);
   const formateursNotInSession = allFormateurs.filter(f => 
-    !sessionFormateurs.includes(f.nom) &&
+    !sessionFormateurIds.includes(f.id) &&
     f.nom.toLowerCase().includes(searchFormateur.toLowerCase())
   );
 
@@ -179,21 +227,48 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
     return financement || { value: mode, label: mode, color: "bg-gray-100 text-gray-700" };
   };
 
-  const addFormateur = (nom: string) => {
-    setSessionFormateurs([...sessionFormateurs, nom]);
+  const addFormateur = (formateur: typeof allFormateurs[0]) => {
+    setFormateurSessionData([...formateurSessionData, { 
+      formateurId: formateur.id, 
+      formateurNom: formateur.nom,
+      matieres: []
+    }]);
     setShowAddFormateur(false);
+    setExpandedFormateur(formateur.id);
     toast({
       title: "Formateur ajouté",
-      description: "Le formateur a été ajouté à la session.",
+      description: "Sélectionnez maintenant les matières à enseigner.",
     });
   };
 
-  const removeFormateur = (nom: string) => {
-    setSessionFormateurs(sessionFormateurs.filter(f => f !== nom));
+  const removeFormateur = (formateurId: number) => {
+    setFormateurSessionData(formateurSessionData.filter(f => f.formateurId !== formateurId));
     toast({
       title: "Formateur retiré",
       description: "Le formateur a été retiré de la session.",
     });
+  };
+
+  const toggleFormateurMatiere = (formateurId: number, matiereId: string) => {
+    setFormateurSessionData(prev => 
+      prev.map(f => {
+        if (f.formateurId === formateurId) {
+          const hasMatieres = f.matieres.includes(matiereId);
+          return {
+            ...f,
+            matieres: hasMatieres 
+              ? f.matieres.filter(m => m !== matiereId)
+              : [...f.matieres, matiereId]
+          };
+        }
+        return f;
+      })
+    );
+  };
+
+  const getFormateurMatieres = (formateurId: number) => {
+    const data = formateurSessionData.find(f => f.formateurId === formateurId);
+    return data?.matieres || [];
   };
 
   const getStatusBadge = (status: string) => {
@@ -245,7 +320,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
       dateDebut: dateDebut.toISOString().split("T")[0],
       dateFin: dateFin.toISOString().split("T")[0],
       lieu: session.lieu,
-      formateurs: sessionFormateurs.length > 0 ? sessionFormateurs : [session.formateur],
+      formateurs: formateurSessionData.length > 0 ? formateurSessionData.map(f => f.formateurNom) : [session.formateur],
     };
 
     const apprenantsList = apprenantsInSession.map((a) => ({
@@ -307,7 +382,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
             </TabsTrigger>
             <TabsTrigger value="formateurs" className="gap-2">
               <UserCog className="w-4 h-4" />
-              Formateurs ({sessionFormateurs.length})
+              Formateurs ({formateurSessionData.length})
             </TabsTrigger>
           </TabsList>
 
@@ -586,7 +661,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                       <div 
                         key={formateur.id}
                         className="flex items-center justify-between p-2 rounded-lg hover:bg-muted cursor-pointer"
-                        onClick={() => addFormateur(formateur.nom)}
+                        onClick={() => addFormateur(formateur)}
                       >
                         <div className="flex items-center gap-2">
                           <Avatar className="w-8 h-8">
@@ -615,48 +690,109 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
             )}
 
             <ScrollArea className="flex-1">
-              <div className="space-y-2">
-                {sessionFormateurs.map((formateurNom) => {
-                  const formateur = allFormateurs.find(f => f.nom === formateurNom);
+              <div className="space-y-3">
+                {formateurSessionData.map((formateurData) => {
+                  const formateur = allFormateurs.find(f => f.id === formateurData.formateurId);
                   if (!formateur) return null;
+                  const isExpanded = expandedFormateur === formateur.id;
+                  const selectedMatieres = getFormateurMatieres(formateur.id);
                   
                   return (
                     <div 
                       key={formateur.id}
-                      className="flex items-center justify-between p-3 rounded-lg border bg-card hover:shadow-sm transition-shadow"
+                      className="p-3 rounded-lg border bg-card hover:shadow-sm transition-shadow"
                     >
-                      <div className="flex items-center gap-3">
-                        <Avatar className="w-10 h-10">
-                          <AvatarFallback className="bg-amber-100 text-amber-700 font-medium">
-                            {formateur.nom.split(' ').map(n => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium text-foreground">{formateur.nom}</p>
-                          <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                            <span className="flex items-center gap-1">
-                              <Mail className="w-3 h-3" />
-                              {formateur.email}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Phone className="w-3 h-3" />
-                              {formateur.telephone}
-                            </span>
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="w-10 h-10">
+                            <AvatarFallback className="bg-amber-100 text-amber-700 font-medium">
+                              {formateur.nom.split(' ').map(n => n[0]).join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium text-foreground">{formateur.nom}</p>
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                              <span className="flex items-center gap-1">
+                                <Mail className="w-3 h-3" />
+                                {formateur.email}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Phone className="w-3 h-3" />
+                                {formateur.telephone}
+                              </span>
+                            </div>
                           </div>
                         </div>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => removeFormateur(formateur.id)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
                       </div>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => removeFormateur(formateur.nom)}
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
+                      
+                      {/* Section matières */}
+                      <div className="mt-3 pt-3 border-t">
+                        <button
+                          onClick={() => setExpandedFormateur(isExpanded ? null : formateur.id)}
+                          className="flex items-center gap-2 text-sm font-medium text-foreground hover:text-primary transition-colors w-full"
+                        >
+                          <BookOpen className="w-4 h-4" />
+                          <span>Matières enseignées ({selectedMatieres.length})</span>
+                          <ChevronDown className={cn("w-4 h-4 ml-auto transition-transform", isExpanded && "rotate-180")} />
+                        </button>
+                        
+                        {/* Badges des matières sélectionnées */}
+                        {selectedMatieres.length > 0 && !isExpanded && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {selectedMatieres.slice(0, 4).map(matiereId => {
+                              const matiere = allMatieres.find(m => m.id === matiereId);
+                              return matiere ? (
+                                <Badge 
+                                  key={matiere.id} 
+                                  className="text-xs"
+                                  style={{ backgroundColor: matiere.color + "20", color: matiere.color, borderColor: matiere.color }}
+                                >
+                                  {matiere.label}
+                                </Badge>
+                              ) : null;
+                            })}
+                            {selectedMatieres.length > 4 && (
+                              <Badge variant="secondary" className="text-xs">
+                                +{selectedMatieres.length - 4}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Liste des matières à cocher */}
+                        {isExpanded && (
+                          <div className="mt-3 grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                            {allMatieres.map((matiere) => (
+                              <label
+                                key={matiere.id}
+                                className="flex items-center gap-2 p-2 rounded-md hover:bg-muted cursor-pointer text-sm"
+                              >
+                                <Checkbox
+                                  checked={selectedMatieres.includes(matiere.id)}
+                                  onCheckedChange={() => toggleFormateurMatiere(formateur.id, matiere.id)}
+                                />
+                                <span 
+                                  className="w-3 h-3 rounded-full flex-shrink-0"
+                                  style={{ backgroundColor: matiere.color }}
+                                />
+                                <span className="truncate">{matiere.label}</span>
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
-                {sessionFormateurs.length === 0 && (
+                {formateurSessionData.length === 0 && (
                   <p className="text-sm text-muted-foreground text-center py-8">
                     Aucun formateur assigné à cette session
                   </p>
