@@ -4,18 +4,33 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Plus, User, UserCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+// Liste des formations disponibles (TAXI/VTC)
+const formationsDisponibles = [
+  { id: "vtc", nom: "Formation VTC", prix: 1099 },
+  { id: "vtc-exam", nom: "Formation VTC avec frais d'examen", prix: 1599 },
+  { id: "taxi", nom: "Formation TAXI", prix: 1299 },
+  { id: "taxi-exam", nom: "Formation TAXI avec frais d'examen", prix: 1799 },
+  { id: "passerelle-taxi", nom: "Formation TAXI pour chauffeur VTC", prix: 599 },
+  { id: "vtc-elearning", nom: "Formation VTC (E-learning)", prix: 1599 },
+  { id: "taxi-elearning", nom: "Formation TAXI (E-learning)", prix: 1299 },
+  { id: "passerelle-taxi-elearning", nom: "Formation TAXI pour chauffeur VTC (E-learning)", prix: 499 },
+  { id: "passerelle-vtc-elearning", nom: "Formation VTC pour chauffeur TAXI (E-learning)", prix: 499 },
+];
 
 export function ApprenantForm() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
+  const [typeApprenant, setTypeApprenant] = useState<"prospect" | "client">("prospect");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     toast({
       title: "Apprenant ajouté",
-      description: "L'apprenant a été ajouté avec succès.",
+      description: `L'apprenant a été ajouté en tant que ${typeApprenant === "prospect" ? "prospect" : "client"}.`,
     });
     setOpen(false);
   };
@@ -28,83 +43,183 @@ export function ApprenantForm() {
           Ajouter un apprenant
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nouvel apprenant</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="firstName">Prénom</Label>
-              <Input id="firstName" placeholder="Jean" required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="lastName">Nom</Label>
-              <Input id="lastName" placeholder="Martin" required />
+        <form onSubmit={handleSubmit} className="space-y-6 mt-4">
+          {/* Type : Prospect ou Client */}
+          <div className="space-y-3">
+            <Label className="text-base font-medium">Type</Label>
+            <RadioGroup 
+              value={typeApprenant} 
+              onValueChange={(v) => setTypeApprenant(v as "prospect" | "client")}
+              className="grid grid-cols-2 gap-4"
+            >
+              <div 
+                className={`flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  typeApprenant === "prospect" 
+                    ? "border-amber-500 bg-amber-50" 
+                    : "border-border hover:border-amber-300"
+                }`}
+                onClick={() => setTypeApprenant("prospect")}
+              >
+                <RadioGroupItem value="prospect" id="prospect" />
+                <Label htmlFor="prospect" className="flex items-center gap-2 cursor-pointer flex-1">
+                  <User className="w-5 h-5 text-amber-600" />
+                  <div>
+                    <div className="font-medium">Prospect</div>
+                    <div className="text-xs text-muted-foreground">Personne intéressée, pas encore inscrite</div>
+                  </div>
+                </Label>
+              </div>
+              <div 
+                className={`flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  typeApprenant === "client" 
+                    ? "border-green-500 bg-green-50" 
+                    : "border-border hover:border-green-300"
+                }`}
+                onClick={() => setTypeApprenant("client")}
+              >
+                <RadioGroupItem value="client" id="client" />
+                <Label htmlFor="client" className="flex items-center gap-2 cursor-pointer flex-1">
+                  <UserCheck className="w-5 h-5 text-green-600" />
+                  <div>
+                    <div className="font-medium">Client</div>
+                    <div className="text-xs text-muted-foreground">Personne inscrite à une formation</div>
+                  </div>
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          {/* Identité */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Identité</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">Prénom *</Label>
+                <Input id="firstName" placeholder="Jean" required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Nom *</Label>
+                <Input id="lastName" placeholder="Martin" required />
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="jean.martin@email.com" required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Téléphone</Label>
-              <Input id="phone" type="tel" placeholder="06 12 34 56 78" />
+          {/* Coordonnées */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Coordonnées</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email *</Label>
+                <Input id="email" type="email" placeholder="jean.martin@email.com" required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Téléphone</Label>
+                <Input id="phone" type="tel" placeholder="06 12 34 56 78" />
+              </div>
             </div>
           </div>
 
+          {/* Adresse postale */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Adresse postale</h3>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="adresse">Adresse</Label>
+                <Input id="adresse" placeholder="12 rue des Lilas" />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="codePostal">Code postal</Label>
+                  <Input id="codePostal" placeholder="69001" maxLength={5} />
+                </div>
+                <div className="space-y-2 col-span-2">
+                  <Label htmlFor="ville">Ville</Label>
+                  <Input id="ville" placeholder="Lyon" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Formation */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Formation</h3>
+            <div className="space-y-2">
+              <Label htmlFor="formation">Formation souhaitée {typeApprenant === "client" && "*"}</Label>
+              <Select required={typeApprenant === "client"}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner une formation" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="" disabled>-- Formations Présentiel --</SelectItem>
+                  <SelectItem value="vtc">Formation VTC - 1 099 €</SelectItem>
+                  <SelectItem value="vtc-exam">Formation VTC avec frais d'examen - 1 599 €</SelectItem>
+                  <SelectItem value="taxi">Formation TAXI - 1 299 €</SelectItem>
+                  <SelectItem value="taxi-exam">Formation TAXI avec frais d'examen - 1 799 €</SelectItem>
+                  <SelectItem value="passerelle-taxi">Formation TAXI pour chauffeur VTC - 599 €</SelectItem>
+                  <SelectItem value="" disabled>-- Formations E-learning --</SelectItem>
+                  <SelectItem value="vtc-elearning">Formation VTC (E-learning) - 1 599 €</SelectItem>
+                  <SelectItem value="taxi-elearning">Formation TAXI (E-learning) - 1 299 €</SelectItem>
+                  <SelectItem value="passerelle-taxi-elearning">Formation TAXI pour chauffeur VTC (E-learning) - 499 €</SelectItem>
+                  <SelectItem value="passerelle-vtc-elearning">Formation VTC pour chauffeur TAXI (E-learning) - 499 €</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {typeApprenant === "client" && (
+              <div className="space-y-2">
+                <Label htmlFor="status">Statut de formation</Label>
+                <Select defaultValue="inscrit">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un statut" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="inscrit">Inscrit</SelectItem>
+                    <SelectItem value="en_cours">En cours de formation</SelectItem>
+                    <SelectItem value="termine">Formation terminée</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          {/* Entreprise (optionnel) */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Entreprise (optionnel)</h3>
+            <div className="space-y-2">
+              <Label htmlFor="company">Entreprise / Financeur</Label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner une entreprise" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="particulier">Particulier (auto-financement)</SelectItem>
+                  <SelectItem value="opco-mobilites">OPCO Mobilités</SelectItem>
+                  <SelectItem value="pole-emploi">France Travail (Pôle Emploi)</SelectItem>
+                  <SelectItem value="cpf">Mon Compte Formation (CPF)</SelectItem>
+                  <SelectItem value="entreprise">Entreprise</SelectItem>
+                  <SelectItem value="autre">Autre</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Notes */}
           <div className="space-y-2">
-            <Label htmlFor="company">Entreprise</Label>
-            <Select>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner une entreprise" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="techcorp">TechCorp</SelectItem>
-                <SelectItem value="designstudio">DesignStudio</SelectItem>
-                <SelectItem value="dataflow">DataFlow</SelectItem>
-                <SelectItem value="innostart">InnoStart</SelectItem>
-                <SelectItem value="autre">Autre</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label htmlFor="notes">Notes</Label>
+            <Input id="notes" placeholder="Informations complémentaires..." />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="formation">Formation</Label>
-            <Select required>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner une formation" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="react">React Avancé</SelectItem>
-                <SelectItem value="ux">UX/UI Design</SelectItem>
-                <SelectItem value="python">Python Data Science</SelectItem>
-                <SelectItem value="management">Management d'équipe</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="status">Statut</Label>
-            <Select required>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner un statut" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="inscrit">Inscrit</SelectItem>
-                <SelectItem value="en_cours">En cours</SelectItem>
-                <SelectItem value="termine">Terminé</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4">
+          <div className="flex justify-end gap-3 pt-4 border-t">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Annuler
             </Button>
-            <Button type="submit">Ajouter l'apprenant</Button>
+            <Button type="submit">
+              {typeApprenant === "prospect" ? "Ajouter le prospect" : "Ajouter le client"}
+            </Button>
           </div>
         </form>
       </DialogContent>
