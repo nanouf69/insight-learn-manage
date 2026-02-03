@@ -15,10 +15,12 @@ import { OrganisationsList } from "@/components/organisations/OrganisationsList"
 import { FormateursList } from "@/components/formateurs/FormateursList";
 import { BPFForm } from "@/components/bpf/BPFForm";
 import { FactureForm } from "@/components/factures/FactureForm";
+import { AgendaView } from "@/components/agenda/AgendaView";
 import { GraduationCap, Users, Euro, TrendingUp } from "lucide-react";
 
 const pageConfig = {
   dashboard: { title: "Tableau de bord", subtitle: "Bienvenue, Marie !" },
+  agenda: { title: "Agenda", subtitle: "Planifiez vos cours par heure" },
   planning: { title: "Planning", subtitle: "Planifiez vos sessions de formation" },
   sessions: { title: "Sessions", subtitle: "Gérez vos sessions de formation" },
   formations: { title: "Formations", subtitle: "Gérez votre catalogue de formations" },
@@ -80,6 +82,8 @@ const Index = () => {
             </div>
           </div>
         );
+      case "agenda":
+        return <AgendaView />;
       case "formations":
         return <FormationsList />;
       case "apprenants":
