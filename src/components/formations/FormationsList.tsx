@@ -580,10 +580,18 @@ Cordialement`);
             )}
           </div>
           <DialogTitle className="text-xl">{formation.title}</DialogTitle>
-          <DialogDescription>{formation.objectives}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 mt-4">
+          {/* Objectifs */}
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+            <h4 className="font-semibold flex items-center gap-2 mb-2">
+              <CheckCircle className="w-4 h-4 text-primary" />
+              Objectifs de la formation
+            </h4>
+            <p className="text-sm text-muted-foreground">{formation.objectives}</p>
+          </div>
+
           {/* Prix et Durée */}
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-muted/50 rounded-lg p-4">
