@@ -1,4 +1,4 @@
-import { Search, Filter, Plus, MoreVertical, Mail, Phone } from "lucide-react";
+import { Search, Filter, MoreVertical, Mail, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,6 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ApprenantForm } from "./ApprenantForm";
 
 const apprenants = [
   {
@@ -98,10 +99,7 @@ export function ApprenantsList() {
             <Filter className="w-4 h-4" />
           </Button>
         </div>
-        <Button className="gap-2">
-          <Plus className="w-4 h-4" />
-          Ajouter un apprenant
-        </Button>
+        <ApprenantForm />
       </div>
 
       {/* Table */}

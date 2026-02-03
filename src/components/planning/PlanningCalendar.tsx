@@ -1,6 +1,7 @@
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { PlanningForm } from "./PlanningForm";
 
 const events = [
   { id: 1, title: "React Avancé - M3", date: 3, time: "14:00", duration: 3, color: "bg-primary" },
@@ -41,10 +42,7 @@ export function PlanningCalendar() {
           </div>
           <Button variant="outline" size="sm">Aujourd'hui</Button>
         </div>
-        <Button className="gap-2">
-          <Plus className="w-4 h-4" />
-          Nouvelle session
-        </Button>
+        <PlanningForm />
       </div>
 
       {/* Calendar Grid */}

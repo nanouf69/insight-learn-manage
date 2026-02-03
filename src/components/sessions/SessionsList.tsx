@@ -1,7 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Calendar, Clock, Users, MapPin } from "lucide-react";
+import { Calendar, Clock, Users, MapPin } from "lucide-react";
+import { SessionForm } from "./SessionForm";
 
 const sessions = [
   {
@@ -75,10 +75,7 @@ export function SessionsList() {
           <h1 className="text-2xl font-bold text-foreground">Sessions</h1>
           <p className="text-muted-foreground">Gérez vos sessions de formation</p>
         </div>
-        <Button className="gap-2">
-          <Plus className="w-4 h-4" />
-          Nouvelle session
-        </Button>
+        <SessionForm />
       </div>
 
       <div className="grid gap-4">

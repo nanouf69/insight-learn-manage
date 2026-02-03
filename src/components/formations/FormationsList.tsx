@@ -1,4 +1,4 @@
-import { Search, Filter, Plus, MoreVertical, Clock, Users, Euro } from "lucide-react";
+import { Search, Filter, MoreVertical, Clock, Users, Euro } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -7,6 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { FormationForm } from "./FormationForm";
 
 const formations = [
   {
@@ -83,10 +84,7 @@ export function FormationsList() {
             <Filter className="w-4 h-4" />
           </Button>
         </div>
-        <Button className="gap-2">
-          <Plus className="w-4 h-4" />
-          Nouvelle formation
-        </Button>
+        <FormationForm />
       </div>
 
       {/* Formations Grid */}
