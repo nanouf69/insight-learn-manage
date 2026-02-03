@@ -456,7 +456,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
               <div></div>
             </div>
             
-            <ScrollArea className="flex-1">
+            <ScrollArea className="flex-1 min-h-[200px] max-h-[300px]">
               <div className="space-y-2">
                 {apprenantsInSession.map((apprenant) => {
                   const sessionData = getApprenantSessionData(apprenant.id);
