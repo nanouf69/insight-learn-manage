@@ -47,7 +47,7 @@ const sessions = [
   {
     id: 4,
     title: "Formation TAXI pour chauffeur VTC - Session 1",
-    formation: "Formation TAXI pour chauffeur VTC (14H) - 599 €",
+    formation: "Formation TAXI pour chauffeur VTC (14H) - 999 €",
     dateDebut: "12 Jan 2026",
     dateFin: "13 Jan 2026",
     lieu: "Présentiel",
@@ -59,7 +59,7 @@ const sessions = [
   {
     id: 5,
     title: "Formation TAXI pour chauffeur VTC - Session 2",
-    formation: "Formation TAXI pour chauffeur VTC (14H) - 599 €",
+    formation: "Formation TAXI pour chauffeur VTC (14H) - 999 €",
     dateDebut: "09 Fév 2026",
     dateFin: "10 Fév 2026",
     lieu: "Présentiel",
@@ -71,7 +71,7 @@ const sessions = [
   {
     id: 8,
     title: "Formation TAXI pour chauffeur VTC - Session 3",
-    formation: "Formation TAXI pour chauffeur VTC (14H) - 599 €",
+    formation: "Formation TAXI pour chauffeur VTC (14H) - 999 €",
     dateDebut: "09 Mars 2026",
     dateFin: "10 Mars 2026",
     lieu: "Présentiel",
@@ -83,7 +83,7 @@ const sessions = [
   {
     id: 9,
     title: "Formation TAXI pour chauffeur VTC - Session 4",
-    formation: "Formation TAXI pour chauffeur VTC (14H) - 599 €",
+    formation: "Formation TAXI pour chauffeur VTC (14H) - 999 €",
     dateDebut: "06 Avr 2026",
     dateFin: "07 Avr 2026",
     lieu: "Présentiel",
