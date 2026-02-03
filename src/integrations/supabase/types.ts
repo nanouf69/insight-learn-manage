@@ -14,7 +14,383 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      apprenants: {
+        Row: {
+          adresse: string | null
+          code_postal: string | null
+          created_at: string
+          date_naissance: string | null
+          email: string | null
+          id: string
+          nom: string
+          numero_dossier_cma: string | null
+          prenom: string
+          statut: string | null
+          telephone: string | null
+          updated_at: string
+          ville: string | null
+        }
+        Insert: {
+          adresse?: string | null
+          code_postal?: string | null
+          created_at?: string
+          date_naissance?: string | null
+          email?: string | null
+          id?: string
+          nom: string
+          numero_dossier_cma?: string | null
+          prenom: string
+          statut?: string | null
+          telephone?: string | null
+          updated_at?: string
+          ville?: string | null
+        }
+        Update: {
+          adresse?: string | null
+          code_postal?: string | null
+          created_at?: string
+          date_naissance?: string | null
+          email?: string | null
+          id?: string
+          nom?: string
+          numero_dossier_cma?: string | null
+          prenom?: string
+          statut?: string | null
+          telephone?: string | null
+          updated_at?: string
+          ville?: string | null
+        }
+        Relationships: []
+      }
+      factures: {
+        Row: {
+          apprenant_id: string | null
+          client_adresse: string | null
+          client_nom: string
+          client_opco: string | null
+          client_siret: string | null
+          created_at: string
+          date_echeance: string | null
+          date_emission: string
+          date_paiement: string | null
+          id: string
+          montant_ht: number
+          montant_ttc: number
+          montant_tva: number
+          numero: string
+          session_id: string | null
+          statut: string | null
+          tva_taux: number
+          type_financement: string
+          updated_at: string
+        }
+        Insert: {
+          apprenant_id?: string | null
+          client_adresse?: string | null
+          client_nom: string
+          client_opco?: string | null
+          client_siret?: string | null
+          created_at?: string
+          date_echeance?: string | null
+          date_emission?: string
+          date_paiement?: string | null
+          id?: string
+          montant_ht?: number
+          montant_ttc?: number
+          montant_tva?: number
+          numero: string
+          session_id?: string | null
+          statut?: string | null
+          tva_taux?: number
+          type_financement?: string
+          updated_at?: string
+        }
+        Update: {
+          apprenant_id?: string | null
+          client_adresse?: string | null
+          client_nom?: string
+          client_opco?: string | null
+          client_siret?: string | null
+          created_at?: string
+          date_echeance?: string | null
+          date_emission?: string
+          date_paiement?: string | null
+          id?: string
+          montant_ht?: number
+          montant_ttc?: number
+          montant_tva?: number
+          numero?: string
+          session_id?: string | null
+          statut?: string | null
+          tva_taux?: number
+          type_financement?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "factures_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: false
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "factures_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      formateurs: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          nom: string
+          prenom: string
+          specialites: string | null
+          tarif_horaire: number | null
+          telephone: string | null
+          type: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          nom: string
+          prenom: string
+          specialites?: string | null
+          tarif_horaire?: number | null
+          telephone?: string | null
+          type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          nom?: string
+          prenom?: string
+          specialites?: string | null
+          tarif_horaire?: number | null
+          telephone?: string | null
+          type?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      formations: {
+        Row: {
+          code_nsf: string | null
+          code_rncp: string | null
+          code_rs: string | null
+          created_at: string
+          description: string | null
+          duree_heures: number
+          id: string
+          nom: string
+          objectifs: string | null
+          prix_ht: number
+          tva_taux: number
+          updated_at: string
+        }
+        Insert: {
+          code_nsf?: string | null
+          code_rncp?: string | null
+          code_rs?: string | null
+          created_at?: string
+          description?: string | null
+          duree_heures?: number
+          id?: string
+          nom: string
+          objectifs?: string | null
+          prix_ht?: number
+          tva_taux?: number
+          updated_at?: string
+        }
+        Update: {
+          code_nsf?: string | null
+          code_rncp?: string | null
+          code_rs?: string | null
+          created_at?: string
+          description?: string | null
+          duree_heures?: number
+          id?: string
+          nom?: string
+          objectifs?: string | null
+          prix_ht?: number
+          tva_taux?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      organismes: {
+        Row: {
+          adresse: string | null
+          code_naf: string | null
+          code_postal: string | null
+          created_at: string
+          email: string | null
+          id: string
+          nom: string
+          numero_declaration: string | null
+          siret: string | null
+          telephone: string | null
+          updated_at: string
+          ville: string | null
+        }
+        Insert: {
+          adresse?: string | null
+          code_naf?: string | null
+          code_postal?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nom: string
+          numero_declaration?: string | null
+          siret?: string | null
+          telephone?: string | null
+          updated_at?: string
+          ville?: string | null
+        }
+        Update: {
+          adresse?: string | null
+          code_naf?: string | null
+          code_postal?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nom?: string
+          numero_declaration?: string | null
+          siret?: string | null
+          telephone?: string | null
+          updated_at?: string
+          ville?: string | null
+        }
+        Relationships: []
+      }
+      session_apprenants: {
+        Row: {
+          apprenant_id: string
+          created_at: string
+          id: string
+          session_id: string
+        }
+        Insert: {
+          apprenant_id: string
+          created_at?: string
+          id?: string
+          session_id: string
+        }
+        Update: {
+          apprenant_id?: string
+          created_at?: string
+          id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_apprenants_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: false
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_apprenants_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_formateurs: {
+        Row: {
+          created_at: string
+          formateur_id: string
+          heures_effectuees: number | null
+          id: string
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          formateur_id: string
+          heures_effectuees?: number | null
+          id?: string
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          formateur_id?: string
+          heures_effectuees?: number | null
+          id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_formateurs_formateur_id_fkey"
+            columns: ["formateur_id"]
+            isOneToOne: false
+            referencedRelation: "formateurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_formateurs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sessions: {
+        Row: {
+          created_at: string
+          date_debut: string
+          date_fin: string
+          formation_id: string | null
+          id: string
+          lieu: string | null
+          places_disponibles: number | null
+          statut: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_debut: string
+          date_fin: string
+          formation_id?: string | null
+          id?: string
+          lieu?: string | null
+          places_disponibles?: number | null
+          statut?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_debut?: string
+          date_fin?: string
+          formation_id?: string | null
+          id?: string
+          lieu?: string | null
+          places_disponibles?: number | null
+          statut?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessions_formation_id_fkey"
+            columns: ["formation_id"]
+            isOneToOne: false
+            referencedRelation: "formations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
