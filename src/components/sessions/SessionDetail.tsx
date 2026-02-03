@@ -295,7 +295,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
           </div>
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4 text-muted-foreground" />
-            <span>{apprenantsInSession.length}/{session.maxParticipants} participants</span>
+            <span>{apprenantsInSession.length}/18 participants</span>
           </div>
         </div>
 
