@@ -9,7 +9,8 @@ import {
   ChevronLeft,
   LogOut,
   CalendarDays,
-  Building2
+  Building2,
+  ClipboardList
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +30,7 @@ const menuItems = [
   { id: "apprenants", label: "Apprenants", icon: Users },
   { id: "crm", label: "CRM", icon: UserCircle },
   { id: "documents", label: "Documents", icon: FileText },
+  { id: "bpf", label: "BPF", icon: ClipboardList },
 ];
 
 export function Sidebar({ currentPage, onNavigate, collapsed = false, onToggleCollapse }: SidebarProps) {
