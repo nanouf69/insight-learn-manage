@@ -14,7 +14,7 @@ const formationsDisponibles = [
   { id: "vtc-exam", nom: "Formation VTC avec frais d'examen", prix: 1599 },
   { id: "taxi", nom: "Formation TAXI", prix: 1299 },
   { id: "taxi-exam", nom: "Formation TAXI avec frais d'examen", prix: 1799 },
-  { id: "passerelle-taxi", nom: "Formation TAXI pour chauffeur VTC", prix: 599 },
+  { id: "passerelle-taxi", nom: "Formation TAXI pour chauffeur VTC", prix: 999 },
   { id: "vtc-elearning", nom: "Formation VTC (E-learning)", prix: 1599 },
   { id: "taxi-elearning", nom: "Formation TAXI (E-learning)", prix: 1299 },
   { id: "passerelle-taxi-elearning", nom: "Formation TAXI pour chauffeur VTC (E-learning)", prix: 499 },
@@ -160,7 +160,7 @@ export function ApprenantForm() {
                     <SelectItem value="vtc-exam">Formation VTC avec frais d'examen - 1 599 €</SelectItem>
                     <SelectItem value="taxi">Formation TAXI - 1 299 €</SelectItem>
                     <SelectItem value="taxi-exam">Formation TAXI avec frais d'examen - 1 799 €</SelectItem>
-                    <SelectItem value="passerelle-taxi">Formation TAXI pour chauffeur VTC - 599 €</SelectItem>
+                    <SelectItem value="passerelle-taxi">Formation TAXI pour chauffeur VTC - 999 €</SelectItem>
                   </SelectGroup>
                   <SelectGroup>
                     <SelectLabel>Formations E-learning</SelectLabel>
