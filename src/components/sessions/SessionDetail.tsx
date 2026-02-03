@@ -17,9 +17,10 @@ import {
   Search,
   UserCog,
   X,
-  Check
+  Download
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { generateEmargementPDF } from "./EmargementGenerator";
 
 interface Session {
   id: number;
@@ -130,14 +131,68 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
     }
   };
 
+  const handleDownloadEmargement = () => {
+    if (apprenantsInSession.length === 0) {
+      toast({
+        title: "Aucun apprenant",
+        description: "Ajoutez des apprenants à la session pour générer les feuilles d'émargement.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Convertir les dates au format ISO pour le générateur
+    const sessionData = {
+      title: session.title,
+      formation: session.formation,
+      dateDebut: convertToISO(session.dateDebut),
+      dateFin: convertToISO(session.dateFin),
+      lieu: session.lieu,
+      formateurs: sessionFormateurs.length > 0 ? sessionFormateurs : [session.formateur],
+    };
+
+    const apprenantsList = apprenantsInSession.map((a) => ({
+      id: a.id,
+      nom: a.nom,
+      prenom: a.prenom,
+    }));
+
+    generateEmargementPDF(sessionData, apprenantsList);
+
+    toast({
+      title: "Feuilles d'émargement générées",
+      description: `${apprenantsList.length} feuille(s) d'émargement téléchargée(s).`,
+    });
+  };
+
+  // Fonction pour convertir "01/02/2026" en "2026-02-01"
+  const convertToISO = (dateStr: string) => {
+    const parts = dateStr.split("/");
+    if (parts.length === 3) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return dateStr;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-3">
-            {session.title}
-            {getStatusBadge(session.status)}
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-3">
+              {session.title}
+              {getStatusBadge(session.status)}
+            </DialogTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleDownloadEmargement}
+              className="gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Feuilles d'émargement
+            </Button>
+          </div>
         </DialogHeader>
 
         {/* Session Info */}
