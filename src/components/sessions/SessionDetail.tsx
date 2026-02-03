@@ -527,6 +527,18 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                       {/* Date début */}
                       <Popover>
                         <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={cn(
+                              "h-8 justify-start text-left font-normal text-xs",
+                              !sessionData?.dateDebut && "text-muted-foreground"
+                            )}
+                          >
+                            {sessionData?.dateDebut 
+                              ? format(sessionData.dateDebut, "dd/MM/yy") 
+                              : "Début"}
+                          </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
                           <CalendarComponent
