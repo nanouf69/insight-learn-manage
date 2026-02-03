@@ -1,4 +1,4 @@
-import { Search, Filter, Upload, MoreVertical, FileText, FileCheck, FileWarning, Download, Eye } from "lucide-react";
+import { Search, Filter, MoreVertical, FileText, FileCheck, FileWarning, Download, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,6 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { DocumentForm } from "./DocumentForm";
 
 const documents = [
   {
@@ -87,10 +88,7 @@ export function DocumentsList() {
             <Filter className="w-4 h-4" />
           </Button>
         </div>
-        <Button className="gap-2">
-          <Upload className="w-4 h-4" />
-          Importer
-        </Button>
+        <DocumentForm />
       </div>
 
       {/* Stats */}

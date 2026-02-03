@@ -1,8 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Building2, Users, Mail, Phone, MapPin } from "lucide-react";
+import { Building2, Users, Mail, Phone, MapPin } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { OrganisationForm } from "./OrganisationForm";
 
 const organisations = [
   {
@@ -83,10 +83,7 @@ export function OrganisationsList() {
           <h1 className="text-2xl font-bold text-foreground">Organisations</h1>
           <p className="text-muted-foreground">Gérez vos organisations clientes et partenaires</p>
         </div>
-        <Button className="gap-2">
-          <Plus className="w-4 h-4" />
-          Nouvelle organisation
-        </Button>
+        <OrganisationForm />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
