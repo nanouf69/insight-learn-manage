@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
   FileText, 
   GraduationCap, 
@@ -27,7 +28,10 @@ import {
   Check,
   Mail,
   Phone,
-  MapPin
+  MapPin,
+  Calendar,
+  Clock,
+  ShoppingCart
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -47,7 +51,6 @@ const entrepriseEmettrice = {
   rcs: "823461561",
   tvaIntra: "FR44823461561",
   prefectures: "69-18-001 et 69-16-15",
-  // Coordonnées bancaires BNP Paribas
   banque: "BNP PARIBAS",
   iban: "FR76 3000 4014 1800 0101 2475 357",
   bic: "BNPAFRPPXXX",
@@ -58,111 +61,48 @@ const entrepriseEmettrice = {
   agence: "LYON-MONTCHAT"
 };
 
-// Liste des apprenants (simulée - à connecter avec la vraie base de données)
+// Liste des apprenants
 const apprenants = [
-  {
-    id: 1,
-    name: "Jean Martin",
-    email: "jean.martin@email.com",
-    phone: "06 12 34 56 78",
-    address: "12 rue des Lilas, 69001 Lyon",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Jean",
-  },
-  {
-    id: 2,
-    name: "Sophie Bernard",
-    email: "sophie.bernard@email.com",
-    phone: "06 98 76 54 32",
-    address: "45 avenue Jean Jaurès, 69007 Lyon",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sophie",
-  },
-  {
-    id: 3,
-    name: "Pierre Durand",
-    email: "pierre.durand@email.com",
-    phone: "06 55 44 33 22",
-    address: "8 place Bellecour, 69002 Lyon",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Pierre",
-  },
-  {
-    id: 4,
-    name: "Marie Leroy",
-    email: "marie.leroy@email.com",
-    phone: "06 11 22 33 44",
-    address: "23 rue de la République, 69003 Lyon",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Marie",
-  },
-  {
-    id: 5,
-    name: "Lucas Petit",
-    email: "lucas.petit@email.com",
-    phone: "06 77 88 99 00",
-    address: "56 cours Lafayette, 69006 Lyon",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Lucas",
-  },
+  { id: 1, name: "Jean Martin", email: "jean.martin@email.com", phone: "06 12 34 56 78", address: "12 rue des Lilas, 69001 Lyon", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Jean" },
+  { id: 2, name: "Sophie Bernard", email: "sophie.bernard@email.com", phone: "06 98 76 54 32", address: "45 avenue Jean Jaurès, 69007 Lyon", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sophie" },
+  { id: 3, name: "Pierre Durand", email: "pierre.durand@email.com", phone: "06 55 44 33 22", address: "8 place Bellecour, 69002 Lyon", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Pierre" },
+  { id: 4, name: "Marie Leroy", email: "marie.leroy@email.com", phone: "06 11 22 33 44", address: "23 rue de la République, 69003 Lyon", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Marie" },
+  { id: 5, name: "Lucas Petit", email: "lucas.petit@email.com", phone: "06 77 88 99 00", address: "56 cours Lafayette, 69006 Lyon", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Lucas" },
 ];
 
-// Liste des organisations (simulée - à connecter avec la vraie base de données)
+// Liste des organisations
 const organisations = [
-  {
-    id: 1,
-    name: "Tech Solutions SARL",
-    type: "client",
-    contact: "Marc Dubois",
-    email: "contact@techsolutions.fr",
-    phone: "01 23 45 67 89",
-    address: "15 Rue de l'Innovation, 75001 Paris",
-    siret: "12345678901234",
-    tvaIntra: "FR12345678901",
-  },
-  {
-    id: 2,
-    name: "Groupe Industriel ABC",
-    type: "client",
-    contact: "Claire Moreau",
-    email: "rh@groupe-abc.com",
-    phone: "01 98 76 54 32",
-    address: "Zone Industrielle Nord, 69000 Lyon",
-    siret: "98765432101234",
-    tvaIntra: "FR98765432101",
-  },
-  {
-    id: 3,
-    name: "Caisse des Dépôts et Consignations",
-    type: "client",
-    contact: "Direction Formation",
-    email: "formation@cdc.fr",
-    phone: "01 58 50 00 00",
-    address: "56, rue de Lille, 75356 PARIS 07 SP",
-    siret: "180.020.026.00",
-    tvaIntra: "FR77180020026",
-  },
-  {
-    id: 4,
-    name: "OPCO Mobilités",
-    type: "opco",
-    contact: "Service Prise en Charge",
-    email: "contact@opcomobilites.fr",
-    phone: "0 800 00 99 99",
-    address: "14 rue Scandicci, 93500 Pantin",
-    siret: "85129986300017",
-    tvaIntra: "FR85129986300",
-  },
-  {
-    id: 5,
-    name: "Mairie de Lyon",
-    type: "client",
-    contact: "Jean-Pierre Martin",
-    email: "formation@mairie-lyon.fr",
-    phone: "04 72 10 30 30",
-    address: "Place de la Comédie, 69001 Lyon",
-    siret: "21690123800019",
-    tvaIntra: "FR21690123800",
-  },
+  { id: 1, name: "Tech Solutions SARL", type: "client", contact: "Marc Dubois", email: "contact@techsolutions.fr", phone: "01 23 45 67 89", address: "15 Rue de l'Innovation, 75001 Paris", siret: "12345678901234", tvaIntra: "FR12345678901" },
+  { id: 2, name: "Groupe Industriel ABC", type: "client", contact: "Claire Moreau", email: "rh@groupe-abc.com", phone: "01 98 76 54 32", address: "Zone Industrielle Nord, 69000 Lyon", siret: "98765432101234", tvaIntra: "FR98765432101" },
+  { id: 3, name: "Caisse des Dépôts et Consignations", type: "client", contact: "Direction Formation", email: "formation@cdc.fr", phone: "01 58 50 00 00", address: "56, rue de Lille, 75356 PARIS 07 SP", siret: "180.020.026.00", tvaIntra: "FR77180020026" },
+  { id: 4, name: "OPCO Mobilités", type: "opco", contact: "Service Prise en Charge", email: "contact@opcomobilites.fr", phone: "0 800 00 99 99", address: "14 rue Scandicci, 93500 Pantin", siret: "85129986300017", tvaIntra: "FR85129986300" },
+  { id: 5, name: "Mairie de Lyon", type: "client", contact: "Jean-Pierre Martin", email: "formation@mairie-lyon.fr", phone: "04 72 10 30 30", address: "Place de la Comédie, 69001 Lyon", siret: "21690123800019", tvaIntra: "FR21690123800" },
+];
+
+// Sessions de formation
+const sessions = [
+  { id: 1, title: "Formation VTC cours du soir", formation: "Formation VTC", dateDebut: "2026-02-14", dateFin: "2026-02-25", horaire: "18:00 - 21:00", lieu: "86 route de genas 69003 Lyon", formateur: "Ahmed Benali", participants: 8, maxParticipants: 12, prix: 1599, status: "confirmed" },
+  { id: 2, title: "FIMO Voyageurs - Session Février", formation: "FIMO Voyageurs", dateDebut: "2026-02-01", dateFin: "2026-02-28", horaire: "09:00 - 17:00", lieu: "86 route de genas 69003 Lyon", formateur: "Jean Dupont", participants: 10, maxParticipants: 15, prix: 2500, status: "confirmed" },
+  { id: 3, title: "FCO Voyageurs - Recyclage", formation: "FCO Voyageurs", dateDebut: "2026-03-03", dateFin: "2026-03-07", horaire: "09:00 - 17:00", lieu: "86 route de genas 69003 Lyon", formateur: "Marie Martin", participants: 6, maxParticipants: 10, prix: 450, status: "pending" },
+  { id: 4, title: "Formation TAXI Initiale", formation: "Formation TAXI", dateDebut: "2026-03-10", dateFin: "2026-03-21", horaire: "09:00 - 17:00", lieu: "86 route de genas 69003 Lyon", formateur: "Pierre Bernard", participants: 5, maxParticipants: 12, prix: 1599, status: "confirmed" },
+  { id: 5, title: "Titre Pro Conducteur TC", formation: "Titre Professionnel", dateDebut: "2026-04-01", dateFin: "2026-06-30", horaire: "09:00 - 17:00", lieu: "86 route de genas 69003 Lyon", formateur: "Sophie Lefebvre", participants: 12, maxParticipants: 15, prix: 8500, status: "confirmed" },
+];
+
+// Liste des produits/services (basée sur l'image fournie)
+const produits = [
+  { id: 1, nom: "Formation continue VTC", prix: 199 },
+  { id: 2, nom: "Formation et location de Véhicule examen TAXI/VTC", prix: 299 },
+  { id: 3, nom: "Formation pratique TAXI/VTC", prix: 149 },
+  { id: 4, nom: "Formation TAXI", prix: 1599 },
+  { id: 5, nom: "Formation VTC", prix: 1499 },
+  { id: 6, nom: "Frais d'examen de la chambre des métiers TAXI/VTC", prix: 206 },
+  { id: 7, nom: "Frais d'examen de la chambre des métiers TAXI/VTC mobilité", prix: 145 },
+  { id: 8, nom: "Frais d'examen de la chambre des métiers TAXI/VTC pratique", prix: 101 },
 ];
 
 interface LigneFacture {
   id: string;
+  type: "session" | "produit";
   stagiaire: string;
   designation: string;
   dateDebut: string;
@@ -180,33 +120,14 @@ interface FactureData {
   date: string;
   dateEcheance: string;
   duplicata: boolean;
-  
-  // Type de financeur
   typeFinanceur: "particulier" | "professionnel";
-  
-  // ID de l'apprenant ou organisation sélectionné
   selectedApprenantId: number | null;
   selectedOrganisationId: number | null;
-  
-  // Références
   refDossier: string;
   refConvention: string;
-  
-  // Lignes de facture
   lignes: LigneFacture[];
-  
-  // Notes
   notes: string;
 }
-
-const formationsDisponibles = [
-  { id: "vtc-soir", nom: "Formation VTC cours du soir", prix: 1599 },
-  { id: "fimo-v", nom: "FIMO Voyageurs", prix: 2500 },
-  { id: "fco-v", nom: "FCO Voyageurs", prix: 450 },
-  { id: "titre-pro", nom: "Titre Professionnel Conducteur Transport en Commun", prix: 8500 },
-  { id: "permis-d", nom: "Permis D", prix: 3200 },
-  { id: "passerelle", nom: "Passerelle Permis D vers DE", prix: 1800 },
-];
 
 const generateNumeroFacture = () => {
   const year = new Date().getFullYear();
@@ -221,16 +142,12 @@ const defaultFactureData: FactureData = {
   date: new Date().toISOString().split('T')[0],
   dateEcheance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
   duplicata: false,
-  
   typeFinanceur: "professionnel",
   selectedApprenantId: null,
   selectedOrganisationId: null,
-  
   refDossier: "",
   refConvention: "",
-  
   lignes: [],
-  
   notes: "",
 };
 
@@ -238,6 +155,10 @@ export function FactureForm() {
   const [data, setData] = useState<FactureData>(defaultFactureData);
   const [searchApprenant, setSearchApprenant] = useState("");
   const [searchOrganisation, setSearchOrganisation] = useState("");
+  const [searchSession, setSearchSession] = useState("");
+  const [searchProduit, setSearchProduit] = useState("");
+  const [isAddLineDialogOpen, setIsAddLineDialogOpen] = useState(false);
+  const [addLineType, setAddLineType] = useState<"session" | "produit">("session");
 
   const updateField = <K extends keyof FactureData>(field: K, value: FactureData[K]) => {
     setData(prev => ({ ...prev, [field]: value }));
@@ -256,6 +177,15 @@ export function FactureForm() {
     o.contact.toLowerCase().includes(searchOrganisation.toLowerCase())
   );
 
+  const filteredSessions = sessions.filter(s => 
+    s.title.toLowerCase().includes(searchSession.toLowerCase()) ||
+    s.formation.toLowerCase().includes(searchSession.toLowerCase())
+  );
+
+  const filteredProduits = produits.filter(p => 
+    p.nom.toLowerCase().includes(searchProduit.toLowerCase())
+  );
+
   const getTypeBadge = (type: string) => {
     switch (type) {
       case "client":
@@ -264,27 +194,58 @@ export function FactureForm() {
         return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">OPCO</Badge>;
       case "prospect":
         return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">Prospect</Badge>;
-      case "partenaire":
-        return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100">Partenaire</Badge>;
       default:
         return <Badge variant="secondary">{type}</Badge>;
     }
   };
 
-  const ajouterLigne = () => {
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "confirmed":
+        return <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">Confirmée</Badge>;
+      case "pending":
+        return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">En attente</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
+
+  const ajouterLigneSession = (session: typeof sessions[0]) => {
     const nouvelleLigne: LigneFacture = {
       id: crypto.randomUUID(),
+      type: "session",
       stagiaire: selectedApprenant?.name || "",
-      designation: "",
-      dateDebut: "",
-      dateFin: "",
-      lieu: `${entrepriseEmettrice.adresse} ${entrepriseEmettrice.codePostal} ${entrepriseEmettrice.ville}`,
+      designation: session.title,
+      dateDebut: session.dateDebut,
+      dateFin: session.dateFin,
+      lieu: session.lieu,
       quantite: 1,
-      prixUnitaire: 0,
+      prixUnitaire: session.prix,
       tvaType: "EXO",
       remise: 0,
     };
     setData(prev => ({ ...prev, lignes: [...prev.lignes, nouvelleLigne] }));
+    setIsAddLineDialogOpen(false);
+    toast.success(`Session "${session.title}" ajoutée`);
+  };
+
+  const ajouterLigneProduit = (produit: typeof produits[0]) => {
+    const nouvelleLigne: LigneFacture = {
+      id: crypto.randomUUID(),
+      type: "produit",
+      stagiaire: selectedApprenant?.name || "",
+      designation: produit.nom,
+      dateDebut: "",
+      dateFin: "",
+      lieu: "",
+      quantite: 1,
+      prixUnitaire: produit.prix,
+      tvaType: "EXO",
+      remise: 0,
+    };
+    setData(prev => ({ ...prev, lignes: [...prev.lignes, nouvelleLigne] }));
+    setIsAddLineDialogOpen(false);
+    toast.success(`Produit "${produit.nom}" ajouté`);
   };
 
   const supprimerLigne = (id: string) => {
@@ -296,20 +257,6 @@ export function FactureForm() {
       ...prev,
       lignes: prev.lignes.map(l => l.id === id ? { ...l, [field]: value } : l)
     }));
-  };
-
-  const selectFormation = (formationId: string, ligneId: string) => {
-    const formation = formationsDisponibles.find(f => f.id === formationId);
-    if (formation) {
-      setData(prev => ({
-        ...prev,
-        lignes: prev.lignes.map(l => l.id === ligneId ? { 
-          ...l, 
-          designation: formation.nom, 
-          prixUnitaire: formation.prix 
-        } : l)
-      }));
-    }
   };
 
   const getTvaRate = (tvaType: string) => {
@@ -366,38 +313,19 @@ export function FactureForm() {
 
   const getClientInfo = () => {
     if (data.typeFinanceur === "particulier" && selectedApprenant) {
-      return {
-        nom: selectedApprenant.name,
-        adresse: selectedApprenant.address,
-        email: selectedApprenant.email,
-        telephone: selectedApprenant.phone,
-        siret: "",
-        tvaIntra: "",
-      };
+      return { nom: selectedApprenant.name, adresse: selectedApprenant.address, email: selectedApprenant.email, telephone: selectedApprenant.phone, siret: "", tvaIntra: "" };
     } else if (data.typeFinanceur === "professionnel" && selectedOrganisation) {
-      return {
-        nom: selectedOrganisation.name,
-        adresse: selectedOrganisation.address,
-        email: selectedOrganisation.email,
-        telephone: selectedOrganisation.phone,
-        siret: selectedOrganisation.siret,
-        tvaIntra: selectedOrganisation.tvaIntra,
-      };
+      return { nom: selectedOrganisation.name, adresse: selectedOrganisation.address, email: selectedOrganisation.email, telephone: selectedOrganisation.phone, siret: selectedOrganisation.siret, tvaIntra: selectedOrganisation.tvaIntra };
     }
     return null;
   };
 
   const generateFactureHTML = () => {
     const client = getClientInfo();
-    
     const lignesHTML = data.lignes.map(l => `
       <tr>
         <td style="padding: 8px; border: 1px solid #ddd;">${l.stagiaire}</td>
-        <td style="padding: 8px; border: 1px solid #ddd;">
-          ${l.designation}<br>
-          <small>Du ${formatDate(l.dateDebut)} au ${formatDate(l.dateFin)}</small><br>
-          <small>Lieu : ${l.lieu}</small>
-        </td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${l.designation}${l.dateDebut ? `<br><small>Du ${formatDate(l.dateDebut)} au ${formatDate(l.dateFin)}</small>` : ''}${l.lieu ? `<br><small>Lieu : ${l.lieu}</small>` : ''}</td>
         <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${l.tvaType}</td>
         <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${l.prixUnitaire.toFixed(2)}</td>
         <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${l.quantite.toFixed(2)}</td>
@@ -406,119 +334,9 @@ export function FactureForm() {
       </tr>
     `).join('');
 
-    const clientHTML = client ? `
-      ${client.nom}<br>
-      ${client.adresse}<br>
-      ${client.siret ? `SIRET : ${client.siret}<br>` : ''}
-      ${client.tvaIntra ? `TVA Intracommunautaire : ${client.tvaIntra}` : ''}
-    ` : 'Aucun client sélectionné';
+    const clientHTML = client ? `${client.nom}<br>${client.adresse}<br>${client.siret ? `SIRET : ${client.siret}<br>` : ''}${client.tvaIntra ? `TVA Intracommunautaire : ${client.tvaIntra}` : ''}` : 'Aucun client sélectionné';
 
-    return `
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <title>Facture ${data.numeroInterne}</title>
-  <style>
-    body { font-family: Arial, sans-serif; font-size: 12px; margin: 20px; }
-    .header { display: flex; justify-content: space-between; margin-bottom: 30px; }
-    .logo { font-size: 24px; font-weight: bold; color: #2563eb; }
-    .logo-sub { font-size: 14px; color: #666; }
-    .title { text-align: right; }
-    .title h1 { font-size: 18px; margin: 0; }
-    .info-row { display: flex; justify-content: space-between; margin-bottom: 20px; }
-    .info-box { width: 48%; }
-    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-    th { background: #f3f4f6; padding: 10px; border: 1px solid #ddd; text-align: left; }
-    .totals { text-align: right; margin-top: 20px; }
-    .bank-info { margin-top: 30px; padding: 15px; background: #f9fafb; border: 1px solid #e5e7eb; }
-    .footer { margin-top: 30px; font-size: 10px; color: #666; text-align: center; border-top: 1px solid #ddd; padding-top: 15px; }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <div>
-      <div class="logo">🚌 ${entrepriseEmettrice.nom}</div>
-      <div class="logo-sub">${entrepriseEmettrice.slogan}</div>
-    </div>
-    <div class="title">
-      <h1>FACTURE ${data.duplicata ? 'DUPLICATA ' : ''}N°${data.numero}</h1>
-      <p>Numéro : ${data.numeroInterne}</p>
-      <p>Date de facturation : ${formatDate(data.date)}</p>
-      <p>Date d'échéance : ${formatDate(data.dateEcheance)}</p>
-    </div>
-  </div>
-
-  <div class="info-row">
-    <div class="info-box">
-      <strong>Émetteur :</strong><br>
-      ${entrepriseEmettrice.nom}<br>
-      ${entrepriseEmettrice.adresse}<br>
-      ${entrepriseEmettrice.codePostal} ${entrepriseEmettrice.ville}<br>
-      SIRET : ${entrepriseEmettrice.siret}<br>
-      Tél.: ${entrepriseEmettrice.telephone}<br>
-      Email: ${entrepriseEmettrice.email}<br>
-      Déclaration d'activité n° ${entrepriseEmettrice.declarationActivite}
-      ${data.refDossier ? `<br>Réf dossier : ${data.refDossier}` : ''}
-    </div>
-    <div class="info-box">
-      <strong>Adressée à :</strong><br>
-      ${clientHTML}
-      ${data.refConvention ? `<br>Réf à rappeler : ${data.refConvention}` : ''}
-    </div>
-  </div>
-
-  <h3>Désignation</h3>
-  <table>
-    <thead>
-      <tr>
-        <th>Stagiaire</th>
-        <th>Formation</th>
-        <th>TVA</th>
-        <th>P.U. HT</th>
-        <th>Qté</th>
-        <th>Rem</th>
-        <th>Total HT</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${lignesHTML}
-    </tbody>
-  </table>
-
-  <div class="totals">
-    <p><strong>Total HT :</strong> ${calculerTotalHT().toFixed(2)} €</p>
-    <p><strong>Total TVA :</strong> ${calculerTotalTVA().toFixed(2)} €</p>
-    <p style="font-size: 16px;"><strong>Total TTC :</strong> ${calculerTotalTTC().toFixed(2)} €</p>
-  </div>
-
-  <div class="bank-info">
-    <h4>Règlement par virement, nos coordonnées bancaires :</h4>
-    <table style="width: auto;">
-      <tr><td><strong>Banque :</strong></td><td>${entrepriseEmettrice.banque}</td></tr>
-      <tr><td><strong>Code banque :</strong></td><td>${entrepriseEmettrice.codeBanque}</td></tr>
-      <tr><td><strong>Code guichet :</strong></td><td>${entrepriseEmettrice.codeGuichet}</td></tr>
-      <tr><td><strong>Numéro de compte :</strong></td><td>${entrepriseEmettrice.numeroCompte}</td></tr>
-      <tr><td><strong>Clé RIB :</strong></td><td>${entrepriseEmettrice.cleRib}</td></tr>
-      <tr><td><strong>Code IBAN :</strong></td><td>${entrepriseEmettrice.iban}</td></tr>
-      <tr><td><strong>Code BIC/SWIFT :</strong></td><td>${entrepriseEmettrice.bic}</td></tr>
-    </table>
-  </div>
-
-  <div class="footer">
-    <p>Centre de formation agrée par la préfecture n°${entrepriseEmettrice.prefectures}</p>
-    <p>TVA non applicable - article 293 B du CGI</p>
-    <p>« Membre d'un centre de gestion agréé, le règlement par chèque est accepté »</p>
-    <p>Aucun escompte ne sera applicable à cette facture.</p>
-    <p>En application de l'article 441-6 du Code de commerce, tout règlement effectué au delà du délai de paiement sera majoré d'un intérêt égal à 3 fois le taux d'intérêt légal. En outre, une indemnité forfaitaire pour frais de recouvrement de 40 € sera due.</p>
-    <hr>
-    <p>SASU FTRANSPORT - Capital de ${entrepriseEmettrice.capital} € - SIRET : ${entrepriseEmettrice.siret}</p>
-    <p>NAF-APE : ${entrepriseEmettrice.nafApe} - RCS/RM : ${entrepriseEmettrice.rcs} - Num. TVA : ${entrepriseEmettrice.tvaIntra}</p>
-    <p>www.ftransport.fr</p>
-  </div>
-</body>
-</html>
-    `;
+    return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Facture ${data.numeroInterne}</title><style>body{font-family:Arial,sans-serif;font-size:12px;margin:20px}.header{display:flex;justify-content:space-between;margin-bottom:30px}.logo{font-size:24px;font-weight:bold;color:#2563eb}.logo-sub{font-size:14px;color:#666}.title{text-align:right}.title h1{font-size:18px;margin:0}.info-row{display:flex;justify-content:space-between;margin-bottom:20px}.info-box{width:48%}table{width:100%;border-collapse:collapse;margin:20px 0}th{background:#f3f4f6;padding:10px;border:1px solid #ddd;text-align:left}.totals{text-align:right;margin-top:20px}.bank-info{margin-top:30px;padding:15px;background:#f9fafb;border:1px solid #e5e7eb}.footer{margin-top:30px;font-size:10px;color:#666;text-align:center;border-top:1px solid #ddd;padding-top:15px}</style></head><body><div class="header"><div><div class="logo">🚌 ${entrepriseEmettrice.nom}</div><div class="logo-sub">${entrepriseEmettrice.slogan}</div></div><div class="title"><h1>FACTURE ${data.duplicata ? 'DUPLICATA ' : ''}N°${data.numero}</h1><p>Numéro : ${data.numeroInterne}</p><p>Date de facturation : ${formatDate(data.date)}</p><p>Date d'échéance : ${formatDate(data.dateEcheance)}</p></div></div><div class="info-row"><div class="info-box"><strong>Émetteur :</strong><br>${entrepriseEmettrice.nom}<br>${entrepriseEmettrice.adresse}<br>${entrepriseEmettrice.codePostal} ${entrepriseEmettrice.ville}<br>SIRET : ${entrepriseEmettrice.siret}<br>Tél.: ${entrepriseEmettrice.telephone}<br>Email: ${entrepriseEmettrice.email}<br>Déclaration d'activité n° ${entrepriseEmettrice.declarationActivite}${data.refDossier ? `<br>Réf dossier : ${data.refDossier}` : ''}</div><div class="info-box"><strong>Adressée à :</strong><br>${clientHTML}${data.refConvention ? `<br>Réf à rappeler : ${data.refConvention}` : ''}</div></div><h3>Désignation</h3><table><thead><tr><th>Stagiaire</th><th>Désignation</th><th>TVA</th><th>P.U. HT</th><th>Qté</th><th>Rem</th><th>Total HT</th></tr></thead><tbody>${lignesHTML}</tbody></table><div class="totals"><p><strong>Total HT :</strong> ${calculerTotalHT().toFixed(2)} €</p><p><strong>Total TVA :</strong> ${calculerTotalTVA().toFixed(2)} €</p><p style="font-size:16px;"><strong>Total TTC :</strong> ${calculerTotalTTC().toFixed(2)} €</p></div><div class="bank-info"><h4>Règlement par virement :</h4><p>Banque : ${entrepriseEmettrice.banque} | IBAN : ${entrepriseEmettrice.iban} | BIC : ${entrepriseEmettrice.bic}</p></div><div class="footer"><p>Centre de formation agrée par la préfecture n°${entrepriseEmettrice.prefectures}</p><p>TVA non applicable - article 293 B du CGI</p><p>SASU FTRANSPORT - Capital de ${entrepriseEmettrice.capital} € - SIRET : ${entrepriseEmettrice.siret}</p></div></body></html>`;
   };
 
   const handleEnvoyer = () => {
@@ -539,23 +357,12 @@ export function FactureForm() {
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start">
         <div>
           <h2 className="text-2xl font-bold">Création de Facture</h2>
-          <p className="text-muted-foreground">
-            Format conforme à votre modèle de facturation
-          </p>
+          <p className="text-muted-foreground">Format conforme à votre modèle de facturation</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleEnvoyer} variant="outline">
-            <Send className="w-4 h-4 mr-2" />
-            Envoyer
-          </Button>
-          <Button onClick={handlePrint} variant="outline">
-            <Printer className="w-4 h-4 mr-2" />
-            Imprimer
-          </Button>
-          <Button onClick={handleExport}>
-            <Download className="w-4 h-4 mr-2" />
-            Exporter
-          </Button>
+          <Button onClick={handleEnvoyer} variant="outline"><Send className="w-4 h-4 mr-2" />Envoyer</Button>
+          <Button onClick={handlePrint} variant="outline"><Printer className="w-4 h-4 mr-2" />Imprimer</Button>
+          <Button onClick={handleExport}><Download className="w-4 h-4 mr-2" />Exporter</Button>
         </div>
       </div>
 
@@ -575,14 +382,10 @@ export function FactureForm() {
                 <p>{entrepriseEmettrice.adresse}</p>
                 <p>{entrepriseEmettrice.codePostal} {entrepriseEmettrice.ville}</p>
                 <p>SIRET : {entrepriseEmettrice.siret}</p>
-                <p>Tél : {entrepriseEmettrice.telephone}</p>
-                <p>Email : {entrepriseEmettrice.email}</p>
               </div>
             </div>
             <div className="text-right">
-              <h2 className="text-xl font-bold">
-                FACTURE {data.duplicata && <span className="text-orange-500">DUPLICATA</span>} N°{data.numero}
-              </h2>
+              <h2 className="text-xl font-bold">FACTURE {data.duplicata && <span className="text-orange-500">DUPLICATA</span>} N°{data.numero}</h2>
               <p className="text-muted-foreground">Numéro : {data.numeroInterne}</p>
             </div>
           </div>
@@ -592,77 +395,41 @@ export function FactureForm() {
       {/* Infos facture */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            Informations de la facture
-          </CardTitle>
+          <CardTitle className="flex items-center gap-2"><FileText className="w-5 h-5" />Informations de la facture</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label htmlFor="numero">N° Facture</Label>
-              <Input 
-                id="numero" 
-                value={data.numero} 
-                onChange={(e) => updateField('numero', e.target.value)}
-              />
+              <Input id="numero" value={data.numero} onChange={(e) => updateField('numero', e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="numeroInterne">Numéro interne</Label>
-              <Input 
-                id="numeroInterne" 
-                value={data.numeroInterne} 
-                onChange={(e) => updateField('numeroInterne', e.target.value)}
-              />
+              <Input id="numeroInterne" value={data.numeroInterne} onChange={(e) => updateField('numeroInterne', e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="date">Date de facturation</Label>
-              <Input 
-                id="date" 
-                type="date"
-                value={data.date} 
-                onChange={(e) => updateField('date', e.target.value)}
-              />
+              <Input id="date" type="date" value={data.date} onChange={(e) => updateField('date', e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="dateEcheance">Date d'échéance</Label>
-              <Input 
-                id="dateEcheance" 
-                type="date"
-                value={data.dateEcheance} 
-                onChange={(e) => updateField('dateEcheance', e.target.value)}
-              />
+              <Input id="dateEcheance" type="date" value={data.dateEcheance} onChange={(e) => updateField('dateEcheance', e.target.value)} />
             </div>
           </div>
           <div className="mt-4 flex items-center gap-4">
             <label className="flex items-center gap-2 cursor-pointer">
-              <input 
-                type="checkbox" 
-                checked={data.duplicata}
-                onChange={(e) => updateField('duplicata', e.target.checked)}
-                className="w-4 h-4"
-              />
+              <input type="checkbox" checked={data.duplicata} onChange={(e) => updateField('duplicata', e.target.checked)} className="w-4 h-4" />
               <span className="text-sm">Duplicata</span>
             </label>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             <div className="space-y-2">
               <Label htmlFor="refDossier">Réf dossier</Label>
-              <Input 
-                id="refDossier" 
-                placeholder="Nom du stagiaire principal"
-                value={data.refDossier} 
-                onChange={(e) => updateField('refDossier', e.target.value)}
-              />
+              <Input id="refDossier" placeholder="Nom du stagiaire principal" value={data.refDossier} onChange={(e) => updateField('refDossier', e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="refConvention">Réf Convention à rappeler</Label>
-              <Input 
-                id="refConvention" 
-                placeholder="Convention num 2024..."
-                value={data.refConvention} 
-                onChange={(e) => updateField('refConvention', e.target.value)}
-              />
+              <Input id="refConvention" placeholder="Convention num 2024..." value={data.refConvention} onChange={(e) => updateField('refConvention', e.target.value)} />
             </div>
           </div>
         </CardContent>
@@ -670,72 +437,28 @@ export function FactureForm() {
 
       <Tabs defaultValue="financeur" className="space-y-4">
         <TabsList className="grid grid-cols-2 gap-2 h-auto">
-          <TabsTrigger value="financeur" className="flex items-center gap-2">
-            <Users className="w-4 h-4" />
-            Financeur (Client)
-          </TabsTrigger>
-          <TabsTrigger value="prestations" className="flex items-center gap-2">
-            <GraduationCap className="w-4 h-4" />
-            Prestations / Formations
-          </TabsTrigger>
+          <TabsTrigger value="financeur" className="flex items-center gap-2"><Users className="w-4 h-4" />Financeur (Client)</TabsTrigger>
+          <TabsTrigger value="prestations" className="flex items-center gap-2"><GraduationCap className="w-4 h-4" />Prestations / Formations</TabsTrigger>
         </TabsList>
 
         {/* Onglet Financeur */}
         <TabsContent value="financeur" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Type de financeur</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle>Type de financeur</CardTitle></CardHeader>
             <CardContent>
-              <RadioGroup 
-                value={data.typeFinanceur} 
-                onValueChange={(v) => {
-                  updateField('typeFinanceur', v as "particulier" | "professionnel");
-                  updateField('selectedApprenantId', null);
-                  updateField('selectedOrganisationId', null);
-                }}
-                className="grid grid-cols-1 md:grid-cols-2 gap-4"
-              >
-                <div 
-                  className={`flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                    data.typeFinanceur === "particulier" 
-                      ? "border-primary bg-primary/5" 
-                      : "border-border hover:border-primary/50"
-                  }`}
-                  onClick={() => {
-                    updateField('typeFinanceur', "particulier");
-                    updateField('selectedApprenantId', null);
-                    updateField('selectedOrganisationId', null);
-                  }}
-                >
+              <RadioGroup value={data.typeFinanceur} onValueChange={(v) => { updateField('typeFinanceur', v as "particulier" | "professionnel"); updateField('selectedApprenantId', null); updateField('selectedOrganisationId', null); }} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className={`flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${data.typeFinanceur === "particulier" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`} onClick={() => { updateField('typeFinanceur', "particulier"); updateField('selectedApprenantId', null); updateField('selectedOrganisationId', null); }}>
                   <RadioGroupItem value="particulier" id="particulier" />
                   <Label htmlFor="particulier" className="flex items-center gap-3 cursor-pointer flex-1">
                     <User className="w-5 h-5 text-muted-foreground" />
-                    <div>
-                      <div className="font-medium">Particulier</div>
-                      <div className="text-sm text-muted-foreground">Personne physique finançant à titre personnel</div>
-                    </div>
+                    <div><div className="font-medium">Particulier</div><div className="text-sm text-muted-foreground">Personne physique finançant à titre personnel</div></div>
                   </Label>
                 </div>
-                <div 
-                  className={`flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                    data.typeFinanceur === "professionnel" 
-                      ? "border-primary bg-primary/5" 
-                      : "border-border hover:border-primary/50"
-                  }`}
-                  onClick={() => {
-                    updateField('typeFinanceur', "professionnel");
-                    updateField('selectedApprenantId', null);
-                    updateField('selectedOrganisationId', null);
-                  }}
-                >
+                <div className={`flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${data.typeFinanceur === "professionnel" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`} onClick={() => { updateField('typeFinanceur', "professionnel"); updateField('selectedApprenantId', null); updateField('selectedOrganisationId', null); }}>
                   <RadioGroupItem value="professionnel" id="professionnel" />
                   <Label htmlFor="professionnel" className="flex items-center gap-3 cursor-pointer flex-1">
                     <Building2 className="w-5 h-5 text-muted-foreground" />
-                    <div>
-                      <div className="font-medium">Professionnel</div>
-                      <div className="text-sm text-muted-foreground">Entreprise, OPCO, organisme financeur</div>
-                    </div>
+                    <div><div className="font-medium">Professionnel</div><div className="text-sm text-muted-foreground">Entreprise, OPCO, organisme financeur</div></div>
                   </Label>
                 </div>
               </RadioGroup>
@@ -744,89 +467,36 @@ export function FactureForm() {
 
           {data.typeFinanceur === "particulier" ? (
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="w-5 h-5" />
-                  Sélectionner un apprenant
-                </CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle className="flex items-center gap-2"><User className="w-5 h-5" />Sélectionner un apprenant</CardTitle></CardHeader>
               <CardContent className="space-y-4">
-                {/* Barre de recherche */}
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input 
-                    placeholder="Rechercher un apprenant..." 
-                    className="pl-10"
-                    value={searchApprenant}
-                    onChange={(e) => setSearchApprenant(e.target.value)}
-                  />
+                  <Input placeholder="Rechercher un apprenant..." className="pl-10" value={searchApprenant} onChange={(e) => setSearchApprenant(e.target.value)} />
                 </div>
-
-                {/* Liste des apprenants */}
                 <ScrollArea className="h-[300px] rounded-md border">
                   <div className="p-2 space-y-2">
                     {filteredApprenants.map((apprenant) => (
-                      <div 
-                        key={apprenant.id}
-                        onClick={() => updateField('selectedApprenantId', apprenant.id)}
-                        className={`p-4 rounded-lg border cursor-pointer transition-all ${
-                          data.selectedApprenantId === apprenant.id 
-                            ? "border-primary bg-primary/5" 
-                            : "border-border hover:border-primary/50 hover:bg-muted/50"
-                        }`}
-                      >
+                      <div key={apprenant.id} onClick={() => updateField('selectedApprenantId', apprenant.id)} className={`p-4 rounded-lg border cursor-pointer transition-all ${data.selectedApprenantId === apprenant.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:bg-muted/50"}`}>
                         <div className="flex items-center gap-4">
-                          <Avatar className="w-12 h-12">
-                            <AvatarImage src={apprenant.avatar} />
-                            <AvatarFallback>{apprenant.name.split(" ").map(n => n[0]).join("")}</AvatarFallback>
-                          </Avatar>
+                          <Avatar className="w-12 h-12"><AvatarImage src={apprenant.avatar} /><AvatarFallback>{apprenant.name.split(" ").map(n => n[0]).join("")}</AvatarFallback></Avatar>
                           <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <h4 className="font-semibold">{apprenant.name}</h4>
-                              {data.selectedApprenantId === apprenant.id && (
-                                <Check className="w-5 h-5 text-primary" />
-                              )}
-                            </div>
+                            <div className="flex items-center justify-between"><h4 className="font-semibold">{apprenant.name}</h4>{data.selectedApprenantId === apprenant.id && <Check className="w-5 h-5 text-primary" />}</div>
                             <div className="text-sm text-muted-foreground space-y-1 mt-1">
-                              <div className="flex items-center gap-2">
-                                <Mail className="w-3.5 h-3.5" />
-                                {apprenant.email}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Phone className="w-3.5 h-3.5" />
-                                {apprenant.phone}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <MapPin className="w-3.5 h-3.5" />
-                                {apprenant.address}
-                              </div>
+                              <div className="flex items-center gap-2"><Mail className="w-3.5 h-3.5" />{apprenant.email}</div>
+                              <div className="flex items-center gap-2"><Phone className="w-3.5 h-3.5" />{apprenant.phone}</div>
                             </div>
                           </div>
                         </div>
                       </div>
                     ))}
-                    {filteredApprenants.length === 0 && (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <User className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                        <p>Aucun apprenant trouvé</p>
-                      </div>
-                    )}
                   </div>
                 </ScrollArea>
-
-                {/* Résumé de la sélection */}
                 {selectedApprenant && (
                   <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
                     <h4 className="font-medium text-sm text-muted-foreground mb-2">Client sélectionné :</h4>
                     <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarImage src={selectedApprenant.avatar} />
-                        <AvatarFallback>{selectedApprenant.name.split(" ").map(n => n[0]).join("")}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-semibold">{selectedApprenant.name}</p>
-                        <p className="text-sm text-muted-foreground">{selectedApprenant.email}</p>
-                      </div>
+                      <Avatar><AvatarImage src={selectedApprenant.avatar} /><AvatarFallback>{selectedApprenant.name.split(" ").map(n => n[0]).join("")}</AvatarFallback></Avatar>
+                      <div><p className="font-semibold">{selectedApprenant.name}</p><p className="text-sm text-muted-foreground">{selectedApprenant.email}</p></div>
                     </div>
                   </div>
                 )}
@@ -834,99 +504,41 @@ export function FactureForm() {
             </Card>
           ) : (
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building2 className="w-5 h-5" />
-                  Sélectionner une organisation
-                </CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle className="flex items-center gap-2"><Building2 className="w-5 h-5" />Sélectionner une organisation</CardTitle></CardHeader>
               <CardContent className="space-y-4">
-                {/* Barre de recherche */}
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input 
-                    placeholder="Rechercher une organisation..." 
-                    className="pl-10"
-                    value={searchOrganisation}
-                    onChange={(e) => setSearchOrganisation(e.target.value)}
-                  />
+                  <Input placeholder="Rechercher une organisation..." className="pl-10" value={searchOrganisation} onChange={(e) => setSearchOrganisation(e.target.value)} />
                 </div>
-
-                {/* Liste des organisations */}
                 <ScrollArea className="h-[400px] rounded-md border">
                   <div className="p-2 space-y-2">
                     {filteredOrganisations.map((org) => (
-                      <div 
-                        key={org.id}
-                        onClick={() => updateField('selectedOrganisationId', org.id)}
-                        className={`p-4 rounded-lg border cursor-pointer transition-all ${
-                          data.selectedOrganisationId === org.id 
-                            ? "border-primary bg-primary/5" 
-                            : "border-border hover:border-primary/50 hover:bg-muted/50"
-                        }`}
-                      >
+                      <div key={org.id} onClick={() => updateField('selectedOrganisationId', org.id)} className={`p-4 rounded-lg border cursor-pointer transition-all ${data.selectedOrganisationId === org.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:bg-muted/50"}`}>
                         <div className="flex items-start gap-4">
-                          <Avatar className="h-12 w-12 bg-primary/10">
-                            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                              {org.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                            </AvatarFallback>
-                          </Avatar>
+                          <Avatar className="h-12 w-12 bg-primary/10"><AvatarFallback className="bg-primary/10 text-primary font-semibold">{org.name.split(' ').map(n => n[0]).join('').slice(0, 2)}</AvatarFallback></Avatar>
                           <div className="flex-1">
                             <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-2">
-                                <h4 className="font-semibold">{org.name}</h4>
-                                {getTypeBadge(org.type)}
-                              </div>
-                              {data.selectedOrganisationId === org.id && (
-                                <Check className="w-5 h-5 text-primary flex-shrink-0" />
-                              )}
+                              <div className="flex items-center gap-2"><h4 className="font-semibold">{org.name}</h4>{getTypeBadge(org.type)}</div>
+                              {data.selectedOrganisationId === org.id && <Check className="w-5 h-5 text-primary flex-shrink-0" />}
                             </div>
                             <p className="text-sm text-muted-foreground mt-1">Contact : {org.contact}</p>
                             <div className="text-sm text-muted-foreground space-y-1 mt-2">
-                              <div className="flex items-center gap-2">
-                                <Mail className="w-3.5 h-3.5" />
-                                {org.email}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Phone className="w-3.5 h-3.5" />
-                                {org.phone}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <MapPin className="w-3.5 h-3.5" />
-                                {org.address}
-                              </div>
-                            </div>
-                            <div className="mt-2 text-xs text-muted-foreground">
-                              SIRET : {org.siret} | TVA : {org.tvaIntra}
+                              <div className="flex items-center gap-2"><Mail className="w-3.5 h-3.5" />{org.email}</div>
+                              <div className="flex items-center gap-2"><Phone className="w-3.5 h-3.5" />{org.phone}</div>
                             </div>
                           </div>
                         </div>
                       </div>
                     ))}
-                    {filteredOrganisations.length === 0 && (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                        <p>Aucune organisation trouvée</p>
-                      </div>
-                    )}
                   </div>
                 </ScrollArea>
-
-                {/* Résumé de la sélection */}
                 {selectedOrganisation && (
                   <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
                     <h4 className="font-medium text-sm text-muted-foreground mb-2">Organisation sélectionnée :</h4>
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10 bg-primary/10">
-                        <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                          {selectedOrganisation.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                        </AvatarFallback>
-                      </Avatar>
+                      <Avatar className="h-10 w-10 bg-primary/10"><AvatarFallback className="bg-primary/10 text-primary font-semibold">{selectedOrganisation.name.split(' ').map(n => n[0]).join('').slice(0, 2)}</AvatarFallback></Avatar>
                       <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold">{selectedOrganisation.name}</p>
-                          {getTypeBadge(selectedOrganisation.type)}
-                        </div>
+                        <div className="flex items-center gap-2"><p className="font-semibold">{selectedOrganisation.name}</p>{getTypeBadge(selectedOrganisation.type)}</div>
                         <p className="text-sm text-muted-foreground">{selectedOrganisation.email}</p>
                       </div>
                     </div>
@@ -942,14 +554,97 @@ export function FactureForm() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <Package className="w-5 h-5" />
-                  Désignation
-                </span>
-                <Button size="sm" onClick={ajouterLigne}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Ajouter une ligne
-                </Button>
+                <span className="flex items-center gap-2"><Package className="w-5 h-5" />Désignation</span>
+                <Dialog open={isAddLineDialogOpen} onOpenChange={setIsAddLineDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm"><Plus className="w-4 h-4 mr-2" />Ajouter une ligne</Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl max-h-[90vh]">
+                    <DialogHeader>
+                      <DialogTitle>Ajouter une prestation</DialogTitle>
+                    </DialogHeader>
+                    <Tabs value={addLineType} onValueChange={(v) => setAddLineType(v as "session" | "produit")} className="mt-4">
+                      <TabsList className="grid grid-cols-2 w-full">
+                        <TabsTrigger value="session" className="flex items-center gap-2">
+                          <GraduationCap className="w-4 h-4" />
+                          Sessions de formation
+                        </TabsTrigger>
+                        <TabsTrigger value="produit" className="flex items-center gap-2">
+                          <ShoppingCart className="w-4 h-4" />
+                          Produits / Services
+                        </TabsTrigger>
+                      </TabsList>
+
+                      <TabsContent value="session" className="mt-4 space-y-4">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input placeholder="Rechercher une session..." className="pl-10" value={searchSession} onChange={(e) => setSearchSession(e.target.value)} />
+                        </div>
+                        <ScrollArea className="h-[400px]">
+                          <div className="space-y-3">
+                            {filteredSessions.map((session) => (
+                              <div key={session.id} onClick={() => ajouterLigneSession(session)} className="p-4 rounded-lg border cursor-pointer transition-all hover:border-primary hover:bg-primary/5">
+                                <div className="flex items-start justify-between">
+                                  <div className="space-y-2 flex-1">
+                                    <div className="flex items-center gap-3">
+                                      <h4 className="font-semibold">{session.title}</h4>
+                                      {getStatusBadge(session.status)}
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">{session.formation}</p>
+                                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                                      <div className="flex items-center gap-1.5"><Calendar className="w-4 h-4" /><span>{formatDate(session.dateDebut)} - {formatDate(session.dateFin)}</span></div>
+                                      <div className="flex items-center gap-1.5"><Clock className="w-4 h-4" /><span>{session.horaire}</span></div>
+                                      <div className="flex items-center gap-1.5"><MapPin className="w-4 h-4" /><span>{session.lieu}</span></div>
+                                      <div className="flex items-center gap-1.5"><Users className="w-4 h-4" /><span>{session.participants}/{session.maxParticipants}</span></div>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="text-lg font-bold text-primary">{session.prix.toFixed(2)} €</p>
+                                    <p className="text-xs text-muted-foreground">HT</p>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                            {filteredSessions.length === 0 && (
+                              <div className="text-center py-8 text-muted-foreground">
+                                <GraduationCap className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                                <p>Aucune session trouvée</p>
+                              </div>
+                            )}
+                          </div>
+                        </ScrollArea>
+                      </TabsContent>
+
+                      <TabsContent value="produit" className="mt-4 space-y-4">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input placeholder="Rechercher un produit..." className="pl-10" value={searchProduit} onChange={(e) => setSearchProduit(e.target.value)} />
+                        </div>
+                        <ScrollArea className="h-[400px]">
+                          <div className="space-y-2">
+                            {filteredProduits.map((produit) => (
+                              <div key={produit.id} onClick={() => ajouterLigneProduit(produit)} className="p-4 rounded-lg border cursor-pointer transition-all hover:border-primary hover:bg-primary/5 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                                    <ShoppingCart className="w-5 h-5 text-primary" />
+                                  </div>
+                                  <span className="font-medium">{produit.nom}</span>
+                                </div>
+                                <span className="text-lg font-bold text-primary">{produit.prix.toFixed(2)} €</span>
+                              </div>
+                            ))}
+                            {filteredProduits.length === 0 && (
+                              <div className="text-center py-8 text-muted-foreground">
+                                <ShoppingCart className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                                <p>Aucun produit trouvé</p>
+                              </div>
+                            )}
+                          </div>
+                        </ScrollArea>
+                      </TabsContent>
+                    </Tabs>
+                  </DialogContent>
+                </Dialog>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -957,14 +652,13 @@ export function FactureForm() {
                 <div className="text-center py-8 text-muted-foreground">
                   <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
                   <p>Aucune ligne ajoutée</p>
-                  <p className="text-sm">Cliquez sur "Ajouter une ligne" pour commencer</p>
+                  <p className="text-sm">Cliquez sur "Ajouter une ligne" pour sélectionner une session ou un produit</p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {/* En-tête du tableau */}
                   <div className="hidden md:grid grid-cols-12 gap-2 text-sm font-medium text-muted-foreground border-b pb-2">
                     <div className="col-span-2">Stagiaire</div>
-                    <div className="col-span-3">Formation</div>
+                    <div className="col-span-3">Désignation</div>
                     <div className="col-span-1">TVA</div>
                     <div className="col-span-1">P.U. HT</div>
                     <div className="col-span-1">Qté</div>
@@ -978,38 +672,19 @@ export function FactureForm() {
                       <div className="grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
                         <div className="md:col-span-2 space-y-1">
                           <Label className="md:hidden">Stagiaire</Label>
-                          <Input 
-                            value={ligne.stagiaire}
-                            onChange={(e) => updateLigne(ligne.id, 'stagiaire', e.target.value)}
-                            placeholder="Nom Prénom"
-                          />
+                          <Input value={ligne.stagiaire} onChange={(e) => updateLigne(ligne.id, 'stagiaire', e.target.value)} placeholder="Nom Prénom" />
                         </div>
-                        
                         <div className="md:col-span-3 space-y-1">
-                          <Label className="md:hidden">Formation</Label>
-                          <Select onValueChange={(v) => selectFormation(v, ligne.id)}>
-                            <SelectTrigger>
-                              <SelectValue placeholder={ligne.designation || "Sélectionner"} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {formationsDisponibles.map(f => (
-                                <SelectItem key={f.id} value={f.id}>
-                                  {f.nom}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <Label className="md:hidden">Désignation</Label>
+                          <div className="flex items-center gap-2">
+                            {ligne.type === "session" ? <GraduationCap className="w-4 h-4 text-primary flex-shrink-0" /> : <ShoppingCart className="w-4 h-4 text-primary flex-shrink-0" />}
+                            <Input value={ligne.designation} onChange={(e) => updateLigne(ligne.id, 'designation', e.target.value)} />
+                          </div>
                         </div>
-                        
                         <div className="md:col-span-1 space-y-1">
                           <Label className="md:hidden">TVA</Label>
-                          <Select 
-                            value={ligne.tvaType}
-                            onValueChange={(v) => updateLigne(ligne.id, 'tvaType', v as LigneFacture['tvaType'])}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
+                          <Select value={ligne.tvaType} onValueChange={(v) => updateLigne(ligne.id, 'tvaType', v as LigneFacture['tvaType'])}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="EXO">EXO</SelectItem>
                               <SelectItem value="5.5">5,5%</SelectItem>
@@ -1018,85 +693,42 @@ export function FactureForm() {
                             </SelectContent>
                           </Select>
                         </div>
-                        
                         <div className="md:col-span-1 space-y-1">
                           <Label className="md:hidden">P.U. HT</Label>
-                          <Input 
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={ligne.prixUnitaire}
-                            onChange={(e) => updateLigne(ligne.id, 'prixUnitaire', parseFloat(e.target.value) || 0)}
-                          />
+                          <Input type="number" min="0" step="0.01" value={ligne.prixUnitaire} onChange={(e) => updateLigne(ligne.id, 'prixUnitaire', parseFloat(e.target.value) || 0)} />
                         </div>
-                        
                         <div className="md:col-span-1 space-y-1">
                           <Label className="md:hidden">Qté</Label>
-                          <Input 
-                            type="number"
-                            min="0.01"
-                            step="0.01"
-                            value={ligne.quantite}
-                            onChange={(e) => updateLigne(ligne.id, 'quantite', parseFloat(e.target.value) || 1)}
-                          />
+                          <Input type="number" min="0.01" step="0.01" value={ligne.quantite} onChange={(e) => updateLigne(ligne.id, 'quantite', parseFloat(e.target.value) || 1)} />
                         </div>
-                        
                         <div className="md:col-span-1 space-y-1">
                           <Label className="md:hidden">Remise %</Label>
-                          <Input 
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={ligne.remise || ""}
-                            onChange={(e) => updateLigne(ligne.id, 'remise', parseFloat(e.target.value) || 0)}
-                            placeholder=""
-                          />
+                          <Input type="number" min="0" max="100" value={ligne.remise || ""} onChange={(e) => updateLigne(ligne.id, 'remise', parseFloat(e.target.value) || 0)} placeholder="" />
                         </div>
-                        
                         <div className="md:col-span-2">
-                          <div className="h-10 px-3 py-2 bg-muted rounded-md flex items-center font-medium justify-end">
-                            {calculerLigneHT(ligne).toFixed(2)} €
-                          </div>
+                          <div className="h-10 px-3 py-2 bg-muted rounded-md flex items-center font-medium justify-end">{calculerLigneHT(ligne).toFixed(2)} €</div>
                         </div>
-                        
                         <div className="md:col-span-1 flex justify-end">
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            onClick={() => supprimerLigne(ligne.id)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => supprimerLigne(ligne.id)} className="text-destructive hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
                         </div>
                       </div>
                       
-                      {/* Détails de la formation */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t">
-                        <div className="space-y-2">
-                          <Label>Date début</Label>
-                          <Input 
-                            type="date"
-                            value={ligne.dateDebut}
-                            onChange={(e) => updateLigne(ligne.id, 'dateDebut', e.target.value)}
-                          />
+                      {ligne.type === "session" && (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t">
+                          <div className="space-y-2">
+                            <Label>Date début</Label>
+                            <Input type="date" value={ligne.dateDebut} onChange={(e) => updateLigne(ligne.id, 'dateDebut', e.target.value)} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Date fin</Label>
+                            <Input type="date" value={ligne.dateFin} onChange={(e) => updateLigne(ligne.id, 'dateFin', e.target.value)} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Lieu</Label>
+                            <Input value={ligne.lieu} onChange={(e) => updateLigne(ligne.id, 'lieu', e.target.value)} />
+                          </div>
                         </div>
-                        <div className="space-y-2">
-                          <Label>Date fin</Label>
-                          <Input 
-                            type="date"
-                            value={ligne.dateFin}
-                            onChange={(e) => updateLigne(ligne.id, 'dateFin', e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Lieu</Label>
-                          <Input 
-                            value={ligne.lieu}
-                            onChange={(e) => updateLigne(ligne.id, 'lieu', e.target.value)}
-                          />
-                        </div>
-                      </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1107,19 +739,10 @@ export function FactureForm() {
                   <Separator />
                   <div className="flex justify-end">
                     <div className="w-full md:w-1/3 space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Total HT</span>
-                        <span className="font-medium">{calculerTotalHT().toFixed(2)} €</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Total TVA</span>
-                        <span className="font-medium">{calculerTotalTVA().toFixed(2)} €</span>
-                      </div>
+                      <div className="flex justify-between text-sm"><span>Total HT</span><span className="font-medium">{calculerTotalHT().toFixed(2)} €</span></div>
+                      <div className="flex justify-between text-sm"><span>Total TVA</span><span className="font-medium">{calculerTotalTVA().toFixed(2)} €</span></div>
                       <Separator />
-                      <div className="flex justify-between text-lg font-bold">
-                        <span>Total TTC</span>
-                        <span className="text-primary">{calculerTotalTTC().toFixed(2)} €</span>
-                      </div>
+                      <div className="flex justify-between text-lg font-bold"><span>Total TTC</span><span className="text-primary">{calculerTotalTTC().toFixed(2)} €</span></div>
                     </div>
                   </div>
                 </>
@@ -1129,39 +752,16 @@ export function FactureForm() {
 
           {/* Coordonnées bancaires */}
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Règlement par virement, coordonnées bancaires</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="text-base">Règlement par virement, coordonnées bancaires</CardTitle></CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Banque :</span>
-                  <p className="font-medium">{entrepriseEmettrice.banque}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Code banque :</span>
-                  <p className="font-medium">{entrepriseEmettrice.codeBanque}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Code guichet :</span>
-                  <p className="font-medium">{entrepriseEmettrice.codeGuichet}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">N° compte :</span>
-                  <p className="font-medium">{entrepriseEmettrice.numeroCompte}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Clé RIB :</span>
-                  <p className="font-medium">{entrepriseEmettrice.cleRib}</p>
-                </div>
-                <div className="col-span-2">
-                  <span className="text-muted-foreground">IBAN :</span>
-                  <p className="font-medium font-mono">{entrepriseEmettrice.iban}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">BIC/SWIFT :</span>
-                  <p className="font-medium font-mono">{entrepriseEmettrice.bic}</p>
-                </div>
+                <div><span className="text-muted-foreground">Banque :</span><p className="font-medium">{entrepriseEmettrice.banque}</p></div>
+                <div><span className="text-muted-foreground">Code banque :</span><p className="font-medium">{entrepriseEmettrice.codeBanque}</p></div>
+                <div><span className="text-muted-foreground">Code guichet :</span><p className="font-medium">{entrepriseEmettrice.codeGuichet}</p></div>
+                <div><span className="text-muted-foreground">N° compte :</span><p className="font-medium">{entrepriseEmettrice.numeroCompte}</p></div>
+                <div><span className="text-muted-foreground">Clé RIB :</span><p className="font-medium">{entrepriseEmettrice.cleRib}</p></div>
+                <div className="col-span-2"><span className="text-muted-foreground">IBAN :</span><p className="font-medium font-mono">{entrepriseEmettrice.iban}</p></div>
+                <div><span className="text-muted-foreground">BIC/SWIFT :</span><p className="font-medium font-mono">{entrepriseEmettrice.bic}</p></div>
               </div>
             </CardContent>
           </Card>
@@ -1170,38 +770,22 @@ export function FactureForm() {
 
       {/* Notes et mentions légales */}
       <Card>
-        <CardHeader>
-          <CardTitle>Notes et mentions légales</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle>Notes et mentions légales</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>Notes additionnelles</Label>
-            <Textarea 
-              value={data.notes}
-              onChange={(e) => updateField('notes', e.target.value)}
-              placeholder="Notes particulières pour cette facture..."
-              rows={3}
-            />
+            <Textarea value={data.notes} onChange={(e) => updateField('notes', e.target.value)} placeholder="Notes particulières pour cette facture..." rows={3} />
           </div>
-          
           <div className="bg-muted/50 p-4 rounded-lg text-sm space-y-2">
             <p>Centre de formation agrée par la préfecture n°{entrepriseEmettrice.prefectures}</p>
             <p className="font-medium">TVA non applicable - article 293 B du CGI</p>
             <p>« Membre d'un centre de gestion agréé, le règlement par chèque est accepté »</p>
-            <p className="text-muted-foreground">Aucun escompte ne sera applicable à cette facture.</p>
-            <p className="text-muted-foreground text-xs">
-              En application de l'article 441-6 du Code de commerce, tout règlement effectué au delà du délai de paiement 
-              sera majoré d'un intérêt égal à 3 fois le taux d'intérêt légal. En outre, une indemnité forfaitaire pour 
-              frais de recouvrement de 40 € sera due.
-            </p>
+            <p className="text-muted-foreground text-xs">En application de l'article 441-6 du Code de commerce, tout règlement effectué au delà du délai de paiement sera majoré d'un intérêt égal à 3 fois le taux d'intérêt légal.</p>
           </div>
-
           <Separator />
-          
           <div className="text-center text-sm text-muted-foreground">
             <p>SASU FTRANSPORT - Capital de {entrepriseEmettrice.capital} € - SIRET : {entrepriseEmettrice.siret}</p>
             <p>NAF-APE : {entrepriseEmettrice.nafApe} - RCS/RM : {entrepriseEmettrice.rcs} - Num. TVA : {entrepriseEmettrice.tvaIntra}</p>
-            <p>www.ftransport.fr</p>
           </div>
         </CardContent>
       </Card>
