@@ -5,7 +5,6 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,23 +19,56 @@ import {
   Trash2,
   Download,
   Send,
-  Euro
+  Printer
 } from "lucide-react";
 import { toast } from "sonner";
 
+// Informations de l'entreprise émettrice
+const entrepriseEmettrice = {
+  nom: "FTRANSPORT",
+  slogan: "Spécialiste Formations Transport",
+  adresse: "86 route de genas",
+  codePostal: "69003",
+  ville: "Lyon",
+  siret: "82346156100016",
+  telephone: "0428296091",
+  email: "contact@ftransport.fr",
+  declarationActivite: "84691511469",
+  capital: "5000",
+  nafApe: "8559B",
+  rcs: "823461561",
+  tvaIntra: "FR44823461561",
+  prefectures: "69-18-001 et 69-16-15",
+  // Coordonnées bancaires BNP Paribas
+  banque: "BNP PARIBAS",
+  iban: "FR76 3000 4014 1800 0101 2475 357",
+  bic: "BNPAFRPPXXX",
+  codeBanque: "30004",
+  codeGuichet: "01418",
+  numeroCompte: "0001024753",
+  cleRib: "57",
+  agence: "LYON-MONTCHAT"
+};
+
 interface LigneFacture {
   id: string;
-  type: "formation" | "produit" | "service";
+  stagiaire: string;
   designation: string;
+  dateDebut: string;
+  dateFin: string;
+  lieu: string;
   quantite: number;
   prixUnitaire: number;
-  tva: number;
+  tvaType: "EXO" | "5.5" | "10" | "20";
+  remise: number;
 }
 
 interface FactureData {
   numero: string;
+  numeroInterne: string;
   date: string;
   dateEcheance: string;
+  duplicata: boolean;
   
   // Type de financeur
   typeFinanceur: "particulier" | "professionnel";
@@ -45,70 +77,80 @@ interface FactureData {
   particulierNom: string;
   particulierPrenom: string;
   particulierAdresse: string;
+  particulierCodePostal: string;
+  particulierVille: string;
   particulierEmail: string;
   particulierTel: string;
   
-  // Financeur professionnel
-  entrepriseNom: string;
-  entrepriseSiret: string;
-  entrepriseAdresse: string;
-  entrepriseContact: string;
-  entrepriseEmail: string;
-  entrepriseTel: string;
+  // Financeur professionnel (client)
+  clientNom: string;
+  clientAdresse: string;
+  clientCodePostal: string;
+  clientVille: string;
+  clientPays: string;
+  clientSiret: string;
+  clientTvaIntra: string;
+  clientPrefecture: string;
   
-  // OPCO / Organisme financeur
-  opcoNom: string;
-  opcoNumero: string;
+  // Références
+  refDossier: string;
+  refConvention: string;
   
   // Lignes de facture
   lignes: LigneFacture[];
   
   // Notes
   notes: string;
-  conditionsPaiement: string;
 }
 
 const formationsDisponibles = [
-  { id: "fimo", nom: "FIMO Voyageurs", prix: 2500 },
-  { id: "fco", nom: "FCO Voyageurs", prix: 450 },
+  { id: "vtc-soir", nom: "Formation VTC cours du soir", prix: 1599 },
+  { id: "fimo-v", nom: "FIMO Voyageurs", prix: 2500 },
+  { id: "fco-v", nom: "FCO Voyageurs", prix: 450 },
   { id: "titre-pro", nom: "Titre Professionnel Conducteur Transport en Commun", prix: 8500 },
   { id: "permis-d", nom: "Permis D", prix: 3200 },
   { id: "passerelle", nom: "Passerelle Permis D vers DE", prix: 1800 },
 ];
 
-const servicesDisponibles = [
-  { id: "eval", nom: "Évaluation préalable", prix: 150 },
-  { id: "accomp", nom: "Accompagnement administratif", prix: 200 },
-  { id: "certif", nom: "Frais de certification", prix: 350 },
-];
+const generateNumeroFacture = () => {
+  const year = new Date().getFullYear();
+  const month = String(new Date().getMonth() + 1).padStart(2, '0');
+  const num = String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+  return `${year}${month}${num}`;
+};
 
 const defaultFactureData: FactureData = {
-  numero: `FAC-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(4, '0')}`,
+  numero: "7",
+  numeroInterne: generateNumeroFacture(),
   date: new Date().toISOString().split('T')[0],
   dateEcheance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+  duplicata: false,
   
   typeFinanceur: "professionnel",
   
   particulierNom: "",
   particulierPrenom: "",
   particulierAdresse: "",
+  particulierCodePostal: "",
+  particulierVille: "",
   particulierEmail: "",
   particulierTel: "",
   
-  entrepriseNom: "",
-  entrepriseSiret: "",
-  entrepriseAdresse: "",
-  entrepriseContact: "",
-  entrepriseEmail: "",
-  entrepriseTel: "",
+  clientNom: "",
+  clientAdresse: "",
+  clientCodePostal: "",
+  clientVille: "",
+  clientPays: "FRANCE",
+  clientSiret: "",
+  clientTvaIntra: "",
+  clientPrefecture: "",
   
-  opcoNom: "",
-  opcoNumero: "",
+  refDossier: "",
+  refConvention: "",
   
   lignes: [],
   
   notes: "",
-  conditionsPaiement: "Paiement à 30 jours. En cas de retard, des pénalités de retard seront appliquées.",
 };
 
 export function FactureForm() {
@@ -118,14 +160,18 @@ export function FactureForm() {
     setData(prev => ({ ...prev, [field]: value }));
   };
 
-  const ajouterLigne = (type: "formation" | "produit" | "service") => {
+  const ajouterLigne = () => {
     const nouvelleLigne: LigneFacture = {
       id: crypto.randomUUID(),
-      type,
+      stagiaire: "",
       designation: "",
+      dateDebut: "",
+      dateFin: "",
+      lieu: `${entrepriseEmettrice.adresse} ${entrepriseEmettrice.codePostal} ${entrepriseEmettrice.ville}`,
       quantite: 1,
       prixUnitaire: 0,
-      tva: 0,
+      tvaType: "EXO",
+      remise: 0,
     };
     setData(prev => ({ ...prev, lignes: [...prev.lignes, nouvelleLigne] }));
   };
@@ -141,8 +187,8 @@ export function FactureForm() {
     }));
   };
 
-  const selectFormation = (id: string, ligneId: string) => {
-    const formation = formationsDisponibles.find(f => f.id === id);
+  const selectFormation = (formationId: string, ligneId: string) => {
+    const formation = formationsDisponibles.find(f => f.id === formationId);
     if (formation) {
       setData(prev => ({
         ...prev,
@@ -155,99 +201,193 @@ export function FactureForm() {
     }
   };
 
-  const selectService = (id: string, ligneId: string) => {
-    const service = servicesDisponibles.find(s => s.id === id);
-    if (service) {
-      setData(prev => ({
-        ...prev,
-        lignes: prev.lignes.map(l => l.id === ligneId ? { 
-          ...l, 
-          designation: service.nom, 
-          prixUnitaire: service.prix 
-        } : l)
-      }));
+  const getTvaRate = (tvaType: string) => {
+    switch (tvaType) {
+      case "5.5": return 5.5;
+      case "10": return 10;
+      case "20": return 20;
+      default: return 0;
     }
   };
 
+  const calculerLigneHT = (ligne: LigneFacture) => {
+    const total = ligne.quantite * ligne.prixUnitaire;
+    return total - (total * ligne.remise / 100);
+  };
+
   const calculerTotalHT = () => {
-    return data.lignes.reduce((sum, l) => sum + (l.quantite * l.prixUnitaire), 0);
+    return data.lignes.reduce((sum, l) => sum + calculerLigneHT(l), 0);
   };
 
   const calculerTotalTVA = () => {
-    return data.lignes.reduce((sum, l) => sum + (l.quantite * l.prixUnitaire * l.tva / 100), 0);
+    return data.lignes.reduce((sum, l) => {
+      const ht = calculerLigneHT(l);
+      return sum + (ht * getTvaRate(l.tvaType) / 100);
+    }, 0);
   };
 
   const calculerTotalTTC = () => {
     return calculerTotalHT() + calculerTotalTVA();
   };
 
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
+
+  const handlePrint = () => {
+    window.print();
+    toast.success("Impression lancée");
+  };
+
   const handleExport = () => {
-    const client = data.typeFinanceur === "particulier" 
-      ? `${data.particulierPrenom} ${data.particulierNom}`
-      : data.entrepriseNom;
-
-    const lignesTexte = data.lignes.map(l => 
-      `- ${l.designation}: ${l.quantite} x ${l.prixUnitaire}€ = ${l.quantite * l.prixUnitaire}€`
-    ).join('\n');
-
-    const content = `
-FACTURE N° ${data.numero}
-========================
-
-Date: ${data.date}
-Échéance: ${data.dateEcheance}
-
-CLIENT
-------
-${data.typeFinanceur === "particulier" ? `
-Nom: ${data.particulierPrenom} ${data.particulierNom}
-Adresse: ${data.particulierAdresse}
-Email: ${data.particulierEmail}
-Tél: ${data.particulierTel}
-` : `
-Entreprise: ${data.entrepriseNom}
-SIRET: ${data.entrepriseSiret}
-Adresse: ${data.entrepriseAdresse}
-Contact: ${data.entrepriseContact}
-Email: ${data.entrepriseEmail}
-Tél: ${data.entrepriseTel}
-${data.opcoNom ? `OPCO: ${data.opcoNom} (${data.opcoNumero})` : ''}
-`}
-
-DÉTAIL
-------
-${lignesTexte}
-
-TOTAUX
-------
-Total HT: ${calculerTotalHT().toFixed(2)}€
-Total TVA: ${calculerTotalTVA().toFixed(2)}€
-Total TTC: ${calculerTotalTTC().toFixed(2)}€
-
-CONDITIONS
-----------
-${data.conditionsPaiement}
-
-${data.notes ? `Notes: ${data.notes}` : ''}
-    `;
-
-    const blob = new Blob([content], { type: 'text/plain' });
+    // Générer un HTML de la facture
+    const factureHTML = generateFactureHTML();
+    const blob = new Blob([factureHTML], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Facture_${data.numero}.txt`;
+    a.download = `Facture_${data.numeroInterne}.html`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success("Facture exportée avec succès");
   };
 
+  const generateFactureHTML = () => {
+    const lignesHTML = data.lignes.map(l => `
+      <tr>
+        <td style="padding: 8px; border: 1px solid #ddd;">${l.stagiaire}</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">
+          ${l.designation}<br>
+          <small>Du ${formatDate(l.dateDebut)} au ${formatDate(l.dateFin)}</small><br>
+          <small>Lieu : ${l.lieu}</small>
+        </td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${l.tvaType}</td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${l.prixUnitaire.toFixed(2)}</td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${l.quantite.toFixed(2)}</td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${l.remise || ''}</td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${calculerLigneHT(l).toFixed(2)}</td>
+      </tr>
+    `).join('');
+
+    const clientInfo = data.typeFinanceur === "particulier" 
+      ? `${data.particulierPrenom} ${data.particulierNom}<br>${data.particulierAdresse}<br>${data.particulierCodePostal} ${data.particulierVille}`
+      : `${data.clientNom}<br>${data.clientAdresse}<br>${data.clientCodePostal} ${data.clientVille}<br>${data.clientPays}<br>SIRET : ${data.clientSiret}<br>TVA Intracommunautaire : ${data.clientTvaIntra}`;
+
+    return `
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Facture ${data.numeroInterne}</title>
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 12px; margin: 20px; }
+    .header { display: flex; justify-content: space-between; margin-bottom: 30px; }
+    .logo { font-size: 24px; font-weight: bold; color: #2563eb; }
+    .logo-sub { font-size: 14px; color: #666; }
+    .title { text-align: right; }
+    .title h1 { font-size: 18px; margin: 0; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 20px; }
+    .info-box { width: 48%; }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    th { background: #f3f4f6; padding: 10px; border: 1px solid #ddd; text-align: left; }
+    .totals { text-align: right; margin-top: 20px; }
+    .bank-info { margin-top: 30px; padding: 15px; background: #f9fafb; border: 1px solid #e5e7eb; }
+    .footer { margin-top: 30px; font-size: 10px; color: #666; text-align: center; border-top: 1px solid #ddd; padding-top: 15px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <div class="logo">🚌 ${entrepriseEmettrice.nom}</div>
+      <div class="logo-sub">${entrepriseEmettrice.slogan}</div>
+    </div>
+    <div class="title">
+      <h1>FACTURE ${data.duplicata ? 'DUPLICATA ' : ''}N°${data.numero}</h1>
+      <p>Numéro : ${data.numeroInterne}</p>
+      <p>Date de facturation : ${formatDate(data.date)}</p>
+      <p>Date d'échéance : ${formatDate(data.dateEcheance)}</p>
+    </div>
+  </div>
+
+  <div class="info-row">
+    <div class="info-box">
+      <strong>Émetteur :</strong><br>
+      ${entrepriseEmettrice.nom}<br>
+      ${entrepriseEmettrice.adresse}<br>
+      ${entrepriseEmettrice.codePostal} ${entrepriseEmettrice.ville}<br>
+      SIRET : ${entrepriseEmettrice.siret}<br>
+      Tél.: ${entrepriseEmettrice.telephone}<br>
+      Email: ${entrepriseEmettrice.email}<br>
+      Déclaration d'activité n° ${entrepriseEmettrice.declarationActivite}
+      ${data.refDossier ? `<br>Réf dossier : ${data.refDossier}` : ''}
+    </div>
+    <div class="info-box">
+      <strong>Adressée à :</strong><br>
+      ${clientInfo}
+      ${data.refConvention ? `<br>Réf à rappeler : ${data.refConvention}` : ''}
+    </div>
+  </div>
+
+  <h3>Désignation</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Stagiaire</th>
+        <th>Formation</th>
+        <th>TVA</th>
+        <th>P.U. HT</th>
+        <th>Qté</th>
+        <th>Rem</th>
+        <th>Total HT</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${lignesHTML}
+    </tbody>
+  </table>
+
+  <div class="totals">
+    <p><strong>Total HT :</strong> ${calculerTotalHT().toFixed(2)} €</p>
+    <p><strong>Total TVA :</strong> ${calculerTotalTVA().toFixed(2)} €</p>
+    <p style="font-size: 16px;"><strong>Total TTC :</strong> ${calculerTotalTTC().toFixed(2)} €</p>
+  </div>
+
+  <div class="bank-info">
+    <h4>Règlement par virement, nos coordonnées bancaires :</h4>
+    <table style="width: auto;">
+      <tr><td><strong>Banque :</strong></td><td>${entrepriseEmettrice.banque}</td></tr>
+      <tr><td><strong>Code banque :</strong></td><td>${entrepriseEmettrice.codeBanque}</td></tr>
+      <tr><td><strong>Code guichet :</strong></td><td>${entrepriseEmettrice.codeGuichet}</td></tr>
+      <tr><td><strong>Numéro de compte :</strong></td><td>${entrepriseEmettrice.numeroCompte}</td></tr>
+      <tr><td><strong>Clé RIB :</strong></td><td>${entrepriseEmettrice.cleRib}</td></tr>
+      <tr><td><strong>Code IBAN :</strong></td><td>${entrepriseEmettrice.iban}</td></tr>
+      <tr><td><strong>Code BIC/SWIFT :</strong></td><td>${entrepriseEmettrice.bic}</td></tr>
+    </table>
+  </div>
+
+  <div class="footer">
+    <p>Centre de formation agrée par la préfecture n°${entrepriseEmettrice.prefectures}</p>
+    <p>TVA non applicable - article 293 B du CGI</p>
+    <p>« Membre d'un centre de gestion agréé, le règlement par chèque est accepté »</p>
+    <p>Aucun escompte ne sera applicable à cette facture.</p>
+    <p>En application de l'article 441-6 du Code de commerce, tout règlement effectué au delà du délai de paiement sera majoré d'un intérêt égal à 3 fois le taux d'intérêt légal. En outre, une indemnité forfaitaire pour frais de recouvrement de 40 € sera due.</p>
+    <hr>
+    <p>SASU FTRANSPORT - Capital de ${entrepriseEmettrice.capital} € - SIRET : ${entrepriseEmettrice.siret}</p>
+    <p>NAF-APE : ${entrepriseEmettrice.nafApe} - RCS/RM : ${entrepriseEmettrice.rcs} - Num. TVA : ${entrepriseEmettrice.tvaIntra}</p>
+    <p>www.ftransport.fr</p>
+  </div>
+</body>
+</html>
+    `;
+  };
+
   const handleEnvoyer = () => {
-    const email = data.typeFinanceur === "particulier" ? data.particulierEmail : data.entrepriseEmail;
-    if (!email) {
-      toast.error("Veuillez renseigner l'email du client");
-      return;
-    }
-    window.location.href = `mailto:${email}?subject=Facture ${data.numero} - F.Transport&body=Veuillez trouver ci-joint la facture ${data.numero}.`;
+    const email = data.typeFinanceur === "particulier" ? data.particulierEmail : "";
+    const sujet = encodeURIComponent(`Facture N°${data.numeroInterne} - ${entrepriseEmettrice.nom}`);
+    const corps = encodeURIComponent(`Bonjour,\n\nVeuillez trouver ci-joint la facture N°${data.numeroInterne}.\n\nMontant TTC : ${calculerTotalTTC().toFixed(2)} €\n\nCordialement,\n${entrepriseEmettrice.nom}`);
+    window.location.href = `mailto:${email}?subject=${sujet}&body=${corps}`;
     toast.success("Ouverture du client email...");
   };
 
@@ -258,7 +398,7 @@ ${data.notes ? `Notes: ${data.notes}` : ''}
         <div>
           <h2 className="text-2xl font-bold">Création de Facture</h2>
           <p className="text-muted-foreground">
-            Générez vos factures pour formations et services
+            Format conforme à votre modèle de facturation
           </p>
         </div>
         <div className="flex gap-2">
@@ -266,12 +406,46 @@ ${data.notes ? `Notes: ${data.notes}` : ''}
             <Send className="w-4 h-4 mr-2" />
             Envoyer
           </Button>
+          <Button onClick={handlePrint} variant="outline">
+            <Printer className="w-4 h-4 mr-2" />
+            Imprimer
+          </Button>
           <Button onClick={handleExport}>
             <Download className="w-4 h-4 mr-2" />
             Exporter
           </Button>
         </div>
       </div>
+
+      {/* Aperçu de l'en-tête */}
+      <Card className="bg-gradient-to-r from-primary/10 to-transparent border-primary/20">
+        <CardContent className="pt-6">
+          <div className="flex justify-between items-start">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-3xl">🚌</span>
+                <div>
+                  <h3 className="text-2xl font-bold text-primary">{entrepriseEmettrice.nom}</h3>
+                  <p className="text-muted-foreground italic">{entrepriseEmettrice.slogan}</p>
+                </div>
+              </div>
+              <div className="mt-4 text-sm space-y-1">
+                <p>{entrepriseEmettrice.adresse}</p>
+                <p>{entrepriseEmettrice.codePostal} {entrepriseEmettrice.ville}</p>
+                <p>SIRET : {entrepriseEmettrice.siret}</p>
+                <p>Tél : {entrepriseEmettrice.telephone}</p>
+                <p>Email : {entrepriseEmettrice.email}</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <h2 className="text-xl font-bold">
+                FACTURE {data.duplicata && <span className="text-orange-500">DUPLICATA</span>} N°{data.numero}
+              </h2>
+              <p className="text-muted-foreground">Numéro : {data.numeroInterne}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Infos facture */}
       <Card>
@@ -282,13 +456,21 @@ ${data.notes ? `Notes: ${data.notes}` : ''}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label htmlFor="numero">N° Facture</Label>
               <Input 
                 id="numero" 
                 value={data.numero} 
                 onChange={(e) => updateField('numero', e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="numeroInterne">Numéro interne</Label>
+              <Input 
+                id="numeroInterne" 
+                value={data.numeroInterne} 
+                onChange={(e) => updateField('numeroInterne', e.target.value)}
               />
             </div>
             <div className="space-y-2">
@@ -310,6 +492,37 @@ ${data.notes ? `Notes: ${data.notes}` : ''}
               />
             </div>
           </div>
+          <div className="mt-4 flex items-center gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={data.duplicata}
+                onChange={(e) => updateField('duplicata', e.target.checked)}
+                className="w-4 h-4"
+              />
+              <span className="text-sm">Duplicata</span>
+            </label>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <div className="space-y-2">
+              <Label htmlFor="refDossier">Réf dossier</Label>
+              <Input 
+                id="refDossier" 
+                placeholder="Nom du stagiaire principal"
+                value={data.refDossier} 
+                onChange={(e) => updateField('refDossier', e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="refConvention">Réf Convention à rappeler</Label>
+              <Input 
+                id="refConvention" 
+                placeholder="Convention num 2024..."
+                value={data.refConvention} 
+                onChange={(e) => updateField('refConvention', e.target.value)}
+              />
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -317,11 +530,11 @@ ${data.notes ? `Notes: ${data.notes}` : ''}
         <TabsList className="grid grid-cols-2 gap-2 h-auto">
           <TabsTrigger value="prestations" className="flex items-center gap-2">
             <GraduationCap className="w-4 h-4" />
-            Formations / Produits / Services
+            Prestations / Formations
           </TabsTrigger>
           <TabsTrigger value="financeur" className="flex items-center gap-2">
             <Users className="w-4 h-4" />
-            Financeur
+            Financeur (Client)
           </TabsTrigger>
         </TabsList>
 
@@ -332,22 +545,12 @@ ${data.notes ? `Notes: ${data.notes}` : ''}
               <CardTitle className="flex items-center justify-between">
                 <span className="flex items-center gap-2">
                   <Package className="w-5 h-5" />
-                  Lignes de facture
+                  Désignation
                 </span>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => ajouterLigne("formation")}>
-                    <GraduationCap className="w-4 h-4 mr-2" />
-                    Formation
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => ajouterLigne("service")}>
-                    <Package className="w-4 h-4 mr-2" />
-                    Service
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => ajouterLigne("produit")}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Autre
-                  </Button>
-                </div>
+                <Button size="sm" onClick={ajouterLigne}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Ajouter une ligne
+                </Button>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -355,82 +558,70 @@ ${data.notes ? `Notes: ${data.notes}` : ''}
                 <div className="text-center py-8 text-muted-foreground">
                   <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
                   <p>Aucune ligne ajoutée</p>
-                  <p className="text-sm">Cliquez sur les boutons ci-dessus pour ajouter des formations ou services</p>
+                  <p className="text-sm">Cliquez sur "Ajouter une ligne" pour commencer</p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {data.lignes.map((ligne, index) => (
+                  {/* En-tête du tableau */}
+                  <div className="hidden md:grid grid-cols-12 gap-2 text-sm font-medium text-muted-foreground border-b pb-2">
+                    <div className="col-span-2">Stagiaire</div>
+                    <div className="col-span-3">Formation</div>
+                    <div className="col-span-1">TVA</div>
+                    <div className="col-span-1">P.U. HT</div>
+                    <div className="col-span-1">Qté</div>
+                    <div className="col-span-1">Rem %</div>
+                    <div className="col-span-2">Total HT</div>
+                    <div className="col-span-1"></div>
+                  </div>
+
+                  {data.lignes.map((ligne) => (
                     <div key={ligne.id} className="p-4 border rounded-lg space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-muted-foreground">
-                          Ligne {index + 1} - {ligne.type === "formation" ? "Formation" : ligne.type === "service" ? "Service" : "Produit"}
-                        </span>
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          onClick={() => supprimerLigne(ligne.id)}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        {ligne.type === "formation" ? (
-                          <div className="space-y-2 md:col-span-2">
-                            <Label>Formation</Label>
-                            <Select onValueChange={(v) => selectFormation(v, ligne.id)}>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Sélectionner une formation" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {formationsDisponibles.map(f => (
-                                  <SelectItem key={f.id} value={f.id}>
-                                    {f.nom} - {f.prix}€
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        ) : ligne.type === "service" ? (
-                          <div className="space-y-2 md:col-span-2">
-                            <Label>Service</Label>
-                            <Select onValueChange={(v) => selectService(v, ligne.id)}>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Sélectionner un service" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {servicesDisponibles.map(s => (
-                                  <SelectItem key={s.id} value={s.id}>
-                                    {s.nom} - {s.prix}€
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        ) : (
-                          <div className="space-y-2 md:col-span-2">
-                            <Label>Désignation</Label>
-                            <Input 
-                              value={ligne.designation}
-                              onChange={(e) => updateLigne(ligne.id, 'designation', e.target.value)}
-                              placeholder="Description du produit/service"
-                            />
-                          </div>
-                        )}
-                        
-                        <div className="space-y-2">
-                          <Label>Quantité</Label>
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
+                        <div className="md:col-span-2 space-y-1">
+                          <Label className="md:hidden">Stagiaire</Label>
                           <Input 
-                            type="number"
-                            min="1"
-                            value={ligne.quantite}
-                            onChange={(e) => updateLigne(ligne.id, 'quantite', parseInt(e.target.value) || 1)}
+                            value={ligne.stagiaire}
+                            onChange={(e) => updateLigne(ligne.id, 'stagiaire', e.target.value)}
+                            placeholder="Nom Prénom"
                           />
                         </div>
                         
-                        <div className="space-y-2">
-                          <Label>Prix unitaire HT (€)</Label>
+                        <div className="md:col-span-3 space-y-1">
+                          <Label className="md:hidden">Formation</Label>
+                          <Select onValueChange={(v) => selectFormation(v, ligne.id)}>
+                            <SelectTrigger>
+                              <SelectValue placeholder={ligne.designation || "Sélectionner"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {formationsDisponibles.map(f => (
+                                <SelectItem key={f.id} value={f.id}>
+                                  {f.nom}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="md:col-span-1 space-y-1">
+                          <Label className="md:hidden">TVA</Label>
+                          <Select 
+                            value={ligne.tvaType}
+                            onValueChange={(v) => updateLigne(ligne.id, 'tvaType', v as LigneFacture['tvaType'])}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="EXO">EXO</SelectItem>
+                              <SelectItem value="5.5">5,5%</SelectItem>
+                              <SelectItem value="10">10%</SelectItem>
+                              <SelectItem value="20">20%</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="md:col-span-1 space-y-1">
+                          <Label className="md:hidden">P.U. HT</Label>
                           <Input 
                             type="number"
                             min="0"
@@ -439,31 +630,72 @@ ${data.notes ? `Notes: ${data.notes}` : ''}
                             onChange={(e) => updateLigne(ligne.id, 'prixUnitaire', parseFloat(e.target.value) || 0)}
                           />
                         </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="space-y-2">
-                          <Label>TVA (%)</Label>
-                          <Select 
-                            value={String(ligne.tva)}
-                            onValueChange={(v) => updateLigne(ligne.id, 'tva', parseFloat(v))}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="0">0% (Exonéré)</SelectItem>
-                              <SelectItem value="5.5">5,5%</SelectItem>
-                              <SelectItem value="10">10%</SelectItem>
-                              <SelectItem value="20">20%</SelectItem>
-                            </SelectContent>
-                          </Select>
+                        
+                        <div className="md:col-span-1 space-y-1">
+                          <Label className="md:hidden">Qté</Label>
+                          <Input 
+                            type="number"
+                            min="0.01"
+                            step="0.01"
+                            value={ligne.quantite}
+                            onChange={(e) => updateLigne(ligne.id, 'quantite', parseFloat(e.target.value) || 1)}
+                          />
                         </div>
-                        <div className="space-y-2 md:col-span-3">
-                          <Label>Total ligne</Label>
-                          <div className="h-10 px-3 py-2 bg-muted rounded-md flex items-center font-medium">
-                            {(ligne.quantite * ligne.prixUnitaire * (1 + ligne.tva / 100)).toFixed(2)}€ TTC
+                        
+                        <div className="md:col-span-1 space-y-1">
+                          <Label className="md:hidden">Remise %</Label>
+                          <Input 
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={ligne.remise || ""}
+                            onChange={(e) => updateLigne(ligne.id, 'remise', parseFloat(e.target.value) || 0)}
+                            placeholder=""
+                          />
+                        </div>
+                        
+                        <div className="md:col-span-2">
+                          <div className="h-10 px-3 py-2 bg-muted rounded-md flex items-center font-medium justify-end">
+                            {calculerLigneHT(ligne).toFixed(2)} €
                           </div>
+                        </div>
+                        
+                        <div className="md:col-span-1 flex justify-end">
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            onClick={() => supprimerLigne(ligne.id)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      {/* Détails de la formation */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t">
+                        <div className="space-y-2">
+                          <Label>Date début</Label>
+                          <Input 
+                            type="date"
+                            value={ligne.dateDebut}
+                            onChange={(e) => updateLigne(ligne.id, 'dateDebut', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Date fin</Label>
+                          <Input 
+                            type="date"
+                            value={ligne.dateFin}
+                            onChange={(e) => updateLigne(ligne.id, 'dateFin', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Lieu</Label>
+                          <Input 
+                            value={ligne.lieu}
+                            onChange={(e) => updateLigne(ligne.id, 'lieu', e.target.value)}
+                          />
                         </div>
                       </div>
                     </div>
@@ -476,18 +708,18 @@ ${data.notes ? `Notes: ${data.notes}` : ''}
                   <Separator />
                   <div className="flex justify-end">
                     <div className="w-full md:w-1/3 space-y-2">
-                      <div className="flex justify-between">
+                      <div className="flex justify-between text-sm">
                         <span>Total HT</span>
-                        <span className="font-medium">{calculerTotalHT().toFixed(2)}€</span>
+                        <span className="font-medium">{calculerTotalHT().toFixed(2)} €</span>
                       </div>
-                      <div className="flex justify-between text-muted-foreground">
+                      <div className="flex justify-between text-sm">
                         <span>Total TVA</span>
-                        <span>{calculerTotalTVA().toFixed(2)}€</span>
+                        <span className="font-medium">{calculerTotalTVA().toFixed(2)} €</span>
                       </div>
                       <Separator />
                       <div className="flex justify-between text-lg font-bold">
                         <span>Total TTC</span>
-                        <span className="text-primary">{calculerTotalTTC().toFixed(2)}€</span>
+                        <span className="text-primary">{calculerTotalTTC().toFixed(2)} €</span>
                       </div>
                     </div>
                   </div>
@@ -496,29 +728,41 @@ ${data.notes ? `Notes: ${data.notes}` : ''}
             </CardContent>
           </Card>
 
+          {/* Coordonnées bancaires */}
           <Card>
             <CardHeader>
-              <CardTitle>Notes et conditions</CardTitle>
+              <CardTitle className="text-base">Règlement par virement, coordonnées bancaires</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="conditionsPaiement">Conditions de paiement</Label>
-                <Textarea 
-                  id="conditionsPaiement"
-                  value={data.conditionsPaiement}
-                  onChange={(e) => updateField('conditionsPaiement', e.target.value)}
-                  rows={2}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes (facultatif)</Label>
-                <Textarea 
-                  id="notes"
-                  value={data.notes}
-                  onChange={(e) => updateField('notes', e.target.value)}
-                  placeholder="Notes complémentaires..."
-                  rows={3}
-                />
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Banque :</span>
+                  <p className="font-medium">{entrepriseEmettrice.banque}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Code banque :</span>
+                  <p className="font-medium">{entrepriseEmettrice.codeBanque}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Code guichet :</span>
+                  <p className="font-medium">{entrepriseEmettrice.codeGuichet}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">N° compte :</span>
+                  <p className="font-medium">{entrepriseEmettrice.numeroCompte}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Clé RIB :</span>
+                  <p className="font-medium">{entrepriseEmettrice.cleRib}</p>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-muted-foreground">IBAN :</span>
+                  <p className="font-medium font-mono">{entrepriseEmettrice.iban}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">BIC/SWIFT :</span>
+                  <p className="font-medium font-mono">{entrepriseEmettrice.bic}</p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -532,28 +776,22 @@ ${data.notes ? `Notes: ${data.notes}` : ''}
             </CardHeader>
             <CardContent>
               <RadioGroup 
-                value={data.typeFinanceur}
+                value={data.typeFinanceur} 
                 onValueChange={(v) => updateField('typeFinanceur', v as "particulier" | "professionnel")}
-                className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                className="flex gap-6"
               >
-                <div className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-colors ${data.typeFinanceur === "particulier" ? "border-primary bg-primary/5" : "hover:bg-muted/50"}`}>
+                <div className="flex items-center space-x-2">
                   <RadioGroupItem value="particulier" id="particulier" />
                   <Label htmlFor="particulier" className="flex items-center gap-2 cursor-pointer">
-                    <User className="w-5 h-5" />
-                    <div>
-                      <div className="font-medium">Particulier</div>
-                      <div className="text-sm text-muted-foreground">Personne physique finançant à titre personnel</div>
-                    </div>
+                    <User className="w-4 h-4" />
+                    Particulier
                   </Label>
                 </div>
-                <div className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-colors ${data.typeFinanceur === "professionnel" ? "border-primary bg-primary/5" : "hover:bg-muted/50"}`}>
+                <div className="flex items-center space-x-2">
                   <RadioGroupItem value="professionnel" id="professionnel" />
                   <Label htmlFor="professionnel" className="flex items-center gap-2 cursor-pointer">
-                    <Building2 className="w-5 h-5" />
-                    <div>
-                      <div className="font-medium">Professionnel</div>
-                      <div className="text-sm text-muted-foreground">Entreprise, OPCO, organisme financeur</div>
-                    </div>
+                    <Building2 className="w-4 h-4" />
+                    Professionnel / Organisme
                   </Label>
                 </div>
               </RadioGroup>
@@ -565,48 +803,57 @@ ${data.notes ? `Notes: ${data.notes}` : ''}
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="w-5 h-5" />
-                  Informations du particulier
+                  Client particulier
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="particulierNom">Nom</Label>
+                    <Label>Nom</Label>
                     <Input 
-                      id="particulierNom"
                       value={data.particulierNom}
                       onChange={(e) => updateField('particulierNom', e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="particulierPrenom">Prénom</Label>
+                    <Label>Prénom</Label>
                     <Input 
-                      id="particulierPrenom"
                       value={data.particulierPrenom}
                       onChange={(e) => updateField('particulierPrenom', e.target.value)}
                     />
                   </div>
                   <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="particulierAdresse">Adresse</Label>
+                    <Label>Adresse</Label>
                     <Input 
-                      id="particulierAdresse"
                       value={data.particulierAdresse}
                       onChange={(e) => updateField('particulierAdresse', e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="particulierEmail">Email</Label>
+                    <Label>Code postal</Label>
                     <Input 
-                      id="particulierEmail"
+                      value={data.particulierCodePostal}
+                      onChange={(e) => updateField('particulierCodePostal', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Ville</Label>
+                    <Input 
+                      value={data.particulierVille}
+                      onChange={(e) => updateField('particulierVille', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Email</Label>
+                    <Input 
                       type="email"
                       value={data.particulierEmail}
                       onChange={(e) => updateField('particulierEmail', e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="particulierTel">Téléphone</Label>
+                    <Label>Téléphone</Label>
                     <Input 
-                      id="particulierTel"
                       value={data.particulierTel}
                       onChange={(e) => updateField('particulierTel', e.target.value)}
                     />
@@ -615,113 +862,122 @@ ${data.notes ? `Notes: ${data.notes}` : ''}
               </CardContent>
             </Card>
           ) : (
-            <>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Building2 className="w-5 h-5" />
-                    Informations de l'entreprise
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="entrepriseNom">Raison sociale</Label>
-                      <Input 
-                        id="entrepriseNom"
-                        value={data.entrepriseNom}
-                        onChange={(e) => updateField('entrepriseNom', e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="entrepriseSiret">N° SIRET</Label>
-                      <Input 
-                        id="entrepriseSiret"
-                        value={data.entrepriseSiret}
-                        onChange={(e) => updateField('entrepriseSiret', e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="entrepriseAdresse">Adresse</Label>
-                      <Input 
-                        id="entrepriseAdresse"
-                        value={data.entrepriseAdresse}
-                        onChange={(e) => updateField('entrepriseAdresse', e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="entrepriseContact">Nom du contact</Label>
-                      <Input 
-                        id="entrepriseContact"
-                        value={data.entrepriseContact}
-                        onChange={(e) => updateField('entrepriseContact', e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="entrepriseEmail">Email</Label>
-                      <Input 
-                        id="entrepriseEmail"
-                        type="email"
-                        value={data.entrepriseEmail}
-                        onChange={(e) => updateField('entrepriseEmail', e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="entrepriseTel">Téléphone</Label>
-                      <Input 
-                        id="entrepriseTel"
-                        value={data.entrepriseTel}
-                        onChange={(e) => updateField('entrepriseTel', e.target.value)}
-                      />
-                    </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="w-5 h-5" />
+                  Client professionnel / Organisme financeur
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2 md:col-span-2">
+                    <Label>Raison sociale</Label>
+                    <Input 
+                      value={data.clientNom}
+                      onChange={(e) => updateField('clientNom', e.target.value)}
+                      placeholder="Ex: Caisse des Dépôts et Consignations"
+                    />
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Euro className="w-5 h-5" />
-                    OPCO / Organisme financeur (facultatif)
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="opcoNom">Nom de l'OPCO</Label>
-                      <Select onValueChange={(v) => updateField('opcoNom', v)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner un OPCO" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="OPCO Mobilités">OPCO Mobilités</SelectItem>
-                          <SelectItem value="OPCO EP">OPCO EP</SelectItem>
-                          <SelectItem value="OPCO Atlas">OPCO Atlas</SelectItem>
-                          <SelectItem value="OPCO Santé">OPCO Santé</SelectItem>
-                          <SelectItem value="OPCO Commerce">OPCO Commerce</SelectItem>
-                          <SelectItem value="Constructys">Constructys</SelectItem>
-                          <SelectItem value="AFDAS">AFDAS</SelectItem>
-                          <SelectItem value="Uniformation">Uniformation</SelectItem>
-                          <SelectItem value="Autre">Autre</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="opcoNumero">N° de prise en charge</Label>
-                      <Input 
-                        id="opcoNumero"
-                        value={data.opcoNumero}
-                        onChange={(e) => updateField('opcoNumero', e.target.value)}
-                        placeholder="Numéro de dossier OPCO"
-                      />
-                    </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label>Adresse</Label>
+                    <Input 
+                      value={data.clientAdresse}
+                      onChange={(e) => updateField('clientAdresse', e.target.value)}
+                      placeholder="Ex: 56, rue de Lille"
+                    />
                   </div>
-                </CardContent>
-              </Card>
-            </>
+                  <div className="space-y-2">
+                    <Label>Code postal</Label>
+                    <Input 
+                      value={data.clientCodePostal}
+                      onChange={(e) => updateField('clientCodePostal', e.target.value)}
+                      placeholder="75356"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Ville</Label>
+                    <Input 
+                      value={data.clientVille}
+                      onChange={(e) => updateField('clientVille', e.target.value)}
+                      placeholder="PARIS 07 SP"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Pays</Label>
+                    <Input 
+                      value={data.clientPays}
+                      onChange={(e) => updateField('clientPays', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>SIRET</Label>
+                    <Input 
+                      value={data.clientSiret}
+                      onChange={(e) => updateField('clientSiret', e.target.value)}
+                      placeholder="180.020.026.00"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>TVA Intracommunautaire</Label>
+                    <Input 
+                      value={data.clientTvaIntra}
+                      onChange={(e) => updateField('clientTvaIntra', e.target.value)}
+                      placeholder="FR77180020026"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Préfecture n°</Label>
+                    <Input 
+                      value={data.clientPrefecture}
+                      onChange={(e) => updateField('clientPrefecture', e.target.value)}
+                      placeholder="16-15, n°69-18-001"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Notes et mentions légales */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Notes et mentions légales</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Notes additionnelles</Label>
+            <Textarea 
+              value={data.notes}
+              onChange={(e) => updateField('notes', e.target.value)}
+              placeholder="Notes particulières pour cette facture..."
+              rows={3}
+            />
+          </div>
+          
+          <div className="bg-muted/50 p-4 rounded-lg text-sm space-y-2">
+            <p>Centre de formation agrée par la préfecture n°{entrepriseEmettrice.prefectures}</p>
+            <p className="font-medium">TVA non applicable - article 293 B du CGI</p>
+            <p>« Membre d'un centre de gestion agréé, le règlement par chèque est accepté »</p>
+            <p className="text-muted-foreground">Aucun escompte ne sera applicable à cette facture.</p>
+            <p className="text-muted-foreground text-xs">
+              En application de l'article 441-6 du Code de commerce, tout règlement effectué au delà du délai de paiement 
+              sera majoré d'un intérêt égal à 3 fois le taux d'intérêt légal. En outre, une indemnité forfaitaire pour 
+              frais de recouvrement de 40 € sera due.
+            </p>
+          </div>
+
+          <Separator />
+          
+          <div className="text-center text-sm text-muted-foreground">
+            <p>SASU FTRANSPORT - Capital de {entrepriseEmettrice.capital} € - SIRET : {entrepriseEmettrice.siret}</p>
+            <p>NAF-APE : {entrepriseEmettrice.nafApe} - RCS/RM : {entrepriseEmettrice.rcs} - Num. TVA : {entrepriseEmettrice.tvaIntra}</p>
+            <p>www.ftransport.fr</p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
