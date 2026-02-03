@@ -7,7 +7,9 @@ import {
   FileText, 
   Settings,
   ChevronLeft,
-  LogOut
+  LogOut,
+  CalendarDays,
+  Building2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -20,10 +22,12 @@ interface SidebarProps {
 
 const menuItems = [
   { id: "dashboard", label: "Tableau de bord", icon: LayoutDashboard },
+  { id: "planning", label: "Planning", icon: Calendar },
+  { id: "sessions", label: "Sessions", icon: CalendarDays },
   { id: "formations", label: "Formations", icon: GraduationCap },
+  { id: "organisations", label: "Organisations", icon: Building2 },
   { id: "apprenants", label: "Apprenants", icon: Users },
   { id: "crm", label: "CRM", icon: UserCircle },
-  { id: "planning", label: "Planning", icon: Calendar },
   { id: "documents", label: "Documents", icon: FileText },
 ];
 

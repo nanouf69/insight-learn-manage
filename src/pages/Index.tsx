@@ -10,14 +10,18 @@ import { CRMDashboard } from "@/components/crm/CRMDashboard";
 import { PlanningCalendar } from "@/components/planning/PlanningCalendar";
 import { DocumentsList } from "@/components/documents/DocumentsList";
 import { SettingsPage } from "@/components/settings/SettingsPage";
+import { SessionsList } from "@/components/sessions/SessionsList";
+import { OrganisationsList } from "@/components/organisations/OrganisationsList";
 import { GraduationCap, Users, Euro, TrendingUp } from "lucide-react";
 
 const pageConfig = {
   dashboard: { title: "Tableau de bord", subtitle: "Bienvenue, Marie !" },
+  planning: { title: "Planning", subtitle: "Planifiez vos sessions de formation" },
+  sessions: { title: "Sessions", subtitle: "Gérez vos sessions de formation" },
   formations: { title: "Formations", subtitle: "Gérez votre catalogue de formations" },
+  organisations: { title: "Organisations", subtitle: "Gérez vos organisations clientes" },
   apprenants: { title: "Apprenants", subtitle: "Suivez vos apprenants" },
   crm: { title: "CRM", subtitle: "Gérez vos contacts et prospects" },
-  planning: { title: "Planning", subtitle: "Planifiez vos sessions de formation" },
   documents: { title: "Documents", subtitle: "Gérez vos documents administratifs" },
   settings: { title: "Paramètres", subtitle: "Configurez votre espace" },
 };
@@ -78,6 +82,10 @@ const Index = () => {
         return <CRMDashboard />;
       case "planning":
         return <PlanningCalendar />;
+      case "sessions":
+        return <SessionsList />;
+      case "organisations":
+        return <OrganisationsList />;
       case "documents":
         return <DocumentsList />;
       case "settings":
