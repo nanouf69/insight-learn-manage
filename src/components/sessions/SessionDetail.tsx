@@ -508,15 +508,15 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                             {apprenant.numeroCMA}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                          <span className="flex items-center gap-1 truncate">
+                        <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                          <div className="flex items-center gap-1 truncate">
                             <Mail className="w-3 h-3 flex-shrink-0" />
                             <span className="truncate">{apprenant.email}</span>
-                          </span>
-                          <span className="flex items-center gap-1">
+                          </div>
+                          <div className="flex items-center gap-1">
                             <Phone className="w-3 h-3" />
                             {apprenant.telephone}
-                          </span>
+                          </div>
                         </div>
                       </div>
                       
