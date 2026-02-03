@@ -446,147 +446,135 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
               </div>
             )}
 
+            {/* En-têtes des colonnes */}
+            <div className="grid grid-cols-[auto_1fr_120px_100px_100px_40px] gap-2 px-3 py-2 bg-muted/50 rounded-lg text-xs font-medium text-muted-foreground mb-2">
+              <div className="w-10"></div>
+              <div>Apprenant</div>
+              <div>Financement</div>
+              <div>Début</div>
+              <div>Fin</div>
+              <div></div>
+            </div>
+            
             <ScrollArea className="flex-1">
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {apprenantsInSession.map((apprenant) => {
                   const sessionData = getApprenantSessionData(apprenant.id);
-                  const financement = getFinancementBadge(sessionData?.modeFinancement || "personnel");
                   
                   return (
                     <div 
                       key={apprenant.id}
-                      className="p-3 rounded-lg border bg-card hover:shadow-sm transition-shadow"
+                      className="grid grid-cols-[auto_1fr_120px_100px_100px_40px] gap-2 items-center p-2 rounded-lg border bg-card hover:shadow-sm transition-shadow"
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="w-10 h-10">
-                            <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                              {apprenant.prenom[0]}{apprenant.nom[0]}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <p className="font-medium text-foreground">{apprenant.prenom} {apprenant.nom}</p>
-                              <Badge 
-                                className={`text-xs ${
-                                  apprenant.typeFormation === "TAXI" 
-                                    ? "bg-blue-100 text-blue-700 hover:bg-blue-100" 
-                                    : apprenant.typeFormation === "VTC"
-                                      ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
-                                      : "bg-amber-100 text-amber-700 hover:bg-amber-100"
-                                }`}
-                              >
-                                {apprenant.typeFormation}
-                              </Badge>
-                              <Badge variant="outline" className="text-xs">
-                                <FileText className="w-3 h-3 mr-1" />
-                                {apprenant.numeroCMA}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                              <span className="flex items-center gap-1">
-                                <Mail className="w-3 h-3" />
-                                {apprenant.email}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Phone className="w-3 h-3" />
-                                {apprenant.telephone}
-                              </span>
-                            </div>
-                          </div>
+                      {/* Avatar */}
+                      <Avatar className="w-10 h-10">
+                        <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                          {apprenant.prenom[0]}{apprenant.nom[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      
+                      {/* Infos apprenant */}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-medium text-foreground truncate">{apprenant.prenom} {apprenant.nom}</p>
+                          <Badge 
+                            className={`text-xs ${
+                              apprenant.typeFormation === "TAXI" 
+                                ? "bg-blue-100 text-blue-700 hover:bg-blue-100" 
+                                : apprenant.typeFormation === "VTC"
+                                  ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
+                                  : "bg-amber-100 text-amber-700 hover:bg-amber-100"
+                            }`}
+                          >
+                            {apprenant.typeFormation}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            <FileText className="w-3 h-3 mr-1" />
+                            {apprenant.numeroCMA}
+                          </Badge>
                         </div>
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => removeApprenant(apprenant.id)}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                          <span className="flex items-center gap-1 truncate">
+                            <Mail className="w-3 h-3 flex-shrink-0" />
+                            <span className="truncate">{apprenant.email}</span>
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Phone className="w-3 h-3" />
+                            {apprenant.telephone}
+                          </span>
+                        </div>
                       </div>
                       
-                      {/* Mode de financement et dates */}
-                      <div className="mt-3 pt-3 border-t flex flex-wrap items-center gap-3">
-                        {/* Mode de financement */}
-                        <div className="flex items-center gap-2">
-                          <CreditCard className="w-4 h-4 text-muted-foreground" />
-                          <Select 
-                            value={sessionData?.modeFinancement || "personnel"}
-                            onValueChange={(value) => updateApprenantFinancement(apprenant.id, value)}
+                      {/* Financement */}
+                      <Select 
+                        value={sessionData?.modeFinancement || "personnel"}
+                        onValueChange={(value) => updateApprenantFinancement(apprenant.id, value)}
+                      >
+                        <SelectTrigger className="h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {modesFinancement.map((mode) => (
+                            <SelectItem key={mode.value} value={mode.value}>
+                              <span className={`px-2 py-0.5 rounded text-xs ${mode.color}`}>
+                                {mode.label}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      
+                      {/* Date début */}
+                      <Popover>
+                        <PopoverTrigger asChild>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <CalendarComponent
+                            mode="single"
+                            selected={sessionData?.dateDebut || undefined}
+                            onSelect={(date) => updateApprenantDates(apprenant.id, date || null, sessionData?.dateFin || null)}
+                            initialFocus
+                            className="p-3 pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      
+                      {/* Date fin */}
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={cn(
+                              "h-8 justify-start text-left font-normal text-xs",
+                              !sessionData?.dateFin && "text-muted-foreground"
+                            )}
                           >
-                            <SelectTrigger className="h-8 w-[140px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {modesFinancement.map((mode) => (
-                                <SelectItem key={mode.value} value={mode.value}>
-                                  <span className={`px-2 py-0.5 rounded text-xs ${mode.color}`}>
-                                    {mode.label}
-                                  </span>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        <div className="h-4 w-px bg-border" />
-                        
-                        {/* Dates de formation */}
-                        <div className="flex items-center gap-2">
-                          <CalendarIcon className="w-4 h-4 text-muted-foreground" />
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className={cn(
-                                  "h-8 w-[120px] justify-start text-left font-normal",
-                                  !sessionData?.dateDebut && "text-muted-foreground"
-                                )}
-                              >
-                                {sessionData?.dateDebut 
-                                  ? format(sessionData.dateDebut, "dd/MM/yyyy") 
-                                  : "Début"}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <CalendarComponent
-                                mode="single"
-                                selected={sessionData?.dateDebut || undefined}
-                                onSelect={(date) => updateApprenantDates(apprenant.id, date || null, sessionData?.dateFin || null)}
-                                initialFocus
-                                className="p-3 pointer-events-auto"
-                              />
-                            </PopoverContent>
-                          </Popover>
-                          <span className="text-xs text-muted-foreground">au</span>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className={cn(
-                                  "h-8 w-[120px] justify-start text-left font-normal",
-                                  !sessionData?.dateFin && "text-muted-foreground"
-                                )}
-                              >
-                                {sessionData?.dateFin 
-                                  ? format(sessionData.dateFin, "dd/MM/yyyy") 
-                                  : "Fin"}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <CalendarComponent
-                                mode="single"
-                                selected={sessionData?.dateFin || undefined}
-                                onSelect={(date) => updateApprenantDates(apprenant.id, sessionData?.dateDebut || null, date || null)}
-                                initialFocus
-                                className="p-3 pointer-events-auto"
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-                      </div>
+                            {sessionData?.dateFin 
+                              ? format(sessionData.dateFin, "dd/MM/yy") 
+                              : "Fin"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <CalendarComponent
+                            mode="single"
+                            selected={sessionData?.dateFin || undefined}
+                            onSelect={(date) => updateApprenantDates(apprenant.id, sessionData?.dateDebut || null, date || null)}
+                            initialFocus
+                            className="p-3 pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      
+                      {/* Bouton supprimer */}
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
+                        onClick={() => removeApprenant(apprenant.id)}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
                     </div>
                   );
                 })}
