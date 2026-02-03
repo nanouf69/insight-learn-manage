@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -88,6 +89,10 @@ interface ApprenantSession {
   modeFinancement: string;
   dateDebut: Date | null;
   dateFin: Date | null;
+  // Champs pour financement personnel
+  montantAPayer: number;
+  montantPaye: number;
+  datePaiement: Date | null;
 }
 
 // Type pour les données de formateur dans une session
@@ -142,12 +147,12 @@ const allFormateurs = [
 export function SessionDetail({ session, open, onOpenChange }: SessionDetailProps) {
   // Données des apprenants dans la session avec financement et dates personnalisées
   const [apprenantSessionData, setApprenantSessionData] = useState<ApprenantSession[]>([
-    { apprenantId: 1, modeFinancement: "cpf", dateDebut: null, dateFin: null },
-    { apprenantId: 2, modeFinancement: "personnel", dateDebut: null, dateFin: null },
-    { apprenantId: 3, modeFinancement: "opco", dateDebut: null, dateFin: null },
-    { apprenantId: 5, modeFinancement: "cpf", dateDebut: null, dateFin: null },
-    { apprenantId: 6, modeFinancement: "france_travail", dateDebut: null, dateFin: null },
-    { apprenantId: 8, modeFinancement: "personnel", dateDebut: null, dateFin: null },
+    { apprenantId: 1, modeFinancement: "cpf", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null },
+    { apprenantId: 2, modeFinancement: "personnel", dateDebut: null, dateFin: null, montantAPayer: 1500, montantPaye: 500, datePaiement: new Date() },
+    { apprenantId: 3, modeFinancement: "opco", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null },
+    { apprenantId: 5, modeFinancement: "cpf", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null },
+    { apprenantId: 6, modeFinancement: "france_travail", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null },
+    { apprenantId: 8, modeFinancement: "personnel", dateDebut: null, dateFin: null, montantAPayer: 1500, montantPaye: 1500, datePaiement: new Date() },
   ]);
   
   // Données des formateurs dans la session avec leurs matières
@@ -200,13 +205,26 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
     });
   };
 
+  const updateApprenantPaiement = (apprenantId: number, montantAPayer: number, montantPaye: number, datePaiement: Date | null) => {
+    setApprenantSessionData(prev => 
+      prev.map(a => a.apprenantId === apprenantId ? { ...a, montantAPayer, montantPaye, datePaiement } : a)
+    );
+    toast({
+      title: "Paiement mis à jour",
+      description: "Les informations de paiement ont été modifiées.",
+    });
+  };
+
   const addApprenant = (id: number) => {
     const apprenant = allApprenants.find(a => a.id === id);
     setApprenantSessionData([...apprenantSessionData, { 
       apprenantId: id, 
       modeFinancement: apprenant?.modeFinancement || "personnel",
       dateDebut: null,
-      dateFin: null
+      dateFin: null,
+      montantAPayer: 0,
+      montantPaye: 0,
+      datePaiement: null
     }]);
     toast({
       title: "Apprenant ajouté",
@@ -447,12 +465,14 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
             )}
 
             {/* En-têtes des colonnes */}
-            <div className="grid grid-cols-[auto_1fr_120px_100px_100px_40px] gap-2 px-3 py-2 bg-muted/50 rounded-lg text-xs font-medium text-muted-foreground mb-2">
+            <div className="grid grid-cols-[auto_1fr_100px_80px_80px_90px_80px_32px] gap-2 px-3 py-2 bg-muted/50 rounded-lg text-xs font-medium text-muted-foreground mb-2">
               <div className="w-10"></div>
               <div>Apprenant</div>
               <div>Financement</div>
               <div>Début</div>
               <div>Fin</div>
+              <div>À payer</div>
+              <div>Reste</div>
               <div></div>
             </div>
             
@@ -460,11 +480,13 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
               <div className="space-y-2">
                 {apprenantsInSession.map((apprenant) => {
                   const sessionData = getApprenantSessionData(apprenant.id);
+                  const isPersonnel = sessionData?.modeFinancement === "personnel";
+                  const resteAPayer = (sessionData?.montantAPayer || 0) - (sessionData?.montantPaye || 0);
                   
                   return (
                     <div 
                       key={apprenant.id}
-                      className="grid grid-cols-[auto_1fr_120px_100px_100px_40px] gap-2 items-center p-2 rounded-lg border bg-card hover:shadow-sm transition-shadow"
+                      className="grid grid-cols-[auto_1fr_100px_80px_80px_90px_80px_32px] gap-2 items-center p-2 rounded-lg border bg-card hover:shadow-sm transition-shadow"
                     >
                       {/* Avatar */}
                       <Avatar className="w-10 h-10">
@@ -577,6 +599,84 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                           />
                         </PopoverContent>
                       </Popover>
+                      
+                      {/* À payer (montant + date) - seulement pour financement personnel */}
+                      {isPersonnel ? (
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 justify-start text-left font-normal text-xs"
+                            >
+                              <CreditCard className="w-3 h-3 mr-1" />
+                              {sessionData?.montantAPayer ? `${sessionData.montantAPayer}€` : "0€"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-3" align="start">
+                            <div className="space-y-3">
+                              <div className="space-y-1">
+                                <Label className="text-xs">Montant à payer (€)</Label>
+                                <Input
+                                  type="number"
+                                  value={sessionData?.montantAPayer || 0}
+                                  onChange={(e) => updateApprenantPaiement(
+                                    apprenant.id, 
+                                    Number(e.target.value), 
+                                    sessionData?.montantPaye || 0, 
+                                    sessionData?.datePaiement || null
+                                  )}
+                                  className="h-8"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">Montant payé (€)</Label>
+                                <Input
+                                  type="number"
+                                  value={sessionData?.montantPaye || 0}
+                                  onChange={(e) => updateApprenantPaiement(
+                                    apprenant.id, 
+                                    sessionData?.montantAPayer || 0, 
+                                    Number(e.target.value), 
+                                    sessionData?.datePaiement || null
+                                  )}
+                                  className="h-8"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">Date du paiement</Label>
+                                <CalendarComponent
+                                  mode="single"
+                                  selected={sessionData?.datePaiement || undefined}
+                                  onSelect={(date) => updateApprenantPaiement(
+                                    apprenant.id, 
+                                    sessionData?.montantAPayer || 0, 
+                                    sessionData?.montantPaye || 0, 
+                                    date || null
+                                  )}
+                                  className="p-2 pointer-events-auto"
+                                />
+                              </div>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      ) : (
+                        <div className="text-xs text-muted-foreground text-center">—</div>
+                      )}
+                      
+                      {/* Reste à payer - seulement pour financement personnel */}
+                      {isPersonnel ? (
+                        <div className={cn(
+                          "text-xs font-medium text-center px-2 py-1 rounded",
+                          resteAPayer > 0 
+                            ? "bg-red-100 text-red-700" 
+                            : "bg-green-100 text-green-700"
+                        )}>
+                          {resteAPayer}€
+                        </div>
+                      ) : (
+                        <div className="text-xs text-muted-foreground text-center">—</div>
+                      )}
                       
                       {/* Bouton supprimer */}
                       <Button 
