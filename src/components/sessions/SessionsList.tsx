@@ -6,11 +6,11 @@ import { SessionForm } from "./SessionForm";
 import { SessionDetail } from "./SessionDetail";
 
 const sessions = [
-  // Formation TAXI Initial (200H = ~6 semaines)
+  // Formation TAXI VTC Initial (200H = ~6 semaines)
   {
     id: 1,
-    title: "Formation TAXI Initial - Session 1",
-    formation: "Formation initiale TAXI (200H)",
+    title: "Formation TAXI VTC - Session 1",
+    formation: "Formation initiale TAXI VTC (200H)",
     dateDebut: "27 Jan 2026",
     dateFin: "06 Mars 2026",
     lieu: "Présentiel",
@@ -21,8 +21,8 @@ const sessions = [
   },
   {
     id: 2,
-    title: "Formation TAXI Initial - Session 2",
-    formation: "Formation initiale TAXI (200H)",
+    title: "Formation TAXI VTC - Session 2",
+    formation: "Formation initiale TAXI VTC (200H)",
     dateDebut: "10 Fév 2026",
     dateFin: "20 Mars 2026",
     lieu: "Présentiel",
@@ -33,8 +33,8 @@ const sessions = [
   },
   {
     id: 3,
-    title: "Formation TAXI Initial - Session 3",
-    formation: "Formation initiale TAXI (200H)",
+    title: "Formation TAXI VTC - Session 3",
+    formation: "Formation initiale TAXI VTC (200H)",
     dateDebut: "24 Fév 2026",
     dateFin: "03 Avr 2026",
     lieu: "Présentiel",
@@ -43,11 +43,11 @@ const sessions = [
     maxParticipants: 10,
     status: "pending"
   },
-  // Passerelle VTC vers TAXI (14H = 2 jours)
+  // Passerelle TAXI VTC (14H = 2 jours)
   {
     id: 4,
-    title: "Passerelle VTC vers TAXI - Session 1",
-    formation: "Passerelle VTC vers TAXI (14H)",
+    title: "Formation TAXI VTC Passerelle - Session 1",
+    formation: "Passerelle TAXI VTC (14H)",
     dateDebut: "12 Jan 2026",
     dateFin: "13 Jan 2026",
     lieu: "Présentiel",
@@ -58,8 +58,8 @@ const sessions = [
   },
   {
     id: 5,
-    title: "Passerelle VTC vers TAXI - Session 2",
-    formation: "Passerelle VTC vers TAXI (14H)",
+    title: "Formation TAXI VTC Passerelle - Session 2",
+    formation: "Passerelle TAXI VTC (14H)",
     dateDebut: "09 Fév 2026",
     dateFin: "10 Fév 2026",
     lieu: "Présentiel",
@@ -68,11 +68,11 @@ const sessions = [
     maxParticipants: 8,
     status: "pending"
   },
-  // Formation continue TAXI (14H = 2 jours)
+  // Formation continue TAXI VTC (14H = 2 jours)
   {
     id: 6,
-    title: "Formation continue TAXI - Session 1",
-    formation: "Formation continue TAXI (14H)",
+    title: "Formation TAXI VTC Continue - Session 1",
+    formation: "Formation continue TAXI VTC (14H)",
     dateDebut: "26 Jan 2026",
     dateFin: "27 Jan 2026",
     lieu: "Présentiel",
@@ -83,8 +83,8 @@ const sessions = [
   },
   {
     id: 7,
-    title: "Formation continue TAXI - Session 2",
-    formation: "Formation continue TAXI (14H)",
+    title: "Formation TAXI VTC Continue - Session 2",
+    formation: "Formation continue TAXI VTC (14H)",
     dateDebut: "23 Fév 2026",
     dateFin: "24 Fév 2026",
     lieu: "Présentiel",

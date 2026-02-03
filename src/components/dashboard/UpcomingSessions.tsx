@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 const sessions = [
   {
     id: 1,
-    title: "Formation TAXI - Session 1",
+    title: "Formation TAXI VTC - Session 1",
     date: "Aujourd'hui",
     time: "09:00 - 17:00",
     participants: 8,
@@ -13,7 +13,7 @@ const sessions = [
   },
   {
     id: 2,
-    title: "Formation TAXI - Session 2",
+    title: "Formation TAXI VTC - Session 2",
     date: "Demain",
     time: "09:00 - 17:00",
     participants: 6,
@@ -22,7 +22,7 @@ const sessions = [
   },
   {
     id: 3,
-    title: "Pratique TAXI",
+    title: "Formation TAXI VTC - Pratique",
     date: "Lun. 10 Feb",
     time: "08:00 - 12:00",
     participants: 4,
