@@ -131,6 +131,23 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
     }
   };
 
+  // Fonction pour convertir "20 Jan 2026" en Date
+  const parseFrenchDate = (dateStr: string): Date => {
+    const months: { [key: string]: number } = {
+      "Jan": 0, "Fév": 1, "Mars": 2, "Avr": 3, "Mai": 4, "Juin": 5,
+      "Juil": 6, "Août": 7, "Sept": 8, "Oct": 9, "Nov": 10, "Déc": 11
+    };
+    
+    const parts = dateStr.split(" ");
+    if (parts.length === 3) {
+      const day = parseInt(parts[0]);
+      const month = months[parts[1]] ?? 0;
+      const year = parseInt(parts[2]);
+      return new Date(year, month, day);
+    }
+    return new Date();
+  };
+
   const handleDownloadEmargement = () => {
     if (apprenantsInSession.length === 0) {
       toast({
@@ -141,12 +158,14 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
       return;
     }
 
-    // Convertir les dates au format ISO pour le générateur
+    const dateDebut = parseFrenchDate(session.dateDebut);
+    const dateFin = parseFrenchDate(session.dateFin);
+
     const sessionData = {
       title: session.title,
       formation: session.formation,
-      dateDebut: convertToISO(session.dateDebut),
-      dateFin: convertToISO(session.dateFin),
+      dateDebut: dateDebut.toISOString().split("T")[0],
+      dateFin: dateFin.toISOString().split("T")[0],
       lieu: session.lieu,
       formateurs: sessionFormateurs.length > 0 ? sessionFormateurs : [session.formateur],
     };
@@ -163,15 +182,6 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
       title: "Feuilles d'émargement générées",
       description: `${apprenantsList.length} feuille(s) d'émargement téléchargée(s).`,
     });
-  };
-
-  // Fonction pour convertir "01/02/2026" en "2026-02-01"
-  const convertToISO = (dateStr: string) => {
-    const parts = dateStr.split("/");
-    if (parts.length === 3) {
-      return `${parts[2]}-${parts[1]}-${parts[0]}`;
-    }
-    return dateStr;
   };
 
   return (
