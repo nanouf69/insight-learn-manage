@@ -45,26 +45,50 @@ const formationsList = [
   "Anglais professionnel",
 ];
 
-const disciplineColors = [
-  "bg-red-500",
-  "bg-yellow-500",
-  "bg-teal-500",
-  "bg-pink-500",
-  "bg-indigo-500",
-  "bg-cyan-500",
-  "bg-lime-500",
-  "bg-amber-500",
+// Liste complète des matières avec leurs couleurs
+const defaultDisciplines: Discipline[] = [
+  { id: "1", nom: "Anglais", color: "#6d7bf4" },
+  { id: "2", nom: "Bilan QCM Examen", color: "#f2ef0c" },
+  { id: "3", nom: "Bilan QRC Examen", color: "#ec9060" },
+  { id: "4", nom: "Correction Bilan Examen", color: "#29acf0" },
+  { id: "5", nom: "Développement commercial Réglementation spécifique VTC", color: "#f8a53d" },
+  { id: "6", nom: "Examen blanc 1", color: "#3f4494" },
+  { id: "7", nom: "Examen Blanc 1 correction", color: "#4ca8a0" },
+  { id: "8", nom: "Examen Blanc 2", color: "#3beeff" },
+  { id: "9", nom: "Examen blanc 2 Correction", color: "#eedfee" },
+  { id: "10", nom: "Examen blanc 3", color: "#749459" },
+  { id: "11", nom: "Examen blanc 3 Correction", color: "#ea67dd" },
+  { id: "12", nom: "Examen blanc 4", color: "#7612ec" },
+  { id: "13", nom: "Examen blanc 4 Correction", color: "#8db32e" },
+  { id: "14", nom: "Examen blanc 5", color: "#59e379" },
+  { id: "15", nom: "Examen blanc 5 Correction", color: "#464c04" },
+  { id: "16", nom: "Examen Blanc 6", color: "#c15050" },
+  { id: "17", nom: "Formation VTC", color: "#16263b" },
+  { id: "18", nom: "Formation continue VTC", color: "#2563eb" },
+  { id: "19", nom: "Formation TAXI", color: "#f59e0b" },
+  { id: "20", nom: "Gestion 1/2", color: "#10b981" },
+  { id: "21", nom: "Gestion 2/3", color: "#14b8a6" },
+  { id: "22", nom: "Gestion 3/3", color: "#06b6d4" },
+  { id: "23", nom: "Pratique TAXI", color: "#f97316" },
+  { id: "24", nom: "Pratique VTC", color: "#8b5cf6" },
+  { id: "25", nom: "Présentation", color: "#ec4899" },
+  { id: "26", nom: "Réglementation locale 1/2", color: "#ef4444" },
+  { id: "27", nom: "Réglementation locale 2/2", color: "#dc2626" },
+  { id: "28", nom: "Réglementation nationale 1/2", color: "#b91c1c" },
+  { id: "29", nom: "Réglementation nationale 2/2", color: "#991b1b" },
+  { id: "30", nom: "Révision", color: "#a855f7" },
+  { id: "31", nom: "Sécurité routière 1/3", color: "#facc15" },
+  { id: "32", nom: "Sécurité routière 2/3", color: "#eab308" },
+  { id: "33", nom: "Sécurité routière 3/3", color: "#ca8a04" },
+  { id: "34", nom: "T3P 1/2", color: "#22d3d1" },
+  { id: "35", nom: "T3P 2/2", color: "#0891b2" },
 ];
 
 const hours = Array.from({ length: 12 }, (_, i) => i + 8); // 8h à 19h
 
 export function AgendaView() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [disciplines, setDisciplines] = useState<Discipline[]>([
-    { id: "1", nom: "Réglementation", color: "bg-red-500" },
-    { id: "2", nom: "Sécurité routière", color: "bg-yellow-500" },
-    { id: "3", nom: "Gestion", color: "bg-teal-500" },
-  ]);
+  const [disciplines, setDisciplines] = useState<Discipline[]>(defaultDisciplines);
   const [courseBlocks, setCourseBlocks] = useState<CourseBlock[]>([
     {
       id: "1",
@@ -75,20 +99,20 @@ export function AgendaView() {
       endHour: 12,
       date: new Date(),
       formation: "Formation VTC Initiale",
-      discipline: "Réglementation",
-      disciplineColor: "bg-red-500",
+      discipline: "Formation VTC",
+      disciplineColor: "#16263b",
     },
     {
       id: "2",
-      title: "Capacité de Transport",
+      title: "Gestion 1/2",
       formateur: "Marie Martin",
       formateurColor: "bg-green-500",
       startHour: 14,
       endHour: 17,
       date: new Date(),
       formation: "Capacité de Transport",
-      discipline: "Gestion",
-      disciplineColor: "bg-teal-500",
+      discipline: "Gestion 1/2",
+      disciplineColor: "#10b981",
     },
   ]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -103,7 +127,7 @@ export function AgendaView() {
   });
   const [newDiscipline, setNewDiscipline] = useState({
     nom: "",
-    color: "bg-red-500",
+    color: "#6366f1",
   });
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
@@ -223,12 +247,17 @@ export function AgendaView() {
           </div>
           <div className="flex flex-wrap gap-2">
             <span className="text-xs text-muted-foreground font-medium mr-1">Disciplines:</span>
-            {disciplines.map((discipline) => (
+            {disciplines.slice(0, 10).map((discipline) => (
               <Badge key={discipline.id} variant="secondary" className="flex items-center gap-1">
-                <div className={`w-3 h-3 rounded-full ${discipline.color}`} />
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: discipline.color }} />
                 {discipline.nom}
               </Badge>
             ))}
+            {disciplines.length > 10 && (
+              <Badge variant="outline" className="text-xs">
+                +{disciplines.length - 10} autres
+              </Badge>
+            )}
           </div>
         </div>
 
@@ -414,12 +443,12 @@ export function AgendaView() {
                     <SelectTrigger>
                       <SelectValue placeholder="Sélectionner une discipline" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-60">
                       {disciplines.map((discipline) => (
                         <SelectItem key={discipline.id} value={discipline.id}>
                           <div className="flex items-center gap-2">
-                            <div className={`w-3 h-3 rounded-full ${discipline.color}`} />
-                            {discipline.nom}
+                            <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: discipline.color }} />
+                            <span className="truncate">{discipline.nom}</span>
                           </div>
                         </SelectItem>
                       ))}
@@ -488,8 +517,8 @@ export function AgendaView() {
                         className="flex items-center justify-between p-2 bg-muted rounded-lg"
                       >
                         <div className="flex items-center gap-2">
-                          <div className={`w-4 h-4 rounded-full ${discipline.color}`} />
-                          <span className="text-sm font-medium">{discipline.nom}</span>
+                          <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: discipline.color }} />
+                          <span className="text-sm font-medium truncate">{discipline.nom}</span>
                         </div>
                         <Button
                           variant="ghost"
@@ -514,19 +543,19 @@ export function AgendaView() {
                 />
                 <div className="space-y-2">
                   <Label className="text-xs text-muted-foreground">Couleur</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {disciplineColors.map((color) => (
-                      <button
-                        key={color}
-                        type="button"
-                        className={`w-8 h-8 rounded-full ${color} transition-transform ${
-                          newDiscipline.color === color
-                            ? "ring-2 ring-offset-2 ring-primary scale-110"
-                            : "hover:scale-105"
-                        }`}
-                        onClick={() => setNewDiscipline({ ...newDiscipline, color })}
-                      />
-                    ))}
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      value={newDiscipline.color}
+                      onChange={(e) => setNewDiscipline({ ...newDiscipline, color: e.target.value })}
+                      className="w-10 h-10 rounded-lg cursor-pointer border-0"
+                    />
+                    <Input
+                      value={newDiscipline.color}
+                      onChange={(e) => setNewDiscipline({ ...newDiscipline, color: e.target.value })}
+                      placeholder="#6366f1"
+                      className="w-28 font-mono text-sm"
+                    />
                   </div>
                 </div>
                 <Button
