@@ -54,7 +54,8 @@ const sessions = [
     formateur: "Pierre Bernard",
     participants: 4,
     maxParticipants: 8,
-    status: "confirmed"
+    status: "confirmed",
+    badge: "TA"
   },
   {
     id: 5,
@@ -66,7 +67,8 @@ const sessions = [
     formateur: "Sophie Lefebvre",
     participants: 0,
     maxParticipants: 8,
-    status: "pending"
+    status: "pending",
+    badge: "TA"
   },
   {
     id: 8,
@@ -78,7 +80,8 @@ const sessions = [
     formateur: "Pierre Bernard",
     participants: 0,
     maxParticipants: 8,
-    status: "pending"
+    status: "pending",
+    badge: "TA"
   },
   {
     id: 9,
@@ -90,7 +93,8 @@ const sessions = [
     formateur: "Sophie Lefebvre",
     participants: 0,
     maxParticipants: 8,
-    status: "pending"
+    status: "pending",
+    badge: "TA"
   },
   // Formation continue TAXI VTC (14H = 2 jours)
   {
@@ -171,6 +175,11 @@ export function SessionsList() {
                 <div className="space-y-2 flex-1">
                   <div className="flex items-center gap-3">
                     <h3 className="font-semibold text-lg text-foreground">{session.title}</h3>
+                    {session.badge && (
+                      <Badge className="bg-amber-500 hover:bg-amber-600 text-white font-bold">
+                        {session.badge}
+                      </Badge>
+                    )}
                     {getStatusBadge(session.status)}
                   </div>
                   <p className="text-sm text-muted-foreground">{session.formation}</p>
