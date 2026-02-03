@@ -93,6 +93,8 @@ interface ApprenantSession {
   montantAPayer: number;
   montantPaye: number;
   datePaiement: Date | null;
+  // Examen théorique
+  examenTheoriqueReussi: "oui" | "non" | null;
 }
 
 // Type pour les données de formateur dans une session
@@ -147,12 +149,12 @@ const allFormateurs = [
 export function SessionDetail({ session, open, onOpenChange }: SessionDetailProps) {
   // Données des apprenants dans la session avec financement et dates personnalisées
   const [apprenantSessionData, setApprenantSessionData] = useState<ApprenantSession[]>([
-    { apprenantId: 1, modeFinancement: "cpf", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null },
-    { apprenantId: 2, modeFinancement: "personnel", dateDebut: null, dateFin: null, montantAPayer: 1500, montantPaye: 500, datePaiement: new Date() },
-    { apprenantId: 3, modeFinancement: "opco", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null },
-    { apprenantId: 5, modeFinancement: "cpf", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null },
-    { apprenantId: 6, modeFinancement: "france_travail", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null },
-    { apprenantId: 8, modeFinancement: "personnel", dateDebut: null, dateFin: null, montantAPayer: 1500, montantPaye: 1500, datePaiement: new Date() },
+    { apprenantId: 1, modeFinancement: "cpf", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null, examenTheoriqueReussi: null },
+    { apprenantId: 2, modeFinancement: "personnel", dateDebut: null, dateFin: null, montantAPayer: 1500, montantPaye: 500, datePaiement: new Date(), examenTheoriqueReussi: "oui" },
+    { apprenantId: 3, modeFinancement: "opco", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null, examenTheoriqueReussi: "non" },
+    { apprenantId: 5, modeFinancement: "cpf", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null, examenTheoriqueReussi: null },
+    { apprenantId: 6, modeFinancement: "france_travail", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null, examenTheoriqueReussi: "oui" },
+    { apprenantId: 8, modeFinancement: "personnel", dateDebut: null, dateFin: null, montantAPayer: 1500, montantPaye: 1500, datePaiement: new Date(), examenTheoriqueReussi: null },
   ]);
   
   // Données des formateurs dans la session avec leurs matières
@@ -224,7 +226,8 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
       dateFin: null,
       montantAPayer: 0,
       montantPaye: 0,
-      datePaiement: null
+      datePaiement: null,
+      examenTheoriqueReussi: null
     }]);
     toast({
       title: "Apprenant ajouté",
@@ -465,13 +468,14 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
             )}
 
             {/* En-têtes des colonnes */}
-            <div className="grid grid-cols-[1fr_100px_80px_80px_90px_80px_32px] gap-2 px-3 py-2 bg-muted/50 rounded-lg text-xs font-medium text-muted-foreground mb-2">
+            <div className="grid grid-cols-[1fr_90px_70px_70px_80px_70px_70px_32px] gap-2 px-3 py-2 bg-muted/50 rounded-lg text-xs font-medium text-muted-foreground mb-2">
               <div>Apprenant</div>
               <div>Financement</div>
               <div>Début</div>
               <div>Fin</div>
               <div>À payer</div>
               <div>Reste</div>
+              <div>Examen</div>
               <div></div>
             </div>
             
@@ -485,7 +489,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                   return (
                     <div 
                       key={apprenant.id}
-                      className="grid grid-cols-[1fr_100px_80px_80px_90px_80px_32px] gap-2 items-center p-2 rounded-lg border bg-card hover:shadow-sm transition-shadow"
+                      className="grid grid-cols-[1fr_90px_70px_70px_80px_70px_70px_32px] gap-2 items-center p-2 rounded-lg border bg-card hover:shadow-sm transition-shadow"
                     >
                       
                       {/* Infos apprenant */}
@@ -670,6 +674,32 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                       ) : (
                         <div className="text-xs text-muted-foreground text-center">—</div>
                       )}
+                      
+                      {/* Examen théorique réussi */}
+                      <Select 
+                        value={sessionData?.examenTheoriqueReussi || ""}
+                        onValueChange={(value: "oui" | "non") => {
+                          setApprenantSessionData(prev => 
+                            prev.map(a => a.apprenantId === apprenant.id ? { ...a, examenTheoriqueReussi: value } : a)
+                          );
+                        }}
+                      >
+                        <SelectTrigger className={cn(
+                          "h-8 text-xs",
+                          sessionData?.examenTheoriqueReussi === "oui" && "bg-green-100 text-green-700 border-green-300",
+                          sessionData?.examenTheoriqueReussi === "non" && "bg-red-100 text-red-700 border-red-300"
+                        )}>
+                          <SelectValue placeholder="—" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="oui">
+                            <span className="text-green-700">Oui ✓</span>
+                          </SelectItem>
+                          <SelectItem value="non">
+                            <span className="text-red-700">Non ✗</span>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
                       
                       {/* Bouton supprimer */}
                       <Button 
