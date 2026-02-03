@@ -53,15 +53,9 @@ export function PlanningForm() {
             <Input id="title" placeholder="Ex: Module 3 - Hooks avancés" required />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="date">Date</Label>
-              <Input id="date" type="date" required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="duration">Durée (heures)</Label>
-              <Input id="duration" type="number" placeholder="3" required />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="date">Date</Label>
+            <Input id="date" type="date" required />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
