@@ -8,6 +8,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   FileText, 
   GraduationCap, 
@@ -19,7 +22,12 @@ import {
   Trash2,
   Download,
   Send,
-  Printer
+  Printer,
+  Search,
+  Check,
+  Mail,
+  Phone,
+  MapPin
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -50,6 +58,109 @@ const entrepriseEmettrice = {
   agence: "LYON-MONTCHAT"
 };
 
+// Liste des apprenants (simulée - à connecter avec la vraie base de données)
+const apprenants = [
+  {
+    id: 1,
+    name: "Jean Martin",
+    email: "jean.martin@email.com",
+    phone: "06 12 34 56 78",
+    address: "12 rue des Lilas, 69001 Lyon",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Jean",
+  },
+  {
+    id: 2,
+    name: "Sophie Bernard",
+    email: "sophie.bernard@email.com",
+    phone: "06 98 76 54 32",
+    address: "45 avenue Jean Jaurès, 69007 Lyon",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sophie",
+  },
+  {
+    id: 3,
+    name: "Pierre Durand",
+    email: "pierre.durand@email.com",
+    phone: "06 55 44 33 22",
+    address: "8 place Bellecour, 69002 Lyon",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Pierre",
+  },
+  {
+    id: 4,
+    name: "Marie Leroy",
+    email: "marie.leroy@email.com",
+    phone: "06 11 22 33 44",
+    address: "23 rue de la République, 69003 Lyon",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Marie",
+  },
+  {
+    id: 5,
+    name: "Lucas Petit",
+    email: "lucas.petit@email.com",
+    phone: "06 77 88 99 00",
+    address: "56 cours Lafayette, 69006 Lyon",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Lucas",
+  },
+];
+
+// Liste des organisations (simulée - à connecter avec la vraie base de données)
+const organisations = [
+  {
+    id: 1,
+    name: "Tech Solutions SARL",
+    type: "client",
+    contact: "Marc Dubois",
+    email: "contact@techsolutions.fr",
+    phone: "01 23 45 67 89",
+    address: "15 Rue de l'Innovation, 75001 Paris",
+    siret: "12345678901234",
+    tvaIntra: "FR12345678901",
+  },
+  {
+    id: 2,
+    name: "Groupe Industriel ABC",
+    type: "client",
+    contact: "Claire Moreau",
+    email: "rh@groupe-abc.com",
+    phone: "01 98 76 54 32",
+    address: "Zone Industrielle Nord, 69000 Lyon",
+    siret: "98765432101234",
+    tvaIntra: "FR98765432101",
+  },
+  {
+    id: 3,
+    name: "Caisse des Dépôts et Consignations",
+    type: "client",
+    contact: "Direction Formation",
+    email: "formation@cdc.fr",
+    phone: "01 58 50 00 00",
+    address: "56, rue de Lille, 75356 PARIS 07 SP",
+    siret: "180.020.026.00",
+    tvaIntra: "FR77180020026",
+  },
+  {
+    id: 4,
+    name: "OPCO Mobilités",
+    type: "opco",
+    contact: "Service Prise en Charge",
+    email: "contact@opcomobilites.fr",
+    phone: "0 800 00 99 99",
+    address: "14 rue Scandicci, 93500 Pantin",
+    siret: "85129986300017",
+    tvaIntra: "FR85129986300",
+  },
+  {
+    id: 5,
+    name: "Mairie de Lyon",
+    type: "client",
+    contact: "Jean-Pierre Martin",
+    email: "formation@mairie-lyon.fr",
+    phone: "04 72 10 30 30",
+    address: "Place de la Comédie, 69001 Lyon",
+    siret: "21690123800019",
+    tvaIntra: "FR21690123800",
+  },
+];
+
 interface LigneFacture {
   id: string;
   stagiaire: string;
@@ -73,24 +184,9 @@ interface FactureData {
   // Type de financeur
   typeFinanceur: "particulier" | "professionnel";
   
-  // Financeur particulier
-  particulierNom: string;
-  particulierPrenom: string;
-  particulierAdresse: string;
-  particulierCodePostal: string;
-  particulierVille: string;
-  particulierEmail: string;
-  particulierTel: string;
-  
-  // Financeur professionnel (client)
-  clientNom: string;
-  clientAdresse: string;
-  clientCodePostal: string;
-  clientVille: string;
-  clientPays: string;
-  clientSiret: string;
-  clientTvaIntra: string;
-  clientPrefecture: string;
+  // ID de l'apprenant ou organisation sélectionné
+  selectedApprenantId: number | null;
+  selectedOrganisationId: number | null;
   
   // Références
   refDossier: string;
@@ -127,23 +223,8 @@ const defaultFactureData: FactureData = {
   duplicata: false,
   
   typeFinanceur: "professionnel",
-  
-  particulierNom: "",
-  particulierPrenom: "",
-  particulierAdresse: "",
-  particulierCodePostal: "",
-  particulierVille: "",
-  particulierEmail: "",
-  particulierTel: "",
-  
-  clientNom: "",
-  clientAdresse: "",
-  clientCodePostal: "",
-  clientVille: "",
-  clientPays: "FRANCE",
-  clientSiret: "",
-  clientTvaIntra: "",
-  clientPrefecture: "",
+  selectedApprenantId: null,
+  selectedOrganisationId: null,
   
   refDossier: "",
   refConvention: "",
@@ -155,15 +236,45 @@ const defaultFactureData: FactureData = {
 
 export function FactureForm() {
   const [data, setData] = useState<FactureData>(defaultFactureData);
+  const [searchApprenant, setSearchApprenant] = useState("");
+  const [searchOrganisation, setSearchOrganisation] = useState("");
 
   const updateField = <K extends keyof FactureData>(field: K, value: FactureData[K]) => {
     setData(prev => ({ ...prev, [field]: value }));
   };
 
+  const selectedApprenant = apprenants.find(a => a.id === data.selectedApprenantId);
+  const selectedOrganisation = organisations.find(o => o.id === data.selectedOrganisationId);
+
+  const filteredApprenants = apprenants.filter(a => 
+    a.name.toLowerCase().includes(searchApprenant.toLowerCase()) ||
+    a.email.toLowerCase().includes(searchApprenant.toLowerCase())
+  );
+
+  const filteredOrganisations = organisations.filter(o => 
+    o.name.toLowerCase().includes(searchOrganisation.toLowerCase()) ||
+    o.contact.toLowerCase().includes(searchOrganisation.toLowerCase())
+  );
+
+  const getTypeBadge = (type: string) => {
+    switch (type) {
+      case "client":
+        return <Badge className="bg-primary/10 text-primary hover:bg-primary/10">Client</Badge>;
+      case "opco":
+        return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">OPCO</Badge>;
+      case "prospect":
+        return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">Prospect</Badge>;
+      case "partenaire":
+        return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100">Partenaire</Badge>;
+      default:
+        return <Badge variant="secondary">{type}</Badge>;
+    }
+  };
+
   const ajouterLigne = () => {
     const nouvelleLigne: LigneFacture = {
       id: crypto.randomUUID(),
-      stagiaire: "",
+      stagiaire: selectedApprenant?.name || "",
       designation: "",
       dateDebut: "",
       dateFin: "",
@@ -242,7 +353,6 @@ export function FactureForm() {
   };
 
   const handleExport = () => {
-    // Générer un HTML de la facture
     const factureHTML = generateFactureHTML();
     const blob = new Blob([factureHTML], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
@@ -254,7 +364,32 @@ export function FactureForm() {
     toast.success("Facture exportée avec succès");
   };
 
+  const getClientInfo = () => {
+    if (data.typeFinanceur === "particulier" && selectedApprenant) {
+      return {
+        nom: selectedApprenant.name,
+        adresse: selectedApprenant.address,
+        email: selectedApprenant.email,
+        telephone: selectedApprenant.phone,
+        siret: "",
+        tvaIntra: "",
+      };
+    } else if (data.typeFinanceur === "professionnel" && selectedOrganisation) {
+      return {
+        nom: selectedOrganisation.name,
+        adresse: selectedOrganisation.address,
+        email: selectedOrganisation.email,
+        telephone: selectedOrganisation.phone,
+        siret: selectedOrganisation.siret,
+        tvaIntra: selectedOrganisation.tvaIntra,
+      };
+    }
+    return null;
+  };
+
   const generateFactureHTML = () => {
+    const client = getClientInfo();
+    
     const lignesHTML = data.lignes.map(l => `
       <tr>
         <td style="padding: 8px; border: 1px solid #ddd;">${l.stagiaire}</td>
@@ -271,9 +406,12 @@ export function FactureForm() {
       </tr>
     `).join('');
 
-    const clientInfo = data.typeFinanceur === "particulier" 
-      ? `${data.particulierPrenom} ${data.particulierNom}<br>${data.particulierAdresse}<br>${data.particulierCodePostal} ${data.particulierVille}`
-      : `${data.clientNom}<br>${data.clientAdresse}<br>${data.clientCodePostal} ${data.clientVille}<br>${data.clientPays}<br>SIRET : ${data.clientSiret}<br>TVA Intracommunautaire : ${data.clientTvaIntra}`;
+    const clientHTML = client ? `
+      ${client.nom}<br>
+      ${client.adresse}<br>
+      ${client.siret ? `SIRET : ${client.siret}<br>` : ''}
+      ${client.tvaIntra ? `TVA Intracommunautaire : ${client.tvaIntra}` : ''}
+    ` : 'Aucun client sélectionné';
 
     return `
 <!DOCTYPE html>
@@ -325,7 +463,7 @@ export function FactureForm() {
     </div>
     <div class="info-box">
       <strong>Adressée à :</strong><br>
-      ${clientInfo}
+      ${clientHTML}
       ${data.refConvention ? `<br>Réf à rappeler : ${data.refConvention}` : ''}
     </div>
   </div>
@@ -384,10 +522,14 @@ export function FactureForm() {
   };
 
   const handleEnvoyer = () => {
-    const email = data.typeFinanceur === "particulier" ? data.particulierEmail : "";
+    const client = getClientInfo();
+    if (!client?.email) {
+      toast.error("Veuillez sélectionner un client avec une adresse email");
+      return;
+    }
     const sujet = encodeURIComponent(`Facture N°${data.numeroInterne} - ${entrepriseEmettrice.nom}`);
     const corps = encodeURIComponent(`Bonjour,\n\nVeuillez trouver ci-joint la facture N°${data.numeroInterne}.\n\nMontant TTC : ${calculerTotalTTC().toFixed(2)} €\n\nCordialement,\n${entrepriseEmettrice.nom}`);
-    window.location.href = `mailto:${email}?subject=${sujet}&body=${corps}`;
+    window.location.href = `mailto:${client.email}?subject=${sujet}&body=${corps}`;
     toast.success("Ouverture du client email...");
   };
 
@@ -526,17 +668,274 @@ export function FactureForm() {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="prestations" className="space-y-4">
+      <Tabs defaultValue="financeur" className="space-y-4">
         <TabsList className="grid grid-cols-2 gap-2 h-auto">
-          <TabsTrigger value="prestations" className="flex items-center gap-2">
-            <GraduationCap className="w-4 h-4" />
-            Prestations / Formations
-          </TabsTrigger>
           <TabsTrigger value="financeur" className="flex items-center gap-2">
             <Users className="w-4 h-4" />
             Financeur (Client)
           </TabsTrigger>
+          <TabsTrigger value="prestations" className="flex items-center gap-2">
+            <GraduationCap className="w-4 h-4" />
+            Prestations / Formations
+          </TabsTrigger>
         </TabsList>
+
+        {/* Onglet Financeur */}
+        <TabsContent value="financeur" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Type de financeur</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RadioGroup 
+                value={data.typeFinanceur} 
+                onValueChange={(v) => {
+                  updateField('typeFinanceur', v as "particulier" | "professionnel");
+                  updateField('selectedApprenantId', null);
+                  updateField('selectedOrganisationId', null);
+                }}
+                className="grid grid-cols-1 md:grid-cols-2 gap-4"
+              >
+                <div 
+                  className={`flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                    data.typeFinanceur === "particulier" 
+                      ? "border-primary bg-primary/5" 
+                      : "border-border hover:border-primary/50"
+                  }`}
+                  onClick={() => {
+                    updateField('typeFinanceur', "particulier");
+                    updateField('selectedApprenantId', null);
+                    updateField('selectedOrganisationId', null);
+                  }}
+                >
+                  <RadioGroupItem value="particulier" id="particulier" />
+                  <Label htmlFor="particulier" className="flex items-center gap-3 cursor-pointer flex-1">
+                    <User className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <div className="font-medium">Particulier</div>
+                      <div className="text-sm text-muted-foreground">Personne physique finançant à titre personnel</div>
+                    </div>
+                  </Label>
+                </div>
+                <div 
+                  className={`flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                    data.typeFinanceur === "professionnel" 
+                      ? "border-primary bg-primary/5" 
+                      : "border-border hover:border-primary/50"
+                  }`}
+                  onClick={() => {
+                    updateField('typeFinanceur', "professionnel");
+                    updateField('selectedApprenantId', null);
+                    updateField('selectedOrganisationId', null);
+                  }}
+                >
+                  <RadioGroupItem value="professionnel" id="professionnel" />
+                  <Label htmlFor="professionnel" className="flex items-center gap-3 cursor-pointer flex-1">
+                    <Building2 className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <div className="font-medium">Professionnel</div>
+                      <div className="text-sm text-muted-foreground">Entreprise, OPCO, organisme financeur</div>
+                    </div>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </CardContent>
+          </Card>
+
+          {data.typeFinanceur === "particulier" ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="w-5 h-5" />
+                  Sélectionner un apprenant
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Barre de recherche */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input 
+                    placeholder="Rechercher un apprenant..." 
+                    className="pl-10"
+                    value={searchApprenant}
+                    onChange={(e) => setSearchApprenant(e.target.value)}
+                  />
+                </div>
+
+                {/* Liste des apprenants */}
+                <ScrollArea className="h-[300px] rounded-md border">
+                  <div className="p-2 space-y-2">
+                    {filteredApprenants.map((apprenant) => (
+                      <div 
+                        key={apprenant.id}
+                        onClick={() => updateField('selectedApprenantId', apprenant.id)}
+                        className={`p-4 rounded-lg border cursor-pointer transition-all ${
+                          data.selectedApprenantId === apprenant.id 
+                            ? "border-primary bg-primary/5" 
+                            : "border-border hover:border-primary/50 hover:bg-muted/50"
+                        }`}
+                      >
+                        <div className="flex items-center gap-4">
+                          <Avatar className="w-12 h-12">
+                            <AvatarImage src={apprenant.avatar} />
+                            <AvatarFallback>{apprenant.name.split(" ").map(n => n[0]).join("")}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <h4 className="font-semibold">{apprenant.name}</h4>
+                              {data.selectedApprenantId === apprenant.id && (
+                                <Check className="w-5 h-5 text-primary" />
+                              )}
+                            </div>
+                            <div className="text-sm text-muted-foreground space-y-1 mt-1">
+                              <div className="flex items-center gap-2">
+                                <Mail className="w-3.5 h-3.5" />
+                                {apprenant.email}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Phone className="w-3.5 h-3.5" />
+                                {apprenant.phone}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <MapPin className="w-3.5 h-3.5" />
+                                {apprenant.address}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {filteredApprenants.length === 0 && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <User className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                        <p>Aucun apprenant trouvé</p>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+
+                {/* Résumé de la sélection */}
+                {selectedApprenant && (
+                  <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+                    <h4 className="font-medium text-sm text-muted-foreground mb-2">Client sélectionné :</h4>
+                    <div className="flex items-center gap-3">
+                      <Avatar>
+                        <AvatarImage src={selectedApprenant.avatar} />
+                        <AvatarFallback>{selectedApprenant.name.split(" ").map(n => n[0]).join("")}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-semibold">{selectedApprenant.name}</p>
+                        <p className="text-sm text-muted-foreground">{selectedApprenant.email}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="w-5 h-5" />
+                  Sélectionner une organisation
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Barre de recherche */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input 
+                    placeholder="Rechercher une organisation..." 
+                    className="pl-10"
+                    value={searchOrganisation}
+                    onChange={(e) => setSearchOrganisation(e.target.value)}
+                  />
+                </div>
+
+                {/* Liste des organisations */}
+                <ScrollArea className="h-[400px] rounded-md border">
+                  <div className="p-2 space-y-2">
+                    {filteredOrganisations.map((org) => (
+                      <div 
+                        key={org.id}
+                        onClick={() => updateField('selectedOrganisationId', org.id)}
+                        className={`p-4 rounded-lg border cursor-pointer transition-all ${
+                          data.selectedOrganisationId === org.id 
+                            ? "border-primary bg-primary/5" 
+                            : "border-border hover:border-primary/50 hover:bg-muted/50"
+                        }`}
+                      >
+                        <div className="flex items-start gap-4">
+                          <Avatar className="h-12 w-12 bg-primary/10">
+                            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                              {org.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-semibold">{org.name}</h4>
+                                {getTypeBadge(org.type)}
+                              </div>
+                              {data.selectedOrganisationId === org.id && (
+                                <Check className="w-5 h-5 text-primary flex-shrink-0" />
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">Contact : {org.contact}</p>
+                            <div className="text-sm text-muted-foreground space-y-1 mt-2">
+                              <div className="flex items-center gap-2">
+                                <Mail className="w-3.5 h-3.5" />
+                                {org.email}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Phone className="w-3.5 h-3.5" />
+                                {org.phone}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <MapPin className="w-3.5 h-3.5" />
+                                {org.address}
+                              </div>
+                            </div>
+                            <div className="mt-2 text-xs text-muted-foreground">
+                              SIRET : {org.siret} | TVA : {org.tvaIntra}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {filteredOrganisations.length === 0 && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                        <p>Aucune organisation trouvée</p>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+
+                {/* Résumé de la sélection */}
+                {selectedOrganisation && (
+                  <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+                    <h4 className="font-medium text-sm text-muted-foreground mb-2">Organisation sélectionnée :</h4>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10 bg-primary/10">
+                        <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                          {selectedOrganisation.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold">{selectedOrganisation.name}</p>
+                          {getTypeBadge(selectedOrganisation.type)}
+                        </div>
+                        <p className="text-sm text-muted-foreground">{selectedOrganisation.email}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
 
         {/* Onglet Prestations */}
         <TabsContent value="prestations" className="space-y-4">
@@ -766,178 +1165,6 @@ export function FactureForm() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        {/* Onglet Financeur */}
-        <TabsContent value="financeur" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Type de financeur</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <RadioGroup 
-                value={data.typeFinanceur} 
-                onValueChange={(v) => updateField('typeFinanceur', v as "particulier" | "professionnel")}
-                className="flex gap-6"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="particulier" id="particulier" />
-                  <Label htmlFor="particulier" className="flex items-center gap-2 cursor-pointer">
-                    <User className="w-4 h-4" />
-                    Particulier
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="professionnel" id="professionnel" />
-                  <Label htmlFor="professionnel" className="flex items-center gap-2 cursor-pointer">
-                    <Building2 className="w-4 h-4" />
-                    Professionnel / Organisme
-                  </Label>
-                </div>
-              </RadioGroup>
-            </CardContent>
-          </Card>
-
-          {data.typeFinanceur === "particulier" ? (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="w-5 h-5" />
-                  Client particulier
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Nom</Label>
-                    <Input 
-                      value={data.particulierNom}
-                      onChange={(e) => updateField('particulierNom', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Prénom</Label>
-                    <Input 
-                      value={data.particulierPrenom}
-                      onChange={(e) => updateField('particulierPrenom', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <Label>Adresse</Label>
-                    <Input 
-                      value={data.particulierAdresse}
-                      onChange={(e) => updateField('particulierAdresse', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Code postal</Label>
-                    <Input 
-                      value={data.particulierCodePostal}
-                      onChange={(e) => updateField('particulierCodePostal', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Ville</Label>
-                    <Input 
-                      value={data.particulierVille}
-                      onChange={(e) => updateField('particulierVille', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Email</Label>
-                    <Input 
-                      type="email"
-                      value={data.particulierEmail}
-                      onChange={(e) => updateField('particulierEmail', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Téléphone</Label>
-                    <Input 
-                      value={data.particulierTel}
-                      onChange={(e) => updateField('particulierTel', e.target.value)}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building2 className="w-5 h-5" />
-                  Client professionnel / Organisme financeur
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2 md:col-span-2">
-                    <Label>Raison sociale</Label>
-                    <Input 
-                      value={data.clientNom}
-                      onChange={(e) => updateField('clientNom', e.target.value)}
-                      placeholder="Ex: Caisse des Dépôts et Consignations"
-                    />
-                  </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <Label>Adresse</Label>
-                    <Input 
-                      value={data.clientAdresse}
-                      onChange={(e) => updateField('clientAdresse', e.target.value)}
-                      placeholder="Ex: 56, rue de Lille"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Code postal</Label>
-                    <Input 
-                      value={data.clientCodePostal}
-                      onChange={(e) => updateField('clientCodePostal', e.target.value)}
-                      placeholder="75356"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Ville</Label>
-                    <Input 
-                      value={data.clientVille}
-                      onChange={(e) => updateField('clientVille', e.target.value)}
-                      placeholder="PARIS 07 SP"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Pays</Label>
-                    <Input 
-                      value={data.clientPays}
-                      onChange={(e) => updateField('clientPays', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>SIRET</Label>
-                    <Input 
-                      value={data.clientSiret}
-                      onChange={(e) => updateField('clientSiret', e.target.value)}
-                      placeholder="180.020.026.00"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>TVA Intracommunautaire</Label>
-                    <Input 
-                      value={data.clientTvaIntra}
-                      onChange={(e) => updateField('clientTvaIntra', e.target.value)}
-                      placeholder="FR77180020026"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Préfecture n°</Label>
-                    <Input 
-                      value={data.clientPrefecture}
-                      onChange={(e) => updateField('clientPrefecture', e.target.value)}
-                      placeholder="16-15, n°69-18-001"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </TabsContent>
       </Tabs>
 
