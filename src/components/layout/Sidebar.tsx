@@ -12,7 +12,8 @@ import {
   Building2,
   ClipboardList,
   Receipt,
-  UserCog
+  UserCog,
+  Clock
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +26,7 @@ interface SidebarProps {
 
 const menuItems = [
   { id: "dashboard", label: "Tableau de bord", icon: LayoutDashboard },
+  { id: "agenda", label: "Agenda", icon: Clock },
   { id: "planning", label: "Planning", icon: Calendar },
   { id: "sessions", label: "Sessions", icon: CalendarDays },
   { id: "formations", label: "Formations", icon: GraduationCap },
