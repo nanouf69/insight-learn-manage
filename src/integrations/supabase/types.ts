@@ -22,6 +22,7 @@ export type Database = {
           date_naissance: string | null
           email: string | null
           id: string
+          mode_financement: string | null
           nom: string
           numero_dossier_cma: string | null
           prenom: string
@@ -37,6 +38,7 @@ export type Database = {
           date_naissance?: string | null
           email?: string | null
           id?: string
+          mode_financement?: string | null
           nom: string
           numero_dossier_cma?: string | null
           prenom: string
@@ -52,6 +54,7 @@ export type Database = {
           date_naissance?: string | null
           email?: string | null
           id?: string
+          mode_financement?: string | null
           nom?: string
           numero_dossier_cma?: string | null
           prenom?: string
@@ -276,19 +279,28 @@ export type Database = {
         Row: {
           apprenant_id: string
           created_at: string
+          date_debut: string | null
+          date_fin: string | null
           id: string
+          mode_financement: string | null
           session_id: string
         }
         Insert: {
           apprenant_id: string
           created_at?: string
+          date_debut?: string | null
+          date_fin?: string | null
           id?: string
+          mode_financement?: string | null
           session_id: string
         }
         Update: {
           apprenant_id?: string
           created_at?: string
+          date_debut?: string | null
+          date_fin?: string | null
           id?: string
+          mode_financement?: string | null
           session_id?: string
         }
         Relationships: [

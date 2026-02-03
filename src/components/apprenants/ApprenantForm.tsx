@@ -190,21 +190,61 @@ export function ApprenantForm() {
             )}
           </div>
 
-          {/* Entreprise (optionnel) */}
+          {/* Mode de financement */}
           <div className="space-y-4">
-            <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Entreprise (optionnel)</h3>
+            <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Financement</h3>
             <div className="space-y-2">
-              <Label htmlFor="company">Entreprise / Financeur</Label>
+              <Label htmlFor="financement">Mode de financement *</Label>
+              <Select defaultValue="personnel">
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un mode de financement" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cpf">
+                    <span className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-purple-500" />
+                      CPF (Mon Compte Formation)
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="personnel">
+                    <span className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-gray-500" />
+                      Personnel (auto-financement)
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="opco">
+                    <span className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-blue-500" />
+                      OPCO
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="france_travail">
+                    <span className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-orange-500" />
+                      France Travail
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="autre">
+                    <span className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-slate-500" />
+                      Autre
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="company">Entreprise / Organisme financeur (optionnel)</Label>
               <Select>
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner une entreprise" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="particulier">Particulier (auto-financement)</SelectItem>
                   <SelectItem value="opco-mobilites">OPCO Mobilités</SelectItem>
-                  <SelectItem value="pole-emploi">France Travail (Pôle Emploi)</SelectItem>
-                  <SelectItem value="cpf">Mon Compte Formation (CPF)</SelectItem>
-                  <SelectItem value="entreprise">Entreprise</SelectItem>
+                  <SelectItem value="opco-ep">OPCO EP</SelectItem>
+                  <SelectItem value="fafcea">FAFCEA</SelectItem>
+                  <SelectItem value="entreprise">Entreprise directe</SelectItem>
                   <SelectItem value="autre">Autre</SelectItem>
                 </SelectContent>
               </Select>
