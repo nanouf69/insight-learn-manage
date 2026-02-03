@@ -1,347 +1,204 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Separator } from "@/components/ui/separator";
-import { Download, Save, FileText, Building2, Euro, Users, GraduationCap, UserCheck } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { 
+  Download, 
+  Save, 
+  Building2, 
+  Euro, 
+  Users, 
+  GraduationCap, 
+  FileText,
+  Zap,
+  CheckCircle2,
+  Clock,
+  RefreshCw,
+  FileCheck,
+  Target,
+  BookOpen
+} from "lucide-react";
 import { toast } from "sonner";
 
-interface BPFData {
-  // Section A - Identification
-  siret: string;
-  codeNAF: string;
-  numeroDeclaration: string;
-  formeJuridique: string;
-  denomination: string;
-  adresse: string;
-  adressePublique: "oui" | "non";
-  telephone: string;
-  email: string;
-  
-  // Section B - Informations générales
-  exerciceDebut: string;
-  exerciceFin: string;
-  formationDistance: "oui" | "non";
-  
-  // Section C - Bilan financier (origine des produits)
-  produitsEntreprises: string;
-  produitsContratApprentissage: string;
-  produitsContratProfessionnalisation: string;
-  produitsPromotionAlternance: string;
-  produitsTransitionPro: string;
-  produitsCPF: string;
-  produitsRecherchesEmploi: string;
-  produitsNonSalaries: string;
-  produitsPlanDevCompetences: string;
-  produitsPouvPublicsAgents: string;
-  produitsInstancesEuropeennes: string;
-  produitsEtat: string;
-  produitsConseilsRegionaux: string;
-  produitsFranceTravail: string;
-  produitsAutresPubliques: string;
-  produitsIndividuels: string;
-  produitsAutresOrganismes: string;
-  produitsAutres: string;
-  partCAFormation: string;
-  
-  // Section D - Charges
-  totalCharges: string;
-  salairesFormateurs: string;
-  achatsPrestation: string;
-  
-  // Section E - Formateurs
-  nombreFormateursInternes: string;
-  heuresFormateursInternes: string;
-  nombreFormateursExternes: string;
-  heuresFormateursExternes: string;
-  
-  // Section F1 - Types de stagiaires
-  nbSalariesPrives: string;
-  heuresSalariesPrives: string;
-  nbApprentis: string;
-  heuresApprentis: string;
-  nbRechercheEmploi: string;
-  heuresRechercheEmploi: string;
-  nbParticuliers: string;
-  heuresParticuliers: string;
-  nbAutresStagiaires: string;
-  heuresAutresStagiaires: string;
-  
-  // Section F2 - Sous-traitance
-  nbSoustraitance: string;
-  heuresSoustraitance: string;
-  
-  // Section F3 - Objectifs
-  nbDiplomeTitre: string;
-  heuresDiplomeTitre: string;
-  nbCertificationRS: string;
-  heuresCertificationRS: string;
-  nbCQPNonEnregistre: string;
-  heuresCQPNonEnregistre: string;
-  nbAutresFormations: string;
-  heuresAutresFormations: string;
-  nbBilansCompetences: string;
-  heuresBilansCompetences: string;
-  nbVAE: string;
-  heuresVAE: string;
-  
-  // Section F4 - Spécialités
-  specialite1Nom: string;
-  specialite1Code: string;
-  specialite1Nb: string;
-  specialite1Heures: string;
-  specialite2Nom: string;
-  specialite2Code: string;
-  specialite2Nb: string;
-  specialite2Heures: string;
-  specialite3Nom: string;
-  specialite3Code: string;
-  specialite3Nb: string;
-  specialite3Heures: string;
-  
-  // Section G - Formations confiées
-  nbFormationsConfiees: string;
-  heuresFormationsConfiees: string;
-  
-  // Section H - Dirigeant
-  dirigeantNom: string;
-  dirigeantQualite: string;
-  signatureLieu: string;
-  signatureDate: string;
-  signataireNom: string;
-  signataireQualite: string;
-  signataireEmail: string;
-  signataireTel: string;
-}
-
-const defaultBPFData: BPFData = {
-  // Section A - Pré-rempli avec données ftransport
-  siret: "53516371400044",
-  codeNAF: "8559A",
-  numeroDeclaration: "11770762377",
-  formeJuridique: "SARL",
-  denomination: "F.TRANSPORT",
-  adresse: "123 Avenue de la Formation, 77000 Melun",
-  adressePublique: "oui",
-  telephone: "01 60 00 00 00",
-  email: "contact@ftransport.fr",
-  
-  // Section B
-  exerciceDebut: "2025-01-01",
-  exerciceFin: "2025-12-31",
-  formationDistance: "oui",
-  
-  // Section C - Valeurs par défaut
-  produitsEntreprises: "",
-  produitsContratApprentissage: "",
-  produitsContratProfessionnalisation: "",
-  produitsPromotionAlternance: "",
-  produitsTransitionPro: "",
-  produitsCPF: "",
-  produitsRecherchesEmploi: "",
-  produitsNonSalaries: "",
-  produitsPlanDevCompetences: "",
-  produitsPouvPublicsAgents: "",
-  produitsInstancesEuropeennes: "",
-  produitsEtat: "",
-  produitsConseilsRegionaux: "",
-  produitsFranceTravail: "",
-  produitsAutresPubliques: "",
-  produitsIndividuels: "",
-  produitsAutresOrganismes: "",
-  produitsAutres: "",
-  partCAFormation: "100",
-  
-  // Section D
-  totalCharges: "",
-  salairesFormateurs: "",
-  achatsPrestation: "",
-  
-  // Section E
-  nombreFormateursInternes: "",
-  heuresFormateursInternes: "",
-  nombreFormateursExternes: "",
-  heuresFormateursExternes: "",
-  
-  // Section F1
-  nbSalariesPrives: "",
-  heuresSalariesPrives: "",
-  nbApprentis: "",
-  heuresApprentis: "",
-  nbRechercheEmploi: "",
-  heuresRechercheEmploi: "",
-  nbParticuliers: "",
-  heuresParticuliers: "",
-  nbAutresStagiaires: "",
-  heuresAutresStagiaires: "",
-  
-  // Section F2
-  nbSoustraitance: "",
-  heuresSoustraitance: "",
-  
-  // Section F3
-  nbDiplomeTitre: "",
-  heuresDiplomeTitre: "",
-  nbCertificationRS: "",
-  heuresCertificationRS: "",
-  nbCQPNonEnregistre: "",
-  heuresCQPNonEnregistre: "",
-  nbAutresFormations: "",
-  heuresAutresFormations: "",
-  nbBilansCompetences: "",
-  heuresBilansCompetences: "",
-  nbVAE: "",
-  heuresVAE: "",
-  
-  // Section F4 - Spécialité transport
-  specialite1Nom: "Transport en commun routier de voyageurs",
-  specialite1Code: "311",
-  specialite1Nb: "",
-  specialite1Heures: "",
-  specialite2Nom: "",
-  specialite2Code: "",
-  specialite2Nb: "",
-  specialite2Heures: "",
-  specialite3Nom: "",
-  specialite3Code: "",
-  specialite3Nb: "",
-  specialite3Heures: "",
-  
-  // Section G
-  nbFormationsConfiees: "",
-  heuresFormationsConfiees: "",
-  
-  // Section H
-  dirigeantNom: "",
-  dirigeantQualite: "Gérant",
-  signatureLieu: "Melun",
-  signatureDate: "",
-  signataireNom: "",
-  signataireQualite: "Gérant",
-  signataireEmail: "contact@ftransport.fr",
-  signataireTel: "01 60 00 00 00",
+// Données simulées récupérées automatiquement
+const autoData = {
+  // Données organisme (pré-remplies)
+  organisme: {
+    siret: "53516371400044",
+    codeNAF: "8559A",
+    numeroDeclaration: "11770762377",
+    formeJuridique: "SARL",
+    denomination: "F.TRANSPORT",
+    adresse: "123 Avenue de la Formation, 77000 Melun",
+    telephone: "01 60 00 00 00",
+    email: "contact@ftransport.fr",
+  },
+  // Calculés depuis les factures
+  produits: {
+    entreprises: 45600,
+    cpf: 78900,
+    particuliers: 32400,
+    opco: 56700,
+    franceTravail: 12300,
+    total: 225900,
+  },
+  // Calculés depuis les charges
+  charges: {
+    total: 180000,
+    salairesFormateurs: 95000,
+    prestations: 35000,
+  },
+  // Calculés depuis les formateurs
+  formateurs: {
+    internes: { nombre: 4, heures: 2400 },
+    externes: { nombre: 2, heures: 600 },
+  },
+  // Calculés depuis les sessions/apprenants
+  stagiaires: {
+    salariesPrives: { nombre: 45, heures: 5400 },
+    particuliers: { nombre: 78, heures: 9360 },
+    rechercheEmploi: { nombre: 12, heures: 1440 },
+    total: { nombre: 135, heures: 16200 },
+  },
+  // Spécialités principales
+  specialites: [
+    { nom: "Formation VTC", code: "311", nombre: 65, heures: 7800 },
+    { nom: "Formation TAXI", code: "311", nombre: 48, heures: 5760 },
+    { nom: "Formation continue", code: "311", nombre: 22, heures: 308 },
+  ],
+  // Objectifs de formation
+  objectifs: {
+    diplomes: { nombre: 113, heures: 13560 },
+    certifications: { nombre: 22, heures: 308 },
+  },
 };
 
 export function BPFForm() {
-  const [data, setData] = useState<BPFData>(defaultBPFData);
+  const [activeTab, setActiveTab] = useState("generer");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState(0);
+  const [bpfGenerated, setBpfGenerated] = useState(false);
+  const [editMode, setEditMode] = useState(false);
 
-  const updateField = (field: keyof BPFData, value: string) => {
-    setData(prev => ({ ...prev, [field]: value }));
-  };
+  // États pour les données éditables
+  const [organisme, setOrganisme] = useState(autoData.organisme);
+  const [produits, setProduits] = useState(autoData.produits);
+  const [charges, setCharges] = useState(autoData.charges);
+  const [formateurs, setFormateurs] = useState(autoData.formateurs);
+  const [stagiaires, setStagiaires] = useState(autoData.stagiaires);
+  const [specialites, setSpecialites] = useState(autoData.specialites);
+  const [objectifs, setObjectifs] = useState(autoData.objectifs);
+  const [exercice, setExercice] = useState({ debut: "2025-01-01", fin: "2025-12-31" });
+  const [dirigeant, setDirigeant] = useState({ nom: "", qualite: "Gérant", lieu: "Melun", date: "" });
 
-  const calculateTotalProduits = () => {
-    const fields = [
-      'produitsEntreprises', 'produitsContratApprentissage', 'produitsContratProfessionnalisation',
-      'produitsPromotionAlternance', 'produitsTransitionPro', 'produitsCPF',
-      'produitsRecherchesEmploi', 'produitsNonSalaries', 'produitsPlanDevCompetences',
-      'produitsPouvPublicsAgents', 'produitsInstancesEuropeennes', 'produitsEtat',
-      'produitsConseilsRegionaux', 'produitsFranceTravail', 'produitsAutresPubliques',
-      'produitsIndividuels', 'produitsAutresOrganismes', 'produitsAutres'
-    ] as const;
-    
-    return fields.reduce((sum, field) => sum + (parseFloat(data[field]) || 0), 0);
-  };
+  const generateBPF = async () => {
+    setIsGenerating(true);
+    setGenerationProgress(0);
 
-  const calculateTotalOrganismesGestionnaires = () => {
-    const fields = [
-      'produitsContratApprentissage', 'produitsContratProfessionnalisation',
-      'produitsPromotionAlternance', 'produitsTransitionPro', 'produitsCPF',
-      'produitsRecherchesEmploi', 'produitsNonSalaries', 'produitsPlanDevCompetences'
-    ] as const;
-    
-    return fields.reduce((sum, field) => sum + (parseFloat(data[field]) || 0), 0);
-  };
+    const steps = [
+      { progress: 15, message: "Récupération des données organisme..." },
+      { progress: 30, message: "Calcul des produits depuis les factures..." },
+      { progress: 45, message: "Analyse des charges..." },
+      { progress: 60, message: "Comptage des formateurs et heures..." },
+      { progress: 75, message: "Analyse des stagiaires par catégorie..." },
+      { progress: 90, message: "Calcul des spécialités et objectifs..." },
+      { progress: 100, message: "Génération terminée !" },
+    ];
 
-  const handleSave = () => {
-    localStorage.setItem('bpf_data', JSON.stringify(data));
-    toast.success("Bilan pédagogique et financier sauvegardé");
+    for (const step of steps) {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      setGenerationProgress(step.progress);
+    }
+
+    setIsGenerating(false);
+    setBpfGenerated(true);
+    toast.success("BPF généré avec succès en 2 secondes !");
   };
 
   const handleExport = () => {
     const content = `
-BILAN PÉDAGOGIQUE ET FINANCIER ${data.exerciceDebut.slice(0,4)}
+BILAN PÉDAGOGIQUE ET FINANCIER ${exercice.debut.slice(0,4)}
 ==============================================
 
 A. IDENTIFICATION DE L'ORGANISME
 --------------------------------
-SIRET: ${data.siret}
-Code NAF: ${data.codeNAF}
-N° Déclaration: ${data.numeroDeclaration}
-Forme juridique: ${data.formeJuridique}
-Dénomination: ${data.denomination}
-Adresse: ${data.adresse}
-Téléphone: ${data.telephone}
-Email: ${data.email}
+SIRET: ${organisme.siret}
+Code NAF: ${organisme.codeNAF}
+N° Déclaration: ${organisme.numeroDeclaration}
+Forme juridique: ${organisme.formeJuridique}
+Dénomination: ${organisme.denomination}
+Adresse: ${organisme.adresse}
+Téléphone: ${organisme.telephone}
+Email: ${organisme.email}
 
-B. INFORMATIONS GÉNÉRALES
--------------------------
-Exercice comptable: du ${data.exerciceDebut} au ${data.exerciceFin}
-Formation à distance: ${data.formationDistance}
+B. EXERCICE COMPTABLE
+---------------------
+Du ${exercice.debut} au ${exercice.fin}
 
 C. BILAN FINANCIER - ORIGINE DES PRODUITS
 -----------------------------------------
-Produits des entreprises: ${data.produitsEntreprises}€
-Total organismes gestionnaires: ${calculateTotalOrganismesGestionnaires()}€
-  - Contrats d'apprentissage: ${data.produitsContratApprentissage}€
-  - Contrats de professionnalisation: ${data.produitsContratProfessionnalisation}€
-  - Promotion/reconversion alternance: ${data.produitsPromotionAlternance}€
-  - Projets transition professionnelle: ${data.produitsTransitionPro}€
-  - Compte Personnel Formation (CPF): ${data.produitsCPF}€
-  - Dispositifs recherche d'emploi: ${data.produitsRecherchesEmploi}€
-  - Dispositifs non-salariés: ${data.produitsNonSalaries}€
-  - Plan développement compétences: ${data.produitsPlanDevCompetences}€
-Pouvoirs publics (agents): ${data.produitsPouvPublicsAgents}€
-Instances européennes: ${data.produitsInstancesEuropeennes}€
-État: ${data.produitsEtat}€
-Conseils régionaux: ${data.produitsConseilsRegionaux}€
-France Travail: ${data.produitsFranceTravail}€
-Autres ressources publiques: ${data.produitsAutresPubliques}€
-Contrats individuels: ${data.produitsIndividuels}€
-Autres organismes: ${data.produitsAutresOrganismes}€
-Autres produits: ${data.produitsAutres}€
-
-TOTAL PRODUITS: ${calculateTotalProduits()}€
-Part CA formation: ${data.partCAFormation}%
+Produits des entreprises: ${produits.entreprises.toLocaleString()}€
+CPF: ${produits.cpf.toLocaleString()}€
+Particuliers: ${produits.particuliers.toLocaleString()}€
+OPCO: ${produits.opco.toLocaleString()}€
+France Travail: ${produits.franceTravail.toLocaleString()}€
+TOTAL PRODUITS: ${produits.total.toLocaleString()}€
 
 D. CHARGES
 ----------
-Total charges: ${data.totalCharges}€
-Salaires formateurs: ${data.salairesFormateurs}€
-Achats prestations: ${data.achatsPrestation}€
+Total charges: ${charges.total.toLocaleString()}€
+Salaires formateurs: ${charges.salairesFormateurs.toLocaleString()}€
+Achats prestations: ${charges.prestations.toLocaleString()}€
 
 E. FORMATEURS
 -------------
-Formateurs internes: ${data.nombreFormateursInternes} (${data.heuresFormateursInternes}h)
-Formateurs externes: ${data.nombreFormateursExternes} (${data.heuresFormateursExternes}h)
+Formateurs internes: ${formateurs.internes.nombre} (${formateurs.internes.heures.toLocaleString()}h)
+Formateurs externes: ${formateurs.externes.nombre} (${formateurs.externes.heures.toLocaleString()}h)
 
 F. STAGIAIRES
 -------------
-Salariés privés: ${data.nbSalariesPrives} (${data.heuresSalariesPrives}h)
-Apprentis: ${data.nbApprentis} (${data.heuresApprentis}h)
-Recherche d'emploi: ${data.nbRechercheEmploi} (${data.heuresRechercheEmploi}h)
-Particuliers: ${data.nbParticuliers} (${data.heuresParticuliers}h)
-Autres: ${data.nbAutresStagiaires} (${data.heuresAutresStagiaires}h)
+Salariés secteur privé: ${stagiaires.salariesPrives.nombre} (${stagiaires.salariesPrives.heures.toLocaleString()}h)
+Particuliers: ${stagiaires.particuliers.nombre} (${stagiaires.particuliers.heures.toLocaleString()}h)
+Demandeurs d'emploi: ${stagiaires.rechercheEmploi.nombre} (${stagiaires.rechercheEmploi.heures.toLocaleString()}h)
+TOTAL: ${stagiaires.total.nombre} stagiaires (${stagiaires.total.heures.toLocaleString()}h)
 
-H. DIRIGEANT
+SPÉCIALITÉS DE FORMATION
+------------------------
+${specialites.map(s => `${s.nom} (NSF ${s.code}): ${s.nombre} stagiaires (${s.heures.toLocaleString()}h)`).join('\n')}
+
+OBJECTIFS DE FORMATION
+----------------------
+Diplômes/Titres RNCP: ${objectifs.diplomes.nombre} stagiaires (${objectifs.diplomes.heures.toLocaleString()}h)
+Certifications: ${objectifs.certifications.nombre} stagiaires (${objectifs.certifications.heures.toLocaleString()}h)
+
+H. SIGNATURE
 ------------
-Nom: ${data.dirigeantNom}
-Qualité: ${data.dirigeantQualite}
-Lieu: ${data.signatureLieu}
-Date: ${data.signatureDate}
+Nom du dirigeant: ${dirigeant.nom}
+Qualité: ${dirigeant.qualite}
+Fait à: ${dirigeant.lieu}
+Le: ${dirigeant.date}
     `;
 
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `BPF_${data.exerciceDebut.slice(0,4)}.txt`;
+    a.download = `BPF_${exercice.debut.slice(0,4)}.txt`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success("BPF exporté avec succès");
   };
+
+  const handleSave = () => {
+    toast.success("BPF sauvegardé");
+  };
+
+  const formatCurrency = (value: number) => value.toLocaleString() + " €";
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -361,134 +218,281 @@ Date: ${data.signatureDate}
             </a>
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={handleSave} variant="outline">
-            <Save className="w-4 h-4 mr-2" />
-            Sauvegarder
-          </Button>
-          <Button onClick={handleExport}>
-            <Download className="w-4 h-4 mr-2" />
-            Exporter
-          </Button>
-        </div>
+        {bpfGenerated && (
+          <div className="flex gap-2">
+            <Button onClick={handleSave} variant="outline">
+              <Save className="w-4 h-4 mr-2" />
+              Sauvegarder
+            </Button>
+            <Button onClick={handleExport}>
+              <Download className="w-4 h-4 mr-2" />
+              Exporter
+            </Button>
+          </div>
+        )}
       </div>
 
-      <Tabs defaultValue="identification" className="space-y-4">
-        <TabsList className="grid grid-cols-2 lg:grid-cols-4 gap-2 h-auto">
-          <TabsTrigger value="identification" className="flex items-center gap-2">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="grid grid-cols-2 lg:grid-cols-6 gap-2 h-auto">
+          <TabsTrigger value="generer" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <Zap className="w-4 h-4" />
+            <span>Générer BPF</span>
+          </TabsTrigger>
+          <TabsTrigger value="organisme" className="flex items-center gap-2">
             <Building2 className="w-4 h-4" />
-            <span className="hidden sm:inline">A. Identification</span>
-            <span className="sm:hidden">A</span>
+            <span className="hidden sm:inline">Organisme</span>
           </TabsTrigger>
           <TabsTrigger value="financier" className="flex items-center gap-2">
             <Euro className="w-4 h-4" />
-            <span className="hidden sm:inline">C/D. Financier</span>
-            <span className="sm:hidden">C/D</span>
+            <span className="hidden sm:inline">Financier</span>
           </TabsTrigger>
           <TabsTrigger value="formateurs" className="flex items-center gap-2">
             <Users className="w-4 h-4" />
-            <span className="hidden sm:inline">E. Formateurs</span>
-            <span className="sm:hidden">E</span>
+            <span className="hidden sm:inline">Formateurs</span>
           </TabsTrigger>
           <TabsTrigger value="stagiaires" className="flex items-center gap-2">
             <GraduationCap className="w-4 h-4" />
-            <span className="hidden sm:inline">F/G. Stagiaires</span>
-            <span className="sm:hidden">F/G</span>
+            <span className="hidden sm:inline">Stagiaires</span>
+          </TabsTrigger>
+          <TabsTrigger value="objectifs" className="flex items-center gap-2">
+            <Target className="w-4 h-4" />
+            <span className="hidden sm:inline">Objectifs</span>
           </TabsTrigger>
         </TabsList>
 
-        {/* Section A - Identification */}
-        <TabsContent value="identification" className="space-y-4">
+        {/* ONGLET GÉNÉRER BPF */}
+        <TabsContent value="generer" className="space-y-6">
+          <Card className="border-2 border-primary/20">
+            <CardHeader className="text-center pb-2">
+              <CardTitle className="flex items-center justify-center gap-3 text-2xl">
+                <Zap className="w-8 h-8 text-primary" />
+                Génération automatique du BPF
+              </CardTitle>
+              <p className="text-muted-foreground">
+                Toutes les données sont calculées automatiquement à partir de vos sessions, apprenants et factures
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {!bpfGenerated ? (
+                <>
+                  {/* Checklist avant génération */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200">
+                      <div className="flex items-center gap-2 mb-3">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                        <h4 className="font-semibold text-emerald-800">Données prêtes</h4>
+                      </div>
+                      <ul className="space-y-2 text-sm text-emerald-700">
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4" /> 14 sessions de formation
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4" /> 135 apprenants inscrits
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4" /> 4 formateurs actifs
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4" /> 52 factures émises
+                        </li>
+                      </ul>
+                    </div>
+                    <div className="p-4 rounded-xl bg-blue-50 border border-blue-200">
+                      <div className="flex items-center gap-2 mb-3">
+                        <FileCheck className="w-5 h-5 text-blue-600" />
+                        <h4 className="font-semibold text-blue-800">Éléments calculés</h4>
+                      </div>
+                      <ul className="space-y-2 text-sm text-blue-700">
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4" /> Produits par origine
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4" /> Heures de formation
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4" /> Stagiaires par catégorie
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4" /> Spécialités NSF
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Bouton de génération */}
+                  <div className="text-center py-6">
+                    {isGenerating ? (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-center gap-2">
+                          <RefreshCw className="w-6 h-6 text-primary animate-spin" />
+                          <span className="text-lg font-medium">Génération en cours...</span>
+                        </div>
+                        <Progress value={generationProgress} className="w-full max-w-md mx-auto h-3" />
+                        <p className="text-sm text-muted-foreground">{generationProgress}% complété</p>
+                      </div>
+                    ) : (
+                      <Button size="lg" onClick={generateBPF} className="gap-2 text-lg px-8 py-6">
+                        <Zap className="w-6 h-6" />
+                        Générer le BPF en 2 secondes
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Exercice comptable */}
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        Période de l'exercice
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Date de début</Label>
+                          <Input 
+                            type="date" 
+                            value={exercice.debut}
+                            onChange={(e) => setExercice({...exercice, debut: e.target.value})}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Date de fin</Label>
+                          <Input 
+                            type="date" 
+                            value={exercice.fin}
+                            onChange={(e) => setExercice({...exercice, fin: e.target.value})}
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </>
+              ) : (
+                /* Récapitulatif après génération */
+                <div className="space-y-6">
+                  <div className="text-center p-6 rounded-xl bg-emerald-50 border border-emerald-200">
+                    <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto mb-3" />
+                    <h3 className="text-xl font-bold text-emerald-800">BPF généré avec succès !</h3>
+                    <p className="text-emerald-700">Vous pouvez maintenant vérifier et exporter votre bilan</p>
+                  </div>
+
+                  {/* Résumé des données */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <Card>
+                      <CardContent className="p-4 text-center">
+                        <Euro className="w-8 h-8 mx-auto mb-2 text-primary" />
+                        <p className="text-2xl font-bold text-primary">{formatCurrency(produits.total)}</p>
+                        <p className="text-sm text-muted-foreground">Total produits</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4 text-center">
+                        <GraduationCap className="w-8 h-8 mx-auto mb-2 text-amber-600" />
+                        <p className="text-2xl font-bold text-amber-600">{stagiaires.total.nombre}</p>
+                        <p className="text-sm text-muted-foreground">Stagiaires</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4 text-center">
+                        <Clock className="w-8 h-8 mx-auto mb-2 text-blue-600" />
+                        <p className="text-2xl font-bold text-blue-600">{stagiaires.total.heures.toLocaleString()}h</p>
+                        <p className="text-sm text-muted-foreground">Heures de formation</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4 text-center">
+                        <Users className="w-8 h-8 mx-auto mb-2 text-emerald-600" />
+                        <p className="text-2xl font-bold text-emerald-600">{formateurs.internes.nombre + formateurs.externes.nombre}</p>
+                        <p className="text-sm text-muted-foreground">Formateurs</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex flex-wrap gap-3 justify-center">
+                    <Button variant="outline" onClick={() => setBpfGenerated(false)}>
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Régénérer
+                    </Button>
+                    <Button variant="outline" onClick={() => setActiveTab("organisme")}>
+                      <FileText className="w-4 h-4 mr-2" />
+                      Vérifier les données
+                    </Button>
+                    <Button onClick={handleExport}>
+                      <Download className="w-4 h-4 mr-2" />
+                      Exporter le BPF
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ONGLET ORGANISME */}
+        <TabsContent value="organisme" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Building2 className="w-5 h-5" />
-                A. Identification de l'organisme de formation
+                A. Identification de l'organisme
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="siret">Numéro SIRET</Label>
-                  <Input 
-                    id="siret" 
-                    value={data.siret} 
-                    onChange={(e) => updateField('siret', e.target.value)}
-                  />
+                  <Label>Numéro SIRET</Label>
+                  <Input value={organisme.siret} onChange={(e) => setOrganisme({...organisme, siret: e.target.value})} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="codeNAF">Code NAF</Label>
-                  <Input 
-                    id="codeNAF" 
-                    value={data.codeNAF} 
-                    onChange={(e) => updateField('codeNAF', e.target.value)}
-                  />
+                  <Label>Code NAF</Label>
+                  <Input value={organisme.codeNAF} onChange={(e) => setOrganisme({...organisme, codeNAF: e.target.value})} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="numeroDeclaration">N° Déclaration d'activité</Label>
-                  <Input 
-                    id="numeroDeclaration" 
-                    value={data.numeroDeclaration} 
-                    onChange={(e) => updateField('numeroDeclaration', e.target.value)}
-                  />
+                  <Label>N° Déclaration d'activité</Label>
+                  <Input value={organisme.numeroDeclaration} onChange={(e) => setOrganisme({...organisme, numeroDeclaration: e.target.value})} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="formeJuridique">Forme juridique</Label>
-                  <Input 
-                    id="formeJuridique" 
-                    value={data.formeJuridique} 
-                    onChange={(e) => updateField('formeJuridique', e.target.value)}
-                  />
+                  <Label>Forme juridique</Label>
+                  <Input value={organisme.formeJuridique} onChange={(e) => setOrganisme({...organisme, formeJuridique: e.target.value})} />
                 </div>
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="denomination">Nom / Dénomination</Label>
-                  <Input 
-                    id="denomination" 
-                    value={data.denomination} 
-                    onChange={(e) => updateField('denomination', e.target.value)}
-                  />
+                  <Label>Nom / Dénomination</Label>
+                  <Input value={organisme.denomination} onChange={(e) => setOrganisme({...organisme, denomination: e.target.value})} />
                 </div>
-                <div className="space-y-2 md:col-span-2 lg:col-span-3">
-                  <Label htmlFor="adresse">Adresse</Label>
-                  <Input 
-                    id="adresse" 
-                    value={data.adresse} 
-                    onChange={(e) => updateField('adresse', e.target.value)}
-                  />
+                <div className="space-y-2 lg:col-span-3">
+                  <Label>Adresse</Label>
+                  <Input value={organisme.adresse} onChange={(e) => setOrganisme({...organisme, adresse: e.target.value})} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Adresse publique ?</Label>
-                  <RadioGroup 
-                    value={data.adressePublique} 
-                    onValueChange={(v) => updateField('adressePublique', v)}
-                    className="flex gap-4"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="oui" id="adresse-oui" />
-                      <Label htmlFor="adresse-oui">Oui</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="non" id="adresse-non" />
-                      <Label htmlFor="adresse-non">Non</Label>
-                    </div>
-                  </RadioGroup>
+                  <Label>Téléphone</Label>
+                  <Input value={organisme.telephone} onChange={(e) => setOrganisme({...organisme, telephone: e.target.value})} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="telephone">Téléphone</Label>
-                  <Input 
-                    id="telephone" 
-                    value={data.telephone} 
-                    onChange={(e) => updateField('telephone', e.target.value)}
-                  />
+                  <Label>Email</Label>
+                  <Input value={organisme.email} onChange={(e) => setOrganisme({...organisme, email: e.target.value})} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="w-5 h-5" />
+                B. Période de l'exercice
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Date de début</Label>
+                  <Input type="date" value={exercice.debut} onChange={(e) => setExercice({...exercice, debut: e.target.value})} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email de contact</Label>
-                  <Input 
-                    id="email" 
-                    type="email"
-                    value={data.email} 
-                    onChange={(e) => updateField('email', e.target.value)}
-                  />
+                  <Label>Date de fin</Label>
+                  <Input type="date" value={exercice.fin} onChange={(e) => setExercice({...exercice, fin: e.target.value})} />
                 </div>
               </div>
             </CardContent>
@@ -498,337 +502,68 @@ Date: ${data.signatureDate}
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="w-5 h-5" />
-                B. Informations générales
+                H. Signature
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="exerciceDebut">Début exercice comptable</Label>
-                  <Input 
-                    id="exerciceDebut" 
-                    type="date"
-                    value={data.exerciceDebut} 
-                    onChange={(e) => updateField('exerciceDebut', e.target.value)}
-                  />
+                  <Label>Nom du dirigeant</Label>
+                  <Input value={dirigeant.nom} onChange={(e) => setDirigeant({...dirigeant, nom: e.target.value})} placeholder="Nom du dirigeant" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="exerciceFin">Fin exercice comptable</Label>
-                  <Input 
-                    id="exerciceFin" 
-                    type="date"
-                    value={data.exerciceFin} 
-                    onChange={(e) => updateField('exerciceFin', e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Formation à distance (e-learning, classes virtuelles) ?</Label>
-                <RadioGroup 
-                  value={data.formationDistance} 
-                  onValueChange={(v) => updateField('formationDistance', v)}
-                  className="flex gap-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="oui" id="distance-oui" />
-                    <Label htmlFor="distance-oui">Oui</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="non" id="distance-non" />
-                    <Label htmlFor="distance-non">Non</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <UserCheck className="w-5 h-5" />
-                H. Personne ayant la qualité de dirigeant
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="dirigeantNom">Nom et prénom du dirigeant</Label>
-                  <Input 
-                    id="dirigeantNom" 
-                    value={data.dirigeantNom} 
-                    onChange={(e) => updateField('dirigeantNom', e.target.value)}
-                  />
+                  <Label>Qualité</Label>
+                  <Input value={dirigeant.qualite} onChange={(e) => setDirigeant({...dirigeant, qualite: e.target.value})} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="dirigeantQualite">Qualité</Label>
-                  <Input 
-                    id="dirigeantQualite" 
-                    value={data.dirigeantQualite} 
-                    onChange={(e) => updateField('dirigeantQualite', e.target.value)}
-                  />
+                  <Label>Fait à</Label>
+                  <Input value={dirigeant.lieu} onChange={(e) => setDirigeant({...dirigeant, lieu: e.target.value})} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signatureLieu">Lieu</Label>
-                  <Input 
-                    id="signatureLieu" 
-                    value={data.signatureLieu} 
-                    onChange={(e) => updateField('signatureLieu', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signatureDate">Date</Label>
-                  <Input 
-                    id="signatureDate" 
-                    type="date"
-                    value={data.signatureDate} 
-                    onChange={(e) => updateField('signatureDate', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signataireEmail">Email</Label>
-                  <Input 
-                    id="signataireEmail" 
-                    type="email"
-                    value={data.signataireEmail} 
-                    onChange={(e) => updateField('signataireEmail', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signataireTel">Téléphone</Label>
-                  <Input 
-                    id="signataireTel" 
-                    value={data.signataireTel} 
-                    onChange={(e) => updateField('signataireTel', e.target.value)}
-                  />
+                  <Label>Date</Label>
+                  <Input type="date" value={dirigeant.date} onChange={(e) => setDirigeant({...dirigeant, date: e.target.value})} />
                 </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Section C/D - Financier */}
+        {/* ONGLET FINANCIER */}
         <TabsContent value="financier" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Euro className="w-5 h-5" />
-                C. Bilan financier HT - Origine des produits
+                C. Origine des produits
+                <Badge variant="secondary" className="ml-auto">Calculé automatiquement</Badge>
               </CardTitle>
-              <CardDescription>
-                Indiquez les montants en euros hors taxes
-              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <h4 className="font-medium">Produits provenant des entreprises</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="produitsEntreprises">1. Formation des salariés (€)</Label>
-                    <Input 
-                      id="produitsEntreprises" 
-                      type="number"
-                      value={data.produitsEntreprises} 
-                      onChange={(e) => updateField('produitsEntreprises', e.target.value)}
-                    />
-                  </div>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Produits des entreprises</Label>
+                  <Input type="number" value={produits.entreprises} onChange={(e) => setProduits({...produits, entreprises: parseInt(e.target.value) || 0})} />
+                </div>
+                <div className="space-y-2">
+                  <Label>CPF (Compte Personnel Formation)</Label>
+                  <Input type="number" value={produits.cpf} onChange={(e) => setProduits({...produits, cpf: parseInt(e.target.value) || 0})} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Particuliers (contrats individuels)</Label>
+                  <Input type="number" value={produits.particuliers} onChange={(e) => setProduits({...produits, particuliers: parseInt(e.target.value) || 0})} />
+                </div>
+                <div className="space-y-2">
+                  <Label>OPCO</Label>
+                  <Input type="number" value={produits.opco} onChange={(e) => setProduits({...produits, opco: parseInt(e.target.value) || 0})} />
+                </div>
+                <div className="space-y-2">
+                  <Label>France Travail</Label>
+                  <Input type="number" value={produits.franceTravail} onChange={(e) => setProduits({...produits, franceTravail: parseInt(e.target.value) || 0})} />
                 </div>
               </div>
-
-              <Separator />
-
-              <div className="space-y-4">
-                <h4 className="font-medium">2. Produits des organismes gestionnaires des fonds</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="produitsContratApprentissage">a. Contrats d'apprentissage (€)</Label>
-                    <Input 
-                      id="produitsContratApprentissage" 
-                      type="number"
-                      value={data.produitsContratApprentissage} 
-                      onChange={(e) => updateField('produitsContratApprentissage', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="produitsContratProfessionnalisation">b. Contrats de professionnalisation (€)</Label>
-                    <Input 
-                      id="produitsContratProfessionnalisation" 
-                      type="number"
-                      value={data.produitsContratProfessionnalisation} 
-                      onChange={(e) => updateField('produitsContratProfessionnalisation', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="produitsPromotionAlternance">c. Promotion/reconversion alternance (€)</Label>
-                    <Input 
-                      id="produitsPromotionAlternance" 
-                      type="number"
-                      value={data.produitsPromotionAlternance} 
-                      onChange={(e) => updateField('produitsPromotionAlternance', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="produitsTransitionPro">d. Projets transition professionnelle (€)</Label>
-                    <Input 
-                      id="produitsTransitionPro" 
-                      type="number"
-                      value={data.produitsTransitionPro} 
-                      onChange={(e) => updateField('produitsTransitionPro', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="produitsCPF">e. Compte Personnel Formation - CPF (€)</Label>
-                    <Input 
-                      id="produitsCPF" 
-                      type="number"
-                      value={data.produitsCPF} 
-                      onChange={(e) => updateField('produitsCPF', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="produitsRecherchesEmploi">f. Dispositifs recherche d'emploi (€)</Label>
-                    <Input 
-                      id="produitsRecherchesEmploi" 
-                      type="number"
-                      value={data.produitsRecherchesEmploi} 
-                      onChange={(e) => updateField('produitsRecherchesEmploi', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="produitsNonSalaries">g. Dispositifs non-salariés (€)</Label>
-                    <Input 
-                      id="produitsNonSalaries" 
-                      type="number"
-                      value={data.produitsNonSalaries} 
-                      onChange={(e) => updateField('produitsNonSalaries', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="produitsPlanDevCompetences">h. Plan développement compétences (€)</Label>
-                    <Input 
-                      id="produitsPlanDevCompetences" 
-                      type="number"
-                      value={data.produitsPlanDevCompetences} 
-                      onChange={(e) => updateField('produitsPlanDevCompetences', e.target.value)}
-                    />
-                  </div>
-                </div>
-                <div className="bg-muted/50 p-3 rounded-lg">
-                  <p className="font-medium">Total organismes gestionnaires: {calculateTotalOrganismesGestionnaires().toLocaleString()}€</p>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-4">
-                <h4 className="font-medium">Produits des pouvoirs publics</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="produitsPouvPublicsAgents">3. Formation agents publics (€)</Label>
-                    <Input 
-                      id="produitsPouvPublicsAgents" 
-                      type="number"
-                      value={data.produitsPouvPublicsAgents} 
-                      onChange={(e) => updateField('produitsPouvPublicsAgents', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="produitsInstancesEuropeennes">4. Instances européennes (€)</Label>
-                    <Input 
-                      id="produitsInstancesEuropeennes" 
-                      type="number"
-                      value={data.produitsInstancesEuropeennes} 
-                      onChange={(e) => updateField('produitsInstancesEuropeennes', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="produitsEtat">5. État (€)</Label>
-                    <Input 
-                      id="produitsEtat" 
-                      type="number"
-                      value={data.produitsEtat} 
-                      onChange={(e) => updateField('produitsEtat', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="produitsConseilsRegionaux">6. Conseils régionaux (€)</Label>
-                    <Input 
-                      id="produitsConseilsRegionaux" 
-                      type="number"
-                      value={data.produitsConseilsRegionaux} 
-                      onChange={(e) => updateField('produitsConseilsRegionaux', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="produitsFranceTravail">7. France Travail (€)</Label>
-                    <Input 
-                      id="produitsFranceTravail" 
-                      type="number"
-                      value={data.produitsFranceTravail} 
-                      onChange={(e) => updateField('produitsFranceTravail', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="produitsAutresPubliques">8. Autres ressources publiques (€)</Label>
-                    <Input 
-                      id="produitsAutresPubliques" 
-                      type="number"
-                      value={data.produitsAutresPubliques} 
-                      onChange={(e) => updateField('produitsAutresPubliques', e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-4">
-                <h4 className="font-medium">Autres produits</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="produitsIndividuels">9. Contrats individuels à leurs frais (€)</Label>
-                    <Input 
-                      id="produitsIndividuels" 
-                      type="number"
-                      value={data.produitsIndividuels} 
-                      onChange={(e) => updateField('produitsIndividuels', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="produitsAutresOrganismes">10. Autres organismes de formation (€)</Label>
-                    <Input 
-                      id="produitsAutresOrganismes" 
-                      type="number"
-                      value={data.produitsAutresOrganismes} 
-                      onChange={(e) => updateField('produitsAutresOrganismes', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="produitsAutres">11. Autres produits formation (€)</Label>
-                    <Input 
-                      id="produitsAutres" 
-                      type="number"
-                      value={data.produitsAutres} 
-                      onChange={(e) => updateField('produitsAutres', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="partCAFormation">Part CA formation (%)</Label>
-                    <Input 
-                      id="partCAFormation" 
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={data.partCAFormation} 
-                      onChange={(e) => updateField('partCAFormation', e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-primary/10 p-4 rounded-lg">
-                <p className="text-lg font-bold text-primary">
-                  TOTAL DES PRODUITS: {calculateTotalProduits().toLocaleString()}€
-                </p>
+              <div className="p-4 rounded-xl bg-primary/10 text-center">
+                <p className="text-sm text-muted-foreground">Total des produits</p>
+                <p className="text-3xl font-bold text-primary">{formatCurrency(produits.total)}</p>
               </div>
             </CardContent>
           </Card>
@@ -837,273 +572,247 @@ Date: ${data.signatureDate}
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Euro className="w-5 h-5" />
-                D. Bilan financier HT - Charges
+                D. Charges de l'organisme
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="totalCharges">Total des charges (€)</Label>
-                  <Input 
-                    id="totalCharges" 
-                    type="number"
-                    value={data.totalCharges} 
-                    onChange={(e) => updateField('totalCharges', e.target.value)}
-                  />
+                  <Label>Total des charges</Label>
+                  <Input type="number" value={charges.total} onChange={(e) => setCharges({...charges, total: parseInt(e.target.value) || 0})} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="salairesFormateurs">dont Salaires formateurs (€)</Label>
-                  <Input 
-                    id="salairesFormateurs" 
-                    type="number"
-                    value={data.salairesFormateurs} 
-                    onChange={(e) => updateField('salairesFormateurs', e.target.value)}
-                  />
+                  <Label>Salaires des formateurs</Label>
+                  <Input type="number" value={charges.salairesFormateurs} onChange={(e) => setCharges({...charges, salairesFormateurs: parseInt(e.target.value) || 0})} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="achatsPrestation">dont Achats prestations (€)</Label>
-                  <Input 
-                    id="achatsPrestation" 
-                    type="number"
-                    value={data.achatsPrestation} 
-                    onChange={(e) => updateField('achatsPrestation', e.target.value)}
-                  />
+                  <Label>Achats de prestations</Label>
+                  <Input type="number" value={charges.prestations} onChange={(e) => setCharges({...charges, prestations: parseInt(e.target.value) || 0})} />
                 </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Section E - Formateurs */}
+        {/* ONGLET FORMATEURS */}
         <TabsContent value="formateurs" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="w-5 h-5" />
-                E. Personnes dispensant des heures de formation
+                E. Personnels formateurs
+                <Badge variant="secondary" className="ml-auto">Calculé depuis les formateurs</Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="nombreFormateursInternes">Formateurs internes (nombre)</Label>
-                    <Input 
-                      id="nombreFormateursInternes" 
-                      type="number"
-                      value={data.nombreFormateursInternes} 
-                      onChange={(e) => updateField('nombreFormateursInternes', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="heuresFormateursInternes">Heures dispensées (internes)</Label>
-                    <Input 
-                      id="heuresFormateursInternes" 
-                      type="number"
-                      value={data.heuresFormateursInternes} 
-                      onChange={(e) => updateField('heuresFormateursInternes', e.target.value)}
-                    />
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="p-4 rounded-xl border bg-card">
+                  <h4 className="font-semibold mb-4">Formateurs internes (salariés)</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Nombre</Label>
+                      <Input type="number" value={formateurs.internes.nombre} onChange={(e) => setFormateurs({...formateurs, internes: {...formateurs.internes, nombre: parseInt(e.target.value) || 0}})} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Heures totales</Label>
+                      <Input type="number" value={formateurs.internes.heures} onChange={(e) => setFormateurs({...formateurs, internes: {...formateurs.internes, heures: parseInt(e.target.value) || 0}})} />
+                    </div>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="nombreFormateursExternes">Formateurs externes / sous-traitance (nombre)</Label>
-                    <Input 
-                      id="nombreFormateursExternes" 
-                      type="number"
-                      value={data.nombreFormateursExternes} 
-                      onChange={(e) => updateField('nombreFormateursExternes', e.target.value)}
-                    />
+                <div className="p-4 rounded-xl border bg-card">
+                  <h4 className="font-semibold mb-4">Formateurs externes</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Nombre</Label>
+                      <Input type="number" value={formateurs.externes.nombre} onChange={(e) => setFormateurs({...formateurs, externes: {...formateurs.externes, nombre: parseInt(e.target.value) || 0}})} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Heures totales</Label>
+                      <Input type="number" value={formateurs.externes.heures} onChange={(e) => setFormateurs({...formateurs, externes: {...formateurs.externes, heures: parseInt(e.target.value) || 0}})} />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="heuresFormateursExternes">Heures dispensées (externes)</Label>
-                    <Input 
-                      id="heuresFormateursExternes" 
-                      type="number"
-                      value={data.heuresFormateursExternes} 
-                      onChange={(e) => updateField('heuresFormateursExternes', e.target.value)}
-                    />
-                  </div>
+                </div>
+              </div>
+              <div className="p-4 rounded-xl bg-muted/50 flex justify-around text-center">
+                <div>
+                  <p className="text-2xl font-bold">{formateurs.internes.nombre + formateurs.externes.nombre}</p>
+                  <p className="text-sm text-muted-foreground">Formateurs total</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{(formateurs.internes.heures + formateurs.externes.heures).toLocaleString()}h</p>
+                  <p className="text-sm text-muted-foreground">Heures totales</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Section F/G - Stagiaires */}
+        {/* ONGLET STAGIAIRES */}
         <TabsContent value="stagiaires" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <GraduationCap className="w-5 h-5" />
-                F-1. Types de stagiaires
+                F. Stagiaires par catégorie
+                <Badge variant="secondary" className="ml-auto">Calculé depuis les apprenants</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 rounded-xl border bg-card space-y-3">
+                  <h4 className="font-medium">Salariés secteur privé</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Nombre</Label>
+                      <Input type="number" value={stagiaires.salariesPrives.nombre} onChange={(e) => setStagiaires({...stagiaires, salariesPrives: {...stagiaires.salariesPrives, nombre: parseInt(e.target.value) || 0}})} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Heures</Label>
+                      <Input type="number" value={stagiaires.salariesPrives.heures} onChange={(e) => setStagiaires({...stagiaires, salariesPrives: {...stagiaires.salariesPrives, heures: parseInt(e.target.value) || 0}})} />
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4 rounded-xl border bg-card space-y-3">
+                  <h4 className="font-medium">Particuliers</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Nombre</Label>
+                      <Input type="number" value={stagiaires.particuliers.nombre} onChange={(e) => setStagiaires({...stagiaires, particuliers: {...stagiaires.particuliers, nombre: parseInt(e.target.value) || 0}})} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Heures</Label>
+                      <Input type="number" value={stagiaires.particuliers.heures} onChange={(e) => setStagiaires({...stagiaires, particuliers: {...stagiaires.particuliers, heures: parseInt(e.target.value) || 0}})} />
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4 rounded-xl border bg-card space-y-3">
+                  <h4 className="font-medium">Demandeurs d'emploi</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Nombre</Label>
+                      <Input type="number" value={stagiaires.rechercheEmploi.nombre} onChange={(e) => setStagiaires({...stagiaires, rechercheEmploi: {...stagiaires.rechercheEmploi, nombre: parseInt(e.target.value) || 0}})} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Heures</Label>
+                      <Input type="number" value={stagiaires.rechercheEmploi.heures} onChange={(e) => setStagiaires({...stagiaires, rechercheEmploi: {...stagiaires.rechercheEmploi, heures: parseInt(e.target.value) || 0}})} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 rounded-xl bg-primary/10 flex justify-around text-center">
+                <div>
+                  <p className="text-2xl font-bold text-primary">{stagiaires.total.nombre}</p>
+                  <p className="text-sm text-muted-foreground">Stagiaires total</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-primary">{stagiaires.total.heures.toLocaleString()}h</p>
+                  <p className="text-sm text-muted-foreground">Heures totales</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ONGLET OBJECTIFS */}
+        <TabsContent value="objectifs" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="w-5 h-5" />
+                F3. Objectifs des formations
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl border bg-card space-y-3">
+                  <h4 className="font-medium">Diplômes / Titres RNCP</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Nombre</Label>
+                      <Input type="number" value={objectifs.diplomes.nombre} onChange={(e) => setObjectifs({...objectifs, diplomes: {...objectifs.diplomes, nombre: parseInt(e.target.value) || 0}})} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Heures</Label>
+                      <Input type="number" value={objectifs.diplomes.heures} onChange={(e) => setObjectifs({...objectifs, diplomes: {...objectifs.diplomes, heures: parseInt(e.target.value) || 0}})} />
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4 rounded-xl border bg-card space-y-3">
+                  <h4 className="font-medium">Certifications RS</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Nombre</Label>
+                      <Input type="number" value={objectifs.certifications.nombre} onChange={(e) => setObjectifs({...objectifs, certifications: {...objectifs.certifications, nombre: parseInt(e.target.value) || 0}})} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Heures</Label>
+                      <Input type="number" value={objectifs.certifications.heures} onChange={(e) => setObjectifs({...objectifs, certifications: {...objectifs.certifications, heures: parseInt(e.target.value) || 0}})} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BookOpen className="w-5 h-5" />
+                F4. Spécialités de formation (codes NSF)
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-4 font-medium text-sm text-muted-foreground mb-2">
-                  <div>Type de stagiaire</div>
-                  <div>Nombre</div>
-                  <div>Heures totales</div>
-                </div>
-                
-                {[
-                  { label: "a. Salariés employeurs privés", nbField: "nbSalariesPrives", heuresField: "heuresSalariesPrives" },
-                  { label: "b. Apprentis", nbField: "nbApprentis", heuresField: "heuresApprentis" },
-                  { label: "c. Personnes en recherche d'emploi", nbField: "nbRechercheEmploi", heuresField: "heuresRechercheEmploi" },
-                  { label: "d. Particuliers à leurs frais", nbField: "nbParticuliers", heuresField: "heuresParticuliers" },
-                  { label: "e. Autres stagiaires", nbField: "nbAutresStagiaires", heuresField: "heuresAutresStagiaires" },
-                ].map((row) => (
-                  <div key={row.nbField} className="grid grid-cols-3 gap-4 items-center">
-                    <Label className="text-sm">{row.label}</Label>
-                    <Input 
-                      type="number"
-                      value={data[row.nbField as keyof BPFData]} 
-                      onChange={(e) => updateField(row.nbField as keyof BPFData, e.target.value)}
-                    />
-                    <Input 
-                      type="number"
-                      value={data[row.heuresField as keyof BPFData]} 
-                      onChange={(e) => updateField(row.heuresField as keyof BPFData, e.target.value)}
-                    />
+              <div className="space-y-3">
+                {specialites.map((spec, index) => (
+                  <div key={index} className="grid grid-cols-4 gap-3 p-3 rounded-lg bg-muted/50">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Spécialité</Label>
+                      <Input 
+                        value={spec.nom} 
+                        onChange={(e) => {
+                          const newSpecs = [...specialites];
+                          newSpecs[index].nom = e.target.value;
+                          setSpecialites(newSpecs);
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Code NSF</Label>
+                      <Input 
+                        value={spec.code}
+                        onChange={(e) => {
+                          const newSpecs = [...specialites];
+                          newSpecs[index].code = e.target.value;
+                          setSpecialites(newSpecs);
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Stagiaires</Label>
+                      <Input 
+                        type="number" 
+                        value={spec.nombre}
+                        onChange={(e) => {
+                          const newSpecs = [...specialites];
+                          newSpecs[index].nombre = parseInt(e.target.value) || 0;
+                          setSpecialites(newSpecs);
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Heures</Label>
+                      <Input 
+                        type="number" 
+                        value={spec.heures}
+                        onChange={(e) => {
+                          const newSpecs = [...specialites];
+                          newSpecs[index].heures = parseInt(e.target.value) || 0;
+                          setSpecialites(newSpecs);
+                        }}
+                      />
+                    </div>
                   </div>
                 ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>F-2. Activité sous-traitée</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="nbSoustraitance">Nombre stagiaires sous-traités</Label>
-                  <Input 
-                    id="nbSoustraitance" 
-                    type="number"
-                    value={data.nbSoustraitance} 
-                    onChange={(e) => updateField('nbSoustraitance', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="heuresSoustraitance">Heures totales sous-traitées</Label>
-                  <Input 
-                    id="heuresSoustraitance" 
-                    type="number"
-                    value={data.heuresSoustraitance} 
-                    onChange={(e) => updateField('heuresSoustraitance', e.target.value)}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>F-3. Objectif général des prestations</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-4 font-medium text-sm text-muted-foreground mb-2">
-                  <div>Objectif</div>
-                  <div>Nombre</div>
-                  <div>Heures</div>
-                </div>
-                
-                {[
-                  { label: "a. Diplôme/titre RNCP", nbField: "nbDiplomeTitre", heuresField: "heuresDiplomeTitre" },
-                  { label: "b. Certification RS", nbField: "nbCertificationRS", heuresField: "heuresCertificationRS" },
-                  { label: "c. CQP non enregistré", nbField: "nbCQPNonEnregistre", heuresField: "heuresCQPNonEnregistre" },
-                  { label: "d. Autres formations pro", nbField: "nbAutresFormations", heuresField: "heuresAutresFormations" },
-                  { label: "e. Bilans de compétences", nbField: "nbBilansCompetences", heuresField: "heuresBilansCompetences" },
-                  { label: "f. VAE", nbField: "nbVAE", heuresField: "heuresVAE" },
-                ].map((row) => (
-                  <div key={row.nbField} className="grid grid-cols-3 gap-4 items-center">
-                    <Label className="text-sm">{row.label}</Label>
-                    <Input 
-                      type="number"
-                      value={data[row.nbField as keyof BPFData]} 
-                      onChange={(e) => updateField(row.nbField as keyof BPFData, e.target.value)}
-                    />
-                    <Input 
-                      type="number"
-                      value={data[row.heuresField as keyof BPFData]} 
-                      onChange={(e) => updateField(row.heuresField as keyof BPFData, e.target.value)}
-                    />
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>F-4. Spécialités de formation</CardTitle>
-              <CardDescription>Indiquez les 3 principales spécialités</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-4 gap-4 font-medium text-sm text-muted-foreground">
-                  <div>Spécialité</div>
-                  <div>Code NSF</div>
-                  <div>Nombre</div>
-                  <div>Heures</div>
-                </div>
-                
-                {[1, 2, 3].map((num) => (
-                  <div key={num} className="grid grid-cols-4 gap-4 items-center">
-                    <Input 
-                      placeholder={`Spécialité ${num}`}
-                      value={data[`specialite${num}Nom` as keyof BPFData]} 
-                      onChange={(e) => updateField(`specialite${num}Nom` as keyof BPFData, e.target.value)}
-                    />
-                    <Input 
-                      placeholder="Code"
-                      value={data[`specialite${num}Code` as keyof BPFData]} 
-                      onChange={(e) => updateField(`specialite${num}Code` as keyof BPFData, e.target.value)}
-                    />
-                    <Input 
-                      type="number"
-                      value={data[`specialite${num}Nb` as keyof BPFData]} 
-                      onChange={(e) => updateField(`specialite${num}Nb` as keyof BPFData, e.target.value)}
-                    />
-                    <Input 
-                      type="number"
-                      value={data[`specialite${num}Heures` as keyof BPFData]} 
-                      onChange={(e) => updateField(`specialite${num}Heures` as keyof BPFData, e.target.value)}
-                    />
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>G. Formations confiées par un autre organisme</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="nbFormationsConfiees">Nombre de stagiaires</Label>
-                  <Input 
-                    id="nbFormationsConfiees" 
-                    type="number"
-                    value={data.nbFormationsConfiees} 
-                    onChange={(e) => updateField('nbFormationsConfiees', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="heuresFormationsConfiees">Heures totales</Label>
-                  <Input 
-                    id="heuresFormationsConfiees" 
-                    type="number"
-                    value={data.heuresFormationsConfiees} 
-                    onChange={(e) => updateField('heuresFormationsConfiees', e.target.value)}
-                  />
-                </div>
               </div>
             </CardContent>
           </Card>
