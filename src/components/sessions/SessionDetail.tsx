@@ -42,7 +42,8 @@ interface SessionDetailProps {
 }
 
 // Liste des apprenants avec numéro de dossier CMA et type de formation
-// typeFormation: "TA" = Taxi pour VTC, "VA" = VTC pour Taxi
+// typeFormation: "TA" = Formation TAXI pour chauffeur VTC (devient TAXI)
+// typeFormation: "VA" = Formation VTC pour chauffeur TAXI (devient VTC)
 const allApprenants = [
   { id: 1, nom: "Martin", prenom: "Lucas", email: "lucas.martin@email.com", telephone: "06 11 22 33 44", numeroCMA: "CMA-2026-001", type: "client", typeFormation: "TA" as const },
   { id: 2, nom: "Bernard", prenom: "Sophie", email: "sophie.bernard@email.com", telephone: "06 22 33 44 55", numeroCMA: "CMA-2026-002", type: "client", typeFormation: "VA" as const },
@@ -353,27 +354,15 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
             <div className="mt-4 p-3 rounded-lg bg-muted/50 border">
               <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
                 <div className="flex items-center gap-2">
-                  <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">TA</Badge>
+                  <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">🚕 TA</Badge>
                   <span className="font-medium">{apprenantsInSession.filter(a => a.typeFormation === "TA").length}</span>
-                  <span className="text-muted-foreground text-xs">(Taxi → VTC)</span>
+                  <span className="text-muted-foreground text-xs">Passerelle TAXI</span>
                 </div>
                 <div className="h-4 w-px bg-border" />
                 <div className="flex items-center gap-2">
-                  <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100">VA</Badge>
+                  <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">🚗 VA</Badge>
                   <span className="font-medium">{apprenantsInSession.filter(a => a.typeFormation === "VA").length}</span>
-                  <span className="text-muted-foreground text-xs">(VTC → Taxi)</span>
-                </div>
-                <div className="h-4 w-px bg-border" />
-                <div className="flex items-center gap-2">
-                  <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">🚕 TAXI</Badge>
-                  <span className="font-medium">{apprenantsInSession.filter(a => a.typeFormation === "TA").length}</span>
-                  <span className="text-muted-foreground text-xs">élèves</span>
-                </div>
-                <div className="h-4 w-px bg-border" />
-                <div className="flex items-center gap-2">
-                  <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">🚗 VTC</Badge>
-                  <span className="font-medium">{apprenantsInSession.filter(a => a.typeFormation === "VA").length}</span>
-                  <span className="text-muted-foreground text-xs">élèves</span>
+                  <span className="text-muted-foreground text-xs">Passerelle VTC</span>
                 </div>
               </div>
             </div>
