@@ -41,16 +41,17 @@ interface SessionDetailProps {
   onOpenChange: (open: boolean) => void;
 }
 
-// Liste des apprenants avec numéro de dossier CMA
+// Liste des apprenants avec numéro de dossier CMA et type de formation
+// typeFormation: "TA" = Taxi pour VTC, "VA" = VTC pour Taxi
 const allApprenants = [
-  { id: 1, nom: "Martin", prenom: "Lucas", email: "lucas.martin@email.com", telephone: "06 11 22 33 44", numeroCMA: "CMA-2026-001", type: "client" },
-  { id: 2, nom: "Bernard", prenom: "Sophie", email: "sophie.bernard@email.com", telephone: "06 22 33 44 55", numeroCMA: "CMA-2026-002", type: "client" },
-  { id: 3, nom: "Petit", prenom: "Thomas", email: "thomas.petit@email.com", telephone: "06 33 44 55 66", numeroCMA: "CMA-2026-003", type: "client" },
-  { id: 4, nom: "Robert", prenom: "Julie", email: "julie.robert@email.com", telephone: "06 44 55 66 77", numeroCMA: "CMA-2026-004", type: "prospect" },
-  { id: 5, nom: "Durand", prenom: "Antoine", email: "antoine.durand@email.com", telephone: "06 55 66 77 88", numeroCMA: "CMA-2026-005", type: "client" },
-  { id: 6, nom: "Moreau", prenom: "Emma", email: "emma.moreau@email.com", telephone: "06 66 77 88 99", numeroCMA: "CMA-2026-006", type: "client" },
-  { id: 7, nom: "Laurent", prenom: "Nicolas", email: "nicolas.laurent@email.com", telephone: "06 77 88 99 00", numeroCMA: "CMA-2026-007", type: "prospect" },
-  { id: 8, nom: "Simon", prenom: "Camille", email: "camille.simon@email.com", telephone: "06 88 99 00 11", numeroCMA: "CMA-2026-008", type: "client" },
+  { id: 1, nom: "Martin", prenom: "Lucas", email: "lucas.martin@email.com", telephone: "06 11 22 33 44", numeroCMA: "CMA-2026-001", type: "client", typeFormation: "TA" as const },
+  { id: 2, nom: "Bernard", prenom: "Sophie", email: "sophie.bernard@email.com", telephone: "06 22 33 44 55", numeroCMA: "CMA-2026-002", type: "client", typeFormation: "VA" as const },
+  { id: 3, nom: "Petit", prenom: "Thomas", email: "thomas.petit@email.com", telephone: "06 33 44 55 66", numeroCMA: "CMA-2026-003", type: "client", typeFormation: "TA" as const },
+  { id: 4, nom: "Robert", prenom: "Julie", email: "julie.robert@email.com", telephone: "06 44 55 66 77", numeroCMA: "CMA-2026-004", type: "prospect", typeFormation: "VA" as const },
+  { id: 5, nom: "Durand", prenom: "Antoine", email: "antoine.durand@email.com", telephone: "06 55 66 77 88", numeroCMA: "CMA-2026-005", type: "client", typeFormation: "TA" as const },
+  { id: 6, nom: "Moreau", prenom: "Emma", email: "emma.moreau@email.com", telephone: "06 66 77 88 99", numeroCMA: "CMA-2026-006", type: "client", typeFormation: "VA" as const },
+  { id: 7, nom: "Laurent", prenom: "Nicolas", email: "nicolas.laurent@email.com", telephone: "06 77 88 99 00", numeroCMA: "CMA-2026-007", type: "prospect", typeFormation: "TA" as const },
+  { id: 8, nom: "Simon", prenom: "Camille", email: "camille.simon@email.com", telephone: "06 88 99 00 11", numeroCMA: "CMA-2026-008", type: "client", typeFormation: "VA" as const },
 ];
 
 // Liste des formateurs disponibles
@@ -309,6 +310,15 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="font-medium text-foreground">{apprenant.prenom} {apprenant.nom}</p>
+                          <Badge 
+                            className={`text-xs ${
+                              apprenant.typeFormation === "TA" 
+                                ? "bg-blue-100 text-blue-700 hover:bg-blue-100" 
+                                : "bg-purple-100 text-purple-700 hover:bg-purple-100"
+                            }`}
+                          >
+                            {apprenant.typeFormation}
+                          </Badge>
                           <Badge variant="outline" className="text-xs">
                             <FileText className="w-3 h-3 mr-1" />
                             {apprenant.numeroCMA}
