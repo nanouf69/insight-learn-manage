@@ -209,8 +209,15 @@ export function SessionsList() {
         {sessions.map((session) => (
           <Card key={session.id} className="hover:shadow-md transition-shadow cursor-pointer">
             <CardContent className="p-5">
-              <div className="flex items-start justify-between">
-                <div className="space-y-3 flex-1">
+              <div className="flex items-start gap-5">
+                {/* Date en gros */}
+                <div className="flex flex-col items-center justify-center min-w-[80px] p-3 rounded-xl bg-primary/10 text-primary">
+                  <Calendar className="w-5 h-5 mb-1" />
+                  <span className="text-xl font-bold">{session.date.split(' ')[0]}</span>
+                  <span className="text-sm font-medium">{session.date.split(' ').slice(1).join(' ')}</span>
+                </div>
+                
+                <div className="space-y-2 flex-1">
                   <div className="flex items-center gap-3">
                     <h3 className="font-semibold text-lg text-foreground">{session.title}</h3>
                     {getStatusBadge(session.status)}
@@ -218,14 +225,6 @@ export function SessionsList() {
                   <p className="text-sm text-muted-foreground">{session.formation}</p>
                   
                   <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1.5">
-                      <Calendar className="w-4 h-4" />
-                      <span>{session.date}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="w-4 h-4" />
-                      <span>{session.horaire}</span>
-                    </div>
                     <div className="flex items-center gap-1.5">
                       <MapPin className="w-4 h-4" />
                       <span>{session.lieu}</span>
