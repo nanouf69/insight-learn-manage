@@ -6,58 +6,9 @@ import { SessionForm } from "./SessionForm";
 import { SessionDetail } from "./SessionDetail";
 
 const sessions = [
-  // Formation VTC Initial (250H = ~7 semaines)
-  {
-    id: 1,
-    title: "Formation VTC Initial - Session 1",
-    formation: "Formation initiale VTC (250H)",
-    dateDebut: "20 Jan 2026",
-    dateFin: "06 Mars 2026",
-    lieu: "Présentiel",
-    formateur: "Jean Dupont",
-    participants: 8,
-    maxParticipants: 12,
-    status: "confirmed"
-  },
-  {
-    id: 2,
-    title: "Formation VTC Initial - Session 2",
-    formation: "Formation initiale VTC (250H)",
-    dateDebut: "03 Fév 2026",
-    dateFin: "20 Mars 2026",
-    lieu: "Présentiel",
-    formateur: "Jean Dupont",
-    participants: 10,
-    maxParticipants: 12,
-    status: "confirmed"
-  },
-  {
-    id: 3,
-    title: "Formation VTC Initial - Session 3",
-    formation: "Formation initiale VTC (250H)",
-    dateDebut: "17 Fév 2026",
-    dateFin: "03 Avr 2026",
-    lieu: "Présentiel",
-    formateur: "Marie Martin",
-    participants: 5,
-    maxParticipants: 12,
-    status: "pending"
-  },
-  {
-    id: 4,
-    title: "Formation VTC Initial - Session 4",
-    formation: "Formation initiale VTC (250H)",
-    dateDebut: "03 Mars 2026",
-    dateFin: "17 Avr 2026",
-    lieu: "Présentiel",
-    formateur: "Jean Dupont",
-    participants: 0,
-    maxParticipants: 12,
-    status: "pending"
-  },
   // Formation TAXI Initial (200H = ~6 semaines)
   {
-    id: 5,
+    id: 1,
     title: "Formation TAXI Initial - Session 1",
     formation: "Formation initiale TAXI (200H)",
     dateDebut: "27 Jan 2026",
@@ -69,7 +20,7 @@ const sessions = [
     status: "confirmed"
   },
   {
-    id: 6,
+    id: 2,
     title: "Formation TAXI Initial - Session 2",
     formation: "Formation initiale TAXI (200H)",
     dateDebut: "10 Fév 2026",
@@ -81,7 +32,7 @@ const sessions = [
     status: "pending"
   },
   {
-    id: 7,
+    id: 3,
     title: "Formation TAXI Initial - Session 3",
     formation: "Formation initiale TAXI (200H)",
     dateDebut: "24 Fév 2026",
@@ -92,34 +43,9 @@ const sessions = [
     maxParticipants: 10,
     status: "pending"
   },
-  // Passerelle TAXI vers VTC (14H = 2 jours)
-  {
-    id: 8,
-    title: "Passerelle TAXI vers VTC - Session 1",
-    formation: "Passerelle TAXI vers VTC (14H)",
-    dateDebut: "05 Jan 2026",
-    dateFin: "06 Jan 2026",
-    lieu: "Présentiel",
-    formateur: "Jean Dupont",
-    participants: 5,
-    maxParticipants: 8,
-    status: "confirmed"
-  },
-  {
-    id: 9,
-    title: "Passerelle TAXI vers VTC - Session 2",
-    formation: "Passerelle TAXI vers VTC (14H)",
-    dateDebut: "02 Fév 2026",
-    dateFin: "03 Fév 2026",
-    lieu: "Présentiel",
-    formateur: "Marie Martin",
-    participants: 3,
-    maxParticipants: 8,
-    status: "pending"
-  },
   // Passerelle VTC vers TAXI (14H = 2 jours)
   {
-    id: 10,
+    id: 4,
     title: "Passerelle VTC vers TAXI - Session 1",
     formation: "Passerelle VTC vers TAXI (14H)",
     dateDebut: "12 Jan 2026",
@@ -131,7 +57,7 @@ const sessions = [
     status: "confirmed"
   },
   {
-    id: 11,
+    id: 5,
     title: "Passerelle VTC vers TAXI - Session 2",
     formation: "Passerelle VTC vers TAXI (14H)",
     dateDebut: "09 Fév 2026",
@@ -142,22 +68,9 @@ const sessions = [
     maxParticipants: 8,
     status: "pending"
   },
-  // Formation continue VTC (14H = 2 jours)
-  {
-    id: 12,
-    title: "Formation continue VTC - Session 1",
-    formation: "Formation continue VTC (14H)",
-    dateDebut: "19 Jan 2026",
-    dateFin: "20 Jan 2026",
-    lieu: "Présentiel",
-    formateur: "Jean Dupont",
-    participants: 7,
-    maxParticipants: 15,
-    status: "confirmed"
-  },
   // Formation continue TAXI (14H = 2 jours)
   {
-    id: 13,
+    id: 6,
     title: "Formation continue TAXI - Session 1",
     formation: "Formation continue TAXI (14H)",
     dateDebut: "26 Jan 2026",
@@ -168,17 +81,16 @@ const sessions = [
     maxParticipants: 15,
     status: "confirmed"
   },
-  // Mobilité PMR (21H = 3 jours)
   {
-    id: 14,
-    title: "Mobilité PMR - Session 1",
-    formation: "Mobilité - Capacité PMR (21H)",
-    dateDebut: "16 Fév 2026",
-    dateFin: "18 Fév 2026",
+    id: 7,
+    title: "Formation continue TAXI - Session 2",
+    formation: "Formation continue TAXI (14H)",
+    dateDebut: "23 Fév 2026",
+    dateFin: "24 Fév 2026",
     lieu: "Présentiel",
-    formateur: "Sophie Lefebvre",
-    participants: 8,
-    maxParticipants: 12,
+    formateur: "Marie Martin",
+    participants: 3,
+    maxParticipants: 15,
     status: "pending"
   },
 ];
