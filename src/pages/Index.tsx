@@ -13,6 +13,7 @@ import { SettingsPage } from "@/components/settings/SettingsPage";
 import { SessionsList } from "@/components/sessions/SessionsList";
 import { OrganisationsList } from "@/components/organisations/OrganisationsList";
 import { BPFForm } from "@/components/bpf/BPFForm";
+import { FactureForm } from "@/components/factures/FactureForm";
 import { GraduationCap, Users, Euro, TrendingUp } from "lucide-react";
 
 const pageConfig = {
@@ -24,6 +25,7 @@ const pageConfig = {
   apprenants: { title: "Apprenants", subtitle: "Suivez vos apprenants" },
   crm: { title: "CRM", subtitle: "Gérez vos contacts et prospects" },
   documents: { title: "Documents", subtitle: "Gérez vos documents administratifs" },
+  factures: { title: "Factures", subtitle: "Créez et gérez vos factures" },
   settings: { title: "Paramètres", subtitle: "Configurez votre espace" },
   bpf: { title: "BPF", subtitle: "Bilan Pédagogique et Financier" },
 };
@@ -90,6 +92,8 @@ const Index = () => {
         return <OrganisationsList />;
       case "documents":
         return <DocumentsList />;
+      case "factures":
+        return <FactureForm />;
       case "bpf":
         return <BPFForm />;
       case "settings":
