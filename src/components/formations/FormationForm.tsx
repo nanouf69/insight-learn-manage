@@ -48,25 +48,42 @@ export function FormationForm() {
             />
           </div>
           
+          <div className="space-y-2">
+            <Label htmlFor="formation-type">Type de formation</Label>
+            <Select required>
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner une formation" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="taxi-presentiel">Formation Taxi (Présentiel)</SelectItem>
+                <SelectItem value="vtc-presentiel">Formation VTC (Présentiel)</SelectItem>
+                <SelectItem value="taxi-examen-presentiel">Formation Taxi avec frais d'examen (Présentiel)</SelectItem>
+                <SelectItem value="vtc-examen-presentiel">Formation VTC avec frais d'examen (Présentiel)</SelectItem>
+                <SelectItem value="taxi-pour-vtc-presentiel">Formation Taxi pour chauffeur VTC (Présentiel)</SelectItem>
+                <SelectItem value="vtc-elearning">Formation VTC (E-learning)</SelectItem>
+                <SelectItem value="taxi-elearning">Formation Taxi (E-learning)</SelectItem>
+                <SelectItem value="taxi-pour-vtc-elearning">Formation Taxi pour chauffeur VTC (E-learning)</SelectItem>
+                <SelectItem value="vtc-pour-taxi-elearning">Formation VTC pour chauffeur Taxi (E-learning)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="category">Catégorie</Label>
+              <Label htmlFor="category">Modalité</Label>
               <Select required>
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="dev">Développement Web</SelectItem>
-                  <SelectItem value="design">Design</SelectItem>
-                  <SelectItem value="data">Data</SelectItem>
-                  <SelectItem value="soft">Soft Skills</SelectItem>
-                  <SelectItem value="marketing">Marketing</SelectItem>
+                  <SelectItem value="presentiel">Présentiel</SelectItem>
+                  <SelectItem value="elearning">E-learning</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="duration">Durée (heures)</Label>
-              <Input id="duration" type="number" placeholder="21" required />
+              <Input id="duration" type="number" placeholder="140" required />
             </div>
           </div>
 
