@@ -99,6 +99,8 @@ interface ApprenantSession {
   examenTheoriqueReussi: "oui" | "non" | null;
   // Note personnalisée
   note: string;
+  // Numéro CMA personnalisé (optionnel, sinon on prend celui de l'apprenant)
+  numeroCMA?: string;
 }
 
 // Moyens de paiement disponibles
@@ -517,10 +519,31 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                               </Badge>
                             </div>
                             <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-                              <span className="flex items-center gap-1">
-                                <FileText className="w-3 h-3" />
-                                {apprenant.numeroCMA}
-                              </span>
+                              {/* Numéro CMA éditable */}
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <button className="flex items-center gap-1 hover:text-foreground transition-colors">
+                                    <FileText className="w-3 h-3" />
+                                    <span>{sessionData?.numeroCMA || apprenant.numeroCMA}</span>
+                                    <Pencil className="w-2.5 h-2.5 opacity-50" />
+                                  </button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-56 p-3" align="start">
+                                  <div className="space-y-2">
+                                    <Label className="text-xs font-medium">Numéro CMA</Label>
+                                    <Input
+                                      value={sessionData?.numeroCMA ?? apprenant.numeroCMA}
+                                      onChange={(e) => {
+                                        setApprenantSessionData(prev => 
+                                          prev.map(a => a.apprenantId === apprenant.id ? { ...a, numeroCMA: e.target.value } : a)
+                                        );
+                                      }}
+                                      placeholder="CMA-2026-XXX"
+                                      className="h-8 text-sm"
+                                    />
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
                               <span className="flex items-center gap-1">
                                 <Mail className="w-3 h-3" />
                                 {apprenant.email}
