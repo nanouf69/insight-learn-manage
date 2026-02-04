@@ -96,6 +96,16 @@ const defaultDisciplines: Discipline[] = [
   { id: "33", nom: "Sécurité routière 3/3", color: "#ca8a04" },
   { id: "34", nom: "T3P 1/2", color: "#22d3d1" },
   { id: "35", nom: "T3P 2/2", color: "#0891b2" },
+  // Nouvelles disciplines TAXI/TA
+  { id: "36", nom: "Topographie Cartographie", color: "#7c3aed" },
+  { id: "37", nom: "Examens blancs TAXI/TA", color: "#0d9488" },
+  { id: "38", nom: "Correction examens blancs TAXI/TA", color: "#059669" },
+  { id: "39", nom: "Bilan exercices TAXI/TA", color: "#d97706" },
+  { id: "40", nom: "Correction bilan exercices TAXI/TA", color: "#b45309" },
+  { id: "41", nom: "Bilan examen TAXI/TA", color: "#be185d" },
+  { id: "42", nom: "Correction bilan examen TAXI/TA", color: "#9d174d" },
+  { id: "43", nom: "Contrôles de connaissances", color: "#4338ca" },
+  { id: "44", nom: "Correction contrôle de connaissances", color: "#3730a3" },
 ];
 
 const hours = Array.from({ length: 12 }, (_, i) => i + 8); // 8h à 19h
