@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      agenda_blocs: {
+        Row: {
+          created_at: string
+          discipline_color: string
+          discipline_id: string
+          discipline_nom: string
+          formateur_id: string | null
+          formation: string
+          heure_debut: string
+          heure_fin: string
+          id: string
+          jour: number
+          semaine_debut: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          discipline_color: string
+          discipline_id: string
+          discipline_nom: string
+          formateur_id?: string | null
+          formation: string
+          heure_debut: string
+          heure_fin: string
+          id?: string
+          jour: number
+          semaine_debut: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          discipline_color?: string
+          discipline_id?: string
+          discipline_nom?: string
+          formateur_id?: string | null
+          formation?: string
+          heure_debut?: string
+          heure_fin?: string
+          id?: string
+          jour?: number
+          semaine_debut?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agenda_blocs_formateur_id_fkey"
+            columns: ["formateur_id"]
+            isOneToOne: false
+            referencedRelation: "formateurs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       apprenants: {
         Row: {
           adresse: string | null
