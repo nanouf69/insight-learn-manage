@@ -108,6 +108,7 @@ const defaultDisciplines: Discipline[] = [
   { id: "42", nom: "Correction bilan examen TAXI/TA", color: "#9d174d" },
   { id: "43", nom: "Contrôles de connaissances", color: "#4338ca" },
   { id: "44", nom: "Correction contrôle de connaissances", color: "#3730a3" },
+  { id: "45", nom: "Réglementation spécifique VTC", color: "#e11d48" },
 ];
 
 const hours = Array.from({ length: 12 }, (_, i) => i + 8); // 8h à 19h
