@@ -96,6 +96,18 @@ export function ApprenantForm() {
           {/* Identité */}
           <div className="space-y-4">
             <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Identité</h3>
+            <div className="space-y-2">
+              <Label htmlFor="civilite">Civilité</Label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner une civilité" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="M.">M.</SelectItem>
+                  <SelectItem value="Mme">Mme</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName">Prénom *</Label>
