@@ -4,8 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 const specialites = [
   { id: "taxi-vtc", label: "Formation TAXI et VTC" },
@@ -17,8 +20,17 @@ const specialites = [
 
 export function FormateurForm() {
   const [open, setOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedSpecialites, setSelectedSpecialites] = useState<string[]>([]);
-  const { toast } = useToast();
+  const [formData, setFormData] = useState({
+    prenom: "",
+    nom: "",
+    email: "",
+    telephone: "",
+    tarif_horaire: "",
+    type: "interne",
+  });
+  const queryClient = useQueryClient();
 
   const handleSpecialiteChange = (id: string, checked: boolean) => {
     if (checked) {
@@ -28,18 +40,60 @@ export function FormateurForm() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    toast({
-      title: "Formateur créé",
-      description: "Le formateur a été ajouté avec succès.",
+  const resetForm = () => {
+    setFormData({
+      prenom: "",
+      nom: "",
+      email: "",
+      telephone: "",
+      tarif_horaire: "",
+      type: "interne",
     });
-    setOpen(false);
     setSelectedSpecialites([]);
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      // Convert selected specialites to labels
+      const specialitesLabels = selectedSpecialites
+        .map(id => specialites.find(s => s.id === id)?.label)
+        .filter(Boolean)
+        .join(', ');
+
+      const { error } = await supabase
+        .from('formateurs')
+        .insert({
+          prenom: formData.prenom,
+          nom: formData.nom,
+          email: formData.email || null,
+          telephone: formData.telephone || null,
+          tarif_horaire: formData.tarif_horaire ? parseFloat(formData.tarif_horaire) : null,
+          type: formData.type,
+          specialites: specialitesLabels || null,
+        });
+
+      if (error) throw error;
+
+      toast.success("Formateur créé avec succès");
+      queryClient.invalidateQueries({ queryKey: ['formateurs'] });
+      setOpen(false);
+      resetForm();
+    } catch (error) {
+      console.error(error);
+      toast.error("Erreur lors de la création du formateur");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      setOpen(isOpen);
+      if (!isOpen) resetForm();
+    }}>
       <DialogTrigger asChild>
         <Button className="gap-2">
           <Plus className="w-4 h-4" />
@@ -53,39 +107,71 @@ export function FormateurForm() {
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="prenom">Prénom</Label>
-              <Input id="prenom" placeholder="Jean" required />
+              <Label htmlFor="prenom">Prénom *</Label>
+              <Input 
+                id="prenom" 
+                placeholder="Jean" 
+                required 
+                value={formData.prenom}
+                onChange={(e) => setFormData({ ...formData, prenom: e.target.value })}
+              />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="nom">Nom</Label>
-              <Input id="nom" placeholder="Dupont" required />
+              <Label htmlFor="nom">Nom *</Label>
+              <Input 
+                id="nom" 
+                placeholder="Dupont" 
+                required 
+                value={formData.nom}
+                onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
+              />
             </div>
           </div>
           
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="jean.dupont@ftransport.fr" required />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="telephone">Téléphone</Label>
-            <Input id="telephone" placeholder="06 12 34 56 78" required />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="adresse">Adresse</Label>
-            <Input id="adresse" placeholder="15 rue de la Formation" required />
+            <Input 
+              id="email" 
+              type="email" 
+              placeholder="jean.dupont@ftransport.fr"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="codePostal">Code postal</Label>
-              <Input id="codePostal" placeholder="75001" required />
+              <Label htmlFor="telephone">Téléphone</Label>
+              <Input 
+                id="telephone" 
+                placeholder="06 12 34 56 78"
+                value={formData.telephone}
+                onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
+              />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="ville">Ville</Label>
-              <Input id="ville" placeholder="Paris" required />
+              <Label htmlFor="tarif">Tarif horaire (€)</Label>
+              <Input 
+                id="tarif" 
+                type="number" 
+                placeholder="50"
+                value={formData.tarif_horaire}
+                onChange={(e) => setFormData({ ...formData, tarif_horaire: e.target.value })}
+              />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="type">Type</Label>
+            <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="interne">Interne</SelectItem>
+                <SelectItem value="externe">Externe</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-3">
@@ -113,7 +199,10 @@ export function FormateurForm() {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Annuler
             </Button>
-            <Button type="submit">Créer le formateur</Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Créer le formateur
+            </Button>
           </div>
         </form>
       </DialogContent>
