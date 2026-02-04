@@ -8,15 +8,11 @@ import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const specialites = [
-  { id: "vtc-initial", label: "Formation initiale VTC (250H)" },
-  { id: "taxi-initial", label: "Formation initiale TAXI (200H)" },
-  { id: "taxi-vtc", label: "Passerelle TAXI vers VTC (14H)" },
-  { id: "vtc-taxi", label: "Passerelle VTC vers TAXI (14H)" },
-  { id: "vtc-continue", label: "Formation continue VTC (14H)" },
-  { id: "taxi-continue", label: "Formation continue TAXI (14H)" },
-  { id: "pmr", label: "Mobilité - Capacité PMR (21H)" },
-  { id: "vtc-elearning", label: "E-learning VTC Initial (250H)" },
-  { id: "taxi-elearning", label: "E-learning TAXI Initial (200H)" },
+  { id: "taxi-vtc", label: "Formation TAXI et VTC" },
+  { id: "taxi", label: "Formation TAXI" },
+  { id: "vtc", label: "Formation VTC" },
+  { id: "taxi-ta", label: "Formation TAXI et TA" },
+  { id: "anglais", label: "Cours Anglais" },
 ];
 
 export function FormateurForm() {
