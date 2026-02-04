@@ -40,10 +40,10 @@ export function PlanningForm() {
                 <SelectValue placeholder="Sélectionner une formation" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="react">React Avancé</SelectItem>
-                <SelectItem value="ux">UX/UI Design</SelectItem>
-                <SelectItem value="python">Python Data Science</SelectItem>
-                <SelectItem value="management">Management d'équipe</SelectItem>
+                <SelectItem value="taxi-vtc">Formation TAXI et VTC</SelectItem>
+                <SelectItem value="taxi">Formation TAXI</SelectItem>
+                <SelectItem value="vtc">Formation VTC</SelectItem>
+                <SelectItem value="taxi-ta">Formation TAXI et TA</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -64,7 +64,7 @@ export function PlanningForm() {
               <Input id="startTime" type="time" required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="endTime">Heure de fin</Label>
+              <Label htmlFor="endTime">Jusqu'à</Label>
               <Input id="endTime" type="time" required />
             </div>
           </div>
