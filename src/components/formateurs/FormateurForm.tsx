@@ -23,6 +23,7 @@ export function FormateurForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedSpecialites, setSelectedSpecialites] = useState<string[]>([]);
   const [formData, setFormData] = useState({
+    civilite: "",
     prenom: "",
     nom: "",
     email: "",
@@ -49,6 +50,7 @@ export function FormateurForm() {
 
   const resetForm = () => {
     setFormData({
+      civilite: "",
       prenom: "",
       nom: "",
       email: "",
@@ -79,6 +81,7 @@ export function FormateurForm() {
       const { error } = await supabase
         .from('formateurs')
         .insert({
+          civilite: formData.civilite || null,
           prenom: formData.prenom,
           nom: formData.nom,
           email: formData.email || null,
@@ -124,6 +127,19 @@ export function FormateurForm() {
           <DialogTitle>Nouveau formateur</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+          <div className="space-y-2">
+            <Label htmlFor="civilite">Civilité</Label>
+            <Select value={formData.civilite} onValueChange={(value) => setFormData({ ...formData, civilite: value })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner une civilité" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="M.">M.</SelectItem>
+                <SelectItem value="Mme">Mme</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="prenom">Prénom *</Label>

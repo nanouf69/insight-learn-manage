@@ -17,6 +17,7 @@ export type Database = {
       apprenants: {
         Row: {
           adresse: string | null
+          civilite: string | null
           code_postal: string | null
           created_at: string
           date_naissance: string | null
@@ -33,6 +34,7 @@ export type Database = {
         }
         Insert: {
           adresse?: string | null
+          civilite?: string | null
           code_postal?: string | null
           created_at?: string
           date_naissance?: string | null
@@ -49,6 +51,7 @@ export type Database = {
         }
         Update: {
           adresse?: string | null
+          civilite?: string | null
           code_postal?: string | null
           created_at?: string
           date_naissance?: string | null
@@ -149,6 +152,7 @@ export type Database = {
       formateurs: {
         Row: {
           adresse: string | null
+          civilite: string | null
           code_postal: string | null
           created_at: string
           email: string | null
@@ -167,6 +171,7 @@ export type Database = {
         }
         Insert: {
           adresse?: string | null
+          civilite?: string | null
           code_postal?: string | null
           created_at?: string
           email?: string | null
@@ -185,6 +190,7 @@ export type Database = {
         }
         Update: {
           adresse?: string | null
+          civilite?: string | null
           code_postal?: string | null
           created_at?: string
           email?: string | null
