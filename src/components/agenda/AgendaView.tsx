@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, Plus, X, User, Clock, BookOpen, Layers } from "lucide-react";
-import { format, addDays, startOfWeek, isSameDay } from "date-fns";
+import { ChevronLeft, ChevronRight, Plus, X, User, Clock, BookOpen, Layers, Loader2 } from "lucide-react";
+import { format, addDays, startOfWeek, isSameDay, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,12 +29,14 @@ interface CourseBlock {
   id: string;
   title: string;
   formateur: string;
+  formateurId: string;
   formateurColor: string;
   startHour: number;
   endHour: number;
   date: Date;
   formation: string;
   discipline?: string;
+  disciplineId?: string;
   disciplineColor?: string;
 }
 
@@ -110,11 +112,26 @@ const defaultDisciplines: Discipline[] = [
 
 const hours = Array.from({ length: 12 }, (_, i) => i + 8); // 8h à 19h
 
+// Helper pour convertir l'heure texte en décimal
+const timeToDecimal = (time: string): number => {
+  const [h, m] = time.split(':').map(Number);
+  return h + (m / 60);
+};
+
+// Helper pour convertir décimal en heure texte
+const decimalToTime = (decimal: number): string => {
+  const h = Math.floor(decimal);
+  const m = Math.round((decimal - h) * 60);
+  return `${h}:${m.toString().padStart(2, '0')}`;
+};
+
 export function AgendaView() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [disciplines, setDisciplines] = useState<Discipline[]>(defaultDisciplines);
   const [formateursList, setFormateursList] = useState<Formateur[]>([]);
   const [courseBlocks, setCourseBlocks] = useState<CourseBlock[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDisciplineDialogOpen, setIsDisciplineDialogOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<{ date: Date; hour: number } | null>(null);
@@ -129,6 +146,8 @@ export function AgendaView() {
     nom: "",
     color: "#6366f1",
   });
+
+  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
 
   // Charger les formateurs depuis la base de données
   useEffect(() => {
@@ -157,7 +176,78 @@ export function AgendaView() {
     fetchFormateurs();
   }, []);
 
-  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+  // Charger les blocs de cours depuis la base de données
+  const loadBlocks = useCallback(async () => {
+    setIsLoading(true);
+    const weekStartDate = format(weekStart, 'yyyy-MM-dd');
+    
+    const { data, error } = await supabase
+      .from('agenda_blocs')
+      .select('*')
+      .eq('semaine_debut', weekStartDate);
+
+    if (error) {
+      console.error('Erreur chargement blocs:', error);
+      setIsLoading(false);
+      return;
+    }
+
+    if (data && formateursList.length > 0) {
+      const blocks: CourseBlock[] = data.map((bloc) => {
+        const formateur = formateursList.find(f => f.id === bloc.formateur_id);
+        return {
+          id: bloc.id,
+          title: bloc.discipline_nom,
+          formateur: formateur?.nom || 'Inconnu',
+          formateurId: bloc.formateur_id || '',
+          formateurColor: formateur?.color || 'bg-gray-500',
+          startHour: timeToDecimal(bloc.heure_debut),
+          endHour: timeToDecimal(bloc.heure_fin),
+          date: addDays(parseISO(bloc.semaine_debut), bloc.jour),
+          formation: bloc.formation,
+          discipline: bloc.discipline_nom,
+          disciplineId: bloc.discipline_id,
+          disciplineColor: bloc.discipline_color,
+        };
+      });
+      setCourseBlocks(blocks);
+    }
+    setIsLoading(false);
+  }, [weekStart, formateursList]);
+
+  // Charger les blocs quand la semaine change ou que les formateurs sont chargés
+  useEffect(() => {
+    if (formateursList.length > 0) {
+      loadBlocks();
+    }
+  }, [loadBlocks, formateursList]);
+
+  // Souscrire aux changements en temps réel
+  useEffect(() => {
+    const weekStartDate = format(weekStart, 'yyyy-MM-dd');
+    
+    const channel = supabase
+      .channel(`agenda:${weekStartDate}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'agenda_blocs',
+          filter: `semaine_debut=eq.${weekStartDate}`,
+        },
+        () => {
+          // Recharger les blocs quand il y a des changements
+          loadBlocks();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [weekStart, loadBlocks]);
+
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   const handlePrevWeek = () => setCurrentDate(addDays(currentDate, -7));
@@ -170,7 +260,7 @@ export function AgendaView() {
     setIsDialogOpen(true);
   };
 
-  const handleAddBlock = () => {
+  const handleAddBlock = async () => {
     if (!selectedSlot || !newBlock.formation || !newBlock.formateur || !newBlock.endHour) return;
 
     const formateurData = formateursList.find((f) => f.id === newBlock.formateur);
@@ -178,22 +268,57 @@ export function AgendaView() {
     const [endH, endM] = newBlock.endHour.split(':').map(Number);
     const endHourDecimal = endH + (endM / 60);
 
+    // Calculer le jour de la semaine (0 = Lundi)
+    const dayOfWeek = weekDays.findIndex(d => isSameDay(d, selectedSlot.date));
+    const weekStartDate = format(weekStart, 'yyyy-MM-dd');
+
+    setIsSaving(true);
+
+    // Sauvegarder en base de données
+    const { data, error } = await supabase
+      .from('agenda_blocs')
+      .insert({
+        formateur_id: newBlock.formateur,
+        discipline_id: disciplineData?.id || '',
+        discipline_nom: disciplineData?.nom || newBlock.formation,
+        discipline_color: disciplineData?.color || '#6366f1',
+        formation: newBlock.formation,
+        jour: dayOfWeek,
+        heure_debut: `${selectedSlot.hour}:00`,
+        heure_fin: newBlock.endHour,
+        semaine_debut: weekStartDate,
+      })
+      .select()
+      .single();
+
+    setIsSaving(false);
+
+    if (error) {
+      console.error('Erreur sauvegarde bloc:', error);
+      toast.error("Erreur lors de la sauvegarde du cours");
+      return;
+    }
+
+    // Ajouter le bloc localement avec l'ID de la base
     const block: CourseBlock = {
-      id: Date.now().toString(),
-      title: newBlock.title || newBlock.formation,
+      id: data.id,
+      title: disciplineData?.nom || newBlock.formation,
       formateur: formateurData?.nom || "",
+      formateurId: newBlock.formateur,
       formateurColor: formateurData?.color || "bg-gray-500",
       startHour: selectedSlot.hour,
       endHour: endHourDecimal,
       date: selectedSlot.date,
       formation: newBlock.formation,
       discipline: disciplineData?.nom,
+      disciplineId: disciplineData?.id,
       disciplineColor: disciplineData?.color,
     };
 
     setCourseBlocks([...courseBlocks, block]);
     setIsDialogOpen(false);
     setSelectedSlot(null);
+    toast.success("Cours enregistré");
   };
 
   const handleAddDiscipline = () => {
@@ -216,8 +341,21 @@ export function AgendaView() {
     toast.success("Discipline supprimée");
   };
 
-  const handleRemoveBlock = (blockId: string) => {
+  const handleRemoveBlock = async (blockId: string) => {
+    // Supprimer de la base de données
+    const { error } = await supabase
+      .from('agenda_blocs')
+      .delete()
+      .eq('id', blockId);
+
+    if (error) {
+      console.error('Erreur suppression bloc:', error);
+      toast.error("Erreur lors de la suppression du cours");
+      return;
+    }
+
     setCourseBlocks(courseBlocks.filter((b) => b.id !== blockId));
+    toast.success("Cours supprimé");
   };
 
   const getBlocksForSlot = (date: Date, hour: number) => {
@@ -240,6 +378,9 @@ export function AgendaView() {
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
             Agenda des cours
+            {(isLoading || isSaving) && (
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            )}
           </CardTitle>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => setIsDisciplineDialogOpen(true)}>
