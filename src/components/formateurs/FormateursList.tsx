@@ -3,8 +3,20 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { Calendar, Clock, Mail, Phone, MapPin, Search, GraduationCap } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar, Clock, Mail, Phone, MapPin, Search, GraduationCap, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { FormateurForm } from "./FormateurForm";
+import { toast } from "sonner";
 
 const formateurs = [
   {
@@ -69,8 +81,26 @@ const formateurs = [
 
 export function FormateursList() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [formateursData, setFormateursData] = useState(formateurs);
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; id: number | null; name: string }>({
+    open: false,
+    id: null,
+    name: "",
+  });
 
-  const filteredFormateurs = formateurs.filter(f =>
+  const handleDeleteClick = (id: number, name: string) => {
+    setDeleteDialog({ open: true, id, name });
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteDialog.id !== null) {
+      setFormateursData(prev => prev.filter(f => f.id !== deleteDialog.id));
+      toast.success(`${deleteDialog.name} a été supprimé`);
+    }
+    setDeleteDialog({ open: false, id: null, name: "" });
+  };
+
+  const filteredFormateurs = formateursData.filter(f =>
     f.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
     f.specialites.some(s => s.toLowerCase().includes(searchTerm.toLowerCase()))
   );
@@ -89,14 +119,14 @@ export function FormateursList() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-primary">{formateurs.length}</p>
+            <p className="text-2xl font-bold text-primary">{formateursData.length}</p>
             <p className="text-sm text-muted-foreground">Formateurs</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
             <p className="text-2xl font-bold text-emerald-600">
-              {formateurs.reduce((acc, f) => acc + f.sessions.length, 0)}
+              {formateursData.reduce((acc, f) => acc + f.sessions.length, 0)}
             </p>
             <p className="text-sm text-muted-foreground">Sessions planifiées</p>
           </CardContent>
@@ -104,7 +134,7 @@ export function FormateursList() {
         <Card>
           <CardContent className="p-4 text-center">
             <p className="text-2xl font-bold text-amber-600">
-              {formateurs.filter(f => f.status === "actif").length}
+              {formateursData.filter(f => f.status === "actif").length}
             </p>
             <p className="text-sm text-muted-foreground">Formateurs actifs</p>
           </CardContent>
@@ -137,11 +167,21 @@ export function FormateursList() {
                   </Avatar>
                   
                   <div className="space-y-2 flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-lg text-foreground">{formateur.nom}</h3>
-                      <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
-                        Actif
-                      </Badge>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-lg text-foreground">{formateur.nom}</h3>
+                        <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
+                          Actif
+                        </Badge>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        onClick={() => handleDeleteClick(formateur.id, formateur.nom)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                     
                     {/* Coordonnées */}
@@ -206,6 +246,24 @@ export function FormateursList() {
           </Card>
         ))}
       </div>
+
+      {/* Dialog de confirmation de suppression */}
+      <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog(prev => ({ ...prev, open }))}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer ce formateur ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer <strong>{deleteDialog.name}</strong> ? Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
