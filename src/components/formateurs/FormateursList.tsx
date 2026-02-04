@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, Mail, Phone, MapPin, Search, GraduationCap, Trash2, Loader2 } from "lucide-react";
+import { Clock, Mail, Phone, Search, GraduationCap, Trash2, Loader2, Pencil } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { FormateurForm } from "./FormateurForm";
+import { FormateurEditForm } from "./FormateurEditForm";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -29,6 +30,7 @@ interface Formateur {
   specialites: string | null;
   tarif_horaire: number | null;
   type: string | null;
+  civilite: string | null;
   societe_nom: string | null;
   adresse: string | null;
   code_postal: string | null;
@@ -44,6 +46,7 @@ export function FormateursList() {
     id: null,
     name: "",
   });
+  const [editFormateur, setEditFormateur] = useState<Formateur | null>(null);
   const queryClient = useQueryClient();
 
   // Fetch formateurs from database
@@ -191,14 +194,24 @@ export function FormateursList() {
                             {formateur.type === 'interne' ? 'Interne' : 'Externe'}
                           </Badge>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={() => handleDeleteClick(formateur.id, `${formateur.prenom} ${formateur.nom}`)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-primary"
+                            onClick={() => setEditFormateur(formateur)}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => handleDeleteClick(formateur.id, `${formateur.prenom} ${formateur.nom}`)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
                       
                       {/* Coordonnées */}
@@ -263,6 +276,15 @@ export function FormateursList() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dialog d'édition */}
+      {editFormateur && (
+        <FormateurEditForm
+          formateur={editFormateur}
+          open={!!editFormateur}
+          onOpenChange={(open) => !open && setEditFormateur(null)}
+        />
+      )}
     </div>
   );
 }

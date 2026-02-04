@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Search, Filter, MoreVertical, Mail, Phone, MapPin, User, UserCheck, Trash2 } from "lucide-react";
+import { Search, Filter, MoreVertical, Mail, Phone, MapPin, User, UserCheck, Trash2, Pencil, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -30,26 +30,28 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ApprenantForm } from "./ApprenantForm";
+import { ApprenantEditForm } from "./ApprenantEditForm";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface Apprenant {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  codePostal: string;
-  ville: string;
-  company: string;
-  formations: string[];
-  progress: number;
-  status: "inscrit" | "en_cours" | "termine";
-  type: "prospect" | "client";
-  avatar: string;
-  modeFinancement: "cpf" | "personnel" | "opco" | "france_travail" | "autre";
+  id: string;
+  nom: string;
+  prenom: string;
+  email: string | null;
+  telephone: string | null;
+  adresse: string | null;
+  code_postal: string | null;
+  ville: string | null;
+  civilite: string | null;
+  statut: string | null;
+  mode_financement: string | null;
+  date_naissance: string | null;
+  numero_dossier_cma: string | null;
 }
 
-const modesFinancementLabels = {
+const modesFinancementLabels: Record<string, { label: string; class: string }> = {
   cpf: { label: "CPF", class: "bg-purple-100 text-purple-700" },
   personnel: { label: "Personnel", class: "bg-gray-100 text-gray-700" },
   opco: { label: "OPCO", class: "bg-blue-100 text-blue-700" },
@@ -57,135 +59,14 @@ const modesFinancementLabels = {
   autre: { label: "Autre", class: "bg-slate-100 text-slate-700" },
 };
 
-const apprenants: Apprenant[] = [
-  {
-    id: 1,
-    name: "Jean Martin",
-    email: "jean.martin@email.com",
-    phone: "06 12 34 56 78",
-    address: "12 rue des Lilas",
-    codePostal: "69001",
-    ville: "Lyon",
-    company: "Particulier",
-    formations: ["Formation VTC"],
-    progress: 75,
-    status: "en_cours",
-    type: "client",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Jean",
-    modeFinancement: "cpf",
-  },
-  {
-    id: 2,
-    name: "Sophie Bernard",
-    email: "sophie.bernard@email.com",
-    phone: "06 98 76 54 32",
-    address: "45 avenue Jean Jaurès",
-    codePostal: "69007",
-    ville: "Lyon",
-    company: "OPCO Mobilités",
-    formations: ["Formation TAXI"],
-    progress: 100,
-    status: "termine",
-    type: "client",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sophie",
-    modeFinancement: "opco",
-  },
-  {
-    id: 3,
-    name: "Pierre Durand",
-    email: "pierre.durand@email.com",
-    phone: "06 55 44 33 22",
-    address: "8 place Bellecour",
-    codePostal: "69002",
-    ville: "Lyon",
-    company: "CPF",
-    formations: ["Formation VTC avec frais d'examen"],
-    progress: 45,
-    status: "en_cours",
-    type: "client",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Pierre",
-    modeFinancement: "cpf",
-  },
-  {
-    id: 4,
-    name: "Marie Leroy",
-    email: "marie.leroy@email.com",
-    phone: "06 11 22 33 44",
-    address: "23 rue de la République",
-    codePostal: "69003",
-    ville: "Lyon",
-    company: "",
-    formations: ["Formation TAXI"],
-    progress: 0,
-    status: "inscrit",
-    type: "prospect",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Marie",
-    modeFinancement: "personnel",
-  },
-  {
-    id: 5,
-    name: "Lucas Petit",
-    email: "lucas.petit@email.com",
-    phone: "06 77 88 99 00",
-    address: "56 cours Lafayette",
-    codePostal: "69006",
-    ville: "Lyon",
-    company: "France Travail",
-    formations: ["Formation VTC"],
-    progress: 30,
-    status: "en_cours",
-    type: "client",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Lucas",
-    modeFinancement: "france_travail",
-  },
-  {
-    id: 6,
-    name: "Ahmed Benali",
-    email: "ahmed.benali@email.com",
-    phone: "06 22 33 44 55",
-    address: "18 rue Garibaldi",
-    codePostal: "69003",
-    ville: "Lyon",
-    company: "",
-    formations: ["Formation VTC (E-learning)"],
-    progress: 0,
-    status: "inscrit",
-    type: "prospect",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmed",
-    modeFinancement: "personnel",
-  },
-  {
-    id: 7,
-    name: "Fatima Diallo",
-    email: "fatima.diallo@email.com",
-    phone: "06 33 44 55 66",
-    address: "7 place Carnot",
-    codePostal: "69002",
-    ville: "Lyon",
-    company: "",
-    formations: ["Formation TAXI pour chauffeur VTC"],
-    progress: 0,
-    status: "inscrit",
-    type: "prospect",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Fatima",
-    modeFinancement: "cpf",
-  },
-];
-
-const statusLabels = {
-  inscrit: { label: "Inscrit", class: "bg-blue-100 text-blue-700" },
-  en_cours: { label: "En cours", class: "bg-amber-100 text-amber-700" },
-  termine: { label: "Terminé", class: "bg-green-100 text-green-700" },
-};
-
 function ApprenantTable({ 
   data, 
-  showType = false,
-  onDelete 
+  onDelete,
+  onEdit,
 }: { 
   data: Apprenant[]; 
-  showType?: boolean;
-  onDelete: (id: number, name: string) => void;
+  onDelete: (id: string, name: string) => void;
+  onEdit: (apprenant: Apprenant) => void;
 }) {
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -195,10 +76,7 @@ function ApprenantTable({
             <TableHead className="font-semibold">Apprenant</TableHead>
             <TableHead className="font-semibold">Contact</TableHead>
             <TableHead className="font-semibold">Adresse</TableHead>
-            <TableHead className="font-semibold">Formations</TableHead>
             <TableHead className="font-semibold">Financement</TableHead>
-            {showType && <TableHead className="font-semibold">Type</TableHead>}
-            <TableHead className="font-semibold">Progression</TableHead>
             <TableHead className="font-semibold">Statut</TableHead>
             <TableHead className="w-12"></TableHead>
           </TableRow>
@@ -209,76 +87,67 @@ function ApprenantTable({
               <TableCell>
                 <div className="flex items-center gap-3">
                   <Avatar className="w-10 h-10">
-                    <AvatarImage src={apprenant.avatar} />
-                    <AvatarFallback>{apprenant.name.split(" ").map(n => n[0]).join("")}</AvatarFallback>
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      {apprenant.prenom[0]}{apprenant.nom[0]}
+                    </AvatarFallback>
                   </Avatar>
-                  <span className="font-medium">{apprenant.name}</span>
+                  <div>
+                    <span className="font-medium">
+                      {apprenant.civilite && `${apprenant.civilite} `}
+                      {apprenant.prenom} {apprenant.nom}
+                    </span>
+                    {apprenant.numero_dossier_cma && (
+                      <div className="text-xs text-muted-foreground">
+                        CMA: {apprenant.numero_dossier_cma}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </TableCell>
               <TableCell>
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Mail className="w-3.5 h-3.5 text-muted-foreground" />
-                    {apprenant.email}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Phone className="w-3.5 h-3.5" />
-                    {apprenant.phone}
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                  <div>
-                    <div>{apprenant.address}</div>
-                    <div className="text-muted-foreground">{apprenant.codePostal} {apprenant.ville}</div>
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex flex-wrap gap-1">
-                  {apprenant.formations.map((f, i) => (
-                    <Badge key={i} variant="secondary" className="text-xs">
-                      {f}
-                    </Badge>
-                  ))}
-                </div>
-              </TableCell>
-              <TableCell>
-                <Badge className={modesFinancementLabels[apprenant.modeFinancement].class}>
-                  {modesFinancementLabels[apprenant.modeFinancement].label}
-                </Badge>
-              </TableCell>
-              {showType && (
-                <TableCell>
-                  {apprenant.type === "prospect" ? (
-                    <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">
-                      <User className="w-3 h-3 mr-1" />
-                      Prospect
-                    </Badge>
-                  ) : (
-                    <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-                      <UserCheck className="w-3 h-3 mr-1" />
-                      Client
-                    </Badge>
+                  {apprenant.email && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Mail className="w-3.5 h-3.5 text-muted-foreground" />
+                      {apprenant.email}
+                    </div>
                   )}
-                </TableCell>
-              )}
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-primary rounded-full transition-all"
-                      style={{ width: `${apprenant.progress}%` }}
-                    />
-                  </div>
-                  <span className="text-sm text-muted-foreground">{apprenant.progress}%</span>
+                  {apprenant.telephone && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Phone className="w-3.5 h-3.5" />
+                      {apprenant.telephone}
+                    </div>
+                  )}
                 </div>
               </TableCell>
               <TableCell>
-                <Badge className={statusLabels[apprenant.status].class}>
-                  {statusLabels[apprenant.status].label}
+                {(apprenant.adresse || apprenant.ville) && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <MapPin className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                    <div>
+                      {apprenant.adresse && <div>{apprenant.adresse}</div>}
+                      {(apprenant.code_postal || apprenant.ville) && (
+                        <div className="text-muted-foreground">
+                          {apprenant.code_postal} {apprenant.ville}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </TableCell>
+              <TableCell>
+                {apprenant.mode_financement && modesFinancementLabels[apprenant.mode_financement] && (
+                  <Badge className={modesFinancementLabels[apprenant.mode_financement].class}>
+                    {modesFinancementLabels[apprenant.mode_financement].label}
+                  </Badge>
+                )}
+              </TableCell>
+              <TableCell>
+                <Badge className={apprenant.statut === 'entreprise' 
+                  ? "bg-blue-100 text-blue-700" 
+                  : "bg-gray-100 text-gray-700"
+                }>
+                  {apprenant.statut === 'entreprise' ? 'Entreprise' : 'Particulier'}
                 </Badge>
               </TableCell>
               <TableCell>
@@ -289,15 +158,13 @@ function ApprenantTable({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem>Voir profil</DropdownMenuItem>
-                    <DropdownMenuItem>Modifier</DropdownMenuItem>
-                    <DropdownMenuItem>Envoyer email</DropdownMenuItem>
-                    {apprenant.type === "prospect" && (
-                      <DropdownMenuItem>Convertir en client</DropdownMenuItem>
-                    )}
+                    <DropdownMenuItem onClick={() => onEdit(apprenant)}>
+                      <Pencil className="w-4 h-4 mr-2" />
+                      Modifier
+                    </DropdownMenuItem>
                     <DropdownMenuItem 
                       className="text-destructive"
-                      onClick={() => onDelete(apprenant.id, apprenant.name)}
+                      onClick={() => onDelete(apprenant.id, `${apprenant.prenom} ${apprenant.nom}`)}
                     >
                       <Trash2 className="w-4 h-4 mr-2" />
                       Supprimer
@@ -315,39 +182,78 @@ function ApprenantTable({
 
 export function ApprenantsList() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("tous");
-  const [apprenantsData, setApprenantsData] = useState<Apprenant[]>(apprenants);
-  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; id: number | null; name: string }>({
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; id: string | null; name: string }>({
     open: false,
     id: null,
     name: "",
   });
+  const [editApprenant, setEditApprenant] = useState<Apprenant | null>(null);
+  const queryClient = useQueryClient();
 
-  const handleDeleteClick = (id: number, name: string) => {
+  // Fetch apprenants from database
+  const { data: apprenants = [], isLoading } = useQuery({
+    queryKey: ['apprenants'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('apprenants')
+        .select('*')
+        .order('nom', { ascending: true });
+      
+      if (error) throw error;
+      return data as Apprenant[];
+    }
+  });
+
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('apprenants')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['apprenants'] });
+      toast.success(`${deleteDialog.name} a été supprimé`);
+      setDeleteDialog({ open: false, id: null, name: "" });
+    },
+    onError: (error) => {
+      toast.error("Erreur lors de la suppression");
+      console.error(error);
+    }
+  });
+
+  const handleDeleteClick = (id: string, name: string) => {
     setDeleteDialog({ open: true, id, name });
   };
 
   const handleConfirmDelete = () => {
-    if (deleteDialog.id !== null) {
-      setApprenantsData(prev => prev.filter(a => a.id !== deleteDialog.id));
-      toast.success(`${deleteDialog.name} a été supprimé`);
+    if (deleteDialog.id) {
+      deleteMutation.mutate(deleteDialog.id);
     }
-    setDeleteDialog({ open: false, id: null, name: "" });
   };
 
-  const filteredApprenants = apprenantsData.filter(a => 
-    a.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    a.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    a.ville.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredApprenants = apprenants.filter(a => 
+    a.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    a.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (a.email && a.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (a.ville && a.ville.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const prospects = filteredApprenants.filter(a => a.type === "prospect");
-  const clients = filteredApprenants.filter(a => a.type === "client");
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header avec stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="p-4 bg-card rounded-lg border">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -361,23 +267,14 @@ export function ApprenantsList() {
         </div>
         <div className="p-4 bg-card rounded-lg border">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-              <User className="w-5 h-5 text-amber-600" />
+            <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+              <UserCheck className="w-5 h-5 text-purple-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{prospects.length}</p>
-              <p className="text-sm text-muted-foreground">Prospects</p>
-            </div>
-          </div>
-        </div>
-        <div className="p-4 bg-card rounded-lg border">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-              <UserCheck className="w-5 h-5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{clients.length}</p>
-              <p className="text-sm text-muted-foreground">Clients</p>
+              <p className="text-2xl font-bold">
+                {apprenants.filter(a => a.mode_financement === 'cpf').length}
+              </p>
+              <p className="text-sm text-muted-foreground">Financements CPF</p>
             </div>
           </div>
         </div>
@@ -395,58 +292,24 @@ export function ApprenantsList() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Button variant="outline" size="icon">
-            <Filter className="w-4 h-4" />
-          </Button>
         </div>
         <ApprenantForm />
       </div>
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="tous" className="gap-2">
-            Tous
-            <Badge variant="secondary" className="ml-1">{filteredApprenants.length}</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="prospects" className="gap-2">
-            <User className="w-4 h-4" />
-            Prospects
-            <Badge className="ml-1 bg-amber-100 text-amber-700">{prospects.length}</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="clients" className="gap-2">
-            <UserCheck className="w-4 h-4" />
-            Clients
-            <Badge className="ml-1 bg-green-100 text-green-700">{clients.length}</Badge>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="tous" className="mt-4">
-          <ApprenantTable data={filteredApprenants} showType={true} onDelete={handleDeleteClick} />
-        </TabsContent>
-
-        <TabsContent value="prospects" className="mt-4">
-          {prospects.length > 0 ? (
-            <ApprenantTable data={prospects} onDelete={handleDeleteClick} />
-          ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              <User className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>Aucun prospect trouvé</p>
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="clients" className="mt-4">
-          {clients.length > 0 ? (
-            <ApprenantTable data={clients} onDelete={handleDeleteClick} />
-          ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              <UserCheck className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>Aucun client trouvé</p>
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+      {/* Liste */}
+      {filteredApprenants.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          <User className="w-12 h-12 mx-auto mb-4 opacity-50" />
+          <p>Aucun apprenant trouvé</p>
+          <p className="text-sm">Ajoutez votre premier apprenant pour commencer</p>
+        </div>
+      ) : (
+        <ApprenantTable 
+          data={filteredApprenants} 
+          onDelete={handleDeleteClick}
+          onEdit={setEditApprenant}
+        />
+      )}
 
       {/* Dialog de confirmation de suppression */}
       <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog(prev => ({ ...prev, open }))}>
@@ -459,12 +322,26 @@ export function ApprenantsList() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction 
+              onClick={handleConfirmDelete} 
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
               Supprimer
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dialog d'édition */}
+      {editApprenant && (
+        <ApprenantEditForm
+          apprenant={editApprenant}
+          open={!!editApprenant}
+          onOpenChange={(open) => !open && setEditApprenant(null)}
+        />
+      )}
     </div>
   );
 }
