@@ -148,40 +148,58 @@ export type Database = {
       }
       formateurs: {
         Row: {
+          adresse: string | null
+          code_postal: string | null
           created_at: string
           email: string | null
           id: string
           nom: string
+          numero_tva: string | null
           prenom: string
+          siren: string | null
+          societe_nom: string | null
           specialites: string | null
           tarif_horaire: number | null
           telephone: string | null
           type: string | null
           updated_at: string
+          ville: string | null
         }
         Insert: {
+          adresse?: string | null
+          code_postal?: string | null
           created_at?: string
           email?: string | null
           id?: string
           nom: string
+          numero_tva?: string | null
           prenom: string
+          siren?: string | null
+          societe_nom?: string | null
           specialites?: string | null
           tarif_horaire?: number | null
           telephone?: string | null
           type?: string | null
           updated_at?: string
+          ville?: string | null
         }
         Update: {
+          adresse?: string | null
+          code_postal?: string | null
           created_at?: string
           email?: string | null
           id?: string
           nom?: string
+          numero_tva?: string | null
           prenom?: string
+          siren?: string | null
+          societe_nom?: string | null
           specialites?: string | null
           tarif_horaire?: number | null
           telephone?: string | null
           type?: string | null
           updated_at?: string
+          ville?: string | null
         }
         Relationships: []
       }

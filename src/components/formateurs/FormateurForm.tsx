@@ -29,6 +29,13 @@ export function FormateurForm() {
     telephone: "",
     tarif_horaire: "",
     type: "interne",
+    // Facturation
+    societe_nom: "",
+    adresse: "",
+    code_postal: "",
+    ville: "",
+    siren: "",
+    numero_tva: "",
   });
   const queryClient = useQueryClient();
 
@@ -48,6 +55,12 @@ export function FormateurForm() {
       telephone: "",
       tarif_horaire: "",
       type: "interne",
+      societe_nom: "",
+      adresse: "",
+      code_postal: "",
+      ville: "",
+      siren: "",
+      numero_tva: "",
     });
     setSelectedSpecialites([]);
   };
@@ -73,6 +86,12 @@ export function FormateurForm() {
           tarif_horaire: formData.tarif_horaire ? parseFloat(formData.tarif_horaire) : null,
           type: formData.type,
           specialites: specialitesLabels || null,
+          societe_nom: formData.societe_nom || null,
+          adresse: formData.adresse || null,
+          code_postal: formData.code_postal || null,
+          ville: formData.ville || null,
+          siren: formData.siren || null,
+          numero_tva: formData.numero_tva || null,
         });
 
       if (error) throw error;
@@ -172,6 +191,75 @@ export function FormateurForm() {
                 <SelectItem value="externe">Externe</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Section Facturation */}
+          <div className="border-t pt-4 mt-4">
+            <h3 className="font-medium text-sm mb-3 text-muted-foreground">Informations de facturation (optionnel)</h3>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="societe_nom">Nom de la société</Label>
+                <Input 
+                  id="societe_nom" 
+                  placeholder="Ma Société SARL"
+                  value={formData.societe_nom}
+                  onChange={(e) => setFormData({ ...formData, societe_nom: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="adresse">Adresse</Label>
+                <Input 
+                  id="adresse" 
+                  placeholder="15 rue de la Formation"
+                  value={formData.adresse}
+                  onChange={(e) => setFormData({ ...formData, adresse: e.target.value })}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="code_postal">Code postal</Label>
+                  <Input 
+                    id="code_postal" 
+                    placeholder="75001"
+                    value={formData.code_postal}
+                    onChange={(e) => setFormData({ ...formData, code_postal: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ville">Ville</Label>
+                  <Input 
+                    id="ville" 
+                    placeholder="Paris"
+                    value={formData.ville}
+                    onChange={(e) => setFormData({ ...formData, ville: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="siren">Numéro SIREN</Label>
+                  <Input 
+                    id="siren" 
+                    placeholder="123 456 789"
+                    value={formData.siren}
+                    onChange={(e) => setFormData({ ...formData, siren: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="numero_tva">Numéro de TVA</Label>
+                  <Input 
+                    id="numero_tva" 
+                    placeholder="FR12345678901"
+                    value={formData.numero_tva}
+                    onChange={(e) => setFormData({ ...formData, numero_tva: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-3">
