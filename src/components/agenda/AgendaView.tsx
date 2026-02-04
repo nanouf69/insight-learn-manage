@@ -263,6 +263,8 @@ export function AgendaView() {
   };
 
   const handleAddBlock = async () => {
+    // Éviter les doubles soumissions
+    if (isSaving) return;
     if (!selectedSlot || !newBlock.formation || !newBlock.formateur || !newBlock.endHour || !newBlock.startHour) return;
 
     const formateurData = formateursList.find((f) => f.id === newBlock.formateur);
@@ -277,6 +279,8 @@ export function AgendaView() {
     const weekStartDate = format(weekStart, 'yyyy-MM-dd');
 
     setIsSaving(true);
+    // Fermer le dialogue immédiatement pour éviter les doubles clics
+    setIsDialogOpen(false);
 
     // Sauvegarder en base de données
     const { data, error } = await supabase
@@ -296,6 +300,7 @@ export function AgendaView() {
       .single();
 
     setIsSaving(false);
+    setSelectedSlot(null);
 
     if (error) {
       console.error('Erreur sauvegarde bloc:', error);
@@ -319,9 +324,7 @@ export function AgendaView() {
       disciplineColor: disciplineData?.color,
     };
 
-    setCourseBlocks([...courseBlocks, block]);
-    setIsDialogOpen(false);
-    setSelectedSlot(null);
+    setCourseBlocks(prev => [...prev, block]);
     toast.success("Cours enregistré");
   };
 
