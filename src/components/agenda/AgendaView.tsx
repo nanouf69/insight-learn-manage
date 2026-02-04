@@ -147,7 +147,8 @@ export function AgendaView() {
 
     const formateurData = formateursList.find((f) => f.id === newBlock.formateur);
     const disciplineData = disciplines.find((d) => d.id === newBlock.discipline);
-    const endHour = parseInt(newBlock.endHour);
+    const [endH, endM] = newBlock.endHour.split(':').map(Number);
+    const endHourDecimal = endH + (endM / 60);
 
     const block: CourseBlock = {
       id: Date.now().toString(),
@@ -155,7 +156,7 @@ export function AgendaView() {
       formateur: formateurData?.nom || "",
       formateurColor: formateurData?.color || "bg-gray-500",
       startHour: selectedSlot.hour,
-      endHour: endHour,
+      endHour: endHourDecimal,
       date: selectedSlot.date,
       formation: newBlock.formation,
       discipline: disciplineData?.nom,
@@ -345,7 +346,7 @@ export function AgendaView() {
                               </div>
                             )}
                             <div className="text-xs opacity-75 mt-0.5">
-                              {block.startHour}:00 - {block.endHour}:00
+                              {block.startHour}:00 - {Math.floor(block.endHour)}:{block.endHour % 1 === 0 ? '00' : '30'}
                             </div>
                           </div>
                         ) : null
@@ -465,10 +466,17 @@ export function AgendaView() {
                       <SelectValue placeholder="Heure de fin" />
                     </SelectTrigger>
                     <SelectContent>
-                      {hours.filter(h => selectedSlot && h > selectedSlot.hour).map((h) => (
-                        <SelectItem key={h} value={h.toString()}>{h}:00</SelectItem>
-                      ))}
-                      <SelectItem value="19">19:00</SelectItem>
+                      {selectedSlot && Array.from({ length: (19 - selectedSlot.hour) * 2 }, (_, i) => {
+                        const totalMinutes = (selectedSlot.hour * 60 + 30) + (i * 30);
+                        const hour = Math.floor(totalMinutes / 60);
+                        const minutes = totalMinutes % 60;
+                        const timeValue = `${hour}:${minutes.toString().padStart(2, '0')}`;
+                        return (
+                          <SelectItem key={timeValue} value={timeValue}>
+                            {timeValue}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
