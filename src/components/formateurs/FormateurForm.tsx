@@ -199,7 +199,7 @@ export function FormateurForm() {
             
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="societe_nom">Nom de la société</Label>
+                <Label htmlFor="societe_nom">Nom de l'entreprise ou de la société</Label>
                 <Input 
                   id="societe_nom" 
                   placeholder="Ma Société SARL"
