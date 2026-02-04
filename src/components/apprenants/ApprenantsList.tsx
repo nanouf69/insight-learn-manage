@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Filter, MoreVertical, Mail, Phone, MapPin, User, UserCheck } from "lucide-react";
+import { Search, Filter, MoreVertical, Mail, Phone, MapPin, User, UserCheck, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -19,7 +19,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ApprenantForm } from "./ApprenantForm";
+import { toast } from "sonner";
 
 interface Apprenant {
   id: number;
@@ -167,7 +178,15 @@ const statusLabels = {
   termine: { label: "Terminé", class: "bg-green-100 text-green-700" },
 };
 
-function ApprenantTable({ data, showType = false }: { data: Apprenant[]; showType?: boolean }) {
+function ApprenantTable({ 
+  data, 
+  showType = false,
+  onDelete 
+}: { 
+  data: Apprenant[]; 
+  showType?: boolean;
+  onDelete: (id: number, name: string) => void;
+}) {
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
       <Table>
@@ -276,7 +295,13 @@ function ApprenantTable({ data, showType = false }: { data: Apprenant[]; showTyp
                     {apprenant.type === "prospect" && (
                       <DropdownMenuItem>Convertir en client</DropdownMenuItem>
                     )}
-                    <DropdownMenuItem className="text-destructive">Supprimer</DropdownMenuItem>
+                    <DropdownMenuItem 
+                      className="text-destructive"
+                      onClick={() => onDelete(apprenant.id, apprenant.name)}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Supprimer
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </TableCell>
@@ -291,8 +316,26 @@ function ApprenantTable({ data, showType = false }: { data: Apprenant[]; showTyp
 export function ApprenantsList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("tous");
+  const [apprenantsData, setApprenantsData] = useState<Apprenant[]>(apprenants);
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; id: number | null; name: string }>({
+    open: false,
+    id: null,
+    name: "",
+  });
 
-  const filteredApprenants = apprenants.filter(a => 
+  const handleDeleteClick = (id: number, name: string) => {
+    setDeleteDialog({ open: true, id, name });
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteDialog.id !== null) {
+      setApprenantsData(prev => prev.filter(a => a.id !== deleteDialog.id));
+      toast.success(`${deleteDialog.name} a été supprimé`);
+    }
+    setDeleteDialog({ open: false, id: null, name: "" });
+  };
+
+  const filteredApprenants = apprenantsData.filter(a => 
     a.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     a.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     a.ville.toLowerCase().includes(searchTerm.toLowerCase())
@@ -379,12 +422,12 @@ export function ApprenantsList() {
         </TabsList>
 
         <TabsContent value="tous" className="mt-4">
-          <ApprenantTable data={filteredApprenants} showType={true} />
+          <ApprenantTable data={filteredApprenants} showType={true} onDelete={handleDeleteClick} />
         </TabsContent>
 
         <TabsContent value="prospects" className="mt-4">
           {prospects.length > 0 ? (
-            <ApprenantTable data={prospects} />
+            <ApprenantTable data={prospects} onDelete={handleDeleteClick} />
           ) : (
             <div className="text-center py-12 text-muted-foreground">
               <User className="w-12 h-12 mx-auto mb-4 opacity-50" />
@@ -395,7 +438,7 @@ export function ApprenantsList() {
 
         <TabsContent value="clients" className="mt-4">
           {clients.length > 0 ? (
-            <ApprenantTable data={clients} />
+            <ApprenantTable data={clients} onDelete={handleDeleteClick} />
           ) : (
             <div className="text-center py-12 text-muted-foreground">
               <UserCheck className="w-12 h-12 mx-auto mb-4 opacity-50" />
@@ -404,6 +447,24 @@ export function ApprenantsList() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Dialog de confirmation de suppression */}
+      <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog(prev => ({ ...prev, open }))}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cet apprenant ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer <strong>{deleteDialog.name}</strong> ? Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
