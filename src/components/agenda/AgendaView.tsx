@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -10,10 +10,18 @@ import { ChevronLeft, ChevronRight, Plus, X, User, Clock, BookOpen, Layers } fro
 import { format, addDays, startOfWeek, isSameDay } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Discipline {
   id: string;
   nom: string;
+  color: string;
+}
+
+interface Formateur {
+  id: string;
+  nom: string;
+  prenom: string;
   color: string;
 }
 
@@ -30,11 +38,18 @@ interface CourseBlock {
   disciplineColor?: string;
 }
 
-const formateursList = [
-  { id: "1", nom: "Jean Dupont", color: "bg-blue-500" },
-  { id: "2", nom: "Marie Martin", color: "bg-green-500" },
-  { id: "3", nom: "Pierre Bernard", color: "bg-purple-500" },
-  { id: "4", nom: "Sophie Leroy", color: "bg-orange-500" },
+// Couleurs pour les formateurs
+const formateurColors = [
+  "bg-blue-500",
+  "bg-green-500",
+  "bg-purple-500",
+  "bg-orange-500",
+  "bg-pink-500",
+  "bg-teal-500",
+  "bg-indigo-500",
+  "bg-red-500",
+  "bg-yellow-500",
+  "bg-cyan-500",
 ];
 
 const formationsList = [
@@ -88,32 +103,8 @@ const hours = Array.from({ length: 12 }, (_, i) => i + 8); // 8h à 19h
 export function AgendaView() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [disciplines, setDisciplines] = useState<Discipline[]>(defaultDisciplines);
-  const [courseBlocks, setCourseBlocks] = useState<CourseBlock[]>([
-    {
-      id: "1",
-      title: "Formation VTC - Module 1",
-      formateur: "Jean Dupont",
-      formateurColor: "bg-blue-500",
-      startHour: 9,
-      endHour: 12,
-      date: new Date(),
-      formation: "Formation VTC Initiale",
-      discipline: "Formation VTC",
-      disciplineColor: "#16263b",
-    },
-    {
-      id: "2",
-      title: "Gestion 1/2",
-      formateur: "Marie Martin",
-      formateurColor: "bg-green-500",
-      startHour: 14,
-      endHour: 17,
-      date: new Date(),
-      formation: "Capacité de Transport",
-      discipline: "Gestion 1/2",
-      disciplineColor: "#10b981",
-    },
-  ]);
+  const [formateursList, setFormateursList] = useState<Formateur[]>([]);
+  const [courseBlocks, setCourseBlocks] = useState<CourseBlock[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDisciplineDialogOpen, setIsDisciplineDialogOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<{ date: Date; hour: number } | null>(null);
@@ -128,6 +119,33 @@ export function AgendaView() {
     nom: "",
     color: "#6366f1",
   });
+
+  // Charger les formateurs depuis la base de données
+  useEffect(() => {
+    const fetchFormateurs = async () => {
+      const { data, error } = await supabase
+        .from('formateurs')
+        .select('id, nom, prenom')
+        .order('nom');
+
+      if (error) {
+        console.error('Erreur chargement formateurs:', error);
+        return;
+      }
+
+      if (data) {
+        const formateursWithColors = data.map((f, index) => ({
+          id: f.id,
+          nom: `${f.prenom} ${f.nom}`,
+          prenom: f.prenom,
+          color: formateurColors[index % formateurColors.length],
+        }));
+        setFormateursList(formateursWithColors);
+      }
+    };
+
+    fetchFormateurs();
+  }, []);
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
