@@ -38,11 +38,10 @@ const formateursList = [
 ];
 
 const formationsList = [
-  "Formation VTC Initiale",
-  "Formation Continue VTC",
-  "Capacité de Transport",
-  "Gestion d'entreprise",
-  "Anglais professionnel",
+  "Formation TAXI et VTC",
+  "Formation TAXI",
+  "Formation VTC",
+  "Formation TAXI et TA",
 ];
 
 // Liste complète des matières avec leurs couleurs
@@ -122,7 +121,7 @@ export function AgendaView() {
     title: "",
     formateur: "",
     formation: "",
-    duration: "2",
+    endHour: "",
     discipline: "",
   });
   const [newDiscipline, setNewDiscipline] = useState({
@@ -139,16 +138,16 @@ export function AgendaView() {
 
   const handleSlotClick = (date: Date, hour: number) => {
     setSelectedSlot({ date, hour });
-    setNewBlock({ title: "", formateur: "", formation: "", duration: "2", discipline: "" });
+    setNewBlock({ title: "", formateur: "", formation: "", endHour: "", discipline: "" });
     setIsDialogOpen(true);
   };
 
   const handleAddBlock = () => {
-    if (!selectedSlot || !newBlock.formation || !newBlock.formateur) return;
+    if (!selectedSlot || !newBlock.formation || !newBlock.formateur || !newBlock.endHour) return;
 
     const formateurData = formateursList.find((f) => f.id === newBlock.formateur);
     const disciplineData = disciplines.find((d) => d.id === newBlock.discipline);
-    const duration = parseInt(newBlock.duration);
+    const endHour = parseInt(newBlock.endHour);
 
     const block: CourseBlock = {
       id: Date.now().toString(),
@@ -156,7 +155,7 @@ export function AgendaView() {
       formateur: formateurData?.nom || "",
       formateurColor: formateurData?.color || "bg-gray-500",
       startHour: selectedSlot.hour,
-      endHour: selectedSlot.hour + duration,
+      endHour: endHour,
       date: selectedSlot.date,
       formation: newBlock.formation,
       discipline: disciplineData?.nom,
@@ -457,22 +456,19 @@ export function AgendaView() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Durée</Label>
+                  <Label>Jusqu'à *</Label>
                   <Select
-                    value={newBlock.duration}
-                    onValueChange={(value) => setNewBlock({ ...newBlock, duration: value })}
+                    value={newBlock.endHour}
+                    onValueChange={(value) => setNewBlock({ ...newBlock, endHour: value })}
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Heure de fin" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">1 heure</SelectItem>
-                      <SelectItem value="2">2 heures</SelectItem>
-                      <SelectItem value="3">3 heures</SelectItem>
-                      <SelectItem value="4">4 heures</SelectItem>
-                      <SelectItem value="5">5 heures</SelectItem>
-                      <SelectItem value="6">6 heures</SelectItem>
-                      <SelectItem value="7">7 heures (journée)</SelectItem>
+                      {hours.filter(h => selectedSlot && h > selectedSlot.hour).map((h) => (
+                        <SelectItem key={h} value={h.toString()}>{h}:00</SelectItem>
+                      ))}
+                      <SelectItem value="19">19:00</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -483,7 +479,7 @@ export function AgendaView() {
                   </Button>
                   <Button
                     onClick={handleAddBlock}
-                    disabled={!newBlock.formation || !newBlock.formateur}
+                    disabled={!newBlock.formation || !newBlock.formateur || !newBlock.endHour}
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Ajouter
