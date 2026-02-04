@@ -29,6 +29,12 @@ interface Formateur {
   specialites: string | null;
   tarif_horaire: number | null;
   type: string | null;
+  societe_nom: string | null;
+  adresse: string | null;
+  code_postal: string | null;
+  ville: string | null;
+  siren: string | null;
+  numero_tva: string | null;
 }
 
 export function FormateursList() {
