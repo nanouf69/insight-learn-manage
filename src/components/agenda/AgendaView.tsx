@@ -139,6 +139,7 @@ export function AgendaView() {
     title: "",
     formateur: "",
     formation: "",
+    startHour: "",
     endHour: "",
     discipline: "",
   });
@@ -256,15 +257,17 @@ export function AgendaView() {
 
   const handleSlotClick = (date: Date, hour: number) => {
     setSelectedSlot({ date, hour });
-    setNewBlock({ title: "", formateur: "", formation: "", endHour: "", discipline: "" });
+    setNewBlock({ title: "", formateur: "", formation: "", startHour: `${hour}:00`, endHour: "", discipline: "" });
     setIsDialogOpen(true);
   };
 
   const handleAddBlock = async () => {
-    if (!selectedSlot || !newBlock.formation || !newBlock.formateur || !newBlock.endHour) return;
+    if (!selectedSlot || !newBlock.formation || !newBlock.formateur || !newBlock.endHour || !newBlock.startHour) return;
 
     const formateurData = formateursList.find((f) => f.id === newBlock.formateur);
     const disciplineData = disciplines.find((d) => d.id === newBlock.discipline);
+    const [startH, startM] = newBlock.startHour.split(':').map(Number);
+    const startHourDecimal = startH + (startM / 60);
     const [endH, endM] = newBlock.endHour.split(':').map(Number);
     const endHourDecimal = endH + (endM / 60);
 
@@ -284,7 +287,7 @@ export function AgendaView() {
         discipline_color: disciplineData?.color || '#6366f1',
         formation: newBlock.formation,
         jour: dayOfWeek,
-        heure_debut: `${selectedSlot.hour}:00`,
+        heure_debut: newBlock.startHour,
         heure_fin: newBlock.endHour,
         semaine_debut: weekStartDate,
       })
@@ -306,7 +309,7 @@ export function AgendaView() {
       formateur: formateurData?.nom || "",
       formateurId: newBlock.formateur,
       formateurColor: formateurData?.color || "bg-gray-500",
-      startHour: selectedSlot.hour,
+      startHour: startHourDecimal,
       endHour: endHourDecimal,
       date: selectedSlot.date,
       formation: newBlock.formation,
@@ -547,8 +550,7 @@ export function AgendaView() {
                 <div className="p-3 bg-muted rounded-lg text-sm">
                   <strong>
                     {format(selectedSlot.date, "EEEE d MMMM yyyy", { locale: fr })}
-                  </strong>{" "}
-                  à partir de <strong>{selectedSlot.hour}:00</strong>
+                  </strong>
                 </div>
 
                 <div className="space-y-2">
@@ -625,29 +627,63 @@ export function AgendaView() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Jusqu'à *</Label>
-                  <Select
-                    value={newBlock.endHour}
-                    onValueChange={(value) => setNewBlock({ ...newBlock, endHour: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Heure de fin" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {selectedSlot && Array.from({ length: (19 - selectedSlot.hour) * 2 }, (_, i) => {
-                        const totalMinutes = (selectedSlot.hour * 60 + 30) + (i * 30);
-                        const hour = Math.floor(totalMinutes / 60);
-                        const minutes = totalMinutes % 60;
-                        const timeValue = `${hour}:${minutes.toString().padStart(2, '0')}`;
-                        return (
-                          <SelectItem key={timeValue} value={timeValue}>
-                            {timeValue}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>De *</Label>
+                    <Select
+                      value={newBlock.startHour}
+                      onValueChange={(value) => setNewBlock({ ...newBlock, startHour: value, endHour: "" })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Heure de début" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 22 }, (_, i) => {
+                          const totalMinutes = 8 * 60 + (i * 30);
+                          const hour = Math.floor(totalMinutes / 60);
+                          const minutes = totalMinutes % 60;
+                          const timeValue = `${hour}:${minutes.toString().padStart(2, '0')}`;
+                          return (
+                            <SelectItem key={timeValue} value={timeValue}>
+                              {timeValue}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Jusqu'à *</Label>
+                    <Select
+                      value={newBlock.endHour}
+                      onValueChange={(value) => setNewBlock({ ...newBlock, endHour: value })}
+                      disabled={!newBlock.startHour}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Heure de fin" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {newBlock.startHour && (() => {
+                          const [startH, startM] = newBlock.startHour.split(':').map(Number);
+                          const startMinutes = startH * 60 + startM;
+                          const endMinutes = 19 * 60;
+                          const slots = Math.floor((endMinutes - startMinutes - 30) / 30) + 1;
+                          return Array.from({ length: Math.max(slots, 1) }, (_, i) => {
+                            const totalMinutes = startMinutes + 30 + (i * 30);
+                            const hour = Math.floor(totalMinutes / 60);
+                            const minutes = totalMinutes % 60;
+                            const timeValue = `${hour}:${minutes.toString().padStart(2, '0')}`;
+                            return (
+                              <SelectItem key={timeValue} value={timeValue}>
+                                {timeValue}
+                              </SelectItem>
+                            );
+                          });
+                        })()}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div className="flex justify-end gap-2 pt-4">
