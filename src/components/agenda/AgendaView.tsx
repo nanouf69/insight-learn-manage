@@ -67,7 +67,7 @@ const defaultDisciplines: Discipline[] = [
   { id: "2", nom: "Bilan QCM Examen", color: "#f2ef0c" },
   { id: "3", nom: "Bilan QRC Examen", color: "#ec9060" },
   { id: "4", nom: "Correction Bilan Examen", color: "#29acf0" },
-  { id: "5", nom: "Développement commercial Réglementation spécifique VTC", color: "#f8a53d" },
+  { id: "5", nom: "Développement commercial", color: "#f8a53d" },
   { id: "6", nom: "Examen blanc 1", color: "#3f4494" },
   { id: "7", nom: "Examen Blanc 1 correction", color: "#4ca8a0" },
   { id: "8", nom: "Examen Blanc 2", color: "#3beeff" },
