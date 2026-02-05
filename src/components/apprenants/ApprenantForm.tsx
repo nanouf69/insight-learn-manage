@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -14,25 +14,111 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
-interface Session {
-  id: string;
-  date_debut: string;
-  date_fin: string;
-  formations?: { nom: string } | null;
-}
-
-// Liste des formations disponibles (TAXI/VTC)
-const formationsDisponibles = [
-  { id: "vtc", nom: "Formation VTC", prix: 1099 },
-  { id: "vtc-exam", nom: "Formation VTC avec frais d'examen", prix: 1599 },
-  { id: "taxi", nom: "Formation TAXI", prix: 1299 },
-  { id: "taxi-exam", nom: "Formation TAXI avec frais d'examen", prix: 1799 },
-  { id: "passerelle-taxi", nom: "Formation TAXI pour chauffeur VTC", prix: 999 },
-  { id: "vtc-elearning", nom: "Formation VTC (E-learning)", prix: 1599 },
-  { id: "taxi-elearning", nom: "Formation TAXI (E-learning)", prix: 1299 },
-  { id: "passerelle-taxi-elearning", nom: "Formation TAXI pour chauffeur VTC (E-learning)", prix: 499 },
-  { id: "passerelle-vtc-elearning", nom: "Formation VTC pour chauffeur TAXI (E-learning)", prix: 499 },
+// Liste des formations avec leurs dates disponibles
+const formationsAvecDates = [
+  {
+    id: "vtc",
+    nom: "Formation VTC (VTC)",
+    prix: 1099,
+    dates: [
+      "Du 12 au 25 janvier 2026",
+      "Du 16 au 30 mars 2026",
+      "Du 11 au 24 mai 2026",
+      "Du 6 au 19 juillet 2026",
+      "Du 14 au 27 septembre 2026",
+      "Du 2 au 15 novembre 2026"
+    ]
+  },
+  {
+    id: "vtc-exam",
+    nom: "Formation VTC avec frais d'examen (VTC)",
+    prix: 1599,
+    dates: [
+      "Du 12 au 25 janvier 2026",
+      "Du 16 au 30 mars 2026",
+      "Du 11 au 24 mai 2026",
+      "Du 6 au 19 juillet 2026",
+      "Du 14 au 27 septembre 2026",
+      "Du 2 au 15 novembre 2026"
+    ]
+  },
+  {
+    id: "taxi",
+    nom: "Formation TAXI (TAXI)",
+    prix: 1299,
+    dates: [
+      "Du 5 au 26 janvier 2026",
+      "Du 9 au 30 mars 2026",
+      "Du 4 au 25 mai 2026",
+      "Du 29 juin au 20 juillet 2026",
+      "Du 7 au 28 septembre 2026",
+      "Du 26 octobre au 16 novembre 2026"
+    ]
+  },
+  {
+    id: "taxi-exam",
+    nom: "Formation TAXI avec frais d'examen (TAXI)",
+    prix: 1799,
+    dates: [
+      "Du 5 au 26 janvier 2026",
+      "Du 9 au 30 mars 2026",
+      "Du 4 au 25 mai 2026",
+      "Du 29 juin au 20 juillet 2026",
+      "Du 7 au 28 septembre 2026",
+      "Du 26 octobre au 16 novembre 2026"
+    ]
+  },
+  {
+    id: "passerelle-taxi",
+    nom: "Formation TAXI pour chauffeur VTC (TA)",
+    prix: 999,
+    dates: [
+      "Sessions sur demande"
+    ]
+  },
+  {
+    id: "vtc-elearning",
+    nom: "Formation VTC E-learning (VTC)",
+    prix: 1599,
+    dates: [
+      "Démarrage immédiat"
+    ]
+  },
+  {
+    id: "taxi-elearning",
+    nom: "Formation TAXI E-learning (TAXI)",
+    prix: 1299,
+    dates: [
+      "Démarrage immédiat"
+    ]
+  },
+  {
+    id: "passerelle-taxi-elearning",
+    nom: "Formation TAXI pour chauffeur VTC E-learning (TA)",
+    prix: 499,
+    dates: [
+      "Démarrage immédiat"
+    ]
+  },
+  {
+    id: "passerelle-vtc-elearning",
+    nom: "Formation VTC pour chauffeur TAXI E-learning (VA)",
+    prix: 499,
+    dates: [
+      "Démarrage immédiat"
+    ]
+  }
 ];
+
+// Générer toutes les options de dates avec formation
+const toutesLesDates = formationsAvecDates.flatMap(formation => 
+  formation.dates.map(date => ({
+    id: `${formation.id}-${date}`,
+    formationId: formation.id,
+    formationNom: formation.nom,
+    dateLabel: date
+  }))
+);
 
 export function ApprenantForm() {
   const [open, setOpen] = useState(false);
@@ -54,43 +140,12 @@ export function ApprenantForm() {
   const [numeroDossierCma, setNumeroDossierCma] = useState("");
   const [dateDebutFormation, setDateDebutFormation] = useState<Date | undefined>();
   const [dateFinFormation, setDateFinFormation] = useState<Date | undefined>();
-  const [selectedSessionDates, setSelectedSessionDates] = useState("");
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const [selectedDateOption, setSelectedDateOption] = useState("");
 
-  // Charger les sessions disponibles
-  useEffect(() => {
-    const fetchSessions = async () => {
-      const { data, error } = await supabase
-        .from('sessions')
-        .select('id, date_debut, date_fin, formations(nom)')
-        .order('date_debut', { ascending: true });
-      
-      if (!error && data) {
-        setSessions(data);
-      }
-    };
-    fetchSessions();
-  }, []);
-
-  // Parser une date au format YYYY-MM-DD sans décalage UTC
-  const parseDateString = (dateStr: string): Date => {
-    const [year, month, day] = dateStr.split('-').map(Number);
-    return new Date(year, month - 1, day);
-  };
-
-  // Gérer la sélection d'une session
-  const handleSessionSelect = (value: string) => {
-    setSelectedSessionDates(value);
-    if (value === "manuel") {
-      // Mode manuel - garder les dates actuelles ou les réinitialiser
-      return;
-    }
-    // Trouver la session sélectionnée
-    const session = sessions.find(s => s.id === value);
-    if (session) {
-      setDateDebutFormation(parseDateString(session.date_debut));
-      setDateFinFormation(parseDateString(session.date_fin));
-    }
+  // Gérer la sélection d'une date de formation
+  const handleDateSelect = (value: string) => {
+    setSelectedDateOption(value);
+    // Si c'est "manuel", on laisse les date pickers actifs
   };
 
   const resetForm = () => {
@@ -107,7 +162,7 @@ export function ApprenantForm() {
     setNumeroDossierCma("");
     setDateDebutFormation(undefined);
     setDateFinFormation(undefined);
-    setSelectedSessionDates("");
+    setSelectedDateOption("");
     setTypeApprenant("prospect");
   };
 
@@ -396,33 +451,77 @@ export function ApprenantForm() {
             <div className="space-y-4">
               <Label>Dates de formation</Label>
               
-              {/* Menu déroulant des sessions */}
-              <Select value={selectedSessionDates} onValueChange={handleSessionSelect}>
+              {/* Menu déroulant des dates disponibles */}
+              <Select value={selectedDateOption} onValueChange={handleDateSelect}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner une session ou définir manuellement" />
+                  <SelectValue placeholder="Sélectionner une date de formation" />
                 </SelectTrigger>
-                <SelectContent className="bg-background z-50">
+                <SelectContent className="bg-background z-50 max-h-80">
                   <SelectItem value="manuel">
                     <span className="flex items-center gap-2">
                       <CalendarIcon className="w-4 h-4" />
                       Définir les dates manuellement
                     </span>
                   </SelectItem>
-                  {sessions.length > 0 && (
-                    <SelectGroup>
-                      <SelectLabel>Sessions disponibles</SelectLabel>
-                      {sessions.map((session) => {
-                        const dateDebut = parseDateString(session.date_debut);
-                        const dateFin = parseDateString(session.date_fin);
-                        const formationNom = session.formations?.nom || "Formation";
-                        return (
-                          <SelectItem key={session.id} value={session.id}>
-                            {formationNom} - du {format(dateDebut, "dd/MM/yyyy", { locale: fr })} au {format(dateFin, "dd/MM/yyyy", { locale: fr })}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectGroup>
-                  )}
+                  
+                  {/* Formations VTC */}
+                  <SelectGroup>
+                    <SelectLabel>Formation VTC (VTC)</SelectLabel>
+                    {formationsAvecDates.find(f => f.id === "vtc")?.dates.map((date, idx) => (
+                      <SelectItem key={`vtc-${idx}`} value={`vtc-${idx}`}>
+                        {date}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+
+                  {/* Formations VTC avec examen */}
+                  <SelectGroup>
+                    <SelectLabel>Formation VTC avec frais d'examen (VTC)</SelectLabel>
+                    {formationsAvecDates.find(f => f.id === "vtc-exam")?.dates.map((date, idx) => (
+                      <SelectItem key={`vtc-exam-${idx}`} value={`vtc-exam-${idx}`}>
+                        {date}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+
+                  {/* Formations TAXI */}
+                  <SelectGroup>
+                    <SelectLabel>Formation TAXI (TAXI)</SelectLabel>
+                    {formationsAvecDates.find(f => f.id === "taxi")?.dates.map((date, idx) => (
+                      <SelectItem key={`taxi-${idx}`} value={`taxi-${idx}`}>
+                        {date}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+
+                  {/* Formations TAXI avec examen */}
+                  <SelectGroup>
+                    <SelectLabel>Formation TAXI avec frais d'examen (TAXI)</SelectLabel>
+                    {formationsAvecDates.find(f => f.id === "taxi-exam")?.dates.map((date, idx) => (
+                      <SelectItem key={`taxi-exam-${idx}`} value={`taxi-exam-${idx}`}>
+                        {date}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+
+                  {/* Passerelle TA */}
+                  <SelectGroup>
+                    <SelectLabel>Formation TAXI pour chauffeur VTC (TA)</SelectLabel>
+                    {formationsAvecDates.find(f => f.id === "passerelle-taxi")?.dates.map((date, idx) => (
+                      <SelectItem key={`passerelle-taxi-${idx}`} value={`passerelle-taxi-${idx}`}>
+                        {date}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+
+                  {/* E-learning */}
+                  <SelectGroup>
+                    <SelectLabel>Formations E-learning</SelectLabel>
+                    <SelectItem value="elearning-vtc">Formation VTC E-learning - Démarrage immédiat</SelectItem>
+                    <SelectItem value="elearning-taxi">Formation TAXI E-learning - Démarrage immédiat</SelectItem>
+                    <SelectItem value="elearning-ta">Formation TAXI pour VTC E-learning (TA) - Démarrage immédiat</SelectItem>
+                    <SelectItem value="elearning-va">Formation VTC pour TAXI E-learning (VA) - Démarrage immédiat</SelectItem>
+                  </SelectGroup>
                 </SelectContent>
               </Select>
 
