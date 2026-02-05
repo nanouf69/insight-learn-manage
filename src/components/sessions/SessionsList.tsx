@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Users, MapPin, Loader2 } from "lucide-react";
 import { SessionForm } from "./SessionForm";
 import { SessionDetail } from "./SessionDetail";
-import { SessionNameEditor } from "./SessionNameEditor";
+import { SessionEditor } from "./SessionEditor";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -129,9 +129,8 @@ export function SessionsList() {
                       <h3 className="font-semibold text-lg text-foreground">
                         {session.nom || `Session du ${formatDate(session.date_debut)}`}
                       </h3>
-                      <SessionNameEditor 
-                        sessionId={session.id} 
-                        currentName={session.nom} 
+                      <SessionEditor 
+                        session={session} 
                         onUpdate={refetch}
                       />
                       {getStatusBadge(session.statut)}
