@@ -259,6 +259,51 @@ export type Database = {
         }
         Relationships: []
       }
+      contacts: {
+        Row: {
+          created_at: string
+          email: string | null
+          entreprise: string | null
+          fonction: string | null
+          id: string
+          nom: string
+          notes: string | null
+          prenom: string
+          statut: string | null
+          telephone: string | null
+          updated_at: string
+          valeur_estimee: number | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          entreprise?: string | null
+          fonction?: string | null
+          id?: string
+          nom: string
+          notes?: string | null
+          prenom: string
+          statut?: string | null
+          telephone?: string | null
+          updated_at?: string
+          valeur_estimee?: number | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          entreprise?: string | null
+          fonction?: string | null
+          id?: string
+          nom?: string
+          notes?: string | null
+          prenom?: string
+          statut?: string | null
+          telephone?: string | null
+          updated_at?: string
+          valeur_estimee?: number | null
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           apprenant_id: string | null

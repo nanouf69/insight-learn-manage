@@ -4,24 +4,55 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Upload, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function DocumentForm() {
   const [open, setOpen] = useState(false);
-  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
+  const [formData, setFormData] = useState({
+    nom: "",
+    type: "",
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    toast({
-      title: "Document importé",
-      description: "Le document a été importé avec succès.",
+  const resetForm = () => {
+    setFormData({
+      nom: "",
+      type: "",
     });
-    setOpen(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const { error } = await supabase.from("documents").insert({
+        nom: formData.nom,
+        type: formData.type,
+      });
+
+      if (error) throw error;
+
+      toast.success("Document importé avec succès");
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
+      resetForm();
+      setOpen(false);
+    } catch (error: any) {
+      toast.error(error.message || "Erreur lors de l'import du document");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      setOpen(isOpen);
+      if (!isOpen) resetForm();
+    }}>
       <DialogTrigger asChild>
         <Button className="gap-2">
           <Upload className="w-4 h-4" />
@@ -49,47 +80,40 @@ export function DocumentForm() {
 
           <div className="space-y-2">
             <Label htmlFor="name">Nom du document</Label>
-            <Input id="name" placeholder="Convention de formation - TechCorp" required />
+            <Input
+              id="name"
+              placeholder="Convention de formation - TechCorp"
+              required
+              value={formData.nom}
+              onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="type">Type</Label>
-              <Select required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="convention">Convention</SelectItem>
-                  <SelectItem value="programme">Programme</SelectItem>
-                  <SelectItem value="emargement">Émargement</SelectItem>
-                  <SelectItem value="attestation">Attestation</SelectItem>
-                  <SelectItem value="facture">Facture</SelectItem>
-                  <SelectItem value="autre">Autre</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="formation">Formation</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="react">React Avancé</SelectItem>
-                  <SelectItem value="ux">UX/UI Design</SelectItem>
-                  <SelectItem value="python">Python Data Science</SelectItem>
-                  <SelectItem value="management">Management d'équipe</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="type">Type</Label>
+            <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="convention">Convention</SelectItem>
+                <SelectItem value="programme">Programme</SelectItem>
+                <SelectItem value="emargement">Émargement</SelectItem>
+                <SelectItem value="attestation">Attestation</SelectItem>
+                <SelectItem value="facture">Facture</SelectItem>
+                <SelectItem value="autre">Autre</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Annuler
             </Button>
-            <Button type="submit">Importer</Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Importer
+            </Button>
           </div>
         </form>
       </DialogContent>

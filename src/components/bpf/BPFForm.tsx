@@ -24,6 +24,8 @@ import {
   BookOpen
 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 
 // Données simulées récupérées automatiquement
 const autoData = {
@@ -84,6 +86,7 @@ export function BPFForm() {
   const [generationProgress, setGenerationProgress] = useState(0);
   const [bpfGenerated, setBpfGenerated] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // États pour les données éditables
   const [organisme, setOrganisme] = useState(autoData.organisme);
@@ -194,8 +197,60 @@ Le: ${dirigeant.date}
     toast.success("BPF exporté avec succès");
   };
 
-  const handleSave = () => {
-    toast.success("BPF sauvegardé");
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const year = parseInt(exercice.debut.slice(0, 4));
+      
+      const { error } = await supabase.from("bpf").insert({
+        annee: year,
+        date_debut: exercice.debut,
+        date_fin: exercice.fin,
+        organisme_siret: organisme.siret,
+        organisme_code_naf: organisme.codeNAF,
+        organisme_numero_declaration: organisme.numeroDeclaration,
+        organisme_forme_juridique: organisme.formeJuridique,
+        organisme_denomination: organisme.denomination,
+        organisme_adresse: organisme.adresse,
+        organisme_telephone: organisme.telephone,
+        organisme_email: organisme.email,
+        produits_entreprises: produits.entreprises,
+        produits_cpf: produits.cpf,
+        produits_particuliers: produits.particuliers,
+        produits_opco: produits.opco,
+        produits_france_travail: produits.franceTravail,
+        produits_total: produits.total,
+        charges_total: charges.total,
+        charges_salaires_formateurs: charges.salairesFormateurs,
+        charges_prestations: charges.prestations,
+        formateurs_internes_nombre: formateurs.internes.nombre,
+        formateurs_internes_heures: formateurs.internes.heures,
+        formateurs_externes_nombre: formateurs.externes.nombre,
+        formateurs_externes_heures: formateurs.externes.heures,
+        stagiaires_salaries_nombre: stagiaires.salariesPrives.nombre,
+        stagiaires_salaries_heures: stagiaires.salariesPrives.heures,
+        stagiaires_particuliers_nombre: stagiaires.particuliers.nombre,
+        stagiaires_particuliers_heures: stagiaires.particuliers.heures,
+        stagiaires_demandeurs_emploi_nombre: stagiaires.rechercheEmploi.nombre,
+        stagiaires_demandeurs_emploi_heures: stagiaires.rechercheEmploi.heures,
+        stagiaires_total_nombre: stagiaires.total.nombre,
+        stagiaires_total_heures: stagiaires.total.heures,
+        specialites: specialites,
+        objectifs: objectifs,
+        dirigeant_nom: dirigeant.nom,
+        dirigeant_qualite: dirigeant.qualite,
+        signature_lieu: dirigeant.lieu,
+        signature_date: dirigeant.date || null,
+        statut: 'brouillon',
+      });
+
+      if (error) throw error;
+      toast.success("BPF sauvegardé avec succès");
+    } catch (error: any) {
+      toast.error(error.message || "Erreur lors de la sauvegarde du BPF");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const formatCurrency = (value: number) => value.toLocaleString() + " €";
@@ -220,8 +275,8 @@ Le: ${dirigeant.date}
         </div>
         {bpfGenerated && (
           <div className="flex gap-2">
-            <Button onClick={handleSave} variant="outline">
-              <Save className="w-4 h-4 mr-2" />
+            <Button onClick={handleSave} variant="outline" disabled={isSaving}>
+              {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
               Sauvegarder
             </Button>
             <Button onClick={handleExport}>
