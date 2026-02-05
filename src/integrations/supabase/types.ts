@@ -83,6 +83,7 @@ export type Database = {
           prenom: string
           statut: string | null
           telephone: string | null
+          type_apprenant: string | null
           updated_at: string
           ville: string | null
         }
@@ -101,6 +102,7 @@ export type Database = {
           prenom: string
           statut?: string | null
           telephone?: string | null
+          type_apprenant?: string | null
           updated_at?: string
           ville?: string | null
         }
@@ -119,6 +121,7 @@ export type Database = {
           prenom?: string
           statut?: string | null
           telephone?: string | null
+          type_apprenant?: string | null
           updated_at?: string
           ville?: string | null
         }
