@@ -1,13 +1,18 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Plus, User, UserCheck, Loader2 } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Plus, User, UserCheck, Loader2, CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 // Liste des formations disponibles (TAXI/VTC)
 const formationsDisponibles = [
@@ -40,6 +45,9 @@ export function ApprenantForm() {
   const [financement, setFinancement] = useState("personnel");
   const [organismeFinanceur, setOrganismeFinanceur] = useState("");
   const [numeroDossierCma, setNumeroDossierCma] = useState("");
+  const [dateDebutFormation, setDateDebutFormation] = useState<Date | undefined>();
+  const [dateFinFormation, setDateFinFormation] = useState<Date | undefined>();
+
   const resetForm = () => {
     setCivilite("");
     setPrenom("");
@@ -52,6 +60,8 @@ export function ApprenantForm() {
     setFinancement("personnel");
     setOrganismeFinanceur("");
     setNumeroDossierCma("");
+    setDateDebutFormation(undefined);
+    setDateFinFormation(undefined);
     setTypeApprenant("prospect");
   };
 
@@ -344,6 +354,67 @@ export function ApprenantForm() {
                 value={numeroDossierCma} 
                 onChange={(e) => setNumeroDossierCma(e.target.value)} 
               />
+            </div>
+
+            {/* Dates de formation */}
+            <div className="space-y-2">
+              <Label>Dates de formation</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dateDebut" className="text-xs text-muted-foreground">Date de début</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !dateDebutFormation && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dateDebutFormation ? format(dateDebutFormation, "dd/MM/yyyy", { locale: fr }) : "Sélectionner"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateDebutFormation}
+                        onSelect={setDateDebutFormation}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                        locale={fr}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dateFin" className="text-xs text-muted-foreground">Date de fin</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !dateFinFormation && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dateFinFormation ? format(dateFinFormation, "dd/MM/yyyy", { locale: fr }) : "Sélectionner"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateFinFormation}
+                        onSelect={setDateFinFormation}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                        locale={fr}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
             </div>
           </div>
 
