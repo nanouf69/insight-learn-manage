@@ -159,9 +159,14 @@ export function ApprenantForm() {
       resetForm();
       setOpen(false);
     } catch (error: any) {
+      // Vérifier si c'est une erreur de doublon
+      const isDuplicate = error.code === '23505' || error.message?.includes('apprenants_nom_prenom_unique');
+      
       toast({
-        title: "Erreur",
-        description: error.message || "Erreur lors de l'ajout de l'apprenant",
+        title: isDuplicate ? "Doublon détecté" : "Erreur",
+        description: isDuplicate 
+          ? `Un apprenant avec le nom "${nom}" et le prénom "${prenom}" existe déjà.`
+          : (error.message || "Erreur lors de l'ajout de l'apprenant"),
         variant: "destructive",
       });
     } finally {
