@@ -253,11 +253,24 @@ export function ApprenantForm() {
                   <SelectValue placeholder="Sélectionner une entreprise" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="opco-mobilites">OPCO Mobilités</SelectItem>
-                  <SelectItem value="opco-ep">OPCO EP</SelectItem>
-                  <SelectItem value="fafcea">FAFCEA</SelectItem>
-                  <SelectItem value="entreprise">Entreprise directe</SelectItem>
-                  <SelectItem value="autre">Autre</SelectItem>
+                  <SelectGroup>
+                    <SelectLabel>Organismes publics</SelectLabel>
+                    <SelectItem value="cpf-cdc">CPF (Caisse des Dépôts)</SelectItem>
+                    <SelectItem value="france-travail">France Travail</SelectItem>
+                    <SelectItem value="metropole-lyon">Métropole de Lyon</SelectItem>
+                    <SelectItem value="mairie">Mairie</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel>OPCO</SelectLabel>
+                    <SelectItem value="opco-mobilites">OPCO Mobilités</SelectItem>
+                    <SelectItem value="opco-ep">OPCO EP</SelectItem>
+                    <SelectItem value="fafcea">FAFCEA</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel>Autres</SelectLabel>
+                    <SelectItem value="societe">Société / Entreprise</SelectItem>
+                    <SelectItem value="autre">Autre</SelectItem>
+                  </SelectGroup>
                 </SelectContent>
               </Select>
             </div>
