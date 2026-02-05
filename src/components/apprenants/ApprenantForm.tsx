@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -13,6 +13,13 @@ import { Plus, User, UserCheck, Loader2, CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+
+interface Session {
+  id: string;
+  date_debut: string;
+  date_fin: string;
+  formations?: { nom: string } | null;
+}
 
 // Liste des formations disponibles (TAXI/VTC)
 const formationsDisponibles = [
@@ -47,6 +54,44 @@ export function ApprenantForm() {
   const [numeroDossierCma, setNumeroDossierCma] = useState("");
   const [dateDebutFormation, setDateDebutFormation] = useState<Date | undefined>();
   const [dateFinFormation, setDateFinFormation] = useState<Date | undefined>();
+  const [selectedSessionDates, setSelectedSessionDates] = useState("");
+  const [sessions, setSessions] = useState<Session[]>([]);
+
+  // Charger les sessions disponibles
+  useEffect(() => {
+    const fetchSessions = async () => {
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('id, date_debut, date_fin, formations(nom)')
+        .order('date_debut', { ascending: true });
+      
+      if (!error && data) {
+        setSessions(data);
+      }
+    };
+    fetchSessions();
+  }, []);
+
+  // Parser une date au format YYYY-MM-DD sans décalage UTC
+  const parseDateString = (dateStr: string): Date => {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+
+  // Gérer la sélection d'une session
+  const handleSessionSelect = (value: string) => {
+    setSelectedSessionDates(value);
+    if (value === "manuel") {
+      // Mode manuel - garder les dates actuelles ou les réinitialiser
+      return;
+    }
+    // Trouver la session sélectionnée
+    const session = sessions.find(s => s.id === value);
+    if (session) {
+      setDateDebutFormation(parseDateString(session.date_debut));
+      setDateFinFormation(parseDateString(session.date_fin));
+    }
+  };
 
   const resetForm = () => {
     setCivilite("");
@@ -62,6 +107,7 @@ export function ApprenantForm() {
     setNumeroDossierCma("");
     setDateDebutFormation(undefined);
     setDateFinFormation(undefined);
+    setSelectedSessionDates("");
     setTypeApprenant("prospect");
   };
 
@@ -357,8 +403,40 @@ export function ApprenantForm() {
             </div>
 
             {/* Dates de formation */}
-            <div className="space-y-2">
+            <div className="space-y-4">
               <Label>Dates de formation</Label>
+              
+              {/* Menu déroulant des sessions */}
+              <Select value={selectedSessionDates} onValueChange={handleSessionSelect}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner une session ou définir manuellement" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="manuel">
+                    <span className="flex items-center gap-2">
+                      <CalendarIcon className="w-4 h-4" />
+                      Définir les dates manuellement
+                    </span>
+                  </SelectItem>
+                  {sessions.length > 0 && (
+                    <SelectGroup>
+                      <SelectLabel>Sessions disponibles</SelectLabel>
+                      {sessions.map((session) => {
+                        const dateDebut = parseDateString(session.date_debut);
+                        const dateFin = parseDateString(session.date_fin);
+                        const formationNom = session.formations?.nom || "Formation";
+                        return (
+                          <SelectItem key={session.id} value={session.id}>
+                            {formationNom} - du {format(dateDebut, "dd/MM/yyyy", { locale: fr })} au {format(dateFin, "dd/MM/yyyy", { locale: fr })}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectGroup>
+                  )}
+                </SelectContent>
+              </Select>
+
+              {/* Date pickers (toujours visibles pour permettre l'ajustement) */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="dateDebut" className="text-xs text-muted-foreground">Date de début</Label>
@@ -375,7 +453,7 @@ export function ApprenantForm() {
                         {dateDebutFormation ? format(dateDebutFormation, "dd/MM/yyyy", { locale: fr }) : "Sélectionner"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0 z-50" align="start">
                       <Calendar
                         mode="single"
                         selected={dateDebutFormation}
@@ -402,7 +480,7 @@ export function ApprenantForm() {
                         {dateFinFormation ? format(dateFinFormation, "dd/MM/yyyy", { locale: fr }) : "Sélectionner"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0 z-50" align="start">
                       <Calendar
                         mode="single"
                         selected={dateFinFormation}
