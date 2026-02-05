@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Filter, MoreVertical, Mail, Phone, MapPin, User, UserCheck, Trash2, Pencil, Loader2 } from "lucide-react";
+import { Search, Filter, MoreVertical, Mail, Phone, MapPin, User, UserCheck, Trash2, Pencil, Loader2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -18,6 +18,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
@@ -63,17 +65,77 @@ function ApprenantTable({
   data, 
   onDelete,
   onEdit,
+  typeFilter,
+  onTypeFilterChange,
 }: { 
   data: Apprenant[]; 
   onDelete: (id: string, name: string) => void;
   onEdit: (apprenant: Apprenant) => void;
+  typeFilter: string[];
+  onTypeFilterChange: (types: string[]) => void;
 }) {
+  const toggleFilter = (type: string) => {
+    if (typeFilter.includes(type)) {
+      onTypeFilterChange(typeFilter.filter(t => t !== type));
+    } else {
+      onTypeFilterChange([...typeFilter, type]);
+    }
+  };
+
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/50">
-            <TableHead className="font-semibold">Apprenant</TableHead>
+            <TableHead className="font-semibold">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-auto p-0 font-semibold hover:bg-transparent">
+                    Apprenant
+                    <ChevronDown className="ml-1 h-4 w-4" />
+                    {typeFilter.length > 0 && (
+                      <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-xs">
+                        {typeFilter.length}
+                      </Badge>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuCheckboxItem
+                    checked={typeFilter.includes("vtc")}
+                    onCheckedChange={() => toggleFilter("vtc")}
+                  >
+                    VTC
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={typeFilter.includes("taxi")}
+                    onCheckedChange={() => toggleFilter("taxi")}
+                  >
+                    TAXI
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={typeFilter.includes("ta")}
+                    onCheckedChange={() => toggleFilter("ta")}
+                  >
+                    TA (Passerelle TAXI)
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={typeFilter.includes("va")}
+                    onCheckedChange={() => toggleFilter("va")}
+                  >
+                    VA (Passerelle VTC)
+                  </DropdownMenuCheckboxItem>
+                  {typeFilter.length > 0 && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => onTypeFilterChange([])}>
+                        Effacer les filtres
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </TableHead>
             <TableHead className="font-semibold">Contact</TableHead>
             <TableHead className="font-semibold">Adresse</TableHead>
             <TableHead className="font-semibold">Financement</TableHead>
@@ -182,6 +244,7 @@ function ApprenantTable({
 
 export function ApprenantsList() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState<string[]>([]);
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; id: string | null; name: string }>({
     open: false,
     id: null,
@@ -308,6 +371,8 @@ export function ApprenantsList() {
           data={filteredApprenants} 
           onDelete={handleDeleteClick}
           onEdit={setEditApprenant}
+          typeFilter={typeFilter}
+          onTypeFilterChange={setTypeFilter}
         />
       )}
 

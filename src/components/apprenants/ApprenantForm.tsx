@@ -425,22 +425,6 @@ export function ApprenantForm() {
               </Select>
             </div>
 
-            {typeApprenant === "client" && (
-              <div className="space-y-2">
-                <Label htmlFor="typeApprenant">Apprenant</Label>
-                <Select defaultValue="vtc">
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="vtc">VTC</SelectItem>
-                    <SelectItem value="taxi">TAXI</SelectItem>
-                    <SelectItem value="ta">TA (Passerelle TAXI)</SelectItem>
-                    <SelectItem value="va">VA (Passerelle VTC)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
           </div>
 
           {/* Mode de financement */}
