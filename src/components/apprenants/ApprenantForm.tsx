@@ -98,7 +98,7 @@ export function ApprenantForm() {
   const [selectedFormation, setSelectedFormation] = useState("");
   const [montantTtc, setMontantTtc] = useState("1299");
   const [typeApprenantFormation, setTypeApprenantFormation] = useState("");
-  const [dateExamenTheorique, setDateExamenTheorique] = useState("");
+  const [dateExamenTheorique, setDateExamenTheorique] = useState("27 janvier 2026");
 
   // Prix par défaut selon la formation
   const prixFormations: Record<string, string> = {
@@ -214,7 +214,7 @@ export function ApprenantForm() {
     setSelectedFormation("");
     setMontantTtc("1299");
     setTypeApprenantFormation("");
-    setDateExamenTheorique("");
+    setDateExamenTheorique("27 janvier 2026");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

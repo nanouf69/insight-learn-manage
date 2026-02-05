@@ -124,7 +124,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
     selected_formation: "",
     creneau_horaire: "",
     montant_ttc: "1299",
-    date_examen_theorique: "",
+    date_examen_theorique: "27 janvier 2026",
   });
   const queryClient = useQueryClient();
 
@@ -151,7 +151,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
         selected_formation: "",
         creneau_horaire: "",
         montant_ttc: "1299",
-        date_examen_theorique: "",
+        date_examen_theorique: "27 janvier 2026",
       });
     }
   }, [apprenant]);
