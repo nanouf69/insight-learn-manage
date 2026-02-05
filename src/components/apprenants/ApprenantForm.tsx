@@ -392,16 +392,6 @@ export function ApprenantForm() {
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="numeroDossierCma">Numéro de dossier CMA</Label>
-              <Input 
-                id="numeroDossierCma" 
-                placeholder="Ex: CMA-2025-001" 
-                value={numeroDossierCma} 
-                onChange={(e) => setNumeroDossierCma(e.target.value)} 
-              />
-            </div>
-
             {/* Dates de formation */}
             <div className="space-y-4">
               <Label>Dates de formation</Label>
@@ -493,6 +483,16 @@ export function ApprenantForm() {
                   </Popover>
                 </div>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="numeroDossierCma">Numéro de dossier CMA</Label>
+              <Input 
+                id="numeroDossierCma" 
+                placeholder="Ex: CMA-2025-001" 
+                value={numeroDossierCma} 
+                onChange={(e) => setNumeroDossierCma(e.target.value)} 
+              />
             </div>
           </div>
 
