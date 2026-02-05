@@ -117,8 +117,11 @@ const defaultDisciplines: Discipline[] = [
   { id: "45", nom: "Réglementation spécifique VTC", color: "#e11d48" },
 ];
 
-// Créneaux de 30 minutes de 8h à 19h
-const timeSlots = Array.from({ length: 22 }, (_, i) => 8 + i * 0.5); // 8:00, 8:30, 9:00, ... 18:30
+// Heures de 8h à 18h (affichage par heure complète)
+const hours = Array.from({ length: 11 }, (_, i) => i + 8); // 8, 9, 10, ... 18
+
+// Hauteur d'une heure en pixels
+const HOUR_HEIGHT = 60;
 
 // Helper pour convertir l'heure texte en décimal
 const timeToDecimal = (time: string): number => {
@@ -384,9 +387,9 @@ export function AgendaView() {
     );
   };
 
-  const isBlockStart = (block: CourseBlock, slot: number) => {
-    // Comparer avec une tolérance pour éviter les erreurs de précision flottante
-    return Math.abs(block.startHour - slot) < 0.01;
+  // Récupérer tous les blocs d'une journée
+  const getBlocksForDay = (date: Date) => {
+    return courseBlocks.filter((block) => isSameDay(block.date, date));
   };
 
   // Helper pour formater l'heure d'un slot
@@ -428,91 +431,86 @@ export function AgendaView() {
         </p>
       </CardHeader>
       <CardContent>
-        {/* Légende des formateurs et disciplines */}
-        <div className="flex flex-wrap gap-4 mb-4">
-          <div className="flex flex-wrap gap-2">
-            <span className="text-xs text-muted-foreground font-medium mr-1">Formateurs:</span>
-            {formateursList.map((formateur) => (
-              <Badge key={formateur.id} variant="outline" className="flex items-center gap-1">
-                <div className={`w-3 h-3 rounded-full ${formateur.color}`} />
-                {formateur.nom}
-              </Badge>
-            ))}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <span className="text-xs text-muted-foreground font-medium mr-1">Disciplines:</span>
-            {disciplines.slice(0, 10).map((discipline) => (
-              <Badge key={discipline.id} variant="secondary" className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: discipline.color }} />
-                {discipline.nom}
-              </Badge>
-            ))}
-            {disciplines.length > 10 && (
-              <Badge variant="outline" className="text-xs">
-                +{disciplines.length - 10} autres
-              </Badge>
-            )}
-          </div>
-        </div>
-
         {/* Grille horaire */}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto border border-border rounded-xl bg-card shadow-sm">
           <div className="min-w-[900px]">
             {/* En-têtes des jours */}
-            <div className="grid grid-cols-8 gap-1 mb-2">
-              <div className="p-2 text-center font-medium text-muted-foreground text-sm">
-                Heures
+            <div className="grid grid-cols-8 border-b border-border bg-muted/40">
+              <div className="p-3 text-center font-medium text-muted-foreground text-xs uppercase tracking-wide border-r border-border">
+                Journée
               </div>
               {weekDays.map((day, index) => (
                 <div
                   key={index}
-                  className={`p-2 text-center rounded-lg ${
+                  className={`p-3 text-center border-r border-border last:border-r-0 ${
                     isSameDay(day, new Date())
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
+                      ? "bg-primary/10"
+                      : ""
                   }`}
                 >
-                  <div className="font-medium text-sm">
-                    {format(day, "EEEE", { locale: fr })}
-                  </div>
-                  <div className="text-xs">
-                    {format(day, "d MMM", { locale: fr })}
+                  <div className={`font-semibold text-sm ${isSameDay(day, new Date()) ? "text-primary" : "text-foreground"}`}>
+                    {format(day, "EEE", { locale: fr })}. {format(day, "dd/MM", { locale: fr })}
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Lignes horaires */}
-            {timeSlots.map((slot) => (
-              <div key={slot} className="grid grid-cols-8 gap-1">
-                {/* Colonne heure */}
-                <div className="p-2 text-center text-sm text-muted-foreground border-r">
-                  {formatSlotTime(slot)}
-                </div>
-                {/* Cellules par jour */}
-                {weekDays.map((day, dayIndex) => {
-                  const blocks = getBlocksForSlot(day, slot);
-                  const hasBlock = blocks.length > 0;
+            {/* Corps de la grille */}
+            <div className="grid grid-cols-8">
+              {/* Colonne des heures */}
+              <div className="border-r border-border bg-muted/20">
+                {hours.map((hour) => (
+                  <div
+                    key={hour}
+                    className="h-[60px] flex items-start justify-end pr-3 pt-1 text-xs font-medium text-muted-foreground border-b border-border/50"
+                  >
+                    {hour} h
+                  </div>
+                ))}
+              </div>
 
-                  return (
-                    <div
-                      key={dayIndex}
-                      className={`relative min-h-[30px] border border-border/50 rounded-sm transition-colors ${
-                        !hasBlock ? "hover:bg-muted/50 cursor-pointer" : ""
-                      }`}
-                      onClick={() => !hasBlock && handleSlotClick(day, slot)}
-                    >
-                      {blocks.map((block) =>
-                        isBlockStart(block, slot) ? (
-                          <div
-                            key={block.id}
-                            className={`absolute inset-x-1 top-1 ${block.formateurColor} text-white rounded-md p-2 shadow-sm z-10`}
-                            style={{
-                              height: `${(block.endHour - block.startHour) * 2 * 30 - 8}px`,
-                            }}
-                          >
+              {/* Colonnes des jours */}
+              {weekDays.map((day, dayIndex) => {
+                const dayBlocks = getBlocksForDay(day);
+                
+                return (
+                  <div
+                    key={dayIndex}
+                    className="relative border-r border-border last:border-r-0"
+                    style={{ height: `${hours.length * HOUR_HEIGHT}px` }}
+                  >
+                    {/* Lignes de grille horaires */}
+                    {hours.map((hour) => (
+                      <div
+                        key={hour}
+                        className="absolute w-full h-[60px] border-b border-border/30 hover:bg-muted/30 cursor-pointer transition-colors"
+                        style={{ top: `${(hour - 8) * HOUR_HEIGHT}px` }}
+                        onClick={() => handleSlotClick(day, hour)}
+                      />
+                    ))}
+
+                    {/* Blocs de cours */}
+                    {dayBlocks.map((block) => {
+                      const topOffset = (block.startHour - 8) * HOUR_HEIGHT;
+                      const blockHeight = (block.endHour - block.startHour) * HOUR_HEIGHT - 4;
+                      
+                      return (
+                        <div
+                          key={block.id}
+                          className="absolute left-1 right-1 rounded-lg shadow-sm overflow-hidden z-10 hover:shadow-md transition-shadow"
+                          style={{
+                            top: `${topOffset + 2}px`,
+                            height: `${blockHeight}px`,
+                            backgroundColor: block.disciplineColor ? `${block.disciplineColor}20` : '#10b98120',
+                            borderLeft: `4px solid ${block.disciplineColor || '#10b981'}`,
+                          }}
+                        >
+                          <div className="p-2 h-full flex flex-col">
                             <div className="flex justify-between items-start">
-                              <div className="text-xs font-medium truncate flex-1">
+                              <div 
+                                className="text-xs font-semibold truncate flex-1"
+                                style={{ color: block.disciplineColor || '#10b981' }}
+                              >
                                 {block.title}
                               </div>
                               <button
@@ -520,41 +518,39 @@ export function AgendaView() {
                                   e.stopPropagation();
                                   handleRemoveBlock(block.id);
                                 }}
-                                className="ml-1 hover:bg-white/20 rounded p-0.5"
+                                className="ml-1 hover:bg-black/10 dark:hover:bg-white/10 rounded p-0.5 text-muted-foreground"
                               >
                                 <X className="h-3 w-3" />
                               </button>
                             </div>
                             <div className="flex items-center gap-1 mt-1">
-                              <User className="h-3 w-3" />
-                              <span className="text-xs opacity-90 truncate">
+                              <User className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-xs text-muted-foreground truncate">
                                 {block.formateur}
                               </span>
                             </div>
-                            {block.discipline && (
+                            {block.discipline && block.discipline !== block.title && (
                               <div className="flex items-center gap-1 mt-0.5">
-                                <Layers className="h-3 w-3" />
-                                <span className="text-xs opacity-90 truncate">
+                                <Layers className="h-3 w-3 text-muted-foreground" />
+                                <span className="text-xs text-muted-foreground truncate">
                                   {block.discipline}
                                 </span>
                               </div>
                             )}
-                            <div className="text-xs opacity-75 mt-0.5">
+                            <div 
+                              className="text-xs font-medium mt-auto"
+                              style={{ color: block.disciplineColor || '#10b981' }}
+                            >
                               {formatSlotTime(block.startHour)} - {formatSlotTime(block.endHour)}
                             </div>
                           </div>
-                        ) : null
-                      )}
-                      {!hasBlock && (
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                          <Plus className="h-4 w-4 text-muted-foreground" />
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
 
