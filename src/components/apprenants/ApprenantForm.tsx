@@ -85,6 +85,7 @@ export function ApprenantForm() {
   const [creneauHoraire, setCreneauHoraire] = useState("");
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
   const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
+  const [montantTtc, setMontantTtc] = useState("");
 
   // Charger les apprenants existants
   useEffect(() => {
@@ -160,6 +161,7 @@ export function ApprenantForm() {
     setTypeApprenant("prospect");
     setSelectedApprenantId("");
     setDuplicateWarning(null);
+    setMontantTtc("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -474,7 +476,21 @@ export function ApprenantForm() {
               </Select>
             </div>
 
-            {/* Sélection d'un apprenant existant pour CPF A */}
+            {/* Montant TTC pour financement personnel */}
+            {financement === "personnel" && (
+              <div className="space-y-2">
+                <Label htmlFor="montantTtc">Montant TTC de la formation (€) *</Label>
+                <Input 
+                  id="montantTtc" 
+                  type="number" 
+                  placeholder="Ex: 1299" 
+                  value={montantTtc} 
+                  onChange={(e) => setMontantTtc(e.target.value)}
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+            )}
             {financement === "cpf-a" && (
               <div className="space-y-2">
                 <Label htmlFor="apprenantCpfA">Apprenant associé (CPF A)</Label>
