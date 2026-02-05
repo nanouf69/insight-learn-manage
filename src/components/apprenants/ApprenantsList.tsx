@@ -284,7 +284,7 @@ export function ApprenantsList() {
       const { data, error } = await supabase
         .from('apprenants')
         .select('*')
-        .order('nom', { ascending: true });
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
       return data as Apprenant[];
