@@ -83,6 +83,8 @@ export function ApprenantForm() {
   const [dateFinFormation, setDateFinFormation] = useState<Date | undefined>();
   const [selectedDateOption, setSelectedDateOption] = useState("");
   const [creneauHoraire, setCreneauHoraire] = useState("");
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+  const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
 
   // Charger les apprenants existants
   useEffect(() => {
@@ -102,6 +104,36 @@ export function ApprenantForm() {
     }
   }, [open]);
 
+  // Vérifier les doublons en temps réel
+  useEffect(() => {
+    const checkDuplicate = async () => {
+      if (!nom.trim() || !prenom.trim()) {
+        setDuplicateWarning(null);
+        return;
+      }
+
+      setIsCheckingDuplicate(true);
+      
+      const { data, error } = await supabase
+        .from('apprenants')
+        .select('id, nom, prenom')
+        .ilike('nom', nom.trim())
+        .ilike('prenom', prenom.trim())
+        .limit(1);
+
+      if (!error && data && data.length > 0) {
+        setDuplicateWarning(`Un apprenant "${data[0].nom} ${data[0].prenom}" existe déjà dans la base de données.`);
+      } else {
+        setDuplicateWarning(null);
+      }
+      
+      setIsCheckingDuplicate(false);
+    };
+
+    // Débounce de 500ms pour éviter trop de requêtes
+    const timeoutId = setTimeout(checkDuplicate, 500);
+    return () => clearTimeout(timeoutId);
+  }, [nom, prenom]);
   // Gérer la sélection d'une date de formation
   const handleDateSelect = (value: string) => {
     setSelectedDateOption(value);
@@ -126,6 +158,7 @@ export function ApprenantForm() {
     setCreneauHoraire("");
     setTypeApprenant("prospect");
     setSelectedApprenantId("");
+    setDuplicateWarning(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -250,13 +283,41 @@ export function ApprenantForm() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="lastName">Nom *</Label>
-                <Input id="lastName" placeholder="Martin" required value={nom} onChange={(e) => setNom(e.target.value)} />
+                <Input 
+                  id="lastName" 
+                  placeholder="Martin" 
+                  required 
+                  value={nom} 
+                  onChange={(e) => setNom(e.target.value)}
+                  className={duplicateWarning ? "border-destructive" : ""}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="firstName">Prénom *</Label>
-                <Input id="firstName" placeholder="Jean" required value={prenom} onChange={(e) => setPrenom(e.target.value)} />
+                <Input 
+                  id="firstName" 
+                  placeholder="Jean" 
+                  required 
+                  value={prenom} 
+                  onChange={(e) => setPrenom(e.target.value)}
+                  className={duplicateWarning ? "border-destructive" : ""}
+                />
               </div>
             </div>
+            
+            {/* Avertissement doublon */}
+            {duplicateWarning && (
+              <div className="flex items-center gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/30 text-destructive text-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                <span>{duplicateWarning}</span>
+              </div>
+            )}
+            
+            {isCheckingDuplicate && nom && prenom && (
+              <p className="text-xs text-muted-foreground">Vérification en cours...</p>
+            )}
           </div>
 
           {/* Coordonnées */}
