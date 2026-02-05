@@ -41,7 +41,12 @@ const datesFormations = {
   ta: {
     label: "Formation TAXI pour chauffeur VTC (TA)",
     dates: [
-      "Sessions sur demande"
+      "Du 5 au 26 janvier 2026",
+      "Du 9 au 30 mars 2026",
+      "Du 4 au 25 mai 2026",
+      "Du 29 juin au 20 juillet 2026",
+      "Du 7 au 28 septembre 2026",
+      "Du 26 octobre au 16 novembre 2026"
     ]
   }
 };
