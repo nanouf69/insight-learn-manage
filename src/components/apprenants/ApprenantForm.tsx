@@ -491,6 +491,22 @@ export function ApprenantForm() {
                 />
               </div>
             )}
+
+            {/* Montant pour financement CPF */}
+            {financement === "cpf" && (
+              <div className="space-y-2">
+                <Label htmlFor="montantCpf">Prix de la formation CPF (€)</Label>
+                <Input 
+                  id="montantCpf" 
+                  type="number" 
+                  placeholder="Ex: 1599" 
+                  value={montantTtc} 
+                  onChange={(e) => setMontantTtc(e.target.value)}
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+            )}
             {financement === "cpf-a" && (
               <div className="space-y-2">
                 <Label htmlFor="apprenantCpfA">Apprenant associé (CPF A)</Label>
