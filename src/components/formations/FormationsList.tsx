@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Filter, MoreVertical, Clock, Users, Euro, Calendar, Download, Send, ChevronDown, ChevronUp, FileText, CheckCircle } from "lucide-react";
+import { Search, Filter, MoreVertical, Clock, Users, Euro, Calendar, Download, Send, ChevronDown, ChevronUp, FileText, CheckCircle, MapPin, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -798,6 +798,124 @@ export function FormationsList() {
         >
           E-learning ({formations.filter(f => f.category === "E-learning").length})
         </Badge>
+      </div>
+
+      {/* Dates des examens 2026 */}
+      <div className="bg-card rounded-xl border border-border p-6 mb-6">
+        <div className="flex items-center gap-2 mb-4">
+          <GraduationCap className="w-5 h-5 text-primary" />
+          <h2 className="text-lg font-semibold">Dates des examens 2026</h2>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Examen Théorique */}
+          <div>
+            <h3 className="font-medium text-foreground mb-3 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-blue-600" />
+              Examen Théorique
+            </h3>
+            <ul className="space-y-2 text-sm">
+              <li className="flex items-start gap-2">
+                <Calendar className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div>
+                  <span className="font-medium">27 janvier 2026</span> - après-midi
+                  <p className="text-muted-foreground flex items-center gap-1 mt-0.5">
+                    <MapPin className="w-3 h-3" />
+                    Villeurbanne - Double Mixte
+                  </p>
+                </div>
+              </li>
+              <li className="flex items-start gap-2">
+                <Calendar className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div>
+                  <span className="font-medium">31 mars 2026</span> - après-midi
+                  <p className="text-muted-foreground flex items-center gap-1 mt-0.5">
+                    <MapPin className="w-3 h-3" />
+                    Clermont-Ferrand - Polydome
+                  </p>
+                </div>
+              </li>
+              <li className="flex items-start gap-2">
+                <Calendar className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div>
+                  <span className="font-medium">26 mai 2026</span> - après-midi
+                  <p className="text-muted-foreground flex items-center gap-1 mt-0.5">
+                    <MapPin className="w-3 h-3" />
+                    Villeurbanne - Double Mixte
+                  </p>
+                </div>
+              </li>
+              <li className="flex items-start gap-2">
+                <Calendar className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div>
+                  <span className="font-medium">21 juillet 2026</span> - après-midi
+                  <p className="text-muted-foreground flex items-center gap-1 mt-0.5">
+                    <MapPin className="w-3 h-3" />
+                    Villeurbanne - Double Mixte
+                  </p>
+                </div>
+              </li>
+              <li className="flex items-start gap-2">
+                <Calendar className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div>
+                  <span className="font-medium">29 septembre 2026</span> - après-midi
+                  <p className="text-muted-foreground flex items-center gap-1 mt-0.5">
+                    <MapPin className="w-3 h-3" />
+                    Villeurbanne - Double Mixte
+                  </p>
+                </div>
+              </li>
+              <li className="flex items-start gap-2">
+                <Calendar className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div>
+                  <span className="font-medium">17 novembre 2026</span> - après-midi
+                  <p className="text-muted-foreground flex items-center gap-1 mt-0.5">
+                    <MapPin className="w-3 h-3" />
+                    Villeurbanne - Double Mixte
+                  </p>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          {/* Examen Pratique */}
+          <div>
+            <h3 className="font-medium text-foreground mb-3 flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-green-600" />
+              Examen Pratique (Rhône 69)
+            </h3>
+            <ul className="space-y-2 text-sm">
+              <li className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span>Du 23 février au 6 mars 2026</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span>Du 4 au 13 mai 2026</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span>Du 29 juin au 7 juillet 2026</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span>Du 1er au 11 septembre 2026</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span>Du 2 au 13 novembre 2026</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span>Du 16 au 23 décembre 2026</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span>Début janvier 2027</span>
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
 
       {/* Formations Grid */}
