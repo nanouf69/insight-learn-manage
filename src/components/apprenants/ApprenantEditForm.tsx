@@ -102,7 +102,10 @@ const prixFormations: Record<string, string> = {
   "vtc-elearning": "1599",
   "taxi-elearning": "1299",
   "passerelle-taxi-elearning": "499",
-  "passerelle-vtc-elearning": "499"
+  "passerelle-vtc-elearning": "499",
+  "vtc-e-presentiel": "1599",
+  "taxi-e-presentiel": "1799",
+  "ta-e-presentiel": "999"
 };
 
 export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEditFormProps) {
@@ -181,7 +184,10 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
     "taxi-elearning": "taxi-e",
     "passerelle-taxi": "ta",
     "passerelle-taxi-elearning": "ta-e",
-    "passerelle-vtc-elearning": "va-e"
+    "passerelle-vtc-elearning": "va-e",
+    "vtc-e-presentiel": "vtc-e-presentiel",
+    "taxi-e-presentiel": "taxi-e-presentiel",
+    "ta-e-presentiel": "ta-e-presentiel"
   };
 
   const handleFormationChange = (value: string) => {
@@ -452,6 +458,12 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                     <SelectItem value="passerelle-taxi-elearning">Formation TAXI pour chauffeur VTC (E-learning) - 499 € (TA)</SelectItem>
                     <SelectItem value="passerelle-vtc-elearning">Formation VTC pour chauffeur TAXI (E-learning) - 499 € (VA)</SelectItem>
                   </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel>Formations E-learning en présentiel</SelectLabel>
+                    <SelectItem value="vtc-e-presentiel">Formation VTC E (Présentiel) - 1 599 € (VTC E Présentiel)</SelectItem>
+                    <SelectItem value="taxi-e-presentiel">Formation TAXI E (Présentiel) - 1 799 € (TAXI E Présentiel)</SelectItem>
+                    <SelectItem value="ta-e-presentiel">Formation TA E (Présentiel) - 999 € (TA E Présentiel)</SelectItem>
+                  </SelectGroup>
                 </SelectContent>
               </Select>
             </div>
@@ -466,10 +478,13 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                 <SelectContent>
                   <SelectItem value="vtc">VTC</SelectItem>
                   <SelectItem value="vtc-e">VTC E</SelectItem>
+                  <SelectItem value="vtc-e-presentiel">VTC E Présentiel</SelectItem>
                   <SelectItem value="taxi">TAXI</SelectItem>
                   <SelectItem value="taxi-e">TAXI E</SelectItem>
+                  <SelectItem value="taxi-e-presentiel">TAXI E Présentiel</SelectItem>
                   <SelectItem value="ta">TA (Passerelle TAXI)</SelectItem>
                   <SelectItem value="ta-e">TA E (Passerelle TAXI E-learning)</SelectItem>
+                  <SelectItem value="ta-e-presentiel">TA E Présentiel</SelectItem>
                   <SelectItem value="va-e">VA E (Passerelle VTC E-learning)</SelectItem>
                 </SelectContent>
               </Select>
