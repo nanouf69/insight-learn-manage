@@ -357,7 +357,9 @@ export function ApprenantForm() {
               <Label htmlFor="financement">Mode de financement *</Label>
               <Select value={financement} onValueChange={(value) => {
                 setFinancement(value);
-                if (value !== "cpf-a") {
+                if (value === "cpf-a") {
+                  setOrganismeFinanceur("cpf-a");
+                } else {
                   setSelectedApprenantId("");
                 }
               }}>
