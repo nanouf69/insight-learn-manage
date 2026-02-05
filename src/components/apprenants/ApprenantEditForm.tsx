@@ -185,6 +185,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
   const formationToType: Record<string, string> = {
     "vtc": "vtc",
     "vtc-exam": "vtc",
+    "vtc-elearning-1099": "vtc-e",
     "vtc-elearning": "vtc-e",
     "taxi": "taxi",
     "taxi-exam": "taxi",
