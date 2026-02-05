@@ -116,13 +116,14 @@ export function ApprenantForm() {
       
       const { data, error } = await supabase
         .from('apprenants')
-        .select('id, nom, prenom')
+        .select('id, nom, prenom, statut')
         .ilike('nom', nom.trim())
         .ilike('prenom', prenom.trim())
         .limit(1);
 
       if (!error && data && data.length > 0) {
-        setDuplicateWarning(`Un apprenant "${data[0].nom} ${data[0].prenom}" existe déjà dans la base de données.`);
+        const typeExistant = data[0].statut === 'prospect' ? 'prospect' : 'client';
+        setDuplicateWarning(`"${data[0].nom} ${data[0].prenom}" est déjà enregistré(e) en tant que ${typeExistant}. Les doublons ne sont pas autorisés.`);
       } else {
         setDuplicateWarning(null);
       }
