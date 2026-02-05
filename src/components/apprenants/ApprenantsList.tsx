@@ -169,7 +169,7 @@ function ApprenantTable({
             <TableHead className="font-semibold">Contact</TableHead>
             <TableHead className="font-semibold">Adresse</TableHead>
             <TableHead className="font-semibold">Apprenant</TableHead>
-            <TableHead className="font-semibold">Statut</TableHead>
+            
             <TableHead className="w-12"></TableHead>
           </TableRow>
         </TableHeader>
@@ -235,14 +235,6 @@ function ApprenantTable({
                 ) : (
                   <span className="text-muted-foreground text-sm">-</span>
                 )}
-              </TableCell>
-              <TableCell>
-                <Badge className={apprenant.statut === 'entreprise' 
-                  ? "bg-blue-100 text-blue-700" 
-                  : "bg-gray-100 text-gray-700"
-                }>
-                  {apprenant.statut === 'entreprise' ? 'Entreprise' : 'Particulier'}
-                </Badge>
               </TableCell>
               <TableCell>
                 <DropdownMenu>
