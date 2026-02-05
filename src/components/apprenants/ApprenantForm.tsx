@@ -176,23 +176,33 @@ export function ApprenantForm() {
   // Vérifier les doublons en temps réel
   useEffect(() => {
     const checkDuplicate = async () => {
-      if (!nom.trim() || !prenom.trim()) {
+      const nomTrimmed = nom.trim().toLowerCase();
+      const prenomTrimmed = prenom.trim().toLowerCase();
+      
+      if (!nomTrimmed || !prenomTrimmed) {
         setDuplicateWarning(null);
         return;
       }
 
       setIsCheckingDuplicate(true);
       
+      // Récupérer tous les apprenants et comparer côté client pour gérer les espaces parasites
       const { data, error } = await supabase
         .from('apprenants')
-        .select('id, nom, prenom, statut')
-        .ilike('nom', nom.trim())
-        .ilike('prenom', prenom.trim())
-        .limit(1);
+        .select('id, nom, prenom, statut');
 
-      if (!error && data && data.length > 0) {
-        const typeExistant = data[0].statut === 'prospect' ? 'prospect' : 'client';
-        setDuplicateWarning(`"${data[0].nom} ${data[0].prenom}" est déjà enregistré(e) en tant que ${typeExistant}. Les doublons ne sont pas autorisés.`);
+      if (!error && data) {
+        const doublon = data.find(a => 
+          a.nom.trim().toLowerCase() === nomTrimmed && 
+          a.prenom.trim().toLowerCase() === prenomTrimmed
+        );
+        
+        if (doublon) {
+          const typeExistant = doublon.statut === 'prospect' ? 'prospect' : 'client';
+          setDuplicateWarning(`"${doublon.prenom.trim()} ${doublon.nom.trim()}" est déjà enregistré(e) en tant que ${typeExistant}. Les doublons ne sont pas autorisés.`);
+        } else {
+          setDuplicateWarning(null);
+        }
       } else {
         setDuplicateWarning(null);
       }
