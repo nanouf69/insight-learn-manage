@@ -72,6 +72,7 @@ export function ApprenantForm() {
   const [dateDebutFormation, setDateDebutFormation] = useState<Date | undefined>();
   const [dateFinFormation, setDateFinFormation] = useState<Date | undefined>();
   const [selectedDateOption, setSelectedDateOption] = useState("");
+  const [creneauHoraire, setCreneauHoraire] = useState("");
 
   // Gérer la sélection d'une date de formation
   const handleDateSelect = (value: string) => {
@@ -94,6 +95,7 @@ export function ApprenantForm() {
     setDateDebutFormation(undefined);
     setDateFinFormation(undefined);
     setSelectedDateOption("");
+    setCreneauHoraire("");
     setTypeApprenant("prospect");
   };
 
@@ -426,6 +428,20 @@ export function ApprenantForm() {
                   </SelectGroup>
                 </SelectContent>
               </Select>
+
+              {/* Créneau horaire pour formation présentiel */}
+              <div className="space-y-2">
+                <Label htmlFor="creneauHoraire">Créneau horaire</Label>
+                <Select value={creneauHoraire} onValueChange={setCreneauHoraire}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un créneau" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    <SelectItem value="journee">Formation en journée (9h - 16h)</SelectItem>
+                    <SelectItem value="soiree">Formation en soirée (17h - 21h)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
               {/* Date pickers (toujours visibles pour permettre l'ajustement) */}
               <div className="grid grid-cols-2 gap-4">
