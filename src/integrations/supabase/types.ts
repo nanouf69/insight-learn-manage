@@ -77,6 +77,7 @@ export type Database = {
           date_debut_formation: string | null
           date_examen_theorique: string | null
           date_fin_formation: string | null
+          date_formation_catalogue: string | null
           date_naissance: string | null
           email: string | null
           formation_choisie: string | null
@@ -102,6 +103,7 @@ export type Database = {
           date_debut_formation?: string | null
           date_examen_theorique?: string | null
           date_fin_formation?: string | null
+          date_formation_catalogue?: string | null
           date_naissance?: string | null
           email?: string | null
           formation_choisie?: string | null
@@ -127,6 +129,7 @@ export type Database = {
           date_debut_formation?: string | null
           date_examen_theorique?: string | null
           date_fin_formation?: string | null
+          date_formation_catalogue?: string | null
           date_naissance?: string | null
           email?: string | null
           formation_choisie?: string | null
