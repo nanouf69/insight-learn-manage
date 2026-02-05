@@ -85,7 +85,7 @@ export function ApprenantForm() {
   const [creneauHoraire, setCreneauHoraire] = useState("");
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
   const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
-  const [montantTtc, setMontantTtc] = useState("");
+  const [montantTtc, setMontantTtc] = useState("1299");
 
   // Charger les apprenants existants
   useEffect(() => {
@@ -161,7 +161,7 @@ export function ApprenantForm() {
     setTypeApprenant("prospect");
     setSelectedApprenantId("");
     setDuplicateWarning(null);
-    setMontantTtc("");
+    setMontantTtc("1299");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -476,37 +476,6 @@ export function ApprenantForm() {
               </Select>
             </div>
 
-            {/* Montant TTC pour financement personnel */}
-            {financement === "personnel" && (
-              <div className="space-y-2">
-                <Label htmlFor="montantTtc">Montant TTC de la formation (€) *</Label>
-                <Input 
-                  id="montantTtc" 
-                  type="number" 
-                  placeholder="Ex: 1299" 
-                  value={montantTtc} 
-                  onChange={(e) => setMontantTtc(e.target.value)}
-                  min="0"
-                  step="0.01"
-                />
-              </div>
-            )}
-
-            {/* Montant pour financement CPF */}
-            {financement === "cpf" && (
-              <div className="space-y-2">
-                <Label htmlFor="montantCpf">Prix de la formation CPF (€)</Label>
-                <Input 
-                  id="montantCpf" 
-                  type="number" 
-                  placeholder="Ex: 1599" 
-                  value={montantTtc} 
-                  onChange={(e) => setMontantTtc(e.target.value)}
-                  min="0"
-                  step="0.01"
-                />
-              </div>
-            )}
             {financement === "cpf-a" && (
               <div className="space-y-2">
                 <Label htmlFor="apprenantCpfA">Apprenant associé (CPF A)</Label>
@@ -681,10 +650,26 @@ export function ApprenantForm() {
             </div>
           </div>
 
-          {/* Notes */}
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
-            <Input id="notes" placeholder="Informations complémentaires..." />
+          {/* Prix de la formation */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Informations</h3>
+            <div className="space-y-2">
+              <Label htmlFor="prixFormation">Prix de la formation (€)</Label>
+              <Input 
+                id="prixFormation" 
+                type="number" 
+                placeholder="Ex: 1299" 
+                value={montantTtc} 
+                onChange={(e) => setMontantTtc(e.target.value)}
+                min="0"
+                step="0.01"
+                defaultValue="1299"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Input id="notes" placeholder="Informations complémentaires..." />
+            </div>
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t">
