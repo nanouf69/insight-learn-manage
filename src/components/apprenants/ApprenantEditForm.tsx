@@ -176,6 +176,18 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
       montant_ttc: prixFormations[value] || prev.montant_ttc,
       type_apprenant: formationToType[value] || prev.type_apprenant
     }));
+    
+    // Pré-sélectionner automatiquement la première date de formation selon le type (présentiel uniquement)
+    if (value === "vtc" || value === "vtc-exam") {
+      setSelectedDateOption(datesFormations.vtc.dates[0]); // "Du 12 au 25 janvier 2026"
+    } else if (value === "taxi" || value === "taxi-exam") {
+      setSelectedDateOption(datesFormations.taxi.dates[0]); // "Du 5 au 26 janvier 2026"
+    } else if (value === "passerelle-taxi") {
+      setSelectedDateOption(datesFormations.ta.dates[0]); // "Du 5 au 26 janvier 2026"
+    } else {
+      // E-learning : pas de date pré-sélectionnée
+      setSelectedDateOption("");
+    }
   };
 
   const handleDateSelect = (value: string) => {
