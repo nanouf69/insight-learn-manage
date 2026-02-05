@@ -39,7 +39,7 @@ export function ApprenantForm() {
   const [ville, setVille] = useState("");
   const [financement, setFinancement] = useState("personnel");
   const [organismeFinanceur, setOrganismeFinanceur] = useState("");
-
+  const [numeroDossierCma, setNumeroDossierCma] = useState("");
   const resetForm = () => {
     setCivilite("");
     setPrenom("");
@@ -51,6 +51,7 @@ export function ApprenantForm() {
     setVille("");
     setFinancement("personnel");
     setOrganismeFinanceur("");
+    setNumeroDossierCma("");
     setTypeApprenant("prospect");
   };
 
@@ -72,6 +73,7 @@ export function ApprenantForm() {
           ville,
           mode_financement: financement,
           organisme_financeur: organismeFinanceur || null,
+          numero_dossier_cma: numeroDossierCma || null,
           statut: typeApprenant === "prospect" ? "prospect" : "inscrit",
         });
 
@@ -332,6 +334,16 @@ export function ApprenantForm() {
                   </SelectGroup>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="numeroDossierCma">Numéro de dossier CMA</Label>
+              <Input 
+                id="numeroDossierCma" 
+                placeholder="Ex: CMA-2025-001" 
+                value={numeroDossierCma} 
+                onChange={(e) => setNumeroDossierCma(e.target.value)} 
+              />
             </div>
           </div>
 
