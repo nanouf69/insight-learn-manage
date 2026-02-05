@@ -51,7 +51,15 @@ interface Apprenant {
   mode_financement: string | null;
   date_naissance: string | null;
   numero_dossier_cma: string | null;
+  type_apprenant: string | null;
 }
+
+const typeApprenantLabels: Record<string, { label: string; class: string }> = {
+  vtc: { label: "VTC", class: "bg-blue-100 text-blue-700" },
+  taxi: { label: "TAXI", class: "bg-yellow-100 text-yellow-700" },
+  ta: { label: "TA", class: "bg-green-100 text-green-700" },
+  va: { label: "VA", class: "bg-purple-100 text-purple-700" },
+};
 
 const modesFinancementLabels: Record<string, { label: string; class: string }> = {
   cpf: { label: "CPF", class: "bg-purple-100 text-purple-700" },
@@ -138,7 +146,7 @@ function ApprenantTable({
             </TableHead>
             <TableHead className="font-semibold">Contact</TableHead>
             <TableHead className="font-semibold">Adresse</TableHead>
-            <TableHead className="font-semibold">Financement</TableHead>
+            <TableHead className="font-semibold">Apprenant</TableHead>
             <TableHead className="font-semibold">Statut</TableHead>
             <TableHead className="w-12"></TableHead>
           </TableRow>
@@ -198,10 +206,12 @@ function ApprenantTable({
                 )}
               </TableCell>
               <TableCell>
-                {apprenant.mode_financement && modesFinancementLabels[apprenant.mode_financement] && (
-                  <Badge className={modesFinancementLabels[apprenant.mode_financement].class}>
-                    {modesFinancementLabels[apprenant.mode_financement].label}
+                {apprenant.type_apprenant && typeApprenantLabels[apprenant.type_apprenant] ? (
+                  <Badge className={typeApprenantLabels[apprenant.type_apprenant].class}>
+                    {typeApprenantLabels[apprenant.type_apprenant].label}
                   </Badge>
+                ) : (
+                  <span className="text-muted-foreground text-sm">-</span>
                 )}
               </TableCell>
               <TableCell>
