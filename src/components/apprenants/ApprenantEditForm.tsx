@@ -517,6 +517,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                   <SelectItem value="journee">Formation en journée (9h - 16h)</SelectItem>
                   <SelectItem value="soiree">Formation en soirée (17h - 21h)</SelectItem>
                   <SelectItem value="en-ligne">Formation en ligne</SelectItem>
+                  <SelectItem value="repassage">Repassage</SelectItem>
                 </SelectContent>
               </Select>
             </div>
