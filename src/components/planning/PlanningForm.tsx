@@ -101,10 +101,10 @@ export function PlanningForm() {
                 <SelectValue placeholder="Sélectionner une formation" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Formation TAXI et VTC">Formation TAXI et VTC</SelectItem>
-                <SelectItem value="Formation TAXI">Formation TAXI</SelectItem>
-                <SelectItem value="Formation VTC">Formation VTC</SelectItem>
-                <SelectItem value="Formation TAXI et TA">Formation TAXI et TA</SelectItem>
+                <SelectItem value="Formation TAXI et VTC">Formation TAXI et VTC (TAXI/VTC)</SelectItem>
+                <SelectItem value="Formation TAXI">Formation TAXI (TAXI)</SelectItem>
+                <SelectItem value="Formation VTC">Formation VTC (VTC)</SelectItem>
+                <SelectItem value="Formation TAXI et TA">Formation TAXI et TA (TAXI/TA)</SelectItem>
               </SelectContent>
             </Select>
           </div>
