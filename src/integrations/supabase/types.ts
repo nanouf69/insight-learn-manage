@@ -712,6 +712,7 @@ export type Database = {
           formation_id: string | null
           id: string
           lieu: string | null
+          nom: string | null
           places_disponibles: number | null
           statut: string | null
           updated_at: string
@@ -723,6 +724,7 @@ export type Database = {
           formation_id?: string | null
           id?: string
           lieu?: string | null
+          nom?: string | null
           places_disponibles?: number | null
           statut?: string | null
           updated_at?: string
@@ -734,6 +736,7 @@ export type Database = {
           formation_id?: string | null
           id?: string
           lieu?: string | null
+          nom?: string | null
           places_disponibles?: number | null
           statut?: string | null
           updated_at?: string

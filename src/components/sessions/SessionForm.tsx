@@ -14,12 +14,14 @@ export function SessionForm() {
   const [isLoading, setIsLoading] = useState(false);
   
   // États pour les champs
+  const [nom, setNom] = useState("");
   const [dateDebut, setDateDebut] = useState("");
   const [dateFin, setDateFin] = useState("");
   const [lieu, setLieu] = useState("");
   const [places, setPlaces] = useState("18");
 
   const resetForm = () => {
+    setNom("");
     setDateDebut("");
     setDateFin("");
     setLieu("");
@@ -34,6 +36,7 @@ export function SessionForm() {
       const { error } = await supabase
         .from('sessions')
         .insert({
+          nom: nom || null,
           date_debut: dateDebut,
           date_fin: dateFin,
           lieu,
@@ -73,6 +76,11 @@ export function SessionForm() {
           <DialogTitle>Nouvelle session</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+          <div className="space-y-2">
+            <Label htmlFor="nom">Nom de la session</Label>
+            <Input id="nom" placeholder="Ex: Session Janvier 2026" value={nom} onChange={(e) => setNom(e.target.value)} />
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="dateDebut">Date de début *</Label>
