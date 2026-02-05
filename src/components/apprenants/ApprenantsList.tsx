@@ -57,9 +57,12 @@ interface Apprenant {
 
 const typeApprenantLabels: Record<string, { label: string; class: string }> = {
   vtc: { label: "VTC", class: "bg-blue-100 text-blue-700" },
+  "vtc-e": { label: "VTC E", class: "bg-blue-50 text-blue-600" },
   taxi: { label: "TAXI", class: "bg-yellow-100 text-yellow-700" },
+  "taxi-e": { label: "TAXI E", class: "bg-yellow-50 text-yellow-600" },
   ta: { label: "TA", class: "bg-green-100 text-green-700" },
-  va: { label: "VA", class: "bg-purple-100 text-purple-700" },
+  "ta-e": { label: "TA E", class: "bg-green-50 text-green-600" },
+  "va-e": { label: "VA E", class: "bg-purple-50 text-purple-600" },
 };
 
 const modesFinancementLabels: Record<string, { label: string; class: string }> = {
@@ -117,10 +120,22 @@ function ApprenantTable({
                     VTC
                   </DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem
+                    checked={typeFilter.includes("vtc-e")}
+                    onCheckedChange={() => toggleFilter("vtc-e")}
+                  >
+                    VTC E
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
                     checked={typeFilter.includes("taxi")}
                     onCheckedChange={() => toggleFilter("taxi")}
                   >
                     TAXI
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={typeFilter.includes("taxi-e")}
+                    onCheckedChange={() => toggleFilter("taxi-e")}
+                  >
+                    TAXI E
                   </DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem
                     checked={typeFilter.includes("ta")}
@@ -129,10 +144,16 @@ function ApprenantTable({
                     TA (Passerelle TAXI)
                   </DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem
-                    checked={typeFilter.includes("va")}
-                    onCheckedChange={() => toggleFilter("va")}
+                    checked={typeFilter.includes("ta-e")}
+                    onCheckedChange={() => toggleFilter("ta-e")}
                   >
-                    VA (Passerelle VTC)
+                    TA E (Passerelle TAXI E-learning)
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={typeFilter.includes("va-e")}
+                    onCheckedChange={() => toggleFilter("va-e")}
+                  >
+                    VA E (Passerelle VTC E-learning)
                   </DropdownMenuCheckboxItem>
                   {typeFilter.length > 0 && (
                     <>

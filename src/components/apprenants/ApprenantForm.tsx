@@ -117,13 +117,13 @@ export function ApprenantForm() {
   const formationToType: Record<string, string> = {
     "vtc": "vtc",
     "vtc-exam": "vtc",
-    "vtc-elearning": "vtc",
+    "vtc-elearning": "vtc-e",
     "taxi": "taxi",
     "taxi-exam": "taxi",
-    "taxi-elearning": "taxi",
+    "taxi-elearning": "taxi-e",
     "passerelle-taxi": "ta",
-    "passerelle-taxi-elearning": "ta",
-    "passerelle-vtc-elearning": "va"
+    "passerelle-taxi-elearning": "ta-e",
+    "passerelle-vtc-elearning": "va-e"
   };
 
   // Mettre à jour le prix et le type d'apprenant quand la formation change
@@ -451,9 +451,12 @@ export function ApprenantForm() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="vtc">VTC</SelectItem>
+                  <SelectItem value="vtc-e">VTC E</SelectItem>
                   <SelectItem value="taxi">TAXI</SelectItem>
+                  <SelectItem value="taxi-e">TAXI E</SelectItem>
                   <SelectItem value="ta">TA (Passerelle TAXI)</SelectItem>
-                  <SelectItem value="va">VA (Passerelle VTC)</SelectItem>
+                  <SelectItem value="ta-e">TA E (Passerelle TAXI E-learning)</SelectItem>
+                  <SelectItem value="va-e">VA E (Passerelle VTC E-learning)</SelectItem>
                 </SelectContent>
               </Select>
               {typeApprenantFormation && (
