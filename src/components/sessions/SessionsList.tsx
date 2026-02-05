@@ -1,149 +1,94 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, MapPin } from "lucide-react";
+import { Calendar, Users, MapPin, Loader2 } from "lucide-react";
 import { SessionForm } from "./SessionForm";
 import { SessionDetail } from "./SessionDetail";
+import { SessionNameEditor } from "./SessionNameEditor";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
-const sessions = [
-  // Formation TAXI VTC Initial (200H = ~6 semaines)
-  {
-    id: 1,
-    title: "Formation TAXI VTC - Session 1",
-    formation: "Formation initiale TAXI VTC (200H)",
-    dateDebut: "27 Jan 2026",
-    dateFin: "06 Mars 2026",
-    lieu: "Présentiel",
-    formateur: "Pierre Bernard",
-    participants: 6,
-    maxParticipants: 10,
-    status: "confirmed"
-  },
-  {
-    id: 2,
-    title: "Formation TAXI VTC - Session 2",
-    formation: "Formation initiale TAXI VTC (200H)",
-    dateDebut: "10 Fév 2026",
-    dateFin: "20 Mars 2026",
-    lieu: "Présentiel",
-    formateur: "Pierre Bernard",
-    participants: 4,
-    maxParticipants: 10,
-    status: "pending"
-  },
-  {
-    id: 3,
-    title: "Formation TAXI VTC - Session 3",
-    formation: "Formation initiale TAXI VTC (200H)",
-    dateDebut: "24 Fév 2026",
-    dateFin: "03 Avr 2026",
-    lieu: "Présentiel",
-    formateur: "Sophie Lefebvre",
-    participants: 0,
-    maxParticipants: 10,
-    status: "pending"
-  },
-  // Formation TAXI pour chauffeur VTC - Passerelle TA (14H = 2 jours)
-  {
-    id: 4,
-    title: "Formation TAXI pour chauffeur VTC - Session 1",
-    formation: "Formation TAXI pour chauffeur VTC (14H) - 999 €",
-    dateDebut: "12 Jan 2026",
-    dateFin: "13 Jan 2026",
-    lieu: "Présentiel",
-    formateur: "Pierre Bernard",
-    participants: 4,
-    maxParticipants: 8,
-    status: "confirmed",
-    badge: "TA"
-  },
-  {
-    id: 5,
-    title: "Formation TAXI pour chauffeur VTC - Session 2",
-    formation: "Formation TAXI pour chauffeur VTC (14H) - 999 €",
-    dateDebut: "09 Fév 2026",
-    dateFin: "10 Fév 2026",
-    lieu: "Présentiel",
-    formateur: "Sophie Lefebvre",
-    participants: 0,
-    maxParticipants: 8,
-    status: "pending",
-    badge: "TA"
-  },
-  {
-    id: 8,
-    title: "Formation TAXI pour chauffeur VTC - Session 3",
-    formation: "Formation TAXI pour chauffeur VTC (14H) - 999 €",
-    dateDebut: "09 Mars 2026",
-    dateFin: "10 Mars 2026",
-    lieu: "Présentiel",
-    formateur: "Pierre Bernard",
-    participants: 0,
-    maxParticipants: 8,
-    status: "pending",
-    badge: "TA"
-  },
-  {
-    id: 9,
-    title: "Formation TAXI pour chauffeur VTC - Session 4",
-    formation: "Formation TAXI pour chauffeur VTC (14H) - 999 €",
-    dateDebut: "06 Avr 2026",
-    dateFin: "07 Avr 2026",
-    lieu: "Présentiel",
-    formateur: "Sophie Lefebvre",
-    participants: 0,
-    maxParticipants: 8,
-    status: "pending",
-    badge: "TA"
-  },
-  // Formation continue TAXI VTC (14H = 2 jours)
-  {
-    id: 6,
-    title: "Formation TAXI VTC Continue - Session 1",
-    formation: "Formation continue TAXI VTC (14H)",
-    dateDebut: "26 Jan 2026",
-    dateFin: "27 Jan 2026",
-    lieu: "Présentiel",
-    formateur: "Marie Martin",
-    participants: 6,
-    maxParticipants: 15,
-    status: "confirmed"
-  },
-  {
-    id: 7,
-    title: "Formation TAXI VTC Continue - Session 2",
-    formation: "Formation continue TAXI VTC (14H)",
-    dateDebut: "23 Fév 2026",
-    dateFin: "24 Fév 2026",
-    lieu: "Présentiel",
-    formateur: "Marie Martin",
-    participants: 3,
-    maxParticipants: 15,
-    status: "pending"
-  },
-];
+interface Session {
+  id: string;
+  nom: string | null;
+  date_debut: string;
+  date_fin: string;
+  lieu: string | null;
+  places_disponibles: number | null;
+  statut: string | null;
+  formation_id: string | null;
+}
 
-const getStatusBadge = (status: string) => {
+const getStatusBadge = (status: string | null) => {
   switch (status) {
+    case "confirmee":
     case "confirmed":
       return <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">Confirmée</Badge>;
+    case "planifiee":
     case "pending":
-      return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">En attente</Badge>;
+      return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">Planifiée</Badge>;
+    case "annulee":
     case "cancelled":
       return <Badge className="bg-red-100 text-red-700 hover:bg-red-100">Annulée</Badge>;
+    case "terminee":
+      return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">Terminée</Badge>;
     default:
-      return <Badge variant="secondary">{status}</Badge>;
+      return <Badge variant="secondary">{status || "Planifiée"}</Badge>;
+  }
+};
+
+const formatDate = (dateString: string) => {
+  try {
+    return format(new Date(dateString), "dd MMM yyyy", { locale: fr });
+  } catch {
+    return dateString;
   }
 };
 
 export function SessionsList() {
-  const [selectedSession, setSelectedSession] = useState<typeof sessions[0] | null>(null);
+  const [selectedSession, setSelectedSession] = useState<any | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
-  const openSessionDetail = (session: typeof sessions[0]) => {
-    setSelectedSession(session);
+  const { data: sessions = [], isLoading, refetch } = useQuery({
+    queryKey: ['sessions'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('*')
+        .order('date_debut', { ascending: true });
+      
+      if (error) throw error;
+      return data as Session[];
+    },
+  });
+
+  const openSessionDetail = (session: Session) => {
+    // Convert to the format expected by SessionDetail
+    const detailSession = {
+      id: session.id,
+      title: session.nom || `Session du ${formatDate(session.date_debut)}`,
+      formation: "Formation TAXI VTC",
+      dateDebut: formatDate(session.date_debut),
+      dateFin: formatDate(session.date_fin),
+      lieu: session.lieu || "Présentiel",
+      formateur: "",
+      participants: 0,
+      maxParticipants: session.places_disponibles || 18,
+      status: session.statut || "planifiee",
+    };
+    setSelectedSession(detailSession);
     setDetailOpen(true);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -155,56 +100,60 @@ export function SessionsList() {
         <SessionForm />
       </div>
 
-      <div className="grid gap-4">
-        {sessions.map((session) => (
-          <Card 
-            key={session.id} 
-            className="hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => openSessionDetail(session)}
-          >
-            <CardContent className="p-5">
-              <div className="flex items-start gap-5">
-                {/* Dates début - fin */}
-                <div className="flex flex-col items-center justify-center min-w-[140px] p-3 rounded-xl bg-primary/10 text-primary">
-                  <Calendar className="w-5 h-5 mb-1" />
-                  <span className="text-sm font-bold">{session.dateDebut}</span>
-                  <span className="text-xs text-primary/70">au</span>
-                  <span className="text-sm font-bold">{session.dateFin}</span>
-                </div>
-                
-                <div className="space-y-2 flex-1">
-                  <div className="flex items-center gap-3">
-                    <h3 className="font-semibold text-lg text-foreground">{session.title}</h3>
-                    {session.badge && (
-                      <Badge className="bg-amber-500 hover:bg-amber-600 text-white font-bold">
-                        {session.badge}
-                      </Badge>
-                    )}
-                    {getStatusBadge(session.status)}
+      {sessions.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            Aucune session créée. Cliquez sur "Nouvelle session" pour en créer une.
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {sessions.map((session) => (
+            <Card 
+              key={session.id} 
+              className="hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => openSessionDetail(session)}
+            >
+              <CardContent className="p-5">
+                <div className="flex items-start gap-5">
+                  {/* Dates début - fin */}
+                  <div className="flex flex-col items-center justify-center min-w-[140px] p-3 rounded-xl bg-primary/10 text-primary">
+                    <Calendar className="w-5 h-5 mb-1" />
+                    <span className="text-sm font-bold">{formatDate(session.date_debut)}</span>
+                    <span className="text-xs text-primary/70">au</span>
+                    <span className="text-sm font-bold">{formatDate(session.date_fin)}</span>
                   </div>
-                  <p className="text-sm text-muted-foreground">{session.formation}</p>
                   
-                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1.5">
-                      <MapPin className="w-4 h-4" />
-                      <span>{session.lieu}</span>
+                  <div className="space-y-2 flex-1">
+                    <div className="flex items-center gap-3">
+                      <h3 className="font-semibold text-lg text-foreground">
+                        {session.nom || `Session du ${formatDate(session.date_debut)}`}
+                      </h3>
+                      <SessionNameEditor 
+                        sessionId={session.id} 
+                        currentName={session.nom} 
+                        onUpdate={refetch}
+                      />
+                      {getStatusBadge(session.statut)}
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <Users className="w-4 h-4" />
-                      <span>{session.participants}/{session.maxParticipants} participants</span>
+                    
+                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="w-4 h-4" />
+                        <span>{session.lieu || "Non défini"}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Users className="w-4 h-4" />
+                        <span>{session.places_disponibles || 18} places</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-                
-                <div className="text-right">
-                  <p className="text-sm font-medium text-foreground">{session.formateur}</p>
-                  <p className="text-xs text-muted-foreground">Formateur</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       <SessionDetail 
         session={selectedSession}
