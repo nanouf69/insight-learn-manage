@@ -66,8 +66,8 @@ export function ApprenantForm() {
   const [adresse, setAdresse] = useState("");
   const [codePostal, setCodePostal] = useState("");
   const [ville, setVille] = useState("");
-  const [financement, setFinancement] = useState("personnel");
-  const [organismeFinanceur, setOrganismeFinanceur] = useState("");
+  const [financement, setFinancement] = useState("cpf");
+  const [organismeFinanceur, setOrganismeFinanceur] = useState("cpf-cdc");
   const [numeroDossierCma, setNumeroDossierCma] = useState("");
   const [dateDebutFormation, setDateDebutFormation] = useState<Date | undefined>();
   const [dateFinFormation, setDateFinFormation] = useState<Date | undefined>();
@@ -89,8 +89,8 @@ export function ApprenantForm() {
     setAdresse("");
     setCodePostal("");
     setVille("");
-    setFinancement("personnel");
-    setOrganismeFinanceur("");
+    setFinancement("cpf");
+    setOrganismeFinanceur("cpf-cdc");
     setNumeroDossierCma("");
     setDateDebutFormation(undefined);
     setDateFinFormation(undefined);
