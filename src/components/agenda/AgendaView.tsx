@@ -117,7 +117,8 @@ const defaultDisciplines: Discipline[] = [
   { id: "45", nom: "Réglementation spécifique VTC", color: "#e11d48" },
 ];
 
-const hours = Array.from({ length: 12 }, (_, i) => i + 8); // 8h à 19h
+// Créneaux de 30 minutes de 8h à 19h
+const timeSlots = Array.from({ length: 22 }, (_, i) => 8 + i * 0.5); // 8:00, 8:30, 9:00, ... 18:30
 
 // Helper pour convertir l'heure texte en décimal
 const timeToDecimal = (time: string): number => {
@@ -262,9 +263,12 @@ export function AgendaView() {
   const handleNextWeek = () => setCurrentDate(addDays(currentDate, 7));
   const handleToday = () => setCurrentDate(new Date());
 
-  const handleSlotClick = (date: Date, hour: number) => {
-    setSelectedSlot({ date, hour });
-    setNewBlock({ title: "", formateur: "", formation: "", startHour: `${hour}:00`, endHour: "", discipline: "" });
+  const handleSlotClick = (date: Date, slot: number) => {
+    setSelectedSlot({ date, hour: slot });
+    const h = Math.floor(slot);
+    const m = (slot % 1) * 60;
+    const timeStr = `${h}:${m === 0 ? '00' : '30'}`;
+    setNewBlock({ title: "", formateur: "", formation: "", startHour: timeStr, endHour: "", discipline: "" });
     setIsDialogOpen(true);
   };
 
@@ -380,8 +384,16 @@ export function AgendaView() {
     );
   };
 
-  const isBlockStart = (block: CourseBlock, hour: number) => {
-    return block.startHour === hour;
+  const isBlockStart = (block: CourseBlock, slot: number) => {
+    // Comparer avec une tolérance pour éviter les erreurs de précision flottante
+    return Math.abs(block.startHour - slot) < 0.01;
+  };
+
+  // Helper pour formater l'heure d'un slot
+  const formatSlotTime = (slot: number): string => {
+    const h = Math.floor(slot);
+    const m = (slot % 1) * 60;
+    return `${h}:${m === 0 ? '00' : '30'}`;
   };
 
   return (
@@ -471,32 +483,32 @@ export function AgendaView() {
             </div>
 
             {/* Lignes horaires */}
-            {hours.map((hour) => (
-              <div key={hour} className="grid grid-cols-8 gap-1">
+            {timeSlots.map((slot) => (
+              <div key={slot} className="grid grid-cols-8 gap-1">
                 {/* Colonne heure */}
                 <div className="p-2 text-center text-sm text-muted-foreground border-r">
-                  {hour}:00
+                  {formatSlotTime(slot)}
                 </div>
                 {/* Cellules par jour */}
                 {weekDays.map((day, dayIndex) => {
-                  const blocks = getBlocksForSlot(day, hour);
+                  const blocks = getBlocksForSlot(day, slot);
                   const hasBlock = blocks.length > 0;
 
                   return (
                     <div
                       key={dayIndex}
-                      className={`relative min-h-[60px] border border-border/50 rounded-sm transition-colors ${
+                      className={`relative min-h-[30px] border border-border/50 rounded-sm transition-colors ${
                         !hasBlock ? "hover:bg-muted/50 cursor-pointer" : ""
                       }`}
-                      onClick={() => !hasBlock && handleSlotClick(day, hour)}
+                      onClick={() => !hasBlock && handleSlotClick(day, slot)}
                     >
                       {blocks.map((block) =>
-                        isBlockStart(block, hour) ? (
+                        isBlockStart(block, slot) ? (
                           <div
                             key={block.id}
                             className={`absolute inset-x-1 top-1 ${block.formateurColor} text-white rounded-md p-2 shadow-sm z-10`}
                             style={{
-                              height: `${(block.endHour - block.startHour) * 60 - 8}px`,
+                              height: `${(block.endHour - block.startHour) * 2 * 30 - 8}px`,
                             }}
                           >
                             <div className="flex justify-between items-start">
@@ -528,7 +540,7 @@ export function AgendaView() {
                               </div>
                             )}
                             <div className="text-xs opacity-75 mt-0.5">
-                              {block.startHour}:00 - {Math.floor(block.endHour)}:{block.endHour % 1 === 0 ? '00' : '30'}
+                              {formatSlotTime(block.startHour)} - {formatSlotTime(block.endHour)}
                             </div>
                           </div>
                         ) : null
