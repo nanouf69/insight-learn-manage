@@ -4,16 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { cn } from "@/lib/utils";
 import { 
   Calendar, 
   MapPin, 
@@ -26,18 +20,15 @@ import {
   UserCog,
   X,
   Download,
-  CreditCard,
-  CalendarIcon,
-  Pencil,
-  BookOpen,
-  ChevronDown,
-  StickyNote
+  Loader2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { generateEmargementPDF } from "./EmargementGenerator";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 interface Session {
-  id: number;
+  id: string;
   title: string;
   formation: string;
   dateDebut: string;
@@ -55,25 +46,17 @@ interface SessionDetailProps {
   onOpenChange: (open: boolean) => void;
 }
 
-// Liste des apprenants avec numéro de dossier CMA, type de formation et mode de financement
-// typeFormation: "TAXI" = Formation initiale TAXI, "VTC" = Formation initiale VTC
-// typeFormation: "TA" = Formation TAXI pour chauffeur VTC (passerelle)
-// modeFinancement: "cpf" = CPF, "personnel" = Personnel, "opco" = OPCO, "france_travail" = France Travail, "autre" = Autre
-const allApprenants = [
-  // Apprenants formation initiale TAXI (présentiel)
-  { id: 1, nom: "Martin", prenom: "Lucas", email: "lucas.martin@email.com", telephone: "06 11 22 33 44", numeroCMA: "CMA-2026-001", type: "client", typeFormation: "TAXI" as const, modeFinancement: "cpf" as const },
-  { id: 2, nom: "Bernard", prenom: "Sophie", email: "sophie.bernard@email.com", telephone: "06 22 33 44 55", numeroCMA: "CMA-2026-002", type: "client", typeFormation: "TAXI" as const, modeFinancement: "personnel" as const },
-  { id: 3, nom: "Petit", prenom: "Thomas", email: "thomas.petit@email.com", telephone: "06 33 44 55 66", numeroCMA: "CMA-2026-003", type: "client", typeFormation: "TAXI" as const, modeFinancement: "opco" as const },
-  // Apprenants formation initiale VTC (présentiel)
-  { id: 4, nom: "Robert", prenom: "Julie", email: "julie.robert@email.com", telephone: "06 44 55 66 77", numeroCMA: "CMA-2026-004", type: "client", typeFormation: "VTC" as const, modeFinancement: "france_travail" as const },
-  { id: 5, nom: "Durand", prenom: "Antoine", email: "antoine.durand@email.com", telephone: "06 55 66 77 88", numeroCMA: "CMA-2026-005", type: "client", typeFormation: "VTC" as const, modeFinancement: "cpf" as const },
-  { id: 6, nom: "Moreau", prenom: "Emma", email: "emma.moreau@email.com", telephone: "06 66 77 88 99", numeroCMA: "CMA-2026-006", type: "client", typeFormation: "VTC" as const, modeFinancement: "personnel" as const },
-  // Apprenants passerelle TA (chauffeur VTC → TAXI)
-  { id: 7, nom: "Laurent", prenom: "Nicolas", email: "nicolas.laurent@email.com", telephone: "06 77 88 99 00", numeroCMA: "CMA-2026-007", type: "client", typeFormation: "TA" as const, modeFinancement: "cpf" as const },
-  { id: 8, nom: "Simon", prenom: "Camille", email: "camille.simon@email.com", telephone: "06 88 99 00 11", numeroCMA: "CMA-2026-008", type: "client", typeFormation: "TA" as const, modeFinancement: "opco" as const },
-  { id: 9, nom: "Leroy", prenom: "Maxime", email: "maxime.leroy@email.com", telephone: "06 99 00 11 22", numeroCMA: "CMA-2026-009", type: "client", typeFormation: "TA" as const, modeFinancement: "personnel" as const },
-  { id: 10, nom: "Garcia", prenom: "Marie", email: "marie.garcia@email.com", telephone: "06 10 11 12 13", numeroCMA: "CMA-2026-010", type: "client", typeFormation: "TA" as const, modeFinancement: "france_travail" as const },
-];
+// Interface pour l'apprenant depuis la base de données
+interface ApprenantDB {
+  id: string;
+  nom: string;
+  prenom: string;
+  email: string | null;
+  telephone: string | null;
+  type_apprenant: string | null;
+  mode_financement: string | null;
+  numero_dossier_cma: string | null;
+}
 
 // Modes de financement disponibles
 const modesFinancement = [
@@ -84,240 +67,147 @@ const modesFinancement = [
   { value: "autre", label: "Autre", color: "bg-slate-100 text-slate-700" },
 ];
 
-// Type pour les données d'apprenant dans une session
-interface ApprenantSession {
-  apprenantId: number;
-  modeFinancement: string;
-  dateDebut: Date | null;
-  dateFin: Date | null;
-  // Champs pour financement personnel
-  montantAPayer: number;
-  montantPaye: number;
-  datePaiement: Date | null;
-  moyenPaiement: string | null;
-  // Examen théorique
-  examenTheoriqueReussi: "oui" | "non" | null;
-  // Note personnalisée
-  note: string;
-  // Numéro CMA personnalisé (optionnel, sinon on prend celui de l'apprenant)
-  numeroCMA?: string;
-}
+// Fonction pour obtenir le badge de type d'apprenant
+const getTypeBadgeColor = (type: string | null) => {
+  if (!type) return "bg-gray-100 text-gray-700";
+  const t = type.toLowerCase();
+  if (t.includes("taxi")) return "bg-yellow-100 text-yellow-700";
+  if (t.includes("vtc")) return "bg-blue-100 text-blue-700";
+  if (t.includes("ta")) return "bg-green-100 text-green-700";
+  if (t.includes("va")) return "bg-purple-100 text-purple-700";
+  return "bg-gray-100 text-gray-700";
+};
 
-// Moyens de paiement disponibles
-const moyensPaiement = [
-  { value: "especes", label: "Espèces" },
-  { value: "cb", label: "Carte bancaire" },
-  { value: "cheque", label: "Chèque" },
-  { value: "virement", label: "Virement" },
-];
+const getFinancementBadge = (mode: string | null) => {
+  if (!mode) return { value: "autre", label: "Non défini", color: "bg-gray-100 text-gray-700" };
+  const financement = modesFinancement.find(f => f.value === mode);
+  return financement || { value: mode, label: mode, color: "bg-gray-100 text-gray-700" };
+};
 
-// Type pour les données de formateur dans une session
-interface FormateurSession {
-  formateurId: number;
-  formateurNom: string;
-  matieres: string[];
-}
-
-// Liste complète des matières/disciplines
-const allMatieres = [
-  { id: "anglais", label: "Anglais", color: "#6d7bf4" },
-  { id: "bilan_qcm", label: "Bilan QCM Examen", color: "#f2ef0c" },
-  { id: "bilan_qrc", label: "Bilan QRC Examen", color: "#ec9060" },
-  { id: "correction_bilan", label: "Correction Bilan Examen", color: "#29acf0" },
-  { id: "dev_commercial_vtc", label: "Développement commercial Réglementation VTC", color: "#f8a53d" },
-  { id: "examen_blanc_1", label: "Examen blanc 1", color: "#3f4494" },
-  { id: "examen_blanc_2", label: "Examen blanc 2", color: "#4ca8a0" },
-  { id: "examen_blanc_3", label: "Examen blanc 3", color: "#3beeff" },
-  { id: "examen_blanc_4", label: "Examen blanc 4", color: "#eedfee" },
-  { id: "examen_blanc_5", label: "Examen blanc 5", color: "#749459" },
-  { id: "examen_blanc_6", label: "Examen blanc 6", color: "#ea67dd" },
-  { id: "formation_vtc", label: "Formation VTC", color: "#16263b" },
-  { id: "formation_continue_vtc", label: "Formation continue VTC", color: "#2a4a6b" },
-  { id: "formation_taxi", label: "Formation TAXI", color: "#1e40af" },
-  { id: "gestion_1", label: "Gestion 1", color: "#7612ec" },
-  { id: "gestion_2", label: "Gestion 2", color: "#8db32e" },
-  { id: "gestion_3", label: "Gestion 3", color: "#59e379" },
-  { id: "pratique_taxi", label: "Pratique TAXI", color: "#464c04" },
-  { id: "pratique_vtc", label: "Pratique VTC", color: "#c15050" },
-  { id: "presentation", label: "Présentation", color: "#6b7280" },
-  { id: "reglementation_locale_1", label: "Réglementation locale 1", color: "#f59e0b" },
-  { id: "reglementation_locale_2", label: "Réglementation locale 2", color: "#d97706" },
-  { id: "reglementation_nationale_1", label: "Réglementation nationale 1", color: "#10b981" },
-  { id: "reglementation_nationale_2", label: "Réglementation nationale 2", color: "#059669" },
-  { id: "revision", label: "Révision", color: "#8b5cf6" },
-  { id: "securite_routiere_1", label: "Sécurité routière 1", color: "#ef4444" },
-  { id: "securite_routiere_2", label: "Sécurité routière 2", color: "#dc2626" },
-  { id: "securite_routiere_3", label: "Sécurité routière 3", color: "#b91c1c" },
-  { id: "t3p_1", label: "T3P 1", color: "#0ea5e9" },
-  { id: "t3p_2", label: "T3P 2", color: "#0284c7" },
-];
-
-// Liste des formateurs disponibles
-const allFormateurs = [
-  { id: 1, nom: "Jean Dupont", email: "jean.dupont@ftransport.fr", telephone: "06 12 34 56 78", specialites: ["VTC Initial", "Formation continue VTC"] },
-  { id: 2, nom: "Marie Martin", email: "marie.martin@ftransport.fr", telephone: "06 23 45 67 89", specialites: ["VTC Initial", "Formation continue TAXI"] },
-  { id: 3, nom: "Pierre Bernard", email: "pierre.bernard@ftransport.fr", telephone: "06 34 56 78 90", specialites: ["TAXI Initial", "Passerelle VTC vers TAXI"] },
-  { id: 4, nom: "Sophie Lefebvre", email: "sophie.lefebvre@ftransport.fr", telephone: "06 45 67 89 01", specialites: ["TAXI Initial", "Mobilité PMR"] },
-];
+const getStatusBadge = (status: string) => {
+  switch (status) {
+    case "confirmed":
+    case "confirmee":
+      return <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">Confirmée</Badge>;
+    case "pending":
+    case "planifiee":
+      return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">Planifiée</Badge>;
+    case "cancelled":
+    case "annulee":
+      return <Badge className="bg-red-100 text-red-700 hover:bg-red-100">Annulée</Badge>;
+    default:
+      return <Badge variant="secondary">{status}</Badge>;
+  }
+};
 
 export function SessionDetail({ session, open, onOpenChange }: SessionDetailProps) {
-  // Données des apprenants dans la session avec financement et dates personnalisées
-  const [apprenantSessionData, setApprenantSessionData] = useState<ApprenantSession[]>([
-    { apprenantId: 1, modeFinancement: "cpf", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null, moyenPaiement: null, examenTheoriqueReussi: null, note: "" },
-    { apprenantId: 2, modeFinancement: "personnel", dateDebut: null, dateFin: null, montantAPayer: 1500, montantPaye: 500, datePaiement: new Date(), moyenPaiement: "cb", examenTheoriqueReussi: "oui", note: "Premier versement effectué" },
-    { apprenantId: 3, modeFinancement: "opco", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null, moyenPaiement: null, examenTheoriqueReussi: "non", note: "" },
-    { apprenantId: 5, modeFinancement: "cpf", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null, moyenPaiement: null, examenTheoriqueReussi: null, note: "" },
-    { apprenantId: 6, modeFinancement: "france_travail", dateDebut: null, dateFin: null, montantAPayer: 0, montantPaye: 0, datePaiement: null, moyenPaiement: null, examenTheoriqueReussi: "oui", note: "" },
-    { apprenantId: 8, modeFinancement: "personnel", dateDebut: null, dateFin: null, montantAPayer: 1500, montantPaye: 1500, datePaiement: new Date(), moyenPaiement: "especes", examenTheoriqueReussi: null, note: "Paiement complet" },
-  ]);
-  
-  // Données des formateurs dans la session avec leurs matières
-  const [formateurSessionData, setFormateurSessionData] = useState<FormateurSession[]>([]);
   const [searchApprenant, setSearchApprenant] = useState("");
-  const [searchFormateur, setSearchFormateur] = useState("");
   const [showAddApprenant, setShowAddApprenant] = useState(false);
-  const [showAddFormateur, setShowAddFormateur] = useState(false);
-  const [expandedFormateur, setExpandedFormateur] = useState<number | null>(null);
   const { toast } = useToast();
+
+  // Charger les apprenants de cette session depuis la base de données
+  const { data: apprenantsInSession = [], isLoading: loadingApprenants, refetch: refetchApprenants } = useQuery({
+    queryKey: ['session-apprenants', session?.id],
+    queryFn: async () => {
+      if (!session?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('session_apprenants')
+        .select(`
+          id,
+          mode_financement,
+          date_debut,
+          date_fin,
+          apprenant:apprenants (
+            id,
+            nom,
+            prenom,
+            email,
+            telephone,
+            type_apprenant,
+            mode_financement,
+            numero_dossier_cma
+          )
+        `)
+        .eq('session_id', session.id);
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!session?.id && open,
+  });
+
+  // Charger tous les apprenants pour l'ajout
+  const { data: allApprenants = [] } = useQuery({
+    queryKey: ['all-apprenants'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('apprenants')
+        .select('id, nom, prenom, email, telephone, type_apprenant, mode_financement, numero_dossier_cma')
+        .order('nom', { ascending: true });
+      
+      if (error) throw error;
+      return data as ApprenantDB[];
+    },
+    enabled: open,
+  });
 
   if (!session) return null;
 
-  const sessionApprenantIds = apprenantSessionData.map(a => a.apprenantId);
-  const apprenantsInSession = allApprenants.filter(a => sessionApprenantIds.includes(a.id));
+  const sessionApprenantIds = apprenantsInSession.map((sa: any) => sa.apprenant?.id);
   const apprenantsNotInSession = allApprenants.filter(a => 
     !sessionApprenantIds.includes(a.id) &&
     (a.nom.toLowerCase().includes(searchApprenant.toLowerCase()) ||
      a.prenom.toLowerCase().includes(searchApprenant.toLowerCase()) ||
-     a.email.toLowerCase().includes(searchApprenant.toLowerCase()))
+     (a.email?.toLowerCase() || "").includes(searchApprenant.toLowerCase()))
   );
 
-  const sessionFormateurIds = formateurSessionData.map(f => f.formateurId);
-  const formateursNotInSession = allFormateurs.filter(f => 
-    !sessionFormateurIds.includes(f.id) &&
-    f.nom.toLowerCase().includes(searchFormateur.toLowerCase())
-  );
-
-  const getApprenantSessionData = (apprenantId: number) => {
-    return apprenantSessionData.find(a => a.apprenantId === apprenantId);
+  const addApprenant = async (apprenantId: string) => {
+    try {
+      const { error } = await supabase
+        .from('session_apprenants')
+        .insert({
+          session_id: session.id,
+          apprenant_id: apprenantId,
+        });
+      
+      if (error) throw error;
+      
+      refetchApprenants();
+      setShowAddApprenant(false);
+      toast({
+        title: "Apprenant ajouté",
+        description: "L'apprenant a été ajouté à la session.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error.message || "Erreur lors de l'ajout",
+        variant: "destructive",
+      });
+    }
   };
 
-  const updateApprenantFinancement = (apprenantId: number, modeFinancement: string) => {
-    setApprenantSessionData(prev => 
-      prev.map(a => a.apprenantId === apprenantId ? { ...a, modeFinancement } : a)
-    );
-    toast({
-      title: "Financement mis à jour",
-      description: "Le mode de financement a été modifié.",
-    });
-  };
-
-  const updateApprenantDates = (apprenantId: number, dateDebut: Date | null, dateFin: Date | null) => {
-    setApprenantSessionData(prev => 
-      prev.map(a => a.apprenantId === apprenantId ? { ...a, dateDebut, dateFin } : a)
-    );
-    toast({
-      title: "Dates mises à jour",
-      description: "Les dates de formation ont été modifiées.",
-    });
-  };
-
-  const updateApprenantPaiement = (apprenantId: number, montantAPayer: number, montantPaye: number, datePaiement: Date | null, moyenPaiement: string | null) => {
-    setApprenantSessionData(prev => 
-      prev.map(a => a.apprenantId === apprenantId ? { ...a, montantAPayer, montantPaye, datePaiement, moyenPaiement } : a)
-    );
-    toast({
-      title: "Paiement mis à jour",
-      description: "Les informations de paiement ont été modifiées.",
-    });
-  };
-
-  const addApprenant = (id: number) => {
-    const apprenant = allApprenants.find(a => a.id === id);
-    setApprenantSessionData([...apprenantSessionData, { 
-      apprenantId: id, 
-      modeFinancement: apprenant?.modeFinancement || "personnel",
-      dateDebut: null,
-      dateFin: null,
-      montantAPayer: 0,
-      montantPaye: 0,
-      datePaiement: null,
-      moyenPaiement: null,
-      examenTheoriqueReussi: null,
-      note: ""
-    }]);
-    toast({
-      title: "Apprenant ajouté",
-      description: "L'apprenant a été ajouté à la session.",
-    });
-  };
-
-  const removeApprenant = (id: number) => {
-    setApprenantSessionData(apprenantSessionData.filter(a => a.apprenantId !== id));
-    toast({
-      title: "Apprenant retiré",
-      description: "L'apprenant a été retiré de la session.",
-    });
-  };
-
-  const getFinancementBadge = (mode: string) => {
-    const financement = modesFinancement.find(f => f.value === mode);
-    return financement || { value: mode, label: mode, color: "bg-gray-100 text-gray-700" };
-  };
-
-  const addFormateur = (formateur: typeof allFormateurs[0]) => {
-    setFormateurSessionData([...formateurSessionData, { 
-      formateurId: formateur.id, 
-      formateurNom: formateur.nom,
-      matieres: []
-    }]);
-    setShowAddFormateur(false);
-    setExpandedFormateur(formateur.id);
-    toast({
-      title: "Formateur ajouté",
-      description: "Sélectionnez maintenant les matières à enseigner.",
-    });
-  };
-
-  const removeFormateur = (formateurId: number) => {
-    setFormateurSessionData(formateurSessionData.filter(f => f.formateurId !== formateurId));
-    toast({
-      title: "Formateur retiré",
-      description: "Le formateur a été retiré de la session.",
-    });
-  };
-
-  const toggleFormateurMatiere = (formateurId: number, matiereId: string) => {
-    setFormateurSessionData(prev => 
-      prev.map(f => {
-        if (f.formateurId === formateurId) {
-          const hasMatieres = f.matieres.includes(matiereId);
-          return {
-            ...f,
-            matieres: hasMatieres 
-              ? f.matieres.filter(m => m !== matiereId)
-              : [...f.matieres, matiereId]
-          };
-        }
-        return f;
-      })
-    );
-  };
-
-  const getFormateurMatieres = (formateurId: number) => {
-    const data = formateurSessionData.find(f => f.formateurId === formateurId);
-    return data?.matieres || [];
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "confirmed":
-        return <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">Confirmée</Badge>;
-      case "pending":
-        return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">En attente</Badge>;
-      case "cancelled":
-        return <Badge className="bg-red-100 text-red-700 hover:bg-red-100">Annulée</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
+  const removeApprenant = async (sessionApprenantId: string) => {
+    try {
+      const { error } = await supabase
+        .from('session_apprenants')
+        .delete()
+        .eq('id', sessionApprenantId);
+      
+      if (error) throw error;
+      
+      refetchApprenants();
+      toast({
+        title: "Apprenant retiré",
+        description: "L'apprenant a été retiré de la session.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error.message || "Erreur lors du retrait",
+        variant: "destructive",
+      });
     }
   };
 
@@ -325,7 +215,9 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
   const parseFrenchDate = (dateStr: string): Date => {
     const months: { [key: string]: number } = {
       "Jan": 0, "Fév": 1, "Mars": 2, "Avr": 3, "Mai": 4, "Juin": 5,
-      "Juil": 6, "Août": 7, "Sept": 8, "Oct": 9, "Nov": 10, "Déc": 11
+      "Juil": 6, "Août": 7, "Sept": 8, "Oct": 9, "Nov": 10, "Déc": 11,
+      "janv.": 0, "févr.": 1, "mars": 2, "avr.": 3, "mai": 4, "juin": 5,
+      "juil.": 6, "août": 7, "sept.": 8, "oct.": 9, "nov.": 10, "déc.": 11
     };
     
     const parts = dateStr.split(" ");
@@ -357,13 +249,13 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
       dateDebut: dateDebut.toISOString().split("T")[0],
       dateFin: dateFin.toISOString().split("T")[0],
       lieu: session.lieu,
-      formateurs: formateurSessionData.length > 0 ? formateurSessionData.map(f => f.formateurNom) : [session.formateur],
+      formateurs: [session.formateur || "Non défini"],
     };
 
-    const apprenantsList = apprenantsInSession.map((a) => ({
-      id: a.id,
-      nom: a.nom,
-      prenom: a.prenom,
+    const apprenantsList = apprenantsInSession.map((sa: any) => ({
+      id: parseInt(sa.apprenant?.id?.slice(-4) || "0", 16) || 1,
+      nom: sa.apprenant?.nom || "",
+      prenom: sa.apprenant?.prenom || "",
     }));
 
     generateEmargementPDF(sessionData, apprenantsList);
@@ -373,6 +265,18 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
       description: `${apprenantsList.length} feuille(s) d'émargement téléchargée(s).`,
     });
   };
+
+  // Compter les apprenants par type
+  const countByType = (type: string) => {
+    return apprenantsInSession.filter((sa: any) => {
+      const t = sa.apprenant?.type_apprenant?.toLowerCase() || "";
+      return t.includes(type.toLowerCase());
+    }).length;
+  };
+
+  const taxiCount = countByType("taxi");
+  const vtcCount = countByType("vtc");
+  const totalCount = apprenantsInSession.length;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -407,7 +311,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
           </div>
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4 text-muted-foreground" />
-            <span>{apprenantsInSession.length}/18 participants</span>
+            <span>{totalCount}/{session.maxParticipants} participants</span>
           </div>
         </div>
 
@@ -415,11 +319,11 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="apprenants" className="gap-2">
               <Users className="w-4 h-4" />
-              Apprenants ({apprenantsInSession.length})
+              Apprenants ({totalCount})
             </TabsTrigger>
             <TabsTrigger value="formateurs" className="gap-2">
               <UserCog className="w-4 h-4" />
-              Formateurs ({formateurSessionData.length})
+              Formateurs (0)
             </TabsTrigger>
           </TabsList>
 
@@ -451,7 +355,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                 </div>
                 <ScrollArea className="h-32">
                   <div className="space-y-2">
-                    {apprenantsNotInSession.map((apprenant) => (
+                    {apprenantsNotInSession.slice(0, 10).map((apprenant) => (
                       <div 
                         key={apprenant.id}
                         className="flex items-center justify-between p-2 rounded-lg hover:bg-muted cursor-pointer"
@@ -460,12 +364,12 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                         <div className="flex items-center gap-2">
                           <Avatar className="w-8 h-8">
                             <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                              {apprenant.prenom[0]}{apprenant.nom[0]}
+                              {apprenant.prenom?.[0]}{apprenant.nom?.[0]}
                             </AvatarFallback>
                           </Avatar>
                           <div>
                             <p className="text-sm font-medium">{apprenant.prenom} {apprenant.nom}</p>
-                            <p className="text-xs text-muted-foreground">{apprenant.email}</p>
+                            <p className="text-xs text-muted-foreground">{apprenant.email || "Pas d'email"}</p>
                           </div>
                         </div>
                         <Button size="sm" variant="ghost" className="gap-1">
@@ -478,384 +382,125 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                         Aucun apprenant disponible
                       </p>
                     )}
+                    {apprenantsNotInSession.length > 10 && (
+                      <p className="text-sm text-muted-foreground text-center py-2">
+                        ... et {apprenantsNotInSession.length - 10} autres (affinez votre recherche)
+                      </p>
+                    )}
                   </div>
                 </ScrollArea>
               </div>
             )}
 
-            <ScrollArea className="h-[400px]">
-              <div className="space-y-3">
-                {apprenantsInSession.map((apprenant) => {
-                  const sessionData = getApprenantSessionData(apprenant.id);
-                  const isPersonnel = sessionData?.modeFinancement === "personnel";
-                  const resteAPayer = (sessionData?.montantAPayer || 0) - (sessionData?.montantPaye || 0);
-                  
-                  return (
-                    <div 
-                      key={apprenant.id}
-                      className="p-4 rounded-xl border bg-card hover:shadow-md transition-shadow space-y-3"
-                    >
-                      {/* Ligne 1: Identité + Badge type + Actions */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="w-10 h-10">
-                            <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                              {apprenant.prenom[0]}{apprenant.nom[0]}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold text-foreground">{apprenant.prenom} {apprenant.nom}</span>
-                              <Badge 
-                                className={`text-xs ${
-                                  apprenant.typeFormation === "TAXI" 
-                                    ? "bg-blue-100 text-blue-700 hover:bg-blue-100" 
-                                    : apprenant.typeFormation === "VTC"
-                                      ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
-                                      : "bg-amber-100 text-amber-700 hover:bg-amber-100"
-                                }`}
-                              >
-                                {apprenant.typeFormation}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-                              {/* Numéro CMA éditable */}
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <button className="flex items-center gap-1 hover:text-foreground transition-colors">
-                                    <FileText className="w-3 h-3" />
-                                    <span>{sessionData?.numeroCMA || apprenant.numeroCMA}</span>
-                                    <Pencil className="w-2.5 h-2.5 opacity-50" />
-                                  </button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-56 p-3" align="start">
-                                  <div className="space-y-2">
-                                    <Label className="text-xs font-medium">Numéro CMA</Label>
-                                    <Input
-                                      value={sessionData?.numeroCMA ?? apprenant.numeroCMA}
-                                      onChange={(e) => {
-                                        setApprenantSessionData(prev => 
-                                          prev.map(a => a.apprenantId === apprenant.id ? { ...a, numeroCMA: e.target.value } : a)
-                                        );
-                                      }}
-                                      placeholder="CMA-2026-XXX"
-                                      className="h-8 text-sm"
-                                    />
-                                  </div>
-                                </PopoverContent>
-                              </Popover>
-                              <span className="flex items-center gap-1">
-                                <Mail className="w-3 h-3" />
-                                {apprenant.email}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Phone className="w-3 h-3" />
-                                {apprenant.telephone}
-                              </span>
-                              {/* Bouton note */}
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className={cn(
-                                      "h-6 w-6 p-0 hover:bg-muted",
-                                      sessionData?.note && "text-amber-600"
-                                    )}
-                                  >
-                                    <StickyNote className="w-3.5 h-3.5" />
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-64 p-3" align="start">
-                                  <div className="space-y-2">
-                                    <Label className="text-xs font-medium">Note</Label>
-                                    <textarea
-                                      value={sessionData?.note || ""}
-                                      onChange={(e) => {
-                                        setApprenantSessionData(prev => 
-                                          prev.map(a => a.apprenantId === apprenant.id ? { ...a, note: e.target.value } : a)
-                                        );
-                                      }}
-                                      placeholder="Ajouter une note..."
-                                      className="w-full h-20 text-sm p-2 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
-                                    />
-                                  </div>
-                                </PopoverContent>
-                              </Popover>
+            {loadingApprenants ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : (
+              <ScrollArea className="h-[350px]">
+                <div className="space-y-3">
+                  {apprenantsInSession.map((sessionApprenant: any) => {
+                    const apprenant = sessionApprenant.apprenant;
+                    if (!apprenant) return null;
+                    
+                    return (
+                      <div 
+                        key={sessionApprenant.id}
+                        className="p-4 rounded-xl border bg-card hover:shadow-md transition-shadow space-y-3"
+                      >
+                        {/* Ligne 1: Identité + Badge type + Actions */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="w-10 h-10">
+                              <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                                {apprenant.prenom?.[0] || ""}{apprenant.nom?.[0] || ""}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-foreground">{apprenant.prenom} {apprenant.nom}</span>
+                                <Badge className={`text-xs ${getTypeBadgeColor(apprenant.type_apprenant)}`}>
+                                  {apprenant.type_apprenant?.toUpperCase() || "N/A"}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                                <span className="flex items-center gap-1">
+                                  <FileText className="w-3 h-3" />
+                                  {apprenant.numero_dossier_cma || "CMA non défini"}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Mail className="w-3 h-3" />
+                                  {apprenant.email || "Non défini"}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Phone className="w-3 h-3" />
+                                  {apprenant.telephone || "Non défini"}
+                                </span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
-                          onClick={() => removeApprenant(apprenant.id)}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      
-                      {/* Ligne 2: Tous les champs */}
-                      <div className="grid grid-cols-6 gap-3 pt-2 border-t">
-                        {/* Financement */}
-                        <div className="space-y-1">
-                          <Label className="text-xs text-muted-foreground">Financement</Label>
-                          <Select 
-                            value={sessionData?.modeFinancement || "personnel"}
-                            onValueChange={(value) => updateApprenantFinancement(apprenant.id, value)}
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
+                            onClick={() => removeApprenant(sessionApprenant.id)}
                           >
-                            <SelectTrigger className="h-9">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {modesFinancement.map((mode) => (
-                                <SelectItem key={mode.value} value={mode.value}>
-                                  <span className={`px-2 py-0.5 rounded text-xs ${mode.color}`}>
-                                    {mode.label}
-                                  </span>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            <X className="w-4 h-4" />
+                          </Button>
                         </div>
                         
-                        {/* Date début */}
-                        <div className="space-y-1">
-                          <Label className="text-xs text-muted-foreground">Début</Label>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className={cn(
-                                  "h-9 w-full justify-start text-left font-normal text-xs",
-                                  !sessionData?.dateDebut && "text-muted-foreground"
-                                )}
-                              >
-                                <CalendarIcon className="w-3 h-3 mr-1.5" />
-                                {sessionData?.dateDebut 
-                                  ? format(sessionData.dateDebut, "dd/MM/yy") 
-                                  : "Choisir"}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <CalendarComponent
-                                mode="single"
-                                selected={sessionData?.dateDebut || undefined}
-                                onSelect={(date) => updateApprenantDates(apprenant.id, date || null, sessionData?.dateFin || null)}
-                                initialFocus
-                                className="p-3 pointer-events-auto"
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-                        
-                        {/* Date fin */}
-                        <div className="space-y-1">
-                          <Label className="text-xs text-muted-foreground">Fin</Label>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className={cn(
-                                  "h-9 w-full justify-start text-left font-normal text-xs",
-                                  !sessionData?.dateFin && "text-muted-foreground"
-                                )}
-                              >
-                                <CalendarIcon className="w-3 h-3 mr-1.5" />
-                                {sessionData?.dateFin 
-                                  ? format(sessionData.dateFin, "dd/MM/yy") 
-                                  : "Choisir"}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <CalendarComponent
-                                mode="single"
-                                selected={sessionData?.dateFin || undefined}
-                                onSelect={(date) => updateApprenantDates(apprenant.id, sessionData?.dateDebut || null, date || null)}
-                                initialFocus
-                                className="p-3 pointer-events-auto"
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-                        
-                        {/* À payer */}
-                        <div className="space-y-1">
-                          <Label className="text-xs text-muted-foreground">À payer</Label>
-                          {isPersonnel ? (
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-9 w-full justify-start text-left font-normal text-xs"
-                                >
-                                  <CreditCard className="w-3 h-3 mr-1.5" />
-                                  {sessionData?.montantAPayer ? `${sessionData.montantAPayer}€` : "0€"}
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-3" align="start">
-                                <div className="space-y-3">
-                                  <div className="space-y-1">
-                                    <Label className="text-xs">Montant à payer (€)</Label>
-                                    <Input
-                                      type="number"
-                                      value={sessionData?.montantAPayer || 0}
-                                      onChange={(e) => updateApprenantPaiement(
-                                        apprenant.id, 
-                                        Number(e.target.value), 
-                                        sessionData?.montantPaye || 0, 
-                                        sessionData?.datePaiement || null,
-                                        sessionData?.moyenPaiement || null
-                                      )}
-                                      className="h-8"
-                                    />
-                                  </div>
-                                  <div className="space-y-1">
-                                    <Label className="text-xs">Montant payé (€)</Label>
-                                    <Input
-                                      type="number"
-                                      value={sessionData?.montantPaye || 0}
-                                      onChange={(e) => updateApprenantPaiement(
-                                        apprenant.id, 
-                                        sessionData?.montantAPayer || 0, 
-                                        Number(e.target.value), 
-                                        sessionData?.datePaiement || null,
-                                        sessionData?.moyenPaiement || null
-                                      )}
-                                      className="h-8"
-                                    />
-                                  </div>
-                                  <div className="space-y-1">
-                                    <Label className="text-xs">Moyen de paiement</Label>
-                                    <Select
-                                      value={sessionData?.moyenPaiement || ""}
-                                      onValueChange={(value) => updateApprenantPaiement(
-                                        apprenant.id, 
-                                        sessionData?.montantAPayer || 0, 
-                                        sessionData?.montantPaye || 0, 
-                                        sessionData?.datePaiement || null,
-                                        value
-                                      )}
-                                    >
-                                      <SelectTrigger className="h-8">
-                                        <SelectValue placeholder="Sélectionner..." />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {moyensPaiement.map((moyen) => (
-                                          <SelectItem key={moyen.value} value={moyen.value}>
-                                            {moyen.label}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                  <div className="space-y-1">
-                                    <Label className="text-xs">Date du paiement</Label>
-                                    <CalendarComponent
-                                      mode="single"
-                                      selected={sessionData?.datePaiement || undefined}
-                                      onSelect={(date) => updateApprenantPaiement(
-                                        apprenant.id, 
-                                        sessionData?.montantAPayer || 0, 
-                                        sessionData?.montantPaye || 0, 
-                                        date || null,
-                                        sessionData?.moyenPaiement || null
-                                      )}
-                                      className="p-2 pointer-events-auto"
-                                    />
-                                  </div>
-                                </div>
-                              </PopoverContent>
-                            </Popover>
-                          ) : (
-                            <div className="h-9 flex items-center justify-center text-xs text-muted-foreground bg-muted/50 rounded-md">—</div>
+                        {/* Ligne 2: Infos financement */}
+                        <div className="flex items-center gap-4 pt-2 border-t text-sm">
+                          <Badge className={getFinancementBadge(sessionApprenant.mode_financement || apprenant.mode_financement).color}>
+                            {getFinancementBadge(sessionApprenant.mode_financement || apprenant.mode_financement).label}
+                          </Badge>
+                          {sessionApprenant.date_debut && (
+                            <span className="text-muted-foreground">
+                              Du {format(new Date(sessionApprenant.date_debut), "dd/MM/yyyy", { locale: fr })}
+                              {sessionApprenant.date_fin && ` au ${format(new Date(sessionApprenant.date_fin), "dd/MM/yyyy", { locale: fr })}`}
+                            </span>
                           )}
                         </div>
-                        
-                        {/* Reste à payer */}
-                        <div className="space-y-1">
-                          <Label className="text-xs text-muted-foreground">Reste</Label>
-                          {isPersonnel ? (
-                            <div className={cn(
-                              "h-9 flex items-center justify-center text-xs font-medium rounded-md",
-                              resteAPayer > 0 
-                                ? "bg-red-100 text-red-700" 
-                                : "bg-green-100 text-green-700"
-                            )}>
-                              {resteAPayer}€
-                            </div>
-                          ) : (
-                            <div className="h-9 flex items-center justify-center text-xs text-muted-foreground bg-muted/50 rounded-md">—</div>
-                          )}
-                        </div>
-                        
-                        {/* Examen théorique */}
-                        <div className="space-y-1">
-                          <Label className="text-xs text-muted-foreground">Examen</Label>
-                          <Select 
-                            value={sessionData?.examenTheoriqueReussi || ""}
-                            onValueChange={(value: "oui" | "non") => {
-                              setApprenantSessionData(prev => 
-                                prev.map(a => a.apprenantId === apprenant.id ? { ...a, examenTheoriqueReussi: value } : a)
-                              );
-                            }}
-                          >
-                            <SelectTrigger className={cn(
-                              "h-9 text-xs",
-                              sessionData?.examenTheoriqueReussi === "oui" && "bg-green-100 text-green-700 border-green-300",
-                              sessionData?.examenTheoriqueReussi === "non" && "bg-red-100 text-red-700 border-red-300"
-                            )}>
-                              <SelectValue placeholder="—" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="oui">
-                                <span className="text-green-700">Oui ✓</span>
-                              </SelectItem>
-                              <SelectItem value="non">
-                                <span className="text-red-700">Non ✗</span>
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
                       </div>
+                    );
+                  })}
+                  
+                  {apprenantsInSession.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                      <p>Aucun apprenant dans cette session</p>
+                      <p className="text-sm">Cliquez sur "Ajouter" pour en ajouter</p>
                     </div>
-                  );
-                })}
-              </div>
-            </ScrollArea>
+                  )}
+                </div>
+              </ScrollArea>
+            )}
 
-            {/* Récapitulatif par type de formation - TAXI + VTC = max 18 */}
+            {/* Récapitulatif par type de formation */}
             <div className="mt-4 p-3 rounded-lg bg-muted/50 border">
               <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
                 <div className="flex items-center gap-2">
-                  <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">🚕 TAXI</Badge>
-                  <span className="font-medium">{apprenantsInSession.filter(a => a.typeFormation === "TAXI").length}</span>
+                  <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">🚕 TAXI</Badge>
+                  <span className="font-medium">{taxiCount}</span>
                 </div>
                 <span className="text-muted-foreground">+</span>
                 <div className="flex items-center gap-2">
-                  <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">🚗 VTC</Badge>
-                  <span className="font-medium">{apprenantsInSession.filter(a => a.typeFormation === "VTC").length}</span>
+                  <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">🚗 VTC</Badge>
+                  <span className="font-medium">{vtcCount}</span>
                 </div>
                 <span className="text-muted-foreground">=</span>
                 <div className="flex items-center gap-2">
                   <Badge 
                     className={`${
-                      apprenantsInSession.filter(a => a.typeFormation === "TAXI" || a.typeFormation === "VTC").length > 18 
+                      totalCount > 18 
                         ? "bg-red-100 text-red-700 hover:bg-red-100" 
                         : "bg-primary/10 text-primary hover:bg-primary/10"
                     }`}
                   >
                     📊 TOTAL
                   </Badge>
-                  <span className={`font-bold ${
-                    apprenantsInSession.filter(a => a.typeFormation === "TAXI" || a.typeFormation === "VTC").length > 18 
-                      ? "text-red-600" 
-                      : ""
-                  }`}>
-                    {apprenantsInSession.filter(a => a.typeFormation === "TAXI" || a.typeFormation === "VTC").length}
+                  <span className={`font-bold ${totalCount > 18 ? "text-red-600" : ""}`}>
+                    {totalCount}
                   </span>
                   <span className="text-muted-foreground">/ 18 max</span>
                 </div>
@@ -865,174 +510,11 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
 
           {/* Formateurs Tab */}
           <TabsContent value="formateurs" className="flex-1 overflow-hidden flex flex-col mt-4">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="font-medium text-foreground">Formateurs assignés</h4>
-              <Button 
-                size="sm" 
-                variant={showAddFormateur ? "secondary" : "default"}
-                onClick={() => setShowAddFormateur(!showAddFormateur)}
-                className="gap-1"
-              >
-                {showAddFormateur ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                {showAddFormateur ? "Fermer" : "Ajouter"}
-              </Button>
+            <div className="text-center py-8 text-muted-foreground">
+              <UserCog className="w-12 h-12 mx-auto mb-3 opacity-50" />
+              <p>Gestion des formateurs</p>
+              <p className="text-sm">Cette fonctionnalité sera disponible prochainement</p>
             </div>
-
-            {showAddFormateur && (
-              <div className="mb-4 p-3 border rounded-lg bg-muted/30">
-                <div className="relative mb-3">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Rechercher un formateur..."
-                    value={searchFormateur}
-                    onChange={(e) => setSearchFormateur(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <ScrollArea className="h-32">
-                  <div className="space-y-2">
-                    {formateursNotInSession.map((formateur) => (
-                      <div 
-                        key={formateur.id}
-                        className="flex items-center justify-between p-2 rounded-lg hover:bg-muted cursor-pointer"
-                        onClick={() => addFormateur(formateur)}
-                      >
-                        <div className="flex items-center gap-2">
-                          <Avatar className="w-8 h-8">
-                            <AvatarFallback className="text-xs bg-amber-100 text-amber-700">
-                              {formateur.nom.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="text-sm font-medium">{formateur.nom}</p>
-                            <p className="text-xs text-muted-foreground">{formateur.specialites.join(', ')}</p>
-                          </div>
-                        </div>
-                        <Button size="sm" variant="ghost" className="gap-1">
-                          <Plus className="w-4 h-4" /> Ajouter
-                        </Button>
-                      </div>
-                    ))}
-                    {formateursNotInSession.length === 0 && (
-                      <p className="text-sm text-muted-foreground text-center py-4">
-                        Tous les formateurs sont déjà assignés
-                      </p>
-                    )}
-                  </div>
-                </ScrollArea>
-              </div>
-            )}
-
-            <ScrollArea className="flex-1">
-              <div className="space-y-3">
-                {formateurSessionData.map((formateurData) => {
-                  const formateur = allFormateurs.find(f => f.id === formateurData.formateurId);
-                  if (!formateur) return null;
-                  const isExpanded = expandedFormateur === formateur.id;
-                  const selectedMatieres = getFormateurMatieres(formateur.id);
-                  
-                  return (
-                    <div 
-                      key={formateur.id}
-                      className="p-3 rounded-lg border bg-card hover:shadow-sm transition-shadow"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="w-10 h-10">
-                            <AvatarFallback className="bg-amber-100 text-amber-700 font-medium">
-                              {formateur.nom.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium text-foreground">{formateur.nom}</p>
-                            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                              <span className="flex items-center gap-1">
-                                <Mail className="w-3 h-3" />
-                                {formateur.email}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Phone className="w-3 h-3" />
-                                {formateur.telephone}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => removeFormateur(formateur.id)}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      
-                      {/* Section matières */}
-                      <div className="mt-3 pt-3 border-t">
-                        <button
-                          onClick={() => setExpandedFormateur(isExpanded ? null : formateur.id)}
-                          className="flex items-center gap-2 text-sm font-medium text-foreground hover:text-primary transition-colors w-full"
-                        >
-                          <BookOpen className="w-4 h-4" />
-                          <span>Matières enseignées ({selectedMatieres.length})</span>
-                          <ChevronDown className={cn("w-4 h-4 ml-auto transition-transform", isExpanded && "rotate-180")} />
-                        </button>
-                        
-                        {/* Badges des matières sélectionnées */}
-                        {selectedMatieres.length > 0 && !isExpanded && (
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {selectedMatieres.slice(0, 4).map(matiereId => {
-                              const matiere = allMatieres.find(m => m.id === matiereId);
-                              return matiere ? (
-                                <Badge 
-                                  key={matiere.id} 
-                                  className="text-xs"
-                                  style={{ backgroundColor: matiere.color + "20", color: matiere.color, borderColor: matiere.color }}
-                                >
-                                  {matiere.label}
-                                </Badge>
-                              ) : null;
-                            })}
-                            {selectedMatieres.length > 4 && (
-                              <Badge variant="secondary" className="text-xs">
-                                +{selectedMatieres.length - 4}
-                              </Badge>
-                            )}
-                          </div>
-                        )}
-                        
-                        {/* Liste des matières à cocher */}
-                        {isExpanded && (
-                          <div className="mt-3 grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-                            {allMatieres.map((matiere) => (
-                              <label
-                                key={matiere.id}
-                                className="flex items-center gap-2 p-2 rounded-md hover:bg-muted cursor-pointer text-sm"
-                              >
-                                <Checkbox
-                                  checked={selectedMatieres.includes(matiere.id)}
-                                  onCheckedChange={() => toggleFormateurMatiere(formateur.id, matiere.id)}
-                                />
-                                <span 
-                                  className="w-3 h-3 rounded-full flex-shrink-0"
-                                  style={{ backgroundColor: matiere.color }}
-                                />
-                                <span className="truncate">{matiere.label}</span>
-                              </label>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-                {formateurSessionData.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-8">
-                    Aucun formateur assigné à cette session
-                  </p>
-                )}
-              </div>
-            </ScrollArea>
           </TabsContent>
         </Tabs>
       </DialogContent>
