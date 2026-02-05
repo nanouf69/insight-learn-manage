@@ -677,10 +677,14 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                           <div className="flex items-center gap-1.5 text-muted-foreground">
                             <Calendar className="w-3.5 h-3.5" />
                             <span>
-                              {apprenant.date_debut_formation && apprenant.date_fin_formation 
-                                ? `${apprenant.date_debut_formation} - ${apprenant.date_fin_formation}`
-                                : apprenant.date_debut_formation || apprenant.date_fin_formation || "Dates non définies"
-                              }
+                              {(() => {
+                                const dateDebut = sessionApprenant.date_debut || apprenant.date_debut_formation;
+                                const dateFin = sessionApprenant.date_fin || apprenant.date_fin_formation;
+                                if (dateDebut && dateFin) {
+                                  return `${dateDebut} - ${dateFin}`;
+                                }
+                                return dateDebut || dateFin || "Dates non définies";
+                              })()}
                             </span>
                           </div>
                           
