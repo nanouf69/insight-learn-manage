@@ -21,7 +21,23 @@ interface Session {
   places_disponibles: number | null;
   statut: string | null;
   formation_id: string | null;
+  types_apprenant: string[] | null;
+  creneaux: string[] | null;
 }
+
+const TYPE_COLORS: Record<string, string> = {
+  "VTC": "bg-blue-500",
+  "VTC E": "bg-blue-400",
+  "VTC E Présentiel": "bg-blue-600",
+  "TAXI": "bg-yellow-500",
+  "TAXI E": "bg-yellow-400",
+  "TAXI E Présentiel": "bg-yellow-600",
+  "TA": "bg-green-500",
+  "TA E": "bg-green-400",
+  "TA E Présentiel": "bg-green-600",
+  "VA E": "bg-purple-500",
+  "VA E Présentiel": "bg-purple-600",
+};
 
 const getStatusBadge = (status: string | null) => {
   switch (status) {
@@ -100,6 +116,8 @@ export function SessionsList() {
           places_disponibles: session.places_disponibles || 18,
           formation_id: session.formation_id,
           statut: 'planifiee',
+          types_apprenant: session.types_apprenant || [],
+          creneaux: session.creneaux || [],
         });
 
       if (error) throw error;
@@ -186,6 +204,29 @@ export function SessionsList() {
                       </Button>
                       {getStatusBadge(session.statut)}
                     </div>
+                    
+                    {/* Tags types apprenant et créneaux */}
+                    {((session.types_apprenant && session.types_apprenant.length > 0) || (session.creneaux && session.creneaux.length > 0)) && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {session.types_apprenant?.map((type) => (
+                          <Badge 
+                            key={type} 
+                            className={`${TYPE_COLORS[type] || 'bg-gray-500'} text-white text-xs`}
+                          >
+                            {type}
+                          </Badge>
+                        ))}
+                        {session.creneaux?.map((creneau) => (
+                          <Badge 
+                            key={creneau} 
+                            variant="outline"
+                            className="text-xs"
+                          >
+                            {creneau}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
                     
                     <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1.5">

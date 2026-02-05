@@ -707,6 +707,7 @@ export type Database = {
       sessions: {
         Row: {
           created_at: string
+          creneaux: string[] | null
           date_debut: string
           date_fin: string
           formation_id: string | null
@@ -715,10 +716,12 @@ export type Database = {
           nom: string | null
           places_disponibles: number | null
           statut: string | null
+          types_apprenant: string[] | null
           updated_at: string
         }
         Insert: {
           created_at?: string
+          creneaux?: string[] | null
           date_debut: string
           date_fin: string
           formation_id?: string | null
@@ -727,10 +730,12 @@ export type Database = {
           nom?: string | null
           places_disponibles?: number | null
           statut?: string | null
+          types_apprenant?: string[] | null
           updated_at?: string
         }
         Update: {
           created_at?: string
+          creneaux?: string[] | null
           date_debut?: string
           date_fin?: string
           formation_id?: string | null
@@ -739,6 +744,7 @@ export type Database = {
           nom?: string | null
           places_disponibles?: number | null
           statut?: string | null
+          types_apprenant?: string[] | null
           updated_at?: string
         }
         Relationships: [
