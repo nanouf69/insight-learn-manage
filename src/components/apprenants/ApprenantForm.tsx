@@ -85,7 +85,29 @@ export function ApprenantForm() {
   const [creneauHoraire, setCreneauHoraire] = useState("");
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
   const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
+  const [selectedFormation, setSelectedFormation] = useState("");
   const [montantTtc, setMontantTtc] = useState("1299");
+
+  // Prix par défaut selon la formation
+  const prixFormations: Record<string, string> = {
+    "vtc": "1099",
+    "vtc-exam": "1599",
+    "taxi": "1299",
+    "taxi-exam": "1799",
+    "passerelle-taxi": "999",
+    "vtc-elearning": "1599",
+    "taxi-elearning": "1299",
+    "passerelle-taxi-elearning": "499",
+    "passerelle-vtc-elearning": "499"
+  };
+
+  // Mettre à jour le prix quand la formation change
+  const handleFormationChange = (value: string) => {
+    setSelectedFormation(value);
+    if (prixFormations[value]) {
+      setMontantTtc(prixFormations[value]);
+    }
+  };
 
   // Charger les apprenants existants
   useEffect(() => {
@@ -161,6 +183,7 @@ export function ApprenantForm() {
     setTypeApprenant("prospect");
     setSelectedApprenantId("");
     setDuplicateWarning(null);
+    setSelectedFormation("");
     setMontantTtc("1299");
   };
 
@@ -364,7 +387,7 @@ export function ApprenantForm() {
             <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Formation</h3>
             <div className="space-y-2">
               <Label htmlFor="formation">Formation souhaitée {typeApprenant === "client" && "*"}</Label>
-              <Select required={typeApprenant === "client"}>
+              <Select value={selectedFormation} onValueChange={handleFormationChange} required={typeApprenant === "client"}>
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner une formation" />
                 </SelectTrigger>
