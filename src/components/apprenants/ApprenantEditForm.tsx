@@ -528,6 +528,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                   <SelectValue placeholder="Sélectionner une date d'examen" />
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
+                  <SelectItem value="pas_encore_choisi">Pas de date choisie encore</SelectItem>
                   {datesExamenTheorique.map((exam, idx) => (
                     <SelectItem key={idx} value={exam.date}>
                       <div className="flex flex-col">
