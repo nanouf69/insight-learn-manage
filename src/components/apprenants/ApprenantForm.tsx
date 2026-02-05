@@ -545,6 +545,7 @@ export function ApprenantForm() {
                   </SelectGroup>
                   <SelectGroup>
                     <SelectLabel>Autres</SelectLabel>
+                    <SelectItem value="personnel">Personnel (auto-financement)</SelectItem>
                     <SelectItem value="societe">Société / Entreprise</SelectItem>
                     <SelectItem value="autre">Autre</SelectItem>
                     <SelectItem value="cpf-a">CPF A</SelectItem>
