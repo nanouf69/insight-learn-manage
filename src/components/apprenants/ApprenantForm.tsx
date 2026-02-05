@@ -87,6 +87,7 @@ export function ApprenantForm() {
   const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
   const [selectedFormation, setSelectedFormation] = useState("");
   const [montantTtc, setMontantTtc] = useState("1299");
+  const [typeApprenantFormation, setTypeApprenantFormation] = useState("");
 
   // Prix par défaut selon la formation
   const prixFormations: Record<string, string> = {
@@ -101,11 +102,27 @@ export function ApprenantForm() {
     "passerelle-vtc-elearning": "499"
   };
 
-  // Mettre à jour le prix quand la formation change
+  // Mapping formation → type d'apprenant
+  const formationToType: Record<string, string> = {
+    "vtc": "vtc",
+    "vtc-exam": "vtc",
+    "vtc-elearning": "vtc",
+    "taxi": "taxi",
+    "taxi-exam": "taxi",
+    "taxi-elearning": "taxi",
+    "passerelle-taxi": "ta",
+    "passerelle-taxi-elearning": "ta",
+    "passerelle-vtc-elearning": "va"
+  };
+
+  // Mettre à jour le prix et le type d'apprenant quand la formation change
   const handleFormationChange = (value: string) => {
     setSelectedFormation(value);
     if (prixFormations[value]) {
       setMontantTtc(prixFormations[value]);
+    }
+    if (formationToType[value]) {
+      setTypeApprenantFormation(formationToType[value]);
     }
   };
 
@@ -185,6 +202,7 @@ export function ApprenantForm() {
     setDuplicateWarning(null);
     setSelectedFormation("");
     setMontantTtc("1299");
+    setTypeApprenantFormation("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -207,6 +225,7 @@ export function ApprenantForm() {
           organisme_financeur: organismeFinanceur || null,
           numero_dossier_cma: numeroDossierCma || null,
           statut: typeApprenant === "prospect" ? "prospect" : "inscrit",
+          type_apprenant: typeApprenantFormation || null,
         });
 
       if (error) throw error;
@@ -409,6 +428,27 @@ export function ApprenantForm() {
                   </SelectGroup>
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Type d'apprenant - rempli automatiquement */}
+            <div className="space-y-2">
+              <Label htmlFor="typeApprenantFormation">Type d'apprenant</Label>
+              <Select value={typeApprenantFormation} onValueChange={setTypeApprenantFormation}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionné automatiquement" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="vtc">VTC</SelectItem>
+                  <SelectItem value="taxi">TAXI</SelectItem>
+                  <SelectItem value="ta">TA (Passerelle TAXI)</SelectItem>
+                  <SelectItem value="va">VA (Passerelle VTC)</SelectItem>
+                </SelectContent>
+              </Select>
+              {typeApprenantFormation && (
+                <p className="text-xs text-muted-foreground">
+                  Défini automatiquement selon la formation sélectionnée
+                </p>
+              )}
             </div>
 
             {/* Créneau horaire pour formation présentiel */}

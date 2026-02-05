@@ -144,11 +144,25 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
     }
   }, [apprenant]);
 
+  // Mapping formation → type d'apprenant
+  const formationToType: Record<string, string> = {
+    "vtc": "vtc",
+    "vtc-exam": "vtc",
+    "vtc-elearning": "vtc",
+    "taxi": "taxi",
+    "taxi-exam": "taxi",
+    "taxi-elearning": "taxi",
+    "passerelle-taxi": "ta",
+    "passerelle-taxi-elearning": "ta",
+    "passerelle-vtc-elearning": "va"
+  };
+
   const handleFormationChange = (value: string) => {
     setFormData(prev => ({
       ...prev,
       selected_formation: value,
-      montant_ttc: prixFormations[value] || prev.montant_ttc
+      montant_ttc: prixFormations[value] || prev.montant_ttc,
+      type_apprenant: formationToType[value] || prev.type_apprenant
     }));
   };
 
@@ -361,22 +375,6 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
           {/* Formation */}
           <div className="space-y-4">
             <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Formation</h3>
-            
-            {/* Type d'apprenant (VTC, TAXI, TA, VA) */}
-            <div className="space-y-2">
-              <Label htmlFor="type_apprenant">Type d'apprenant</Label>
-              <Select value={formData.type_apprenant} onValueChange={(value) => setFormData({ ...formData, type_apprenant: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="vtc">VTC</SelectItem>
-                  <SelectItem value="taxi">TAXI</SelectItem>
-                  <SelectItem value="ta">TA (Passerelle TAXI)</SelectItem>
-                  <SelectItem value="va">VA (Passerelle VTC)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
 
             <div className="space-y-2">
               <Label htmlFor="formation">Formation souhaitée</Label>
@@ -402,6 +400,27 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                   </SelectGroup>
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Type d'apprenant - rempli automatiquement */}
+            <div className="space-y-2">
+              <Label htmlFor="type_apprenant">Type d'apprenant</Label>
+              <Select value={formData.type_apprenant} onValueChange={(value) => setFormData({ ...formData, type_apprenant: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionné automatiquement" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="vtc">VTC</SelectItem>
+                  <SelectItem value="taxi">TAXI</SelectItem>
+                  <SelectItem value="ta">TA (Passerelle TAXI)</SelectItem>
+                  <SelectItem value="va">VA (Passerelle VTC)</SelectItem>
+                </SelectContent>
+              </Select>
+              {formData.type_apprenant && (
+                <p className="text-xs text-muted-foreground">
+                  Défini automatiquement selon la formation sélectionnée
+                </p>
+              )}
             </div>
 
             {/* Créneau horaire */}
