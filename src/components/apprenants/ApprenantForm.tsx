@@ -227,18 +227,18 @@ export function ApprenantForm() {
                 <SelectContent>
                   <SelectGroup>
                     <SelectLabel>Formations Présentiel</SelectLabel>
-                    <SelectItem value="vtc">Formation VTC - 1 099 €</SelectItem>
-                    <SelectItem value="vtc-exam">Formation VTC avec frais d'examen - 1 599 €</SelectItem>
-                    <SelectItem value="taxi">Formation TAXI - 1 299 €</SelectItem>
-                    <SelectItem value="taxi-exam">Formation TAXI avec frais d'examen - 1 799 €</SelectItem>
-                    <SelectItem value="passerelle-taxi">Formation TAXI pour chauffeur VTC - 999 €</SelectItem>
+                    <SelectItem value="vtc">Formation VTC - 1 099 € (VTC)</SelectItem>
+                    <SelectItem value="vtc-exam">Formation VTC avec frais d'examen - 1 599 € (VTC)</SelectItem>
+                    <SelectItem value="taxi">Formation TAXI - 1 299 € (TAXI)</SelectItem>
+                    <SelectItem value="taxi-exam">Formation TAXI avec frais d'examen - 1 799 € (TAXI)</SelectItem>
+                    <SelectItem value="passerelle-taxi">Formation TAXI pour chauffeur VTC - 999 € (TA)</SelectItem>
                   </SelectGroup>
                   <SelectGroup>
                     <SelectLabel>Formations E-learning</SelectLabel>
-                    <SelectItem value="vtc-elearning">Formation VTC (E-learning) - 1 599 €</SelectItem>
-                    <SelectItem value="taxi-elearning">Formation TAXI (E-learning) - 1 299 €</SelectItem>
-                    <SelectItem value="passerelle-taxi-elearning">Formation TAXI pour chauffeur VTC (E-learning) - 499 €</SelectItem>
-                    <SelectItem value="passerelle-vtc-elearning">Formation VTC pour chauffeur TAXI (E-learning) - 499 €</SelectItem>
+                    <SelectItem value="vtc-elearning">Formation VTC (E-learning) - 1 599 € (VTC)</SelectItem>
+                    <SelectItem value="taxi-elearning">Formation TAXI (E-learning) - 1 299 € (TAXI)</SelectItem>
+                    <SelectItem value="passerelle-taxi-elearning">Formation TAXI pour chauffeur VTC (E-learning) - 499 € (TA)</SelectItem>
+                    <SelectItem value="passerelle-vtc-elearning">Formation VTC pour chauffeur TAXI (E-learning) - 499 € (VTC)</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
