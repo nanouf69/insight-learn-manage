@@ -57,6 +57,16 @@ const datesFormations = {
   }
 };
 
+// Dates des examens théoriques 2026
+const datesExamenTheorique = [
+  { date: "27 janvier 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
+  { date: "31 mars 2026", lieu: "Puy-de-Dôme – Polydome, Place du 1er mai, 63100 Clermont-Ferrand", horaire: "après-midi" },
+  { date: "26 mai 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
+  { date: "21 juillet 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
+  { date: "29 septembre 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
+  { date: "17 novembre 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
+];
+
 export function ApprenantForm() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
@@ -88,6 +98,7 @@ export function ApprenantForm() {
   const [selectedFormation, setSelectedFormation] = useState("");
   const [montantTtc, setMontantTtc] = useState("1299");
   const [typeApprenantFormation, setTypeApprenantFormation] = useState("");
+  const [dateExamenTheorique, setDateExamenTheorique] = useState("");
 
   // Prix par défaut selon la formation
   const prixFormations: Record<string, string> = {
@@ -203,6 +214,7 @@ export function ApprenantForm() {
     setSelectedFormation("");
     setMontantTtc("1299");
     setTypeApprenantFormation("");
+    setDateExamenTheorique("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -461,6 +473,26 @@ export function ApprenantForm() {
                 <SelectContent className="bg-background z-50">
                   <SelectItem value="journee">Formation en journée (9h - 16h)</SelectItem>
                   <SelectItem value="soiree">Formation en soirée (17h - 21h)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Date d'examen théorique */}
+            <div className="space-y-2">
+              <Label htmlFor="dateExamenTheorique">Date d'examen théorique</Label>
+              <Select value={dateExamenTheorique} onValueChange={setDateExamenTheorique}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner une date d'examen" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  {datesExamenTheorique.map((exam, idx) => (
+                    <SelectItem key={idx} value={exam.date}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{exam.date} ({exam.horaire})</span>
+                        <span className="text-xs text-muted-foreground">{exam.lieu}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
