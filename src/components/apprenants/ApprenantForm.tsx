@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -13,6 +13,12 @@ import { Plus, User, UserCheck, Loader2, CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+
+interface Apprenant {
+  id: string;
+  nom: string;
+  prenom: string;
+}
 
 // Liste des dates par type de formation (présentiel uniquement)
 const datesFormations = {
@@ -57,6 +63,10 @@ export function ApprenantForm() {
   const [typeApprenant, setTypeApprenant] = useState<"prospect" | "client">("prospect");
   const [isLoading, setIsLoading] = useState(false);
   
+  // Liste des apprenants existants pour CPF A
+  const [apprenants, setApprenants] = useState<Apprenant[]>([]);
+  const [selectedApprenantId, setSelectedApprenantId] = useState("");
+  
   // États pour les champs du formulaire
   const [civilite, setCivilite] = useState("");
   const [prenom, setPrenom] = useState("");
@@ -73,6 +83,24 @@ export function ApprenantForm() {
   const [dateFinFormation, setDateFinFormation] = useState<Date | undefined>();
   const [selectedDateOption, setSelectedDateOption] = useState("");
   const [creneauHoraire, setCreneauHoraire] = useState("");
+
+  // Charger les apprenants existants
+  useEffect(() => {
+    const fetchApprenants = async () => {
+      const { data, error } = await supabase
+        .from('apprenants')
+        .select('id, nom, prenom')
+        .order('nom', { ascending: true });
+      
+      if (!error && data) {
+        setApprenants(data);
+      }
+    };
+    
+    if (open) {
+      fetchApprenants();
+    }
+  }, [open]);
 
   // Gérer la sélection d'une date de formation
   const handleDateSelect = (value: string) => {
@@ -97,6 +125,7 @@ export function ApprenantForm() {
     setSelectedDateOption("");
     setCreneauHoraire("");
     setTypeApprenant("prospect");
+    setSelectedApprenantId("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -326,7 +355,12 @@ export function ApprenantForm() {
             <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Financement</h3>
             <div className="space-y-2">
               <Label htmlFor="financement">Mode de financement *</Label>
-              <Select value={financement} onValueChange={setFinancement}>
+              <Select value={financement} onValueChange={(value) => {
+                setFinancement(value);
+                if (value !== "cpf-a") {
+                  setSelectedApprenantId("");
+                }
+              }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner un mode de financement" />
                 </SelectTrigger>
@@ -370,6 +404,31 @@ export function ApprenantForm() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Sélection d'un apprenant existant pour CPF A */}
+            {financement === "cpf-a" && (
+              <div className="space-y-2">
+                <Label htmlFor="apprenantCpfA">Apprenant associé (CPF A)</Label>
+                <Select value={selectedApprenantId} onValueChange={setSelectedApprenantId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un apprenant existant" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {apprenants.length > 0 ? (
+                      apprenants.map((apprenant) => (
+                        <SelectItem key={apprenant.id} value={apprenant.id}>
+                          {apprenant.nom} {apprenant.prenom}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-data" disabled>
+                        Aucun apprenant enregistré
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             
             <div className="space-y-2">
               <Label htmlFor="company">Entreprise / Organisme financeur (optionnel)</Label>
