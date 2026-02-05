@@ -38,6 +38,9 @@ interface Apprenant {
   date_fin_formation?: string | null;
   creneau_horaire?: string | null;
   date_examen_theorique?: string | null;
+  montant_paye?: number | null;
+  moyen_paiement?: string | null;
+  notes?: string | null;
 }
 
 interface ApprenantEditFormProps {
@@ -137,6 +140,9 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
     creneau_horaire: "",
     montant_ttc: "1299",
     date_examen_theorique: "27 janvier 2026",
+    montant_paye: "0",
+    moyen_paiement: "",
+    notes: "",
   });
   const queryClient = useQueryClient();
 
@@ -164,6 +170,9 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
         creneau_horaire: apprenant.creneau_horaire || "",
         montant_ttc: apprenant.montant_ttc?.toString() || "1299",
         date_examen_theorique: apprenant.date_examen_theorique || "27 janvier 2026",
+        montant_paye: apprenant.montant_paye?.toString() || "0",
+        moyen_paiement: apprenant.moyen_paiement || "",
+        notes: apprenant.notes || "",
       });
       
       // Restaurer la date de formation du catalogue si elle existe
@@ -255,6 +264,9 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
       date_fin_formation: dateFinFormation ? format(dateFinFormation, 'yyyy-MM-dd') : null,
       creneau_horaire: formData.creneau_horaire || null,
       date_examen_theorique: formData.date_examen_theorique || null,
+      montant_paye: formData.montant_paye ? parseFloat(formData.montant_paye) : 0,
+      moyen_paiement: formData.moyen_paiement || null,
+      notes: formData.notes?.trim() || null,
     };
 
     try {
@@ -744,19 +756,79 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
             </div>
           </div>
 
-          {/* Prix de la formation */}
+          {/* Prix de la formation et Paiement */}
           <div className="space-y-4">
-            <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Informations</h3>
+            <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Informations financières</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="prixFormation">Prix de la formation (€)</Label>
+                <Input 
+                  id="prixFormation" 
+                  type="number" 
+                  placeholder="1299" 
+                  value={formData.montant_ttc}
+                  onChange={(e) => setFormData({ ...formData, montant_ttc: e.target.value })}
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="montant_paye">Montant payé (€)</Label>
+                <Input 
+                  id="montant_paye" 
+                  type="number" 
+                  placeholder="0" 
+                  value={formData.montant_paye}
+                  onChange={(e) => setFormData({ ...formData, montant_paye: e.target.value })}
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="moyen_paiement">Moyen de paiement</Label>
+                <Select 
+                  value={formData.moyen_paiement} 
+                  onValueChange={(value) => setFormData({ ...formData, moyen_paiement: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="especes">Espèces</SelectItem>
+                    <SelectItem value="cb">Carte bancaire</SelectItem>
+                    <SelectItem value="cheque">Chèque</SelectItem>
+                    <SelectItem value="virement">Virement</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Reste à payer</Label>
+                <div className={cn(
+                  "h-10 px-3 py-2 rounded-md border flex items-center font-medium",
+                  (parseFloat(formData.montant_ttc) || 0) - (parseFloat(formData.montant_paye) || 0) > 0
+                    ? "bg-orange-50 text-orange-700 border-orange-200"
+                    : "bg-green-50 text-green-700 border-green-200"
+                )}>
+                  {((parseFloat(formData.montant_ttc) || 0) - (parseFloat(formData.montant_paye) || 0)).toFixed(2)} €
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Notes</h3>
             <div className="space-y-2">
-              <Label htmlFor="prixFormation">Prix de la formation (€)</Label>
-              <Input 
-                id="prixFormation" 
-                type="number" 
-                placeholder="1299" 
-                value={formData.montant_ttc}
-                onChange={(e) => setFormData({ ...formData, montant_ttc: e.target.value })}
-                min="0"
-                step="0.01"
+              <Label htmlFor="notes">Notes et commentaires</Label>
+              <textarea 
+                id="notes" 
+                className="w-full min-h-[80px] px-3 py-2 rounded-md border border-input bg-background text-sm resize-y"
+                placeholder="Notes internes sur cet apprenant..."
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               />
             </div>
           </div>

@@ -83,8 +83,11 @@ export type Database = {
           formation_choisie: string | null
           id: string
           mode_financement: string | null
+          montant_paye: number | null
           montant_ttc: number | null
+          moyen_paiement: string | null
           nom: string
+          notes: string | null
           numero_dossier_cma: string | null
           organisme_financeur: string | null
           prenom: string
@@ -109,8 +112,11 @@ export type Database = {
           formation_choisie?: string | null
           id?: string
           mode_financement?: string | null
+          montant_paye?: number | null
           montant_ttc?: number | null
+          moyen_paiement?: string | null
           nom: string
+          notes?: string | null
           numero_dossier_cma?: string | null
           organisme_financeur?: string | null
           prenom: string
@@ -135,8 +141,11 @@ export type Database = {
           formation_choisie?: string | null
           id?: string
           mode_financement?: string | null
+          montant_paye?: number | null
           montant_ttc?: number | null
+          moyen_paiement?: string | null
           nom?: string
+          notes?: string | null
           numero_dossier_cma?: string | null
           organisme_financeur?: string | null
           prenom?: string

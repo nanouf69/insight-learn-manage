@@ -176,18 +176,16 @@ function PaiementPopover({
   montantTotal: number; 
   montantPaye: number; 
   moyenPaiement: string;
-  onSave: (data: { montant_paye?: number; montant_total?: number; moyen_paiement?: string }) => void 
+  onSave: (data: { montant_paye?: number; moyen_paiement?: string }) => void 
 }) {
-  const [localMontantTotal, setLocalMontantTotal] = useState(montantTotal);
   const [localMontantPaye, setLocalMontantPaye] = useState(montantPaye);
   const [localMoyenPaiement, setLocalMoyenPaiement] = useState(moyenPaiement);
   const [open, setOpen] = useState(false);
 
-  const resteAPayer = localMontantTotal - localMontantPaye;
+  const resteAPayer = montantTotal - localMontantPaye;
 
   const handleSave = () => {
     onSave({
-      montant_total: localMontantTotal,
       montant_paye: localMontantPaye,
       moyen_paiement: localMoyenPaiement
     });
@@ -212,12 +210,10 @@ function PaiementPopover({
           
           <div className="space-y-2">
             <Label>Montant total (€)</Label>
-            <Input 
-              type="number"
-              value={localMontantTotal}
-              onChange={(e) => setLocalMontantTotal(parseFloat(e.target.value) || 0)}
-              placeholder="Ex: 1599"
-            />
+            <div className="h-10 px-3 py-2 rounded-md border bg-muted/50 flex items-center text-muted-foreground">
+              {montantTotal.toFixed(2)} €
+            </div>
+            <p className="text-xs text-muted-foreground">Modifiable dans la fiche apprenant</p>
           </div>
 
           <div className="space-y-2">
@@ -283,9 +279,6 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
           date_debut,
           date_fin,
           notes,
-          montant_paye,
-          montant_total,
-          moyen_paiement,
           apprenant:apprenants (
             id,
             nom,
@@ -299,7 +292,10 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
             date_fin_formation,
             date_examen_theorique,
             statut,
-            montant_ttc
+            montant_ttc,
+            montant_paye,
+            moyen_paiement,
+            notes
           )
         `)
         .eq('session_id', session.id);
@@ -384,10 +380,10 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
     }
   };
 
-  // Fonction pour mettre à jour les notes et paiements
+  // Fonction pour mettre à jour les notes dans session_apprenants
   const updateSessionApprenant = async (
     sessionApprenantId: string, 
-    updates: { notes?: string; montant_paye?: number; montant_total?: number; moyen_paiement?: string }
+    updates: { notes?: string }
   ) => {
     try {
       const { error } = await supabase
@@ -399,8 +395,35 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
       
       refetchApprenants();
       toast({
-        title: "Informations mises à jour",
-        description: "Les informations ont été enregistrées.",
+        title: "Notes mises à jour",
+        description: "Les notes ont été enregistrées.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error.message || "Erreur lors de la mise à jour",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Fonction pour mettre à jour le paiement dans apprenants
+  const updateApprenantPaiement = async (
+    apprenantId: string, 
+    updates: { montant_paye?: number; moyen_paiement?: string; notes?: string }
+  ) => {
+    try {
+      const { error } = await supabase
+        .from('apprenants')
+        .update(updates)
+        .eq('id', apprenantId);
+      
+      if (error) throw error;
+      
+      refetchApprenants();
+      toast({
+        title: "Paiement mis à jour",
+        description: "Les informations de paiement ont été enregistrées.",
       });
     } catch (error: any) {
       toast({
@@ -698,18 +721,18 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                             {/* Popover Notes */}
                             <NotesPopover 
                               sessionApprenantId={sessionApprenant.id}
-                              notes={sessionApprenant.notes || ""}
+                              notes={sessionApprenant.notes || apprenant.notes || ""}
                               onSave={(notes) => updateSessionApprenant(sessionApprenant.id, { notes })}
                             />
 
                             {/* Popover Paiement (seulement si financement personnel) */}
                             {(sessionApprenant.mode_financement === "personnel" || apprenant.mode_financement === "personnel") && (
                               <PaiementPopover 
-                                sessionApprenantId={sessionApprenant.id}
-                                montantTotal={sessionApprenant.montant_total || apprenant.montant_ttc || 0}
-                                montantPaye={sessionApprenant.montant_paye || 0}
-                                moyenPaiement={sessionApprenant.moyen_paiement || ""}
-                                onSave={(data) => updateSessionApprenant(sessionApprenant.id, data)}
+                                sessionApprenantId={apprenant.id}
+                                montantTotal={apprenant.montant_ttc || 0}
+                                montantPaye={apprenant.montant_paye || 0}
+                                moyenPaiement={apprenant.moyen_paiement || ""}
+                                onSave={(data) => updateApprenantPaiement(apprenant.id, data)}
                               />
                             )}
                           </div>
