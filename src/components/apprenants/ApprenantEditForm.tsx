@@ -33,6 +33,7 @@ interface Apprenant {
   type_apprenant: string | null;
   formation_choisie?: string | null;
   montant_ttc?: number | null;
+  date_formation_catalogue?: string | null;
   date_debut_formation?: string | null;
   date_fin_formation?: string | null;
   creneau_horaire?: string | null;
@@ -164,7 +165,12 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
         date_examen_theorique: apprenant.date_examen_theorique || "27 janvier 2026",
       });
       
-      // Restaurer la date de formation sélectionnée si elle existe
+      // Restaurer la date de formation du catalogue si elle existe
+      if (apprenant.date_formation_catalogue) {
+        setSelectedDateOption(apprenant.date_formation_catalogue);
+      }
+      
+      // Restaurer les dates manuelles si elles existent
       if (apprenant.date_debut_formation) {
         setDateDebutFormation(new Date(apprenant.date_debut_formation));
       }
@@ -242,6 +248,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
       type_apprenant: formData.type_apprenant || null,
       formation_choisie: formData.selected_formation || null,
       montant_ttc: formData.montant_ttc ? parseFloat(formData.montant_ttc) : null,
+      date_formation_catalogue: selectedDateOption || null,
       date_debut_formation: dateDebutFormation ? format(dateDebutFormation, 'yyyy-MM-dd') : null,
       date_fin_formation: dateFinFormation ? format(dateFinFormation, 'yyyy-MM-dd') : null,
       creneau_horaire: formData.creneau_horaire || null,
@@ -636,7 +643,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                   <SelectGroup>
                     <SelectLabel>{datesFormations.vtc.label}</SelectLabel>
                     {datesFormations.vtc.dates.map((date, idx) => (
-                      <SelectItem key={`vtc-${idx}`} value={`vtc-${idx}`}>
+                      <SelectItem key={`vtc-${idx}`} value={date}>
                         {date}
                       </SelectItem>
                     ))}
@@ -645,7 +652,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                   <SelectGroup>
                     <SelectLabel>{datesFormations.taxi.label}</SelectLabel>
                     {datesFormations.taxi.dates.map((date, idx) => (
-                      <SelectItem key={`taxi-${idx}`} value={`taxi-${idx}`}>
+                      <SelectItem key={`taxi-${idx}`} value={date}>
                         {date}
                       </SelectItem>
                     ))}
@@ -654,7 +661,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                   <SelectGroup>
                     <SelectLabel>{datesFormations.ta.label}</SelectLabel>
                     {datesFormations.ta.dates.map((date, idx) => (
-                      <SelectItem key={`ta-${idx}`} value={`ta-${idx}`}>
+                      <SelectItem key={`ta-${idx}`} value={date}>
                         {date}
                       </SelectItem>
                     ))}

@@ -263,6 +263,7 @@ export function ApprenantForm() {
       type_apprenant: typeApprenantFormation || null,
       formation_choisie: selectedFormation || null,
       montant_ttc: montantTtc ? parseFloat(montantTtc) : null,
+      date_formation_catalogue: selectedDateOption || null,
       date_debut_formation: dateDebutFormation ? format(dateDebutFormation, 'yyyy-MM-dd') : null,
       date_fin_formation: dateFinFormation ? format(dateFinFormation, 'yyyy-MM-dd') : null,
       creneau_horaire: creneauHoraire || null,
@@ -680,7 +681,7 @@ export function ApprenantForm() {
                   <SelectGroup>
                     <SelectLabel>{datesFormations.vtc.label}</SelectLabel>
                     {datesFormations.vtc.dates.map((date, idx) => (
-                      <SelectItem key={`vtc-${idx}`} value={`vtc-${idx}`}>
+                      <SelectItem key={`vtc-${idx}`} value={date}>
                         {date}
                       </SelectItem>
                     ))}
@@ -690,7 +691,7 @@ export function ApprenantForm() {
                   <SelectGroup>
                     <SelectLabel>{datesFormations.taxi.label}</SelectLabel>
                     {datesFormations.taxi.dates.map((date, idx) => (
-                      <SelectItem key={`taxi-${idx}`} value={`taxi-${idx}`}>
+                      <SelectItem key={`taxi-${idx}`} value={date}>
                         {date}
                       </SelectItem>
                     ))}
@@ -700,7 +701,7 @@ export function ApprenantForm() {
                   <SelectGroup>
                     <SelectLabel>{datesFormations.ta.label}</SelectLabel>
                     {datesFormations.ta.dates.map((date, idx) => (
-                      <SelectItem key={`ta-${idx}`} value={`ta-${idx}`}>
+                      <SelectItem key={`ta-${idx}`} value={date}>
                         {date}
                       </SelectItem>
                     ))}
