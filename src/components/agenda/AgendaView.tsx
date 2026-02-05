@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Plus, X, User, Clock, BookOpen, Layers, Loader2 } from "lucide-react";
-import { format, addDays, startOfWeek, isSameDay, parseISO } from "date-fns";
+import { format, addDays, startOfWeek, isSameDay } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,6 +39,12 @@ interface CourseBlock {
   disciplineId?: string;
   disciplineColor?: string;
 }
+
+// Helper pour parser une date sans décalage de timezone
+const parseDateString = (dateStr: string): Date => {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  return new Date(year, month - 1, day);
+};
 
 // Couleurs pour les formateurs
 const formateurColors = [
@@ -205,7 +211,7 @@ export function AgendaView() {
           formateurColor: formateur?.color || 'bg-gray-500',
           startHour: timeToDecimal(bloc.heure_debut),
           endHour: timeToDecimal(bloc.heure_fin),
-          date: addDays(parseISO(bloc.semaine_debut), bloc.jour),
+          date: addDays(parseDateString(bloc.semaine_debut), bloc.jour),
           formation: bloc.formation,
           discipline: bloc.discipline_nom,
           disciplineId: bloc.discipline_id,
