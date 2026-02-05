@@ -73,10 +73,16 @@ export type Database = {
           civilite: string | null
           code_postal: string | null
           created_at: string
+          creneau_horaire: string | null
+          date_debut_formation: string | null
+          date_examen_theorique: string | null
+          date_fin_formation: string | null
           date_naissance: string | null
           email: string | null
+          formation_choisie: string | null
           id: string
           mode_financement: string | null
+          montant_ttc: number | null
           nom: string
           numero_dossier_cma: string | null
           organisme_financeur: string | null
@@ -92,10 +98,16 @@ export type Database = {
           civilite?: string | null
           code_postal?: string | null
           created_at?: string
+          creneau_horaire?: string | null
+          date_debut_formation?: string | null
+          date_examen_theorique?: string | null
+          date_fin_formation?: string | null
           date_naissance?: string | null
           email?: string | null
+          formation_choisie?: string | null
           id?: string
           mode_financement?: string | null
+          montant_ttc?: number | null
           nom: string
           numero_dossier_cma?: string | null
           organisme_financeur?: string | null
@@ -111,10 +123,16 @@ export type Database = {
           civilite?: string | null
           code_postal?: string | null
           created_at?: string
+          creneau_horaire?: string | null
+          date_debut_formation?: string | null
+          date_examen_theorique?: string | null
+          date_fin_formation?: string | null
           date_naissance?: string | null
           email?: string | null
+          formation_choisie?: string | null
           id?: string
           mode_financement?: string | null
+          montant_ttc?: number | null
           nom?: string
           numero_dossier_cma?: string | null
           organisme_financeur?: string | null

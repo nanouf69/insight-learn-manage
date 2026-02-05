@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -31,6 +31,12 @@ interface Apprenant {
   numero_dossier_cma: string | null;
   organisme_financeur: string | null;
   type_apprenant: string | null;
+  formation_choisie?: string | null;
+  montant_ttc?: number | null;
+  date_debut_formation?: string | null;
+  date_fin_formation?: string | null;
+  creneau_horaire?: string | null;
+  date_examen_theorique?: string | null;
 }
 
 interface ApprenantEditFormProps {
@@ -105,6 +111,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
   const [dateDebutFormation, setDateDebutFormation] = useState<Date | undefined>();
   const [dateFinFormation, setDateFinFormation] = useState<Date | undefined>();
   const [selectedDateOption, setSelectedDateOption] = useState("");
+  const submitInProgressRef = useRef(false);
   
   const [formData, setFormData] = useState({
     civilite: "",
@@ -148,11 +155,19 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
         date_naissance: apprenant.date_naissance || "",
         numero_dossier_cma: apprenant.numero_dossier_cma || "",
         type_apprenant: apprenant.type_apprenant || "",
-        selected_formation: "",
-        creneau_horaire: "",
-        montant_ttc: "1299",
-        date_examen_theorique: "27 janvier 2026",
+        selected_formation: apprenant.formation_choisie || "",
+        creneau_horaire: apprenant.creneau_horaire || "",
+        montant_ttc: apprenant.montant_ttc?.toString() || "1299",
+        date_examen_theorique: apprenant.date_examen_theorique || "27 janvier 2026",
       });
+      
+      // Restaurer la date de formation sélectionnée si elle existe
+      if (apprenant.date_debut_formation) {
+        setDateDebutFormation(new Date(apprenant.date_debut_formation));
+      }
+      if (apprenant.date_fin_formation) {
+        setDateFinFormation(new Date(apprenant.date_fin_formation));
+      }
     }
   }, [apprenant]);
 
@@ -194,29 +209,43 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
     setSelectedDateOption(value);
   };
 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Protection contre les doubles clics
+    if (submitInProgressRef.current || isLoading) return;
+    submitInProgressRef.current = true;
     setIsLoading(true);
+
+    // Capturer les valeurs actuelles pour éviter la perte de données
+    const updateData = {
+      civilite: formData.civilite?.trim() || null,
+      prenom: formData.prenom.trim(),
+      nom: formData.nom.trim(),
+      email: formData.email?.trim() || null,
+      telephone: formData.telephone?.trim() || null,
+      adresse: formData.adresse?.trim() || null,
+      code_postal: formData.code_postal?.trim() || null,
+      ville: formData.ville?.trim() || null,
+      statut: typeApprenant === "prospect" ? "prospect" : "inscrit",
+      mode_financement: formData.mode_financement,
+      organisme_financeur: formData.organisme_financeur || null,
+      date_naissance: formData.date_naissance || null,
+      numero_dossier_cma: formData.numero_dossier_cma?.trim() || null,
+      type_apprenant: formData.type_apprenant || null,
+      formation_choisie: formData.selected_formation || null,
+      montant_ttc: formData.montant_ttc ? parseFloat(formData.montant_ttc) : null,
+      date_debut_formation: dateDebutFormation ? format(dateDebutFormation, 'yyyy-MM-dd') : null,
+      date_fin_formation: dateFinFormation ? format(dateFinFormation, 'yyyy-MM-dd') : null,
+      creneau_horaire: formData.creneau_horaire || null,
+      date_examen_theorique: formData.date_examen_theorique || null,
+    };
 
     try {
       const { error } = await supabase
         .from('apprenants')
-        .update({
-          civilite: formData.civilite || null,
-          prenom: formData.prenom,
-          nom: formData.nom,
-          email: formData.email || null,
-          telephone: formData.telephone || null,
-          adresse: formData.adresse || null,
-          code_postal: formData.code_postal || null,
-          ville: formData.ville || null,
-          statut: typeApprenant === "prospect" ? "prospect" : "inscrit",
-          mode_financement: formData.mode_financement,
-          organisme_financeur: formData.organisme_financeur || null,
-          date_naissance: formData.date_naissance || null,
-          numero_dossier_cma: formData.numero_dossier_cma || null,
-          type_apprenant: formData.type_apprenant || null,
-        })
+        .update(updateData)
         .eq('id', apprenant.id);
 
       if (error) throw error;
@@ -229,6 +258,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
       toast.error("Erreur lors de la modification de l'apprenant");
     } finally {
       setIsLoading(false);
+      submitInProgressRef.current = false;
     }
   };
 

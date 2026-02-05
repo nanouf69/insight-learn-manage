@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -229,34 +229,50 @@ export function ApprenantForm() {
     setDateExamenTheorique("27 janvier 2026");
   };
 
+  // Ref pour éviter les doubles soumissions
+  const submitInProgressRef = useRef(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Protection contre les doubles clics
+    if (submitInProgressRef.current || isLoading) return;
+    submitInProgressRef.current = true;
     setIsLoading(true);
+
+    // Capturer les valeurs actuelles pour éviter la perte de données
+    const formData = {
+      civilite,
+      prenom: prenom.trim(),
+      nom: nom.trim(),
+      email: email.trim() || null,
+      telephone: telephone.trim() || null,
+      adresse: adresse.trim() || null,
+      code_postal: codePostal.trim() || null,
+      ville: ville.trim() || null,
+      mode_financement: financement,
+      organisme_financeur: organismeFinanceur || null,
+      numero_dossier_cma: numeroDossierCma.trim() || null,
+      statut: typeApprenant === "prospect" ? "prospect" : "inscrit",
+      type_apprenant: typeApprenantFormation || null,
+      formation_choisie: selectedFormation || null,
+      montant_ttc: montantTtc ? parseFloat(montantTtc) : null,
+      date_debut_formation: dateDebutFormation ? format(dateDebutFormation, 'yyyy-MM-dd') : null,
+      date_fin_formation: dateFinFormation ? format(dateFinFormation, 'yyyy-MM-dd') : null,
+      creneau_horaire: creneauHoraire || null,
+      date_examen_theorique: dateExamenTheorique || null,
+    };
 
     try {
       const { error } = await supabase
         .from('apprenants')
-        .insert({
-          civilite,
-          prenom,
-          nom,
-          email,
-          telephone,
-          adresse,
-          code_postal: codePostal,
-          ville,
-          mode_financement: financement,
-          organisme_financeur: organismeFinanceur || null,
-          numero_dossier_cma: numeroDossierCma || null,
-          statut: typeApprenant === "prospect" ? "prospect" : "inscrit",
-          type_apprenant: typeApprenantFormation || null,
-        });
+        .insert(formData);
 
       if (error) throw error;
 
       toast({
         title: "Apprenant ajouté",
-        description: `${prenom} ${nom} a été ajouté en tant que ${typeApprenant === "prospect" ? "prospect" : "client"}.`,
+        description: `${formData.prenom} ${formData.nom} a été ajouté en tant que ${typeApprenant === "prospect" ? "prospect" : "client"}.`,
       });
       resetForm();
       setOpen(false);
@@ -267,12 +283,13 @@ export function ApprenantForm() {
       toast({
         title: isDuplicate ? "Doublon détecté" : "Erreur",
         description: isDuplicate 
-          ? `Un apprenant avec le nom "${nom}" et le prénom "${prenom}" existe déjà.`
+          ? `Un apprenant avec le nom "${formData.nom}" et le prénom "${formData.prenom}" existe déjà.`
           : (error.message || "Erreur lors de l'ajout de l'apprenant"),
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
+      submitInProgressRef.current = false;
     }
   };
 
