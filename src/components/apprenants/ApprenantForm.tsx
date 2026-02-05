@@ -91,13 +91,13 @@ export function ApprenantForm() {
   const [numeroDossierCma, setNumeroDossierCma] = useState("");
   const [dateDebutFormation, setDateDebutFormation] = useState<Date | undefined>();
   const [dateFinFormation, setDateFinFormation] = useState<Date | undefined>();
-  const [selectedDateOption, setSelectedDateOption] = useState("");
+  const [selectedDateOption, setSelectedDateOption] = useState(datesFormations.vtc.dates[0]);
   const [creneauHoraire, setCreneauHoraire] = useState("");
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
   const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
-  const [selectedFormation, setSelectedFormation] = useState("");
-  const [montantTtc, setMontantTtc] = useState("1299");
-  const [typeApprenantFormation, setTypeApprenantFormation] = useState("");
+  const [selectedFormation, setSelectedFormation] = useState("vtc-exam");
+  const [montantTtc, setMontantTtc] = useState("1599");
+  const [typeApprenantFormation, setTypeApprenantFormation] = useState("vtc");
   const [dateExamenTheorique, setDateExamenTheorique] = useState("27 janvier 2026");
 
   // Prix par défaut selon la formation
@@ -218,14 +218,14 @@ export function ApprenantForm() {
     setNumeroDossierCma("");
     setDateDebutFormation(undefined);
     setDateFinFormation(undefined);
-    setSelectedDateOption("");
+    setSelectedDateOption(datesFormations.vtc.dates[0]);
     setCreneauHoraire("");
     setTypeApprenant("prospect");
     setSelectedApprenantId("");
     setDuplicateWarning(null);
-    setSelectedFormation("");
-    setMontantTtc("1299");
-    setTypeApprenantFormation("");
+    setSelectedFormation("vtc-exam");
+    setMontantTtc("1599");
+    setTypeApprenantFormation("vtc");
     setDateExamenTheorique("27 janvier 2026");
   };
 
