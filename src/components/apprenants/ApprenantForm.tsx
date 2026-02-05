@@ -169,12 +169,12 @@ export function ApprenantForm() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="firstName">Prénom *</Label>
-                <Input id="firstName" placeholder="Jean" required value={prenom} onChange={(e) => setPrenom(e.target.value)} />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="lastName">Nom *</Label>
                 <Input id="lastName" placeholder="Martin" required value={nom} onChange={(e) => setNom(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="firstName">Prénom *</Label>
+                <Input id="firstName" placeholder="Jean" required value={prenom} onChange={(e) => setPrenom(e.target.value)} />
               </div>
             </div>
           </div>
