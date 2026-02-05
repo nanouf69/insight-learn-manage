@@ -13,7 +13,8 @@ import {
   ClipboardList,
   Receipt,
   UserCog,
-  Clock
+  Clock,
+  ClipboardCheck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +34,7 @@ const menuItems = [
   { id: "formateurs", label: "Formateurs", icon: UserCog },
   { id: "organisations", label: "Organisations", icon: Building2 },
   { id: "apprenants", label: "Apprenants", icon: Users },
+  { id: "examens", label: "Examen et Réussite", icon: ClipboardCheck },
   { id: "crm", label: "CRM", icon: UserCircle },
   { id: "documents", label: "Documents", icon: FileText },
   { id: "factures", label: "Factures", icon: Receipt },

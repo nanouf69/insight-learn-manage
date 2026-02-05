@@ -16,6 +16,7 @@ import { FormateursList } from "@/components/formateurs/FormateursList";
 import { BPFForm } from "@/components/bpf/BPFForm";
 import { FactureForm } from "@/components/factures/FactureForm";
 import { AgendaView } from "@/components/agenda/AgendaView";
+import { ExamenReussitePage } from "@/components/examens/ExamenReussitePage";
 import { GraduationCap, Users, Euro, TrendingUp } from "lucide-react";
 
 const pageConfig = {
@@ -27,6 +28,7 @@ const pageConfig = {
   formateurs: { title: "Formateurs", subtitle: "Gérez votre équipe de formateurs" },
   organisations: { title: "Organisations", subtitle: "Gérez vos organisations clientes" },
   apprenants: { title: "Apprenants", subtitle: "Suivez vos apprenants" },
+  examens: { title: "Examen et Réussite", subtitle: "Suivi des examens théoriques" },
   crm: { title: "CRM", subtitle: "Gérez vos contacts et prospects" },
   documents: { title: "Documents", subtitle: "Gérez vos documents administratifs" },
   factures: { title: "Factures", subtitle: "Créez et gérez vos factures" },
@@ -88,6 +90,8 @@ const Index = () => {
         return <FormationsList />;
       case "apprenants":
         return <ApprenantsList />;
+      case "examens":
+        return <ExamenReussitePage />;
       case "crm":
         return <CRMDashboard />;
       case "planning":
