@@ -1,13 +1,19 @@
 import { useState, useEffect } from "react";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Loader2, CalendarIcon, User, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
 
 interface Apprenant {
   id: string;
@@ -23,6 +29,8 @@ interface Apprenant {
   mode_financement: string | null;
   date_naissance: string | null;
   numero_dossier_cma: string | null;
+  organisme_financeur: string | null;
+  type_apprenant: string | null;
 }
 
 interface ApprenantEditFormProps {
@@ -31,8 +39,63 @@ interface ApprenantEditFormProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// Liste des dates par type de formation (présentiel uniquement)
+const datesFormations = {
+  vtc: {
+    label: "Formation VTC",
+    dates: [
+      "Du 12 au 25 janvier 2026",
+      "Du 16 au 30 mars 2026",
+      "Du 11 au 24 mai 2026",
+      "Du 6 au 19 juillet 2026",
+      "Du 14 au 27 septembre 2026",
+      "Du 2 au 15 novembre 2026"
+    ]
+  },
+  taxi: {
+    label: "Formation TAXI",
+    dates: [
+      "Du 5 au 26 janvier 2026",
+      "Du 9 au 30 mars 2026",
+      "Du 4 au 25 mai 2026",
+      "Du 29 juin au 20 juillet 2026",
+      "Du 7 au 28 septembre 2026",
+      "Du 26 octobre au 16 novembre 2026"
+    ]
+  },
+  ta: {
+    label: "Formation TAXI pour chauffeur VTC (TA)",
+    dates: [
+      "Du 5 au 26 janvier 2026",
+      "Du 9 au 30 mars 2026",
+      "Du 4 au 25 mai 2026",
+      "Du 29 juin au 20 juillet 2026",
+      "Du 7 au 28 septembre 2026",
+      "Du 26 octobre au 16 novembre 2026"
+    ]
+  }
+};
+
+// Prix par défaut selon la formation
+const prixFormations: Record<string, string> = {
+  "vtc": "1099",
+  "vtc-exam": "1599",
+  "taxi": "1299",
+  "taxi-exam": "1799",
+  "passerelle-taxi": "999",
+  "vtc-elearning": "1599",
+  "taxi-elearning": "1299",
+  "passerelle-taxi-elearning": "499",
+  "passerelle-vtc-elearning": "499"
+};
+
 export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEditFormProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [typeApprenant, setTypeApprenant] = useState<"prospect" | "client">("prospect");
+  const [dateDebutFormation, setDateDebutFormation] = useState<Date | undefined>();
+  const [dateFinFormation, setDateFinFormation] = useState<Date | undefined>();
+  const [selectedDateOption, setSelectedDateOption] = useState("");
+  
   const [formData, setFormData] = useState({
     civilite: "",
     prenom: "",
@@ -43,14 +106,22 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
     code_postal: "",
     ville: "",
     statut: "particulier",
-    mode_financement: "personnel",
+    mode_financement: "cpf",
+    organisme_financeur: "cpf-cdc",
     date_naissance: "",
     numero_dossier_cma: "",
+    type_apprenant: "",
+    selected_formation: "",
+    creneau_horaire: "",
+    montant_ttc: "1299",
   });
   const queryClient = useQueryClient();
 
   useEffect(() => {
     if (apprenant) {
+      const isClient = apprenant.statut === "inscrit" || apprenant.statut === "entreprise";
+      setTypeApprenant(isClient ? "client" : "prospect");
+      
       setFormData({
         civilite: apprenant.civilite || "",
         prenom: apprenant.prenom,
@@ -61,12 +132,29 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
         code_postal: apprenant.code_postal || "",
         ville: apprenant.ville || "",
         statut: apprenant.statut || "particulier",
-        mode_financement: apprenant.mode_financement || "personnel",
+        mode_financement: apprenant.mode_financement || "cpf",
+        organisme_financeur: apprenant.organisme_financeur || "cpf-cdc",
         date_naissance: apprenant.date_naissance || "",
         numero_dossier_cma: apprenant.numero_dossier_cma || "",
+        type_apprenant: apprenant.type_apprenant || "",
+        selected_formation: "",
+        creneau_horaire: "",
+        montant_ttc: "1299",
       });
     }
   }, [apprenant]);
+
+  const handleFormationChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      selected_formation: value,
+      montant_ttc: prixFormations[value] || prev.montant_ttc
+    }));
+  };
+
+  const handleDateSelect = (value: string) => {
+    setSelectedDateOption(value);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,10 +172,12 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
           adresse: formData.adresse || null,
           code_postal: formData.code_postal || null,
           ville: formData.ville || null,
-          statut: formData.statut,
+          statut: typeApprenant === "prospect" ? "prospect" : "inscrit",
           mode_financement: formData.mode_financement,
+          organisme_financeur: formData.organisme_financeur || null,
           date_naissance: formData.date_naissance || null,
           numero_dossier_cma: formData.numero_dossier_cma || null,
+          type_apprenant: formData.type_apprenant || null,
         })
         .eq('id', apprenant.id);
 
@@ -111,6 +201,51 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
           <DialogTitle>Modifier l'apprenant</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6 mt-4">
+          {/* Type : Prospect ou Client */}
+          <div className="space-y-3">
+            <Label className="text-base font-medium">Type</Label>
+            <RadioGroup 
+              value={typeApprenant} 
+              onValueChange={(v) => setTypeApprenant(v as "prospect" | "client")}
+              className="grid grid-cols-2 gap-4"
+            >
+              <div 
+                className={`flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  typeApprenant === "prospect" 
+                    ? "border-amber-500 bg-amber-50" 
+                    : "border-border hover:border-amber-300"
+                }`}
+                onClick={() => setTypeApprenant("prospect")}
+              >
+                <RadioGroupItem value="prospect" id="edit-prospect" />
+                <Label htmlFor="edit-prospect" className="flex items-center gap-2 cursor-pointer flex-1">
+                  <User className="w-5 h-5 text-amber-600" />
+                  <div>
+                    <div className="font-medium">Prospect</div>
+                    <div className="text-xs text-muted-foreground">Personne intéressée</div>
+                  </div>
+                </Label>
+              </div>
+              <div 
+                className={`flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  typeApprenant === "client" 
+                    ? "border-green-500 bg-green-50" 
+                    : "border-border hover:border-green-300"
+                }`}
+                onClick={() => setTypeApprenant("client")}
+              >
+                <RadioGroupItem value="client" id="edit-client" />
+                <Label htmlFor="edit-client" className="flex items-center gap-2 cursor-pointer flex-1">
+                  <UserCheck className="w-5 h-5 text-green-600" />
+                  <div>
+                    <div className="font-medium">Client</div>
+                    <div className="text-xs text-muted-foreground">Inscrit à une formation</div>
+                  </div>
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+
           {/* Identité */}
           <div className="space-y-4">
             <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Identité</h3>
@@ -128,16 +263,6 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="prenom">Prénom *</Label>
-                <Input 
-                  id="prenom" 
-                  placeholder="Jean" 
-                  required 
-                  value={formData.prenom}
-                  onChange={(e) => setFormData({ ...formData, prenom: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="nom">Nom *</Label>
                 <Input 
                   id="nom" 
@@ -145,6 +270,16 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                   required 
                   value={formData.nom}
                   onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="prenom">Prénom *</Label>
+                <Input 
+                  id="prenom" 
+                  placeholder="Jean" 
+                  required 
+                  value={formData.prenom}
+                  onChange={(e) => setFormData({ ...formData, prenom: e.target.value })}
                 />
               </div>
             </div>
@@ -223,45 +358,280 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
             </div>
           </div>
 
-          {/* Statut et Financement */}
+          {/* Formation */}
           <div className="space-y-4">
-            <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Statut et Financement</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="statut">Statut</Label>
-                <Select value={formData.statut} onValueChange={(value) => setFormData({ ...formData, statut: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="particulier">Particulier</SelectItem>
-                    <SelectItem value="entreprise">Entreprise</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="mode_financement">Mode de financement</Label>
-                <Select value={formData.mode_financement} onValueChange={(value) => setFormData({ ...formData, mode_financement: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cpf">CPF</SelectItem>
-                    <SelectItem value="personnel">Personnel</SelectItem>
-                    <SelectItem value="opco">OPCO</SelectItem>
-                    <SelectItem value="france_travail">France Travail</SelectItem>
+            <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Formation</h3>
+            
+            {/* Type d'apprenant (VTC, TAXI, TA, VA) */}
+            <div className="space-y-2">
+              <Label htmlFor="type_apprenant">Type d'apprenant</Label>
+              <Select value={formData.type_apprenant} onValueChange={(value) => setFormData({ ...formData, type_apprenant: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="vtc">VTC</SelectItem>
+                  <SelectItem value="taxi">TAXI</SelectItem>
+                  <SelectItem value="ta">TA (Passerelle TAXI)</SelectItem>
+                  <SelectItem value="va">VA (Passerelle VTC)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="formation">Formation souhaitée</Label>
+              <Select value={formData.selected_formation} onValueChange={handleFormationChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner une formation" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Formations Présentiel</SelectLabel>
+                    <SelectItem value="vtc">Formation VTC - 1 099 € (VTC)</SelectItem>
+                    <SelectItem value="vtc-exam">Formation VTC avec frais d'examen - 1 599 € (VTC)</SelectItem>
+                    <SelectItem value="taxi">Formation TAXI - 1 299 € (TAXI)</SelectItem>
+                    <SelectItem value="taxi-exam">Formation TAXI avec frais d'examen - 1 799 € (TAXI)</SelectItem>
+                    <SelectItem value="passerelle-taxi">Formation TAXI pour chauffeur VTC - 999 € (TA)</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel>Formations E-learning</SelectLabel>
+                    <SelectItem value="vtc-elearning">Formation VTC (E-learning) - 1 599 € (VTC)</SelectItem>
+                    <SelectItem value="taxi-elearning">Formation TAXI (E-learning) - 1 299 € (TAXI)</SelectItem>
+                    <SelectItem value="passerelle-taxi-elearning">Formation TAXI pour chauffeur VTC (E-learning) - 499 € (TA)</SelectItem>
+                    <SelectItem value="passerelle-vtc-elearning">Formation VTC pour chauffeur TAXI (E-learning) - 499 € (VA)</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Créneau horaire */}
+            <div className="space-y-2">
+              <Label htmlFor="creneauHoraire">Créneau horaire</Label>
+              <Select value={formData.creneau_horaire} onValueChange={(value) => setFormData({ ...formData, creneau_horaire: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un créneau" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="journee">Formation en journée (9h - 16h)</SelectItem>
+                  <SelectItem value="soiree">Formation en soirée (17h - 21h)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Mode de financement */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Financement</h3>
+            <div className="space-y-2">
+              <Label htmlFor="financement">Mode de financement *</Label>
+              <Select value={formData.mode_financement} onValueChange={(value) => {
+                setFormData({ ...formData, mode_financement: value });
+                if (value === "cpf-a") {
+                  setFormData(prev => ({ ...prev, organisme_financeur: "cpf-a" }));
+                }
+              }}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un mode de financement" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cpf">
+                    <span className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-purple-500" />
+                      CPF (Mon Compte Formation)
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="personnel">
+                    <span className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-gray-500" />
+                      Personnel (auto-financement)
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="opco">
+                    <span className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-blue-500" />
+                      OPCO
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="france_travail">
+                    <span className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-orange-500" />
+                      France Travail
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="autre">
+                    <span className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-slate-500" />
+                      Autre
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="cpf-a">
+                    <span className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-indigo-500" />
+                      CPF A
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="company">Organisme financeur</Label>
+              <Select value={formData.organisme_financeur} onValueChange={(value) => setFormData({ ...formData, organisme_financeur: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un organisme" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Organismes publics</SelectLabel>
+                    <SelectItem value="cpf-cdc">CPF (Caisse des Dépôts)</SelectItem>
+                    <SelectItem value="france-travail">France Travail</SelectItem>
+                    <SelectItem value="metropole-lyon">Métropole de Lyon</SelectItem>
+                    <SelectItem value="mairie">Mairie</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel>OPCO</SelectLabel>
+                    <SelectItem value="opco-mobilites">OPCO Mobilités</SelectItem>
+                    <SelectItem value="opco-ep">OPCO EP</SelectItem>
+                    <SelectItem value="fafcea">FAFCEA</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel>Autres</SelectLabel>
+                    <SelectItem value="personnel">Personnel (auto-financement)</SelectItem>
+                    <SelectItem value="societe">Société / Entreprise</SelectItem>
                     <SelectItem value="autre">Autre</SelectItem>
-                  </SelectContent>
-                </Select>
+                    <SelectItem value="cpf-a">CPF A</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Dates de formation */}
+            <div className="space-y-4">
+              <Label>Dates de formation</Label>
+              
+              <Select value={selectedDateOption} onValueChange={handleDateSelect}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner une date de formation" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50 max-h-80">
+                  <SelectItem value="manuel">
+                    <span className="flex items-center gap-2">
+                      <CalendarIcon className="w-4 h-4" />
+                      Définir les dates manuellement
+                    </span>
+                  </SelectItem>
+                  
+                  <SelectGroup>
+                    <SelectLabel>{datesFormations.vtc.label}</SelectLabel>
+                    {datesFormations.vtc.dates.map((date, idx) => (
+                      <SelectItem key={`vtc-${idx}`} value={`vtc-${idx}`}>
+                        {date}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+
+                  <SelectGroup>
+                    <SelectLabel>{datesFormations.taxi.label}</SelectLabel>
+                    {datesFormations.taxi.dates.map((date, idx) => (
+                      <SelectItem key={`taxi-${idx}`} value={`taxi-${idx}`}>
+                        {date}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+
+                  <SelectGroup>
+                    <SelectLabel>{datesFormations.ta.label}</SelectLabel>
+                    {datesFormations.ta.dates.map((date, idx) => (
+                      <SelectItem key={`ta-${idx}`} value={`ta-${idx}`}>
+                        {date}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dateDebut" className="text-xs text-muted-foreground">Date de début</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !dateDebutFormation && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dateDebutFormation ? format(dateDebutFormation, "dd/MM/yyyy", { locale: fr }) : "Sélectionner"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 z-50" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateDebutFormation}
+                        onSelect={setDateDebutFormation}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                        locale={fr}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dateFin" className="text-xs text-muted-foreground">Date de fin</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !dateFinFormation && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dateFinFormation ? format(dateFinFormation, "dd/MM/yyyy", { locale: fr }) : "Sélectionner"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 z-50" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateFinFormation}
+                        onSelect={setDateFinFormation}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                        locale={fr}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="numero_dossier_cma">Numéro de dossier CMA</Label>
               <Input 
                 id="numero_dossier_cma" 
-                placeholder="CMA-2024-001"
+                placeholder="Ex: CMA-2025-001"
                 value={formData.numero_dossier_cma}
                 onChange={(e) => setFormData({ ...formData, numero_dossier_cma: e.target.value })}
+              />
+            </div>
+          </div>
+
+          {/* Prix de la formation */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Informations</h3>
+            <div className="space-y-2">
+              <Label htmlFor="prixFormation">Prix de la formation (€)</Label>
+              <Input 
+                id="prixFormation" 
+                type="number" 
+                placeholder="1299" 
+                value={formData.montant_ttc}
+                onChange={(e) => setFormData({ ...formData, montant_ttc: e.target.value })}
+                min="0"
+                step="0.01"
               />
             </div>
           </div>
