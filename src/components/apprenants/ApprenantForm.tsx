@@ -469,6 +469,7 @@ export function ApprenantForm() {
                   <SelectValue placeholder="Sélectionner une formation" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="pas_encore_choisi">Pas encore choisi</SelectItem>
                   <SelectGroup>
                     <SelectLabel>Formations Présentiel</SelectLabel>
                     <SelectItem value="vtc">Formation VTC - 1 099 € (VTC)</SelectItem>
