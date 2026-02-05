@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Plus, User, UserCheck } from "lucide-react";
+import { Plus, User, UserCheck, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 // Liste des formations disponibles (TAXI/VTC)
 const formationsDisponibles = [
@@ -25,14 +26,72 @@ export function ApprenantForm() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   const [typeApprenant, setTypeApprenant] = useState<"prospect" | "client">("prospect");
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // États pour les champs du formulaire
+  const [civilite, setCivilite] = useState("");
+  const [prenom, setPrenom] = useState("");
+  const [nom, setNom] = useState("");
+  const [email, setEmail] = useState("");
+  const [telephone, setTelephone] = useState("");
+  const [adresse, setAdresse] = useState("");
+  const [codePostal, setCodePostal] = useState("");
+  const [ville, setVille] = useState("");
+  const [financement, setFinancement] = useState("personnel");
+  const [organismeFinanceur, setOrganismeFinanceur] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const resetForm = () => {
+    setCivilite("");
+    setPrenom("");
+    setNom("");
+    setEmail("");
+    setTelephone("");
+    setAdresse("");
+    setCodePostal("");
+    setVille("");
+    setFinancement("personnel");
+    setOrganismeFinanceur("");
+    setTypeApprenant("prospect");
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Apprenant ajouté",
-      description: `L'apprenant a été ajouté en tant que ${typeApprenant === "prospect" ? "prospect" : "client"}.`,
-    });
-    setOpen(false);
+    setIsLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('apprenants')
+        .insert({
+          civilite,
+          prenom,
+          nom,
+          email,
+          telephone,
+          adresse,
+          code_postal: codePostal,
+          ville,
+          mode_financement: financement,
+          organisme_financeur: organismeFinanceur || null,
+          statut: typeApprenant === "prospect" ? "prospect" : "inscrit",
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Apprenant ajouté",
+        description: `${prenom} ${nom} a été ajouté en tant que ${typeApprenant === "prospect" ? "prospect" : "client"}.`,
+      });
+      resetForm();
+      setOpen(false);
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error.message || "Erreur lors de l'ajout de l'apprenant",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -98,7 +157,7 @@ export function ApprenantForm() {
             <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Identité</h3>
             <div className="space-y-2">
               <Label htmlFor="civilite">Civilité</Label>
-              <Select>
+              <Select value={civilite} onValueChange={setCivilite}>
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner une civilité" />
                 </SelectTrigger>
@@ -111,11 +170,11 @@ export function ApprenantForm() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName">Prénom *</Label>
-                <Input id="firstName" placeholder="Jean" required />
+                <Input id="firstName" placeholder="Jean" required value={prenom} onChange={(e) => setPrenom(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lastName">Nom *</Label>
-                <Input id="lastName" placeholder="Martin" required />
+                <Input id="lastName" placeholder="Martin" required value={nom} onChange={(e) => setNom(e.target.value)} />
               </div>
             </div>
           </div>
@@ -126,11 +185,11 @@ export function ApprenantForm() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email *</Label>
-                <Input id="email" type="email" placeholder="jean.martin@email.com" required />
+                <Input id="email" type="email" placeholder="jean.martin@email.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Téléphone</Label>
-                <Input id="phone" type="tel" placeholder="06 12 34 56 78" />
+                <Input id="phone" type="tel" placeholder="06 12 34 56 78" value={telephone} onChange={(e) => setTelephone(e.target.value)} />
               </div>
             </div>
           </div>
@@ -141,16 +200,16 @@ export function ApprenantForm() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="adresse">Adresse</Label>
-                <Input id="adresse" placeholder="12 rue des Lilas" />
+                <Input id="adresse" placeholder="12 rue des Lilas" value={adresse} onChange={(e) => setAdresse(e.target.value)} />
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="codePostal">Code postal</Label>
-                  <Input id="codePostal" placeholder="69001" maxLength={5} />
+                  <Input id="codePostal" placeholder="69001" maxLength={5} value={codePostal} onChange={(e) => setCodePostal(e.target.value)} />
                 </div>
                 <div className="space-y-2 col-span-2">
                   <Label htmlFor="ville">Ville</Label>
-                  <Input id="ville" placeholder="Lyon" />
+                  <Input id="ville" placeholder="Lyon" value={ville} onChange={(e) => setVille(e.target.value)} />
                 </div>
               </div>
             </div>
@@ -207,7 +266,7 @@ export function ApprenantForm() {
             <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Financement</h3>
             <div className="space-y-2">
               <Label htmlFor="financement">Mode de financement *</Label>
-              <Select defaultValue="personnel">
+              <Select value={financement} onValueChange={setFinancement}>
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner un mode de financement" />
                 </SelectTrigger>
@@ -248,7 +307,7 @@ export function ApprenantForm() {
             
             <div className="space-y-2">
               <Label htmlFor="company">Entreprise / Organisme financeur (optionnel)</Label>
-              <Select>
+              <Select value={organismeFinanceur} onValueChange={setOrganismeFinanceur}>
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner une entreprise" />
                 </SelectTrigger>
@@ -286,7 +345,8 @@ export function ApprenantForm() {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Annuler
             </Button>
-            <Button type="submit">
+            <Button type="submit" disabled={isLoading}>
+              {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {typeApprenant === "prospect" ? "Ajouter le prospect" : "Ajouter le client"}
             </Button>
           </div>

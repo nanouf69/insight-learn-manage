@@ -79,6 +79,7 @@ export type Database = {
           mode_financement: string | null
           nom: string
           numero_dossier_cma: string | null
+          organisme_financeur: string | null
           prenom: string
           statut: string | null
           telephone: string | null
@@ -96,6 +97,7 @@ export type Database = {
           mode_financement?: string | null
           nom: string
           numero_dossier_cma?: string | null
+          organisme_financeur?: string | null
           prenom: string
           statut?: string | null
           telephone?: string | null
@@ -113,6 +115,7 @@ export type Database = {
           mode_financement?: string | null
           nom?: string
           numero_dossier_cma?: string | null
+          organisme_financeur?: string | null
           prenom?: string
           statut?: string | null
           telephone?: string | null
@@ -120,6 +123,202 @@ export type Database = {
           ville?: string | null
         }
         Relationships: []
+      }
+      bpf: {
+        Row: {
+          annee: number
+          charges_prestations: number | null
+          charges_salaires_formateurs: number | null
+          charges_total: number | null
+          created_at: string
+          date_debut: string
+          date_fin: string
+          dirigeant_nom: string | null
+          dirigeant_qualite: string | null
+          formateurs_externes_heures: number | null
+          formateurs_externes_nombre: number | null
+          formateurs_internes_heures: number | null
+          formateurs_internes_nombre: number | null
+          id: string
+          objectifs: Json | null
+          organisme_adresse: string | null
+          organisme_code_naf: string | null
+          organisme_denomination: string | null
+          organisme_email: string | null
+          organisme_forme_juridique: string | null
+          organisme_numero_declaration: string | null
+          organisme_siret: string | null
+          organisme_telephone: string | null
+          produits_cpf: number | null
+          produits_entreprises: number | null
+          produits_france_travail: number | null
+          produits_opco: number | null
+          produits_particuliers: number | null
+          produits_total: number | null
+          signature_date: string | null
+          signature_lieu: string | null
+          specialites: Json | null
+          stagiaires_demandeurs_emploi_heures: number | null
+          stagiaires_demandeurs_emploi_nombre: number | null
+          stagiaires_particuliers_heures: number | null
+          stagiaires_particuliers_nombre: number | null
+          stagiaires_salaries_heures: number | null
+          stagiaires_salaries_nombre: number | null
+          stagiaires_total_heures: number | null
+          stagiaires_total_nombre: number | null
+          statut: string | null
+          updated_at: string
+        }
+        Insert: {
+          annee: number
+          charges_prestations?: number | null
+          charges_salaires_formateurs?: number | null
+          charges_total?: number | null
+          created_at?: string
+          date_debut: string
+          date_fin: string
+          dirigeant_nom?: string | null
+          dirigeant_qualite?: string | null
+          formateurs_externes_heures?: number | null
+          formateurs_externes_nombre?: number | null
+          formateurs_internes_heures?: number | null
+          formateurs_internes_nombre?: number | null
+          id?: string
+          objectifs?: Json | null
+          organisme_adresse?: string | null
+          organisme_code_naf?: string | null
+          organisme_denomination?: string | null
+          organisme_email?: string | null
+          organisme_forme_juridique?: string | null
+          organisme_numero_declaration?: string | null
+          organisme_siret?: string | null
+          organisme_telephone?: string | null
+          produits_cpf?: number | null
+          produits_entreprises?: number | null
+          produits_france_travail?: number | null
+          produits_opco?: number | null
+          produits_particuliers?: number | null
+          produits_total?: number | null
+          signature_date?: string | null
+          signature_lieu?: string | null
+          specialites?: Json | null
+          stagiaires_demandeurs_emploi_heures?: number | null
+          stagiaires_demandeurs_emploi_nombre?: number | null
+          stagiaires_particuliers_heures?: number | null
+          stagiaires_particuliers_nombre?: number | null
+          stagiaires_salaries_heures?: number | null
+          stagiaires_salaries_nombre?: number | null
+          stagiaires_total_heures?: number | null
+          stagiaires_total_nombre?: number | null
+          statut?: string | null
+          updated_at?: string
+        }
+        Update: {
+          annee?: number
+          charges_prestations?: number | null
+          charges_salaires_formateurs?: number | null
+          charges_total?: number | null
+          created_at?: string
+          date_debut?: string
+          date_fin?: string
+          dirigeant_nom?: string | null
+          dirigeant_qualite?: string | null
+          formateurs_externes_heures?: number | null
+          formateurs_externes_nombre?: number | null
+          formateurs_internes_heures?: number | null
+          formateurs_internes_nombre?: number | null
+          id?: string
+          objectifs?: Json | null
+          organisme_adresse?: string | null
+          organisme_code_naf?: string | null
+          organisme_denomination?: string | null
+          organisme_email?: string | null
+          organisme_forme_juridique?: string | null
+          organisme_numero_declaration?: string | null
+          organisme_siret?: string | null
+          organisme_telephone?: string | null
+          produits_cpf?: number | null
+          produits_entreprises?: number | null
+          produits_france_travail?: number | null
+          produits_opco?: number | null
+          produits_particuliers?: number | null
+          produits_total?: number | null
+          signature_date?: string | null
+          signature_lieu?: string | null
+          specialites?: Json | null
+          stagiaires_demandeurs_emploi_heures?: number | null
+          stagiaires_demandeurs_emploi_nombre?: number | null
+          stagiaires_particuliers_heures?: number | null
+          stagiaires_particuliers_nombre?: number | null
+          stagiaires_salaries_heures?: number | null
+          stagiaires_salaries_nombre?: number | null
+          stagiaires_total_heures?: number | null
+          stagiaires_total_nombre?: number | null
+          statut?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      documents: {
+        Row: {
+          apprenant_id: string | null
+          created_at: string
+          formation_id: string | null
+          id: string
+          nom: string
+          session_id: string | null
+          taille: number | null
+          type: string
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          apprenant_id?: string | null
+          created_at?: string
+          formation_id?: string | null
+          id?: string
+          nom: string
+          session_id?: string | null
+          taille?: number | null
+          type: string
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          apprenant_id?: string | null
+          created_at?: string
+          formation_id?: string | null
+          id?: string
+          nom?: string
+          session_id?: string | null
+          taille?: number | null
+          type?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: false
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_formation_id_fkey"
+            columns: ["formation_id"]
+            isOneToOne: false
+            referencedRelation: "formations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       factures: {
         Row: {
