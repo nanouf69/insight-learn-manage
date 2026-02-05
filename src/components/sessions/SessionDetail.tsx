@@ -20,7 +20,10 @@ import {
   UserCog,
   X,
   Download,
-  Loader2
+  Loader2,
+  CheckCircle,
+  XCircle,
+  GraduationCap
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { generateEmargementPDF } from "./EmargementGenerator";
@@ -56,6 +59,10 @@ interface ApprenantDB {
   type_apprenant: string | null;
   mode_financement: string | null;
   numero_dossier_cma: string | null;
+  date_debut_formation: string | null;
+  date_fin_formation: string | null;
+  date_examen_theorique: string | null;
+  statut: string | null;
 }
 
 // Modes de financement disponibles
@@ -126,7 +133,11 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
             telephone,
             type_apprenant,
             mode_financement,
-            numero_dossier_cma
+            numero_dossier_cma,
+            date_debut_formation,
+            date_fin_formation,
+            date_examen_theorique,
+            statut
           )
         `)
         .eq('session_id', session.id);
@@ -143,7 +154,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
     queryFn: async () => {
       const { data, error } = await supabase
         .from('apprenants')
-        .select('id, nom, prenom, email, telephone, type_apprenant, mode_financement, numero_dossier_cma')
+        .select('id, nom, prenom, email, telephone, type_apprenant, mode_financement, numero_dossier_cma, date_debut_formation, date_fin_formation, date_examen_theorique, statut')
         .order('nom', { ascending: true });
       
       if (error) throw error;
@@ -449,17 +460,47 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                           </Button>
                         </div>
                         
-                        {/* Ligne 2: Infos financement */}
+                        {/* Ligne 2: Dates de formation */}
                         <div className="flex items-center gap-4 pt-2 border-t text-sm">
+                          <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <Calendar className="w-3.5 h-3.5" />
+                            <span>
+                              {apprenant.date_debut_formation && apprenant.date_fin_formation 
+                                ? `${apprenant.date_debut_formation} - ${apprenant.date_fin_formation}`
+                                : apprenant.date_debut_formation || apprenant.date_fin_formation || "Dates non définies"
+                              }
+                            </span>
+                          </div>
+                          
                           <Badge className={getFinancementBadge(sessionApprenant.mode_financement || apprenant.mode_financement).color}>
                             {getFinancementBadge(sessionApprenant.mode_financement || apprenant.mode_financement).label}
                           </Badge>
-                          {sessionApprenant.date_debut && (
-                            <span className="text-muted-foreground">
-                              Du {format(new Date(sessionApprenant.date_debut), "dd/MM/yyyy", { locale: fr })}
-                              {sessionApprenant.date_fin && ` au ${format(new Date(sessionApprenant.date_fin), "dd/MM/yyyy", { locale: fr })}`}
-                            </span>
+                        </div>
+
+                        {/* Ligne 3: Examen théorique */}
+                        <div className="flex items-center gap-4 pt-2 border-t text-sm">
+                          {apprenant.date_examen_theorique && (
+                            <div className="flex items-center gap-1.5 text-muted-foreground">
+                              <GraduationCap className="w-3.5 h-3.5" />
+                              <span>Examen: {apprenant.date_examen_theorique}</span>
+                            </div>
                           )}
+                          
+                          <div className="flex items-center gap-1.5">
+                            {apprenant.statut === "admis" ? (
+                              <>
+                                <CheckCircle className="w-4 h-4 text-green-600" />
+                                <span className="text-green-600 font-medium">Réussi</span>
+                              </>
+                            ) : apprenant.statut === "refuse" || apprenant.statut === "échec" ? (
+                              <>
+                                <XCircle className="w-4 h-4 text-red-500" />
+                                <span className="text-red-500 font-medium">Échoué</span>
+                              </>
+                            ) : (
+                              <span className="text-muted-foreground">En attente</span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
