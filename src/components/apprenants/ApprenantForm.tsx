@@ -107,6 +107,7 @@ export function ApprenantForm() {
     "taxi": "1299",
     "taxi-exam": "1799",
     "passerelle-taxi": "999",
+    "vtc-elearning-1099": "1099",
     "vtc-elearning": "1599",
     "taxi-elearning": "1299",
     "passerelle-taxi-elearning": "499",
@@ -480,6 +481,7 @@ export function ApprenantForm() {
                   </SelectGroup>
                   <SelectGroup>
                     <SelectLabel>Formations E-learning</SelectLabel>
+                    <SelectItem value="vtc-elearning-1099">Formation VTC (E-learning) - 1 099 € (VTC)</SelectItem>
                     <SelectItem value="vtc-elearning">Formation VTC (E-learning) - 1 599 € (VTC)</SelectItem>
                     <SelectItem value="taxi-elearning">Formation TAXI (E-learning) - 1 299 € (TAXI)</SelectItem>
                     <SelectItem value="passerelle-taxi-elearning">Formation TAXI pour chauffeur VTC (E-learning) - 499 € (TA)</SelectItem>
