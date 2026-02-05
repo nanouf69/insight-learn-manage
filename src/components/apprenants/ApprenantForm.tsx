@@ -361,6 +361,12 @@ export function ApprenantForm() {
                       Autre
                     </span>
                   </SelectItem>
+                  <SelectItem value="cpf-a">
+                    <span className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-indigo-500" />
+                      CPF A
+                    </span>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -389,6 +395,7 @@ export function ApprenantForm() {
                     <SelectLabel>Autres</SelectLabel>
                     <SelectItem value="societe">Société / Entreprise</SelectItem>
                     <SelectItem value="autre">Autre</SelectItem>
+                    <SelectItem value="cpf-a">CPF A</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
