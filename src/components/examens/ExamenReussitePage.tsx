@@ -46,6 +46,7 @@ export function ExamenReussitePage() {
                   <TableRow>
                     <TableHead>Nom</TableHead>
                     <TableHead>Prénom</TableHead>
+                    <TableHead>Type</TableHead>
                     <TableHead>N° Dossier CMA</TableHead>
                     <TableHead>Téléphone</TableHead>
                     <TableHead>Email</TableHead>
@@ -53,24 +54,55 @@ export function ExamenReussitePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {apprenants.map((apprenant) => (
-                    <TableRow key={apprenant.id}>
-                      <TableCell className="font-medium">{apprenant.nom}</TableCell>
-                      <TableCell>{apprenant.prenom}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{apprenant.numero_dossier_cma || "-"}</Badge>
-                      </TableCell>
-                      <TableCell>{apprenant.telephone || "-"}</TableCell>
-                      <TableCell className="max-w-[200px] truncate">
-                        {apprenant.email || "-"}
-                      </TableCell>
-                      <TableCell>
-                        <Badge className="bg-primary/10 text-primary">
-                          {apprenant.date_examen_theorique}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {apprenants.map((apprenant) => {
+                    const typeLabel = {
+                      'vtc': 'VTC',
+                      'vtc-e': 'VTC E',
+                      'vtc-e-presentiel': 'VTC E Présentiel',
+                      'taxi': 'TAXI',
+                      'taxi-e': 'TAXI E',
+                      'taxi-e-presentiel': 'TAXI E Présentiel',
+                      'ta': 'TA',
+                      'ta-e': 'TA E',
+                      'va': 'VA',
+                      'va-e': 'VA E',
+                    }[apprenant.type_apprenant || ''] || apprenant.type_apprenant || '-';
+
+                    const typeColor = {
+                      'vtc': 'bg-blue-100 text-blue-800',
+                      'vtc-e': 'bg-blue-100 text-blue-800',
+                      'vtc-e-presentiel': 'bg-blue-100 text-blue-800',
+                      'taxi': 'bg-amber-100 text-amber-800',
+                      'taxi-e': 'bg-amber-100 text-amber-800',
+                      'taxi-e-presentiel': 'bg-amber-100 text-amber-800',
+                      'ta': 'bg-purple-100 text-purple-800',
+                      'ta-e': 'bg-purple-100 text-purple-800',
+                      'va': 'bg-green-100 text-green-800',
+                      'va-e': 'bg-green-100 text-green-800',
+                    }[apprenant.type_apprenant || ''] || 'bg-gray-100 text-gray-800';
+
+                    return (
+                      <TableRow key={apprenant.id}>
+                        <TableCell className="font-medium">{apprenant.nom}</TableCell>
+                        <TableCell>{apprenant.prenom}</TableCell>
+                        <TableCell>
+                          <Badge className={typeColor}>{typeLabel}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{apprenant.numero_dossier_cma || "-"}</Badge>
+                        </TableCell>
+                        <TableCell>{apprenant.telephone || "-"}</TableCell>
+                        <TableCell className="max-w-[200px] truncate">
+                          {apprenant.email || "-"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className="bg-primary/10 text-primary">
+                            {apprenant.date_examen_theorique}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
