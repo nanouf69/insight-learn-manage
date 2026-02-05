@@ -658,12 +658,11 @@ export function ApprenantForm() {
               <Input 
                 id="prixFormation" 
                 type="number" 
-                placeholder="Ex: 1299" 
+                placeholder="1299" 
                 value={montantTtc} 
                 onChange={(e) => setMontantTtc(e.target.value)}
                 min="0"
                 step="0.01"
-                defaultValue="1299"
               />
             </div>
             <div className="space-y-2">
