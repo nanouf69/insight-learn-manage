@@ -488,6 +488,7 @@ export function ApprenantForm() {
                 <SelectContent className="bg-background z-50">
                   <SelectItem value="journee">Formation en journée (9h - 16h)</SelectItem>
                   <SelectItem value="soiree">Formation en soirée (17h - 21h)</SelectItem>
+                  <SelectItem value="en-ligne">Formation en ligne</SelectItem>
                 </SelectContent>
               </Select>
             </div>
