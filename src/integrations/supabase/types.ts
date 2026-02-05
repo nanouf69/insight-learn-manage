@@ -628,6 +628,10 @@ export type Database = {
           date_fin: string | null
           id: string
           mode_financement: string | null
+          montant_paye: number | null
+          montant_total: number | null
+          moyen_paiement: string | null
+          notes: string | null
           session_id: string
         }
         Insert: {
@@ -637,6 +641,10 @@ export type Database = {
           date_fin?: string | null
           id?: string
           mode_financement?: string | null
+          montant_paye?: number | null
+          montant_total?: number | null
+          moyen_paiement?: string | null
+          notes?: string | null
           session_id: string
         }
         Update: {
@@ -646,6 +654,10 @@ export type Database = {
           date_fin?: string | null
           id?: string
           mode_financement?: string | null
+          montant_paye?: number | null
+          montant_total?: number | null
+          moyen_paiement?: string | null
+          notes?: string | null
           session_id?: string
         }
         Relationships: [

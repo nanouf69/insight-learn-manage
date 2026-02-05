@@ -6,6 +6,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { 
@@ -23,7 +27,11 @@ import {
   Loader2,
   CheckCircle,
   XCircle,
-  GraduationCap
+  GraduationCap,
+  StickyNote,
+  CreditCard,
+  Euro,
+  Save
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { generateEmargementPDF } from "./EmargementGenerator";
@@ -107,6 +115,155 @@ const getStatusBadge = (status: string) => {
   }
 };
 
+// Composant Popover pour les notes
+function NotesPopover({ 
+  sessionApprenantId, 
+  notes, 
+  onSave 
+}: { 
+  sessionApprenantId: string; 
+  notes: string; 
+  onSave: (notes: string) => void 
+}) {
+  const [localNotes, setLocalNotes] = useState(notes);
+  const [open, setOpen] = useState(false);
+
+  const handleSave = () => {
+    onSave(localNotes);
+    setOpen(false);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className={`h-8 px-2 gap-1 ${notes ? "text-primary" : "text-muted-foreground"}`}
+        >
+          <StickyNote className="w-4 h-4" />
+          {notes ? "Notes" : "Ajouter notes"}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80">
+        <div className="space-y-3">
+          <Label>Notes pour cet apprenant</Label>
+          <Textarea 
+            value={localNotes}
+            onChange={(e) => setLocalNotes(e.target.value)}
+            placeholder="Ajouter des notes..."
+            className="min-h-[100px]"
+          />
+          <Button onClick={handleSave} size="sm" className="w-full gap-2">
+            <Save className="w-4 h-4" />
+            Enregistrer
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// Composant Popover pour le paiement personnel
+function PaiementPopover({ 
+  sessionApprenantId, 
+  montantTotal, 
+  montantPaye, 
+  moyenPaiement, 
+  onSave 
+}: { 
+  sessionApprenantId: string; 
+  montantTotal: number; 
+  montantPaye: number; 
+  moyenPaiement: string;
+  onSave: (data: { montant_paye?: number; montant_total?: number; moyen_paiement?: string }) => void 
+}) {
+  const [localMontantTotal, setLocalMontantTotal] = useState(montantTotal);
+  const [localMontantPaye, setLocalMontantPaye] = useState(montantPaye);
+  const [localMoyenPaiement, setLocalMoyenPaiement] = useState(moyenPaiement);
+  const [open, setOpen] = useState(false);
+
+  const resteAPayer = localMontantTotal - localMontantPaye;
+
+  const handleSave = () => {
+    onSave({
+      montant_total: localMontantTotal,
+      montant_paye: localMontantPaye,
+      moyen_paiement: localMoyenPaiement
+    });
+    setOpen(false);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className={`h-8 px-2 gap-1 ${montantPaye > 0 ? "text-green-600" : "text-muted-foreground"}`}
+        >
+          <Euro className="w-4 h-4" />
+          {montantPaye > 0 ? `${montantPaye}€ payé` : "Paiement"}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80">
+        <div className="space-y-4">
+          <h4 className="font-medium">Gestion du paiement</h4>
+          
+          <div className="space-y-2">
+            <Label>Montant total (€)</Label>
+            <Input 
+              type="number"
+              value={localMontantTotal}
+              onChange={(e) => setLocalMontantTotal(parseFloat(e.target.value) || 0)}
+              placeholder="Ex: 1599"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Montant payé (€)</Label>
+            <Input 
+              type="number"
+              value={localMontantPaye}
+              onChange={(e) => setLocalMontantPaye(parseFloat(e.target.value) || 0)}
+              placeholder="Ex: 500"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Moyen de paiement</Label>
+            <Select value={localMoyenPaiement} onValueChange={setLocalMoyenPaiement}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="especes">Espèces</SelectItem>
+                <SelectItem value="cb">Carte bancaire</SelectItem>
+                <SelectItem value="cheque">Chèque</SelectItem>
+                <SelectItem value="virement">Virement</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="p-3 rounded-lg bg-muted/50">
+            <div className="flex justify-between text-sm">
+              <span>Reste à payer:</span>
+              <span className={`font-bold ${resteAPayer > 0 ? "text-orange-600" : "text-green-600"}`}>
+                {resteAPayer.toFixed(2)} €
+              </span>
+            </div>
+          </div>
+
+          <Button onClick={handleSave} size="sm" className="w-full gap-2">
+            <Save className="w-4 h-4" />
+            Enregistrer
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export function SessionDetail({ session, open, onOpenChange }: SessionDetailProps) {
   const [searchApprenant, setSearchApprenant] = useState("");
   const [showAddApprenant, setShowAddApprenant] = useState(false);
@@ -125,6 +282,10 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
           mode_financement,
           date_debut,
           date_fin,
+          notes,
+          montant_paye,
+          montant_total,
+          moyen_paiement,
           apprenant:apprenants (
             id,
             nom,
@@ -137,7 +298,8 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
             date_debut_formation,
             date_fin_formation,
             date_examen_theorique,
-            statut
+            statut,
+            montant_ttc
           )
         `)
         .eq('session_id', session.id);
@@ -217,6 +379,33 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
       toast({
         title: "Erreur",
         description: error.message || "Erreur lors du retrait",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Fonction pour mettre à jour les notes et paiements
+  const updateSessionApprenant = async (
+    sessionApprenantId: string, 
+    updates: { notes?: string; montant_paye?: number; montant_total?: number; moyen_paiement?: string }
+  ) => {
+    try {
+      const { error } = await supabase
+        .from('session_apprenants')
+        .update(updates)
+        .eq('id', sessionApprenantId);
+      
+      if (error) throw error;
+      
+      refetchApprenants();
+      toast({
+        title: "Informations mises à jour",
+        description: "Les informations ont été enregistrées.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error.message || "Erreur lors de la mise à jour",
         variant: "destructive",
       });
     }
@@ -477,28 +666,51 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                           </Badge>
                         </div>
 
-                        {/* Ligne 3: Examen théorique */}
-                        <div className="flex items-center gap-4 pt-2 border-t text-sm">
-                          {apprenant.date_examen_theorique && (
-                            <div className="flex items-center gap-1.5 text-muted-foreground">
-                              <GraduationCap className="w-3.5 h-3.5" />
-                              <span>Examen: {apprenant.date_examen_theorique}</span>
+                        {/* Ligne 3: Examen + Notes + Paiement */}
+                        <div className="flex items-center justify-between gap-4 pt-2 border-t text-sm">
+                          <div className="flex items-center gap-4">
+                            {apprenant.date_examen_theorique && (
+                              <div className="flex items-center gap-1.5 text-muted-foreground">
+                                <GraduationCap className="w-3.5 h-3.5" />
+                                <span>Examen: {apprenant.date_examen_theorique}</span>
+                              </div>
+                            )}
+                            
+                            <div className="flex items-center gap-1.5">
+                              {apprenant.statut === "admis" ? (
+                                <>
+                                  <CheckCircle className="w-4 h-4 text-green-600" />
+                                  <span className="text-green-600 font-medium">Réussi</span>
+                                </>
+                              ) : apprenant.statut === "refuse" || apprenant.statut === "échec" ? (
+                                <>
+                                  <XCircle className="w-4 h-4 text-red-500" />
+                                  <span className="text-red-500 font-medium">Échoué</span>
+                                </>
+                              ) : (
+                                <span className="text-muted-foreground">En attente</span>
+                              )}
                             </div>
-                          )}
-                          
-                          <div className="flex items-center gap-1.5">
-                            {apprenant.statut === "admis" ? (
-                              <>
-                                <CheckCircle className="w-4 h-4 text-green-600" />
-                                <span className="text-green-600 font-medium">Réussi</span>
-                              </>
-                            ) : apprenant.statut === "refuse" || apprenant.statut === "échec" ? (
-                              <>
-                                <XCircle className="w-4 h-4 text-red-500" />
-                                <span className="text-red-500 font-medium">Échoué</span>
-                              </>
-                            ) : (
-                              <span className="text-muted-foreground">En attente</span>
+                          </div>
+
+                          {/* Boutons Notes et Paiement */}
+                          <div className="flex items-center gap-2">
+                            {/* Popover Notes */}
+                            <NotesPopover 
+                              sessionApprenantId={sessionApprenant.id}
+                              notes={sessionApprenant.notes || ""}
+                              onSave={(notes) => updateSessionApprenant(sessionApprenant.id, { notes })}
+                            />
+
+                            {/* Popover Paiement (seulement si financement personnel) */}
+                            {(sessionApprenant.mode_financement === "personnel" || apprenant.mode_financement === "personnel") && (
+                              <PaiementPopover 
+                                sessionApprenantId={sessionApprenant.id}
+                                montantTotal={sessionApprenant.montant_total || apprenant.montant_ttc || 0}
+                                montantPaye={sessionApprenant.montant_paye || 0}
+                                moyenPaiement={sessionApprenant.moyen_paiement || ""}
+                                onSave={(data) => updateSessionApprenant(sessionApprenant.id, data)}
+                              />
                             )}
                           </div>
                         </div>
