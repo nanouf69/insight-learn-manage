@@ -126,7 +126,7 @@ export function ApprenantForm() {
     "passerelle-vtc-elearning": "va-e"
   };
 
-  // Mettre à jour le prix et le type d'apprenant quand la formation change
+  // Mettre à jour le prix, le type d'apprenant et les dates par défaut quand la formation change
   const handleFormationChange = (value: string) => {
     setSelectedFormation(value);
     if (prixFormations[value]) {
@@ -134,6 +134,18 @@ export function ApprenantForm() {
     }
     if (formationToType[value]) {
       setTypeApprenantFormation(formationToType[value]);
+    }
+    
+    // Pré-sélectionner automatiquement la première date de formation selon le type (présentiel uniquement)
+    if (value === "vtc" || value === "vtc-exam") {
+      setSelectedDateOption(datesFormations.vtc.dates[0]); // "Du 12 au 25 janvier 2026"
+    } else if (value === "taxi" || value === "taxi-exam") {
+      setSelectedDateOption(datesFormations.taxi.dates[0]); // "Du 5 au 26 janvier 2026"
+    } else if (value === "passerelle-taxi") {
+      setSelectedDateOption(datesFormations.ta.dates[0]); // "Du 5 au 26 janvier 2026"
+    } else {
+      // E-learning : pas de date pré-sélectionnée
+      setSelectedDateOption("");
     }
   };
 
