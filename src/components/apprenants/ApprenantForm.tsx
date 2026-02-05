@@ -14,12 +14,10 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
-// Liste des formations avec leurs dates disponibles
-const formationsAvecDates = [
-  {
-    id: "vtc",
-    nom: "Formation VTC (VTC)",
-    prix: 1099,
+// Liste des dates par type de formation (présentiel uniquement)
+const datesFormations = {
+  vtc: {
+    label: "Formation VTC",
     dates: [
       "Du 12 au 25 janvier 2026",
       "Du 16 au 30 mars 2026",
@@ -29,23 +27,8 @@ const formationsAvecDates = [
       "Du 2 au 15 novembre 2026"
     ]
   },
-  {
-    id: "vtc-exam",
-    nom: "Formation VTC avec frais d'examen (VTC)",
-    prix: 1599,
-    dates: [
-      "Du 12 au 25 janvier 2026",
-      "Du 16 au 30 mars 2026",
-      "Du 11 au 24 mai 2026",
-      "Du 6 au 19 juillet 2026",
-      "Du 14 au 27 septembre 2026",
-      "Du 2 au 15 novembre 2026"
-    ]
-  },
-  {
-    id: "taxi",
-    nom: "Formation TAXI (TAXI)",
-    prix: 1299,
+  taxi: {
+    label: "Formation TAXI",
     dates: [
       "Du 5 au 26 janvier 2026",
       "Du 9 au 30 mars 2026",
@@ -55,70 +38,13 @@ const formationsAvecDates = [
       "Du 26 octobre au 16 novembre 2026"
     ]
   },
-  {
-    id: "taxi-exam",
-    nom: "Formation TAXI avec frais d'examen (TAXI)",
-    prix: 1799,
-    dates: [
-      "Du 5 au 26 janvier 2026",
-      "Du 9 au 30 mars 2026",
-      "Du 4 au 25 mai 2026",
-      "Du 29 juin au 20 juillet 2026",
-      "Du 7 au 28 septembre 2026",
-      "Du 26 octobre au 16 novembre 2026"
-    ]
-  },
-  {
-    id: "passerelle-taxi",
-    nom: "Formation TAXI pour chauffeur VTC (TA)",
-    prix: 999,
+  ta: {
+    label: "Formation TAXI pour chauffeur VTC (TA)",
     dates: [
       "Sessions sur demande"
     ]
-  },
-  {
-    id: "vtc-elearning",
-    nom: "Formation VTC E-learning (VTC)",
-    prix: 1599,
-    dates: [
-      "Démarrage immédiat"
-    ]
-  },
-  {
-    id: "taxi-elearning",
-    nom: "Formation TAXI E-learning (TAXI)",
-    prix: 1299,
-    dates: [
-      "Démarrage immédiat"
-    ]
-  },
-  {
-    id: "passerelle-taxi-elearning",
-    nom: "Formation TAXI pour chauffeur VTC E-learning (TA)",
-    prix: 499,
-    dates: [
-      "Démarrage immédiat"
-    ]
-  },
-  {
-    id: "passerelle-vtc-elearning",
-    nom: "Formation VTC pour chauffeur TAXI E-learning (VA)",
-    prix: 499,
-    dates: [
-      "Démarrage immédiat"
-    ]
   }
-];
-
-// Générer toutes les options de dates avec formation
-const toutesLesDates = formationsAvecDates.flatMap(formation => 
-  formation.dates.map(date => ({
-    id: `${formation.id}-${date}`,
-    formationId: formation.id,
-    formationNom: formation.nom,
-    dateLabel: date
-  }))
-);
+};
 
 export function ApprenantForm() {
   const [open, setOpen] = useState(false);
@@ -466,19 +392,9 @@ export function ApprenantForm() {
                   
                   {/* Formations VTC */}
                   <SelectGroup>
-                    <SelectLabel>Formation VTC (VTC)</SelectLabel>
-                    {formationsAvecDates.find(f => f.id === "vtc")?.dates.map((date, idx) => (
+                    <SelectLabel>{datesFormations.vtc.label}</SelectLabel>
+                    {datesFormations.vtc.dates.map((date, idx) => (
                       <SelectItem key={`vtc-${idx}`} value={`vtc-${idx}`}>
-                        {date}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-
-                  {/* Formations VTC avec examen */}
-                  <SelectGroup>
-                    <SelectLabel>Formation VTC avec frais d'examen (VTC)</SelectLabel>
-                    {formationsAvecDates.find(f => f.id === "vtc-exam")?.dates.map((date, idx) => (
-                      <SelectItem key={`vtc-exam-${idx}`} value={`vtc-exam-${idx}`}>
                         {date}
                       </SelectItem>
                     ))}
@@ -486,19 +402,9 @@ export function ApprenantForm() {
 
                   {/* Formations TAXI */}
                   <SelectGroup>
-                    <SelectLabel>Formation TAXI (TAXI)</SelectLabel>
-                    {formationsAvecDates.find(f => f.id === "taxi")?.dates.map((date, idx) => (
+                    <SelectLabel>{datesFormations.taxi.label}</SelectLabel>
+                    {datesFormations.taxi.dates.map((date, idx) => (
                       <SelectItem key={`taxi-${idx}`} value={`taxi-${idx}`}>
-                        {date}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-
-                  {/* Formations TAXI avec examen */}
-                  <SelectGroup>
-                    <SelectLabel>Formation TAXI avec frais d'examen (TAXI)</SelectLabel>
-                    {formationsAvecDates.find(f => f.id === "taxi-exam")?.dates.map((date, idx) => (
-                      <SelectItem key={`taxi-exam-${idx}`} value={`taxi-exam-${idx}`}>
                         {date}
                       </SelectItem>
                     ))}
@@ -506,21 +412,12 @@ export function ApprenantForm() {
 
                   {/* Passerelle TA */}
                   <SelectGroup>
-                    <SelectLabel>Formation TAXI pour chauffeur VTC (TA)</SelectLabel>
-                    {formationsAvecDates.find(f => f.id === "passerelle-taxi")?.dates.map((date, idx) => (
-                      <SelectItem key={`passerelle-taxi-${idx}`} value={`passerelle-taxi-${idx}`}>
+                    <SelectLabel>{datesFormations.ta.label}</SelectLabel>
+                    {datesFormations.ta.dates.map((date, idx) => (
+                      <SelectItem key={`ta-${idx}`} value={`ta-${idx}`}>
                         {date}
                       </SelectItem>
                     ))}
-                  </SelectGroup>
-
-                  {/* E-learning */}
-                  <SelectGroup>
-                    <SelectLabel>Formations E-learning</SelectLabel>
-                    <SelectItem value="elearning-vtc">Formation VTC E-learning - Démarrage immédiat</SelectItem>
-                    <SelectItem value="elearning-taxi">Formation TAXI E-learning - Démarrage immédiat</SelectItem>
-                    <SelectItem value="elearning-ta">Formation TAXI pour VTC E-learning (TA) - Démarrage immédiat</SelectItem>
-                    <SelectItem value="elearning-va">Formation VTC pour TAXI E-learning (VA) - Démarrage immédiat</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
