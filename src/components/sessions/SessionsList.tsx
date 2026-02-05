@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, MapPin, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar, Users, MapPin, Loader2, Copy } from "lucide-react";
 import { SessionForm } from "./SessionForm";
 import { SessionDetail } from "./SessionDetail";
 import { SessionEditor } from "./SessionEditor";
@@ -9,6 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useToast } from "@/hooks/use-toast";
 
 interface Session {
   id: string;
@@ -50,6 +52,8 @@ const formatDate = (dateString: string) => {
 export function SessionsList() {
   const [selectedSession, setSelectedSession] = useState<any | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [duplicating, setDuplicating] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const { data: sessions = [], isLoading, refetch } = useQuery({
     queryKey: ['sessions'],
@@ -65,7 +69,6 @@ export function SessionsList() {
   });
 
   const openSessionDetail = (session: Session) => {
-    // Convert to the format expected by SessionDetail
     const detailSession = {
       id: session.id,
       title: session.nom || `Session du ${formatDate(session.date_debut)}`,
@@ -80,6 +83,41 @@ export function SessionsList() {
     };
     setSelectedSession(detailSession);
     setDetailOpen(true);
+  };
+
+  const duplicateSession = async (e: React.MouseEvent, session: Session) => {
+    e.stopPropagation();
+    setDuplicating(session.id);
+
+    try {
+      const { error } = await supabase
+        .from('sessions')
+        .insert({
+          nom: session.nom ? `${session.nom} (copie)` : null,
+          date_debut: session.date_debut,
+          date_fin: session.date_fin,
+          lieu: session.lieu,
+          places_disponibles: session.places_disponibles || 18,
+          formation_id: session.formation_id,
+          statut: 'planifiee',
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Session dupliquée",
+        description: "La session a été dupliquée avec succès.",
+      });
+      refetch();
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error.message || "Erreur lors de la duplication",
+        variant: "destructive",
+      });
+    } finally {
+      setDuplicating(null);
+    }
   };
 
   if (isLoading) {
@@ -125,7 +163,7 @@ export function SessionsList() {
                   </div>
                   
                   <div className="space-y-2 flex-1">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <h3 className="font-semibold text-lg text-foreground">
                         {session.nom || `Session du ${formatDate(session.date_debut)}`}
                       </h3>
@@ -133,6 +171,19 @@ export function SessionsList() {
                         session={session} 
                         onUpdate={refetch}
                       />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={(e) => duplicateSession(e, session)}
+                        disabled={duplicating === session.id}
+                      >
+                        {duplicating === session.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </Button>
                       {getStatusBadge(session.statut)}
                     </div>
                     
