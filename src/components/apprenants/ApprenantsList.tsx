@@ -58,10 +58,13 @@ interface Apprenant {
 const typeApprenantLabels: Record<string, { label: string; class: string }> = {
   vtc: { label: "VTC", class: "bg-blue-100 text-blue-700" },
   "vtc-e": { label: "VTC E", class: "bg-blue-50 text-blue-600" },
+  "vtc-e-presentiel": { label: "VTC E Présentiel", class: "bg-blue-200 text-blue-800" },
   taxi: { label: "TAXI", class: "bg-yellow-100 text-yellow-700" },
   "taxi-e": { label: "TAXI E", class: "bg-yellow-50 text-yellow-600" },
+  "taxi-e-presentiel": { label: "TAXI E Présentiel", class: "bg-yellow-200 text-yellow-800" },
   ta: { label: "TA", class: "bg-green-100 text-green-700" },
   "ta-e": { label: "TA E", class: "bg-green-50 text-green-600" },
+  "ta-e-presentiel": { label: "TA E Présentiel", class: "bg-green-200 text-green-800" },
   "va-e": { label: "VA E", class: "bg-purple-50 text-purple-600" },
 };
 
