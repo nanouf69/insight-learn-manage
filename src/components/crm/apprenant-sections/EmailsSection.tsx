@@ -1,12 +1,18 @@
-import { useState } from "react";
-import { Mail, Send, Inbox, Clock, Plus, Search } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Mail, Send, Inbox, Clock, Plus, Search, RefreshCw, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface EmailsSectionProps {
   apprenant: any;
@@ -14,53 +20,123 @@ interface EmailsSectionProps {
 
 interface EmailRecord {
   id: string;
+  outlook_message_id: string | null;
   subject: string;
-  preview: string;
-  date: Date;
+  body_preview: string | null;
+  body_html: string | null;
+  sender_email: string | null;
+  sender_name: string | null;
+  recipients: string[] | null;
   type: 'sent' | 'received';
-  read: boolean;
+  is_read: boolean;
+  has_attachments: boolean;
+  received_at: string | null;
+  sent_at: string | null;
+  created_at: string;
 }
+
+// Email de l'organisme pour la synchronisation Outlook
+const ORGANISME_EMAIL = "contact@ftransport.fr"; // À configurer
 
 export function EmailsSection({ apprenant }: EmailsSectionProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<'all' | 'sent' | 'received'>('all');
+  const [isComposeOpen, setIsComposeOpen] = useState(false);
+  const [newEmailSubject, setNewEmailSubject] = useState("");
+  const [newEmailBody, setNewEmailBody] = useState("");
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  // TODO: Créer une table emails dans Supabase pour stocker l'historique
-  // Pour l'instant, données simulées
-  const [emails] = useState<EmailRecord[]>([
-    {
-      id: '1',
-      subject: "Confirmation d'inscription à la formation VTC",
-      preview: "Bonjour, nous avons bien reçu votre inscription...",
-      date: new Date(2026, 0, 10),
-      type: 'sent',
-      read: true,
+  // Fetch emails from database
+  const { data: emails = [], isLoading, refetch } = useQuery({
+    queryKey: ['emails', apprenant.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('emails')
+        .select('*')
+        .eq('apprenant_id', apprenant.id)
+        .order('received_at', { ascending: false, nullsFirst: false });
+
+      if (error) throw error;
+      return (data || []) as EmailRecord[];
     },
-    {
-      id: '2',
-      subject: "Documents à fournir pour votre dossier",
-      preview: "Afin de compléter votre dossier d'inscription...",
-      date: new Date(2026, 0, 11),
-      type: 'sent',
-      read: true,
+    enabled: !!apprenant.id,
+  });
+
+  // Sync emails mutation
+  const syncMutation = useMutation({
+    mutationFn: async () => {
+      if (!apprenant.email) {
+        throw new Error("L'apprenant n'a pas d'adresse email");
+      }
+
+      const { data, error } = await supabase.functions.invoke('sync-outlook-emails', {
+        body: {
+          action: 'sync',
+          apprenantId: apprenant.id,
+          apprenantEmail: apprenant.email,
+          userEmail: ORGANISME_EMAIL,
+        },
+      });
+
+      if (error) throw error;
+      return data;
     },
-    {
-      id: '3',
-      subject: "Re: Documents à fournir pour votre dossier",
-      preview: "Bonjour, veuillez trouver ci-joint les documents demandés...",
-      date: new Date(2026, 0, 12),
-      type: 'received',
-      read: true,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['emails', apprenant.id] });
+      toast({
+        title: "Synchronisation réussie",
+        description: `${data.synced} email(s) synchronisé(s)`,
+      });
     },
-    {
-      id: '4',
-      subject: "Convocation examen théorique - 27 janvier 2026",
-      preview: "Vous êtes convoqué(e) pour l'examen théorique...",
-      date: new Date(2026, 0, 20),
-      type: 'sent',
-      read: true,
+    onError: (error: any) => {
+      toast({
+        title: "Erreur de synchronisation",
+        description: error.message,
+        variant: "destructive",
+      });
     },
-  ]);
+  });
+
+  // Send email mutation
+  const sendMutation = useMutation({
+    mutationFn: async ({ subject, body }: { subject: string; body: string }) => {
+      if (!apprenant.email) {
+        throw new Error("L'apprenant n'a pas d'adresse email");
+      }
+
+      const { data, error } = await supabase.functions.invoke('sync-outlook-emails', {
+        body: {
+          action: 'send',
+          apprenantId: apprenant.id,
+          userEmail: ORGANISME_EMAIL,
+          to: apprenant.email,
+          subject,
+          body,
+        },
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['emails', apprenant.id] });
+      setIsComposeOpen(false);
+      setNewEmailSubject("");
+      setNewEmailBody("");
+      toast({
+        title: "Email envoyé",
+        description: `Email envoyé à ${apprenant.email}`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur d'envoi",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   const filteredEmails = emails
     .filter(email => {
@@ -72,14 +148,30 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
       if (!searchQuery) return true;
       const query = searchQuery.toLowerCase();
       return (
-        email.subject.toLowerCase().includes(query) ||
-        email.preview.toLowerCase().includes(query)
+        email.subject?.toLowerCase().includes(query) ||
+        email.body_preview?.toLowerCase().includes(query)
       );
-    })
-    .sort((a, b) => b.date.getTime() - a.date.getTime());
+    });
 
   const sentCount = emails.filter(e => e.type === 'sent').length;
   const receivedCount = emails.filter(e => e.type === 'received').length;
+
+  const handleSendEmail = () => {
+    if (!newEmailSubject.trim() || !newEmailBody.trim()) {
+      toast({
+        title: "Champs requis",
+        description: "Veuillez remplir le sujet et le contenu de l'email",
+        variant: "destructive",
+      });
+      return;
+    }
+    sendMutation.mutate({ subject: newEmailSubject, body: newEmailBody });
+  };
+
+  const getEmailDate = (email: EmailRecord) => {
+    const dateStr = email.type === 'sent' ? email.sent_at : email.received_at;
+    return dateStr ? new Date(dateStr) : new Date(email.created_at);
+  };
 
   return (
     <Card>
@@ -88,10 +180,70 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
           <Mail className="w-5 h-5" />
           Historique des Emails
         </CardTitle>
-        <Button size="sm">
-          <Plus className="w-4 h-4 mr-2" />
-          Nouveau mail
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => syncMutation.mutate()}
+            disabled={syncMutation.isPending || !apprenant.email}
+          >
+            {syncMutation.isPending ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4 mr-2" />
+            )}
+            Synchroniser
+          </Button>
+          <Dialog open={isComposeOpen} onOpenChange={setIsComposeOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" disabled={!apprenant.email}>
+                <Plus className="w-4 h-4 mr-2" />
+                Nouveau mail
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle>Nouveau mail à {apprenant.prenom} {apprenant.nom}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div>
+                  <Label>Destinataire</Label>
+                  <Input value={apprenant.email || "Pas d'email"} disabled />
+                </div>
+                <div>
+                  <Label>Sujet</Label>
+                  <Input 
+                    value={newEmailSubject} 
+                    onChange={(e) => setNewEmailSubject(e.target.value)}
+                    placeholder="Sujet de l'email..."
+                  />
+                </div>
+                <div>
+                  <Label>Message</Label>
+                  <Textarea 
+                    value={newEmailBody} 
+                    onChange={(e) => setNewEmailBody(e.target.value)}
+                    placeholder="Contenu de l'email..."
+                    rows={8}
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setIsComposeOpen(false)}>
+                    Annuler
+                  </Button>
+                  <Button onClick={handleSendEmail} disabled={sendMutation.isPending}>
+                    {sendMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4 mr-2" />
+                    )}
+                    Envoyer
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </CardHeader>
       <CardContent>
         {/* Stats */}
@@ -138,10 +290,23 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
           </TabsList>
 
           <TabsContent value={activeTab}>
-            {filteredEmails.length === 0 ? (
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : filteredEmails.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Mail className="w-12 h-12 mx-auto mb-3 opacity-30" />
                 <p>Aucun email trouvé</p>
+                {apprenant.email && (
+                  <Button 
+                    variant="link" 
+                    className="mt-2"
+                    onClick={() => syncMutation.mutate()}
+                  >
+                    Synchroniser les emails depuis Outlook
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="space-y-2">
@@ -149,7 +314,7 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
                   <div 
                     key={email.id}
                     className={`flex items-start gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer ${
-                      !email.read ? 'bg-primary/5 border-primary/20' : ''
+                      !email.is_read ? 'bg-primary/5 border-primary/20' : ''
                     }`}
                   >
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
@@ -163,20 +328,25 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <h4 className={`font-medium truncate ${!email.read ? 'font-semibold' : ''}`}>
+                        <h4 className={`font-medium truncate ${!email.is_read ? 'font-semibold' : ''}`}>
                           {email.subject}
                         </h4>
                         <Badge variant="outline" className="text-xs shrink-0">
                           {email.type === 'sent' ? 'Envoyé' : 'Reçu'}
                         </Badge>
+                        {email.has_attachments && (
+                          <Badge variant="secondary" className="text-xs shrink-0">
+                            📎
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-sm text-muted-foreground truncate">
-                        {email.preview}
+                        {email.body_preview}
                       </p>
                     </div>
                     <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
                       <Clock className="w-3 h-3" />
-                      {format(email.date, 'dd MMM yyyy', { locale: fr })}
+                      {format(getEmailDate(email), 'dd MMM yyyy', { locale: fr })}
                     </div>
                   </div>
                 ))}
@@ -185,13 +355,15 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
           </TabsContent>
         </Tabs>
 
-        {/* Note */}
-        <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-          <p className="text-sm text-amber-800">
-            <strong>Note :</strong> L'historique des emails sera synchronisé avec votre boîte mail 
-            une fois l'intégration email configurée.
-          </p>
-        </div>
+        {/* Info */}
+        {!apprenant.email && (
+          <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-sm text-amber-800">
+              <strong>Note :</strong> Ajoutez une adresse email à cet apprenant pour 
+              pouvoir synchroniser et envoyer des emails.
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
