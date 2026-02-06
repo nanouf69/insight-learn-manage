@@ -2,7 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 interface AnalyzeDocumentRequest {
@@ -16,6 +16,34 @@ interface AnalysisResult {
   issueDate?: string;
   rejectionReason?: string;
   details?: string;
+}
+
+// Helper to convert ArrayBuffer to base64
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+// Get MIME type from URL or content-type header
+function getMimeType(url: string, contentType?: string): string {
+  if (contentType) {
+    return contentType.split(';')[0].trim();
+  }
+  
+  const ext = url.split('.').pop()?.toLowerCase();
+  switch (ext) {
+    case 'pdf': return 'application/pdf';
+    case 'png': return 'image/png';
+    case 'jpg':
+    case 'jpeg': return 'image/jpeg';
+    case 'gif': return 'image/gif';
+    case 'webp': return 'image/webp';
+    default: return 'application/octet-stream';
+  }
 }
 
 Deno.serve(async (req) => {
@@ -39,10 +67,25 @@ Deno.serve(async (req) => {
       throw new Error('LOVABLE_API_KEY non configurée');
     }
 
+    // Download the document and convert to base64
+    console.log('Downloading document from:', documentUrl);
+    const docResponse = await fetch(documentUrl);
+    if (!docResponse.ok) {
+      throw new Error(`Impossible de télécharger le document: ${docResponse.status}`);
+    }
+    
+    const contentType = docResponse.headers.get('content-type') || '';
+    const mimeType = getMimeType(documentUrl, contentType);
+    const arrayBuffer = await docResponse.arrayBuffer();
+    const base64Data = arrayBufferToBase64(arrayBuffer);
+    const dataUrl = `data:${mimeType};base64,${base64Data}`;
+    
+    console.log('Document downloaded, MIME type:', mimeType, 'Size:', arrayBuffer.byteLength);
+
     // Build the prompt based on document type
     let prompt = '';
     if (documentType === 'piece_identite') {
-      prompt = `Analyse cette image d'une pièce d'identité (carte d'identité ou passeport).
+      prompt = `Analyse ce document d'une pièce d'identité (carte d'identité ou passeport).
 
 INSTRUCTIONS:
 1. Identifie la date d'expiration/validité du document
@@ -55,7 +98,7 @@ INSTRUCTIONS:
 
 IMPORTANT: Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
     } else if (documentType === 'permis_conduire') {
-      prompt = `Analyse cette image d'un permis de conduire.
+      prompt = `Analyse ce document d'un permis de conduire.
 
 INSTRUCTIONS:
 1. Identifie la date d'obtention du permis (date de délivrance initiale, pas la date du document)
@@ -75,7 +118,7 @@ IMPORTANT: Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
       const threeMonthsAgo = new Date(today);
       threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
       
-      prompt = `Analyse cette image d'un justificatif de domicile (facture EDF, eau, téléphone, avis d'imposition, etc.).
+      prompt = `Analyse ce document justificatif de domicile (facture EDF, eau, téléphone, avis d'imposition, etc.).
 
 INSTRUCTIONS:
 1. Identifie la date du document (date d'émission ou date de la facture)
@@ -90,7 +133,7 @@ INSTRUCTIONS:
 IMPORTANT: Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
     }
 
-    // Call Lovable AI Gateway with vision
+    // Call Lovable AI Gateway with vision - using base64 data URL
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -110,7 +153,7 @@ IMPORTANT: Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
               {
                 type: 'image_url',
                 image_url: {
-                  url: documentUrl,
+                  url: dataUrl,
                 },
               },
             ],
