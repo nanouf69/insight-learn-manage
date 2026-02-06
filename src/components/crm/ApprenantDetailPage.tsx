@@ -57,6 +57,24 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
     },
   });
 
+  // Récupérer la photo d'inscription du candidat
+  const { data: photoDoc } = useQuery({
+    queryKey: ['apprenant-photo', apprenantId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('documents_inscription')
+        .select('url')
+        .eq('apprenant_id', apprenantId)
+        .eq('type_document', 'photo')
+        .eq('statut', 'valid')
+        .single();
+      
+      if (error) return null;
+      return data;
+    },
+    enabled: !!apprenantId,
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -89,7 +107,10 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
         </Button>
         <div className="flex items-center gap-4 flex-1">
           <Avatar className="w-16 h-16">
-            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${apprenant.prenom}${apprenant.nom}`} />
+            <AvatarImage 
+              src={photoDoc?.url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${apprenant.prenom}${apprenant.nom}`} 
+              className="object-cover"
+            />
             <AvatarFallback className="text-lg">{initials}</AvatarFallback>
           </Avatar>
           <div>
