@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import { parseDateRange } from "@/lib/parseDateRange";
 
 interface Apprenant {
   id: string;
@@ -265,8 +266,12 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
       formation_choisie: formData.selected_formation || null,
       montant_ttc: formData.montant_ttc ? parseFloat(formData.montant_ttc) : null,
       date_formation_catalogue: selectedDateOption || null,
-      date_debut_formation: dateDebutFormation ? format(dateDebutFormation, 'yyyy-MM-dd') : null,
-      date_fin_formation: dateFinFormation ? format(dateFinFormation, 'yyyy-MM-dd') : null,
+      date_debut_formation: dateDebutFormation 
+        ? format(dateDebutFormation, 'yyyy-MM-dd') 
+        : (selectedDateOption ? parseDateRange(selectedDateOption).dateDebut : null),
+      date_fin_formation: dateFinFormation 
+        ? format(dateFinFormation, 'yyyy-MM-dd') 
+        : (selectedDateOption ? parseDateRange(selectedDateOption).dateFin : null),
       creneau_horaire: formData.creneau_horaire || null,
       date_examen_theorique: formData.date_examen_theorique || null,
       montant_paye: formData.montant_paye ? parseFloat(formData.montant_paye) : 0,
@@ -285,6 +290,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
 
       toast.success("Apprenant modifié avec succès");
       queryClient.invalidateQueries({ queryKey: ['apprenants'] });
+      queryClient.invalidateQueries({ queryKey: ['apprenant-detail', apprenant.id] });
       onOpenChange(false);
     } catch (error) {
       console.error(error);
