@@ -4,9 +4,10 @@ import { fr } from 'date-fns/locale';
 
 import signatureImage from '@/assets/signature-dirigeant.png';
 import tamponImage from '@/assets/tampon-entreprise.png';
+import logoImage from '@/assets/logo-ftransport.png';
 
 const COMPANY_INFO = {
-  name: 'F.Transport Services Pro',
+  name: 'Ftransport',
   address: '86 Route de Genas 69003 Lyon',
   siret: '53516371400044',
 };
@@ -26,16 +27,23 @@ export async function generateAttestationFranceTravail(apprenant: any) {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   
+  // Logo en haut à droite
+  try {
+    doc.addImage(logoImage, 'PNG', pageWidth - 60, 5, 45, 16);
+  } catch (e) {
+    console.log('Logo non chargé');
+  }
+  
   // Ligne de titre
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(0, 0, 0);
   
   const titleLine = '----------------------- Formulaire à compléter et à retourner à votre France Travail -----------------------';
-  doc.text(titleLine, pageWidth / 2, 15, { align: 'center' });
+  doc.text(titleLine, pageWidth / 2, 25, { align: 'center' });
   
-  // Référence et nom (fictif pour la référence, à adapter)
-  let y = 30;
+  // Référence et nom
+  let y = 40;
   doc.setFontSize(10);
   doc.text(`Référence : ${apprenant.numero_dossier_cma || '..........'}`, 20, y);
   

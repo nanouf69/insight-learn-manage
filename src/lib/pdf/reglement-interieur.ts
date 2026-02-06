@@ -4,9 +4,10 @@ import { fr } from 'date-fns/locale';
 
 import signatureImage from '@/assets/signature-dirigeant.png';
 import tamponImage from '@/assets/tampon-entreprise.png';
+import logoImage from '@/assets/logo-ftransport.png';
 
 const COMPANY_INFO = {
-  name: 'F.Transport Services Pro',
+  name: 'Ftransport',
   address: '86 Route de Genas 69003 Lyon',
   siret: '53516371400044',
   naf: '8559A',
@@ -16,7 +17,7 @@ const COMPANY_INFO = {
 const REGLEMENT_ARTICLES = [
   {
     title: 'Article 1 : Personne concernée',
-    content: "Le présent règlement intérieur est établi conformément à la législation en vigueur (article L.922-1 à R.922-11 du Code du travail). Il s'applique aux personnes inscrites à une action de formation organisée par Ftransport services pro."
+    content: "Le présent règlement intérieur est établi conformément à la législation en vigueur (article L.922-1 à R.922-11 du Code du travail). Il s'applique aux personnes inscrites à une action de formation organisée par Ftransport."
   },
   {
     title: 'Article 2 : Conditions générales',
@@ -53,24 +54,31 @@ export async function generateReglementInterieurSigne(apprenant: any) {
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   
-  // En-tête
+  // Logo en haut à gauche
+  try {
+    doc.addImage(logoImage, 'PNG', 15, 5, 45, 16);
+  } catch (e) {
+    console.log('Logo non chargé');
+  }
+  
+  // En-tête (décalé pour le logo)
   doc.setFillColor(0, 51, 102);
-  doc.rect(0, 0, pageWidth, 25, 'F');
+  doc.rect(0, 25, pageWidth, 20, 'F');
   
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text('RÈGLEMENT INTÉRIEUR', pageWidth / 2, 12, { align: 'center' });
+  doc.text('RÈGLEMENT INTÉRIEUR', pageWidth / 2, 35, { align: 'center' });
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.text('Conditions générales applicables aux stagiaires', pageWidth / 2, 20, { align: 'center' });
+  doc.text('Conditions générales applicables aux stagiaires', pageWidth / 2, 42, { align: 'center' });
   
   // Adresse
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(8);
-  doc.text(`${COMPANY_INFO.address}`, pageWidth / 2, 32, { align: 'center' });
+  doc.text(`${COMPANY_INFO.address}`, pageWidth / 2, 52, { align: 'center' });
   
-  let y = 42;
+  let y = 60;
   
   // Articles (version condensée)
   doc.setFontSize(8);
