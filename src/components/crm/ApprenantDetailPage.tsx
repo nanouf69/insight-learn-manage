@@ -1,21 +1,25 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, User, FileText, BookOpen, Calendar, Mail, Phone, MapPin, CreditCard, Edit2, Download, CheckCircle2, XCircle, Plus } from "lucide-react";
+import { ArrowLeft, User, FileText, BookOpen, Calendar, Mail, Phone, MapPin, CreditCard, Edit2, Download, CheckCircle2, XCircle, Plus, CalendarIcon, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useQuery } from "@tanstack/react-query";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { fr } from "date-fns/locale";
+import { toast } from "sonner";
 import { DocumentsFormation } from "./apprenant-sections/DocumentsFormation";
 import { DocumentsDossier } from "./apprenant-sections/DocumentsDossier";
 import { DocumentsInscription } from "./apprenant-sections/DocumentsInscription";
 import { ExamensSection } from "./apprenant-sections/ExamensSection";
 import { EmailsSection } from "./apprenant-sections/EmailsSection";
 import { ApprenantEditForm } from "@/components/apprenants/ApprenantEditForm";
+import { cn } from "@/lib/utils";
 
 interface ApprenantDetailPageProps {
   apprenantId: string;
@@ -70,7 +74,45 @@ const creneauLabels: Record<string, string> = {
 export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPageProps) {
   const [activeTab, setActiveTab] = useState("infos");
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [dateDebutOpen, setDateDebutOpen] = useState(false);
+  const [dateFinOpen, setDateFinOpen] = useState(false);
+  const queryClient = useQueryClient();
 
+  // Fonction pour mettre à jour une date
+  const updateDate = async (field: 'date_debut_formation' | 'date_fin_formation', date: Date | undefined) => {
+    if (!date) return;
+    
+    try {
+      const { error } = await supabase
+        .from('apprenants')
+        .update({ [field]: format(date, 'yyyy-MM-dd') })
+        .eq('id', apprenantId);
+
+      if (error) throw error;
+
+      toast.success("Date mise à jour");
+      queryClient.invalidateQueries({ queryKey: ['apprenant-detail', apprenantId] });
+      
+      if (field === 'date_debut_formation') {
+        setDateDebutOpen(false);
+      } else {
+        setDateFinOpen(false);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Erreur lors de la mise à jour");
+    }
+  };
+
+  // Parser une date au format YYYY-MM-DD
+  const parseDate = (dateStr: string | null | undefined): Date | undefined => {
+    if (!dateStr) return undefined;
+    try {
+      return parse(dateStr, 'yyyy-MM-dd', new Date());
+    } catch {
+      return undefined;
+    }
+  };
   const { data: apprenant, isLoading } = useQuery({
     queryKey: ['apprenant-detail', apprenantId],
     queryFn: async () => {
@@ -245,11 +287,61 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-muted-foreground">Date de début</p>
-                    <p className="font-medium">{apprenant.date_debut_formation || '-'}</p>
+                    <Popover open={dateDebutOpen} onOpenChange={setDateDebutOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={cn(
+                            "h-auto p-1 font-medium justify-start hover:bg-muted",
+                            !apprenant.date_debut_formation && "text-muted-foreground"
+                          )}
+                        >
+                          {apprenant.date_debut_formation 
+                            ? format(parseDate(apprenant.date_debut_formation) || new Date(), 'dd MMMM yyyy', { locale: fr })
+                            : 'Cliquer pour définir'}
+                          <Pencil className="w-3 h-3 ml-2 text-muted-foreground" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={parseDate(apprenant.date_debut_formation)}
+                          onSelect={(date) => updateDate('date_debut_formation', date)}
+                          initialFocus
+                          locale={fr}
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Date de fin</p>
-                    <p className="font-medium">{apprenant.date_fin_formation || '-'}</p>
+                    <Popover open={dateFinOpen} onOpenChange={setDateFinOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={cn(
+                            "h-auto p-1 font-medium justify-start hover:bg-muted",
+                            !apprenant.date_fin_formation && "text-muted-foreground"
+                          )}
+                        >
+                          {apprenant.date_fin_formation 
+                            ? format(parseDate(apprenant.date_fin_formation) || new Date(), 'dd MMMM yyyy', { locale: fr })
+                            : 'Cliquer pour définir'}
+                          <Pencil className="w-3 h-3 ml-2 text-muted-foreground" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={parseDate(apprenant.date_fin_formation)}
+                          onSelect={(date) => updateDate('date_fin_formation', date)}
+                          initialFocus
+                          locale={fr}
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
                 <div>
