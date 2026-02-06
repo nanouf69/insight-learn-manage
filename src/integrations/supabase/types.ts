@@ -401,6 +401,62 @@ export type Database = {
           },
         ]
       }
+      documents_inscription: {
+        Row: {
+          analyse_ia_date: string | null
+          analyse_ia_details: Json | null
+          apprenant_id: string
+          created_at: string
+          description: string | null
+          id: string
+          motif_refus: string | null
+          nom_fichier: string
+          statut: string
+          titre: string
+          type_document: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          analyse_ia_date?: string | null
+          analyse_ia_details?: Json | null
+          apprenant_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          motif_refus?: string | null
+          nom_fichier: string
+          statut?: string
+          titre: string
+          type_document: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          analyse_ia_date?: string | null
+          analyse_ia_details?: Json | null
+          apprenant_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          motif_refus?: string | null
+          nom_fichier?: string
+          statut?: string
+          titre?: string
+          type_document?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_inscription_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: false
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       factures: {
         Row: {
           apprenant_id: string | null
