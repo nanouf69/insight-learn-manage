@@ -122,6 +122,11 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
   const [newDocTitle, setNewDocTitle] = useState('');
   const [newDocDescription, setNewDocDescription] = useState('');
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
+  
+  // Questions obligatoires
+  const [question1, setQuestion1] = useState<boolean | null>(null);
+  const [question2, setQuestion2] = useState<boolean | null>(null);
+  const [question3, setQuestion3] = useState<boolean | null>(null);
 
   // Fetch existing documents on mount
   useEffect(() => {
@@ -686,6 +691,122 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
             <Plus className="w-4 h-4 mr-2" />
             Ajouter un document supplémentaire
           </Button>
+        </div>
+
+        {/* Questions obligatoires */}
+        <div className="mt-6 p-4 border-2 border-primary/30 rounded-lg bg-primary/5">
+          <h4 className="font-semibold mb-4 flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 text-primary" />
+            Questions obligatoires
+          </h4>
+          <div className="space-y-4">
+            {/* Question 1 */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium">
+                1) Avez-vous perdu 6 points d'un coup (une seule infraction) sur votre permis de conduire ?
+              </p>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="question1"
+                    checked={question1 === false}
+                    onChange={() => setQuestion1(false)}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm">Non</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="question1"
+                    checked={question1 === true}
+                    onChange={() => setQuestion1(true)}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm">Oui</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Question 2 */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium">
+                2) Avez-vous déjà été condamné(e) ferme ou avec sursis à 6 mois minimum de prison ?
+              </p>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="question2"
+                    checked={question2 === false}
+                    onChange={() => setQuestion2(false)}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm">Non</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="question2"
+                    checked={question2 === true}
+                    onChange={() => setQuestion2(true)}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm">Oui</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Question 3 */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium">
+                3) Avez-vous déjà été condamné(e) pour conduite sans permis ?
+              </p>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="question3"
+                    checked={question3 === false}
+                    onChange={() => setQuestion3(false)}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm">Non</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="question3"
+                    checked={question3 === true}
+                    onChange={() => setQuestion3(true)}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm">Oui</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Avertissement si une réponse est "Oui" */}
+            {(question1 === true || question2 === true || question3 === true) && (
+              <div className="mt-4 p-4 bg-destructive/10 border border-destructive rounded-lg">
+                <p className="text-destructive font-bold text-lg flex items-center gap-2">
+                  <Ban className="w-5 h-5" />
+                  Merci de recontacter le centre au 04 28 29 60 91
+                </p>
+              </div>
+            )}
+
+            {/* Indicateur si toutes les questions sont répondues "Non" */}
+            {question1 === false && question2 === false && question3 === false && (
+              <div className="mt-4 p-3 bg-green-100 border border-green-300 rounded-lg">
+                <p className="text-green-700 font-medium flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5" />
+                  Toutes les conditions sont remplies
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Note */}
