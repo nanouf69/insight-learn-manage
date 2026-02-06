@@ -74,7 +74,7 @@ const DOCUMENT_TYPES = [
   {
     id: 'photo_identite',
     title: "Photo d'identité",
-    description: "Format photo d'identité officielle",
+    description: "⚠️ Fond clair obligatoire (blanc ou beige) - Format photo d'identité officielle",
     required: true,
     needsValidation: false,
   },
