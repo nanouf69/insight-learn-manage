@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { FileCheck, Upload, CheckCircle2, XCircle, AlertCircle, Loader2, Trash2, Eye, Ban, Plus, ScanSearch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PhotoCropper } from "./PhotoCropper";
 
 interface DocumentsInscriptionProps {
   apprenant: any;
@@ -122,6 +123,11 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
   const [newDocTitle, setNewDocTitle] = useState('');
   const [newDocDescription, setNewDocDescription] = useState('');
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
+  
+  // Photo cropper state
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [cropperImageSrc, setCropperImageSrc] = useState<string>('');
+  const [pendingPhotoDocId, setPendingPhotoDocId] = useState<string>('');
   
   // Questions obligatoires
   const [question1, setQuestion1] = useState<boolean | null>(null);
@@ -441,6 +447,7 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
       // Validate file size
       if (file.size > MAX_FILE_SIZE_BYTES) {
         toast.error(`Le fichier est trop volumineux (max ${MAX_FILE_SIZE_MB}Mo)`);
+        event.target.value = '';
         return;
       }
       
@@ -451,14 +458,36 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
       
       if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension || '')) {
         toast.error(`Format non accepté. Formats autorisés: ${ACCEPTED_FORMATS_DISPLAY}`);
+        event.target.value = '';
         return;
       }
       
-      handleUpload(docId, file, isCustom);
+      // Si c'est une photo d'identité (image), ouvrir le cropper
+      if (docId === 'photo_identite' && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          if (e.target?.result) {
+            setCropperImageSrc(e.target.result as string);
+            setPendingPhotoDocId(docId);
+            setCropperOpen(true);
+          }
+        };
+        reader.readAsDataURL(file);
+      } else {
+        handleUpload(docId, file, isCustom);
+      }
     }
     // Reset input
     event.target.value = '';
   };
+
+  // Callback après le recadrage de la photo
+  const handlePhotoCropComplete = useCallback(async (croppedBlob: Blob) => {
+    const file = new File([croppedBlob], 'photo_identite.jpg', { type: 'image/jpeg' });
+    await handleUpload(pendingPhotoDocId, file, false);
+    setPendingPhotoDocId('');
+    setCropperImageSrc('');
+  }, [pendingPhotoDocId]);
 
   const openDocument = (url: string) => {
     window.open(url, '_blank');
@@ -928,6 +957,18 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
           </DialogContent>
         </Dialog>
       </CardContent>
+
+      {/* Photo Cropper Dialog */}
+      <PhotoCropper
+        open={cropperOpen}
+        onClose={() => {
+          setCropperOpen(false);
+          setCropperImageSrc('');
+          setPendingPhotoDocId('');
+        }}
+        imageSrc={cropperImageSrc}
+        onCropComplete={handlePhotoCropComplete}
+      />
     </Card>
   );
 }
