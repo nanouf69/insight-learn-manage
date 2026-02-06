@@ -756,67 +756,69 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
             </div>
           </div>
 
-          {/* Prix de la formation et Paiement */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Informations financières</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="prixFormation">Prix de la formation (€)</Label>
-                <Input 
-                  id="prixFormation" 
-                  type="number" 
-                  placeholder="1299" 
-                  value={formData.montant_ttc}
-                  onChange={(e) => setFormData({ ...formData, montant_ttc: e.target.value })}
-                  min="0"
-                  step="0.01"
-                />
+          {/* Prix de la formation et Paiement - Uniquement pour financement personnel */}
+          {formData.mode_financement === "personnel" && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Informations financières</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="prixFormation">Prix de la formation (€)</Label>
+                  <Input 
+                    id="prixFormation" 
+                    type="number" 
+                    placeholder="1299" 
+                    value={formData.montant_ttc}
+                    onChange={(e) => setFormData({ ...formData, montant_ttc: e.target.value })}
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="montant_paye">Montant payé (€)</Label>
+                  <Input 
+                    id="montant_paye" 
+                    type="number" 
+                    placeholder="0" 
+                    value={formData.montant_paye}
+                    onChange={(e) => setFormData({ ...formData, montant_paye: e.target.value })}
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="montant_paye">Montant payé (€)</Label>
-                <Input 
-                  id="montant_paye" 
-                  type="number" 
-                  placeholder="0" 
-                  value={formData.montant_paye}
-                  onChange={(e) => setFormData({ ...formData, montant_paye: e.target.value })}
-                  min="0"
-                  step="0.01"
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="moyen_paiement">Moyen de paiement</Label>
-                <Select 
-                  value={formData.moyen_paiement} 
-                  onValueChange={(value) => setFormData({ ...formData, moyen_paiement: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="especes">Espèces</SelectItem>
-                    <SelectItem value="cb">Carte bancaire</SelectItem>
-                    <SelectItem value="cheque">Chèque</SelectItem>
-                    <SelectItem value="virement">Virement</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Reste à payer</Label>
-                <div className={cn(
-                  "h-10 px-3 py-2 rounded-md border flex items-center font-medium",
-                  (parseFloat(formData.montant_ttc) || 0) - (parseFloat(formData.montant_paye) || 0) > 0
-                    ? "bg-orange-50 text-orange-700 border-orange-200"
-                    : "bg-green-50 text-green-700 border-green-200"
-                )}>
-                  {((parseFloat(formData.montant_ttc) || 0) - (parseFloat(formData.montant_paye) || 0)).toFixed(2)} €
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="moyen_paiement">Moyen de paiement</Label>
+                  <Select 
+                    value={formData.moyen_paiement} 
+                    onValueChange={(value) => setFormData({ ...formData, moyen_paiement: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="especes">Espèces</SelectItem>
+                      <SelectItem value="cb">Carte bancaire</SelectItem>
+                      <SelectItem value="cheque">Chèque</SelectItem>
+                      <SelectItem value="virement">Virement</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Reste à payer</Label>
+                  <div className={cn(
+                    "h-10 px-3 py-2 rounded-md border flex items-center font-medium",
+                    (parseFloat(formData.montant_ttc) || 0) - (parseFloat(formData.montant_paye) || 0) > 0
+                      ? "bg-orange-50 text-orange-700 border-orange-200"
+                      : "bg-green-50 text-green-700 border-green-200"
+                  )}>
+                    {((parseFloat(formData.montant_ttc) || 0) - (parseFloat(formData.montant_paye) || 0)).toFixed(2)} €
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Notes */}
           <div className="space-y-4">
