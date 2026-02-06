@@ -29,42 +29,43 @@ export function OnboardingLayout({ children, currentStep, totalSteps, title }: O
   const progressPercent = (currentStep / totalSteps) * 100;
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-white text-gray-900">
+      {/* Progress bar at the very top */}
+      <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-gray-200">
+        <div 
+          className="bg-blue-500 h-1 transition-all duration-500"
+          style={{ width: `${progressPercent}%` }}
+        />
+      </div>
+
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-sm border-b border-white/10">
+      <header className="fixed top-1 left-0 right-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/bienvenue" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <img src={logoFtransport} alt="FTRANSPORT" className="h-10 w-auto" />
           </Link>
           
-          {/* Progress bar */}
-          <div className="hidden md:flex items-center gap-4 flex-1 max-w-2xl mx-8">
-            <div className="w-full bg-white/10 rounded-full h-2">
-              <div 
-                className="bg-gradient-to-r from-blue-500 to-blue-400 h-2 rounded-full transition-all duration-500"
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
-            <span className="text-sm text-white/60 whitespace-nowrap">
+          {/* Step counter */}
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-gray-500">
               Étape {currentStep}/{totalSteps}
             </span>
+            <Link 
+              to="/bienvenue" 
+              className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors text-sm"
+            >
+              <Home className="w-4 h-4" />
+              <span className="hidden sm:inline">Accueil</span>
+            </Link>
           </div>
-
-          <Link 
-            to="/bienvenue" 
-            className="flex items-center gap-2 text-white/60 hover:text-white transition-colors text-sm"
-          >
-            <Home className="w-4 h-4" />
-            <span className="hidden sm:inline">Accueil</span>
-          </Link>
         </div>
       </header>
 
-      <div className="flex pt-20">
+      <div className="flex pt-[73px]">
         {/* Sidebar with steps */}
-        <aside className="hidden lg:block w-80 fixed left-0 top-20 bottom-0 bg-black border-r border-white/10 overflow-y-auto">
+        <aside className="hidden lg:block w-80 fixed left-0 top-[73px] bottom-0 bg-gray-50 border-r border-gray-200 overflow-y-auto">
           <nav className="p-6">
-            <h2 className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-4">
+            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
               Progression
             </h2>
             <ul className="space-y-1">
@@ -79,9 +80,9 @@ export function OnboardingLayout({ children, currentStep, totalSteps, title }: O
                       to={step.path}
                       className={`
                         flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200
-                        ${isCurrent ? 'bg-blue-500/20 border border-blue-500/50 text-white' : ''}
-                        ${isComplete ? 'text-white/80 hover:bg-white/5' : ''}
-                        ${isFuture ? 'text-white/30 cursor-not-allowed' : ''}
+                        ${isCurrent ? 'bg-blue-50 border border-blue-200 text-blue-700' : ''}
+                        ${isComplete ? 'text-gray-700 hover:bg-gray-100' : ''}
+                        ${isFuture ? 'text-gray-300 cursor-not-allowed' : ''}
                       `}
                       onClick={(e) => isFuture && e.preventDefault()}
                     >
@@ -89,12 +90,12 @@ export function OnboardingLayout({ children, currentStep, totalSteps, title }: O
                         w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold
                         ${isComplete ? 'bg-green-500 text-white' : ''}
                         ${isCurrent ? 'bg-blue-500 text-white' : ''}
-                        ${isFuture ? 'bg-white/10 text-white/30' : ''}
+                        ${isFuture ? 'bg-gray-200 text-gray-400' : ''}
                       `}>
                         {isComplete ? <Check className="w-4 h-4" /> : step.number}
                       </div>
                       <span className="flex-1 text-sm">{step.title}</span>
-                      {isCurrent && <ChevronRight className="w-4 h-4 text-blue-400" />}
+                      {isCurrent && <ChevronRight className="w-4 h-4 text-blue-500" />}
                     </Link>
                   </li>
                 );
@@ -106,12 +107,12 @@ export function OnboardingLayout({ children, currentStep, totalSteps, title }: O
         {/* Main content */}
         <main className="flex-1 lg:ml-80">
           {/* Mobile progress indicator */}
-          <div className="lg:hidden px-4 py-3 bg-white/5 border-b border-white/10">
+          <div className="lg:hidden px-4 py-3 bg-gray-50 border-b border-gray-200">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-white/60">Étape {currentStep} sur {totalSteps}</span>
-              <span className="text-sm font-medium text-blue-400">{Math.round(progressPercent)}%</span>
+              <span className="text-sm text-gray-500">Étape {currentStep} sur {totalSteps}</span>
+              <span className="text-sm font-medium text-blue-600">{Math.round(progressPercent)}%</span>
             </div>
-            <div className="w-full bg-white/10 rounded-full h-1.5">
+            <div className="w-full bg-gray-200 rounded-full h-1.5">
               <div 
                 className="bg-blue-500 h-1.5 rounded-full transition-all duration-500"
                 style={{ width: `${progressPercent}%` }}
@@ -122,12 +123,12 @@ export function OnboardingLayout({ children, currentStep, totalSteps, title }: O
           <div className="max-w-4xl mx-auto px-4 py-8 lg:py-12">
             <div className="mb-8">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-xl font-bold">
+                <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-xl font-bold text-white">
                   {currentStep}
                 </div>
                 <div>
-                  <h1 className="text-2xl lg:text-3xl font-bold">{title}</h1>
-                  <p className="text-white/60 text-sm">Étape {currentStep} sur {totalSteps}</p>
+                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">{title}</h1>
+                  <p className="text-gray-500 text-sm">Étape {currentStep} sur {totalSteps}</p>
                 </div>
               </div>
             </div>
