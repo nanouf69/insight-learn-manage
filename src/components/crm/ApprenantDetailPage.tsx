@@ -165,12 +165,17 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
         .eq('apprenant_id', apprenantId)
         .eq('type_document', 'photo_identite')
         .eq('statut', 'valid')
-        .single();
+        .maybeSingle();
       
-      if (error) return null;
+      if (error) {
+        console.error('Erreur récupération photo:', error);
+        return null;
+      }
+      console.log('Photo récupérée:', data);
       return data;
     },
     enabled: !!apprenantId,
+    staleTime: 0, // Toujours refetch
   });
 
   if (isLoading) {
