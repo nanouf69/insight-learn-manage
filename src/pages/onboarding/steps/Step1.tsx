@@ -28,12 +28,6 @@ export default function Step1() {
       description: "Carte d'identité ou passeport en cours de validité",
     },
     {
-      id: 'permis_conduire',
-      icon: FileText,
-      title: "Permis de conduire",
-      description: "Hors période probatoire (plus de 3 ans)",
-    },
-    {
       id: 'justificatif_domicile',
       icon: MapPin,
       title: "Justificatif de domicile",
@@ -44,12 +38,6 @@ export default function Step1() {
       icon: Camera,
       title: "Photo d'identité",
       description: "Fond clair obligatoire (blanc, beige ou bleu)",
-    },
-    {
-      id: 'signature',
-      icon: PenTool,
-      title: "Signature",
-      description: "Signature manuscrite sur papier blanc",
     },
   ];
 
