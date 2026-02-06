@@ -238,9 +238,19 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
                     </p>
                   </div>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Moyen de paiement</p>
-                  <p className="font-medium">{apprenant.moyen_paiement || '-'}</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Moyen de paiement</p>
+                    <p className="font-medium">{apprenant.moyen_paiement || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Date de paiement</p>
+                    <p className="font-medium">
+                      {apprenant.date_paiement 
+                        ? format(new Date(apprenant.date_paiement), 'dd MMMM yyyy', { locale: fr })
+                        : '-'}
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
