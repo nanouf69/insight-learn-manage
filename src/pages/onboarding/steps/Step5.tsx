@@ -70,9 +70,14 @@ export default function Step5() {
         <div className="bg-white border border-gray-200 rounded-2xl p-6 lg:p-8">
           <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-            <p className="text-red-700">
-              <strong>ATTENTION :</strong> Vous ne pouvez choisir que parmi les 2 prochaines dates d'examen pour que votre inscription soit prise en compte par le Compte Personnel de Formation (CPF).
-            </p>
+            <div className="text-red-700">
+              <p className="mb-2">
+                <strong>ATTENTION :</strong> Vous ne pouvez choisir que la date d'examen la plus proche pour que votre inscription soit prise en compte par le Compte Personnel de Formation (CPF).
+              </p>
+              <p className="text-red-600 italic">
+                Sauf si votre examen aura lieu le même mois.
+              </p>
+            </div>
           </div>
 
           {/* Sélecteur de date d'examen */}
