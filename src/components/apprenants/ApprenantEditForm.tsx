@@ -41,6 +41,7 @@ interface Apprenant {
   montant_paye?: number | null;
   moyen_paiement?: string | null;
   notes?: string | null;
+  date_paiement?: string | null;
 }
 
 interface ApprenantEditFormProps {
@@ -118,6 +119,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
   const [typeApprenant, setTypeApprenant] = useState<"prospect" | "client">("prospect");
   const [dateDebutFormation, setDateDebutFormation] = useState<Date | undefined>();
   const [dateFinFormation, setDateFinFormation] = useState<Date | undefined>();
+  const [datePaiement, setDatePaiement] = useState<Date | undefined>();
   const [selectedDateOption, setSelectedDateOption] = useState("");
   const submitInProgressRef = useRef(false);
   
@@ -186,6 +188,9 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
       }
       if (apprenant.date_fin_formation) {
         setDateFinFormation(new Date(apprenant.date_fin_formation));
+      }
+      if (apprenant.date_paiement) {
+        setDatePaiement(new Date(apprenant.date_paiement));
       }
     }
   }, [apprenant]);
@@ -267,6 +272,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
       montant_paye: formData.montant_paye ? parseFloat(formData.montant_paye) : 0,
       moyen_paiement: formData.moyen_paiement || null,
       notes: formData.notes?.trim() || null,
+      date_paiement: datePaiement ? format(datePaiement, 'yyyy-MM-dd') : null,
     };
 
     try {
@@ -806,15 +812,41 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Reste à payer</Label>
-                  <div className={cn(
-                    "h-10 px-3 py-2 rounded-md border flex items-center font-medium",
-                    (parseFloat(formData.montant_ttc) || 0) - (parseFloat(formData.montant_paye) || 0) > 0
-                      ? "bg-orange-50 text-orange-700 border-orange-200"
-                      : "bg-green-50 text-green-700 border-green-200"
-                  )}>
-                    {((parseFloat(formData.montant_ttc) || 0) - (parseFloat(formData.montant_paye) || 0)).toFixed(2)} €
-                  </div>
+                  <Label>Date de paiement</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !datePaiement && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {datePaiement ? format(datePaiement, "dd MMMM yyyy", { locale: fr }) : "Sélectionner une date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={datePaiement}
+                        onSelect={setDatePaiement}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Reste à payer</Label>
+                <div className={cn(
+                  "h-10 px-3 py-2 rounded-md border flex items-center font-medium",
+                  (parseFloat(formData.montant_ttc) || 0) - (parseFloat(formData.montant_paye) || 0) > 0
+                    ? "bg-orange-50 text-orange-700 border-orange-200"
+                    : "bg-green-50 text-green-700 border-green-200"
+                )}>
+                  {((parseFloat(formData.montant_ttc) || 0) - (parseFloat(formData.montant_paye) || 0)).toFixed(2)} €
                 </div>
               </div>
             </div>

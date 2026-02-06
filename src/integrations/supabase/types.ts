@@ -79,6 +79,7 @@ export type Database = {
           date_fin_formation: string | null
           date_formation_catalogue: string | null
           date_naissance: string | null
+          date_paiement: string | null
           email: string | null
           formation_choisie: string | null
           id: string
@@ -108,6 +109,7 @@ export type Database = {
           date_fin_formation?: string | null
           date_formation_catalogue?: string | null
           date_naissance?: string | null
+          date_paiement?: string | null
           email?: string | null
           formation_choisie?: string | null
           id?: string
@@ -137,6 +139,7 @@ export type Database = {
           date_fin_formation?: string | null
           date_formation_catalogue?: string | null
           date_naissance?: string | null
+          date_paiement?: string | null
           email?: string | null
           formation_choisie?: string | null
           id?: string
