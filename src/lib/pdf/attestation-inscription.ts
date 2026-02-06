@@ -5,9 +5,10 @@ import { fr } from 'date-fns/locale';
 // Import des assets
 import signatureImage from '@/assets/signature-dirigeant.png';
 import tamponImage from '@/assets/tampon-entreprise.png';
+import logoImage from '@/assets/logo-ftransport.png';
 
 const COMPANY_INFO = {
-  name: 'F.Transport Services Pro',
+  name: 'Ftransport',
   address: '86 Route de Genas 69003 Lyon',
   siret: '53516371400044',
   naf: '8559A',
@@ -20,23 +21,25 @@ export async function generateAttestationInscription(apprenant: any) {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   
-  // En-tête
+  // Logo en haut à gauche
+  try {
+    doc.addImage(logoImage, 'PNG', 15, 8, 50, 18);
+  } catch (e) {
+    console.log('Logo non chargé');
+  }
+  
+  // En-tête (décalé pour le logo)
   doc.setFillColor(0, 51, 102);
-  doc.rect(0, 0, pageWidth, 35, 'F');
+  doc.rect(0, 30, pageWidth, 25, 'F');
   
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(20);
+  doc.setFontSize(18);
   doc.setFont('helvetica', 'bold');
-  doc.text("ATTESTATION D'INSCRIPTION", pageWidth / 2, 20, { align: 'center' });
-  
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text(COMPANY_INFO.name, pageWidth / 2, 30, { align: 'center' });
+  doc.text("ATTESTATION D'INSCRIPTION", pageWidth / 2, 45, { align: 'center' });
   
   // Corps
   doc.setTextColor(0, 0, 0);
-  let y = 50;
-  
+  let y = 65;
   doc.setFontSize(11);
   doc.text('Je soussigné, Directeur de ' + COMPANY_INFO.name + ',', 20, y);
   y += 10;
