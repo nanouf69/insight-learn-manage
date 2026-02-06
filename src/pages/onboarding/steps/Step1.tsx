@@ -1,10 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, CreditCard, MapPin, Info, Camera, AlertTriangle, Phone } from "lucide-react";
+import { ArrowRight, CreditCard, MapPin, Info, Camera, AlertTriangle, Phone, User } from "lucide-react";
 import { OnboardingLayout } from "../OnboardingLayout";
 import { DocumentUploadCard } from "@/components/onboarding/DocumentUploadCard";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function Step1() {
+  // Nom et prénom de l'apprenant
+  const [nom, setNom] = useState(() => localStorage.getItem('onboarding_nom') || '');
+  const [prenom, setPrenom] = useState(() => localStorage.getItem('onboarding_prenom') || '');
+
   // Generate a unique session ID for this onboarding session
   const [sessionId] = useState(() => {
     const stored = localStorage.getItem('onboarding_session_id');
@@ -22,6 +28,15 @@ export default function Step1() {
     question2: null,
     question3: null,
   });
+
+  // Sauvegarder nom et prénom dans localStorage
+  useEffect(() => {
+    localStorage.setItem('onboarding_nom', nom);
+  }, [nom]);
+
+  useEffect(() => {
+    localStorage.setItem('onboarding_prenom', prenom);
+  }, [prenom]);
 
   const handleStatusChange = (docId: string, status: 'pending' | 'valid' | 'rejected', _reason?: string) => {
     setDocumentStatuses(prev => ({ ...prev, [docId]: status }));
@@ -77,6 +92,38 @@ export default function Step1() {
   return (
     <OnboardingLayout currentStep={1} totalSteps={11} title="Documents requis pour l'inscription">
       <div className="space-y-6">
+        {/* Nom et Prénom */}
+        <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <User className="w-5 h-5 text-blue-500" />
+            <h3 className="font-semibold text-gray-900">Vos informations</h3>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="nom" className="text-gray-700">Nom <span className="text-red-500">*</span></Label>
+              <Input
+                id="nom"
+                type="text"
+                placeholder="Votre nom"
+                value={nom}
+                onChange={(e) => setNom(e.target.value)}
+                className="bg-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="prenom" className="text-gray-700">Prénom <span className="text-red-500">*</span></Label>
+              <Input
+                id="prenom"
+                type="text"
+                placeholder="Votre prénom"
+                value={prenom}
+                onChange={(e) => setPrenom(e.target.value)}
+                className="bg-white"
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Info format */}
         <div className="flex items-center gap-2 text-gray-500 text-sm">
           <Info className="w-4 h-4" />
