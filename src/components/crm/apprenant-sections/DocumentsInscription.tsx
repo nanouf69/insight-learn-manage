@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { FileCheck, Upload, CheckCircle2, XCircle, AlertCircle, Loader2, Trash2, Eye, Ban, Plus } from "lucide-react";
+import { FileCheck, Upload, CheckCircle2, XCircle, AlertCircle, Loader2, Trash2, Eye, Ban, Plus, ScanSearch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -105,6 +105,7 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
   const [documents, setDocuments] = useState<DocumentStatus[]>([]);
   const [customDocuments, setCustomDocuments] = useState<CustomDocument[]>([]);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [analyzingId, setAnalyzingId] = useState<string | null>(null);
   const [rejectionDialog, setRejectionDialog] = useState<{
     open: boolean;
     docId: string;
@@ -206,6 +207,73 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
     }
   };
 
+  // Analyze document with AI to check expiration
+  const analyzeDocument = async (docId: string, documentUrl: string) => {
+    // Only analyze piece_identite and permis_conduire
+    if (docId !== 'piece_identite' && docId !== 'permis_conduire') {
+      return;
+    }
+
+    setAnalyzingId(docId);
+    toast.info("Analyse du document en cours...", { duration: 3000 });
+
+    try {
+      const { data, error } = await supabase.functions.invoke('analyze-document', {
+        body: {
+          documentUrl,
+          documentType: docId,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data && !data.isValid && data.rejectionReason) {
+        // Document is not valid - auto-reject it
+        toast.error(`Document invalide : ${data.rejectionReason}`, { duration: 5000 });
+        
+        // Find the document and reject it
+        const doc = documents.find(d => d.id === docId);
+        if (doc?.fileName) {
+          // Get the file
+          const { data: fileData, error: downloadError } = await supabase.storage
+            .from('documents-inscription')
+            .download(`${apprenant.id}/${doc.fileName}`);
+
+          if (!downloadError && fileData) {
+            // Delete the original file
+            await supabase.storage
+              .from('documents-inscription')
+              .remove([`${apprenant.id}/${doc.fileName}`]);
+
+            // Re-upload with rejected prefix
+            const fileExt = doc.fileName.split('.').pop();
+            const rejectedFileName = `rejected_${doc.id}_${encodeURIComponent(data.rejectionReason)}.${fileExt}`;
+            
+            await supabase.storage
+              .from('documents-inscription')
+              .upload(`${apprenant.id}/${rejectedFileName}`, fileData, {
+                cacheControl: '3600',
+                upsert: true
+              });
+
+            await fetchDocuments();
+          }
+        }
+      } else if (data && data.isValid) {
+        toast.success("Document validé ✓", { duration: 3000 });
+        if (data.details) {
+          console.log('Document details:', data.details);
+        }
+      }
+    } catch (error: any) {
+      console.error('Analysis error:', error);
+      // Don't show error to user, just log it - manual validation still possible
+      toast.info("Vérification automatique non disponible. Veuillez vérifier manuellement.", { duration: 4000 });
+    } finally {
+      setAnalyzingId(null);
+    }
+  };
+
   const handleUpload = async (docId: string, file: File, isCustom = false) => {
     setUploadingId(docId);
     
@@ -225,6 +293,18 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
           .remove([`${apprenant.id}/${existingDoc.fileName}`]);
       }
 
+      // Also delete any rejected version
+      const { data: files } = await supabase.storage
+        .from('documents-inscription')
+        .list(`${apprenant.id}/`);
+      
+      const rejectedFile = files?.find(f => f.name.startsWith(`rejected_${docId}`));
+      if (rejectedFile) {
+        await supabase.storage
+          .from('documents-inscription')
+          .remove([`${apprenant.id}/${rejectedFile.name}`]);
+      }
+
       // Upload the new file
       const { error: uploadError } = await supabase.storage
         .from('documents-inscription')
@@ -242,6 +322,20 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
       
       // Refresh the documents list
       await fetchDocuments();
+
+      // If it's a piece_identite or permis_conduire, analyze it automatically
+      if (!isCustom && (docId === 'piece_identite' || docId === 'permis_conduire')) {
+        const { data: urlData } = supabase.storage
+          .from('documents-inscription')
+          .getPublicUrl(filePath);
+        
+        if (urlData?.publicUrl) {
+          // Small delay to ensure file is fully uploaded
+          setTimeout(() => {
+            analyzeDocument(docId, urlData.publicUrl);
+          }, 1000);
+        }
+      }
     } catch (error: any) {
       console.error('Upload error:', error);
       toast.error(error.message || "Erreur lors de l'upload du document");
@@ -480,15 +574,31 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
                       </Button>
                     )}
                     {doc.status === 'valid' && doc.needsValidation && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => openRejectionDialog(doc.id, doc.title)}
-                        className="text-destructive hover:text-destructive"
-                        title="Refuser le document"
-                      >
-                        <Ban className="w-4 h-4" />
-                      </Button>
+                      <>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => doc.url && analyzeDocument(doc.id, doc.url)}
+                          disabled={analyzingId === doc.id}
+                          title="Analyser automatiquement le document"
+                          className="text-primary hover:text-primary"
+                        >
+                          {analyzingId === doc.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <ScanSearch className="w-4 h-4" />
+                          )}
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => openRejectionDialog(doc.id, doc.title)}
+                          className="text-destructive hover:text-destructive"
+                          title="Refuser le document manuellement"
+                        >
+                          <Ban className="w-4 h-4" />
+                        </Button>
+                      </>
                     )}
                     <Button 
                       variant="ghost" 
