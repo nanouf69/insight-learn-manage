@@ -8,6 +8,8 @@ const corsHeaders = {
 interface AnalyzeDocumentRequest {
   documentUrl: string;
   documentType: 'piece_identite' | 'permis_conduire' | 'justificatif_domicile';
+  expectedNom?: string;
+  expectedPrenom?: string;
 }
 
 interface AnalysisResult {
@@ -16,6 +18,10 @@ interface AnalysisResult {
   issueDate?: string;
   rejectionReason?: string;
   details?: string;
+  extractedNom?: string;
+  extractedPrenom?: string;
+  nameMatch?: boolean;
+  nameMismatchReason?: string;
 }
 
 // Helper to convert ArrayBuffer to base64
@@ -53,7 +59,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { documentUrl, documentType } = await req.json() as AnalyzeDocumentRequest;
+    const { documentUrl, documentType, expectedNom, expectedPrenom } = await req.json() as AnalyzeDocumentRequest;
 
     if (!documentUrl || !documentType) {
       return new Response(
@@ -90,11 +96,14 @@ Deno.serve(async (req) => {
 INSTRUCTIONS:
 1. Identifie la date d'expiration/validité du document
 2. Vérifie si le document est périmé par rapport à la date actuelle (${new Date().toLocaleDateString('fr-FR')})
-3. Retourne un JSON avec les champs suivants:
+3. Extrait le NOM et le(s) PRÉNOM(s) de la personne sur le document
+4. Retourne un JSON avec les champs suivants:
    - isValid: boolean (true si le document n'est pas périmé)
    - expirationDate: string (date d'expiration au format JJ/MM/AAAA si trouvée)
    - rejectionReason: string (si isValid=false, explique pourquoi: "Pièce d'identité périmée depuis le [date]")
    - details: string (informations supplémentaires extraites)
+   - extractedNom: string (le NOM de famille en majuscules tel qu'il apparaît sur le document)
+   - extractedPrenom: string (le(s) prénom(s) tel(s) qu'il(s) apparaît/apparaissent sur le document)
 
 IMPORTANT: Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
     } else if (documentType === 'permis_conduire') {
@@ -193,6 +202,37 @@ IMPORTANT: Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
         isValid: true,
         details: "Impossible d'analyser automatiquement le document. Vérification manuelle recommandée.",
       };
+    }
+
+    // For piece_identite, compare extracted name with expected name
+    if (documentType === 'piece_identite' && result.extractedNom && expectedNom && expectedPrenom) {
+      const normalize = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+      
+      const extractedNomNorm = normalize(result.extractedNom || '');
+      const extractedPrenomNorm = normalize(result.extractedPrenom || '');
+      const expectedNomNorm = normalize(expectedNom);
+      const expectedPrenomNorm = normalize(expectedPrenom);
+      
+      // Check if names match (allowing for partial match on first name since ID may have multiple first names)
+      const nomMatches = extractedNomNorm.includes(expectedNomNorm) || expectedNomNorm.includes(extractedNomNorm);
+      const prenomMatches = extractedPrenomNorm.includes(expectedPrenomNorm) || expectedPrenomNorm.includes(extractedPrenomNorm);
+      
+      result.nameMatch = nomMatches && prenomMatches;
+      
+      if (!result.nameMatch) {
+        const mismatchParts: string[] = [];
+        if (!nomMatches) {
+          mismatchParts.push(`Nom saisi "${expectedNom}" ≠ Nom sur la pièce "${result.extractedNom}"`);
+        }
+        if (!prenomMatches) {
+          mismatchParts.push(`Prénom saisi "${expectedPrenom}" ≠ Prénom sur la pièce "${result.extractedPrenom}"`);
+        }
+        result.nameMismatchReason = mismatchParts.join('. ');
+        
+        // Mark as invalid if names don't match
+        result.isValid = false;
+        result.rejectionReason = `Les informations saisies ne correspondent pas à la pièce d'identité. ${result.nameMismatchReason}`;
+      }
     }
 
     return new Response(

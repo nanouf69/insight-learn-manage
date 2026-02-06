@@ -10,6 +10,8 @@ interface DocumentUploadCardProps {
   description: string;
   icon: React.ComponentType<{ className?: string }>;
   sessionId: string;
+  expectedNom?: string;
+  expectedPrenom?: string;
   onStatusChange?: (docId: string, status: 'pending' | 'valid' | 'rejected', reason?: string) => void;
 }
 
@@ -23,6 +25,8 @@ export function DocumentUploadCard({
   description,
   icon: Icon,
   sessionId,
+  expectedNom,
+  expectedPrenom,
   onStatusChange,
 }: DocumentUploadCardProps) {
   const [status, setStatus] = useState<'empty' | 'uploading' | 'analyzing' | 'valid' | 'rejected' | 'pending'>('empty');
@@ -99,11 +103,19 @@ export function DocumentUploadCard({
         toast.info("Analyse du document en cours...", { duration: 3000 });
 
         try {
+          const requestBody: Record<string, string> = {
+            documentUrl: publicUrl,
+            documentType: docId,
+          };
+          
+          // For ID documents, include expected name for verification
+          if (docId === 'piece_identite' && expectedNom && expectedPrenom) {
+            requestBody.expectedNom = expectedNom;
+            requestBody.expectedPrenom = expectedPrenom;
+          }
+          
           const { data, error } = await supabase.functions.invoke('analyze-document', {
-            body: {
-              documentUrl: publicUrl,
-              documentType: docId,
-            },
+            body: requestBody,
           });
 
           if (error) throw error;
@@ -174,11 +186,19 @@ export function DocumentUploadCard({
     toast.info("Nouvelle analyse en cours...", { duration: 3000 });
 
     try {
+      const requestBody: Record<string, string> = {
+        documentUrl: fileUrl,
+        documentType: docId,
+      };
+      
+      // For ID documents, include expected name for verification
+      if (docId === 'piece_identite' && expectedNom && expectedPrenom) {
+        requestBody.expectedNom = expectedNom;
+        requestBody.expectedPrenom = expectedPrenom;
+      }
+      
       const { data, error } = await supabase.functions.invoke('analyze-document', {
-        body: {
-          documentUrl: fileUrl,
-          documentType: docId,
-        },
+        body: requestBody,
       });
 
       if (error) throw error;
