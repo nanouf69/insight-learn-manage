@@ -93,8 +93,8 @@ export function DocumentUploadCard({
 
       toast.success(`Document "${title}" uploadé avec succès`);
       
-      // For piece_identite, permis_conduire, justificatif_domicile: analyze with AI
-      if (docId === 'piece_identite' || docId === 'permis_conduire' || docId === 'justificatif_domicile') {
+      // For piece_identite and justificatif_domicile: analyze with AI
+      if (docId === 'piece_identite' || docId === 'justificatif_domicile') {
         setStatus('analyzing');
         toast.info("Analyse du document en cours...", { duration: 3000 });
 

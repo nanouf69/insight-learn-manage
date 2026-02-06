@@ -61,7 +61,6 @@ export default function Step1() {
           </p>
           <ul className="mt-2 text-gray-600 text-sm space-y-1 ml-4 list-disc">
             <li><strong>Pièce d'identité</strong> : doit être en cours de validité (non périmée)</li>
-            <li><strong>Permis de conduire</strong> : doit avoir plus de 3 ans (hors période probatoire) et être valide</li>
             <li><strong>Justificatif de domicile</strong> : doit dater de moins de 3 mois</li>
           </ul>
         </div>
