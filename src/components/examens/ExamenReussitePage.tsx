@@ -81,6 +81,10 @@ export function ExamenReussitePage() {
                       'va-e': 'bg-green-100 text-green-800',
                     }[apprenant.type_apprenant || ''] || 'bg-gray-100 text-gray-800';
 
+                    const isMissingCMA = !apprenant.numero_dossier_cma;
+                    const isMissingPhone = !apprenant.telephone;
+                    const isMissingEmail = !apprenant.email;
+
                     return (
                       <TableRow key={apprenant.id}>
                         <TableCell className="font-medium">{apprenant.nom}</TableCell>
@@ -89,10 +93,14 @@ export function ExamenReussitePage() {
                           <Badge className={typeColor}>{typeLabel}</Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">{apprenant.numero_dossier_cma || "-"}</Badge>
+                          <Badge variant="outline" className={isMissingCMA ? "border-destructive text-destructive" : ""}>
+                            {apprenant.numero_dossier_cma || "-"}
+                          </Badge>
                         </TableCell>
-                        <TableCell>{apprenant.telephone || "-"}</TableCell>
-                        <TableCell className="max-w-[200px] truncate">
+                        <TableCell className={isMissingPhone ? "text-destructive font-medium" : ""}>
+                          {apprenant.telephone || "-"}
+                        </TableCell>
+                        <TableCell className={`max-w-[200px] truncate ${isMissingEmail ? "text-destructive font-medium" : ""}`}>
                           {apprenant.email || "-"}
                         </TableCell>
                         <TableCell>
