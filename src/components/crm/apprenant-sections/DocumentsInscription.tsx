@@ -533,15 +533,20 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h4 className="font-medium">{doc.title}</h4>
+                    <h4 className={`font-medium ${doc.status === 'rejected' ? 'text-destructive' : ''}`}>
+                      {doc.title}
+                    </h4>
                     {doc.required && !doc.uploaded && (
                       <Badge variant="destructive" className="text-xs">Requis</Badge>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground">{doc.description}</p>
+                  <p className={`text-sm ${doc.status === 'rejected' ? 'text-destructive/70' : 'text-muted-foreground'}`}>
+                    {doc.description}
+                  </p>
                   {doc.status === 'rejected' && doc.rejectionReason && (
-                    <p className="text-sm text-destructive font-medium mt-1">
-                      ⚠️ Refusé : {doc.rejectionReason}
+                    <p className="text-base text-destructive font-bold mt-2 flex items-center gap-2">
+                      <Ban className="w-4 h-4" />
+                      REFUSÉ : {doc.rejectionReason}
                     </p>
                   )}
                 </div>
