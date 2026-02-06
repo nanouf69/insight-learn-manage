@@ -864,6 +864,30 @@ export function ApprenantForm() {
                   </Select>
                 </div>
               </div>
+              <div className="space-y-2">
+                <Label>Date de paiement</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      <span>Sélectionner une date</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
               <div className="p-3 rounded-lg bg-muted/50">
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-muted-foreground">Reste à payer</span>
