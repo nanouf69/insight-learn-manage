@@ -286,6 +286,10 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
       const docType = DOCUMENT_TYPES.find(d => d.id === docId);
       const docTitle = isCustom ? docId : (docType?.title || docId);
       const docDescription = isCustom ? 'Document supplémentaire' : (docType?.description || '');
+      
+      // Documents qui ne nécessitent pas de validation IA sont directement validés
+      const needsValidation = docType?.needsValidation ?? false;
+      const initialStatus = needsValidation ? 'pending' : 'valid';
 
       // Delete existing record in database for this document type
       if (!isCustom) {
@@ -306,7 +310,7 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
           description: docDescription,
           url: urlData?.publicUrl || '',
           nom_fichier: fileName,
-          statut: 'pending',
+          statut: initialStatus,
         });
 
       if (dbError) {
