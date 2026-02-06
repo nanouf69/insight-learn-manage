@@ -464,18 +464,25 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
       
       // Si c'est une photo d'identité (image), ouvrir le cropper
       if (docId === 'photo_identite' && file.type.startsWith('image/')) {
+        console.log('Opening photo cropper for:', docId);
         const reader = new FileReader();
         reader.onload = (e) => {
           if (e.target?.result) {
+            console.log('Image loaded, opening cropper dialog');
             setCropperImageSrc(e.target.result as string);
             setPendingPhotoDocId(docId);
             setCropperOpen(true);
           }
         };
+        reader.onerror = (e) => {
+          console.error('Error reading file:', e);
+          toast.error("Erreur lors de la lecture du fichier");
+        };
         reader.readAsDataURL(file);
-      } else {
-        handleUpload(docId, file, isCustom);
+        return; // Important: don't proceed to normal upload
       }
+      
+      handleUpload(docId, file, isCustom);
     }
     // Reset input
     event.target.value = '';
@@ -956,19 +963,19 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </CardContent>
 
-      {/* Photo Cropper Dialog */}
-      <PhotoCropper
-        open={cropperOpen}
-        onClose={() => {
-          setCropperOpen(false);
-          setCropperImageSrc('');
-          setPendingPhotoDocId('');
-        }}
-        imageSrc={cropperImageSrc}
-        onCropComplete={handlePhotoCropComplete}
-      />
+        {/* Photo Cropper Dialog */}
+        <PhotoCropper
+          open={cropperOpen}
+          onClose={() => {
+            setCropperOpen(false);
+            setCropperImageSrc('');
+            setPendingPhotoDocId('');
+          }}
+          imageSrc={cropperImageSrc}
+          onCropComplete={handlePhotoCropComplete}
+        />
+      </CardContent>
     </Card>
   );
 }
