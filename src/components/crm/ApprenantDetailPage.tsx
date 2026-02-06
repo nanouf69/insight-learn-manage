@@ -41,6 +41,32 @@ const financementLabels: Record<string, string> = {
   'entreprise': 'Entreprise',
 };
 
+const formationLabels: Record<string, string> = {
+  'vtc': 'Formation VTC (sans examen) - 1 099 €',
+  'vtc-exam': 'Formation VTC avec frais d\'examen - 1 599 €',
+  'taxi': 'Formation TAXI (sans examen) - 1 299 €',
+  'taxi-exam': 'Formation TAXI avec frais d\'examen - 1 799 €',
+  'passerelle-taxi': 'Formation TAXI pour chauffeur VTC (TA) - 999 €',
+  'vtc-elearning-1099': 'Formation VTC (E-learning) - 1 099 €',
+  'vtc-elearning': 'Formation VTC avec examen (E-learning) - 1 599 €',
+  'taxi-elearning': 'Formation TAXI (E-learning) - 1 299 €',
+  'passerelle-taxi-elearning': 'Formation TA (E-learning) - 999 €',
+  'passerelle-vtc-elearning': 'Formation VA (E-learning) - 499 €',
+  'vtc-e-presentiel': 'Formation VTC E-learning + Présentiel - 1 599 €',
+  'taxi-e-presentiel': 'Formation TAXI E-learning + Présentiel - 1 799 €',
+  'ta-e-presentiel': 'Formation TA E-learning + Présentiel - 999 €',
+};
+
+const creneauLabels: Record<string, string> = {
+  'matin': 'Formation en matinée (8h - 12h)',
+  'apres-midi': 'Formation en après-midi (13h - 17h)',
+  'soiree': 'Formation en soirée (17h - 21h)',
+  'journee': 'Formation en journée (8h - 17h)',
+  'elearning': 'Formation en ligne',
+  'repassage': 'Repassage',
+  'pas-encore-choisi': 'Pas encore choisi',
+};
+
 export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPageProps) {
   const [activeTab, setActiveTab] = useState("infos");
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -208,7 +234,13 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
               <CardContent className="space-y-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Formation choisie</p>
-                  <p className="font-medium">{apprenant.formation_choisie || '-'}</p>
+                  <p className="font-medium">
+                    {formationLabels[apprenant.formation_choisie || ''] || apprenant.formation_choisie || '-'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Dates de formation (catalogue)</p>
+                  <p className="font-medium">{apprenant.date_formation_catalogue || '-'}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -222,7 +254,9 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Créneau horaire</p>
-                  <p className="font-medium">{apprenant.creneau_horaire || '-'}</p>
+                  <p className="font-medium">
+                    {creneauLabels[apprenant.creneau_horaire || ''] || apprenant.creneau_horaire || '-'}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">N° Dossier CMA</p>
