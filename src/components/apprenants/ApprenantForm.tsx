@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { autoAssignToSession } from "@/hooks/useAutoAssignSession";
+import { parseDateRange } from "@/lib/parseDateRange";
 
 interface Apprenant {
   id: string;
@@ -278,8 +279,12 @@ export function ApprenantForm() {
       formation_choisie: selectedFormation || null,
       montant_ttc: montantTtc ? parseFloat(montantTtc) : null,
       date_formation_catalogue: selectedDateOption || null,
-      date_debut_formation: dateDebutFormation ? format(dateDebutFormation, 'yyyy-MM-dd') : null,
-      date_fin_formation: dateFinFormation ? format(dateFinFormation, 'yyyy-MM-dd') : null,
+      date_debut_formation: dateDebutFormation 
+        ? format(dateDebutFormation, 'yyyy-MM-dd') 
+        : (selectedDateOption ? parseDateRange(selectedDateOption).dateDebut : null),
+      date_fin_formation: dateFinFormation 
+        ? format(dateFinFormation, 'yyyy-MM-dd') 
+        : (selectedDateOption ? parseDateRange(selectedDateOption).dateFin : null),
       creneau_horaire: creneauHoraire || null,
       date_examen_theorique: dateExamenTheorique || null,
     };
