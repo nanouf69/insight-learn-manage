@@ -13,6 +13,7 @@ import { Plus, User, UserCheck, Loader2, CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { autoAssignToSession } from "@/hooks/useAutoAssignSession";
 
 interface Apprenant {
   id: string;
@@ -283,15 +284,35 @@ export function ApprenantForm() {
     };
 
     try {
-      const { error } = await supabase
+      const { data: newApprenant, error } = await supabase
         .from('apprenants')
-        .insert(formData);
+        .insert(formData)
+        .select()
+        .single();
 
       if (error) throw error;
 
+      // Auto-assign to session if client (not prospect)
+      let sessionInfo = "";
+      if (typeApprenant === "client" && newApprenant) {
+        const result = await autoAssignToSession(
+          newApprenant.id,
+          formData.type_apprenant,
+          formData.creneau_horaire,
+          formData.date_formation_catalogue,
+          formData.montant_ttc
+        );
+        
+        if (result.success && result.sessionName) {
+          sessionInfo = result.created 
+            ? ` et assigné à la nouvelle session "${result.sessionName}"`
+            : ` et assigné à la session "${result.sessionName}"`;
+        }
+      }
+
       toast({
         title: "Apprenant ajouté",
-        description: `${formData.prenom} ${formData.nom} a été ajouté en tant que ${typeApprenant === "prospect" ? "prospect" : "client"}.`,
+        description: `${formData.prenom} ${formData.nom} a été ajouté en tant que ${typeApprenant === "prospect" ? "prospect" : "client"}${sessionInfo}.`,
       });
       resetForm();
       setOpen(false);
