@@ -43,7 +43,7 @@ export function Header({ title, subtitle, onMenuClick }: HeaderProps) {
           {/* Quick Action */}
           <Button size="sm" className="gap-2">
             <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Nouvelle formation</span>
+            <span className="hidden sm:inline">Nouvel apprenant</span>
           </Button>
 
           {/* Notifications */}
