@@ -36,7 +36,7 @@ interface EmailRecord {
 }
 
 // Email de l'organisme pour la synchronisation Outlook
-const ORGANISME_EMAIL = "contact@ftransport.fr"; // À configurer
+const ORGANISME_EMAIL = "contact@ftransport.fr";
 
 export function EmailsSection({ apprenant }: EmailsSectionProps) {
   const [searchQuery, setSearchQuery] = useState("");
