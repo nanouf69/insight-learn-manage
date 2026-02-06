@@ -13,9 +13,12 @@ import {
   Receipt,
   UserCog,
   Clock,
-  ClipboardCheck
+  ClipboardCheck,
+  Truck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import logoFtransport from "@/assets/logo-ftransport.png";
 
 interface SidebarProps {
   currentPage: string;
@@ -40,6 +43,12 @@ const menuItems = [
 ];
 
 export function Sidebar({ currentPage, onNavigate, collapsed = false, onToggleCollapse }: SidebarProps) {
+  const { signOut } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+  };
+
   return (
     <aside 
       className={cn(
@@ -51,15 +60,17 @@ export function Sidebar({ currentPage, onNavigate, collapsed = false, onToggleCo
       <div className="p-6 flex items-center justify-between">
         {!collapsed && (
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-              <GraduationCap className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold text-sidebar-foreground">FormaCloud</span>
+            <img 
+              src={logoFtransport} 
+              alt="FTransport" 
+              className="h-10 object-contain"
+            />
+            <span className="text-xl font-bold text-sidebar-foreground">FTransport</span>
           </div>
         )}
         {collapsed && (
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center mx-auto">
-            <GraduationCap className="w-6 h-6 text-primary-foreground" />
+          <div className="mx-auto">
+            <Truck className="w-8 h-8 text-primary" />
           </div>
         )}
         {onToggleCollapse && !collapsed && (
@@ -101,7 +112,10 @@ export function Sidebar({ currentPage, onNavigate, collapsed = false, onToggleCo
           <Settings className="w-5 h-5 flex-shrink-0" />
           {!collapsed && <span className="font-medium">Paramètres</span>}
         </button>
-        <button className="nav-item w-full text-destructive hover:text-destructive">
+        <button 
+          onClick={handleLogout}
+          className="nav-item w-full text-destructive hover:text-destructive"
+        >
           <LogOut className="w-5 h-5 flex-shrink-0" />
           {!collapsed && <span className="font-medium">Déconnexion</span>}
         </button>
