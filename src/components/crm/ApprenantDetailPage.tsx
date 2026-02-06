@@ -12,6 +12,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parse } from "date-fns";
 import { fr } from "date-fns/locale";
+import { parseDateRange } from "@/lib/parseDateRange";
 import { toast } from "sonner";
 import { DocumentsFormation } from "./apprenant-sections/DocumentsFormation";
 import { DocumentsDossier } from "./apprenant-sections/DocumentsDossier";
@@ -123,6 +124,33 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
         .single();
       
       if (error) throw error;
+      
+      // Si les dates ne sont pas définies mais date_formation_catalogue existe, les extraire
+      if (data && data.date_formation_catalogue && (!data.date_debut_formation || !data.date_fin_formation)) {
+        const { dateDebut, dateFin } = parseDateRange(data.date_formation_catalogue);
+        
+        // Mise à jour automatique en base si les dates ont été extraites
+        if (dateDebut || dateFin) {
+          const updates: Record<string, string> = {};
+          if (dateDebut && !data.date_debut_formation) updates.date_debut_formation = dateDebut;
+          if (dateFin && !data.date_fin_formation) updates.date_fin_formation = dateFin;
+          
+          if (Object.keys(updates).length > 0) {
+            await supabase
+              .from('apprenants')
+              .update(updates)
+              .eq('id', apprenantId);
+            
+            // Retourner les données avec les dates synchronisées
+            return { 
+              ...data, 
+              date_debut_formation: data.date_debut_formation || dateDebut,
+              date_fin_formation: data.date_fin_formation || dateFin
+            };
+          }
+        }
+      }
+      
       return data;
     },
   });
