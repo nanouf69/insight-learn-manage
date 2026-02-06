@@ -51,26 +51,19 @@ export function OnboardingLayout({ children, currentStep, totalSteps, title }: O
 
       {/* Header */}
       <header className="fixed top-[38px] left-0 right-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/bienvenue" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <img src={logoFtransport} alt="FTRANSPORT" className="h-10 w-auto" />
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between">
+          <Link to="/bienvenue" className="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition-opacity">
+            <img src={logoFtransport} alt="FTRANSPORT" className="h-8 sm:h-10 w-auto" />
           </Link>
           
-          {/* Time estimate and step counter */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="font-medium">~30 min</span>
-            </div>
-            <div className="h-4 w-px bg-gray-300" />
-            <span className="text-sm text-gray-500">
-              Étape {currentStep}/{totalSteps}
+          {/* Step counter - simplified on mobile */}
+          <div className="flex items-center gap-2 sm:gap-4">
+            <span className="text-xs sm:text-sm text-gray-500">
+              {currentStep}/{totalSteps}
             </span>
             <Link 
               to="/bienvenue" 
-              className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors text-sm"
+              className="flex items-center gap-1 sm:gap-2 text-gray-500 hover:text-gray-900 transition-colors text-sm"
             >
               <Home className="w-4 h-4" />
               <span className="hidden sm:inline">Accueil</span>
@@ -79,9 +72,9 @@ export function OnboardingLayout({ children, currentStep, totalSteps, title }: O
         </div>
       </header>
 
-      <div className="flex pt-[110px]">
-        {/* Sidebar with steps */}
-        <aside className="hidden lg:block w-80 fixed left-0 top-[110px] bottom-0 bg-gray-50 border-r border-gray-200 overflow-y-auto">
+      <div className="flex pt-[94px] sm:pt-[102px]">
+        {/* Sidebar with steps - desktop only */}
+        <aside className="hidden lg:block w-80 fixed left-0 top-[102px] bottom-0 bg-gray-50 border-r border-gray-200 overflow-y-auto">
           <nav className="p-6">
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
               Progression
@@ -124,22 +117,22 @@ export function OnboardingLayout({ children, currentStep, totalSteps, title }: O
 
         {/* Main content */}
         <main className="flex-1 lg:ml-80">
-          {/* Mobile progress indicator */}
-          <div className="lg:hidden px-4 py-3 bg-gray-50 border-b border-gray-200">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-500">Étape {currentStep} sur {totalSteps}</span>
-              <span className="text-sm font-medium text-blue-600">{Math.round(progressPercent)}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-1.5">
-              <div 
-                className="bg-blue-500 h-1.5 rounded-full transition-all duration-500"
-                style={{ width: `${progressPercent}%` }}
-              />
+          {/* Mobile step title */}
+          <div className="lg:hidden px-4 py-4 bg-gray-50 border-b border-gray-200">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-lg font-bold text-white flex-shrink-0">
+                {currentStep}
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-lg font-bold text-gray-900 truncate">{title}</h1>
+                <p className="text-gray-500 text-xs">Étape {currentStep} sur {totalSteps}</p>
+              </div>
             </div>
           </div>
 
-          <div className="max-w-4xl mx-auto px-4 py-8 lg:py-12">
-            <div className="mb-8">
+          <div className="max-w-4xl mx-auto px-4 py-6 lg:py-12">
+            {/* Desktop title */}
+            <div className="hidden lg:block mb-8">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-xl font-bold text-white">
                   {currentStep}
