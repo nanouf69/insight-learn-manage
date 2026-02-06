@@ -130,51 +130,29 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
 
   const fetchDocuments = async () => {
     try {
-      // List files in the apprenant's folder
-      const { data: files, error } = await supabase.storage
-        .from('documents-inscription')
-        .list(`${apprenant.id}/`);
+      // Fetch documents from database
+      const { data: dbDocs, error } = await supabase
+        .from('documents_inscription')
+        .select('*')
+        .eq('apprenant_id', apprenant.id);
 
       if (error) {
         console.error('Error fetching documents:', error);
         return;
       }
 
-      // Map document types with their upload status
+      // Map document types with their upload status from database
       const updatedDocuments: DocumentStatus[] = DOCUMENT_TYPES.map(docType => {
-        const uploadedFile = files?.find(f => f.name.startsWith(docType.id));
-        const rejectedFile = files?.find(f => f.name.startsWith(`rejected_${docType.id}`));
+        const dbDoc = dbDocs?.find(d => d.type_document === docType.id);
         
-        if (rejectedFile) {
-          // Parse rejection reason from filename
-          const reasonMatch = rejectedFile.name.match(/rejected_[^_]+_(.+)\.[^.]+$/);
-          const rejectionReason = reasonMatch ? decodeURIComponent(reasonMatch[1]) : 'Document refusé';
-          
-          const { data: urlData } = supabase.storage
-            .from('documents-inscription')
-            .getPublicUrl(`${apprenant.id}/${rejectedFile.name}`);
-          
+        if (dbDoc) {
           return {
             ...docType,
             uploaded: true,
-            status: 'rejected' as const,
-            rejectionReason,
-            url: urlData?.publicUrl,
-            fileName: rejectedFile.name,
-          };
-        }
-        
-        if (uploadedFile) {
-          const { data: urlData } = supabase.storage
-            .from('documents-inscription')
-            .getPublicUrl(`${apprenant.id}/${uploadedFile.name}`);
-          
-          return {
-            ...docType,
-            uploaded: true,
-            status: 'valid' as const,
-            url: urlData?.publicUrl,
-            fileName: uploadedFile.name,
+            status: dbDoc.statut as 'valid' | 'rejected' | 'pending',
+            rejectionReason: dbDoc.motif_refus || undefined,
+            url: dbDoc.url,
+            fileName: dbDoc.nom_fichier,
           };
         }
         return {
@@ -184,26 +162,15 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
         };
       });
 
-      // Fetch custom documents
-      const customFiles = files?.filter(f => f.name.startsWith('custom_')) || [];
-      const customDocs: CustomDocument[] = customFiles.map(f => {
-        const { data: urlData } = supabase.storage
-          .from('documents-inscription')
-          .getPublicUrl(`${apprenant.id}/${f.name}`);
-        
-        // Parse title from filename: custom_title_timestamp.ext
-        const match = f.name.match(/custom_(.+?)_\d+\.[^.]+$/);
-        const title = match ? decodeURIComponent(match[1]) : 'Document';
-        
-        return {
-          id: f.name,
-          title,
-          description: 'Document supplémentaire',
-          uploaded: true,
-          url: urlData?.publicUrl,
-          fileName: f.name,
-        };
-      });
+      // Fetch custom documents from database
+      const customDocs: CustomDocument[] = (dbDocs?.filter(d => d.type_document === 'custom') || []).map(d => ({
+        id: d.id,
+        title: d.titre,
+        description: d.description || 'Document supplémentaire',
+        uploaded: true,
+        url: d.url,
+        fileName: d.nom_fichier,
+      }));
 
       setDocuments(updatedDocuments);
       setCustomDocuments(customDocs);
@@ -233,42 +200,38 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
       if (error) throw error;
 
       if (data && !data.isValid && data.rejectionReason) {
-        // Document is not valid - auto-reject it
+        // Document is not valid - update database status to rejected
         toast.error(`Document invalide : ${data.rejectionReason}`, { duration: 5000 });
         
-        // Find the document and reject it
-        const doc = documents.find(d => d.id === docId);
-        if (doc?.fileName) {
-          // Get the file
-          const { data: fileData, error: downloadError } = await supabase.storage
-            .from('documents-inscription')
-            .download(`${apprenant.id}/${doc.fileName}`);
+        // Update the document status in database
+        await supabase
+          .from('documents_inscription')
+          .update({
+            statut: 'rejected',
+            motif_refus: data.rejectionReason,
+            analyse_ia_date: new Date().toISOString(),
+            analyse_ia_details: data,
+          })
+          .eq('apprenant_id', apprenant.id)
+          .eq('type_document', docId);
 
-          if (!downloadError && fileData) {
-            // Delete the original file
-            await supabase.storage
-              .from('documents-inscription')
-              .remove([`${apprenant.id}/${doc.fileName}`]);
-
-            // Re-upload with rejected prefix
-            const fileExt = doc.fileName.split('.').pop();
-            const rejectedFileName = `rejected_${doc.id}_${encodeURIComponent(data.rejectionReason)}.${fileExt}`;
-            
-            await supabase.storage
-              .from('documents-inscription')
-              .upload(`${apprenant.id}/${rejectedFileName}`, fileData, {
-                cacheControl: '3600',
-                upsert: true
-              });
-
-            await fetchDocuments();
-          }
-        }
+        await fetchDocuments();
       } else if (data && data.isValid) {
         toast.success("Document validé ✓", { duration: 3000 });
-        if (data.details) {
-          console.log('Document details:', data.details);
-        }
+        
+        // Update the document status in database as valid
+        await supabase
+          .from('documents_inscription')
+          .update({
+            statut: 'valid',
+            motif_refus: null,
+            analyse_ia_date: new Date().toISOString(),
+            analyse_ia_details: data,
+          })
+          .eq('apprenant_id', apprenant.id)
+          .eq('type_document', docId);
+
+        await fetchDocuments();
       }
     } catch (error: any) {
       console.error('Analysis error:', error);
@@ -290,7 +253,7 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
         : `${docId}_${Date.now()}.${fileExt}`;
       const filePath = `${apprenant.id}/${fileName}`;
 
-      // First, delete any existing file for this document type
+      // First, delete any existing file for this document type from storage
       const existingDoc = documents.find(d => d.id === docId);
       if (existingDoc?.fileName) {
         await supabase.storage
@@ -298,19 +261,7 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
           .remove([`${apprenant.id}/${existingDoc.fileName}`]);
       }
 
-      // Also delete any rejected version
-      const { data: files } = await supabase.storage
-        .from('documents-inscription')
-        .list(`${apprenant.id}/`);
-      
-      const rejectedFile = files?.find(f => f.name.startsWith(`rejected_${docId}`));
-      if (rejectedFile) {
-        await supabase.storage
-          .from('documents-inscription')
-          .remove([`${apprenant.id}/${rejectedFile.name}`]);
-      }
-
-      // Upload the new file
+      // Upload the new file to storage
       const { error: uploadError } = await supabase.storage
         .from('documents-inscription')
         .upload(filePath, file, {
@@ -322,7 +273,41 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
         throw uploadError;
       }
 
-      const docTitle = isCustom ? docId : DOCUMENT_TYPES.find(d => d.id === docId)?.title;
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('documents-inscription')
+        .getPublicUrl(filePath);
+
+      const docType = DOCUMENT_TYPES.find(d => d.id === docId);
+      const docTitle = isCustom ? docId : (docType?.title || docId);
+      const docDescription = isCustom ? 'Document supplémentaire' : (docType?.description || '');
+
+      // Delete existing record in database for this document type
+      if (!isCustom) {
+        await supabase
+          .from('documents_inscription')
+          .delete()
+          .eq('apprenant_id', apprenant.id)
+          .eq('type_document', docId);
+      }
+
+      // Insert new record in database
+      const { error: dbError } = await supabase
+        .from('documents_inscription')
+        .insert({
+          apprenant_id: apprenant.id,
+          type_document: isCustom ? 'custom' : docId,
+          titre: docTitle,
+          description: docDescription,
+          url: urlData?.publicUrl || '',
+          nom_fichier: fileName,
+          statut: 'pending',
+        });
+
+      if (dbError) {
+        throw dbError;
+      }
+
       toast.success(`Document "${docTitle}" uploadé avec succès`);
       
       // Refresh the documents list
@@ -330,10 +315,6 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
 
       // If it's a piece_identite, permis_conduire, or justificatif_domicile, analyze it automatically
       if (!isCustom && (docId === 'piece_identite' || docId === 'permis_conduire' || docId === 'justificatif_domicile')) {
-        const { data: urlData } = supabase.storage
-          .from('documents-inscription')
-          .getPublicUrl(filePath);
-        
         if (urlData?.publicUrl) {
           // Small delay to ensure file is fully uploaded
           setTimeout(() => {
@@ -356,11 +337,26 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
     if (!doc?.fileName) return;
 
     try {
-      const { error } = await supabase.storage
+      // Delete from storage
+      const { error: storageError } = await supabase.storage
         .from('documents-inscription')
         .remove([`${apprenant.id}/${doc.fileName}`]);
 
-      if (error) throw error;
+      if (storageError) throw storageError;
+
+      // Delete from database
+      if (isCustom) {
+        await supabase
+          .from('documents_inscription')
+          .delete()
+          .eq('id', docId);
+      } else {
+        await supabase
+          .from('documents_inscription')
+          .delete()
+          .eq('apprenant_id', apprenant.id)
+          .eq('type_document', docId);
+      }
 
       toast.success("Document supprimé");
       await fetchDocuments();
@@ -380,28 +376,15 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
     }
 
     try {
-      // Get the file first
-      const { data: fileData, error: downloadError } = await supabase.storage
-        .from('documents-inscription')
-        .download(`${apprenant.id}/${doc.fileName}`);
-
-      if (downloadError) throw downloadError;
-
-      // Delete the original file
-      await supabase.storage
-        .from('documents-inscription')
-        .remove([`${apprenant.id}/${doc.fileName}`]);
-
-      // Re-upload with rejected prefix and reason in filename
-      const fileExt = doc.fileName.split('.').pop();
-      const rejectedFileName = `rejected_${doc.id}_${encodeURIComponent(reason)}.${fileExt}`;
-      
-      await supabase.storage
-        .from('documents-inscription')
-        .upload(`${apprenant.id}/${rejectedFileName}`, fileData, {
-          cacheControl: '3600',
-          upsert: true
-        });
+      // Update the document status in database
+      await supabase
+        .from('documents_inscription')
+        .update({
+          statut: 'rejected',
+          motif_refus: reason,
+        })
+        .eq('apprenant_id', apprenant.id)
+        .eq('type_document', rejectionDialog.docId);
 
       toast.success(`Document refusé : ${reason}`);
       setRejectionDialog({ open: false, docId: '', docTitle: '' });
