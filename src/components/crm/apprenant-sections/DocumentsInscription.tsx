@@ -456,7 +456,17 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
       const fileExtension = file.name.toLowerCase().split('.').pop();
       const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'heic', 'heif', 'webp'];
       
-      if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension || '')) {
+      // Pour la photo d'identité, seules les images sont acceptées (pas de PDF)
+      if (docId === 'photo_identite') {
+        const imageTypes = ['image/jpeg', 'image/png', 'image/heic', 'image/heif', 'image/webp'];
+        const imageExtensions = ['jpg', 'jpeg', 'png', 'heic', 'heif', 'webp'];
+        
+        if (!imageTypes.includes(file.type) && !imageExtensions.includes(fileExtension || '')) {
+          toast.error("Pour la photo d'identité, seules les images sont acceptées (JPG, PNG, HEIC, WebP)");
+          event.target.value = '';
+          return;
+        }
+      } else if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension || '')) {
         toast.error(`Format non accepté. Formats autorisés: ${ACCEPTED_FORMATS_DISPLAY}`);
         event.target.value = '';
         return;
