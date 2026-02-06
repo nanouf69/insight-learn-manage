@@ -817,7 +817,7 @@ export function ApprenantForm() {
             </div>
           </div>
 
-          {/* Prix de la formation */}
+          {/* Prix de la formation - Toujours visible */}
           <div className="space-y-4">
             <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Informations</h3>
             <div className="space-y-2">
@@ -832,10 +832,51 @@ export function ApprenantForm() {
                 step="0.01"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Input id="notes" placeholder="Informations complémentaires..." />
+          </div>
+
+          {/* Informations financières - Uniquement si financement personnel */}
+          {organismeFinanceur === "personnel" && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Informations financières</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="montantPaye">Montant payé (€)</Label>
+                  <Input 
+                    id="montantPaye" 
+                    type="number" 
+                    placeholder="0" 
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="moyenPaiement">Moyen de paiement</Label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cb">Carte bancaire</SelectItem>
+                      <SelectItem value="virement">Virement</SelectItem>
+                      <SelectItem value="especes">Espèces</SelectItem>
+                      <SelectItem value="cheque">Chèque</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="p-3 rounded-lg bg-muted/50">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Reste à payer</span>
+                  <span className="font-semibold">{montantTtc ? `${parseFloat(montantTtc).toFixed(2)} €` : "0.00 €"}</span>
+                </div>
+              </div>
             </div>
+          )}
+
+          {/* Notes */}
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes</Label>
+            <Input id="notes" placeholder="Informations complémentaires..." />
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t">
