@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, Filter, MoreVertical, Mail, Phone, Calendar, GraduationCap } from "lucide-react";
+import { Search, Filter, MoreVertical, Mail, Phone, Calendar, GraduationCap, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,8 +12,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { format, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+import { ApprenantDetailPage } from "./ApprenantDetailPage";
 
 const typeLabels: Record<string, string> = {
   'vtc': 'VTC',
@@ -33,14 +34,14 @@ const typeColors: Record<string, string> = {
   'vtc': 'bg-blue-100 text-blue-800',
   'vtc-e': 'bg-blue-50 text-blue-700',
   'vtc-e-presentiel': 'bg-blue-200 text-blue-900',
-  'taxi': 'bg-yellow-100 text-yellow-800',
-  'taxi-e': 'bg-yellow-50 text-yellow-700',
-  'taxi-e-presentiel': 'bg-yellow-200 text-yellow-900',
+  'taxi': 'bg-amber-100 text-amber-800',
+  'taxi-e': 'bg-amber-50 text-amber-700',
+  'taxi-e-presentiel': 'bg-amber-200 text-amber-900',
   'ta': 'bg-purple-100 text-purple-800',
   'ta-e': 'bg-purple-50 text-purple-700',
   'ta-e-presentiel': 'bg-purple-200 text-purple-900',
-  'va-e': 'bg-green-100 text-green-800',
-  'va-e-presentiel': 'bg-green-200 text-green-900',
+  'va-e': 'bg-emerald-100 text-emerald-800',
+  'va-e-presentiel': 'bg-emerald-200 text-emerald-900',
 };
 
 const financementLabels: Record<string, string> = {
@@ -56,13 +57,14 @@ const financementColors: Record<string, string> = {
   'personnel': 'bg-muted text-muted-foreground',
   'cpf': 'bg-primary/10 text-primary',
   'cpf-a': 'bg-primary/20 text-primary',
-  'opco': 'bg-warning/10 text-warning',
-  'france-travail': 'bg-success/10 text-success',
+  'opco': 'bg-orange-100 text-orange-700',
+  'france-travail': 'bg-emerald-100 text-emerald-700',
   'entreprise': 'bg-accent text-accent-foreground',
 };
 
 export function CRMDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedApprenantId, setSelectedApprenantId] = useState<string | null>(null);
 
   const { data: apprenants = [], isLoading } = useQuery({
     queryKey: ['apprenants-crm'],
@@ -114,6 +116,16 @@ export function CRMDashboard() {
     { id: "paye", label: "Payé", count: "", value: `${stats.totalPaye.toLocaleString('fr-FR')}€` },
   ];
 
+  // Afficher la fiche détaillée si un apprenant est sélectionné
+  if (selectedApprenantId) {
+    return (
+      <ApprenantDetailPage 
+        apprenantId={selectedApprenantId} 
+        onBack={() => setSelectedApprenantId(null)} 
+      />
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Pipeline Overview */}
@@ -161,7 +173,7 @@ export function CRMDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredApprenants.map((apprenant) => {
             const typeLabel = typeLabels[apprenant.type_apprenant || ''] || apprenant.type_apprenant || '-';
-            const typeColor = typeColors[apprenant.type_apprenant || ''] || 'bg-gray-100 text-gray-800';
+            const typeColor = typeColors[apprenant.type_apprenant || ''] || 'bg-muted text-muted-foreground';
             const financementLabel = financementLabels[apprenant.mode_financement || ''] || apprenant.mode_financement || '-';
             const financementColor = financementColors[apprenant.mode_financement || ''] || 'bg-muted text-muted-foreground';
             const initials = `${apprenant.prenom?.[0] || ''}${apprenant.nom?.[0] || ''}`.toUpperCase();
@@ -170,7 +182,8 @@ export function CRMDashboard() {
             return (
               <div 
                 key={apprenant.id} 
-                className="bg-card rounded-xl border border-border p-5 hover:shadow-lg transition-all duration-200"
+                className="bg-card rounded-xl border border-border p-5 hover:shadow-lg transition-all duration-200 cursor-pointer"
+                onClick={() => setSelectedApprenantId(apprenant.id)}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-4">
@@ -184,13 +197,15 @@ export function CRMDashboard() {
                     </div>
                   </div>
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                       <Button variant="ghost" size="icon" className="h-8 w-8">
                         <MoreVertical className="w-4 h-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>Voir fiche</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSelectedApprenantId(apprenant.id)}>
+                        Voir fiche
+                      </DropdownMenuItem>
                       <DropdownMenuItem>Modifier</DropdownMenuItem>
                       <DropdownMenuItem className="text-destructive">Supprimer</DropdownMenuItem>
                     </DropdownMenuContent>
