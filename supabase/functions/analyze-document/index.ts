@@ -7,7 +7,7 @@ const corsHeaders = {
 
 interface AnalyzeDocumentRequest {
   documentUrl: string;
-  documentType: 'piece_identite' | 'permis_conduire';
+  documentType: 'piece_identite' | 'permis_conduire' | 'justificatif_domicile';
 }
 
 interface AnalysisResult {
@@ -68,6 +68,24 @@ INSTRUCTIONS:
    - expirationDate: string (date d'expiration au format JJ/MM/AAAA si trouvée)
    - rejectionReason: string (si isValid=false, explique pourquoi: "Permis en période probatoire (moins de 3 ans)" ou "Permis de conduire périmé")
    - details: string (informations supplémentaires extraites)
+
+IMPORTANT: Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
+    } else if (documentType === 'justificatif_domicile') {
+      const today = new Date();
+      const threeMonthsAgo = new Date(today);
+      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+      
+      prompt = `Analyse cette image d'un justificatif de domicile (facture EDF, eau, téléphone, avis d'imposition, etc.).
+
+INSTRUCTIONS:
+1. Identifie la date du document (date d'émission ou date de la facture)
+2. Vérifie si le document a moins de 3 mois par rapport à la date actuelle (${new Date().toLocaleDateString('fr-FR')})
+3. La date limite acceptable est le ${threeMonthsAgo.toLocaleDateString('fr-FR')}
+4. Retourne un JSON avec les champs suivants:
+   - isValid: boolean (true si le document date de moins de 3 mois)
+   - issueDate: string (date du document au format JJ/MM/AAAA si trouvée)
+   - rejectionReason: string (si isValid=false: "Justificatif de domicile de plus de 3 mois (daté du [date])")
+   - details: string (type de document identifié: facture EDF, eau, etc.)
 
 IMPORTANT: Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
     }

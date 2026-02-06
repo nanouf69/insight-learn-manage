@@ -69,7 +69,7 @@ const DOCUMENT_TYPES = [
     title: "Justificatif de domicile",
     description: "De moins de 3 mois (facture EDF, eau, téléphone...)",
     required: true,
-    needsValidation: false,
+    needsValidation: true,
   },
   {
     id: 'photo_identite',
@@ -87,7 +87,7 @@ const DOCUMENT_TYPES = [
   },
 ];
 
-const REJECTION_REASONS = {
+const REJECTION_REASONS: Record<string, { value: string; label: string }[]> = {
   piece_identite: [
     { value: 'expired', label: "Pièce d'identité périmée" },
     { value: 'unreadable', label: "Document illisible" },
@@ -96,6 +96,11 @@ const REJECTION_REASONS = {
   permis_conduire: [
     { value: 'expired', label: "Permis de conduire périmé" },
     { value: 'probatoire', label: "Permis en période probatoire (moins de 3 ans)" },
+    { value: 'unreadable', label: "Document illisible" },
+    { value: 'invalid', label: "Document non conforme" },
+  ],
+  justificatif_domicile: [
+    { value: 'too_old', label: "Justificatif de plus de 3 mois" },
     { value: 'unreadable', label: "Document illisible" },
     { value: 'invalid', label: "Document non conforme" },
   ],
@@ -209,8 +214,8 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
 
   // Analyze document with AI to check expiration
   const analyzeDocument = async (docId: string, documentUrl: string) => {
-    // Only analyze piece_identite and permis_conduire
-    if (docId !== 'piece_identite' && docId !== 'permis_conduire') {
+    // Only analyze piece_identite, permis_conduire, and justificatif_domicile
+    if (docId !== 'piece_identite' && docId !== 'permis_conduire' && docId !== 'justificatif_domicile') {
       return;
     }
 
@@ -323,8 +328,8 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
       // Refresh the documents list
       await fetchDocuments();
 
-      // If it's a piece_identite or permis_conduire, analyze it automatically
-      if (!isCustom && (docId === 'piece_identite' || docId === 'permis_conduire')) {
+      // If it's a piece_identite, permis_conduire, or justificatif_domicile, analyze it automatically
+      if (!isCustom && (docId === 'piece_identite' || docId === 'permis_conduire' || docId === 'justificatif_domicile')) {
         const { data: urlData } = supabase.storage
           .from('documents-inscription')
           .getPublicUrl(filePath);
