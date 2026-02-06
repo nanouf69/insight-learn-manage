@@ -171,41 +171,41 @@ export function DocumentUploadCard({
     switch (status) {
       case 'empty':
         return (
-          <span className="px-4 py-1.5 rounded-full bg-yellow-500/20 text-yellow-400 text-sm font-medium border border-yellow-500/30 flex-shrink-0">
+          <span className="px-4 py-1.5 rounded-full bg-amber-50 text-amber-600 text-sm font-medium border border-amber-200 flex-shrink-0">
             Requis
           </span>
         );
       case 'uploading':
         return (
-          <span className="px-4 py-1.5 rounded-full bg-blue-500/20 text-blue-400 text-sm font-medium border border-blue-500/30 flex-shrink-0 flex items-center gap-2">
+          <span className="px-4 py-1.5 rounded-full bg-blue-50 text-blue-600 text-sm font-medium border border-blue-200 flex-shrink-0 flex items-center gap-2">
             <Loader2 className="w-3 h-3 animate-spin" />
             Upload...
           </span>
         );
       case 'analyzing':
         return (
-          <span className="px-4 py-1.5 rounded-full bg-blue-500/20 text-blue-400 text-sm font-medium border border-blue-500/30 flex-shrink-0 flex items-center gap-2">
+          <span className="px-4 py-1.5 rounded-full bg-blue-50 text-blue-600 text-sm font-medium border border-blue-200 flex-shrink-0 flex items-center gap-2">
             <Loader2 className="w-3 h-3 animate-spin" />
             Analyse IA...
           </span>
         );
       case 'valid':
         return (
-          <span className="px-4 py-1.5 rounded-full bg-green-500/20 text-green-400 text-sm font-medium border border-green-500/30 flex-shrink-0 flex items-center gap-2">
+          <span className="px-4 py-1.5 rounded-full bg-green-50 text-green-600 text-sm font-medium border border-green-200 flex-shrink-0 flex items-center gap-2">
             <CheckCircle2 className="w-3 h-3" />
             Validé
           </span>
         );
       case 'rejected':
         return (
-          <span className="px-4 py-1.5 rounded-full bg-red-500/20 text-red-400 text-sm font-medium border border-red-500/30 flex-shrink-0 flex items-center gap-2">
+          <span className="px-4 py-1.5 rounded-full bg-red-50 text-red-600 text-sm font-medium border border-red-200 flex-shrink-0 flex items-center gap-2">
             <XCircle className="w-3 h-3" />
             Refusé
           </span>
         );
       case 'pending':
         return (
-          <span className="px-4 py-1.5 rounded-full bg-orange-500/20 text-orange-400 text-sm font-medium border border-orange-500/30 flex-shrink-0 flex items-center gap-2">
+          <span className="px-4 py-1.5 rounded-full bg-orange-50 text-orange-600 text-sm font-medium border border-orange-200 flex-shrink-0 flex items-center gap-2">
             <AlertCircle className="w-3 h-3" />
             En attente
           </span>
@@ -217,31 +217,31 @@ export function DocumentUploadCard({
     <div className="space-y-2">
       <div 
         className={cn(
-          "flex items-center gap-4 bg-white/5 border rounded-2xl p-5 transition-colors",
-          status === 'rejected' ? "border-red-500/30" : "border-white/10",
-          status === 'valid' ? "border-green-500/30" : "",
-          status === 'empty' && "hover:border-blue-500/30 cursor-pointer"
+          "flex items-center gap-4 bg-gray-50 border rounded-2xl p-5 transition-colors",
+          status === 'rejected' ? "border-red-300 bg-red-50/50" : "border-gray-200",
+          status === 'valid' ? "border-green-300 bg-green-50/50" : "",
+          status === 'empty' && "hover:border-blue-300 hover:bg-blue-50/30 cursor-pointer"
         )}
         onClick={status === 'empty' ? handleFileSelect : undefined}
       >
         {/* Icon */}
         <div className={cn(
           "w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0",
-          status === 'valid' ? "bg-green-500/20" : status === 'rejected' ? "bg-red-500/20" : "bg-blue-500/20"
+          status === 'valid' ? "bg-green-100" : status === 'rejected' ? "bg-red-100" : "bg-blue-100"
         )}>
           <Icon className={cn(
             "w-7 h-7",
-            status === 'valid' ? "text-green-400" : status === 'rejected' ? "text-red-400" : "text-blue-400"
+            status === 'valid' ? "text-green-600" : status === 'rejected' ? "text-red-600" : "text-blue-600"
           )} />
         </div>
         
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-lg text-white">{title}</h3>
+          <h3 className="font-semibold text-lg text-gray-900">{title}</h3>
           {fileName ? (
-            <p className="text-white/50 text-sm truncate">{fileName}</p>
+            <p className="text-gray-500 text-sm truncate">{fileName}</p>
           ) : (
-            <p className="text-white/50 text-sm">{description}</p>
+            <p className="text-gray-500 text-sm">{description}</p>
           )}
         </div>
 
@@ -255,10 +255,10 @@ export function DocumentUploadCard({
                     e.stopPropagation();
                     window.open(fileUrl, '_blank');
                   }}
-                  className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                  className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
                   title="Voir le document"
                 >
-                  <Eye className="w-4 h-4 text-white/60" />
+                  <Eye className="w-4 h-4 text-gray-600" />
                 </button>
               )}
               <button
@@ -266,10 +266,10 @@ export function DocumentUploadCard({
                   e.stopPropagation();
                   handleDelete();
                 }}
-                className="p-2 rounded-lg bg-white/5 hover:bg-red-500/20 transition-colors"
+                className="p-2 rounded-lg bg-gray-100 hover:bg-red-100 transition-colors"
                 title="Supprimer"
               >
-                <Trash2 className="w-4 h-4 text-white/60 hover:text-red-400" />
+                <Trash2 className="w-4 h-4 text-gray-600 hover:text-red-600" />
               </button>
             </>
           )}
@@ -280,10 +280,10 @@ export function DocumentUploadCard({
                 e.stopPropagation();
                 handleFileSelect();
               }}
-              className="p-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 transition-colors"
+              className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition-colors"
               title="Télécharger"
             >
-              <Upload className="w-4 h-4 text-blue-400" />
+              <Upload className="w-4 h-4 text-blue-600" />
             </button>
           )}
           
@@ -302,14 +302,14 @@ export function DocumentUploadCard({
 
       {/* Rejection reason */}
       {status === 'rejected' && rejectionReason && (
-        <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/30 rounded-xl p-4 ml-4">
-          <XCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+        <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl p-4 ml-4">
+          <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-red-400 font-medium text-sm">Document refusé</p>
-            <p className="text-red-300/80 text-sm">{rejectionReason}</p>
+            <p className="text-red-600 font-medium text-sm">Document refusé</p>
+            <p className="text-red-500 text-sm">{rejectionReason}</p>
             <button
               onClick={handleFileSelect}
-              className="mt-2 text-sm text-blue-400 hover:text-blue-300 underline"
+              className="mt-2 text-sm text-blue-600 hover:text-blue-700 underline"
             >
               Télécharger un nouveau document
             </button>

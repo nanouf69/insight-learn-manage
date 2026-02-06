@@ -60,18 +60,18 @@ export default function Step1() {
   return (
     <OnboardingLayout currentStep={1} totalSteps={11} title="Documents requis pour l'inscription">
       <div className="space-y-6">
-        {/* Info format */}
-        <div className="flex items-center gap-2 text-white/60 text-sm">
+      {/* Info format */}
+        <div className="flex items-center gap-2 text-gray-500 text-sm">
           <Info className="w-4 h-4" />
           <span>Formats acceptés : PDF, JPG, PNG, HEIC, WebP • Max 2Mo par fichier</span>
         </div>
 
         {/* Validation criteria info */}
-        <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
-          <p className="text-white/80 text-sm">
-            <strong className="text-white">🤖 Vérification automatique :</strong> Nos documents sont analysés par IA pour vérifier leur validité :
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <p className="text-gray-700 text-sm">
+            <strong className="text-gray-900">🤖 Vérification automatique :</strong> Nos documents sont analysés par IA pour vérifier leur validité :
           </p>
-          <ul className="mt-2 text-white/70 text-sm space-y-1 ml-4 list-disc">
+          <ul className="mt-2 text-gray-600 text-sm space-y-1 ml-4 list-disc">
             <li><strong>Pièce d'identité</strong> : doit être en cours de validité (non périmée)</li>
             <li><strong>Permis de conduire</strong> : doit avoir plus de 3 ans (hors période probatoire) et être valide</li>
             <li><strong>Justificatif de domicile</strong> : doit dater de moins de 3 mois</li>
@@ -95,8 +95,8 @@ export default function Step1() {
 
         {/* Warning if documents are rejected */}
         {hasRejected && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
-            <p className="text-red-400 font-medium">
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+            <p className="text-red-600 font-medium">
               ⚠️ Certains documents ont été refusés. Veuillez les remplacer par des documents conformes.
             </p>
           </div>
@@ -106,7 +106,7 @@ export default function Step1() {
         <div className="flex justify-end pt-4">
           <Link
             to="/bienvenue/etape-2"
-            className="inline-flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-medium px-6 py-3 rounded-xl transition-colors"
+            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-xl transition-colors shadow-sm"
           >
             Étape suivante
             <ArrowRight className="w-4 h-4" />
