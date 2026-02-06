@@ -964,18 +964,19 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
           </DialogContent>
         </Dialog>
 
-        {/* Photo Cropper Dialog */}
-        <PhotoCropper
-          open={cropperOpen}
-          onClose={() => {
-            setCropperOpen(false);
-            setCropperImageSrc('');
-            setPendingPhotoDocId('');
-          }}
-          imageSrc={cropperImageSrc}
-          onCropComplete={handlePhotoCropComplete}
-        />
       </CardContent>
+
+      {/* Photo Cropper Dialog - en dehors du Card pour éviter les problèmes de z-index */}
+      <PhotoCropper
+        open={cropperOpen}
+        onClose={() => {
+          setCropperOpen(false);
+          setCropperImageSrc('');
+          setPendingPhotoDocId('');
+        }}
+        imageSrc={cropperImageSrc}
+        onCropComplete={handlePhotoCropComplete}
+      />
     </Card>
   );
 }
