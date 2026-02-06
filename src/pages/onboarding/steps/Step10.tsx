@@ -44,10 +44,6 @@ export default function Step10() {
                   description: "Carte d'identité, passeport ou titre de séjour",
                 },
                 {
-                  title: "Permis de conduire",
-                  description: "Recto et verso, en cours de validité",
-                },
-                {
                   title: "Justificatif de domicile",
                   description: "De moins de 3 mois",
                 },
