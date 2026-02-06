@@ -17,6 +17,26 @@ const COMPANY_INFO = {
   fax: '08.90.20.85.19',
 };
 
+// Fonction pour obtenir le nom de formation lisible selon le type d'apprenant
+function getFormationName(typeApprenant: string | null): string {
+  const type = (typeApprenant || '').toLowerCase();
+  
+  if (type.includes('ta')) {
+    return 'Formation TAXI pour chauffeurs VTC';
+  }
+  if (type.includes('va')) {
+    return 'Formation VTC pour chauffeurs TAXI';
+  }
+  if (type.includes('taxi')) {
+    return 'Formation TAXI';
+  }
+  if (type.includes('vtc')) {
+    return 'Formation VTC';
+  }
+  
+  return 'Formation VTC'; // Défaut
+}
+
 export async function generateAttestationInscription(apprenant: any) {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -76,8 +96,9 @@ export async function generateAttestationInscription(apprenant: any) {
   doc.setFillColor(240, 240, 240);
   doc.roundedRect(15, y - 5, pageWidth - 30, 35, 3, 3, 'F');
   
+  const formationName = getFormationName(apprenant.type_apprenant);
   doc.setFont('helvetica', 'bold');
-  doc.text(`Formation : ${apprenant.formation_choisie || '-'}`, 20, y + 5);
+  doc.text(`Formation : ${formationName}`, 20, y + 5);
   y += 12;
   
   doc.setFont('helvetica', 'normal');
