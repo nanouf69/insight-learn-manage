@@ -425,14 +425,31 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
     fileInputRefs.current[docId]?.click();
   };
 
+  // Formats acceptés
+  const ACCEPTED_FORMATS = '.pdf,.jpg,.jpeg,.png,.heic,.heif,.webp';
+  const ACCEPTED_FORMATS_DISPLAY = 'PDF, JPG, PNG, HEIC, WebP';
+  const MAX_FILE_SIZE_MB = 2;
+  const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
   const handleFileChange = (docId: string, event: React.ChangeEvent<HTMLInputElement>, isCustom = false) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Validate file size (10MB max)
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error("Le fichier est trop volumineux (max 10Mo)");
+      // Validate file size
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        toast.error(`Le fichier est trop volumineux (max ${MAX_FILE_SIZE_MB}Mo)`);
         return;
       }
+      
+      // Validate file type
+      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/heic', 'image/heif', 'image/webp'];
+      const fileExtension = file.name.toLowerCase().split('.').pop();
+      const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'heic', 'heif', 'webp'];
+      
+      if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension || '')) {
+        toast.error(`Format non accepté. Formats autorisés: ${ACCEPTED_FORMATS_DISPLAY}`);
+        return;
+      }
+      
       handleUpload(docId, file, isCustom);
     }
     // Reset input
@@ -488,6 +505,9 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
               Dossier complet
             </p>
           )}
+          <p className="text-xs text-muted-foreground mt-3">
+            📎 Formats acceptés : {ACCEPTED_FORMATS_DISPLAY} • Max {MAX_FILE_SIZE_MB}Mo par fichier
+          </p>
         </div>
 
         {/* Documents list */}
@@ -545,7 +565,7 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
                   type="file"
                   ref={(el) => { fileInputRefs.current[doc.id] = el; }}
                   onChange={(e) => handleFileChange(doc.id, e)}
-                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                  accept={ACCEPTED_FORMATS}
                   className="hidden"
                 />
                 
@@ -888,7 +908,7 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
                 type="file"
                 ref={(el) => { fileInputRefs.current[`custom_${newDocTitle}`] = el; }}
                 onChange={(e) => handleFileChange(newDocTitle, e, true)}
-                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                accept={ACCEPTED_FORMATS}
                 className="hidden"
               />
             </div>
