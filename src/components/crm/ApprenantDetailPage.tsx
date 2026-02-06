@@ -15,6 +15,7 @@ import { DocumentsDossier } from "./apprenant-sections/DocumentsDossier";
 import { DocumentsInscription } from "./apprenant-sections/DocumentsInscription";
 import { ExamensSection } from "./apprenant-sections/ExamensSection";
 import { EmailsSection } from "./apprenant-sections/EmailsSection";
+import { ApprenantEditForm } from "@/components/apprenants/ApprenantEditForm";
 
 interface ApprenantDetailPageProps {
   apprenantId: string;
@@ -42,6 +43,7 @@ const financementLabels: Record<string, string> = {
 
 export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPageProps) {
   const [activeTab, setActiveTab] = useState("infos");
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   const { data: apprenant, isLoading } = useQuery({
     queryKey: ['apprenant-detail', apprenantId],
@@ -127,11 +129,18 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
             </div>
           </div>
         </div>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" onClick={() => setIsEditOpen(true)}>
           <Edit2 className="w-4 h-4 mr-2" />
           Modifier
         </Button>
       </div>
+
+      {/* Modal d'édition */}
+      <ApprenantEditForm 
+        apprenant={apprenant} 
+        open={isEditOpen} 
+        onOpenChange={setIsEditOpen} 
+      />
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
