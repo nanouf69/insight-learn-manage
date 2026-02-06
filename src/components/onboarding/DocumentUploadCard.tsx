@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Upload, CheckCircle2, XCircle, Loader2, AlertCircle, Eye, Trash2 } from "lucide-react";
+import { Upload, CheckCircle2, XCircle, Loader2, AlertCircle, Eye, Trash2, ScanSearch, Ban } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -132,7 +132,7 @@ export function DocumentUploadCard({
           onStatusChange?.(docId, 'pending');
         }
       } else {
-        // For photo and signature, mark as valid immediately
+        // For photo, mark as valid immediately
         setStatus('valid');
         onStatusChange?.(docId, 'valid');
       }
@@ -167,141 +167,214 @@ export function DocumentUploadCard({
     }
   };
 
+  const handleReAnalyze = async () => {
+    if (!fileUrl || (docId !== 'piece_identite' && docId !== 'justificatif_domicile')) return;
+
+    setStatus('analyzing');
+    toast.info("Nouvelle analyse en cours...", { duration: 3000 });
+
+    try {
+      const { data, error } = await supabase.functions.invoke('analyze-document', {
+        body: {
+          documentUrl: fileUrl,
+          documentType: docId,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data && !data.isValid && data.rejectionReason) {
+        setStatus('rejected');
+        setRejectionReason(data.rejectionReason);
+        toast.error(`Document invalide : ${data.rejectionReason}`, { duration: 5000 });
+        onStatusChange?.(docId, 'rejected', data.rejectionReason);
+      } else if (data && data.isValid) {
+        setStatus('valid');
+        setRejectionReason('');
+        toast.success("Document validé ✓", { duration: 3000 });
+        onStatusChange?.(docId, 'valid');
+      } else {
+        setStatus('pending');
+        toast.info("Vérification en attente", { duration: 3000 });
+        onStatusChange?.(docId, 'pending');
+      }
+    } catch (analyzeError: any) {
+      console.error('Re-analysis error:', analyzeError);
+      setStatus('pending');
+      toast.info("Vérification automatique non disponible.", { duration: 4000 });
+      onStatusChange?.(docId, 'pending');
+    }
+  };
+
   const getStatusBadge = () => {
-    const baseClasses = "px-2 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium flex-shrink-0 flex items-center gap-1 sm:gap-2";
-    
     switch (status) {
       case 'empty':
-        return (
-          <span className={`${baseClasses} bg-amber-50 text-amber-600 border border-amber-200`}>
-            <span className="hidden sm:inline">Requis</span>
-            <span className="sm:hidden">!</span>
-          </span>
-        );
+        return null;
       case 'uploading':
         return (
-          <span className={`${baseClasses} bg-blue-50 text-blue-600 border border-blue-200`}>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-600 border border-blue-200">
             <Loader2 className="w-3 h-3 animate-spin" />
-            <span className="hidden sm:inline">Upload...</span>
+            Upload...
           </span>
         );
       case 'analyzing':
         return (
-          <span className={`${baseClasses} bg-blue-50 text-blue-600 border border-blue-200`}>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-600 border border-blue-200">
             <Loader2 className="w-3 h-3 animate-spin" />
-            <span className="hidden sm:inline">Analyse...</span>
+            Analyse...
           </span>
         );
       case 'valid':
         return (
-          <span className={`${baseClasses} bg-green-50 text-green-600 border border-green-200`}>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-50 text-green-600 border border-green-200">
             <CheckCircle2 className="w-3 h-3" />
-            <span className="hidden sm:inline">Validé</span>
+            Reçu
           </span>
         );
       case 'rejected':
         return (
-          <span className={`${baseClasses} bg-red-50 text-red-600 border border-red-200`}>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-red-50 text-red-600 border border-red-200">
             <XCircle className="w-3 h-3" />
-            <span className="hidden sm:inline">Refusé</span>
+            Refusé
           </span>
         );
       case 'pending':
         return (
-          <span className={`${baseClasses} bg-orange-50 text-orange-600 border border-orange-200`}>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-orange-50 text-orange-600 border border-orange-200">
             <AlertCircle className="w-3 h-3" />
-            <span className="hidden sm:inline">Attente</span>
+            Attente
           </span>
         );
     }
   };
 
+  const hasFile = status !== 'empty' && status !== 'uploading';
+  const canAnalyze = (docId === 'piece_identite' || docId === 'justificatif_domicile') && hasFile && status !== 'analyzing';
+
   return (
     <div className="space-y-2">
       <div 
         className={cn(
-          "bg-gray-50 border rounded-xl sm:rounded-2xl p-3 sm:p-5 transition-colors",
-          status === 'rejected' ? "border-red-300 bg-red-50/50" : "border-gray-200",
-          status === 'valid' ? "border-green-300 bg-green-50/50" : "",
-          status === 'empty' && "hover:border-blue-300 hover:bg-blue-50/30 cursor-pointer"
+          "bg-white border-2 rounded-xl p-4 transition-all",
+          status === 'rejected' ? "border-red-300" : status === 'valid' ? "border-green-300" : "border-gray-200",
+          status === 'empty' && "hover:border-blue-300 cursor-pointer"
         )}
         onClick={status === 'empty' ? handleFileSelect : undefined}
       >
-        {/* Mobile layout: stacked */}
-        <div className="flex items-start gap-3 sm:gap-4">
-          {/* Icon */}
+        <div className="flex items-start gap-3">
+          {/* Status icon on the left */}
           <div className={cn(
-            "w-10 h-10 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0",
-            status === 'valid' ? "bg-green-100" : status === 'rejected' ? "bg-red-100" : "bg-blue-100"
+            "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1",
+            status === 'valid' ? "bg-green-100" : 
+            status === 'rejected' ? "bg-red-100" : 
+            status === 'pending' ? "bg-orange-100" :
+            "bg-gray-100"
           )}>
-            <Icon className={cn(
-              "w-5 h-5 sm:w-7 sm:h-7",
-              status === 'valid' ? "text-green-600" : status === 'rejected' ? "text-red-600" : "text-blue-600"
-            )} />
+            {status === 'valid' ? (
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
+            ) : status === 'rejected' ? (
+              <XCircle className="w-5 h-5 text-red-600" />
+            ) : status === 'pending' ? (
+              <AlertCircle className="w-5 h-5 text-orange-600" />
+            ) : status === 'uploading' || status === 'analyzing' ? (
+              <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+            ) : (
+              <Icon className="w-5 h-5 text-gray-400" />
+            )}
           </div>
           
-          {/* Content and actions */}
+          {/* Content */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0 flex-1">
-                <h3 className="font-semibold text-base sm:text-lg text-gray-900">{title}</h3>
-                {fileName ? (
-                  <p className="text-gray-500 text-xs sm:text-sm truncate">{fileName}</p>
-                ) : (
-                  <p className="text-gray-500 text-xs sm:text-sm line-clamp-2">{description}</p>
-                )}
+            <div className="flex items-start justify-between gap-2 flex-wrap">
+              <div className="min-w-0">
+                <h3 className="font-semibold text-gray-900">{title}</h3>
+                <p className="text-gray-500 text-sm">{description}</p>
               </div>
               
-              {/* Badge - always visible */}
-              <div className="flex-shrink-0">
-                {getStatusBadge()}
-              </div>
+              {/* Badge */}
+              {getStatusBadge()}
             </div>
             
-            {/* Action buttons - on mobile, below text */}
-            <div className="flex items-center gap-2 mt-3">
-              {status !== 'empty' && status !== 'uploading' && status !== 'analyzing' && (
-                <>
-                  {fileUrl && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.open(fileUrl, '_blank');
-                      }}
-                      className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors text-xs sm:text-sm flex items-center gap-1"
-                      title="Voir le document"
-                    >
-                      <Eye className="w-4 h-4 text-gray-600" />
-                      <span className="hidden sm:inline text-gray-600">Voir</span>
-                    </button>
-                  )}
+            {/* Actions row for uploaded files */}
+            {hasFile && status !== 'analyzing' && (
+              <div className="flex items-center gap-1 mt-3">
+                {/* View button */}
+                {fileUrl && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDelete();
+                      window.open(fileUrl, '_blank');
                     }}
-                    className="p-2 rounded-lg bg-gray-100 hover:bg-red-100 transition-colors text-xs sm:text-sm flex items-center gap-1"
-                    title="Supprimer"
+                    className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                    title="Voir le document"
                   >
-                    <Trash2 className="w-4 h-4 text-gray-600 hover:text-red-600" />
-                    <span className="hidden sm:inline text-gray-600">Supprimer</span>
+                    <Eye className="w-5 h-5 text-gray-500" />
                   </button>
-                </>
-              )}
-              
-              {status === 'empty' && (
+                )}
+                
+                {/* Re-analyze with AI button */}
+                {canAnalyze && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleReAnalyze();
+                    }}
+                    className="p-2 rounded-lg hover:bg-blue-50 transition-colors"
+                    title="Relancer l'analyse IA"
+                  >
+                    <ScanSearch className="w-5 h-5 text-blue-500" />
+                  </button>
+                )}
+                
+                {/* Reject indicator (for rejected status) */}
+                {status === 'rejected' && (
+                  <div className="p-2">
+                    <Ban className="w-5 h-5 text-red-400" />
+                  </div>
+                )}
+                
+                {/* Delete button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete();
+                  }}
+                  className="p-2 rounded-lg hover:bg-red-50 transition-colors"
+                  title="Supprimer"
+                >
+                  <Trash2 className="w-5 h-5 text-red-400" />
+                </button>
+                
+                {/* Spacer */}
+                <div className="flex-1" />
+                
+                {/* Replace button */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleFileSelect();
                   }}
-                  className="px-3 py-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition-colors text-sm flex items-center gap-2 text-blue-600 font-medium"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors text-sm text-gray-600"
                 >
                   <Upload className="w-4 h-4" />
-                  <span>Télécharger</span>
+                  Remplacer
                 </button>
-              )}
-            </div>
+              </div>
+            )}
+            
+            {/* Upload button for empty state */}
+            {status === 'empty' && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleFileSelect();
+                }}
+                className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors text-sm text-blue-600 font-medium"
+              >
+                <Upload className="w-4 h-4" />
+                Télécharger
+              </button>
+            )}
           </div>
         </div>
 
@@ -317,17 +390,11 @@ export function DocumentUploadCard({
 
       {/* Rejection reason */}
       {status === 'rejected' && rejectionReason && (
-        <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl p-4 ml-4">
+        <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl p-4 ml-11">
           <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-red-600 font-medium text-sm">Document refusé</p>
             <p className="text-red-500 text-sm">{rejectionReason}</p>
-            <button
-              onClick={handleFileSelect}
-              className="mt-2 text-sm text-blue-600 hover:text-blue-700 underline"
-            >
-              Télécharger un nouveau document
-            </button>
           </div>
         </div>
       )}
