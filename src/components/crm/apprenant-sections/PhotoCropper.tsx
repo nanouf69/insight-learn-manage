@@ -136,6 +136,9 @@ export function PhotoCropper({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Cadrer la photo d'identité</DialogTitle>
+          <p className="text-sm text-orange-600 dark:text-orange-400 font-medium">
+            ⚠️ Cadrez uniquement la tête (du haut du crâne au menton)
+          </p>
         </DialogHeader>
         
         <div className="relative h-80 bg-muted rounded-lg overflow-hidden">
@@ -177,9 +180,14 @@ export function PhotoCropper({
           </div>
         </div>
 
-        <p className="text-xs text-muted-foreground text-center">
-          Ajustez le cadrage pour centrer le visage. Format photo d'identité (35×45mm)
-        </p>
+        <div className="text-center space-y-1">
+          <p className="text-sm font-medium text-foreground">
+            📸 La tête doit occuper 70-80% du cadre
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Fond clair obligatoire (blanc, beige ou bleu) • Format 35×45mm
+          </p>
+        </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
