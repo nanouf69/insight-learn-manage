@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, Filter, MoreVertical, Mail, Phone, Calendar, GraduationCap, ArrowLeft } from "lucide-react";
+import { Search, Filter, MoreVertical, Mail, Phone, Calendar, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { ApprenantDetailPage } from "./ApprenantDetailPage";
-
+import { ApprenantForm } from "@/components/apprenants/ApprenantForm";
 const typeLabels: Record<string, string> = {
   'vtc': 'VTC',
   'vtc-e': 'VTC E',
@@ -162,6 +162,7 @@ export function CRMDashboard() {
             <Filter className="w-4 h-4" />
           </Button>
         </div>
+        <ApprenantForm />
       </div>
 
       {/* Apprenants Grid */}
