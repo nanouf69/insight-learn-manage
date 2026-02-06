@@ -136,7 +136,7 @@ export default function Step1() {
             <strong className="text-gray-900">🤖 Vérification automatique :</strong> Nos documents sont analysés par IA pour vérifier leur validité :
           </p>
           <ul className="mt-2 text-gray-600 text-sm space-y-1 ml-4 list-disc">
-            <li><strong>Pièce d'identité</strong> : doit être en cours de validité (non périmée)</li>
+            <li><strong>Pièce d'identité</strong> : doit être en cours de validité (non périmée) et correspondre au nom/prénom saisis</li>
             <li><strong>Justificatif de domicile</strong> : doit dater de moins de 3 mois</li>
           </ul>
         </div>
@@ -151,6 +151,8 @@ export default function Step1() {
               description={doc.description}
               icon={doc.icon}
               sessionId={sessionId}
+              expectedNom={doc.id === 'piece_identite' ? nom : undefined}
+              expectedPrenom={doc.id === 'piece_identite' ? prenom : undefined}
               onStatusChange={handleStatusChange}
             />
           ))}
