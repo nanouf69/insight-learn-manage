@@ -65,7 +65,7 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
         .from('documents_inscription')
         .select('url')
         .eq('apprenant_id', apprenantId)
-        .eq('type_document', 'photo')
+        .eq('type_document', 'photo_identite')
         .eq('statut', 'valid')
         .single();
       
