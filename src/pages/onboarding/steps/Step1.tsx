@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, CreditCard, FileText, MapPin, Info, Camera, PenTool } from "lucide-react";
+import { ArrowRight, CreditCard, MapPin, Info, Camera, AlertTriangle, Phone } from "lucide-react";
 import { OnboardingLayout } from "../OnboardingLayout";
 import { DocumentUploadCard } from "@/components/onboarding/DocumentUploadCard";
 
@@ -15,9 +15,20 @@ export default function Step1() {
   });
 
   const [documentStatuses, setDocumentStatuses] = useState<Record<string, 'pending' | 'valid' | 'rejected'>>({});
+  
+  // Questions obligatoires state
+  const [answers, setAnswers] = useState<Record<string, boolean | null>>({
+    question1: null,
+    question2: null,
+    question3: null,
+  });
 
   const handleStatusChange = (docId: string, status: 'pending' | 'valid' | 'rejected', _reason?: string) => {
     setDocumentStatuses(prev => ({ ...prev, [docId]: status }));
+  };
+
+  const handleAnswerChange = (questionId: string, value: boolean) => {
+    setAnswers(prev => ({ ...prev, [questionId]: value }));
   };
 
   const documents = [
@@ -41,14 +52,32 @@ export default function Step1() {
     },
   ];
 
+  const questions = [
+    {
+      id: 'question1',
+      text: "Avez-vous perdu 6 points d'un coup (une seule infraction) sur votre permis de conduire ?",
+    },
+    {
+      id: 'question2',
+      text: "Avez-vous déjà été condamné(e) ferme ou avec sursis à 6 mois minimum de prison ?",
+    },
+    {
+      id: 'question3',
+      text: "Avez-vous déjà été condamné(e) pour conduite sans permis ?",
+    },
+  ];
+
   // Check if all required documents are valid
   const allValid = documents.every(doc => documentStatuses[doc.id] === 'valid');
   const hasRejected = Object.values(documentStatuses).some(s => s === 'rejected');
+  
+  // Check if any question has "Oui" answer
+  const hasYesAnswer = Object.values(answers).some(answer => answer === true);
 
   return (
     <OnboardingLayout currentStep={1} totalSteps={11} title="Documents requis pour l'inscription">
       <div className="space-y-6">
-      {/* Info format */}
+        {/* Info format */}
         <div className="flex items-center gap-2 text-gray-500 text-sm">
           <Info className="w-4 h-4" />
           <span>Formats acceptés : PDF, JPG, PNG, HEIC, WebP • Max 2Mo par fichier</span>
@@ -86,6 +115,63 @@ export default function Step1() {
             <p className="text-red-600 font-medium">
               ⚠️ Certains documents ont été refusés. Veuillez les remplacer par des documents conformes.
             </p>
+          </div>
+        )}
+
+        {/* Questions obligatoires */}
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 sm:p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <AlertTriangle className="w-5 h-5 text-amber-500" />
+            <h3 className="font-semibold text-gray-900">Questions obligatoires</h3>
+          </div>
+          
+          <div className="space-y-4">
+            {questions.map((question, index) => (
+              <div key={question.id} className="space-y-2">
+                <p className="text-gray-700 text-sm sm:text-base">
+                  {index + 1}) {question.text}
+                </p>
+                <div className="flex items-center gap-6 ml-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name={question.id}
+                      checked={answers[question.id] === false}
+                      onChange={() => handleAnswerChange(question.id, false)}
+                      className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                    />
+                    <span className="text-gray-700">Non</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name={question.id}
+                      checked={answers[question.id] === true}
+                      onChange={() => handleAnswerChange(question.id, true)}
+                      className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                    />
+                    <span className="text-gray-700">Oui</span>
+                  </label>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Alert if any answer is "Oui" */}
+        {hasYesAnswer && (
+          <div className="bg-red-50 border border-red-300 rounded-xl p-4 sm:p-5">
+            <div className="flex items-start gap-3">
+              <Phone className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-red-700 font-semibold">
+                  Votre situation nécessite un accompagnement personnalisé
+                </p>
+                <p className="text-red-600 text-sm mt-1">
+                  Merci de nous contacter au <a href="tel:0428296091" className="font-bold underline">04 28 29 60 91</a> avant de poursuivre votre inscription.
+                </p>
+              </div>
+            </div>
           </div>
         )}
 
