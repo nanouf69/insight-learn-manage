@@ -457,6 +457,71 @@ export type Database = {
           },
         ]
       }
+      emails: {
+        Row: {
+          apprenant_id: string | null
+          body_html: string | null
+          body_preview: string | null
+          created_at: string
+          has_attachments: boolean | null
+          id: string
+          is_read: boolean | null
+          outlook_message_id: string | null
+          received_at: string | null
+          recipients: string[] | null
+          sender_email: string | null
+          sender_name: string | null
+          sent_at: string | null
+          subject: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          apprenant_id?: string | null
+          body_html?: string | null
+          body_preview?: string | null
+          created_at?: string
+          has_attachments?: boolean | null
+          id?: string
+          is_read?: boolean | null
+          outlook_message_id?: string | null
+          received_at?: string | null
+          recipients?: string[] | null
+          sender_email?: string | null
+          sender_name?: string | null
+          sent_at?: string | null
+          subject: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          apprenant_id?: string | null
+          body_html?: string | null
+          body_preview?: string | null
+          created_at?: string
+          has_attachments?: boolean | null
+          id?: string
+          is_read?: boolean | null
+          outlook_message_id?: string | null
+          received_at?: string | null
+          recipients?: string[] | null
+          sender_email?: string | null
+          sender_name?: string | null
+          sent_at?: string | null
+          subject?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emails_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: false
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       factures: {
         Row: {
           apprenant_id: string | null

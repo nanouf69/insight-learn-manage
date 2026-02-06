@@ -1,0 +1,276 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
+
+interface EmailMessage {
+  id: string;
+  subject: string;
+  bodyPreview: string;
+  body?: { content: string; contentType: string };
+  from?: { emailAddress: { address: string; name: string } };
+  toRecipients?: { emailAddress: { address: string; name: string } }[];
+  hasAttachments: boolean;
+  isRead: boolean;
+  receivedDateTime: string;
+  sentDateTime?: string;
+}
+
+interface TokenResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+}
+
+async function getAccessToken(): Promise<string> {
+  const tenantId = Deno.env.get("MS_GRAPH_TENANT_ID");
+  const clientId = Deno.env.get("MS_GRAPH_CLIENT_ID");
+  const clientSecret = Deno.env.get("MS_GRAPH_CLIENT_SECRET");
+
+  if (!tenantId || !clientId || !clientSecret) {
+    throw new Error("Missing Microsoft Graph credentials");
+  }
+
+  const tokenUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
+
+  const params = new URLSearchParams({
+    client_id: clientId,
+    client_secret: clientSecret,
+    scope: "https://graph.microsoft.com/.default",
+    grant_type: "client_credentials",
+  });
+
+  const response = await fetch(tokenUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: params.toString(),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    console.error("Token error:", error);
+    throw new Error(`Failed to get access token: ${response.status}`);
+  }
+
+  const data: TokenResponse = await response.json();
+  return data.access_token;
+}
+
+async function fetchEmails(
+  accessToken: string,
+  userEmail: string,
+  folder: "inbox" | "sentItems"
+): Promise<EmailMessage[]> {
+  const url = `https://graph.microsoft.com/v1.0/users/${userEmail}/mailFolders/${folder}/messages?$top=50&$orderby=receivedDateTime desc&$select=id,subject,bodyPreview,body,from,toRecipients,hasAttachments,isRead,receivedDateTime,sentDateTime`;
+
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    console.error(`Error fetching ${folder}:`, error);
+    return [];
+  }
+
+  const data = await response.json();
+  return data.value || [];
+}
+
+async function sendEmail(
+  accessToken: string,
+  userEmail: string,
+  to: string,
+  subject: string,
+  body: string
+): Promise<boolean> {
+  const url = `https://graph.microsoft.com/v1.0/users/${userEmail}/sendMail`;
+
+  const emailData = {
+    message: {
+      subject,
+      body: {
+        contentType: "HTML",
+        content: body,
+      },
+      toRecipients: [
+        {
+          emailAddress: {
+            address: to,
+          },
+        },
+      ],
+    },
+    saveToSentItems: true,
+  };
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(emailData),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    console.error("Error sending email:", error);
+    return false;
+  }
+
+  return true;
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const { action, apprenantId, apprenantEmail, userEmail, to, subject, body } =
+      await req.json();
+
+    const accessToken = await getAccessToken();
+
+    if (action === "sync") {
+      // Sync emails for an apprenant
+      if (!apprenantEmail || !userEmail) {
+        return new Response(
+          JSON.stringify({ error: "apprenantEmail and userEmail are required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Fetch inbox (received from apprenant)
+      const inboxEmails = await fetchEmails(accessToken, userEmail, "inbox");
+      const sentEmails = await fetchEmails(accessToken, userEmail, "sentItems");
+
+      // Filter emails related to the apprenant
+      const relevantInbox = inboxEmails.filter(
+        (email) =>
+          email.from?.emailAddress?.address?.toLowerCase() ===
+          apprenantEmail.toLowerCase()
+      );
+
+      const relevantSent = sentEmails.filter((email) =>
+        email.toRecipients?.some(
+          (r) =>
+            r.emailAddress?.address?.toLowerCase() ===
+            apprenantEmail.toLowerCase()
+        )
+      );
+
+      // Prepare emails for insertion
+      const emailsToInsert = [
+        ...relevantInbox.map((email) => ({
+          apprenant_id: apprenantId,
+          outlook_message_id: email.id,
+          subject: email.subject,
+          body_preview: email.bodyPreview,
+          body_html: email.body?.content,
+          sender_email: email.from?.emailAddress?.address,
+          sender_name: email.from?.emailAddress?.name,
+          recipients: [userEmail],
+          type: "received" as const,
+          is_read: email.isRead,
+          has_attachments: email.hasAttachments,
+          received_at: email.receivedDateTime,
+        })),
+        ...relevantSent.map((email) => ({
+          apprenant_id: apprenantId,
+          outlook_message_id: email.id,
+          subject: email.subject,
+          body_preview: email.bodyPreview,
+          body_html: email.body?.content,
+          sender_email: userEmail,
+          sender_name: null,
+          recipients: email.toRecipients?.map((r) => r.emailAddress?.address) || [],
+          type: "sent" as const,
+          is_read: true,
+          has_attachments: email.hasAttachments,
+          sent_at: email.sentDateTime || email.receivedDateTime,
+        })),
+      ];
+
+      // Upsert emails (update if exists, insert if new)
+      if (emailsToInsert.length > 0) {
+        const { error } = await supabase
+          .from("emails")
+          .upsert(emailsToInsert, {
+            onConflict: "outlook_message_id",
+            ignoreDuplicates: false,
+          });
+
+        if (error) {
+          console.error("Error upserting emails:", error);
+          throw error;
+        }
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          synced: emailsToInsert.length,
+          inbox: relevantInbox.length,
+          sent: relevantSent.length,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "send") {
+      // Send an email
+      if (!userEmail || !to || !subject || !body) {
+        return new Response(
+          JSON.stringify({ error: "userEmail, to, subject, and body are required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const success = await sendEmail(accessToken, userEmail, to, subject, body);
+
+      if (success && apprenantId) {
+        // Save to database
+        await supabase.from("emails").insert({
+          apprenant_id: apprenantId,
+          subject,
+          body_preview: body.substring(0, 200),
+          body_html: body,
+          sender_email: userEmail,
+          recipients: [to],
+          type: "sent",
+          is_read: true,
+          has_attachments: false,
+          sent_at: new Date().toISOString(),
+        });
+      }
+
+      return new Response(
+        JSON.stringify({ success }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({ error: "Invalid action. Use 'sync' or 'send'" }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error("Error:", error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});
