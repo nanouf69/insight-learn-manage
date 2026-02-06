@@ -4,6 +4,7 @@ import { Header } from "@/components/layout/Header";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { UpcomingSessions } from "@/components/dashboard/UpcomingSessions";
+import { PaymentReminders } from "@/components/dashboard/PaymentReminders";
 import { FormationsList } from "@/components/formations/FormationsList";
 import { ApprenantsList } from "@/components/apprenants/ApprenantsList";
 import { CRMDashboard } from "@/components/crm/CRMDashboard";
@@ -78,9 +79,10 @@ const Index = () => {
             </div>
 
             {/* Two Column Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <UpcomingSessions />
               <RecentActivity />
+              <PaymentReminders />
             </div>
           </div>
         );
