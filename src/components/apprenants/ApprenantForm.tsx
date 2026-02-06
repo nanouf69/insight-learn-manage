@@ -100,6 +100,7 @@ export function ApprenantForm() {
   const [montantTtc, setMontantTtc] = useState("1599");
   const [typeApprenantFormation, setTypeApprenantFormation] = useState("vtc");
   const [dateExamenTheorique, setDateExamenTheorique] = useState("27 janvier 2026");
+  const [datePaiement, setDatePaiement] = useState<Date | undefined>();
 
   // Prix par défaut selon la formation
   const prixFormations: Record<string, string> = {
@@ -872,16 +873,18 @@ export function ApprenantForm() {
                       variant="outline"
                       className={cn(
                         "w-full justify-start text-left font-normal",
-                        "text-muted-foreground"
+                        !datePaiement && "text-muted-foreground"
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      <span>Sélectionner une date</span>
+                      {datePaiement ? format(datePaiement, "dd MMMM yyyy", { locale: fr }) : "Sélectionner une date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
+                      selected={datePaiement}
+                      onSelect={setDatePaiement}
                       initialFocus
                       className="pointer-events-auto"
                     />
