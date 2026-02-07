@@ -8,12 +8,20 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+// Fonction pour normaliser le texte (supprimer accents et mettre en minuscules)
+const normalizeText = (text: string): string => {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Supprime les accents
+    .trim();
+};
+
 export default function OnboardingWelcome() {
   const navigate = useNavigate();
   const [nom, setNom] = useState('');
   const [prenom, setPrenom] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [showForm, setShowForm] = useState(true);
 
   const handleSearch = async () => {
     if (!nom.trim() || !prenom.trim()) {
@@ -24,31 +32,40 @@ export default function OnboardingWelcome() {
     setIsSearching(true);
 
     try {
-      // Chercher l'apprenant dans la base de données
-      const { data, error } = await supabase
+      // Récupérer tous les apprenants pour faire une recherche normalisée côté client
+      const { data: apprenants, error } = await supabase
         .from('apprenants')
-        .select('*')
-        .ilike('nom', nom.trim())
-        .ilike('prenom', prenom.trim())
-        .limit(1)
-        .maybeSingle();
+        .select('*');
 
       if (error) throw error;
+
+      // Normaliser les termes de recherche
+      const nomNormalized = normalizeText(nom);
+      const prenomNormalized = normalizeText(prenom);
+
+      // Chercher l'apprenant avec correspondance normalisée
+      const found = apprenants?.find(a => 
+        normalizeText(a.nom) === nomNormalized && 
+        normalizeText(a.prenom) === prenomNormalized
+      );
 
       // Sauvegarder les infos dans localStorage
       localStorage.setItem('onboarding_nom', nom.trim());
       localStorage.setItem('onboarding_prenom', prenom.trim());
 
-      if (data) {
+      if (found) {
         // Apprenant trouvé - sauvegarder toutes ses infos
-        localStorage.setItem('onboarding_apprenant_id', data.id);
-        localStorage.setItem('onboarding_email', data.email || '');
-        localStorage.setItem('onboarding_telephone', data.telephone || '');
-        localStorage.setItem('onboarding_adresse', data.adresse || '');
-        localStorage.setItem('onboarding_code_postal', data.code_postal || '');
-        localStorage.setItem('onboarding_ville', data.ville || '');
+        localStorage.setItem('onboarding_apprenant_id', found.id);
+        localStorage.setItem('onboarding_email', found.email || '');
+        localStorage.setItem('onboarding_telephone', found.telephone || '');
+        localStorage.setItem('onboarding_adresse', found.adresse || '');
+        localStorage.setItem('onboarding_code_postal', found.code_postal || '');
+        localStorage.setItem('onboarding_ville', found.ville || '');
         localStorage.setItem('onboarding_found', 'true');
-        toast.success(`Bienvenue ${data.prenom} ! Nous avons trouvé votre dossier.`);
+        // Utiliser le nom/prénom exact de la BDD
+        localStorage.setItem('onboarding_nom', found.nom);
+        localStorage.setItem('onboarding_prenom', found.prenom);
+        toast.success(`Bienvenue ${found.prenom} ! Nous avons trouvé votre dossier.`);
       } else {
         // Apprenant non trouvé - on continue quand même
         localStorage.setItem('onboarding_found', 'false');
