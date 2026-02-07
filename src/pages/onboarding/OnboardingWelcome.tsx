@@ -67,18 +67,16 @@ export default function OnboardingWelcome() {
         localStorage.setItem('onboarding_prenom', found.prenom);
         toast.success(`Bienvenue ${found.prenom} ! Nous avons trouvé votre dossier.`);
       } else {
-        // Apprenant non trouvé - on continue quand même
-        localStorage.setItem('onboarding_found', 'false');
-        localStorage.removeItem('onboarding_apprenant_id');
-        localStorage.setItem('onboarding_email', '');
-        localStorage.setItem('onboarding_telephone', '');
-        localStorage.setItem('onboarding_adresse', '');
-        localStorage.setItem('onboarding_code_postal', '');
-        localStorage.setItem('onboarding_ville', '');
-        toast.info("Dossier non trouvé. Vous pourrez compléter vos informations à l'étape suivante.");
+        // Apprenant non trouvé - afficher message d'erreur
+        toast.error(
+          "Nous n'avons pas trouvé votre dossier. Merci de contacter le centre au 04 28 29 60 91",
+          { duration: 8000 }
+        );
+        setIsSearching(false);
+        return; // Ne pas continuer
       }
 
-      // Rediriger vers l'étape 1
+      // Rediriger vers l'étape 1 seulement si trouvé
       navigate('/bienvenue/etape-1');
     } catch (error) {
       console.error('Erreur lors de la recherche:', error);
