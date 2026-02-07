@@ -204,34 +204,24 @@ IMPORTANT: Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
       };
     }
 
-    // For piece_identite, compare extracted name with expected name
-    if (documentType === 'piece_identite' && result.extractedNom && expectedNom && expectedPrenom) {
+    // For piece_identite, compare extracted NOM (last name) only with expected name
+    if (documentType === 'piece_identite' && result.extractedNom && expectedNom) {
       const normalize = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
       
       const extractedNomNorm = normalize(result.extractedNom || '');
-      const extractedPrenomNorm = normalize(result.extractedPrenom || '');
       const expectedNomNorm = normalize(expectedNom);
-      const expectedPrenomNorm = normalize(expectedPrenom);
       
-      // Check if names match (allowing for partial match on first name since ID may have multiple first names)
+      // Check if last name matches (allowing for partial match)
       const nomMatches = extractedNomNorm.includes(expectedNomNorm) || expectedNomNorm.includes(extractedNomNorm);
-      const prenomMatches = extractedPrenomNorm.includes(expectedPrenomNorm) || expectedPrenomNorm.includes(extractedPrenomNorm);
       
-      result.nameMatch = nomMatches && prenomMatches;
+      result.nameMatch = nomMatches;
       
       if (!result.nameMatch) {
-        const mismatchParts: string[] = [];
-        if (!nomMatches) {
-          mismatchParts.push(`Nom saisi "${expectedNom}" ≠ Nom sur la pièce "${result.extractedNom}"`);
-        }
-        if (!prenomMatches) {
-          mismatchParts.push(`Prénom saisi "${expectedPrenom}" ≠ Prénom sur la pièce "${result.extractedPrenom}"`);
-        }
-        result.nameMismatchReason = mismatchParts.join('. ');
+        result.nameMismatchReason = `Nom saisi "${expectedNom}" ≠ Nom sur la pièce "${result.extractedNom}"`;
         
-        // Mark as invalid if names don't match
+        // Mark as invalid if last name doesn't match
         result.isValid = false;
-        result.rejectionReason = `Les informations saisies ne correspondent pas à la pièce d'identité. ${result.nameMismatchReason}`;
+        result.rejectionReason = `Le nom saisi ne correspond pas à la pièce d'identité. ${result.nameMismatchReason}`;
       }
     }
 
