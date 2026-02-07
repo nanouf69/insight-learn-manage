@@ -43,49 +43,12 @@ export default function Step1() {
     question3: null,
   });
 
-  // Charger les données de l'apprenant depuis le CRM
+  // Charger l'ID de l'apprenant depuis localStorage (déjà chargé depuis la page de bienvenue)
   useEffect(() => {
-    const loadApprenantData = async () => {
-      // Essayer de trouver l'apprenant par email ou nom/prénom stockés
-      const storedEmail = localStorage.getItem('onboarding_email');
-      const storedNom = localStorage.getItem('onboarding_nom');
-      const storedPrenom = localStorage.getItem('onboarding_prenom');
-      
-      if (storedEmail || (storedNom && storedPrenom)) {
-        let query = supabase.from('apprenants').select('*');
-        
-        if (storedEmail) {
-          query = query.eq('email', storedEmail);
-        } else if (storedNom && storedPrenom) {
-          query = query.ilike('nom', storedNom).ilike('prenom', storedPrenom);
-        }
-        
-        const { data, error } = await query.limit(1).maybeSingle();
-        
-        if (!error && data) {
-          setApprenantId(data.id);
-          setNom(data.nom || '');
-          setPrenom(data.prenom || '');
-          setEmail(data.email || '');
-          setTelephone(data.telephone || '');
-          setAdresse(data.adresse || '');
-          setCodePostal(data.code_postal || '');
-          setVille(data.ville || '');
-          
-          // Sauvegarder dans localStorage
-          localStorage.setItem('onboarding_nom', data.nom || '');
-          localStorage.setItem('onboarding_prenom', data.prenom || '');
-          localStorage.setItem('onboarding_email', data.email || '');
-          localStorage.setItem('onboarding_telephone', data.telephone || '');
-          localStorage.setItem('onboarding_adresse', data.adresse || '');
-          localStorage.setItem('onboarding_code_postal', data.code_postal || '');
-          localStorage.setItem('onboarding_ville', data.ville || '');
-          localStorage.setItem('onboarding_apprenant_id', data.id);
-        }
-      }
-    };
-    
-    loadApprenantData();
+    const storedApprenantId = localStorage.getItem('onboarding_apprenant_id');
+    if (storedApprenantId) {
+      setApprenantId(storedApprenantId);
+    }
   }, []);
 
   // Sauvegarder dans localStorage à chaque modification

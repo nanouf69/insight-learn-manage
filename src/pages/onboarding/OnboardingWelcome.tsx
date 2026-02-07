@@ -1,8 +1,76 @@
-import { Link } from "react-router-dom";
-import { ArrowRight, FileText, CheckCircle, AlertTriangle, Phone } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowRight, FileText, CheckCircle, AlertTriangle, Phone, User, Search, Loader2 } from "lucide-react";
 import logoFtransport from "@/assets/logo-ftransport.png";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export default function OnboardingWelcome() {
+  const navigate = useNavigate();
+  const [nom, setNom] = useState('');
+  const [prenom, setPrenom] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [showForm, setShowForm] = useState(true);
+
+  const handleSearch = async () => {
+    if (!nom.trim() || !prenom.trim()) {
+      toast.error("Veuillez saisir votre nom et prénom");
+      return;
+    }
+
+    setIsSearching(true);
+
+    try {
+      // Chercher l'apprenant dans la base de données
+      const { data, error } = await supabase
+        .from('apprenants')
+        .select('*')
+        .ilike('nom', nom.trim())
+        .ilike('prenom', prenom.trim())
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      // Sauvegarder les infos dans localStorage
+      localStorage.setItem('onboarding_nom', nom.trim());
+      localStorage.setItem('onboarding_prenom', prenom.trim());
+
+      if (data) {
+        // Apprenant trouvé - sauvegarder toutes ses infos
+        localStorage.setItem('onboarding_apprenant_id', data.id);
+        localStorage.setItem('onboarding_email', data.email || '');
+        localStorage.setItem('onboarding_telephone', data.telephone || '');
+        localStorage.setItem('onboarding_adresse', data.adresse || '');
+        localStorage.setItem('onboarding_code_postal', data.code_postal || '');
+        localStorage.setItem('onboarding_ville', data.ville || '');
+        localStorage.setItem('onboarding_found', 'true');
+        toast.success(`Bienvenue ${data.prenom} ! Nous avons trouvé votre dossier.`);
+      } else {
+        // Apprenant non trouvé - on continue quand même
+        localStorage.setItem('onboarding_found', 'false');
+        localStorage.removeItem('onboarding_apprenant_id');
+        localStorage.setItem('onboarding_email', '');
+        localStorage.setItem('onboarding_telephone', '');
+        localStorage.setItem('onboarding_adresse', '');
+        localStorage.setItem('onboarding_code_postal', '');
+        localStorage.setItem('onboarding_ville', '');
+        toast.info("Dossier non trouvé. Vous pourrez compléter vos informations à l'étape suivante.");
+      }
+
+      // Rediriger vers l'étape 1
+      navigate('/bienvenue/etape-1');
+    } catch (error) {
+      console.error('Erreur lors de la recherche:', error);
+      toast.error("Une erreur est survenue. Veuillez réessayer.");
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Hero Section */}
@@ -28,6 +96,66 @@ export default function OnboardingWelcome() {
               Vous êtes inscrit(e) pour la formation <strong className="text-white">TAXI / VTC</strong>.
               Suivez les étapes ci-dessous pour compléter votre inscription.
             </p>
+          </div>
+
+          {/* Formulaire d'identification */}
+          <div className="bg-white/10 border border-white/20 rounded-2xl p-6 lg:p-8 mb-12 max-w-xl mx-auto">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center">
+                <User className="w-6 h-6 text-blue-400" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold">Identification</h2>
+                <p className="text-white/60 text-sm">Entrez votre nom et prénom pour commencer</p>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="nom" className="text-white/80">Nom <span className="text-red-400">*</span></Label>
+                  <Input
+                    id="nom"
+                    type="text"
+                    placeholder="Votre nom"
+                    value={nom}
+                    onChange={(e) => setNom(e.target.value)}
+                    className="bg-white/10 border-white/20 text-white placeholder:text-white/40"
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="prenom" className="text-white/80">Prénom <span className="text-red-400">*</span></Label>
+                  <Input
+                    id="prenom"
+                    type="text"
+                    placeholder="Votre prénom"
+                    value={prenom}
+                    onChange={(e) => setPrenom(e.target.value)}
+                    className="bg-white/10 border-white/20 text-white placeholder:text-white/40"
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  />
+                </div>
+              </div>
+              
+              <Button
+                onClick={handleSearch}
+                disabled={isSearching || !nom.trim() || !prenom.trim()}
+                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-6 text-lg"
+              >
+                {isSearching ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Recherche en cours...
+                  </>
+                ) : (
+                  <>
+                    <Search className="w-5 h-5 mr-2" />
+                    Commencer mon inscription
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
 
           {/* Prérequis */}
@@ -97,17 +225,6 @@ export default function OnboardingWelcome() {
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* CTA */}
-          <div className="text-center">
-            <Link
-              to="/bienvenue/etape-1"
-              className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold px-8 py-4 rounded-xl text-lg transition-all shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40"
-            >
-              Commencer l'inscription
-              <ArrowRight className="w-5 h-5" />
-            </Link>
           </div>
         </div>
       </div>
