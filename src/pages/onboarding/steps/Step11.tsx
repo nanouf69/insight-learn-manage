@@ -1,18 +1,44 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, AlertTriangle, Phone, CheckCircle, FileText, Clock, Send } from "lucide-react";
+import { ArrowLeft, AlertTriangle, Phone, CheckCircle, FileText, Clock, Send, Calendar, MapPin } from "lucide-react";
 import { OnboardingLayout } from "../OnboardingLayout";
 import step11Dossier from "@/assets/onboarding/step11-dossier.png";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+// Dates des examens théoriques 2026
+const datesExamenTheorique = [
+  { value: "27 janvier 2026", label: "27 janvier 2026 (après-midi)", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne" },
+  { value: "24 février 2026", label: "24 février 2026 (après-midi)", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne" },
+  { value: "31 mars 2026", label: "31 mars 2026 (après-midi)", lieu: "Puy-de-Dôme – Polydome, Place du 1er mai, 63100 Clermont-Ferrand" },
+  { value: "26 mai 2026", label: "26 mai 2026 (après-midi)", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne" },
+  { value: "21 juillet 2026", label: "21 juillet 2026 (après-midi)", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne" },
+  { value: "29 septembre 2026", label: "29 septembre 2026 (après-midi)", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne" },
+  { value: "17 novembre 2026", label: "17 novembre 2026 (après-midi)", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne" },
+];
 
 export default function Step11() {
   const [numeroDossier, setNumeroDossier] = useState('');
+  const [dateExamen, setDateExamen] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const selectedExam = datesExamenTheorique.find(e => e.value === dateExamen);
 
   const handleSubmit = async () => {
     if (!numeroDossier.trim()) {
       toast.error("Veuillez entrer votre numéro de dossier");
+      return;
+    }
+    
+    if (!dateExamen) {
+      toast.error("Veuillez choisir votre date d'examen");
       return;
     }
 
@@ -23,11 +49,14 @@ export default function Step11() {
     
     // Store in localStorage for now
     localStorage.setItem('onboarding_numero_dossier', numeroDossier);
+    localStorage.setItem('onboarding_date_examen', dateExamen);
     
     setIsSubmitting(false);
     setIsSubmitted(true);
-    toast.success("Numéro de dossier enregistré avec succès !");
+    toast.success("Informations enregistrées avec succès !");
   };
+
+  const canSubmit = numeroDossier.trim() && dateExamen;
 
   return (
     <OnboardingLayout currentStep={11} totalSteps={11} title="Communiquez-nous le numéro de dossier">
@@ -36,7 +65,7 @@ export default function Step11() {
           <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 flex items-start gap-3">
             <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
             <p className="text-green-700">
-              <strong>Dernière étape !</strong> Communiquez-nous votre numéro de dossier CMA.
+              <strong>Dernière étape !</strong> Communiquez-nous votre numéro de dossier CMA et votre date d'examen.
             </p>
           </div>
 
@@ -52,49 +81,94 @@ export default function Step11() {
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
             <div className="flex items-center gap-3 mb-4">
               <FileText className="w-6 h-6 text-blue-500" />
-              <h3 className="text-lg font-semibold text-gray-900">Entrez votre numéro de dossier</h3>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Entrez votre numéro de dossier <span className="text-red-500">*</span>
+              </h3>
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-3">
-              <input
-                type="text"
-                value={numeroDossier}
-                onChange={(e) => setNumeroDossier(e.target.value)}
-                placeholder="Ex: 00043920"
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-lg font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                disabled={isSubmitted}
-              />
-              <button
-                onClick={handleSubmit}
-                disabled={isSubmitting || isSubmitted}
-                className={`inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors ${
-                  isSubmitted 
-                    ? "bg-green-500 text-white cursor-default" 
-                    : "bg-blue-600 hover:bg-blue-700 text-white"
-                } disabled:opacity-50`}
-              >
-                {isSubmitted ? (
-                  <>
-                    <CheckCircle className="w-5 h-5" />
-                    Envoyé
-                  </>
-                ) : isSubmitting ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Envoi...
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-5 h-5" />
-                    Envoyer
-                  </>
-                )}
-              </button>
-            </div>
+            <input
+              type="text"
+              value={numeroDossier}
+              onChange={(e) => setNumeroDossier(e.target.value)}
+              placeholder="Ex: 00043920"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              disabled={isSubmitted}
+            />
             
             <p className="text-gray-500 text-sm mt-3">
               Vous trouverez ce numéro dans le mail de confirmation de la CMA.
             </p>
+          </div>
+
+          {/* Sélection de la date d'examen */}
+          <div className="bg-purple-50 border border-purple-200 rounded-xl p-6 mb-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Calendar className="w-6 h-6 text-purple-500" />
+              <h3 className="text-lg font-semibold text-gray-900">
+                Choisissez votre date d'examen théorique <span className="text-red-500">*</span>
+              </h3>
+            </div>
+            
+            <Select 
+              value={dateExamen} 
+              onValueChange={setDateExamen}
+              disabled={isSubmitted}
+            >
+              <SelectTrigger className="w-full bg-white text-base py-6">
+                <SelectValue placeholder="Sélectionnez une date d'examen..." />
+              </SelectTrigger>
+              <SelectContent>
+                {datesExamenTheorique.map((exam) => (
+                  <SelectItem key={exam.value} value={exam.value} className="py-3">
+                    <div className="flex flex-col">
+                      <span className="font-medium">{exam.label}</span>
+                      <span className="text-xs text-muted-foreground">{exam.lieu}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {selectedExam && (
+              <div className="mt-3 p-3 bg-white rounded-lg border border-purple-100">
+                <div className="flex items-start gap-2">
+                  <MapPin className="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-gray-600">{selectedExam.lieu}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Bouton d'envoi */}
+          <div className="flex justify-center mb-6">
+            <button
+              onClick={handleSubmit}
+              disabled={isSubmitting || isSubmitted || !canSubmit}
+              className={`inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-medium text-lg transition-colors ${
+                isSubmitted 
+                  ? "bg-green-500 text-white cursor-default" 
+                  : canSubmit
+                    ? "bg-blue-600 hover:bg-blue-700 text-white"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
+            >
+              {isSubmitted ? (
+                <>
+                  <CheckCircle className="w-5 h-5" />
+                  Informations envoyées
+                </>
+              ) : isSubmitting ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Envoi en cours...
+                </>
+              ) : (
+                <>
+                  <Send className="w-5 h-5" />
+                  Envoyer mes informations
+                </>
+              )}
+            </button>
           </div>
 
           <div className="space-y-4">
