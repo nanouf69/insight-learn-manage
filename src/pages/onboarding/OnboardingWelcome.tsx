@@ -69,8 +69,8 @@ export default function OnboardingWelcome() {
       } else {
         // Apprenant non trouvé - afficher message d'erreur
         toast.error(
-          "Nous n'avons pas trouvé votre dossier. Merci de contacter le centre au 04 28 29 60 91",
-          { duration: 8000 }
+          "Dossier non trouvé. Veuillez écrire votre nom et prénom exactement comme sur votre compte CPF, ou contactez le centre au 04 28 29 60 91",
+          { duration: 10000 }
         );
         setIsSearching(false);
         return; // Ne pas continuer
