@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { GraduationCap, Calendar, CheckCircle2, XCircle, Clock, Edit2 } from "lucide-react";
+import { GraduationCap, Calendar, CheckCircle2, XCircle, Clock, Edit2, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
+// Dates des examens théoriques 2026 avec les détails
+const datesExamenTheorique = [
+  { date: "27 janvier 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
+  { date: "24 février 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
+  { date: "31 mars 2026", lieu: "Puy-de-Dôme – Polydome, Place du 1er mai, 63100 Clermont-Ferrand", horaire: "après-midi" },
+  { date: "26 mai 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
+  { date: "21 juillet 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
+  { date: "29 septembre 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
+  { date: "17 novembre 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
+];
+
 interface ExamensSectionProps {
   apprenant: any;
 }
@@ -25,6 +36,14 @@ export function ExamensSection({ apprenant }: ExamensSectionProps) {
   const [resultatPratique, setResultatPratique] = useState<string | null>(null);
   const [datePratique, setDatePratique] = useState<string>('');
   const queryClient = useQueryClient();
+
+  // Trouver les détails de la date d'examen théorique
+  const getExamDetails = (dateExamen: string | null) => {
+    if (!dateExamen || dateExamen === 'pas_encore_choisi') return null;
+    return datesExamenTheorique.find(e => e.date === dateExamen);
+  };
+
+  const examDetails = getExamDetails(apprenant.date_examen_theorique);
 
   // TODO: Ajouter les colonnes resultat_theorique, resultat_pratique, date_examen_pratique dans la BDD
 
@@ -96,12 +115,29 @@ export function ExamensSection({ apprenant }: ExamensSectionProps) {
             <div className="space-y-4">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Date d'examen</p>
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <span className="font-medium">
-                    {apprenant.date_examen_theorique || 'Non définie'}
-                  </span>
-                </div>
+                {apprenant.date_examen_theorique && apprenant.date_examen_theorique !== 'pas_encore_choisi' ? (
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                      <span className="font-medium">
+                        {examDetails ? `${examDetails.date} (${examDetails.horaire})` : apprenant.date_examen_theorique}
+                      </span>
+                    </div>
+                    {examDetails && (
+                      <div className="flex items-start gap-2 ml-6">
+                        <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                        <span className="text-sm text-muted-foreground">
+                          {examDetails.lieu}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">Non définie</span>
+                  </div>
+                )}
               </div>
 
               <div>
