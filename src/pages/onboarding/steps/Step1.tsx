@@ -1,15 +1,29 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, CreditCard, MapPin, Info, Camera, AlertTriangle, Phone, User } from "lucide-react";
+import { ArrowRight, CreditCard, MapPin, Info, Camera, AlertTriangle, Phone, User, Check, Pencil, Mail } from "lucide-react";
 import { OnboardingLayout } from "../OnboardingLayout";
 import { DocumentUploadCard } from "@/components/onboarding/DocumentUploadCard";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export default function Step1() {
   // Nom et prénom de l'apprenant
   const [nom, setNom] = useState(() => localStorage.getItem('onboarding_nom') || '');
   const [prenom, setPrenom] = useState(() => localStorage.getItem('onboarding_prenom') || '');
+  const [email, setEmail] = useState(() => localStorage.getItem('onboarding_email') || '');
+  const [telephone, setTelephone] = useState(() => localStorage.getItem('onboarding_telephone') || '');
+  const [adresse, setAdresse] = useState(() => localStorage.getItem('onboarding_adresse') || '');
+  const [codePostal, setCodePostal] = useState(() => localStorage.getItem('onboarding_code_postal') || '');
+  const [ville, setVille] = useState(() => localStorage.getItem('onboarding_ville') || '');
+  
+  // État de confirmation d'identité
+  const [identityConfirmed, setIdentityConfirmed] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [apprenantId, setApprenantId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Generate a unique session ID for this onboarding session
   const [sessionId] = useState(() => {
@@ -29,7 +43,52 @@ export default function Step1() {
     question3: null,
   });
 
-  // Sauvegarder nom et prénom dans localStorage
+  // Charger les données de l'apprenant depuis le CRM
+  useEffect(() => {
+    const loadApprenantData = async () => {
+      // Essayer de trouver l'apprenant par email ou nom/prénom stockés
+      const storedEmail = localStorage.getItem('onboarding_email');
+      const storedNom = localStorage.getItem('onboarding_nom');
+      const storedPrenom = localStorage.getItem('onboarding_prenom');
+      
+      if (storedEmail || (storedNom && storedPrenom)) {
+        let query = supabase.from('apprenants').select('*');
+        
+        if (storedEmail) {
+          query = query.eq('email', storedEmail);
+        } else if (storedNom && storedPrenom) {
+          query = query.ilike('nom', storedNom).ilike('prenom', storedPrenom);
+        }
+        
+        const { data, error } = await query.limit(1).maybeSingle();
+        
+        if (!error && data) {
+          setApprenantId(data.id);
+          setNom(data.nom || '');
+          setPrenom(data.prenom || '');
+          setEmail(data.email || '');
+          setTelephone(data.telephone || '');
+          setAdresse(data.adresse || '');
+          setCodePostal(data.code_postal || '');
+          setVille(data.ville || '');
+          
+          // Sauvegarder dans localStorage
+          localStorage.setItem('onboarding_nom', data.nom || '');
+          localStorage.setItem('onboarding_prenom', data.prenom || '');
+          localStorage.setItem('onboarding_email', data.email || '');
+          localStorage.setItem('onboarding_telephone', data.telephone || '');
+          localStorage.setItem('onboarding_adresse', data.adresse || '');
+          localStorage.setItem('onboarding_code_postal', data.code_postal || '');
+          localStorage.setItem('onboarding_ville', data.ville || '');
+          localStorage.setItem('onboarding_apprenant_id', data.id);
+        }
+      }
+    };
+    
+    loadApprenantData();
+  }, []);
+
+  // Sauvegarder dans localStorage à chaque modification
   useEffect(() => {
     localStorage.setItem('onboarding_nom', nom);
   }, [nom]);
@@ -38,12 +97,84 @@ export default function Step1() {
     localStorage.setItem('onboarding_prenom', prenom);
   }, [prenom]);
 
+  useEffect(() => {
+    localStorage.setItem('onboarding_email', email);
+  }, [email]);
+
+  useEffect(() => {
+    localStorage.setItem('onboarding_telephone', telephone);
+  }, [telephone]);
+
+  useEffect(() => {
+    localStorage.setItem('onboarding_adresse', adresse);
+  }, [adresse]);
+
+  useEffect(() => {
+    localStorage.setItem('onboarding_code_postal', codePostal);
+  }, [codePostal]);
+
+  useEffect(() => {
+    localStorage.setItem('onboarding_ville', ville);
+  }, [ville]);
+
   const handleStatusChange = (docId: string, status: 'pending' | 'valid' | 'rejected', _reason?: string) => {
     setDocumentStatuses(prev => ({ ...prev, [docId]: status }));
   };
 
   const handleAnswerChange = (questionId: string, value: boolean) => {
     setAnswers(prev => ({ ...prev, [questionId]: value }));
+  };
+
+  // Sauvegarder les modifications dans le CRM
+  const handleSaveChanges = async () => {
+    if (!nom.trim() || !prenom.trim()) {
+      toast.error("Le nom et le prénom sont obligatoires");
+      return;
+    }
+
+    setIsSaving(true);
+    
+    try {
+      const updateData = {
+        nom: nom.trim(),
+        prenom: prenom.trim(),
+        email: email.trim() || null,
+        telephone: telephone.trim() || null,
+        adresse: adresse.trim() || null,
+        code_postal: codePostal.trim() || null,
+        ville: ville.trim() || null,
+      };
+
+      if (apprenantId) {
+        // Mettre à jour l'apprenant existant
+        const { error } = await supabase
+          .from('apprenants')
+          .update(updateData)
+          .eq('id', apprenantId);
+          
+        if (error) throw error;
+        toast.success("Vos informations ont été mises à jour");
+      } else {
+        // Créer un nouvel apprenant
+        const { data, error } = await supabase
+          .from('apprenants')
+          .insert(updateData)
+          .select()
+          .single();
+          
+        if (error) throw error;
+        setApprenantId(data.id);
+        localStorage.setItem('onboarding_apprenant_id', data.id);
+        toast.success("Vos informations ont été enregistrées");
+      }
+      
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde:', error);
+      toast.error("Erreur lors de la sauvegarde des informations");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const documents = [
@@ -96,41 +227,195 @@ export default function Step1() {
   const hasNameInfo = nom.trim() !== '' && prenom.trim() !== '';
   
   // Can proceed only if all requirements are met
-  const canProceed = hasNameInfo && allDocumentsValid && allQuestionsAnswered && !hasYesAnswer;
+  const canProceed = hasNameInfo && identityConfirmed && allDocumentsValid && allQuestionsAnswered && !hasYesAnswer;
 
   return (
-    <OnboardingLayout currentStep={1} totalSteps={11} title="Documents requis pour l'inscription">
+    <OnboardingLayout currentStep={1} totalSteps={11} title="Confirmation d'identité et documents requis">
       <div className="space-y-6">
-        {/* Nom et Prénom */}
+        {/* Confirmation d'identité */}
         <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <User className="w-5 h-5 text-blue-500" />
-            <h3 className="font-semibold text-gray-900">Vos informations</h3>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="nom" className="text-gray-700">Nom <span className="text-red-500">*</span></Label>
-              <Input
-                id="nom"
-                type="text"
-                placeholder="Votre nom"
-                value={nom}
-                onChange={(e) => setNom(e.target.value)}
-                className="bg-white"
-              />
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <User className="w-5 h-5 text-blue-500" />
+              <h3 className="font-semibold text-gray-900">Confirmation de votre identité</h3>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="prenom" className="text-gray-700">Prénom <span className="text-red-500">*</span></Label>
-              <Input
-                id="prenom"
-                type="text"
-                placeholder="Votre prénom"
-                value={prenom}
-                onChange={(e) => setPrenom(e.target.value)}
-                className="bg-white"
-              />
-            </div>
+            {!isEditing && hasNameInfo && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsEditing(true)}
+                className="text-blue-600 hover:text-blue-700"
+              >
+                <Pencil className="w-4 h-4 mr-1" />
+                Modifier
+              </Button>
+            )}
           </div>
+          
+          {isEditing || !hasNameInfo ? (
+            // Mode édition
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="nom" className="text-gray-700">Nom <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="nom"
+                    type="text"
+                    placeholder="Votre nom"
+                    value={nom}
+                    onChange={(e) => setNom(e.target.value)}
+                    className="bg-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="prenom" className="text-gray-700">Prénom <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="prenom"
+                    type="text"
+                    placeholder="Votre prénom"
+                    value={prenom}
+                    onChange={(e) => setPrenom(e.target.value)}
+                    className="bg-white"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-gray-700">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="votre.email@exemple.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="bg-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="telephone" className="text-gray-700">Téléphone</Label>
+                  <Input
+                    id="telephone"
+                    type="tel"
+                    placeholder="06 12 34 56 78"
+                    value={telephone}
+                    onChange={(e) => setTelephone(e.target.value)}
+                    className="bg-white"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="adresse" className="text-gray-700">Adresse</Label>
+                <Input
+                  id="adresse"
+                  type="text"
+                  placeholder="123 rue de la Formation"
+                  value={adresse}
+                  onChange={(e) => setAdresse(e.target.value)}
+                  className="bg-white"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="codePostal" className="text-gray-700">Code postal</Label>
+                  <Input
+                    id="codePostal"
+                    type="text"
+                    placeholder="69000"
+                    value={codePostal}
+                    onChange={(e) => setCodePostal(e.target.value)}
+                    className="bg-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ville" className="text-gray-700">Ville</Label>
+                  <Input
+                    id="ville"
+                    type="text"
+                    placeholder="Lyon"
+                    value={ville}
+                    onChange={(e) => setVille(e.target.value)}
+                    className="bg-white"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end gap-2 pt-2">
+                {hasNameInfo && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsEditing(false)}
+                  >
+                    Annuler
+                  </Button>
+                )}
+                <Button
+                  onClick={handleSaveChanges}
+                  disabled={isSaving || !nom.trim() || !prenom.trim()}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {isSaving ? "Enregistrement..." : "Enregistrer les modifications"}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            // Mode affichage avec confirmation
+            <div className="space-y-4">
+              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <User className="w-4 h-4 text-gray-500" />
+                  <span className="text-gray-900 font-medium">{nom} {prenom}</span>
+                </div>
+                {email && (
+                  <div className="flex items-center gap-3">
+                    <Mail className="w-4 h-4 text-gray-500" />
+                    <span className="text-gray-700">{email}</span>
+                  </div>
+                )}
+                {telephone && (
+                  <div className="flex items-center gap-3">
+                    <Phone className="w-4 h-4 text-gray-500" />
+                    <span className="text-gray-700">{telephone}</span>
+                  </div>
+                )}
+                {(adresse || codePostal || ville) && (
+                  <div className="flex items-center gap-3">
+                    <MapPin className="w-4 h-4 text-gray-500" />
+                    <span className="text-gray-700">
+                      {[adresse, codePostal, ville].filter(Boolean).join(', ')}
+                    </span>
+                  </div>
+                )}
+              </div>
+              
+              <div className="border-t pt-4">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={identityConfirmed}
+                    onChange={(e) => setIdentityConfirmed(e.target.checked)}
+                    className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500 mt-0.5"
+                  />
+                  <span className="text-gray-700">
+                    <strong className="text-gray-900">Je confirme que ces informations sont correctes</strong>
+                    <br />
+                    <span className="text-sm text-gray-500">
+                      Si une information est incorrecte, cliquez sur "Modifier" pour la corriger.
+                    </span>
+                  </span>
+                </label>
+              </div>
+              
+              {identityConfirmed && (
+                <div className="flex items-center gap-2 text-green-600 bg-green-50 p-3 rounded-lg">
+                  <Check className="w-5 h-5" />
+                  <span className="font-medium">Identité confirmée</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Info format */}
@@ -241,6 +526,7 @@ export default function Step1() {
             </p>
             <ul className="mt-2 text-amber-600 text-sm space-y-1 ml-4 list-disc">
               {!hasNameInfo && <li>Renseigner votre nom et prénom</li>}
+              {hasNameInfo && !identityConfirmed && <li>Confirmer que vos informations sont correctes</li>}
               {!allDocumentsValid && <li>Télécharger et faire valider tous les documents requis</li>}
               {!allQuestionsAnswered && <li>Répondre à toutes les questions obligatoires</li>}
               {hasYesAnswer && <li>Contacter le centre au 04 28 29 60 91 (réponse "Oui" détectée)</li>}
