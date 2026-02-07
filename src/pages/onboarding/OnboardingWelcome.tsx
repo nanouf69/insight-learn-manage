@@ -22,8 +22,11 @@ export default function OnboardingWelcome() {
   const [nom, setNom] = useState('');
   const [prenom, setPrenom] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [attempted, setAttempted] = useState(false); // Pour afficher les erreurs
 
   const handleSearch = async () => {
+    setAttempted(true);
+    
     if (!nom.trim() || !prenom.trim()) {
       toast.error("Veuillez saisir votre nom et prénom");
       return;
@@ -135,9 +138,16 @@ export default function OnboardingWelcome() {
                     placeholder="Votre nom"
                     value={nom}
                     onChange={(e) => setNom(e.target.value)}
-                    className="bg-white/10 border-white/20 text-white placeholder:text-white/40"
+                    className={`bg-white/10 text-white placeholder:text-white/40 ${
+                      attempted && !nom.trim() 
+                        ? 'border-red-500 border-2' 
+                        : 'border-white/20'
+                    }`}
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                   />
+                  {attempted && !nom.trim() && (
+                    <p className="text-red-400 text-xs">Champ obligatoire</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="prenom" className="text-white/80">Prénom <span className="text-red-400">*</span></Label>
@@ -147,9 +157,16 @@ export default function OnboardingWelcome() {
                     placeholder="Votre prénom"
                     value={prenom}
                     onChange={(e) => setPrenom(e.target.value)}
-                    className="bg-white/10 border-white/20 text-white placeholder:text-white/40"
+                    className={`bg-white/10 text-white placeholder:text-white/40 ${
+                      attempted && !prenom.trim() 
+                        ? 'border-red-500 border-2' 
+                        : 'border-white/20'
+                    }`}
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                   />
+                  {attempted && !prenom.trim() && (
+                    <p className="text-red-400 text-xs">Champ obligatoire</p>
+                  )}
                 </div>
               </div>
               

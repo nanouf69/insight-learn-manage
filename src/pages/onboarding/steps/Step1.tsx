@@ -24,6 +24,7 @@ export default function Step1() {
   const [isEditing, setIsEditing] = useState(false);
   const [apprenantId, setApprenantId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [attempted, setAttempted] = useState(false); // Pour afficher les erreurs de validation
 
   // Generate a unique session ID for this onboarding session
   const [sessionId] = useState(() => {
@@ -196,7 +197,11 @@ export default function Step1() {
     <OnboardingLayout currentStep={1} totalSteps={11} title="Confirmation d'identité et documents requis">
       <div className="space-y-6">
         {/* Confirmation d'identité */}
-        <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5">
+        <div className={`bg-white rounded-xl p-4 sm:p-5 border-2 ${
+          attempted && hasNameInfo && !identityConfirmed 
+            ? 'border-red-500' 
+            : 'border-gray-200'
+        }`}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <User className="w-5 h-5 text-blue-500" />
@@ -353,13 +358,17 @@ export default function Step1() {
                 )}
               </div>
               
-              <div className="border-t pt-4">
+              <div className={`border-t pt-4 ${attempted && !identityConfirmed ? 'bg-red-50 -mx-4 px-4 pb-4 rounded-b-lg' : ''}`}>
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={identityConfirmed}
                     onChange={(e) => setIdentityConfirmed(e.target.checked)}
-                    className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500 mt-0.5"
+                    className={`w-5 h-5 border-2 rounded focus:ring-green-500 mt-0.5 ${
+                      attempted && !identityConfirmed 
+                        ? 'border-red-500 text-red-600' 
+                        : 'border-gray-300 text-green-600'
+                    }`}
                   />
                   <span className="text-gray-700">
                     <strong className="text-gray-900">Je confirme que ces informations sont correctes</strong>
@@ -400,19 +409,26 @@ export default function Step1() {
 
         {/* Document upload cards */}
         <div className="space-y-4">
-          {documents.map((doc) => (
-            <DocumentUploadCard
-              key={doc.id}
-              docId={doc.id}
-              title={doc.title}
-              description={doc.description}
-              icon={doc.icon}
-              sessionId={sessionId}
-              expectedNom={doc.id === 'piece_identite' ? nom : undefined}
-              expectedPrenom={doc.id === 'piece_identite' ? prenom : undefined}
-              onStatusChange={handleStatusChange}
-            />
-          ))}
+          {documents.map((doc) => {
+            const isNotValid = documentStatuses[doc.id] !== 'valid';
+            return (
+              <div 
+                key={doc.id}
+                className={`rounded-xl ${attempted && isNotValid ? 'ring-2 ring-red-500' : ''}`}
+              >
+                <DocumentUploadCard
+                  docId={doc.id}
+                  title={doc.title}
+                  description={doc.description}
+                  icon={doc.icon}
+                  sessionId={sessionId}
+                  expectedNom={doc.id === 'piece_identite' ? nom : undefined}
+                  expectedPrenom={doc.id === 'piece_identite' ? prenom : undefined}
+                  onStatusChange={handleStatusChange}
+                />
+              </div>
+            );
+          })}
         </div>
 
         {/* Warning if documents are rejected */}
@@ -425,42 +441,57 @@ export default function Step1() {
         )}
 
         {/* Questions obligatoires */}
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 sm:p-5">
+        <div className={`rounded-xl p-4 sm:p-5 border-2 ${
+          attempted && !allQuestionsAnswered 
+            ? 'bg-red-50 border-red-500' 
+            : 'bg-blue-50 border-blue-200'
+        }`}>
           <div className="flex items-center gap-2 mb-4">
             <AlertTriangle className="w-5 h-5 text-amber-500" />
             <h3 className="font-semibold text-gray-900">Questions obligatoires</h3>
           </div>
           
           <div className="space-y-4">
-            {questions.map((question, index) => (
-              <div key={question.id} className="space-y-2">
-                <p className="text-gray-700 text-sm sm:text-base">
-                  {index + 1}) {question.text}
-                </p>
-                <div className="flex items-center gap-6 ml-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name={question.id}
-                      checked={answers[question.id] === false}
-                      onChange={() => handleAnswerChange(question.id, false)}
-                      className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                    />
-                    <span className="text-gray-700">Non</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name={question.id}
-                      checked={answers[question.id] === true}
-                      onChange={() => handleAnswerChange(question.id, true)}
-                      className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                    />
-                    <span className="text-gray-700">Oui</span>
-                  </label>
+            {questions.map((question, index) => {
+              const isUnanswered = answers[question.id] === null;
+              return (
+                <div 
+                  key={question.id} 
+                  className={`space-y-2 p-3 rounded-lg ${
+                    attempted && isUnanswered ? 'bg-red-100 border-2 border-red-500' : ''
+                  }`}
+                >
+                  <p className={`text-sm sm:text-base ${attempted && isUnanswered ? 'text-red-700 font-medium' : 'text-gray-700'}`}>
+                    {index + 1}) {question.text}
+                  </p>
+                  <div className="flex items-center gap-6 ml-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name={question.id}
+                        checked={answers[question.id] === false}
+                        onChange={() => handleAnswerChange(question.id, false)}
+                        className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                      />
+                      <span className="text-gray-700">Non</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name={question.id}
+                        checked={answers[question.id] === true}
+                        onChange={() => handleAnswerChange(question.id, true)}
+                        className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                      />
+                      <span className="text-gray-700">Oui</span>
+                    </label>
+                  </div>
+                  {attempted && isUnanswered && (
+                    <p className="text-red-600 text-xs ml-4">Veuillez répondre à cette question</p>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -509,8 +540,8 @@ export default function Step1() {
             </Link>
           ) : (
             <button
-              disabled
-              className="inline-flex items-center gap-2 bg-gray-300 text-gray-500 font-medium px-6 py-3 rounded-xl cursor-not-allowed"
+              onClick={() => setAttempted(true)}
+              className="inline-flex items-center gap-2 bg-gray-300 hover:bg-gray-400 text-gray-600 font-medium px-6 py-3 rounded-xl transition-colors cursor-pointer"
             >
               Étape suivante
               <ArrowRight className="w-4 h-4" />
