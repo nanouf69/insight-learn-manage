@@ -46,6 +46,7 @@ const EXAM_DATES = [
 export default function Step5() {
   const [selectedExamId, setSelectedExamId] = useState<string>('');
   const [isOpen, setIsOpen] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
 
   // Filtrer les 2 premières dates non dépassées
   const availableExams = useMemo(() => {
@@ -63,6 +64,8 @@ export default function Step5() {
       setSelectedExamId(availableExams[0].id);
     }
   });
+
+  const canProceed = selectedExamId && confirmed;
 
   return (
     <OnboardingLayout currentStep={5} totalSteps={11} title="Choisissez la date d'examen">
@@ -161,6 +164,21 @@ export default function Step5() {
           </div>
         </div>
 
+        {/* Confirmation checkbox */}
+        <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={confirmed}
+              onChange={(e) => setConfirmed(e.target.checked)}
+              className="w-5 h-5 mt-0.5 rounded border-gray-300 text-green-600 focus:ring-green-500"
+            />
+            <span className="text-gray-700">
+              <strong className="text-gray-900">Je confirme</strong> avoir sélectionné ma date d'examen sur la plateforme CMA
+            </span>
+          </label>
+        </div>
+
         {/* Navigation */}
         <div className="flex justify-between pt-4">
           <Link
@@ -170,13 +188,23 @@ export default function Step5() {
             <ArrowLeft className="w-4 h-4" />
             Précédent
           </Link>
-          <Link
-            to="/bienvenue/etape-6"
-            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-xl transition-colors"
-          >
-            Étape suivante
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+          {canProceed ? (
+            <Link
+              to="/bienvenue/etape-6"
+              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-xl transition-colors"
+            >
+              Étape suivante
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          ) : (
+            <button
+              disabled
+              className="inline-flex items-center gap-2 bg-gray-300 text-gray-500 font-medium px-6 py-3 rounded-xl cursor-not-allowed"
+            >
+              Étape suivante
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
     </OnboardingLayout>
