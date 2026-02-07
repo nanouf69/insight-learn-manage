@@ -83,11 +83,20 @@ export default function Step1() {
   ];
 
   // Check if all required documents are valid
-  const allValid = documents.every(doc => documentStatuses[doc.id] === 'valid');
+  const allDocumentsValid = documents.every(doc => documentStatuses[doc.id] === 'valid');
   const hasRejected = Object.values(documentStatuses).some(s => s === 'rejected');
   
   // Check if any question has "Oui" answer
   const hasYesAnswer = Object.values(answers).some(answer => answer === true);
+  
+  // Check if all questions are answered
+  const allQuestionsAnswered = Object.values(answers).every(answer => answer !== null);
+  
+  // Check if nom and prenom are filled
+  const hasNameInfo = nom.trim() !== '' && prenom.trim() !== '';
+  
+  // Can proceed only if all requirements are met
+  const canProceed = hasNameInfo && allDocumentsValid && allQuestionsAnswered && !hasYesAnswer;
 
   return (
     <OnboardingLayout currentStep={1} totalSteps={11} title="Documents requis pour l'inscription">
@@ -224,15 +233,40 @@ export default function Step1() {
           </div>
         )}
 
+        {/* Validation message */}
+        {!canProceed && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <p className="text-amber-700 text-sm font-medium">
+              ⚠️ Pour passer à l'étape suivante, vous devez :
+            </p>
+            <ul className="mt-2 text-amber-600 text-sm space-y-1 ml-4 list-disc">
+              {!hasNameInfo && <li>Renseigner votre nom et prénom</li>}
+              {!allDocumentsValid && <li>Télécharger et faire valider tous les documents requis</li>}
+              {!allQuestionsAnswered && <li>Répondre à toutes les questions obligatoires</li>}
+              {hasYesAnswer && <li>Contacter le centre au 04 28 29 60 91 (réponse "Oui" détectée)</li>}
+            </ul>
+          </div>
+        )}
+
         {/* Navigation */}
         <div className="flex justify-end pt-4">
-          <Link
-            to="/bienvenue/etape-2"
-            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-xl transition-colors shadow-sm"
-          >
-            Étape suivante
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+          {canProceed ? (
+            <Link
+              to="/bienvenue/etape-2"
+              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-xl transition-colors shadow-sm"
+            >
+              Étape suivante
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          ) : (
+            <button
+              disabled
+              className="inline-flex items-center gap-2 bg-gray-300 text-gray-500 font-medium px-6 py-3 rounded-xl cursor-not-allowed"
+            >
+              Étape suivante
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
     </OnboardingLayout>
