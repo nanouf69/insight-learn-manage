@@ -21,7 +21,8 @@ const steps = [
   { number: 8, title: "Validation email", path: "/bienvenue/etape-8" },
   { number: 9, title: "Activer compte", path: "/bienvenue/etape-9" },
   { number: 10, title: "Documents CMA", path: "/bienvenue/etape-10" },
-  { number: 11, title: "Numéro dossier", path: "/bienvenue/etape-11" },
+  { number: 11, title: "Dossier & examen", path: "/bienvenue/etape-11" },
+  { number: 12, title: "Confirmation", path: "/bienvenue/etape-12" },
 ];
 
 export function OnboardingLayout({ children, currentStep, totalSteps, title }: OnboardingLayoutProps) {

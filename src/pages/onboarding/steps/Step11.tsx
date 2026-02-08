@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { ArrowLeft, AlertTriangle, Phone, CheckCircle, FileText, Clock, Send, Calendar, MapPin } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, ArrowRight, AlertTriangle, CheckCircle, FileText, Calendar, MapPin, GraduationCap } from "lucide-react";
 import { OnboardingLayout } from "../OnboardingLayout";
 import step11Dossier from "@/assets/onboarding/step11-dossier.png";
 import { toast } from "sonner";
@@ -23,17 +23,43 @@ const datesExamenTheorique = [
   { value: "17 novembre 2026", label: "17 novembre 2026 (après-midi)", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne" },
 ];
 
+// Types d'examens disponibles
+const typesExamen = [
+  { value: "vtc_complet", label: "VTC examen complet" },
+  { value: "vtc_mobilite", label: "VTC mobilité" },
+  { value: "taxi_complet", label: "Taxi examen complet" },
+  { value: "taxi_mobilite", label: "Taxi mobilité" },
+];
+
 export default function Step11() {
+  const navigate = useNavigate();
   const [numeroDossier, setNumeroDossier] = useState('');
   const [dateExamen, setDateExamen] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [typeExamen, setTypeExamen] = useState('');
+  const [attempted, setAttempted] = useState(false);
 
   const selectedExam = datesExamenTheorique.find(e => e.value === dateExamen);
 
-  const handleSubmit = async () => {
+  // Load saved values on mount
+  useEffect(() => {
+    const savedNumeroDossier = localStorage.getItem('onboarding_numero_dossier');
+    const savedDateExamen = localStorage.getItem('onboarding_date_examen');
+    const savedTypeExamen = localStorage.getItem('onboarding_type_examen');
+    if (savedNumeroDossier) setNumeroDossier(savedNumeroDossier);
+    if (savedDateExamen) setDateExamen(savedDateExamen);
+    if (savedTypeExamen) setTypeExamen(savedTypeExamen);
+  }, []);
+
+  const handleNext = () => {
+    setAttempted(true);
+    
     if (!numeroDossier.trim()) {
       toast.error("Veuillez entrer votre numéro de dossier");
+      return;
+    }
+    
+    if (!typeExamen) {
+      toast.error("Veuillez choisir votre type d'examen");
       return;
     }
     
@@ -42,30 +68,24 @@ export default function Step11() {
       return;
     }
 
-    setIsSubmitting(true);
-    
-    // Simulate submission - in real app, save to database
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Store in localStorage for now
+    // Store in localStorage
     localStorage.setItem('onboarding_numero_dossier', numeroDossier);
     localStorage.setItem('onboarding_date_examen', dateExamen);
+    localStorage.setItem('onboarding_type_examen', typeExamen);
     
-    setIsSubmitting(false);
-    setIsSubmitted(true);
-    toast.success("Informations enregistrées avec succès !");
+    navigate('/bienvenue/etape-12');
   };
 
-  const canSubmit = numeroDossier.trim() && dateExamen;
+  const canSubmit = numeroDossier.trim() && dateExamen && typeExamen;
 
   return (
-    <OnboardingLayout currentStep={11} totalSteps={11} title="Communiquez-nous le numéro de dossier">
+    <OnboardingLayout currentStep={11} totalSteps={12} title="Numéro de dossier et examen">
       <div className="space-y-8">
         <div className="bg-white border border-gray-200 rounded-2xl p-6 lg:p-8">
           <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 flex items-start gap-3">
             <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
             <p className="text-green-700">
-              <strong>Dernière étape !</strong> Communiquez-nous votre numéro de dossier CMA et votre date d'examen.
+              <strong>Presque terminé !</strong> Communiquez-nous votre numéro de dossier CMA et les informations sur votre examen.
             </p>
           </div>
 
@@ -78,7 +98,7 @@ export default function Step11() {
           </div>
 
           {/* Champ de saisie du numéro de dossier */}
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
+          <div className={`bg-blue-50 border rounded-xl p-6 mb-6 ${attempted && !numeroDossier.trim() ? 'border-red-500' : 'border-blue-200'}`}>
             <div className="flex items-center gap-3 mb-4">
               <FileText className="w-6 h-6 text-blue-500" />
               <h3 className="text-lg font-semibold text-gray-900">
@@ -91,17 +111,52 @@ export default function Step11() {
               value={numeroDossier}
               onChange={(e) => setNumeroDossier(e.target.value)}
               placeholder="Ex: 00043920"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              disabled={isSubmitted}
+              className={`w-full px-4 py-3 border rounded-lg text-lg font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                attempted && !numeroDossier.trim() ? 'border-red-500' : 'border-gray-300'
+              }`}
             />
+            
+            {attempted && !numeroDossier.trim() && (
+              <p className="text-red-500 text-sm mt-2">Ce champ est obligatoire</p>
+            )}
             
             <p className="text-gray-500 text-sm mt-3">
               Vous trouverez ce numéro dans le mail de confirmation de la CMA.
             </p>
           </div>
 
+          {/* Sélection du type d'examen */}
+          <div className={`bg-orange-50 border rounded-xl p-6 mb-6 ${attempted && !typeExamen ? 'border-red-500' : 'border-orange-200'}`}>
+            <div className="flex items-center gap-3 mb-4">
+              <GraduationCap className="w-6 h-6 text-orange-500" />
+              <h3 className="text-lg font-semibold text-gray-900">
+                Quel examen passez-vous ? <span className="text-red-500">*</span>
+              </h3>
+            </div>
+            
+            <Select 
+              value={typeExamen} 
+              onValueChange={setTypeExamen}
+            >
+              <SelectTrigger className={`w-full bg-white text-base py-6 ${attempted && !typeExamen ? 'border-red-500' : ''}`}>
+                <SelectValue placeholder="Sélectionnez le type d'examen..." />
+              </SelectTrigger>
+              <SelectContent>
+                {typesExamen.map((type) => (
+                  <SelectItem key={type.value} value={type.value} className="py-3">
+                    <span className="font-medium">{type.label}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {attempted && !typeExamen && (
+              <p className="text-red-500 text-sm mt-2">Ce champ est obligatoire</p>
+            )}
+          </div>
+
           {/* Sélection de la date d'examen */}
-          <div className="bg-purple-50 border border-purple-200 rounded-xl p-6 mb-6">
+          <div className={`bg-purple-50 border rounded-xl p-6 mb-6 ${attempted && !dateExamen ? 'border-red-500' : 'border-purple-200'}`}>
             <div className="flex items-center gap-3 mb-4">
               <Calendar className="w-6 h-6 text-purple-500" />
               <h3 className="text-lg font-semibold text-gray-900">
@@ -112,9 +167,8 @@ export default function Step11() {
             <Select 
               value={dateExamen} 
               onValueChange={setDateExamen}
-              disabled={isSubmitted}
             >
-              <SelectTrigger className="w-full bg-white text-base py-6">
+              <SelectTrigger className={`w-full bg-white text-base py-6 ${attempted && !dateExamen ? 'border-red-500' : ''}`}>
                 <SelectValue placeholder="Sélectionnez une date d'examen..." />
               </SelectTrigger>
               <SelectContent>
@@ -129,6 +183,10 @@ export default function Step11() {
               </SelectContent>
             </Select>
             
+            {attempted && !dateExamen && (
+              <p className="text-red-500 text-sm mt-2">Ce champ est obligatoire</p>
+            )}
+            
             {selectedExam && (
               <div className="mt-3 p-3 bg-white rounded-lg border border-purple-100">
                 <div className="flex items-start gap-2">
@@ -137,38 +195,6 @@ export default function Step11() {
                 </div>
               </div>
             )}
-          </div>
-
-          {/* Bouton d'envoi */}
-          <div className="flex justify-center mb-6">
-            <button
-              onClick={handleSubmit}
-              disabled={isSubmitting || isSubmitted || !canSubmit}
-              className={`inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-medium text-lg transition-colors ${
-                isSubmitted 
-                  ? "bg-green-500 text-white cursor-default" 
-                  : canSubmit
-                    ? "bg-blue-600 hover:bg-blue-700 text-white"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
-              }`}
-            >
-              {isSubmitted ? (
-                <>
-                  <CheckCircle className="w-5 h-5" />
-                  Informations envoyées
-                </>
-              ) : isSubmitting ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Envoi en cours...
-                </>
-              ) : (
-                <>
-                  <Send className="w-5 h-5" />
-                  Envoyer mes informations
-                </>
-              )}
-            </button>
           </div>
 
           <div className="space-y-4">
@@ -192,39 +218,7 @@ export default function Step11() {
                 </p>
               </div>
             </div>
-
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
-              <Clock className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
-              <p className="text-blue-700 text-sm">
-                <strong>En cas de réussite à l'épreuve d'admissibilité :</strong> Merci de nous contacter dans les 48h après la réception des résultats 
-                pour garantir un véhicule pour le passage à l'épreuve pratique.
-              </p>
-            </div>
-
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-start gap-3">
-              <Clock className="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5" />
-              <p className="text-gray-600 text-sm">
-                Si dans les 2 mois qui suivent ce mail nous n'avons pas reçu les documents demandés, 
-                le centre se réserve le droit de ne plus payer les frais d'examens si vous y aviez droit.
-              </p>
-            </div>
           </div>
-        </div>
-
-        {/* Contact */}
-        <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-2xl p-6 lg:p-8 text-center">
-          <h3 className="text-2xl font-bold text-gray-900 mb-4">Nous reprendrons contact très prochainement</h3>
-          <p className="text-gray-600 mb-6">Cordialement, l'équipe FTRANSPORT</p>
-          
-          <div className="flex items-center justify-center gap-3 text-xl">
-            <Phone className="w-6 h-6 text-blue-500" />
-            <a href="tel:0428296091" className="font-semibold text-gray-900 hover:text-blue-600 transition-colors">
-              04.28.29.60.91
-            </a>
-          </div>
-          <p className="text-gray-500 text-sm mt-2">
-            86 Route de Genas, 69003 Lyon • De 9h à 17h sur rendez-vous
-          </p>
         </div>
 
         {/* Navigation */}
@@ -236,17 +230,17 @@ export default function Step11() {
             <ArrowLeft className="w-4 h-4" />
             Précédent
           </Link>
-          <Link
-            to="/bienvenue"
+          <button
+            onClick={handleNext}
             className={`inline-flex items-center gap-2 font-medium px-6 py-3 rounded-xl transition-colors ${
-              isSubmitted 
-                ? "bg-green-600 hover:bg-green-700 text-white" 
-                : "bg-gray-300 text-gray-500 cursor-not-allowed pointer-events-none"
+              canSubmit 
+                ? "bg-blue-600 hover:bg-blue-700 text-white" 
+                : "bg-blue-600 hover:bg-blue-700 text-white"
             }`}
           >
-            <CheckCircle className="w-4 h-4" />
-            Terminé
-          </Link>
+            Étape suivante
+            <ArrowRight className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </OnboardingLayout>
