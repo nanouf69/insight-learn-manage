@@ -93,7 +93,7 @@ export default function Step11() {
             <img 
               src={step11Dossier} 
               alt="Numéro de dossier" 
-              className="w-full rounded-xl border border-gray-200"
+              className="max-w-lg mx-auto rounded-xl border border-gray-200"
             />
           </div>
 

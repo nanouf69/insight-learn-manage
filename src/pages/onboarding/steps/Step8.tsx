@@ -27,7 +27,7 @@ export default function Step8() {
             <img 
               src={step8Modal} 
               alt="Modal de confirmation" 
-              className="w-full rounded-xl border border-gray-200"
+              className="max-w-md mx-auto rounded-xl border border-gray-200"
             />
           </div>
 
@@ -44,8 +44,9 @@ export default function Step8() {
             <img 
               src={step8Email} 
               alt="Email CMA France" 
-              className="w-full rounded-xl border border-gray-200"
+              className="max-w-md mx-auto rounded-xl border border-gray-200 blur-sm hover:blur-none transition-all duration-300"
             />
+            <p className="text-xs text-gray-400 text-center mt-2 italic">Image floutée pour protéger les données personnelles</p>
             <p className="mt-4 text-gray-600 text-sm">
               Retournez sur votre boîte mail et cliquez sur le mail "CMA France - Vérification du compte".
             </p>

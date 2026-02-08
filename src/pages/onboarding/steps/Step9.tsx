@@ -22,7 +22,7 @@ export default function Step9() {
             <img 
               src={step9Validate} 
               alt="Valider mon compte" 
-              className="w-full rounded-xl border border-gray-200"
+              className="max-w-lg mx-auto rounded-xl border border-gray-200"
             />
           </div>
 

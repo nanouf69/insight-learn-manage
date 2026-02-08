@@ -22,7 +22,7 @@ export default function Step3() {
             <img 
               src={step3Departement} 
               alt="Choix département" 
-              className="w-full rounded-xl border border-gray-200"
+              className="max-w-lg mx-auto rounded-xl border border-gray-200"
             />
           </div>
 
