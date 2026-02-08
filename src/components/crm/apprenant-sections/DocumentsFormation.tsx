@@ -1,21 +1,24 @@
 import { useState } from "react";
-import { FileText, Download, CheckCircle2 } from "lucide-react";
+import { FileText, Download, CheckCircle2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { generateAttestationInscription } from "@/lib/pdf/attestation-inscription";
 import { generateAttestationFinFormation } from "@/lib/pdf/attestation-fin-formation";
 import { generateAttestationFranceTravail } from "@/lib/pdf/attestation-france-travail";
+import { generateBienvenueFtransport } from "@/lib/pdf/bienvenue-ftransport";
 import { toast } from "sonner";
 
 interface DocumentsFormationProps {
   apprenant: any;
 }
 
+type DocType = 'inscription' | 'fin-formation' | 'france-travail' | 'bienvenue';
+
 export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
   const [generatingDoc, setGeneratingDoc] = useState<string | null>(null);
 
-  const handleGenerateAttestation = async (type: 'inscription' | 'fin-formation' | 'france-travail') => {
+  const handleGenerateAttestation = async (type: DocType) => {
     setGeneratingDoc(type);
     try {
       if (type === 'inscription') {
@@ -27,6 +30,9 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
       } else if (type === 'france-travail') {
         await generateAttestationFranceTravail(apprenant);
         toast.success("Attestation France Travail générée");
+      } else if (type === 'bienvenue') {
+        await generateBienvenueFtransport(apprenant);
+        toast.success("Document de bienvenue généré");
       }
     } catch (error) {
       console.error('Erreur génération PDF:', error);
@@ -38,11 +44,20 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
 
   const documents = [
     {
+      id: 'bienvenue',
+      title: "Document de Bienvenue",
+      description: "Guide d'inscription avec le lien vers les étapes à suivre",
+      status: 'disponible',
+      type: 'bienvenue' as const,
+      icon: Mail,
+    },
+    {
       id: 'inscription',
       title: "Attestation d'inscription",
       description: "Confirme l'inscription de l'apprenant à la formation",
       status: 'disponible',
       type: 'inscription' as const,
+      icon: FileText,
     },
     {
       id: 'fin-formation',
@@ -50,6 +65,7 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
       description: "Délivrée à la fin du parcours de formation",
       status: apprenant.date_fin_formation ? 'disponible' : 'en_attente',
       type: 'fin-formation' as const,
+      icon: FileText,
     },
     {
       id: 'france-travail',
@@ -57,6 +73,7 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
       description: "Formulaire à retourner à France Travail (auto-rempli sauf type de rémunération)",
       status: apprenant.mode_financement === 'france-travail' ? 'disponible' : 'non_applicable',
       type: 'france-travail' as const,
+      icon: FileText,
     },
   ];
 
@@ -77,7 +94,7 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
             >
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-primary" />
+                  <doc.icon className="w-5 h-5 text-primary" />
                 </div>
                 <div>
                   <h4 className="font-medium">{doc.title}</h4>
