@@ -24,7 +24,7 @@ export default function Step10() {
             <img 
               src={step10Docs} 
               alt="Interface CMA" 
-              className="w-full rounded-xl border border-gray-200"
+              className="max-w-lg mx-auto rounded-xl border border-gray-200"
             />
           </div>
 
@@ -33,7 +33,7 @@ export default function Step10() {
             <img 
               src={step10Mydocs} 
               alt="Mes documents" 
-              className="w-full rounded-xl border border-gray-200"
+              className="max-w-lg mx-auto rounded-xl border border-gray-200"
             />
           </div>
 

@@ -15,7 +15,7 @@ export default function Step4() {
             <img 
               src={step4Taxi} 
               alt="Type d'épreuve" 
-              className="w-full rounded-xl border border-gray-200"
+              className="max-w-lg mx-auto rounded-xl border border-gray-200"
             />
           </div>
 

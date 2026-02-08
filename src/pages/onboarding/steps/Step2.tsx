@@ -39,7 +39,7 @@ export default function Step2() {
               <img 
                 src={step2Cma} 
                 alt="Site CMA" 
-                className="w-full rounded-xl border border-gray-200"
+                className="max-w-lg mx-auto rounded-xl border border-gray-200"
               />
             </div>
 
@@ -48,7 +48,7 @@ export default function Step2() {
               <img 
                 src={step2Cards} 
                 alt="Types d'examens" 
-                className="w-full rounded-xl border border-gray-200"
+                className="max-w-lg mx-auto rounded-xl border border-gray-200"
               />
               <div className="mt-4 grid md:grid-cols-3 gap-4">
                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">

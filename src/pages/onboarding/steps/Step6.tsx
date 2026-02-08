@@ -22,7 +22,7 @@ export default function Step6() {
             <img 
               src={step6Form} 
               alt="Formulaire d'inscription" 
-              className="w-full rounded-xl border border-gray-200"
+              className="max-w-lg mx-auto rounded-xl border border-gray-200"
             />
           </div>
 
