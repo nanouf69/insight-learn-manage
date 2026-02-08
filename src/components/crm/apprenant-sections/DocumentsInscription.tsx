@@ -438,7 +438,7 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
   // Formats acceptés
   const ACCEPTED_FORMATS = '.pdf,.jpg,.jpeg,.png,.heic,.heif,.webp';
   const ACCEPTED_FORMATS_DISPLAY = 'PDF, JPG, PNG, HEIC, WebP';
-  const MAX_FILE_SIZE_MB = 2;
+  const MAX_FILE_SIZE_MB = 4;
   const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
   const handleFileChange = (docId: string, event: React.ChangeEvent<HTMLInputElement>, isCustom = false) => {
