@@ -23,6 +23,7 @@ import Step8 from "./pages/onboarding/steps/Step8";
 import Step9 from "./pages/onboarding/steps/Step9";
 import Step10 from "./pages/onboarding/steps/Step10";
 import Step11 from "./pages/onboarding/steps/Step11";
+import Step12 from "./pages/onboarding/steps/Step12";
 
 function App() {
   const [queryClient] = useState(() => new QueryClient());
@@ -58,6 +59,7 @@ function App() {
               <Route path="/bienvenue/etape-9" element={<Step9 />} />
               <Route path="/bienvenue/etape-10" element={<Step10 />} />
               <Route path="/bienvenue/etape-11" element={<Step11 />} />
+              <Route path="/bienvenue/etape-12" element={<Step12 />} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
