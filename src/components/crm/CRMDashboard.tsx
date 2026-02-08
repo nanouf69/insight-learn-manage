@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, Filter, MoreVertical, Mail, Phone, Calendar, GraduationCap } from "lucide-react";
+import { Search, Filter, MoreVertical, Mail, Phone, Calendar, GraduationCap, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,6 +16,7 @@ import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { ApprenantDetailPage } from "./ApprenantDetailPage";
 import { ApprenantForm } from "@/components/apprenants/ApprenantForm";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 const typeLabels: Record<string, string> = {
   'vtc': 'VTC',
   'vtc-e': 'VTC E',
@@ -180,10 +181,40 @@ export function CRMDashboard() {
             const initials = `${apprenant.prenom?.[0] || ''}${apprenant.nom?.[0] || ''}`.toUpperCase();
             const createdAt = apprenant.created_at ? formatDistanceToNow(new Date(apprenant.created_at), { addSuffix: true, locale: fr }) : '';
 
+            // Vérifier les incohérences entre type_apprenant et type_examen
+            const typeExamen = (apprenant as any).type_examen;
+            const b2Vierge = (apprenant as any).b2_vierge;
+            const anomalies: string[] = [];
+            
+            // Vérifier si le type d'examen correspond au type d'apprenant
+            if (typeExamen) {
+              const isVtcApprenant = apprenant.type_apprenant?.toLowerCase().includes('vtc');
+              const isTaxiApprenant = apprenant.type_apprenant?.toLowerCase().includes('taxi') || 
+                                       apprenant.type_apprenant?.toLowerCase().includes('ta');
+              const isVtcExam = typeExamen.includes('vtc');
+              const isTaxiExam = typeExamen.includes('taxi');
+              
+              if (isVtcApprenant && isTaxiExam) {
+                anomalies.push(`Type d'examen (${typeExamen === 'taxi_complet' ? 'Taxi complet' : 'Taxi mobilité'}) ne correspond pas au type apprenant (VTC)`);
+              }
+              if (isTaxiApprenant && isVtcExam) {
+                anomalies.push(`Type d'examen (${typeExamen === 'vtc_complet' ? 'VTC complet' : 'VTC mobilité'}) ne correspond pas au type apprenant (TAXI/TA)`);
+              }
+            }
+            
+            // Vérifier si B2 n'est pas vierge
+            if (b2Vierge === false && typeExamen) {
+              anomalies.push("B2 non confirmé comme vierge");
+            }
+
+            const hasAnomalies = anomalies.length > 0;
+
             return (
               <div 
                 key={apprenant.id} 
-                className="bg-card rounded-xl border border-border p-5 hover:shadow-lg transition-all duration-200 cursor-pointer"
+                className={`bg-card rounded-xl border p-5 hover:shadow-lg transition-all duration-200 cursor-pointer ${
+                  hasAnomalies ? 'border-red-500 border-2' : 'border-border'
+                }`}
                 onClick={() => setSelectedApprenantId(apprenant.id)}
               >
                 <div className="flex items-start justify-between">
@@ -193,7 +224,24 @@ export function CRMDashboard() {
                       <AvatarFallback>{initials}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="font-semibold text-foreground">{apprenant.prenom} {apprenant.nom}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-foreground">{apprenant.prenom} {apprenant.nom}</h3>
+                        {hasAnomalies && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <AlertTriangle className="w-5 h-5 text-red-500" />
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs bg-red-50 border-red-200 text-red-800">
+                                <p className="font-semibold mb-1">Anomalies détectées :</p>
+                                <ul className="list-disc list-inside text-sm">
+                                  {anomalies.map((a, i) => <li key={i}>{a}</li>)}
+                                </ul>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
                       <Badge className={typeColor}>{typeLabel}</Badge>
                     </div>
                   </div>

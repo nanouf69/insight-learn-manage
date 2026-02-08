@@ -387,6 +387,43 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
                   <p className="text-sm text-muted-foreground">N° Dossier CMA</p>
                   <p className="font-medium">{apprenant.numero_dossier_cma || '-'}</p>
                 </div>
+                
+                {/* Informations d'examen */}
+                <div className="pt-4 border-t space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Type d'examen</p>
+                      <p className="font-medium">
+                        {(apprenant as any).type_examen 
+                          ? {
+                              'vtc_complet': 'VTC examen complet',
+                              'vtc_mobilite': 'VTC mobilité',
+                              'taxi_complet': 'Taxi examen complet',
+                              'taxi_mobilite': 'Taxi mobilité'
+                            }[(apprenant as any).type_examen] || (apprenant as any).type_examen
+                          : '-'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Date d'examen théorique</p>
+                      <p className="font-medium">{apprenant.date_examen_theorique || '-'}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Lieu d'examen</p>
+                    <p className="font-medium text-sm">{(apprenant as any).lieu_examen || '-'}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-muted-foreground">B2 vierge confirmé</p>
+                    {(apprenant as any).b2_vierge === true ? (
+                      <Badge className="bg-green-100 text-green-800">Oui</Badge>
+                    ) : (apprenant as any).b2_vierge === false ? (
+                      <Badge className="bg-red-100 text-red-800">Non</Badge>
+                    ) : (
+                      <Badge variant="outline">Non renseigné</Badge>
+                    )}
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
