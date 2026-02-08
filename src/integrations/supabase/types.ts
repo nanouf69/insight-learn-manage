@@ -70,6 +70,7 @@ export type Database = {
       apprenants: {
         Row: {
           adresse: string | null
+          b2_vierge: boolean | null
           civilite: string | null
           code_postal: string | null
           created_at: string
@@ -83,6 +84,7 @@ export type Database = {
           email: string | null
           formation_choisie: string | null
           id: string
+          lieu_examen: string | null
           mode_financement: string | null
           montant_paye: number | null
           montant_ttc: number | null
@@ -95,11 +97,13 @@ export type Database = {
           statut: string | null
           telephone: string | null
           type_apprenant: string | null
+          type_examen: string | null
           updated_at: string
           ville: string | null
         }
         Insert: {
           adresse?: string | null
+          b2_vierge?: boolean | null
           civilite?: string | null
           code_postal?: string | null
           created_at?: string
@@ -113,6 +117,7 @@ export type Database = {
           email?: string | null
           formation_choisie?: string | null
           id?: string
+          lieu_examen?: string | null
           mode_financement?: string | null
           montant_paye?: number | null
           montant_ttc?: number | null
@@ -125,11 +130,13 @@ export type Database = {
           statut?: string | null
           telephone?: string | null
           type_apprenant?: string | null
+          type_examen?: string | null
           updated_at?: string
           ville?: string | null
         }
         Update: {
           adresse?: string | null
+          b2_vierge?: boolean | null
           civilite?: string | null
           code_postal?: string | null
           created_at?: string
@@ -143,6 +150,7 @@ export type Database = {
           email?: string | null
           formation_choisie?: string | null
           id?: string
+          lieu_examen?: string | null
           mode_financement?: string | null
           montant_paye?: number | null
           montant_ttc?: number | null
@@ -155,6 +163,7 @@ export type Database = {
           statut?: string | null
           telephone?: string | null
           type_apprenant?: string | null
+          type_examen?: string | null
           updated_at?: string
           ville?: string | null
         }

@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { generateRecapitulatifPDF } from "@/lib/pdf/recapitulatif-inscription";
+import { supabase } from "@/integrations/supabase/client";
 
 // Dates des examens théoriques 2026
 const datesExamenTheorique = [
@@ -136,12 +137,50 @@ export default function Step12() {
 
     setIsSubmitting(true);
     
-    // Simulate submission - in real app, save to database
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setIsSubmitting(false);
-    setIsSubmitted(true);
-    toast.success("Votre dossier a été envoyé avec succès !");
+    try {
+      // Get the apprenant ID from localStorage
+      const apprenantId = localStorage.getItem('onboarding_apprenant_id');
+      
+      if (!apprenantId) {
+        toast.error("Erreur: Impossible de trouver votre dossier. Veuillez recommencer depuis le début.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Get the lieu from the selected exam date
+      const selectedExam = datesExamenTheorique.find(e => e.value === dateExamen);
+      const lieuExamen = selectedExam?.lieu || '';
+
+      // Update the apprenant in the database
+      const { error } = await supabase
+        .from('apprenants')
+        .update({
+          numero_dossier_cma: numeroDossier,
+          date_examen_theorique: dateExamen,
+          type_examen: typeExamen,
+          lieu_examen: lieuExamen,
+          b2_vierge: b2Vierge,
+          // Also update contact info if changed
+          email: email || undefined,
+          telephone: telephone || undefined,
+        })
+        .eq('id', apprenantId);
+
+      if (error) {
+        console.error('Error updating apprenant:', error);
+        toast.error("Erreur lors de l'enregistrement. Veuillez réessayer.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      setIsSubmitting(false);
+      setIsSubmitted(true);
+      toast.success("Votre dossier a été envoyé avec succès !");
+    } catch (err) {
+      console.error('Unexpected error:', err);
+      toast.error("Une erreur inattendue s'est produite.");
+      setIsSubmitting(false);
+    }
   };
 
   const openEditCoordonnees = () => {
