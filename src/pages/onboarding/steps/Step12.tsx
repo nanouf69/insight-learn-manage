@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Phone, CheckCircle, Clock, AlertTriangle, User, FileText, Calendar, GraduationCap, Shield, Edit2, Send } from "lucide-react";
+import { ArrowLeft, Phone, CheckCircle, Clock, AlertTriangle, User, FileText, Calendar, GraduationCap, Shield, Edit2, Send, Download } from "lucide-react";
 import { OnboardingLayout } from "../OnboardingLayout";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,6 +21,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { generateRecapitulatifPDF } from "@/lib/pdf/recapitulatif-inscription";
 
 // Dates des examens théoriques 2026
 const datesExamenTheorique = [
@@ -201,6 +202,24 @@ export default function Step12() {
     toast.success("Date d'examen mise à jour");
   };
 
+  const handleDownloadRecap = () => {
+    const selectedExam = datesExamenTheorique.find(e => e.value === dateExamen);
+    
+    generateRecapitulatifPDF({
+      nom,
+      prenom,
+      email,
+      telephone,
+      numeroDossier,
+      typeExamen: getTypeExamenLabel(typeExamen),
+      dateExamen,
+      lieuExamen: selectedExam?.lieu,
+      b2Vierge,
+    });
+    
+    toast.success("Récapitulatif téléchargé !");
+  };
+
   return (
     <OnboardingLayout currentStep={12} totalSteps={12} title="Confirmation de votre dossier">
       <div className="space-y-8">
@@ -325,8 +344,8 @@ export default function Step12() {
             </div>
           </div>
 
-          {/* Bouton de soumission */}
-          <div className="flex justify-center mb-6">
+          {/* Boutons d'action */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
             <button
               onClick={handleSubmit}
               disabled={isSubmitting || isSubmitted || !b2Vierge}
@@ -354,6 +373,14 @@ export default function Step12() {
                   Confirmer et envoyer mon dossier
                 </>
               )}
+            </button>
+            
+            <button
+              onClick={handleDownloadRecap}
+              className="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-medium text-base bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
+            >
+              <Download className="w-5 h-5" />
+              Télécharger le récapitulatif
             </button>
           </div>
 
