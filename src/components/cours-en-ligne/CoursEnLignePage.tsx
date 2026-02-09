@@ -2,12 +2,39 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Layers, GraduationCap, Plus, Users, TrendingUp, AlertTriangle, FileText, Monitor } from "lucide-react";
+import { BookOpen, Layers, GraduationCap, Plus, Users, TrendingUp, AlertTriangle, FileText, Monitor, ArrowUp, ArrowDown, Pencil, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
 const CoursEnLignePage = () => {
   const [activeTab, setActiveTab] = useState("accueil");
   const [selectedFormation, setSelectedFormation] = useState("vtc");
+  const [modules, setModules] = useState([
+    { id: 1, nom: "1.INTRODUCTION", eleves: 2, progression: "0%", statut: "Actif" },
+    { id: 2, nom: "2.COURS ET EXERCICES VTC", eleves: 2, progression: "6%", statut: "Actif" },
+    { id: 3, nom: "3.FORMULES", eleves: 2, progression: "0%", statut: "Actif" },
+    { id: 4, nom: "4.BILAN EXERCICES VTC", eleves: 2, progression: "4%", statut: "Actif" },
+    { id: 5, nom: "6.BILAN EXAMEN VTC", eleves: 2, progression: "8%", statut: "Actif" },
+    { id: 6, nom: "8.PRATIQUE TAXI", eleves: 0, progression: "0%", statut: "Actif" },
+    { id: 7, nom: "7.CONNAISSANCES DE LA VILLE TAXI", eleves: 0, progression: "0%", statut: "Actif" },
+    { id: 8, nom: "7.PRATIQUE VTC", eleves: 2, progression: "0%", statut: "Actif" },
+    { id: 9, nom: "4.BILAN EXERCICES TAXI", eleves: 0, progression: "0%", statut: "Actif" },
+    { id: 10, nom: "2.COURS ET EXERCICES TAXI", eleves: 0, progression: "0%", statut: "Actif" },
+    { id: 11, nom: "6.BILAN EXAMEN TAXI", eleves: 0, progression: "0%", statut: "Actif" },
+  ]);
+
+  const moveModule = (index: number, direction: "up" | "down") => {
+    const newModules = [...modules];
+    const swapIndex = direction === "up" ? index - 1 : index + 1;
+    if (swapIndex < 0 || swapIndex >= newModules.length) return;
+    [newModules[index], newModules[swapIndex]] = [newModules[swapIndex], newModules[index]];
+    setModules(newModules);
+  };
+
+  const deleteModule = (id: number) => {
+    setModules(modules.filter(m => m.id !== id));
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -145,21 +172,78 @@ const CoursEnLignePage = () => {
         {/* Modules */}
         <TabsContent value="modules" className="space-y-6 mt-6">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold">Modules de cours</h2>
+            <div>
+              <h2 className="text-2xl font-bold">Gestion des modules</h2>
+              <p className="text-sm text-muted-foreground mt-1">Modules d'entraînement</p>
+            </div>
             <Button className="gap-2">
               <Plus className="w-4 h-4" />
-              Nouveau module
+              Nouveau module d'entraînement
             </Button>
           </div>
+
           <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-              <Layers className="w-12 h-12 mb-4 opacity-50" />
-              <p className="text-lg font-medium">Aucun module créé</p>
-              <p className="text-sm mt-1">Créez votre premier module pour organiser vos cours en ligne.</p>
-              <Button className="mt-4 gap-2">
-                <Plus className="w-4 h-4" />
-                Créer un module
-              </Button>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="font-semibold">Nom</TableHead>
+                    <TableHead className="font-semibold">Élèves</TableHead>
+                    <TableHead className="font-semibold">Progression</TableHead>
+                    <TableHead className="font-semibold">Statut</TableHead>
+                    <TableHead className="font-semibold">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {modules.map((module, index) => (
+                    <TableRow key={module.id}>
+                      <TableCell className="font-medium">{module.nom}</TableCell>
+                      <TableCell>{module.eleves}</TableCell>
+                      <TableCell>{module.progression}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-emerald-600 border-emerald-600">
+                          {module.statut}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => moveModule(index, "up")}
+                            disabled={index === 0}
+                          >
+                            <ArrowUp className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => moveModule(index, "down")}
+                            disabled={index === modules.length - 1}
+                          >
+                            <ArrowDown className="w-4 h-4" />
+                          </Button>
+                          <Button variant="secondary" size="sm" className="gap-1">
+                            <Pencil className="w-3 h-3" />
+                            Éditer
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="gap-1"
+                            onClick={() => deleteModule(module.id)}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            Supprimer
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>
