@@ -1,12 +1,18 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ClipboardCheck } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { ClipboardCheck, CheckCircle2, XCircle, UserX, Search } from "lucide-react";
+import { toast } from "sonner";
 
 export function ExamenReussitePage() {
-  // Récupérer tous les apprenants avec examen en janvier
+  const [search, setSearch] = useState("");
+  const queryClient = useQueryClient();
+
   const { data: apprenants, isLoading } = useQuery({
     queryKey: ['apprenants-examen-janvier'],
     queryFn: async () => {
@@ -15,11 +21,45 @@ export function ExamenReussitePage() {
         .select('*')
         .or('date_examen_theorique.ilike.%janvier%,date_examen_theorique.ilike.%Janvier%')
         .order('nom', { ascending: true });
-      
       if (error) throw error;
       return data;
     },
   });
+
+  const updateResultat = useMutation({
+    mutationFn: async ({ id, resultat }: { id: string; resultat: string | null }) => {
+      const { error } = await supabase
+        .from('apprenants')
+        .update({ resultat_examen: resultat } as any)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['apprenants-examen-janvier'] });
+      toast.success("Résultat mis à jour");
+    },
+  });
+
+  const filtered = apprenants?.filter(a =>
+    `${a.nom} ${a.prenom}`.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const reussis = apprenants?.filter(a => (a as any).resultat_examen === 'oui') || [];
+  const nonReussis = apprenants?.filter(a => (a as any).resultat_examen === 'non') || [];
+  const absents = apprenants?.filter(a => (a as any).resultat_examen === 'absent' || !a.numero_dossier_cma) || [];
+
+  const typeLabel: Record<string, string> = {
+    'vtc': 'VTC', 'vtc-e': 'VTC E', 'vtc-e-presentiel': 'VTC E Présentiel',
+    'taxi': 'TAXI', 'taxi-e': 'TAXI E', 'taxi-e-presentiel': 'TAXI E Présentiel',
+    'ta': 'TA', 'ta-e': 'TA E', 'va': 'VA', 'va-e': 'VA E',
+  };
+
+  const typeColor: Record<string, string> = {
+    'vtc': 'bg-blue-100 text-blue-800', 'vtc-e': 'bg-blue-100 text-blue-800',
+    'taxi': 'bg-amber-100 text-amber-800', 'taxi-e': 'bg-amber-100 text-amber-800',
+    'ta': 'bg-purple-100 text-purple-800', 'ta-e': 'bg-purple-100 text-purple-800',
+    'va': 'bg-green-100 text-green-800', 'va-e': 'bg-green-100 text-green-800',
+  };
 
   if (isLoading) {
     return (
@@ -31,6 +71,92 @@ export function ExamenReussitePage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Examen et Réussite</h1>
+          <p className="text-sm text-muted-foreground">Suivi des examens théoriques</p>
+        </div>
+        <div className="relative w-72">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+      </div>
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="border-l-4 border-l-emerald-500">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+              Examen réussi
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-emerald-600">{reussis.length}</div>
+            {reussis.length > 0 && (
+              <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+                {reussis.map(a => (
+                  <div key={a.id} className="text-xs text-muted-foreground flex justify-between">
+                    <span>{a.nom} {a.prenom}</span>
+                    <Badge variant="outline" className="text-[10px] px-1">{a.date_examen_theorique}</Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-red-500">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <XCircle className="h-4 w-4 text-red-500" />
+              Non réussi
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">{nonReussis.length}</div>
+            {nonReussis.length > 0 && (
+              <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+                {nonReussis.map(a => (
+                  <div key={a.id} className="text-xs text-muted-foreground">
+                    {a.nom} {a.prenom}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-orange-500">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <UserX className="h-4 w-4 text-orange-500" />
+              Absent / Pas de n° dossier
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">{absents.length}</div>
+            {absents.length > 0 && (
+              <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+                {absents.map(a => (
+                  <div key={a.id} className="text-xs text-muted-foreground flex justify-between">
+                    <span>{a.nom} {a.prenom}</span>
+                    {!a.numero_dossier_cma && <Badge variant="destructive" className="text-[10px] px-1">Pas de CMA</Badge>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main table */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -39,7 +165,7 @@ export function ExamenReussitePage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {apprenants && apprenants.length > 0 ? (
+          {filtered && filtered.length > 0 ? (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
@@ -51,62 +177,58 @@ export function ExamenReussitePage() {
                     <TableHead>Téléphone</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Date d'examen</TableHead>
+                    <TableHead className="text-center">Examen réussi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {apprenants.map((apprenant) => {
-                    const typeLabel = {
-                      'vtc': 'VTC',
-                      'vtc-e': 'VTC E',
-                      'vtc-e-presentiel': 'VTC E Présentiel',
-                      'taxi': 'TAXI',
-                      'taxi-e': 'TAXI E',
-                      'taxi-e-presentiel': 'TAXI E Présentiel',
-                      'ta': 'TA',
-                      'ta-e': 'TA E',
-                      'va': 'VA',
-                      'va-e': 'VA E',
-                    }[apprenant.type_apprenant || ''] || apprenant.type_apprenant || '-';
-
-                    const typeColor = {
-                      'vtc': 'bg-blue-100 text-blue-800',
-                      'vtc-e': 'bg-blue-100 text-blue-800',
-                      'vtc-e-presentiel': 'bg-blue-100 text-blue-800',
-                      'taxi': 'bg-amber-100 text-amber-800',
-                      'taxi-e': 'bg-amber-100 text-amber-800',
-                      'taxi-e-presentiel': 'bg-amber-100 text-amber-800',
-                      'ta': 'bg-purple-100 text-purple-800',
-                      'ta-e': 'bg-purple-100 text-purple-800',
-                      'va': 'bg-green-100 text-green-800',
-                      'va-e': 'bg-green-100 text-green-800',
-                    }[apprenant.type_apprenant || ''] || 'bg-gray-100 text-gray-800';
-
-                    const isMissingCMA = !apprenant.numero_dossier_cma;
-                    const isMissingPhone = !apprenant.telephone;
-                    const isMissingEmail = !apprenant.email;
+                  {filtered.map((apprenant) => {
+                    const tLabel = typeLabel[apprenant.type_apprenant || ''] || apprenant.type_apprenant || '-';
+                    const tColor = typeColor[apprenant.type_apprenant || ''] || 'bg-gray-100 text-gray-800';
+                    const resultat = (apprenant as any).resultat_examen || '';
 
                     return (
                       <TableRow key={apprenant.id}>
                         <TableCell className="font-medium">{apprenant.nom}</TableCell>
                         <TableCell>{apprenant.prenom}</TableCell>
+                        <TableCell><Badge className={tColor}>{tLabel}</Badge></TableCell>
                         <TableCell>
-                          <Badge className={typeColor}>{typeLabel}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={isMissingCMA ? "border-destructive text-destructive" : ""}>
+                          <Badge variant="outline" className={!apprenant.numero_dossier_cma ? "border-destructive text-destructive" : ""}>
                             {apprenant.numero_dossier_cma || "-"}
                           </Badge>
                         </TableCell>
-                        <TableCell className={isMissingPhone ? "text-destructive font-medium" : ""}>
+                        <TableCell className={!apprenant.telephone ? "text-destructive font-medium" : ""}>
                           {apprenant.telephone || "-"}
                         </TableCell>
-                        <TableCell className={`max-w-[200px] truncate ${isMissingEmail ? "text-destructive font-medium" : ""}`}>
+                        <TableCell className={`max-w-[200px] truncate ${!apprenant.email ? "text-destructive font-medium" : ""}`}>
                           {apprenant.email || "-"}
                         </TableCell>
                         <TableCell>
-                          <Badge className="bg-primary/10 text-primary">
-                            {apprenant.date_examen_theorique}
-                          </Badge>
+                          <Badge className="bg-primary/10 text-primary">{apprenant.date_examen_theorique}</Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Select
+                            value={resultat || "non_renseigne"}
+                            onValueChange={(val) =>
+                              updateResultat.mutate({
+                                id: apprenant.id,
+                                resultat: val === "non_renseigne" ? null : val,
+                              })
+                            }
+                          >
+                            <SelectTrigger className={`w-28 mx-auto ${
+                              resultat === 'oui' ? 'border-emerald-500 text-emerald-700 bg-emerald-50' :
+                              resultat === 'non' ? 'border-red-500 text-red-700 bg-red-50' :
+                              resultat === 'absent' ? 'border-orange-500 text-orange-700 bg-orange-50' : ''
+                            }`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="non_renseigne">-</SelectItem>
+                              <SelectItem value="oui">✅ Oui</SelectItem>
+                              <SelectItem value="non">❌ Non</SelectItem>
+                              <SelectItem value="absent">🔶 Absent</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </TableCell>
                       </TableRow>
                     );
@@ -116,10 +238,9 @@ export function ExamenReussitePage() {
             </div>
           ) : (
             <div className="text-center py-12 text-muted-foreground">
-              Aucun apprenant inscrit à l'examen de janvier
+              Aucun apprenant trouvé
             </div>
           )}
-          
           {apprenants && apprenants.length > 0 && (
             <div className="mt-4 text-sm text-muted-foreground">
               Total : {apprenants.length} apprenant(s) inscrit(s)
