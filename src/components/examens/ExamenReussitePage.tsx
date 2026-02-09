@@ -6,11 +6,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { ClipboardCheck, CheckCircle2, XCircle, UserX, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ClipboardCheck, CheckCircle2, XCircle, UserX, Search, RotateCcw, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 
 export function ExamenReussitePage() {
   const [search, setSearch] = useState("");
+  const [repassageSearch, setRepassageSearch] = useState("");
+  const [repassageList, setRepassageList] = useState<string[]>([]);
   const queryClient = useQueryClient();
 
   const { data: apprenants, isLoading } = useQuery({
@@ -20,6 +23,18 @@ export function ExamenReussitePage() {
         .from('apprenants')
         .select('*')
         .or('date_examen_theorique.ilike.%janvier%,date_examen_theorique.ilike.%Janvier%')
+        .order('nom', { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: allApprenants } = useQuery({
+    queryKey: ['all-apprenants'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('apprenants')
+        .select('id, nom, prenom, type_apprenant, telephone, email, date_examen_theorique')
         .order('nom', { ascending: true });
       if (error) throw error;
       return data;
@@ -47,6 +62,13 @@ export function ExamenReussitePage() {
   const reussis = apprenants?.filter(a => (a as any).resultat_examen === 'oui') || [];
   const nonReussis = apprenants?.filter(a => (a as any).resultat_examen === 'non') || [];
   const absents = apprenants?.filter(a => (a as any).resultat_examen === 'absent' || !a.numero_dossier_cma) || [];
+
+  const repassageCandidates = allApprenants?.filter(a =>
+    !repassageList.includes(a.id) &&
+    `${a.nom} ${a.prenom}`.toLowerCase().includes(repassageSearch.toLowerCase())
+  ) || [];
+
+  const repassageApprenants = allApprenants?.filter(a => repassageList.includes(a.id)) || [];
 
   const typeLabel: Record<string, string> = {
     'vtc': 'VTC', 'vtc-e': 'VTC E', 'vtc-e-presentiel': 'VTC E Présentiel',
@@ -244,6 +266,105 @@ export function ExamenReussitePage() {
           {apprenants && apprenants.length > 0 && (
             <div className="mt-4 text-sm text-muted-foreground">
               Total : {apprenants.length} apprenant(s) inscrit(s)
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      {/* Repassage examen théorique */}
+      <Card className="border-l-4 border-l-violet-500">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <RotateCcw className="h-5 w-5 text-violet-500" />
+            Repassage examen théorique
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Search & add */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher un apprenant à ajouter..."
+              value={repassageSearch}
+              onChange={(e) => setRepassageSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          {repassageSearch.length >= 2 && repassageCandidates.length > 0 && (
+            <div className="border rounded-md max-h-40 overflow-y-auto divide-y">
+              {repassageCandidates.slice(0, 8).map(a => (
+                <button
+                  key={a.id}
+                  onClick={() => {
+                    setRepassageList(prev => [...prev, a.id]);
+                    setRepassageSearch("");
+                    toast.success(`${a.nom} ${a.prenom} ajouté au repassage`);
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-2 hover:bg-muted/50 text-sm transition-colors"
+                >
+                  <span className="font-medium">{a.nom} {a.prenom}</span>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-[10px]">
+                      {typeLabel[a.type_apprenant || ''] || a.type_apprenant || '-'}
+                    </Badge>
+                    <Plus className="h-4 w-4 text-violet-500" />
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* List */}
+          {repassageApprenants.length > 0 ? (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nom</TableHead>
+                    <TableHead>Prénom</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Téléphone</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Ancien examen</TableHead>
+                    <TableHead className="text-center">Retirer</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {repassageApprenants.map(a => {
+                    const tLabel = typeLabel[a.type_apprenant || ''] || a.type_apprenant || '-';
+                    const tColor = typeColor[a.type_apprenant || ''] || 'bg-gray-100 text-gray-800';
+                    return (
+                      <TableRow key={a.id}>
+                        <TableCell className="font-medium">{a.nom}</TableCell>
+                        <TableCell>{a.prenom}</TableCell>
+                        <TableCell><Badge className={tColor}>{tLabel}</Badge></TableCell>
+                        <TableCell>{a.telephone || '-'}</TableCell>
+                        <TableCell className="max-w-[200px] truncate">{a.email || '-'}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{a.date_examen_theorique || '-'}</Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setRepassageList(prev => prev.filter(id => id !== a.id))}
+                          >
+                            <X className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground text-sm">
+              Aucun apprenant ajouté au repassage. Utilisez la recherche ci-dessus pour en ajouter.
+            </div>
+          )}
+          {repassageApprenants.length > 0 && (
+            <div className="text-sm text-muted-foreground">
+              {repassageApprenants.length} apprenant(s) en repassage
             </div>
           )}
         </CardContent>
