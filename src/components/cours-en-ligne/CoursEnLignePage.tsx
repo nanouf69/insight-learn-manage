@@ -6,10 +6,12 @@ import { BookOpen, Layers, GraduationCap, Plus, Users, TrendingUp, AlertTriangle
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import ModuleDetailView from "./ModuleDetailView";
 
 const CoursEnLignePage = () => {
   const [activeTab, setActiveTab] = useState("accueil");
   const [selectedFormation, setSelectedFormation] = useState("vtc");
+  const [editingModule, setEditingModule] = useState<{ id: number; nom: string } | null>(null);
   const [modules, setModules] = useState([
     { id: 1, nom: "1.INTRODUCTION", eleves: 2, progression: "0%", statut: "Actif" },
     { id: 2, nom: "2.COURS ET EXERCICES VTC", eleves: 2, progression: "6%", statut: "Actif" },
@@ -35,6 +37,10 @@ const CoursEnLignePage = () => {
   const deleteModule = (id: number) => {
     setModules(modules.filter(m => m.id !== id));
   };
+
+  if (editingModule) {
+    return <ModuleDetailView module={editingModule} onBack={() => setEditingModule(null)} />;
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -225,7 +231,7 @@ const CoursEnLignePage = () => {
                           >
                             <ArrowDown className="w-4 h-4" />
                           </Button>
-                          <Button variant="secondary" size="sm" className="gap-1">
+                          <Button variant="secondary" size="sm" className="gap-1" onClick={() => setEditingModule({ id: module.id, nom: module.nom })}>
                             <Pencil className="w-3 h-3" />
                             Éditer
                           </Button>
