@@ -14,7 +14,8 @@ import {
   UserCog,
   Clock,
   ClipboardCheck,
-  Truck
+  Truck,
+  Monitor
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -40,6 +41,7 @@ const menuItems = [
   { id: "documents", label: "Documents", icon: FileText },
   { id: "factures", label: "Factures", icon: Receipt },
   { id: "bpf", label: "BPF", icon: ClipboardList },
+  { id: "cours-en-ligne", label: "Cours en ligne", icon: Monitor },
 ];
 
 export function Sidebar({ currentPage, onNavigate, collapsed = false, onToggleCollapse }: SidebarProps) {

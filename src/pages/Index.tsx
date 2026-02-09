@@ -18,6 +18,7 @@ import { BPFForm } from "@/components/bpf/BPFForm";
 import { FactureForm } from "@/components/factures/FactureForm";
 import { AgendaView } from "@/components/agenda/AgendaView";
 import { ExamenReussitePage } from "@/components/examens/ExamenReussitePage";
+import CoursEnLignePage from "@/components/cours-en-ligne/CoursEnLignePage";
 import { GraduationCap, Users, Euro, TrendingUp } from "lucide-react";
 
 const pageConfig = {
@@ -35,6 +36,7 @@ const pageConfig = {
   factures: { title: "Factures", subtitle: "Créez et gérez vos factures" },
   settings: { title: "Paramètres", subtitle: "Configurez votre espace" },
   bpf: { title: "BPF", subtitle: "Bilan Pédagogique et Financier" },
+  "cours-en-ligne": { title: "Cours en ligne", subtitle: "Gérez vos formations e-learning" },
 };
 
 const Index = () => {
@@ -110,6 +112,8 @@ const Index = () => {
         return <FactureForm />;
       case "bpf":
         return <BPFForm />;
+      case "cours-en-ligne":
+        return <CoursEnLignePage />;
       case "settings":
         return <SettingsPage />;
       default:
