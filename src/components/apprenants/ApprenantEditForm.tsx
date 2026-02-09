@@ -465,15 +465,15 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
             </div>
           </div>
 
-          {/* Formation */}
+          {/* Formation ou Service */}
           <div className="space-y-4">
-            <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Formation</h3>
+            <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Formation ou Service</h3>
 
             <div className="space-y-2">
-              <Label htmlFor="formation">Formation souhaitée</Label>
+              <Label htmlFor="formation">Formations ou Services souhaités</Label>
               <Select value={formData.selected_formation} onValueChange={handleFormationChange}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner une formation" />
+                  <SelectValue placeholder="Sélectionner une formation ou un service" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="pas_encore_choisi">Pas encore choisi</SelectItem>
@@ -498,6 +498,13 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                     <SelectItem value="vtc-e-presentiel">Formation VTC E (Présentiel) - 1 599 € (VTC E Présentiel)</SelectItem>
                     <SelectItem value="taxi-e-presentiel">Formation TAXI E (Présentiel) - 1 799 € (TAXI E Présentiel)</SelectItem>
                     <SelectItem value="ta-e-presentiel">Formation TA E (Présentiel) - 999 € (TA E Présentiel)</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel>Services</SelectLabel>
+                    <SelectItem value="location-vehicule">Location de véhicule</SelectItem>
+                    <SelectItem value="formation-et-location">Formation et location de véhicule</SelectItem>
+                    <SelectItem value="repassage-theorique">Repassage examen théorique</SelectItem>
+                    <SelectItem value="repassage-pratique">Repassage examen pratique</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
