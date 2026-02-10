@@ -430,7 +430,12 @@ export default function Step12() {
             
             <button
               onClick={handleDownloadRecap}
-              className="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-medium text-base bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
+              disabled={!isSubmitted}
+              className={`inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-medium text-base transition-colors ${
+                isSubmitted
+                  ? "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
+              }`}
             >
               <Download className="w-5 h-5" />
               Télécharger le récapitulatif
