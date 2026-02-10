@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -52,6 +53,19 @@ function getMimeType(url: string, contentType?: string): string {
   }
 }
 
+// Validate that URL is from our Supabase storage
+function isValidStorageUrl(url: string): boolean {
+  try {
+    const parsedUrl = new URL(url);
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    if (!supabaseUrl) return false;
+    const supabaseDomain = new URL(supabaseUrl).hostname;
+    return parsedUrl.hostname === supabaseDomain;
+  } catch {
+    return false;
+  }
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -59,11 +73,43 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Authenticate user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Non autorisé' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ error: 'Token invalide' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { documentUrl, documentType, expectedNom, expectedPrenom } = await req.json() as AnalyzeDocumentRequest;
 
     if (!documentUrl || !documentType) {
       return new Response(
         JSON.stringify({ error: 'documentUrl et documentType sont requis' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate document URL to prevent SSRF
+    if (!isValidStorageUrl(documentUrl)) {
+      return new Response(
+        JSON.stringify({ error: 'URL de document invalide' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -175,7 +221,7 @@ IMPORTANT: Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
     if (!response.ok) {
       const errorText = await response.text();
       console.error('AI Gateway error:', errorText);
-      throw new Error(`Erreur lors de l'analyse du document: ${response.status}`);
+      throw new Error(`Erreur lors de l'analyse du document`);
     }
 
     const aiResponse = await response.json();
@@ -188,7 +234,6 @@ IMPORTANT: Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
     // Parse the JSON response
     let result: AnalysisResult;
     try {
-      // Try to extract JSON from the response (in case there's extra text)
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         result = JSON.parse(jsonMatch[0]);
@@ -197,29 +242,25 @@ IMPORTANT: Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
       }
     } catch (parseError) {
       console.error('Error parsing AI response:', content);
-      // Return a default uncertain result
       result = {
         isValid: true,
         details: "Impossible d'analyser automatiquement le document. Vérification manuelle recommandée.",
       };
     }
 
-    // For piece_identite, compare extracted NOM (last name) only with expected name
+    // For piece_identite, compare extracted NOM with expected name
     if (documentType === 'piece_identite' && result.extractedNom && expectedNom) {
       const normalize = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
       
       const extractedNomNorm = normalize(result.extractedNom || '');
       const expectedNomNorm = normalize(expectedNom);
       
-      // Check if last name matches (allowing for partial match)
       const nomMatches = extractedNomNorm.includes(expectedNomNorm) || expectedNomNorm.includes(extractedNomNorm);
       
       result.nameMatch = nomMatches;
       
       if (!result.nameMatch) {
         result.nameMismatchReason = `Nom saisi "${expectedNom}" ≠ Nom sur la pièce "${result.extractedNom}"`;
-        
-        // Mark as invalid if last name doesn't match
         result.isValid = false;
         result.rejectionReason = `Le nom saisi ne correspond pas à la pièce d'identité. ${result.nameMismatchReason}`;
       }
@@ -233,7 +274,7 @@ IMPORTANT: Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
   } catch (error) {
     console.error('Error:', error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Erreur lors de l\'analyse' }),
+      JSON.stringify({ error: 'Erreur lors de l\'analyse' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
