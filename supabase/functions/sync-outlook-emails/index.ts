@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 interface EmailMessage {
@@ -50,8 +50,7 @@ async function getAccessToken(): Promise<string> {
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    console.error("Token error:", error);
+    console.error("Token error:", await response.text());
     throw new Error(`Failed to get access token: ${response.status}`);
   }
 
@@ -74,8 +73,7 @@ async function fetchEmails(
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    console.error(`Error fetching ${folder}:`, error);
+    console.error(`Error fetching ${folder}:`, await response.text());
     return [];
   }
 
@@ -120,8 +118,7 @@ async function sendEmail(
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    console.error("Error sending email:", error);
+    console.error("Error sending email:", await response.text());
     return false;
   }
 
@@ -134,7 +131,31 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Authenticate user
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Non autorisé" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ error: "Token invalide" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Use service role client for database operations
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -144,7 +165,6 @@ Deno.serve(async (req) => {
     const accessToken = await getAccessToken();
 
     if (action === "sync") {
-      // Sync emails for an apprenant
       if (!apprenantEmail || !userEmail) {
         return new Response(
           JSON.stringify({ error: "apprenantEmail and userEmail are required" }),
@@ -203,7 +223,7 @@ Deno.serve(async (req) => {
         })),
       ];
 
-      // Upsert emails (update if exists, insert if new)
+      // Upsert emails
       if (emailsToInsert.length > 0) {
         const { error } = await supabase
           .from("emails")
@@ -230,7 +250,6 @@ Deno.serve(async (req) => {
     }
 
     if (action === "send") {
-      // Send an email
       if (!userEmail || !to || !subject || !body) {
         return new Response(
           JSON.stringify({ error: "userEmail, to, subject, and body are required" }),
@@ -241,7 +260,6 @@ Deno.serve(async (req) => {
       const success = await sendEmail(accessToken, userEmail, to, subject, body);
 
       if (success && apprenantId) {
-        // Save to database
         await supabase.from("emails").insert({
           apprenant_id: apprenantId,
           subject,
@@ -269,7 +287,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error("Error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Erreur interne du serveur" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
