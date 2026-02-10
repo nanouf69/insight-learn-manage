@@ -12,7 +12,7 @@ const COMPANY_INFO = {
   phone: '09.86.22.30.62',
 };
 
-const ONBOARDING_URL = 'https://insight-learn-manage.lovable.app/onboarding';
+const ONBOARDING_URL = 'https://insight-learn-manage.lovable.app/bienvenue';
 
 export async function generateBienvenueFtransport(apprenant: {
   nom: string;
@@ -110,18 +110,18 @@ export async function generateBienvenueFtransport(apprenant: {
   
   y += 40;
   
-  // URL cliquable
+  // URL cliquable - centré manuellement pour que le lien fonctionne
   doc.setTextColor(0, 102, 204);
   doc.setFontSize(10);
-  doc.textWithLink(ONBOARDING_URL, pageWidth / 2, y, {
+  const linkWidth = doc.getTextWidth(ONBOARDING_URL);
+  const linkX = (pageWidth - linkWidth) / 2;
+  doc.textWithLink(ONBOARDING_URL, linkX, y, {
     url: ONBOARDING_URL,
-    align: 'center'
   });
   
   // Ligne sous le lien
-  const linkWidth = doc.getTextWidth(ONBOARDING_URL);
   doc.setDrawColor(0, 102, 204);
-  doc.line(pageWidth / 2 - linkWidth / 2, y + 1, pageWidth / 2 + linkWidth / 2, y + 1);
+  doc.line(linkX, y + 1, linkX + linkWidth, y + 1);
   
   y += 25;
   
