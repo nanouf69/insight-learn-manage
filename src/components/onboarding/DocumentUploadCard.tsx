@@ -1,8 +1,9 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Upload, CheckCircle2, XCircle, Loader2, AlertCircle, Eye, Trash2, ScanSearch, Ban } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { PhotoCropper } from "@/components/crm/apprenant-sections/PhotoCropper";
 
 interface DocumentUploadCardProps {
   docId: string;
@@ -33,6 +34,8 @@ export function DocumentUploadCard({
   const [fileName, setFileName] = useState<string>('');
   const [fileUrl, setFileUrl] = useState<string>('');
   const [rejectionReason, setRejectionReason] = useState<string>('');
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [cropperImageSrc, setCropperImageSrc] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = () => {
@@ -61,9 +64,26 @@ export function DocumentUploadCard({
       return;
     }
 
+    // For photo_identite: open cropper instead of uploading directly
+    if (docId === 'photo_identite' && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setCropperImageSrc(reader.result as string);
+        setCropperOpen(true);
+      };
+      reader.readAsDataURL(file);
+      event.target.value = '';
+      return;
+    }
+
     await uploadFile(file);
     event.target.value = '';
   };
+
+  const handleCropComplete = useCallback(async (croppedBlob: Blob) => {
+    const file = new File([croppedBlob], 'photo_identite.jpg', { type: 'image/jpeg' });
+    await uploadFile(file);
+  }, []);
 
   const uploadFile = async (file: File) => {
     setStatus('uploading');
@@ -417,6 +437,16 @@ export function DocumentUploadCard({
             <p className="text-red-500 text-sm">{rejectionReason}</p>
           </div>
         </div>
+      )}
+
+      {/* Photo cropper dialog */}
+      {docId === 'photo_identite' && (
+        <PhotoCropper
+          open={cropperOpen}
+          onClose={() => setCropperOpen(false)}
+          imageSrc={cropperImageSrc}
+          onCropComplete={handleCropComplete}
+        />
       )}
     </div>
   );
