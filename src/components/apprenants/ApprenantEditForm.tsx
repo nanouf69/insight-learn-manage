@@ -112,7 +112,9 @@ const prixFormations: Record<string, string> = {
   "passerelle-vtc-elearning": "499",
   "vtc-e-presentiel": "1599",
   "taxi-e-presentiel": "1799",
-  "ta-e-presentiel": "999"
+  "ta-e-presentiel": "999",
+  "continue-vtc": "200",
+  "continue-taxi": "299"
 };
 
 export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEditFormProps) {
@@ -498,6 +500,11 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                     <SelectItem value="vtc-e-presentiel">Formation VTC E (Présentiel) - 1 599 € (VTC E Présentiel)</SelectItem>
                     <SelectItem value="taxi-e-presentiel">Formation TAXI E (Présentiel) - 1 799 € (TAXI E Présentiel)</SelectItem>
                     <SelectItem value="ta-e-presentiel">Formation TA E (Présentiel) - 999 € (TA E Présentiel)</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel>Formations Continues</SelectLabel>
+                    <SelectItem value="continue-vtc">Formation continue VTC - 200 €</SelectItem>
+                    <SelectItem value="continue-taxi">Formation continue TAXI - 299 €</SelectItem>
                   </SelectGroup>
                   <SelectGroup>
                     <SelectLabel>Services</SelectLabel>

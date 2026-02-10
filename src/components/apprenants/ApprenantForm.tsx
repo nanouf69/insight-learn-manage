@@ -117,7 +117,9 @@ export function ApprenantForm() {
     "passerelle-vtc-elearning": "499",
     "vtc-e-presentiel": "1599",
     "taxi-e-presentiel": "1799",
-    "ta-e-presentiel": "999"
+    "ta-e-presentiel": "999",
+    "continue-vtc": "200",
+    "continue-taxi": "299"
   };
 
   // Mapping formation → type d'apprenant
@@ -134,7 +136,9 @@ export function ApprenantForm() {
     "passerelle-vtc-elearning": "va-e",
     "vtc-e-presentiel": "vtc-e-presentiel",
     "taxi-e-presentiel": "taxi-e-presentiel",
-    "ta-e-presentiel": "ta-e-presentiel"
+    "ta-e-presentiel": "ta-e-presentiel",
+    "continue-vtc": "vtc",
+    "continue-taxi": "taxi"
   };
 
   // Mettre à jour le prix, le type d'apprenant et les dates par défaut quand la formation change
@@ -520,6 +524,11 @@ export function ApprenantForm() {
                     <SelectItem value="vtc-e-presentiel">Formation VTC E (Présentiel) - 1 599 € (VTC E Présentiel)</SelectItem>
                     <SelectItem value="taxi-e-presentiel">Formation TAXI E (Présentiel) - 1 799 € (TAXI E Présentiel)</SelectItem>
                     <SelectItem value="ta-e-presentiel">Formation TA E (Présentiel) - 999 € (TA E Présentiel)</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel>Formations Continues</SelectLabel>
+                    <SelectItem value="continue-vtc">Formation continue VTC - 200 €</SelectItem>
+                    <SelectItem value="continue-taxi">Formation continue TAXI - 299 €</SelectItem>
                   </SelectGroup>
                   <SelectGroup>
                     <SelectLabel>Services</SelectLabel>
