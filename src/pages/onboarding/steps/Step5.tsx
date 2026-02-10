@@ -144,7 +144,7 @@ export default function Step5() {
                 <h4 className="font-semibold text-gray-900 mb-2">Session affectée</h4>
                 <p className="text-gray-700 text-sm">
                   Nous vous avons affecté à la prochaine session écrite disponible afin de respecter les délais en vigueur. 
-                  Vous pouvez la conserver ou choisir l'autre date proposée, si votre inscription a eu lieu le même mois que l'examen.
+                  Vous pouvez la conserver ou choisir l'autre date proposée si votre inscription a eu lieu le même mois que l'examen.
                 </p>
               </div>
             </div>

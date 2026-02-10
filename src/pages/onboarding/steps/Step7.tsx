@@ -1,11 +1,19 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, ArrowLeft, AlertTriangle, Key } from "lucide-react";
+import { ArrowRight, ArrowLeft, AlertTriangle, Eye, EyeOff } from "lucide-react";
 import { OnboardingLayout } from "../OnboardingLayout";
-import step7Password from "@/assets/onboarding/step7-password.png";
 
 export default function Step7() {
+  const [telephone, setTelephone] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+
+  const passwordsMatch = password.length > 0 && password === confirmPassword;
+  const allFilled = telephone.trim().length > 0 && passwordsMatch;
+  const canProceed = allFilled && confirmed;
 
   return (
     <OnboardingLayout currentStep={7} totalSteps={11} title="Créez votre mot de passe">
@@ -18,36 +26,72 @@ export default function Step7() {
             </p>
           </div>
 
-          <div className="mb-6">
-            <img 
-              src={step7Password} 
-              alt="Création mot de passe" 
-              className="max-w-lg mx-auto rounded-xl border border-gray-200"
-            />
-          </div>
+          <div className="space-y-5">
+            {/* Téléphone */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 mb-1">
+                Téléphone <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="tel"
+                value={telephone}
+                onChange={(e) => setTelephone(e.target.value)}
+                placeholder="Numéro de téléphone valide"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              />
+            </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl p-4">
-              <Key className="w-5 h-5 text-blue-500" />
+            {/* Mot de passe + Confirmation côte à côte */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <p className="font-medium text-gray-900">Téléphone</p>
-                <p className="text-sm text-gray-600">Numéro de téléphone valide</p>
+                <label className="block text-sm font-medium text-gray-900 mb-1">
+                  Mot de passe <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Créez un mot de passe"
+                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
               </div>
-            </div>
-            
-            <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl p-4">
-              <Key className="w-5 h-5 text-blue-500" />
+
               <div>
-                <p className="font-medium text-gray-900">Mot de passe</p>
-                <p className="text-sm text-gray-600">Créez un mot de passe sécurisé</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl p-4">
-              <Key className="w-5 h-5 text-blue-500" />
-              <div>
-                <p className="font-medium text-gray-900">Confirmer le mot de passe</p>
-                <p className="text-sm text-gray-600">Retapez le même mot de passe</p>
+                <label className="block text-sm font-medium text-gray-900 mb-1">
+                  Confirmer le mot de passe <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirm ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Retapez le mot de passe"
+                    className={`w-full px-4 py-3 pr-12 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                      confirmPassword.length > 0 && !passwordsMatch
+                        ? "border-red-400"
+                        : "border-gray-300"
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm(!showConfirm)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                {confirmPassword.length > 0 && !passwordsMatch && (
+                  <p className="text-red-500 text-sm mt-1">Les mots de passe ne correspondent pas</p>
+                )}
               </div>
             </div>
           </div>
@@ -84,7 +128,7 @@ export default function Step7() {
             <ArrowLeft className="w-4 h-4" />
             Précédent
           </Link>
-          {confirmed ? (
+          {canProceed ? (
             <Link
               to="/bienvenue/etape-8"
               className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-xl transition-colors"
