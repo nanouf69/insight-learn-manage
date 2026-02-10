@@ -57,77 +57,61 @@ export async function generateBienvenueFtransport(apprenant: {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(11);
   const welcomeLines = doc.splitTextToSize(
-    `Nous avons le plaisir de vous confirmer votre inscription a la formation ${formationType}. ` +
-    `Afin de finaliser votre dossier, nous vous invitons a suivre les etapes ci-dessous.`,
+    `Nous avons le plaisir de vous confirmer votre inscription a la formation ${formationType}.`,
     pageWidth - 40
   );
   doc.text(welcomeLines, 20, y);
   y += welcomeLines.length * 6 + 12;
 
-  // --- Encadre etapes ---
-  const boxH = 80;
-  doc.setFillColor(240, 244, 248);
-  doc.roundedRect(15, y, pageWidth - 30, boxH, 4, 4, 'F');
-  doc.setDrawColor(0, 51, 102);
-  doc.setLineWidth(0.5);
-  doc.roundedRect(15, y, pageWidth - 30, boxH, 4, 4, 'S');
+  // --- Encadre important ---
+  const warningLines = doc.splitTextToSize(
+    'Afin de valider definitivement votre inscription a l\'examen, merci de cliquer sur le lien ci-dessous et de suivre les etapes. Sans cela, vous ne serez pas inscrit a l\'examen.',
+    pageWidth - 50
+  );
+  const warningBoxH = warningLines.length * 6 + 20;
+
+  doc.setFillColor(255, 245, 238);
+  doc.roundedRect(15, y, pageWidth - 30, warningBoxH, 4, 4, 'F');
+  doc.setDrawColor(220, 80, 20);
+  doc.setLineWidth(0.8);
+  doc.roundedRect(15, y, pageWidth - 30, warningBoxH, 4, 4, 'S');
 
   y += 14;
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.setTextColor(0, 51, 102);
-  doc.text('Les etapes pour completer votre inscription :', 25, y);
-  y += 12;
+  doc.setFontSize(11);
+  doc.setTextColor(200, 60, 0);
+  doc.text(warningLines, 25, y);
+  y += warningLines.length * 6 + 16;
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.setTextColor(50, 50, 50);
-
-  const steps = [
-    '1.  Inscrivez-vous sur le site de la CMA (Chambre des Metiers)',
-    '2.  Telechargez vos documents obligatoires (piece d\'identite, justificatif de domicile)',
-    '3.  Renseignez votre numero de dossier CMA et choisissez votre date d\'examen',
-    '4.  Validez et envoyez votre dossier',
-  ];
-
-  steps.forEach((step) => {
-    doc.text(step, 30, y);
-    y += 11;
-  });
-
-  y += 18;
-
-  // --- Bouton / lien ---
-  const btnW = 160;
-  const btnH = 28;
-  const btnX = (pageWidth - btnW) / 2;
-
+  // --- Lien en gros ---
   doc.setFillColor(0, 102, 204);
+  const btnW = 170;
+  const btnH = 32;
+  const btnX = (pageWidth - btnW) / 2;
   doc.roundedRect(btnX, y, btnW, btnH, 5, 5, 'F');
 
-  // Texte du bouton
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.text('Commencer mon inscription', pageWidth / 2, y + 11, { align: 'center' });
+  doc.setFontSize(14);
+  doc.text('CLIQUEZ ICI POUR VOUS INSCRIRE', pageWidth / 2, y + 14, { align: 'center' });
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
-  doc.text('Cliquez sur le lien ci-dessous pour acceder au portail', pageWidth / 2, y + 20, { align: 'center' });
+  doc.text('Suivez les etapes pour finaliser votre dossier', pageWidth / 2, y + 24, { align: 'center' });
 
-  // Zone cliquable invisible sur tout le bouton
   doc.link(btnX, y, btnW, btnH, { url: ONBOARDING_URL });
 
   y += btnH + 10;
 
-  // URL visible et cliquable
+  // URL visible et cliquable en gros
   doc.setTextColor(0, 102, 204);
-  doc.setFontSize(9);
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
   const linkWidth = doc.getTextWidth(ONBOARDING_URL);
   const linkX = (pageWidth - linkWidth) / 2;
   doc.textWithLink(ONBOARDING_URL, linkX, y, { url: ONBOARDING_URL });
   doc.setDrawColor(0, 102, 204);
-  doc.setLineWidth(0.3);
+  doc.setLineWidth(0.4);
   doc.line(linkX, y + 1, linkX + linkWidth, y + 1);
 
   y += 22;
