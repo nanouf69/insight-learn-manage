@@ -102,16 +102,30 @@ export default function Step12() {
 
   // Load saved values on mount
   useEffect(() => {
-    const profile = localStorage.getItem('onboarding_profile');
-    if (profile) {
-      try {
-        const parsed = JSON.parse(profile);
-        setNom(parsed.nom || '');
-        setPrenom(parsed.prenom || '');
-        setEmail(parsed.email || '');
-        setTelephone(parsed.telephone || '');
-      } catch (e) {
-        console.error('Error parsing profile:', e);
+    // Read individual keys saved by Step 1
+    const savedNom = localStorage.getItem('onboarding_nom');
+    const savedPrenom = localStorage.getItem('onboarding_prenom');
+    const savedEmail = localStorage.getItem('onboarding_email');
+    const savedTelephone = localStorage.getItem('onboarding_telephone');
+    
+    if (savedNom) setNom(savedNom);
+    if (savedPrenom) setPrenom(savedPrenom);
+    if (savedEmail) setEmail(savedEmail);
+    if (savedTelephone) setTelephone(savedTelephone);
+    
+    // Fallback: try onboarding_profile JSON format
+    if (!savedNom && !savedPrenom) {
+      const profile = localStorage.getItem('onboarding_profile');
+      if (profile) {
+        try {
+          const parsed = JSON.parse(profile);
+          setNom(parsed.nom || '');
+          setPrenom(parsed.prenom || '');
+          setEmail(parsed.email || '');
+          setTelephone(parsed.telephone || '');
+        } catch (e) {
+          console.error('Error parsing profile:', e);
+        }
       }
     }
     

@@ -44,11 +44,15 @@ export default function Step10() {
               {[
                 {
                   title: "Pièce d'identité",
-                  description: "Carte d'identité, passeport ou titre de séjour",
+                  description: "Carte d'identité, passeport ou titre de séjour (recto-verso)",
                 },
                 {
                   title: "Justificatif de domicile",
-                  description: "De moins de 3 mois",
+                  description: "De moins de 3 mois (facture EDF, eau, internet, avis d'imposition…)",
+                },
+                {
+                  title: "Photo d'identité",
+                  description: "Format photo d'identité, uniquement la tête, fond neutre",
                 },
               ].map((doc, index) => (
                 <div key={index} className="flex items-start gap-4 bg-gray-50 border border-gray-200 rounded-xl p-4">
