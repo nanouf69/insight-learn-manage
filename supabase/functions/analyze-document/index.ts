@@ -73,29 +73,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Authenticate user
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return new Response(
-        JSON.stringify({ error: 'Non autorisé' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
-    const token = authHeader.replace('Bearer ', '');
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
-      return new Response(
-        JSON.stringify({ error: 'Token invalide' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const { documentUrl, documentType, expectedNom, expectedPrenom } = await req.json() as AnalyzeDocumentRequest;
 
@@ -106,29 +86,31 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Validate document URL to prevent SSRF
-    if (!isValidStorageUrl(documentUrl)) {
-      return new Response(
-        JSON.stringify({ error: 'URL de document invalide' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY non configurée');
     }
 
-    // Download the document and convert to base64
-    console.log('Downloading document from:', documentUrl);
-    const docResponse = await fetch(documentUrl);
-    if (!docResponse.ok) {
-      throw new Error(`Impossible de télécharger le document: ${docResponse.status}`);
+    // Download document from private storage using service role
+    // documentUrl can be a full URL or just a file path
+    let filePath = documentUrl;
+    if (documentUrl.includes('/documents-inscription/')) {
+      const parts = documentUrl.split('/documents-inscription/');
+      filePath = parts[parts.length - 1];
     }
     
-    const contentType = docResponse.headers.get('content-type') || '';
-    const mimeType = getMimeType(documentUrl, contentType);
-    const arrayBuffer = await docResponse.arrayBuffer();
+    console.log('Downloading document from storage path:', filePath);
+    const { data: fileData, error: downloadError } = await supabase.storage
+      .from('documents-inscription')
+      .download(filePath);
+
+    if (downloadError || !fileData) {
+      console.error('Storage download error:', downloadError);
+      throw new Error(`Impossible de télécharger le document: ${downloadError?.message}`);
+    }
+    
+    const mimeType = fileData.type || getMimeType(filePath);
+    const arrayBuffer = await fileData.arrayBuffer();
     const base64Data = arrayBufferToBase64(arrayBuffer);
     const dataUrl = `data:${mimeType};base64,${base64Data}`;
     
