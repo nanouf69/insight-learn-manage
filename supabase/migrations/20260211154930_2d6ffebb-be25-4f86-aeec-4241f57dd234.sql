@@ -1,0 +1,1 @@
+ALTER TABLE public.apprenants ADD COLUMN documents_complets boolean DEFAULT false;
