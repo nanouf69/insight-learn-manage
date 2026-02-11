@@ -81,6 +81,21 @@ const datesExamenPratique = [
   "Début janvier 2027",
 ];
 
+// Dates de formation continue 2026
+const datesFormationContinue = [
+  "27 et 28 janvier 2026",
+  "17 et 18 février 2026",
+  "31 mars et 1er avril 2026",
+  "28 et 29 avril 2026",
+  "26 et 27 mai 2026",
+  "23 et 24 juin 2026",
+  "21 et 22 juillet 2026",
+  "29 et 30 septembre 2026",
+  "28 et 29 octobre 2026",
+  "17 et 18 novembre 2026",
+  "23 et 24 décembre 2026",
+];
+
 export function ApprenantForm() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
@@ -672,19 +687,37 @@ export function ApprenantForm() {
             </div>
             )}
 
-            {/* Date d'examen pratique - pour repassage pratique et formation continue */}
-            {(selectedFormation === "repassage-pratique" || selectedFormation === "continue-vtc" || selectedFormation === "continue-taxi") && (
+            {/* Date d'examen pratique - pour repassage pratique */}
+            {selectedFormation === "repassage-pratique" && (
               <div className="space-y-2">
-                <Label htmlFor="dateExamenPratique">
-                  {selectedFormation === "repassage-pratique" ? "Date d'examen pratique (Rhône 69)" : "Dates de formation continue"}
-                </Label>
+                <Label htmlFor="dateExamenPratique">Date d'examen pratique (Rhône 69)</Label>
                 <Select value={dateExamenPratique} onValueChange={setDateExamenPratique}>
                   <SelectTrigger>
-                    <SelectValue placeholder={selectedFormation === "repassage-pratique" ? "Sélectionner une date d'examen pratique" : "Sélectionner les dates de formation continue"} />
+                    <SelectValue placeholder="Sélectionner une date d'examen pratique" />
                   </SelectTrigger>
                   <SelectContent className="bg-background z-50">
                     <SelectItem value="pas_encore_choisi">Pas de date choisie encore</SelectItem>
                     {datesExamenPratique.map((date, idx) => (
+                      <SelectItem key={idx} value={date}>
+                        {date}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Dates de formation continue */}
+            {(selectedFormation === "continue-vtc" || selectedFormation === "continue-taxi") && (
+              <div className="space-y-2">
+                <Label htmlFor="dateExamenPratique">Dates de formation continue</Label>
+                <Select value={dateExamenPratique} onValueChange={setDateExamenPratique}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner les dates de formation continue" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    <SelectItem value="pas_encore_choisi">Pas de date choisie encore</SelectItem>
+                    {datesFormationContinue.map((date, idx) => (
                       <SelectItem key={idx} value={date}>
                         {date}
                       </SelectItem>
