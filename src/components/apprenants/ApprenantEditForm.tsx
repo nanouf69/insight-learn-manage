@@ -209,10 +209,10 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
     }
   }, [apprenant]);
 
-  // Charger les sessions pour les dates d'examen pratique (formation continue)
+  // Charger les sessions pour les dates d'examen pratique (formation continue ou repassage pratique)
   useEffect(() => {
-    const isFormationContinue = formData.selected_formation === "continue-vtc" || formData.selected_formation === "continue-taxi";
-    if (isFormationContinue && open) {
+    const needsSessions = formData.selected_formation === "continue-vtc" || formData.selected_formation === "continue-taxi" || formData.selected_formation === "repassage-pratique";
+    if (needsSessions && open) {
       const fetchSessions = async () => {
         const { data, error } = await supabase
           .from('sessions')
@@ -618,7 +618,8 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
               </Select>
             </div>
 
-            {/* Date d'examen théorique */}
+            {/* Date d'examen théorique - masqué pour repassage pratique et formation continue */}
+            {formData.selected_formation !== "repassage-pratique" && formData.selected_formation !== "continue-vtc" && formData.selected_formation !== "continue-taxi" && (
             <div className="space-y-2">
               <Label htmlFor="dateExamenTheorique">Date d'examen théorique</Label>
               <Select value={formData.date_examen_theorique} onValueChange={(value) => setFormData({ ...formData, date_examen_theorique: value })}>
@@ -638,14 +639,17 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                 </SelectContent>
               </Select>
             </div>
+            )}
 
-            {/* Date d'examen pratique - uniquement pour formation continue */}
-            {(formData.selected_formation === "continue-vtc" || formData.selected_formation === "continue-taxi") && (
+            {/* Date d'examen pratique - pour repassage pratique et formation continue */}
+            {(formData.selected_formation === "repassage-pratique" || formData.selected_formation === "continue-vtc" || formData.selected_formation === "continue-taxi") && (
               <div className="space-y-2">
-                <Label htmlFor="dateExamenPratique">Date d'examen pratique</Label>
+                <Label htmlFor="dateExamenPratique">
+                  {formData.selected_formation === "repassage-pratique" ? "Date d'examen pratique" : "Dates de formation continue"}
+                </Label>
                 <Select value={dateExamenPratique} onValueChange={setDateExamenPratique}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner une date d'examen pratique" />
+                    <SelectValue placeholder={formData.selected_formation === "repassage-pratique" ? "Sélectionner une date d'examen pratique" : "Sélectionner les dates de formation continue"} />
                   </SelectTrigger>
                   <SelectContent className="bg-background z-50">
                     <SelectItem value="pas_encore_choisi">Pas de date choisie encore</SelectItem>
