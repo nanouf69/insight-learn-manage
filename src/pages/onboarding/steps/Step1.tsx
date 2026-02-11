@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, CreditCard, MapPin, Info, Camera, AlertTriangle, Phone, User, Check, Pencil, Mail, Car, PenTool, CalendarDays } from "lucide-react";
+import { ArrowRight, CreditCard, MapPin, Info, Camera, AlertTriangle, Phone, User, Check, Pencil, Mail, CalendarDays } from "lucide-react";
 import { OnboardingLayout } from "../OnboardingLayout";
 import { DocumentUploadCard } from "@/components/onboarding/DocumentUploadCard";
 import { Input } from "@/components/ui/input";
@@ -36,10 +36,6 @@ export default function Step1() {
   });
 
   const [documentStatuses, setDocumentStatuses] = useState<Record<string, 'pending' | 'valid' | 'rejected'>>({});
-  
-  // Permis de conduire date validation
-  const [datePermis, setDatePermis] = useState('');
-  const [isConduiteAccompagnee, setIsConduiteAccompagnee] = useState<boolean | null>(null);
   
   // Justificatif de domicile month selection
   const [moisJustificatif, setMoisJustificatif] = useState('');
@@ -156,12 +152,6 @@ export default function Step1() {
       description: "Carte d'identité ou passeport en cours de validité",
     },
     {
-      id: 'permis_conduire',
-      icon: Car,
-      title: "Permis de conduire",
-      description: "Hors période probatoire",
-    },
-    {
       id: 'justificatif_domicile',
       icon: MapPin,
       title: "Justificatif de domicile",
@@ -171,26 +161,9 @@ export default function Step1() {
       id: 'photo_identite',
       icon: Camera,
       title: "Photo d'identité",
-      description: "Fond clair obligatoire (blanc, beige ou bleu) - Uniquement la tête",
-    },
-    {
-      id: 'signature',
-      icon: PenTool,
-      title: "Signature",
-      description: "Signature manuscrite sur papier blanc",
+      description: "Fond clair obligatoire (blanc, beige ou bleu)",
     },
   ];
-
-  // Permis date validation helpers
-  const isPermisDateTooOld = (() => {
-    if (!datePermis) return false;
-    const permisDate = new Date(datePermis);
-    const threeYearsAgo = new Date();
-    threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
-    return permisDate <= threeYearsAgo;
-  })();
-
-  const permisBlocked = isPermisDateTooOld && isConduiteAccompagnee !== true;
 
   // Justificatif month validation
   const isJustificatifTooOld = (() => {
@@ -243,12 +216,11 @@ export default function Step1() {
   // Check if nom and prenom are filled
   const hasNameInfo = nom.trim() !== '' && prenom.trim() !== '';
   
-  // Permis and justificatif extra validations
-  const permisDateValid = datePermis && (!isPermisDateTooOld || isConduiteAccompagnee === true);
+  // Justificatif extra validation
   const justificatifMonthValid = moisJustificatif && !isJustificatifTooOld;
   
   // Can proceed only if all requirements are met
-  const canProceed = hasNameInfo && identityConfirmed && allDocumentsValid && allQuestionsAnswered && !hasYesAnswer && !permisBlocked && !!permisDateValid && !!justificatifMonthValid;
+  const canProceed = hasNameInfo && identityConfirmed && allDocumentsValid && allQuestionsAnswered && !hasYesAnswer && !!justificatifMonthValid;
 
   return (
     <OnboardingLayout currentStep={1} totalSteps={11} title="Confirmation d'identité et documents requis">
@@ -475,80 +447,6 @@ export default function Step1() {
                   />
                 </div>
 
-                {/* Permis de conduire: date + conduite accompagnée */}
-                {doc.id === 'permis_conduire' && (
-                  <div className={`mt-2 border rounded-xl p-4 space-y-3 ${attempted && !permisDateValid ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-gray-50'}`}>
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                        <CalendarDays className="w-4 h-4" />
-                        Date d'obtention de votre permis de conduire <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="date"
-                        value={datePermis}
-                        onChange={(e) => {
-                          setDatePermis(e.target.value);
-                          // Reset conduite accompagnée when date changes
-                          setIsConduiteAccompagnee(null);
-                        }}
-                        max={new Date().toISOString().split('T')[0]}
-                        className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                          attempted && !datePermis ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                      />
-                      {attempted && !datePermis && (
-                        <p className="text-red-500 text-xs">Veuillez indiquer la date de votre permis</p>
-                      )}
-                    </div>
-
-                    {/* Si permis > 3 ans, demander conduite accompagnée */}
-                    {isPermisDateTooOld && (
-                      <div className={`border rounded-lg p-3 space-y-2 ${permisBlocked ? 'border-red-300 bg-red-50' : 'border-amber-300 bg-amber-50'}`}>
-                        <p className="text-sm font-medium text-gray-900">
-                          ⚠️ Votre permis a plus de 3 ans. Avez-vous obtenu votre permis en conduite accompagnée ?
-                        </p>
-                        <div className="flex items-center gap-6">
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="conduite_accompagnee"
-                              checked={isConduiteAccompagnee === true}
-                              onChange={() => setIsConduiteAccompagnee(true)}
-                              className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                            />
-                            <span className="text-sm text-gray-700">Oui</span>
-                          </label>
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="conduite_accompagnee"
-                              checked={isConduiteAccompagnee === false}
-                              onChange={() => setIsConduiteAccompagnee(false)}
-                              className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                            />
-                            <span className="text-sm text-gray-700">Non</span>
-                          </label>
-                        </div>
-                        {isConduiteAccompagnee === false && (
-                          <div className="flex items-start gap-2 mt-2 p-2 bg-red-100 rounded-lg">
-                            <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                            <p className="text-red-700 text-sm font-medium">
-                              Votre permis dépasse la période probatoire de 3 ans. Le dossier ne peut pas être accepté. 
-                              Contactez-nous au <a href="tel:0428296091" className="underline font-bold">04 28 29 60 91</a>.
-                            </p>
-                          </div>
-                        )}
-                        {isConduiteAccompagnee === true && (
-                          <div className="flex items-center gap-2 mt-2 p-2 bg-green-100 rounded-lg">
-                            <Check className="w-4 h-4 text-green-600" />
-                            <p className="text-green-700 text-sm">Conduite accompagnée acceptée (période probatoire de 2 ans).</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-
                 {/* Justificatif de domicile: month selector */}
                 {doc.id === 'justificatif_domicile' && (
                   <div className={`mt-2 border rounded-xl p-4 ${attempted && !justificatifMonthValid ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-gray-50'}`}>
@@ -677,8 +575,6 @@ export default function Step1() {
               {!hasNameInfo && <li>Renseigner votre nom et prénom</li>}
               {hasNameInfo && !identityConfirmed && <li>Confirmer que vos informations sont correctes</li>}
               {!allDocumentsValid && <li>Télécharger et faire valider tous les documents requis</li>}
-              {!permisDateValid && <li>Indiquer la date de votre permis de conduire</li>}
-              {permisBlocked && <li>Permis hors période probatoire — contactez-nous</li>}
               {!justificatifMonthValid && <li>Sélectionner le mois de votre justificatif de domicile</li>}
               {isJustificatifTooOld && <li>Votre justificatif date de plus de 3 mois</li>}
               {!allQuestionsAnswered && <li>Répondre à toutes les questions obligatoires</li>}
