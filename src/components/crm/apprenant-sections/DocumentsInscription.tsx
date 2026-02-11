@@ -190,68 +190,6 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
     }
   };
 
-  // Analyze document with AI to check expiration
-  const analyzeDocument = async (docId: string, documentUrl: string) => {
-    // Only analyze piece_identite, permis_conduire, and justificatif_domicile
-    if (docId !== 'piece_identite' && docId !== 'permis_conduire' && docId !== 'justificatif_domicile') {
-      return;
-    }
-
-    setAnalyzingId(docId);
-    toast.info("Analyse du document en cours...", { duration: 3000 });
-
-    try {
-      const { data, error } = await supabase.functions.invoke('analyze-document', {
-        body: {
-          documentUrl,
-          documentType: docId,
-        },
-      });
-
-      if (error) throw error;
-
-      if (data && !data.isValid && data.rejectionReason) {
-        // Document is not valid - update database status to rejected
-        toast.error(`Document invalide : ${data.rejectionReason}`, { duration: 5000 });
-        
-        // Update the document status in database
-        await supabase
-          .from('documents_inscription')
-          .update({
-            statut: 'rejected',
-            motif_refus: data.rejectionReason,
-            analyse_ia_date: new Date().toISOString(),
-            analyse_ia_details: data,
-          })
-          .eq('apprenant_id', apprenant.id)
-          .eq('type_document', docId);
-
-        await fetchDocuments();
-      } else if (data && data.isValid) {
-        toast.success("Document validé ✓", { duration: 3000 });
-        
-        // Update the document status in database as valid
-        await supabase
-          .from('documents_inscription')
-          .update({
-            statut: 'valid',
-            motif_refus: null,
-            analyse_ia_date: new Date().toISOString(),
-            analyse_ia_details: data,
-          })
-          .eq('apprenant_id', apprenant.id)
-          .eq('type_document', docId);
-
-        await fetchDocuments();
-      }
-    } catch (error: any) {
-      console.error('Analysis error:', error);
-      // Don't show error to user, just log it - manual validation still possible
-      toast.info("Vérification automatique non disponible. Veuillez vérifier manuellement.", { duration: 4000 });
-    } finally {
-      setAnalyzingId(null);
-    }
-  };
 
   const handleUpload = async (docId: string, file: File, isCustom = false) => {
     setUploadingId(docId);
@@ -293,9 +231,7 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
       const docTitle = isCustom ? docId : (docType?.title || docId);
       const docDescription = isCustom ? 'Document supplémentaire' : (docType?.description || '');
       
-      // Documents qui ne nécessitent pas de validation IA sont directement validés
-      const needsValidation = docType?.needsValidation ?? false;
-      const initialStatus = needsValidation ? 'pending' : 'valid';
+      const initialStatus = 'valid';
 
       // Delete existing record in database for this document type
       if (!isCustom) {
@@ -328,15 +264,6 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
       // Refresh the documents list
       await fetchDocuments();
 
-      // If it's a piece_identite, permis_conduire, or justificatif_domicile, analyze it automatically
-      if (!isCustom && (docId === 'piece_identite' || docId === 'permis_conduire' || docId === 'justificatif_domicile')) {
-        if (urlData?.publicUrl) {
-          // Small delay to ensure file is fully uploaded
-          setTimeout(() => {
-            analyzeDocument(docId, urlData.publicUrl);
-          }, 1000);
-        }
-      }
     } catch (error: any) {
       console.error('Upload error:', error);
       toast.error(error.message || "Erreur lors de l'upload du document");
@@ -643,20 +570,6 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
                     )}
                     {doc.status === 'valid' && doc.needsValidation && (
                       <>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => doc.url && analyzeDocument(doc.id, doc.url)}
-                          disabled={analyzingId === doc.id}
-                          title="Analyser automatiquement le document"
-                          className="text-primary hover:text-primary"
-                        >
-                          {analyzingId === doc.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <ScanSearch className="w-4 h-4" />
-                          )}
-                        </Button>
                         <Button 
                           variant="ghost" 
                           size="sm"

@@ -396,16 +396,6 @@ export default function Step1() {
           <span>Formats acceptés : PDF, JPG, PNG, HEIC, WebP • Max 2Mo par fichier</span>
         </div>
 
-        {/* Validation criteria info */}
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <p className="text-gray-700 text-sm">
-            <strong className="text-gray-900">🤖 Vérification automatique :</strong> Nos documents sont analysés par IA pour vérifier leur validité :
-          </p>
-          <ul className="mt-2 text-gray-600 text-sm space-y-1 ml-4 list-disc">
-            <li><strong>Pièce d'identité</strong> : doit être en cours de validité (non périmée) et correspondre au nom/prénom saisis</li>
-            <li><strong>Justificatif de domicile</strong> : doit dater de moins de 3 mois</li>
-          </ul>
-        </div>
 
         {/* Document upload cards */}
         <div className="space-y-4">
