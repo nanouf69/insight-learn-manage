@@ -46,6 +46,7 @@ interface Apprenant {
   date_paiement?: string | null;
   inscrit_france_travail?: boolean | null;
   date_examen_pratique?: string | null;
+  documents_complets?: boolean | null;
 }
 
 interface ApprenantEditFormProps {
@@ -131,6 +132,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
   const [inscritFranceTravail, setInscritFranceTravail] = useState(false);
   const [dateExamenPratique, setDateExamenPratique] = useState("");
   const [sessionsDisponibles, setSessionsDisponibles] = useState<{id: string, nom: string, date_debut: string, date_fin: string}[]>([]);
+  const [documentsComplets, setDocumentsComplets] = useState(false);
   
   const [formData, setFormData] = useState({
     civilite: "",
@@ -203,6 +205,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
       }
       setInscritFranceTravail(apprenant.inscrit_france_travail ?? false);
       setDateExamenPratique(apprenant.date_examen_pratique || "");
+      setDocumentsComplets(apprenant.documents_complets ?? false);
     }
   }, [apprenant]);
 
@@ -308,6 +311,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
       date_paiement: datePaiement ? format(datePaiement, 'yyyy-MM-dd') : null,
       inscrit_france_travail: inscritFranceTravail,
       date_examen_pratique: dateExamenPratique || null,
+      documents_complets: documentsComplets,
     };
 
     try {
@@ -505,6 +509,19 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
               id="edit-inscritFranceTravail"
               checked={inscritFranceTravail}
               onCheckedChange={setInscritFranceTravail}
+            />
+          </div>
+
+          {/* Possession des documents */}
+          <div className="flex items-center justify-between p-4 rounded-lg border">
+            <div className="space-y-0.5">
+              <Label htmlFor="edit-documentsComplets" className="text-sm font-medium">Possession des documents</Label>
+              <p className="text-xs text-muted-foreground">L'apprenant a-t-il fourni tous ses documents ?</p>
+            </div>
+            <Switch
+              id="edit-documentsComplets"
+              checked={documentsComplets}
+              onCheckedChange={setDocumentsComplets}
             />
           </div>
 

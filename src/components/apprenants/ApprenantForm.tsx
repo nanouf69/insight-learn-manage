@@ -106,6 +106,7 @@ export function ApprenantForm() {
   const [inscritFranceTravail, setInscritFranceTravail] = useState(false);
   const [dateExamenPratique, setDateExamenPratique] = useState("");
   const [sessionsDisponibles, setSessionsDisponibles] = useState<{id: string, nom: string, date_debut: string, date_fin: string}[]>([]);
+  const [documentsComplets, setDocumentsComplets] = useState(false);
 
   // Prix par défaut selon la formation
   const prixFormations: Record<string, string> = {
@@ -276,6 +277,7 @@ export function ApprenantForm() {
     setDateExamenTheorique("27 janvier 2026");
     setInscritFranceTravail(false);
     setDateExamenPratique("");
+    setDocumentsComplets(false);
   };
 
   // Ref pour éviter les doubles soumissions
@@ -317,6 +319,7 @@ export function ApprenantForm() {
       date_examen_theorique: dateExamenTheorique || null,
       inscrit_france_travail: inscritFranceTravail,
       date_examen_pratique: dateExamenPratique || null,
+      documents_complets: documentsComplets,
     };
 
     try {
@@ -510,7 +513,19 @@ export function ApprenantForm() {
             />
           </div>
 
-          {/* Adresse postale */}
+          {/* Possession des documents */}
+          <div className="flex items-center justify-between p-4 rounded-lg border">
+            <div className="space-y-0.5">
+              <Label htmlFor="documentsComplets" className="text-sm font-medium">Possession des documents</Label>
+              <p className="text-xs text-muted-foreground">L'apprenant a-t-il fourni tous ses documents ?</p>
+            </div>
+            <Switch
+              id="documentsComplets"
+              checked={documentsComplets}
+              onCheckedChange={setDocumentsComplets}
+            />
+          </div>
+
           <div className="space-y-4">
             <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Adresse postale</h3>
             <div className="space-y-4">
