@@ -187,10 +187,10 @@ export function ApprenantForm() {
     }
   }, [open]);
 
-  // Charger les sessions pour les dates d'examen pratique (formation continue)
+  // Charger les sessions pour les dates d'examen pratique (formation continue ou repassage pratique)
   useEffect(() => {
-    const isFormationContinue = selectedFormation === "continue-vtc" || selectedFormation === "continue-taxi";
-    if (isFormationContinue && open) {
+    const needsSessions = selectedFormation === "continue-vtc" || selectedFormation === "continue-taxi" || selectedFormation === "repassage-pratique";
+    if (needsSessions && open) {
       const fetchSessions = async () => {
         const { data, error } = await supabase
           .from('sessions')
@@ -638,7 +638,8 @@ export function ApprenantForm() {
               </Select>
             </div>
 
-            {/* Date d'examen théorique */}
+            {/* Date d'examen théorique - masqué pour repassage pratique et formation continue */}
+            {selectedFormation !== "repassage-pratique" && selectedFormation !== "continue-vtc" && selectedFormation !== "continue-taxi" && (
             <div className="space-y-2">
               <Label htmlFor="dateExamenTheorique">Date d'examen théorique</Label>
               <Select value={dateExamenTheorique} onValueChange={setDateExamenTheorique}>
@@ -658,14 +659,17 @@ export function ApprenantForm() {
                 </SelectContent>
               </Select>
             </div>
+            )}
 
-            {/* Date d'examen pratique - uniquement pour formation continue */}
-            {(selectedFormation === "continue-vtc" || selectedFormation === "continue-taxi") && (
+            {/* Date d'examen pratique - pour repassage pratique et formation continue */}
+            {(selectedFormation === "repassage-pratique" || selectedFormation === "continue-vtc" || selectedFormation === "continue-taxi") && (
               <div className="space-y-2">
-                <Label htmlFor="dateExamenPratique">Date d'examen pratique</Label>
+                <Label htmlFor="dateExamenPratique">
+                  {selectedFormation === "repassage-pratique" ? "Date d'examen pratique" : "Dates de formation continue"}
+                </Label>
                 <Select value={dateExamenPratique} onValueChange={setDateExamenPratique}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner une date d'examen pratique" />
+                    <SelectValue placeholder={selectedFormation === "repassage-pratique" ? "Sélectionner une date d'examen pratique" : "Sélectionner les dates de formation continue"} />
                   </SelectTrigger>
                   <SelectContent className="bg-background z-50">
                     <SelectItem value="pas_encore_choisi">Pas de date choisie encore</SelectItem>
