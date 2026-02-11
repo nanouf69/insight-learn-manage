@@ -102,6 +102,17 @@ const datesExamenTheorique = [
   { date: "17 novembre 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
 ];
 
+// Dates des examens pratiques 2026 (Rhône 69)
+const datesExamenPratique = [
+  "Du 23 février au 6 mars 2026",
+  "Du 4 au 13 mai 2026",
+  "Du 29 juin au 7 juillet 2026",
+  "Du 1er au 11 septembre 2026",
+  "Du 2 au 13 novembre 2026",
+  "Du 16 au 23 décembre 2026",
+  "Début janvier 2027",
+];
+
 // Prix par défaut selon la formation
 const prixFormations: Record<string, string> = {
   "vtc": "1099",
@@ -645,7 +656,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
             {(formData.selected_formation === "repassage-pratique" || formData.selected_formation === "continue-vtc" || formData.selected_formation === "continue-taxi") && (
               <div className="space-y-2">
                 <Label htmlFor="dateExamenPratique">
-                  {formData.selected_formation === "repassage-pratique" ? "Date d'examen pratique" : "Dates de formation continue"}
+                  {formData.selected_formation === "repassage-pratique" ? "Date d'examen pratique (Rhône 69)" : "Dates de formation continue"}
                 </Label>
                 <Select value={dateExamenPratique} onValueChange={setDateExamenPratique}>
                   <SelectTrigger>
@@ -653,12 +664,9 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                   </SelectTrigger>
                   <SelectContent className="bg-background z-50">
                     <SelectItem value="pas_encore_choisi">Pas de date choisie encore</SelectItem>
-                    {sessionsDisponibles.map((session) => (
-                      <SelectItem key={session.id} value={`${session.date_debut} - ${session.date_fin}`}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{session.nom || 'Session'}</span>
-                          <span className="text-xs text-muted-foreground">Du {session.date_debut} au {session.date_fin}</span>
-                        </div>
+                    {datesExamenPratique.map((date, idx) => (
+                      <SelectItem key={idx} value={date}>
+                        {date}
                       </SelectItem>
                     ))}
                   </SelectContent>
