@@ -117,57 +117,9 @@ export function DocumentUploadCard({
 
       toast.success(`Document "${title}" uploadé avec succès`);
       
-      // For piece_identite and justificatif_domicile: analyze with AI
-      if (docId === 'piece_identite' || docId === 'justificatif_domicile') {
-        setStatus('analyzing');
-        toast.info("Analyse du document en cours...", { duration: 3000 });
-
-        try {
-          const requestBody: Record<string, string> = {
-            documentUrl: publicUrl,
-            documentType: docId,
-          };
-          
-          // For ID documents, include expected name for verification
-          if (docId === 'piece_identite' && expectedNom && expectedPrenom) {
-            requestBody.expectedNom = expectedNom;
-            requestBody.expectedPrenom = expectedPrenom;
-          }
-          
-          const { data, error } = await supabase.functions.invoke('analyze-document', {
-            body: requestBody,
-          });
-
-          if (error) throw error;
-
-          if (data && !data.isValid && data.rejectionReason) {
-            setStatus('rejected');
-            setRejectionReason(data.rejectionReason);
-            toast.error(`Document invalide : ${data.rejectionReason}`, { duration: 5000 });
-            onStatusChange?.(docId, 'rejected', data.rejectionReason);
-          } else if (data && data.isValid) {
-            setStatus('valid');
-            setRejectionReason('');
-            toast.success("Document validé ✓", { duration: 3000 });
-            onStatusChange?.(docId, 'valid');
-          } else {
-            // Uncertain result
-            setStatus('pending');
-            toast.info("Vérification en attente", { duration: 3000 });
-            onStatusChange?.(docId, 'pending');
-          }
-        } catch (analyzeError: any) {
-          console.error('Analysis error:', analyzeError);
-          // If analysis fails, mark as pending (needs manual verification)
-          setStatus('pending');
-          toast.info("Vérification automatique non disponible. Le document sera vérifié manuellement.", { duration: 4000 });
-          onStatusChange?.(docId, 'pending');
-        }
-      } else {
-        // For photo, mark as valid immediately
-        setStatus('valid');
-        onStatusChange?.(docId, 'valid');
-      }
+      // Mark as valid immediately (no AI analysis)
+      setStatus('valid');
+      onStatusChange?.(docId, 'valid');
     } catch (error: any) {
       console.error('Upload error:', error);
       toast.error(error.message || "Erreur lors de l'upload du document");
@@ -199,52 +151,6 @@ export function DocumentUploadCard({
     }
   };
 
-  const handleReAnalyze = async () => {
-    if (!fileUrl || (docId !== 'piece_identite' && docId !== 'justificatif_domicile')) return;
-
-    setStatus('analyzing');
-    toast.info("Nouvelle analyse en cours...", { duration: 3000 });
-
-    try {
-      const requestBody: Record<string, string> = {
-        documentUrl: fileUrl,
-        documentType: docId,
-      };
-      
-      // For ID documents, include expected name for verification
-      if (docId === 'piece_identite' && expectedNom && expectedPrenom) {
-        requestBody.expectedNom = expectedNom;
-        requestBody.expectedPrenom = expectedPrenom;
-      }
-      
-      const { data, error } = await supabase.functions.invoke('analyze-document', {
-        body: requestBody,
-      });
-
-      if (error) throw error;
-
-      if (data && !data.isValid && data.rejectionReason) {
-        setStatus('rejected');
-        setRejectionReason(data.rejectionReason);
-        toast.error(`Document invalide : ${data.rejectionReason}`, { duration: 5000 });
-        onStatusChange?.(docId, 'rejected', data.rejectionReason);
-      } else if (data && data.isValid) {
-        setStatus('valid');
-        setRejectionReason('');
-        toast.success("Document validé ✓", { duration: 3000 });
-        onStatusChange?.(docId, 'valid');
-      } else {
-        setStatus('pending');
-        toast.info("Vérification en attente", { duration: 3000 });
-        onStatusChange?.(docId, 'pending');
-      }
-    } catch (analyzeError: any) {
-      console.error('Re-analysis error:', analyzeError);
-      setStatus('pending');
-      toast.info("Vérification automatique non disponible.", { duration: 4000 });
-      onStatusChange?.(docId, 'pending');
-    }
-  };
 
   const getStatusBadge = () => {
     switch (status) {
@@ -289,7 +195,6 @@ export function DocumentUploadCard({
   };
 
   const hasFile = status !== 'empty' && status !== 'uploading';
-  const canAnalyze = (docId === 'piece_identite' || docId === 'justificatif_domicile') && hasFile && status !== 'analyzing';
 
   return (
     <div className="space-y-2">
@@ -352,19 +257,6 @@ export function DocumentUploadCard({
                   </button>
                 )}
                 
-                {/* Re-analyze with AI button */}
-                {canAnalyze && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleReAnalyze();
-                    }}
-                    className="p-2 rounded-lg hover:bg-blue-50 transition-colors"
-                    title="Relancer l'analyse IA"
-                  >
-                    <ScanSearch className="w-5 h-5 text-blue-500" />
-                  </button>
-                )}
                 
                 {/* Reject indicator (for rejected status) */}
                 {status === 'rejected' && (
