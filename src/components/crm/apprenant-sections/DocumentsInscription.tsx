@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { FileCheck, Upload, CheckCircle2, XCircle, AlertCircle, Loader2, Trash2, Eye, Ban, Plus, ScanSearch } from "lucide-react";
+import { FileCheck, Upload, CheckCircle2, XCircle, AlertCircle, Loader2, Trash2, Eye, Ban, Plus, ScanSearch, CalendarDays, AlertTriangle, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -133,6 +133,47 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
   const [question1, setQuestion1] = useState<boolean | null>(null);
   const [question2, setQuestion2] = useState<boolean | null>(null);
   const [question3, setQuestion3] = useState<boolean | null>(null);
+
+  // Permis de conduire date validation
+  const [datePermis, setDatePermis] = useState('');
+  const [isConduiteAccompagnee, setIsConduiteAccompagnee] = useState<boolean | null>(null);
+  
+  // Justificatif de domicile month selection
+  const [moisJustificatif, setMoisJustificatif] = useState('');
+
+  // Permis date validation helpers
+  const isPermisDateTooOld = (() => {
+    if (!datePermis) return false;
+    const permisDate = new Date(datePermis);
+    const threeYearsAgo = new Date();
+    threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
+    return permisDate <= threeYearsAgo;
+  })();
+
+  const permisBlocked = isPermisDateTooOld && isConduiteAccompagnee !== true;
+
+  // Justificatif month validation
+  const isJustificatifTooOld = (() => {
+    if (!moisJustificatif) return false;
+    const [year, month] = moisJustificatif.split('-').map(Number);
+    const selectedDate = new Date(year, month - 1, 1);
+    const now = new Date();
+    const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+    return selectedDate < threeMonthsAgo;
+  })();
+
+  // Generate month options
+  const monthOptions = (() => {
+    const options: { value: string; label: string }[] = [];
+    const now = new Date();
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const label = d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+      options.push({ value, label: label.charAt(0).toUpperCase() + label.slice(1) });
+    }
+    return options;
+  })();
 
   // Fetch existing documents on mount
   useEffect(() => {
@@ -490,105 +531,122 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
         {/* Documents list */}
         <div className="space-y-3">
           {documents.map((doc) => (
-            <div 
-              key={doc.id}
-              className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
-                doc.status === 'rejected' 
-                  ? 'bg-destructive/10 border-destructive/30' 
-                  : doc.status === 'valid' 
-                    ? 'bg-green-50 border-green-200' 
-                    : 'bg-muted/30'
-              }`}
-            >
-              <div className="flex items-center gap-4">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                  doc.status === 'rejected'
-                    ? 'bg-destructive/20'
+            <div key={doc.id}>
+              <div 
+                className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
+                  doc.status === 'rejected' 
+                    ? 'bg-destructive/10 border-destructive/30' 
                     : doc.status === 'valid' 
-                      ? 'bg-green-100' 
-                      : 'bg-muted'
-                }`}>
-                  {doc.status === 'rejected' ? (
-                    <Ban className="w-5 h-5 text-destructive" />
-                  ) : doc.status === 'valid' ? (
-                    <CheckCircle2 className="w-5 h-5 text-green-600" />
-                  ) : (
-                    <XCircle className="w-5 h-5 text-muted-foreground" />
-                  )}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h4 className={`font-medium ${doc.status === 'rejected' ? 'text-destructive' : ''}`}>
-                      {doc.title}
-                    </h4>
-                    {doc.required && !doc.uploaded && (
-                      <Badge variant="destructive" className="text-xs">Requis</Badge>
+                      ? 'bg-green-50 border-green-200' 
+                      : 'bg-muted/30'
+                }`}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                    doc.status === 'rejected'
+                      ? 'bg-destructive/20'
+                      : doc.status === 'valid' 
+                        ? 'bg-green-100' 
+                        : 'bg-muted'
+                  }`}>
+                    {doc.status === 'rejected' ? (
+                      <Ban className="w-5 h-5 text-destructive" />
+                    ) : doc.status === 'valid' ? (
+                      <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    ) : (
+                      <XCircle className="w-5 h-5 text-muted-foreground" />
                     )}
                   </div>
-                  <p className={`text-sm ${doc.status === 'rejected' ? 'text-destructive/70' : 'text-muted-foreground'}`}>
-                    {doc.description}
-                  </p>
-                  {doc.status === 'rejected' && doc.rejectionReason && (
-                    <p className="text-base text-destructive font-bold mt-2 flex items-center gap-2">
-                      <Ban className="w-4 h-4" />
-                      REFUSÉ : {doc.rejectionReason}
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className={`font-medium ${doc.status === 'rejected' ? 'text-destructive' : ''}`}>
+                        {doc.title}
+                      </h4>
+                      {doc.required && !doc.uploaded && (
+                        <Badge variant="destructive" className="text-xs">Requis</Badge>
+                      )}
+                    </div>
+                    <p className={`text-sm ${doc.status === 'rejected' ? 'text-destructive/70' : 'text-muted-foreground'}`}>
+                      {doc.description}
                     </p>
-                  )}
+                    {doc.status === 'rejected' && doc.rejectionReason && (
+                      <p className="text-base text-destructive font-bold mt-2 flex items-center gap-2">
+                        <Ban className="w-4 h-4" />
+                        REFUSÉ : {doc.rejectionReason}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {/* Hidden file input */}
-                <input
-                  type="file"
-                  ref={(el) => { fileInputRefs.current[doc.id] = el; }}
-                  onChange={(e) => handleFileChange(doc.id, e)}
-                  accept={ACCEPTED_FORMATS}
-                  className="hidden"
-                />
-                
-                {doc.uploaded ? (
-                  <>
-                    {doc.status === 'rejected' ? (
-                      <Badge variant="destructive" className="text-xs">
-                        <Ban className="w-3 h-3 mr-1" />
-                        Refusé
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-green-600 border-green-600">
-                        <CheckCircle2 className="w-3 h-3 mr-1" />
-                        Reçu
-                      </Badge>
-                    )}
-                    {doc.url && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => openDocument(doc.url!)}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                    )}
-                    {doc.status === 'valid' && doc.needsValidation && (
-                      <>
+                <div className="flex items-center gap-2">
+                  {/* Hidden file input */}
+                  <input
+                    type="file"
+                    ref={(el) => { fileInputRefs.current[doc.id] = el; }}
+                    onChange={(e) => handleFileChange(doc.id, e)}
+                    accept={ACCEPTED_FORMATS}
+                    className="hidden"
+                  />
+                  
+                  {doc.uploaded ? (
+                    <>
+                      {doc.status === 'rejected' ? (
+                        <Badge variant="destructive" className="text-xs">
+                          <Ban className="w-3 h-3 mr-1" />
+                          Refusé
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-green-600 border-green-600">
+                          <CheckCircle2 className="w-3 h-3 mr-1" />
+                          Reçu
+                        </Badge>
+                      )}
+                      {doc.url && (
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={() => openRejectionDialog(doc.id, doc.title)}
-                          className="text-destructive hover:text-destructive"
-                          title="Refuser le document manuellement"
+                          onClick={() => openDocument(doc.url!)}
                         >
-                          <Ban className="w-4 h-4" />
+                          <Eye className="w-4 h-4" />
                         </Button>
-                      </>
-                    )}
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleDelete(doc.id)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                      )}
+                      {doc.status === 'valid' && doc.needsValidation && (
+                        <>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => openRejectionDialog(doc.id, doc.title)}
+                            className="text-destructive hover:text-destructive"
+                            title="Refuser le document manuellement"
+                          >
+                            <Ban className="w-4 h-4" />
+                          </Button>
+                        </>
+                      )}
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleDelete(doc.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleFileSelect(doc.id)}
+                        disabled={uploadingId === doc.id}
+                      >
+                        {uploadingId === doc.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4 mr-2" />
+                            Remplacer
+                          </>
+                        )}
+                      </Button>
+                    </>
+                  ) : (
                     <Button 
                       variant="outline" 
                       size="sm"
@@ -596,31 +654,109 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
                       disabled={uploadingId === doc.id}
                     >
                       {uploadingId === doc.id ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       ) : (
-                        <>
-                          <Upload className="w-4 h-4 mr-2" />
-                          Remplacer
-                        </>
+                        <Upload className="w-4 h-4 mr-2" />
                       )}
+                      Uploader
                     </Button>
-                  </>
-                ) : (
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleFileSelect(doc.id)}
-                    disabled={uploadingId === doc.id}
-                  >
-                    {uploadingId === doc.id ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Upload className="w-4 h-4 mr-2" />
-                    )}
-                    Uploader
-                  </Button>
-                )}
+                  )}
+                </div>
               </div>
+
+              {/* Permis de conduire: date + conduite accompagnée */}
+              {doc.id === 'permis_conduire' && (
+                <div className={`mt-2 border rounded-lg p-4 space-y-3 ${permisBlocked ? 'border-destructive/50 bg-destructive/5' : 'border-border bg-muted/30'}`}>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-sm font-medium">
+                      <CalendarDays className="w-4 h-4" />
+                      Date d'obtention du permis de conduire
+                    </label>
+                    <input
+                      type="date"
+                      value={datePermis}
+                      onChange={(e) => {
+                        setDatePermis(e.target.value);
+                        setIsConduiteAccompagnee(null);
+                      }}
+                      max={new Date().toISOString().split('T')[0]}
+                      className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  </div>
+
+                  {isPermisDateTooOld && (
+                    <div className={`border rounded-lg p-3 space-y-2 ${permisBlocked ? 'border-destructive/30 bg-destructive/10' : 'border-amber-300 bg-amber-50'}`}>
+                      <p className="text-sm font-medium">
+                        ⚠️ Votre permis a plus de 3 ans. Avez-vous obtenu votre permis en conduite accompagnée ?
+                      </p>
+                      <div className="flex items-center gap-6">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="crm_conduite_accompagnee"
+                            checked={isConduiteAccompagnee === true}
+                            onChange={() => setIsConduiteAccompagnee(true)}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-sm">Oui</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="crm_conduite_accompagnee"
+                            checked={isConduiteAccompagnee === false}
+                            onChange={() => setIsConduiteAccompagnee(false)}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-sm">Non</span>
+                        </label>
+                      </div>
+                      {isConduiteAccompagnee === false && (
+                        <div className="flex items-start gap-2 mt-2 p-2 bg-destructive/10 rounded-lg">
+                          <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+                          <p className="text-destructive text-sm font-medium">
+                            Permis hors période probatoire de 3 ans. Dossier non accepté.
+                          </p>
+                        </div>
+                      )}
+                      {isConduiteAccompagnee === true && (
+                        <div className="flex items-center gap-2 mt-2 p-2 bg-green-100 rounded-lg">
+                          <Check className="w-4 h-4 text-green-600" />
+                          <p className="text-green-700 text-sm">Conduite accompagnée acceptée (période probatoire de 2 ans).</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Justificatif de domicile: month selector */}
+              {doc.id === 'justificatif_domicile' && (
+                <div className={`mt-2 border rounded-lg p-4 ${isJustificatifTooOld ? 'border-destructive/50 bg-destructive/5' : 'border-border bg-muted/30'}`}>
+                  <label className="flex items-center gap-2 text-sm font-medium mb-2">
+                    <CalendarDays className="w-4 h-4" />
+                    Mois du justificatif
+                  </label>
+                  <select
+                    value={moisJustificatif}
+                    onChange={(e) => setMoisJustificatif(e.target.value)}
+                    className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    <option value="">Sélectionnez le mois du justificatif...</option>
+                    {monthOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                  {isJustificatifTooOld && (
+                    <div className="flex items-start gap-2 mt-2 p-2 bg-destructive/10 rounded-lg">
+                      <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+                      <p className="text-destructive text-sm font-medium">
+                        Ce justificatif date de plus de 3 mois. Veuillez fournir un document plus récent.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ))}
 
