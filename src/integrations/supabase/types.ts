@@ -76,6 +76,7 @@ export type Database = {
           created_at: string
           creneau_horaire: string | null
           date_debut_formation: string | null
+          date_examen_pratique: string | null
           date_examen_theorique: string | null
           date_fin_formation: string | null
           date_formation_catalogue: string | null
@@ -84,6 +85,7 @@ export type Database = {
           email: string | null
           formation_choisie: string | null
           id: string
+          inscrit_france_travail: boolean | null
           lieu_examen: string | null
           mode_financement: string | null
           montant_paye: number | null
@@ -110,6 +112,7 @@ export type Database = {
           created_at?: string
           creneau_horaire?: string | null
           date_debut_formation?: string | null
+          date_examen_pratique?: string | null
           date_examen_theorique?: string | null
           date_fin_formation?: string | null
           date_formation_catalogue?: string | null
@@ -118,6 +121,7 @@ export type Database = {
           email?: string | null
           formation_choisie?: string | null
           id?: string
+          inscrit_france_travail?: boolean | null
           lieu_examen?: string | null
           mode_financement?: string | null
           montant_paye?: number | null
@@ -144,6 +148,7 @@ export type Database = {
           created_at?: string
           creneau_horaire?: string | null
           date_debut_formation?: string | null
+          date_examen_pratique?: string | null
           date_examen_theorique?: string | null
           date_fin_formation?: string | null
           date_formation_catalogue?: string | null
@@ -152,6 +157,7 @@ export type Database = {
           email?: string | null
           formation_choisie?: string | null
           id?: string
+          inscrit_france_travail?: boolean | null
           lieu_examen?: string | null
           mode_financement?: string | null
           montant_paye?: number | null

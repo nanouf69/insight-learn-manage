@@ -10,6 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Loader2, CalendarIcon, User, UserCheck } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -43,6 +44,8 @@ interface Apprenant {
   moyen_paiement?: string | null;
   notes?: string | null;
   date_paiement?: string | null;
+  inscrit_france_travail?: boolean | null;
+  date_examen_pratique?: string | null;
 }
 
 interface ApprenantEditFormProps {
@@ -125,6 +128,9 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
   const [datePaiement, setDatePaiement] = useState<Date | undefined>();
   const [selectedDateOption, setSelectedDateOption] = useState("");
   const submitInProgressRef = useRef(false);
+  const [inscritFranceTravail, setInscritFranceTravail] = useState(false);
+  const [dateExamenPratique, setDateExamenPratique] = useState("");
+  const [sessionsDisponibles, setSessionsDisponibles] = useState<{id: string, nom: string, date_debut: string, date_fin: string}[]>([]);
   
   const [formData, setFormData] = useState({
     civilite: "",
@@ -195,8 +201,28 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
       if (apprenant.date_paiement) {
         setDatePaiement(new Date(apprenant.date_paiement));
       }
+      setInscritFranceTravail(apprenant.inscrit_france_travail ?? false);
+      setDateExamenPratique(apprenant.date_examen_pratique || "");
     }
   }, [apprenant]);
+
+  // Charger les sessions pour les dates d'examen pratique (formation continue)
+  useEffect(() => {
+    const isFormationContinue = formData.selected_formation === "continue-vtc" || formData.selected_formation === "continue-taxi";
+    if (isFormationContinue && open) {
+      const fetchSessions = async () => {
+        const { data, error } = await supabase
+          .from('sessions')
+          .select('id, nom, date_debut, date_fin')
+          .order('date_debut', { ascending: true });
+        
+        if (!error && data) {
+          setSessionsDisponibles(data.map(s => ({ id: s.id, nom: s.nom || '', date_debut: s.date_debut, date_fin: s.date_fin })));
+        }
+      };
+      fetchSessions();
+    }
+  }, [formData.selected_formation, open]);
 
   // Mapping formation → type d'apprenant
   const formationToType: Record<string, string> = {
@@ -280,6 +306,8 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
       moyen_paiement: formData.moyen_paiement || null,
       notes: formData.notes?.trim() || null,
       date_paiement: datePaiement ? format(datePaiement, 'yyyy-MM-dd') : null,
+      inscrit_france_travail: inscritFranceTravail,
+      date_examen_pratique: dateExamenPratique || null,
     };
 
     try {
@@ -467,6 +495,19 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
             </div>
           </div>
 
+          {/* Inscrit à France Travail */}
+          <div className="flex items-center justify-between p-4 rounded-lg border">
+            <div className="space-y-0.5">
+              <Label htmlFor="edit-inscritFranceTravail" className="text-sm font-medium">Inscrit à France Travail</Label>
+              <p className="text-xs text-muted-foreground">L'apprenant est-il inscrit à France Travail ?</p>
+            </div>
+            <Switch
+              id="edit-inscritFranceTravail"
+              checked={inscritFranceTravail}
+              onCheckedChange={setInscritFranceTravail}
+            />
+          </div>
+
           {/* Formation ou Service */}
           <div className="space-y-4">
             <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Formation ou Service</h3>
@@ -580,9 +621,31 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          {/* Mode de financement */}
+            {/* Date d'examen pratique - uniquement pour formation continue */}
+            {(formData.selected_formation === "continue-vtc" || formData.selected_formation === "continue-taxi") && (
+              <div className="space-y-2">
+                <Label htmlFor="dateExamenPratique">Date d'examen pratique</Label>
+                <Select value={dateExamenPratique} onValueChange={setDateExamenPratique}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner une date d'examen pratique" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    <SelectItem value="pas_encore_choisi">Pas de date choisie encore</SelectItem>
+                    {sessionsDisponibles.map((session) => (
+                      <SelectItem key={session.id} value={`${session.date_debut} - ${session.date_fin}`}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{session.nom || 'Session'}</span>
+                          <span className="text-xs text-muted-foreground">Du {session.date_debut} au {session.date_fin}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+          </div>
           <div className="space-y-4">
             <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Financement</h3>
             <div className="space-y-2">
