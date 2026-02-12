@@ -174,6 +174,7 @@ export default function Step12() {
           type_examen: typeExamen,
           lieu_examen: lieuExamen,
           b2_vierge: b2Vierge,
+          documents_complets: true,
           // Also update contact info if changed
           email: email || undefined,
           telephone: telephone || undefined,
