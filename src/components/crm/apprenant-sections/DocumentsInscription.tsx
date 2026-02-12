@@ -214,8 +214,9 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
         };
       });
 
-      // Fetch custom documents from database
-      const customDocs: CustomDocument[] = (dbDocs?.filter(d => d.type_document === 'custom') || []).map(d => ({
+      // Fetch custom documents and generated documents from database
+      const standardTypeIds = DOCUMENT_TYPES.map(d => d.id);
+      const customDocs: CustomDocument[] = (dbDocs?.filter(d => !standardTypeIds.includes(d.type_document)) || []).map(d => ({
         id: d.id,
         title: d.titre,
         description: d.description || 'Document supplémentaire',
