@@ -166,19 +166,20 @@ export default function Step12() {
       const lieuExamen = selectedExam?.lieu || '';
 
       // Update the apprenant in the database
+      const updateData: Record<string, unknown> = {
+        numero_dossier_cma: numeroDossier,
+        date_examen_theorique: dateExamen,
+        type_examen: typeExamen || null,
+        lieu_examen: lieuExamen || null,
+        b2_vierge: b2Vierge,
+        documents_complets: true,
+      };
+      if (email) updateData.email = email;
+      if (telephone) updateData.telephone = telephone;
+
       const { error } = await supabase
         .from('apprenants')
-        .update({
-          numero_dossier_cma: numeroDossier,
-          date_examen_theorique: dateExamen,
-          type_examen: typeExamen,
-          lieu_examen: lieuExamen,
-          b2_vierge: b2Vierge,
-          documents_complets: true,
-          // Also update contact info if changed
-          email: email || undefined,
-          telephone: telephone || undefined,
-        })
+        .update(updateData)
         .eq('id', apprenantId);
 
       if (error) {
