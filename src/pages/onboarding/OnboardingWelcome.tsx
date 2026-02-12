@@ -8,13 +8,40 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-// Fonction pour normaliser le texte (supprimer accents et mettre en minuscules)
+// Fonction pour normaliser le texte (supprimer accents, tirets, espaces multiples et mettre en minuscules)
 const normalizeText = (text: string): string => {
   return text
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '') // Supprime les accents
+    .replace(/[-']/g, ' ')           // Remplace tirets et apostrophes par des espaces
+    .replace(/\s+/g, ' ')            // Normalise les espaces multiples
     .trim();
+};
+
+// Distance de Levenshtein pour tolérer les fautes d'orthographe
+const levenshtein = (a: string, b: string): number => {
+  const matrix: number[][] = [];
+  for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      matrix[i][j] = b[i - 1] === a[j - 1]
+        ? matrix[i - 1][j - 1]
+        : Math.min(matrix[i - 1][j - 1] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j] + 1);
+    }
+  }
+  return matrix[b.length][a.length];
+};
+
+// Vérifie si deux textes sont similaires (tolérance aux fautes)
+const isSimilar = (input: string, target: string, maxDistance = 2): boolean => {
+  const a = normalizeText(input);
+  const b = normalizeText(target);
+  if (a === b) return true;
+  // Pour les noms courts (<=3 chars), tolérer seulement 1 erreur
+  const tolerance = Math.min(maxDistance, Math.floor(b.length / 3));
+  return levenshtein(a, b) <= Math.max(1, tolerance);
 };
 
 export default function OnboardingWelcome() {
@@ -46,11 +73,18 @@ export default function OnboardingWelcome() {
       const nomNormalized = normalizeText(nom);
       const prenomNormalized = normalizeText(prenom);
 
-      // Chercher l'apprenant avec correspondance normalisée
-      const found = apprenants?.find(a => 
+      // Chercher l'apprenant avec correspondance exacte normalisée d'abord
+      let found = apprenants?.find(a => 
         normalizeText(a.nom) === nomNormalized && 
         normalizeText(a.prenom) === prenomNormalized
       );
+
+      // Si pas trouvé, essayer avec tolérance aux fautes d'orthographe
+      if (!found) {
+        found = apprenants?.find(a => 
+          isSimilar(nom, a.nom) && isSimilar(prenom, a.prenom)
+        );
+      }
 
       // Sauvegarder les infos dans localStorage
       localStorage.setItem('onboarding_nom', nom.trim());
