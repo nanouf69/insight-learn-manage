@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -61,14 +62,14 @@ const entrepriseEmettrice = {
   agence: "LYON-MONTCHAT"
 };
 
-// Liste des apprenants
-const apprenants = [
-  { id: 1, name: "Jean Martin", email: "jean.martin@email.com", phone: "06 12 34 56 78", address: "12 rue des Lilas, 69001 Lyon", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Jean" },
-  { id: 2, name: "Sophie Bernard", email: "sophie.bernard@email.com", phone: "06 98 76 54 32", address: "45 avenue Jean Jaurès, 69007 Lyon", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sophie" },
-  { id: 3, name: "Pierre Durand", email: "pierre.durand@email.com", phone: "06 55 44 33 22", address: "8 place Bellecour, 69002 Lyon", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Pierre" },
-  { id: 4, name: "Marie Leroy", email: "marie.leroy@email.com", phone: "06 11 22 33 44", address: "23 rue de la République, 69003 Lyon", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Marie" },
-  { id: 5, name: "Lucas Petit", email: "lucas.petit@email.com", phone: "06 77 88 99 00", address: "56 cours Lafayette, 69006 Lyon", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Lucas" },
-];
+interface ApprenantItem {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  avatar: string;
+}
 
 // Liste des organisations
 const organisations = [
@@ -121,7 +122,7 @@ interface FactureData {
   dateEcheance: string;
   duplicata: boolean;
   typeFinanceur: "particulier" | "professionnel";
-  selectedApprenantId: number | null;
+  selectedApprenantId: string | null;
   selectedOrganisationId: number | null;
   refDossier: string;
   refConvention: string;
@@ -159,6 +160,40 @@ export function FactureForm() {
   const [searchProduit, setSearchProduit] = useState("");
   const [isAddLineDialogOpen, setIsAddLineDialogOpen] = useState(false);
   const [addLineType, setAddLineType] = useState<"session" | "produit">("session");
+  const [apprenants, setApprenants] = useState<ApprenantItem[]>([]);
+
+  useEffect(() => {
+    const fetchApprenants = async () => {
+      const allData: ApprenantItem[] = [];
+      let offset = 0;
+      const batchSize = 1000;
+      let hasMore = true;
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('apprenants')
+          .select('id, nom, prenom, email, telephone, adresse, ville, code_postal')
+          .range(offset, offset + batchSize - 1);
+        if (error) break;
+        if (data && data.length > 0) {
+          const mapped = data.map(a => ({
+            id: a.id,
+            name: `${a.prenom} ${a.nom}`,
+            email: a.email || '',
+            phone: a.telephone || '',
+            address: [a.adresse, a.code_postal, a.ville].filter(Boolean).join(', '),
+            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${a.prenom}`,
+          }));
+          allData.push(...mapped);
+          offset += batchSize;
+          hasMore = data.length === batchSize;
+        } else {
+          hasMore = false;
+        }
+      }
+      setApprenants(allData);
+    };
+    fetchApprenants();
+  }, []);
 
   const updateField = <K extends keyof FactureData>(field: K, value: FactureData[K]) => {
     setData(prev => ({ ...prev, [field]: value }));
