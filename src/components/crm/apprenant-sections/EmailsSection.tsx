@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Mail, Send, Inbox, Clock, Plus, Search, RefreshCw, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { Mail, Send, Inbox, Clock, Plus, Search, RefreshCw, Loader2, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,6 +38,130 @@ interface EmailRecord {
 
 // Email de l'organisme pour la synchronisation Outlook
 const ORGANISME_EMAIL = "contact@ftransport.fr";
+const ONBOARDING_URL = "https://insight-learn-manage.lovable.app/bienvenue";
+
+function getFormationType(typeApprenant: string | null | undefined): string {
+  const type = (typeApprenant || '').toLowerCase();
+  if (type.includes('ta-e') || type === 'ta') return 'TAXI (mobilité VTC vers TAXI)';
+  if (type.includes('va-e') || type === 'va') return 'VTC (mobilité TAXI vers VTC)';
+  if (type.includes('taxi')) return 'TAXI';
+  if (type.includes('vtc')) return 'VTC';
+  return 'TAXI / VTC';
+}
+
+interface EmailTemplate {
+  id: string;
+  label: string;
+  icon: string;
+  getSubject: (apprenant: any) => string;
+  getBody: (apprenant: any) => string;
+}
+
+const EMAIL_TEMPLATES: EmailTemplate[] = [
+  {
+    id: 'bienvenue',
+    label: '📄 Document de bienvenue',
+    icon: '📄',
+    getSubject: (a) => `Bienvenue chez Ftransport - ${a.prenom} ${a.nom}`,
+    getBody: (a) => {
+      const formation = getFormationType(a.type_apprenant);
+      return `Bonjour ${a.prenom} ${a.nom},
+
+Nous avons le plaisir de vous confirmer votre inscription à la formation ${formation}.
+
+⚠️ IMPORTANT : Afin de valider définitivement votre inscription à l'examen, merci de cliquer sur le lien ci-dessous et de suivre les étapes. Sans cela, vous ne serez pas inscrit à l'examen.
+
+👉 CLIQUEZ ICI POUR VOUS INSCRIRE : ${ONBOARDING_URL}
+
+Pour toute question, contactez-nous :
+📞 Tél : 04 28 29 60 91
+📧 Email : contact@ftransport.fr
+
+Cordialement,
+L'équipe Ftransport
+86 Route de Genas, 69003 Lyon`;
+    },
+  },
+  {
+    id: 'rappel-documents',
+    label: '📋 Rappel documents manquants',
+    icon: '📋',
+    getSubject: (a) => `Rappel : Documents manquants - ${a.prenom} ${a.nom}`,
+    getBody: (a) => `Bonjour ${a.prenom},
+
+Nous vous rappelons que certains documents nécessaires à la finalisation de votre dossier d'inscription sont encore manquants.
+
+Merci de nous transmettre les pièces manquantes dans les plus brefs délais afin que nous puissions procéder à votre inscription à l'examen.
+
+Vous pouvez compléter votre dossier en ligne : ${ONBOARDING_URL}
+
+N'hésitez pas à nous contacter si vous avez des questions.
+
+Cordialement,
+L'équipe Ftransport
+📞 04 28 29 60 91`,
+  },
+  {
+    id: 'convocation-examen',
+    label: '🎓 Convocation examen',
+    icon: '🎓',
+    getSubject: (a) => `Convocation à l'examen - ${a.prenom} ${a.nom}`,
+    getBody: (a) => `Bonjour ${a.prenom},
+
+Nous avons le plaisir de vous informer que votre inscription à l'examen a bien été validée.
+
+📅 Date de l'examen : [À compléter]
+📍 Lieu : [À compléter]
+🕐 Heure de convocation : [À compléter]
+
+Documents à apporter le jour de l'examen :
+- Pièce d'identité en cours de validité
+- Convocation (ce mail)
+
+Nous vous souhaitons bonne chance !
+
+Cordialement,
+L'équipe Ftransport
+📞 04 28 29 60 91`,
+  },
+  {
+    id: 'confirmation-inscription',
+    label: '✅ Confirmation d\'inscription',
+    icon: '✅',
+    getSubject: (a) => `Confirmation d'inscription - ${a.prenom} ${a.nom}`,
+    getBody: (a) => {
+      const formation = getFormationType(a.type_apprenant);
+      return `Bonjour ${a.prenom},
+
+Nous vous confirmons que votre inscription à la formation ${formation} est bien enregistrée et votre dossier est complet.
+
+Votre formation débutera prochainement. Nous vous transmettrons les informations pratiques (dates, horaires, lieu) par email.
+
+En attendant, n'hésitez pas à nous contacter pour toute question.
+
+Cordialement,
+L'équipe Ftransport
+📞 04 28 29 60 91
+📧 contact@ftransport.fr`;
+    },
+  },
+  {
+    id: 'relance-paiement',
+    label: '💰 Relance paiement',
+    icon: '💰',
+    getSubject: (a) => `Relance paiement - ${a.prenom} ${a.nom}`,
+    getBody: (a) => `Bonjour ${a.prenom},
+
+Nous vous contactons au sujet du règlement de votre formation. À ce jour, nous n'avons pas encore reçu votre paiement.
+
+Merci de procéder au règlement dans les meilleurs délais ou de nous contacter pour convenir d'un échéancier.
+
+Cordialement,
+L'équipe Ftransport
+📞 04 28 29 60 91
+📧 contact@ftransport.fr`,
+  },
+];
 
 export function EmailsSection({ apprenant }: EmailsSectionProps) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -44,6 +169,7 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
   const [isComposeOpen, setIsComposeOpen] = useState(false);
   const [newEmailSubject, setNewEmailSubject] = useState("");
   const [newEmailBody, setNewEmailBody] = useState("");
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -124,6 +250,7 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
       setIsComposeOpen(false);
       setNewEmailSubject("");
       setNewEmailBody("");
+      setSelectedTemplate("");
       toast({
         title: "Email envoyé",
         description: `Email envoyé à ${apprenant.email}`,
@@ -168,6 +295,15 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
     sendMutation.mutate({ subject: newEmailSubject, body: newEmailBody });
   };
 
+  const handleTemplateSelect = (templateId: string) => {
+    setSelectedTemplate(templateId);
+    const template = EMAIL_TEMPLATES.find(t => t.id === templateId);
+    if (template) {
+      setNewEmailSubject(template.getSubject(apprenant));
+      setNewEmailBody(template.getBody(apprenant));
+    }
+  };
+
   const getEmailDate = (email: EmailRecord) => {
     const dateStr = email.type === 'sent' ? email.sent_at : email.received_at;
     return dateStr ? new Date(dateStr) : new Date(email.created_at);
@@ -194,18 +330,45 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
             )}
             Synchroniser
           </Button>
-          <Dialog open={isComposeOpen} onOpenChange={setIsComposeOpen}>
+          <Dialog open={isComposeOpen} onOpenChange={(open) => {
+            setIsComposeOpen(open);
+            if (!open) {
+              setSelectedTemplate("");
+              setNewEmailSubject("");
+              setNewEmailBody("");
+            }
+          }}>
             <DialogTrigger asChild>
               <Button size="sm" disabled={!apprenant.email}>
                 <Plus className="w-4 h-4 mr-2" />
                 Nouveau mail
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
+            <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Nouveau mail à {apprenant.prenom} {apprenant.nom}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-4">
+                {/* Template selector */}
+                <div>
+                  <Label className="flex items-center gap-2 mb-2">
+                    <FileText className="w-4 h-4" />
+                    Modèle d'email
+                  </Label>
+                  <Select value={selectedTemplate} onValueChange={handleTemplateSelect}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choisir un modèle d'email..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {EMAIL_TEMPLATES.map((template) => (
+                        <SelectItem key={template.id} value={template.id}>
+                          {template.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div>
                   <Label>Destinataire</Label>
                   <Input value={apprenant.email || "Pas d'email"} disabled />
@@ -224,7 +387,7 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
                     value={newEmailBody} 
                     onChange={(e) => setNewEmailBody(e.target.value)}
                     placeholder="Contenu de l'email..."
-                    rows={8}
+                    rows={12}
                   />
                 </div>
                 <div className="flex justify-end gap-2">
