@@ -12,7 +12,7 @@ interface RecapitulatifData {
   b2Vierge: boolean;
 }
 
-export function generateRecapitulatifPDF(data: RecapitulatifData): void {
+export function generateRecapitulatifPDF(data: RecapitulatifData, options?: { returnBlob?: boolean }): Blob | void {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 20;
@@ -174,7 +174,12 @@ export function generateRecapitulatifPDF(data: RecapitulatifData): void {
   doc.text('FTRANSPORT - 86 Route de Genas, 69003 Lyon', margin, footerY);
   doc.text('Tél : 04.28.29.60.91 • contact@ftransport.fr', margin, footerY + 5);
 
-  // Téléchargement
+  // Téléchargement ou retour du blob
   const fileName = `Recapitulatif_Inscription_${data.nom}_${data.prenom}.pdf`.replace(/\s+/g, '_');
+  
+  if (options?.returnBlob) {
+    return doc.output('blob');
+  }
+  
   doc.save(fileName);
 }

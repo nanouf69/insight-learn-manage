@@ -256,10 +256,9 @@ export default function Step12() {
     toast.success("Date d'examen mise à jour");
   };
 
-  const handleDownloadRecap = () => {
+  const handleDownloadRecap = async () => {
     const selectedExam = datesExamenTheorique.find(e => e.value === dateExamen);
-    
-    generateRecapitulatifPDF({
+    const pdfData = {
       nom,
       prenom,
       email,
@@ -269,7 +268,56 @@ export default function Step12() {
       dateExamen,
       lieuExamen: selectedExam?.lieu,
       b2Vierge,
-    });
+    };
+    
+    // Generate and download the PDF
+    generateRecapitulatifPDF(pdfData);
+    
+    // Also generate a blob to upload to storage
+    const blob = generateRecapitulatifPDF(pdfData, { returnBlob: true }) as Blob;
+    const apprenantId = localStorage.getItem('onboarding_apprenant_id');
+    
+    if (blob && apprenantId) {
+      try {
+        const fileName = `recapitulatif_inscription_${Date.now()}.pdf`;
+        const filePath = `${apprenantId}/${fileName}`;
+        
+        // Upload to storage
+        const { error: uploadError } = await supabase.storage
+          .from('documents-inscription')
+          .upload(filePath, blob, { cacheControl: '3600', upsert: true });
+
+        if (uploadError) {
+          console.error('Upload recap error:', uploadError);
+        } else {
+          const { data: urlData } = supabase.storage
+            .from('documents-inscription')
+            .getPublicUrl(filePath);
+
+          // Delete any existing recap record
+          await supabase
+            .from('documents_inscription')
+            .delete()
+            .eq('apprenant_id', apprenantId)
+            .eq('type_document', 'recapitulatif_inscription');
+
+          // Save record in database
+          await supabase
+            .from('documents_inscription')
+            .insert({
+              apprenant_id: apprenantId,
+              type_document: 'recapitulatif_inscription',
+              titre: 'Récapitulatif d\'inscription',
+              description: 'PDF généré automatiquement à la fin de l\'onboarding',
+              url: urlData?.publicUrl || '',
+              nom_fichier: fileName,
+              statut: 'valid',
+            });
+        }
+      } catch (err) {
+        console.error('Error saving recap PDF:', err);
+      }
+    }
     
     toast.success("Récapitulatif téléchargé !");
   };
