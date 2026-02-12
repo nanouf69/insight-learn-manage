@@ -167,6 +167,7 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<'all' | 'sent' | 'received'>('all');
   const [isComposeOpen, setIsComposeOpen] = useState(false);
+  const [selectedEmail, setSelectedEmail] = useState<EmailRecord | null>(null);
   const [newEmailSubject, setNewEmailSubject] = useState("");
   const [newEmailBody, setNewEmailBody] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
@@ -476,6 +477,7 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
                 {filteredEmails.map((email) => (
                   <div 
                     key={email.id}
+                    onClick={() => setSelectedEmail(email)}
                     className={`flex items-start gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer ${
                       !email.is_read ? 'bg-primary/5 border-primary/20' : ''
                     }`}
@@ -528,6 +530,48 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
           </div>
         )}
       </CardContent>
+
+      {/* Email detail dialog */}
+      <Dialog open={!!selectedEmail} onOpenChange={(open) => !open && setSelectedEmail(null)}>
+        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+          {selectedEmail && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  {selectedEmail.type === 'sent' ? (
+                    <Send className="w-5 h-5 text-blue-600" />
+                  ) : (
+                    <Inbox className="w-5 h-5 text-green-600" />
+                  )}
+                  {selectedEmail.subject}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 pt-2">
+                <div className="flex flex-wrap gap-4 text-sm text-muted-foreground border-b pb-3">
+                  {selectedEmail.type === 'sent' ? (
+                    <span><strong>À :</strong> {selectedEmail.recipients?.join(', ') || apprenant.email}</span>
+                  ) : (
+                    <span><strong>De :</strong> {selectedEmail.sender_name || selectedEmail.sender_email}</span>
+                  )}
+                  <span className="ml-auto">
+                    {format(getEmailDate(selectedEmail), "dd MMMM yyyy 'à' HH:mm", { locale: fr })}
+                  </span>
+                </div>
+                {selectedEmail.body_html ? (
+                  <div 
+                    className="prose prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{ __html: selectedEmail.body_html }} 
+                  />
+                ) : (
+                  <pre className="whitespace-pre-wrap text-sm font-sans">
+                    {selectedEmail.body_preview}
+                  </pre>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
