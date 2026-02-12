@@ -6,6 +6,7 @@ import { fr } from "date-fns/locale";
 
 interface Activity {
   id: string;
+  apprenantId: string;
   type: string;
   message: string;
   target: string;
@@ -15,7 +16,11 @@ interface Activity {
   iconColor: string;
 }
 
-export function RecentActivity() {
+interface RecentActivityProps {
+  onNavigateToApprenant?: (apprenantId: string) => void;
+}
+
+export function RecentActivity({ onNavigateToApprenant }: RecentActivityProps) {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -42,6 +47,7 @@ export function RecentActivity() {
         // Add completed onboarding activities
         completedApprenants?.forEach((a) => {
           activityList.push({
+            apprenantId: a.id,
             id: `completed-${a.id}`,
             type: "onboarding_complete",
             message: `${a.prenom} ${a.nom} a terminé son dossier Bienvenue`,
@@ -57,6 +63,7 @@ export function RecentActivity() {
         const completedIds = new Set(completedApprenants?.map(a => a.id) || []);
         newApprenants?.filter(a => !completedIds.has(a.id)).forEach((a) => {
           activityList.push({
+            apprenantId: a.id,
             id: `new-${a.id}`,
             type: "inscription",
             message: `${a.prenom} ${a.nom} a été inscrit`,
@@ -112,7 +119,11 @@ export function RecentActivity() {
           <p className="text-sm text-muted-foreground">Aucune activité récente</p>
         ) : (
           activities.map((activity) => (
-            <div key={activity.id} className="flex items-start gap-3">
+            <div 
+              key={activity.id} 
+              className="flex items-start gap-3 cursor-pointer hover:bg-muted/50 rounded-lg p-2 -mx-2 transition-colors"
+              onClick={() => onNavigateToApprenant?.(activity.apprenantId)}
+            >
               <div className={`p-2 rounded-lg ${activity.iconBg}`}>
                 <activity.icon className={`w-4 h-4 ${activity.iconColor}`} />
               </div>

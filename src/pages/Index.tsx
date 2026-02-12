@@ -42,6 +42,12 @@ const pageConfig = {
 const Index = () => {
   const [currentPage, setCurrentPage] = useState("dashboard");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [initialApprenantId, setInitialApprenantId] = useState<string | null>(null);
+
+  const handleNavigateToApprenant = (apprenantId: string) => {
+    setInitialApprenantId(apprenantId);
+    setCurrentPage("crm");
+  };
 
   const renderContent = () => {
     switch (currentPage) {
@@ -83,7 +89,7 @@ const Index = () => {
             {/* Two Column Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <UpcomingSessions />
-              <RecentActivity />
+              <RecentActivity onNavigateToApprenant={handleNavigateToApprenant} />
               <PaymentReminders />
             </div>
           </div>
@@ -97,7 +103,7 @@ const Index = () => {
       case "examens":
         return <ExamenReussitePage />;
       case "crm":
-        return <CRMDashboard />;
+        return <CRMDashboard initialApprenantId={initialApprenantId} onApprenantClosed={() => setInitialApprenantId(null)} />;
       case "planning":
         return <PlanningCalendar />;
       case "sessions":
