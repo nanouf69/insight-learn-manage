@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Search, Filter, MoreVertical, Mail, Phone, Calendar, GraduationCap, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,9 +63,20 @@ const financementColors: Record<string, string> = {
   'entreprise': 'bg-accent text-accent-foreground',
 };
 
-export function CRMDashboard() {
+interface CRMDashboardProps {
+  initialApprenantId?: string | null;
+  onApprenantClosed?: () => void;
+}
+
+export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashboardProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedApprenantId, setSelectedApprenantId] = useState<string | null>(null);
+  const [selectedApprenantId, setSelectedApprenantId] = useState<string | null>(initialApprenantId || null);
+
+  useEffect(() => {
+    if (initialApprenantId) {
+      setSelectedApprenantId(initialApprenantId);
+    }
+  }, [initialApprenantId]);
 
   const { data: apprenants = [], isLoading } = useQuery({
     queryKey: ['apprenants-crm'],
@@ -120,7 +131,7 @@ export function CRMDashboard() {
     return (
       <ApprenantDetailPage 
         apprenantId={selectedApprenantId} 
-        onBack={() => setSelectedApprenantId(null)} 
+        onBack={() => { setSelectedApprenantId(null); onApprenantClosed?.(); }} 
       />
     );
   }
