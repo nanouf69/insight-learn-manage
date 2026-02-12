@@ -81,14 +81,12 @@ export function CRMDashboard() {
   });
 
   const filteredApprenants = useMemo(() => {
-    if (!searchQuery) return apprenants;
-    const query = searchQuery.toLowerCase();
-    return apprenants.filter(a => 
-      a.nom?.toLowerCase().includes(query) ||
-      a.prenom?.toLowerCase().includes(query) ||
-      a.email?.toLowerCase().includes(query) ||
-      a.telephone?.includes(query)
-    );
+    if (!searchQuery.trim()) return apprenants;
+    const words = searchQuery.toLowerCase().trim().split(/\s+/);
+    return apprenants.filter(a => {
+      const searchable = `${a.prenom} ${a.nom} ${a.email} ${a.telephone}`.toLowerCase();
+      return words.every(word => searchable.includes(word));
+    });
   }, [apprenants, searchQuery]);
 
   const stats = useMemo(() => {
