@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, AlertTriangle, CheckCircle, FileText, Calendar, MapPin, GraduationCap } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { OnboardingLayout } from "../OnboardingLayout";
 import step11Dossier from "@/assets/onboarding/step11-dossier.png";
 import { toast } from "sonner";
@@ -50,7 +51,7 @@ export default function Step11() {
     if (savedTypeExamen) setTypeExamen(savedTypeExamen);
   }, []);
 
-  const handleNext = () => {
+  const handleNext = async () => {
     setAttempted(true);
     
     if (!numeroDossier.trim()) {
@@ -72,6 +73,25 @@ export default function Step11() {
     localStorage.setItem('onboarding_numero_dossier', numeroDossier);
     localStorage.setItem('onboarding_date_examen', dateExamen);
     localStorage.setItem('onboarding_type_examen', typeExamen);
+
+    // Also save directly to database
+    const apprenantId = localStorage.getItem('onboarding_apprenant_id');
+    if (apprenantId) {
+      const selectedExamData = datesExamenTheorique.find(e => e.value === dateExamen);
+      const { error } = await supabase
+        .from('apprenants')
+        .update({
+          numero_dossier_cma: numeroDossier,
+          date_examen_theorique: dateExamen,
+          type_examen: typeExamen,
+          lieu_examen: selectedExamData?.lieu || '',
+        })
+        .eq('id', apprenantId);
+      
+      if (error) {
+        console.error('Error saving step 11 data:', error);
+      }
+    }
     
     navigate('/bienvenue/etape-12');
   };
