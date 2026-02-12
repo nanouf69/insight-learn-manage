@@ -146,6 +146,39 @@ L'équipe Ftransport
     },
   },
   {
+    id: 'repassage-examen',
+    label: '🔄 Repassage examen',
+    icon: '🔄',
+    getSubject: (a) => `Réinscription à l'examen T3P - ${a.prenom} ${a.nom}`,
+    getBody: (a) => {
+      const formation = getFormationType(a.type_apprenant);
+      return `Bonjour ${a.prenom},
+
+Suite à votre précédent examen ${formation}, vous devez procéder à une nouvelle inscription pour repasser l'examen.
+
+📌 ÉTAPES À SUIVRE :
+
+1️⃣ Rendez-vous sur le site : www.exament3p.fr
+
+2️⃣ Connectez-vous avec :
+   • Login : votre adresse email
+   • Mot de passe : cliquez sur "Mot de passe oublié" pour en créer un nouveau
+
+3️⃣ Une fois connecté(e), procédez à votre réinscription à l'examen en suivant les instructions du site.
+
+⚠️ IMPORTANT : Une fois votre réinscription effectuée sur le site, merci de nous recontacter immédiatement afin que nous puissions finaliser votre dossier et vous accompagner pour la suite.
+
+📞 Tél : 04 28 29 60 91
+📧 Email : contact@ftransport.fr
+
+N'hésitez pas à nous contacter si vous rencontrez des difficultés lors de votre réinscription.
+
+Cordialement,
+L'équipe Ftransport
+86 Route de Genas, 69003 Lyon`;
+    },
+  },
+  {
     id: 'relance-paiement',
     label: '💰 Relance paiement',
     icon: '💰',
