@@ -182,16 +182,21 @@ export function ApprenantForm() {
     if (formationToType[value]) {
       setTypeApprenantFormation(formationToType[value]);
     }
+
+    // Pour les RP, forcer le mode de financement à "personnel"
+    if (value === "repassage-pratique" || value === "repassage-theorique") {
+      setFinancement("personnel");
+      setOrganismeFinanceur("personnel");
+    }
     
     // Pré-sélectionner automatiquement la première date de formation selon le type (présentiel uniquement)
     if (value === "vtc" || value === "vtc-exam") {
-      setSelectedDateOption(datesFormations.vtc.dates[0]); // "Du 12 au 25 janvier 2026"
+      setSelectedDateOption(datesFormations.vtc.dates[0]);
     } else if (value === "taxi" || value === "taxi-exam") {
-      setSelectedDateOption(datesFormations.taxi.dates[0]); // "Du 5 au 26 janvier 2026"
+      setSelectedDateOption(datesFormations.taxi.dates[0]);
     } else if (value === "passerelle-taxi") {
-      setSelectedDateOption(datesFormations.ta.dates[0]); // "Du 5 au 26 janvier 2026"
+      setSelectedDateOption(datesFormations.ta.dates[0]);
     } else {
-      // E-learning : pas de date pré-sélectionnée
       setSelectedDateOption("");
     }
   };
