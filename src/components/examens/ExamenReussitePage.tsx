@@ -555,15 +555,23 @@ export function ExamenReussitePage() {
 
       {/* Récapitulatif formation pratique */}
       {(() => {
-        // Tous les candidats à former : réussis + PA (pas les RP)
+        const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+        const matchPratiqueFormation = (datePratique: string | null) => {
+          if (!datePratique) return false;
+          return normalize(datePratique) === normalize(selectedDatePratique);
+        };
+
+        // Tous les candidats à former : réussis + PA (pas les RP), filtrés par date pratique
         const paTypes = ['pa-vtc', 'pa-taxi'];
         const rpTypes = ['rp-vtc', 'rp-taxi'];
         const reussisFormation = apprenants?.filter(a => 
           (a as any).resultat_examen === 'oui' && 
-          !rpTypes.includes((a.type_apprenant || '').toLowerCase())
+          !rpTypes.includes((a.type_apprenant || '').toLowerCase()) &&
+          matchPratiqueFormation((a as any).date_examen_pratique)
         ) || [];
         const paFormation = (allApprenants || []).filter(a => 
           paTypes.includes((a.type_apprenant || '').toLowerCase()) && 
+          matchPratiqueFormation(a.date_examen_pratique) &&
           !reussisFormation.some(r => r.id === a.id)
         );
         const tousAFormer = [...reussisFormation, ...paFormation];
