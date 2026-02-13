@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Phone, MapPin, Landmark, ChevronRight, Inbox, Send, Eye } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Mail, Phone, MapPin, Landmark, ChevronRight, Inbox, Send, Eye, RefreshCw, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -11,10 +12,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OrganisationForm } from "./OrganisationForm";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { toast } from "sonner";
 
 export function OrganisationsList() {
   const [selectedOrg, setSelectedOrg] = useState<any>(null);
   const [selectedEmail, setSelectedEmail] = useState<any>(null);
+  const [syncing, setSyncing] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: organisations, isLoading } = useQuery({
     queryKey: ['organismes'],
@@ -66,7 +70,37 @@ export function OrganisationsList() {
           <h1 className="text-2xl font-bold text-foreground">Organisations</h1>
           <p className="text-muted-foreground">Gérez vos organisations clientes et partenaires</p>
         </div>
-        <OrganisationForm />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            className="gap-2"
+            disabled={syncing}
+            onClick={async () => {
+              setSyncing(true);
+              try {
+                const { data, error } = await supabase.functions.invoke('sync-outlook-emails', {
+                  body: { action: 'sync-all', userEmail: 'contact@ftransport.fr' },
+                });
+                if (error) throw error;
+                if (data?.success) {
+                  toast.success(`Synchronisation terminée : ${data.synced} nouveau(x) email(s) (${data.inbox} reçus, ${data.sent} envoyés)`);
+                  queryClient.invalidateQueries({ queryKey: ['org-emails'] });
+                } else {
+                  throw new Error('Échec de la synchronisation');
+                }
+              } catch (err: any) {
+                console.error('Sync error:', err);
+                toast.error('Erreur de synchronisation : ' + (err.message || 'Erreur inconnue'));
+              } finally {
+                setSyncing(false);
+              }
+            }}
+          >
+            {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            Synchroniser Outlook
+          </Button>
+          <OrganisationForm />
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
