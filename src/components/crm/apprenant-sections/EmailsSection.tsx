@@ -194,7 +194,7 @@ Vous devrez choisir une journée complète d'entraînement pratique (de 9h à 17
 
 👉 CHOISISSEZ VOTRE DATE ICI : ${bookingUrl}
 
-⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié et vous ne recevrez aucune confirmation.
+⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié.
 
 📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.
 
@@ -232,7 +232,7 @@ Vous devrez choisir une journée complète d'entraînement pratique (jusqu'à 17
 
 👉 CHOISISSEZ VOTRE DATE ICI : ${bookingUrl}
 
-⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié et vous ne recevrez aucune confirmation.
+⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié.
 
 📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.
 
