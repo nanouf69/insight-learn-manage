@@ -184,7 +184,7 @@ export default function ReservationPratique() {
 
     // Send confirmation email
     if (apprenant?.nom && apprenant?.prenom) {
-      const confDate = new Date(selectedDate + 'T00:00:00');
+      const confDate = new Date(selectedDate + 'T12:00:00');
       const dateStr = `${DAY_NAMES[confDate.getDay()]} ${confDate.getDate()} ${MONTH_NAMES[confDate.getMonth()]} 2026`;
       const formationType = isVTC ? 'VTC' : 'TAXI';
       const exerciceLink = isVTC 
@@ -451,7 +451,7 @@ export default function ReservationPratique() {
                 disabled={submitting}
                 className={`w-full text-lg py-6 ${isVTC ? 'bg-blue-600 hover:bg-blue-700' : 'bg-amber-600 hover:bg-amber-700'}`}
               >
-                {submitting ? "Réservation en cours..." : `Confirmer le ${formatDate(new Date(selectedDate + 'T00:00:00'))}`}
+                {submitting ? "Réservation en cours..." : `Confirmer le ${formatDate(new Date(selectedDate + 'T12:00:00'))}`}
               </Button>
             </CardContent>
           </Card>
