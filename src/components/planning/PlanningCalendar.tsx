@@ -25,7 +25,7 @@ type DayInfo = {
   date: Date;
   dateKey: string;
   label: string;
-  expectedType: 'vtc' | 'taxi';
+  expectedType: 'vtc' | 'taxi' | 'examen';
   reservedCandidates: { name: string; type: string }[];
 };
 
@@ -66,11 +66,7 @@ export function PlanningCalendar() {
       // Build day list with expected types
       // VTC days: first 8 weekdays, TAXI: remaining (based on ~29 VTC / 4 per day ≈ 8 days)
       const weekdays = generateWeekdays();
-      // Determine split: count how many VTC vs TAXI reservations exist, or default 8 VTC days
-      const vtcCount = (reservations || []).filter(r => r.type_formation.toLowerCase() === 'vtc').length;
-      const taxiCount = (reservations || []).filter(r => r.type_formation.toLowerCase() === 'taxi').length;
-      // If we have reservations, compute days needed; otherwise default to 8 VTC days
-      const vtcDays = vtcCount > 0 ? Math.max(Math.ceil(vtcCount / 4), 8) : 8;
+      // Fixed schedule: VTC Feb 16-24, TAXI Feb 25-27, Exams Mar 2-6
 
       const builtWeeks: WeekInfo[] = [];
       let currentWeek: DayInfo[] = [];
@@ -82,7 +78,7 @@ export function PlanningCalendar() {
           date: d,
           dateKey: key,
           label: `${DAY_NAMES[d.getDay()]} ${d.getDate()} ${MONTH_NAMES[d.getMonth()]}`,
-          expectedType: i < vtcDays ? 'vtc' : 'taxi',
+          expectedType: d.getMonth() === 2 ? 'examen' : (d.getMonth() === 1 && d.getDate() >= 25) ? 'taxi' : 'vtc',
           reservedCandidates: byDate[key] || [],
         });
 
@@ -134,17 +130,26 @@ export function PlanningCalendar() {
                   {day.label}
                 </div>
                 <div className="flex flex-col gap-1">
-                  <span className={`text-xs font-bold ${day.expectedType === 'vtc' ? 'text-primary' : 'text-amber-600'}`}>
-                    Formation pratique {day.expectedType === 'vtc' ? 'VTC' : 'TAXI'}
-                  </span>
-                  {day.reservedCandidates.length > 0 ? (
-                    day.reservedCandidates.map((c, i) => (
-                      <span key={i} className="text-xs text-foreground leading-tight">
-                        {c.name}
-                      </span>
-                    ))
+                  {day.expectedType === 'examen' ? (
+                    <>
+                      <span className="text-xs font-bold text-destructive">📋 Examens pratiques</span>
+                      <span className="text-xs text-muted-foreground italic mt-1">Semaine d'examens</span>
+                    </>
                   ) : (
-                    <span className="text-xs text-muted-foreground italic mt-1">En attente de réservations</span>
+                    <>
+                      <span className={`text-xs font-bold ${day.expectedType === 'vtc' ? 'text-primary' : 'text-amber-600'}`}>
+                        Formation pratique {day.expectedType === 'vtc' ? 'VTC' : 'TAXI'}
+                      </span>
+                      {day.reservedCandidates.length > 0 ? (
+                        day.reservedCandidates.map((c, i) => (
+                          <span key={i} className="text-xs text-foreground leading-tight">
+                            {c.name}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic mt-1">En attente de réservations</span>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

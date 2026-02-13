@@ -1036,12 +1036,20 @@ export function ExamenReussitePage() {
         const totalTAXI = tousPlanning.filter(a => isTAXIType(a.type_apprenant)).length;
         const totalReserved = (reservationsPratique || []).length;
 
-        // Determine which days are VTC vs TAXI based on the period
-        const vtcDaysNeeded = Math.ceil(totalVTC / 4);
-        const dayTypeMap: Record<string, 'vtc' | 'taxi'> = {};
-        weekdays.forEach((d, i) => {
+        // Determine which days are VTC, TAXI, or exams
+        // VTC: Feb 16-24 (indices 0-6), TAXI: Feb 25-27 (indices 7-9), Week 3 (Mar 2-6): exams
+        const dayTypeMap: Record<string, 'vtc' | 'taxi' | 'examen'> = {};
+        weekdays.forEach((d) => {
           const key = d.toISOString().slice(0, 10);
-          dayTypeMap[key] = i < vtcDaysNeeded ? 'vtc' : 'taxi';
+          const month = d.getMonth();
+          const date = d.getDate();
+          if (month === 2) { // March = exams
+            dayTypeMap[key] = 'examen';
+          } else if (month === 1 && date >= 25) { // Feb 25+
+            dayTypeMap[key] = 'taxi';
+          } else {
+            dayTypeMap[key] = 'vtc';
+          }
         });
 
         // Group by week
@@ -1110,6 +1118,12 @@ export function ExamenReussitePage() {
                               )}
                             </div>
                           )}
+                          {expectedType === 'examen' && (
+                            <div>
+                              <div className="text-[10px] font-semibold text-red-700 mb-1">📋 Examens pratiques</div>
+                              <div className="text-[10px] text-muted-foreground italic">Semaine d'examens</div>
+                            </div>
+                          )}
                           {!expectedType && !hasReservations && (
                             <div className="text-[10px] text-muted-foreground text-center mt-4">Libre</div>
                           )}
@@ -1126,7 +1140,7 @@ export function ExamenReussitePage() {
               <div className="p-4 bg-emerald-50 rounded-lg flex items-center justify-between">
                 <div className="space-y-1">
                   <p className="text-sm font-bold text-emerald-800">
-                    VTC : {totalVTC} candidats ({vtcDaysNeeded} jours) • TAXI : {totalTAXI} candidats ({Math.ceil(totalTAXI / 4)} jours)
+                    VTC : {totalVTC} candidats • TAXI : {totalTAXI} candidats • Semaine 3 : Examens
                   </p>
                   <p className="text-xs text-emerald-700">
                     {totalReserved > 0 ? `${totalReserved} réservation(s) confirmée(s)` : 'Aucune réservation confirmée — les noms apparaîtront quand les candidats choisiront leur date'}
