@@ -21,13 +21,14 @@ export function ExamenReussitePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
+  // Mapping: each theoretical exam date → the next practical exam date (always after)
   const datesExamenTheorique = [
-    { date: "27 janvier 2026", lieu: "Villeurbanne" },
-    { date: "31 mars 2026", lieu: "Clermont-Ferrand" },
-    { date: "26 mai 2026", lieu: "Villeurbanne" },
-    { date: "21 juillet 2026", lieu: "Villeurbanne" },
-    { date: "29 septembre 2026", lieu: "Villeurbanne" },
-    { date: "17 novembre 2026", lieu: "Villeurbanne" },
+    { date: "27 janvier 2026", lieu: "Villeurbanne", pratiqueIndex: 0 },
+    { date: "31 mars 2026", lieu: "Clermont-Ferrand", pratiqueIndex: 1 },
+    { date: "26 mai 2026", lieu: "Villeurbanne", pratiqueIndex: 2 },
+    { date: "21 juillet 2026", lieu: "Villeurbanne", pratiqueIndex: 3 },
+    { date: "29 septembre 2026", lieu: "Villeurbanne", pratiqueIndex: 4 },
+    { date: "17 novembre 2026", lieu: "Villeurbanne", pratiqueIndex: 5 },
   ];
 
   const datesExamenPratique = [
@@ -39,6 +40,14 @@ export function ExamenReussitePage() {
     "Du 16 au 23 decembre 2026",
     "Debut janvier 2027",
   ];
+
+  const handleExamDateChange = (date: string) => {
+    setSelectedExamDate(date);
+    const match = datesExamenTheorique.find(e => e.date === date);
+    if (match !== undefined) {
+      setSelectedDatePratique(datesExamenPratique[match.pratiqueIndex]);
+    }
+  };
 
   const { data: apprenants, isLoading } = useQuery({
     queryKey: ['apprenants-examen', selectedExamDate],
@@ -217,7 +226,7 @@ export function ExamenReussitePage() {
           <p className="text-sm text-muted-foreground">Suivi des examens théoriques</p>
         </div>
         <div className="flex items-center gap-3">
-          <Select value={selectedExamDate} onValueChange={setSelectedExamDate}>
+          <Select value={selectedExamDate} onValueChange={handleExamDateChange}>
             <SelectTrigger className="w-64">
               <SelectValue placeholder="Date d'examen" />
             </SelectTrigger>
@@ -394,20 +403,6 @@ export function ExamenReussitePage() {
         );
         const reussisLettre = [...reussisTheorique, ...paRpApprenants];
 
-        // Auto-detect practical date from candidates' date_examen_pratique
-        const pratiqueDates = reussisLettre
-          .map(a => (a as any).date_examen_pratique)
-          .filter(Boolean) as string[];
-        const pratiqueCount: Record<string, number> = {};
-        pratiqueDates.forEach(d => { pratiqueCount[d] = (pratiqueCount[d] || 0) + 1; });
-        const mostCommonPratique = Object.entries(pratiqueCount).sort((a, b) => b[1] - a[1])[0]?.[0];
-        // Normalize accents for matching
-        const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-        const detectedPratique = mostCommonPratique 
-          ? datesExamenPratique.find(dp => normalize(dp) === normalize(mostCommonPratique)) || mostCommonPratique
-          : null;
-        // Use detected date or fallback to selected
-        const effectiveDatePratique = detectedPratique || selectedDatePratique;
 
         const getCategorieCMA = (type: string | null) => {
           if (!type) return null;
@@ -452,7 +447,7 @@ export function ExamenReussitePage() {
               </div>
 
               <p><strong>Objet :</strong> Liste des candidats ayant reussi l'examen du ${selectedExamDate}</p>
-              <p><strong>Dates de passage pratique :</strong> ${effectiveDatePratique}</p>
+              <p><strong>Dates de passage pratique :</strong> ${selectedDatePratique}</p>
 
               <p>Madame,</p>
               <p>Veuillez trouver ci-dessous la liste des candidats de notre centre de formation ayant reussi l'examen theorique du ${selectedExamDate} :</p>
@@ -512,20 +507,16 @@ export function ExamenReussitePage() {
             <CardContent>
               <div className="flex items-center gap-4 mb-4 flex-wrap">
                 <p className="text-sm text-muted-foreground">Dates de passage pratique :</p>
-                {detectedPratique ? (
-                  <Badge variant="outline" className="text-sm px-3 py-1">{effectiveDatePratique}</Badge>
-                ) : (
-                  <Select value={selectedDatePratique} onValueChange={setSelectedDatePratique}>
-                    <SelectTrigger className="w-72 h-8 text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {datesExamenPratique.map(d => (
-                        <SelectItem key={d} value={d}>{d}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
+                <Select value={selectedDatePratique} onValueChange={setSelectedDatePratique}>
+                  <SelectTrigger className="w-72 h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {datesExamenPratique.map(d => (
+                      <SelectItem key={d} value={d}>{d}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               {reussisLettre.length > 0 && (
                 <div className="grid grid-cols-2 gap-4">
