@@ -593,8 +593,9 @@ export function ExamenReussitePage() {
                           <div className="space-y-3 text-sm">
                             <p><strong>Destinataire :</strong> audrey.crevier@cma-auvergnerhonealpes.fr</p>
                             <p><strong>Objet :</strong> Liste candidats reçus - Examen du {selectedExamDate}</p>
+                            <p><strong>Dates pratique :</strong> {selectedDatePratique}</p>
                             {dateDebutPratique && (
-                              <p><strong>Début souhaité :</strong> {new Date(dateDebutPratique).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                              <p><strong>Début souhaité des passages :</strong> à partir du {new Date(dateDebutPratique).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                             )}
                             <div className="flex gap-4">
                               <p><strong>TAXI :</strong> {taxiReussis.length} candidat(s)</p>
