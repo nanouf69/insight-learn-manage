@@ -94,13 +94,21 @@ export function SessionsList() {
       
       if (error) throw error;
       
-      const rates: Record<string, { total: number; passed: number }> = {};
+      const rates: Record<string, { total: number; passed: number; failed: number; absent: number }> = {};
       for (const sa of data || []) {
-        if (!rates[sa.session_id]) rates[sa.session_id] = { total: 0, passed: 0 };
+        if (!rates[sa.session_id]) rates[sa.session_id] = { total: 0, passed: 0, failed: 0, absent: 0 };
         const resultat = (sa as any).apprenants?.resultat_examen;
         if (resultat) {
-          rates[sa.session_id].total++;
-          if (resultat.toLowerCase() === 'oui') rates[sa.session_id].passed++;
+          const r = resultat.toLowerCase();
+          if (r === 'oui') {
+            rates[sa.session_id].passed++;
+            rates[sa.session_id].total++;
+          } else if (r === 'non') {
+            rates[sa.session_id].failed++;
+            rates[sa.session_id].total++;
+          } else if (r === 'absent') {
+            rates[sa.session_id].absent++;
+          }
         }
       }
       return rates;
@@ -260,20 +268,24 @@ export function SessionsList() {
                           <Users className="w-4 h-4" />
                           <span>{session.places_disponibles || 18} places</span>
                         </div>
-                        {passRates[session.id] && passRates[session.id].total > 0 && (
-                          <div className="flex items-center gap-1.5">
-                            <Trophy className="w-4 h-4" />
-                            <span className={
-                              Math.round((passRates[session.id].passed / passRates[session.id].total) * 100) >= 70
-                                ? "text-emerald-600 font-medium"
-                                : Math.round((passRates[session.id].passed / passRates[session.id].total) * 100) >= 40
-                                  ? "text-amber-600 font-medium"
-                                  : "text-red-600 font-medium"
-                            }>
-                              Théorie : {passRates[session.id].passed}/{passRates[session.id].total} ({Math.round((passRates[session.id].passed / passRates[session.id].total) * 100)}%)
-                            </span>
-                          </div>
-                        )}
+                        {passRates[session.id] && (passRates[session.id].total > 0 || passRates[session.id].absent > 0) && (() => {
+                          const r = passRates[session.id];
+                          const pct = r.total > 0 ? Math.round((r.passed / r.total) * 100) : 0;
+                          return (
+                            <div className="flex items-center gap-1.5">
+                              <Trophy className="w-4 h-4" />
+                              <span className={
+                                r.total === 0 ? "text-muted-foreground font-medium"
+                                : pct >= 70 ? "text-emerald-600 font-medium"
+                                : pct >= 40 ? "text-amber-600 font-medium"
+                                : "text-red-600 font-medium"
+                              }>
+                                Théorie : ✅ {r.passed} · ❌ {r.failed}{r.absent > 0 ? ` · 🔶 ${r.absent} abs.` : ''}
+                                {r.total > 0 ? ` (${pct}%)` : ''}
+                              </span>
+                            </div>
+                          );
+                        })()}
                       </div>
                   </div>
                 </div>
