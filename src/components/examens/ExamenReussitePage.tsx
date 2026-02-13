@@ -17,14 +17,23 @@ export function ExamenReussitePage() {
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [selectedExamMonth, setSelectedExamMonth] = useState("janvier");
-  const [datePassageDebut, setDatePassageDebut] = useState("23 fevrier");
-  const [datePassageFin, setDatePassageFin] = useState("6 mars");
+  const [selectedDatePratique, setSelectedDatePratique] = useState("Du 23 février au 6 mars 2026");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
   const examMonths = [
     "janvier", "février", "mars", "avril", "mai", "juin",
     "juillet", "août", "septembre", "octobre", "novembre", "décembre"
+  ];
+
+  const datesExamenPratique = [
+    "Du 23 fevrier au 6 mars 2026",
+    "Du 4 au 13 mai 2026",
+    "Du 29 juin au 7 juillet 2026",
+    "Du 1er au 11 septembre 2026",
+    "Du 2 au 13 novembre 2026",
+    "Du 16 au 23 decembre 2026",
+    "Debut janvier 2027",
   ];
 
   const { data: apprenants, isLoading } = useQuery({
@@ -424,7 +433,7 @@ export function ExamenReussitePage() {
               </div>
 
               <p><strong>Objet :</strong> Liste des candidats ayant reussi l'examen de ${selectedExamMonth} 2026</p>
-              <p><strong>Dates de passage :</strong> du ${datePassageDebut} au ${datePassageFin} 2026</p>
+              <p><strong>Dates de passage pratique :</strong> ${selectedDatePratique}</p>
 
               <p>Madame,</p>
               <p>Veuillez trouver ci-dessous la liste des candidats de notre centre de formation ayant reussi l'examen theorique de ${selectedExamMonth} 2026 :</p>
@@ -484,21 +493,16 @@ export function ExamenReussitePage() {
             <CardContent>
               <div className="flex items-center gap-4 mb-4 flex-wrap">
                 <p className="text-sm text-muted-foreground">Dates de passage pratique :</p>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">du</span>
-                  <Input 
-                    value={datePassageDebut} 
-                    onChange={(e) => setDatePassageDebut(e.target.value)} 
-                    className="w-40 h-8 text-sm"
-                  />
-                  <span className="text-sm">au</span>
-                  <Input 
-                    value={datePassageFin} 
-                    onChange={(e) => setDatePassageFin(e.target.value)} 
-                    className="w-40 h-8 text-sm"
-                  />
-                  <span className="text-sm">2026</span>
-                </div>
+                <Select value={selectedDatePratique} onValueChange={setSelectedDatePratique}>
+                  <SelectTrigger className="w-72 h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {datesExamenPratique.map(d => (
+                      <SelectItem key={d} value={d}>{d}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               {reussisLettre.length > 0 && (
                 <div className="grid grid-cols-2 gap-4">
