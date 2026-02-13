@@ -393,8 +393,52 @@ export function ExamenReussitePage() {
         );
       })()}
 
+      {/* Check if all results are filled */}
+      {(() => {
+        const totalInscrits = apprenants?.length || 0;
+        const sansResultat = apprenants?.filter(a => !(a as any).resultat_examen) || [];
+        const resultatsComplets = totalInscrits > 0 && sansResultat.length === 0;
+
+        if (!resultatsComplets) {
+          return (
+            <Card className="border-l-4 border-l-orange-500 bg-orange-50">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <XCircle className="h-6 w-6 text-orange-600 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-orange-800">Résultats d'examen incomplets</p>
+                    <p className="text-sm text-orange-700 mt-1">
+                      {sansResultat.length} apprenant(s) sur {totalInscrits} n'ont pas encore de résultat renseigné.
+                      Le planning de formation pratique et la lettre CMA ne seront disponibles qu'une fois tous les résultats saisis.
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {sansResultat.slice(0, 10).map(a => (
+                        <Badge key={a.id} variant="outline" className="text-orange-700 border-orange-300 text-xs">
+                          {a.nom} {a.prenom}
+                        </Badge>
+                      ))}
+                      {sansResultat.length > 10 && (
+                        <Badge variant="outline" className="text-orange-700 border-orange-300 text-xs">
+                          +{sansResultat.length - 10} autres
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        }
+
+        return null;
+      })()}
+
       {/* Lettre CMA - Réussite examen */}
       {(() => {
+        const totalInscrits = apprenants?.length || 0;
+        const sansResultat = apprenants?.filter(a => !(a as any).resultat_examen) || [];
+        if (totalInscrits === 0 || sansResultat.length > 0) return null;
+
         const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
         // Find the default practical date for the current theoretical exam
         const currentTheorique = datesExamenTheorique.find(e => e.date === selectedExamDate);
@@ -806,6 +850,10 @@ export function ExamenReussitePage() {
 
       {/* Planning formation pratique */}
       {(() => {
+        const totalInscritsP = apprenants?.length || 0;
+        const sansResultatP = apprenants?.filter(a => !(a as any).resultat_examen) || [];
+        if (totalInscritsP === 0 || sansResultatP.length > 0) return null;
+
         const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
         const currentTheorique3 = datesExamenTheorique.find(e => e.date === selectedExamDate);
         const defaultPratique3 = currentTheorique3 ? datesExamenPratique[currentTheorique3.pratiqueIndex] : null;
