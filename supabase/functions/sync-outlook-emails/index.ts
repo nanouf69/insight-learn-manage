@@ -86,7 +86,8 @@ async function sendEmail(
   userEmail: string,
   to: string,
   subject: string,
-  body: string
+  body: string,
+  requestReadReceipt: boolean = false
 ): Promise<boolean> {
   const url = `https://graph.microsoft.com/v1.0/users/${userEmail}/sendMail`;
 
@@ -104,6 +105,8 @@ async function sendEmail(
           },
         },
       ],
+      isDeliveryReceiptRequested: requestReadReceipt,
+      isReadReceiptRequested: requestReadReceipt,
     },
     saveToSentItems: true,
   };
@@ -159,7 +162,7 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { action, apprenantId, apprenantEmail, userEmail, to, subject, body } =
+    const { action, apprenantId, apprenantEmail, userEmail, to, subject, body, requestReadReceipt } =
       await req.json();
 
     const accessToken = await getAccessToken();
@@ -257,7 +260,7 @@ Deno.serve(async (req) => {
         );
       }
 
-      const success = await sendEmail(accessToken, userEmail, to, subject, body);
+      const success = await sendEmail(accessToken, userEmail, to, subject, body, requestReadReceipt === true);
 
       if (success && apprenantId) {
         await supabase.from("emails").insert({
