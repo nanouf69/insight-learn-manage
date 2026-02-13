@@ -67,6 +67,36 @@ export type Database = {
           },
         ]
       }
+      alertes_systeme: {
+        Row: {
+          created_at: string
+          details: string | null
+          id: string
+          lu: boolean
+          message: string
+          titre: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          lu?: boolean
+          message: string
+          titre: string
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          lu?: boolean
+          message?: string
+          titre?: string
+          type?: string
+        }
+        Relationships: []
+      }
       apprenants: {
         Row: {
           adresse: string | null

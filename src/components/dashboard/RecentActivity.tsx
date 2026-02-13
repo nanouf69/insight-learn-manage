@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { GraduationCap, UserPlus, FileCheck, CreditCard, CheckCircle } from "lucide-react";
+import { GraduationCap, UserPlus, FileCheck, CreditCard, CheckCircle, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -27,6 +27,14 @@ export function RecentActivity({ onNavigateToApprenant }: RecentActivityProps) {
   useEffect(() => {
     const fetchActivities = async () => {
       try {
+        // Fetch system alerts (email failures, etc.)
+        const { data: alertes } = await supabase
+          .from('alertes_systeme')
+          .select('*')
+          .eq('lu', false)
+          .order('created_at', { ascending: false })
+          .limit(5);
+
         // Fetch apprenants who recently completed onboarding
         const { data: completedApprenants } = await supabase
           .from('apprenants')
@@ -43,6 +51,21 @@ export function RecentActivity({ onNavigateToApprenant }: RecentActivityProps) {
           .limit(5);
 
         const activityList: Activity[] = [];
+
+        // Add system alerts first (priority)
+        alertes?.forEach((a) => {
+          activityList.push({
+            apprenantId: '',
+            id: `alert-${a.id}`,
+            type: "alert",
+            message: a.titre,
+            target: a.message,
+            time: formatDistanceToNow(new Date(a.created_at), { addSuffix: true, locale: fr }),
+            icon: AlertTriangle,
+            iconBg: "bg-destructive/10",
+            iconColor: "text-destructive",
+          });
+        });
 
         // Add completed onboarding activities
         completedApprenants?.forEach((a) => {
@@ -75,13 +98,8 @@ export function RecentActivity({ onNavigateToApprenant }: RecentActivityProps) {
           });
         });
 
-        // Sort by most recent and limit
-        activityList.sort((a, b) => {
-          // Parse "il y a X" - just use the original dates for sorting
-          return 0; // Already sorted from DB
-        });
-
-        setActivities(activityList.slice(0, 6));
+        // Alerts stay on top, rest as-is
+        setActivities(activityList.slice(0, 8));
       } catch (err) {
         console.error('Error fetching activities:', err);
       } finally {
