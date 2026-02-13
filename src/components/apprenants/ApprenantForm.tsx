@@ -1079,7 +1079,7 @@ export function ApprenantForm() {
           )}
 
           {/* Informations financières - Uniquement si financement personnel */}
-          {organismeFinanceur === "personnel" && !["repassage-theorique", "repassage-pratique"].includes(selectedFormation) && (
+          {organismeFinanceur === "personnel" && !["repassage-theorique", "repassage-pratique", "passage-pratique"].includes(selectedFormation) && !["pa-vtc", "pa-taxi"].includes(typeApprenantFormation) && (
             <div className="space-y-4">
               <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Informations financières</h3>
               <div className="grid grid-cols-2 gap-4">
