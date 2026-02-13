@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ClipboardCheck, CheckCircle2, XCircle, UserX, Search, RotateCcw, Plus, X, Upload, FileText, Trash2, Download, Users, Mail, GraduationCap } from "lucide-react";
+import { ClipboardCheck, CheckCircle2, XCircle, UserX, Search, RotateCcw, Plus, X, Upload, FileText, Trash2, Download, Users, Mail, GraduationCap, Calendar } from "lucide-react";
 import { toast } from "sonner";
 
 export function ExamenReussitePage() {
@@ -645,6 +645,166 @@ export function ExamenReussitePage() {
                 <p className="text-sm text-muted-foreground">
                   {vtcList.length} VTC ({joursVTC}j) + {taxiList.length} TAXI ({joursTAXI}j)
                 </p>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
+
+      {/* Planning formation pratique */}
+      {(() => {
+        const paTypes = ['pa-vtc', 'pa-taxi'];
+        const rpTypes = ['rp-vtc', 'rp-taxi'];
+        const reussisPlanning = apprenants?.filter(a => 
+          (a as any).resultat_examen === 'oui' && 
+          !rpTypes.includes((a.type_apprenant || '').toLowerCase())
+        ) || [];
+        const paPlanning = (allApprenants || []).filter(a => 
+          paTypes.includes((a.type_apprenant || '').toLowerCase()) && 
+          !reussisPlanning.some(r => r.id === a.id)
+        );
+        const tousPlanning = [...reussisPlanning, ...paPlanning];
+
+        const isVTCType = (type: string | null) => {
+          if (!type) return false;
+          const t = type.toLowerCase();
+          return ['vtc', 'vtc-e', 'vtc-e-presentiel', 'va-e', 'pa-vtc'].includes(t);
+        };
+        const isTAXIType = (type: string | null) => {
+          if (!type) return false;
+          const t = type.toLowerCase();
+          return ['taxi', 'taxi-e', 'taxi-e-presentiel', 'ta', 'ta-e', 'pa-taxi'].includes(t);
+        };
+
+        const vtcPlanning = tousPlanning.filter(a => isVTCType(a.type_apprenant));
+        const taxiPlanning = tousPlanning.filter(a => isTAXIType(a.type_apprenant));
+
+        // Generate weekdays starting from Monday Feb 16, 2026, excluding weekends, before March 2
+        const getWeekdays = () => {
+          const days: Date[] = [];
+          const start = new Date(2026, 1, 16); // Feb 16, 2026 (Monday)
+          const end = new Date(2026, 2, 2); // March 2, 2026
+          let current = new Date(start);
+          while (current < end) {
+            const day = current.getDay();
+            if (day !== 0 && day !== 6) {
+              days.push(new Date(current));
+            }
+            current.setDate(current.getDate() + 1);
+          }
+          return days;
+        };
+
+        const weekdays = getWeekdays();
+        const dayNames = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+        const monthNames = ['jan', 'fév', 'mar', 'avr', 'mai', 'jun', 'jul', 'aoû', 'sep', 'oct', 'nov', 'déc'];
+
+        // Assign VTC: 4 per day
+        const vtcByDay: Record<string, typeof vtcPlanning> = {};
+        vtcPlanning.forEach((a, i) => {
+          const dayIndex = Math.floor(i / 4);
+          if (dayIndex < weekdays.length) {
+            const key = weekdays[dayIndex].toISOString().slice(0, 10);
+            if (!vtcByDay[key]) vtcByDay[key] = [];
+            vtcByDay[key].push(a);
+          }
+        });
+
+        // Assign TAXI: 3 per day
+        const taxiByDay: Record<string, typeof taxiPlanning> = {};
+        taxiPlanning.forEach((a, i) => {
+          const dayIndex = Math.floor(i / 3);
+          if (dayIndex < weekdays.length) {
+            const key = weekdays[dayIndex].toISOString().slice(0, 10);
+            if (!taxiByDay[key]) taxiByDay[key] = [];
+            taxiByDay[key].push(a);
+          }
+        });
+
+        // Group by week
+        const weeks: Date[][] = [];
+        let currentWeek: Date[] = [];
+        weekdays.forEach((d, i) => {
+          currentWeek.push(d);
+          if (d.getDay() === 5 || i === weekdays.length - 1) {
+            weeks.push(currentWeek);
+            currentWeek = [];
+          }
+        });
+
+        return (
+          <Card className="border-l-4 border-l-emerald-500">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-emerald-600" />
+                Planning formation pratique — Du 16 février au 1er mars 2026
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                VTC : 4 candidats/jour • TAXI : 3 candidats/jour • Pas de week-end • Deadline : avant le 2 mars
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {weeks.map((week, wi) => (
+                <div key={wi}>
+                  <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Semaine {wi + 1}</h4>
+                  <div className="grid grid-cols-5 gap-2">
+                    {week.map(day => {
+                      const key = day.toISOString().slice(0, 10);
+                      const vtcDay = vtcByDay[key] || [];
+                      const taxiDay = taxiByDay[key] || [];
+                      const hasContent = vtcDay.length > 0 || taxiDay.length > 0;
+
+                      return (
+                        <div key={key} className={`border rounded-lg p-2 min-h-[120px] ${hasContent ? 'bg-background' : 'bg-muted/30'}`}>
+                          <div className="text-xs font-bold text-center mb-2 pb-1 border-b">
+                            {dayNames[day.getDay()]} {day.getDate()} {monthNames[day.getMonth()]}
+                          </div>
+                          {vtcDay.length > 0 && (
+                            <div className="mb-2">
+                              <div className="text-[10px] font-semibold text-blue-700 mb-1">VTC ({vtcDay.length})</div>
+                              {vtcDay.map(a => (
+                                <div key={a.id} className="text-[11px] px-1 py-0.5 bg-blue-50 rounded mb-0.5 truncate" title={`${a.nom} ${a.prenom}`}>
+                                  {a.nom} {a.prenom}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {taxiDay.length > 0 && (
+                            <div>
+                              <div className="text-[10px] font-semibold text-amber-700 mb-1">TAXI ({taxiDay.length})</div>
+                              {taxiDay.map(a => (
+                                <div key={a.id} className="text-[11px] px-1 py-0.5 bg-amber-50 rounded mb-0.5 truncate" title={`${a.nom} ${a.prenom}`}>
+                                  {a.nom} {a.prenom}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {!hasContent && (
+                            <div className="text-[10px] text-muted-foreground text-center mt-4">Libre</div>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {/* Pad empty cells if week has fewer than 5 days */}
+                    {Array.from({ length: 5 - week.length }).map((_, i) => (
+                      <div key={`empty-${i}`} className="border rounded-lg p-2 min-h-[120px] bg-muted/10" />
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              <div className="p-4 bg-emerald-50 rounded-lg flex items-center justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm font-bold text-emerald-800">
+                    VTC : {vtcPlanning.length} candidats → {Math.ceil(vtcPlanning.length / 4)} jours (du {weekdays[0] ? `${weekdays[0].getDate()} ${monthNames[weekdays[0].getMonth()]}` : ''} au {weekdays[Math.ceil(vtcPlanning.length / 4) - 1] ? `${weekdays[Math.ceil(vtcPlanning.length / 4) - 1].getDate()} ${monthNames[weekdays[Math.ceil(vtcPlanning.length / 4) - 1].getMonth()]}` : ''})
+                  </p>
+                  <p className="text-sm font-bold text-emerald-800">
+                    TAXI : {taxiPlanning.length} candidats → {Math.ceil(taxiPlanning.length / 3)} jours (du {weekdays[0] ? `${weekdays[0].getDate()} ${monthNames[weekdays[0].getMonth()]}` : ''} au {weekdays[Math.ceil(taxiPlanning.length / 3) - 1] ? `${weekdays[Math.ceil(taxiPlanning.length / 3) - 1].getDate()} ${monthNames[weekdays[Math.ceil(taxiPlanning.length / 3) - 1].getMonth()]}` : ''})
+                  </p>
+                </div>
+                <Badge className="bg-emerald-200 text-emerald-900 text-sm px-3 py-1">
+                  ✅ Tous formés avant le 2 mars
+                </Badge>
               </div>
             </CardContent>
           </Card>
