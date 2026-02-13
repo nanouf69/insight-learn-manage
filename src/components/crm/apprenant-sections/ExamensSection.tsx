@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { GraduationCap, Calendar, CheckCircle2, XCircle, Clock, Edit2, MapPin } from "lucide-react";
+import { useState, useEffect } from "react";
+import { GraduationCap, Calendar, CheckCircle2, XCircle, Clock, Edit2, MapPin, Dumbbell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -35,7 +35,23 @@ export function ExamensSection({ apprenant }: ExamensSectionProps) {
   const [resultatTheorique, setResultatTheorique] = useState<string | null>(null);
   const [resultatPratique, setResultatPratique] = useState<string | null>(null);
   const [datePratique, setDatePratique] = useState<string>('');
+  const [dateEntrainement, setDateEntrainement] = useState<string | null>(null);
   const queryClient = useQueryClient();
+
+  // Fetch reservation pratique (date d'entraînement)
+  useEffect(() => {
+    async function fetchReservation() {
+      const { data } = await supabase
+        .from("reservations_pratique")
+        .select("date_choisie")
+        .eq("apprenant_id", apprenant.id)
+        .maybeSingle();
+      if (data) {
+        setDateEntrainement(data.date_choisie);
+      }
+    }
+    fetchReservation();
+  }, [apprenant.id]);
 
   // Trouver les détails de la date d'examen théorique
   const getExamDetails = (dateExamen: string | null) => {
@@ -199,6 +215,21 @@ export function ExamensSection({ apprenant }: ExamensSectionProps) {
                     </span>
                   </div>
                 )}
+              </div>
+
+              {/* Date d'entraînement pratique */}
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Date d'entraînement pratique</p>
+                <div className="flex items-center gap-2">
+                  <Dumbbell className="w-4 h-4 text-muted-foreground" />
+                  {dateEntrainement ? (
+                    <span className="font-medium">
+                      {new Date(dateEntrainement + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">Non réservée</span>
+                  )}
+                </div>
               </div>
 
               <div>
