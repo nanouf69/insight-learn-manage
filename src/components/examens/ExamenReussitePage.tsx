@@ -16,16 +16,24 @@ export function ExamenReussitePage() {
   const [repassageList, setRepassageList] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [selectedExamMonth, setSelectedExamMonth] = useState("janvier");
+  const [datePassageDebut, setDatePassageDebut] = useState("23 fevrier");
+  const [datePassageFin, setDatePassageFin] = useState("6 mars");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
+  const examMonths = [
+    "janvier", "février", "mars", "avril", "mai", "juin",
+    "juillet", "août", "septembre", "octobre", "novembre", "décembre"
+  ];
+
   const { data: apprenants, isLoading } = useQuery({
-    queryKey: ['apprenants-examen-janvier'],
+    queryKey: ['apprenants-examen', selectedExamMonth],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('apprenants')
         .select('*')
-        .or('date_examen_theorique.ilike.%janvier%,date_examen_theorique.ilike.%Janvier%')
+        .or(`date_examen_theorique.ilike.%${selectedExamMonth}%,date_examen_theorique.ilike.%${selectedExamMonth.charAt(0).toUpperCase() + selectedExamMonth.slice(1)}%`)
         .order('nom', { ascending: true });
       if (error) throw error;
       return data;
@@ -127,7 +135,7 @@ export function ExamenReussitePage() {
         const non = result.details?.filter((d: any) => d.resultat === 'non').length || 0;
         const absent = result.details?.filter((d: any) => d.resultat === 'absent').length || 0;
         toast.success(`Résultats mis à jour ! ✅ ${oui} admis, ❌ ${non} non admis, 🔶 ${absent} absents`);
-        queryClient.invalidateQueries({ queryKey: ['apprenants-examen-janvier'] });
+        queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamMonth] });
       }
     } catch (err: any) {
       toast.error("Erreur : " + err.message);
@@ -145,7 +153,7 @@ export function ExamenReussitePage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['apprenants-examen-janvier'] });
+      queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamMonth] });
       toast.success("Résultat mis à jour");
     },
   });
@@ -190,19 +198,31 @@ export function ExamenReussitePage() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold">Examen et Réussite</h1>
           <p className="text-sm text-muted-foreground">Suivi des examens théoriques</p>
         </div>
-        <div className="relative w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Rechercher..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
+        <div className="flex items-center gap-3">
+          <Select value={selectedExamMonth} onValueChange={setSelectedExamMonth}>
+            <SelectTrigger className="w-44">
+              <SelectValue placeholder="Mois d'examen" />
+            </SelectTrigger>
+            <SelectContent>
+              {examMonths.map(m => (
+                <SelectItem key={m} value={m}>{m.charAt(0).toUpperCase() + m.slice(1)} 2026</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="relative w-60">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
         </div>
       </div>
 
@@ -403,11 +423,11 @@ export function ExamenReussitePage() {
                 <a href="mailto:audrey.crevier@cma-auvergnerhonealpes.fr">audrey.crevier@cma-auvergnerhonealpes.fr</a></p>
               </div>
 
-              <p><strong>Objet :</strong> Liste des candidats ayant reussi l'examen du 27 janvier 2026</p>
-              <p><strong>Dates de passage :</strong> du 23 fevrier au 6 mars 2026</p>
+              <p><strong>Objet :</strong> Liste des candidats ayant reussi l'examen de ${selectedExamMonth} 2026</p>
+              <p><strong>Dates de passage :</strong> du ${datePassageDebut} au ${datePassageFin} 2026</p>
 
               <p>Madame,</p>
-              <p>Veuillez trouver ci-dessous la liste des candidats de notre centre de formation ayant reussi l'examen theorique du 27 janvier 2026 :</p>
+              <p>Veuillez trouver ci-dessous la liste des candidats de notre centre de formation ayant reussi l'examen theorique de ${selectedExamMonth} 2026 :</p>
 
               <div style="display:flex;gap:20px;margin:20px 0;">
                 <div style="flex:1;">
@@ -462,9 +482,24 @@ export function ExamenReussitePage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                Lettre type pour la CMA (audrey.crevier@cma-auvergnerhonealpes.fr) avec la liste des candidats ayant réussi l'examen du 27 janvier, répartis en TAXI et VTC. Dates de passage : du 23 février au 6 mars 2026.
-              </p>
+              <div className="flex items-center gap-4 mb-4 flex-wrap">
+                <p className="text-sm text-muted-foreground">Dates de passage pratique :</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">du</span>
+                  <Input 
+                    value={datePassageDebut} 
+                    onChange={(e) => setDatePassageDebut(e.target.value)} 
+                    className="w-40 h-8 text-sm"
+                  />
+                  <span className="text-sm">au</span>
+                  <Input 
+                    value={datePassageFin} 
+                    onChange={(e) => setDatePassageFin(e.target.value)} 
+                    className="w-40 h-8 text-sm"
+                  />
+                  <span className="text-sm">2026</span>
+                </div>
+              </div>
               {reussisLettre.length > 0 && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -621,7 +656,7 @@ export function ExamenReussitePage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ClipboardCheck className="h-5 w-5" />
-            Inscrits à l'examen théorique - Janvier 2026
+            Inscrits à l'examen théorique - {selectedExamMonth.charAt(0).toUpperCase() + selectedExamMonth.slice(1)} 2026
           </CardTitle>
         </CardHeader>
         <CardContent>
