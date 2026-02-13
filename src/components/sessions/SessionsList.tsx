@@ -85,9 +85,9 @@ export function SessionsList() {
     },
   });
 
-  // Fetch pass rates per session
-  const { data: passRates = {} } = useQuery({
-    queryKey: ['session-pass-rates'],
+  // Fetch pass rates and counts per session
+  const { data: sessionStats = {} } = useQuery({
+    queryKey: ['session-stats'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('session_apprenants')
@@ -95,24 +95,19 @@ export function SessionsList() {
       
       if (error) throw error;
       
-      const rates: Record<string, { total: number; passed: number; failed: number; absent: number }> = {};
+      const stats: Record<string, { inscrits: number; passed: number; failed: number; absent: number; total: number }> = {};
       for (const sa of data || []) {
-        if (!rates[sa.session_id]) rates[sa.session_id] = { total: 0, passed: 0, failed: 0, absent: 0 };
+        if (!stats[sa.session_id]) stats[sa.session_id] = { inscrits: 0, passed: 0, failed: 0, absent: 0, total: 0 };
+        stats[sa.session_id].inscrits++;
         const resultat = (sa as any).apprenants?.resultat_examen;
         if (resultat) {
           const r = resultat.toLowerCase();
-          if (r === 'oui') {
-            rates[sa.session_id].passed++;
-            rates[sa.session_id].total++;
-          } else if (r === 'non') {
-            rates[sa.session_id].failed++;
-            rates[sa.session_id].total++;
-          } else if (r === 'absent') {
-            rates[sa.session_id].absent++;
-          }
+          if (r === 'oui') { stats[sa.session_id].passed++; stats[sa.session_id].total++; }
+          else if (r === 'non') { stats[sa.session_id].failed++; stats[sa.session_id].total++; }
+          else if (r === 'absent') { stats[sa.session_id].absent++; }
         }
       }
-      return rates;
+      return stats;
     },
   });
 
@@ -313,10 +308,12 @@ export function SessionsList() {
                         </div>
                         <div className="flex items-center gap-1.5">
                           <Users className="w-4 h-4" />
-                          <span>{session.places_disponibles || 18} places</span>
+                          <span className={sessionStats[session.id]?.inscrits > (session.places_disponibles || 18) ? "text-red-600 font-medium" : ""}>
+                            {sessionStats[session.id]?.inscrits || 0}/{session.places_disponibles || 18} inscrits
+                          </span>
                         </div>
-                        {passRates[session.id] && (passRates[session.id].total > 0 || passRates[session.id].absent > 0) && (() => {
-                          const r = passRates[session.id];
+                        {sessionStats[session.id] && (sessionStats[session.id].total > 0 || sessionStats[session.id].absent > 0) && (() => {
+                          const r = sessionStats[session.id];
                           const pct = r.total > 0 ? Math.round((r.passed / r.total) * 100) : 0;
                           return (
                             <div className="flex items-center gap-1.5">
