@@ -5,3 +5,12 @@ verify_jwt = false
 
 [functions.sync-outlook-emails]
 verify_jwt = false
+
+[functions.send-sms-ovh]
+verify_jwt = false
+
+[functions.parse-exam-results]
+verify_jwt = false
+
+[functions.parse-exam-planning]
+verify_jwt = false
