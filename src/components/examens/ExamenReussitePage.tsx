@@ -534,15 +534,30 @@ export function ExamenReussitePage() {
                 requestReadReceipt: true,
               },
             });
-            if (error) throw error;
+            if (error) {
+              // Log alert in DB from frontend as fallback
+              await supabase.from('alertes_systeme').insert({
+                type: 'email_error',
+                titre: 'Échec envoi Lettre CMA',
+                message: `Erreur lors de l'envoi à audrey.crevier@cma-auvergnerhonealpes.fr : ${error.message || 'Erreur inconnue'}`,
+                details: `Examen: ${selectedExamDate}\nCandidats: ${reussisLettre.length}`,
+              });
+              throw error;
+            }
             if (data?.success) {
               toast.success('Email envoyé à la CMA avec accusé de réception demandé !');
             } else {
+              await supabase.from('alertes_systeme').insert({
+                type: 'email_error',
+                titre: 'Échec envoi Lettre CMA',
+                message: `L'envoi à audrey.crevier@cma-auvergnerhonealpes.fr a échoué.`,
+                details: `Examen: ${selectedExamDate}\nCandidats: ${reussisLettre.length}`,
+              });
               throw new Error('Échec de l\'envoi');
             }
           } catch (err) {
             console.error('Erreur envoi CMA:', err);
-            toast.error('Erreur lors de l\'envoi de l\'email à la CMA');
+            toast.error('Erreur lors de l\'envoi — alerte ajoutée au tableau de bord');
           } finally {
             setSendingCMAEmail(false);
           }

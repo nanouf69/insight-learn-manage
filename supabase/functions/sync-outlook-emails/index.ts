@@ -277,6 +277,16 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Log failure as system alert
+      if (!success) {
+        await supabase.from("alertes_systeme").insert({
+          type: "email_error",
+          titre: `Échec envoi email à ${to}`,
+          message: `L'envoi de l'email "${subject}" à ${to} a échoué.`,
+          details: `Expéditeur: ${userEmail}\nDestinataire: ${to}\nObjet: ${subject}\nDate: ${new Date().toISOString()}`,
+        });
+      }
+
       return new Response(
         JSON.stringify({ success }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
