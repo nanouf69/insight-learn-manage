@@ -37,7 +37,7 @@ export function ExamenReussitePage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('apprenants')
-        .select('id, nom, prenom, type_apprenant, telephone, email, date_examen_theorique')
+        .select('id, nom, prenom, type_apprenant, telephone, email, date_examen_theorique, date_examen_pratique, resultat_examen')
         .order('nom', { ascending: true });
       if (error) throw error;
       return data;
@@ -349,7 +349,16 @@ export function ExamenReussitePage() {
 
       {/* Lettre CMA - Réussite examen */}
       {(() => {
-        const reussisLettre = apprenants?.filter(a => (a as any).resultat_examen === 'oui') || [];
+        // Candidats réussis de l'examen théorique de janvier
+        const reussisTheorique = apprenants?.filter(a => (a as any).resultat_examen === 'oui') || [];
+        // PA et RP qui ont réussi (pas forcément dans la query janvier)
+        const paRpTypes = ['pa-vtc', 'pa-taxi', 'rp-vtc', 'rp-taxi'];
+        const reussisPA_RP = (allApprenants || []).filter(a => 
+          paRpTypes.includes((a.type_apprenant || '').toLowerCase()) && 
+          a.resultat_examen === 'oui' &&
+          !reussisTheorique.some(r => r.id === a.id)
+        );
+        const reussisLettre = [...reussisTheorique, ...reussisPA_RP];
         
         const getCategorieCMA = (type: string | null) => {
           if (!type) return null;
