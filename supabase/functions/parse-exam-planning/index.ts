@@ -160,10 +160,59 @@ Ne mets aucune explication, juste le tableau JSON.`
           nom: match.nom,
           prenom: match.prenom,
           date_examen: r.date_examen,
+          heure_passage: r.heure_passage || "09:00",
           matched: !updateErr
         });
       } else {
         notFound.push(r);
+      }
+    }
+
+    // Create agenda_blocs for each matched candidate
+    const agendaBlocsToInsert: Array<Record<string, unknown>> = [];
+    const matchedUpdates = updates.filter(u => u.matched);
+
+    for (const u of matchedUpdates) {
+      // Parse the exam date to compute weekStart (Monday) and day index
+      const [year, month, day] = u.date_examen.split('-').map(Number);
+      const examDate = new Date(year, month - 1, day);
+      const dayOfWeek = examDate.getDay(); // 0=Sun, 1=Mon...
+      // Get Monday of that week
+      const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      const monday = new Date(examDate);
+      monday.setDate(monday.getDate() + mondayOffset);
+      const semaineDebut = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
+      const jour = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // 0=Mon, 6=Sun
+
+      // Compute end hour (1h block)
+      const [hh, mm] = u.heure_passage.split(':').map(Number);
+      const endMinutes = mm + 60;
+      const endH = hh + Math.floor(endMinutes / 60);
+      const endM = endMinutes % 60;
+      const heureFin = `${endH}:${String(endM).padStart(2, '0')}`;
+
+      agendaBlocsToInsert.push({
+        discipline_id: "exam-pratique",
+        discipline_nom: `Examen ${u.prenom} ${u.nom}`,
+        discipline_color: "#ef4444",
+        formation: "Examen pratique CMA",
+        formateur_id: null,
+        jour,
+        heure_debut: u.heure_passage,
+        heure_fin: heureFin,
+        semaine_debut: semaineDebut,
+      });
+    }
+
+    let agendaInserted = 0;
+    if (agendaBlocsToInsert.length > 0) {
+      const { data: insertedBlocs, error: blocErr } = await supabase
+        .from("agenda_blocs")
+        .insert(agendaBlocsToInsert);
+      if (blocErr) {
+        console.error("Erreur insertion agenda_blocs:", blocErr);
+      } else {
+        agendaInserted = agendaBlocsToInsert.length;
       }
     }
 
@@ -172,6 +221,7 @@ Ne mets aucune explication, juste le tableau JSON.`
       totalExtracted: results.length,
       totalUpdated: updates.filter(u => u.matched).length,
       totalNotFound: notFound.length,
+      agendaInserted,
       updates,
       notFound,
       extractedFromPdf: results,

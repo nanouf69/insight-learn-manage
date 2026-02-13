@@ -426,11 +426,13 @@ export function AgendaView() {
       if (error) throw error;
       if (data?.success) {
         toast.success(
-          `${data.totalUpdated} date(s) d'examen mise(s) à jour${data.totalNotFound > 0 ? ` • ${data.totalNotFound} candidat(s) non trouvé(s)` : ''}`,
+          `${data.totalUpdated} candidat(s) mis à jour • ${data.agendaInserted || 0} bloc(s) ajouté(s) à l'agenda${data.totalNotFound > 0 ? ` • ${data.totalNotFound} non trouvé(s)` : ''}`,
           { duration: 8000 }
         );
         queryClient.invalidateQueries({ queryKey: ['apprenants'] });
         queryClient.invalidateQueries({ queryKey: ['all-apprenants'] });
+        // Reload agenda blocks
+        loadBlocks();
       } else {
         toast.error(data?.error || "Erreur lors de l'analyse");
       }
