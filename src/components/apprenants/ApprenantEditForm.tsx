@@ -911,8 +911,8 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
             </div>
           </div>
 
-          {/* Prix de la formation et Paiement - Uniquement pour financement personnel */}
-          {formData.mode_financement === "personnel" && (
+          {/* Prix de la formation et Paiement - Masqué pour repassage/passage examen et PA */}
+          {formData.mode_financement === "personnel" && !["repassage-theorique", "repassage-pratique", "passage-pratique"].includes(formData.selected_formation) && !["pa-vtc", "pa-taxi"].includes(formData.type_apprenant) && (
             <div className="space-y-4">
               <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Informations financières</h3>
               <div className="grid grid-cols-2 gap-4">
