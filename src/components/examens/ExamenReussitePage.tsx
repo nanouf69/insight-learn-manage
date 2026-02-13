@@ -79,6 +79,18 @@ export function ExamenReussitePage() {
     },
   });
 
+  // Fetch reservations pratique
+  const { data: reservationsPratique } = useQuery({
+    queryKey: ['reservations-pratique-planning'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('reservations_pratique')
+        .select('date_choisie, type_formation, apprenant_id');
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   // Fetch uploaded PDF files
   const { data: examFiles, refetch: refetchFiles } = useQuery({
     queryKey: ['exam-result-files'],
@@ -940,97 +952,41 @@ export function ExamenReussitePage() {
         );
       })()}
 
-      {/* Planning formation pratique */}
+      {/* Planning formation pratique - from reservations */}
       {(() => {
-        const totalInscritsP = apprenants?.length || 0;
-        const sansResultatP = apprenants?.filter(a => !(a as any).resultat_examen) || [];
-        if (totalInscritsP === 0 || sansResultatP.length > 0) return null;
-
-        const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-        const currentTheorique3 = datesExamenTheorique.find(e => e.date === selectedExamDate);
-        const defaultPratique3 = currentTheorique3 ? datesExamenPratique[currentTheorique3.pratiqueIndex] : null;
-        const matchPratiquePlanning = (datePratique: string | null) => {
-          if (!datePratique) {
-            return defaultPratique3 ? normalize(defaultPratique3) === normalize(selectedDatePratique) : false;
-          }
-          return normalize(datePratique) === normalize(selectedDatePratique);
-        };
-
-        const paTypes = ['pa-vtc', 'pa-taxi'];
-        const rpTypes = ['rp-vtc', 'rp-taxi'];
-        const reussisPlanning = apprenants?.filter(a => 
-          (a as any).resultat_examen === 'oui' && 
-          !rpTypes.includes((a.type_apprenant || '').toLowerCase()) &&
-          matchPratiquePlanning((a as any).date_examen_pratique)
-        ) || [];
-        const paPlanning = (allApprenants || []).filter(a => 
-          paTypes.includes((a.type_apprenant || '').toLowerCase()) && 
-          matchPratiquePlanning(a.date_examen_pratique) &&
-          !reussisPlanning.some(r => r.id === a.id)
-        );
-        const tousPlanning = [...reussisPlanning, ...paPlanning];
-
-        const isVTCType = (type: string | null) => {
-          if (!type) return false;
-          const t = type.toLowerCase();
-          return ['vtc', 'vtc-e', 'vtc-e-presentiel', 'va-e', 'pa-vtc'].includes(t);
-        };
-        const isTAXIType = (type: string | null) => {
-          if (!type) return false;
-          const t = type.toLowerCase();
-          return ['taxi', 'taxi-e', 'taxi-e-presentiel', 'ta', 'ta-e', 'pa-taxi'].includes(t);
-        };
-
-        const vtcPlanning = tousPlanning.filter(a => isVTCType(a.type_apprenant));
-        const taxiPlanning = tousPlanning.filter(a => isTAXIType(a.type_apprenant));
-
-        // Generate weekdays starting from Monday Feb 16, 2026, excluding weekends, before March 2
-        const getWeekdays = () => {
-          const days: Date[] = [];
-          const start = new Date(2026, 1, 16); // Feb 16, 2026 (Monday)
-          const end = new Date(2026, 2, 7); // March 7, 2026 (exclusive) — period goes to March 6
-          let current = new Date(start);
-          while (current < end) {
-            const day = current.getDay();
-            if (day !== 0 && day !== 6) {
-              days.push(new Date(current));
-            }
-            current.setDate(current.getDate() + 1);
-          }
-          return days;
-        };
-
-        const weekdays = getWeekdays();
         const dayNames = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
         const monthNames = ['jan', 'fév', 'mar', 'avr', 'mai', 'jun', 'jul', 'aoû', 'sep', 'oct', 'nov', 'déc'];
 
-        // Assign VTC: 4 per day, except Tuesday Feb 24 which gets 5
-        const vtcByDay: Record<string, typeof vtcPlanning> = {};
-        let vtcIndex = 0;
-        let dayIndex = 0;
-        while (vtcIndex < vtcPlanning.length && dayIndex < weekdays.length) {
-          const day = weekdays[dayIndex];
-          const key = day.toISOString().slice(0, 10);
-          // Tuesday Feb 17, 2026 = day.getDay() === 2 && day.getDate() === 17 && day.getMonth() === 1
-          const isTueFeb17 = day.getDay() === 2 && day.getDate() === 17 && day.getMonth() === 1;
-          const capacity = isTueFeb17 ? 5 : 4;
-          vtcByDay[key] = vtcPlanning.slice(vtcIndex, vtcIndex + capacity);
-          vtcIndex += capacity;
-          dayIndex++;
-        }
-        const joursVTCNeeded = dayIndex;
+        // Build apprenant map from allApprenants
+        const appMap: Record<string, { id: string; nom: string; prenom: string; type_apprenant: string | null }> = {};
+        (allApprenants || []).forEach(a => { appMap[a.id] = a; });
 
-        // TAXI starts after all VTC days: 4 per day
-        const taxiByDay: Record<string, typeof taxiPlanning> = {};
-        taxiPlanning.forEach((a, i) => {
-          const taxiDayIndex = joursVTCNeeded + Math.floor(i / 4);
-          if (taxiDayIndex < weekdays.length) {
-            const key = weekdays[taxiDayIndex].toISOString().slice(0, 10);
-            if (!taxiByDay[key]) taxiByDay[key] = [];
-            taxiByDay[key].push(a);
+        // Group reservations by date
+        const byDate: Record<string, { vtc: typeof allApprenants; taxi: typeof allApprenants }> = {};
+        (reservationsPratique || []).forEach(r => {
+          if (!byDate[r.date_choisie]) byDate[r.date_choisie] = { vtc: [], taxi: [] };
+          const app = appMap[r.apprenant_id];
+          if (app) {
+            if (r.type_formation.toLowerCase() === 'vtc') {
+              byDate[r.date_choisie].vtc!.push(app as any);
+            } else {
+              byDate[r.date_choisie].taxi!.push(app as any);
+            }
           }
         });
-        const joursTAXINeeded = Math.ceil(taxiPlanning.length / 4);
+
+        const totalReservations = (reservationsPratique || []).length;
+        if (totalReservations === 0) return null;
+
+        // Generate weekdays Feb 16 - Mar 6
+        const weekdays: Date[] = [];
+        const start = new Date(2026, 1, 16);
+        const end = new Date(2026, 2, 7);
+        let cur = new Date(start);
+        while (cur < end) {
+          if (cur.getDay() !== 0 && cur.getDay() !== 6) weekdays.push(new Date(cur));
+          cur.setDate(cur.getDate() + 1);
+        }
 
         // Group by week
         const weeks: Date[][] = [];
@@ -1043,6 +999,9 @@ export function ExamenReussitePage() {
           }
         });
 
+        const totalVTC = (reservationsPratique || []).filter(r => r.type_formation.toLowerCase() === 'vtc').length;
+        const totalTAXI = (reservationsPratique || []).filter(r => r.type_formation.toLowerCase() === 'taxi').length;
+
         return (
           <Card className="border-l-4 border-l-emerald-500">
             <CardHeader>
@@ -1051,7 +1010,7 @@ export function ExamenReussitePage() {
                 Planning formation pratique — Du 16 février au 6 mars 2026
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                VTC : 4 candidats/jour • TAXI : 4 candidats/jour • Pas de week-end • Deadline : avant le 6 mars
+                VTC : {totalVTC} réservations • TAXI : {totalTAXI} réservations • Données en temps réel depuis les réservations
               </p>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -1061,8 +1020,9 @@ export function ExamenReussitePage() {
                   <div className="grid grid-cols-5 gap-2">
                     {week.map(day => {
                       const key = day.toISOString().slice(0, 10);
-                      const vtcDay = vtcByDay[key] || [];
-                      const taxiDay = taxiByDay[key] || [];
+                      const dayData = byDate[key];
+                      const vtcDay = dayData?.vtc || [];
+                      const taxiDay = dayData?.taxi || [];
                       const hasContent = vtcDay.length > 0 || taxiDay.length > 0;
 
                       return (
@@ -1073,7 +1033,7 @@ export function ExamenReussitePage() {
                           {vtcDay.length > 0 && (
                             <div className="mb-2">
                               <div className="text-[10px] font-semibold text-blue-700 mb-1">VTC ({vtcDay.length})</div>
-                              {vtcDay.map(a => (
+                              {vtcDay.map((a: any) => (
                                 <div key={a.id} className="text-[11px] px-1 py-0.5 bg-blue-50 rounded mb-0.5 truncate" title={`${a.nom} ${a.prenom}`}>
                                   {a.nom} {a.prenom}
                                 </div>
@@ -1083,7 +1043,7 @@ export function ExamenReussitePage() {
                           {taxiDay.length > 0 && (
                             <div>
                               <div className="text-[10px] font-semibold text-amber-700 mb-1">TAXI ({taxiDay.length})</div>
-                              {taxiDay.map(a => (
+                              {taxiDay.map((a: any) => (
                                 <div key={a.id} className="text-[11px] px-1 py-0.5 bg-amber-50 rounded mb-0.5 truncate" title={`${a.nom} ${a.prenom}`}>
                                   {a.nom} {a.prenom}
                                 </div>
@@ -1096,7 +1056,6 @@ export function ExamenReussitePage() {
                         </div>
                       );
                     })}
-                    {/* Pad empty cells if week has fewer than 5 days */}
                     {Array.from({ length: 5 - week.length }).map((_, i) => (
                       <div key={`empty-${i}`} className="border rounded-lg p-2 min-h-[120px] bg-muted/10" />
                     ))}
@@ -1104,18 +1063,10 @@ export function ExamenReussitePage() {
                 </div>
               ))}
 
-              <div className="p-4 bg-emerald-50 rounded-lg flex items-center justify-between">
-                <div className="space-y-1">
-                  <p className="text-sm font-bold text-emerald-800">
-                    VTC : {vtcPlanning.length} candidats → {Math.ceil(vtcPlanning.length / 4)} jours (du {weekdays[0] ? `${weekdays[0].getDate()} ${monthNames[weekdays[0].getMonth()]}` : ''} au {weekdays[Math.ceil(vtcPlanning.length / 4) - 1] ? `${weekdays[Math.ceil(vtcPlanning.length / 4) - 1].getDate()} ${monthNames[weekdays[Math.ceil(vtcPlanning.length / 4) - 1].getMonth()]}` : ''})
-                  </p>
-                  <p className="text-sm font-bold text-emerald-800">
-                    TAXI : {taxiPlanning.length} candidats → {Math.ceil(taxiPlanning.length / 3)} jours (du {weekdays[0] ? `${weekdays[0].getDate()} ${monthNames[weekdays[0].getMonth()]}` : ''} au {weekdays[Math.ceil(taxiPlanning.length / 3) - 1] ? `${weekdays[Math.ceil(taxiPlanning.length / 3) - 1].getDate()} ${monthNames[weekdays[Math.ceil(taxiPlanning.length / 3) - 1].getMonth()]}` : ''})
-                  </p>
-                </div>
-                <Badge className="bg-emerald-200 text-emerald-900 text-sm px-3 py-1">
-                  ✅ Tous formés avant le 2 mars
-                </Badge>
+              <div className="p-4 bg-emerald-50 rounded-lg">
+                <p className="text-sm font-bold text-emerald-800">
+                  Total : {totalReservations} réservations ({totalVTC} VTC + {totalTAXI} TAXI)
+                </p>
               </div>
             </CardContent>
           </Card>
