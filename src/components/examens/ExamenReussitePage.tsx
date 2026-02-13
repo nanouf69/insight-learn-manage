@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,13 +7,15 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ClipboardCheck, CheckCircle2, XCircle, UserX, Search, RotateCcw, Plus, X } from "lucide-react";
+import { ClipboardCheck, CheckCircle2, XCircle, UserX, Search, RotateCcw, Plus, X, Upload, FileText, Trash2, Download } from "lucide-react";
 import { toast } from "sonner";
 
 export function ExamenReussitePage() {
   const [search, setSearch] = useState("");
   const [repassageSearch, setRepassageSearch] = useState("");
   const [repassageList, setRepassageList] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
   const { data: apprenants, isLoading } = useQuery({
@@ -40,6 +42,67 @@ export function ExamenReussitePage() {
       return data;
     },
   });
+
+  // Fetch uploaded PDF files
+  const { data: examFiles, refetch: refetchFiles } = useQuery({
+    queryKey: ['exam-result-files'],
+    queryFn: async () => {
+      const { data, error } = await supabase.storage
+        .from('exam-results')
+        .list('', { sortBy: { column: 'created_at', order: 'desc' } });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const handleUploadPdf = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type !== 'application/pdf') {
+      toast.error("Seuls les fichiers PDF sont acceptés");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Le fichier ne doit pas dépasser 10 Mo");
+      return;
+    }
+    setUploading(true);
+    const fileName = `resultats-${Date.now()}-${file.name}`;
+    const { error } = await supabase.storage
+      .from('exam-results')
+      .upload(fileName, file);
+    setUploading(false);
+    if (error) {
+      toast.error("Erreur lors de l'upload : " + error.message);
+    } else {
+      toast.success("PDF uploadé avec succès");
+      refetchFiles();
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleDeleteFile = async (fileName: string) => {
+    const { error } = await supabase.storage
+      .from('exam-results')
+      .remove([fileName]);
+    if (error) {
+      toast.error("Erreur lors de la suppression");
+    } else {
+      toast.success("Fichier supprimé");
+      refetchFiles();
+    }
+  };
+
+  const handleDownloadFile = async (fileName: string) => {
+    const { data, error } = await supabase.storage
+      .from('exam-results')
+      .createSignedUrl(fileName, 60);
+    if (error || !data?.signedUrl) {
+      toast.error("Erreur lors du téléchargement");
+      return;
+    }
+    window.open(data.signedUrl, '_blank');
+  };
 
   const updateResultat = useMutation({
     mutationFn: async ({ id, resultat }: { id: string; resultat: string | null }) => {
@@ -365,6 +428,68 @@ export function ExamenReussitePage() {
           {repassageApprenants.length > 0 && (
             <div className="text-sm text-muted-foreground">
               {repassageApprenants.length} apprenant(s) en repassage
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* PDF Résultats d'examen */}
+      <Card className="border-l-4 border-l-sky-500">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-sky-500" />
+            Dossier PDF - Résultats d'examen
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Uploadez ici le PDF contenant les numéros de dossier avec les résultats d'examen.
+          </p>
+          <div className="flex items-center gap-3">
+            <input
+              type="file"
+              accept="application/pdf"
+              ref={fileInputRef}
+              onChange={handleUploadPdf}
+              className="hidden"
+            />
+            <Button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              {uploading ? "Upload en cours..." : "Ajouter un PDF"}
+            </Button>
+          </div>
+
+          {examFiles && examFiles.length > 0 ? (
+            <div className="rounded-md border divide-y">
+              {examFiles.map((file) => (
+                <div key={file.name} className="flex items-center justify-between px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-5 w-5 text-sky-500" />
+                    <div>
+                      <p className="text-sm font-medium">{file.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {file.created_at ? new Date(file.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="icon" onClick={() => handleDownloadFile(file.name)} title="Télécharger">
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDeleteFile(file.name)} title="Supprimer">
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground text-sm">
+              Aucun PDF uploadé. Cliquez sur "Ajouter un PDF" pour commencer.
             </div>
           )}
         </CardContent>
