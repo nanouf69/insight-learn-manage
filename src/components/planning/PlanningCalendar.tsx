@@ -4,11 +4,13 @@ import { useState } from "react";
 import { PlanningForm } from "./PlanningForm";
 
 const events = [
-  { id: 1, title: "React Avancé - M3", date: 3, time: "14:00", duration: 3, color: "bg-primary" },
-  { id: 2, title: "UX Design", date: 4, time: "09:00", duration: 4, color: "bg-accent" },
-  { id: 3, title: "Python DS", date: 5, time: "10:00", duration: 6, color: "bg-success" },
-  { id: 4, title: "Management", date: 6, time: "14:00", duration: 3, color: "bg-warning" },
-  { id: 5, title: "React Avancé - M4", date: 10, time: "14:00", duration: 3, color: "bg-primary" },
+  { id: 1, title: "VTC - Candidat 1", date: 3, time: "08:00", duration: 2, color: "bg-primary" },
+  { id: 2, title: "VTC - Candidat 2", date: 3, time: "08:00", duration: 2, color: "bg-primary" },
+  { id: 3, title: "VTC - Candidat 3", date: 3, time: "08:00", duration: 2, color: "bg-primary" },
+  { id: 4, title: "VTC - Candidat 4", date: 3, time: "08:00", duration: 2, color: "bg-primary" },
+  { id: 5, title: "VTC - Candidat 5", date: 3, time: "08:00", duration: 2, color: "bg-primary" },
+  { id: 6, title: "Formation TAXI", date: 5, time: "09:00", duration: 4, color: "bg-accent" },
+  { id: 7, title: "Formation TAXI", date: 10, time: "09:00", duration: 4, color: "bg-accent" },
 ];
 
 const days = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
@@ -98,19 +100,11 @@ export function PlanningCalendar() {
       <div className="flex items-center gap-6 text-sm">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded bg-primary" />
-          <span className="text-muted-foreground">Développement</span>
+          <span className="text-muted-foreground">VTC</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded bg-accent" />
-          <span className="text-muted-foreground">Design</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-success" />
-          <span className="text-muted-foreground">Data</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-warning" />
-          <span className="text-muted-foreground">Soft Skills</span>
+          <span className="text-muted-foreground">TAXI</span>
         </div>
       </div>
     </div>
