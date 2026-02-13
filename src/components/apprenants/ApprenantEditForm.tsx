@@ -648,8 +648,8 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
               </Select>
             </div>
 
-            {/* Date d'examen théorique - masqué pour repassage pratique et formation continue */}
-            {formData.selected_formation !== "repassage-pratique" && formData.selected_formation !== "continue-vtc" && formData.selected_formation !== "continue-taxi" && (
+            {/* Date d'examen théorique - masqué pour repassage pratique, passage pratique et formation continue */}
+            {formData.selected_formation !== "repassage-pratique" && formData.selected_formation !== "passage-pratique" && formData.selected_formation !== "continue-vtc" && formData.selected_formation !== "continue-taxi" && (
             <div className="space-y-2">
               <Label htmlFor="dateExamenTheorique">Date d'examen théorique</Label>
               <Select value={formData.date_examen_theorique} onValueChange={(value) => setFormData({ ...formData, date_examen_theorique: value })}>
@@ -671,10 +671,10 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
             </div>
             )}
 
-            {/* Date d'examen pratique - pour repassage pratique */}
-            {formData.selected_formation === "repassage-pratique" && (
+            {/* Date d'examen pratique - pour repassage pratique et passage pratique */}
+            {(formData.selected_formation === "repassage-pratique" || formData.selected_formation === "passage-pratique") && (
               <div className="space-y-2">
-                <Label htmlFor="dateExamenPratique">Date d'examen pratique (Rhône 69)</Label>
+                <Label htmlFor="dateExamenPratique">Date d'examen pratique (Rhône 69) *</Label>
                 <Select value={dateExamenPratique} onValueChange={setDateExamenPratique}>
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionner une date d'examen pratique" />
