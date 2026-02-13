@@ -1018,9 +1018,9 @@ export function ExamenReussitePage() {
           return ['taxi', 'taxi-e', 'taxi-e-presentiel', 'ta', 'ta-e', 'pa-taxi'].includes(t);
         };
 
-        // Candidates without reservation: compute their assignment
-        const unreservedVTC = tousPlanning.filter(a => isVTCType(a.type_apprenant) && !reservedIds.has(a.id));
-        const unreservedTAXI = tousPlanning.filter(a => isTAXIType(a.type_apprenant) && !reservedIds.has(a.id));
+        // Count unreserved candidates
+        const unreservedVTCCount = tousPlanning.filter(a => isVTCType(a.type_apprenant) && !reservedIds.has(a.id)).length;
+        const unreservedTAXICount = tousPlanning.filter(a => isTAXIType(a.type_apprenant) && !reservedIds.has(a.id)).length;
 
         // Generate weekdays Feb 16 - Mar 6
         const weekdays: Date[] = [];
@@ -1032,45 +1032,16 @@ export function ExamenReussitePage() {
           cur.setDate(cur.getDate() + 1);
         }
 
-        // Assign unreserved VTC to days that have capacity left
-        const computedByDate: Record<string, { vtc: any[]; taxi: any[] }> = {};
-        let vtcIdx = 0;
-        for (let di = 0; di < weekdays.length && vtcIdx < unreservedVTC.length; di++) {
-          const key = weekdays[di].toISOString().slice(0, 10);
-          const isTueFeb17 = weekdays[di].getDay() === 2 && weekdays[di].getDate() === 17 && weekdays[di].getMonth() === 1;
-          const capacity = isTueFeb17 ? 5 : 4;
-          const reservedCount = (byDate[key]?.vtc?.length || 0);
-          const remaining = Math.max(0, capacity - reservedCount);
-          if (remaining > 0) {
-            if (!computedByDate[key]) computedByDate[key] = { vtc: [], taxi: [] };
-            computedByDate[key].vtc = unreservedVTC.slice(vtcIdx, vtcIdx + remaining);
-            vtcIdx += remaining;
-          }
-        }
+        const totalVTC = tousPlanning.filter(a => isVTCType(a.type_apprenant)).length;
+        const totalTAXI = tousPlanning.filter(a => isTAXIType(a.type_apprenant)).length;
+        const totalReserved = (reservationsPratique || []).length;
 
-        // Find where TAXI starts (after VTC days)
-        const vtcTotalNeeded = tousPlanning.filter(a => isVTCType(a.type_apprenant)).length;
-        const vtcDaysNeeded = Math.ceil(vtcTotalNeeded / 4);
-        let taxiIdx = 0;
-        for (let di = vtcDaysNeeded; di < weekdays.length && taxiIdx < unreservedTAXI.length; di++) {
-          const key = weekdays[di].toISOString().slice(0, 10);
-          const reservedCount = (byDate[key]?.taxi?.length || 0);
-          const remaining = Math.max(0, 4 - reservedCount);
-          if (remaining > 0) {
-            if (!computedByDate[key]) computedByDate[key] = { vtc: [], taxi: [] };
-            computedByDate[key].taxi = unreservedTAXI.slice(taxiIdx, taxiIdx + remaining);
-            taxiIdx += remaining;
-          }
-        }
-
-        // Merge reservations + computed
-        const mergedByDate: Record<string, { vtc: any[]; taxi: any[] }> = {};
-        weekdays.forEach(d => {
+        // Determine which days are VTC vs TAXI based on the period
+        const vtcDaysNeeded = Math.ceil(totalVTC / 4);
+        const dayTypeMap: Record<string, 'vtc' | 'taxi'> = {};
+        weekdays.forEach((d, i) => {
           const key = d.toISOString().slice(0, 10);
-          mergedByDate[key] = {
-            vtc: [...(byDate[key]?.vtc || []), ...(computedByDate[key]?.vtc || [])],
-            taxi: [...(byDate[key]?.taxi || []), ...(computedByDate[key]?.taxi || [])],
-          };
+          dayTypeMap[key] = i < vtcDaysNeeded ? 'vtc' : 'taxi';
         });
 
         // Group by week
@@ -1083,10 +1054,6 @@ export function ExamenReussitePage() {
             currentWeek = [];
           }
         });
-
-        const totalVTC = tousPlanning.filter(a => isVTCType(a.type_apprenant)).length;
-        const totalTAXI = tousPlanning.filter(a => isTAXIType(a.type_apprenant)).length;
-        const totalReserved = (reservationsPratique || []).length;
 
         return (
           <Card className="border-l-4 border-l-emerald-500">
@@ -1106,41 +1073,44 @@ export function ExamenReussitePage() {
                   <div className="grid grid-cols-5 gap-2">
                     {week.map(day => {
                       const key = day.toISOString().slice(0, 10);
-                      const merged = mergedByDate[key] || { vtc: [], taxi: [] };
-                      const hasContent = merged.vtc.length > 0 || merged.taxi.length > 0;
+                      const dayData = byDate[key];
+                      const vtcReserved = dayData?.vtc || [];
+                      const taxiReserved = dayData?.taxi || [];
+                      const expectedType = dayTypeMap[key];
+                      const hasReservations = vtcReserved.length > 0 || taxiReserved.length > 0;
 
                       return (
-                        <div key={key} className={`border rounded-lg p-2 min-h-[120px] ${hasContent ? 'bg-background' : 'bg-muted/30'}`}>
+                        <div key={key} className={`border rounded-lg p-2 min-h-[120px] ${(hasReservations || expectedType) ? 'bg-background' : 'bg-muted/30'}`}>
                           <div className="text-xs font-bold text-center mb-2 pb-1 border-b">
                             {dayNames[day.getDay()]} {day.getDate()} {monthNames[day.getMonth()]}
                           </div>
-                          {merged.vtc.length > 0 && (
+                          
+                          {/* Show label for expected type */}
+                          {expectedType === 'vtc' && (
                             <div className="mb-2">
-                              <div className="text-[10px] font-semibold text-blue-700 mb-1">VTC ({merged.vtc.length})</div>
-                              {merged.vtc.map((a: any) => {
-                                const isReserved = reservedIds.has(a.id);
-                                return (
-                                  <div key={a.id} className={`text-[11px] px-1 py-0.5 rounded mb-0.5 truncate ${isReserved ? 'bg-blue-100 font-semibold' : 'bg-blue-50'}`} title={`${a.nom} ${a.prenom}${isReserved ? ' ✓ Réservé' : ''}`}>
-                                    {a.nom} {a.prenom} {isReserved && '✓'}
-                                  </div>
-                                );
-                              })}
+                              <div className="text-[10px] font-semibold text-blue-700 mb-1">Formation pratique VTC</div>
+                              {vtcReserved.length > 0 ? vtcReserved.map((a: any) => (
+                                <div key={a.id} className="text-[11px] px-1 py-0.5 bg-blue-100 rounded mb-0.5 truncate font-semibold" title={`${a.nom} ${a.prenom}`}>
+                                  {a.nom} {a.prenom} ✓
+                                </div>
+                              )) : (
+                                <div className="text-[10px] text-muted-foreground italic">En attente de réservations</div>
+                              )}
                             </div>
                           )}
-                          {merged.taxi.length > 0 && (
+                          {expectedType === 'taxi' && (
                             <div>
-                              <div className="text-[10px] font-semibold text-amber-700 mb-1">TAXI ({merged.taxi.length})</div>
-                              {merged.taxi.map((a: any) => {
-                                const isReserved = reservedIds.has(a.id);
-                                return (
-                                  <div key={a.id} className={`text-[11px] px-1 py-0.5 rounded mb-0.5 truncate ${isReserved ? 'bg-amber-100 font-semibold' : 'bg-amber-50'}`} title={`${a.nom} ${a.prenom}${isReserved ? ' ✓ Réservé' : ''}`}>
-                                    {a.nom} {a.prenom} {isReserved && '✓'}
-                                  </div>
-                                );
-                              })}
+                              <div className="text-[10px] font-semibold text-amber-700 mb-1">Formation pratique TAXI</div>
+                              {taxiReserved.length > 0 ? taxiReserved.map((a: any) => (
+                                <div key={a.id} className="text-[11px] px-1 py-0.5 bg-amber-100 rounded mb-0.5 truncate font-semibold" title={`${a.nom} ${a.prenom}`}>
+                                  {a.nom} {a.prenom} ✓
+                                </div>
+                              )) : (
+                                <div className="text-[10px] text-muted-foreground italic">En attente de réservations</div>
+                              )}
                             </div>
                           )}
-                          {!hasContent && (
+                          {!expectedType && !hasReservations && (
                             <div className="text-[10px] text-muted-foreground text-center mt-4">Libre</div>
                           )}
                         </div>
@@ -1156,10 +1126,10 @@ export function ExamenReussitePage() {
               <div className="p-4 bg-emerald-50 rounded-lg flex items-center justify-between">
                 <div className="space-y-1">
                   <p className="text-sm font-bold text-emerald-800">
-                    VTC : {totalVTC} candidats • TAXI : {totalTAXI} candidats
+                    VTC : {totalVTC} candidats ({vtcDaysNeeded} jours) • TAXI : {totalTAXI} candidats ({Math.ceil(totalTAXI / 4)} jours)
                   </p>
                   <p className="text-xs text-emerald-700">
-                    {totalReserved > 0 ? `${totalReserved} réservation(s) confirmée(s) (✓)` : 'Aucune réservation confirmée pour le moment'}
+                    {totalReserved > 0 ? `${totalReserved} réservation(s) confirmée(s)` : 'Aucune réservation confirmée — les noms apparaîtront quand les candidats choisiront leur date'}
                   </p>
                 </div>
                 <Badge className="bg-emerald-200 text-emerald-900 text-sm px-3 py-1">
