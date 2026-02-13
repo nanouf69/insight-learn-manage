@@ -122,8 +122,8 @@ export function OrganisationForm({ organisation, onClose }: OrganisationFormProp
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="siret">SIRET</Label>
-              <Input id="siret" placeholder="123 456 789 00012" value={siret} onChange={(e) => setSiret(e.target.value)} />
+              <Label htmlFor="siret">N° SIREN</Label>
+              <Input id="siret" placeholder="123 456 789" value={siret} onChange={(e) => setSiret(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="codeNaf">Code NAF</Label>
