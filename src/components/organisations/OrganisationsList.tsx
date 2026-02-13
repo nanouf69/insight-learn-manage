@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Users, Mail, Phone, MapPin, Landmark, ChevronRight, Inbox, Send, Eye } from "lucide-react";
+import { Mail, Phone, MapPin, Landmark, ChevronRight, Inbox, Send, Eye } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -12,94 +12,21 @@ import { OrganisationForm } from "./OrganisationForm";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
-const organisations = [
-  {
-    id: "cma",
-    name: "Chambre des Métiers et de l'Artisanat",
-    type: "institution",
-    contact: "Mme Audrey CREVIER",
-    email: "audrey.crevier@cma-auvergnerhonealpes.fr",
-    phone: "",
-    address: "Auvergne-Rhône-Alpes",
-    apprenants: 0,
-    formationsEnCours: 0,
-    description: "Établissement public sous tutelle de l'État",
-  },
-  {
-    id: "1",
-    name: "Tech Solutions SARL",
-    type: "client",
-    contact: "Marc Dubois",
-    email: "contact@techsolutions.fr",
-    phone: "01 23 45 67 89",
-    address: "15 Rue de l'Innovation, 75001 Paris",
-    apprenants: 24,
-    formationsEnCours: 3,
-  },
-  {
-    id: "2",
-    name: "Groupe Industriel ABC",
-    type: "client",
-    contact: "Claire Moreau",
-    email: "rh@groupe-abc.com",
-    phone: "01 98 76 54 32",
-    address: "Zone Industrielle Nord, 69000 Lyon",
-    apprenants: 45,
-    formationsEnCours: 5,
-  },
-  {
-    id: "3",
-    name: "StartUp Digital",
-    type: "prospect",
-    contact: "Thomas Petit",
-    email: "thomas@startup-digital.io",
-    phone: "06 12 34 56 78",
-    address: "10 Avenue des Startups, 33000 Bordeaux",
-    apprenants: 0,
-    formationsEnCours: 0,
-  },
-  {
-    id: "4",
-    name: "Cabinet Conseil RH",
-    type: "partenaire",
-    contact: "Sophie Lambert",
-    email: "s.lambert@conseil-rh.fr",
-    phone: "01 45 67 89 01",
-    address: "25 Boulevard Haussmann, 75008 Paris",
-    apprenants: 12,
-    formationsEnCours: 2,
-  },
-  {
-    id: "5",
-    name: "Mairie de Marseille",
-    type: "client",
-    contact: "Jean-Pierre Martin",
-    email: "formation@mairie-marseille.fr",
-    phone: "04 91 00 00 00",
-    address: "Hôtel de Ville, 13001 Marseille",
-    apprenants: 67,
-    formationsEnCours: 8,
-  },
-];
-
-const getTypeBadge = (type: string) => {
-  switch (type) {
-    case "client":
-      return <Badge className="bg-primary/10 text-primary hover:bg-primary/10">Client</Badge>;
-    case "prospect":
-      return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">Prospect</Badge>;
-    case "partenaire":
-      return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100">Partenaire</Badge>;
-    case "institution":
-      return <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">Institution publique</Badge>;
-    default:
-      return <Badge variant="secondary">{type}</Badge>;
-  }
-};
-
 export function OrganisationsList() {
-  const [selectedOrg, setSelectedOrg] = useState<typeof organisations[0] | null>(null);
+  const [selectedOrg, setSelectedOrg] = useState<any>(null);
   const [selectedEmail, setSelectedEmail] = useState<any>(null);
+
+  const { data: organisations, isLoading } = useQuery({
+    queryKey: ['organismes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('organismes')
+        .select('*')
+        .order('nom', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+  });
 
   // Fetch emails for the selected org
   const { data: orgEmails } = useQuery({
@@ -112,7 +39,6 @@ export function OrganisationsList() {
         .select('*')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      // Filter emails that involve this org's email or domain
       return (data || []).filter(e => {
         const matchSender = e.sender_email?.toLowerCase().includes(emailDomain.toLowerCase());
         const matchRecipient = e.recipients?.some((r: string) => r.toLowerCase().includes(emailDomain.toLowerCase()));
@@ -125,6 +51,14 @@ export function OrganisationsList() {
   const sentEmails = orgEmails?.filter(e => e.type === 'sent' || e.recipients?.some((r: string) => r.toLowerCase().includes(selectedOrg?.email?.split('@')[1]?.toLowerCase() || ''))) || [];
   const receivedEmails = orgEmails?.filter(e => e.sender_email?.toLowerCase().includes(selectedOrg?.email?.split('@')[1]?.toLowerCase() || '')) || [];
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -136,7 +70,7 @@ export function OrganisationsList() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {organisations.map((org) => (
+        {(organisations || []).map((org) => (
           <Card
             key={org.id}
             className="hover:shadow-md transition-shadow cursor-pointer"
@@ -146,22 +80,18 @@ export function OrganisationsList() {
               <div className="space-y-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <Avatar className={`h-12 w-12 ${org.type === 'institution' ? 'bg-emerald-100' : 'bg-primary/10'}`}>
-                      <AvatarFallback className={`${org.type === 'institution' ? 'bg-emerald-100 text-emerald-700' : 'bg-primary/10 text-primary'} font-semibold`}>
-                        {org.type === 'institution' ? <Landmark className="h-5 w-5" /> : org.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                    <Avatar className="h-12 w-12 bg-primary/10">
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                        {org.nom.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="font-semibold text-foreground">{org.name}</h3>
-                      <p className="text-sm text-muted-foreground">{org.contact}</p>
+                      <h3 className="font-semibold text-foreground">{org.nom}</h3>
+                      {org.ville && <p className="text-sm text-muted-foreground">{org.ville}</p>}
                     </div>
                   </div>
-                  {getTypeBadge(org.type)}
+                  <OrganisationForm organisation={org} />
                 </div>
-
-                {'description' in org && org.description && (
-                  <p className="text-xs text-muted-foreground italic">{org.description}</p>
-                )}
 
                 <div className="space-y-2 text-sm">
                   {org.email && (
@@ -170,16 +100,21 @@ export function OrganisationsList() {
                       <span className="truncate">{org.email}</span>
                     </div>
                   )}
-                  {org.phone && (
+                  {org.telephone && (
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Phone className="w-4 h-4" />
-                      <span>{org.phone}</span>
+                      <span>{org.telephone}</span>
                     </div>
                   )}
-                  {org.address && (
+                  {org.adresse && (
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <MapPin className="w-4 h-4 flex-shrink-0" />
-                      <span className="truncate">{org.address}</span>
+                      <span className="truncate">{org.adresse}{org.code_postal ? `, ${org.code_postal}` : ''}{org.ville ? ` ${org.ville}` : ''}</span>
+                    </div>
+                  )}
+                  {org.siret && (
+                    <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                      <span>SIRET: {org.siret}</span>
                     </div>
                   )}
                 </div>
@@ -202,39 +137,47 @@ export function OrganisationsList() {
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
-              {selectedOrg?.type === 'institution' && <Landmark className="h-5 w-5 text-emerald-600" />}
-              {selectedOrg?.name}
-              {selectedOrg && getTypeBadge(selectedOrg.type)}
+              {selectedOrg?.nom}
             </DialogTitle>
           </DialogHeader>
 
           {selectedOrg && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Contact :</span>{' '}
-                  <span className="font-medium">{selectedOrg.contact}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Email :</span>{' '}
-                  <span className="font-medium">{selectedOrg.email}</span>
-                </div>
-                {selectedOrg.phone && (
+                {selectedOrg.email && (
+                  <div>
+                    <span className="text-muted-foreground">Email :</span>{' '}
+                    <span className="font-medium">{selectedOrg.email}</span>
+                  </div>
+                )}
+                {selectedOrg.telephone && (
                   <div>
                     <span className="text-muted-foreground">Téléphone :</span>{' '}
-                    <span className="font-medium">{selectedOrg.phone}</span>
+                    <span className="font-medium">{selectedOrg.telephone}</span>
                   </div>
                 )}
-                {selectedOrg.address && (
+                {selectedOrg.adresse && (
                   <div>
                     <span className="text-muted-foreground">Adresse :</span>{' '}
-                    <span className="font-medium">{selectedOrg.address}</span>
+                    <span className="font-medium">{selectedOrg.adresse}{selectedOrg.code_postal ? `, ${selectedOrg.code_postal}` : ''}{selectedOrg.ville ? ` ${selectedOrg.ville}` : ''}</span>
                   </div>
                 )}
-                {'description' in selectedOrg && selectedOrg.description && (
-                  <div className="col-span-2">
-                    <span className="text-muted-foreground">Statut :</span>{' '}
-                    <span className="font-medium">{selectedOrg.description}</span>
+                {selectedOrg.siret && (
+                  <div>
+                    <span className="text-muted-foreground">SIRET :</span>{' '}
+                    <span className="font-medium">{selectedOrg.siret}</span>
+                  </div>
+                )}
+                {selectedOrg.numero_declaration && (
+                  <div>
+                    <span className="text-muted-foreground">N° Déclaration :</span>{' '}
+                    <span className="font-medium">{selectedOrg.numero_declaration}</span>
+                  </div>
+                )}
+                {selectedOrg.code_naf && (
+                  <div>
+                    <span className="text-muted-foreground">Code NAF :</span>{' '}
+                    <span className="font-medium">{selectedOrg.code_naf}</span>
                   </div>
                 )}
               </div>
