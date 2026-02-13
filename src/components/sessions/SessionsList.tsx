@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, MapPin, Loader2, Copy, Trophy } from "lucide-react";
+import { Calendar, Users, MapPin, Loader2, Copy, Trophy, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { SessionForm } from "./SessionForm";
 import { SessionDetail } from "./SessionDetail";
 import { SessionEditor } from "./SessionEditor";
@@ -169,6 +170,23 @@ export function SessionsList() {
     }
   };
 
+  const deleteSession = async (e: React.MouseEvent, sessionId: string) => {
+    e.stopPropagation();
+    try {
+      // Delete linked session_apprenants and session_formateurs first
+      await supabase.from('session_apprenants').delete().eq('session_id', sessionId);
+      await supabase.from('session_formateurs').delete().eq('session_id', sessionId);
+      
+      const { error } = await supabase.from('sessions').delete().eq('id', sessionId);
+      if (error) throw error;
+
+      toast({ title: "Session supprimée", description: "La session a été supprimée avec succès." });
+      refetch();
+    } catch (error: any) {
+      toast({ title: "Erreur", description: error.message || "Erreur lors de la suppression", variant: "destructive" });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -233,6 +251,35 @@ export function SessionsList() {
                           <Copy className="h-4 w-4" />
                         )}
                       </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Supprimer cette session ?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Cette action est irréversible. Tous les apprenants liés à cette session seront détachés.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Annuler</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              onClick={(e) => deleteSession(e, session.id)}
+                            >
+                              Supprimer
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                       {getStatusBadge(session.statut)}
                     </div>
                     
