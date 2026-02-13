@@ -1279,7 +1279,7 @@ export function ExamenReussitePage() {
         // VTC: Feb 16-24 (indices 0-6), TAXI: Feb 25-27 (indices 7-9), Week 3 (Mar 2-6): exams
         const dayTypeMap: Record<string, 'vtc' | 'taxi' | 'examen'> = {};
         weekdays.forEach((d) => {
-          const key = d.toISOString().slice(0, 10);
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
           const month = d.getMonth();
           const date = d.getDate();
           if (month === 2) { // March = exams
@@ -1305,31 +1305,10 @@ export function ExamenReussitePage() {
         return (
           <Card className="border-l-4 border-l-emerald-500">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-emerald-600" />
                   Planning formation pratique — Du 16 février au 6 mars 2026
                 </CardTitle>
-                <div>
-                  <input
-                    type="file"
-                    ref={planningFileInputRef}
-                    accept=".pdf"
-                    className="hidden"
-                    onChange={handlePlanningUpload}
-                  />
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-2 text-xs"
-                    disabled={uploadingPlanning || analyzingPlanning}
-                    onClick={() => planningFileInputRef.current?.click()}
-                  >
-                    <Upload className="h-3 w-3" />
-                    {uploadingPlanning ? 'Upload...' : analyzingPlanning ? 'Analyse IA...' : 'Importer planning CMA (PDF)'}
-                  </Button>
-                </div>
-              </div>
               <p className="text-sm text-muted-foreground">
                 VTC : {totalVTC} candidats • TAXI : {totalTAXI} candidats • {totalReserved} réservation(s) confirmée(s)
               </p>
@@ -1340,7 +1319,7 @@ export function ExamenReussitePage() {
                   <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Semaine {wi + 1}</h4>
                   <div className="grid grid-cols-5 gap-2">
                     {week.map(day => {
-                      const key = day.toISOString().slice(0, 10);
+                      const key = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
                       const dayData = byDate[key];
                       const vtcReserved = dayData?.vtc || [];
                       const taxiReserved = dayData?.taxi || [];

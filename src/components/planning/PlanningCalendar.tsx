@@ -1,8 +1,10 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { PlanningForm } from "./PlanningForm";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 const DAY_NAMES = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 const MONTH_NAMES = ['jan', 'fév', 'mar', 'avr', 'mai', 'jun', 'jul', 'aoû', 'sep', 'oct', 'nov', 'déc'];
@@ -38,6 +40,56 @@ export function PlanningCalendar() {
   const [currentMonth] = useState("Février 2026");
   const [weeks, setWeeks] = useState<WeekInfo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploadingPlanning, setUploadingPlanning] = useState(false);
+  const [analyzingPlanning, setAnalyzingPlanning] = useState(false);
+  const planningFileInputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
+
+  const toLocalDateKey = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  const handlePlanningUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (file.size > 4 * 1024 * 1024) {
+      toast.error("Le fichier est trop volumineux (max 4 Mo)");
+      return;
+    }
+    setUploadingPlanning(true);
+    try {
+      const fileName = `planning-${Date.now()}.pdf`;
+      const { error: uploadError } = await supabase.storage
+        .from("exam-results")
+        .upload(fileName, file, { contentType: "application/pdf" });
+      if (uploadError) throw uploadError;
+      setUploadingPlanning(false);
+      setAnalyzingPlanning(true);
+      const { data, error } = await supabase.functions.invoke("parse-exam-planning", {
+        body: { fileName },
+      });
+      if (error) throw error;
+      if (data?.success) {
+        toast.success(
+          `${data.totalUpdated} date(s) d'examen mise(s) à jour${data.totalNotFound > 0 ? ` • ${data.totalNotFound} candidat(s) non trouvé(s)` : ''}`,
+          { duration: 8000 }
+        );
+        queryClient.invalidateQueries({ queryKey: ['apprenants'] });
+        queryClient.invalidateQueries({ queryKey: ['all-apprenants'] });
+      } else {
+        toast.error(data?.error || "Erreur lors de l'analyse");
+      }
+    } catch (err: any) {
+      toast.error("Erreur: " + (err.message || "Échec de l'analyse"));
+    } finally {
+      setUploadingPlanning(false);
+      setAnalyzingPlanning(false);
+      if (planningFileInputRef.current) planningFileInputRef.current.value = '';
+    }
+  };
 
   useEffect(() => {
     async function fetchData() {
@@ -73,7 +125,7 @@ export function PlanningCalendar() {
       let weekNum = 1;
 
       weekdays.forEach((d, i) => {
-        const key = d.toISOString().slice(0, 10);
+        const key = toLocalDateKey(d);
         currentWeek.push({
           date: d,
           dateKey: key,
@@ -114,7 +166,26 @@ export function PlanningCalendar() {
           </div>
           <Button variant="outline" size="sm">Aujourd'hui</Button>
         </div>
-        <PlanningForm />
+        <div className="flex items-center gap-2">
+          <input
+            type="file"
+            ref={planningFileInputRef}
+            accept=".pdf"
+            className="hidden"
+            onChange={handlePlanningUpload}
+          />
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-2 text-xs"
+            disabled={uploadingPlanning || analyzingPlanning}
+            onClick={() => planningFileInputRef.current?.click()}
+          >
+            <Upload className="h-3 w-3" />
+            {uploadingPlanning ? 'Upload...' : analyzingPlanning ? 'Analyse IA...' : 'Importer planning CMA (PDF)'}
+          </Button>
+          <PlanningForm />
+        </div>
       </div>
 
       {weeks.map((week) => (
