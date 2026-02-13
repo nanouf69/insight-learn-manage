@@ -435,6 +435,8 @@ export function ExamenReussitePage() {
 
               <p><strong>Total general : ${reussisLettre.length} candidat(s)</strong> — ${taxiReussis.length} TAXI, ${vtcReussis.length} VTC</p>
 
+              <p><strong>Important :</strong> Nous disposons d'un seul vehicule disponible pour les epreuves pratiques.</p>
+
               <p>Je reste a votre disposition pour toute information complementaire.</p>
               <p style="margin-top:30px;">Cordialement,<br/><br/><strong>FTRANSPORT</strong></p>
             </body>
