@@ -241,8 +241,9 @@ export function ExamenReussitePage() {
             {nonReussis.length > 0 && (
               <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
                 {nonReussis.map(a => (
-                  <div key={a.id} className="text-xs text-muted-foreground">
-                    {a.nom} {a.prenom}
+                  <div key={a.id} className="text-xs text-muted-foreground flex justify-between">
+                    <span>{a.nom} {a.prenom}</span>
+                    <Badge variant="outline" className="text-[10px] px-1">{a.date_examen_theorique}</Badge>
                   </div>
                 ))}
               </div>
