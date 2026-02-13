@@ -4,13 +4,15 @@ import { useState } from "react";
 import { PlanningForm } from "./PlanningForm";
 
 const events = [
-  { id: 1, title: "VTC - Yacob", date: 3, time: "08:00", duration: 2, color: "bg-primary" },
-  { id: 2, title: "VTC - Candidat 2", date: 3, time: "08:00", duration: 2, color: "bg-primary" },
-  { id: 3, title: "VTC - Candidat 3", date: 3, time: "08:00", duration: 2, color: "bg-primary" },
-  { id: 4, title: "VTC - Candidat 4", date: 3, time: "08:00", duration: 2, color: "bg-primary" },
-  { id: 5, title: "VTC - Candidat 5", date: 3, time: "08:00", duration: 2, color: "bg-primary" },
-  { id: 6, title: "Formation TAXI", date: 5, time: "09:00", duration: 4, color: "bg-accent" },
-  { id: 7, title: "Formation TAXI", date: 10, time: "09:00", duration: 4, color: "bg-accent" },
+  { id: 1, title: "VTC - Yacob", date: 17, time: "08:00", duration: 2, color: "bg-primary" },
+  { id: 2, title: "VTC - Candidat 2", date: 17, time: "08:00", duration: 2, color: "bg-primary" },
+  { id: 3, title: "VTC - Candidat 3", date: 17, time: "08:00", duration: 2, color: "bg-primary" },
+  { id: 4, title: "VTC - Candidat 4", date: 17, time: "08:00", duration: 2, color: "bg-primary" },
+  { id: 5, title: "VTC - Candidat 5", date: 17, time: "08:00", duration: 2, color: "bg-primary" },
+  { id: 6, title: "TAXI - Candidat 1", date: 25, time: "09:00", duration: 4, color: "bg-accent" },
+  { id: 7, title: "TAXI - Candidat 2", date: 26, time: "09:00", duration: 4, color: "bg-accent" },
+  { id: 8, title: "TAXI - Candidat 3", date: 27, time: "09:00", duration: 4, color: "bg-accent" },
+  { id: 9, title: "TAXI - Candidat 4", date: 28, time: "09:00", duration: 4, color: "bg-accent" },
 ];
 
 const days = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
