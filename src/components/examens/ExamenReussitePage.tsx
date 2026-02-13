@@ -15,6 +15,7 @@ export function ExamenReussitePage() {
   const [repassageSearch, setRepassageSearch] = useState("");
   const [repassageList, setRepassageList] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -102,6 +103,37 @@ export function ExamenReussitePage() {
       return;
     }
     window.open(data.signedUrl, '_blank');
+  };
+
+  const handleAnalyzePdf = async (fileName: string) => {
+    setAnalyzing(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parse-exam-results`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ fileName }),
+      });
+      const result = await res.json();
+      if (!res.ok || result.error) {
+        toast.error("Erreur : " + (result.error || "Échec de l'analyse"));
+      } else {
+        const oui = result.details?.filter((d: any) => d.resultat === 'oui').length || 0;
+        const non = result.details?.filter((d: any) => d.resultat === 'non').length || 0;
+        const absent = result.details?.filter((d: any) => d.resultat === 'absent').length || 0;
+        toast.success(`Résultats mis à jour ! ✅ ${oui} admis, ❌ ${non} non admis, 🔶 ${absent} absents`);
+        queryClient.invalidateQueries({ queryKey: ['apprenants-examen-janvier'] });
+      }
+    } catch (err: any) {
+      toast.error("Erreur : " + err.message);
+    } finally {
+      setAnalyzing(false);
+    }
   };
 
   const updateResultat = useMutation({
@@ -477,6 +509,16 @@ export function ExamenReussitePage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="gap-1"
+                      disabled={analyzing}
+                      onClick={() => handleAnalyzePdf(file.name)}
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                      {analyzing ? "Analyse..." : "Analyser les résultats"}
+                    </Button>
                     <Button variant="outline" size="icon" onClick={() => handleDownloadFile(file.name)} title="Télécharger">
                       <Download className="h-4 w-4" />
                     </Button>
