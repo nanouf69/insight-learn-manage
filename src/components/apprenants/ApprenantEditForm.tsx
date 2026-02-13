@@ -595,6 +595,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                     <SelectItem value="formation-et-location">Formation et location de véhicule</SelectItem>
                     <SelectItem value="repassage-theorique">Repassage examen théorique</SelectItem>
                     <SelectItem value="repassage-pratique">Repassage examen pratique</SelectItem>
+                    <SelectItem value="passage-pratique">Passage examen pratique</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
@@ -618,6 +619,10 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                   <SelectItem value="ta-e">TA E (Passerelle TAXI E-learning)</SelectItem>
                   <SelectItem value="ta-e-presentiel">TA E Présentiel</SelectItem>
                   <SelectItem value="va-e">VA E (Passerelle VTC E-learning)</SelectItem>
+                  <SelectItem value="pa-vtc">PA VTC</SelectItem>
+                  <SelectItem value="pa-taxi">PA TAXI</SelectItem>
+                  <SelectItem value="rp-vtc">RP VTC</SelectItem>
+                  <SelectItem value="rp-taxi">RP TAXI</SelectItem>
                 </SelectContent>
               </Select>
               {formData.type_apprenant && (
