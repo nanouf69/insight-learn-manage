@@ -350,7 +350,7 @@ Deno.serve(async (req) => {
       }
 
       // Append company signature if not already present
-      const signatureHtml = `<br><br>---<br><strong>FTRANSPORT</strong><br>Centre de formation VTC &amp; TAXI<br>86 Route de Genas, 69003 Lyon<br>📞 04.28.29.60.91<br>📧 contact@ftransport.fr<br>🕐 Du lundi au vendredi, 9h - 17h<br>🌐 <a href="https://insight-learn-manage.lovable.app">insight-learn-manage.lovable.app</a>`;
+      const signatureHtml = `<br><br>---<br><strong>FTRANSPORT</strong><br>Centre de formation VTC &amp; TAXI<br>86 Route de Genas, 69003 Lyon<br>📞 04.28.29.60.91<br>📧 contact@ftransport.fr<br>🕐 Du lundi au vendredi, 9h - 18h<br>🌐 <a href="https://insight-learn-manage.lovable.app">insight-learn-manage.lovable.app</a>`;
       const bodyWithSignature = body.includes("FTRANSPORT") ? body : body + signatureHtml;
 
       const success = await sendEmail(accessToken, userEmail, to, subject, bodyWithSignature, requestReadReceipt === true);
