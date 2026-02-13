@@ -715,29 +715,22 @@ export function ExamenReussitePage() {
           !rpTypes.includes((a.type_apprenant || '').toLowerCase()) &&
           matchPratiquePlanning((a as any).date_examen_pratique)
         ) || [];
-        // RP candidates (rp-vtc, rp-taxi) matched by date_examen_pratique
-        const rpPlanning = (allApprenants || []).filter(a => 
-          rpTypes.includes((a.type_apprenant || '').toLowerCase()) && 
-          matchPratiquePlanning(a.date_examen_pratique) &&
-          !reussisPlanning.some(r => r.id === a.id)
-        );
-        // PA candidates (pa-vtc, pa-taxi) matched by date_examen_pratique
         const paPlanning = (allApprenants || []).filter(a => 
           paTypes.includes((a.type_apprenant || '').toLowerCase()) && 
           matchPratiquePlanning(a.date_examen_pratique) &&
           !reussisPlanning.some(r => r.id === a.id)
         );
-        const tousPlanning = [...reussisPlanning, ...rpPlanning, ...paPlanning];
+        const tousPlanning = [...reussisPlanning, ...paPlanning];
 
         const isVTCType = (type: string | null) => {
           if (!type) return false;
           const t = type.toLowerCase();
-          return ['vtc', 'vtc-e', 'vtc-e-presentiel', 'va-e', 'pa-vtc', 'rp-vtc'].includes(t);
+          return ['vtc', 'vtc-e', 'vtc-e-presentiel', 'va-e', 'pa-vtc'].includes(t);
         };
         const isTAXIType = (type: string | null) => {
           if (!type) return false;
           const t = type.toLowerCase();
-          return ['taxi', 'taxi-e', 'taxi-e-presentiel', 'ta', 'ta-e', 'pa-taxi', 'rp-taxi'].includes(t);
+          return ['taxi', 'taxi-e', 'taxi-e-presentiel', 'ta', 'ta-e', 'pa-taxi'].includes(t);
         };
 
         const vtcPlanning = tousPlanning.filter(a => isVTCType(a.type_apprenant));
