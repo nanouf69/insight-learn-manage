@@ -903,17 +903,24 @@ export function ExamenReussitePage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {vtcList.map((a, i) => (
+                        {vtcList.map((a, i) => {
+                          const hasReservation = reservationsPratique?.some(r => r.apprenant_id === a.id);
+                          return (
                           <TableRow key={a.id}>
                             <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
-                            <TableCell className="font-medium">{a.nom} {a.prenom}</TableCell>
+                            <TableCell className="font-medium flex items-center gap-2">
+                              {!hasReservation && <X className="h-4 w-4 text-red-500 shrink-0" />}
+                              {hasReservation && <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />}
+                              {a.nom} {a.prenom}
+                            </TableCell>
                             <TableCell>
                               <Badge className="bg-blue-100 text-blue-800 text-xs">
                                 {typeLabel[a.type_apprenant || ''] || a.type_apprenant || '-'}
                               </Badge>
                             </TableCell>
                           </TableRow>
-                        ))}
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </div>
@@ -1026,17 +1033,24 @@ export function ExamenReussitePage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {taxiList.map((a, i) => (
+                        {taxiList.map((a, i) => {
+                          const hasReservation = reservationsPratique?.some(r => r.apprenant_id === a.id);
+                          return (
                           <TableRow key={a.id}>
                             <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
-                            <TableCell className="font-medium">{a.nom} {a.prenom}</TableCell>
+                            <TableCell className="font-medium flex items-center gap-2">
+                              {!hasReservation && <X className="h-4 w-4 text-red-500 shrink-0" />}
+                              {hasReservation && <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />}
+                              {a.nom} {a.prenom}
+                            </TableCell>
                             <TableCell>
                               <Badge className="bg-amber-100 text-amber-800 text-xs">
                                 {typeLabel[a.type_apprenant || ''] || a.type_apprenant || '-'}
                               </Badge>
                             </TableCell>
                           </TableRow>
-                        ))}
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </div>
