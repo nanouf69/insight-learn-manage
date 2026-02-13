@@ -29,7 +29,10 @@ export function ExamenReussitePage() {
   const [sendingTAXIRelance, setSendingTAXIRelance] = useState(false);
   const [sentVTCRelance, setSentVTCRelance] = useState(false);
   const [sentTAXIRelance, setSentTAXIRelance] = useState(false);
+  const [uploadingPlanning, setUploadingPlanning] = useState(false);
+  const [analyzingPlanning, setAnalyzingPlanning] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const planningFileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
   // Mapping: each theoretical exam date → the next practical exam date (always after)
@@ -57,6 +60,48 @@ export function ExamenReussitePage() {
     const match = datesExamenTheorique.find(e => e.date === date);
     if (match !== undefined) {
       setSelectedDatePratique(datesExamenPratique[match.pratiqueIndex]);
+    }
+  };
+
+  const handlePlanningUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (file.size > 4 * 1024 * 1024) {
+      toast.error("Le fichier est trop volumineux (max 4 Mo)");
+      return;
+    }
+    setUploadingPlanning(true);
+    try {
+      const fileName = `planning-${Date.now()}.pdf`;
+      const { error: uploadError } = await supabase.storage
+        .from("exam-results")
+        .upload(fileName, file, { contentType: "application/pdf" });
+      if (uploadError) throw uploadError;
+      setUploadingPlanning(false);
+      setAnalyzingPlanning(true);
+      const { data, error } = await supabase.functions.invoke("parse-exam-planning", {
+        body: { fileName },
+      });
+      if (error) throw error;
+      if (data?.success) {
+        toast.success(
+          `${data.totalUpdated} date(s) d'examen mise(s) à jour${data.totalNotFound > 0 ? ` • ${data.totalNotFound} candidat(s) non trouvé(s)` : ''}`,
+          { duration: 8000 }
+        );
+        if (data.notFound?.length > 0) {
+          console.log("Candidats non trouvés:", data.notFound);
+        }
+        queryClient.invalidateQueries({ queryKey: ['apprenants'] });
+        queryClient.invalidateQueries({ queryKey: ['all-apprenants'] });
+      } else {
+        toast.error(data?.error || "Erreur lors de l'analyse");
+      }
+    } catch (err: any) {
+      toast.error("Erreur: " + (err.message || "Échec de l'analyse"));
+    } finally {
+      setUploadingPlanning(false);
+      setAnalyzingPlanning(false);
+      if (planningFileInputRef.current) planningFileInputRef.current.value = '';
     }
   };
 
@@ -506,6 +551,8 @@ export function ExamenReussitePage() {
           !reussisTheorique.some(r => r.id === a.id)
         );
         const reussisLettre = [...reussisTheorique, ...paRpApprenants];
+
+
 
 
         const getCategorieCMA = (type: string | null) => {
@@ -1258,10 +1305,31 @@ export function ExamenReussitePage() {
         return (
           <Card className="border-l-4 border-l-emerald-500">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-emerald-600" />
-                Planning formation pratique — Du 16 février au 6 mars 2026
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-emerald-600" />
+                  Planning formation pratique — Du 16 février au 6 mars 2026
+                </CardTitle>
+                <div>
+                  <input
+                    type="file"
+                    ref={planningFileInputRef}
+                    accept=".pdf"
+                    className="hidden"
+                    onChange={handlePlanningUpload}
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-2 text-xs"
+                    disabled={uploadingPlanning || analyzingPlanning}
+                    onClick={() => planningFileInputRef.current?.click()}
+                  >
+                    <Upload className="h-3 w-3" />
+                    {uploadingPlanning ? 'Upload...' : analyzingPlanning ? 'Analyse IA...' : 'Importer planning CMA (PDF)'}
+                  </Button>
+                </div>
+              </div>
               <p className="text-sm text-muted-foreground">
                 VTC : {totalVTC} candidats • TAXI : {totalTAXI} candidats • {totalReserved} réservation(s) confirmée(s)
               </p>
