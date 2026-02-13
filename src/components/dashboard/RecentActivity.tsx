@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { GraduationCap, UserPlus, FileCheck, CreditCard, CheckCircle, AlertTriangle } from "lucide-react";
+import { GraduationCap, UserPlus, FileCheck, CreditCard, CheckCircle, AlertTriangle, CalendarCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -42,6 +42,24 @@ export function RecentActivity({ onNavigateToApprenant }: RecentActivityProps) {
           .eq('documents_complets', true)
           .order('updated_at', { ascending: false })
           .limit(5);
+
+        // Fetch recent practical training reservations
+        const { data: reservations } = await supabase
+          .from('reservations_pratique')
+          .select('id, apprenant_id, date_choisie, type_formation, created_at')
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        // Fetch apprenant names for reservations
+        const resApprenantIds = [...new Set(reservations?.map(r => r.apprenant_id) || [])];
+        let resApprenantMap: Record<string, { nom: string; prenom: string }> = {};
+        if (resApprenantIds.length > 0) {
+          const { data: resApprenants } = await supabase
+            .from('apprenants')
+            .select('id, nom, prenom')
+            .in('id', resApprenantIds);
+          resApprenants?.forEach(a => { resApprenantMap[a.id] = a; });
+        }
 
         // Fetch recently created apprenants
         const { data: newApprenants } = await supabase
@@ -98,8 +116,28 @@ export function RecentActivity({ onNavigateToApprenant }: RecentActivityProps) {
           });
         });
 
-        // Alerts stay on top, rest as-is
-        setActivities(activityList.slice(0, 8));
+        // Add practical training reservation activities
+        reservations?.forEach((r) => {
+          const app = resApprenantMap[r.apprenant_id];
+          if (app) {
+            activityList.push({
+              apprenantId: r.apprenant_id,
+              id: `resa-${r.id}`,
+              type: "reservation",
+              message: `${app.prenom} ${app.nom} a choisi sa date pratique`,
+              target: `${r.type_formation.toUpperCase()} — ${new Date(r.date_choisie).toLocaleDateString('fr-FR')}`,
+              time: formatDistanceToNow(new Date(r.created_at), { addSuffix: true, locale: fr }),
+              icon: CalendarCheck,
+              iconBg: "bg-emerald-500/10",
+              iconColor: "text-emerald-600",
+            });
+          }
+        });
+
+        // Alerts stay on top, sort rest by most recent
+        const alerts = activityList.filter(a => a.type === 'alert');
+        const rest = activityList.filter(a => a.type !== 'alert');
+        setActivities([...alerts, ...rest].slice(0, 10));
       } catch (err) {
         console.error('Error fetching activities:', err);
       } finally {
