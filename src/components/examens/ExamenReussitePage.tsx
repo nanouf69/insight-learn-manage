@@ -952,14 +952,14 @@ export function ExamenReussitePage() {
             <CardContent>
               <div className="grid grid-cols-2 gap-6">
                 {/* VTC */}
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-sm font-bold text-blue-700">VTC (Présentiel, E-learning, VA, PA VTC)</h4>
+                <div className="space-y-3">
+                  <h4 className="text-sm font-bold text-blue-700">VTC (Présentiel, E-learning, VA, PA VTC)</h4>
+                  <div className="flex flex-wrap gap-2">
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button size="sm" variant="outline" disabled={vtcList.length === 0 || sendingVTCPratique || sentVTCPratique} className={`gap-1 text-xs ${sentVTCPratique ? 'text-green-700 border-green-300' : ''}`}>
+                        <Button size="sm" variant="outline" disabled={vtcList.length === 0 || sendingVTCPratique || sentVTCPratique} className={`gap-1.5 text-xs ${sentVTCPratique ? 'text-green-700 border-green-300' : ''}`}>
                           {sentVTCPratique ? <CheckCircle2 className="h-3 w-3" /> : <Mail className="h-3 w-3" />}
-                          {sendingVTCPratique ? 'Envoi...' : sentVTCPratique ? 'Déjà envoyé ✓' : `Envoyer email dates (${vtcList.filter(a => a.email).length})`}
+                          {sendingVTCPratique ? 'Envoi...' : sentVTCPratique ? 'Envoyé ✓' : `Email dates (${vtcList.filter(a => a.email).length})`}
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
@@ -997,15 +997,15 @@ export function ExamenReussitePage() {
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
-                    {/* Bouton Relancer VTC - candidats sans réservation */}
+                    {/* Relancer VTC */}
                     {(() => {
                       const vtcSansResa = vtcList.filter(a => a.email && !reservationsPratique?.some(r => r.apprenant_id === a.id));
                       return vtcSansResa.length > 0 ? (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button size="sm" variant="outline" disabled={sendingVTCRelance || sentVTCRelance} className={`gap-1 text-xs ${sentVTCRelance ? 'text-green-700 border-green-300' : 'text-orange-700 border-orange-300'}`}>
+                            <Button size="sm" variant="outline" disabled={sendingVTCRelance || sentVTCRelance} className={`gap-1.5 text-xs ${sentVTCRelance ? 'text-green-700 border-green-300' : 'text-orange-700 border-orange-300'}`}>
                               {sentVTCRelance ? <CheckCircle2 className="h-3 w-3" /> : <RotateCcw className="h-3 w-3" />}
-                              {sendingVTCRelance ? 'Envoi...' : sentVTCRelance ? 'Relance envoyée ✓' : `Relancer (${vtcSansResa.length})`}
+                              {sendingVTCRelance ? 'Envoi...' : sentVTCRelance ? 'Relancé ✓' : `Relancer (${vtcSansResa.length})`}
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
@@ -1043,15 +1043,15 @@ export function ExamenReussitePage() {
                         </AlertDialog>
                       ) : null;
                     })()}
-                    {/* SMS Relancer VTC */}
+                    {/* SMS VTC */}
                     {(() => {
                       const vtcSansResa = vtcList.filter(a => a.telephone && !reservationsPratique?.some(r => r.apprenant_id === a.id));
                       return vtcSansResa.length > 0 ? (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button size="sm" variant="outline" disabled={sendingVTCSMS || sentVTCSMS} className={`gap-1 text-xs ${sentVTCSMS ? 'text-green-700 border-green-300' : 'text-purple-700 border-purple-300'}`}>
+                            <Button size="sm" variant="outline" disabled={sendingVTCSMS || sentVTCSMS} className={`gap-1.5 text-xs ${sentVTCSMS ? 'text-green-700 border-green-300' : 'text-purple-700 border-purple-300'}`}>
                               {sentVTCSMS ? <CheckCircle2 className="h-3 w-3" /> : <MessageSquare className="h-3 w-3" />}
-                              {sendingVTCSMS ? 'Envoi SMS...' : sentVTCSMS ? 'SMS envoyés ✓' : `SMS Relance (${vtcSansResa.length})`}
+                              {sendingVTCSMS ? 'Envoi...' : sentVTCSMS ? 'SMS ✓' : `SMS (${vtcSansResa.length})`}
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
@@ -1059,32 +1059,32 @@ export function ExamenReussitePage() {
                               <AlertDialogTitle>Relancer par SMS les VTC sans réservation</AlertDialogTitle>
                               <AlertDialogDescription asChild>
                                 <div className="space-y-2 text-sm">
-                                  <p>Envoyer un SMS de rappel à <strong>{vtcSansResa.length}</strong> candidat(s) VTC :</p>
+                                  <p>Envoyer un SMS à <strong>{vtcSansResa.length}</strong> candidat(s) VTC :</p>
                                   <ul className="list-disc pl-4">{vtcSansResa.map(a => <li key={a.id}>{a.nom} {a.prenom} — {a.telephone}</li>)}</ul>
-                                    <div className="bg-muted p-3 rounded text-xs mt-2">
-                                      <p className="font-medium mb-1">Message (personnalisé par candidat) :</p>
-                                      <p>FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique VTC. Attention, il n'y aura pas d'autres dates d'entrainement. Reservez ici: [lien personnalisé]. FTRANSPORT 04.28.29.60.91</p>
-                                    </div>
+                                  <div className="bg-muted p-3 rounded text-xs mt-2">
+                                    <p className="font-medium mb-1">Message (personnalisé par candidat) :</p>
+                                    <p>FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique VTC. Attention, il n'y aura pas d'autres dates d'entrainement. Reservez ici: [lien personnalisé]. FTRANSPORT 04.28.29.60.91</p>
                                   </div>
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                <AlertDialogAction onClick={async () => {
-                                  setSendingVTCSMS(true);
-                                  let sent = 0;
-                                  try {
-                                    for (const a of vtcSansResa) {
-                                      const bookingUrl = `https://insight-learn-manage.lovable.app/reservation-pratique?id=${a.id}&type=vtc`;
-                                      const message = `FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique VTC. Attention, il n'y aura pas d'autres dates d'entrainement. Reservez ici: ${bookingUrl} FTRANSPORT 04.28.29.60.91`;
-                                      const { data, error } = await supabase.functions.invoke('send-sms-ovh', {
-                                        body: { receivers: [a.telephone!], message },
-                                      });
-                                      if (!error && data?.success) sent++;
-                                    }
-                                    setSentVTCSMS(true);
-                                    toast.success(`${sent}/${vtcSansResa.length} SMS VTC envoyé(s)`);
-                                  } catch (err: any) {
+                                </div>
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Annuler</AlertDialogCancel>
+                              <AlertDialogAction onClick={async () => {
+                                setSendingVTCSMS(true);
+                                let sent = 0;
+                                try {
+                                  for (const a of vtcSansResa) {
+                                    const bookingUrl = `https://insight-learn-manage.lovable.app/reservation-pratique?id=${a.id}&type=vtc`;
+                                    const message = `FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique VTC. Attention, il n'y aura pas d'autres dates d'entrainement. Reservez ici: ${bookingUrl} FTRANSPORT 04.28.29.60.91`;
+                                    const { data, error } = await supabase.functions.invoke('send-sms-ovh', {
+                                      body: { receivers: [a.telephone!], message },
+                                    });
+                                    if (!error && data?.success) sent++;
+                                  }
+                                  setSentVTCSMS(true);
+                                  toast.success(`${sent}/${vtcSansResa.length} SMS VTC envoyé(s)`);
+                                } catch (err: any) {
                                   toast.error('Erreur SMS: ' + (err.message || 'Échec'));
                                 } finally {
                                   setSendingVTCSMS(false);
@@ -1181,14 +1181,14 @@ export function ExamenReussitePage() {
                 </div>
 
                 {/* TAXI */}
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-sm font-bold text-amber-700">TAXI (Présentiel, E-learning, TA, PA TAXI)</h4>
+                <div className="space-y-3">
+                  <h4 className="text-sm font-bold text-amber-700">TAXI (Présentiel, E-learning, TA, PA TAXI)</h4>
+                  <div className="flex flex-wrap gap-2">
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button size="sm" variant="outline" disabled={taxiList.length === 0 || sendingTAXIPratique || sentTAXIPratique} className={`gap-1 text-xs ${sentTAXIPratique ? 'text-green-700 border-green-300' : ''}`}>
+                        <Button size="sm" variant="outline" disabled={taxiList.length === 0 || sendingTAXIPratique || sentTAXIPratique} className={`gap-1.5 text-xs ${sentTAXIPratique ? 'text-green-700 border-green-300' : ''}`}>
                           {sentTAXIPratique ? <CheckCircle2 className="h-3 w-3" /> : <Mail className="h-3 w-3" />}
-                          {sendingTAXIPratique ? 'Envoi...' : sentTAXIPratique ? 'Déjà envoyé ✓' : `Envoyer email dates (${taxiList.filter(a => a.email).length})`}
+                          {sendingTAXIPratique ? 'Envoi...' : sentTAXIPratique ? 'Envoyé ✓' : `Email dates (${taxiList.filter(a => a.email).length})`}
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
@@ -1226,15 +1226,15 @@ export function ExamenReussitePage() {
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
-                    {/* Bouton Relancer TAXI - candidats sans réservation */}
+                    {/* Relancer TAXI */}
                     {(() => {
                       const taxiSansResa = taxiList.filter(a => a.email && !reservationsPratique?.some(r => r.apprenant_id === a.id));
                       return taxiSansResa.length > 0 ? (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button size="sm" variant="outline" disabled={sendingTAXIRelance || sentTAXIRelance} className={`gap-1 text-xs ${sentTAXIRelance ? 'text-green-700 border-green-300' : 'text-orange-700 border-orange-300'}`}>
+                            <Button size="sm" variant="outline" disabled={sendingTAXIRelance || sentTAXIRelance} className={`gap-1.5 text-xs ${sentTAXIRelance ? 'text-green-700 border-green-300' : 'text-orange-700 border-orange-300'}`}>
                               {sentTAXIRelance ? <CheckCircle2 className="h-3 w-3" /> : <RotateCcw className="h-3 w-3" />}
-                              {sendingTAXIRelance ? 'Envoi...' : sentTAXIRelance ? 'Relance envoyée ✓' : `Relancer (${taxiSansResa.length})`}
+                              {sendingTAXIRelance ? 'Envoi...' : sentTAXIRelance ? 'Relancé ✓' : `Relancer (${taxiSansResa.length})`}
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
@@ -1272,15 +1272,15 @@ export function ExamenReussitePage() {
                         </AlertDialog>
                       ) : null;
                     })()}
-                    {/* SMS Relancer TAXI */}
+                    {/* SMS TAXI */}
                     {(() => {
                       const taxiSansResa = taxiList.filter(a => a.telephone && !reservationsPratique?.some(r => r.apprenant_id === a.id));
                       return taxiSansResa.length > 0 ? (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button size="sm" variant="outline" disabled={sendingTAXISMS || sentTAXISMS} className={`gap-1 text-xs ${sentTAXISMS ? 'text-green-700 border-green-300' : 'text-purple-700 border-purple-300'}`}>
+                            <Button size="sm" variant="outline" disabled={sendingTAXISMS || sentTAXISMS} className={`gap-1.5 text-xs ${sentTAXISMS ? 'text-green-700 border-green-300' : 'text-purple-700 border-purple-300'}`}>
                               {sentTAXISMS ? <CheckCircle2 className="h-3 w-3" /> : <MessageSquare className="h-3 w-3" />}
-                              {sendingTAXISMS ? 'Envoi SMS...' : sentTAXISMS ? 'SMS envoyés ✓' : `SMS Relance (${taxiSansResa.length})`}
+                              {sendingTAXISMS ? 'Envoi...' : sentTAXISMS ? 'SMS ✓' : `SMS (${taxiSansResa.length})`}
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
@@ -1288,32 +1288,32 @@ export function ExamenReussitePage() {
                               <AlertDialogTitle>Relancer par SMS les TAXI sans réservation</AlertDialogTitle>
                               <AlertDialogDescription asChild>
                                 <div className="space-y-2 text-sm">
-                                  <p>Envoyer un SMS de rappel à <strong>{taxiSansResa.length}</strong> candidat(s) TAXI :</p>
+                                  <p>Envoyer un SMS à <strong>{taxiSansResa.length}</strong> candidat(s) TAXI :</p>
                                   <ul className="list-disc pl-4">{taxiSansResa.map(a => <li key={a.id}>{a.nom} {a.prenom} — {a.telephone}</li>)}</ul>
-                                    <div className="bg-muted p-3 rounded text-xs mt-2">
-                                      <p className="font-medium mb-1">Message (personnalisé par candidat) :</p>
-                                      <p>FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique TAXI. Attention, il n'y aura pas d'autres dates d'entrainement. Reservez ici: [lien personnalisé]. FTRANSPORT 04.28.29.60.91</p>
-                                    </div>
+                                  <div className="bg-muted p-3 rounded text-xs mt-2">
+                                    <p className="font-medium mb-1">Message (personnalisé par candidat) :</p>
+                                    <p>FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique TAXI. Attention, il n'y aura pas d'autres dates d'entrainement. Reservez ici: [lien personnalisé]. FTRANSPORT 04.28.29.60.91</p>
                                   </div>
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                <AlertDialogAction onClick={async () => {
-                                  setSendingTAXISMS(true);
-                                  let sent = 0;
-                                  try {
-                                    for (const a of taxiSansResa) {
-                                      const bookingUrl = `https://insight-learn-manage.lovable.app/reservation-pratique?id=${a.id}&type=taxi`;
-                                      const message = `FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique TAXI. Attention, il n'y aura pas d'autres dates d'entrainement. Reservez ici: ${bookingUrl} FTRANSPORT 04.28.29.60.91`;
-                                      const { data, error } = await supabase.functions.invoke('send-sms-ovh', {
-                                        body: { receivers: [a.telephone!], message },
-                                      });
-                                      if (!error && data?.success) sent++;
-                                    }
-                                    setSentTAXISMS(true);
-                                    toast.success(`${sent}/${taxiSansResa.length} SMS TAXI envoyé(s)`);
-                                  } catch (err: any) {
+                                </div>
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Annuler</AlertDialogCancel>
+                              <AlertDialogAction onClick={async () => {
+                                setSendingTAXISMS(true);
+                                let sent = 0;
+                                try {
+                                  for (const a of taxiSansResa) {
+                                    const bookingUrl = `https://insight-learn-manage.lovable.app/reservation-pratique?id=${a.id}&type=taxi`;
+                                    const message = `FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique TAXI. Attention, il n'y aura pas d'autres dates d'entrainement. Reservez ici: ${bookingUrl} FTRANSPORT 04.28.29.60.91`;
+                                    const { data, error } = await supabase.functions.invoke('send-sms-ovh', {
+                                      body: { receivers: [a.telephone!], message },
+                                    });
+                                    if (!error && data?.success) sent++;
+                                  }
+                                  setSentTAXISMS(true);
+                                  toast.success(`${sent}/${taxiSansResa.length} SMS TAXI envoyé(s)`);
+                                } catch (err: any) {
                                   toast.error('Erreur SMS: ' + (err.message || 'Échec'));
                                 } finally {
                                   setSendingTAXISMS(false);
