@@ -966,7 +966,8 @@ export function ApprenantForm() {
             </div>
           </div>
 
-          {/* Prix de la formation - Toujours visible */}
+          {/* Prix de la formation - Masqué pour repassage/passage examen */}
+          {!["repassage-theorique", "repassage-pratique", "passage-pratique"].includes(selectedFormation) && !["pa-vtc", "pa-taxi"].includes(typeApprenantFormation) && (
           <div className="space-y-4">
             <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Informations</h3>
             <div className="space-y-2">
@@ -982,6 +983,7 @@ export function ApprenantForm() {
               />
             </div>
           </div>
+          )}
 
           {/* Informations financières - Uniquement si financement personnel */}
           {organismeFinanceur === "personnel" && (
