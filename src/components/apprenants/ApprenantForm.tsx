@@ -317,6 +317,14 @@ export function ApprenantForm() {
     submitInProgressRef.current = true;
     setIsLoading(true);
 
+    // Validation : date d'examen pratique obligatoire pour RP pratique et PA pratique
+    if ((selectedFormation === "repassage-pratique" || selectedFormation === "passage-pratique") && (!dateExamenPratique || dateExamenPratique === "pas_encore_choisi")) {
+      toast({ title: "Date d'examen obligatoire", description: "Veuillez sélectionner une date d'examen pratique.", variant: "destructive" });
+      setIsLoading(false);
+      submitInProgressRef.current = false;
+      return;
+    }
+
     // Capturer les valeurs actuelles pour éviter la perte de données
     const formData = {
       civilite,
@@ -669,8 +677,8 @@ export function ApprenantForm() {
               </Select>
             </div>
 
-            {/* Date d'examen théorique - masqué pour repassage pratique et formation continue */}
-            {selectedFormation !== "repassage-pratique" && selectedFormation !== "continue-vtc" && selectedFormation !== "continue-taxi" && (
+            {/* Date d'examen théorique - masqué pour repassage pratique, passage pratique et formation continue */}
+            {selectedFormation !== "repassage-pratique" && selectedFormation !== "passage-pratique" && selectedFormation !== "continue-vtc" && selectedFormation !== "continue-taxi" && (
             <div className="space-y-2">
               <Label htmlFor="dateExamenTheorique">Date d'examen théorique</Label>
               <Select value={dateExamenTheorique} onValueChange={setDateExamenTheorique}>
@@ -692,10 +700,10 @@ export function ApprenantForm() {
             </div>
             )}
 
-            {/* Date d'examen pratique - pour repassage pratique */}
-            {selectedFormation === "repassage-pratique" && (
+            {/* Date d'examen pratique - pour repassage pratique et passage pratique */}
+            {(selectedFormation === "repassage-pratique" || selectedFormation === "passage-pratique") && (
               <div className="space-y-2">
-                <Label htmlFor="dateExamenPratique">Date d'examen pratique (Rhône 69)</Label>
+                <Label htmlFor="dateExamenPratique">Date d'examen pratique (Rhône 69) *</Label>
                 <Select value={dateExamenPratique} onValueChange={setDateExamenPratique}>
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionner une date d'examen pratique" />
