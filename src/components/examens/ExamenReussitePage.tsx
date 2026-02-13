@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ClipboardCheck, CheckCircle2, XCircle, UserX, Search, RotateCcw, Plus, X, Upload, FileText, Trash2, Download, Users } from "lucide-react";
+import { ClipboardCheck, CheckCircle2, XCircle, UserX, Search, RotateCcw, Plus, X, Upload, FileText, Trash2, Download, Users, Mail } from "lucide-react";
 import { toast } from "sonner";
 
 export function ExamenReussitePage() {
@@ -344,6 +344,139 @@ export function ExamenReussitePage() {
             {renderGroup('VTC (VTC, VTC E, VA E)', vtcs, 'border-l-blue-500', 'bg-blue-100 text-blue-800')}
             {renderGroup('Autre', autres, 'border-l-gray-400', 'bg-gray-100 text-gray-800')}
           </div>
+        );
+      })()}
+
+      {/* Lettre CMA - Réussite examen */}
+      {(() => {
+        const reussisLettre = apprenants?.filter(a => (a as any).resultat_examen === 'oui') || [];
+        
+        const getCategorieCMA = (type: string | null) => {
+          if (!type) return null;
+          const t = type.toLowerCase();
+          if (['taxi', 'taxi-e', 'taxi-e-presentiel', 'ta', 'ta-e', 'pa-taxi', 'rp-taxi'].includes(t)) return 'TAXI';
+          if (['vtc', 'vtc-e', 'vtc-e-presentiel', 'va-e', 'pa-vtc', 'rp-vtc'].includes(t)) return 'VTC';
+          return null;
+        };
+
+        const taxiReussis = reussisLettre.filter(a => getCategorieCMA(a.type_apprenant) === 'TAXI');
+        const vtcReussis = reussisLettre.filter(a => getCategorieCMA(a.type_apprenant) === 'VTC');
+        const maxRows = Math.max(taxiReussis.length, vtcReussis.length);
+
+        const handlePrintLettre = () => {
+          const printWindow = window.open('', '_blank');
+          if (!printWindow) return;
+
+          const taxiRows = taxiReussis.map(a => `<tr><td style="padding:4px 8px;border:1px solid #ccc;">${a.nom} ${a.prenom}</td></tr>`).join('');
+          const vtcRows = vtcReussis.map(a => `<tr><td style="padding:4px 8px;border:1px solid #ccc;">${a.nom} ${a.prenom}</td></tr>`).join('');
+
+          // Pad shorter column
+          const padTaxi = taxiReussis.length < maxRows ? Array(maxRows - taxiReussis.length).fill('<tr><td style="padding:4px 8px;border:1px solid #ccc;">&nbsp;</td></tr>').join('') : '';
+          const padVtc = vtcReussis.length < maxRows ? Array(maxRows - vtcReussis.length).fill('<tr><td style="padding:4px 8px;border:1px solid #ccc;">&nbsp;</td></tr>').join('') : '';
+
+          printWindow.document.write(`
+            <html>
+            <head><title>Lettre CMA - Résultats examen</title></head>
+            <body style="font-family:Arial,sans-serif;padding:40px;max-width:800px;margin:0 auto;font-size:13px;line-height:1.6;">
+              <div style="text-align:right;margin-bottom:30px;">
+                <p><strong>FTRANSPORT</strong><br/>
+                Centre de formation<br/>
+                Lyon</p>
+                <p>Le ${new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+              </div>
+
+              <div style="margin-bottom:20px;">
+                <p><strong>A l'attention de :</strong><br/>
+                Mme Audrey CREVIER<br/>
+                Chambre des Metiers et de l'Artisanat<br/>
+                Auvergne-Rhone-Alpes<br/>
+                <a href="mailto:audrey.crevier@cma-auvergnerhonealpes.fr">audrey.crevier@cma-auvergnerhonealpes.fr</a></p>
+              </div>
+
+              <p><strong>Objet :</strong> Liste des candidats ayant reussi l'examen du 27 janvier 2026</p>
+              <p><strong>Dates de passage :</strong> du 23 fevrier au 6 mars 2026</p>
+
+              <p>Madame,</p>
+              <p>Veuillez trouver ci-dessous la liste des candidats de notre centre de formation ayant reussi l'examen theorique du 27 janvier 2026 :</p>
+
+              <div style="display:flex;gap:20px;margin:20px 0;">
+                <div style="flex:1;">
+                  <table style="width:100%;border-collapse:collapse;">
+                    <thead>
+                      <tr><th style="padding:6px 8px;border:1px solid #ccc;background:#fef3c7;text-align:left;">TAXI (${taxiReussis.length})</th></tr>
+                    </thead>
+                    <tbody>${taxiRows}${padTaxi}</tbody>
+                    <tfoot>
+                      <tr><td style="padding:6px 8px;border:1px solid #ccc;background:#fef9e7;font-weight:bold;">Total : ${taxiReussis.length}</td></tr>
+                    </tfoot>
+                  </table>
+                </div>
+                <div style="flex:1;">
+                  <table style="width:100%;border-collapse:collapse;">
+                    <thead>
+                      <tr><th style="padding:6px 8px;border:1px solid #ccc;background:#dbeafe;text-align:left;">VTC (${vtcReussis.length})</th></tr>
+                    </thead>
+                    <tbody>${vtcRows}${padVtc}</tbody>
+                    <tfoot>
+                      <tr><td style="padding:6px 8px;border:1px solid #ccc;background:#eff6ff;font-weight:bold;">Total : ${vtcReussis.length}</td></tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+
+              <p><strong>Total general : ${reussisLettre.length} candidat(s)</strong> — ${taxiReussis.length} TAXI, ${vtcReussis.length} VTC</p>
+
+              <p>Je reste a votre disposition pour toute information complementaire.</p>
+              <p style="margin-top:30px;">Cordialement,<br/><br/><strong>FTRANSPORT</strong></p>
+            </body>
+            </html>
+          `);
+          printWindow.document.close();
+          printWindow.print();
+        };
+
+        return (
+          <Card className="border-l-4 border-l-teal-500">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Mail className="h-5 w-5 text-teal-600" />
+                  Lettre CMA — Candidats reçus
+                </span>
+                <Button onClick={handlePrintLettre} disabled={reussisLettre.length === 0} className="gap-2">
+                  <FileText className="h-4 w-4" />
+                  Générer la lettre ({reussisLettre.length})
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                Lettre type pour la CMA (audrey.crevier@cma-auvergnerhonealpes.fr) avec la liste des candidats ayant réussi l'examen du 27 janvier, répartis en TAXI et VTC. Dates de passage : du 23 février au 6 mars 2026.
+              </p>
+              {reussisLettre.length > 0 && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-sm font-semibold mb-2 text-amber-700">TAXI ({taxiReussis.length})</h4>
+                    <div className="space-y-1">
+                      {taxiReussis.map(a => (
+                        <div key={a.id} className="text-sm px-2 py-1 bg-amber-50 rounded">{a.nom} {a.prenom}</div>
+                      ))}
+                      {taxiReussis.length === 0 && <p className="text-xs text-muted-foreground">Aucun</p>}
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold mb-2 text-blue-700">VTC ({vtcReussis.length})</h4>
+                    <div className="space-y-1">
+                      {vtcReussis.map(a => (
+                        <div key={a.id} className="text-sm px-2 py-1 bg-blue-50 rounded">{a.nom} {a.prenom}</div>
+                      ))}
+                      {vtcReussis.length === 0 && <p className="text-xs text-muted-foreground">Aucun</p>}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         );
       })()}
 
