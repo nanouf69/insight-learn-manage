@@ -351,14 +351,14 @@ export function ExamenReussitePage() {
       {(() => {
         // Candidats réussis de l'examen théorique de janvier
         const reussisTheorique = apprenants?.filter(a => (a as any).resultat_examen === 'oui') || [];
-        // PA et RP qui ont réussi (pas forcément dans la query janvier)
+        // PA et RP : inclus automatiquement (pas besoin de résultat théorique)
         const paRpTypes = ['pa-vtc', 'pa-taxi', 'rp-vtc', 'rp-taxi'];
-        const reussisPA_RP = (allApprenants || []).filter(a => 
+        const paRpApprenants = (allApprenants || []).filter(a => 
           paRpTypes.includes((a.type_apprenant || '').toLowerCase()) && 
-          a.resultat_examen === 'oui' &&
+          a.date_examen_pratique &&
           !reussisTheorique.some(r => r.id === a.id)
         );
-        const reussisLettre = [...reussisTheorique, ...reussisPA_RP];
+        const reussisLettre = [...reussisTheorique, ...paRpApprenants];
         
         const getCategorieCMA = (type: string | null) => {
           if (!type) return null;
