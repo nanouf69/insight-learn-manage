@@ -864,30 +864,33 @@ export function ExamenReussitePage() {
         const dayNames = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
         const monthNames = ['jan', 'fév', 'mar', 'avr', 'mai', 'jun', 'jul', 'aoû', 'sep', 'oct', 'nov', 'déc'];
 
-        // Assign VTC first: 4 per day, then TAXI on separate days: 3 per day
-        const joursVTCNeeded = Math.ceil(vtcPlanning.length / 4);
-        const joursTAXINeeded = Math.ceil(taxiPlanning.length / 4);
-        
+        // Assign VTC: 4 per day, except Tuesday Feb 24 which gets 5
         const vtcByDay: Record<string, typeof vtcPlanning> = {};
-        vtcPlanning.forEach((a, i) => {
-          const dayIndex = Math.floor(i / 4);
-          if (dayIndex < weekdays.length) {
-            const key = weekdays[dayIndex].toISOString().slice(0, 10);
-            if (!vtcByDay[key]) vtcByDay[key] = [];
-            vtcByDay[key].push(a);
-          }
-        });
+        let vtcIndex = 0;
+        let dayIndex = 0;
+        while (vtcIndex < vtcPlanning.length && dayIndex < weekdays.length) {
+          const day = weekdays[dayIndex];
+          const key = day.toISOString().slice(0, 10);
+          // Tuesday Feb 24, 2026 = day.getDay() === 2 && day.getDate() === 24 && day.getMonth() === 1
+          const isTueFeb24 = day.getDay() === 2 && day.getDate() === 24 && day.getMonth() === 1;
+          const capacity = isTueFeb24 ? 5 : 4;
+          vtcByDay[key] = vtcPlanning.slice(vtcIndex, vtcIndex + capacity);
+          vtcIndex += capacity;
+          dayIndex++;
+        }
+        const joursVTCNeeded = dayIndex;
 
-        // TAXI starts after all VTC days
+        // TAXI starts after all VTC days: 4 per day
         const taxiByDay: Record<string, typeof taxiPlanning> = {};
         taxiPlanning.forEach((a, i) => {
-          const dayIndex = joursVTCNeeded + Math.floor(i / 4);
-          if (dayIndex < weekdays.length) {
-            const key = weekdays[dayIndex].toISOString().slice(0, 10);
+          const taxiDayIndex = joursVTCNeeded + Math.floor(i / 4);
+          if (taxiDayIndex < weekdays.length) {
+            const key = weekdays[taxiDayIndex].toISOString().slice(0, 10);
             if (!taxiByDay[key]) taxiByDay[key] = [];
             taxiByDay[key].push(a);
           }
         });
+        const joursTAXINeeded = Math.ceil(taxiPlanning.length / 4);
 
         // Group by week
         const weeks: Date[][] = [];
