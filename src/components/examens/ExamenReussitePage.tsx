@@ -16,14 +16,18 @@ export function ExamenReussitePage() {
   const [repassageList, setRepassageList] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
-  const [selectedExamMonth, setSelectedExamMonth] = useState("janvier");
-  const [selectedDatePratique, setSelectedDatePratique] = useState("Du 23 février au 6 mars 2026");
+  const [selectedExamDate, setSelectedExamDate] = useState("27 janvier 2026");
+  const [selectedDatePratique, setSelectedDatePratique] = useState("Du 23 fevrier au 6 mars 2026");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
-  const examMonths = [
-    "janvier", "février", "mars", "avril", "mai", "juin",
-    "juillet", "août", "septembre", "octobre", "novembre", "décembre"
+  const datesExamenTheorique = [
+    { date: "27 janvier 2026", lieu: "Villeurbanne" },
+    { date: "31 mars 2026", lieu: "Clermont-Ferrand" },
+    { date: "26 mai 2026", lieu: "Villeurbanne" },
+    { date: "21 juillet 2026", lieu: "Villeurbanne" },
+    { date: "29 septembre 2026", lieu: "Villeurbanne" },
+    { date: "17 novembre 2026", lieu: "Villeurbanne" },
   ];
 
   const datesExamenPratique = [
@@ -37,12 +41,12 @@ export function ExamenReussitePage() {
   ];
 
   const { data: apprenants, isLoading } = useQuery({
-    queryKey: ['apprenants-examen', selectedExamMonth],
+    queryKey: ['apprenants-examen', selectedExamDate],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('apprenants')
         .select('*')
-        .or(`date_examen_theorique.ilike.%${selectedExamMonth}%,date_examen_theorique.ilike.%${selectedExamMonth.charAt(0).toUpperCase() + selectedExamMonth.slice(1)}%`)
+        .ilike('date_examen_theorique', `%${selectedExamDate}%`)
         .order('nom', { ascending: true });
       if (error) throw error;
       return data;
@@ -144,7 +148,7 @@ export function ExamenReussitePage() {
         const non = result.details?.filter((d: any) => d.resultat === 'non').length || 0;
         const absent = result.details?.filter((d: any) => d.resultat === 'absent').length || 0;
         toast.success(`Résultats mis à jour ! ✅ ${oui} admis, ❌ ${non} non admis, 🔶 ${absent} absents`);
-        queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamMonth] });
+        queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] });
       }
     } catch (err: any) {
       toast.error("Erreur : " + err.message);
@@ -162,7 +166,7 @@ export function ExamenReussitePage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamMonth] });
+      queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] });
       toast.success("Résultat mis à jour");
     },
   });
@@ -213,13 +217,13 @@ export function ExamenReussitePage() {
           <p className="text-sm text-muted-foreground">Suivi des examens théoriques</p>
         </div>
         <div className="flex items-center gap-3">
-          <Select value={selectedExamMonth} onValueChange={setSelectedExamMonth}>
-            <SelectTrigger className="w-44">
-              <SelectValue placeholder="Mois d'examen" />
+          <Select value={selectedExamDate} onValueChange={setSelectedExamDate}>
+            <SelectTrigger className="w-64">
+              <SelectValue placeholder="Date d'examen" />
             </SelectTrigger>
             <SelectContent>
-              {examMonths.map(m => (
-                <SelectItem key={m} value={m}>{m.charAt(0).toUpperCase() + m.slice(1)} 2026</SelectItem>
+              {datesExamenTheorique.map(e => (
+                <SelectItem key={e.date} value={e.date}>{e.date} — {e.lieu}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -432,11 +436,11 @@ export function ExamenReussitePage() {
                 <a href="mailto:audrey.crevier@cma-auvergnerhonealpes.fr">audrey.crevier@cma-auvergnerhonealpes.fr</a></p>
               </div>
 
-              <p><strong>Objet :</strong> Liste des candidats ayant reussi l'examen de ${selectedExamMonth} 2026</p>
+              <p><strong>Objet :</strong> Liste des candidats ayant reussi l'examen du ${selectedExamDate}</p>
               <p><strong>Dates de passage pratique :</strong> ${selectedDatePratique}</p>
 
               <p>Madame,</p>
-              <p>Veuillez trouver ci-dessous la liste des candidats de notre centre de formation ayant reussi l'examen theorique de ${selectedExamMonth} 2026 :</p>
+              <p>Veuillez trouver ci-dessous la liste des candidats de notre centre de formation ayant reussi l'examen theorique du ${selectedExamDate} :</p>
 
               <div style="display:flex;gap:20px;margin:20px 0;">
                 <div style="flex:1;">
@@ -820,7 +824,7 @@ export function ExamenReussitePage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ClipboardCheck className="h-5 w-5" />
-            Inscrits à l'examen théorique - {selectedExamMonth.charAt(0).toUpperCase() + selectedExamMonth.slice(1)} 2026
+            Inscrits à l'examen théorique - {selectedExamDate}
           </CardTitle>
         </CardHeader>
         <CardContent>
