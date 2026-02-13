@@ -740,7 +740,7 @@ export function ExamenReussitePage() {
         const getWeekdays = () => {
           const days: Date[] = [];
           const start = new Date(2026, 1, 16); // Feb 16, 2026 (Monday)
-          const end = new Date(2026, 2, 2); // March 2, 2026
+          const end = new Date(2026, 2, 7); // March 7, 2026 (exclusive) — period goes to March 6
           let current = new Date(start);
           while (current < end) {
             const day = current.getDay();
@@ -797,7 +797,7 @@ export function ExamenReussitePage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-emerald-600" />
-                Planning formation pratique — Du 16 février au 1er mars 2026
+                Planning formation pratique — Du 16 février au 6 mars 2026
               </CardTitle>
               <p className="text-sm text-muted-foreground">
                 VTC : 4 candidats/jour • TAXI : 3 candidats/jour • Pas de week-end • Deadline : avant le 2 mars
