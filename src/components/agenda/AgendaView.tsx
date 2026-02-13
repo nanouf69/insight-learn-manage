@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -6,11 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, Plus, X, User, Clock, BookOpen, Layers, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, X, User, Clock, BookOpen, Layers, Loader2, Upload } from "lucide-react";
 import { format, addDays, startOfWeek, isSameDay } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface Discipline {
   id: string;
@@ -143,6 +144,10 @@ export function AgendaView() {
   const [courseBlocks, setCourseBlocks] = useState<CourseBlock[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [uploadingPlanning, setUploadingPlanning] = useState(false);
+  const [analyzingPlanning, setAnalyzingPlanning] = useState(false);
+  const planningFileInputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDisciplineDialogOpen, setIsDisciplineDialogOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<{ date: Date; hour: number } | null>(null);
@@ -399,6 +404,45 @@ export function AgendaView() {
     return `${h}:${m === 0 ? '00' : '30'}`;
   };
 
+  const handlePlanningUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (file.size > 4 * 1024 * 1024) {
+      toast.error("Le fichier est trop volumineux (max 4 Mo)");
+      return;
+    }
+    setUploadingPlanning(true);
+    try {
+      const fileName = `planning-${Date.now()}.pdf`;
+      const { error: uploadError } = await supabase.storage
+        .from("exam-results")
+        .upload(fileName, file, { contentType: "application/pdf" });
+      if (uploadError) throw uploadError;
+      setUploadingPlanning(false);
+      setAnalyzingPlanning(true);
+      const { data, error } = await supabase.functions.invoke("parse-exam-planning", {
+        body: { fileName },
+      });
+      if (error) throw error;
+      if (data?.success) {
+        toast.success(
+          `${data.totalUpdated} date(s) d'examen mise(s) à jour${data.totalNotFound > 0 ? ` • ${data.totalNotFound} candidat(s) non trouvé(s)` : ''}`,
+          { duration: 8000 }
+        );
+        queryClient.invalidateQueries({ queryKey: ['apprenants'] });
+        queryClient.invalidateQueries({ queryKey: ['all-apprenants'] });
+      } else {
+        toast.error(data?.error || "Erreur lors de l'analyse");
+      }
+    } catch (err: any) {
+      toast.error("Erreur: " + (err.message || "Échec de l'analyse"));
+    } finally {
+      setUploadingPlanning(false);
+      setAnalyzingPlanning(false);
+      if (planningFileInputRef.current) planningFileInputRef.current.value = '';
+    }
+  };
+
   return (
     <Card className="animate-fade-in">
       <CardHeader>
@@ -411,6 +455,23 @@ export function AgendaView() {
             )}
           </CardTitle>
           <div className="flex items-center gap-2">
+            <input
+              type="file"
+              ref={planningFileInputRef}
+              accept=".pdf"
+              className="hidden"
+              onChange={handlePlanningUpload}
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-2 text-xs"
+              disabled={uploadingPlanning || analyzingPlanning}
+              onClick={() => planningFileInputRef.current?.click()}
+            >
+              <Upload className="h-3 w-3" />
+              {uploadingPlanning ? 'Upload...' : analyzingPlanning ? 'Analyse IA...' : 'Importer planning CMA (PDF)'}
+            </Button>
             <Button variant="outline" size="sm" onClick={() => setIsDisciplineDialogOpen(true)}>
               <Layers className="h-4 w-4 mr-2" />
               Disciplines
