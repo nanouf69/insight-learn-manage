@@ -392,13 +392,21 @@ export function ExamenReussitePage() {
 
       {/* Lettre CMA - Réussite examen */}
       {(() => {
-        // Candidats réussis de l'examen théorique de janvier
-        const reussisTheorique = apprenants?.filter(a => (a as any).resultat_examen === 'oui') || [];
-        // PA et RP : inclus automatiquement (pas besoin de résultat théorique)
+        const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+        const matchPratique = (datePratique: string | null) => {
+          if (!datePratique) return false;
+          return normalize(datePratique) === normalize(selectedDatePratique);
+        };
+
+        // Candidats réussis de l'examen théorique dont la date pratique correspond
+        const reussisTheorique = apprenants?.filter(a => 
+          (a as any).resultat_examen === 'oui' && matchPratique((a as any).date_examen_pratique)
+        ) || [];
+        // PA et RP : inclus si leur date pratique correspond
         const paRpTypes = ['pa-vtc', 'pa-taxi', 'rp-vtc', 'rp-taxi'];
         const paRpApprenants = (allApprenants || []).filter(a => 
           paRpTypes.includes((a.type_apprenant || '').toLowerCase()) && 
-          a.date_examen_pratique &&
+          matchPratique(a.date_examen_pratique) &&
           !reussisTheorique.some(r => r.id === a.id)
         );
         const reussisLettre = [...reussisTheorique, ...paRpApprenants];
