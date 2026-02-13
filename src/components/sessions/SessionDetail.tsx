@@ -291,6 +291,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
             date_debut_formation,
             date_fin_formation,
             date_examen_theorique,
+            resultat_examen,
             statut,
             montant_ttc,
             montant_paye,
@@ -704,18 +705,23 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                             )}
                             
                             <div className="flex items-center gap-1.5">
-                              {apprenant.statut === "admis" ? (
+                              {apprenant.resultat_examen === 'oui' ? (
                                 <>
                                   <CheckCircle className="w-4 h-4 text-green-600" />
-                                  <span className="text-green-600 font-medium">Réussi</span>
+                                  <span className="text-green-600 font-medium">Théorie réussie ✅</span>
                                 </>
-                              ) : apprenant.statut === "refuse" || apprenant.statut === "échec" ? (
+                              ) : apprenant.resultat_examen === 'non' ? (
                                 <>
                                   <XCircle className="w-4 h-4 text-red-500" />
-                                  <span className="text-red-500 font-medium">Échoué</span>
+                                  <span className="text-red-500 font-medium">Théorie échouée ❌</span>
+                                </>
+                              ) : apprenant.resultat_examen === 'absent' ? (
+                                <>
+                                  <XCircle className="w-4 h-4 text-orange-500" />
+                                  <span className="text-orange-500 font-medium">Absent 🔶</span>
                                 </>
                               ) : (
-                                <span className="text-muted-foreground">En attente</span>
+                                <span className="text-muted-foreground">Résultat en attente</span>
                               )}
                             </div>
                           </div>
