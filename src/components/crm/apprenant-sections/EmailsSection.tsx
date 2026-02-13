@@ -179,6 +179,69 @@ L'équipe Ftransport
     },
   },
   {
+    id: 'felicitations-vtc-pratique',
+    label: '🎉 Félicitations VTC - Choix date pratique',
+    icon: '🎉',
+    getSubject: (a) => `Félicitations - Choix de votre date de formation pratique VTC - ${a.prenom} ${a.nom}`,
+    getBody: (a) => {
+      // Generate VTC planning dates with capacity
+      const getVtcDates = () => {
+        const days: { date: Date; capacity: number }[] = [];
+        const start = new Date(2026, 1, 16); // Feb 16, 2026 (Monday)
+        const end = new Date(2026, 2, 7);
+        let current = new Date(start);
+        while (current < end) {
+          const dow = current.getDay();
+          if (dow !== 0 && dow !== 6) {
+            const isTueFeb17 = dow === 2 && current.getDate() === 17 && current.getMonth() === 1;
+            days.push({ date: new Date(current), capacity: isTueFeb17 ? 5 : 4 });
+          }
+          current.setDate(current.getDate() + 1);
+        }
+        return days;
+      };
+      const vtcDates = getVtcDates();
+      const dayNames = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+      const monthNames = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+      
+      const datesText = vtcDates.map(d => {
+        const name = dayNames[d.date.getDay()];
+        const day = d.date.getDate();
+        const month = monthNames[d.date.getMonth()];
+        return `• ${name} ${day} ${month} 2026 — ${d.capacity} place(s) restante(s)`;
+      }).join('\n');
+
+      return `Bonjour ${a.prenom},
+
+Félicitations, vous venez de réussir votre épreuve d'admissibilité, face à l'épreuve d'admission.
+
+Vous devrez choisir une journée complète d'entraînement pratique parmi les dates suivantes (de 9h à 17h) :
+
+${datesText}
+
+⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié et vous ne recevrez aucune confirmation.
+
+📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.
+
+Notamment les exercices suivants dans "Formation Pratique VTC" : Quizz Lyon et Questions à apprendre.
+Ou cliquez sur le lien suivant : https://app.formative.com/join/DNFDZS
+
+⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.
+
+🍽️ Vous aurez une pause à Confluences aux alentours de 12h jusqu'à 13h.
+
+📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.
+
+Cordialement,
+
+FTRANSPORT
+Centre de formation
+86 Route de Genas 69003 Lyon
+📞 04.28.29.60.91
+De 9h à 17h sur rendez-vous`;
+    },
+  },
+  {
     id: 'relance-paiement',
     label: '💰 Relance paiement',
     icon: '💰',
