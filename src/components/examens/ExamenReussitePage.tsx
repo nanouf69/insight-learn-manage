@@ -21,6 +21,8 @@ export function ExamenReussitePage() {
   const [selectedDatePratique, setSelectedDatePratique] = useState("Du 23 fevrier au 6 mars 2026");
   const [dateDebutPratique, setDateDebutPratique] = useState("");
   const [sendingCMAEmail, setSendingCMAEmail] = useState(false);
+  const [sendingVTCPratique, setSendingVTCPratique] = useState(false);
+  const [sendingTAXIPratique, setSendingTAXIPratique] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -784,6 +786,44 @@ export function ExamenReussitePage() {
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="text-sm font-bold text-blue-700">VTC (Présentiel, E-learning, VA, PA VTC)</h4>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="outline" disabled={vtcList.length === 0 || sendingVTCPratique} className="gap-1 text-xs">
+                          <Mail className="h-3 w-3" />
+                          {sendingVTCPratique ? 'Envoi...' : `Envoyer email dates (${vtcList.filter(a => a.email).length})`}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Envoyer les emails VTC - Dates pratique</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Envoyer l'email "Félicitations VTC - Choix date pratique" à {vtcList.filter(a => a.email).length} candidat(s) ayant un email renseigné ?
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Annuler</AlertDialogCancel>
+                          <AlertDialogAction onClick={async () => {
+                            const candidates = vtcList.filter(a => a.email);
+                            if (candidates.length === 0) return;
+                            setSendingVTCPratique(true);
+                            let sent = 0;
+                            for (const a of candidates) {
+                              const bookingUrl = `https://insight-learn-manage.lovable.app/reservation-pratique?id=${a.id}&type=vtc`;
+                              const subject = `Félicitations - Choix de votre date de formation pratique VTC - ${a.prenom} ${a.nom}`;
+                              const body = `Bonjour ${a.prenom},\n\nFélicitations, vous venez de réussir votre épreuve d'admissibilité, face à l'épreuve d'admission.\n\nVous devrez choisir une journée complète d'entraînement pratique (de 9h à 17h).\n\n👉 CHOISISSEZ VOTRE DATE ICI : ${bookingUrl}\n\n⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié et vous ne recevrez aucune confirmation.\n\n📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.\n\nNotamment les exercices suivants dans "Formation Pratique VTC" : Quizz Lyon et Questions à apprendre.\nOu cliquez sur le lien suivant : https://app.formative.com/join/DNFDZS\n\n⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.\n\n🍽️ Vous aurez une pause à Confluences aux alentours de 12h jusqu'à 13h.\n\n📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.\n\nCordialement,\n\nFTRANSPORT\nCentre de formation\n86 Route de Genas 69003 Lyon\n📞 04.28.29.60.91\nDe 9h à 17h sur rendez-vous`;
+                              try {
+                                const { error } = await supabase.functions.invoke('sync-outlook-emails', {
+                                  body: { action: 'send', to: a.email, subject, body, apprenantId: a.id }
+                                });
+                                if (!error) sent++;
+                              } catch {}
+                            }
+                            setSendingVTCPratique(false);
+                            toast.success(`${sent}/${candidates.length} email(s) VTC envoyé(s)`);
+                          }}>Envoyer</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                   <div className="rounded-md border">
                     <Table>
@@ -819,6 +859,44 @@ export function ExamenReussitePage() {
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="text-sm font-bold text-amber-700">TAXI (Présentiel, E-learning, TA, PA TAXI)</h4>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="outline" disabled={taxiList.length === 0 || sendingTAXIPratique} className="gap-1 text-xs">
+                          <Mail className="h-3 w-3" />
+                          {sendingTAXIPratique ? 'Envoi...' : `Envoyer email dates (${taxiList.filter(a => a.email).length})`}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Envoyer les emails TAXI - Dates pratique</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Envoyer l'email "Félicitations TAXI - Choix date pratique" à {taxiList.filter(a => a.email).length} candidat(s) ayant un email renseigné ?
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Annuler</AlertDialogCancel>
+                          <AlertDialogAction onClick={async () => {
+                            const candidates = taxiList.filter(a => a.email);
+                            if (candidates.length === 0) return;
+                            setSendingTAXIPratique(true);
+                            let sent = 0;
+                            for (const a of candidates) {
+                              const bookingUrl = `https://insight-learn-manage.lovable.app/reservation-pratique?id=${a.id}&type=taxi`;
+                              const subject = `Félicitations - Choix de votre date de formation pratique TAXI - ${a.prenom} ${a.nom}`;
+                              const body = `Bonjour ${a.prenom},\n\nFélicitations, vous venez de réussir votre épreuve d'admissibilité, face à l'épreuve d'admission.\n\nVous devrez choisir une journée complète d'entraînement pratique (jusqu'à 17h au maximum).\n\n👉 CHOISISSEZ VOTRE DATE ICI : ${bookingUrl}\n\n⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié et vous ne recevrez aucune confirmation.\n\n📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.\n\nNotamment les exercices suivants dans "Formation Pratique TAXI" : QCM Taximètre, Cas pratique, Quizz Lyon et Questions à apprendre.\nOu cliquez ici : https://app.formative.com/join/ZT924H\n\n⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.\n\n🍽️ Vous aurez une pause à Confluences aux alentours de 12h jusqu'à 13h.\n\n📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.\n\nCordialement,\n\nFTRANSPORT\nCentre de formation\n86 Route de Genas 69003 Lyon\n📞 04.28.29.60.91\nDe 9h à 17h sur rendez-vous`;
+                              try {
+                                const { error } = await supabase.functions.invoke('sync-outlook-emails', {
+                                  body: { action: 'send', to: a.email, subject, body, apprenantId: a.id }
+                                });
+                                if (!error) sent++;
+                              } catch {}
+                            }
+                            setSendingTAXIPratique(false);
+                            toast.success(`${sent}/${candidates.length} email(s) TAXI envoyé(s)`);
+                          }}>Envoyer</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                   <div className="rounded-md border">
                     <Table>
