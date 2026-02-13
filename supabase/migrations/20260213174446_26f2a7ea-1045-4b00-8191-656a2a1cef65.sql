@@ -1,0 +1,1 @@
+ALTER TABLE public.apprenants ADD COLUMN heure_examen_pratique text;

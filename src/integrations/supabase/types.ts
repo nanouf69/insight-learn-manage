@@ -115,6 +115,7 @@ export type Database = {
           documents_complets: boolean | null
           email: string | null
           formation_choisie: string | null
+          heure_examen_pratique: string | null
           id: string
           inscrit_france_travail: boolean | null
           lieu_examen: string | null
@@ -152,6 +153,7 @@ export type Database = {
           documents_complets?: boolean | null
           email?: string | null
           formation_choisie?: string | null
+          heure_examen_pratique?: string | null
           id?: string
           inscrit_france_travail?: boolean | null
           lieu_examen?: string | null
@@ -189,6 +191,7 @@ export type Database = {
           documents_complets?: boolean | null
           email?: string | null
           formation_choisie?: string | null
+          heure_examen_pratique?: string | null
           id?: string
           inscrit_france_travail?: boolean | null
           lieu_examen?: string | null
