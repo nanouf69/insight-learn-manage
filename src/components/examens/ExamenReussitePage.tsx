@@ -589,6 +589,20 @@ export function ExamenReussitePage() {
               throw error;
             }
             if (data?.success) {
+              // Enregistrer l'email envoyé dans la table emails
+              const dateDebutTextForSubject = dateDebutPratique 
+                ? ` - Début souhaité : ${new Date(dateDebutPratique).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                : '';
+              await supabase.from('emails').insert({
+                subject: `Liste candidats reçus - Examen du ${selectedExamDate}${dateDebutTextForSubject}`,
+                body_html: htmlBody,
+                body_preview: `Liste des ${reussisLettre.length} candidats reçus à l'examen du ${selectedExamDate}`,
+                sender_email: 'contact@ftransport.fr',
+                recipients: ['audrey.crevier@cma-auvergnerhonealpes.fr'],
+                type: 'sent',
+                is_read: true,
+                sent_at: new Date().toISOString(),
+              });
               toast.success('Email envoyé à la CMA avec accusé de réception demandé !');
             } else {
               await supabase.from('alertes_systeme').insert({
