@@ -758,7 +758,7 @@ export function ExamenReussitePage() {
 
         // Assign VTC first: 4 per day, then TAXI on separate days: 3 per day
         const joursVTCNeeded = Math.ceil(vtcPlanning.length / 4);
-        const joursTAXINeeded = Math.ceil(taxiPlanning.length / 3);
+        const joursTAXINeeded = Math.ceil(taxiPlanning.length / 4);
         
         const vtcByDay: Record<string, typeof vtcPlanning> = {};
         vtcPlanning.forEach((a, i) => {
@@ -773,7 +773,7 @@ export function ExamenReussitePage() {
         // TAXI starts after all VTC days
         const taxiByDay: Record<string, typeof taxiPlanning> = {};
         taxiPlanning.forEach((a, i) => {
-          const dayIndex = joursVTCNeeded + Math.floor(i / 3);
+          const dayIndex = joursVTCNeeded + Math.floor(i / 4);
           if (dayIndex < weekdays.length) {
             const key = weekdays[dayIndex].toISOString().slice(0, 10);
             if (!taxiByDay[key]) taxiByDay[key] = [];
@@ -800,7 +800,7 @@ export function ExamenReussitePage() {
                 Planning formation pratique — Du 16 février au 6 mars 2026
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                VTC : 4 candidats/jour • TAXI : 3 candidats/jour • Pas de week-end • Deadline : avant le 2 mars
+                VTC : 4 candidats/jour • TAXI : 4 candidats/jour • Pas de week-end • Deadline : avant le 6 mars
               </p>
             </CardHeader>
             <CardContent className="space-y-6">
