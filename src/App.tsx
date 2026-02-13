@@ -9,6 +9,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+import ReservationPratique from "./pages/ReservationPratique";
 
 // Onboarding pages
 import OnboardingWelcome from "./pages/onboarding/OnboardingWelcome";
@@ -60,6 +61,9 @@ function App() {
               <Route path="/bienvenue/etape-10" element={<Step10 />} />
               <Route path="/bienvenue/etape-11" element={<Step11 />} />
               <Route path="/bienvenue/etape-12" element={<Step12 />} />
+              
+              {/* Reservation pratique - public */}
+              <Route path="/reservation-pratique" element={<ReservationPratique />} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

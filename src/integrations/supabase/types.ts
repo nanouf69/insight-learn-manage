@@ -834,6 +834,38 @@ export type Database = {
         }
         Relationships: []
       }
+      reservations_pratique: {
+        Row: {
+          apprenant_id: string
+          created_at: string
+          date_choisie: string
+          id: string
+          type_formation: string
+        }
+        Insert: {
+          apprenant_id: string
+          created_at?: string
+          date_choisie: string
+          id?: string
+          type_formation: string
+        }
+        Update: {
+          apprenant_id?: string
+          created_at?: string
+          date_choisie?: string
+          id?: string
+          type_formation?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_pratique_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: true
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       session_apprenants: {
         Row: {
           apprenant_id: string
