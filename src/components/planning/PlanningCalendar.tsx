@@ -4,7 +4,7 @@ import { useState } from "react";
 import { PlanningForm } from "./PlanningForm";
 
 const events = [
-  { id: 1, title: "VTC - Candidat 1", date: 3, time: "08:00", duration: 2, color: "bg-primary" },
+  { id: 1, title: "VTC - Yacob", date: 3, time: "08:00", duration: 2, color: "bg-primary" },
   { id: 2, title: "VTC - Candidat 2", date: 3, time: "08:00", duration: 2, color: "bg-primary" },
   { id: 3, title: "VTC - Candidat 3", date: 3, time: "08:00", duration: 2, color: "bg-primary" },
   { id: 4, title: "VTC - Candidat 4", date: 3, time: "08:00", duration: 2, color: "bg-primary" },
