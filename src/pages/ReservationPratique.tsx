@@ -184,8 +184,13 @@ export default function ReservationPratique() {
 
     // Send confirmation email
     if (apprenant?.nom && apprenant?.prenom) {
-      const confDate = new Date(selectedDate + 'T12:00:00');
-      const dateStr = `${DAY_NAMES[confDate.getDay()]} ${confDate.getDate()} ${MONTH_NAMES[confDate.getMonth()]} 2026`;
+      // Parse date manually to avoid any timezone shift
+      const [yearStr, monthStr, dayStr] = selectedDate.split('-');
+      const dayNum = parseInt(dayStr, 10);
+      const monthIdx = parseInt(monthStr, 10) - 1;
+      const yearNum = parseInt(yearStr, 10);
+      const confDate = new Date(yearNum, monthIdx, dayNum, 12, 0, 0);
+      const dateStr = `${DAY_NAMES[confDate.getDay()]} ${dayNum} ${MONTH_NAMES[monthIdx]} ${yearNum}`;
       const formationType = isVTC ? 'VTC' : 'TAXI';
       const exerciceLink = isVTC 
         ? 'https://app.formative.com/join/DNFDZS' 
