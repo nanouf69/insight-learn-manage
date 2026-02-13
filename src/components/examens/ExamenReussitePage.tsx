@@ -18,6 +18,8 @@ export function ExamenReussitePage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [selectedExamDate, setSelectedExamDate] = useState("27 janvier 2026");
   const [selectedDatePratique, setSelectedDatePratique] = useState("Du 23 fevrier au 6 mars 2026");
+  const [dateDebutPratique, setDateDebutPratique] = useState("");
+  const [sendingCMAEmail, setSendingCMAEmail] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -431,21 +433,18 @@ export function ExamenReussitePage() {
         const vtcReussis = reussisLettre.filter(a => getCategorieCMA(a.type_apprenant) === 'VTC');
         const maxRows = Math.max(taxiReussis.length, vtcReussis.length);
 
-        const handlePrintLettre = () => {
-          const printWindow = window.open('', '_blank');
-          if (!printWindow) return;
-
+        const generateLettreHTML = () => {
           const taxiRows = taxiReussis.map(a => `<tr><td style="padding:4px 8px;border:1px solid #ccc;">${a.nom} ${a.prenom}</td></tr>`).join('');
           const vtcRows = vtcReussis.map(a => `<tr><td style="padding:4px 8px;border:1px solid #ccc;">${a.nom} ${a.prenom}</td></tr>`).join('');
-
-          // Pad shorter column
           const padTaxi = taxiReussis.length < maxRows ? Array(maxRows - taxiReussis.length).fill('<tr><td style="padding:4px 8px;border:1px solid #ccc;">&nbsp;</td></tr>').join('') : '';
           const padVtc = vtcReussis.length < maxRows ? Array(maxRows - vtcReussis.length).fill('<tr><td style="padding:4px 8px;border:1px solid #ccc;">&nbsp;</td></tr>').join('') : '';
 
-          printWindow.document.write(`
-            <html>
-            <head><title>Lettre CMA - Résultats examen</title></head>
-            <body style="font-family:Arial,sans-serif;padding:40px;max-width:800px;margin:0 auto;font-size:13px;line-height:1.6;">
+          const dateDebutText = dateDebutPratique 
+            ? new Date(dateDebutPratique).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+            : '';
+
+          return `
+            <div style="font-family:Arial,sans-serif;padding:40px;max-width:800px;margin:0 auto;font-size:13px;line-height:1.6;">
               <div style="text-align:right;margin-bottom:30px;">
                 <p><strong>FTRANSPORT</strong><br/>
                 Centre de formation<br/>
@@ -463,6 +462,7 @@ export function ExamenReussitePage() {
 
               <p><strong>Objet :</strong> Liste des candidats ayant reussi l'examen du ${selectedExamDate}</p>
               <p><strong>Dates de passage pratique :</strong> ${selectedDatePratique}</p>
+              ${dateDebutText ? `<p><strong>Début souhaité des passages :</strong> à partir du ${dateDebutText}</p>` : ''}
 
               <p>Madame,</p>
               <p>Veuillez trouver ci-dessous la liste des candidats de notre centre de formation ayant reussi l'examen theorique du ${selectedExamDate} :</p>
@@ -498,11 +498,52 @@ export function ExamenReussitePage() {
 
               <p>Je reste a votre disposition pour toute information complementaire.</p>
               <p style="margin-top:30px;">Cordialement,<br/><br/><strong>FTRANSPORT</strong></p>
-            </body>
+            </div>
+          `;
+        };
+
+        const handlePrintLettre = () => {
+          const printWindow = window.open('', '_blank');
+          if (!printWindow) return;
+          printWindow.document.write(`
+            <html>
+            <head><title>Lettre CMA - Résultats examen</title></head>
+            <body>${generateLettreHTML()}</body>
             </html>
           `);
           printWindow.document.close();
           printWindow.print();
+        };
+
+        const handleSendCMAEmail = async () => {
+          if (reussisLettre.length === 0) return;
+          setSendingCMAEmail(true);
+          try {
+            const htmlBody = generateLettreHTML();
+            const dateDebutText = dateDebutPratique 
+              ? ` - Début souhaité : ${new Date(dateDebutPratique).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`
+              : '';
+            const { data, error } = await supabase.functions.invoke('sync-outlook-emails', {
+              body: {
+                action: 'send',
+                userEmail: 'contact@ftransport.fr',
+                to: 'audrey.crevier@cma-auvergnerhonealpes.fr',
+                subject: `Liste candidats reçus - Examen du ${selectedExamDate}${dateDebutText}`,
+                body: htmlBody,
+              },
+            });
+            if (error) throw error;
+            if (data?.success) {
+              toast.success('Email envoyé à la CMA avec succès !');
+            } else {
+              throw new Error('Échec de l\'envoi');
+            }
+          } catch (err) {
+            console.error('Erreur envoi CMA:', err);
+            toast.error('Erreur lors de l\'envoi de l\'email à la CMA');
+          } finally {
+            setSendingCMAEmail(false);
+          }
         };
 
         return (
@@ -513,10 +554,20 @@ export function ExamenReussitePage() {
                   <Mail className="h-5 w-5 text-teal-600" />
                   Lettre CMA — Candidats reçus
                 </span>
-                <Button onClick={handlePrintLettre} disabled={reussisLettre.length === 0} className="gap-2">
-                  <FileText className="h-4 w-4" />
-                  Générer la lettre ({reussisLettre.length})
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button onClick={handlePrintLettre} disabled={reussisLettre.length === 0} variant="outline" className="gap-2">
+                    <FileText className="h-4 w-4" />
+                    Imprimer ({reussisLettre.length})
+                  </Button>
+                  <Button 
+                    onClick={handleSendCMAEmail} 
+                    disabled={reussisLettre.length === 0 || sendingCMAEmail} 
+                    className="gap-2"
+                  >
+                    <Mail className="h-4 w-4" />
+                    {sendingCMAEmail ? 'Envoi...' : `Envoyer par email (${reussisLettre.length})`}
+                  </Button>
+                </div>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -532,6 +583,14 @@ export function ExamenReussitePage() {
                     ))}
                   </SelectContent>
                 </Select>
+                <p className="text-sm text-muted-foreground">À partir du :</p>
+                <Input 
+                  type="date" 
+                  value={dateDebutPratique} 
+                  onChange={(e) => setDateDebutPratique(e.target.value)}
+                  className="w-48 h-8 text-sm"
+                  placeholder="Date de début souhaitée"
+                />
               </div>
               {reussisLettre.length > 0 && (
                 <div className="grid grid-cols-2 gap-4">
