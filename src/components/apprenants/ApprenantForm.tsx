@@ -993,8 +993,79 @@ export function ApprenantForm() {
           </div>
           )}
 
+          {/* Section paiement pour RP (repassage) */}
+          {["repassage-theorique", "repassage-pratique"].includes(selectedFormation) && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Paiement repassage</h3>
+              <div className="p-3 rounded-lg bg-muted/50">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Location de véhicule</span>
+                  <span className="font-semibold">80,00 €</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="montantPayeRp">Montant payé (€)</Label>
+                  <Input 
+                    id="montantPayeRp" 
+                    type="number" 
+                    placeholder="0" 
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="moyenPaiementRp">Moyen de paiement</Label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cb">Carte bancaire</SelectItem>
+                      <SelectItem value="virement">Virement</SelectItem>
+                      <SelectItem value="especes">Espèces</SelectItem>
+                      <SelectItem value="cheque">Chèque</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Date de paiement</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !datePaiement && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {datePaiement ? format(datePaiement, "dd MMMM yyyy", { locale: fr }) : "Sélectionner une date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={datePaiement}
+                      onSelect={setDatePaiement}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="p-3 rounded-lg bg-muted/50">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Reste à payer</span>
+                  <span className="font-semibold">80,00 €</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Informations financières - Uniquement si financement personnel */}
-          {organismeFinanceur === "personnel" && (
+          {organismeFinanceur === "personnel" && !["repassage-theorique", "repassage-pratique"].includes(selectedFormation) && (
             <div className="space-y-4">
               <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Informations financières</h3>
               <div className="grid grid-cols-2 gap-4">
