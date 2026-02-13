@@ -242,6 +242,79 @@ De 9h à 17h sur rendez-vous`;
     },
   },
   {
+    id: 'felicitations-taxi-pratique',
+    label: '🎉 Félicitations TAXI - Choix date pratique',
+    icon: '🎉',
+    getSubject: (a) => `Félicitations - Choix de votre date de formation pratique TAXI - ${a.prenom} ${a.nom}`,
+    getBody: (a) => {
+      // TAXI dates start after all VTC days
+      // VTC: starts Feb 16, 4/day (5 on Feb 17). Need to know how many VTC candidates to compute offset.
+      // For now, TAXI starts around Feb 25 based on planning rules
+      const getTaxiDates = () => {
+        const days: { date: Date; capacity: number }[] = [];
+        const start = new Date(2026, 1, 16);
+        const end = new Date(2026, 2, 7);
+        const allWeekdays: Date[] = [];
+        let current = new Date(start);
+        while (current < end) {
+          const dow = current.getDay();
+          if (dow !== 0 && dow !== 6) {
+            allWeekdays.push(new Date(current));
+          }
+          current.setDate(current.getDate() + 1);
+        }
+        // TAXI starts after VTC days — estimate based on typical VTC count
+        // VTC days typically occupy first ~5-6 days, TAXI starts around day index 6+
+        // Use Feb 25 as start (index ~7) — admin adjusts before sending
+        const taxiStart = allWeekdays.findIndex(d => d.getDate() === 25 && d.getMonth() === 1);
+        const startIdx = taxiStart >= 0 ? taxiStart : 7;
+        for (let i = startIdx; i < allWeekdays.length; i++) {
+          days.push({ date: allWeekdays[i], capacity: 4 });
+        }
+        return days;
+      };
+      const taxiDates = getTaxiDates();
+      const dayNames = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+      const monthNames = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+
+      const datesText = taxiDates.map(d => {
+        const name = dayNames[d.date.getDay()];
+        const day = d.date.getDate();
+        const month = monthNames[d.date.getMonth()];
+        return `• ${name} ${day} ${month} 2026 — ${d.capacity} place(s) restante(s)`;
+      }).join('\n');
+
+      return `Bonjour ${a.prenom},
+
+Félicitations, vous venez de réussir votre épreuve d'admissibilité, face à l'épreuve d'admission.
+
+Vous devrez choisir une journée complète d'entraînement pratique (jusqu'à 17h au maximum) parmi les dates suivantes :
+
+${datesText}
+
+⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié et vous ne recevrez aucune confirmation.
+
+📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.
+
+Notamment les exercices suivants dans "Formation Pratique TAXI" : QCM Taximètre, Cas pratique, Quizz Lyon et Questions à apprendre.
+Ou cliquez ici : https://app.formative.com/join/ZT924H
+
+⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.
+
+🍽️ Vous aurez une pause à Confluences aux alentours de 12h jusqu'à 13h.
+
+📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.
+
+Cordialement,
+
+FTRANSPORT
+Centre de formation
+86 Route de Genas 69003 Lyon
+📞 04.28.29.60.91
+De 9h à 17h sur rendez-vous`;
+    },
+  },
+  {
     id: 'relance-paiement',
     label: '💰 Relance paiement',
     icon: '💰',
