@@ -50,12 +50,15 @@ function generatePlanningDates(type: 'vtc' | 'taxi'): { date: Date; capacity: nu
     }
     return vtcDays;
   } else {
-    // TAXI: starts from Feb 25, 4/day
+    // TAXI: starts from Feb 25, only February days (March = exams), 4/day
     const taxiStartIdx = allWeekdays.findIndex(d => d.getDate() === 25 && d.getMonth() === 1);
     const startIdx = taxiStartIdx >= 0 ? taxiStartIdx : 7;
     const taxiDays: { date: Date; capacity: number }[] = [];
     for (let i = startIdx; i < allWeekdays.length; i++) {
-      taxiDays.push({ date: allWeekdays[i], capacity: 4 });
+      const d = allWeekdays[i];
+      // Stop at March (month === 2) — March is reserved for exams
+      if (d.getMonth() >= 2) break;
+      taxiDays.push({ date: d, capacity: 4 });
     }
     return taxiDays;
   }
