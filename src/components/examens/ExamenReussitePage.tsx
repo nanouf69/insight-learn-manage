@@ -756,7 +756,10 @@ export function ExamenReussitePage() {
         const dayNames = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
         const monthNames = ['jan', 'fév', 'mar', 'avr', 'mai', 'jun', 'jul', 'aoû', 'sep', 'oct', 'nov', 'déc'];
 
-        // Assign VTC: 4 per day
+        // Assign VTC first: 4 per day, then TAXI on separate days: 3 per day
+        const joursVTCNeeded = Math.ceil(vtcPlanning.length / 4);
+        const joursTAXINeeded = Math.ceil(taxiPlanning.length / 3);
+        
         const vtcByDay: Record<string, typeof vtcPlanning> = {};
         vtcPlanning.forEach((a, i) => {
           const dayIndex = Math.floor(i / 4);
@@ -767,10 +770,10 @@ export function ExamenReussitePage() {
           }
         });
 
-        // Assign TAXI: 3 per day
+        // TAXI starts after all VTC days
         const taxiByDay: Record<string, typeof taxiPlanning> = {};
         taxiPlanning.forEach((a, i) => {
-          const dayIndex = Math.floor(i / 3);
+          const dayIndex = joursVTCNeeded + Math.floor(i / 3);
           if (dayIndex < weekdays.length) {
             const key = weekdays[dayIndex].toISOString().slice(0, 10);
             if (!taxiByDay[key]) taxiByDay[key] = [];
