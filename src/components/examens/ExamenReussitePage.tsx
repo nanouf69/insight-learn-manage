@@ -393,8 +393,15 @@ export function ExamenReussitePage() {
       {/* Lettre CMA - Réussite examen */}
       {(() => {
         const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+        // Find the default practical date for the current theoretical exam
+        const currentTheorique = datesExamenTheorique.find(e => e.date === selectedExamDate);
+        const defaultPratique = currentTheorique ? datesExamenPratique[currentTheorique.pratiqueIndex] : null;
+        
         const matchPratique = (datePratique: string | null) => {
-          if (!datePratique) return false;
+          // If no practical date set, match if selected practical date is the default for this theoretical exam
+          if (!datePratique) {
+            return defaultPratique ? normalize(defaultPratique) === normalize(selectedDatePratique) : false;
+          }
           return normalize(datePratique) === normalize(selectedDatePratique);
         };
 
@@ -556,8 +563,12 @@ export function ExamenReussitePage() {
       {/* Récapitulatif formation pratique */}
       {(() => {
         const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+        const currentTheorique2 = datesExamenTheorique.find(e => e.date === selectedExamDate);
+        const defaultPratique2 = currentTheorique2 ? datesExamenPratique[currentTheorique2.pratiqueIndex] : null;
         const matchPratiqueFormation = (datePratique: string | null) => {
-          if (!datePratique) return false;
+          if (!datePratique) {
+            return defaultPratique2 ? normalize(defaultPratique2) === normalize(selectedDatePratique) : false;
+          }
           return normalize(datePratique) === normalize(selectedDatePratique);
         };
 
@@ -688,8 +699,12 @@ export function ExamenReussitePage() {
       {/* Planning formation pratique */}
       {(() => {
         const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+        const currentTheorique3 = datesExamenTheorique.find(e => e.date === selectedExamDate);
+        const defaultPratique3 = currentTheorique3 ? datesExamenPratique[currentTheorique3.pratiqueIndex] : null;
         const matchPratiquePlanning = (datePratique: string | null) => {
-          if (!datePratique) return false;
+          if (!datePratique) {
+            return defaultPratique3 ? normalize(defaultPratique3) === normalize(selectedDatePratique) : false;
+          }
           return normalize(datePratique) === normalize(selectedDatePratique);
         };
 
