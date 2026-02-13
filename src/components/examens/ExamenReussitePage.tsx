@@ -933,9 +933,9 @@ export function ExamenReussitePage() {
         while (vtcIndex < vtcPlanning.length && dayIndex < weekdays.length) {
           const day = weekdays[dayIndex];
           const key = day.toISOString().slice(0, 10);
-          // Tuesday Feb 24, 2026 = day.getDay() === 2 && day.getDate() === 24 && day.getMonth() === 1
-          const isTueFeb24 = day.getDay() === 2 && day.getDate() === 24 && day.getMonth() === 1;
-          const capacity = isTueFeb24 ? 5 : 4;
+          // Tuesday Feb 17, 2026 = day.getDay() === 2 && day.getDate() === 17 && day.getMonth() === 1
+          const isTueFeb17 = day.getDay() === 2 && day.getDate() === 17 && day.getMonth() === 1;
+          const capacity = isTueFeb17 ? 5 : 4;
           vtcByDay[key] = vtcPlanning.slice(vtcIndex, vtcIndex + capacity);
           vtcIndex += capacity;
           dayIndex++;
