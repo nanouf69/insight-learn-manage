@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, MapPin, Loader2, Copy } from "lucide-react";
+import { Calendar, Users, MapPin, Loader2, Copy, Trophy } from "lucide-react";
 import { SessionForm } from "./SessionForm";
 import { SessionDetail } from "./SessionDetail";
 import { SessionEditor } from "./SessionEditor";
@@ -81,6 +81,29 @@ export function SessionsList() {
       
       if (error) throw error;
       return data as Session[];
+    },
+  });
+
+  // Fetch pass rates per session
+  const { data: passRates = {} } = useQuery({
+    queryKey: ['session-pass-rates'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('session_apprenants')
+        .select('session_id, apprenant_id, apprenants(resultat_examen)');
+      
+      if (error) throw error;
+      
+      const rates: Record<string, { total: number; passed: number }> = {};
+      for (const sa of data || []) {
+        if (!rates[sa.session_id]) rates[sa.session_id] = { total: 0, passed: 0 };
+        const resultat = (sa as any).apprenants?.resultat_examen;
+        if (resultat) {
+          rates[sa.session_id].total++;
+          if (resultat.toLowerCase() === 'oui') rates[sa.session_id].passed++;
+        }
+      }
+      return rates;
     },
   });
 
@@ -228,16 +251,30 @@ export function SessionsList() {
                       </div>
                     )}
                     
-                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1.5">
-                        <MapPin className="w-4 h-4" />
-                        <span>{session.lieu || "Non défini"}</span>
+                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          <MapPin className="w-4 h-4" />
+                          <span>{session.lieu || "Non défini"}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Users className="w-4 h-4" />
+                          <span>{session.places_disponibles || 18} places</span>
+                        </div>
+                        {passRates[session.id] && passRates[session.id].total > 0 && (
+                          <div className="flex items-center gap-1.5">
+                            <Trophy className="w-4 h-4" />
+                            <span className={
+                              Math.round((passRates[session.id].passed / passRates[session.id].total) * 100) >= 70
+                                ? "text-emerald-600 font-medium"
+                                : Math.round((passRates[session.id].passed / passRates[session.id].total) * 100) >= 40
+                                  ? "text-amber-600 font-medium"
+                                  : "text-red-600 font-medium"
+                            }>
+                              Théorie : {passRates[session.id].passed}/{passRates[session.id].total} ({Math.round((passRates[session.id].passed / passRates[session.id].total) * 100)}%)
+                            </span>
+                          </div>
+                        )}
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <Users className="w-4 h-4" />
-                        <span>{session.places_disponibles || 18} places</span>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </CardContent>
