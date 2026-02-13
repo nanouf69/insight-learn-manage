@@ -329,7 +329,7 @@ export default function ReservationPratique() {
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
         {/* Welcome */}
         <Card>
-          <CardContent className="pt-6 space-y-3">
+          <CardContent className="pt-6 space-y-4">
             <h2 className="text-lg font-semibold">
               Bonjour {apprenant?.prenom} 👋
             </h2>
@@ -337,9 +337,32 @@ export default function ReservationPratique() {
               Félicitations pour votre réussite à l'épreuve d'admissibilité ! 
               Choisissez ci-dessous <strong>une seule journée</strong> d'entraînement pratique.
             </p>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm space-y-3">
+              <p className="font-semibold text-amber-800">⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié.</p>
+              
+              <div className="text-amber-700 space-y-2">
+                <p>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.</p>
+                {isVTC ? (
+                  <>
+                    <p>Notamment les exercices suivants dans <strong>"Formation Pratique VTC"</strong> : Quizz Lyon et Questions à apprendre.</p>
+                    <p>Ou cliquez sur le lien suivant : <a href="https://app.formative.com/join/DNFDZS" target="_blank" rel="noopener noreferrer" className="underline text-primary font-medium">https://app.formative.com/join/DNFDZS</a></p>
+                  </>
+                ) : (
+                  <>
+                    <p>Notamment les exercices suivants dans <strong>"Formation Pratique TAXI"</strong> : QCM Taximètre, Cas pratique, Quizz Lyon et Questions à apprendre.</p>
+                    <p>Ou cliquez ici : <a href="https://app.formative.com/join/ZT924H" target="_blank" rel="noopener noreferrer" className="underline text-primary font-medium">https://app.formative.com/join/ZT924H</a></p>
+                  </>
+                )}
+                <p className="font-semibold">⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.</p>
+                <p>🍽️ Vous aurez une pause à Confluences aux alentours de 12h jusqu'à 13h.</p>
+                <p className="font-semibold">📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.</p>
+              </div>
+            </div>
+
             <div className="flex flex-wrap gap-2 text-xs">
               <Badge variant="outline" className="gap-1"><Clock className="h-3 w-3" /> 9h - 17h</Badge>
-              <Badge variant="outline" className="gap-1"><MapPin className="h-3 w-3" /> 86 Route de Genas, Lyon</Badge>
+              <Badge variant="outline" className="gap-1"><MapPin className="h-3 w-3" /> 86 Route de Genas, 69003 Lyon</Badge>
             </div>
           </CardContent>
         </Card>
