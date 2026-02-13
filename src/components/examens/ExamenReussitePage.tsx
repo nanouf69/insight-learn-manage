@@ -1012,7 +1012,7 @@ export function ExamenReussitePage() {
                                   <ul className="list-disc pl-4">{vtcSansResa.map(a => <li key={a.id}>{a.nom} {a.prenom} — {a.telephone}</li>)}</ul>
                                   <div className="bg-muted p-3 rounded text-xs mt-2">
                                     <p className="font-medium mb-1">Message :</p>
-                                    <p>FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique VTC. Merci de réserver rapidement sur le lien envoyé par email. FTRANSPORT 04.28.29.60.91</p>
+                                    <p>FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique VTC. Attention, il n'y aura pas d'autres dates d'entrainement. Merci de réserver rapidement sur le lien envoyé par email. FTRANSPORT 04.28.29.60.91</p>
                                   </div>
                                 </div>
                               </AlertDialogDescription>
@@ -1026,7 +1026,7 @@ export function ExamenReussitePage() {
                                   const { data, error } = await supabase.functions.invoke('send-sms-ovh', {
                                     body: {
                                       receivers: phones,
-                                      message: `FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique VTC. Merci de reserver rapidement sur le lien envoye par email. FTRANSPORT 04.28.29.60.91`,
+                                      message: `FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique VTC. Attention, il n'y aura pas d'autres dates d'entrainement. Merci de reserver rapidement sur le lien envoye par email. FTRANSPORT 04.28.29.60.91`,
                                     },
                                   });
                                   if (error) throw error;
@@ -1197,7 +1197,7 @@ export function ExamenReussitePage() {
                                   <ul className="list-disc pl-4">{taxiSansResa.map(a => <li key={a.id}>{a.nom} {a.prenom} — {a.telephone}</li>)}</ul>
                                   <div className="bg-muted p-3 rounded text-xs mt-2">
                                     <p className="font-medium mb-1">Message :</p>
-                                    <p>FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique TAXI. Merci de réserver rapidement sur le lien envoyé par email. FTRANSPORT 04.28.29.60.91</p>
+                                    <p>FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique TAXI. Attention, il n'y aura pas d'autres dates d'entrainement. Merci de réserver rapidement sur le lien envoyé par email. FTRANSPORT 04.28.29.60.91</p>
                                   </div>
                                 </div>
                               </AlertDialogDescription>
@@ -1211,7 +1211,7 @@ export function ExamenReussitePage() {
                                   const { data, error } = await supabase.functions.invoke('send-sms-ovh', {
                                     body: {
                                       receivers: phones,
-                                      message: `FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique TAXI. Merci de reserver rapidement sur le lien envoye par email. FTRANSPORT 04.28.29.60.91`,
+                                      message: `FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique TAXI. Attention, il n'y aura pas d'autres dates d'entrainement. Merci de reserver rapidement sur le lien envoye par email. FTRANSPORT 04.28.29.60.91`,
                                     },
                                   });
                                   if (error) throw error;
