@@ -20,7 +20,7 @@ const weeks: Week[] = [
     label: "Semaine 1",
     days: [
       { date: "Lun 16 fév", type: "VTC", count: 4, candidates: ["Abdellah-berhail Ayoub", "ALLAOUI MOUSTOIPHA", "Alti MOHAMMED SALAH", "AROUMOUGAM Ségar"] },
-      { date: "Mar 17 fév", type: "VTC", count: 4, candidates: ["BALA Oussama", "BARKAT Zakaria", "Belkaid Rim", "BELLACHE ABDERRAHMANE"] },
+      { date: "Mar 17 fév", type: "VTC", count: 5, candidates: ["YACOB TESFAZIAN ALEXANDRE", "BALA Oussama", "BARKAT Zakaria", "Belkaid Rim", "BELLACHE ABDERRAHMANE"] },
       { date: "Mer 18 fév", type: "VTC", count: 4, candidates: ["Benamara Kaouthar", "Felder Vivien", "Ghennai Soufiane", "Gindre Anthony"] },
       { date: "Jeu 19 fév", type: "VTC", count: 4, candidates: ["Gombe Evrard", "Hadj mokhnache Amar", "haider amri", "Kout Ahmed"] },
       { date: "Ven 20 fév", type: "VTC", count: 4, candidates: ["Lameche Mourad", "Loic JEAN-PIERRE", "Lukudisa Manuel", "MADI OMAR"] },
@@ -31,15 +31,15 @@ const weeks: Week[] = [
     days: [
       { date: "Lun 23 fév", type: "VTC", count: 4, candidates: ["Mahersia Nour", "Mamoi Amo", "Mbele Tuzaya Ernoult", "Nadarou Sarah"] },
       { date: "Mar 24 fév", type: "VTC", count: 4, candidates: ["Pont Christian", "Sahbi Jessim", "Slassi Yacine", "STEPANYAN LEVON"] },
-      { date: "Mer 25 fév", type: "VTC", count: 1, candidates: ["YACOB TESFAZIAN ALEXAN..."] },
-      { date: "Jeu 26 fév", type: "TAXI", count: 4, candidates: ["Aiello Franck", "BENNOUNA Medjoub", "Bonche Evan", "Bouberka sami"] },
-      { date: "Ven 27 fév", type: "TAXI", count: 4, candidates: ["DANOUN David", "Ghouila Merwan", "Hamadouche Mahfoud", "HOSNI Zied"] },
+      { date: "Mer 25 fév", type: "TAXI", count: 4, candidates: ["Aiello Franck", "BENNOUNA Medjoub", "Bonche Evan", "Bouberka sami"] },
+      { date: "Jeu 26 fév", type: "TAXI", count: 4, candidates: ["DANOUN David", "Ghouila Merwan", "Hamadouche Mahfoud", "HOSNI Zied"] },
+      { date: "Ven 27 fév", type: "TAXI", count: 4, candidates: ["MERROUANI Morjane", "Racherache Salah", "Reghi Akim", "SOUSSI LHASSAN"] },
     ],
   },
   {
     label: "Semaine 3",
     days: [
-      { date: "Lun 2 mar", type: "TAXI", count: 4, candidates: ["MERROUANI Morjane", "Racherache Salah", "Reghi Akim", "SOUSSI LHASSAN"] },
+      { date: "Lun 2 mar", type: null, count: 0, candidates: [] },
       { date: "Mar 3 mar", type: null, count: 0, candidates: [] },
       { date: "Mer 4 mar", type: null, count: 0, candidates: [] },
       { date: "Jeu 5 mar", type: null, count: 0, candidates: [] },
