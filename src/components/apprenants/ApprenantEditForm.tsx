@@ -270,22 +270,30 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
   };
 
   const handleFormationChange = (value: string) => {
+    const updates: any = {
+      selected_formation: value,
+      montant_ttc: prixFormations[value] || undefined,
+      type_apprenant: formationToType[value] || undefined
+    };
+
+    // Pour les RP, forcer le mode de financement à "personnel"
+    if (value === "repassage-pratique" || value === "repassage-theorique") {
+      updates.mode_financement = "personnel";
+      updates.organisme_financeur = "personnel";
+    }
+
     setFormData(prev => ({
       ...prev,
-      selected_formation: value,
-      montant_ttc: prixFormations[value] || prev.montant_ttc,
-      type_apprenant: formationToType[value] || prev.type_apprenant
+      ...Object.fromEntries(Object.entries(updates).filter(([_, v]) => v !== undefined))
     }));
     
-    // Pré-sélectionner automatiquement la première date de formation selon le type (présentiel uniquement)
     if (value === "vtc" || value === "vtc-exam") {
-      setSelectedDateOption(datesFormations.vtc.dates[0]); // "Du 12 au 25 janvier 2026"
+      setSelectedDateOption(datesFormations.vtc.dates[0]);
     } else if (value === "taxi" || value === "taxi-exam") {
-      setSelectedDateOption(datesFormations.taxi.dates[0]); // "Du 5 au 26 janvier 2026"
+      setSelectedDateOption(datesFormations.taxi.dates[0]);
     } else if (value === "passerelle-taxi") {
-      setSelectedDateOption(datesFormations.ta.dates[0]); // "Du 5 au 26 janvier 2026"
+      setSelectedDateOption(datesFormations.ta.dates[0]);
     } else {
-      // E-learning : pas de date pré-sélectionnée
       setSelectedDateOption("");
     }
   };
