@@ -211,10 +211,23 @@ export function ExamensSection({ apprenant }: ExamensSectionProps) {
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
                     <span className="font-medium">
-                      {datePratique || 'Non définie'}
+                      {apprenant.date_examen_pratique 
+                        ? new Date(apprenant.date_examen_pratique + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+                        : 'Non définie'}
                     </span>
                   </div>
                 )}
+              </div>
+
+              {/* Heure de passage */}
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Heure de passage</p>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  <span className="font-medium">
+                    {apprenant.heure_examen_pratique || 'Non définie'}
+                  </span>
+                </div>
               </div>
 
               {/* Date d'entraînement pratique */}

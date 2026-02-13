@@ -58,14 +58,15 @@ Deno.serve(async (req) => {
               {
                 type: "text",
                 text: `Analyse ce document PDF de planning d'examen pratique de la CMA (Chambre des Métiers et de l'Artisanat). 
-Extrais TOUS les candidats avec leur nom, prénom et leur date d'examen pratique.
+Extrais TOUS les candidats avec leur nom, prénom, leur date d'examen pratique ET leur heure de passage.
 
 Réponds UNIQUEMENT avec un JSON valide, sans aucun texte avant ou après. Le format doit être exactement:
-[{"nom": "DUPONT", "prenom": "Jean", "date_examen": "2026-03-02"}, {"nom": "MARTIN", "prenom": "Pierre", "date_examen": "2026-03-03"}]
+[{"nom": "DUPONT", "prenom": "Jean", "date_examen": "2026-03-02", "heure_passage": "09:00"}, {"nom": "MARTIN", "prenom": "Pierre", "date_examen": "2026-03-03", "heure_passage": "14:30"}]
 
 - "nom" = le nom de famille en MAJUSCULES tel qu'il apparait dans le document
 - "prenom" = le prénom tel qu'il apparait dans le document
 - "date_examen" = la date d'examen pratique au format YYYY-MM-DD
+- "heure_passage" = l'heure de passage au format HH:MM (24h). Si l'heure exacte n'est pas indiquée mais qu'une plage est donnée (ex: "matin", "après-midi"), utilise "09:00" pour le matin et "14:00" pour l'après-midi.
 
 Si un candidat a plusieurs dates, prends la première date d'examen pratique.
 Ne mets aucune explication, juste le tableau JSON.`
@@ -97,7 +98,7 @@ Ne mets aucune explication, juste le tableau JSON.`
     console.log("AI raw response:", content);
 
     // Parse the JSON from AI response
-    let results: Array<{ nom: string; prenom: string; date_examen: string }>;
+    let results: Array<{ nom: string; prenom: string; date_examen: string; heure_passage?: string }>;
     try {
       const jsonMatch = content.match(/\[[\s\S]*\]/);
       if (!jsonMatch) throw new Error("No JSON array found");
@@ -113,7 +114,7 @@ Ne mets aucune explication, juste le tableau JSON.`
     // Fetch all apprenants
     const { data: apprenants, error: fetchErr } = await supabase
       .from("apprenants")
-      .select("id, nom, prenom, date_examen_pratique");
+      .select("id, nom, prenom, date_examen_pratique, heure_examen_pratique");
 
     if (fetchErr) {
       return new Response(JSON.stringify({ error: "Erreur DB: " + fetchErr.message }), {
@@ -140,9 +141,13 @@ Ne mets aucune explication, juste le tableau JSON.`
       });
 
       if (match) {
+        const updateData: Record<string, string> = { date_examen_pratique: r.date_examen };
+        if (r.heure_passage) {
+          updateData.heure_examen_pratique = r.heure_passage;
+        }
         const { error: updateErr } = await supabase
           .from("apprenants")
-          .update({ date_examen_pratique: r.date_examen })
+          .update(updateData)
           .eq("id", match.id);
 
         updates.push({
