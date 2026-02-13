@@ -167,6 +167,95 @@ Deno.serve(async (req) => {
 
     const accessToken = await getAccessToken();
 
+    if (action === "sync-all") {
+      // Global sync: fetch all recent emails from inbox and sent items
+      const syncUserEmail = userEmail || "contact@ftransport.fr";
+      const inboxEmails = await fetchEmails(accessToken, syncUserEmail, "inbox");
+      const sentEmails = await fetchEmails(accessToken, syncUserEmail, "sentItems");
+
+      // Get existing outlook_message_ids to avoid duplicates
+      const { data: existingEmails } = await supabase
+        .from("emails")
+        .select("outlook_message_id")
+        .not("outlook_message_id", "is", null);
+      const existingIds = new Set((existingEmails || []).map((e: any) => e.outlook_message_id));
+
+      const newInbox = inboxEmails.filter((e) => !existingIds.has(e.id));
+      const newSent = sentEmails.filter((e) => !existingIds.has(e.id));
+
+      // Try to match emails to apprenants by email address
+      const { data: apprenants } = await supabase
+        .from("apprenants")
+        .select("id, email")
+        .not("email", "is", null);
+      const emailToApprenant = new Map<string, string>();
+      (apprenants || []).forEach((a: any) => {
+        if (a.email) emailToApprenant.set(a.email.toLowerCase(), a.id);
+      });
+
+      const emailsToInsert = [
+        ...newInbox.map((email) => {
+          const senderEmail = email.from?.emailAddress?.address?.toLowerCase() || "";
+          return {
+            apprenant_id: emailToApprenant.get(senderEmail) || null,
+            outlook_message_id: email.id,
+            subject: email.subject,
+            body_preview: email.bodyPreview,
+            body_html: email.body?.content,
+            sender_email: email.from?.emailAddress?.address,
+            sender_name: email.from?.emailAddress?.name,
+            recipients: [syncUserEmail],
+            type: "received" as const,
+            is_read: email.isRead,
+            has_attachments: email.hasAttachments,
+            received_at: email.receivedDateTime,
+          };
+        }),
+        ...newSent.map((email) => {
+          const recipientEmail = email.toRecipients?.[0]?.emailAddress?.address?.toLowerCase() || "";
+          return {
+            apprenant_id: emailToApprenant.get(recipientEmail) || null,
+            outlook_message_id: email.id,
+            subject: email.subject,
+            body_preview: email.bodyPreview,
+            body_html: email.body?.content,
+            sender_email: syncUserEmail,
+            sender_name: null,
+            recipients: email.toRecipients?.map((r) => r.emailAddress?.address) || [],
+            type: "sent" as const,
+            is_read: true,
+            has_attachments: email.hasAttachments,
+            sent_at: email.sentDateTime || email.receivedDateTime,
+          };
+        }),
+      ];
+
+      if (emailsToInsert.length > 0) {
+        const { error } = await supabase
+          .from("emails")
+          .upsert(emailsToInsert, {
+            onConflict: "outlook_message_id",
+            ignoreDuplicates: true,
+          });
+        if (error) {
+          console.error("Error upserting emails:", error);
+          throw error;
+        }
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          synced: emailsToInsert.length,
+          inbox: newInbox.length,
+          sent: newSent.length,
+          totalInbox: inboxEmails.length,
+          totalSent: sentEmails.length,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (action === "sync") {
       if (!apprenantEmail || !userEmail) {
         return new Response(
