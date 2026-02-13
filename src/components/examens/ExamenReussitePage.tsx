@@ -23,6 +23,8 @@ export function ExamenReussitePage() {
   const [sendingCMAEmail, setSendingCMAEmail] = useState(false);
   const [sendingVTCPratique, setSendingVTCPratique] = useState(false);
   const [sendingTAXIPratique, setSendingTAXIPratique] = useState(false);
+  const [sentVTCPratique, setSentVTCPratique] = useState(false);
+  const [sentTAXIPratique, setSentTAXIPratique] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -800,9 +802,9 @@ export function ExamenReussitePage() {
                     <h4 className="text-sm font-bold text-blue-700">VTC (Présentiel, E-learning, VA, PA VTC)</h4>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button size="sm" variant="outline" disabled={vtcList.length === 0 || sendingVTCPratique} className="gap-1 text-xs">
-                          <Mail className="h-3 w-3" />
-                          {sendingVTCPratique ? 'Envoi...' : `Envoyer email dates (${vtcList.filter(a => a.email).length})`}
+                        <Button size="sm" variant="outline" disabled={vtcList.length === 0 || sendingVTCPratique || sentVTCPratique} className={`gap-1 text-xs ${sentVTCPratique ? 'text-green-700 border-green-300' : ''}`}>
+                          {sentVTCPratique ? <CheckCircle2 className="h-3 w-3" /> : <Mail className="h-3 w-3" />}
+                          {sendingVTCPratique ? 'Envoi...' : sentVTCPratique ? 'Déjà envoyé ✓' : `Envoyer email dates (${vtcList.filter(a => a.email).length})`}
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
@@ -834,6 +836,7 @@ export function ExamenReussitePage() {
                               } catch {}
                             }
                             setSendingVTCPratique(false);
+                            setSentVTCPratique(true);
                             toast.success(`${sent}/${candidates.length} email(s) VTC envoyé(s)`);
                           }}>Envoyer</AlertDialogAction>
                         </AlertDialogFooter>
@@ -876,9 +879,9 @@ export function ExamenReussitePage() {
                     <h4 className="text-sm font-bold text-amber-700">TAXI (Présentiel, E-learning, TA, PA TAXI)</h4>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button size="sm" variant="outline" disabled={taxiList.length === 0 || sendingTAXIPratique} className="gap-1 text-xs">
-                          <Mail className="h-3 w-3" />
-                          {sendingTAXIPratique ? 'Envoi...' : `Envoyer email dates (${taxiList.filter(a => a.email).length})`}
+                        <Button size="sm" variant="outline" disabled={taxiList.length === 0 || sendingTAXIPratique || sentTAXIPratique} className={`gap-1 text-xs ${sentTAXIPratique ? 'text-green-700 border-green-300' : ''}`}>
+                          {sentTAXIPratique ? <CheckCircle2 className="h-3 w-3" /> : <Mail className="h-3 w-3" />}
+                          {sendingTAXIPratique ? 'Envoi...' : sentTAXIPratique ? 'Déjà envoyé ✓' : `Envoyer email dates (${taxiList.filter(a => a.email).length})`}
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
@@ -910,6 +913,7 @@ export function ExamenReussitePage() {
                               } catch {}
                             }
                             setSendingTAXIPratique(false);
+                            setSentTAXIPratique(true);
                             toast.success(`${sent}/${candidates.length} email(s) TAXI envoyé(s)`);
                           }}>Envoyer</AlertDialogAction>
                         </AlertDialogFooter>
