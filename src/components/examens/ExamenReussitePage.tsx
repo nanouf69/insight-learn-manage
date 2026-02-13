@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ClipboardCheck, CheckCircle2, XCircle, UserX, Search, RotateCcw, Plus, X, Upload, FileText, Trash2, Download, Users, Mail } from "lucide-react";
+import { ClipboardCheck, CheckCircle2, XCircle, UserX, Search, RotateCcw, Plus, X, Upload, FileText, Trash2, Download, Users, Mail, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
 
 export function ExamenReussitePage() {
@@ -169,6 +169,7 @@ export function ExamenReussitePage() {
     'vtc': 'VTC', 'vtc-e': 'VTC E', 'vtc-e-presentiel': 'VTC E Présentiel',
     'taxi': 'TAXI', 'taxi-e': 'TAXI E', 'taxi-e-presentiel': 'TAXI E Présentiel',
     'ta': 'TA', 'ta-e': 'TA E', 'va': 'VA', 'va-e': 'VA E',
+    'pa-vtc': 'PA VTC', 'pa-taxi': 'PA TAXI', 'rp-vtc': 'RP VTC', 'rp-taxi': 'RP TAXI',
   };
 
   const typeColor: Record<string, string> = {
@@ -486,6 +487,126 @@ export function ExamenReussitePage() {
                   </div>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        );
+      })()}
+
+      {/* Récapitulatif formation pratique */}
+      {(() => {
+        // Tous les candidats à former : réussis + PA
+        const paRpTypes = ['pa-vtc', 'pa-taxi', 'rp-vtc', 'rp-taxi'];
+        const reussisFormation = apprenants?.filter(a => (a as any).resultat_examen === 'oui') || [];
+        const paRpFormation = (allApprenants || []).filter(a => 
+          paRpTypes.includes((a.type_apprenant || '').toLowerCase()) && 
+          !reussisFormation.some(r => r.id === a.id)
+        );
+        const tousAFormer = [...reussisFormation, ...paRpFormation];
+
+        const isVTC = (type: string | null) => {
+          if (!type) return false;
+          const t = type.toLowerCase();
+          return ['vtc', 'vtc-e', 'vtc-e-presentiel', 'va-e', 'pa-vtc', 'rp-vtc'].includes(t);
+        };
+        const isTAXI = (type: string | null) => {
+          if (!type) return false;
+          const t = type.toLowerCase();
+          return ['taxi', 'taxi-e', 'taxi-e-presentiel', 'ta', 'ta-e', 'pa-taxi', 'rp-taxi'].includes(t);
+        };
+
+        const vtcList = tousAFormer.filter(a => isVTC(a.type_apprenant));
+        const taxiList = tousAFormer.filter(a => isTAXI(a.type_apprenant));
+        const joursVTC = Math.ceil(vtcList.length / 4);
+        const joursTAXI = Math.ceil(taxiList.length / 3);
+        const maxRows = Math.max(vtcList.length, taxiList.length);
+
+        return (
+          <Card className="border-l-4 border-l-indigo-500">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <GraduationCap className="h-5 w-5 text-indigo-600" />
+                Récapitulatif — Formation pratique à planifier
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-6">
+                {/* VTC */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-bold text-blue-700">VTC (Présentiel, E-learning, VA, PA VTC, RP VTC)</h4>
+                  </div>
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-8">#</TableHead>
+                          <TableHead>Nom Prénom</TableHead>
+                          <TableHead>Type</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {vtcList.map((a, i) => (
+                          <TableRow key={a.id}>
+                            <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
+                            <TableCell className="font-medium">{a.nom} {a.prenom}</TableCell>
+                            <TableCell>
+                              <Badge className="bg-blue-100 text-blue-800 text-xs">
+                                {typeLabel[a.type_apprenant || ''] || a.type_apprenant || '-'}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  <div className="mt-3 p-3 bg-blue-50 rounded-lg space-y-1">
+                    <p className="text-sm font-bold text-blue-800">Total VTC à former : {vtcList.length}</p>
+                    <p className="text-sm text-blue-700">4 candidats/jour → <strong>{joursVTC} jour(s)</strong> de formation nécessaires</p>
+                  </div>
+                </div>
+
+                {/* TAXI */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-bold text-amber-700">TAXI (Présentiel, E-learning, TA, PA TAXI, RP TAXI)</h4>
+                  </div>
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-8">#</TableHead>
+                          <TableHead>Nom Prénom</TableHead>
+                          <TableHead>Type</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {taxiList.map((a, i) => (
+                          <TableRow key={a.id}>
+                            <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
+                            <TableCell className="font-medium">{a.nom} {a.prenom}</TableCell>
+                            <TableCell>
+                              <Badge className="bg-amber-100 text-amber-800 text-xs">
+                                {typeLabel[a.type_apprenant || ''] || a.type_apprenant || '-'}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  <div className="mt-3 p-3 bg-amber-50 rounded-lg space-y-1">
+                    <p className="text-sm font-bold text-amber-800">Total TAXI à former : {taxiList.length}</p>
+                    <p className="text-sm text-amber-700">3 candidats/jour → <strong>{joursTAXI} jour(s)</strong> de formation nécessaires</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 p-4 bg-muted/50 rounded-lg flex items-center justify-between">
+                <p className="text-sm font-semibold">Total général : {tousAFormer.length} candidat(s) à former</p>
+                <p className="text-sm text-muted-foreground">
+                  {vtcList.length} VTC ({joursVTC}j) + {taxiList.length} TAXI ({joursTAXI}j)
+                </p>
+              </div>
             </CardContent>
           </Card>
         );
