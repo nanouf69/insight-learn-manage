@@ -1108,7 +1108,7 @@ export function ExamenReussitePage() {
                             </TableCell>
                             <TableCell className="text-center">
                               <div className="flex items-center justify-center gap-1">
-                                {hasReservation ? (
+                                {hasReservation && (
                                   <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                       <Button variant="ghost" size="icon" className="h-7 w-7" title="Annuler la réservation">
@@ -1128,25 +1128,24 @@ export function ExamenReussitePage() {
                                       </AlertDialogFooter>
                                     </AlertDialogContent>
                                   </AlertDialog>
-                                ) : (
-                                  <Popover>
-                                    <PopoverTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Choisir une date">
-                                        <CalendarPlus className="h-3.5 w-3.5 text-blue-600" />
-                                      </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-2" align="end">
-                                      <p className="text-xs font-medium mb-2">Choisir une date pour {a.prenom} :</p>
-                                      <div className="grid gap-1">
-                                        {vtcDates.map(d => (
-                                          <Button key={d} variant="outline" size="sm" className="text-xs justify-start" onClick={() => handleAssignDate(a.id, `${a.nom} ${a.prenom}`, d, 'vtc')}>
-                                            {new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
-                                          </Button>
-                                        ))}
-                                      </div>
-                                    </PopoverContent>
-                                  </Popover>
                                 )}
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7" title={hasReservation ? "Changer la date" : "Choisir une date"}>
+                                      <CalendarPlus className="h-3.5 w-3.5 text-blue-600" />
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-2" align="end">
+                                    <p className="text-xs font-medium mb-2">{hasReservation ? 'Changer' : 'Choisir'} la date pour {a.prenom} :</p>
+                                    <div className="grid gap-1">
+                                      {vtcDates.map(d => (
+                                        <Button key={d} variant={reservation?.date_choisie === d ? "default" : "outline"} size="sm" className="text-xs justify-start" onClick={() => handleAssignDate(a.id, `${a.nom} ${a.prenom}`, d, 'vtc')}>
+                                          {new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                        </Button>
+                                      ))}
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
                               </div>
                             </TableCell>
                           </TableRow>
@@ -1337,7 +1336,7 @@ export function ExamenReussitePage() {
                             </TableCell>
                             <TableCell className="text-center">
                               <div className="flex items-center justify-center gap-1">
-                                {hasReservation ? (
+                                {hasReservation && (
                                   <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                       <Button variant="ghost" size="icon" className="h-7 w-7" title="Annuler la réservation">
@@ -1357,25 +1356,24 @@ export function ExamenReussitePage() {
                                       </AlertDialogFooter>
                                     </AlertDialogContent>
                                   </AlertDialog>
-                                ) : (
-                                  <Popover>
-                                    <PopoverTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Choisir une date">
-                                        <CalendarPlus className="h-3.5 w-3.5 text-amber-600" />
-                                      </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-2" align="end">
-                                      <p className="text-xs font-medium mb-2">Choisir une date pour {a.prenom} :</p>
-                                      <div className="grid gap-1">
-                                        {taxiDates.map(d => (
-                                          <Button key={d} variant="outline" size="sm" className="text-xs justify-start" onClick={() => handleAssignDate(a.id, `${a.nom} ${a.prenom}`, d, 'taxi')}>
-                                            {new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
-                                          </Button>
-                                        ))}
-                                      </div>
-                                    </PopoverContent>
-                                  </Popover>
                                 )}
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7" title={hasReservation ? "Changer la date" : "Choisir une date"}>
+                                      <CalendarPlus className="h-3.5 w-3.5 text-amber-600" />
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-2" align="end">
+                                    <p className="text-xs font-medium mb-2">{hasReservation ? 'Changer' : 'Choisir'} la date pour {a.prenom} :</p>
+                                    <div className="grid gap-1">
+                                      {taxiDates.map(d => (
+                                        <Button key={d} variant={reservation?.date_choisie === d ? "default" : "outline"} size="sm" className="text-xs justify-start" onClick={() => handleAssignDate(a.id, `${a.nom} ${a.prenom}`, d, 'taxi')}>
+                                          {new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                        </Button>
+                                      ))}
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
                               </div>
                             </TableCell>
                           </TableRow>
