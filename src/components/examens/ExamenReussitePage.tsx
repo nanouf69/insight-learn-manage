@@ -687,14 +687,22 @@ export function ExamenReussitePage() {
 
       {/* Planning formation pratique */}
       {(() => {
+        const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+        const matchPratiquePlanning = (datePratique: string | null) => {
+          if (!datePratique) return false;
+          return normalize(datePratique) === normalize(selectedDatePratique);
+        };
+
         const paTypes = ['pa-vtc', 'pa-taxi'];
         const rpTypes = ['rp-vtc', 'rp-taxi'];
         const reussisPlanning = apprenants?.filter(a => 
           (a as any).resultat_examen === 'oui' && 
-          !rpTypes.includes((a.type_apprenant || '').toLowerCase())
+          !rpTypes.includes((a.type_apprenant || '').toLowerCase()) &&
+          matchPratiquePlanning((a as any).date_examen_pratique)
         ) || [];
         const paPlanning = (allApprenants || []).filter(a => 
           paTypes.includes((a.type_apprenant || '').toLowerCase()) && 
+          matchPratiquePlanning(a.date_examen_pratique) &&
           !reussisPlanning.some(r => r.id === a.id)
         );
         const tousPlanning = [...reussisPlanning, ...paPlanning];
