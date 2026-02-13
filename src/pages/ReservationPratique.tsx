@@ -28,6 +28,14 @@ interface DateSlot {
 const DAY_NAMES = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 const MONTH_NAMES = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 
+// Helper to get local YYYY-MM-DD without UTC shift
+const toLocalDateKey = (d: Date) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
 function generatePlanningDates(type: 'vtc' | 'taxi'): { date: Date; capacity: number }[] {
   const start = new Date(2026, 1, 16); // Feb 16, 2026
   const end = new Date(2026, 2, 7);    // March 7
@@ -135,7 +143,7 @@ export default function ReservationPratique() {
 
   const dateSlots: DateSlot[] = useMemo(() => {
     return planningDates.map(d => {
-      const key = d.date.toISOString().slice(0, 10);
+      const key = toLocalDateKey(d.date);
       const reserved = reservationCounts[key] || 0;
       return {
         date: d.date,
@@ -377,7 +385,7 @@ export default function ReservationPratique() {
             </h3>
             <div className="grid gap-3">
               {dateSlots.map(slot => {
-                const key = slot.date.toISOString().slice(0, 10);
+                const key = toLocalDateKey(slot.date);
                 const isFull = slot.remaining <= 0;
                 const isSelected = selectedDate === key;
 
