@@ -199,7 +199,7 @@ export default function ReservationPratique() {
 
         try {
           await supabase.functions.invoke('sync-outlook-emails', {
-            body: { action: 'send', to: appFull.email, subject, body, apprenantId }
+            body: { action: 'send', userEmail: 'contact@ftransport.fr', to: appFull.email, subject, body, apprenantId }
           });
         } catch {}
       }
