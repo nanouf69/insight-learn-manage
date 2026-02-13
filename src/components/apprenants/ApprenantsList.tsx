@@ -325,12 +325,15 @@ export function ApprenantsList() {
     }
   };
 
-  const filteredApprenants = apprenants.filter(a => 
-    a.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    a.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (a.email && a.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (a.ville && a.ville.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const normalize = (str: string) =>
+    str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
+
+  const filteredApprenants = apprenants.filter(a => {
+    if (!searchTerm.trim()) return true;
+    const keywords = normalize(searchTerm).split(" ").filter(Boolean);
+    const haystack = normalize([a.nom, a.prenom, a.email || "", a.telephone || "", a.ville || ""].join(" "));
+    return keywords.every(kw => haystack.includes(kw));
+  });
 
   if (isLoading) {
     return (

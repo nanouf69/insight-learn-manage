@@ -91,11 +91,14 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
     },
   });
 
+  const normalize = (str: string) =>
+    str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
+
   const filteredApprenants = useMemo(() => {
     if (!searchQuery.trim()) return apprenants;
-    const words = searchQuery.toLowerCase().trim().split(/\s+/);
+    const words = normalize(searchQuery).split(" ").filter(Boolean);
     return apprenants.filter(a => {
-      const searchable = `${a.prenom} ${a.nom} ${a.email} ${a.telephone}`.toLowerCase();
+      const searchable = normalize(`${a.prenom} ${a.nom} ${a.email} ${a.telephone}`);
       return words.every(word => searchable.includes(word));
     });
   }, [apprenants, searchQuery]);
