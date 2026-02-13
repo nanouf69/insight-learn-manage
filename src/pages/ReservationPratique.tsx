@@ -173,6 +173,37 @@ export default function ReservationPratique() {
       .update({ date_examen_pratique: selectedDate })
       .eq("id", apprenantId);
 
+    // Send confirmation email
+    if (apprenant?.nom && apprenant?.prenom) {
+      const confDate = new Date(selectedDate + 'T00:00:00');
+      const dateStr = `${DAY_NAMES[confDate.getDay()]} ${confDate.getDate()} ${MONTH_NAMES[confDate.getMonth()]} 2026`;
+      const formationType = isVTC ? 'VTC' : 'TAXI';
+      const exerciceLink = isVTC 
+        ? 'https://app.formative.com/join/DNFDZS' 
+        : 'https://app.formative.com/join/ZT924H';
+      const exerciceNom = isVTC
+        ? '"Formation Pratique VTC" : Quizz Lyon et Questions à apprendre'
+        : '"Formation Pratique TAXI" : QCM Taximètre, Cas pratique, Quizz Lyon et Questions à apprendre';
+
+      // Fetch email from apprenants table
+      const { data: appFull } = await supabase
+        .from("apprenants")
+        .select("email")
+        .eq("id", apprenantId)
+        .single();
+
+      if (appFull?.email) {
+        const subject = `Confirmation de votre date de formation pratique ${formationType} - ${apprenant.prenom} ${apprenant.nom}`;
+        const body = `Bonjour ${apprenant.prenom},\n\nNous confirmons votre inscription à la journée de formation pratique ${formationType} :\n\n📅 Date : ${dateStr}\n🕐 Horaires : 9h00 - 17h00\n📍 Lieu : 86 Route de Genas, 69003 Lyon\n🍽️ Pause déjeuner : Confluences (12h - 13h)\n\n📚 Rappel important :\nMerci de bien réviser les exercices suivants dans ${exerciceNom}.\nLien : ${exerciceLink}\n\n⚠️ Ce créneau ne pourra pas être modifié et vous ne recevrez aucune autre confirmation.\n\nCordialement,\n\nFTRANSPORT\nCentre de formation\n86 Route de Genas 69003 Lyon\n📞 04.28.29.60.91\nDe 9h à 17h sur rendez-vous`;
+
+        try {
+          await supabase.functions.invoke('sync-outlook-emails', {
+            body: { action: 'send', to: appFull.email, subject, body, apprenantId }
+          });
+        } catch {}
+      }
+    }
+
     setConfirmed(true);
     setSubmitting(false);
   };
