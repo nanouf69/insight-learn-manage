@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ClipboardCheck, CheckCircle2, XCircle, UserX, Search, RotateCcw, Plus, X, Upload, FileText, Trash2, Download } from "lucide-react";
+import { ClipboardCheck, CheckCircle2, XCircle, UserX, Search, RotateCcw, Plus, X, Upload, FileText, Trash2, Download, Users } from "lucide-react";
 import { toast } from "sonner";
 
 export function ExamenReussitePage() {
@@ -273,6 +273,79 @@ export function ExamenReussitePage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Récapitulatif par catégorie */}
+      {(() => {
+        const inscrits = apprenants || [];
+        const getCategorie = (type: string | null) => {
+          if (!type) return 'Autre';
+          const t = type.toLowerCase();
+          if (['taxi', 'taxi-e', 'taxi-e-presentiel', 'ta', 'ta-e'].includes(t)) return 'TAXI';
+          if (['vtc', 'vtc-e', 'vtc-e-presentiel', 'va-e'].includes(t)) return 'VTC';
+          return 'Autre';
+        };
+        const taxis = inscrits.filter(a => getCategorie(a.type_apprenant) === 'TAXI');
+        const vtcs = inscrits.filter(a => getCategorie(a.type_apprenant) === 'VTC');
+        const autres = inscrits.filter(a => getCategorie(a.type_apprenant) === 'Autre');
+
+        const renderGroup = (title: string, list: typeof inscrits, color: string, badgeClass: string) => (
+          list.length > 0 && (
+            <Card key={title} className={`border-l-4 ${color}`}>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    {title}
+                  </span>
+                  <Badge className={badgeClass}>{list.length} apprenant(s)</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nom</TableHead>
+                        <TableHead>Prénom</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Date d'examen</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {list.map(a => (
+                        <TableRow key={a.id}>
+                          <TableCell className="font-medium">{a.nom}</TableCell>
+                          <TableCell>{a.prenom}</TableCell>
+                          <TableCell>
+                            <Badge className={typeColor[a.type_apprenant || ''] || 'bg-gray-100 text-gray-800'}>
+                              {typeLabel[a.type_apprenant || ''] || a.type_apprenant || '-'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{a.date_examen_theorique || '-'}</Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )
+        );
+
+        return (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Récapitulatif des inscrits par catégorie — Total : {inscrits.length}
+            </h2>
+            {renderGroup('TAXI (Taxi, Taxi E, TA, TA E)', taxis, 'border-l-amber-500', 'bg-amber-100 text-amber-800')}
+            {renderGroup('VTC (VTC, VTC E, VA E)', vtcs, 'border-l-blue-500', 'bg-blue-100 text-blue-800')}
+            {renderGroup('Autre', autres, 'border-l-gray-400', 'bg-gray-100 text-gray-800')}
+          </div>
+        );
+      })()}
 
       {/* Main table */}
       <Card>
