@@ -38,7 +38,12 @@ Deno.serve(async (req) => {
 
     // Convert to base64 for AI analysis
     const arrayBuffer = await fileData.arrayBuffer();
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    const bytes = new Uint8Array(arrayBuffer);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64 = btoa(binary);
 
     // Use Lovable AI to extract candidate names and their exam dates
     const lovableApiKey = Deno.env.get("LOVABLE_API_KEY")!;
