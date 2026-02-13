@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -530,11 +531,12 @@ export function ExamenReussitePage() {
                 to: 'audrey.crevier@cma-auvergnerhonealpes.fr',
                 subject: `Liste candidats reçus - Examen du ${selectedExamDate}${dateDebutText}`,
                 body: htmlBody,
+                requestReadReceipt: true,
               },
             });
             if (error) throw error;
             if (data?.success) {
-              toast.success('Email envoyé à la CMA avec succès !');
+              toast.success('Email envoyé à la CMA avec accusé de réception demandé !');
             } else {
               throw new Error('Échec de l\'envoi');
             }
@@ -559,14 +561,45 @@ export function ExamenReussitePage() {
                     <FileText className="h-4 w-4" />
                     Imprimer ({reussisLettre.length})
                   </Button>
-                  <Button 
-                    onClick={handleSendCMAEmail} 
-                    disabled={reussisLettre.length === 0 || sendingCMAEmail} 
-                    className="gap-2"
-                  >
-                    <Mail className="h-4 w-4" />
-                    {sendingCMAEmail ? 'Envoi...' : `Envoyer par email (${reussisLettre.length})`}
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        disabled={reussisLettre.length === 0 || sendingCMAEmail} 
+                        className="gap-2"
+                      >
+                        <Mail className="h-4 w-4" />
+                        {sendingCMAEmail ? 'Envoi...' : `Envoyer par email (${reussisLettre.length})`}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="max-w-lg">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Confirmer l'envoi à la CMA</AlertDialogTitle>
+                        <AlertDialogDescription asChild>
+                          <div className="space-y-3 text-sm">
+                            <p><strong>Destinataire :</strong> audrey.crevier@cma-auvergnerhonealpes.fr</p>
+                            <p><strong>Objet :</strong> Liste candidats reçus - Examen du {selectedExamDate}</p>
+                            {dateDebutPratique && (
+                              <p><strong>Début souhaité :</strong> {new Date(dateDebutPratique).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                            )}
+                            <div className="flex gap-4">
+                              <p><strong>TAXI :</strong> {taxiReussis.length} candidat(s)</p>
+                              <p><strong>VTC :</strong> {vtcReussis.length} candidat(s)</p>
+                            </div>
+                            <p><strong>Total :</strong> {reussisLettre.length} candidat(s)</p>
+                            <p className="text-xs text-muted-foreground mt-2">
+                              ✓ Un accusé de réception sera demandé
+                            </p>
+                          </div>
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleSendCMAEmail}>
+                          Confirmer l'envoi
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </CardTitle>
             </CardHeader>
