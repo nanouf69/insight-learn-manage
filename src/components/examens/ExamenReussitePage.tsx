@@ -808,8 +808,11 @@ export function ExamenReussitePage() {
                       <AlertDialogContent>
                         <AlertDialogHeader>
                           <AlertDialogTitle>Envoyer les emails VTC - Dates pratique</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Envoyer l'email "Félicitations VTC - Choix date pratique" à {vtcList.filter(a => a.email).length} candidat(s) ayant un email renseigné ?
+                          <AlertDialogDescription asChild>
+                            <div className="space-y-2 text-sm">
+                              <p>Envoyer l'email "Félicitations VTC - Choix date pratique" à {vtcList.filter(a => a.email).length} candidat(s) ayant un email renseigné ?</p>
+                              <p className="font-medium text-blue-700">📅 Entraînement VTC : du 16 au 24 février 2026</p>
+                            </div>
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -881,8 +884,11 @@ export function ExamenReussitePage() {
                       <AlertDialogContent>
                         <AlertDialogHeader>
                           <AlertDialogTitle>Envoyer les emails TAXI - Dates pratique</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Envoyer l'email "Félicitations TAXI - Choix date pratique" à {taxiList.filter(a => a.email).length} candidat(s) ayant un email renseigné ?
+                          <AlertDialogDescription asChild>
+                            <div className="space-y-2 text-sm">
+                              <p>Envoyer l'email "Félicitations TAXI - Choix date pratique" à {taxiList.filter(a => a.email).length} candidat(s) ayant un email renseigné ?</p>
+                              <p className="font-medium text-amber-700">📅 Entraînement TAXI : du 25 au 27 février 2026</p>
+                            </div>
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
