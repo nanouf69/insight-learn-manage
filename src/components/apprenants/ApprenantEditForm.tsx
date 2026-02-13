@@ -911,6 +911,87 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
             </div>
           </div>
 
+          {/* Section paiement pour RP (repassage) */}
+          {["repassage-theorique", "repassage-pratique"].includes(formData.selected_formation) && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Paiement repassage</h3>
+              <div className="p-3 rounded-lg bg-muted/50">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Location de véhicule</span>
+                  <span className="font-semibold">80,00 €</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="montant_paye">Montant payé (€)</Label>
+                  <Input 
+                    id="montant_paye" 
+                    type="number" 
+                    placeholder="0" 
+                    value={formData.montant_paye}
+                    onChange={(e) => setFormData({ ...formData, montant_paye: e.target.value })}
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="moyen_paiement">Moyen de paiement</Label>
+                  <Select 
+                    value={formData.moyen_paiement} 
+                    onValueChange={(value) => setFormData({ ...formData, moyen_paiement: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cb">Carte bancaire</SelectItem>
+                      <SelectItem value="virement">Virement</SelectItem>
+                      <SelectItem value="especes">Espèces</SelectItem>
+                      <SelectItem value="cheque">Chèque</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Date de paiement</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !datePaiement && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {datePaiement ? format(datePaiement, "dd MMMM yyyy", { locale: fr }) : "Sélectionner une date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={datePaiement}
+                      onSelect={setDatePaiement}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-2">
+                <Label>Reste à payer</Label>
+                <div className={cn(
+                  "h-10 px-3 py-2 rounded-md border flex items-center font-medium",
+                  80 - (parseFloat(formData.montant_paye) || 0) > 0
+                    ? "bg-orange-50 text-orange-700 border-orange-200"
+                    : "bg-green-50 text-green-700 border-green-200"
+                )}>
+                  {(80 - (parseFloat(formData.montant_paye) || 0)).toFixed(2)} €
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Prix de la formation et Paiement - Masqué pour repassage/passage examen et PA */}
           {formData.mode_financement === "personnel" && !["repassage-theorique", "repassage-pratique", "passage-pratique"].includes(formData.selected_formation) && !["pa-vtc", "pa-taxi"].includes(formData.type_apprenant) && (
             <div className="space-y-4">
