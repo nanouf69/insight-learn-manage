@@ -129,6 +129,7 @@ export function ApprenantForm() {
   const [typeApprenantFormation, setTypeApprenantFormation] = useState("vtc");
   const [dateExamenTheorique, setDateExamenTheorique] = useState("27 janvier 2026");
   const [datePaiement, setDatePaiement] = useState<Date | undefined>();
+  const [montantPayeRp, setMontantPayeRp] = useState("");
   const [inscritFranceTravail, setInscritFranceTravail] = useState(false);
   const [dateExamenPratique, setDateExamenPratique] = useState("");
   const [sessionsDisponibles, setSessionsDisponibles] = useState<{id: string, nom: string, date_debut: string, date_fin: string}[]>([]);
@@ -1011,7 +1012,10 @@ export function ApprenantForm() {
                     type="number" 
                     placeholder="0" 
                     min="0"
+                    max="80"
                     step="0.01"
+                    value={montantPayeRp}
+                    onChange={(e) => setMontantPayeRp(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -1058,7 +1062,12 @@ export function ApprenantForm() {
               <div className="p-3 rounded-lg bg-muted/50">
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-muted-foreground">Reste à payer</span>
-                  <span className="font-semibold">80,00 €</span>
+                  <span className={cn(
+                    "font-semibold",
+                    (80 - (parseFloat(montantPayeRp) || 0)) > 0 ? "text-orange-600" : "text-green-600"
+                  )}>
+                    {(80 - (parseFloat(montantPayeRp) || 0)).toFixed(2)} €
+                  </span>
                 </div>
               </div>
             </div>
