@@ -464,12 +464,34 @@ export function ExamenReussitePage() {
         const currentTheorique = datesExamenTheorique.find(e => e.date === selectedExamDate);
         const defaultPratique = currentTheorique ? datesExamenPratique[currentTheorique.pratiqueIndex] : null;
         
+        const parsePeriodRangeCMA = (period: string): { start: Date; end: Date } | null => {
+          const norm = period.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+          const moisMap: Record<string, number> = { janvier: 0, fevrier: 1, mars: 2, avril: 3, mai: 4, juin: 5, juillet: 6, aout: 7, septembre: 8, octobre: 9, novembre: 10, decembre: 11 };
+          const match2 = norm.match(/du\s+(\d+)(?:er)?\s+(\w+)\s+au\s+(\d+)(?:er)?\s+(\w+)\s+(\d{4})/);
+          if (match2) {
+            const [, d1, m1, d2, m2, y] = match2;
+            return { start: new Date(+y, moisMap[m1] ?? 0, +d1), end: new Date(+y, moisMap[m2] ?? 0, +d2) };
+          }
+          const match1 = norm.match(/du\s+(\d+)(?:er)?\s+au\s+(\d+)(?:er)?\s+(\w+)\s+(\d{4})/);
+          if (match1) {
+            const [, d1, d2, m, y] = match1;
+            return { start: new Date(+y, moisMap[m] ?? 0, +d1), end: new Date(+y, moisMap[m] ?? 0, +d2) };
+          }
+          return null;
+        };
+        const isISODateCMA = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s);
+        const periodRangeCMA = parsePeriodRangeCMA(selectedDatePratique);
+
         const matchPratique = (datePratique: string | null) => {
-          // If no practical date set, match if selected practical date is the default for this theoretical exam
           if (!datePratique) {
             return defaultPratique ? normalize(defaultPratique) === normalize(selectedDatePratique) : false;
           }
-          return normalize(datePratique) === normalize(selectedDatePratique);
+          if (normalize(datePratique) === normalize(selectedDatePratique)) return true;
+          if (isISODateCMA(datePratique) && periodRangeCMA) {
+            const d = new Date(datePratique);
+            return d >= periodRangeCMA.start && d <= periodRangeCMA.end;
+          }
+          return false;
         };
 
         // Candidats réussis de l'examen théorique dont la date pratique correspond
@@ -751,11 +773,38 @@ export function ExamenReussitePage() {
         const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
         const currentTheorique2 = datesExamenTheorique.find(e => e.date === selectedExamDate);
         const defaultPratique2 = currentTheorique2 ? datesExamenPratique[currentTheorique2.pratiqueIndex] : null;
+        // Parse date range from period string like "Du 23 fevrier au 6 mars 2026"
+        const parsePeriodRange = (period: string): { start: Date; end: Date } | null => {
+          const norm = period.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+          const moisMap: Record<string, number> = { janvier: 0, fevrier: 1, mars: 2, avril: 3, mai: 4, juin: 5, juillet: 6, aout: 7, septembre: 8, octobre: 9, novembre: 10, decembre: 11 };
+          // Match "du X mois au Y mois annee" or "du X au Y mois annee"
+          const match2 = norm.match(/du\s+(\d+)(?:er)?\s+(\w+)\s+au\s+(\d+)(?:er)?\s+(\w+)\s+(\d{4})/);
+          if (match2) {
+            const [, d1, m1, d2, m2, y] = match2;
+            return { start: new Date(+y, moisMap[m1] ?? 0, +d1), end: new Date(+y, moisMap[m2] ?? 0, +d2) };
+          }
+          const match1 = norm.match(/du\s+(\d+)(?:er)?\s+au\s+(\d+)(?:er)?\s+(\w+)\s+(\d{4})/);
+          if (match1) {
+            const [, d1, d2, m, y] = match1;
+            return { start: new Date(+y, moisMap[m] ?? 0, +d1), end: new Date(+y, moisMap[m] ?? 0, +d2) };
+          }
+          return null;
+        };
+        const isISODate = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s);
+        const periodRange = parsePeriodRange(selectedDatePratique);
+
         const matchPratiqueFormation = (datePratique: string | null) => {
           if (!datePratique) {
             return defaultPratique2 ? normalize(defaultPratique2) === normalize(selectedDatePratique) : false;
           }
-          return normalize(datePratique) === normalize(selectedDatePratique);
+          // Direct text match
+          if (normalize(datePratique) === normalize(selectedDatePratique)) return true;
+          // ISO date match within selected period range
+          if (isISODate(datePratique) && periodRange) {
+            const d = new Date(datePratique);
+            return d >= periodRange.start && d <= periodRange.end;
+          }
+          return false;
         };
 
         // Tous les candidats à former : réussis + PA (pas les RP), filtrés par date pratique
@@ -1106,11 +1155,34 @@ export function ExamenReussitePage() {
         const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
         const currentTheorique3 = datesExamenTheorique.find(e => e.date === selectedExamDate);
         const defaultPratique3 = currentTheorique3 ? datesExamenPratique[currentTheorique3.pratiqueIndex] : null;
+        const parsePeriodRange3 = (period: string): { start: Date; end: Date } | null => {
+          const norm = period.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+          const moisMap: Record<string, number> = { janvier: 0, fevrier: 1, mars: 2, avril: 3, mai: 4, juin: 5, juillet: 6, aout: 7, septembre: 8, octobre: 9, novembre: 10, decembre: 11 };
+          const match2 = norm.match(/du\s+(\d+)(?:er)?\s+(\w+)\s+au\s+(\d+)(?:er)?\s+(\w+)\s+(\d{4})/);
+          if (match2) {
+            const [, d1, m1, d2, m2, y] = match2;
+            return { start: new Date(+y, moisMap[m1] ?? 0, +d1), end: new Date(+y, moisMap[m2] ?? 0, +d2) };
+          }
+          const match1 = norm.match(/du\s+(\d+)(?:er)?\s+au\s+(\d+)(?:er)?\s+(\w+)\s+(\d{4})/);
+          if (match1) {
+            const [, d1, d2, m, y] = match1;
+            return { start: new Date(+y, moisMap[m] ?? 0, +d1), end: new Date(+y, moisMap[m] ?? 0, +d2) };
+          }
+          return null;
+        };
+        const isISODate3 = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s);
+        const periodRange3 = parsePeriodRange3(selectedDatePratique);
+
         const matchPratiquePlanning = (datePratique: string | null) => {
           if (!datePratique) {
             return defaultPratique3 ? normalize(defaultPratique3) === normalize(selectedDatePratique) : false;
           }
-          return normalize(datePratique) === normalize(selectedDatePratique);
+          if (normalize(datePratique) === normalize(selectedDatePratique)) return true;
+          if (isISODate3(datePratique) && periodRange3) {
+            const d = new Date(datePratique);
+            return d >= periodRange3.start && d <= periodRange3.end;
+          }
+          return false;
         };
 
         const paTypes = ['pa-vtc', 'pa-taxi'];
