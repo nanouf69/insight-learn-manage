@@ -25,6 +25,10 @@ export function ExamenReussitePage() {
   const [sendingTAXIPratique, setSendingTAXIPratique] = useState(false);
   const [sentVTCPratique, setSentVTCPratique] = useState(false);
   const [sentTAXIPratique, setSentTAXIPratique] = useState(false);
+  const [sendingVTCRelance, setSendingVTCRelance] = useState(false);
+  const [sendingTAXIRelance, setSendingTAXIRelance] = useState(false);
+  const [sentVTCRelance, setSentVTCRelance] = useState(false);
+  const [sentTAXIRelance, setSentTAXIRelance] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -842,6 +846,52 @@ export function ExamenReussitePage() {
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
+                    {/* Bouton Relancer VTC - candidats sans réservation */}
+                    {(() => {
+                      const vtcSansResa = vtcList.filter(a => a.email && !reservationsPratique?.some(r => r.apprenant_id === a.id));
+                      return vtcSansResa.length > 0 ? (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="outline" disabled={sendingVTCRelance || sentVTCRelance} className={`gap-1 text-xs ${sentVTCRelance ? 'text-green-700 border-green-300' : 'text-orange-700 border-orange-300'}`}>
+                              {sentVTCRelance ? <CheckCircle2 className="h-3 w-3" /> : <RotateCcw className="h-3 w-3" />}
+                              {sendingVTCRelance ? 'Envoi...' : sentVTCRelance ? 'Relance envoyée ✓' : `Relancer (${vtcSansResa.length})`}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Relancer les VTC sans réservation</AlertDialogTitle>
+                              <AlertDialogDescription asChild>
+                                <div className="space-y-2 text-sm">
+                                  <p>Envoyer un rappel à <strong>{vtcSansResa.length}</strong> candidat(s) VTC qui n'ont pas encore choisi de créneau :</p>
+                                  <ul className="list-disc pl-4">{vtcSansResa.map(a => <li key={a.id}>{a.nom} {a.prenom}</li>)}</ul>
+                                </div>
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Annuler</AlertDialogCancel>
+                              <AlertDialogAction onClick={async () => {
+                                setSendingVTCRelance(true);
+                                let sent = 0;
+                                for (const a of vtcSansResa) {
+                                  const bookingUrl = `https://insight-learn-manage.lovable.app/reservation-pratique?id=${a.id}&type=vtc`;
+                                  const subject = `RAPPEL - Choisissez votre date de formation pratique VTC - ${a.prenom} ${a.nom}`;
+                                  const body = `Bonjour ${a.prenom},<br><br>Nous n'avons pas encore reçu votre choix de date pour la formation pratique VTC.<br><br>⚠️ Il est impératif de réserver votre créneau au plus vite.<br><br>👉 <a href="${bookingUrl}">CHOISISSEZ VOTRE DATE ICI</a><br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans "Formation Pratique VTC" : Quizz Lyon et Questions à apprendre.<br>Ou cliquez sur le lien suivant : <a href="https://app.formative.com/join/DNFDZS">https://app.formative.com/join/DNFDZS</a><br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous`;
+                                  try {
+                                    const { error } = await supabase.functions.invoke('sync-outlook-emails', {
+                                      body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id }
+                                    });
+                                    if (!error) sent++;
+                                  } catch {}
+                                }
+                                setSendingVTCRelance(false);
+                                setSentVTCRelance(true);
+                                toast.success(`${sent}/${vtcSansResa.length} rappel(s) VTC envoyé(s)`);
+                              }}>Envoyer les rappels</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      ) : null;
+                    })()}
                   </div>
                   <div className="rounded-md border">
                     <Table>
@@ -919,6 +969,52 @@ export function ExamenReussitePage() {
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
+                    {/* Bouton Relancer TAXI - candidats sans réservation */}
+                    {(() => {
+                      const taxiSansResa = taxiList.filter(a => a.email && !reservationsPratique?.some(r => r.apprenant_id === a.id));
+                      return taxiSansResa.length > 0 ? (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="outline" disabled={sendingTAXIRelance || sentTAXIRelance} className={`gap-1 text-xs ${sentTAXIRelance ? 'text-green-700 border-green-300' : 'text-orange-700 border-orange-300'}`}>
+                              {sentTAXIRelance ? <CheckCircle2 className="h-3 w-3" /> : <RotateCcw className="h-3 w-3" />}
+                              {sendingTAXIRelance ? 'Envoi...' : sentTAXIRelance ? 'Relance envoyée ✓' : `Relancer (${taxiSansResa.length})`}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Relancer les TAXI sans réservation</AlertDialogTitle>
+                              <AlertDialogDescription asChild>
+                                <div className="space-y-2 text-sm">
+                                  <p>Envoyer un rappel à <strong>{taxiSansResa.length}</strong> candidat(s) TAXI qui n'ont pas encore choisi de créneau :</p>
+                                  <ul className="list-disc pl-4">{taxiSansResa.map(a => <li key={a.id}>{a.nom} {a.prenom}</li>)}</ul>
+                                </div>
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Annuler</AlertDialogCancel>
+                              <AlertDialogAction onClick={async () => {
+                                setSendingTAXIRelance(true);
+                                let sent = 0;
+                                for (const a of taxiSansResa) {
+                                  const bookingUrl = `https://insight-learn-manage.lovable.app/reservation-pratique?id=${a.id}&type=taxi`;
+                                  const subject = `RAPPEL - Choisissez votre date de formation pratique TAXI - ${a.prenom} ${a.nom}`;
+                                  const body = `Bonjour ${a.prenom},<br><br>Nous n'avons pas encore reçu votre choix de date pour la formation pratique TAXI.<br><br>⚠️ Il est impératif de réserver votre créneau au plus vite.<br><br>👉 <a href="${bookingUrl}">CHOISISSEZ VOTRE DATE ICI</a><br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans "Formation Pratique TAXI" : QCM Taximètre, Cas pratique, Quizz Lyon et Questions à apprendre.<br>Ou cliquez ici : <a href="https://app.formative.com/join/ZT924H">https://app.formative.com/join/ZT924H</a><br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous`;
+                                  try {
+                                    const { error } = await supabase.functions.invoke('sync-outlook-emails', {
+                                      body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id }
+                                    });
+                                    if (!error) sent++;
+                                  } catch {}
+                                }
+                                setSendingTAXIRelance(false);
+                                setSentTAXIRelance(true);
+                                toast.success(`${sent}/${taxiSansResa.length} rappel(s) TAXI envoyé(s)`);
+                              }}>Envoyer les rappels</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      ) : null;
+                    })()}
                   </div>
                   <div className="rounded-md border">
                     <Table>
