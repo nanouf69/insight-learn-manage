@@ -8,8 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ClipboardCheck, CheckCircle2, XCircle, UserX, Search, RotateCcw, Plus, X, Upload, FileText, Trash2, Download, Users, Mail, GraduationCap, Calendar, MessageSquare } from "lucide-react";
+import { ClipboardCheck, CheckCircle2, XCircle, UserX, Search, RotateCcw, Plus, X, Upload, FileText, Trash2, Download, Users, Mail, GraduationCap, Calendar, MessageSquare, CalendarPlus } from "lucide-react";
 import { toast } from "sonner";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export function ExamenReussitePage() {
   const [search, setSearch] = useState("");
@@ -39,7 +40,37 @@ export function ExamenReussitePage() {
   const planningFileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
-  // Mapping: each theoretical exam date → the next practical exam date (always after)
+  // Cancel a reservation
+  const handleCancelReservation = async (apprenantId: string, apprenantNom: string) => {
+    try {
+      const { error } = await supabase
+        .from('reservations_pratique')
+        .delete()
+        .eq('apprenant_id', apprenantId);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['reservations-pratique-planning'] });
+      toast.success(`Réservation de ${apprenantNom} annulée`);
+    } catch (err: any) {
+      toast.error('Erreur: ' + (err.message || 'Échec'));
+    }
+  };
+
+  // Assign a date to a candidate
+  const handleAssignDate = async (apprenantId: string, apprenantNom: string, date: string, typeFormation: string) => {
+    try {
+      // Delete existing reservation first (upsert by apprenant_id which is unique)
+      await supabase.from('reservations_pratique').delete().eq('apprenant_id', apprenantId);
+      const { error } = await supabase
+        .from('reservations_pratique')
+        .insert({ apprenant_id: apprenantId, date_choisie: date, type_formation: typeFormation });
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['reservations-pratique-planning'] });
+      toast.success(`Date ${date} assignée à ${apprenantNom}`);
+    } catch (err: any) {
+      toast.error('Erreur: ' + (err.message || 'Échec'));
+    }
+  };
+
   const datesExamenTheorique = [
     { date: "27 janvier 2026", lieu: "Villeurbanne", pratiqueIndex: 0 },
     { date: "31 mars 2026", lieu: "Clermont-Ferrand", pratiqueIndex: 1 },
@@ -140,7 +171,7 @@ export function ExamenReussitePage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('reservations_pratique')
-        .select('date_choisie, type_formation, apprenant_id');
+        .select('id, date_choisie, type_formation, apprenant_id');
       if (error) throw error;
       return data || [];
     },
@@ -1055,11 +1086,15 @@ export function ExamenReussitePage() {
                           <TableHead className="w-8">#</TableHead>
                           <TableHead>Nom Prénom</TableHead>
                           <TableHead>Type</TableHead>
+                          <TableHead className="text-center w-20">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {vtcList.map((a, i) => {
-                          const hasReservation = reservationsPratique?.some(r => r.apprenant_id === a.id);
+                          const reservation = reservationsPratique?.find(r => r.apprenant_id === a.id);
+                          const hasReservation = !!reservation;
+                          // VTC available dates: Feb 16-24, 2026 (weekdays only)
+                          const vtcDates = ['2026-02-16','2026-02-17','2026-02-18','2026-02-19','2026-02-20','2026-02-23','2026-02-24'];
                           return (
                           <TableRow key={a.id}>
                             <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
@@ -1067,11 +1102,55 @@ export function ExamenReussitePage() {
                               {!hasReservation && <X className="h-4 w-4 text-red-500 shrink-0" />}
                               {hasReservation && <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />}
                               {a.nom} {a.prenom}
+                              {hasReservation && <span className="text-xs text-muted-foreground">({reservation.date_choisie})</span>}
                             </TableCell>
                             <TableCell>
                               <Badge className="bg-blue-100 text-blue-800 text-xs">
                                 {typeLabel[a.type_apprenant || ''] || a.type_apprenant || '-'}
                               </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                {hasReservation ? (
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Annuler la réservation">
+                                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Annuler la réservation ?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Supprimer la réservation du {reservation.date_choisie} pour <strong>{a.nom} {a.prenom}</strong> ? L'élève pourra rechoisir une date.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Non</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleCancelReservation(a.id, `${a.nom} ${a.prenom}`)}>Oui, annuler</AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                ) : (
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Choisir une date">
+                                        <CalendarPlus className="h-3.5 w-3.5 text-blue-600" />
+                                      </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-2" align="end">
+                                      <p className="text-xs font-medium mb-2">Choisir une date pour {a.prenom} :</p>
+                                      <div className="grid gap-1">
+                                        {vtcDates.map(d => (
+                                          <Button key={d} variant="outline" size="sm" className="text-xs justify-start" onClick={() => handleAssignDate(a.id, `${a.nom} ${a.prenom}`, d, 'vtc')}>
+                                            {new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                          </Button>
+                                        ))}
+                                      </div>
+                                    </PopoverContent>
+                                  </Popover>
+                                )}
+                              </div>
                             </TableCell>
                           </TableRow>
                           );
@@ -1240,11 +1319,14 @@ export function ExamenReussitePage() {
                           <TableHead className="w-8">#</TableHead>
                           <TableHead>Nom Prénom</TableHead>
                           <TableHead>Type</TableHead>
+                          <TableHead className="text-center w-20">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {taxiList.map((a, i) => {
-                          const hasReservation = reservationsPratique?.some(r => r.apprenant_id === a.id);
+                          const reservation = reservationsPratique?.find(r => r.apprenant_id === a.id);
+                          const hasReservation = !!reservation;
+                          const taxiDates = ['2026-02-25','2026-02-26','2026-02-27'];
                           return (
                           <TableRow key={a.id}>
                             <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
@@ -1252,11 +1334,55 @@ export function ExamenReussitePage() {
                               {!hasReservation && <X className="h-4 w-4 text-red-500 shrink-0" />}
                               {hasReservation && <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />}
                               {a.nom} {a.prenom}
+                              {hasReservation && <span className="text-xs text-muted-foreground">({reservation.date_choisie})</span>}
                             </TableCell>
                             <TableCell>
                               <Badge className="bg-amber-100 text-amber-800 text-xs">
                                 {typeLabel[a.type_apprenant || ''] || a.type_apprenant || '-'}
                               </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                {hasReservation ? (
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Annuler la réservation">
+                                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Annuler la réservation ?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Supprimer la réservation du {reservation.date_choisie} pour <strong>{a.nom} {a.prenom}</strong> ? L'élève pourra rechoisir une date.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Non</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleCancelReservation(a.id, `${a.nom} ${a.prenom}`)}>Oui, annuler</AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                ) : (
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Choisir une date">
+                                        <CalendarPlus className="h-3.5 w-3.5 text-amber-600" />
+                                      </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-2" align="end">
+                                      <p className="text-xs font-medium mb-2">Choisir une date pour {a.prenom} :</p>
+                                      <div className="grid gap-1">
+                                        {taxiDates.map(d => (
+                                          <Button key={d} variant="outline" size="sm" className="text-xs justify-start" onClick={() => handleAssignDate(a.id, `${a.nom} ${a.prenom}`, d, 'taxi')}>
+                                            {new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                          </Button>
+                                        ))}
+                                      </div>
+                                    </PopoverContent>
+                                  </Popover>
+                                )}
+                              </div>
                             </TableCell>
                           </TableRow>
                           );
@@ -1451,8 +1577,11 @@ export function ExamenReussitePage() {
                             <div className="mb-2">
                               <div className="text-[10px] font-semibold text-blue-700 mb-1">Formation pratique VTC</div>
                               {vtcReserved.length > 0 ? vtcReserved.map((a: any) => (
-                                <div key={a.id} className="text-[11px] px-1 py-0.5 bg-blue-100 rounded mb-0.5 truncate font-semibold" title={`${a.nom} ${a.prenom}`}>
-                                  {a.nom} {a.prenom} ✓
+                                <div key={a.id} className="text-[11px] px-1 py-0.5 bg-blue-100 rounded mb-0.5 truncate font-semibold flex items-center justify-between group" title={`${a.nom} ${a.prenom}`}>
+                                  <span>{a.nom} {a.prenom} ✓</span>
+                                  <button onClick={() => handleCancelReservation(a.id, `${a.nom} ${a.prenom}`)} className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 ml-1 shrink-0" title="Annuler">
+                                    <X className="h-3 w-3" />
+                                  </button>
                                 </div>
                               )) : (
                                 <div className="text-[10px] text-muted-foreground italic">En attente de réservations</div>
@@ -1463,8 +1592,11 @@ export function ExamenReussitePage() {
                             <div>
                               <div className="text-[10px] font-semibold text-amber-700 mb-1">Formation pratique TAXI</div>
                               {taxiReserved.length > 0 ? taxiReserved.map((a: any) => (
-                                <div key={a.id} className="text-[11px] px-1 py-0.5 bg-amber-100 rounded mb-0.5 truncate font-semibold" title={`${a.nom} ${a.prenom}`}>
-                                  {a.nom} {a.prenom} ✓
+                                <div key={a.id} className="text-[11px] px-1 py-0.5 bg-amber-100 rounded mb-0.5 truncate font-semibold flex items-center justify-between group" title={`${a.nom} ${a.prenom}`}>
+                                  <span>{a.nom} {a.prenom} ✓</span>
+                                  <button onClick={() => handleCancelReservation(a.id, `${a.nom} ${a.prenom}`)} className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 ml-1 shrink-0" title="Annuler">
+                                    <X className="h-3 w-3" />
+                                  </button>
                                 </div>
                               )) : (
                                 <div className="text-[10px] text-muted-foreground italic">En attente de réservations</div>
