@@ -22,23 +22,23 @@ export function ExamenReussitePage() {
   const queryClient = useQueryClient();
 
   const datesExamenTheorique = [
-    { date: "27 janvier 2026", lieu: "Villeurbanne" },
-    { date: "31 mars 2026", lieu: "Clermont-Ferrand" },
-    { date: "26 mai 2026", lieu: "Villeurbanne" },
-    { date: "21 juillet 2026", lieu: "Villeurbanne" },
-    { date: "29 septembre 2026", lieu: "Villeurbanne" },
-    { date: "17 novembre 2026", lieu: "Villeurbanne" },
+    { date: "27 janvier 2026", lieu: "Villeurbanne", pratique: "Du 23 fevrier au 6 mars 2026" },
+    { date: "31 mars 2026", lieu: "Clermont-Ferrand", pratique: "Du 4 au 13 mai 2026" },
+    { date: "26 mai 2026", lieu: "Villeurbanne", pratique: "Du 29 juin au 7 juillet 2026" },
+    { date: "21 juillet 2026", lieu: "Villeurbanne", pratique: "Du 1er au 11 septembre 2026" },
+    { date: "29 septembre 2026", lieu: "Villeurbanne", pratique: "Du 2 au 13 novembre 2026" },
+    { date: "17 novembre 2026", lieu: "Villeurbanne", pratique: "Du 16 au 23 decembre 2026" },
   ];
 
-  const datesExamenPratique = [
-    "Du 23 fevrier au 6 mars 2026",
-    "Du 4 au 13 mai 2026",
-    "Du 29 juin au 7 juillet 2026",
-    "Du 1er au 11 septembre 2026",
-    "Du 2 au 13 novembre 2026",
-    "Du 16 au 23 decembre 2026",
-    "Debut janvier 2027",
-  ];
+  const datesExamenPratique = datesExamenTheorique.map(e => e.pratique);
+
+  const handleExamDateChange = (date: string) => {
+    setSelectedExamDate(date);
+    const match = datesExamenTheorique.find(e => e.date === date);
+    if (match) {
+      setSelectedDatePratique(match.pratique);
+    }
+  };
 
   const { data: apprenants, isLoading } = useQuery({
     queryKey: ['apprenants-examen', selectedExamDate],
@@ -217,7 +217,7 @@ export function ExamenReussitePage() {
           <p className="text-sm text-muted-foreground">Suivi des examens théoriques</p>
         </div>
         <div className="flex items-center gap-3">
-          <Select value={selectedExamDate} onValueChange={setSelectedExamDate}>
+          <Select value={selectedExamDate} onValueChange={handleExamDateChange}>
             <SelectTrigger className="w-64">
               <SelectValue placeholder="Date d'examen" />
             </SelectTrigger>
