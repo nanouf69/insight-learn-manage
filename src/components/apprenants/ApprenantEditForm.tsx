@@ -912,7 +912,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
           </div>
 
           {/* Section paiement pour RP (repassage) */}
-          {["repassage-theorique", "repassage-pratique"].includes(formData.selected_formation) && (
+          {formData.selected_formation === "repassage-pratique" && (
             <div className="space-y-4">
               <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Paiement repassage</h3>
               <div className="p-3 rounded-lg bg-muted/50">
