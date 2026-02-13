@@ -494,24 +494,28 @@ export function ExamenReussitePage() {
 
       {/* Récapitulatif formation pratique */}
       {(() => {
-        // Tous les candidats à former : réussis + PA
-        const paRpTypes = ['pa-vtc', 'pa-taxi', 'rp-vtc', 'rp-taxi'];
-        const reussisFormation = apprenants?.filter(a => (a as any).resultat_examen === 'oui') || [];
-        const paRpFormation = (allApprenants || []).filter(a => 
-          paRpTypes.includes((a.type_apprenant || '').toLowerCase()) && 
+        // Tous les candidats à former : réussis + PA (pas les RP)
+        const paTypes = ['pa-vtc', 'pa-taxi'];
+        const rpTypes = ['rp-vtc', 'rp-taxi'];
+        const reussisFormation = apprenants?.filter(a => 
+          (a as any).resultat_examen === 'oui' && 
+          !rpTypes.includes((a.type_apprenant || '').toLowerCase())
+        ) || [];
+        const paFormation = (allApprenants || []).filter(a => 
+          paTypes.includes((a.type_apprenant || '').toLowerCase()) && 
           !reussisFormation.some(r => r.id === a.id)
         );
-        const tousAFormer = [...reussisFormation, ...paRpFormation];
+        const tousAFormer = [...reussisFormation, ...paFormation];
 
         const isVTC = (type: string | null) => {
           if (!type) return false;
           const t = type.toLowerCase();
-          return ['vtc', 'vtc-e', 'vtc-e-presentiel', 'va-e', 'pa-vtc', 'rp-vtc'].includes(t);
+          return ['vtc', 'vtc-e', 'vtc-e-presentiel', 'va-e', 'pa-vtc'].includes(t);
         };
         const isTAXI = (type: string | null) => {
           if (!type) return false;
           const t = type.toLowerCase();
-          return ['taxi', 'taxi-e', 'taxi-e-presentiel', 'ta', 'ta-e', 'pa-taxi', 'rp-taxi'].includes(t);
+          return ['taxi', 'taxi-e', 'taxi-e-presentiel', 'ta', 'ta-e', 'pa-taxi'].includes(t);
         };
 
         const vtcList = tousAFormer.filter(a => isVTC(a.type_apprenant));
@@ -533,7 +537,7 @@ export function ExamenReussitePage() {
                 {/* VTC */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-sm font-bold text-blue-700">VTC (Présentiel, E-learning, VA, PA VTC, RP VTC)</h4>
+                    <h4 className="text-sm font-bold text-blue-700">VTC (Présentiel, E-learning, VA, PA VTC)</h4>
                   </div>
                   <div className="rounded-md border">
                     <Table>
@@ -568,7 +572,7 @@ export function ExamenReussitePage() {
                 {/* TAXI */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-sm font-bold text-amber-700">TAXI (Présentiel, E-learning, TA, PA TAXI, RP TAXI)</h4>
+                    <h4 className="text-sm font-bold text-amber-700">TAXI (Présentiel, E-learning, TA, PA TAXI)</h4>
                   </div>
                   <div className="rounded-md border">
                     <Table>
