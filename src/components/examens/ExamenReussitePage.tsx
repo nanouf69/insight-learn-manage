@@ -55,7 +55,7 @@ export function ExamenReussitePage() {
     }
   };
 
-  // Assign a date to a candidate
+  // Assign a date to a candidate and notify by email
   const handleAssignDate = async (apprenantId: string, apprenantNom: string, date: string, typeFormation: string) => {
     try {
       // Delete existing reservation first (upsert by apprenant_id which is unique)
@@ -66,6 +66,26 @@ export function ExamenReussitePage() {
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['reservations-pratique-planning'] });
       toast.success(`Date ${date} assignée à ${apprenantNom}`);
+
+      // Send notification email
+      const apprenant = allApprenants?.find(a => a.id === apprenantId);
+      if (apprenant?.email) {
+        const dateFormatted = new Date(date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        const typeUpper = typeFormation.toUpperCase();
+        const exerciceLink = typeFormation === 'vtc' 
+          ? 'https://app.formative.com/join/DNFDZS' 
+          : 'https://app.formative.com/join/ZT924H';
+        const subject = `Votre date de formation pratique ${typeUpper} - ${apprenant.prenom} ${apprenant.nom}`;
+        const body = `Bonjour ${apprenant.prenom},<br><br>Votre date de formation pratique ${typeUpper} a été fixée au :<br><br><strong>📅 ${dateFormatted}</strong><br><br>📍 RDV au 86 Route de Genas 69003 Lyon à 9h.<br>🍽️ Pause déjeuner à Confluences de 12h à 13h.<br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices :<br><a href="${exerciceLink}">${exerciceLink}</a><br><br>⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous`;
+        try {
+          await supabase.functions.invoke('sync-outlook-emails', {
+            body: { action: 'send', userEmail: 'contact@ftransport.fr', to: apprenant.email, subject, body, apprenantId }
+          });
+          toast.success(`Email de notification envoyé à ${apprenant.email}`);
+        } catch {
+          toast.error("Date assignée mais l'email n'a pas pu être envoyé");
+        }
+      }
     } catch (err: any) {
       toast.error('Erreur: ' + (err.message || 'Échec'));
     }
