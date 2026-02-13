@@ -52,8 +52,10 @@ export function OrganisationsList() {
     enabled: !!selectedOrg?.email,
   });
 
-  const sentEmails = orgEmails?.filter(e => e.type === 'sent' || e.recipients?.some((r: string) => r.toLowerCase().includes(selectedOrg?.email?.split('@')[1]?.toLowerCase() || ''))) || [];
-  const receivedEmails = orgEmails?.filter(e => e.sender_email?.toLowerCase().includes(selectedOrg?.email?.split('@')[1]?.toLowerCase() || '')) || [];
+  const sentEmails = (orgEmails?.filter(e => e.type === 'sent' || e.recipients?.some((r: string) => r.toLowerCase().includes(selectedOrg?.email?.split('@')[1]?.toLowerCase() || ''))) || [])
+    .sort((a, b) => new Date(b.sent_at || b.created_at).getTime() - new Date(a.sent_at || a.created_at).getTime());
+  const receivedEmails = (orgEmails?.filter(e => e.sender_email?.toLowerCase().includes(selectedOrg?.email?.split('@')[1]?.toLowerCase() || '')) || [])
+    .sort((a, b) => new Date(b.received_at || b.created_at).getTime() - new Date(a.received_at || a.created_at).getTime());
 
   if (isLoading) {
     return (
@@ -216,7 +218,7 @@ export function OrganisationsList() {
                 )}
               </div>
 
-              <Tabs defaultValue="sent" className="w-full">
+              <Tabs defaultValue="received" className="w-full">
                 <TabsList className="w-full">
                   <TabsTrigger value="sent" className="flex-1 gap-2">
                     <Send className="h-4 w-4" />
