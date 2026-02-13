@@ -42,13 +42,11 @@ function generatePlanningDates(type: 'vtc' | 'taxi'): { date: Date; capacity: nu
   }
 
   if (type === 'vtc') {
-    // VTC: first days, 4/day except Tue Feb 17 = 5
-    // Show enough days to cover potential VTC candidates (up to ~6 days)
+    // VTC: first days, 4/day
     const vtcDays: { date: Date; capacity: number }[] = [];
     for (let i = 0; i < Math.min(7, allWeekdays.length); i++) {
       const d = allWeekdays[i];
-      const isTueFeb17 = d.getDay() === 2 && d.getDate() === 17 && d.getMonth() === 1;
-      vtcDays.push({ date: d, capacity: isTueFeb17 ? 5 : 4 });
+      vtcDays.push({ date: d, capacity: 4 });
     }
     return vtcDays;
   } else {
