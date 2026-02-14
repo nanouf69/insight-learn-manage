@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.parse-exam-planning]
 verify_jwt = false
+
+[functions.resend-confirmations]
+verify_jwt = false
