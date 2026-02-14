@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { safeDateParse, formatDateFR, formatDateShortFR } from "@/lib/safeDateParse";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -70,9 +71,7 @@ export function ExamenReussitePage() {
       // Send notification email
       const apprenant = allApprenants?.find(a => a.id === apprenantId);
       if (apprenant?.email) {
-        const [yyyy, mm, dd] = date.split('-').map(Number);
-        const dateObj = new Date(yyyy, mm - 1, dd, 12, 0, 0);
-        const dateFormatted = dateObj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        const dateFormatted = formatDateFR(date);
         const typeUpper = typeFormation.toUpperCase();
         const exerciceLink = typeFormation === 'vtc' 
           ? 'https://app.formative.com/join/DNFDZS' 
@@ -631,7 +630,7 @@ export function ExamenReussitePage() {
           const padVtc = vtcReussis.length < maxRows ? Array(maxRows - vtcReussis.length).fill('<tr><td style="padding:4px 8px;border:1px solid #ccc;">&nbsp;</td></tr>').join('') : '';
 
           const dateDebutText = dateDebutPratique 
-            ? new Date(dateDebutPratique).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+            ? formatDateFR(dateDebutPratique, { day: 'numeric', month: 'long', year: 'numeric' })
             : '';
 
           return `
@@ -712,7 +711,7 @@ export function ExamenReussitePage() {
           try {
             const htmlBody = generateLettreHTML();
             const dateDebutText = dateDebutPratique 
-              ? ` - Début souhaité : ${new Date(dateDebutPratique).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`
+              ? ` - Début souhaité : ${formatDateFR(dateDebutPratique, { day: 'numeric', month: 'long', year: 'numeric' })}`
               : '';
             const { data, error } = await supabase.functions.invoke('sync-outlook-emails', {
               body: {
@@ -737,7 +736,7 @@ export function ExamenReussitePage() {
             if (data?.success) {
               // Enregistrer l'email envoyé dans la table emails
               const dateDebutTextForSubject = dateDebutPratique 
-                ? ` - Début souhaité : ${new Date(dateDebutPratique).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                ? ` - Début souhaité : ${formatDateFR(dateDebutPratique, { day: 'numeric', month: 'long', year: 'numeric' })}`
                 : '';
               await supabase.from('emails').insert({
                 subject: `Liste candidats reçus - Examen du ${selectedExamDate}${dateDebutTextForSubject}`,
@@ -799,7 +798,7 @@ export function ExamenReussitePage() {
                             <p><strong>Objet :</strong> Liste candidats reçus - Examen du {selectedExamDate}</p>
                             <p><strong>Dates pratique :</strong> {selectedDatePratique}</p>
                             {dateDebutPratique && (
-                              <p><strong>Début souhaité des passages :</strong> à partir du {new Date(dateDebutPratique).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                              <p><strong>Début souhaité des passages :</strong> à partir du {formatDateFR(dateDebutPratique, { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                             )}
                             <div className="flex gap-4">
                               <p><strong>TAXI :</strong> {taxiReussis.length} candidat(s)</p>
@@ -1162,7 +1161,7 @@ export function ExamenReussitePage() {
                                     <div className="grid gap-1">
                                       {vtcDates.map(d => (
                                         <Button key={d} variant={reservation?.date_choisie === d ? "default" : "outline"} size="sm" className="text-xs justify-start" onClick={() => handleAssignDate(a.id, `${a.nom} ${a.prenom}`, d, 'vtc')}>
-                                          {(() => { const [y,m,day] = d.split('-').map(Number); return new Date(y, m-1, day, 12, 0, 0).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }); })()}
+                                          {formatDateShortFR(d)}
                                         </Button>
                                       ))}
                                     </div>
@@ -1390,7 +1389,7 @@ export function ExamenReussitePage() {
                                     <div className="grid gap-1">
                                       {taxiDates.map(d => (
                                         <Button key={d} variant={reservation?.date_choisie === d ? "default" : "outline"} size="sm" className="text-xs justify-start" onClick={() => handleAssignDate(a.id, `${a.nom} ${a.prenom}`, d, 'taxi')}>
-                                          {(() => { const [y,m,day] = d.split('-').map(Number); return new Date(y, m-1, day, 12, 0, 0).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }); })()}
+                                          {formatDateShortFR(d)}
                                         </Button>
                                       ))}
                                     </div>

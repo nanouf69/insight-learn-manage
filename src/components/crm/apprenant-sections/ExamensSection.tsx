@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { formatDateFR } from "@/lib/safeDateParse";
 import { GraduationCap, Calendar, CheckCircle2, XCircle, Clock, Edit2, MapPin, Dumbbell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -212,7 +213,7 @@ export function ExamensSection({ apprenant }: ExamensSectionProps) {
                     <Calendar className="w-4 h-4 text-muted-foreground" />
                     <span className="font-medium">
                       {apprenant.date_examen_pratique 
-                        ? (() => { const [y,m,d] = apprenant.date_examen_pratique!.split('-').map(Number); return new Date(y, m-1, d, 12, 0, 0).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); })()
+                        ? formatDateFR(apprenant.date_examen_pratique!)
                         : 'Non définie'}
                     </span>
                   </div>
@@ -237,7 +238,7 @@ export function ExamensSection({ apprenant }: ExamensSectionProps) {
                   <Dumbbell className="w-4 h-4 text-muted-foreground" />
                   {dateEntrainement ? (
                     <span className="font-medium">
-                      {(() => { const [y,m,d] = dateEntrainement.split('-').map(Number); return new Date(y, m-1, d, 12, 0, 0).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); })()}
+                      {formatDateFR(dateEntrainement)}
                     </span>
                   ) : (
                     <span className="text-muted-foreground">Non réservée</span>

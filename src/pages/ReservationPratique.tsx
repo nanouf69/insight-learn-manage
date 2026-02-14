@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { safeDateParse } from "@/lib/safeDateParse";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckCircle, Calendar, MapPin, Clock, AlertTriangle } from "lucide-react";
@@ -253,7 +254,7 @@ export default function ReservationPratique() {
 
   // Already has a reservation
   if (existingReservation) {
-    const resDate = new Date(existingReservation.date_choisie + 'T00:00:00');
+    const resDate = safeDateParse(existingReservation.date_choisie);
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
@@ -279,7 +280,7 @@ export default function ReservationPratique() {
 
   // Confirmed state
   if (confirmed && selectedDate) {
-    const confDate = new Date(selectedDate + 'T00:00:00');
+    const confDate = safeDateParse(selectedDate);
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
         <Card className="max-w-lg w-full shadow-xl">
@@ -456,7 +457,7 @@ export default function ReservationPratique() {
                 disabled={submitting}
                 className={`w-full text-lg py-6 ${isVTC ? 'bg-blue-600 hover:bg-blue-700' : 'bg-amber-600 hover:bg-amber-700'}`}
               >
-                {submitting ? "Réservation en cours..." : `Confirmer le ${(() => { const [y,m,d] = selectedDate.split('-').map(Number); return formatDate(new Date(y, m-1, d, 12, 0, 0)); })()}`}
+                {submitting ? "Réservation en cours..." : `Confirmer le ${formatDate(safeDateParse(selectedDate))}`}
               </Button>
             </CardContent>
           </Card>
