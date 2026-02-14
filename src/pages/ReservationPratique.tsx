@@ -456,7 +456,7 @@ export default function ReservationPratique() {
                 disabled={submitting}
                 className={`w-full text-lg py-6 ${isVTC ? 'bg-blue-600 hover:bg-blue-700' : 'bg-amber-600 hover:bg-amber-700'}`}
               >
-                {submitting ? "Réservation en cours..." : `Confirmer le ${formatDate(new Date(selectedDate + 'T12:00:00'))}`}
+                {submitting ? "Réservation en cours..." : `Confirmer le ${(() => { const [y,m,d] = selectedDate.split('-').map(Number); return formatDate(new Date(y, m-1, d, 12, 0, 0)); })()}`}
               </Button>
             </CardContent>
           </Card>
