@@ -29,6 +29,13 @@ interface DateSlot {
 const DAY_NAMES = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 const MONTH_NAMES = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 
+// Determine VTC or TAXI from the apprenant's type_apprenant field
+const TAXI_TYPES = ['taxi', 'taxi-e', 'taxi-e-presentiel', 'ta', 'ta-e', 'ta-e-presentiel', 'pa-taxi', 'rp-taxi'];
+function detectFormationType(typeApprenant: string | null): 'vtc' | 'taxi' {
+  if (!typeApprenant) return 'vtc';
+  return TAXI_TYPES.includes(typeApprenant.toLowerCase()) ? 'taxi' : 'vtc';
+}
+
 // Helper to get local YYYY-MM-DD without UTC shift
 const toLocalDateKey = (d: Date) => {
   const y = d.getFullYear();
@@ -86,8 +93,9 @@ export default function ReservationPratique() {
   const [submitting, setSubmitting] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [detectedType, setDetectedType] = useState<'vtc' | 'taxi'>('vtc');
 
-  const type = typeParam || 'vtc';
+  const type = detectedType;
   const isVTC = type === 'vtc';
 
   // Fetch apprenant info and existing reservations
@@ -113,6 +121,10 @@ export default function ReservationPratique() {
       }
       setApprenant(appData);
 
+      // Detect correct type from apprenant's type_apprenant (ignore URL param)
+      const correctType = detectFormationType(appData.type_apprenant);
+      setDetectedType(correctType);
+
       // Check existing reservation
       const { data: existingRes } = await supabase
         .from("reservations_pratique")
@@ -128,7 +140,7 @@ export default function ReservationPratique() {
       const { data: allRes } = await supabase
         .from("reservations_pratique")
         .select("date_choisie")
-        .eq("type_formation", type);
+        .eq("type_formation", correctType);
 
       const counts: Record<string, number> = {};
       (allRes || []).forEach(r => {
@@ -138,7 +150,7 @@ export default function ReservationPratique() {
       setLoading(false);
     }
     load();
-  }, [apprenantId, type]);
+  }, [apprenantId]);
 
   const planningDates = useMemo(() => generatePlanningDates(type), [type]);
 
