@@ -82,6 +82,7 @@ Deno.serve(async (req) => {
 
     // Build SMS request
     const smsUrl = `${OVH_API_URL}/sms/${serviceName}/jobs`;
+    const actualSender = sender || 'FTRANSPORT';
     const smsBody = JSON.stringify({
       charset: 'UTF-8',
       class: 'phoneDisplay',
@@ -90,9 +91,9 @@ Deno.serve(async (req) => {
       noStopClause: true,
       priority: 'high',
       receivers: formattedReceivers,
+      sender: actualSender,
       senderForResponse: false,
       validityPeriod: 2880,
-      ...(sender ? { sender } : {}),
     });
 
     const signature = await ovhSign(appSecret, consumerKey, 'POST', smsUrl, smsBody, timestamp);
