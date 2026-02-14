@@ -70,7 +70,9 @@ export function ExamenReussitePage() {
       // Send notification email
       const apprenant = allApprenants?.find(a => a.id === apprenantId);
       if (apprenant?.email) {
-        const dateFormatted = new Date(date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        const [yyyy, mm, dd] = date.split('-').map(Number);
+        const dateObj = new Date(yyyy, mm - 1, dd, 12, 0, 0);
+        const dateFormatted = dateObj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
         const typeUpper = typeFormation.toUpperCase();
         const exerciceLink = typeFormation === 'vtc' 
           ? 'https://app.formative.com/join/DNFDZS' 
