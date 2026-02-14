@@ -1064,7 +1064,7 @@ export function ExamenReussitePage() {
                                   <ul className="list-disc pl-4">{vtcSansResa.map(a => <li key={a.id}>{a.nom} {a.prenom} — {a.telephone}</li>)}</ul>
                                   <div className="bg-muted p-3 rounded text-xs mt-2">
                                     <p className="font-medium mb-1">Message (personnalisé par candidat) :</p>
-                                    <p>FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique VTC. Attention, il n'y aura pas d'autres dates d'entrainement. Reservez ici: [lien personnalisé]. FTRANSPORT 04.28.29.60.91</p>
+                                    <p>FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique VTC. Attention, il n'y aura pas d'autres dates d'entrainement. Reservez ici: [lien personnalise]</p>
                                   </div>
                                 </div>
                               </AlertDialogDescription>
@@ -1077,7 +1077,7 @@ export function ExamenReussitePage() {
                                 try {
                                   for (const a of vtcSansResa) {
                                     const bookingUrl = `https://insight-learn-manage.lovable.app/reservation-pratique?id=${a.id}&type=vtc`;
-                                    const message = `FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique VTC. Attention, il n'y aura pas d'autres dates d'entrainement. Reservez ici: ${bookingUrl} FTRANSPORT 04.28.29.60.91`;
+                                    const message = `FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique VTC. Attention, il n'y aura pas d'autres dates d'entrainement. Reservez ici: ${bookingUrl}`;
                                     const { data, error } = await supabase.functions.invoke('send-sms-ovh', {
                                       body: { receivers: [a.telephone!], message },
                                     });
@@ -1293,7 +1293,7 @@ export function ExamenReussitePage() {
                                   <ul className="list-disc pl-4">{taxiSansResa.map(a => <li key={a.id}>{a.nom} {a.prenom} — {a.telephone}</li>)}</ul>
                                   <div className="bg-muted p-3 rounded text-xs mt-2">
                                     <p className="font-medium mb-1">Message (personnalisé par candidat) :</p>
-                                    <p>FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique TAXI. Attention, il n'y aura pas d'autres dates d'entrainement. Reservez ici: [lien personnalisé]. FTRANSPORT 04.28.29.60.91</p>
+                                    <p>FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique TAXI. Attention, il n'y aura pas d'autres dates d'entrainement. Reservez ici: [lien personnalise]</p>
                                   </div>
                                 </div>
                               </AlertDialogDescription>
@@ -1306,7 +1306,7 @@ export function ExamenReussitePage() {
                                 try {
                                   for (const a of taxiSansResa) {
                                     const bookingUrl = `https://insight-learn-manage.lovable.app/reservation-pratique?id=${a.id}&type=taxi`;
-                                    const message = `FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique TAXI. Attention, il n'y aura pas d'autres dates d'entrainement. Reservez ici: ${bookingUrl} FTRANSPORT 04.28.29.60.91`;
+                                    const message = `FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique TAXI. Attention, il n'y aura pas d'autres dates d'entrainement. Reservez ici: ${bookingUrl}`;
                                     const { data, error } = await supabase.functions.invoke('send-sms-ovh', {
                                       body: { receivers: [a.telephone!], message },
                                     });
