@@ -39,12 +39,12 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Safe date parsing
+      // Safe date parsing with manual French formatting (Deno locale unreliable)
+      const JOURS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+      const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
       const [y, m, d] = res.date_choisie.split('-').map(Number);
       const dateObj = new Date(y, m - 1, d, 12, 0, 0);
-      const dateFormatted = dateObj.toLocaleDateString('fr-FR', {
-        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-      });
+      const dateFormatted = `${JOURS[dateObj.getDay()]} ${d} ${MOIS[m - 1]} ${y}`;
 
       const typeUpper = res.type_formation.toUpperCase();
       const exerciceLink = res.type_formation === 'vtc'
