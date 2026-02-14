@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
       noStopClause: true,
       priority: 'high',
       receivers: formattedReceivers,
-      senderForResponse: true,
+      senderForResponse: false,
       validityPeriod: 2880,
       ...(sender ? { sender } : {}),
     });
