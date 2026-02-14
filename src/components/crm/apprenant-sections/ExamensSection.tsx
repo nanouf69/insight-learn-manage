@@ -212,7 +212,7 @@ export function ExamensSection({ apprenant }: ExamensSectionProps) {
                     <Calendar className="w-4 h-4 text-muted-foreground" />
                     <span className="font-medium">
                       {apprenant.date_examen_pratique 
-                        ? new Date(apprenant.date_examen_pratique + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+                        ? (() => { const [y,m,d] = apprenant.date_examen_pratique!.split('-').map(Number); return new Date(y, m-1, d, 12, 0, 0).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); })()
                         : 'Non définie'}
                     </span>
                   </div>
@@ -237,7 +237,7 @@ export function ExamensSection({ apprenant }: ExamensSectionProps) {
                   <Dumbbell className="w-4 h-4 text-muted-foreground" />
                   {dateEntrainement ? (
                     <span className="font-medium">
-                      {new Date(dateEntrainement + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                      {(() => { const [y,m,d] = dateEntrainement.split('-').map(Number); return new Date(y, m-1, d, 12, 0, 0).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); })()}
                     </span>
                   ) : (
                     <span className="text-muted-foreground">Non réservée</span>

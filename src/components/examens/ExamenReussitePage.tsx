@@ -1162,7 +1162,7 @@ export function ExamenReussitePage() {
                                     <div className="grid gap-1">
                                       {vtcDates.map(d => (
                                         <Button key={d} variant={reservation?.date_choisie === d ? "default" : "outline"} size="sm" className="text-xs justify-start" onClick={() => handleAssignDate(a.id, `${a.nom} ${a.prenom}`, d, 'vtc')}>
-                                          {new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                          {(() => { const [y,m,day] = d.split('-').map(Number); return new Date(y, m-1, day, 12, 0, 0).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }); })()}
                                         </Button>
                                       ))}
                                     </div>
@@ -1390,7 +1390,7 @@ export function ExamenReussitePage() {
                                     <div className="grid gap-1">
                                       {taxiDates.map(d => (
                                         <Button key={d} variant={reservation?.date_choisie === d ? "default" : "outline"} size="sm" className="text-xs justify-start" onClick={() => handleAssignDate(a.id, `${a.nom} ${a.prenom}`, d, 'taxi')}>
-                                          {new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                          {(() => { const [y,m,day] = d.split('-').map(Number); return new Date(y, m-1, day, 12, 0, 0).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }); })()}
                                         </Button>
                                       ))}
                                     </div>
