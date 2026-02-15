@@ -599,11 +599,11 @@ export function ExamenReussitePage() {
         const reussisTheorique = apprenants?.filter(a => 
           (a as any).resultat_examen === 'oui' && matchPratique((a as any).date_examen_pratique)
         ) || [];
-        // PA et RP : inclus si leur date pratique correspond
+        // PA et RP : inclus si leur date d'examen théorique correspond à la date sélectionnée
         const paRpTypes = ['pa-vtc', 'pa-taxi', 'rp-vtc', 'rp-taxi'];
         const paRpApprenants = (allApprenants || []).filter(a => 
           paRpTypes.includes((a.type_apprenant || '').toLowerCase()) && 
-          matchPratique(a.date_examen_pratique) &&
+          a.date_examen_theorique?.includes(selectedExamDate) &&
           !reussisTheorique.some(r => r.id === a.id)
         );
         const reussisLettre = [...reussisTheorique, ...paRpApprenants];
