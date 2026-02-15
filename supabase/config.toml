@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.resend-confirmations]
 verify_jwt = false
+
+[functions.bridge-bank]
+verify_jwt = false

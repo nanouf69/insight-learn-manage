@@ -8,19 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { 
-  Search, 
-  Euro, 
-  TrendingUp, 
-  TrendingDown, 
-  Clock, 
-  CheckCircle, 
-  AlertTriangle,
-  Download,
-  Filter,
-  Receipt,
-  CreditCard,
-  Banknote,
-  BarChart3
+  Search, Euro, TrendingUp, Clock, CheckCircle, AlertTriangle,
+  Download, Filter, Receipt, CreditCard, Banknote, BarChart3,
+  Building2, RefreshCw, Link2, ExternalLink, ArrowDownLeft, ArrowUpRight
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -39,11 +29,31 @@ interface Facture {
   client_opco: string | null;
 }
 
-const statutConfig: Record<string, { label: string; color: string; icon: typeof CheckCircle }> = {
-  payee: { label: "Payée", color: "bg-emerald-100 text-emerald-700", icon: CheckCircle },
-  en_attente: { label: "En attente", color: "bg-amber-100 text-amber-700", icon: Clock },
-  en_retard: { label: "En retard", color: "bg-destructive/10 text-destructive", icon: AlertTriangle },
-  annulee: { label: "Annulée", color: "bg-muted text-muted-foreground", icon: AlertTriangle },
+interface BridgeAccount {
+  id: number;
+  name: string;
+  balance: number;
+  status: string;
+  iban: string;
+  currency_code: string;
+  type: string;
+}
+
+interface BridgeTransaction {
+  id: number;
+  description: string;
+  amount: number;
+  date: string;
+  category_id: number;
+  is_future: boolean;
+  account_id: number;
+}
+
+const statutConfig: Record<string, { label: string; color: string }> = {
+  payee: { label: "Payée", color: "bg-emerald-100 text-emerald-700" },
+  en_attente: { label: "En attente", color: "bg-amber-100 text-amber-700" },
+  en_retard: { label: "En retard", color: "bg-destructive/10 text-destructive" },
+  annulee: { label: "Annulée", color: "bg-muted text-muted-foreground" },
 };
 
 const financementLabels: Record<string, string> = {
@@ -54,6 +64,8 @@ const financementLabels: Record<string, string> = {
   cpf: "CPF",
 };
 
+const BRIDGE_USER_KEY = "ftransport_bridge_user";
+
 export function ComptabilitePage() {
   const [factures, setFactures] = useState<Facture[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,8 +74,20 @@ export function ComptabilitePage() {
   const [filterFinancement, setFilterFinancement] = useState<string>("all");
   const [activeTab, setActiveTab] = useState("overview");
 
+  // Bridge state
+  const [bridgeUserUuid, setBridgeUserUuid] = useState<string | null>(null);
+  const [bridgeAccounts, setBridgeAccounts] = useState<BridgeAccount[]>([]);
+  const [bridgeTransactions, setBridgeTransactions] = useState<BridgeTransaction[]>([]);
+  const [bridgeLoading, setBridgeLoading] = useState(false);
+  const [bridgeConnected, setBridgeConnected] = useState(false);
+
   useEffect(() => {
     fetchFactures();
+    const savedUser = localStorage.getItem(BRIDGE_USER_KEY);
+    if (savedUser) {
+      setBridgeUserUuid(savedUser);
+      setBridgeConnected(true);
+    }
   }, []);
 
   const fetchFactures = async () => {
@@ -72,14 +96,87 @@ export function ComptabilitePage() {
       .from("factures")
       .select("*")
       .order("date_emission", { ascending: false });
-
     if (error) {
       toast.error("Erreur lors du chargement des factures");
-      console.error(error);
     } else {
       setFactures(data || []);
     }
     setLoading(false);
+  };
+
+  const callBridge = async (action: string, extra: Record<string, string> = {}) => {
+    const res = await supabase.functions.invoke("bridge-bank", {
+      body: { action, ...extra },
+    });
+    if (res.error) throw new Error(res.error.message);
+    return res.data;
+  };
+
+  const handleCreateBridgeUser = async () => {
+    setBridgeLoading(true);
+    try {
+      const data = await callBridge("create_user");
+      const uuid = data.uuid;
+      setBridgeUserUuid(uuid);
+      localStorage.setItem(BRIDGE_USER_KEY, uuid);
+      toast.success("Utilisateur Bridge créé");
+
+      // Create connect session
+      const session = await callBridge("connect_session", { user_uuid: uuid });
+      if (session.url) {
+        window.open(session.url, "_blank");
+        toast.info("Connectez votre banque dans la fenêtre qui s'ouvre");
+        setBridgeConnected(true);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Erreur lors de la création Bridge: " + (err instanceof Error ? err.message : "Erreur inconnue"));
+    }
+    setBridgeLoading(false);
+  };
+
+  const handleReconnect = async () => {
+    if (!bridgeUserUuid) return;
+    setBridgeLoading(true);
+    try {
+      const session = await callBridge("connect_session", { user_uuid: bridgeUserUuid });
+      if (session.url) {
+        window.open(session.url, "_blank");
+        toast.info("Connectez votre banque dans la fenêtre qui s'ouvre");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Erreur: " + (err instanceof Error ? err.message : "Erreur inconnue"));
+    }
+    setBridgeLoading(false);
+  };
+
+  const handleFetchAccounts = async () => {
+    if (!bridgeUserUuid) return;
+    setBridgeLoading(true);
+    try {
+      const data = await callBridge("list_accounts", { user_uuid: bridgeUserUuid });
+      setBridgeAccounts(data.resources || []);
+      toast.success(`${(data.resources || []).length} compte(s) récupéré(s)`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Erreur: " + (err instanceof Error ? err.message : "Erreur inconnue"));
+    }
+    setBridgeLoading(false);
+  };
+
+  const handleFetchTransactions = async () => {
+    if (!bridgeUserUuid) return;
+    setBridgeLoading(true);
+    try {
+      const data = await callBridge("list_transactions", { user_uuid: bridgeUserUuid });
+      setBridgeTransactions(data.resources || []);
+      toast.success(`${(data.resources || []).length} transaction(s) récupérée(s)`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Erreur: " + (err instanceof Error ? err.message : "Erreur inconnue"));
+    }
+    setBridgeLoading(false);
   };
 
   const filteredFactures = useMemo(() => {
@@ -93,7 +190,6 @@ export function ComptabilitePage() {
     });
   }, [factures, search, filterStatut, filterFinancement]);
 
-  // Stats
   const totalCA = useMemo(() => factures.reduce((s, f) => f.statut !== "annulee" ? s + Number(f.montant_ttc) : s, 0), [factures]);
   const totalPaye = useMemo(() => factures.filter(f => f.statut === "payee").reduce((s, f) => s + Number(f.montant_ttc), 0), [factures]);
   const totalEnAttente = useMemo(() => factures.filter(f => f.statut === "en_attente").reduce((s, f) => s + Number(f.montant_ttc), 0), [factures]);
@@ -102,7 +198,6 @@ export function ComptabilitePage() {
     return factures.filter(f => f.statut === "en_attente" && f.date_echeance && f.date_echeance < today).reduce((s, f) => s + Number(f.montant_ttc), 0);
   }, [factures]);
 
-  // Par catégorie de financement
   const parFinancement = useMemo(() => {
     const map: Record<string, { count: number; total: number }> = {};
     factures.forEach((f) => {
@@ -160,6 +255,9 @@ export function ComptabilitePage() {
           </TabsTrigger>
           <TabsTrigger value="categories" className="gap-2">
             <Filter className="h-4 w-4" /> Par catégorie
+          </TabsTrigger>
+          <TabsTrigger value="banque" className="gap-2">
+            <Building2 className="h-4 w-4" /> Compte bancaire
           </TabsTrigger>
         </TabsList>
 
@@ -220,7 +318,6 @@ export function ComptabilitePage() {
             </Card>
           </div>
 
-          {/* Répartition par financement */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Répartition par type de financement</CardTitle>
@@ -386,6 +483,120 @@ export function ComptabilitePage() {
                 </Card>
               );
             })
+          )}
+        </TabsContent>
+
+        {/* === COMPTE BANCAIRE === */}
+        <TabsContent value="banque" className="space-y-6">
+          {!bridgeConnected ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-16">
+                <Building2 className="h-16 w-16 text-muted-foreground/30 mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Connectez votre compte bancaire</h3>
+                <p className="text-muted-foreground text-center max-w-md mb-6">
+                  Synchronisez votre compte BNP Paribas professionnel pour voir vos transactions en temps réel et les rapprocher de vos factures.
+                </p>
+                <Button onClick={handleCreateBridgeUser} disabled={bridgeLoading} className="gap-2" size="lg">
+                  <Link2 className="h-5 w-5" />
+                  {bridgeLoading ? "Connexion en cours..." : "Connecter ma banque"}
+                </Button>
+                <p className="text-xs text-muted-foreground mt-4">
+                  Connexion sécurisée via Bridge by Bankin' (agréé ACPR)
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Building2 className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Compte bancaire connecté</h3>
+                    <p className="text-sm text-muted-foreground">BNP Paribas via Bridge</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={handleReconnect} disabled={bridgeLoading} className="gap-2" size="sm">
+                    <ExternalLink className="h-4 w-4" /> Reconnecter
+                  </Button>
+                  <Button variant="outline" onClick={handleFetchAccounts} disabled={bridgeLoading} className="gap-2" size="sm">
+                    <RefreshCw className={`h-4 w-4 ${bridgeLoading ? "animate-spin" : ""}`} /> Comptes
+                  </Button>
+                  <Button variant="outline" onClick={handleFetchTransactions} disabled={bridgeLoading} className="gap-2" size="sm">
+                    <RefreshCw className={`h-4 w-4 ${bridgeLoading ? "animate-spin" : ""}`} /> Transactions
+                  </Button>
+                </div>
+              </div>
+
+              {/* Accounts */}
+              {bridgeAccounts.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {bridgeAccounts.map((account) => (
+                    <Card key={account.id}>
+                      <CardContent className="pt-6">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="font-medium text-sm">{account.name}</p>
+                          <Badge variant="outline">{account.type}</Badge>
+                        </div>
+                        <p className="text-2xl font-bold">{formatMontant(account.balance)}</p>
+                        {account.iban && (
+                          <p className="text-xs text-muted-foreground mt-1">{account.iban}</p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              {/* Transactions */}
+              {bridgeTransactions.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Dernières transactions</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead className="text-right">Montant</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {bridgeTransactions.slice(0, 50).map((t) => (
+                          <TableRow key={t.id}>
+                            <TableCell>{formatDate(t.date)}</TableCell>
+                            <TableCell className="flex items-center gap-2">
+                              {t.amount >= 0 ? (
+                                <ArrowDownLeft className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                              ) : (
+                                <ArrowUpRight className="h-4 w-4 text-destructive flex-shrink-0" />
+                              )}
+                              <span className="truncate">{t.description}</span>
+                            </TableCell>
+                            <TableCell className={`text-right font-semibold ${t.amount >= 0 ? "text-emerald-600" : "text-destructive"}`}>
+                              {t.amount >= 0 ? "+" : ""}{formatMontant(t.amount)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              )}
+
+              {bridgeAccounts.length === 0 && bridgeTransactions.length === 0 && (
+                <Card>
+                  <CardContent className="flex flex-col items-center justify-center py-12">
+                    <RefreshCw className="h-12 w-12 text-muted-foreground/30 mb-3" />
+                    <p className="text-muted-foreground">Cliquez sur "Comptes" ou "Transactions" pour synchroniser vos données bancaires</p>
+                  </CardContent>
+                </Card>
+              )}
+            </>
           )}
         </TabsContent>
       </Tabs>
