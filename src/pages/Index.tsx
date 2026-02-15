@@ -16,6 +16,7 @@ import { OrganisationsList } from "@/components/organisations/OrganisationsList"
 import { FormateursList } from "@/components/formateurs/FormateursList";
 import { BPFForm } from "@/components/bpf/BPFForm";
 import { FactureForm } from "@/components/factures/FactureForm";
+import { ComptabilitePage } from "@/components/comptabilite/ComptabilitePage";
 import { AgendaView } from "@/components/agenda/AgendaView";
 import { ExamenReussitePage } from "@/components/examens/ExamenReussitePage";
 import CoursEnLignePage from "@/components/cours-en-ligne/CoursEnLignePage";
@@ -34,6 +35,7 @@ const pageConfig = {
   crm: { title: "CRM", subtitle: "Gérez vos contacts et prospects" },
   documents: { title: "Documents", subtitle: "Gérez vos documents administratifs" },
   factures: { title: "Factures", subtitle: "Créez et gérez vos factures" },
+  comptabilite: { title: "Comptabilité", subtitle: "Suivi financier et catégorisation des factures" },
   settings: { title: "Paramètres", subtitle: "Configurez votre espace" },
   bpf: { title: "BPF", subtitle: "Bilan Pédagogique et Financier" },
   "cours-en-ligne": { title: "Cours en ligne", subtitle: "Gérez vos formations e-learning" },
@@ -116,6 +118,8 @@ const Index = () => {
         return <DocumentsList />;
       case "factures":
         return <FactureForm />;
+      case "comptabilite":
+        return <ComptabilitePage />;
       case "bpf":
         return <BPFForm />;
       case "cours-en-ligne":
