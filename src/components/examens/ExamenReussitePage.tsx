@@ -292,6 +292,13 @@ export function ExamenReussitePage() {
 
   const updateResultat = useMutation({
     mutationFn: async ({ id, resultat }: { id: string; resultat: string | null }) => {
+      // Vérifier que l'apprenant a une date d'examen avant de le mettre en absent
+      if (resultat === 'absent') {
+        const apprenant = apprenants?.find(a => a.id === id);
+        if (!apprenant?.date_examen_theorique) {
+          throw new Error("Impossible de mettre en absent : l'apprenant n'est inscrit à aucune date d'examen");
+        }
+      }
       const { error } = await supabase
         .from('apprenants')
         .update({ resultat_examen: resultat } as any)
@@ -302,6 +309,9 @@ export function ExamenReussitePage() {
       queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] });
       toast.success("Résultat mis à jour");
     },
+    onError: (err: any) => {
+      toast.error(err.message || "Erreur lors de la mise à jour");
+    },
   });
 
   const filtered = apprenants?.filter(a =>
@@ -310,7 +320,7 @@ export function ExamenReussitePage() {
 
   const reussis = apprenants?.filter(a => (a as any).resultat_examen === 'oui') || [];
   const nonReussis = apprenants?.filter(a => (a as any).resultat_examen === 'non') || [];
-  const absents = apprenants?.filter(a => (a as any).resultat_examen === 'absent' || !a.numero_dossier_cma) || [];
+  const absents = apprenants?.filter(a => (a as any).resultat_examen === 'absent') || [];
 
   const repassageCandidates = allApprenants?.filter(a =>
     !repassageList.includes(a.id) &&
