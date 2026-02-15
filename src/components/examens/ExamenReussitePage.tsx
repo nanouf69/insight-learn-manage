@@ -910,17 +910,17 @@ export function ExamenReussitePage() {
           return false;
         };
 
-        // Tous les candidats à former : réussis + PA (pas les RP), filtrés par date pratique
+        // Tous les candidats à former : réussis (pas les RP) — sans filtre sur la date pratique
         const paTypes = ['pa-vtc', 'pa-taxi'];
         const rpTypes = ['rp-vtc', 'rp-taxi'];
         const reussisFormation = apprenants?.filter(a => 
           (a as any).resultat_examen === 'oui' && 
-          !rpTypes.includes((a.type_apprenant || '').toLowerCase()) &&
-          matchPratiqueFormation((a as any).date_examen_pratique)
+          !rpTypes.includes((a.type_apprenant || '').toLowerCase())
         ) || [];
         const paFormation = (allApprenants || []).filter(a => 
           paTypes.includes((a.type_apprenant || '').toLowerCase()) && 
-          matchPratiqueFormation(a.date_examen_pratique) &&
+          a.date_examen_theorique?.includes(selectedExamDate) &&
+          (a as any).resultat_examen === 'oui' &&
           !reussisFormation.some(r => r.id === a.id)
         );
         const tousAFormer = [...reussisFormation, ...paFormation];
