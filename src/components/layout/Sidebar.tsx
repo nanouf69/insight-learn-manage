@@ -12,6 +12,7 @@ import {
   ClipboardList,
   Receipt,
   UserCog,
+  Calculator,
   Clock,
   ClipboardCheck,
   Truck,
@@ -40,6 +41,7 @@ const menuItems = [
   { id: "examens", label: "Examen et Réussite", icon: ClipboardCheck },
   { id: "documents", label: "Documents", icon: FileText },
   { id: "factures", label: "Factures", icon: Receipt },
+  { id: "comptabilite", label: "Comptabilité", icon: Calculator },
   { id: "bpf", label: "BPF", icon: ClipboardList },
   { id: "cours-en-ligne", label: "Cours en ligne", icon: Monitor },
 ];
