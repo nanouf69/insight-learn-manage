@@ -1727,17 +1727,16 @@ export function ExamenReussitePage() {
           }
         };
 
-        const renderPratiqueTable = (list: typeof candidatsPratique, color: string, headerBg: string) => (
+        const renderPratiqueTable = (list: typeof candidatsPratique) => (
           <div className="rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-8">#</TableHead>
                   <TableHead>Nom Prénom</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Date examen</TableHead>
+                  <TableHead>Date</TableHead>
                   <TableHead>Heure</TableHead>
-                  <TableHead className="text-center">Résultat</TableHead>
+                  <TableHead className="text-center">Réussi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1746,22 +1745,15 @@ export function ExamenReussitePage() {
                   return (
                     <TableRow key={a.id}>
                       <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
-                      <TableCell className="font-medium">{a.nom} {a.prenom}</TableCell>
-                      <TableCell>
-                        <Badge className={typeColor[a.type_apprenant || ''] || 'bg-gray-100 text-gray-800'}>
-                          {typeLabel[a.type_apprenant || ''] || a.type_apprenant || '-'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{a.date_examen_pratique ? formatDateShortFR(a.date_examen_pratique) : '-'}</Badge>
-                      </TableCell>
-                      <TableCell className="text-sm">{(a as any).heure_examen_pratique || '-'}</TableCell>
+                      <TableCell className="font-medium text-sm">{a.nom} {a.prenom}</TableCell>
+                      <TableCell className="text-xs">{a.date_examen_pratique ? formatDateShortFR(a.date_examen_pratique) : '-'}</TableCell>
+                      <TableCell className="text-xs">{(a as any).heure_examen_pratique || '-'}</TableCell>
                       <TableCell className="text-center">
                         <Select
                           value={resultatP || "non_renseigne"}
                           onValueChange={(val) => updateResultatPratique(a.id, val === "non_renseigne" ? null : val)}
                         >
-                          <SelectTrigger className={`w-28 mx-auto ${
+                          <SelectTrigger className={`w-24 mx-auto text-xs ${
                             resultatP === 'oui' ? 'border-emerald-500 text-emerald-700 bg-emerald-50' :
                             resultatP === 'non' ? 'border-red-500 text-red-700 bg-red-50' : ''
                           }`}>
@@ -1769,8 +1761,8 @@ export function ExamenReussitePage() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="non_renseigne">-</SelectItem>
-                            <SelectItem value="oui">✅ Réussi</SelectItem>
-                            <SelectItem value="non">❌ Échoué</SelectItem>
+                            <SelectItem value="oui">✅ Oui</SelectItem>
+                            <SelectItem value="non">❌ Non</SelectItem>
                           </SelectContent>
                         </Select>
                       </TableCell>
@@ -1805,13 +1797,13 @@ export function ExamenReussitePage() {
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-3">
                   <h4 className="text-sm font-bold text-amber-700">TAXI ({taxiPratique.length})</h4>
-                  {taxiPratique.length > 0 ? renderPratiqueTable(taxiPratique, 'amber', 'bg-amber-50') : (
+                  {taxiPratique.length > 0 ? renderPratiqueTable(taxiPratique) : (
                     <p className="text-xs text-muted-foreground">Aucun candidat TAXI inscrit</p>
                   )}
                 </div>
                 <div className="space-y-3">
                   <h4 className="text-sm font-bold text-blue-700">VTC ({vtcPratique.length})</h4>
-                  {vtcPratique.length > 0 ? renderPratiqueTable(vtcPratique, 'blue', 'bg-blue-50') : (
+                  {vtcPratique.length > 0 ? renderPratiqueTable(vtcPratique) : (
                     <p className="text-xs text-muted-foreground">Aucun candidat VTC inscrit</p>
                   )}
                 </div>
