@@ -4,7 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Mail, Phone, MapPin, Landmark, ChevronRight, Inbox, Send, Eye, RefreshCw, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Mail, Phone, MapPin, Landmark, ChevronRight, Inbox, Send, Eye, RefreshCw, Loader2, PenLine } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -18,7 +20,55 @@ export function OrganisationsList() {
   const [selectedOrg, setSelectedOrg] = useState<any>(null);
   const [selectedEmail, setSelectedEmail] = useState<any>(null);
   const [syncing, setSyncing] = useState(false);
+  const [composing, setComposing] = useState(false);
+  const [composeSubject, setComposeSubject] = useState("");
+  const [composeBody, setComposeBody] = useState("");
+  const [sending, setSending] = useState(false);
   const queryClient = useQueryClient();
+
+  const handleSendEmail = async () => {
+    if (!selectedOrg?.email || !composeSubject.trim()) {
+      toast.error("Veuillez renseigner un objet");
+      return;
+    }
+    setSending(true);
+    try {
+      const htmlBody = composeBody.replace(/\n/g, '<br>');
+      const { data, error } = await supabase.functions.invoke('sync-outlook-emails', {
+        body: {
+          action: 'send',
+          userEmail: 'contact@ftransport.fr',
+          to: selectedOrg.email,
+          subject: composeSubject,
+          body: htmlBody,
+        },
+      });
+      if (error) throw error;
+      if (data?.success) {
+        await supabase.from('emails').insert({
+          subject: composeSubject,
+          body_html: htmlBody,
+          body_preview: composeBody.slice(0, 200),
+          sender_email: 'contact@ftransport.fr',
+          recipients: [selectedOrg.email],
+          type: 'sent',
+          is_read: true,
+          sent_at: new Date().toISOString(),
+        });
+        toast.success('Email envoyé !');
+        setComposing(false);
+        setComposeSubject("");
+        setComposeBody("");
+        queryClient.invalidateQueries({ queryKey: ['org-emails'] });
+      } else {
+        throw new Error('Échec de l\'envoi');
+      }
+    } catch (err: any) {
+      toast.error('Erreur : ' + (err.message || 'Échec'));
+    } finally {
+      setSending(false);
+    }
+  };
 
   const { data: organisations, isLoading } = useQuery({
     queryKey: ['organismes'],
@@ -216,7 +266,48 @@ export function OrganisationsList() {
                     <span className="font-medium">{selectedOrg.code_naf}</span>
                   </div>
                 )}
-              </div>
+               </div>
+
+              {/* Bouton écrire + formulaire */}
+              {selectedOrg.email && (
+                <div>
+                  {!composing ? (
+                    <Button onClick={() => setComposing(true)} className="gap-2" size="sm">
+                      <PenLine className="h-4 w-4" />
+                      Écrire un email
+                    </Button>
+                  ) : (
+                    <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-semibold flex items-center gap-2">
+                          <PenLine className="h-4 w-4" />
+                          Nouveau message à {selectedOrg.email}
+                        </h4>
+                        <Button variant="ghost" size="sm" onClick={() => { setComposing(false); setComposeSubject(""); setComposeBody(""); }}>
+                          Annuler
+                        </Button>
+                      </div>
+                      <Input
+                        placeholder="Objet du mail"
+                        value={composeSubject}
+                        onChange={(e) => setComposeSubject(e.target.value)}
+                      />
+                      <Textarea
+                        placeholder="Contenu du message..."
+                        value={composeBody}
+                        onChange={(e) => setComposeBody(e.target.value)}
+                        rows={6}
+                      />
+                      <div className="flex justify-end">
+                        <Button onClick={handleSendEmail} disabled={sending || !composeSubject.trim()} className="gap-2">
+                          <Send className="h-4 w-4" />
+                          {sending ? 'Envoi...' : 'Envoyer'}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <Tabs defaultValue="received" className="w-full">
                 <TabsList className="w-full">
