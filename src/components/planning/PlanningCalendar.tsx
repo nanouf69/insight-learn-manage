@@ -31,6 +31,7 @@ type CandidateInfo = {
   telephone: string;
   email: string;
   heure?: string;
+  pasInscritExamen?: boolean;
 };
 
 type ExamCandidate = {
@@ -79,9 +80,9 @@ export function PlanningCalendar() {
         .from("apprenants")
         .select("id, nom, prenom, telephone, email, date_examen_pratique, heure_examen_pratique, formation_choisie");
 
-      const appMap: Record<string, { nom: string; prenom: string; telephone: string; email: string }> = {};
+      const appMap: Record<string, { nom: string; prenom: string; telephone: string; email: string; hasExam: boolean }> = {};
       (allApprenants || []).forEach(a => {
-        appMap[a.id] = { nom: a.nom, prenom: a.prenom, telephone: a.telephone || '', email: a.email || '' };
+        appMap[a.id] = { nom: a.nom, prenom: a.prenom, telephone: a.telephone || '', email: a.email || '', hasExam: !!(a.date_examen_pratique) };
       });
 
       // Group reservations by date
@@ -97,6 +98,7 @@ export function PlanningCalendar() {
             prenom: app.prenom,
             telephone: app.telephone,
             email: app.email,
+            pasInscritExamen: !app.hasExam,
           });
         }
       });
@@ -216,8 +218,9 @@ export function PlanningCalendar() {
                       </span>
                       {day.reservedCandidates.length > 0 ? (
                         day.reservedCandidates.map((c, i) => (
-                          <span key={i} className="text-xs text-foreground leading-tight">
-                            {c.name}
+                          <span key={i} className={`text-xs leading-tight ${c.pasInscritExamen ? 'text-destructive font-bold' : 'text-foreground'}`}>
+                            {c.pasInscritExamen && '⚠️ '}{c.name}
+                            {c.pasInscritExamen && <span className="block text-[10px] text-destructive font-normal">Non inscrit à l'examen</span>}
                           </span>
                         ))
                       ) : (
