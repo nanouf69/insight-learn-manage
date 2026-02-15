@@ -1,0 +1,1 @@
+ALTER TABLE public.apprenants ADD COLUMN resultat_examen_pratique text DEFAULT NULL;
