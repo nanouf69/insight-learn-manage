@@ -1,9 +1,10 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { PlanningForm } from "./PlanningForm";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { generateEmargementPratiquePDF } from "@/lib/pdf/emargement-pratique";
 
 const DAY_NAMES = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 const MONTH_NAMES = ['jan', 'fév', 'mar', 'avr', 'mai', 'jun', 'jul', 'aoû', 'sep', 'oct', 'nov', 'déc'];
@@ -22,12 +23,21 @@ function generateWeekdays(): Date[] {
   return days;
 }
 
+type CandidateInfo = {
+  name: string;
+  type: string;
+  nom: string;
+  prenom: string;
+  telephone: string;
+  email: string;
+};
+
 type DayInfo = {
   date: Date;
   dateKey: string;
   label: string;
   expectedType: 'vtc' | 'taxi' | 'examen';
-  reservedCandidates: { name: string; type: string }[];
+  reservedCandidates: CandidateInfo[];
 };
 
 type WeekInfo = {
@@ -56,20 +66,28 @@ export function PlanningCalendar() {
         .from("reservations_pratique")
         .select("date_choisie, type_formation, apprenant_id");
 
-      // Fetch apprenant names
+      // Fetch apprenant details
       const ids = [...new Set((reservations || []).map(r => r.apprenant_id))];
-      const appMap: Record<string, string> = {};
+      const appMap: Record<string, { nom: string; prenom: string; telephone: string; email: string }> = {};
       if (ids.length > 0) {
-        const { data: apps } = await supabase.from("apprenants").select("id, nom, prenom").in("id", ids);
-        (apps || []).forEach(a => { appMap[a.id] = `${a.nom} ${a.prenom}`; });
+        const { data: apps } = await supabase.from("apprenants").select("id, nom, prenom, telephone, email").in("id", ids);
+        (apps || []).forEach(a => { appMap[a.id] = { nom: a.nom, prenom: a.prenom, telephone: a.telephone || '', email: a.email || '' }; });
       }
 
       // Group reservations by date
-      const byDate: Record<string, { name: string; type: string }[]> = {};
+      const byDate: Record<string, CandidateInfo[]> = {};
       (reservations || []).forEach(r => {
         if (!byDate[r.date_choisie]) byDate[r.date_choisie] = [];
-        if (appMap[r.apprenant_id]) {
-          byDate[r.date_choisie].push({ name: appMap[r.apprenant_id], type: r.type_formation });
+        const app = appMap[r.apprenant_id];
+        if (app) {
+          byDate[r.date_choisie].push({
+            name: `${app.nom} ${app.prenom}`,
+            type: r.type_formation,
+            nom: app.nom,
+            prenom: app.prenom,
+            telephone: app.telephone,
+            email: app.email,
+          });
         }
       });
 
@@ -141,7 +159,7 @@ export function PlanningCalendar() {
                 <div className="text-sm font-semibold text-foreground mb-2 text-center border-b border-border pb-2">
                   {day.label}
                 </div>
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-1 flex-1">
                   {day.expectedType === 'examen' ? (
                     <>
                       <span className="text-xs font-bold text-destructive">📋 Examens pratiques</span>
@@ -164,6 +182,29 @@ export function PlanningCalendar() {
                     </>
                   )}
                 </div>
+                {day.expectedType !== 'examen' && day.reservedCandidates.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-2 w-full gap-1 text-xs h-7"
+                    onClick={() => {
+                      generateEmargementPratiquePDF(
+                        day.date,
+                        day.expectedType as 'vtc' | 'taxi',
+                        day.reservedCandidates.map(c => ({
+                          nom: c.nom,
+                          prenom: c.prenom,
+                          telephone: c.telephone,
+                          email: c.email,
+                        }))
+                      );
+                      toast.success("Feuille d'émargement téléchargée");
+                    }}
+                  >
+                    <Download className="h-3 w-3" />
+                    Émargement
+                  </Button>
+                )}
               </div>
             ))}
             {Array.from({ length: 5 - week.days.length }).map((_, i) => (
