@@ -1165,6 +1165,10 @@ export function ExamenReussitePage() {
                                         </Button>
                                       ))}
                                     </div>
+                                    <div className="border-t mt-2 pt-2">
+                                      <p className="text-xs text-muted-foreground mb-1">Ou choisir une autre date :</p>
+                                      <Input type="date" className="h-8 text-xs" onChange={(e) => { if (e.target.value) handleAssignDate(a.id, `${a.nom} ${a.prenom}`, e.target.value, 'vtc'); }} />
+                                    </div>
                                   </PopoverContent>
                                 </Popover>
                               </div>
@@ -1392,6 +1396,10 @@ export function ExamenReussitePage() {
                                           {formatDateShortFR(d)}
                                         </Button>
                                       ))}
+                                    </div>
+                                    <div className="border-t mt-2 pt-2">
+                                      <p className="text-xs text-muted-foreground mb-1">Ou choisir une autre date :</p>
+                                      <Input type="date" className="h-8 text-xs" onChange={(e) => { if (e.target.value) handleAssignDate(a.id, `${a.nom} ${a.prenom}`, e.target.value, 'taxi'); }} />
                                     </div>
                                   </PopoverContent>
                                 </Popover>
