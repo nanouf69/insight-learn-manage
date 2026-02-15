@@ -30,6 +30,13 @@ type CandidateInfo = {
   prenom: string;
   telephone: string;
   email: string;
+  heure?: string;
+};
+
+type ExamCandidate = {
+  name: string;
+  type: string;
+  heure: string;
 };
 
 type DayInfo = {
@@ -38,6 +45,7 @@ type DayInfo = {
   label: string;
   expectedType: 'vtc' | 'taxi' | 'examen';
   reservedCandidates: CandidateInfo[];
+  examCandidates: ExamCandidate[];
 };
 
 type WeekInfo = {
@@ -66,13 +74,15 @@ export function PlanningCalendar() {
         .from("reservations_pratique")
         .select("date_choisie, type_formation, apprenant_id");
 
-      // Fetch apprenant details
-      const ids = [...new Set((reservations || []).map(r => r.apprenant_id))];
+      // Fetch apprenant details (including exam fields)
+      const { data: allApprenants } = await supabase
+        .from("apprenants")
+        .select("id, nom, prenom, telephone, email, date_examen_pratique, heure_examen_pratique, formation_choisie");
+
       const appMap: Record<string, { nom: string; prenom: string; telephone: string; email: string }> = {};
-      if (ids.length > 0) {
-        const { data: apps } = await supabase.from("apprenants").select("id, nom, prenom, telephone, email").in("id", ids);
-        (apps || []).forEach(a => { appMap[a.id] = { nom: a.nom, prenom: a.prenom, telephone: a.telephone || '', email: a.email || '' }; });
-      }
+      (allApprenants || []).forEach(a => {
+        appMap[a.id] = { nom: a.nom, prenom: a.prenom, telephone: a.telephone || '', email: a.email || '' };
+      });
 
       // Group reservations by date
       const byDate: Record<string, CandidateInfo[]> = {};
@@ -91,11 +101,24 @@ export function PlanningCalendar() {
         }
       });
 
-      // Build day list with expected types
-      // VTC days: first 8 weekdays, TAXI: remaining (based on ~29 VTC / 4 per day ≈ 8 days)
-      const weekdays = generateWeekdays();
-      // Fixed schedule: VTC Feb 16-24, TAXI Feb 25-27, Exams Mar 2-6
+      // Group exam candidates by date
+      const examByDate: Record<string, ExamCandidate[]> = {};
+      (allApprenants || []).forEach(a => {
+        if (a.date_examen_pratique && a.heure_examen_pratique) {
+          if (!examByDate[a.date_examen_pratique]) examByDate[a.date_examen_pratique] = [];
+          const type = (a.formation_choisie || '').toLowerCase().includes('taxi') ? 'TAXI' : 'VTC';
+          examByDate[a.date_examen_pratique].push({
+            name: `${a.prenom} ${a.nom}`,
+            type,
+            heure: a.heure_examen_pratique,
+          });
+        }
+      });
+      // Sort exam candidates by time
+      Object.values(examByDate).forEach(list => list.sort((a, b) => a.heure.localeCompare(b.heure)));
 
+      // Build day list
+      const weekdays = generateWeekdays();
       const builtWeeks: WeekInfo[] = [];
       let currentWeek: DayInfo[] = [];
       let weekNum = 1;
@@ -108,6 +131,7 @@ export function PlanningCalendar() {
           label: `${DAY_NAMES[d.getDay()]} ${d.getDate()} ${MONTH_NAMES[d.getMonth()]}`,
           expectedType: d.getMonth() === 2 ? 'examen' : (d.getMonth() === 1 && d.getDate() >= 25) ? 'taxi' : 'vtc',
           reservedCandidates: byDate[key] || [],
+          examCandidates: examByDate[key] || [],
         });
 
         if (d.getDay() === 5 || i === weekdays.length - 1) {
@@ -163,7 +187,27 @@ export function PlanningCalendar() {
                   {day.expectedType === 'examen' ? (
                     <>
                       <span className="text-xs font-bold text-destructive">📋 Examens pratiques</span>
-                      <span className="text-xs text-muted-foreground italic mt-1">Semaine d'examens</span>
+                      {day.examCandidates.length > 0 ? (
+                        (() => {
+                          const byTime: Record<string, ExamCandidate[]> = {};
+                          day.examCandidates.forEach(c => {
+                            if (!byTime[c.heure]) byTime[c.heure] = [];
+                            byTime[c.heure].push(c);
+                          });
+                          return Object.entries(byTime).sort(([a], [b]) => a.localeCompare(b)).map(([heure, candidates]) => (
+                            <div key={heure} className="mt-1">
+                              <span className="text-[10px] font-bold text-muted-foreground uppercase">{heure}</span>
+                              {candidates.map((c, i) => (
+                                <span key={i} className={`text-xs leading-tight block ${c.type === 'TAXI' ? 'text-amber-600' : 'text-primary'}`}>
+                                  {c.name} <span className="text-[10px] font-medium">({c.type})</span>
+                                </span>
+                              ))}
+                            </div>
+                          ));
+                        })()
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic mt-1">Aucun candidat programmé</span>
+                      )}
                     </>
                   ) : (
                     <>
