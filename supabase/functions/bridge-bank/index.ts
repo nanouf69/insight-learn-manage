@@ -90,8 +90,7 @@ serve(async (req) => {
           Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
-          country: "fr",
-          prefill_email: "contact@ftransport.fr",
+          user_email: "contact@ftransport.fr",
         }),
       });
       const data = await res.json();
