@@ -595,9 +595,9 @@ export function ExamenReussitePage() {
           return false;
         };
 
-        // Candidats réussis de l'examen théorique dont la date pratique correspond
+        // Candidats réussis de l'examen théorique (sans filtre sur la date pratique)
         const reussisTheorique = apprenants?.filter(a => 
-          (a as any).resultat_examen === 'oui' && matchPratique((a as any).date_examen_pratique)
+          (a as any).resultat_examen === 'oui'
         ) || [];
         // PA et RP : inclus si leur date d'examen théorique correspond à la date sélectionnée
         const paRpTypes = ['pa-vtc', 'pa-taxi', 'rp-vtc', 'rp-taxi'];
