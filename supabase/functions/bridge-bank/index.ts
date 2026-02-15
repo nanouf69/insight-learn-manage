@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 const BRIDGE_API_URL = "https://api.bridgeapi.io/v3/aggregation";
-const BRIDGE_VERSION = "2024-08-15";
+const BRIDGE_VERSION = "2025-01-15";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
