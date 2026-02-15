@@ -129,6 +129,7 @@ export type Database = {
           organisme_financeur: string | null
           prenom: string
           resultat_examen: string | null
+          resultat_examen_pratique: string | null
           statut: string | null
           telephone: string | null
           type_apprenant: string | null
@@ -167,6 +168,7 @@ export type Database = {
           organisme_financeur?: string | null
           prenom: string
           resultat_examen?: string | null
+          resultat_examen_pratique?: string | null
           statut?: string | null
           telephone?: string | null
           type_apprenant?: string | null
@@ -205,6 +207,7 @@ export type Database = {
           organisme_financeur?: string | null
           prenom?: string
           resultat_examen?: string | null
+          resultat_examen_pratique?: string | null
           statut?: string | null
           telephone?: string | null
           type_apprenant?: string | null

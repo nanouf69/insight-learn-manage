@@ -179,7 +179,7 @@ export function ExamenReussitePage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('apprenants')
-        .select('id, nom, prenom, type_apprenant, telephone, email, date_examen_theorique, date_examen_pratique, resultat_examen, numero_dossier_cma')
+        .select('id, nom, prenom, type_apprenant, telephone, email, date_examen_theorique, date_examen_pratique, heure_examen_pratique, resultat_examen, resultat_examen_pratique, numero_dossier_cma')
         .order('nom', { ascending: true });
       if (error) throw error;
       return data;
@@ -1695,6 +1695,136 @@ export function ExamenReussitePage() {
             </CardContent>
           </Card>
         );
+      })()}
+
+      {/* Résultats examen pratique */}
+      {(() => {
+        // All candidates who have a date_examen_pratique (registered at CMA)
+        const candidatsPratique = (allApprenants || []).filter(a => a.date_examen_pratique);
+        
+        const getCategoriePratique = (type: string | null) => {
+          if (!type) return null;
+          const t = type.toLowerCase();
+          if (['taxi', 'taxi-e', 'taxi-e-presentiel', 'ta', 'ta-e', 'pa-taxi', 'rp-taxi'].includes(t)) return 'TAXI';
+          if (['vtc', 'vtc-e', 'vtc-e-presentiel', 'va-e', 'pa-vtc', 'rp-vtc'].includes(t)) return 'VTC';
+          return null;
+        };
+
+        const taxiPratique = candidatsPratique.filter(a => getCategoriePratique(a.type_apprenant) === 'TAXI');
+        const vtcPratique = candidatsPratique.filter(a => getCategoriePratique(a.type_apprenant) === 'VTC');
+
+        const updateResultatPratique = async (id: string, resultat: string | null) => {
+          try {
+            const { error } = await supabase
+              .from('apprenants')
+              .update({ resultat_examen_pratique: resultat } as any)
+              .eq('id', id);
+            if (error) throw error;
+            queryClient.invalidateQueries({ queryKey: ['all-apprenants'] });
+            toast.success("Résultat pratique mis à jour");
+          } catch (err: any) {
+            toast.error(err.message || "Erreur");
+          }
+        };
+
+        const renderPratiqueTable = (list: typeof candidatsPratique, color: string, headerBg: string) => (
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-8">#</TableHead>
+                  <TableHead>Nom Prénom</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Date examen</TableHead>
+                  <TableHead>Heure</TableHead>
+                  <TableHead className="text-center">Résultat</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {list.map((a, i) => {
+                  const resultatP = (a as any).resultat_examen_pratique || '';
+                  return (
+                    <TableRow key={a.id}>
+                      <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
+                      <TableCell className="font-medium">{a.nom} {a.prenom}</TableCell>
+                      <TableCell>
+                        <Badge className={typeColor[a.type_apprenant || ''] || 'bg-gray-100 text-gray-800'}>
+                          {typeLabel[a.type_apprenant || ''] || a.type_apprenant || '-'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{a.date_examen_pratique ? formatDateShortFR(a.date_examen_pratique) : '-'}</Badge>
+                      </TableCell>
+                      <TableCell className="text-sm">{(a as any).heure_examen_pratique || '-'}</TableCell>
+                      <TableCell className="text-center">
+                        <Select
+                          value={resultatP || "non_renseigne"}
+                          onValueChange={(val) => updateResultatPratique(a.id, val === "non_renseigne" ? null : val)}
+                        >
+                          <SelectTrigger className={`w-28 mx-auto ${
+                            resultatP === 'oui' ? 'border-emerald-500 text-emerald-700 bg-emerald-50' :
+                            resultatP === 'non' ? 'border-red-500 text-red-700 bg-red-50' : ''
+                          }`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="non_renseigne">-</SelectItem>
+                            <SelectItem value="oui">✅ Réussi</SelectItem>
+                            <SelectItem value="non">❌ Échoué</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        );
+
+        const reussisPratique = candidatsPratique.filter(a => (a as any).resultat_examen_pratique === 'oui').length;
+        const echouesPratique = candidatsPratique.filter(a => (a as any).resultat_examen_pratique === 'non').length;
+        const enAttentePratique = candidatsPratique.filter(a => !(a as any).resultat_examen_pratique).length;
+
+        return candidatsPratique.length > 0 ? (
+          <Card className="border-l-4 border-l-rose-500">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <ClipboardCheck className="h-5 w-5 text-rose-600" />
+                  Résultats examen pratique — Inscrits CMA
+                </span>
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-emerald-100 text-emerald-800">✅ {reussisPratique}</Badge>
+                  <Badge className="bg-red-100 text-red-800">❌ {echouesPratique}</Badge>
+                  <Badge variant="outline">En attente : {enAttentePratique}</Badge>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <h4 className="text-sm font-bold text-amber-700">TAXI ({taxiPratique.length})</h4>
+                  {taxiPratique.length > 0 ? renderPratiqueTable(taxiPratique, 'amber', 'bg-amber-50') : (
+                    <p className="text-xs text-muted-foreground">Aucun candidat TAXI inscrit</p>
+                  )}
+                </div>
+                <div className="space-y-3">
+                  <h4 className="text-sm font-bold text-blue-700">VTC ({vtcPratique.length})</h4>
+                  {vtcPratique.length > 0 ? renderPratiqueTable(vtcPratique, 'blue', 'bg-blue-50') : (
+                    <p className="text-xs text-muted-foreground">Aucun candidat VTC inscrit</p>
+                  )}
+                </div>
+              </div>
+              <div className="mt-4 p-3 bg-rose-50 rounded-lg flex items-center justify-between">
+                <p className="text-sm font-bold text-rose-800">Total inscrits CMA : {candidatsPratique.length}</p>
+                <p className="text-sm text-rose-700">
+                  {reussisPratique} réussi(s) • {echouesPratique} échoué(s) • {enAttentePratique} en attente
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : null;
       })()}
 
       {/* Main table */}
