@@ -873,6 +873,11 @@ export function ExamenReussitePage() {
 
       {/* Récapitulatif formation pratique */}
       {(() => {
+        // Block access if not all exam results are filled
+        const totalInscritsFormer = apprenants?.length || 0;
+        const sansResultatFormer = apprenants?.filter(a => !(a as any).resultat_examen) || [];
+        if (totalInscritsFormer === 0 || sansResultatFormer.length > 0) return null;
+
         const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
         const currentTheorique2 = datesExamenTheorique.find(e => e.date === selectedExamDate);
         const defaultPratique2 = currentTheorique2 ? datesExamenPratique[currentTheorique2.pratiqueIndex] : null;
