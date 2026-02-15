@@ -568,7 +568,7 @@ export function ExamenReussitePage() {
       {(() => {
         const totalInscrits = apprenants?.length || 0;
         const sansResultat = apprenants?.filter(a => !(a as any).resultat_examen) || [];
-        if (totalInscrits === 0 || sansResultat.length > 0) return null;
+        const resultatsIncomplets = totalInscrits === 0 || sansResultat.length > 0;
 
         const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
         // Find the default practical date for the current theoretical exam
@@ -776,10 +776,6 @@ export function ExamenReussitePage() {
           }
         };
 
-        // Candidats sans numéro de dossier CMA
-        const sansDossier = reussisLettre.filter(a => !a.numero_dossier_cma);
-        const hasMissingDossier = sansDossier.length > 0;
-
         return (
           <Card className="border-l-4 border-l-teal-500">
             <CardHeader>
@@ -789,16 +785,15 @@ export function ExamenReussitePage() {
                   Lettre CMA — Candidats reçus
                 </span>
                 <div className="flex items-center gap-2">
-                  <Button onClick={handlePrintLettre} disabled={reussisLettre.length === 0} variant="outline" className="gap-2">
+                  <Button onClick={handlePrintLettre} disabled={reussisLettre.length === 0 || resultatsIncomplets} variant="outline" className="gap-2">
                     <FileText className="h-4 w-4" />
                     Imprimer ({reussisLettre.length})
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button 
-                        disabled={reussisLettre.length === 0 || sendingCMAEmail || hasMissingDossier} 
+                        disabled={reussisLettre.length === 0 || sendingCMAEmail || resultatsIncomplets} 
                         className="gap-2"
-                        title={hasMissingDossier ? "Impossible d'envoyer : des candidats n'ont pas de numéro de dossier CMA" : undefined}
                       >
                         <Mail className="h-4 w-4" />
                         {sendingCMAEmail ? 'Envoi...' : `Envoyer par email (${reussisLettre.length})`}
@@ -836,24 +831,24 @@ export function ExamenReussitePage() {
                   </AlertDialog>
                 </div>
               </CardTitle>
-              {hasMissingDossier && (
+              {resultatsIncomplets && sansResultat.length > 0 && (
                 <div className="mt-3 p-4 bg-red-100 border-2 border-red-500 rounded-lg">
-                  <p className="text-red-700 font-bold text-base flex items-center gap-2">
-                    <XCircle className="h-5 w-5" />
-                    ⚠️ NUMÉRO DE DOSSIER CMA MANQUANT — Impossible d'envoyer la lettre
+                  <p className="text-red-700 font-bold text-lg flex items-center gap-2">
+                    <XCircle className="h-6 w-6" />
+                    ⚠️ RÉSULTATS D'EXAMEN MANQUANTS — Impossible d'envoyer la lettre
                   </p>
                   <p className="text-red-600 text-sm mt-1">
-                    {sansDossier.length} candidat(s) inscrit(s) à l'examen du {selectedExamDate} n'ont pas de numéro de dossier CMA :
+                    {sansResultat.length} candidat(s) inscrit(s) à l'examen du {selectedExamDate} n'ont pas encore de résultat renseigné :
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {sansDossier.map(a => (
+                    {sansResultat.map(a => (
                       <Badge key={a.id} className="bg-red-200 text-red-800 border-red-400 text-sm font-semibold px-3 py-1">
                         {a.nom} {a.prenom} — ☎️ {a.telephone || 'pas de tél'}
                       </Badge>
                     ))}
                   </div>
                   <p className="text-red-600 text-xs mt-2 italic">
-                    Renseignez le numéro de dossier CMA de chaque candidat dans sa fiche CRM avant d'envoyer la lettre.
+                    Saisissez le résultat (Oui / Non / Absent) de chaque candidat dans le tableau ci-dessus avant d'envoyer la lettre.
                   </p>
                 </div>
               )}
