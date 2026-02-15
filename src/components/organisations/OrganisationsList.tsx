@@ -298,6 +298,14 @@ export function OrganisationsList() {
                         onChange={(e) => setComposeBody(e.target.value)}
                         rows={6}
                       />
+                      <div className="border-t border-dashed pt-3 mt-2 text-xs text-muted-foreground space-y-0.5">
+                        <p className="font-semibold text-foreground">FTRANSPORT</p>
+                        <p>Centre de formation VTC & TAXI</p>
+                        <p>86 Route de Genas, 69003 Lyon</p>
+                        <p>📞 04.28.29.60.91</p>
+                        <p>📧 contact@ftransport.fr</p>
+                        <p>🕐 Du lundi au vendredi, 9h - 18h</p>
+                      </div>
                       <div className="flex justify-end">
                         <Button onClick={handleSendEmail} disabled={sending || !composeSubject.trim()} className="gap-2">
                           <Send className="h-4 w-4" />
