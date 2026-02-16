@@ -73,7 +73,6 @@ interface ApprenantDB {
   statut: string | null;
 }
 
-// Modes de financement disponibles
 const modesFinancement = [
   { value: "cpf", label: "CPF", color: "bg-purple-100 text-purple-700" },
   { value: "personnel", label: "Personnel", color: "bg-gray-100 text-gray-700" },
@@ -82,7 +81,6 @@ const modesFinancement = [
   { value: "autre", label: "Autre", color: "bg-slate-100 text-slate-700" },
 ];
 
-// Fonction pour obtenir le badge de type d'apprenant
 const getTypeBadgeColor = (type: string | null) => {
   if (!type) return "bg-gray-100 text-gray-700";
   const t = type.toLowerCase();
@@ -115,7 +113,6 @@ const getStatusBadge = (status: string) => {
   }
 };
 
-// Composant Popover pour les notes
 function NotesPopover({ 
   sessionApprenantId, 
   notes, 
@@ -164,7 +161,6 @@ function NotesPopover({
   );
 }
 
-// Composant Popover pour le paiement personnel
 function PaiementPopover({ 
   sessionApprenantId, 
   montantTotal, 
@@ -263,6 +259,8 @@ function PaiementPopover({
 export function SessionDetail({ session, open, onOpenChange }: SessionDetailProps) {
   const [searchApprenant, setSearchApprenant] = useState("");
   const [showAddApprenant, setShowAddApprenant] = useState(false);
+  const [showAddFormateur, setShowAddFormateur] = useState(false);
+  const [searchFormateur, setSearchFormateur] = useState("");
   const { toast } = useToast();
 
   // Charger les apprenants de cette session depuis la base de données
@@ -307,6 +305,36 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
     enabled: !!session?.id && open,
   });
 
+  // Charger les formateurs de cette session
+  const { data: formateursInSession = [], isLoading: loadingFormateurs, refetch: refetchFormateurs } = useQuery({
+    queryKey: ['session-formateurs', session?.id],
+    queryFn: async () => {
+      if (!session?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('session_formateurs')
+        .select(`
+          id,
+          heures_effectuees,
+          formateur:formateurs (
+            id,
+            nom,
+            prenom,
+            email,
+            telephone,
+            specialites,
+            type,
+            civilite
+          )
+        `)
+        .eq('session_id', session.id);
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!session?.id && open,
+  });
+
   // Charger tous les apprenants pour l'ajout
   const { data: allApprenants = [] } = useQuery({
     queryKey: ['all-apprenants'],
@@ -322,6 +350,21 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
     enabled: open,
   });
 
+  // Charger tous les formateurs pour l'ajout
+  const { data: allFormateurs = [] } = useQuery({
+    queryKey: ['all-formateurs'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('formateurs')
+        .select('id, nom, prenom, email, telephone, specialites, type, civilite')
+        .order('nom', { ascending: true });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: open,
+  });
+
   if (!session) return null;
 
   const sessionApprenantIds = apprenantsInSession.map((sa: any) => sa.apprenant?.id);
@@ -330,6 +373,14 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
     (a.nom.toLowerCase().includes(searchApprenant.toLowerCase()) ||
      a.prenom.toLowerCase().includes(searchApprenant.toLowerCase()) ||
      (a.email?.toLowerCase() || "").includes(searchApprenant.toLowerCase()))
+  );
+
+  const sessionFormateurIds = formateursInSession.map((sf: any) => sf.formateur?.id);
+  const formateursNotInSession = allFormateurs.filter(f => 
+    !sessionFormateurIds.includes(f.id) &&
+    (f.nom.toLowerCase().includes(searchFormateur.toLowerCase()) ||
+     f.prenom.toLowerCase().includes(searchFormateur.toLowerCase()) ||
+     (f.email?.toLowerCase() || "").includes(searchFormateur.toLowerCase()))
   );
 
   const addApprenant = async (apprenantId: string) => {
@@ -371,6 +422,55 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
       toast({
         title: "Apprenant retiré",
         description: "L'apprenant a été retiré de la session.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error.message || "Erreur lors du retrait",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const addFormateur = async (formateurId: string) => {
+    try {
+      const { error } = await supabase
+        .from('session_formateurs')
+        .insert({
+          session_id: session.id,
+          formateur_id: formateurId,
+        });
+      
+      if (error) throw error;
+      
+      refetchFormateurs();
+      setShowAddFormateur(false);
+      toast({
+        title: "Formateur ajouté",
+        description: "Le formateur a été ajouté à la session.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error.message || "Erreur lors de l'ajout",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const removeFormateur = async (sessionFormateurId: string) => {
+    try {
+      const { error } = await supabase
+        .from('session_formateurs')
+        .delete()
+        .eq('id', sessionFormateurId);
+      
+      if (error) throw error;
+      
+      refetchFormateurs();
+      toast({
+        title: "Formateur retiré",
+        description: "Le formateur a été retiré de la session.",
       });
     } catch (error: any) {
       toast({
@@ -467,13 +567,21 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
     const dateDebut = parseFrenchDate(session.dateDebut);
     const dateFin = parseFrenchDate(session.dateFin);
 
+    // Récupérer les noms des formateurs assignés
+    const formateurNames = formateursInSession.length > 0 
+      ? formateursInSession.map((sf: any) => {
+          const f = sf.formateur;
+          return f ? `${f.prenom} ${f.nom}` : "Non défini";
+        })
+      : [session.formateur || "Non défini"];
+
     const sessionData = {
       title: session.title,
       formation: session.formation,
       dateDebut: dateDebut.toISOString().split("T")[0],
       dateFin: dateFin.toISOString().split("T")[0],
       lieu: session.lieu,
-      formateurs: [session.formateur || "Non défini"],
+      formateurs: formateurNames,
     };
 
     const apprenantsList = apprenantsInSession.map((sa: any) => ({
@@ -501,6 +609,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
   const taxiCount = countByType("taxi");
   const vtcCount = countByType("vtc");
   const totalCount = apprenantsInSession.length;
+  const formateursCount = formateursInSession.length;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -537,6 +646,17 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
             <Users className="w-4 h-4 text-muted-foreground" />
             <span>{totalCount}/{session.maxParticipants} participants</span>
           </div>
+          {formateursInSession.length > 0 && (
+            <div className="flex items-center gap-2">
+              <UserCog className="w-4 h-4 text-muted-foreground" />
+              <span>
+                {formateursInSession.map((sf: any) => {
+                  const f = sf.formateur;
+                  return f ? `${f.prenom} ${f.nom}` : "";
+                }).filter(Boolean).join(", ")}
+              </span>
+            </div>
+          )}
         </div>
 
         <Tabs defaultValue="apprenants" className="flex-1 flex flex-col overflow-hidden">
@@ -547,7 +667,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
             </TabsTrigger>
             <TabsTrigger value="formateurs" className="gap-2">
               <UserCog className="w-4 h-4" />
-              Formateurs (0)
+              Formateurs ({formateursCount})
             </TabsTrigger>
           </TabsList>
 
@@ -728,14 +848,12 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
 
                           {/* Boutons Notes et Paiement */}
                           <div className="flex items-center gap-2">
-                            {/* Popover Notes */}
                             <NotesPopover 
                               sessionApprenantId={sessionApprenant.id}
                               notes={sessionApprenant.notes || apprenant.notes || ""}
                               onSave={(notes) => updateSessionApprenant(sessionApprenant.id, { notes })}
                             />
 
-                            {/* Popover Paiement (seulement si financement personnel) */}
                             {(sessionApprenant.mode_financement === "personnel" || apprenant.mode_financement === "personnel") && (
                               <PaiementPopover 
                                 sessionApprenantId={apprenant.id}
@@ -796,11 +914,140 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
 
           {/* Formateurs Tab */}
           <TabsContent value="formateurs" className="flex-1 overflow-hidden flex flex-col mt-4">
-            <div className="text-center py-8 text-muted-foreground">
-              <UserCog className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>Gestion des formateurs</p>
-              <p className="text-sm">Cette fonctionnalité sera disponible prochainement</p>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-medium text-foreground">Formateurs assignés</h4>
+              <Button 
+                size="sm" 
+                variant={showAddFormateur ? "secondary" : "default"}
+                onClick={() => setShowAddFormateur(!showAddFormateur)}
+                className="gap-1"
+              >
+                {showAddFormateur ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                {showAddFormateur ? "Fermer" : "Ajouter"}
+              </Button>
             </div>
+
+            {showAddFormateur && (
+              <div className="mb-4 p-3 border rounded-lg bg-muted/30">
+                <div className="relative mb-3">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Rechercher un formateur..."
+                    value={searchFormateur}
+                    onChange={(e) => setSearchFormateur(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <ScrollArea className="h-32">
+                  <div className="space-y-2">
+                    {formateursNotInSession.map((formateur) => (
+                      <div 
+                        key={formateur.id}
+                        className="flex items-center justify-between p-2 rounded-lg hover:bg-muted cursor-pointer"
+                        onClick={() => addFormateur(formateur.id)}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Avatar className="w-8 h-8">
+                            <AvatarFallback className="text-xs bg-accent text-accent-foreground">
+                              {formateur.prenom?.[0]}{formateur.nom?.[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="text-sm font-medium">{formateur.civilite ? `${formateur.civilite} ` : ""}{formateur.prenom} {formateur.nom}</p>
+                            <p className="text-xs text-muted-foreground">{formateur.specialites || formateur.type || "Pas de spécialité"}</p>
+                          </div>
+                        </div>
+                        <Button size="sm" variant="ghost" className="gap-1">
+                          <Plus className="w-4 h-4" /> Ajouter
+                        </Button>
+                      </div>
+                    ))}
+                    {formateursNotInSession.length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        Aucun formateur disponible
+                      </p>
+                    )}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
+
+            {loadingFormateurs ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : (
+              <ScrollArea className="h-[350px]">
+                <div className="space-y-3">
+                  {formateursInSession.map((sessionFormateur: any) => {
+                    const formateur = sessionFormateur.formateur;
+                    if (!formateur) return null;
+                    
+                    return (
+                      <div 
+                        key={sessionFormateur.id}
+                        className="p-4 rounded-xl border bg-card hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="w-10 h-10">
+                              <AvatarFallback className="bg-accent text-accent-foreground font-medium">
+                                {formateur.prenom?.[0] || ""}{formateur.nom?.[0] || ""}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-foreground">
+                                  {formateur.civilite ? `${formateur.civilite} ` : ""}{formateur.prenom} {formateur.nom}
+                                </span>
+                                <Badge variant="outline" className="text-xs">
+                                  {formateur.type === "externe" ? "Externe" : "Interne"}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                                {formateur.email && (
+                                  <span className="flex items-center gap-1">
+                                    <Mail className="w-3 h-3" />
+                                    {formateur.email}
+                                  </span>
+                                )}
+                                {formateur.telephone && (
+                                  <span className="flex items-center gap-1">
+                                    <Phone className="w-3 h-3" />
+                                    {formateur.telephone}
+                                  </span>
+                                )}
+                              </div>
+                              {formateur.specialites && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Spécialités : {formateur.specialites}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
+                            onClick={() => removeFormateur(sessionFormateur.id)}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  
+                  {formateursInSession.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <UserCog className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                      <p>Aucun formateur assigné</p>
+                      <p className="text-sm">Cliquez sur "Ajouter" pour assigner un formateur</p>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            )}
           </TabsContent>
         </Tabs>
       </DialogContent>
