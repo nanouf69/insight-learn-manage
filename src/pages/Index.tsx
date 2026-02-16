@@ -148,6 +148,8 @@ const Index = () => {
         <Header 
           title={config.title}
           subtitle={config.subtitle}
+          onSelectApprenant={handleNavigateToApprenant}
+          onNavigate={setCurrentPage}
         />
         
         <main className="flex-1 overflow-auto p-6">
