@@ -980,6 +980,7 @@ export type Database = {
           nom: string | null
           places_disponibles: number | null
           statut: string | null
+          type_session: string
           types_apprenant: string[] | null
           updated_at: string
         }
@@ -994,6 +995,7 @@ export type Database = {
           nom?: string | null
           places_disponibles?: number | null
           statut?: string | null
+          type_session?: string
           types_apprenant?: string[] | null
           updated_at?: string
         }
@@ -1008,6 +1010,7 @@ export type Database = {
           nom?: string | null
           places_disponibles?: number | null
           statut?: string | null
+          type_session?: string
           types_apprenant?: string[] | null
           updated_at?: string
         }
