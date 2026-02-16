@@ -13,8 +13,8 @@ export function SessionForm() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   
-  // États pour les champs
   const [nom, setNom] = useState("");
+  const [typeSession, setTypeSession] = useState("theorique");
   const [dateDebut, setDateDebut] = useState("");
   const [dateFin, setDateFin] = useState("");
   const [lieu, setLieu] = useState("");
@@ -22,6 +22,7 @@ export function SessionForm() {
 
   const resetForm = () => {
     setNom("");
+    setTypeSession("theorique");
     setDateDebut("");
     setDateFin("");
     setLieu("");
@@ -37,10 +38,11 @@ export function SessionForm() {
         .from('sessions')
         .insert({
           nom: nom || null,
+          type_session: typeSession,
           date_debut: dateDebut,
           date_fin: dateFin,
           lieu,
-          places_disponibles: parseInt(places) || 18,
+          places_disponibles: parseInt(places) || (typeSession === 'pratique' ? 4 : 18),
           statut: 'planifiee',
         });
 
@@ -77,8 +79,25 @@ export function SessionForm() {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
+            <Label>Type de session *</Label>
+            <Select value={typeSession} onValueChange={(v) => {
+              setTypeSession(v);
+              if (v === 'pratique') setPlaces("4");
+              else setPlaces("18");
+            }}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="theorique">📚 Formation théorique</SelectItem>
+                <SelectItem value="pratique">🚗 Formation pratique</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="nom">Nom de la session</Label>
-            <Input id="nom" placeholder="Ex: Session Janvier 2026" value={nom} onChange={(e) => setNom(e.target.value)} />
+            <Input id="nom" placeholder={typeSession === 'pratique' ? "Ex: Formation pratique VTC Février 2026" : "Ex: Session Janvier 2026"} value={nom} onChange={(e) => setNom(e.target.value)} />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -99,7 +118,7 @@ export function SessionForm() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="places">Places disponibles</Label>
-              <Input id="places" type="number" placeholder="18" value={places} onChange={(e) => setPlaces(e.target.value)} />
+              <Input id="places" type="number" placeholder={typeSession === 'pratique' ? "4" : "18"} value={places} onChange={(e) => setPlaces(e.target.value)} />
             </div>
           </div>
 

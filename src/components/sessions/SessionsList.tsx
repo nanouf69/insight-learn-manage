@@ -24,6 +24,7 @@ interface Session {
   formation_id: string | null;
   types_apprenant: string[] | null;
   creneaux: string[] | null;
+  type_session: string;
 }
 
 const TYPE_COLORS: Record<string, string> = {
@@ -229,6 +230,9 @@ export function SessionsList() {
                       <h3 className="font-semibold text-lg text-foreground">
                         {session.nom || `Session du ${formatDate(session.date_debut)}`}
                       </h3>
+                      {session.type_session === 'pratique' && (
+                        <Badge className="bg-emerald-500 text-white text-xs">🚗 Pratique</Badge>
+                      )}
                       <SessionEditor 
                         session={session} 
                         onUpdate={refetch}
