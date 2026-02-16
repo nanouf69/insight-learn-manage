@@ -25,6 +25,8 @@ interface Session {
   types_apprenant: string[] | null;
   creneaux: string[] | null;
   type_session: string;
+  heure_debut: string | null;
+  heure_fin: string | null;
 }
 
 const TYPE_COLORS: Record<string, string> = {

@@ -975,6 +975,8 @@ export type Database = {
           date_debut: string
           date_fin: string
           formation_id: string | null
+          heure_debut: string | null
+          heure_fin: string | null
           id: string
           lieu: string | null
           nom: string | null
@@ -990,6 +992,8 @@ export type Database = {
           date_debut: string
           date_fin: string
           formation_id?: string | null
+          heure_debut?: string | null
+          heure_fin?: string | null
           id?: string
           lieu?: string | null
           nom?: string | null
@@ -1005,6 +1009,8 @@ export type Database = {
           date_debut?: string
           date_fin?: string
           formation_id?: string | null
+          heure_debut?: string | null
+          heure_fin?: string | null
           id?: string
           lieu?: string | null
           nom?: string | null
