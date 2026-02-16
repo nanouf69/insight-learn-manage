@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Pencil, Loader2, CalendarIcon, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +34,12 @@ const CRENEAUX = [
   { value: "17h-21h", label: "17h - 21h" },
 ];
 
+interface Formateur {
+  id: string;
+  nom: string;
+  prenom: string;
+}
+
 interface SessionEditorProps {
   session: {
     id: string;
@@ -43,6 +50,8 @@ interface SessionEditorProps {
     places_disponibles: number | null;
     types_apprenant?: string[] | null;
     creneaux?: string[] | null;
+    heure_debut?: string | null;
+    heure_fin?: string | null;
   };
   onUpdate: () => void;
 }
@@ -60,8 +69,29 @@ export function SessionEditor({ session, onUpdate }: SessionEditorProps) {
   const [places, setPlaces] = useState(String(session.places_disponibles || 18));
   const [typesApprenant, setTypesApprenant] = useState<string[]>(session.types_apprenant || []);
   const [creneaux, setCreneaux] = useState<string[]>(session.creneaux || []);
+  const [heureDebut, setHeureDebut] = useState(session.heure_debut || "");
+  const [heureFin, setHeureFin] = useState(session.heure_fin || "");
+  const [selectedFormateurId, setSelectedFormateurId] = useState<string>("");
+  const [formateurs, setFormateurs] = useState<Formateur[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchFormateurs = async () => {
+      const { data } = await supabase.from('formateurs').select('id, nom, prenom');
+      if (data) setFormateurs(data);
+    };
+    const fetchSessionFormateur = async () => {
+      const { data } = await supabase
+        .from('session_formateurs')
+        .select('formateur_id')
+        .eq('session_id', session.id)
+        .limit(1);
+      if (data && data.length > 0) setSelectedFormateurId(data[0].formateur_id);
+    };
+    fetchFormateurs();
+    fetchSessionFormateur();
+  }, [session.id]);
 
   const toggleTypeApprenant = (type: string) => {
     setTypesApprenant(prev => 
@@ -104,10 +134,21 @@ export function SessionEditor({ session, onUpdate }: SessionEditorProps) {
           places_disponibles: parseInt(places) || 18,
           types_apprenant: typesApprenant,
           creneaux: creneaux,
+          heure_debut: heureDebut || null,
+          heure_fin: heureFin || null,
         })
         .eq('id', session.id);
 
       if (error) throw error;
+
+      // Gérer le formateur assigné
+      if (selectedFormateurId) {
+        await supabase.from('session_formateurs').delete().eq('session_id', session.id);
+        await supabase.from('session_formateurs').insert({
+          session_id: session.id,
+          formateur_id: selectedFormateurId,
+        });
+      }
 
       toast({
         title: "Session mise à jour",
@@ -135,6 +176,8 @@ export function SessionEditor({ session, onUpdate }: SessionEditorProps) {
     setPlaces(String(session.places_disponibles || 18));
     setTypesApprenant(session.types_apprenant || []);
     setCreneaux(session.creneaux || []);
+    setHeureDebut(session.heure_debut || "");
+    setHeureFin(session.heure_fin || "");
     setOpen(true);
   };
 
@@ -273,6 +316,33 @@ export function SessionEditor({ session, onUpdate }: SessionEditorProps) {
               )}
             </div>
 
+            {/* Horaires libres */}
+            <div className="space-y-3">
+              <Label>Horaires</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label htmlFor="heureDebut" className="text-xs text-muted-foreground">Heure de début</Label>
+                  <Input
+                    id="heureDebut"
+                    type="time"
+                    value={heureDebut}
+                    onChange={(e) => setHeureDebut(e.target.value)}
+                    placeholder="09:00"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="heureFin" className="text-xs text-muted-foreground">Heure de fin</Label>
+                  <Input
+                    id="heureFin"
+                    type="time"
+                    value={heureFin}
+                    onChange={(e) => setHeureFin(e.target.value)}
+                    placeholder="16:00"
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Créneaux horaires */}
             <div className="space-y-3">
               <Label>Créneaux horaires</Label>
@@ -293,6 +363,24 @@ export function SessionEditor({ session, onUpdate }: SessionEditorProps) {
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* Sélection du formateur */}
+            <div className="space-y-2">
+              <Label>Formateur / Intervenant</Label>
+              <Select value={selectedFormateurId} onValueChange={setSelectedFormateurId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir un formateur..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Aucun</SelectItem>
+                  {formateurs.map((f) => (
+                    <SelectItem key={f.id} value={f.id}>
+                      {f.prenom} {f.nom}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="flex justify-end gap-3 pt-4">
