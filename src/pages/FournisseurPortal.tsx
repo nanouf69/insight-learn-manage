@@ -209,9 +209,9 @@ export default function FournisseurPortal() {
         adresse: adresse.trim() || null, code_postal: codePostal.trim() || null,
         ville: ville.trim() || null, formation_choisie: selectedFormation,
         type_apprenant: typeApprenantFormation, montant_ttc: parseFloat(montantTtc) || null,
-        date_formation_catalogue: selectedDateOption || null, creneau_horaire: creneauHoraire || null,
-        date_examen_theorique: dateExamenTheorique || null, date_examen_pratique: dateExamenPratique || null,
-        inscrit_france_travail: inscritFranceTravail, documents_complets: documentsComplets,
+        date_formation_catalogue: dateDebutFormation ? format(dateDebutFormation, "yyyy-MM-dd") : null,
+        date_examen_pratique: dateFinFormation ? format(dateFinFormation, "yyyy-MM-dd") : null,
+        inscrit_france_travail: inscritFranceTravail,
         mode_financement: financement, organisme_financeur: organismeFinanceur || null,
       });
       if (error) throw error;
@@ -394,11 +394,6 @@ export default function FournisseurPortal() {
                       <Switch checked={inscritFranceTravail} onCheckedChange={setInscritFranceTravail} />
                     </div>
 
-                    {/* Documents complets */}
-                    <div className="flex items-center justify-between p-4 rounded-lg border">
-                      <div><Label className="text-sm font-medium">Possession des documents</Label><p className="text-xs text-muted-foreground">L'apprenant a-t-il fourni tous ses documents ?</p></div>
-                      <Switch checked={documentsComplets} onCheckedChange={setDocumentsComplets} />
-                    </div>
 
                     {/* Adresse */}
                     <div className="space-y-4">
@@ -453,6 +448,41 @@ export default function FournisseurPortal() {
                     <div className="space-y-2">
                       <Label>Prix de la formation (€)</Label>
                       <Input type="number" value={montantTtc} onChange={e => setMontantTtc(e.target.value)} min="0" step="0.01" />
+                    </div>
+
+                    {/* Dates d'entrée et sortie */}
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Dates de formation</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Date d'entrée en formation</Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateDebutFormation && "text-muted-foreground")}>
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {dateDebutFormation ? format(dateDebutFormation, "dd/MM/yyyy") : "Choisir une date"}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar mode="single" selected={dateDebutFormation} onSelect={setDateDebutFormation} initialFocus className={cn("p-3 pointer-events-auto")} />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Date de sortie de formation</Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateFinFormation && "text-muted-foreground")}>
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {dateFinFormation ? format(dateFinFormation, "dd/MM/yyyy") : "Choisir une date"}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar mode="single" selected={dateFinFormation} onSelect={setDateFinFormation} initialFocus className={cn("p-3 pointer-events-auto")} />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      </div>
                     </div>
 
 
