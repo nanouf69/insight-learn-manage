@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.register-formation-continue]
 verify_jwt = false
+
+[functions.upload-document-inscription]
+verify_jwt = false
