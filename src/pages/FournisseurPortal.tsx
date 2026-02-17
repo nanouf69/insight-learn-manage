@@ -229,25 +229,29 @@ export default function FournisseurPortal() {
     e.preventDefault();
     if (!fournisseur) return;
     const fileInput = document.getElementById('doc-file') as HTMLInputElement;
-    const file = fileInput?.files?.[0];
-    if (!file || !selectedApprenantForDoc) {
-      toast({ title: "Erreur", description: "Veuillez sélectionner un apprenant et un fichier.", variant: "destructive" });
+    const files = fileInput?.files;
+    if (!files || files.length === 0 || !selectedApprenantForDoc) {
+      toast({ title: "Erreur", description: "Veuillez sélectionner un apprenant et au moins un fichier.", variant: "destructive" });
       return;
     }
     setIsUploadingDoc(true);
     try {
-      const filePath = `${fournisseur.id}/${selectedApprenantForDoc}/${Date.now()}_${file.name}`;
-      const { error: uploadErr } = await supabase.storage.from('fournisseur-documents').upload(filePath, file);
-      if (uploadErr) throw uploadErr;
-      const { data: { publicUrl } } = supabase.storage.from('fournisseur-documents').getPublicUrl(filePath);
-      const { error: insertErr } = await supabase.from('fournisseur_documents').insert({
-        fournisseur_id: fournisseur.id, fournisseur_apprenant_id: selectedApprenantForDoc,
-        titre: file.name, nom_fichier: file.name, url: publicUrl,
-      });
-      if (insertErr) throw insertErr;
-      toast({ title: "Document envoyé", description: `"${file.name}" a été uploadé avec succès.` });
+      let successCount = 0;
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const filePath = `${fournisseur.id}/${selectedApprenantForDoc}/${Date.now()}_${file.name}`;
+        const { error: uploadErr } = await supabase.storage.from('fournisseur-documents').upload(filePath, file);
+        if (uploadErr) throw uploadErr;
+        const { data: { publicUrl } } = supabase.storage.from('fournisseur-documents').getPublicUrl(filePath);
+        const { error: insertErr } = await supabase.from('fournisseur_documents').insert({
+          fournisseur_id: fournisseur.id, fournisseur_apprenant_id: selectedApprenantForDoc,
+          titre: file.name, nom_fichier: file.name, url: publicUrl,
+        });
+        if (insertErr) throw insertErr;
+        successCount++;
+      }
+      toast({ title: "Documents envoyés", description: `${successCount} document(s) uploadé(s) avec succès.` });
       setSelectedApprenantForDoc(""); fileInput.value = "";
-      // Refresh docs
       const { data } = await supabase.from('fournisseur_documents').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false });
       if (data) setDocuments(data as FournisseurDocument[]);
     } catch (err: any) {
@@ -518,8 +522,8 @@ export default function FournisseurPortal() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label>Fichier *</Label>
-                      <Input id="doc-file" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" required />
+                      <Label>Fichier(s) *</Label>
+                      <Input id="doc-file" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" multiple required />
                     </div>
                     <Button type="submit" disabled={isUploadingDoc} className="gap-2">
                       {isUploadingDoc ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
