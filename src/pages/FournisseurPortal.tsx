@@ -202,7 +202,30 @@ export default function FournisseurPortal() {
     if (!fournisseur || isSubmitting) return;
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.from('fournisseur_apprenants').insert({
+      // Insert into main apprenants table so it appears in CRM
+      const { data: newApprenant, error: apprenantError } = await supabase
+        .from('apprenants')
+        .insert({
+          civilite: civilite || null,
+          nom: nom.trim(), prenom: prenom.trim(),
+          email: email.trim() || null, telephone: telephone.trim() || null,
+          adresse: adresse.trim() || null, code_postal: codePostal.trim() || null,
+          ville: ville.trim() || null, formation_choisie: selectedFormation,
+          type_apprenant: typeApprenantFormation, montant_ttc: parseFloat(montantTtc) || null,
+          date_debut_formation: dateDebutFormation ? format(dateDebutFormation, "yyyy-MM-dd") : null,
+          date_fin_formation: dateFinFormation ? format(dateFinFormation, "yyyy-MM-dd") : null,
+          inscrit_france_travail: inscritFranceTravail,
+          mode_financement: financement, organisme_financeur: organismeFinanceur || null,
+          statut: 'fournisseur',
+          notes: `Via fournisseur: ${fournisseur.nom}`,
+        })
+        .select('id')
+        .single();
+
+      if (apprenantError) throw apprenantError;
+
+      // Also insert into fournisseur_apprenants for supplier portal tracking
+      await supabase.from('fournisseur_apprenants').insert({
         fournisseur_id: fournisseur.id,
         civilite, nom: nom.trim(), prenom: prenom.trim(),
         email: email.trim() || null, telephone: telephone.trim() || null,
@@ -213,8 +236,9 @@ export default function FournisseurPortal() {
         date_examen_pratique: dateFinFormation ? format(dateFinFormation, "yyyy-MM-dd") : null,
         inscrit_france_travail: inscritFranceTravail,
         mode_financement: financement, organisme_financeur: organismeFinanceur || null,
+        notes: `apprenant_id:${newApprenant.id}`,
       });
-      if (error) throw error;
+
       toast({ title: "Apprenant ajouté", description: `${prenom} ${nom} a été enregistré avec succès.` });
       resetForm();
       setShowForm(false);
@@ -239,6 +263,18 @@ export default function FournisseurPortal() {
     }
     setIsUploadingDoc(true);
     try {
+      // Find the linked apprenant_id from fournisseur_apprenant notes
+      let mainApprenantId: string | null = null;
+      const { data: faData } = await supabase
+        .from('fournisseur_apprenants')
+        .select('notes')
+        .eq('id', selectedApprenantForDoc)
+        .single();
+      if (faData?.notes) {
+        const match = faData.notes.match(/apprenant_id:(.+)/);
+        if (match) mainApprenantId = match[1];
+      }
+
       let successCount = 0;
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
@@ -251,6 +287,20 @@ export default function FournisseurPortal() {
           titre: file.name, nom_fichier: file.name, url: publicUrl,
         });
         if (insertErr) throw insertErr;
+
+        // Also insert into documents_inscription for CRM visibility
+        if (mainApprenantId) {
+          await supabase.from('documents_inscription').insert({
+            apprenant_id: mainApprenantId,
+            type_document: 'custom',
+            titre: file.name,
+            description: `Document fournisseur: ${fournisseur.nom}`,
+            url: publicUrl,
+            nom_fichier: file.name,
+            statut: 'valid',
+          });
+        }
+
         successCount++;
       }
       toast({ title: "Documents envoyés", description: `${successCount} document(s) uploadé(s) avec succès.` });

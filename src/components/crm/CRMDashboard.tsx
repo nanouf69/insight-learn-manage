@@ -89,33 +89,16 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
       
       if (regularError) throw regularError;
 
-      // Fetch supplier apprenants
-      const { data: supplierData, error: supplierError } = await supabase
-        .from('fournisseur_apprenants')
-        .select('*, fournisseurs!inner(nom)')
-        .order('created_at', { ascending: false });
+      // Mark fournisseur apprenants with source info
+      const result = (regularData || []).map((a: any) => {
+        if (a.statut === 'fournisseur') {
+          return { ...a, _source: 'fournisseur', _fournisseurNom: a.notes?.replace('Via fournisseur: ', '') || 'Fournisseur' };
+        }
+        return a;
+      });
 
-      const supplierApprenants = (supplierData || []).map((sa: any) => ({
-        ...sa,
-        statut: 'fournisseur',
-        _source: 'fournisseur',
-        _fournisseurNom: sa.fournisseurs?.nom || 'Fournisseur',
-        // Map missing fields to keep consistency
-        montant_paye: 0,
-        date_naissance: null,
-        date_paiement: null,
-        moyen_paiement: null,
-        resultat_examen: null,
-        resultat_examen_pratique: null,
-        heure_examen_pratique: null,
-        lieu_examen: null,
-        type_examen: null,
-        b2_vierge: false,
-        numero_dossier_cma: null,
-      }));
-
-      return [...(regularData || []), ...supplierApprenants].sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      return result.sort(
+        (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
     },
   });
