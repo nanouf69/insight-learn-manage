@@ -230,8 +230,8 @@ export default function FournisseurPortal() {
     if (!fournisseur) return;
     const fileInput = document.getElementById('doc-file') as HTMLInputElement;
     const file = fileInput?.files?.[0];
-    if (!file || !selectedApprenantForDoc || !docTitre) {
-      toast({ title: "Erreur", description: "Veuillez remplir tous les champs et sélectionner un fichier.", variant: "destructive" });
+    if (!file || !selectedApprenantForDoc) {
+      toast({ title: "Erreur", description: "Veuillez sélectionner un apprenant et un fichier.", variant: "destructive" });
       return;
     }
     setIsUploadingDoc(true);
@@ -242,11 +242,11 @@ export default function FournisseurPortal() {
       const { data: { publicUrl } } = supabase.storage.from('fournisseur-documents').getPublicUrl(filePath);
       const { error: insertErr } = await supabase.from('fournisseur_documents').insert({
         fournisseur_id: fournisseur.id, fournisseur_apprenant_id: selectedApprenantForDoc,
-        titre: docTitre, nom_fichier: file.name, url: publicUrl,
+        titre: file.name, nom_fichier: file.name, url: publicUrl,
       });
       if (insertErr) throw insertErr;
-      toast({ title: "Document envoyé", description: `"${docTitre}" a été uploadé avec succès.` });
-      setDocTitre(""); setSelectedApprenantForDoc(""); fileInput.value = "";
+      toast({ title: "Document envoyé", description: `"${file.name}" a été uploadé avec succès.` });
+      setSelectedApprenantForDoc(""); fileInput.value = "";
       // Refresh docs
       const { data } = await supabase.from('fournisseur_documents').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false });
       if (data) setDocuments(data as FournisseurDocument[]);
@@ -515,10 +515,6 @@ export default function FournisseurPortal() {
                             {apprenants.map(a => <SelectItem key={a.id} value={a.id}>{a.prenom} {a.nom}</SelectItem>)}
                           </SelectContent>
                         </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Titre du document *</Label>
-                        <Input value={docTitre} onChange={e => setDocTitre(e.target.value)} placeholder="Ex: Pièce d'identité" required />
                       </div>
                     </div>
                     <div className="space-y-2">
