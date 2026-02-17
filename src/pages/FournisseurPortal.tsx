@@ -119,9 +119,9 @@ export default function FournisseurPortal() {
   const [adresse, setAdresse] = useState("");
   const [codePostal, setCodePostal] = useState("");
   const [ville, setVille] = useState("");
-  const [selectedFormation, setSelectedFormation] = useState("vtc-exam");
-  const [montantTtc, setMontantTtc] = useState("1599");
-  const [typeApprenantFormation, setTypeApprenantFormation] = useState("vtc");
+  const [selectedFormation, setSelectedFormation] = useState("marketing-digital-24h");
+  const [montantTtc, setMontantTtc] = useState("1500");
+  const [typeApprenantFormation, setTypeApprenantFormation] = useState("marketing-digital");
   const [creneauHoraire, setCreneauHoraire] = useState("");
   const [dateExamenTheorique, setDateExamenTheorique] = useState("27 janvier 2026");
   const [dateExamenPratique, setDateExamenPratique] = useState("");
@@ -189,10 +189,10 @@ export default function FournisseurPortal() {
 
   const resetForm = () => {
     setCivilite(""); setPrenom(""); setNom(""); setEmail(""); setTelephone("");
-    setAdresse(""); setCodePostal(""); setVille(""); setSelectedFormation("vtc-exam");
-    setMontantTtc("1599"); setTypeApprenantFormation("vtc"); setCreneauHoraire("");
-    setDateExamenTheorique("27 janvier 2026"); setDateExamenPratique("");
-    setSelectedDateOption(datesFormations.vtc.dates[0]); setDateDebutFormation(undefined);
+    setAdresse(""); setCodePostal(""); setVille(""); setSelectedFormation("marketing-digital-24h");
+    setMontantTtc("1500"); setTypeApprenantFormation("marketing-digital"); setCreneauHoraire("");
+    setDateExamenTheorique(""); setDateExamenPratique("");
+    setSelectedDateOption(""); setDateDebutFormation(undefined);
     setDateFinFormation(undefined); setInscritFranceTravail(false); setDocumentsComplets(false);
     setFinancement("cpf"); setOrganismeFinanceur("cpf-cdc");
   };
@@ -419,29 +419,6 @@ export default function FournisseurPortal() {
                           <SelectTrigger><SelectValue placeholder="Sélectionner une formation" /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="pas_encore_choisi">Pas encore choisi</SelectItem>
-                            <SelectGroup><SelectLabel>Formations Présentiel</SelectLabel>
-                              <SelectItem value="vtc">Formation VTC - 1 099 €</SelectItem>
-                              <SelectItem value="vtc-exam">Formation VTC avec frais d'examen - 1 599 €</SelectItem>
-                              <SelectItem value="taxi">Formation TAXI - 1 299 €</SelectItem>
-                              <SelectItem value="taxi-exam">Formation TAXI avec frais d'examen - 1 799 €</SelectItem>
-                              <SelectItem value="passerelle-taxi">Formation TAXI pour chauffeur VTC - 999 €</SelectItem>
-                            </SelectGroup>
-                            <SelectGroup><SelectLabel>Formations E-learning</SelectLabel>
-                              <SelectItem value="vtc-elearning-1099">Formation VTC (E-learning) - 1 099 €</SelectItem>
-                              <SelectItem value="vtc-elearning">Formation VTC (E-learning) - 1 599 €</SelectItem>
-                              <SelectItem value="taxi-elearning">Formation TAXI (E-learning) - 1 299 €</SelectItem>
-                              <SelectItem value="passerelle-taxi-elearning">Formation TAXI chauffeur VTC (E-learning) - 999 €</SelectItem>
-                              <SelectItem value="passerelle-vtc-elearning">Formation VTC chauffeur TAXI (E-learning) - 499 €</SelectItem>
-                            </SelectGroup>
-                            <SelectGroup><SelectLabel>Formations E-learning en présentiel</SelectLabel>
-                              <SelectItem value="vtc-e-presentiel">Formation VTC E (Présentiel) - 1 599 €</SelectItem>
-                              <SelectItem value="taxi-e-presentiel">Formation TAXI E (Présentiel) - 1 799 €</SelectItem>
-                              <SelectItem value="ta-e-presentiel">Formation TA E (Présentiel) - 999 €</SelectItem>
-                            </SelectGroup>
-                            <SelectGroup><SelectLabel>Formations Continues</SelectLabel>
-                              <SelectItem value="continue-vtc">Formation continue VTC - 200 €</SelectItem>
-                              <SelectItem value="continue-taxi">Formation continue TAXI - 299 €</SelectItem>
-                            </SelectGroup>
                             <SelectGroup><SelectLabel>Marketing Digital</SelectLabel>
                               <SelectItem value="marketing-digital-24h">Marketing Digital 24H - 1 500 €</SelectItem>
                               <SelectItem value="marketing-digital-26h">Marketing Digital 26H - 2 100 €</SelectItem>
@@ -452,85 +429,9 @@ export default function FournisseurPortal() {
                               <SelectItem value="anglais-35h">Anglais Professionnel 35H - 2 000 €</SelectItem>
                               <SelectItem value="anglais-45h">Anglais Professionnel 45H - 3 000 €</SelectItem>
                             </SelectGroup>
-                            <SelectGroup><SelectLabel>Services</SelectLabel>
-                              <SelectItem value="location-vehicule">Location de véhicule</SelectItem>
-                              <SelectItem value="formation-et-location">Formation et location de véhicule</SelectItem>
-                              <SelectItem value="repassage-theorique">Repassage examen théorique</SelectItem>
-                              <SelectItem value="repassage-pratique">Repassage examen pratique</SelectItem>
-                              <SelectItem value="passage-pratique">Passage examen pratique</SelectItem>
-                            </SelectGroup>
                           </SelectContent>
                         </Select>
                       </div>
-
-                      <div className="space-y-2">
-                        <Label>Type d'apprenant</Label>
-                        <Select value={typeApprenantFormation} onValueChange={setTypeApprenantFormation}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="vtc">VTC</SelectItem><SelectItem value="vtc-e">VTC E</SelectItem>
-                            <SelectItem value="taxi">TAXI</SelectItem><SelectItem value="taxi-e">TAXI E</SelectItem>
-                            <SelectItem value="ta">TA</SelectItem><SelectItem value="ta-e">TA E</SelectItem>
-                            <SelectItem value="va-e">VA E</SelectItem>
-                            <SelectItem value="marketing-digital">Marketing Digital</SelectItem>
-                            <SelectItem value="anglais">Anglais Professionnel</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Créneau horaire</Label>
-                        <Select value={creneauHoraire} onValueChange={setCreneauHoraire}>
-                          <SelectTrigger><SelectValue placeholder="Sélectionner un créneau" /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="journee">Formation en journée (9h - 16h)</SelectItem>
-                            <SelectItem value="soiree">Formation en soirée (17h - 21h)</SelectItem>
-                            <SelectItem value="en-ligne">Formation en ligne</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Date examen théorique */}
-                      {!["repassage-pratique", "passage-pratique", "continue-vtc", "continue-taxi"].includes(selectedFormation) && (
-                        <div className="space-y-2">
-                          <Label>Date d'examen théorique</Label>
-                          <Select value={dateExamenTheorique} onValueChange={setDateExamenTheorique}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pas_encore_choisi">Pas de date choisie</SelectItem>
-                              {datesExamenTheorique.map((e, i) => (
-                                <SelectItem key={i} value={e.date}>{e.date} ({e.horaire}) - {e.lieu}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-
-                      {/* Date examen pratique */}
-                      {["repassage-pratique", "passage-pratique"].includes(selectedFormation) && (
-                        <div className="space-y-2">
-                          <Label>Date d'examen pratique *</Label>
-                          <Select value={dateExamenPratique} onValueChange={setDateExamenPratique}>
-                            <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                            <SelectContent>
-                              {datesExamenPratique.map((d, i) => <SelectItem key={i} value={d}>{d}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-
-                      {/* Dates formation continue */}
-                      {["continue-vtc", "continue-taxi"].includes(selectedFormation) && (
-                        <div className="space-y-2">
-                          <Label>Dates de formation continue</Label>
-                          <Select value={dateExamenPratique} onValueChange={setDateExamenPratique}>
-                            <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                            <SelectContent>
-                              {datesFormationContinue.map((d, i) => <SelectItem key={i} value={d}>{d}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
                     </div>
 
                     {/* Financement */}
@@ -554,25 +455,6 @@ export default function FournisseurPortal() {
                       <Input type="number" value={montantTtc} onChange={e => setMontantTtc(e.target.value)} min="0" step="0.01" />
                     </div>
 
-                    {/* Dates formation */}
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Dates de formation</h3>
-                      <Select value={selectedDateOption} onValueChange={setSelectedDateOption}>
-                        <SelectTrigger><SelectValue placeholder="Sélectionner une date" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="manuel">Définir les dates manuellement</SelectItem>
-                          <SelectGroup><SelectLabel>{datesFormations.vtc.label}</SelectLabel>
-                            {datesFormations.vtc.dates.map((d, i) => <SelectItem key={`v${i}`} value={d}>{d}</SelectItem>)}
-                          </SelectGroup>
-                          <SelectGroup><SelectLabel>{datesFormations.taxi.label}</SelectLabel>
-                            {datesFormations.taxi.dates.map((d, i) => <SelectItem key={`t${i}`} value={d}>{d}</SelectItem>)}
-                          </SelectGroup>
-                          <SelectGroup><SelectLabel>{datesFormations.ta.label}</SelectLabel>
-                            {datesFormations.ta.dates.map((d, i) => <SelectItem key={`a${i}`} value={d}>{d}</SelectItem>)}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                    </div>
 
                     <div className="flex justify-end gap-3 pt-4">
                       <Button type="button" variant="outline" onClick={() => { resetForm(); setShowForm(false); }}>Annuler</Button>
