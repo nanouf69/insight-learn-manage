@@ -20,6 +20,20 @@ interface RecentActivityProps {
   onNavigateToApprenant?: (apprenantId: string) => void;
 }
 
+const getFormationLabel = (code: string): string => {
+  const labels: Record<string, string> = {
+    'formation-continue-vtc': 'Formation Continue VTC — 200€',
+    'formation-continue-taxi': 'Formation Continue TAXI — 299€',
+    'vtc': 'Formation VTC',
+    'taxi': 'Formation TAXI',
+    'vtc-exam': 'Formation VTC avec examen',
+    'taxi-exam': 'Formation TAXI avec examen',
+    'passage-pratique': 'Passage examen pratique',
+    'repassage-pratique': 'Repassage examen pratique',
+  };
+  return labels[code] || code;
+};
+
 export function RecentActivity({ onNavigateToApprenant }: RecentActivityProps) {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -103,16 +117,20 @@ export function RecentActivity({ onNavigateToApprenant }: RecentActivityProps) {
         // Add new inscription activities (exclude those already in completed)
         const completedIds = new Set(completedApprenants?.map(a => a.id) || []);
         newApprenants?.filter(a => !completedIds.has(a.id)).forEach((a) => {
+          const isFormationContinue = a.formation_choisie?.startsWith('formation-continue');
+          const formationLabel = getFormationLabel(a.formation_choisie || "");
           activityList.push({
             apprenantId: a.id,
             id: `new-${a.id}`,
-            type: "inscription",
-            message: `${a.prenom} ${a.nom} a été inscrit`,
-            target: a.formation_choisie || "",
+            type: isFormationContinue ? "formation_continue" : "inscription",
+            message: isFormationContinue 
+              ? `📋 ${a.prenom} ${a.nom} — nouvelle inscription Formation Continue`
+              : `${a.prenom} ${a.nom} a été inscrit`,
+            target: formationLabel,
             time: formatDistanceToNow(new Date(a.created_at), { addSuffix: true, locale: fr }),
-            icon: UserPlus,
-            iconBg: "bg-primary/10",
-            iconColor: "text-primary",
+            icon: isFormationContinue ? GraduationCap : UserPlus,
+            iconBg: isFormationContinue ? "bg-blue-500/10" : "bg-primary/10",
+            iconColor: isFormationContinue ? "text-blue-600" : "text-primary",
           });
         });
 
