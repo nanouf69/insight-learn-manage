@@ -166,17 +166,20 @@ function PaiementPopover({
   sessionApprenantId, 
   montantTotal, 
   montantPaye, 
-  moyenPaiement, 
+  moyenPaiement,
+  datePaiement,
   onSave 
 }: { 
   sessionApprenantId: string; 
   montantTotal: number; 
   montantPaye: number; 
   moyenPaiement: string;
-  onSave: (data: { montant_paye?: number; moyen_paiement?: string }) => void 
+  datePaiement: string;
+  onSave: (data: { montant_paye?: number; moyen_paiement?: string; date_paiement?: string | null }) => void 
 }) {
   const [localMontantPaye, setLocalMontantPaye] = useState(montantPaye);
   const [localMoyenPaiement, setLocalMoyenPaiement] = useState(moyenPaiement);
+  const [localDatePaiement, setLocalDatePaiement] = useState(datePaiement);
   const [open, setOpen] = useState(false);
 
   const resteAPayer = montantTotal - localMontantPaye;
@@ -184,7 +187,8 @@ function PaiementPopover({
   const handleSave = () => {
     onSave({
       montant_paye: localMontantPaye,
-      moyen_paiement: localMoyenPaiement
+      moyen_paiement: localMoyenPaiement,
+      date_paiement: localDatePaiement || null
     });
     setOpen(false);
   };
@@ -236,6 +240,15 @@ function PaiementPopover({
                 <SelectItem value="virement">Virement</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Date de paiement</Label>
+            <Input 
+              type="date"
+              value={localDatePaiement}
+              onChange={(e) => setLocalDatePaiement(e.target.value)}
+            />
           </div>
 
           <div className="p-3 rounded-lg bg-muted/50">
@@ -517,7 +530,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
   // Fonction pour mettre à jour le paiement dans apprenants
   const updateApprenantPaiement = async (
     apprenantId: string, 
-    updates: { montant_paye?: number; moyen_paiement?: string; notes?: string }
+    updates: { montant_paye?: number; moyen_paiement?: string; date_paiement?: string | null; notes?: string }
   ) => {
     try {
       const { error } = await supabase
@@ -932,6 +945,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                                 montantTotal={apprenant.montant_ttc || 0}
                                 montantPaye={apprenant.montant_paye || 0}
                                 moyenPaiement={apprenant.moyen_paiement || ""}
+                                datePaiement={apprenant.date_paiement || ""}
                                 onSave={(data) => updateApprenantPaiement(apprenant.id, data)}
                               />
                             )}
