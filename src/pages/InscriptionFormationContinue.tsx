@@ -42,6 +42,7 @@ export default function InscriptionFormationContinue() {
   const [adresse, setAdresse] = useState("");
   const [codePostal, setCodePostal] = useState("");
   const [ville, setVille] = useState("");
+  const [dateNaissance, setDateNaissance] = useState("");
   const [telephone, setTelephone] = useState("");
   const [email, setEmail] = useState("");
   
@@ -72,6 +73,7 @@ export default function InscriptionFormationContinue() {
           prenom: prenom.trim(),
           nom: nom.trim().toUpperCase(),
           adresse: adresse.trim(),
+          date_naissance: dateNaissance || null,
           code_postal: codePostal.trim(),
           ville: ville.trim(),
           telephone: telephone.trim(),
@@ -275,6 +277,11 @@ export default function InscriptionFormationContinue() {
                   <Label>Nom <span className="text-red-500">*</span></Label>
                   <Input placeholder="Votre nom" value={nom} onChange={(e) => setNom(e.target.value)} />
                 </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label>Date de naissance</Label>
+                <Input type="date" value={dateNaissance} onChange={(e) => setDateNaissance(e.target.value)} />
               </div>
 
               <div className="space-y-1">
