@@ -166,10 +166,17 @@ export default function InscriptionFormationContinue() {
         <Card className="max-w-lg w-full shadow-xl">
           <CardContent className="pt-8 text-center space-y-6">
             <CheckCircle className="h-20 w-20 text-emerald-500 mx-auto" />
-            <h1 className="text-2xl font-bold">Inscription enregistrée !</h1>
+            <h1 className="text-2xl font-bold">Demande d'inscription envoyée !</h1>
             <p className="text-muted-foreground">
-              Merci <strong>{prenom}</strong>, votre inscription à la <strong>{details.label}</strong> a bien été prise en compte.
+              Merci <strong>{prenom}</strong>, votre demande d'inscription à la <strong>{details.label}</strong> a bien été prise en compte.
             </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-left space-y-2">
+              <p className="font-semibold text-blue-800">📧 En attente de confirmation</p>
+              <p className="text-blue-700">
+                Votre inscription ne sera <strong>définitivement validée</strong> qu'après réception d'un <strong>email de confirmation</strong> de notre part. 
+                Veuillez vérifier votre boîte mail (et vos spams) dans les prochains jours.
+              </p>
+            </div>
             <div className="bg-primary/10 border border-primary/20 rounded-xl p-4">
               <p className="font-semibold text-primary">
                 {datesFormationContinue.find(d => d.value === dateFormation)?.label}
@@ -181,7 +188,7 @@ export default function InscriptionFormationContinue() {
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-left space-y-2">
               <p className="font-semibold text-amber-800">📋 Prochaines étapes :</p>
               <ul className="list-disc pl-5 text-amber-700 space-y-1">
-                <li>Vous recevrez un email de confirmation</li>
+                <li><strong>Attendez l'email de confirmation</strong> pour valider votre place</li>
                 <li>Le règlement de <strong>{details.prix}€</strong> est à effectuer par virement bancaire</li>
                 <li>Lieu : 86 Route de Genas, 69003 Lyon</li>
               </ul>
