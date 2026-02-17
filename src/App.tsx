@@ -11,6 +11,7 @@ import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import ReservationPratique from "./pages/ReservationPratique";
 import InscriptionFormationContinue from "./pages/InscriptionFormationContinue";
+import FournisseurPortal from "./pages/FournisseurPortal";
 
 // Onboarding pages
 import OnboardingWelcome from "./pages/onboarding/OnboardingWelcome";
@@ -66,6 +67,9 @@ function App() {
               {/* Reservation pratique - public */}
               <Route path="/reservation-pratique" element={<ReservationPratique />} />
               <Route path="/inscription-formation-continue" element={<InscriptionFormationContinue />} />
+              
+              {/* Fournisseur portal - public */}
+              <Route path="/fournisseur/:token" element={<FournisseurPortal />} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

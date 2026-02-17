@@ -765,6 +765,220 @@ export type Database = {
         }
         Relationships: []
       }
+      fournisseur_apprenants: {
+        Row: {
+          adresse: string | null
+          civilite: string | null
+          code_postal: string | null
+          created_at: string
+          creneau_horaire: string | null
+          date_examen_pratique: string | null
+          date_examen_theorique: string | null
+          date_formation_catalogue: string | null
+          documents_complets: boolean | null
+          email: string | null
+          formation_choisie: string | null
+          fournisseur_id: string
+          id: string
+          inscrit_france_travail: boolean | null
+          mode_financement: string | null
+          montant_ttc: number | null
+          nom: string
+          notes: string | null
+          organisme_financeur: string | null
+          prenom: string
+          telephone: string | null
+          type_apprenant: string | null
+          updated_at: string
+          ville: string | null
+        }
+        Insert: {
+          adresse?: string | null
+          civilite?: string | null
+          code_postal?: string | null
+          created_at?: string
+          creneau_horaire?: string | null
+          date_examen_pratique?: string | null
+          date_examen_theorique?: string | null
+          date_formation_catalogue?: string | null
+          documents_complets?: boolean | null
+          email?: string | null
+          formation_choisie?: string | null
+          fournisseur_id: string
+          id?: string
+          inscrit_france_travail?: boolean | null
+          mode_financement?: string | null
+          montant_ttc?: number | null
+          nom: string
+          notes?: string | null
+          organisme_financeur?: string | null
+          prenom: string
+          telephone?: string | null
+          type_apprenant?: string | null
+          updated_at?: string
+          ville?: string | null
+        }
+        Update: {
+          adresse?: string | null
+          civilite?: string | null
+          code_postal?: string | null
+          created_at?: string
+          creneau_horaire?: string | null
+          date_examen_pratique?: string | null
+          date_examen_theorique?: string | null
+          date_formation_catalogue?: string | null
+          documents_complets?: boolean | null
+          email?: string | null
+          formation_choisie?: string | null
+          fournisseur_id?: string
+          id?: string
+          inscrit_france_travail?: boolean | null
+          mode_financement?: string | null
+          montant_ttc?: number | null
+          nom?: string
+          notes?: string | null
+          organisme_financeur?: string | null
+          prenom?: string
+          telephone?: string | null
+          type_apprenant?: string | null
+          updated_at?: string
+          ville?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fournisseur_apprenants_fournisseur_id_fkey"
+            columns: ["fournisseur_id"]
+            isOneToOne: false
+            referencedRelation: "fournisseurs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fournisseur_documents: {
+        Row: {
+          created_at: string
+          fournisseur_apprenant_id: string
+          fournisseur_id: string
+          id: string
+          nom_fichier: string
+          titre: string
+          type_document: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          fournisseur_apprenant_id: string
+          fournisseur_id: string
+          id?: string
+          nom_fichier: string
+          titre: string
+          type_document?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          fournisseur_apprenant_id?: string
+          fournisseur_id?: string
+          id?: string
+          nom_fichier?: string
+          titre?: string
+          type_document?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fournisseur_documents_fournisseur_apprenant_id_fkey"
+            columns: ["fournisseur_apprenant_id"]
+            isOneToOne: false
+            referencedRelation: "fournisseur_apprenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fournisseur_documents_fournisseur_id_fkey"
+            columns: ["fournisseur_id"]
+            isOneToOne: false
+            referencedRelation: "fournisseurs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fournisseur_factures: {
+        Row: {
+          created_at: string
+          description: string | null
+          destinataire: string
+          fournisseur_id: string
+          id: string
+          montant: number | null
+          nom_fichier: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          destinataire: string
+          fournisseur_id: string
+          id?: string
+          montant?: number | null
+          nom_fichier: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          destinataire?: string
+          fournisseur_id?: string
+          id?: string
+          montant?: number | null
+          nom_fichier?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fournisseur_factures_fournisseur_id_fkey"
+            columns: ["fournisseur_id"]
+            isOneToOne: false
+            referencedRelation: "fournisseurs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fournisseurs: {
+        Row: {
+          actif: boolean
+          adresse: string | null
+          created_at: string
+          email: string | null
+          id: string
+          nom: string
+          telephone: string | null
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          adresse?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nom: string
+          telephone?: string | null
+          token?: string
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          adresse?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nom?: string
+          telephone?: string | null
+          token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       organismes: {
         Row: {
           adresse: string | null
