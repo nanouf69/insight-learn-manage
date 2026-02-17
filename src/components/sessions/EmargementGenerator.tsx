@@ -109,7 +109,7 @@ function generatePage(
 
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
-  doc.text("FEUILLE D'EMARGEMENT", pageWidth - margin, 14, { align: "right" });
+  doc.text("FEUILLE D'EMARGEMENT - FORMATION PRATIQUE", pageWidth - margin, 14, { align: "right" });
 
   doc.setTextColor(0, 0, 0);
 
