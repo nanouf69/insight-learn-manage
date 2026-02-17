@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.bridge-bank]
 verify_jwt = false
+
+[functions.register-formation-continue]
+verify_jwt = false
