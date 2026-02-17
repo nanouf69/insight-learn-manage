@@ -81,13 +81,42 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
   const { data: apprenants = [], isLoading } = useQuery({
     queryKey: ['apprenants-crm'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Fetch regular apprenants
+      const { data: regularData, error: regularError } = await supabase
         .from('apprenants')
         .select('*')
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
-      return data;
+      if (regularError) throw regularError;
+
+      // Fetch supplier apprenants
+      const { data: supplierData, error: supplierError } = await supabase
+        .from('fournisseur_apprenants')
+        .select('*, fournisseurs!inner(nom)')
+        .order('created_at', { ascending: false });
+
+      const supplierApprenants = (supplierData || []).map((sa: any) => ({
+        ...sa,
+        statut: 'fournisseur',
+        _source: 'fournisseur',
+        _fournisseurNom: sa.fournisseurs?.nom || 'Fournisseur',
+        // Map missing fields to keep consistency
+        montant_paye: 0,
+        date_naissance: null,
+        date_paiement: null,
+        moyen_paiement: null,
+        resultat_examen: null,
+        resultat_examen_pratique: null,
+        heure_examen_pratique: null,
+        lieu_examen: null,
+        type_examen: null,
+        b2_vierge: false,
+        numero_dossier_cma: null,
+      }));
+
+      return [...(regularData || []), ...supplierApprenants].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
     },
   });
 
@@ -255,6 +284,11 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
                         )}
                       </div>
                       <Badge className={typeColor}>{typeLabel}</Badge>
+                      {(apprenant as any)._source === 'fournisseur' && (
+                        <Badge variant="outline" className="text-orange-600 border-orange-300 bg-orange-50">
+                          {(apprenant as any)._fournisseurNom}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                   <DropdownMenu>

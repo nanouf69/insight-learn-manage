@@ -68,6 +68,7 @@ const BRIDGE_USER_KEY = "ftransport_bridge_user";
 
 export function ComptabilitePage() {
   const [factures, setFactures] = useState<Facture[]>([]);
+  const [fournisseurFactures, setFournisseurFactures] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState<string>("all");
@@ -83,12 +84,21 @@ export function ComptabilitePage() {
 
   useEffect(() => {
     fetchFactures();
+    fetchFournisseurFactures();
     const savedUser = localStorage.getItem(BRIDGE_USER_KEY);
     if (savedUser) {
       setBridgeUserUuid(savedUser);
       setBridgeConnected(true);
     }
   }, []);
+
+  const fetchFournisseurFactures = async () => {
+    const { data, error } = await supabase
+      .from("fournisseur_factures")
+      .select("*, fournisseurs!inner(nom)")
+      .order("created_at", { ascending: false });
+    if (!error && data) setFournisseurFactures(data);
+  };
 
   const fetchFactures = async () => {
     setLoading(true);
@@ -258,6 +268,9 @@ export function ComptabilitePage() {
           </TabsTrigger>
           <TabsTrigger value="banque" className="gap-2">
             <Building2 className="h-4 w-4" /> Compte bancaire
+          </TabsTrigger>
+          <TabsTrigger value="fournisseurs" className="gap-2">
+            <Receipt className="h-4 w-4" /> Factures fournisseurs
           </TabsTrigger>
         </TabsList>
 
@@ -598,6 +611,73 @@ export function ComptabilitePage() {
               )}
             </>
           )}
+        </TabsContent>
+
+        {/* === FACTURES FOURNISSEURS === */}
+        <TabsContent value="fournisseurs" className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-sm text-muted-foreground">Total factures fournisseurs</p>
+                <p className="text-2xl font-bold">{fournisseurFactures.length}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-sm text-muted-foreground">Montant total à payer</p>
+                <p className="text-2xl font-bold text-destructive">
+                  {formatMontant(fournisseurFactures.reduce((s, f) => s + (Number(f.montant) || 0), 0))}
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-sm text-muted-foreground">Fournisseurs actifs</p>
+                <p className="text-2xl font-bold">{new Set(fournisseurFactures.map(f => f.fournisseur_id)).size}</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Factures à payer</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {fournisseurFactures.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <Receipt className="h-12 w-12 text-muted-foreground/50 mb-3" />
+                  <p className="text-muted-foreground">Aucune facture fournisseur</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Fournisseur</TableHead>
+                      <TableHead>Fichier</TableHead>
+                      <TableHead>Destinataire</TableHead>
+                      <TableHead className="text-right">Montant</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Date</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {fournisseurFactures.map((f: any) => (
+                      <TableRow key={f.id}>
+                        <TableCell className="font-medium">{f.fournisseurs?.nom || "—"}</TableCell>
+                        <TableCell>{f.nom_fichier}</TableCell>
+                        <TableCell><Badge variant="outline">{f.destinataire}</Badge></TableCell>
+                        <TableCell className="text-right font-semibold">
+                          {f.montant ? formatMontant(Number(f.montant)) : "—"}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{f.description || "—"}</TableCell>
+                        <TableCell>{formatDate(f.created_at)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

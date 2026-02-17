@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { GraduationCap, UserPlus, FileCheck, CreditCard, CheckCircle, AlertTriangle, CalendarCheck } from "lucide-react";
+import { GraduationCap, UserPlus, FileCheck, CreditCard, CheckCircle, AlertTriangle, CalendarCheck, Receipt } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -152,6 +152,26 @@ export function RecentActivity({ onNavigateToApprenant }: RecentActivityProps) {
           }
         });
 
+        // Fetch recent supplier invoices
+        const { data: fournisseurFactures } = await supabase
+          .from('fournisseur_factures')
+          .select('*, fournisseurs!inner(nom)')
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        fournisseurFactures?.forEach((f: any) => {
+          activityList.push({
+            apprenantId: '',
+            id: `facture-fournisseur-${f.id}`,
+            type: "facture_fournisseur",
+            message: `📄 Facture déposée par ${f.fournisseurs?.nom || 'Fournisseur'}`,
+            target: `→ ${f.destinataire}${f.montant ? ` — ${Number(f.montant).toLocaleString('fr-FR')}€` : ''}`,
+            time: formatDistanceToNow(new Date(f.created_at), { addSuffix: true, locale: fr }),
+            icon: Receipt,
+            iconBg: "bg-orange-500/10",
+            iconColor: "text-orange-600",
+          });
+        });
         // Alerts stay on top, sort rest by most recent
         const alerts = activityList.filter(a => a.type === 'alert');
         const rest = activityList.filter(a => a.type !== 'alert');
