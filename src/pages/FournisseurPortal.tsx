@@ -141,7 +141,7 @@ export default function FournisseurPortal() {
   // Facture upload
   const [factureDestinataire, setFactureDestinataire] = useState("");
   const [factureMontant, setFactureMontant] = useState("");
-  const [factureDescription, setFactureDescription] = useState("");
+  const [factureDescription, setFactureDescription] = useState("Prestation de services");
   const [isUploadingFacture, setIsUploadingFacture] = useState(false);
 
   // Load fournisseur by token
@@ -578,7 +578,7 @@ export default function FournisseurPortal() {
                       </div>
                       <div className="space-y-2">
                         <Label>Description</Label>
-                        <Input value={factureDescription} onChange={e => setFactureDescription(e.target.value)} placeholder="Ex: Prestation janvier 2026" />
+                        <Input value={factureDescription} onChange={e => setFactureDescription(e.target.value)} placeholder="Prestation de services" />
                       </div>
                     </div>
                     <div className="space-y-2">
