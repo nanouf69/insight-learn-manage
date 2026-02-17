@@ -109,7 +109,8 @@ function generatePage(
 
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
-  doc.text("FEUILLE D'EMARGEMENT - FORMATION PRATIQUE", pageWidth - margin, 14, { align: "right" });
+  const emargementTitle = `FEUILLE D'EMARGEMENT - ${session.formation.toUpperCase()}`;
+  doc.text(emargementTitle, pageWidth - margin, 14, { align: "right" });
 
   doc.setTextColor(0, 0, 0);
 

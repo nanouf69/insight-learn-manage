@@ -592,7 +592,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
           const f = sf.formateur;
           return f ? `${f.prenom} ${f.nom}` : "Non défini";
         })
-      : [session.formateur || "Non défini"];
+      : [session.formateur || "GUENICHI Naoufal"];
 
     const sessionData = {
       title: session.title,
