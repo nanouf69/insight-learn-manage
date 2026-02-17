@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import ReservationPratique from "./pages/ReservationPratique";
+import InscriptionFormationContinue from "./pages/InscriptionFormationContinue";
 
 // Onboarding pages
 import OnboardingWelcome from "./pages/onboarding/OnboardingWelcome";
@@ -64,6 +65,7 @@ function App() {
               
               {/* Reservation pratique - public */}
               <Route path="/reservation-pratique" element={<ReservationPratique />} />
+              <Route path="/inscription-formation-continue" element={<InscriptionFormationContinue />} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
