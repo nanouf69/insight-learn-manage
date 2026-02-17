@@ -178,8 +178,8 @@ export default function InscriptionFormationContinue() {
         sessionId = newSession.id;
       }
 
-      // 3. Link apprenant to session
-      await supabase
+      // 3. Link apprenant to session — CRITICAL: check for errors
+      const { error: linkErr } = await supabase
         .from("session_apprenants")
         .insert({
           session_id: sessionId,
@@ -191,6 +191,24 @@ export default function InscriptionFormationContinue() {
           date_fin: selectedDate.fin,
         });
 
+      if (linkErr) {
+        console.error("Erreur liaison session_apprenants:", linkErr);
+        throw new Error("Erreur lors de l'inscription à la session. Veuillez réessayer.");
+      }
+
+      // 4. Verify the link was created
+      const { data: verifyLink } = await supabase
+        .from("session_apprenants")
+        .select("id")
+        .eq("session_id", sessionId)
+        .eq("apprenant_id", apprenant.id)
+        .single();
+
+      if (!verifyLink) {
+        throw new Error("L'inscription n'a pas pu être confirmée. Veuillez réessayer.");
+      }
+
+      console.log("✅ Inscription réussie:", { apprenantId: apprenant.id, sessionId, linkId: verifyLink.id });
       setSubmitted(true);
     } catch (err: any) {
       console.error("Erreur inscription:", err);
