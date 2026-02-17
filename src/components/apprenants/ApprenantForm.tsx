@@ -151,7 +151,13 @@ export function ApprenantForm() {
     "taxi-e-presentiel": "1799",
     "ta-e-presentiel": "999",
     "continue-vtc": "200",
-    "continue-taxi": "299"
+    "continue-taxi": "299",
+    "marketing-digital-24h": "1500",
+    "marketing-digital-26h": "2100",
+    "marketing-digital-28h": "3300",
+    "anglais-20h": "1200",
+    "anglais-35h": "2000",
+    "anglais-45h": "3000"
   };
 
   // Mapping formation → type d'apprenant
@@ -170,7 +176,13 @@ export function ApprenantForm() {
     "taxi-e-presentiel": "taxi-e-presentiel",
     "ta-e-presentiel": "ta-e-presentiel",
     "continue-vtc": "vtc",
-    "continue-taxi": "taxi"
+    "continue-taxi": "taxi",
+    "marketing-digital-24h": "marketing-digital",
+    "marketing-digital-26h": "marketing-digital",
+    "marketing-digital-28h": "marketing-digital",
+    "anglais-20h": "anglais",
+    "anglais-35h": "anglais",
+    "anglais-45h": "anglais"
   };
 
   // Mettre à jour le prix, le type d'apprenant et les dates par défaut quand la formation change
@@ -625,6 +637,18 @@ export function ApprenantForm() {
                     <SelectItem value="continue-taxi">Formation continue TAXI - 299 €</SelectItem>
                   </SelectGroup>
                   <SelectGroup>
+                    <SelectLabel>Marketing Digital</SelectLabel>
+                    <SelectItem value="marketing-digital-24h">Marketing Digital 24H - 1 500 €</SelectItem>
+                    <SelectItem value="marketing-digital-26h">Marketing Digital 26H - 2 100 €</SelectItem>
+                    <SelectItem value="marketing-digital-28h">Marketing Digital 28H - 3 300 €</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel>Anglais Professionnel</SelectLabel>
+                    <SelectItem value="anglais-20h">Anglais Professionnel 20H - 1 200 €</SelectItem>
+                    <SelectItem value="anglais-35h">Anglais Professionnel 35H - 2 000 €</SelectItem>
+                    <SelectItem value="anglais-45h">Anglais Professionnel 45H - 3 000 €</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
                     <SelectLabel>Services</SelectLabel>
                     <SelectItem value="location-vehicule">Location de véhicule</SelectItem>
                     <SelectItem value="formation-et-location">Formation et location de véhicule</SelectItem>
@@ -658,6 +682,8 @@ export function ApprenantForm() {
                   <SelectItem value="pa-taxi">PA TAXI</SelectItem>
                   <SelectItem value="rp-vtc">RP VTC</SelectItem>
                   <SelectItem value="rp-taxi">RP TAXI</SelectItem>
+                  <SelectItem value="marketing-digital">Marketing Digital</SelectItem>
+                  <SelectItem value="anglais">Anglais Professionnel</SelectItem>
                 </SelectContent>
               </Select>
               {typeApprenantFormation && (
