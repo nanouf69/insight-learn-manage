@@ -31,7 +31,8 @@ import {
   StickyNote,
   CreditCard,
   Euro,
-  Save
+  Save,
+  Send
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { generateEmargementPDF } from "./EmargementGenerator";
@@ -261,6 +262,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
   const [showAddApprenant, setShowAddApprenant] = useState(false);
   const [showAddFormateur, setShowAddFormateur] = useState(false);
   const [searchFormateur, setSearchFormateur] = useState("");
+  const [sendingEmails, setSendingEmails] = useState(false);
   const { toast } = useToast();
 
   // Charger les apprenants de cette session depuis la base de données
@@ -294,7 +296,11 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
             montant_ttc,
             montant_paye,
             moyen_paiement,
-            notes
+            notes,
+            civilite,
+            adresse,
+            code_postal,
+            ville
           )
         `)
         .eq('session_id', session.id);
@@ -598,6 +604,58 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
     });
   };
 
+  const isFormationContinue = session.title?.toLowerCase().includes('continue');
+
+  const handleSendConfirmationEmails = async () => {
+    const apprenantsWithEmail = apprenantsInSession.filter((sa: any) => sa.apprenant?.email);
+    
+    if (apprenantsWithEmail.length === 0) {
+      toast({
+        title: "Aucun email",
+        description: "Aucun apprenant de cette session n'a d'adresse email.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSendingEmails(true);
+    let sent = 0;
+    let failed = 0;
+
+    for (const sa of apprenantsWithEmail) {
+      const a = sa.apprenant;
+      const typeApprenant = (a.type_apprenant || '').toLowerCase();
+      const formation = typeApprenant.includes('taxi') ? 'TAXI' : typeApprenant.includes('vtc') ? 'VTC' : 'TAXI / VTC';
+      const dateDebut = a.date_debut_formation || session.dateDebut || '[date à compléter]';
+      const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+
+      const subject = `Confirmation d'inscription formation continue - ${a.prenom} ${a.nom}`;
+      const body = `${a.civilite || ''} ${a.prenom} ${a.nom}<br><br>${a.adresse || ''}<br>${a.code_postal || ''} ${a.ville || ''}<br><br><br><br><br>Lyon, le ${today}<br><br>Bonjour,<br><br>Nous avons le plaisir de vous convier pour la formation :<br><br><strong>${formation}</strong><br><br>Le <strong>${dateDebut}</strong><br><br>Horaires : de 9h à 12h et de 13h à 17h<br><br>Adresse : 86 route de Genas 69003 Lyon<br><br><br>A l'issue des quatorze heures de formation, une attestation de formation continue vous sera délivrée et vous pourrez effectuer votre demande de renouvellement de carte professionnelle auprès de la préfecture.<br><br>Le reste des informations vous sera communiqué ce mardi.<br><br>Attention, si vous venez en voiture, merci de venir en avance, actuellement, il y a de nombreux travaux sur la route de Genas. Nous vous conseillons de vous garer sur l'avenue des Acacias à Lyon et de rejoindre le centre à pied.<br><br>Rappel, pour la formation vous devez :<br>- savoir lire et écrire le français<br>- avoir un permis de conduire plus de 3 ans en cours de validité<br>- avoir le casier judiciaire B2 vierge<br><br><span style="color: red; font-size: 18px; font-weight: bold;">⚠️ IMPORTANT : Nous vous rappelons que votre présence est obligatoire. En cas d'absence et/ou de retard, l'attestation de formation continue ne vous sera pas remise. Il est inutile de négocier ou de trouver des raisons : vous serez reporté(e) à la session suivante.</span><br><br>Pour les personnes qui n'ont pas réglé leur formation, merci de préparer l'appoint. Les chèques et la carte bleue ne seront pas acceptés le jour de l'entrée en formation. Pour les personnes qui souhaiteraient payer par virement, vous trouverez ci-joint le RIB du centre de formation. Une facture vous sera bien sûr remise pour les paiements effectués.<br><br>Nous vous souhaitons une excellente formation et espérons qu'elle répondra pleinement à vos attentes.<br><br><strong>RIB - SASU SERVICES PRO F TRANSPORT</strong><br><br>IBAN : FR76 3000 4014 1800 0101 2475 357<br>BIC : BNPAFRPPXXX<br>Code banque : 30004<br>Code agence : 01418<br>N° de compte : 00010124753<br>Clé RIB : 57<br><br>SERVICES PRO 86 ROUTE DE GENAS 69003, LYON 3EME - FR<br><br>Cordialement,<br>FTRANSPORT`;
+
+      try {
+        await supabase.functions.invoke('sync-outlook-emails', {
+          body: {
+            action: 'send',
+            apprenantId: a.id,
+            userEmail: 'contact@ftransport.fr',
+            to: a.email,
+            subject,
+            body,
+          },
+        });
+        sent++;
+      } catch {
+        failed++;
+      }
+    }
+
+    setSendingEmails(false);
+    toast({
+      title: "Envoi terminé",
+      description: `${sent} email(s) envoyé(s)${failed > 0 ? `, ${failed} échec(s)` : ''}.`,
+    });
+  };
+
   // Compter les apprenants par type
   const countByType = (type: string) => {
     return apprenantsInSession.filter((sa: any) => {
@@ -620,15 +678,29 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
               {session.title}
               {getStatusBadge(session.status)}
             </DialogTitle>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleDownloadEmargement}
-              className="gap-2"
-            >
-              <Download className="w-4 h-4" />
-              Feuilles d'émargement
-            </Button>
+            <div className="flex gap-2">
+              {isFormationContinue && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleSendConfirmationEmails}
+                  disabled={sendingEmails || apprenantsInSession.length === 0}
+                  className="gap-2"
+                >
+                  {sendingEmails ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  📩 Envoyer confirmations
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleDownloadEmargement}
+                className="gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Feuilles d'émargement
+              </Button>
+            </div>
           </div>
         </DialogHeader>
 
