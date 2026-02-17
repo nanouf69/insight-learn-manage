@@ -216,6 +216,19 @@ L'équipe Ftransport
 📞 04 28 29 60 91
 📧 contact@ftransport.fr`,
   },
+  {
+    id: 'confirmation-formation-continue',
+    label: '📩 Confirmation formation continue',
+    icon: '📩',
+    getSubject: (a) => `Confirmation d'inscription formation continue - ${a.prenom} ${a.nom}`,
+    getBody: (a) => {
+      const formation = getFormationType(a.type_apprenant);
+      const dateDebut = a.date_debut_formation || '[date a completer]';
+      const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+
+      return `${a.civilite || ''} ${a.prenom} ${a.nom}<br><br>${a.adresse || ''}<br>${a.code_postal || ''} ${a.ville || ''}<br><br><br><br><br>Lyon, le ${today}<br><br>Bonjour,<br><br>Nous avons le plaisir de vous convier pour la formation :<br><br><strong>${formation}</strong><br><br>Le <strong>${dateDebut}</strong><br><br>Horaires : de 9h a 12h et de 13h a 17h<br><br>Adresse : 86 route de Genas 69003 Lyon<br><br><br>A l'issue des quatorze heures de formation, une attestation de formation continue vous sera delivree et vous pourrez effectuer votre demande de renouvellement de carte professionnelle aupres de la prefecture.<br><br>Le reste des informations vous sera communique ce mardi.<br><br>Attention, si vous venez en voiture, merci de venir en avance, actuellement, il y a de nombreux travaux sur la route de Genas. Nous vous conseillons de vous garer sur l'avenue des Acacias a Lyon et de rejoindre le centre a pied.<br><br>Rappel, pour la formation vous devez :<br>- savoir lire et ecrire le francais<br>- avoir un permis de conduire plus de 3 ans en cours de validite<br>- avoir le casier judiciaire B2 vierge<br><br>Nous vous rappelons que votre presence est obligatoire, en cas d'absence et ou de retard, l'attestation de formation continue ne vous sera pas remise.<br><br>Pour les personnes qui n'ont pas regle leur formation, merci de preparer l'appoint, les cheques et la carte bleue ne seront pas acceptes le jour de l'entree en formation, pour les personnes qui souhaiteraient payer par virement, vous trouverez ci-joint le RIB du centre de formation.<br><br>Nous vous souhaitons une excellente formation et esperons qu'elle repondra pleinement a vos attentes.<br><br><strong>RIB - SASU SERVICES PRO F TRANSPORT</strong><br><br>IBAN : FR76 3000 4014 1800 0101 2475 357<br>BIC : BNPAFRPPXXX<br>Code banque : 30004<br>Code agence : 01418<br>N° de compte : 00010124753<br>Cle RIB : 57<br><br>SERVICES PRO 86 ROUTE DE GENAS 69003, LYON 3EME - FR`;
+    },
+  },
 ];
 
 export function EmailsSection({ apprenant }: EmailsSectionProps) {
