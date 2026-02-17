@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckCircle, FileText, AlertTriangle } from "lucide-react";
@@ -49,10 +49,45 @@ export default function InscriptionFormationContinue() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fullDates, setFullDates] = useState<Record<string, boolean>>({});
+  const [loadingDates, setLoadingDates] = useState(true);
+
+  const MAX_PLACES = 16;
+
+  // Check which dates are full
+  useEffect(() => {
+    const checkAvailability = async () => {
+      setLoadingDates(true);
+      const full: Record<string, boolean> = {};
+      for (const d of datesFormationContinue) {
+        const { data: sessions } = await supabase
+          .from("sessions")
+          .select("id, places_disponibles, nom")
+          .eq("date_debut", d.value)
+          .eq("date_fin", d.fin)
+          .eq("type_session", "theorique");
+
+        const matchingSession = sessions?.find(s =>
+          s.nom?.toLowerCase().includes("formation continue") &&
+          s.nom?.toLowerCase().includes(type)
+        );
+        if (matchingSession && (matchingSession.places_disponibles ?? MAX_PLACES) <= 0) {
+          full[d.value] = true;
+        }
+      }
+      setFullDates(full);
+      setLoadingDates(false);
+      // If currently selected date is now full, deselect
+      if (dateFormation && full[dateFormation]) {
+        setDateFormation("");
+      }
+    };
+    checkAvailability();
+  }, [type]);
 
   const details = formationDetails[type];
 
-  const canSubmit = prenom.trim() && nom.trim() && adresse.trim() && telephone.trim() && email.trim() && dateFormation;
+  const canSubmit = prenom.trim() && nom.trim() && adresse.trim() && telephone.trim() && email.trim() && dateFormation && !fullDates[dateFormation];
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
@@ -111,14 +146,17 @@ export default function InscriptionFormationContinue() {
       );
 
       if (matchingSession) {
+        const remaining = matchingSession.places_disponibles ?? MAX_PLACES;
+        if (remaining <= 0) {
+          throw new Error("Cette session est complète. Veuillez choisir une autre date.");
+        }
         sessionId = matchingSession.id;
-        // Decrement places
         await supabase
           .from("sessions")
-          .update({ places_disponibles: Math.max(0, (matchingSession.places_disponibles || 18) - 1) })
+          .update({ places_disponibles: Math.max(0, remaining - 1) })
           .eq("id", sessionId);
       } else {
-        // Create new session
+        // Create new session with 16 places max, minus this one = 15
         const { data: newSession, error: createErr } = await supabase
           .from("sessions")
           .insert({
@@ -126,7 +164,7 @@ export default function InscriptionFormationContinue() {
             date_debut: selectedDate.value,
             date_fin: selectedDate.fin,
             types_apprenant: [typeApprenant],
-            places_disponibles: 17,
+            places_disponibles: MAX_PLACES - 1,
             statut: "planifiee",
             type_session: "theorique",
             lieu: "86 route de genas 69003 Lyon",
@@ -250,18 +288,22 @@ export default function InscriptionFormationContinue() {
             <div className="space-y-2">
               <h3 className="font-semibold border-b pb-2">Date de formation</h3>
               <Label>Sélectionnez vos dates <span className="text-red-500">*</span></Label>
-              <Select value={dateFormation} onValueChange={setDateFormation}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choisir une date de formation" />
-                </SelectTrigger>
-                <SelectContent>
-                  {datesFormationContinue.map((d) => (
-                    <SelectItem key={d.value} value={d.value}>
-                      {d.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {loadingDates ? (
+                <p className="text-sm text-muted-foreground">Chargement des disponibilités...</p>
+              ) : (
+                <Select value={dateFormation} onValueChange={setDateFormation}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir une date de formation" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {datesFormationContinue.map((d) => (
+                      <SelectItem key={d.value} value={d.value} disabled={!!fullDates[d.value]}>
+                        {d.label}{fullDates[d.value] ? " — 🔴 COMPLET" : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             {/* Coordonnées du stagiaire */}
