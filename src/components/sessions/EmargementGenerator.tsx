@@ -28,7 +28,7 @@ interface OrganismeData {
   numeroDeclaration: string;
 }
 
-// Données de l'organisme (à connecter à la base de données plus tard)
+// Données de l'organisme
 const organisme: OrganismeData = {
   nom: "FTRANSPORT",
   adresse: "86 route de genas 69003 Lyon",
@@ -39,7 +39,6 @@ const organisme: OrganismeData = {
   numeroDeclaration: "823461561",
 };
 
-// Lieu de formation fixe
 const LIEU_FORMATION = "86 route de genas 69003 Lyon";
 
 export function generateEmargementPDF(
@@ -47,7 +46,7 @@ export function generateEmargementPDF(
   apprenants: Apprenant[]
 ) {
   const doc = new jsPDF({
-    orientation: "portrait",
+    orientation: "landscape",
     unit: "mm",
     format: "a4",
   });
@@ -62,20 +61,18 @@ export function generateEmargementPDF(
   const daysPerPage = 5;
   const totalPages = Math.ceil(workingDays.length / daysPerPage);
 
-  apprenants.forEach((apprenant, apprenantIndex) => {
-    for (let pageIndex = 0; pageIndex < totalPages; pageIndex++) {
-      if (apprenantIndex > 0 || pageIndex > 0) {
-        doc.addPage();
-      }
-
-      const pageDays = workingDays.slice(
-        pageIndex * daysPerPage,
-        (pageIndex + 1) * daysPerPage
-      );
-
-      generatePage(doc, session, apprenant, pageDays, pageIndex + 1, totalPages);
+  for (let pageIndex = 0; pageIndex < totalPages; pageIndex++) {
+    if (pageIndex > 0) {
+      doc.addPage();
     }
-  });
+
+    const pageDays = workingDays.slice(
+      pageIndex * daysPerPage,
+      (pageIndex + 1) * daysPerPage
+    );
+
+    generatePage(doc, session, apprenants, pageDays, pageIndex + 1, totalPages);
+  }
 
   // Télécharger le PDF
   const fileName = `emargement_${session.formation.replace(/\s+/g, "_")}_${format(
@@ -88,121 +85,134 @@ export function generateEmargementPDF(
 function generatePage(
   doc: jsPDF,
   session: SessionData,
-  apprenant: Apprenant,
+  apprenants: Apprenant[],
   days: Date[],
   pageNum: number,
   totalPages: number
 ) {
   const pageWidth = doc.internal.pageSize.getWidth();
-  const margin = 12;
-  let yPos = 12;
+  const margin = 10;
+  let yPos = 10;
 
   // ===== EN-TÊTE AVEC BANDEAU =====
-  // Bandeau de couleur en haut
   doc.setFillColor(41, 128, 185);
-  doc.rect(0, 0, pageWidth, 28, "F");
+  doc.rect(0, 0, pageWidth, 22, "F");
 
-  // Logo / Nom de l'organisme
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(22);
+  doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
-  doc.text(organisme.nom, margin, 14);
+  doc.text(organisme.nom, margin, 12);
 
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.text("Spécialiste Formations Transport", margin, 21);
+  doc.text("Specialiste Formations Transport", margin, 18);
 
-  // Titre du document
-  doc.setFontSize(16);
+  doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
-  doc.text("FEUILLE D'ÉMARGEMENT", pageWidth - margin, 17, { align: "right" });
+  doc.text("FEUILLE D'EMARGEMENT", pageWidth - margin, 14, { align: "right" });
 
-  // Reset couleur texte
   doc.setTextColor(0, 0, 0);
 
   // ===== INFORMATIONS DE LA SESSION =====
-  yPos = 38;
+  yPos = 28;
 
-  // Cadre pour les informations
   doc.setDrawColor(41, 128, 185);
   doc.setLineWidth(0.5);
-  doc.roundedRect(margin, yPos, pageWidth - margin * 2, 42, 3, 3);
+  doc.roundedRect(margin, yPos, pageWidth - margin * 2, 22, 2, 2);
 
-  yPos += 8;
+  yPos += 7;
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
-  doc.setTextColor(41, 128, 185);
-  doc.text("Intitulé de la formation :", margin + 5, yPos);
-  doc.setTextColor(0, 0, 0);
-  doc.text(session.formation, margin + 55, yPos);
-
-  yPos += 8;
   doc.setFontSize(10);
-  doc.setFont("helvetica", "bold");
-  doc.text("Stagiaire :", margin + 5, yPos);
-  doc.setFont("helvetica", "normal");
-  doc.text(`${apprenant.nom.toUpperCase()} ${apprenant.prenom}`, margin + 30, yPos);
+  doc.setTextColor(41, 128, 185);
+  doc.text("Formation :", margin + 4, yPos);
+  doc.setTextColor(0, 0, 0);
+  doc.text(session.formation, margin + 32, yPos);
 
-  yPos += 7;
   doc.setFont("helvetica", "bold");
-  doc.text("Formateur(s) :", margin + 5, yPos);
+  doc.text("Formateur(s) :", pageWidth / 2, yPos);
   doc.setFont("helvetica", "normal");
-  doc.text(session.formateurs.join(", "), margin + 35, yPos);
+  doc.text(session.formateurs.join(", "), pageWidth / 2 + 32, yPos);
 
-  yPos += 7;
+  yPos += 8;
   doc.setFont("helvetica", "bold");
-  doc.text("Dates :", margin + 5, yPos);
+  doc.text("Dates :", margin + 4, yPos);
   doc.setFont("helvetica", "normal");
   doc.text(
-    `du ${format(parseISO(session.dateDebut), "dd MMMM", { locale: fr })} au ${format(parseISO(session.dateFin), "dd MMMM yyyy", { locale: fr })}`,
-    margin + 22,
+    `du ${format(parseISO(session.dateDebut), "dd/MM/yyyy")} au ${format(parseISO(session.dateFin), "dd/MM/yyyy")}`,
+    margin + 20,
     yPos
   );
 
-  yPos += 7;
   doc.setFont("helvetica", "bold");
-  doc.text("Lieu :", margin + 5, yPos);
+  doc.text("Lieu :", pageWidth / 2, yPos);
   doc.setFont("helvetica", "normal");
-  doc.text(LIEU_FORMATION, margin + 18, yPos);
+  doc.text(LIEU_FORMATION, pageWidth / 2 + 14, yPos);
 
   if (totalPages > 1) {
     doc.setFont("helvetica", "italic");
-    doc.setFontSize(9);
-    doc.text(`Page ${pageNum} / ${totalPages}`, pageWidth - margin - 5, yPos, { align: "right" });
+    doc.setFontSize(8);
+    doc.text(`Page ${pageNum} / ${totalPages}`, pageWidth - margin - 2, yPos, { align: "right" });
   }
 
-  // ===== TABLEAU D'ÉMARGEMENT =====
-  yPos = 88;
+  // ===== TABLEAU D'ÉMARGEMENT - TOUS LES APPRENANTS =====
+  yPos = 55;
 
-  const tableData = days.map((day) => {
-    const dateStr = format(day, "EEEE dd/MM", { locale: fr });
+  // Construire les colonnes dynamiquement selon les jours
+  const headRow1: any[] = [
+    { content: "N°", rowSpan: 2, styles: { halign: "center", valign: "middle", cellWidth: 8 } },
+    { content: "Nom & Prenom", rowSpan: 2, styles: { halign: "center", valign: "middle", cellWidth: 38 } },
+  ];
+
+  const headRow2: any[] = [];
+
+  days.forEach((day) => {
+    const dateStr = format(day, "EEE dd/MM", { locale: fr });
     const dateCapitalized = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
-    return [
-      dateCapitalized,
-      "09h00 - 12h00",
-      "", // Signature stagiaire matin
-      "", // Signature formateur matin
-      "13h00 - 16h00",
-      "", // Signature stagiaire après-midi
-      "", // Signature formateur après-midi
-    ];
+    headRow1.push({
+      content: dateCapitalized,
+      colSpan: 2,
+      styles: { halign: "center", fontSize: 7 },
+    });
+    headRow2.push({ content: "Matin", styles: { halign: "center", fontSize: 6 } });
+    headRow2.push({ content: "Apres-midi", styles: { halign: "center", fontSize: 6 } });
   });
+
+  // Construire les lignes avec tous les apprenants
+  const tableData = apprenants.map((apprenant, index) => {
+    const row: string[] = [
+      String(index + 1),
+      `${apprenant.nom.toUpperCase()} ${apprenant.prenom}`,
+    ];
+    // 2 colonnes vides (matin + après-midi) par jour pour signature
+    days.forEach(() => {
+      row.push(""); // matin
+      row.push(""); // après-midi
+    });
+    return row;
+  });
+
+  const totalCols = 2 + days.length * 2;
+  const availableWidth = pageWidth - margin * 2;
+  const fixedWidth = 8 + 38; // N° + Nom
+  const remainingWidth = availableWidth - fixedWidth;
+  const sigCellWidth = remainingWidth / (days.length * 2);
+
+  const columnStyles: any = {
+    0: { cellWidth: 8, halign: "center", fontSize: 7 },
+    1: { cellWidth: 38, halign: "left", fontSize: 7, fontStyle: "bold" },
+  };
+  for (let i = 2; i < totalCols; i++) {
+    columnStyles[i] = { cellWidth: sigCellWidth, halign: "center" };
+  }
 
   autoTable(doc, {
     startY: yPos,
-    head: [
-      [
-        { content: "Date", rowSpan: 2, styles: { halign: "center", valign: "middle" } },
-        { content: "MATIN", colSpan: 3, styles: { halign: "center" } },
-        { content: "APRÈS-MIDI", colSpan: 3, styles: { halign: "center" } },
-      ],
-      ["Horaire", "Signature\nStagiaire", "Signature\nFormateur", "Horaire", "Signature\nStagiaire", "Signature\nFormateur"],
-    ],
+    head: [headRow1, headRow2],
     body: tableData,
     theme: "grid",
     styles: {
-      fontSize: 9,
-      cellPadding: 4,
+      fontSize: 7,
+      cellPadding: 2,
       valign: "middle",
       lineColor: [41, 128, 185],
       lineWidth: 0.3,
@@ -211,21 +221,13 @@ function generatePage(
       fillColor: [41, 128, 185],
       textColor: 255,
       fontStyle: "bold",
-      fontSize: 9,
-      cellPadding: 5,
+      fontSize: 7,
+      cellPadding: 3,
     },
     bodyStyles: {
-      minCellHeight: 18,
+      minCellHeight: 12,
     },
-    columnStyles: {
-      0: { cellWidth: 32, halign: "center", fontStyle: "bold" },
-      1: { cellWidth: 24, halign: "center", fontSize: 8 },
-      2: { cellWidth: 28, halign: "center" },
-      3: { cellWidth: 28, halign: "center" },
-      4: { cellWidth: 24, halign: "center", fontSize: 8 },
-      5: { cellWidth: 28, halign: "center" },
-      6: { cellWidth: 28, halign: "center" },
-    },
+    columnStyles,
     margin: { left: margin, right: margin },
     tableLineColor: [41, 128, 185],
     tableLineWidth: 0.5,
@@ -233,69 +235,48 @@ function generatePage(
 
   // Position après le tableau
   const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
-  yPos = finalY + 12;
+  yPos = finalY + 8;
 
-  // ===== DURÉE TOTALE =====
-  const totalHours = days.length * 6;
-  doc.setFillColor(245, 245, 245);
-  doc.roundedRect(margin, yPos - 4, 100, 12, 2, 2, "F");
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.text(`Durée totale réalisée : ${totalHours} heures`, margin + 5, yPos + 3);
-
-  // ===== ZONE DE SIGNATURE =====
-  yPos += 20;
-  
-  // Deux colonnes pour signatures
-  const colWidth = (pageWidth - margin * 2 - 10) / 2;
-  
-  // Signature stagiaire
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.text("Signature du stagiaire", margin, yPos);
-  doc.setFont("helvetica", "italic");
-  doc.setFontSize(8);
-  doc.text("(précédée de la mention 'Lu et approuvé')", margin, yPos + 5);
-  doc.setDrawColor(180, 180, 180);
-  doc.setLineWidth(0.3);
-  doc.roundedRect(margin, yPos + 8, colWidth, 28, 2, 2);
-
-  // Signature centre de formation
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.text("Cachet et signature du centre", margin + colWidth + 10, yPos);
+  // ===== HORAIRES =====
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.text(`Fait à Lyon, le _______________`, margin + colWidth + 10, yPos + 5);
-  doc.roundedRect(margin + colWidth + 10, yPos + 8, colWidth, 28, 2, 2);
+  doc.text("Horaires : Matin 09h00 - 12h00 / Apres-midi 13h00 - 16h00", margin, yPos);
+
+  // ===== ZONE DE SIGNATURE =====
+  yPos += 8;
+  const colWidth = (pageWidth - margin * 2 - 10) / 2;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.text("Signature du responsable de formation", margin, yPos);
+  doc.setDrawColor(180, 180, 180);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(margin, yPos + 2, colWidth, 20, 2, 2);
+
+  doc.text("Cachet et signature du centre", margin + colWidth + 10, yPos);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.text(`Fait a Lyon, le _______________`, margin + colWidth + 10, yPos + 6);
+  doc.roundedRect(margin + colWidth + 10, yPos + 2, colWidth, 20, 2, 2);
 
   // ===== PIED DE PAGE =====
-  const footerY = doc.internal.pageSize.getHeight() - 18;
-  
-  // Ligne de séparation
+  const footerY = doc.internal.pageSize.getHeight() - 10;
+
   doc.setDrawColor(41, 128, 185);
   doc.setLineWidth(0.5);
-  doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5);
+  doc.line(margin, footerY - 4, pageWidth - margin, footerY - 4);
 
-  doc.setFontSize(8);
+  doc.setFontSize(7);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(41, 128, 185);
   doc.text(organisme.nom, pageWidth / 2, footerY, { align: "center" });
-  
+
   doc.setTextColor(80, 80, 80);
   doc.setFont("helvetica", "normal");
-  doc.text(organisme.adresse, pageWidth / 2, footerY + 4, { align: "center" });
   doc.text(
-    `Tél. ${organisme.telephone} – ${organisme.email}`,
+    `${organisme.adresse} | Tel. ${organisme.telephone} | ${organisme.email} | SIRET ${organisme.siret} | NAF ${organisme.codeNaf}`,
     pageWidth / 2,
-    footerY + 8,
-    { align: "center" }
-  );
-  doc.setFontSize(7);
-  doc.text(
-    `SIRET ${organisme.siret} – NAF ${organisme.codeNaf} – N° Déclaration ${organisme.numeroDeclaration}`,
-    pageWidth / 2,
-    footerY + 12,
+    footerY + 4,
     { align: "center" }
   );
 }
