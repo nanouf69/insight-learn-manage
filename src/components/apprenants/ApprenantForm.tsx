@@ -10,7 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
-import { Plus, User, UserCheck, Loader2, CalendarIcon } from "lucide-react";
+import { Plus, User, UserCheck, Loader2, CalendarIcon, PlusCircle, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -134,6 +134,7 @@ export function ApprenantForm() {
   const [dateExamenPratique, setDateExamenPratique] = useState("");
   const [sessionsDisponibles, setSessionsDisponibles] = useState<{id: string, nom: string, date_debut: string, date_fin: string}[]>([]);
   const [documentsComplets, setDocumentsComplets] = useState(false);
+  const [secondFormation, setSecondFormation] = useState("");
 
   // Prix par défaut selon la formation
   const prixFormations: Record<string, string> = {
@@ -322,6 +323,7 @@ export function ApprenantForm() {
     setInscritFranceTravail(false);
     setDateExamenPratique("");
     setDocumentsComplets(false);
+    setSecondFormation("");
   };
 
   // Ref pour éviter les doubles soumissions
@@ -358,7 +360,7 @@ export function ApprenantForm() {
       numero_dossier_cma: numeroDossierCma.trim() || null,
       statut: typeApprenant === "prospect" ? "prospect" : "inscrit",
       type_apprenant: typeApprenantFormation || null,
-      formation_choisie: selectedFormation || null,
+      formation_choisie: secondFormation ? `${selectedFormation} + ${secondFormation}` : (selectedFormation || null),
       montant_ttc: montantTtc ? parseFloat(montantTtc) : null,
       date_formation_catalogue: selectedDateOption || null,
       date_debut_formation: dateDebutFormation 
@@ -659,6 +661,77 @@ export function ApprenantForm() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Formation supplémentaire */}
+            {secondFormation ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Formation supplémentaire</Label>
+                  <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-destructive" onClick={() => setSecondFormation("")}>
+                    <X className="h-3 w-3 mr-1" /> Supprimer
+                  </Button>
+                </div>
+                <Select value={secondFormation} onValueChange={setSecondFormation}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner une 2ème formation" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Formations Présentiel</SelectLabel>
+                      <SelectItem value="vtc">Formation VTC - 1 099 € (VTC)</SelectItem>
+                      <SelectItem value="vtc-exam">Formation VTC avec frais d'examen - 1 599 € (VTC)</SelectItem>
+                      <SelectItem value="taxi">Formation TAXI - 1 299 € (TAXI)</SelectItem>
+                      <SelectItem value="taxi-exam">Formation TAXI avec frais d'examen - 1 799 € (TAXI)</SelectItem>
+                      <SelectItem value="passerelle-taxi">Formation TAXI pour chauffeur VTC - 999 € (TA)</SelectItem>
+                    </SelectGroup>
+                    <SelectGroup>
+                      <SelectLabel>Formations E-learning</SelectLabel>
+                      <SelectItem value="vtc-elearning-1099">Formation VTC (E-learning) - 1 099 € (VTC)</SelectItem>
+                      <SelectItem value="vtc-elearning">Formation VTC (E-learning) - 1 599 € (VTC)</SelectItem>
+                      <SelectItem value="taxi-elearning">Formation TAXI (E-learning) - 1 299 € (TAXI)</SelectItem>
+                      <SelectItem value="passerelle-taxi-elearning">Formation TAXI pour chauffeur VTC (E-learning) - 999 € (TA)</SelectItem>
+                      <SelectItem value="passerelle-vtc-elearning">Formation VTC pour chauffeur TAXI (E-learning) - 499 € (VA)</SelectItem>
+                    </SelectGroup>
+                    <SelectGroup>
+                      <SelectLabel>Formations E-learning en présentiel</SelectLabel>
+                      <SelectItem value="vtc-e-presentiel">Formation VTC E (Présentiel) - 1 599 € (VTC E Présentiel)</SelectItem>
+                      <SelectItem value="taxi-e-presentiel">Formation TAXI E (Présentiel) - 1 799 € (TAXI E Présentiel)</SelectItem>
+                      <SelectItem value="ta-e-presentiel">Formation TA E (Présentiel) - 999 € (TA E Présentiel)</SelectItem>
+                    </SelectGroup>
+                    <SelectGroup>
+                      <SelectLabel>Formations Continues</SelectLabel>
+                      <SelectItem value="continue-vtc">Formation continue VTC - 200 €</SelectItem>
+                      <SelectItem value="continue-taxi">Formation continue TAXI - 299 €</SelectItem>
+                    </SelectGroup>
+                    <SelectGroup>
+                      <SelectLabel>Marketing Digital</SelectLabel>
+                      <SelectItem value="marketing-digital-24h">Marketing Digital 24H - 1 500 €</SelectItem>
+                      <SelectItem value="marketing-digital-26h">Marketing Digital 26H - 2 100 €</SelectItem>
+                      <SelectItem value="marketing-digital-28h">Marketing Digital 28H - 3 300 €</SelectItem>
+                    </SelectGroup>
+                    <SelectGroup>
+                      <SelectLabel>Anglais Professionnel</SelectLabel>
+                      <SelectItem value="anglais-20h">Anglais Professionnel 20H - 1 200 €</SelectItem>
+                      <SelectItem value="anglais-35h">Anglais Professionnel 35H - 2 000 €</SelectItem>
+                      <SelectItem value="anglais-45h">Anglais Professionnel 45H - 3 000 €</SelectItem>
+                    </SelectGroup>
+                    <SelectGroup>
+                      <SelectLabel>Services</SelectLabel>
+                      <SelectItem value="location-vehicule">Location de véhicule</SelectItem>
+                      <SelectItem value="formation-et-location">Formation et location de véhicule</SelectItem>
+                      <SelectItem value="repassage-theorique">Repassage examen théorique</SelectItem>
+                      <SelectItem value="repassage-pratique">Repassage examen pratique</SelectItem>
+                      <SelectItem value="passage-pratique">Passage examen pratique</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <Button type="button" variant="outline" size="sm" className="gap-2 text-primary border-primary/30 hover:bg-primary/5" onClick={() => setSecondFormation("continue-vtc")}>
+                <PlusCircle className="h-4 w-4" />
+                Ajouter une formation supplémentaire
+              </Button>
+            )}
 
             {/* Type d'apprenant - rempli automatiquement */}
             <div className="space-y-2">
