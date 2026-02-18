@@ -1,0 +1,1 @@
+ALTER TABLE public.session_apprenants ALTER COLUMN presence_pratique SET DEFAULT 'present';
