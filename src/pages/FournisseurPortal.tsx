@@ -620,17 +620,21 @@ export default function FournisseurPortal() {
           <TabsContent value="factures">
             <div className="space-y-6">
               <Card>
-                <CardHeader><CardTitle>Déposer une facture</CardTitle><CardDescription>Envoyez votre facture au destinataire concerné</CardDescription></CardHeader>
+                <CardHeader><CardTitle>Déposer une facture</CardTitle><CardDescription>Envoyez votre facture au prestataire concerné</CardDescription></CardHeader>
                 <CardContent>
                   <form onSubmit={handleUploadFacture} className="space-y-4">
                     <div className="space-y-2">
-                      <Label>Destinataire *</Label>
+                      <Label>Prestataire *</Label>
                       <Select value={factureDestinataire} onValueChange={setFactureDestinataire}>
-                        <SelectTrigger><SelectValue placeholder="Sélectionner le destinataire" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder="Sélectionner le prestataire" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="Finally Academy">Finally Academy</SelectItem>
+                          <SelectItem value="Finally Academy Ltd">Finally Academy Ltd</SelectItem>
                           <SelectItem value="Massena Group">Massena Group</SelectItem>
                           <SelectItem value="El Najia Dechar">El Najia Dechar</SelectItem>
+                          <SelectItem value="PRIMA NETTOYAGE">PRIMA NETTOYAGE</SelectItem>
+                          <SelectItem value="SPEAK ENGLISH 4REAL">SPEAK ENGLISH 4REAL</SelectItem>
+                          <SelectItem value="Auto-École Demo">Auto-École Demo</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -677,7 +681,7 @@ export default function FournisseurPortal() {
                         <div>
                           <p className="font-medium">{f.nom_fichier}</p>
                           <p className="text-sm text-muted-foreground">
-                            Destinataire : <span className="font-medium">{f.destinataire}</span>
+                            Prestataire : <span className="font-medium">{f.destinataire}</span>
                             {(f as any).mois_annee ? ` • Période : ${(f as any).mois_annee}` : ""}
                             {f.montant ? ` • ${f.montant.toLocaleString('fr-FR')} €` : ""}
                             {" • "}{new Date(f.created_at).toLocaleDateString('fr-FR')}
