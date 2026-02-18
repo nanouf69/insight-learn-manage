@@ -120,17 +120,32 @@ export function SessionsList() {
   });
 
   // Sort: upcoming sessions first (closest to today), then past sessions
+  // Formation filter matchers (on session name)
+  const FORMATION_FILTERS: Record<string, (nom: string) => boolean> = {
+    "continue_vtc": (nom) => /continue.*vtc|vtc.*continue/i.test(nom),
+    "soir_vtc": (nom) => /soir/i.test(nom),
+    "ta_taxi": (nom) => /ta.*taxi|taxi.*ta/i.test(nom) && !/vtc/i.test(nom),
+    "vtc_taxi": (nom) => /vtc.*taxi|taxi.*vtc/i.test(nom) && !/continue/i.test(nom) && !/soir/i.test(nom),
+    "pratique_vtc": (nom) => /pratique.*vtc|vtc.*pratique/i.test(nom),
+    "pratique_taxi": (nom) => /pratique.*taxi|taxi.*pratique/i.test(nom) && !/vtc/i.test(nom),
+  };
+
   const filteredSessions = useMemo(() => {
     const now = new Date();
     const q = search.toLowerCase();
 
     let list = sessions.filter((s) => {
+      const nom = s.nom || "";
       const matchSearch = !q
-        || (s.nom || "").toLowerCase().includes(q)
+        || nom.toLowerCase().includes(q)
         || (s.lieu || "").toLowerCase().includes(q)
         || (s.types_apprenant || []).some(t => t.toLowerCase().includes(q));
       const matchStatut = filterStatut === "tous" || s.statut === filterStatut;
-      const matchType = filterType === "tous" || s.type_session === filterType;
+      const matchType = filterType === "tous"
+        ? true
+        : FORMATION_FILTERS[filterType]
+          ? FORMATION_FILTERS[filterType](nom)
+          : s.type_session === filterType;
       return matchSearch && matchStatut && matchType;
     });
 
@@ -248,13 +263,19 @@ export function SessionsList() {
           />
         </div>
         <Select value={filterType} onValueChange={setFilterType}>
-          <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="Type" />
+          <SelectTrigger className="w-[220px]">
+            <SelectValue placeholder="Formation" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="tous">Tous les types</SelectItem>
+            <SelectItem value="tous">Toutes les formations</SelectItem>
             <SelectItem value="theorique">📚 Théorique</SelectItem>
             <SelectItem value="pratique">🚗 Pratique</SelectItem>
+            <SelectItem value="continue_vtc">🔄 Formation continue VTC</SelectItem>
+            <SelectItem value="soir_vtc">🌙 Formation VTC cours du soir</SelectItem>
+            <SelectItem value="ta_taxi">🚕 Formation TA et TAXI</SelectItem>
+            <SelectItem value="vtc_taxi">🚖 Formation VTC et TAXI</SelectItem>
+            <SelectItem value="pratique_vtc">🚗 Formation pratique VTC</SelectItem>
+            <SelectItem value="pratique_taxi">🚕 Formation pratique TAXI</SelectItem>
           </SelectContent>
         </Select>
         <Select value={filterStatut} onValueChange={setFilterStatut}>
