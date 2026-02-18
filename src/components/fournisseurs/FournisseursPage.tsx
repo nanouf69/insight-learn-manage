@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Copy, Loader2, Users, FileText, Receipt, Eye, Building2, CreditCard } from "lucide-react";
+import { Plus, Copy, Loader2, Users, FileText, Receipt, Eye, Building2, CreditCard, Mail } from "lucide-react";
+import { EmailDialog } from "@/components/shared/EmailDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Fournisseur {
@@ -46,6 +47,8 @@ export function FournisseursPage() {
   const [detailApprenants, setDetailApprenants] = useState<any[]>([]);
   const [detailDocuments, setDetailDocuments] = useState<any[]>([]);
   const [detailFactures, setDetailFactures] = useState<any[]>([]);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [emailTarget, setEmailTarget] = useState<Fournisseur | null>(null);
 
   const loadFournisseurs = async () => {
     const { data, error } = await supabase.from('fournisseurs').select('*').order('created_at', { ascending: false });
@@ -320,6 +323,11 @@ export function FournisseursPage() {
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={() => copyLink(f.token)} className="gap-1"><Copy className="w-3.5 h-3.5" />Copier le lien</Button>
                     <Button variant="outline" size="sm" onClick={() => viewDetails(f)} className="gap-1"><Eye className="w-3.5 h-3.5" />Voir</Button>
+                    {f.email && (
+                      <Button variant="outline" size="sm" onClick={() => { setEmailTarget(f); setEmailDialogOpen(true); }} className="gap-1">
+                        <Mail className="w-3.5 h-3.5" />Email
+                      </Button>
+                    )}
                     <Button variant={f.actif ? "destructive" : "default"} size="sm" onClick={() => toggleActif(f)}>
                       {f.actif ? "Désactiver" : "Activer"}
                     </Button>
@@ -329,6 +337,17 @@ export function FournisseursPage() {
             </Card>
           ))}
         </div>
+      )}
+
+      {/* Dialog email fournisseur */}
+      {emailTarget?.email && (
+        <EmailDialog
+          open={emailDialogOpen}
+          onOpenChange={(open) => { setEmailDialogOpen(open); if (!open) setEmailTarget(null); }}
+          contactName={emailTarget.nom}
+          contactEmail={emailTarget.email}
+          queryKey="fournisseur-emails"
+        />
       )}
     </div>
   );

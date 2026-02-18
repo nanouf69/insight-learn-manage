@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Clock, Mail, Phone, Search, GraduationCap, Trash2, Loader2, Pencil } from "lucide-react";
+import { EmailDialog } from "@/components/shared/EmailDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,6 +48,7 @@ export function FormateursList() {
     name: "",
   });
   const [editFormateur, setEditFormateur] = useState<Formateur | null>(null);
+  const [emailDialog, setEmailDialog] = useState<{ open: boolean; formateur: Formateur | null }>({ open: false, formateur: null });
   const queryClient = useQueryClient();
 
   // Fetch formateurs from database
@@ -195,6 +197,16 @@ export function FormateursList() {
                           </Badge>
                         </div>
                         <div className="flex items-center gap-1">
+                          {formateur.email && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-primary"
+                              onClick={() => setEmailDialog({ open: true, formateur })}
+                            >
+                              <Mail className="w-4 h-4" />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="icon"
@@ -283,6 +295,17 @@ export function FormateursList() {
           formateur={editFormateur}
           open={!!editFormateur}
           onOpenChange={(open) => !open && setEditFormateur(null)}
+        />
+      )}
+
+      {/* Dialog email formateur */}
+      {emailDialog.formateur?.email && (
+        <EmailDialog
+          open={emailDialog.open}
+          onOpenChange={(open) => setEmailDialog({ open, formateur: open ? emailDialog.formateur : null })}
+          contactName={`${emailDialog.formateur.prenom} ${emailDialog.formateur.nom}`}
+          contactEmail={emailDialog.formateur.email}
+          queryKey="formateur-emails"
         />
       )}
     </div>
