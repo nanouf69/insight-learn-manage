@@ -131,13 +131,23 @@ export default function PlanningMensuelFormateurs({ open, onClose }: PlanningMen
     end: endOfMonth(moisActuel),
   }).filter(d => !isWeekend(d));
 
-  // Pour la vue calendrier : grouper blocs par date
+  // Helper : convertit "9:00" ou "13:30" en minutes pour tri numérique
+  const heureEnMinutes = (h: string) => {
+    const [hh, mm] = h.split(':').map(Number);
+    return hh * 60 + (mm || 0);
+  };
+
+  // Pour la vue calendrier : grouper blocs par date (triés chronologiquement)
   const blocsParDate = new Map<string, AgendaBloc[]>();
   blocsFiltered.forEach(b => {
     const date = getDateFromBloc(b.semaine_debut, b.jour);
     const key = format(date, "yyyy-MM-dd");
     if (!blocsParDate.has(key)) blocsParDate.set(key, []);
     blocsParDate.get(key)!.push(b);
+  });
+  // Trier chaque jour chronologiquement
+  blocsParDate.forEach((blocs, key) => {
+    blocsParDate.set(key, blocs.sort((a, b) => heureEnMinutes(a.heure_debut) - heureEnMinutes(b.heure_debut)));
   });
 
   return (
@@ -313,7 +323,7 @@ export default function PlanningMensuelFormateurs({ open, onClose }: PlanningMen
                           const da = getDateFromBloc(a.semaine_debut, a.jour);
                           const db = getDateFromBloc(b.semaine_debut, b.jour);
                           if (da.getTime() !== db.getTime()) return da.getTime() - db.getTime();
-                          return a.heure_debut.localeCompare(b.heure_debut);
+                          return heureEnMinutes(a.heure_debut) - heureEnMinutes(b.heure_debut);
                         })
                         .map(c => {
                           const date = getDateFromBloc(c.semaine_debut, c.jour);
