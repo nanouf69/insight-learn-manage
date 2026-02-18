@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Copy, ExternalLink, Loader2, Users, FileText, Receipt, Eye } from "lucide-react";
+import { Plus, Copy, Loader2, Users, FileText, Receipt, Eye, Building2, CreditCard } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Fournisseur {
@@ -16,6 +16,16 @@ interface Fournisseur {
   email: string | null;
   telephone: string | null;
   adresse: string | null;
+  code_postal: string | null;
+  ville: string | null;
+  pays: string | null;
+  siren: string | null;
+  siret: string | null;
+  numero_tva: string | null;
+  iban: string | null;
+  bic: string | null;
+  banque: string | null;
+  site_web: string | null;
   token: string;
   actif: boolean;
   created_at: string;
@@ -32,14 +42,14 @@ export function FournisseursPage() {
   const [telephone, setTelephone] = useState("");
   const [adresse, setAdresse] = useState("");
   const [selectedFournisseur, setSelectedFournisseur] = useState<Fournisseur | null>(null);
-  const [detailTab, setDetailTab] = useState("apprenants");
+  const [detailTab, setDetailTab] = useState("coordonnees");
   const [detailApprenants, setDetailApprenants] = useState<any[]>([]);
   const [detailDocuments, setDetailDocuments] = useState<any[]>([]);
   const [detailFactures, setDetailFactures] = useState<any[]>([]);
 
   const loadFournisseurs = async () => {
     const { data, error } = await supabase.from('fournisseurs').select('*').order('created_at', { ascending: false });
-    if (!error && data) setFournisseurs(data);
+    if (!error && data) setFournisseurs(data as Fournisseur[]);
     setLoading(false);
   };
 
@@ -69,6 +79,7 @@ export function FournisseursPage() {
 
   const viewDetails = async (f: Fournisseur) => {
     setSelectedFournisseur(f);
+    setDetailTab("coordonnees");
     const [appRes, docRes, facRes] = await Promise.all([
       supabase.from('fournisseur_apprenants').select('*').eq('fournisseur_id', f.id).order('created_at', { ascending: false }),
       supabase.from('fournisseur_documents').select('*').eq('fournisseur_id', f.id).order('created_at', { ascending: false }),
@@ -83,6 +94,11 @@ export function FournisseursPage() {
     await supabase.from('fournisseurs').update({ actif: !f.actif }).eq('id', f.id);
     loadFournisseurs();
     toast({ title: f.actif ? "Fournisseur désactivé" : "Fournisseur activé" });
+  };
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: `${label} copié !` });
   };
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin" /></div>;
@@ -127,10 +143,116 @@ export function FournisseursPage() {
 
           <Tabs value={detailTab} onValueChange={setDetailTab}>
             <TabsList>
+              <TabsTrigger value="coordonnees" className="gap-2"><Building2 className="w-4 h-4" />Coordonnées</TabsTrigger>
+              <TabsTrigger value="bancaire" className="gap-2"><CreditCard className="w-4 h-4" />RIB</TabsTrigger>
               <TabsTrigger value="apprenants" className="gap-2"><Users className="w-4 h-4" />Apprenants ({detailApprenants.length})</TabsTrigger>
               <TabsTrigger value="documents" className="gap-2"><FileText className="w-4 h-4" />Documents ({detailDocuments.length})</TabsTrigger>
               <TabsTrigger value="factures" className="gap-2"><Receipt className="w-4 h-4" />Factures ({detailFactures.length})</TabsTrigger>
             </TabsList>
+
+            {/* Onglet Coordonnées */}
+            <TabsContent value="coordonnees">
+              <Card>
+                <CardHeader><CardTitle className="text-base">Informations professionnelles</CardTitle></CardHeader>
+                <CardContent className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Raison sociale</p>
+                    <p className="font-medium">{selectedFournisseur.nom}</p>
+                  </div>
+                  {selectedFournisseur.siren && (
+                    <div>
+                      <p className="text-muted-foreground">SIREN</p>
+                      <p className="font-medium font-mono">{selectedFournisseur.siren}</p>
+                    </div>
+                  )}
+                  {selectedFournisseur.siret && (
+                    <div>
+                      <p className="text-muted-foreground">SIRET</p>
+                      <p className="font-medium font-mono">{selectedFournisseur.siret}</p>
+                    </div>
+                  )}
+                  {selectedFournisseur.numero_tva && (
+                    <div>
+                      <p className="text-muted-foreground">N° TVA</p>
+                      <p className="font-medium">{selectedFournisseur.numero_tva}</p>
+                    </div>
+                  )}
+                  {selectedFournisseur.email && (
+                    <div>
+                      <p className="text-muted-foreground">Email</p>
+                      <p className="font-medium">{selectedFournisseur.email}</p>
+                    </div>
+                  )}
+                  {selectedFournisseur.telephone && (
+                    <div>
+                      <p className="text-muted-foreground">Téléphone</p>
+                      <p className="font-medium">{selectedFournisseur.telephone}</p>
+                    </div>
+                  )}
+                  {selectedFournisseur.adresse && (
+                    <div className="col-span-2">
+                      <p className="text-muted-foreground">Adresse</p>
+                      <p className="font-medium">
+                        {selectedFournisseur.adresse}
+                        {selectedFournisseur.code_postal ? `, ${selectedFournisseur.code_postal}` : ""}
+                        {selectedFournisseur.ville ? ` ${selectedFournisseur.ville}` : ""}
+                        {selectedFournisseur.pays && selectedFournisseur.pays !== 'France' ? ` — ${selectedFournisseur.pays}` : ""}
+                      </p>
+                    </div>
+                  )}
+                  {selectedFournisseur.site_web && (
+                    <div>
+                      <p className="text-muted-foreground">Site web</p>
+                      <a href={`https://${selectedFournisseur.site_web.replace(/^https?:\/\//, '')}`} target="_blank" rel="noopener noreferrer" className="font-medium text-primary underline">
+                        {selectedFournisseur.site_web}
+                      </a>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Onglet RIB / Bancaire */}
+            <TabsContent value="bancaire">
+              <Card>
+                <CardHeader><CardTitle className="text-base">Coordonnées bancaires</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                  {selectedFournisseur.iban ? (
+                    <div className="grid grid-cols-1 gap-4 text-sm">
+                      <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                        <div>
+                          <p className="text-muted-foreground text-xs uppercase tracking-wide">IBAN</p>
+                          <p className="font-mono font-semibold text-base mt-1">{selectedFournisseur.iban}</p>
+                        </div>
+                        <Button variant="ghost" size="sm" onClick={() => copyToClipboard(selectedFournisseur.iban!, 'IBAN')}>
+                          <Copy className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      {selectedFournisseur.bic && (
+                        <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                          <div>
+                            <p className="text-muted-foreground text-xs uppercase tracking-wide">BIC / SWIFT</p>
+                            <p className="font-mono font-semibold text-base mt-1">{selectedFournisseur.bic}</p>
+                          </div>
+                          <Button variant="ghost" size="sm" onClick={() => copyToClipboard(selectedFournisseur.bic!, 'BIC')}>
+                            <Copy className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
+                      {selectedFournisseur.banque && (
+                        <div>
+                          <p className="text-muted-foreground text-xs uppercase tracking-wide mb-1">Banque</p>
+                          <p className="font-medium">{selectedFournisseur.banque}</p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground py-4 text-center">Aucune coordonnée bancaire renseignée.</p>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
             <TabsContent value="apprenants">
               {detailApprenants.length === 0 ? <p className="text-muted-foreground py-4">Aucun apprenant</p> : (
                 <div className="grid gap-3">
@@ -183,8 +305,17 @@ export function FournisseursPage() {
                     <div className="flex items-center gap-2">
                       <p className="font-semibold text-lg">{f.nom}</p>
                       <Badge variant={f.actif ? "default" : "secondary"}>{f.actif ? "Actif" : "Inactif"}</Badge>
+                      {f.pays && f.pays !== 'France' && <Badge variant="outline">{f.pays}</Badge>}
                     </div>
                     <p className="text-sm text-muted-foreground">{f.email || "—"} • {f.telephone || "—"}</p>
+                    {f.adresse && (
+                      <p className="text-xs text-muted-foreground">
+                        {f.adresse}{f.code_postal ? `, ${f.code_postal}` : ""}{f.ville ? ` ${f.ville}` : ""}
+                      </p>
+                    )}
+                    {f.iban && (
+                      <p className="text-xs font-mono text-muted-foreground">IBAN : {f.iban}</p>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={() => copyLink(f.token)} className="gap-1"><Copy className="w-3.5 h-3.5" />Copier le lien</Button>
