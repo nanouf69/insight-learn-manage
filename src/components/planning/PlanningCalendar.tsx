@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { PlanningForm } from "./PlanningForm";
@@ -54,17 +54,79 @@ type WeekInfo = {
   days: DayInfo[];
 };
 
+// Mapping formation date → exam date (based on the planning schedule)
+// VTC: Feb 16-24 → Mar 2-6 exams, TAXI: Feb 25-27 → Mar 5-6 exams
+const FORMATION_TO_EXAM_MAP: Record<string, { date: string; heure: string }[]> = {
+  // VTC training → exam dates (each training day maps to an exam day)
+  '2026-02-16': [{ date: '2026-03-02', heure: '08:30' }, { date: '2026-03-02', heure: '10:00' }, { date: '2026-03-02', heure: '11:30' }, { date: '2026-03-02', heure: '13:30' }],
+  '2026-02-17': [{ date: '2026-03-03', heure: '08:30' }, { date: '2026-03-03', heure: '10:00' }, { date: '2026-03-03', heure: '11:30' }, { date: '2026-03-03', heure: '13:30' }],
+  '2026-02-18': [{ date: '2026-03-04', heure: '08:30' }, { date: '2026-03-04', heure: '10:00' }, { date: '2026-03-04', heure: '11:30' }, { date: '2026-03-04', heure: '13:30' }],
+  '2026-02-19': [{ date: '2026-03-05', heure: '08:30' }, { date: '2026-03-05', heure: '10:00' }, { date: '2026-03-05', heure: '11:30' }, { date: '2026-03-05', heure: '13:30' }],
+  '2026-02-20': [{ date: '2026-03-06', heure: '08:30' }, { date: '2026-03-06', heure: '10:00' }, { date: '2026-03-06', heure: '11:30' }, { date: '2026-03-06', heure: '13:30' }],
+  '2026-02-23': [{ date: '2026-03-02', heure: '08:30' }, { date: '2026-03-02', heure: '10:00' }, { date: '2026-03-02', heure: '11:30' }, { date: '2026-03-02', heure: '13:30' }],
+  '2026-02-24': [{ date: '2026-03-03', heure: '08:30' }, { date: '2026-03-03', heure: '10:00' }, { date: '2026-03-03', heure: '11:30' }, { date: '2026-03-03', heure: '13:30' }],
+  // TAXI training → exam dates
+  '2026-02-25': [{ date: '2026-03-05', heure: '08:30' }, { date: '2026-03-05', heure: '10:00' }, { date: '2026-03-05', heure: '11:30' }, { date: '2026-03-05', heure: '13:30' }],
+  '2026-02-26': [{ date: '2026-03-06', heure: '08:30' }, { date: '2026-03-06', heure: '10:00' }, { date: '2026-03-06', heure: '11:30' }, { date: '2026-03-06', heure: '13:30' }],
+  '2026-02-27': [{ date: '2026-03-06', heure: '08:30' }, { date: '2026-03-06', heure: '10:00' }, { date: '2026-03-06', heure: '11:30' }, { date: '2026-03-06', heure: '13:30' }],
+};
+
 export function PlanningCalendar() {
   const [currentMonth] = useState("Février 2026");
   const [weeks, setWeeks] = useState<WeekInfo[]>([]);
   const [loading, setLoading] = useState(true);
-  
+  const [syncing, setSyncing] = useState(false);
+
 
   const toLocalDateKey = (d: Date) => {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
+  };
+
+  // Sync exam dates from planning: for each apprenant with a training reservation,
+  // automatically assign date_examen_pratique and heure_examen_pratique based on their slot position
+  const handleSyncExamDates = async () => {
+    setSyncing(true);
+    try {
+      // Fetch all reservations
+      const { data: reservations, error: resError } = await supabase
+        .from("reservations_pratique")
+        .select("date_choisie, type_formation, apprenant_id, created_at");
+      if (resError) throw resError;
+
+      // Group reservations by date, sorted by created_at (first come = first slot)
+      const byDate: Record<string, { apprenant_id: string; created_at: string }[]> = {};
+      (reservations || []).forEach(r => {
+        if (!byDate[r.date_choisie]) byDate[r.date_choisie] = [];
+        byDate[r.date_choisie].push({ apprenant_id: r.apprenant_id, created_at: r.created_at });
+      });
+      // Sort each day's candidates by creation date
+      Object.values(byDate).forEach(list => list.sort((a, b) => a.created_at.localeCompare(b.created_at)));
+
+      let updated = 0;
+      let skipped = 0;
+      for (const [date, candidates] of Object.entries(byDate)) {
+        const examSlots = FORMATION_TO_EXAM_MAP[date];
+        if (!examSlots) { skipped += candidates.length; continue; }
+        for (let i = 0; i < candidates.length; i++) {
+          const slot = examSlots[Math.min(i, examSlots.length - 1)];
+          const { error } = await supabase
+            .from("apprenants")
+            .update({ date_examen_pratique: slot.date, heure_examen_pratique: slot.heure } as any)
+            .eq("id", candidates[i].apprenant_id);
+          if (!error) updated++;
+        }
+      }
+      toast.success(`✅ ${updated} apprenant(s) mis à jour${skipped > 0 ? ` (${skipped} sans correspondance)` : ''}`);
+      // Refresh planning
+      setLoading(true);
+    } catch (err: any) {
+      toast.error("Erreur lors de la synchronisation : " + (err.message || 'Échec'));
+    } finally {
+      setSyncing(false);
+    }
   };
 
 
@@ -169,6 +231,17 @@ export function PlanningCalendar() {
           <Button variant="outline" size="sm">Aujourd'hui</Button>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSyncExamDates}
+            disabled={syncing}
+            className="gap-1.5 text-xs"
+            title="Assigner automatiquement les dates et heures d'examen pratique à chaque apprenant selon le planning"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${syncing ? 'animate-spin' : ''}`} />
+            {syncing ? 'Synchronisation...' : 'Sync dates examen'}
+          </Button>
           <PlanningForm />
         </div>
       </div>
