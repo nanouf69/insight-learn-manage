@@ -1742,13 +1742,38 @@ export function ExamenReussitePage() {
 
         const updateResultatPratique = async (id: string, resultat: string | null) => {
           try {
+            // Update resultat_examen_pratique in apprenants
             const { error } = await supabase
               .from('apprenants')
               .update({ resultat_examen_pratique: resultat } as any)
               .eq('id', id);
             if (error) throw error;
+
+            // If "deplace", also mark presence_pratique = 'deplace' in session_apprenants for pratique sessions
+            if (resultat === 'deplace') {
+              const { data: sessionsApprenant } = await supabase
+                .from('session_apprenants')
+                .select('id, session_id, sessions!inner(type_session)')
+                .eq('apprenant_id', id)
+                .eq('sessions.type_session', 'pratique' as any);
+              if (sessionsApprenant && sessionsApprenant.length > 0) {
+                for (const sa of sessionsApprenant) {
+                  await supabase
+                    .from('session_apprenants')
+                    .update({ presence_pratique: 'deplace' })
+                    .eq('id', sa.id);
+                }
+              }
+              // Also delete existing reservation so they can book a new one
+              await supabase.from('reservations_pratique').delete().eq('apprenant_id', id);
+              queryClient.invalidateQueries({ queryKey: ['deplaces-session-pratique'] });
+              queryClient.invalidateQueries({ queryKey: ['reservations-pratique-planning'] });
+              toast.success("Candidat déplacé à la prochaine session — il peut réserver un nouveau créneau");
+            } else if (resultat !== 'deplace') {
+              toast.success("Résultat pratique mis à jour");
+            }
+
             queryClient.invalidateQueries({ queryKey: ['all-apprenants'] });
-            toast.success("Résultat pratique mis à jour");
           } catch (err: any) {
             toast.error(err.message || "Erreur");
           }
@@ -1763,16 +1788,21 @@ export function ExamenReussitePage() {
                   <TableHead>Nom Prénom</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Heure</TableHead>
-                  <TableHead className="text-center">Réussi</TableHead>
+                  <TableHead className="text-center w-44">Résultat / Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {list.map((a, i) => {
                   const resultatP = (a as any).resultat_examen_pratique || '';
                   return (
-                    <TableRow key={a.id}>
+                    <TableRow key={a.id} className={resultatP === 'deplace' ? 'bg-orange-50/50' : ''}>
                       <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
-                      <TableCell className="font-medium text-sm">{a.nom} {a.prenom}</TableCell>
+                      <TableCell className="font-medium text-sm">
+                        {a.nom} {a.prenom}
+                        {resultatP === 'deplace' && (
+                          <Badge className="ml-2 bg-orange-100 text-orange-800 text-[10px]">📅 Déplacé</Badge>
+                        )}
+                      </TableCell>
                       <TableCell className="text-xs">{a.date_examen_pratique ? formatDateShortFR(a.date_examen_pratique) : '-'}</TableCell>
                       <TableCell className="text-xs">{(a as any).heure_examen_pratique || '-'}</TableCell>
                       <TableCell className="text-center">
@@ -1780,9 +1810,10 @@ export function ExamenReussitePage() {
                           value={resultatP || "non_renseigne"}
                           onValueChange={(val) => updateResultatPratique(a.id, val === "non_renseigne" ? null : val)}
                         >
-                          <SelectTrigger className={`w-24 mx-auto text-xs ${
+                          <SelectTrigger className={`w-36 mx-auto text-xs ${
                             resultatP === 'oui' ? 'border-emerald-500 text-emerald-700 bg-emerald-50' :
-                            resultatP === 'non' ? 'border-red-500 text-red-700 bg-red-50' : ''
+                            resultatP === 'non' ? 'border-red-500 text-red-700 bg-red-50' :
+                            resultatP === 'deplace' ? 'border-orange-500 text-orange-700 bg-orange-50' : ''
                           }`}>
                             <SelectValue />
                           </SelectTrigger>
@@ -1790,6 +1821,7 @@ export function ExamenReussitePage() {
                             <SelectItem value="non_renseigne">-</SelectItem>
                             <SelectItem value="oui">✅ Oui</SelectItem>
                             <SelectItem value="non">❌ Non</SelectItem>
+                            <SelectItem value="deplace">📅 Déplacé prochaine session</SelectItem>
                           </SelectContent>
                         </Select>
                       </TableCell>
@@ -1803,6 +1835,7 @@ export function ExamenReussitePage() {
 
         const reussisPratique = candidatsPratique.filter(a => (a as any).resultat_examen_pratique === 'oui').length;
         const echouesPratique = candidatsPratique.filter(a => (a as any).resultat_examen_pratique === 'non').length;
+        const deplacesPratique = candidatsPratique.filter(a => (a as any).resultat_examen_pratique === 'deplace').length;
         const enAttentePratique = candidatsPratique.filter(a => !(a as any).resultat_examen_pratique).length;
 
         return candidatsPratique.length > 0 ? (
@@ -1816,6 +1849,9 @@ export function ExamenReussitePage() {
                 <div className="flex items-center gap-2">
                   <Badge className="bg-emerald-100 text-emerald-800">✅ {reussisPratique}</Badge>
                   <Badge className="bg-red-100 text-red-800">❌ {echouesPratique}</Badge>
+                  {deplacesPratique > 0 && (
+                    <Badge className="bg-orange-100 text-orange-800">📅 {deplacesPratique} déplacé(s)</Badge>
+                  )}
                   <Badge variant="outline">En attente : {enAttentePratique}</Badge>
                 </div>
               </CardTitle>
@@ -1838,9 +1874,17 @@ export function ExamenReussitePage() {
               <div className="mt-4 p-3 bg-rose-50 rounded-lg flex items-center justify-between">
                 <p className="text-sm font-bold text-rose-800">Total inscrits CMA : {candidatsPratique.length}</p>
                 <p className="text-sm text-rose-700">
-                  {reussisPratique} réussi(s) • {echouesPratique} échoué(s) • {enAttentePratique} en attente
+                  {reussisPratique} réussi(s) • {echouesPratique} échoué(s) • {deplacesPratique > 0 ? `${deplacesPratique} déplacé(s) • ` : ''}{enAttentePratique} en attente
                 </p>
               </div>
+              {deplacesPratique > 0 && (
+                <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg flex items-start gap-2">
+                  <CalendarPlus className="h-4 w-4 text-orange-600 mt-0.5 shrink-0" />
+                  <p className="text-sm text-orange-800">
+                    <strong>{deplacesPratique} candidat(s) déplacé(s)</strong> sont automatiquement inclus dans la lettre CMA et la liste des candidats à former pour la prochaine session.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         ) : null;
