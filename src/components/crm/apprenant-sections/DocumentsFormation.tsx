@@ -3,7 +3,7 @@ import { FileText, Download, CheckCircle2, Mail, ClipboardList, Upload, Eye, Cal
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { generateAttestationInscription } from "@/lib/pdf/attestation-inscription";
 import { generateAttestationFinFormation } from "@/lib/pdf/attestation-fin-formation";
 import { generateAttestationFranceTravail } from "@/lib/pdf/attestation-france-travail";
@@ -50,18 +50,31 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
     },
   });
 
-  // Sessions triées par proximité de date (la plus proche en premier)
-  const sortedSessions = sessionData
-    ? [...sessionData].sort((a, b) => {
-        const sA = a.sessions as any;
-        const sB = b.sessions as any;
-        if (!sA || !sB) return 0;
-        const now = new Date().getTime();
-        const diffA = Math.abs(new Date(sA.date_debut).getTime() - now);
-        const diffB = Math.abs(new Date(sB.date_debut).getTime() - now);
-        return diffA - diffB;
-      })
-    : [];
+  // Sessions : à venir triées du plus proche au plus loin, puis passées du plus récent au plus ancien
+  const now = new Date();
+  const upcomingSessions = (sessionData || [])
+    .filter(sa => {
+      const s = sa.sessions as any;
+      return s && new Date(s.date_fin) >= now;
+    })
+    .sort((a, b) => {
+      const sA = a.sessions as any;
+      const sB = b.sessions as any;
+      return new Date(sA.date_debut).getTime() - new Date(sB.date_debut).getTime();
+    });
+
+  const pastSessions = (sessionData || [])
+    .filter(sa => {
+      const s = sa.sessions as any;
+      return s && new Date(s.date_fin) < now;
+    })
+    .sort((a, b) => {
+      const sA = a.sessions as any;
+      const sB = b.sessions as any;
+      return new Date(sB.date_fin).getTime() - new Date(sA.date_fin).getTime();
+    });
+
+  const sortedSessions = [...upcomingSessions, ...pastSessions];
 
   // Session sélectionnée (ou toutes si '__all__')
   const selectedSession = selectedSessionId === '__all__'
@@ -282,18 +295,41 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="__all__">Toutes les sessions</SelectItem>
-                            {sortedSessions.map((sa, i) => {
-                              const s = sa.sessions as any;
-                              if (!s) return null;
-                              const label = s.nom || s.type_session || `Session ${i + 1}`;
-                              const dateLabel = s.date_debut ? ` · ${s.date_debut}` : '';
-                              const isFirst = i === 0;
-                              return (
-                                <SelectItem key={s.id} value={s.id}>
-                                  {isFirst ? '⭐ ' : ''}{label}{dateLabel}
-                                </SelectItem>
-                              );
-                            })}
+                            {upcomingSessions.length > 0 && (
+                              <SelectGroup>
+                                <SelectLabel className="text-xs text-primary">📅 À venir</SelectLabel>
+                                {upcomingSessions.map((sa, i) => {
+                                  const s = sa.sessions as any;
+                                  if (!s) return null;
+                                  const label = s.nom || s.type_session || `Session ${i + 1}`;
+                                  const dateLabel = s.date_debut ? ` · ${s.date_debut}` : '';
+                                  return (
+                                    <SelectItem key={s.id} value={s.id}>
+                                      {i === 0 ? '⭐ ' : ''}{label}{dateLabel}
+                                    </SelectItem>
+                                  );
+                                })}
+                              </SelectGroup>
+                            )}
+                            {upcomingSessions.length > 0 && pastSessions.length > 0 && (
+                              <SelectSeparator />
+                            )}
+                            {pastSessions.length > 0 && (
+                              <SelectGroup>
+                                <SelectLabel className="text-xs text-muted-foreground">🕐 Passées</SelectLabel>
+                                {pastSessions.map((sa, i) => {
+                                  const s = sa.sessions as any;
+                                  if (!s) return null;
+                                  const label = s.nom || s.type_session || `Session ${i + 1}`;
+                                  const dateLabel = s.date_debut ? ` · ${s.date_debut}` : '';
+                                  return (
+                                    <SelectItem key={s.id} value={s.id} className="text-muted-foreground">
+                                      {label}{dateLabel}
+                                    </SelectItem>
+                                  );
+                                })}
+                              </SelectGroup>
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
