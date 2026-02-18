@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileText, Download, CheckCircle2, Mail } from "lucide-react";
+import { FileText, Download, CheckCircle2, Mail, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,16 +7,43 @@ import { generateAttestationInscription } from "@/lib/pdf/attestation-inscriptio
 import { generateAttestationFinFormation } from "@/lib/pdf/attestation-fin-formation";
 import { generateAttestationFranceTravail } from "@/lib/pdf/attestation-france-travail";
 import { generateBienvenueFtransport } from "@/lib/pdf/bienvenue-ftransport";
+import { generateEmargementPDF } from "@/components/sessions/EmargementGenerator";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
 
 interface DocumentsFormationProps {
   apprenant: any;
 }
 
-type DocType = 'inscription' | 'fin-formation' | 'france-travail' | 'bienvenue';
+type DocType = 'inscription' | 'fin-formation' | 'france-travail' | 'bienvenue' | 'emargement';
 
 export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
   const [generatingDoc, setGeneratingDoc] = useState<string | null>(null);
+
+  // Récupérer les sessions de l'apprenant pour l'émargement
+  const { data: sessionData } = useQuery({
+    queryKey: ['apprenant-sessions', apprenant.id],
+    queryFn: async () => {
+      const { data: sessionApprenants } = await supabase
+        .from('session_apprenants')
+        .select(`
+          session_id,
+          sessions (
+            id, nom, date_debut, date_fin, lieu, type_session,
+            session_formateurs (
+              formateurs ( nom, prenom )
+            ),
+            session_apprenants (
+              apprenants ( id, nom, prenom )
+            )
+          )
+        `)
+        .eq('apprenant_id', apprenant.id);
+      return sessionApprenants;
+    },
+  });
 
   const handleGenerateAttestation = async (type: DocType) => {
     setGeneratingDoc(type);
@@ -33,6 +60,34 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
       } else if (type === 'bienvenue') {
         await generateBienvenueFtransport(apprenant);
         toast.success("Document de bienvenue généré");
+      } else if (type === 'emargement') {
+        if (!sessionData || sessionData.length === 0) {
+          toast.error("Aucune session trouvée pour cet apprenant");
+          return;
+        }
+        // Générer pour la première session trouvée (ou toutes)
+        for (const sa of sessionData) {
+          const session = sa.sessions as any;
+          if (!session) continue;
+          const formateurs = session.session_formateurs?.map((sf: any) =>
+            sf.formateurs ? `${sf.formateurs.nom} ${sf.formateurs.prenom}` : ''
+          ).filter(Boolean) || ['GUENICHI Naoufal'];
+
+          const apprenants = session.session_apprenants?.map((sa: any) => sa.apprenants).filter(Boolean) || [];
+
+          generateEmargementPDF(
+            {
+              title: session.nom || session.type_session,
+              formation: session.nom || 'FORMATION CONTINUE',
+              dateDebut: session.date_debut,
+              dateFin: session.date_fin,
+              lieu: session.lieu || '86 route de genas 69003 Lyon',
+              formateurs,
+            },
+            apprenants.length > 0 ? apprenants : [{ id: 0, nom: apprenant.nom, prenom: apprenant.prenom }]
+          );
+        }
+        toast.success("Feuille d'émargement générée");
       }
     } catch (error) {
       console.error('Erreur génération PDF:', error);
@@ -41,6 +96,8 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
       setGeneratingDoc(null);
     }
   };
+
+  const hasSession = sessionData && sessionData.length > 0;
 
   const documents = [
     {
@@ -66,6 +123,14 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
       status: apprenant.date_fin_formation ? 'disponible' : 'en_attente',
       type: 'fin-formation' as const,
       icon: FileText,
+    },
+    {
+      id: 'emargement',
+      title: "Feuille d'émargement",
+      description: "Feuille de présence de la session de formation",
+      status: hasSession ? 'disponible' : 'en_attente',
+      type: 'emargement' as const,
+      icon: ClipboardList,
     },
     {
       id: 'france-travail',
