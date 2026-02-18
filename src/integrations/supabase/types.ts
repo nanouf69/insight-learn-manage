@@ -1098,6 +1098,7 @@ export type Database = {
           montant_total: number | null
           moyen_paiement: string | null
           notes: string | null
+          presence_pratique: string | null
           session_id: string
         }
         Insert: {
@@ -1111,6 +1112,7 @@ export type Database = {
           montant_total?: number | null
           moyen_paiement?: string | null
           notes?: string | null
+          presence_pratique?: string | null
           session_id: string
         }
         Update: {
@@ -1124,6 +1126,7 @@ export type Database = {
           montant_total?: number | null
           moyen_paiement?: string | null
           notes?: string | null
+          presence_pratique?: string | null
           session_id?: string
         }
         Relationships: [
