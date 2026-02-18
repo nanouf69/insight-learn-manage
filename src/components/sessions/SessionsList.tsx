@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, MapPin, Loader2, Copy, Trophy, Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar, Users, MapPin, Loader2, Copy, Trophy, Trash2, Search, X } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { SessionForm } from "./SessionForm";
 import { SessionDetail } from "./SessionDetail";
@@ -73,6 +75,9 @@ export function SessionsList() {
   const [selectedSession, setSelectedSession] = useState<any | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [duplicating, setDuplicating] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [filterStatut, setFilterStatut] = useState("tous");
+  const [filterType, setFilterType] = useState("tous");
   const { toast } = useToast();
 
   const { data: sessions = [], isLoading, refetch } = useQuery({
@@ -113,6 +118,34 @@ export function SessionsList() {
       return stats;
     },
   });
+
+  // Sort: upcoming sessions first (closest to today), then past sessions
+  const filteredSessions = useMemo(() => {
+    const now = new Date();
+    const q = search.toLowerCase();
+
+    let list = sessions.filter((s) => {
+      const matchSearch = !q
+        || (s.nom || "").toLowerCase().includes(q)
+        || (s.lieu || "").toLowerCase().includes(q)
+        || (s.types_apprenant || []).some(t => t.toLowerCase().includes(q));
+      const matchStatut = filterStatut === "tous" || s.statut === filterStatut;
+      const matchType = filterType === "tous" || s.type_session === filterType;
+      return matchSearch && matchStatut && matchType;
+    });
+
+    // Sort: upcoming (date_debut >= today) ascending, then past descending
+    const upcoming = list
+      .filter(s => new Date(s.date_debut) >= now)
+      .sort((a, b) => new Date(a.date_debut).getTime() - new Date(b.date_debut).getTime());
+    const past = list
+      .filter(s => new Date(s.date_debut) < now)
+      .sort((a, b) => new Date(b.date_debut).getTime() - new Date(a.date_debut).getTime());
+
+    return [...upcoming, ...past];
+  }, [sessions, search, filterStatut, filterType]);
+
+  const hasActiveFilters = search || filterStatut !== "tous" || filterType !== "tous";
 
   const openSessionDetail = (session: Session) => {
     const detailSession = {
@@ -203,15 +236,63 @@ export function SessionsList() {
         <SessionForm />
       </div>
 
-      {sessions.length === 0 ? (
+      {/* Filtres */}
+      <div className="flex flex-wrap gap-3 items-center">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher une session..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Select value={filterType} onValueChange={setFilterType}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="Type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="tous">Tous les types</SelectItem>
+            <SelectItem value="theorique">📚 Théorique</SelectItem>
+            <SelectItem value="pratique">🚗 Pratique</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filterStatut} onValueChange={setFilterStatut}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="Statut" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="tous">Tous les statuts</SelectItem>
+            <SelectItem value="planifiee">Planifiée</SelectItem>
+            <SelectItem value="confirmee">Confirmée</SelectItem>
+            <SelectItem value="terminee">Terminée</SelectItem>
+            <SelectItem value="annulee">Annulée</SelectItem>
+          </SelectContent>
+        </Select>
+        {hasActiveFilters && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => { setSearch(""); setFilterStatut("tous"); setFilterType("tous"); }}
+            className="text-muted-foreground"
+          >
+            <X className="h-4 w-4 mr-1" /> Réinitialiser
+          </Button>
+        )}
+        <span className="text-sm text-muted-foreground ml-auto">
+          {filteredSessions.length} session{filteredSessions.length !== 1 ? "s" : ""}
+        </span>
+      </div>
+
+      {filteredSessions.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            Aucune session créée. Cliquez sur "Nouvelle session" pour en créer une.
+            {hasActiveFilters ? "Aucune session ne correspond aux filtres." : "Aucune session créée. Cliquez sur \"Nouvelle session\" pour en créer une."}
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-4">
-          {sessions.map((session) => (
+          {filteredSessions.map((session) => (
             <Card 
               key={session.id} 
               className="hover:shadow-md transition-shadow cursor-pointer"
