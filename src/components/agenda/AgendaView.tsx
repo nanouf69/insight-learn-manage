@@ -462,9 +462,11 @@ export function AgendaView() {
     toast.success("Cours modifié");
   };
 
-  // Récupérer tous les blocs d'une journée
+  // Récupérer tous les blocs d'une journée, triés par heure de début
   const getBlocksForDay = (date: Date) => {
-    return courseBlocks.filter((block) => isSameDay(block.date, date));
+    return courseBlocks
+      .filter((block) => isSameDay(block.date, date))
+      .sort((a, b) => a.startHour - b.startHour);
   };
 
   // Helper pour formater l'heure d'un slot
