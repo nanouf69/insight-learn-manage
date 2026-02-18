@@ -986,7 +986,8 @@ export function ExamenReussitePage() {
           !reussisFormation.some(r => r.id === a.id) &&
           !paFormation.some(r => r.id === a.id)
         );
-        const tousAFormer = [...reussisFormation, ...paFormation, ...deplacesFormation];
+        // tousAFormer exclut les déplacés (ils ont leur propre section)
+        const tousAFormer = [...reussisFormation, ...paFormation];
 
         const isVTC = (type: string | null) => {
           if (!type) return false;
@@ -1724,7 +1725,124 @@ export function ExamenReussitePage() {
         );
       })()}
 
-      {/* Résultats examen pratique */}
+      {/* Décalés à la prochaine session */}
+      {(() => {
+        const deplacesAff = (allApprenants || []).filter(a =>
+          (deplacesSessionPratique || []).includes(a.id)
+        );
+
+        const isVTC = (type: string | null) => {
+          if (!type) return false;
+          const t = type.toLowerCase();
+          return t.includes('vtc') || t === 'va' || t === 'pa-vtc';
+        };
+        const isTAXI = (type: string | null) => {
+          if (!type) return false;
+          const t = type.toLowerCase();
+          return t.includes('taxi') || t.includes('ta') || t === 'pa-taxi';
+        };
+
+        const typeColor: Record<string, string> = {
+          'vtc': 'bg-blue-100 text-blue-800', 'vtc-e': 'bg-blue-100 text-blue-800',
+          'taxi': 'bg-amber-100 text-amber-800', 'taxi-e': 'bg-amber-100 text-amber-800',
+          'ta': 'bg-orange-100 text-orange-800', 'va': 'bg-purple-100 text-purple-800',
+          'pa-vtc': 'bg-sky-100 text-sky-800', 'pa-taxi': 'bg-yellow-100 text-yellow-800',
+          'rp-vtc': 'bg-indigo-100 text-indigo-800', 'rp-taxi': 'bg-red-100 text-red-800',
+        };
+
+        if (!selectedExamDate) return null;
+
+        return (
+          <Card className="border-orange-200 bg-orange-50/30">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-orange-700">
+                <CalendarPlus className="h-5 w-5" />
+                Décalés à la prochaine session
+                {deplacesAff.length > 0 && (
+                  <Badge className="bg-orange-100 text-orange-800 ml-2">{deplacesAff.length}</Badge>
+                )}
+              </CardTitle>
+              <p className="text-xs text-orange-600 mt-1">
+                Ces candidats sont automatiquement inclus dans la lettre CMA et dans les « Candidats à former » de la prochaine session.
+              </p>
+            </CardHeader>
+            <CardContent>
+              {deplacesAff.length === 0 ? (
+                <p className="text-sm text-muted-foreground italic text-center py-4">Aucun candidat décalé pour cette session.</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-6">
+                  {/* VTC */}
+                  <div>
+                    <h4 className="text-sm font-bold text-blue-700 mb-2">VTC</h4>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-6">#</TableHead>
+                          <TableHead>Nom Prénom</TableHead>
+                          <TableHead>Type</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {deplacesAff.filter(a => isVTC(a.type_apprenant)).map((a, i) => (
+                          <TableRow key={a.id} className="bg-orange-50/50">
+                            <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
+                            <TableCell className="font-medium text-sm">
+                              {a.nom} {a.prenom}
+                              <Badge className="ml-2 bg-orange-100 text-orange-800 text-[10px]">📅 Décalé</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={`text-[10px] ${typeColor[a.type_apprenant?.toLowerCase() || ''] || 'bg-gray-100 text-gray-800'}`}>
+                                {a.type_apprenant?.toUpperCase()}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {deplacesAff.filter(a => isVTC(a.type_apprenant)).length === 0 && (
+                          <TableRow><TableCell colSpan={3} className="text-xs text-muted-foreground italic">Aucun</TableCell></TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  {/* TAXI */}
+                  <div>
+                    <h4 className="text-sm font-bold text-amber-700 mb-2">TAXI</h4>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-6">#</TableHead>
+                          <TableHead>Nom Prénom</TableHead>
+                          <TableHead>Type</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {deplacesAff.filter(a => isTAXI(a.type_apprenant)).map((a, i) => (
+                          <TableRow key={a.id} className="bg-orange-50/50">
+                            <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
+                            <TableCell className="font-medium text-sm">
+                              {a.nom} {a.prenom}
+                              <Badge className="ml-2 bg-orange-100 text-orange-800 text-[10px]">📅 Décalé</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={`text-[10px] ${typeColor[a.type_apprenant?.toLowerCase() || ''] || 'bg-gray-100 text-gray-800'}`}>
+                                {a.type_apprenant?.toUpperCase()}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {deplacesAff.filter(a => isTAXI(a.type_apprenant)).length === 0 && (
+                          <TableRow><TableCell colSpan={3} className="text-xs text-muted-foreground italic">Aucun</TableCell></TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })()}
+
+
       {(() => {
         // All candidates who have a date_examen_pratique (registered at CMA)
         const candidatsPratique = (allApprenants || []).filter(a => a.date_examen_pratique);
