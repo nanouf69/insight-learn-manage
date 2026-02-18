@@ -61,30 +61,51 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
         await generateBienvenueFtransport(apprenant);
         toast.success("Document de bienvenue généré");
       } else if (type === 'emargement') {
-        if (!sessionData || sessionData.length === 0) {
-          toast.error("Aucune session trouvée pour cet apprenant");
-          return;
-        }
-        // Générer pour la première session trouvée (ou toutes)
-        for (const sa of sessionData) {
-          const session = sa.sessions as any;
-          if (!session) continue;
-          const formateurs = session.session_formateurs?.map((sf: any) =>
-            sf.formateurs ? `${sf.formateurs.nom} ${sf.formateurs.prenom}` : ''
-          ).filter(Boolean) || ['GUENICHI Naoufal'];
+        // Si une session est liée, utiliser ses données ; sinon générer depuis les infos de l'apprenant
+        if (sessionData && sessionData.length > 0) {
+          for (const sa of sessionData) {
+            const session = sa.sessions as any;
+            if (!session) continue;
+            const formateurs = session.session_formateurs?.map((sf: any) =>
+              sf.formateurs ? `${sf.formateurs.nom} ${sf.formateurs.prenom}` : ''
+            ).filter(Boolean);
+            const formateursFinaux = formateurs?.length > 0 ? formateurs : ['GUENICHI Naoufal'];
 
-          const apprenants = session.session_apprenants?.map((sa: any) => sa.apprenants).filter(Boolean) || [];
+            const sessionApprenants = session.session_apprenants?.map((sa: any) => sa.apprenants).filter(Boolean) || [];
+            const apprenantsList = sessionApprenants.length > 0
+              ? sessionApprenants
+              : [{ id: 0, nom: apprenant.nom, prenom: apprenant.prenom }];
+
+            generateEmargementPDF(
+              {
+                title: session.nom || session.type_session,
+                formation: session.nom || 'FORMATION CONTINUE',
+                dateDebut: session.date_debut,
+                dateFin: session.date_fin,
+                lieu: session.lieu || '86 route de genas 69003 Lyon',
+                formateurs: formateursFinaux,
+              },
+              apprenantsList
+            );
+          }
+        } else {
+          // Pas de session : générer depuis les dates de l'apprenant
+          const dateDebut = apprenant.date_debut_formation || new Date().toISOString().split('T')[0];
+          const dateFin = apprenant.date_fin_formation || dateDebut;
+          const formation = apprenant.type_apprenant
+            ? apprenant.type_apprenant.toUpperCase().includes('TAXI') ? 'FORMATION CONTINUE TAXI' : 'FORMATION CONTINUE VTC'
+            : 'FORMATION CONTINUE';
 
           generateEmargementPDF(
             {
-              title: session.nom || session.type_session,
-              formation: session.nom || 'FORMATION CONTINUE',
-              dateDebut: session.date_debut,
-              dateFin: session.date_fin,
-              lieu: session.lieu || '86 route de genas 69003 Lyon',
-              formateurs,
+              title: formation,
+              formation,
+              dateDebut,
+              dateFin,
+              lieu: '86 route de genas 69003 Lyon',
+              formateurs: ['GUENICHI Naoufal'],
             },
-            apprenants.length > 0 ? apprenants : [{ id: 0, nom: apprenant.nom, prenom: apprenant.prenom }]
+            [{ id: 0, nom: apprenant.nom, prenom: apprenant.prenom }]
           );
         }
         toast.success("Feuille d'émargement générée");
@@ -96,8 +117,6 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
       setGeneratingDoc(null);
     }
   };
-
-  const hasSession = sessionData && sessionData.length > 0;
 
   const documents = [
     {
@@ -128,7 +147,7 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
       id: 'emargement',
       title: "Feuille d'émargement",
       description: "Feuille de présence de la session de formation",
-      status: hasSession ? 'disponible' : 'en_attente',
+      status: 'disponible',
       type: 'emargement' as const,
       icon: ClipboardList,
     },
