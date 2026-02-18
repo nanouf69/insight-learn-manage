@@ -41,6 +41,39 @@ export function ExamenReussitePage() {
   const planningFileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
+  // Déplacer un candidat à la prochaine session d'entraînement
+  const handleDecalerProchaineSession = async (apprenantId: string, apprenantNom: string) => {
+    try {
+      // Mark presence_pratique = 'deplace' in session_apprenants for pratique sessions
+      const { data: sessionsApprenant } = await supabase
+        .from('session_apprenants')
+        .select('id, session_id, sessions!inner(type_session)')
+        .eq('apprenant_id', apprenantId)
+        .eq('sessions.type_session', 'pratique' as any);
+      if (sessionsApprenant && sessionsApprenant.length > 0) {
+        for (const sa of sessionsApprenant) {
+          await supabase
+            .from('session_apprenants')
+            .update({ presence_pratique: 'deplace' })
+            .eq('id', sa.id);
+        }
+      }
+      // Update resultat_examen_pratique in apprenants
+      await supabase
+        .from('apprenants')
+        .update({ resultat_examen_pratique: 'deplace' } as any)
+        .eq('id', apprenantId);
+      // Delete existing reservation so they can book a new one next session
+      await supabase.from('reservations_pratique').delete().eq('apprenant_id', apprenantId);
+      queryClient.invalidateQueries({ queryKey: ['deplaces-session-pratique'] });
+      queryClient.invalidateQueries({ queryKey: ['reservations-pratique-planning'] });
+      queryClient.invalidateQueries({ queryKey: ['all-apprenants'] });
+      toast.success(`${apprenantNom} déplacé(e) à la prochaine session — inclus dans la lettre CMA et les candidats à former`);
+    } catch (err: any) {
+      toast.error('Erreur: ' + (err.message || 'Échec'));
+    }
+  };
+
   // Cancel a reservation
   const handleCancelReservation = async (apprenantId: string, apprenantNom: string) => {
     try {
@@ -1233,6 +1266,17 @@ export function ExamenReussitePage() {
                                       <p className="text-xs text-muted-foreground mb-1">Ou choisir une autre date :</p>
                                       <Input type="date" className="h-8 text-xs" onChange={(e) => { if (e.target.value) handleAssignDate(a.id, `${a.nom} ${a.prenom}`, e.target.value, 'vtc'); }} />
                                     </div>
+                                    <div className="border-t mt-2 pt-2">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="w-full text-xs text-orange-700 border-orange-300 hover:bg-orange-50 gap-1.5"
+                                        onClick={() => handleDecalerProchaineSession(a.id, `${a.nom} ${a.prenom}`)}
+                                      >
+                                        <CalendarPlus className="h-3.5 w-3.5" />
+                                        Déplacer à la prochaine session
+                                      </Button>
+                                    </div>
                                   </PopoverContent>
                                 </Popover>
                               </div>
@@ -1464,6 +1508,17 @@ export function ExamenReussitePage() {
                                     <div className="border-t mt-2 pt-2">
                                       <p className="text-xs text-muted-foreground mb-1">Ou choisir une autre date :</p>
                                       <Input type="date" className="h-8 text-xs" onChange={(e) => { if (e.target.value) handleAssignDate(a.id, `${a.nom} ${a.prenom}`, e.target.value, 'taxi'); }} />
+                                    </div>
+                                    <div className="border-t mt-2 pt-2">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="w-full text-xs text-orange-700 border-orange-300 hover:bg-orange-50 gap-1.5"
+                                        onClick={() => handleDecalerProchaineSession(a.id, `${a.nom} ${a.prenom}`)}
+                                      >
+                                        <CalendarPlus className="h-3.5 w-3.5" />
+                                        Déplacer à la prochaine session
+                                      </Button>
                                     </div>
                                   </PopoverContent>
                                 </Popover>
