@@ -119,7 +119,7 @@ const defaultDisciplines: Discipline[] = [
 ];
 
 // Heures de 8h à 18h (affichage par heure complète)
-const hours = Array.from({ length: 11 }, (_, i) => i + 8); // 8, 9, 10, ... 18
+const hours = Array.from({ length: 14 }, (_, i) => i + 8); // 8, 9, 10, ... 21
 
 // Hauteur d'une heure en pixels
 const HOUR_HEIGHT = 60;
