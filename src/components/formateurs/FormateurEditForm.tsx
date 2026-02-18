@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Calendar, CheckCircle } from "lucide-react";
+import { Loader2, Calendar, CheckCircle, PlusCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -48,6 +48,7 @@ interface FormateurEditFormProps {
 export function FormateurEditForm({ formateur, open, onOpenChange }: FormateurEditFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedSpecialites, setSelectedSpecialites] = useState<string[]>([]);
+  const [selectedSessionId, setSelectedSessionId] = useState<string>("");
   const [formData, setFormData] = useState({
     civilite: "",
     prenom: "",
@@ -65,7 +66,7 @@ export function FormateurEditForm({ formateur, open, onOpenChange }: FormateurEd
   });
   const queryClient = useQueryClient();
 
-  // Charger les sessions du formateur
+  // Charger les sessions assignées au formateur
   const { data: sessionFormateurs = [], refetch: refetchSessions } = useQuery({
     queryKey: ['formateur-sessions', formateur.id],
     queryFn: async () => {
@@ -84,6 +85,48 @@ export function FormateurEditForm({ formateur, open, onOpenChange }: FormateurEd
     },
     enabled: open,
   });
+
+  // Charger toutes les sessions disponibles
+  const { data: allSessions = [] } = useQuery({
+    queryKey: ['all-sessions-for-assign'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('id, nom, date_debut, date_fin, type_session')
+        .order('date_debut', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: open,
+  });
+
+  const assignedSessionIds = sessionFormateurs.map((sf: any) => sf.sessions?.id).filter(Boolean);
+  const availableSessions = allSessions.filter((s: any) => !assignedSessionIds.includes(s.id));
+
+  const handleAssignSession = async () => {
+    if (!selectedSessionId) return;
+    const { error } = await supabase
+      .from('session_formateurs')
+      .insert({ formateur_id: formateur.id, session_id: selectedSessionId, presence: 'present' });
+    if (!error) {
+      toast.success("Formateur assigné à la session");
+      setSelectedSessionId("");
+      refetchSessions();
+    } else {
+      toast.error("Erreur lors de l'assignation");
+    }
+  };
+
+  const handleRemoveSession = async (sessionFormateurId: string) => {
+    const { error } = await supabase
+      .from('session_formateurs')
+      .delete()
+      .eq('id', sessionFormateurId);
+    if (!error) {
+      toast.success("Assignation supprimée");
+      refetchSessions();
+    }
+  };
 
   // Initialize form data when formateur changes
   useEffect(() => {
@@ -132,7 +175,7 @@ export function FormateurEditForm({ formateur, open, onOpenChange }: FormateurEd
       .eq('id', sessionFormateurId);
     if (!error) {
       refetchSessions();
-      toast.success(`Présence mise à jour : ${next === 'present' ? 'Présent' : next === 'absent' ? 'Absent' : 'Excusé'}`);
+      toast.success(`Présence : ${next === 'present' ? 'Présent' : next === 'absent' ? 'Absent' : 'Excusé'}`);
     }
   };
 
@@ -399,7 +442,40 @@ export function FormateurEditForm({ formateur, open, onOpenChange }: FormateurEd
 
           {/* ===== ONGLET SESSIONS & PRÉSENCE ===== */}
           <TabsContent value="presence">
-            <div className="mt-4 space-y-3">
+            <div className="mt-4 space-y-4">
+
+              {/* Section assignation */}
+              <div className="p-3 border rounded-xl bg-muted/30 space-y-2">
+                <p className="text-sm font-medium">Assigner à une session</p>
+                <div className="flex gap-2">
+                  <Select value={selectedSessionId} onValueChange={setSelectedSessionId}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Choisir une session..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableSessions.map((s: any) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.nom || `Session ${s.type_session}`} — {s.date_debut ? format(new Date(s.date_debut), 'dd/MM/yyyy', { locale: fr }) : ''}
+                        </SelectItem>
+                      ))}
+                      {availableSessions.length === 0 && (
+                        <SelectItem value="none" disabled>Toutes les sessions sont déjà assignées</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    onClick={handleAssignSession}
+                    disabled={!selectedSessionId}
+                    size="sm"
+                    className="gap-1"
+                  >
+                    <PlusCircle className="w-4 h-4" />
+                    Assigner
+                  </Button>
+                </div>
+              </div>
+
               <p className="text-sm text-muted-foreground">
                 Cliquez sur le badge de présence pour le modifier (Présent → Absent → Excusé)
               </p>
@@ -408,12 +484,12 @@ export function FormateurEditForm({ formateur, open, onOpenChange }: FormateurEd
                 <div className="text-center py-10 text-muted-foreground border rounded-xl bg-muted/20">
                   <Calendar className="w-10 h-10 mx-auto mb-3 opacity-40" />
                   <p className="font-medium">Aucune session assignée</p>
-                  <p className="text-sm mt-1">Ce formateur n'est assigné à aucune session.</p>
+                  <p className="text-sm mt-1">Utilisez le menu ci-dessus pour assigner ce formateur à une session.</p>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {sessionFormateurs
-                    .sort((a: any, b: any) => {
+                  {(sessionFormateurs as any[])
+                    .sort((a, b) => {
                       const da = a.sessions?.date_debut || '';
                       const db = b.sessions?.date_debut || '';
                       return db.localeCompare(da);
@@ -423,7 +499,7 @@ export function FormateurEditForm({ formateur, open, onOpenChange }: FormateurEd
                       if (!session) return null;
                       const presence = sf.presence || 'present';
                       const isPast = session.date_fin && new Date(session.date_fin) < new Date();
-                      
+
                       return (
                         <div
                           key={sf.id}
@@ -435,28 +511,31 @@ export function FormateurEditForm({ formateur, open, onOpenChange }: FormateurEd
                                 {session.nom || (session.type_session === 'pratique' ? '🚗 Session Pratique' : '📚 Session Théorique')}
                               </span>
                               {isPast && (
-                                <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Passée</span>
+                                <span className="text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">Passée</span>
                               )}
                             </div>
-                            <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
-                              <Calendar className="w-3 h-3" />
-                              {session.date_debut && format(new Date(session.date_debut), 'd MMM yyyy', { locale: fr })}
-                              {session.date_fin && session.date_fin !== session.date_debut && (
-                                <> → {format(new Date(session.date_fin), 'd MMM yyyy', { locale: fr })}</>
-                              )}
-                              {session.heure_debut && (
-                                <span>· {session.heure_debut}{session.heure_fin ? ` - ${session.heure_fin}` : ''}</span>
-                              )}
-                              {session.lieu && <span>· {session.lieu}</span>}
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {session.date_debut && format(new Date(session.date_debut), 'dd MMM yyyy', { locale: fr })}
+                              {session.date_fin && session.date_fin !== session.date_debut && ` → ${format(new Date(session.date_fin), 'dd MMM yyyy', { locale: fr })}`}
+                              {session.heure_debut && ` · ${session.heure_debut}${session.heure_fin ? `–${session.heure_fin}` : ''}`}
+                              {session.lieu && ` · ${session.lieu}`}
                             </div>
                           </div>
-                          <button
-                            onClick={() => togglePresence(sf.id, presence)}
-                            title="Cliquer pour changer la présence"
-                            className={`ml-3 flex-shrink-0 text-xs px-3 py-1.5 rounded-full font-medium border transition-colors cursor-pointer ${getPresenceStyle(presence)}`}
-                          >
-                            {getPresenceLabel(presence)}
-                          </button>
+                          <div className="flex items-center gap-2 ml-3">
+                            <button
+                              onClick={() => togglePresence(sf.id, presence)}
+                              className={`text-xs font-medium px-3 py-1.5 rounded-lg border cursor-pointer transition-colors ${getPresenceStyle(presence)}`}
+                            >
+                              {getPresenceLabel(presence)}
+                            </button>
+                            <button
+                              onClick={() => handleRemoveSession(sf.id)}
+                              className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded"
+                              title="Retirer de la session"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
                       );
                     })}
@@ -464,6 +543,7 @@ export function FormateurEditForm({ formateur, open, onOpenChange }: FormateurEd
               )}
             </div>
           </TabsContent>
+
         </Tabs>
       </DialogContent>
     </Dialog>
