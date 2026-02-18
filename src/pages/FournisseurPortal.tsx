@@ -139,7 +139,7 @@ export default function FournisseurPortal() {
   const [isUploadingDoc, setIsUploadingDoc] = useState(false);
 
   // Facture upload
-  const [factureDestinataire, setFactureDestinataire] = useState("Finally Academy");
+  const [factureDestinataire, setFactureDestinataire] = useState("Finally Academy Ltd");
   const [factureMontant, setFactureMontant] = useState("");
   const [factureDescription, setFactureDescription] = useState("Prestation de services");
   const [factureMoisAnnee, setFactureMoisAnnee] = useState("");
@@ -341,7 +341,7 @@ export default function FournisseurPortal() {
       } as any);
       if (insertErr) throw insertErr;
       toast({ title: "Facture envoyée", description: `Facture pour ${factureDestinataire} envoyée avec succès.` });
-      setFactureDestinataire("Finally Academy"); setFactureMontant(""); setFactureDescription("Prestation de services"); setFactureMoisAnnee(""); fileInput.value = "";
+      setFactureDestinataire("Finally Academy Ltd"); setFactureMontant(""); setFactureDescription("Prestation de services"); setFactureMoisAnnee(""); fileInput.value = "";
       const { data } = await supabase.from('fournisseur_factures').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false });
       if (data) setFactures(data as FournisseurFacture[]);
     } catch (err: any) {
@@ -628,13 +628,11 @@ export default function FournisseurPortal() {
                       <Select value={factureDestinataire} onValueChange={setFactureDestinataire}>
                         <SelectTrigger><SelectValue placeholder="Sélectionner le prestataire" /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Finally Academy">Finally Academy</SelectItem>
                           <SelectItem value="Finally Academy Ltd">Finally Academy Ltd</SelectItem>
                           <SelectItem value="Massena Group">Massena Group</SelectItem>
                           <SelectItem value="El Najia Dechar">El Najia Dechar</SelectItem>
                           <SelectItem value="PRIMA NETTOYAGE">PRIMA NETTOYAGE</SelectItem>
                           <SelectItem value="SPEAK ENGLISH 4REAL">SPEAK ENGLISH 4REAL</SelectItem>
-                          <SelectItem value="Auto-École Demo">Auto-École Demo</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
