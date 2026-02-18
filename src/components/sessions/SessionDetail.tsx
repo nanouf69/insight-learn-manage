@@ -909,9 +909,9 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                           <div className="flex items-center gap-2 pt-2 border-t">
                             <span className="text-sm text-muted-foreground font-medium">Présence :</span>
                             <Select
-                              value={sessionApprenant.presence_pratique || ''}
+                              value={sessionApprenant.presence_pratique || 'present'}
                               onValueChange={async (val) => {
-                                await updateSessionApprenant(sessionApprenant.id, { presence_pratique: val || null });
+                                await updateSessionApprenant(sessionApprenant.id, { presence_pratique: val });
                               }}
                             >
                               <SelectTrigger className="h-7 w-[230px] text-xs">
