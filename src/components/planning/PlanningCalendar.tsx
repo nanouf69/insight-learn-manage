@@ -1,10 +1,11 @@
-import { ChevronLeft, ChevronRight, Download, RefreshCw } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, RefreshCw, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { PlanningForm } from "./PlanningForm";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { generateEmargementPratiquePDF } from "@/lib/pdf/emargement-pratique";
+import PlanningMensuelFormateurs from "@/components/agenda/PlanningMensuelFormateurs";
 
 const DAY_NAMES = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 const MONTH_NAMES = ['jan', 'fév', 'mar', 'avr', 'mai', 'jun', 'jul', 'aoû', 'sep', 'oct', 'nov', 'déc'];
@@ -76,6 +77,7 @@ export function PlanningCalendar() {
   const [weeks, setWeeks] = useState<WeekInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [isPlanningMensuelOpen, setIsPlanningMensuelOpen] = useState(false);
 
 
   const toLocalDateKey = (d: Date) => {
@@ -234,6 +236,15 @@ export function PlanningCalendar() {
           <Button
             variant="outline"
             size="sm"
+            onClick={() => setIsPlanningMensuelOpen(true)}
+            className="gap-1.5 text-xs"
+          >
+            <CalendarDays className="h-3.5 w-3.5" />
+            Planning mensuel formateurs
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleSyncExamDates}
             disabled={syncing}
             className="gap-1.5 text-xs"
@@ -344,6 +355,11 @@ export function PlanningCalendar() {
           <span className="text-muted-foreground">TAXI</span>
         </div>
       </div>
+
+      <PlanningMensuelFormateurs
+        open={isPlanningMensuelOpen}
+        onClose={() => setIsPlanningMensuelOpen(false)}
+      />
     </div>
   );
 }
