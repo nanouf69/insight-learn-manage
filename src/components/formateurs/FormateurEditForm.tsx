@@ -128,7 +128,7 @@ export function FormateurEditForm({ formateur, open, onOpenChange }: FormateurEd
     return acc;
   }, {});
 
-  const sortedDates = Object.keys(blocsGroupedByDate).sort((a, b) => b.localeCompare(a));
+  const sortedDates = Object.keys(blocsGroupedByDate).sort((a, b) => a.localeCompare(b));
 
   // Calcul des heures totales présent
   const totalHeuresPresent = agendaBlocs.reduce((total, bloc) => {
