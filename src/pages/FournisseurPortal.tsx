@@ -188,7 +188,7 @@ export default function FournisseurPortal() {
       if (fournisseur.formateur_id) {
         const { data: planData } = await supabase
           .from('session_formateurs')
-          .select('session_id, heures_effectuees, sessions(id, nom, date_debut, date_fin, heure_debut, heure_fin, lieu, type_session, formation_id, formations(nom))')
+          .select('session_id, heures_effectuees, presence, sessions(id, nom, date_debut, date_fin, heure_debut, heure_fin, lieu, type_session, formation_id, formations(nom))')
           .eq('formateur_id', fournisseur.formateur_id);
         if (planData) setPlanning(planData);
       }
@@ -766,12 +766,13 @@ export default function FournisseurPortal() {
                         const s = p.sessions;
                         if (!s) return null;
                         const isPast = s.date_fin && new Date(s.date_fin) < new Date();
+                        const presence = p.presence || 'present';
                         return (
-                          <Card key={p.session_id} className={isPast ? 'opacity-60' : ''}>
+                          <Card key={p.session_id} className={isPast ? 'opacity-70' : ''}>
                             <CardContent className="pt-4">
                               <div className="flex justify-between items-start">
-                                <div className="space-y-1">
-                                  <div className="flex items-center gap-2">
+                                <div className="space-y-1 flex-1">
+                                  <div className="flex items-center gap-2 flex-wrap">
                                     <p className="font-semibold">{s.nom || s.formations?.nom || '—'}</p>
                                     <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
                                       {s.type_session === 'pratique' ? '🚗 Pratique' : '📚 Théorique'}
@@ -786,6 +787,16 @@ export default function FournisseurPortal() {
                                   {s.lieu && <p className="text-sm text-muted-foreground">📍 {s.lieu}</p>}
                                   {p.heures_effectuees ? <p className="text-sm text-muted-foreground">⏱ {p.heures_effectuees}h effectuées</p> : null}
                                 </div>
+                                {/* Badge présence (lecture seule côté formateur) */}
+                                <span className={`text-xs px-2 py-1 rounded-full font-medium border flex-shrink-0 ml-3 ${
+                                  presence === 'present'
+                                    ? 'bg-green-100 text-green-700 border-green-300'
+                                    : presence === 'absent'
+                                    ? 'bg-red-100 text-red-700 border-red-300'
+                                    : 'bg-orange-100 text-orange-700 border-orange-300'
+                                }`}>
+                                  {presence === 'present' ? '✓ Présent' : presence === 'absent' ? '✗ Absent' : '~ Excusé'}
+                                </span>
                               </div>
                             </CardContent>
                           </Card>

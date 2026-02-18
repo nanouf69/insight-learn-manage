@@ -340,6 +340,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
         .select(`
           id,
           heures_effectuees,
+          presence,
           formateur:formateurs (
             id,
             nom,
@@ -505,7 +506,18 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
     }
   };
 
-  // Fonction pour mettre à jour les notes dans session_apprenants
+
+  const togglePresenceFormateur = async (sessionFormateurId: string, currentPresence: string) => {
+    // Cycle: present → absent → excuse → present
+    const next = currentPresence === 'present' ? 'absent' : currentPresence === 'absent' ? 'excuse' : 'present';
+    const { error } = await supabase
+      .from('session_formateurs')
+      .update({ presence: next })
+      .eq('id', sessionFormateurId);
+    if (!error) refetchFormateurs();
+  };
+
+
   const updateSessionApprenant = async (
     sessionApprenantId: string, 
     updates: { notes?: string; presence_pratique?: string | null }
@@ -1107,13 +1119,29 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <span className="font-semibold text-foreground">
                                   {formateur.civilite ? `${formateur.civilite} ` : ""}{formateur.prenom} {formateur.nom}
                                 </span>
                                 <Badge variant="outline" className="text-xs">
                                   {formateur.type === "externe" ? "Externe" : "Interne"}
                                 </Badge>
+                                {/* Badge présence */}
+                                <button
+                                  onClick={() => togglePresenceFormateur(sessionFormateur.id, sessionFormateur.presence || 'present')}
+                                  title="Cliquer pour changer la présence"
+                                  className={`text-xs px-2 py-0.5 rounded-full font-medium border transition-colors cursor-pointer ${
+                                    (sessionFormateur.presence || 'present') === 'present'
+                                      ? 'bg-green-100 text-green-700 border-green-300 hover:bg-green-200'
+                                      : (sessionFormateur.presence) === 'absent'
+                                      ? 'bg-red-100 text-red-700 border-red-300 hover:bg-red-200'
+                                      : 'bg-orange-100 text-orange-700 border-orange-300 hover:bg-orange-200'
+                                  }`}
+                                >
+                                  {(sessionFormateur.presence || 'present') === 'present' ? '✓ Présent' 
+                                    : sessionFormateur.presence === 'absent' ? '✗ Absent'
+                                    : '~ Excusé'}
+                                </button>
                               </div>
                               <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
                                 {formateur.email && (
