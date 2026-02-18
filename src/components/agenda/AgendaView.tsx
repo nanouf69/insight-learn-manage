@@ -748,7 +748,7 @@ export function AgendaView() {
                         {newBlock.startHour && (() => {
                           const [startH, startM] = newBlock.startHour.split(':').map(Number);
                           const startMinutes = startH * 60 + startM;
-                          const endMinutes = 19 * 60;
+                          const endMinutes = 21 * 60;
                           const slots = Math.floor((endMinutes - startMinutes - 30) / 30) + 1;
                           return Array.from({ length: Math.max(slots, 1) }, (_, i) => {
                             const totalMinutes = startMinutes + 30 + (i * 30);
