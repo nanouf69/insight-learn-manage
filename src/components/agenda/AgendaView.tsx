@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import PlanningMensuelFormateurs from "./PlanningMensuelFormateurs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -152,7 +151,7 @@ export function AgendaView() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDisciplineDialogOpen, setIsDisciplineDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isPlanningMensuelOpen, setIsPlanningMensuelOpen] = useState(false);
+  
   const [editingBlock, setEditingBlock] = useState<CourseBlock | null>(null);
   const [editBlock, setEditBlock] = useState({
     formateur: "",
@@ -544,10 +543,6 @@ export function AgendaView() {
             >
               <Upload className="h-3 w-3" />
               {uploadingPlanning ? 'Upload...' : analyzingPlanning ? 'Analyse IA...' : 'Importer planning CMA (PDF)'}
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setIsPlanningMensuelOpen(true)}>
-              <BookOpen className="h-4 w-4 mr-2" />
-              Planning mensuel
             </Button>
             <Button variant="outline" size="sm" onClick={() => setIsDisciplineDialogOpen(true)}>
               <Layers className="h-4 w-4 mr-2" />
@@ -1035,10 +1030,6 @@ export function AgendaView() {
           </DialogContent>
         </Dialog>
 
-      <PlanningMensuelFormateurs
-        open={isPlanningMensuelOpen}
-        onClose={() => setIsPlanningMensuelOpen(false)}
-      />
 
       </CardContent>
     </Card>
