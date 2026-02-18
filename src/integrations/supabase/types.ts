@@ -663,15 +663,19 @@ export type Database = {
       formateurs: {
         Row: {
           adresse: string | null
+          banque: string | null
+          bic: string | null
           civilite: string | null
           code_postal: string | null
           created_at: string
           email: string | null
+          iban: string | null
           id: string
           nom: string
           numero_tva: string | null
           prenom: string
           siren: string | null
+          site_web: string | null
           societe_nom: string | null
           specialites: string | null
           tarif_horaire: number | null
@@ -682,15 +686,19 @@ export type Database = {
         }
         Insert: {
           adresse?: string | null
+          banque?: string | null
+          bic?: string | null
           civilite?: string | null
           code_postal?: string | null
           created_at?: string
           email?: string | null
+          iban?: string | null
           id?: string
           nom: string
           numero_tva?: string | null
           prenom: string
           siren?: string | null
+          site_web?: string | null
           societe_nom?: string | null
           specialites?: string | null
           tarif_horaire?: number | null
@@ -701,15 +709,19 @@ export type Database = {
         }
         Update: {
           adresse?: string | null
+          banque?: string | null
+          bic?: string | null
           civilite?: string | null
           code_postal?: string | null
           created_at?: string
           email?: string | null
+          iban?: string | null
           id?: string
           nom?: string
           numero_tva?: string | null
           prenom?: string
           siren?: string | null
+          site_web?: string | null
           societe_nom?: string | null
           specialites?: string | null
           tarif_horaire?: number | null
@@ -947,35 +959,65 @@ export type Database = {
         Row: {
           actif: boolean
           adresse: string | null
+          banque: string | null
+          bic: string | null
+          code_postal: string | null
           created_at: string
           email: string | null
+          iban: string | null
           id: string
           nom: string
+          numero_tva: string | null
+          pays: string | null
+          siren: string | null
+          siret: string | null
+          site_web: string | null
           telephone: string | null
           token: string
           updated_at: string
+          ville: string | null
         }
         Insert: {
           actif?: boolean
           adresse?: string | null
+          banque?: string | null
+          bic?: string | null
+          code_postal?: string | null
           created_at?: string
           email?: string | null
+          iban?: string | null
           id?: string
           nom: string
+          numero_tva?: string | null
+          pays?: string | null
+          siren?: string | null
+          siret?: string | null
+          site_web?: string | null
           telephone?: string | null
           token?: string
           updated_at?: string
+          ville?: string | null
         }
         Update: {
           actif?: boolean
           adresse?: string | null
+          banque?: string | null
+          bic?: string | null
+          code_postal?: string | null
           created_at?: string
           email?: string | null
+          iban?: string | null
           id?: string
           nom?: string
+          numero_tva?: string | null
+          pays?: string | null
+          siren?: string | null
+          siret?: string | null
+          site_web?: string | null
           telephone?: string | null
           token?: string
           updated_at?: string
+          ville?: string | null
         }
         Relationships: []
       }
