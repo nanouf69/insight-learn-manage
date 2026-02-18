@@ -1027,8 +1027,8 @@ export function ExamenReussitePage() {
           !reussisFormation.some(r => r.id === a.id) &&
           !paFormation.some(r => r.id === a.id)
         );
-        // tousAFormer exclut les déplacés (ils ont leur propre section)
-        const tousAFormer = [...reussisFormation, ...paFormation];
+        // tousAFormer inclut les déplacés (ils apparaissent aussi dans leur propre section "Décalés")
+        const tousAFormer = [...reussisFormation, ...paFormation, ...deplacesFormation];
 
         const isVTC = (type: string | null) => {
           if (!type) return false;
