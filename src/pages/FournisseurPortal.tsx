@@ -144,6 +144,7 @@ export default function FournisseurPortal() {
   const [factureMontant, setFactureMontant] = useState("");
   const [factureDescription, setFactureDescription] = useState("Prestation de services");
   const [factureMoisAnnee, setFactureMoisAnnee] = useState("");
+  const [factureMoisMultiples, setFactureMoisMultiples] = useState<string[]>([]);
   const [isUploadingFacture, setIsUploadingFacture] = useState(false);
 
   // Load fournisseur by token
@@ -160,6 +161,8 @@ export default function FournisseurPortal() {
       const facOnly = (data as any).factures_only === true;
       const formateurId = (data as any).formateur_id || null;
       setFournisseur({ id: data.id, nom: data.nom, factures_only: facOnly, formateur_id: formateurId });
+      // Pré-remplir le destinataire avec le nom du fournisseur lui-même
+      setFactureDestinataire(data.nom);
       if (formateurId) setActiveTab("planning");
       else if (facOnly) setActiveTab("factures");
       else setActiveTab("apprenants");
@@ -335,8 +338,16 @@ export default function FournisseurPortal() {
     if (!fournisseur) return;
     const fileInput = document.getElementById('facture-file') as HTMLInputElement;
     const file = fileInput?.files?.[0];
-    if (!file || !factureDestinataire) {
-      toast({ title: "Erreur", description: "Veuillez sélectionner un destinataire et un fichier.", variant: "destructive" });
+    const isFormateur = !!fournisseur.formateur_id;
+    const moisValue = isFormateur
+      ? (factureMoisMultiples.length > 0 ? factureMoisMultiples.sort().join(', ') : null)
+      : (factureMoisAnnee || null);
+    if (!file) {
+      toast({ title: "Erreur", description: "Veuillez sélectionner un fichier.", variant: "destructive" });
+      return;
+    }
+    if (isFormateur && factureMoisMultiples.length === 0) {
+      toast({ title: "Erreur", description: "Veuillez sélectionner au moins un mois.", variant: "destructive" });
       return;
     }
     setIsUploadingFacture(true);
@@ -350,11 +361,11 @@ export default function FournisseurPortal() {
         destinataire: factureDestinataire,
         montant: factureMontant ? parseFloat(factureMontant) : null,
         description: factureDescription || null,
-        mois_annee: factureMoisAnnee || null,
+        mois_annee: moisValue,
       } as any);
       if (insertErr) throw insertErr;
-      toast({ title: "Facture envoyée", description: `Facture pour ${factureDestinataire} envoyée avec succès.` });
-      setFactureDestinataire("Finally Academy Ltd"); setFactureMontant(""); setFactureDescription("Prestation de services"); setFactureMoisAnnee(""); fileInput.value = "";
+      toast({ title: "Facture envoyée", description: `Facture envoyée avec succès.` });
+      setFactureMontant(""); setFactureDescription("Prestation de services"); setFactureMoisAnnee(""); setFactureMoisMultiples([]); fileInput.value = "";
       const { data } = await supabase.from('fournisseur_factures').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false });
       if (data) setFactures(data as FournisseurFacture[]);
     } catch (err: any) {
@@ -640,28 +651,51 @@ export default function FournisseurPortal() {
                 <CardContent>
                   <form onSubmit={handleUploadFacture} className="space-y-4">
                     <div className="space-y-2">
-                      <Label>Prestataire *</Label>
-                      <Select value={factureDestinataire} onValueChange={setFactureDestinataire}>
-                        <SelectTrigger><SelectValue placeholder="Sélectionner le prestataire" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Finally Academy Ltd">Finally Academy Ltd</SelectItem>
-                          <SelectItem value="Massena Group">Massena Group</SelectItem>
-                          <SelectItem value="El Najia Dechar">El Najia Dechar</SelectItem>
-                          <SelectItem value="PRIMA NETTOYAGE">PRIMA NETTOYAGE</SelectItem>
-                          <SelectItem value="SPEAK ENGLISH 4REAL">SPEAK ENGLISH 4REAL</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Label>Destinataire</Label>
+                      <div className="px-3 py-2 rounded-md border bg-muted/40 text-sm font-medium">{factureDestinataire}</div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Mois et année concernés *</Label>
-                      <Input
-                        type="month"
-                        value={factureMoisAnnee}
-                        onChange={e => setFactureMoisAnnee(e.target.value)}
-                        required={!!fournisseur?.factures_only}
-                      />
-                      <p className="text-xs text-muted-foreground">Indiquez le mois et l'année que cette facture couvre</p>
-                    </div>
+                    {fournisseur?.formateur_id ? (
+                      <div className="space-y-2">
+                        <Label>Mois couverts *</Label>
+                        <div className="space-y-2 border rounded-md p-3 bg-muted/20">
+                          {Array.from({ length: 12 }, (_, i) => {
+                            const now = new Date();
+                            // Générer les 6 derniers mois + 2 à venir
+                            const d = new Date(now.getFullYear(), now.getMonth() - 6 + i, 1);
+                            const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                            const label = d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+                            const checked = factureMoisMultiples.includes(val);
+                            return (
+                              <label key={val} className="flex items-center gap-2 cursor-pointer text-sm">
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => setFactureMoisMultiples(prev =>
+                                    checked ? prev.filter(m => m !== val) : [...prev, val]
+                                  )}
+                                  className="rounded"
+                                />
+                                <span className="capitalize">{label}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                        {factureMoisMultiples.length > 0 && (
+                          <p className="text-xs text-muted-foreground">{factureMoisMultiples.length} mois sélectionné(s)</p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <Label>Mois et année concernés *</Label>
+                        <Input
+                          type="month"
+                          value={factureMoisAnnee}
+                          onChange={e => setFactureMoisAnnee(e.target.value)}
+                          required={!!fournisseur?.factures_only}
+                        />
+                        <p className="text-xs text-muted-foreground">Indiquez le mois et l'année que cette facture couvre</p>
+                      </div>
+                    )}
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Montant (€)</Label>
