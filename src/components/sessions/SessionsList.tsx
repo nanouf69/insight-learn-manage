@@ -174,6 +174,7 @@ export function SessionsList() {
       participants: 0,
       maxParticipants: session.places_disponibles || 18,
       status: session.statut || "planifiee",
+      type_session: session.type_session,
     };
     setSelectedSession(detailSession);
     setDetailOpen(true);

@@ -50,6 +50,7 @@ interface Session {
   participants: number;
   maxParticipants: number;
   status: string;
+  type_session?: string;
 }
 
 interface SessionDetailProps {
@@ -292,6 +293,10 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
           date_debut,
           date_fin,
           notes,
+          presence_pratique,
+          montant_total,
+          montant_paye,
+          moyen_paiement,
           apprenant:apprenants (
             id,
             nom,
@@ -503,7 +508,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
   // Fonction pour mettre à jour les notes dans session_apprenants
   const updateSessionApprenant = async (
     sessionApprenantId: string, 
-    updates: { notes?: string }
+    updates: { notes?: string; presence_pratique?: string | null }
   ) => {
     try {
       const { error } = await supabase
@@ -899,7 +904,27 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                           </Badge>
                         </div>
 
-                        {/* Ligne 3: Examen + Notes + Paiement */}
+                        {/* Ligne 3: Présence (pratique) + Examen + Notes + Paiement */}
+                        {session.type_session === 'pratique' && (
+                          <div className="flex items-center gap-2 pt-2 border-t">
+                            <span className="text-sm text-muted-foreground font-medium">Présence :</span>
+                            <Select
+                              value={sessionApprenant.presence_pratique || ''}
+                              onValueChange={async (val) => {
+                                await updateSessionApprenant(sessionApprenant.id, { presence_pratique: val || null });
+                              }}
+                            >
+                              <SelectTrigger className="h-7 w-[230px] text-xs">
+                                <SelectValue placeholder="Non renseigné" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="present">✅ Présent</SelectItem>
+                                <SelectItem value="absent">❌ Absent</SelectItem>
+                                <SelectItem value="deplace">📅 Déplacé à la prochaine session</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
                         <div className="flex items-center justify-between gap-4 pt-2 border-t text-sm">
                           <div className="flex items-center gap-4">
                             {apprenant.date_examen_theorique && (
