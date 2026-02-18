@@ -186,6 +186,21 @@ export function ExamenReussitePage() {
     },
   });
 
+  // Fetch apprenants marqués "Déplacé à la prochaine session" dans les sessions pratiques
+  const { data: deplacesSessionPratique } = useQuery({
+    queryKey: ['deplaces-session-pratique'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('session_apprenants')
+        .select('apprenant_id, session_id, sessions!inner(type_session)')
+        .eq('presence_pratique', 'deplace')
+        .eq('sessions.type_session', 'pratique');
+      if (error) throw error;
+      const ids = [...new Set((data || []).map((d: any) => d.apprenant_id))];
+      return ids;
+    },
+  });
+
   // Fetch reservations pratique
   const { data: reservationsPratique } = useQuery({
     queryKey: ['reservations-pratique-planning'],
@@ -616,7 +631,13 @@ export function ExamenReussitePage() {
           a.date_examen_theorique?.includes(selectedExamDate) &&
           !reussisTheorique.some(r => r.id === a.id)
         );
-        const reussisLettre = [...reussisTheorique, ...paRpApprenants];
+        // Candidats déplacés à la prochaine session (depuis sessions pratiques précédentes)
+        const deplacesApprenantsCMA = (allApprenants || []).filter(a =>
+          (deplacesSessionPratique || []).includes(a.id) &&
+          !reussisTheorique.some(r => r.id === a.id) &&
+          !paRpApprenants.some(r => r.id === a.id)
+        );
+        const reussisLettre = [...reussisTheorique, ...paRpApprenants, ...deplacesApprenantsCMA];
 
 
 
@@ -959,7 +980,13 @@ export function ExamenReussitePage() {
           (a as any).resultat_examen === 'oui' &&
           !reussisFormation.some(r => r.id === a.id)
         );
-        const tousAFormer = [...reussisFormation, ...paFormation];
+        // Candidats déplacés à la prochaine session (sessions pratiques précédentes)
+        const deplacesFormation = (allApprenants || []).filter(a =>
+          (deplacesSessionPratique || []).includes(a.id) &&
+          !reussisFormation.some(r => r.id === a.id) &&
+          !paFormation.some(r => r.id === a.id)
+        );
+        const tousAFormer = [...reussisFormation, ...paFormation, ...deplacesFormation];
 
         const isVTC = (type: string | null) => {
           if (!type) return false;
