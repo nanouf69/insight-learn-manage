@@ -159,6 +159,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
   const [sessionsDisponibles, setSessionsDisponibles] = useState<{id: string, nom: string, date_debut: string, date_fin: string}[]>([]);
   const [documentsComplets, setDocumentsComplets] = useState(false);
   const [secondFormation, setSecondFormation] = useState("");
+  const [secondTypeApprenant, setSecondTypeApprenant] = useState("");
   
   const [formData, setFormData] = useState({
     civilite: "",
@@ -238,6 +239,15 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
         const parts = formationChoisie.split(" + ");
         setFormData(prev => ({ ...prev, selected_formation: parts[0] }));
         setSecondFormation(parts[1] || "");
+      }
+      // Restaurer le 2ème type d'apprenant si il existe
+      const typeApprenantVal = apprenant.type_apprenant || "";
+      if (typeApprenantVal.includes(" + ")) {
+        const parts = typeApprenantVal.split(" + ");
+        setFormData(prev => ({ ...prev, type_apprenant: parts[0] }));
+        setSecondTypeApprenant(parts[1] || "");
+      } else {
+        setSecondTypeApprenant("");
       }
     }
   }, [apprenant]);
@@ -334,7 +344,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
       organisme_financeur: formData.organisme_financeur || null,
       date_naissance: formData.date_naissance || null,
       numero_dossier_cma: formData.numero_dossier_cma?.trim() || null,
-      type_apprenant: formData.type_apprenant || null,
+      type_apprenant: secondTypeApprenant ? `${formData.type_apprenant} + ${secondTypeApprenant}` : (formData.type_apprenant || null),
       formation_choisie: secondFormation ? `${formData.selected_formation} + ${secondFormation}` : (formData.selected_formation || null),
       montant_ttc: formData.montant_ttc ? parseFloat(formData.montant_ttc) : null,
       date_formation_catalogue: selectedDateOption || null,
@@ -718,6 +728,44 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                 </p>
               )}
             </div>
+
+            {/* Second type d'apprenant */}
+            {secondTypeApprenant ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Type d'apprenant supplémentaire</Label>
+                  <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-destructive hover:text-destructive" onClick={() => setSecondTypeApprenant("")}>
+                    <X className="w-3 h-3 mr-1" /> Supprimer
+                  </Button>
+                </div>
+                <Select value={secondTypeApprenant} onValueChange={setSecondTypeApprenant}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="vtc">VTC</SelectItem>
+                    <SelectItem value="taxi">TAXI</SelectItem>
+                    <SelectItem value="ta">TA</SelectItem>
+                    <SelectItem value="va">VA</SelectItem>
+                    <SelectItem value="vtc-e">VTC E</SelectItem>
+                    <SelectItem value="taxi-e">TAXI E</SelectItem>
+                    <SelectItem value="ta-e">TA E</SelectItem>
+                    <SelectItem value="pa-vtc">PA VTC</SelectItem>
+                    <SelectItem value="pa-taxi">PA TAXI</SelectItem>
+                    <SelectItem value="rp-vtc">RP VTC</SelectItem>
+                    <SelectItem value="rp-taxi">RP TAXI</SelectItem>
+                    <SelectItem value="vtc-e-presentiel">VTC E Présentiel</SelectItem>
+                    <SelectItem value="taxi-e-presentiel">TAXI E Présentiel</SelectItem>
+                    <SelectItem value="ta-e-presentiel">TA E Présentiel</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <Button type="button" variant="outline" size="sm" className="gap-2 text-primary border-primary/30 hover:bg-primary/5" onClick={() => setSecondTypeApprenant("vtc")}>
+                <PlusCircle className="w-4 h-4" />
+                Ajouter un type d'apprenant supplémentaire
+              </Button>
+            )}
 
             {/* Créneau horaire */}
             <div className="space-y-2">

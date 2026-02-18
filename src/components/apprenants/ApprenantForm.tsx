@@ -135,6 +135,7 @@ export function ApprenantForm() {
   const [sessionsDisponibles, setSessionsDisponibles] = useState<{id: string, nom: string, date_debut: string, date_fin: string}[]>([]);
   const [documentsComplets, setDocumentsComplets] = useState(false);
   const [secondFormation, setSecondFormation] = useState("");
+  const [secondTypeApprenant, setSecondTypeApprenant] = useState("");
 
   // Prix par défaut selon la formation
   const prixFormations: Record<string, string> = {
@@ -324,6 +325,7 @@ export function ApprenantForm() {
     setDateExamenPratique("");
     setDocumentsComplets(false);
     setSecondFormation("");
+    setSecondTypeApprenant("");
   };
 
   // Ref pour éviter les doubles soumissions
@@ -359,7 +361,7 @@ export function ApprenantForm() {
       organisme_financeur: organismeFinanceur || null,
       numero_dossier_cma: numeroDossierCma.trim() || null,
       statut: typeApprenant === "prospect" ? "prospect" : "inscrit",
-      type_apprenant: typeApprenantFormation || null,
+      type_apprenant: secondTypeApprenant ? `${typeApprenantFormation} + ${secondTypeApprenant}` : (typeApprenantFormation || null),
       formation_choisie: secondFormation ? `${selectedFormation} + ${secondFormation}` : (selectedFormation || null),
       montant_ttc: montantTtc ? parseFloat(montantTtc) : null,
       date_formation_catalogue: selectedDateOption || null,
@@ -765,6 +767,44 @@ export function ApprenantForm() {
                 </p>
               )}
             </div>
+
+            {/* Second type d'apprenant */}
+            {secondTypeApprenant ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Type d'apprenant supplémentaire</Label>
+                  <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-destructive hover:text-destructive" onClick={() => setSecondTypeApprenant("")}>
+                    <X className="w-3 h-3 mr-1" /> Supprimer
+                  </Button>
+                </div>
+                <Select value={secondTypeApprenant} onValueChange={setSecondTypeApprenant}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="vtc">VTC</SelectItem>
+                    <SelectItem value="taxi">TAXI</SelectItem>
+                    <SelectItem value="ta">TA</SelectItem>
+                    <SelectItem value="va">VA</SelectItem>
+                    <SelectItem value="vtc-e">VTC E</SelectItem>
+                    <SelectItem value="taxi-e">TAXI E</SelectItem>
+                    <SelectItem value="ta-e">TA E</SelectItem>
+                    <SelectItem value="pa-vtc">PA VTC</SelectItem>
+                    <SelectItem value="pa-taxi">PA TAXI</SelectItem>
+                    <SelectItem value="rp-vtc">RP VTC</SelectItem>
+                    <SelectItem value="rp-taxi">RP TAXI</SelectItem>
+                    <SelectItem value="vtc-e-presentiel">VTC E Présentiel</SelectItem>
+                    <SelectItem value="taxi-e-presentiel">TAXI E Présentiel</SelectItem>
+                    <SelectItem value="ta-e-presentiel">TA E Présentiel</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <Button type="button" variant="outline" size="sm" className="gap-2 text-primary border-primary/30 hover:bg-primary/5" onClick={() => setSecondTypeApprenant("vtc")}>
+                <PlusCircle className="w-4 h-4" />
+                Ajouter un type d'apprenant supplémentaire
+              </Button>
+            )}
 
             {/* Créneau horaire pour formation présentiel */}
             <div className="space-y-2">
