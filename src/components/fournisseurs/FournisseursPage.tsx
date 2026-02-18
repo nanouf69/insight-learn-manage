@@ -3,11 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Copy, Loader2, Users, FileText, Receipt, Eye, Building2, CreditCard, Mail } from "lucide-react";
+import { Plus, Copy, Loader2, Users, FileText, Receipt, Eye, Building2, CreditCard, Mail, RefreshCw } from "lucide-react";
 import { EmailDialog } from "@/components/shared/EmailDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -36,6 +36,7 @@ export function FournisseursPage() {
   const { toast } = useToast();
   const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [open, setOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [nom, setNom] = useState("");
@@ -104,6 +105,25 @@ export function FournisseursPage() {
     toast({ title: `${label} copié !` });
   };
 
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-outlook-emails', {
+        body: { action: 'sync-all', userEmail: 'contact@ftransport.fr' },
+      });
+      if (error) throw error;
+      if (data?.success) {
+        toast({ title: `Synchronisation terminée : ${data.synced} nouveau(x) email(s) (${data.inbox} reçus, ${data.sent} envoyés)` });
+      } else {
+        throw new Error('Échec de la synchronisation');
+      }
+    } catch (err: any) {
+      toast({ title: 'Erreur de synchronisation', description: err.message || 'Erreur inconnue', variant: 'destructive' });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin" /></div>;
 
   return (
@@ -113,26 +133,32 @@ export function FournisseursPage() {
           <h2 className="text-xl font-semibold">Fournisseurs ({fournisseurs.length})</h2>
           <p className="text-sm text-muted-foreground">Gérez vos fournisseurs et leurs espaces dédiés</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2"><Plus className="w-4 h-4" />Nouveau fournisseur</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Nouveau fournisseur</DialogTitle></DialogHeader>
-            <form onSubmit={handleCreate} className="space-y-4 mt-4">
-              <div className="space-y-2"><Label>Nom *</Label><Input required value={nom} onChange={e => setNom(e.target.value)} placeholder="Nom du fournisseur" /></div>
-              <div className="space-y-2"><Label>Email</Label><Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@exemple.com" /></div>
-              <div className="space-y-2"><Label>Téléphone</Label><Input value={telephone} onChange={e => setTelephone(e.target.value)} placeholder="06 12 34 56 78" /></div>
-              <div className="space-y-2"><Label>Adresse</Label><Input value={adresse} onChange={e => setAdresse(e.target.value)} placeholder="Adresse complète" /></div>
-              <div className="flex justify-end gap-3 pt-2">
-                <Button type="button" variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
-                <Button type="submit" disabled={isCreating}>
-                  {isCreating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Créer
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" className="gap-2" disabled={syncing} onClick={handleSync}>
+            {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            Synchroniser Outlook
+          </Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2"><Plus className="w-4 h-4" />Nouveau fournisseur</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Nouveau fournisseur</DialogTitle></DialogHeader>
+              <form onSubmit={handleCreate} className="space-y-4 mt-4">
+                <div className="space-y-2"><Label>Nom *</Label><Input required value={nom} onChange={e => setNom(e.target.value)} placeholder="Nom du fournisseur" /></div>
+                <div className="space-y-2"><Label>Email</Label><Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@exemple.com" /></div>
+                <div className="space-y-2"><Label>Téléphone</Label><Input value={telephone} onChange={e => setTelephone(e.target.value)} placeholder="06 12 34 56 78" /></div>
+                <div className="space-y-2"><Label>Adresse</Label><Input value={adresse} onChange={e => setAdresse(e.target.value)} placeholder="Adresse complète" /></div>
+                <div className="flex justify-end gap-3 pt-2">
+                  <Button type="button" variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
+                  <Button type="submit" disabled={isCreating}>
+                    {isCreating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Créer
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Detail view */}
@@ -153,7 +179,6 @@ export function FournisseursPage() {
               <TabsTrigger value="factures" className="gap-2"><Receipt className="w-4 h-4" />Factures ({detailFactures.length})</TabsTrigger>
             </TabsList>
 
-            {/* Onglet Coordonnées */}
             <TabsContent value="coordonnees">
               <Card>
                 <CardHeader><CardTitle className="text-base">Informations professionnelles</CardTitle></CardHeader>
@@ -215,7 +240,6 @@ export function FournisseursPage() {
               </Card>
             </TabsContent>
 
-            {/* Onglet RIB / Bancaire */}
             <TabsContent value="bancaire">
               <Card>
                 <CardHeader><CardTitle className="text-base">Coordonnées bancaires</CardTitle></CardHeader>
