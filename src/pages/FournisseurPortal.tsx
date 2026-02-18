@@ -16,7 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { parseDateRange } from "@/lib/parseDateRange";
-import { Plus, Loader2, CalendarIcon, Users, FileText, Receipt, Upload, Trash2, Eye } from "lucide-react";
+import { Plus, Loader2, CalendarIcon, Users, FileText, Receipt, Upload, Trash2, Eye, CalendarDays } from "lucide-react";
 import logoFtransport from "@/assets/logo-ftransport.png";
 
 // Dates formations (same as ApprenantForm)
@@ -97,7 +97,7 @@ export default function FournisseurPortal() {
   const { token } = useParams<{ token: string }>();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [fournisseur, setFournisseur] = useState<{ id: string; nom: string; factures_only?: boolean } | null>(null);
+  const [fournisseur, setFournisseur] = useState<{ id: string; nom: string; factures_only?: boolean; formateur_id?: string | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Tab state
@@ -107,6 +107,7 @@ export default function FournisseurPortal() {
   const [apprenants, setApprenants] = useState<FournisseurApprenant[]>([]);
   const [documents, setDocuments] = useState<FournisseurDocument[]>([]);
   const [factures, setFactures] = useState<FournisseurFacture[]>([]);
+  const [planning, setPlanning] = useState<any[]>([]);
 
   // Apprenant form
   const [showForm, setShowForm] = useState(false);
@@ -151,14 +152,17 @@ export default function FournisseurPortal() {
       if (!token) { setError("Lien invalide"); setLoading(false); return; }
       const { data, error: err } = await supabase
         .from('fournisseurs')
-        .select('id, nom, actif, factures_only')
+        .select('id, nom, actif, factures_only, formateur_id')
         .eq('token', token)
         .maybeSingle();
       if (err || !data) { setError("Lien invalide ou expiré"); setLoading(false); return; }
       if (!data.actif) { setError("Ce compte fournisseur est désactivé"); setLoading(false); return; }
       const facOnly = (data as any).factures_only === true;
-      setFournisseur({ id: data.id, nom: data.nom, factures_only: facOnly });
-      setActiveTab(facOnly ? "factures" : "apprenants");
+      const formateurId = (data as any).formateur_id || null;
+      setFournisseur({ id: data.id, nom: data.nom, factures_only: facOnly, formateur_id: formateurId });
+      if (formateurId) setActiveTab("planning");
+      else if (facOnly) setActiveTab("factures");
+      else setActiveTab("apprenants");
       setLoading(false);
     };
     loadFournisseur();
@@ -176,6 +180,15 @@ export default function FournisseurPortal() {
       if (appRes.data) setApprenants(appRes.data);
       if (docRes.data) setDocuments(docRes.data as FournisseurDocument[]);
       if (facRes.data) setFactures(facRes.data as FournisseurFacture[]);
+
+      // Charger le planning si c'est un formateur
+      if (fournisseur.formateur_id) {
+        const { data: planData } = await supabase
+          .from('session_formateurs')
+          .select('session_id, heures_effectuees, sessions(id, nom, date_debut, date_fin, heure_debut, heure_fin, lieu, type_session, formation_id, formations(nom))')
+          .eq('formateur_id', fournisseur.formateur_id);
+        if (planData) setPlanning(planData);
+      }
     };
     load();
   }, [fournisseur, showForm]);
@@ -386,8 +399,11 @@ export default function FournisseurPortal() {
       <div className="max-w-6xl mx-auto p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           {fournisseur?.factures_only ? (
-            <TabsList className="grid w-full grid-cols-1 mb-6">
-              <TabsTrigger value="factures" className="gap-2"><Receipt className="w-4 h-4" />Factures</TabsTrigger>
+            <TabsList className={`grid w-full mb-6 ${fournisseur.formateur_id ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              {fournisseur.formateur_id && (
+                <TabsTrigger value="planning" className="gap-2"><CalendarDays className="w-4 h-4" />Mon planning</TabsTrigger>
+              )}
+              <TabsTrigger value="factures" className="gap-2"><Receipt className="w-4 h-4" />Mes factures</TabsTrigger>
             </TabsList>
           ) : (
             <TabsList className="grid w-full grid-cols-3 mb-6">
@@ -692,6 +708,60 @@ export default function FournisseurPortal() {
               )}
             </div>
           </TabsContent>
+
+          {/* ============ TAB PLANNING (formateurs uniquement) ============ */}
+          {fournisseur?.formateur_id && (
+            <TabsContent value="planning">
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold">Mon planning de cours</h2>
+                {planning.length === 0 ? (
+                  <Card>
+                    <CardContent className="pt-6 text-center text-muted-foreground">
+                      Aucune session planifiée pour le moment.
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid gap-3">
+                    {planning
+                      .sort((a, b) => {
+                        const da = a.sessions?.date_debut || '';
+                        const db = b.sessions?.date_debut || '';
+                        return da.localeCompare(db);
+                      })
+                      .map((p: any) => {
+                        const s = p.sessions;
+                        if (!s) return null;
+                        const isPast = s.date_fin && new Date(s.date_fin) < new Date();
+                        return (
+                          <Card key={p.session_id} className={isPast ? 'opacity-60' : ''}>
+                            <CardContent className="pt-4">
+                              <div className="flex justify-between items-start">
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-2">
+                                    <p className="font-semibold">{s.nom || s.formations?.nom || '—'}</p>
+                                    <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                                      {s.type_session === 'pratique' ? '🚗 Pratique' : '📚 Théorique'}
+                                    </span>
+                                    {isPast && <span className="text-xs text-muted-foreground">(passée)</span>}
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">
+                                    📅 {new Date(s.date_debut).toLocaleDateString('fr-FR')}
+                                    {s.date_fin !== s.date_debut ? ` → ${new Date(s.date_fin).toLocaleDateString('fr-FR')}` : ''}
+                                    {s.heure_debut ? ` · ${s.heure_debut}${s.heure_fin ? ` – ${s.heure_fin}` : ''}` : ''}
+                                  </p>
+                                  {s.lieu && <p className="text-sm text-muted-foreground">📍 {s.lieu}</p>}
+                                  {p.heures_effectuees ? <p className="text-sm text-muted-foreground">⏱ {p.heures_effectuees}h effectuées</p> : null}
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </div>
