@@ -1211,6 +1211,7 @@ export type Database = {
           formateur_id: string
           heures_effectuees: number | null
           id: string
+          presence: string
           session_id: string
         }
         Insert: {
@@ -1218,6 +1219,7 @@ export type Database = {
           formateur_id: string
           heures_effectuees?: number | null
           id?: string
+          presence?: string
           session_id: string
         }
         Update: {
@@ -1225,6 +1227,7 @@ export type Database = {
           formateur_id?: string
           heures_effectuees?: number | null
           id?: string
+          presence?: string
           session_id?: string
         }
         Relationships: [
