@@ -97,7 +97,7 @@ export default function FournisseurPortal() {
   const { token } = useParams<{ token: string }>();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [fournisseur, setFournisseur] = useState<{ id: string; nom: string } | null>(null);
+  const [fournisseur, setFournisseur] = useState<{ id: string; nom: string; factures_only?: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Tab state
@@ -142,6 +142,7 @@ export default function FournisseurPortal() {
   const [factureDestinataire, setFactureDestinataire] = useState("Finally Academy");
   const [factureMontant, setFactureMontant] = useState("");
   const [factureDescription, setFactureDescription] = useState("Prestation de services");
+  const [factureMoisAnnee, setFactureMoisAnnee] = useState("");
   const [isUploadingFacture, setIsUploadingFacture] = useState(false);
 
   // Load fournisseur by token
@@ -150,12 +151,14 @@ export default function FournisseurPortal() {
       if (!token) { setError("Lien invalide"); setLoading(false); return; }
       const { data, error: err } = await supabase
         .from('fournisseurs')
-        .select('id, nom, actif')
+        .select('id, nom, actif, factures_only')
         .eq('token', token)
         .maybeSingle();
       if (err || !data) { setError("Lien invalide ou expiré"); setLoading(false); return; }
       if (!data.actif) { setError("Ce compte fournisseur est désactivé"); setLoading(false); return; }
-      setFournisseur({ id: data.id, nom: data.nom });
+      const facOnly = (data as any).factures_only === true;
+      setFournisseur({ id: data.id, nom: data.nom, factures_only: facOnly });
+      setActiveTab(facOnly ? "factures" : "apprenants");
       setLoading(false);
     };
     loadFournisseur();
@@ -334,10 +337,11 @@ export default function FournisseurPortal() {
         destinataire: factureDestinataire,
         montant: factureMontant ? parseFloat(factureMontant) : null,
         description: factureDescription || null,
-      });
+        mois_annee: factureMoisAnnee || null,
+      } as any);
       if (insertErr) throw insertErr;
       toast({ title: "Facture envoyée", description: `Facture pour ${factureDestinataire} envoyée avec succès.` });
-      setFactureDestinataire("Finally Academy"); setFactureMontant(""); setFactureDescription("Prestation de services"); fileInput.value = "";
+      setFactureDestinataire("Finally Academy"); setFactureMontant(""); setFactureDescription("Prestation de services"); setFactureMoisAnnee(""); fileInput.value = "";
       const { data } = await supabase.from('fournisseur_factures').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false });
       if (data) setFactures(data as FournisseurFacture[]);
     } catch (err: any) {
@@ -381,11 +385,17 @@ export default function FournisseurPortal() {
 
       <div className="max-w-6xl mx-auto p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="apprenants" className="gap-2"><Users className="w-4 h-4" />Apprenants</TabsTrigger>
-            <TabsTrigger value="documents" className="gap-2"><FileText className="w-4 h-4" />Documents</TabsTrigger>
-            <TabsTrigger value="factures" className="gap-2"><Receipt className="w-4 h-4" />Factures</TabsTrigger>
-          </TabsList>
+          {fournisseur?.factures_only ? (
+            <TabsList className="grid w-full grid-cols-1 mb-6">
+              <TabsTrigger value="factures" className="gap-2"><Receipt className="w-4 h-4" />Factures</TabsTrigger>
+            </TabsList>
+          ) : (
+            <TabsList className="grid w-full grid-cols-3 mb-6">
+              <TabsTrigger value="apprenants" className="gap-2"><Users className="w-4 h-4" />Apprenants</TabsTrigger>
+              <TabsTrigger value="documents" className="gap-2"><FileText className="w-4 h-4" />Documents</TabsTrigger>
+              <TabsTrigger value="factures" className="gap-2"><Receipt className="w-4 h-4" />Factures</TabsTrigger>
+            </TabsList>
+          )}
 
           {/* ============ TAB APPRENANTS ============ */}
           <TabsContent value="apprenants">
@@ -624,6 +634,16 @@ export default function FournisseurPortal() {
                         </SelectContent>
                       </Select>
                     </div>
+                    <div className="space-y-2">
+                      <Label>Mois et année concernés *</Label>
+                      <Input
+                        type="month"
+                        value={factureMoisAnnee}
+                        onChange={e => setFactureMoisAnnee(e.target.value)}
+                        required={!!fournisseur?.factures_only}
+                      />
+                      <p className="text-xs text-muted-foreground">Indiquez le mois et l'année que cette facture couvre</p>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Montant (€)</Label>
@@ -658,6 +678,7 @@ export default function FournisseurPortal() {
                           <p className="font-medium">{f.nom_fichier}</p>
                           <p className="text-sm text-muted-foreground">
                             Destinataire : <span className="font-medium">{f.destinataire}</span>
+                            {(f as any).mois_annee ? ` • Période : ${(f as any).mois_annee}` : ""}
                             {f.montant ? ` • ${f.montant.toLocaleString('fr-FR')} €` : ""}
                             {" • "}{new Date(f.created_at).toLocaleDateString('fr-FR')}
                           </p>
