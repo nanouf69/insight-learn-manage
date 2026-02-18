@@ -124,6 +124,12 @@ const hours = Array.from({ length: 14 }, (_, i) => i + 8); // 8, 9, 10, ... 21
 // Hauteur d'une heure en pixels
 const HOUR_HEIGHT = 60;
 
+// Helper pour normaliser une heure au format HH:MM (évite "9:00" → force "09:00")
+const normalizeHeure = (time: string): string => {
+  const [h, m] = time.split(':');
+  return `${h.padStart(2, '0')}:${(m || '00').padStart(2, '0')}`;
+};
+
 // Helper pour convertir l'heure texte en décimal
 const timeToDecimal = (time: string): number => {
   const [h, m] = time.split(':').map(Number);
@@ -320,8 +326,8 @@ export function AgendaView() {
         discipline_color: disciplineData?.color || '#6366f1',
         formation: newBlock.formation,
         jour: dayOfWeek,
-        heure_debut: newBlock.startHour,
-        heure_fin: newBlock.endHour,
+        heure_debut: normalizeHeure(newBlock.startHour),
+        heure_fin: normalizeHeure(newBlock.endHour),
         semaine_debut: weekStartDate,
       })
       .select()
@@ -432,8 +438,8 @@ export function AgendaView() {
         discipline_nom: disciplineData?.nom || editingBlock.title,
         discipline_color: disciplineData?.color || editingBlock.disciplineColor || '#6366f1',
         formation: editBlock.formation,
-        heure_debut: editBlock.startHour,
-        heure_fin: editBlock.endHour,
+        heure_debut: normalizeHeure(editBlock.startHour),
+        heure_fin: normalizeHeure(editBlock.endHour),
       })
       .eq('id', editingBlock.id);
 
