@@ -1,10 +1,11 @@
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Clock, Mail, Phone, Search, GraduationCap, Trash2, Loader2, Pencil } from "lucide-react";
+import { Clock, Mail, Phone, Search, GraduationCap, Trash2, Loader2, Pencil, RefreshCw } from "lucide-react";
 import { EmailDialog } from "@/components/shared/EmailDialog";
 import {
   AlertDialog,
@@ -19,7 +20,6 @@ import {
 import { FormateurForm } from "./FormateurForm";
 import { FormateurEditForm } from "./FormateurEditForm";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface Formateur {
@@ -42,6 +42,7 @@ interface Formateur {
 
 export function FormateursList() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [syncing, setSyncing] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; id: string | null; name: string }>({
     open: false,
     id: null,
@@ -122,7 +123,36 @@ export function FormateursList() {
           <h1 className="text-2xl font-bold text-foreground">Formateurs</h1>
           <p className="text-muted-foreground">Gérez votre équipe de formateurs</p>
         </div>
-        <FormateurForm />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            className="gap-2"
+            disabled={syncing}
+            onClick={async () => {
+              setSyncing(true);
+              try {
+                const { data, error } = await supabase.functions.invoke('sync-outlook-emails', {
+                  body: { action: 'sync-all', userEmail: 'contact@ftransport.fr' },
+                });
+                if (error) throw error;
+                if (data?.success) {
+                  toast.success(`Synchronisation terminée : ${data.synced} nouveau(x) email(s)`);
+                  queryClient.invalidateQueries({ queryKey: ['formateur-emails'] });
+                } else {
+                  throw new Error('Échec');
+                }
+              } catch (err: any) {
+                toast.error('Erreur : ' + (err.message || 'Erreur inconnue'));
+              } finally {
+                setSyncing(false);
+              }
+            }}
+          >
+            {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            Synchroniser Outlook
+          </Button>
+          <FormateurForm />
+        </div>
       </div>
 
       {/* Stats */}
