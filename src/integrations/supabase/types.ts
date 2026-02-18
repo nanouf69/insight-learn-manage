@@ -921,6 +921,7 @@ export type Database = {
           destinataire: string
           fournisseur_id: string
           id: string
+          mois_annee: string | null
           montant: number | null
           nom_fichier: string
           url: string
@@ -931,6 +932,7 @@ export type Database = {
           destinataire: string
           fournisseur_id: string
           id?: string
+          mois_annee?: string | null
           montant?: number | null
           nom_fichier: string
           url: string
@@ -941,6 +943,7 @@ export type Database = {
           destinataire?: string
           fournisseur_id?: string
           id?: string
+          mois_annee?: string | null
           montant?: number | null
           nom_fichier?: string
           url?: string
@@ -964,6 +967,7 @@ export type Database = {
           code_postal: string | null
           created_at: string
           email: string | null
+          factures_only: boolean | null
           iban: string | null
           id: string
           nom: string
@@ -985,6 +989,7 @@ export type Database = {
           code_postal?: string | null
           created_at?: string
           email?: string | null
+          factures_only?: boolean | null
           iban?: string | null
           id?: string
           nom: string
@@ -1006,6 +1011,7 @@ export type Database = {
           code_postal?: string | null
           created_at?: string
           email?: string | null
+          factures_only?: boolean | null
           iban?: string | null
           id?: string
           nom?: string
