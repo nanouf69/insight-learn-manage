@@ -184,12 +184,13 @@ export default function FournisseurPortal() {
       if (docRes.data) setDocuments(docRes.data as FournisseurDocument[]);
       if (facRes.data) setFactures(facRes.data as FournisseurFacture[]);
 
-      // Charger le planning si c'est un formateur
+      // Charger le planning si c'est un formateur (depuis agenda_blocs)
       if (fournisseur.formateur_id) {
         const { data: planData } = await supabase
-          .from('session_formateurs')
-          .select('session_id, heures_effectuees, presence, sessions(id, nom, date_debut, date_fin, heure_debut, heure_fin, lieu, type_session, formation_id, formations(nom))')
-          .eq('formateur_id', fournisseur.formateur_id);
+          .from('agenda_blocs')
+          .select('id, discipline_nom, formation, heure_debut, heure_fin, semaine_debut, jour, discipline_color')
+          .eq('formateur_id', fournisseur.formateur_id)
+          .order('semaine_debut', { ascending: true });
         if (planData) setPlanning(planData);
       }
     };
@@ -751,59 +752,62 @@ export default function FournisseurPortal() {
                 {planning.length === 0 ? (
                   <Card>
                     <CardContent className="pt-6 text-center text-muted-foreground">
-                      Aucune session planifiée pour le moment.
+                      Aucun créneau planifié pour le moment.
                     </CardContent>
                   </Card>
-                ) : (
-                  <div className="grid gap-3">
-                    {planning
-                      .sort((a, b) => {
-                        const da = a.sessions?.date_debut || '';
-                        const db = b.sessions?.date_debut || '';
-                        return da.localeCompare(db);
-                      })
-                      .map((p: any) => {
-                        const s = p.sessions;
-                        if (!s) return null;
-                        const isPast = s.date_fin && new Date(s.date_fin) < new Date();
-                        const presence = p.presence || 'present';
+                ) : (() => {
+                  // Grouper par date réelle (semaine_debut + jour)
+                  const grouped: Record<string, typeof planning> = {};
+                  planning.forEach((bloc: any) => {
+                    const [year, month, day] = bloc.semaine_debut.split('-').map(Number);
+                    const base = new Date(year, month - 1, day);
+                    base.setDate(base.getDate() + bloc.jour);
+                    const dateKey = `${base.getFullYear()}-${String(base.getMonth()+1).padStart(2,'0')}-${String(base.getDate()).padStart(2,'0')}`;
+                    if (!grouped[dateKey]) grouped[dateKey] = [];
+                    grouped[dateKey].push({ ...bloc, _dateObj: base });
+                  });
+                  const JOURS = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+                  const MOIS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+                  const sortedKeys = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
+                  return (
+                    <div className="space-y-4">
+                      {sortedKeys.map((dateKey) => {
+                        const blocs = grouped[dateKey];
+                        const d = blocs[0]._dateObj as Date;
+                        const isPast = d < new Date();
+                        const label = `${JOURS[d.getDay()]} ${d.getDate()} ${MOIS[d.getMonth()]} ${d.getFullYear()}`;
                         return (
-                          <Card key={p.session_id} className={isPast ? 'opacity-70' : ''}>
-                            <CardContent className="pt-4">
-                              <div className="flex justify-between items-start">
-                                <div className="space-y-1 flex-1">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <p className="font-semibold">{s.nom || s.formations?.nom || '—'}</p>
-                                    <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                                      {s.type_session === 'pratique' ? '🚗 Pratique' : '📚 Théorique'}
-                                    </span>
-                                    {isPast && <span className="text-xs text-muted-foreground">(passée)</span>}
-                                  </div>
-                                  <p className="text-sm text-muted-foreground">
-                                    📅 {new Date(s.date_debut).toLocaleDateString('fr-FR')}
-                                    {s.date_fin !== s.date_debut ? ` → ${new Date(s.date_fin).toLocaleDateString('fr-FR')}` : ''}
-                                    {s.heure_debut ? ` · ${s.heure_debut}${s.heure_fin ? ` – ${s.heure_fin}` : ''}` : ''}
-                                  </p>
-                                  {s.lieu && <p className="text-sm text-muted-foreground">📍 {s.lieu}</p>}
-                                  {p.heures_effectuees ? <p className="text-sm text-muted-foreground">⏱ {p.heures_effectuees}h effectuées</p> : null}
-                                </div>
-                                {/* Badge présence (lecture seule côté formateur) */}
-                                <span className={`text-xs px-2 py-1 rounded-full font-medium border flex-shrink-0 ml-3 ${
-                                  presence === 'present'
-                                    ? 'bg-green-100 text-green-700 border-green-300'
-                                    : presence === 'absent'
-                                    ? 'bg-red-100 text-red-700 border-red-300'
-                                    : 'bg-orange-100 text-orange-700 border-orange-300'
-                                }`}>
-                                  {presence === 'present' ? '✓ Présent' : presence === 'absent' ? '✗ Absent' : '~ Excusé'}
-                                </span>
-                              </div>
-                            </CardContent>
-                          </Card>
+                          <div key={dateKey} className={`border rounded-xl overflow-hidden ${isPast ? 'opacity-75' : ''}`}>
+                            <div className="flex items-center justify-between px-4 py-2 bg-muted/40 border-b">
+                              <span className="font-semibold text-sm">{label}</span>
+                              {isPast && <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">Passé</span>}
+                            </div>
+                            <div className="divide-y">
+                              {(blocs as any[])
+                                .sort((a, b) => a.heure_debut.localeCompare(b.heure_debut))
+                                .map((bloc: any) => {
+                                  const [sh, sm] = bloc.heure_debut.split(':').map(Number);
+                                  const [eh, em] = bloc.heure_fin.split(':').map(Number);
+                                  const heures = (eh + em/60) - (sh + sm/60);
+                                  return (
+                                    <div key={bloc.id} className="flex items-center gap-3 px-4 py-3">
+                                      <div className="w-3 h-10 rounded-sm shrink-0" style={{ backgroundColor: bloc.discipline_color || '#6366f1' }} />
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium">{bloc.discipline_nom}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                          {bloc.heure_debut} – {bloc.heure_fin} · {heures.toFixed(1)}h · {bloc.formation}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          </div>
                         );
                       })}
-                  </div>
-                )}
+                    </div>
+                  );
+                })()}
               </div>
             </TabsContent>
           )}
