@@ -1949,10 +1949,11 @@ export function ExamenReussitePage() {
                               })
                             }
                           >
-                            <SelectTrigger className={`w-28 mx-auto ${
+                            <SelectTrigger className={`w-36 mx-auto ${
                               resultat === 'oui' ? 'border-emerald-500 text-emerald-700 bg-emerald-50' :
                               resultat === 'non' ? 'border-red-500 text-red-700 bg-red-50' :
-                              resultat === 'absent' ? 'border-orange-500 text-orange-700 bg-orange-50' : ''
+                              resultat === 'absent' ? 'border-orange-500 text-orange-700 bg-orange-50' :
+                              resultat === 'deplace' ? 'border-blue-500 text-blue-700 bg-blue-50' : ''
                             }`}>
                               <SelectValue />
                             </SelectTrigger>
@@ -1961,6 +1962,7 @@ export function ExamenReussitePage() {
                               <SelectItem value="oui">✅ Oui</SelectItem>
                               <SelectItem value="non">❌ Non</SelectItem>
                               <SelectItem value="absent">🔶 Absent</SelectItem>
+                              <SelectItem value="deplace">📅 Déplacé prochaine session</SelectItem>
                             </SelectContent>
                           </Select>
                         </TableCell>
