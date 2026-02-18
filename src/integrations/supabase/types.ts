@@ -968,6 +968,7 @@ export type Database = {
           created_at: string
           email: string | null
           factures_only: boolean | null
+          formateur_id: string | null
           iban: string | null
           id: string
           nom: string
@@ -990,6 +991,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           factures_only?: boolean | null
+          formateur_id?: string | null
           iban?: string | null
           id?: string
           nom: string
@@ -1012,6 +1014,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           factures_only?: boolean | null
+          formateur_id?: string | null
           iban?: string | null
           id?: string
           nom?: string
@@ -1025,7 +1028,15 @@ export type Database = {
           updated_at?: string
           ville?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fournisseurs_formateur_id_fkey"
+            columns: ["formateur_id"]
+            isOneToOne: false
+            referencedRelation: "formateurs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       organismes: {
         Row: {
