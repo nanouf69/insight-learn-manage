@@ -7,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Copy, Loader2, Users, FileText, Receipt, Eye, Building2, CreditCard, Mail, RefreshCw } from "lucide-react";
+import { Plus, Copy, Loader2, Users, FileText, Receipt, Eye, Building2, CreditCard, Mail, RefreshCw, SendHorizonal } from "lucide-react";
 import { EmailDialog } from "@/components/shared/EmailDialog";
+import { BulkEmailSender } from "@/components/shared/BulkEmailSender";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Fournisseur {
@@ -37,6 +38,7 @@ export function FournisseursPage() {
   const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [bulkEmailFournisseur, setBulkEmailFournisseur] = useState<Fournisseur | null>(null);
   const [open, setOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [nom, setNom] = useState("");
@@ -348,6 +350,11 @@ export function FournisseursPage() {
                     <Button variant="outline" size="sm" onClick={() => copyLink(f.token)} className="gap-1"><Copy className="w-3.5 h-3.5" />Copier le lien</Button>
                     <Button variant="outline" size="sm" onClick={() => viewDetails(f)} className="gap-1"><Eye className="w-3.5 h-3.5" />Voir</Button>
                     {f.email && (
+                      <Button variant="outline" size="sm" onClick={() => setBulkEmailFournisseur(f)} className="gap-1">
+                        <SendHorizonal className="w-3.5 h-3.5" />Notifier
+                      </Button>
+                    )}
+                    {f.email && (
                       <Button variant="outline" size="sm" onClick={() => { setEmailTarget(f); setEmailDialogOpen(true); }} className="gap-1">
                         <Mail className="w-3.5 h-3.5" />Email
                       </Button>
@@ -371,6 +378,92 @@ export function FournisseursPage() {
           contactName={emailTarget.nom}
           contactEmail={emailTarget.email}
           queryKey="fournisseur-emails"
+        />
+      )}
+
+      {/* Notification individuelle fournisseur (ex: Prima Nettoyage) */}
+      {bulkEmailFournisseur?.email && (
+        <BulkEmailSender
+          open={!!bulkEmailFournisseur}
+          onOpenChange={(open) => { if (!open) setBulkEmailFournisseur(null); }}
+          title={`Notification — ${bulkEmailFournisseur.nom}`}
+          description="Informez ce prestataire qu'il doit désormais déposer ses factures sur la plateforme."
+          subject="🧾 Dépôt de vos factures — Plateforme FTRANSPORT"
+          recipients={[{ id: bulkEmailFournisseur.id, name: bulkEmailFournisseur.nom, email: bulkEmailFournisseur.email! }]}
+          getHtmlBody={(recipient) => {
+            const portalUrl = `${window.location.origin}/fournisseur/${bulkEmailFournisseur.token}`;
+            return `<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#f4f7fb;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f7fb;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+        <!-- Header -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#1a3a5c 0%,#2563eb 100%);padding:36px 40px;text-align:center;">
+            <p style="margin:0;font-size:28px;font-weight:800;color:#ffffff;letter-spacing:2px;">FTRANSPORT</p>
+            <p style="margin:6px 0 0;font-size:13px;color:#93c5fd;letter-spacing:1px;">CENTRE DE FORMATION VTC & TAXI</p>
+          </td>
+        </tr>
+        <!-- Body -->
+        <tr>
+          <td style="padding:40px;">
+            <p style="margin:0 0 8px;font-size:15px;color:#64748b;">Bonjour <strong style="color:#1e293b;">${recipient.name}</strong>,</p>
+            <p style="margin:16px 0;font-size:15px;color:#334155;line-height:1.7;">
+              À partir de maintenant, nous vous demandons de bien vouloir <strong>déposer vos factures directement sur notre plateforme dédiée</strong>.
+            </p>
+            <!-- CTA Box -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+              <tr>
+                <td style="padding:20px 24px;background:#eff6ff;border-radius:10px;border-left:4px solid #2563eb;">
+                  <p style="margin:0;font-size:14px;color:#1e40af;font-weight:700;">🧾 Comment déposer votre facture ?</p>
+                  <p style="margin:10px 0 0;font-size:13px;color:#334155;line-height:1.7;">
+                    1. Accédez à votre espace personnel via le lien ci-dessous<br>
+                    2. Cliquez sur l'onglet <strong>"Factures"</strong><br>
+                    3. Uploadez votre facture au format PDF
+                  </p>
+                  <p style="margin:16px 0 0;text-align:center;">
+                    <a href="${portalUrl}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:700;">
+                      Accéder à mon espace →
+                    </a>
+                  </p>
+                </td>
+              </tr>
+            </table>
+            <p style="margin:16px 0 8px;font-size:14px;color:#64748b;line-height:1.6;">
+              Ce lien est personnel et sécurisé. Il vous permettra de soumettre vos factures et de suivre vos échanges avec notre équipe.
+            </p>
+            <p style="margin:0;font-size:14px;color:#64748b;">
+              Pour toute question, n'hésitez pas à nous contacter par retour d'email.
+            </p>
+          </td>
+        </tr>
+        <!-- Footer -->
+        <tr>
+          <td style="background:#f8fafc;padding:24px 40px;border-top:1px solid #e2e8f0;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td>
+                  <p style="margin:0;font-size:13px;font-weight:700;color:#1e293b;">FTRANSPORT</p>
+                  <p style="margin:2px 0 0;font-size:12px;color:#64748b;">Centre de formation VTC & TAXI</p>
+                  <p style="margin:2px 0 0;font-size:12px;color:#64748b;">86 Route de Genas, 69003 Lyon</p>
+                </td>
+                <td align="right">
+                  <p style="margin:0;font-size:12px;color:#64748b;">📞 04.28.29.60.91</p>
+                  <p style="margin:2px 0 0;font-size:12px;color:#64748b;">📧 contact@ftransport.fr</p>
+                  <p style="margin:2px 0 0;font-size:12px;color:#64748b;">🕐 Lun–Ven, 9h–18h</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+          }}
         />
       )}
     </div>

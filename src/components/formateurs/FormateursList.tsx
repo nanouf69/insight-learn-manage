@@ -5,8 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Clock, Mail, Phone, Search, GraduationCap, Trash2, Loader2, Pencil, RefreshCw } from "lucide-react";
+import { Clock, Mail, Phone, Search, GraduationCap, Trash2, Loader2, Pencil, RefreshCw, SendHorizonal } from "lucide-react";
 import { EmailDialog } from "@/components/shared/EmailDialog";
+import { BulkEmailSender } from "@/components/shared/BulkEmailSender";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,6 +44,7 @@ interface Formateur {
 export function FormateursList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [syncing, setSyncing] = useState(false);
+  const [bulkEmailOpen, setBulkEmailOpen] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; id: string | null; name: string }>({
     open: false,
     id: null,
@@ -127,6 +129,14 @@ export function FormateursList() {
           <Button
             variant="outline"
             className="gap-2"
+            onClick={() => setBulkEmailOpen(true)}
+          >
+            <SendHorizonal className="w-4 h-4" />
+            Envoyer aux formateurs
+          </Button>
+          <Button
+            variant="outline"
+            className="gap-2"
             disabled={syncing}
             onClick={async () => {
               setSyncing(true);
@@ -165,7 +175,7 @@ export function FormateursList() {
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-emerald-600">
+            <p className="text-2xl font-bold text-primary/80">
               {formateurs.filter(f => f.type === 'interne').length}
             </p>
             <p className="text-sm text-muted-foreground">Internes</p>
@@ -173,7 +183,7 @@ export function FormateursList() {
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-amber-600">
+            <p className="text-2xl font-bold text-muted-foreground">
               {formateurs.filter(f => f.type === 'externe').length}
             </p>
             <p className="text-sm text-muted-foreground">Externes</p>
@@ -338,6 +348,88 @@ export function FormateursList() {
           queryKey="formateur-emails"
         />
       )}
+
+      {/* Envoi en masse aux formateurs */}
+      <BulkEmailSender
+        open={bulkEmailOpen}
+        onOpenChange={setBulkEmailOpen}
+        title="Notification aux formateurs"
+        description="Informez tous vos formateurs qu'ils peuvent désormais consulter leur agenda et déposer leurs factures sur la plateforme."
+        subject="📅 Accès à votre agenda & dépôt de vos factures — FTRANSPORT"
+        recipients={formateurs
+          .filter(f => f.email)
+          .map(f => ({ id: f.id, name: `${f.prenom} ${f.nom}`, email: f.email! }))}
+        getHtmlBody={(recipient) => {
+          const portalUrl = `https://insight-learn-manage.lovable.app`;
+          return `<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#f4f7fb;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f7fb;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+        <!-- Header -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#1a3a5c 0%,#2563eb 100%);padding:36px 40px;text-align:center;">
+            <p style="margin:0;font-size:28px;font-weight:800;color:#ffffff;letter-spacing:2px;">FTRANSPORT</p>
+            <p style="margin:6px 0 0;font-size:13px;color:#93c5fd;letter-spacing:1px;">CENTRE DE FORMATION VTC & TAXI</p>
+          </td>
+        </tr>
+        <!-- Body -->
+        <tr>
+          <td style="padding:40px;">
+            <p style="margin:0 0 8px;font-size:15px;color:#64748b;">Bonjour <strong style="color:#1e293b;">${recipient.name}</strong>,</p>
+            <p style="margin:16px 0;font-size:15px;color:#334155;line-height:1.7;">
+              Nous avons le plaisir de vous informer que votre <strong>espace formateur</strong> est désormais disponible sur notre plateforme. Vous pouvez dès maintenant :
+            </p>
+            <!-- Features -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+              <tr>
+                <td style="padding:14px 18px;background:#eff6ff;border-radius:8px;border-left:4px solid #2563eb;margin-bottom:12px;">
+                  <p style="margin:0;font-size:14px;color:#1e40af;"><strong>📅 Consulter votre agenda</strong></p>
+                  <p style="margin:4px 0 0;font-size:13px;color:#3b82f6;">Retrouvez toutes vos sessions planifiées, horaires et formations assignées en temps réel.</p>
+                </td>
+              </tr>
+              <tr><td style="padding:6px 0;"></td></tr>
+              <tr>
+                <td style="padding:14px 18px;background:#f0fdf4;border-radius:8px;border-left:4px solid #16a34a;">
+                  <p style="margin:0;font-size:14px;color:#15803d;"><strong>🧾 Déposer vos factures</strong></p>
+                  <p style="margin:4px 0 0;font-size:13px;color:#16a34a;">Uploadez directement vos factures depuis votre portail personnel. Votre lien d'accès vous sera transmis séparément.</p>
+                </td>
+              </tr>
+            </table>
+            <p style="margin:24px 0 8px;font-size:14px;color:#64748b;line-height:1.6;">
+              Pour tout accès ou question, n'hésitez pas à nous contacter par retour d'email ou par téléphone.
+            </p>
+            <p style="margin:0;font-size:14px;color:#64748b;">Nous vous souhaitons une excellente journée.</p>
+          </td>
+        </tr>
+        <!-- Footer -->
+        <tr>
+          <td style="background:#f8fafc;padding:24px 40px;border-top:1px solid #e2e8f0;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td>
+                  <p style="margin:0;font-size:13px;font-weight:700;color:#1e293b;">FTRANSPORT</p>
+                  <p style="margin:2px 0 0;font-size:12px;color:#64748b;">Centre de formation VTC & TAXI</p>
+                  <p style="margin:2px 0 0;font-size:12px;color:#64748b;">86 Route de Genas, 69003 Lyon</p>
+                </td>
+                <td align="right">
+                  <p style="margin:0;font-size:12px;color:#64748b;">📞 04.28.29.60.91</p>
+                  <p style="margin:2px 0 0;font-size:12px;color:#64748b;">📧 contact@ftransport.fr</p>
+                  <p style="margin:2px 0 0;font-size:12px;color:#64748b;">🕐 Lun–Ven, 9h–18h</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+        }}
+      />
     </div>
   );
 }
