@@ -219,18 +219,26 @@ export function ExamenReussitePage() {
     },
   });
 
-  // Fetch apprenants marqués "Déplacé à la prochaine session" dans les sessions pratiques
+  // Fetch apprenants marqués "Déplacé à la prochaine session"
+  // Source 1 : session_apprenants.presence_pratique = 'deplace' (candidats inscrits en session pratique)
+  // Source 2 : apprenants.resultat_examen_pratique = 'deplace' (candidats sans session pratique, ex: Sarah)
   const { data: deplacesSessionPratique } = useQuery({
     queryKey: ['deplaces-session-pratique'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('session_apprenants')
-        .select('apprenant_id, session_id, sessions!inner(type_session)')
-        .eq('presence_pratique', 'deplace')
-        .eq('sessions.type_session', 'pratique');
-      if (error) throw error;
-      const ids = [...new Set((data || []).map((d: any) => d.apprenant_id))];
-      return ids;
+      const [{ data: dataSession }, { data: dataApprenants }] = await Promise.all([
+        supabase
+          .from('session_apprenants')
+          .select('apprenant_id, session_id, sessions!inner(type_session)')
+          .eq('presence_pratique', 'deplace')
+          .eq('sessions.type_session', 'pratique'),
+        supabase
+          .from('apprenants')
+          .select('id')
+          .eq('resultat_examen_pratique', 'deplace'),
+      ]);
+      const idsSession = (dataSession || []).map((d: any) => d.apprenant_id);
+      const idsApprenants = (dataApprenants || []).map((d: any) => d.id);
+      return [...new Set([...idsSession, ...idsApprenants])];
     },
   });
 
