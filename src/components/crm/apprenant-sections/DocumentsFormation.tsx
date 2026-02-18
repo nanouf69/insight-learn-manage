@@ -1,8 +1,9 @@
 import { useState, useRef } from "react";
-import { FileText, Download, CheckCircle2, Mail, ClipboardList, Upload, Eye } from "lucide-react";
+import { FileText, Download, CheckCircle2, Mail, ClipboardList, Upload, Eye, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { generateAttestationInscription } from "@/lib/pdf/attestation-inscription";
 import { generateAttestationFinFormation } from "@/lib/pdf/attestation-fin-formation";
 import { generateAttestationFranceTravail } from "@/lib/pdf/attestation-france-travail";
@@ -22,6 +23,7 @@ type DocType = 'inscription' | 'fin-formation' | 'france-travail' | 'bienvenue' 
 export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
   const [generatingDoc, setGeneratingDoc] = useState<string | null>(null);
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
+  const [selectedSessionId, setSelectedSessionId] = useState<string>('__all__');
   const queryClient = useQueryClient();
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
@@ -48,6 +50,24 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
     },
   });
 
+  // Sessions triées par proximité de date (la plus proche en premier)
+  const sortedSessions = sessionData
+    ? [...sessionData].sort((a, b) => {
+        const sA = a.sessions as any;
+        const sB = b.sessions as any;
+        if (!sA || !sB) return 0;
+        const now = new Date().getTime();
+        const diffA = Math.abs(new Date(sA.date_debut).getTime() - now);
+        const diffB = Math.abs(new Date(sB.date_debut).getTime() - now);
+        return diffA - diffB;
+      })
+    : [];
+
+  // Session sélectionnée (ou toutes si '__all__')
+  const selectedSession = selectedSessionId === '__all__'
+    ? null
+    : sortedSessions.find(s => (s.sessions as any)?.id === selectedSessionId);
+
   const handleGenerateAttestation = async (type: DocType) => {
     setGeneratingDoc(type);
     try {
@@ -64,9 +84,13 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
         await generateBienvenueFtransport(apprenant);
         toast.success("Document de bienvenue généré");
       } else if (type === 'emargement') {
-        // Si une session est liée, utiliser ses données ; sinon générer depuis les infos de l'apprenant
-        if (sessionData && sessionData.length > 0) {
-          for (const sa of sessionData) {
+        // Utiliser la session sélectionnée, ou toutes si '__all__'
+        const sessionsToUse = selectedSession
+          ? [selectedSession]
+          : (sortedSessions.length > 0 ? sortedSessions : []);
+
+        if (sessionsToUse.length > 0) {
+          for (const sa of sessionsToUse) {
             const session = sa.sessions as any;
             if (!session) continue;
             const formateurs = session.session_formateurs?.map((sf: any) =>
@@ -248,6 +272,32 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
                   <div>
                     <h4 className="font-medium">{doc.title}</h4>
                     <p className="text-sm text-muted-foreground">{doc.description}</p>
+                    {/* Sélecteur de session pour l'émargement */}
+                    {doc.id === 'emargement' && sortedSessions.length > 0 && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <CalendarDays className="w-3.5 h-3.5 text-muted-foreground" />
+                        <Select value={selectedSessionId} onValueChange={setSelectedSessionId}>
+                          <SelectTrigger className="h-7 text-xs w-56">
+                            <SelectValue placeholder="Choisir une session" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__all__">Toutes les sessions</SelectItem>
+                            {sortedSessions.map((sa, i) => {
+                              const s = sa.sessions as any;
+                              if (!s) return null;
+                              const label = s.nom || s.type_session || `Session ${i + 1}`;
+                              const dateLabel = s.date_debut ? ` · ${s.date_debut}` : '';
+                              const isFirst = i === 0;
+                              return (
+                                <SelectItem key={s.id} value={s.id}>
+                                  {isFirst ? '⭐ ' : ''}{label}{dateLabel}
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                     {uploadedDoc && (
                       <p className="text-xs text-primary mt-0.5">✓ Fichier importé : {uploadedDoc.nom_fichier}</p>
                     )}
