@@ -150,6 +150,15 @@ export function AgendaView() {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDisciplineDialogOpen, setIsDisciplineDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingBlock, setEditingBlock] = useState<CourseBlock | null>(null);
+  const [editBlock, setEditBlock] = useState({
+    formateur: "",
+    formation: "",
+    startHour: "",
+    endHour: "",
+    discipline: "",
+  });
   const [selectedSlot, setSelectedSlot] = useState<{ date: Date; hour: number } | null>(null);
   const [newBlock, setNewBlock] = useState({
     title: "",
@@ -392,6 +401,66 @@ export function AgendaView() {
     );
   };
 
+  const handleEditBlock = (block: CourseBlock) => {
+    setEditingBlock(block);
+    setEditBlock({
+      formateur: block.formateurId,
+      formation: block.formation,
+      startHour: decimalToTime(block.startHour),
+      endHour: decimalToTime(block.endHour),
+      discipline: block.disciplineId || '',
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateBlock = async () => {
+    if (!editingBlock || !editBlock.formation || !editBlock.formateur || !editBlock.endHour || !editBlock.startHour) return;
+
+    const disciplineData = disciplines.find((d) => d.id === editBlock.discipline);
+    const formateurData = formateursList.find((f) => f.id === editBlock.formateur);
+    const [startH, startM] = editBlock.startHour.split(':').map(Number);
+    const startHourDecimal = startH + (startM / 60);
+    const [endH, endM] = editBlock.endHour.split(':').map(Number);
+    const endHourDecimal = endH + (endM / 60);
+
+    const { error } = await supabase
+      .from('agenda_blocs')
+      .update({
+        formateur_id: editBlock.formateur,
+        discipline_id: disciplineData?.id || editingBlock.disciplineId || '',
+        discipline_nom: disciplineData?.nom || editingBlock.title,
+        discipline_color: disciplineData?.color || editingBlock.disciplineColor || '#6366f1',
+        formation: editBlock.formation,
+        heure_debut: editBlock.startHour,
+        heure_fin: editBlock.endHour,
+      })
+      .eq('id', editingBlock.id);
+
+    if (error) {
+      console.error('Erreur mise à jour bloc:', error);
+      toast.error("Erreur lors de la mise à jour");
+      return;
+    }
+
+    setCourseBlocks(prev => prev.map(b => b.id === editingBlock.id ? {
+      ...b,
+      title: disciplineData?.nom || b.title,
+      formateur: formateurData?.nom || b.formateur,
+      formateurId: editBlock.formateur,
+      formateurColor: formateurData?.color || b.formateurColor,
+      startHour: startHourDecimal,
+      endHour: endHourDecimal,
+      formation: editBlock.formation,
+      discipline: disciplineData?.nom || b.discipline,
+      disciplineId: disciplineData?.id || b.disciplineId,
+      disciplineColor: disciplineData?.color || b.disciplineColor,
+    } : b));
+
+    setIsEditDialogOpen(false);
+    setEditingBlock(null);
+    toast.success("Cours modifié");
+  };
+
   // Récupérer tous les blocs d'une journée
   const getBlocksForDay = (date: Date) => {
     return courseBlocks.filter((block) => isSameDay(block.date, date));
@@ -560,7 +629,8 @@ export function AgendaView() {
                       return (
                         <div
                           key={block.id}
-                          className="absolute left-1 right-1 rounded-lg shadow-sm overflow-hidden z-10 hover:shadow-md transition-shadow"
+                          className="absolute left-1 right-1 rounded-lg shadow-sm overflow-hidden z-10 hover:shadow-md transition-shadow cursor-pointer"
+                          onClick={() => handleEditBlock(block)}
                           style={{
                             top: `${topOffset + 2}px`,
                             height: `${blockHeight}px`,
@@ -866,6 +936,99 @@ export function AgendaView() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Dialog pour modifier un bloc */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Modifier le cours</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Formation *</Label>
+                <Select value={editBlock.formation} onValueChange={(value) => setEditBlock({ ...editBlock, formation: value })}>
+                  <SelectTrigger><SelectValue placeholder="Choisir une formation" /></SelectTrigger>
+                  <SelectContent>
+                    {formationsList.map((formation) => (
+                      <SelectItem key={formation} value={formation}>{formation}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Formateur *</Label>
+                <Select value={editBlock.formateur} onValueChange={(value) => setEditBlock({ ...editBlock, formateur: value })}>
+                  <SelectTrigger><SelectValue placeholder="Choisir un formateur" /></SelectTrigger>
+                  <SelectContent>
+                    {formateursList.map((f) => (
+                      <SelectItem key={f.id} value={f.id}>{f.nom}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Discipline</Label>
+                <Select value={editBlock.discipline} onValueChange={(value) => setEditBlock({ ...editBlock, discipline: value })}>
+                  <SelectTrigger><SelectValue placeholder="Choisir une discipline" /></SelectTrigger>
+                  <SelectContent>
+                    {disciplines.map((discipline) => (
+                      <SelectItem key={discipline.id} value={discipline.id}>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: discipline.color }} />
+                          <span>{discipline.nom}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>De *</Label>
+                  <Select value={editBlock.startHour} onValueChange={(value) => setEditBlock({ ...editBlock, startHour: value, endHour: "" })}>
+                    <SelectTrigger><SelectValue placeholder="Heure de début" /></SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 26 }, (_, i) => {
+                        const totalMinutes = 8 * 60 + (i * 30);
+                        const hour = Math.floor(totalMinutes / 60);
+                        const minutes = totalMinutes % 60;
+                        const timeValue = `${hour}:${minutes.toString().padStart(2, '0')}`;
+                        return <SelectItem key={timeValue} value={timeValue}>{timeValue}</SelectItem>;
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Jusqu'à *</Label>
+                  <Select value={editBlock.endHour} onValueChange={(value) => setEditBlock({ ...editBlock, endHour: value })} disabled={!editBlock.startHour}>
+                    <SelectTrigger><SelectValue placeholder="Heure de fin" /></SelectTrigger>
+                    <SelectContent>
+                      {editBlock.startHour && (() => {
+                        const [startH, startM] = editBlock.startHour.split(':').map(Number);
+                        const startMinutes = startH * 60 + startM;
+                        const slots = Math.floor((21 * 60 - startMinutes - 30) / 30) + 1;
+                        return Array.from({ length: Math.max(slots, 1) }, (_, i) => {
+                          const totalMinutes = startMinutes + 30 + (i * 30);
+                          const hour = Math.floor(totalMinutes / 60);
+                          const minutes = totalMinutes % 60;
+                          const timeValue = `${hour}:${minutes.toString().padStart(2, '0')}`;
+                          return <SelectItem key={timeValue} value={timeValue}>{timeValue}</SelectItem>;
+                        });
+                      })()}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Annuler</Button>
+                <Button onClick={handleUpdateBlock} disabled={!editBlock.formation || !editBlock.formateur || !editBlock.endHour}>
+                  Enregistrer
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
       </CardContent>
     </Card>
   );
