@@ -6,11 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Calendar, CheckCircle, PlusCircle, Trash2 } from "lucide-react";
+import { Loader2, Calendar, CheckCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
 import { fr } from "date-fns/locale";
 
 const specialites = [
@@ -45,10 +45,23 @@ interface FormateurEditFormProps {
   onOpenChange: (open: boolean) => void;
 }
 
+type PresenceStatus = 'present' | 'absent' | 'excuse';
+
+const parseDateString = (dateStr: string): Date => {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  return new Date(year, month - 1, day);
+};
+
+const timeToHours = (time: string): number => {
+  const [h, m] = time.split(':').map(Number);
+  return h + (m / 60);
+};
+
 export function FormateurEditForm({ formateur, open, onOpenChange }: FormateurEditFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedSpecialites, setSelectedSpecialites] = useState<string[]>([]);
-  const [selectedSessionId, setSelectedSessionId] = useState<string>("");
+  // Map: blocId -> presence status (stored in state, persisted via supabase via a simple upsert pattern using localStorage key for now)
+  const [presenceMap, setPresenceMap] = useState<Record<string, PresenceStatus>>({});
   const [formData, setFormData] = useState({
     civilite: "",
     prenom: "",
@@ -66,67 +79,65 @@ export function FormateurEditForm({ formateur, open, onOpenChange }: FormateurEd
   });
   const queryClient = useQueryClient();
 
-  // Charger les sessions assignées au formateur
-  const { data: sessionFormateurs = [], refetch: refetchSessions } = useQuery({
-    queryKey: ['formateur-sessions', formateur.id],
+  // Charger les blocs agenda du formateur (toutes les semaines)
+  const { data: agendaBlocs = [], isLoading: blocsLoading } = useQuery({
+    queryKey: ['agenda-blocs-formateur', formateur.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('session_formateurs')
-        .select(`
-          id,
-          presence,
-          heures_effectuees,
-          sessions(id, nom, date_debut, date_fin, heure_debut, heure_fin, lieu, type_session)
-        `)
+        .from('agenda_blocs')
+        .select('id, discipline_nom, formation, heure_debut, heure_fin, semaine_debut, jour, discipline_color')
         .eq('formateur_id', formateur.id)
-        .order('created_at', { ascending: false });
+        .order('semaine_debut', { ascending: false });
       if (error) throw error;
       return data || [];
     },
     enabled: open,
   });
 
-  // Charger toutes les sessions disponibles
-  const { data: allSessions = [] } = useQuery({
-    queryKey: ['all-sessions-for-assign'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('sessions')
-        .select('id, nom, date_debut, date_fin, type_session')
-        .order('date_debut', { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: open,
-  });
+  // Charger la presence depuis localStorage au montage
+  useEffect(() => {
+    if (!open) return;
+    const key = `presence_formateur_${formateur.id}`;
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved) setPresenceMap(JSON.parse(saved));
+    } catch {}
+  }, [open, formateur.id]);
 
-  const assignedSessionIds = sessionFormateurs.map((sf: any) => sf.sessions?.id).filter(Boolean);
-  const availableSessions = allSessions.filter((s: any) => !assignedSessionIds.includes(s.id));
-
-  const handleAssignSession = async () => {
-    if (!selectedSessionId) return;
-    const { error } = await supabase
-      .from('session_formateurs')
-      .insert({ formateur_id: formateur.id, session_id: selectedSessionId, presence: 'present' });
-    if (!error) {
-      toast.success("Formateur assigné à la session");
-      setSelectedSessionId("");
-      refetchSessions();
-    } else {
-      toast.error("Erreur lors de l'assignation");
-    }
+  const savePresence = (newMap: Record<string, PresenceStatus>) => {
+    setPresenceMap(newMap);
+    const key = `presence_formateur_${formateur.id}`;
+    localStorage.setItem(key, JSON.stringify(newMap));
   };
 
-  const handleRemoveSession = async (sessionFormateurId: string) => {
-    const { error } = await supabase
-      .from('session_formateurs')
-      .delete()
-      .eq('id', sessionFormateurId);
-    if (!error) {
-      toast.success("Assignation supprimée");
-      refetchSessions();
-    }
+  const togglePresenceBloc = (blocId: string) => {
+    const current = presenceMap[blocId] || 'present';
+    const next: PresenceStatus = current === 'present' ? 'absent' : current === 'absent' ? 'excuse' : 'present';
+    const newMap = { ...presenceMap, [blocId]: next };
+    savePresence(newMap);
+    toast.success(`Présence : ${next === 'present' ? '✓ Présent' : next === 'absent' ? '✗ Absent' : '~ Excusé'}`);
   };
+
+  // Grouper les blocs par date
+  const blocsGroupedByDate = agendaBlocs.reduce((acc: Record<string, typeof agendaBlocs>, bloc) => {
+    const baseDate = parseDateString(bloc.semaine_debut);
+    const date = addDays(baseDate, bloc.jour);
+    const dateKey = format(date, 'yyyy-MM-dd');
+    if (!acc[dateKey]) acc[dateKey] = [];
+    acc[dateKey].push(bloc);
+    return acc;
+  }, {});
+
+  const sortedDates = Object.keys(blocsGroupedByDate).sort((a, b) => b.localeCompare(a));
+
+  // Calcul des heures totales présent
+  const totalHeuresPresent = agendaBlocs.reduce((total, bloc) => {
+    const status = presenceMap[bloc.id] || 'present';
+    if (status === 'present') {
+      return total + (timeToHours(bloc.heure_fin) - timeToHours(bloc.heure_debut));
+    }
+    return total;
+  }, 0);
 
   // Initialize form data when formateur changes
   useEffect(() => {
@@ -164,18 +175,6 @@ export function FormateurEditForm({ formateur, open, onOpenChange }: FormateurEd
       setSelectedSpecialites([...selectedSpecialites, id]);
     } else {
       setSelectedSpecialites(selectedSpecialites.filter(s => s !== id));
-    }
-  };
-
-  const togglePresence = async (sessionFormateurId: string, currentPresence: string) => {
-    const next = currentPresence === 'present' ? 'absent' : currentPresence === 'absent' ? 'excuse' : 'present';
-    const { error } = await supabase
-      .from('session_formateurs')
-      .update({ presence: next })
-      .eq('id', sessionFormateurId);
-    if (!error) {
-      refetchSessions();
-      toast.success(`Présence : ${next === 'present' ? 'Présent' : next === 'absent' ? 'Absent' : 'Excusé'}`);
     }
   };
 
@@ -222,13 +221,13 @@ export function FormateurEditForm({ formateur, open, onOpenChange }: FormateurEd
     }
   };
 
-  const getPresenceStyle = (presence: string) => {
-    if (presence === 'present') return 'bg-green-100 text-green-700 border-green-300 hover:bg-green-200';
-    if (presence === 'absent') return 'bg-red-100 text-red-700 border-red-300 hover:bg-red-200';
-    return 'bg-orange-100 text-orange-700 border-orange-300 hover:bg-orange-200';
+  const getPresenceStyle = (presence: PresenceStatus) => {
+    if (presence === 'present') return 'bg-green-100 text-green-700 border-green-300 hover:bg-green-200 cursor-pointer';
+    if (presence === 'absent') return 'bg-red-100 text-red-700 border-red-300 hover:bg-red-200 cursor-pointer';
+    return 'bg-orange-100 text-orange-700 border-orange-300 hover:bg-orange-200 cursor-pointer';
   };
 
-  const getPresenceLabel = (presence: string) => {
+  const getPresenceLabel = (presence: PresenceStatus) => {
     if (presence === 'present') return '✓ Présent';
     if (presence === 'absent') return '✗ Absent';
     return '~ Excusé';
@@ -236,7 +235,7 @@ export function FormateurEditForm({ formateur, open, onOpenChange }: FormateurEd
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[640px] max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {formateur.civilite ? `${formateur.civilite} ` : ''}{formateur.prenom} {formateur.nom}
@@ -248,10 +247,10 @@ export function FormateurEditForm({ formateur, open, onOpenChange }: FormateurEd
             <TabsTrigger value="infos">Informations</TabsTrigger>
             <TabsTrigger value="presence" className="gap-2">
               <CheckCircle className="w-4 h-4" />
-              Sessions & Présence
-              {sessionFormateurs.length > 0 && (
+              Présence Agenda
+              {agendaBlocs.length > 0 && (
                 <span className="ml-1 bg-primary/20 text-primary text-xs px-1.5 py-0.5 rounded-full">
-                  {sessionFormateurs.length}
+                  {agendaBlocs.length}
                 </span>
               )}
             </TabsTrigger>
@@ -440,105 +439,106 @@ export function FormateurEditForm({ formateur, open, onOpenChange }: FormateurEd
             </form>
           </TabsContent>
 
-          {/* ===== ONGLET SESSIONS & PRÉSENCE ===== */}
+          {/* ===== ONGLET PRÉSENCE AGENDA ===== */}
           <TabsContent value="presence">
             <div className="mt-4 space-y-4">
 
-              {/* Section assignation */}
-              <div className="p-3 border rounded-xl bg-muted/30 space-y-2">
-                <p className="text-sm font-medium">Assigner à une session</p>
-                <div className="flex gap-2">
-                  <Select value={selectedSessionId} onValueChange={setSelectedSessionId}>
-                    <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Choisir une session..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableSessions.map((s: any) => (
-                        <SelectItem key={s.id} value={s.id}>
-                          {s.nom || `Session ${s.type_session}`} — {s.date_debut ? format(new Date(s.date_debut), 'dd/MM/yyyy', { locale: fr }) : ''}
-                        </SelectItem>
-                      ))}
-                      {availableSessions.length === 0 && (
-                        <SelectItem value="none" disabled>Toutes les sessions sont déjà assignées</SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    type="button"
-                    onClick={handleAssignSession}
-                    disabled={!selectedSessionId}
-                    size="sm"
-                    className="gap-1"
-                  >
-                    <PlusCircle className="w-4 h-4" />
-                    Assigner
-                  </Button>
+              {/* Résumé total heures */}
+              {agendaBlocs.length > 0 && (
+                <div className="flex items-center gap-3 p-3 rounded-xl border bg-muted/30">
+                  <Clock className="w-5 h-5 text-primary shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold">{totalHeuresPresent.toFixed(1)}h effectuées (Présent)</p>
+                    <p className="text-xs text-muted-foreground">
+                      {agendaBlocs.length} créneaux au total • Cliquer sur le badge pour changer la présence
+                    </p>
+                  </div>
+                  {formData.tarif_horaire && (
+                    <div className="ml-auto text-right">
+                      <p className="text-sm font-bold text-primary">{(totalHeuresPresent * parseFloat(formData.tarif_horaire)).toFixed(0)} €</p>
+                      <p className="text-xs text-muted-foreground">à facturer</p>
+                    </div>
+                  )}
                 </div>
-              </div>
+              )}
 
-              <p className="text-sm text-muted-foreground">
-                Cliquez sur le badge de présence pour le modifier (Présent → Absent → Excusé)
-              </p>
-
-              {sessionFormateurs.length === 0 ? (
+              {blocsLoading ? (
+                <div className="flex items-center justify-center py-10">
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : agendaBlocs.length === 0 ? (
                 <div className="text-center py-10 text-muted-foreground border rounded-xl bg-muted/20">
                   <Calendar className="w-10 h-10 mx-auto mb-3 opacity-40" />
-                  <p className="font-medium">Aucune session assignée</p>
-                  <p className="text-sm mt-1">Utilisez le menu ci-dessus pour assigner ce formateur à une session.</p>
+                  <p className="font-medium">Aucun créneau dans l'agenda</p>
+                  <p className="text-sm mt-1">Ce formateur n'a pas de blocs assignés dans l'agenda.</p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {(sessionFormateurs as any[])
-                    .sort((a, b) => {
-                      const da = a.sessions?.date_debut || '';
-                      const db = b.sessions?.date_debut || '';
-                      return db.localeCompare(da);
-                    })
-                    .map((sf: any) => {
-                      const session = sf.sessions;
-                      if (!session) return null;
-                      const presence = sf.presence || 'present';
-                      const isPast = session.date_fin && new Date(session.date_fin) < new Date();
+                <div className="space-y-4">
+                  {sortedDates.map((dateKey) => {
+                    const blocs = blocsGroupedByDate[dateKey];
+                    const date = parseDateString(dateKey);
+                    const isPast = date < new Date();
+                    const heuresDuJour = blocs.reduce((sum: number, b: any) => {
+                      const status = presenceMap[b.id] || 'present';
+                      if (status === 'present') return sum + (timeToHours(b.heure_fin) - timeToHours(b.heure_debut));
+                      return sum;
+                    }, 0);
 
-                      return (
-                        <div
-                          key={sf.id}
-                          className={`flex items-center justify-between p-4 rounded-xl border bg-card transition-shadow hover:shadow-sm ${isPast ? 'opacity-70' : ''}`}
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-medium text-foreground text-sm">
-                                {session.nom || (session.type_session === 'pratique' ? '🚗 Session Pratique' : '📚 Session Théorique')}
-                              </span>
-                              {isPast && (
-                                <span className="text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">Passée</span>
-                              )}
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1">
-                              {session.date_debut && format(new Date(session.date_debut), 'dd MMM yyyy', { locale: fr })}
-                              {session.date_fin && session.date_fin !== session.date_debut && ` → ${format(new Date(session.date_fin), 'dd MMM yyyy', { locale: fr })}`}
-                              {session.heure_debut && ` · ${session.heure_debut}${session.heure_fin ? `–${session.heure_fin}` : ''}`}
-                              {session.lieu && ` · ${session.lieu}`}
-                            </div>
+                    return (
+                      <div key={dateKey} className={`border rounded-xl overflow-hidden ${isPast ? 'opacity-80' : ''}`}>
+                        {/* En-tête de la journée */}
+                        <div className="flex items-center justify-between px-4 py-2 bg-muted/40 border-b">
+                          <div>
+                            <span className="font-semibold text-sm capitalize">
+                              {format(date, 'EEEE d MMMM yyyy', { locale: fr })}
+                            </span>
+                            {isPast && <span className="ml-2 text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Passé</span>}
                           </div>
-                          <div className="flex items-center gap-2 ml-3">
-                            <button
-                              onClick={() => togglePresence(sf.id, presence)}
-                              className={`text-xs font-medium px-3 py-1.5 rounded-lg border cursor-pointer transition-colors ${getPresenceStyle(presence)}`}
-                            >
-                              {getPresenceLabel(presence)}
-                            </button>
-                            <button
-                              onClick={() => handleRemoveSession(sf.id)}
-                              className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded"
-                              title="Retirer de la session"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
+                          <span className="text-xs text-muted-foreground font-medium">{heuresDuJour.toFixed(1)}h présent</span>
                         </div>
-                      );
-                    })}
+
+                        {/* Liste des créneaux */}
+                        <div className="divide-y">
+                          {(blocs as any[])
+                            .sort((a, b) => a.heure_debut.localeCompare(b.heure_debut))
+                            .map((bloc: any) => {
+                              const presence = presenceMap[bloc.id] || 'present';
+                              const heures = timeToHours(bloc.heure_fin) - timeToHours(bloc.heure_debut);
+
+                              return (
+                                <div key={bloc.id} className="flex items-center justify-between px-4 py-3 hover:bg-muted/20 transition-colors">
+                                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                                    {/* Couleur discipline */}
+                                    <div
+                                      className="w-3 h-8 rounded-sm shrink-0"
+                                      style={{ backgroundColor: bloc.discipline_color || '#6366f1' }}
+                                    />
+                                    <div className="min-w-0">
+                                      <p className="text-sm font-medium truncate">{bloc.discipline_nom}</p>
+                                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                        <span>{bloc.heure_debut} – {bloc.heure_fin}</span>
+                                        <span>·</span>
+                                        <span>{heures.toFixed(1)}h</span>
+                                        <span>·</span>
+                                        <span className="truncate">{bloc.formation}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Badge présence cliquable */}
+                                  <button
+                                    onClick={() => togglePresenceBloc(bloc.id)}
+                                    className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors shrink-0 ml-3 ${getPresenceStyle(presence)}`}
+                                  >
+                                    {getPresenceLabel(presence)}
+                                  </button>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
