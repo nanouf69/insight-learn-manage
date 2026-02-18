@@ -139,7 +139,7 @@ export default function FournisseurPortal() {
   const [isUploadingDoc, setIsUploadingDoc] = useState(false);
 
   // Facture upload
-  const [factureDestinataire, setFactureDestinataire] = useState("");
+  const [factureDestinataire, setFactureDestinataire] = useState("Finally Academy");
   const [factureMontant, setFactureMontant] = useState("");
   const [factureDescription, setFactureDescription] = useState("Prestation de services");
   const [isUploadingFacture, setIsUploadingFacture] = useState(false);
@@ -337,7 +337,7 @@ export default function FournisseurPortal() {
       });
       if (insertErr) throw insertErr;
       toast({ title: "Facture envoyée", description: `Facture pour ${factureDestinataire} envoyée avec succès.` });
-      setFactureDestinataire(""); setFactureMontant(""); setFactureDescription(""); fileInput.value = "";
+      setFactureDestinataire("Finally Academy"); setFactureMontant(""); setFactureDescription("Prestation de services"); fileInput.value = "";
       const { data } = await supabase.from('fournisseur_factures').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false });
       if (data) setFactures(data as FournisseurFacture[]);
     } catch (err: any) {
