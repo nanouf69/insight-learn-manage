@@ -719,7 +719,7 @@ export function AgendaView() {
                         <SelectValue placeholder="Heure de début" />
                       </SelectTrigger>
                       <SelectContent>
-                        {Array.from({ length: 22 }, (_, i) => {
+                        {Array.from({ length: 26 }, (_, i) => {
                           const totalMinutes = 8 * 60 + (i * 30);
                           const hour = Math.floor(totalMinutes / 60);
                           const minutes = totalMinutes % 60;
