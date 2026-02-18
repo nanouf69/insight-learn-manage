@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { FileText, Download, CheckCircle2, Mail, ClipboardList } from "lucide-react";
+import { useState, useRef } from "react";
+import { FileText, Download, CheckCircle2, Mail, ClipboardList, Upload, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +8,7 @@ import { generateAttestationFinFormation } from "@/lib/pdf/attestation-fin-forma
 import { generateAttestationFranceTravail } from "@/lib/pdf/attestation-france-travail";
 import { generateBienvenueFtransport } from "@/lib/pdf/bienvenue-ftransport";
 import { generateEmargementPDF } from "@/components/sessions/EmargementGenerator";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -21,6 +21,9 @@ type DocType = 'inscription' | 'fin-formation' | 'france-travail' | 'bienvenue' 
 
 export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
   const [generatingDoc, setGeneratingDoc] = useState<string | null>(null);
+  const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   // Récupérer les sessions de l'apprenant pour l'émargement
   const { data: sessionData } = useQuery({
@@ -118,6 +121,63 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
     }
   };
 
+  // Fetch uploaded docs from storage for this learner
+  const { data: uploadedDocs, refetch: refetchDocs } = useQuery({
+    queryKey: ['formation-docs-uploaded', apprenant.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('documents_inscription')
+        .select('*')
+        .eq('apprenant_id', apprenant.id)
+        .in('type_document', ['emargement', 'attestation-fin-formation']);
+      return data || [];
+    },
+  });
+
+  const handleUploadFile = async (docId: string, file: File) => {
+    setUploadingDoc(docId);
+    try {
+      const ext = file.name.split('.').pop();
+      const filePath = `${apprenant.id}/${docId}-${Date.now()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('documents-inscription')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('documents-inscription')
+        .getPublicUrl(filePath);
+
+      const titlesMap: Record<string, string> = {
+        'emargement': "Feuille d'émargement",
+        'attestation-fin-formation': "Attestation de fin de formation",
+      };
+
+      await supabase.from('documents_inscription').insert({
+        apprenant_id: apprenant.id,
+        titre: titlesMap[docId] || docId,
+        nom_fichier: file.name,
+        type_document: docId,
+        url: publicUrl,
+        statut: 'valide',
+      });
+
+      toast.success("Document uploadé avec succès");
+      refetchDocs();
+      queryClient.invalidateQueries({ queryKey: ['formation-docs-uploaded', apprenant.id] });
+    } catch (error) {
+      console.error('Erreur upload:', error);
+      toast.error("Erreur lors de l'upload du document");
+    } finally {
+      setUploadingDoc(null);
+    }
+  };
+
+  const getUploadedDoc = (docId: string) =>
+    uploadedDocs?.find(d => d.type_document === docId);
+
   const documents = [
     {
       id: 'bienvenue',
@@ -171,48 +231,96 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {documents.map((doc) => (
-            <div 
-              key={doc.id}
-              className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <doc.icon className="w-5 h-5 text-primary" />
+          {documents.map((doc) => {
+            const canUpload = doc.id === 'emargement' || doc.id === 'attestation-fin-formation' || doc.id === 'fin-formation';
+            const uploadedDoc = canUpload ? getUploadedDoc(doc.id === 'fin-formation' ? 'attestation-fin-formation' : doc.id) : null;
+            const uploadKey = doc.id === 'fin-formation' ? 'attestation-fin-formation' : doc.id;
+
+            return (
+              <div 
+                key={doc.id}
+                className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <doc.icon className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium">{doc.title}</h4>
+                    <p className="text-sm text-muted-foreground">{doc.description}</p>
+                    {uploadedDoc && (
+                      <p className="text-xs text-primary mt-0.5">✓ Fichier importé : {uploadedDoc.nom_fichier}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-medium">{doc.title}</h4>
-                  <p className="text-sm text-muted-foreground">{doc.description}</p>
+                <div className="flex items-center gap-2">
+                  {doc.status === 'disponible' && (
+                    <>
+                      <Badge variant="outline" className="text-primary border-primary">
+                        <CheckCircle2 className="w-3 h-3 mr-1" />
+                        Disponible
+                      </Badge>
+                      <Button 
+                        size="sm" 
+                        onClick={() => handleGenerateAttestation(doc.type)}
+                        disabled={generatingDoc === doc.type}
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        {generatingDoc === doc.type ? 'Génération...' : 'Générer'}
+                      </Button>
+                    </>
+                  )}
+                  {doc.status === 'en_attente' && (
+                    <Badge variant="secondary">En attente</Badge>
+                  )}
+                  {doc.status === 'non_applicable' && (
+                    <Badge variant="outline" className="text-muted-foreground">Non applicable</Badge>
+                  )}
+
+                  {/* Bouton upload pour les docs qu'on peut importer depuis l'ordinateur */}
+                  {canUpload && (
+                    <>
+                      <input
+                        type="file"
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                        className="hidden"
+                        ref={(el) => { fileInputRefs.current[uploadKey] = el; }}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleUploadFile(uploadKey, file);
+                          e.target.value = '';
+                        }}
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => fileInputRefs.current[uploadKey]?.click()}
+                        disabled={uploadingDoc === uploadKey}
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        {uploadingDoc === uploadKey ? 'Import...' : 'Importer'}
+                      </Button>
+                      {uploadedDoc && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          asChild
+                        >
+                          <a href={uploadedDoc.url} target="_blank" rel="noopener noreferrer">
+                            <Eye className="w-4 h-4 mr-1" />
+                            Voir
+                          </a>
+                        </Button>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                {doc.status === 'disponible' && (
-                  <>
-                    <Badge variant="outline" className="text-green-600 border-green-600">
-                      <CheckCircle2 className="w-3 h-3 mr-1" />
-                      Disponible
-                    </Badge>
-                    <Button 
-                      size="sm" 
-                      onClick={() => handleGenerateAttestation(doc.type)}
-                      disabled={generatingDoc === doc.type}
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      {generatingDoc === doc.type ? 'Génération...' : 'Télécharger'}
-                    </Button>
-                  </>
-                )}
-                {doc.status === 'en_attente' && (
-                  <Badge variant="secondary">En attente</Badge>
-                )}
-                {doc.status === 'non_applicable' && (
-                  <Badge variant="outline" className="text-muted-foreground">Non applicable</Badge>
-                )}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </CardContent>
     </Card>
   );
 }
+
