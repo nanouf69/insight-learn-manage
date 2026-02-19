@@ -55,21 +55,36 @@ const Index = () => {
   const [initialApprenantId, setInitialApprenantId] = useState<string | null>(null);
   const [totalEntrees, setTotalEntrees] = useState<number>(0);
   const [totalSorties, setTotalSorties] = useState<number>(0);
+  const [fluxPeriode, setFluxPeriode] = useState<string>("");
 
   useEffect(() => {
     const fetchFlux = async () => {
       const { data } = await supabase
         .from("transactions_bancaires")
-        .select("montant");
+        .select("montant, date_operation");
       if (!data) return;
       let entrees = 0;
       let sorties = 0;
-      data.forEach(({ montant }) => {
+      let minDate: Date | null = null;
+      let maxDate: Date | null = null;
+      data.forEach(({ montant, date_operation }) => {
         if (montant > 0) entrees += montant;
         else sorties += montant;
+        if (date_operation) {
+          const d = new Date(date_operation);
+          if (!minDate || d < minDate) minDate = d;
+          if (!maxDate || d > maxDate) maxDate = d;
+        }
       });
       setTotalEntrees(entrees);
       setTotalSorties(Math.abs(sorties));
+      if (minDate && maxDate) {
+        const fmtMois = (d: Date) =>
+          d.toLocaleDateString("fr-FR", { month: "short", year: "numeric" });
+        const min = fmtMois(minDate);
+        const max = fmtMois(maxDate);
+        setFluxPeriode(min === max ? min : `${min} – ${max}`);
+      }
     };
     fetchFlux();
   }, []);
@@ -120,12 +135,14 @@ const Index = () => {
                 value={fmt(totalEntrees)}
                 icon={ArrowDownCircle}
                 iconColor="success"
+                subtitle={fluxPeriode || undefined}
               />
               <StatCard 
                 title="Total sorti (relevés)" 
                 value={fmt(totalSorties)}
                 icon={ArrowUpCircle}
                 iconColor="warning"
+                subtitle={fluxPeriode || undefined}
               />
             </div>
 
