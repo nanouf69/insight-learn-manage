@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -13,12 +13,22 @@ import {
   Search, Euro, TrendingUp, Clock, CheckCircle, AlertTriangle,
   Download, Filter, Receipt, CreditCard, Banknote, BarChart3,
   Building2, RefreshCw, Link2, ExternalLink, ArrowDownLeft, ArrowUpRight,
-  CalendarIcon, CheckCheck
+  CalendarIcon, CheckCheck, FileText, Upload, Trash2, Eye, FolderOpen
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+
+interface Releve {
+  id: string;
+  nom_fichier: string;
+  url: string;
+  mois_annee: string;
+  banque: string;
+  notes: string | null;
+  created_at: string;
+}
 
 interface Facture {
   id: string;
@@ -112,6 +122,14 @@ export function ComptabilitePage() {
   const [bridgeLoading, setBridgeLoading] = useState(false);
   const [bridgeConnected, setBridgeConnected] = useState(false);
 
+  // Relevés de comptes state
+  const [releves, setReleves] = useState<Releve[]>([]);
+  const [relevesLoading, setRelevesLoading] = useState(false);
+  const [uploadingReleve, setUploadingReleve] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const [releveForm, setReleveForm] = useState({ mois_annee: format(new Date(), "yyyy-MM"), banque: "BNP Paribas", notes: "" });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const fetchFournisseurFactures = async () => {
     const { data, error } = await supabase
       .from("fournisseur_factures")
@@ -134,9 +152,20 @@ export function ComptabilitePage() {
     setLoading(false);
   };
 
+  const fetchReleves = useCallback(async () => {
+    setRelevesLoading(true);
+    const { data, error } = await supabase
+      .from("releves_bancaires")
+      .select("*")
+      .order("mois_annee", { ascending: false });
+    if (!error && data) setReleves(data as Releve[]);
+    setRelevesLoading(false);
+  }, []);
+
   useEffect(() => {
     fetchFactures();
     fetchFournisseurFactures();
+    fetchReleves();
     const savedRequisition = localStorage.getItem(GC_REQUISITION_KEY);
     if (savedRequisition) {
       setGcRequisitionId(savedRequisition);
@@ -144,6 +173,61 @@ export function ComptabilitePage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleReleveUpload = async (file: File) => {
+    if (!file) return;
+    setUploadingReleve(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${Date.now()}_${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("releves-bancaires")
+        .upload(path, file, { contentType: file.type });
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from("releves-bancaires").getPublicUrl(path);
+      // Use signed URL for private bucket
+      const { data: signedData } = await supabase.storage.from("releves-bancaires").createSignedUrl(path, 60 * 60 * 24 * 365);
+      const url = signedData?.signedUrl || urlData.publicUrl;
+
+      const { error: dbError } = await supabase.from("releves_bancaires").insert({
+        nom_fichier: file.name,
+        url,
+        mois_annee: releveForm.mois_annee,
+        banque: releveForm.banque,
+        notes: releveForm.notes || null,
+      });
+      if (dbError) throw dbError;
+
+      toast.success("Relevé déposé avec succès !");
+      setReleveForm({ mois_annee: format(new Date(), "yyyy-MM"), banque: "BNP Paribas", notes: "" });
+      await fetchReleves();
+    } catch (err) {
+      toast.error("Erreur lors du dépôt : " + (err instanceof Error ? err.message : "Erreur inconnue"));
+    }
+    setUploadingReleve(false);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleReleveUpload(file);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleReleveUpload(file);
+  };
+
+  const handleDeleteReleve = async (releve: Releve) => {
+    if (!confirm(`Supprimer le relevé "${releve.nom_fichier}" ?`)) return;
+    await supabase.from("releves_bancaires").delete().eq("id", releve.id);
+    toast.success("Relevé supprimé");
+    await fetchReleves();
+  };
+
+
 
   const callGC = async (action: string, extra: Record<string, string> = {}) => {
     const res = await supabase.functions.invoke("bridge-bank", {
@@ -352,6 +436,10 @@ export function ComptabilitePage() {
           </TabsTrigger>
           <TabsTrigger value="fournisseurs" className="gap-2">
             <Receipt className="h-4 w-4" /> Factures fournisseurs
+          </TabsTrigger>
+          <TabsTrigger value="releves" className="gap-2">
+            <FolderOpen className="h-4 w-4" /> Relevés de comptes
+            <Badge className="ml-1 h-5 px-1.5 text-[10px]">{releves.length}</Badge>
           </TabsTrigger>
         </TabsList>
 
@@ -932,6 +1020,160 @@ export function ComptabilitePage() {
                         <TableCell>{getStatutBadge(f.statut || "en_attente")}</TableCell>
                         <TableCell>{formatDate(f.date_paiement)}</TableCell>
                         <TableCell>{f.moyen_paiement || "—"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* === RELEVÉS DE COMPTES === */}
+        <TabsContent value="releves" className="space-y-6">
+          {/* Upload zone */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Upload className="h-5 w-5" /> Déposer un relevé de compte
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Mois / Année</label>
+                  <Input
+                    type="month"
+                    value={releveForm.mois_annee}
+                    onChange={e => setReleveForm(f => ({ ...f, mois_annee: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Banque</label>
+                  <Select value={releveForm.banque} onValueChange={v => setReleveForm(f => ({ ...f, banque: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="BNP Paribas">BNP Paribas</SelectItem>
+                      <SelectItem value="Société Générale">Société Générale</SelectItem>
+                      <SelectItem value="Crédit Agricole">Crédit Agricole</SelectItem>
+                      <SelectItem value="LCL">LCL</SelectItem>
+                      <SelectItem value="Caisse d'Épargne">Caisse d'Épargne</SelectItem>
+                      <SelectItem value="Banque Postale">Banque Postale</SelectItem>
+                      <SelectItem value="Autre">Autre</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Notes (optionnel)</label>
+                  <Input
+                    placeholder="Ex: compte courant principal"
+                    value={releveForm.notes}
+                    onChange={e => setReleveForm(f => ({ ...f, notes: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              {/* Drag & drop zone */}
+              <div
+                className={cn(
+                  "border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center gap-3 transition-all cursor-pointer",
+                  dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:bg-muted/50"
+                )}
+                onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {uploadingReleve ? (
+                  <>
+                    <RefreshCw className="h-10 w-10 text-primary animate-spin" />
+                    <p className="text-sm text-muted-foreground">Dépôt en cours...</p>
+                  </>
+                ) : (
+                  <>
+                    <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
+                      <FileText className="h-7 w-7 text-primary" />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-medium">Glissez votre relevé ici</p>
+                      <p className="text-sm text-muted-foreground">ou cliquez pour parcourir vos fichiers</p>
+                      <p className="text-xs text-muted-foreground mt-1">PDF, OFX, CSV — max 20 Mo</p>
+                    </div>
+                  </>
+                )}
+              </div>
+              <input ref={fileInputRef} type="file" accept=".pdf,.ofx,.csv,.xlsx,.qif" className="hidden" onChange={handleFileChange} />
+            </CardContent>
+          </Card>
+
+          {/* Liste des relevés */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <FolderOpen className="h-5 w-5" /> Relevés archivés ({releves.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {relevesLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : releves.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <FolderOpen className="h-12 w-12 text-muted-foreground/30 mb-3" />
+                  <p className="text-muted-foreground">Aucun relevé déposé pour l'instant</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Fichier</TableHead>
+                      <TableHead>Banque</TableHead>
+                      <TableHead>Période</TableHead>
+                      <TableHead>Notes</TableHead>
+                      <TableHead>Déposé le</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {releves.map((r) => (
+                      <TableRow key={r.id}>
+                        <TableCell className="font-medium flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-primary flex-shrink-0" />
+                          <span className="truncate max-w-[200px]">{r.nom_fichier}</span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{r.banque}</Badge>
+                        </TableCell>
+                        <TableCell className="font-mono text-sm">
+                          {r.mois_annee ? (() => {
+                            const [y, m] = r.mois_annee.split("-");
+                            const d = new Date(parseInt(y), parseInt(m) - 1, 1);
+                            return format(d, "MMMM yyyy", { locale: fr });
+                          })() : "—"}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-sm">{r.notes || "—"}</TableCell>
+                        <TableCell>{formatDate(r.created_at)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="gap-1 h-8"
+                              onClick={() => window.open(r.url, "_blank")}
+                            >
+                              <Eye className="h-3 w-3" /> Voir
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="gap-1 h-8 text-destructive hover:text-destructive"
+                              onClick={() => handleDeleteReleve(r)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

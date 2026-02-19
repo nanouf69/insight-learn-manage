@@ -1163,6 +1163,36 @@ export type Database = {
         }
         Relationships: []
       }
+      releves_bancaires: {
+        Row: {
+          banque: string
+          created_at: string
+          id: string
+          mois_annee: string
+          nom_fichier: string
+          notes: string | null
+          url: string
+        }
+        Insert: {
+          banque?: string
+          created_at?: string
+          id?: string
+          mois_annee: string
+          nom_fichier: string
+          notes?: string | null
+          url: string
+        }
+        Update: {
+          banque?: string
+          created_at?: string
+          id?: string
+          mois_annee?: string
+          nom_fichier?: string
+          notes?: string | null
+          url?: string
+        }
+        Relationships: []
+      }
       reservations_pratique: {
         Row: {
           apprenant_id: string
