@@ -1445,6 +1445,78 @@ export type Database = {
           },
         ]
       }
+      transactions_bancaires: {
+        Row: {
+          banque: string
+          categorie: string | null
+          created_at: string
+          date_operation: string
+          fournisseur_client: string | null
+          id: string
+          justificatif_id: string | null
+          libelle: string
+          montant: number
+          notes: string | null
+          reference: string | null
+          releve_id: string | null
+          solde: number | null
+          source: string
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          banque?: string
+          categorie?: string | null
+          created_at?: string
+          date_operation: string
+          fournisseur_client?: string | null
+          id?: string
+          justificatif_id?: string | null
+          libelle: string
+          montant: number
+          notes?: string | null
+          reference?: string | null
+          releve_id?: string | null
+          solde?: number | null
+          source?: string
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          banque?: string
+          categorie?: string | null
+          created_at?: string
+          date_operation?: string
+          fournisseur_client?: string | null
+          id?: string
+          justificatif_id?: string | null
+          libelle?: string
+          montant?: number
+          notes?: string | null
+          reference?: string | null
+          releve_id?: string | null
+          solde?: number | null
+          source?: string
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_bancaires_justificatif_id_fkey"
+            columns: ["justificatif_id"]
+            isOneToOne: false
+            referencedRelation: "justificatifs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_bancaires_releve_id_fkey"
+            columns: ["releve_id"]
+            isOneToOne: false
+            referencedRelation: "releves_bancaires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
