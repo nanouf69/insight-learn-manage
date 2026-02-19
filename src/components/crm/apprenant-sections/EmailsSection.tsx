@@ -201,6 +201,16 @@ L'équipe Ftransport
     },
   },
   {
+    id: 'echec-theorique',
+    label: '❌ Échec examen théorique',
+    icon: '❌',
+    getSubject: (a) => `Suite à votre examen T3P - ${a.prenom} ${a.nom}`,
+    getBody: (a) => {
+      const formation = getFormationType(a.type_apprenant);
+      return `Bonjour ${a.prenom},<br><br>Nous avons bien pris connaissance des résultats de votre examen théorique ${formation} et nous tenons d'abord à vous encourager : <strong>l'échec n'est qu'une étape, pas une fin</strong>. Beaucoup de candidats ont dû repasser plusieurs fois avant de décrocher leur certification. La persévérance paie toujours.<br><br>Voici les étapes à suivre pour vous réinscrire à l'examen :<br><br><strong>1️⃣ Rendez-vous sur le site officiel :</strong><br>👉 <a href="http://www.exament3p.fr">www.exament3p.fr</a><br><br><strong>2️⃣ Connectez-vous à votre espace :</strong><br>Cliquez sur <em>"Mot de passe oublié"</em> pour accéder à votre compte (votre login est votre adresse email).<br><br><strong>3️⃣ Procédez à votre réinscription</strong> en suivant les instructions du site et réglez les frais d'examen en ligne.<br><br>⚠️ <strong>IMPORTANT — Département 69 obligatoire :</strong><br>Lors de votre réinscription, vous devez <u>impérativement sélectionner le département <strong>69 (Rhône)</strong></u> même si vous résidez dans un autre département. Sans cela, nous ne pourrons ni assurer votre formation ni vous louer un véhicule pour l'examen pratique.<br><br><strong>📅 Attention aux dates !</strong><br>Les places partent vite. Inscrivez-vous dès que possible pour ne pas manquer les prochaines sessions disponibles.<br><br>✅ <strong>Une fois votre réinscription effectuée et le paiement des frais d'examen validé</strong>, merci de nous contacter par téléphone le jour même des résultats de l'examen théorique afin que nous puissions organiser la suite de votre formation.<br><br>📞 <strong>04 28 29 60 91</strong><br>📧 contact@ftransport.fr<br>🕐 Du lundi au vendredi, 9h – 17h<br><br>Ne baissez pas les bras — vous êtes capable de réussir. Nous sommes là pour vous accompagner à chaque étape.<br><br>Cordialement,<br><br><strong>FTRANSPORT</strong><br>Centre de formation VTC & TAXI<br>86 Route de Genas, 69003 Lyon`;
+    },
+  },
+  {
     id: 'relance-paiement',
     label: '💰 Relance paiement',
     icon: '💰',
