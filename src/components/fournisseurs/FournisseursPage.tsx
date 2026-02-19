@@ -393,7 +393,7 @@ export function FournisseursPage() {
           subject="🔗 Votre accès à la plateforme FTRANSPORT"
           recipients={[{ id: sendLinkTarget.id, name: sendLinkTarget.nom, email: sendLinkTarget.email! }]}
           getHtmlBody={(recipient) => {
-            const portalUrl = `https://gestion.ftransport.fr/fournisseur/${sendLinkTarget.token}`;
+            const portalUrl = `https://insight-learn-manage.lovable.app/fournisseur/${sendLinkTarget.token}`;
             return `<!DOCTYPE html>
 <html lang="fr">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
@@ -471,7 +471,7 @@ export function FournisseursPage() {
           subject="🧾 Dépôt de vos factures — Plateforme FTRANSPORT"
           recipients={[{ id: bulkEmailFournisseur.id, name: bulkEmailFournisseur.nom, email: bulkEmailFournisseur.email! }]}
           getHtmlBody={(recipient) => {
-            const portalUrl = `https://gestion.ftransport.fr/fournisseur/${bulkEmailFournisseur.token}`;
+            const portalUrl = `https://insight-learn-manage.lovable.app/fournisseur/${bulkEmailFournisseur.token}`;
             return `<!DOCTYPE html>
 <html lang="fr">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
