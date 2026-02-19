@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.upload-document-inscription]
 verify_jwt = false
+
+[functions.corriger-qrc]
+verify_jwt = false
