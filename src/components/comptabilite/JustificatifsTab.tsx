@@ -138,6 +138,94 @@ function getStatutConfig(value: string) {
   return STATUTS.find(s => s.value === value) || STATUTS[0];
 }
 
+// Combobox catégorie avec recherche intégrée
+function CategorieCombobox({
+  value,
+  onValueChange,
+  placeholder = "Catégorie...",
+  className = "",
+  allowAll = false,
+}: {
+  value: string;
+  onValueChange: (v: string) => void;
+  placeholder?: string;
+  className?: string;
+  allowAll?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  const filtered = CATEGORIES.filter(c =>
+    c.label.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const selected = value === "tous" ? null : CATEGORIES.find(c => c.value === value);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div className={cn("relative", className)} ref={ref}>
+      <button
+        type="button"
+        onClick={() => { setOpen(o => !o); setSearch(""); }}
+        className="flex items-center gap-2 w-full h-9 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring hover:bg-muted/50 transition-colors"
+      >
+        <Tag className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+        <span className="flex-1 text-left truncate text-sm">
+          {allowAll && value === "tous" ? "Toutes catégories" : selected ? selected.label : <span className="text-muted-foreground">{placeholder}</span>}
+        </span>
+        <svg className="h-4 w-4 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+      </button>
+      {open && (
+        <div className="absolute z-50 mt-1 w-full min-w-[240px] rounded-md border border-border bg-popover shadow-lg">
+          <div className="p-2 border-b border-border">
+            <input
+              autoFocus
+              type="text"
+              placeholder="Rechercher une catégorie..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full rounded-sm border border-input bg-background px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-ring"
+            />
+          </div>
+          <div className="max-h-64 overflow-y-auto p-1">
+            {allowAll && (
+              <button
+                type="button"
+                className={cn("w-full text-left px-2 py-1.5 rounded-sm text-sm hover:bg-muted transition-colors", value === "tous" && "bg-primary/10 font-medium")}
+                onClick={() => { onValueChange("tous"); setOpen(false); }}
+              >
+                Toutes catégories
+              </button>
+            )}
+            {filtered.length === 0 ? (
+              <p className="px-2 py-3 text-sm text-muted-foreground text-center">Aucune catégorie trouvée</p>
+            ) : (
+              filtered.map(c => (
+                <button
+                  type="button"
+                  key={c.value}
+                  className={cn("w-full text-left px-2 py-1.5 rounded-sm text-sm hover:bg-muted transition-colors", value === c.value && "bg-primary/10 font-medium")}
+                  onClick={() => { onValueChange(c.value); setOpen(false); }}
+                >
+                  {c.label}
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function JustificatifsTab() {
   const [items, setItems] = useState<Justificatif[]>([]);
   const [loading, setLoading] = useState(true);
@@ -342,18 +430,13 @@ export function JustificatifsTab() {
             </Button>
           ))}
         </div>
-        <Select value={filterCategorie} onValueChange={setFilterCategorie}>
-          <SelectTrigger className="w-[180px]">
-            <Tag className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="Catégorie" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="tous">Toutes catégories</SelectItem>
-            {CATEGORIES.map(c => (
-              <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <CategorieCombobox
+          value={filterCategorie}
+          onValueChange={setFilterCategorie}
+          placeholder="Toutes catégories"
+          allowAll={true}
+          className="w-[220px]"
+        />
       </div>
 
       {/* List grouped by month */}
@@ -433,19 +516,12 @@ export function JustificatifsTab() {
 
                         {/* Category selector */}
                         {isEditing ? (
-                          <Select
+                          <CategorieCombobox
                             value={editForm.categorie || ""}
                             onValueChange={v => setEditForm(f => ({ ...f, categorie: v }))}
-                          >
-                            <SelectTrigger className="h-8 w-[200px] text-xs">
-                              <SelectValue placeholder="Catégorie..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {CATEGORIES.map(c => (
-                                <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            placeholder="Catégorie..."
+                            className="w-[260px] h-8 text-xs"
+                          />
                         ) : (
                           item.categorie && (
                             <Badge className={cn("text-xs w-fit", catConfig.color)}>{catConfig.label}</Badge>
