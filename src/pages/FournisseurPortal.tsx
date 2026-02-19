@@ -16,8 +16,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { parseDateRange } from "@/lib/parseDateRange";
-import { Plus, Loader2, CalendarIcon, Users, FileText, Receipt, Upload, Trash2, Eye, CalendarDays } from "lucide-react";
+import { Plus, Loader2, CalendarIcon, Users, FileText, Receipt, Upload, Trash2, Eye, CalendarDays, BarChart3 } from "lucide-react";
 import logoFtransport from "@/assets/logo-ftransport.png";
+import { RapprochementBancaire } from "@/components/comptabilite/RapprochementBancaire";
 
 // Dates formations (same as ApprenantForm)
 const datesFormations = {
