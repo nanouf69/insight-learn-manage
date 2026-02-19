@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Copy, Loader2, Users, FileText, Receipt, Eye, Building2, CreditCard, Mail, RefreshCw, SendHorizonal, Upload, Trash2 } from "lucide-react";
+import { Plus, Copy, Loader2, Users, FileText, Receipt, Eye, Building2, CreditCard, Mail, RefreshCw, SendHorizonal, Upload, Trash2, FolderOpen } from "lucide-react";
 import { EmailDialog } from "@/components/shared/EmailDialog";
 import { BulkEmailSender } from "@/components/shared/BulkEmailSender";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -59,13 +59,29 @@ export function FournisseursPage() {
   const [sendLinkOpen, setSendLinkOpen] = useState(false);
   const [sendLinkTarget, setSendLinkTarget] = useState<Fournisseur | null>(null);
 
+  // Global docs from suppliers (uploaded_by = 'fournisseur')
+  const [globalPageTab, setGlobalPageTab] = useState("liste");
+  const [allDocsFromFournisseurs, setAllDocsFromFournisseurs] = useState<any[]>([]);
+  const [loadingDocs, setLoadingDocs] = useState(false);
+
   const loadFournisseurs = async () => {
     const { data, error } = await supabase.from('fournisseurs').select('*').order('created_at', { ascending: false });
     if (!error && data) setFournisseurs(data as Fournisseur[]);
     setLoading(false);
   };
 
-  useEffect(() => { loadFournisseurs(); }, []);
+  const loadAllDocs = async () => {
+    setLoadingDocs(true);
+    const { data } = await supabase
+      .from('fournisseur_shared_docs')
+      .select('*, fournisseurs!inner(nom)')
+      .eq('uploaded_by', 'fournisseur')
+      .order('created_at', { ascending: false });
+    if (data) setAllDocsFromFournisseurs(data);
+    setLoadingDocs(false);
+  };
+
+  useEffect(() => { loadFournisseurs(); loadAllDocs(); }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -171,7 +187,67 @@ export function FournisseursPage() {
         </div>
       </div>
 
-      {/* Detail view */}
+      {/* Global page tabs (only when not in detail view) */}
+      {!selectedFournisseur && (
+        <Tabs value={globalPageTab} onValueChange={setGlobalPageTab}>
+          <TabsList>
+            <TabsTrigger value="liste" className="gap-2"><Users className="w-4 h-4" />Fournisseurs</TabsTrigger>
+            <TabsTrigger value="documents" className="gap-2 relative">
+              <FolderOpen className="w-4 h-4" />
+              Documents reçus
+              {allDocsFromFournisseurs.length > 0 && (
+                <span className="ml-1 bg-primary text-primary-foreground text-[10px] rounded-full px-1.5 py-0.5 font-bold">
+                  {allDocsFromFournisseurs.length}
+                </span>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="liste">
+            {/* list rendered below */}
+          </TabsContent>
+
+          <TabsContent value="documents">
+            <div className="space-y-3 mt-2">
+              {loadingDocs ? (
+                <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin" /></div>
+              ) : allDocsFromFournisseurs.length === 0 ? (
+                <Card><CardContent className="pt-6 text-center text-muted-foreground">Aucun document déposé par les fournisseurs.</CardContent></Card>
+              ) : (
+                allDocsFromFournisseurs.map((doc: any) => (
+                  <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg bg-card hover:bg-muted/30 transition-colors">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+                        <FileText className="w-4 h-4 text-primary" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{doc.titre}</p>
+                        <p className="text-xs text-muted-foreground">
+                          <span className="font-medium">{(doc.fournisseurs as any)?.nom}</span>
+                          {" · "}{doc.nom_fichier}
+                          {" · "}{new Date(doc.created_at).toLocaleDateString('fr-FR')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                        <Button variant="outline" size="sm" className="gap-1"><Eye className="w-3 h-3" />Voir</Button>
+                      </a>
+                      <Button variant="ghost" size="sm" className="text-destructive" onClick={async () => {
+                        await supabase.from('fournisseur_shared_docs').delete().eq('id', doc.id);
+                        loadAllDocs();
+                      }}><Trash2 className="w-3 h-3" /></Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+      )}
+
+
+      {/* Detail view or list */}
       {selectedFournisseur ? (
         <div className="space-y-4">
           <div className="flex items-center gap-3">
@@ -419,7 +495,7 @@ export function FournisseursPage() {
             </TabsContent>
           </Tabs>
         </div>
-      ) : (
+      ) : globalPageTab === "liste" ? (
         /* List view */
         <div className="grid gap-4">
           {fournisseurs.length === 0 ? (
@@ -466,7 +542,7 @@ export function FournisseursPage() {
             </Card>
           ))}
         </div>
-      )}
+      ) : null}
 
       {/* Dialog email fournisseur */}
       {emailTarget?.email && (
