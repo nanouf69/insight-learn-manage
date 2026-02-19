@@ -1015,6 +1015,7 @@ export type Database = {
           banque: string | null
           bic: string | null
           code_postal: string | null
+          comptable_only: boolean | null
           created_at: string
           email: string | null
           factures_only: boolean | null
@@ -1038,6 +1039,7 @@ export type Database = {
           banque?: string | null
           bic?: string | null
           code_postal?: string | null
+          comptable_only?: boolean | null
           created_at?: string
           email?: string | null
           factures_only?: boolean | null
@@ -1061,6 +1063,7 @@ export type Database = {
           banque?: string | null
           bic?: string | null
           code_postal?: string | null
+          comptable_only?: boolean | null
           created_at?: string
           email?: string | null
           factures_only?: boolean | null
