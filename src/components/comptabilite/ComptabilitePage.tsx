@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { JustificatifsTab } from "./JustificatifsTab";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -440,6 +441,9 @@ export function ComptabilitePage() {
           <TabsTrigger value="releves" className="gap-2">
             <FolderOpen className="h-4 w-4" /> Relevés de comptes
             <Badge className="ml-1 h-5 px-1.5 text-[10px]">{releves.length}</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="justificatifs" className="gap-2">
+            <Receipt className="h-4 w-4" /> Justificatifs
           </TabsTrigger>
         </TabsList>
 
@@ -1181,6 +1185,11 @@ export function ComptabilitePage() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* === JUSTIFICATIFS === */}
+        <TabsContent value="justificatifs" className="space-y-6">
+          <JustificatifsTab />
         </TabsContent>
       </Tabs>
     </div>

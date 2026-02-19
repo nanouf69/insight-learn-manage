@@ -1088,6 +1088,62 @@ export type Database = {
           },
         ]
       }
+      justificatifs: {
+        Row: {
+          categorie: string | null
+          created_at: string
+          date_operation: string | null
+          description: string | null
+          facture_id: string | null
+          fournisseur: string | null
+          id: string
+          montant_ttc: number | null
+          nom_fichier: string
+          notes: string | null
+          statut: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          categorie?: string | null
+          created_at?: string
+          date_operation?: string | null
+          description?: string | null
+          facture_id?: string | null
+          fournisseur?: string | null
+          id?: string
+          montant_ttc?: number | null
+          nom_fichier: string
+          notes?: string | null
+          statut?: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          categorie?: string | null
+          created_at?: string
+          date_operation?: string | null
+          description?: string | null
+          facture_id?: string | null
+          fournisseur?: string | null
+          id?: string
+          montant_ttc?: number | null
+          nom_fichier?: string
+          notes?: string | null
+          statut?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "justificatifs_facture_id_fkey"
+            columns: ["facture_id"]
+            isOneToOne: false
+            referencedRelation: "factures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organismes: {
         Row: {
           adresse: string | null
