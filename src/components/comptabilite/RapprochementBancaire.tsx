@@ -230,9 +230,21 @@ export function RapprochementBancaire() {
   };
 
   const saveEdit = async (id: string) => {
+    const tx = transactions.find(t => t.id === id);
     await supabase.from("transactions_bancaires").update(editForm).eq("id", id);
     setEditingId(null);
-    toast.success("Mise à jour !");
+    // Auto-catégoriser les transactions similaires si une catégorie a été choisie
+    if (tx && editForm.categorie) {
+      const updatedTx = { ...tx, ...editForm } as Transaction;
+      const similar = await autoCategorizeSimilar(updatedTx, editForm.categorie);
+      if (similar > 0) {
+        toast.success(`Sauvegardé ! ${similar} transaction(s) similaire(s) auto-catégorisée(s) ✨`);
+      } else {
+        toast.success("Mise à jour !");
+      }
+    } else {
+      toast.success("Mise à jour !");
+    }
     await fetchAll();
   };
 
@@ -296,6 +308,44 @@ export function RapprochementBancaire() {
     await fetchAll();
   };
 
+  // Extraire les mots significatifs d'un libellé (>= 3 chars, non génériques)
+  const extractKeywords = (libelle: string): string[] => {
+    const stopWords = new Set(["les", "des", "une", "par", "sur", "pour", "avec", "dans", "virement", "paiement", "prelevement", "prlv", "sepa", "facture", "carte", "vir", "remise", "cheque", "fra", "com"]);
+    return libelle
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter(w => w.length >= 3 && !stopWords.has(w));
+  };
+
+  // Après avoir catégorisé une transaction, auto-catégoriser les similaires
+  const autoCategorizeSimilar = async (sourceTx: Transaction, categorie: string): Promise<number> => {
+    const sourceKeywords = extractKeywords(sourceTx.libelle);
+    if (sourceKeywords.length === 0) return 0;
+
+    const uncategorized = transactions.filter(
+      t => t.id !== sourceTx.id && !t.categorie
+    );
+
+    const toUpdate: string[] = [];
+    for (const tx of uncategorized) {
+      const txKeywords = extractKeywords(tx.libelle);
+      const commonWords = sourceKeywords.filter(w => txKeywords.includes(w));
+      // Au moins 1 mot commun significatif
+      if (commonWords.length >= 1) {
+        toUpdate.push(tx.id);
+      }
+    }
+
+    if (toUpdate.length > 0) {
+      await supabase
+        .from("transactions_bancaires")
+        .update({ categorie })
+        .in("id", toUpdate);
+    }
+    return toUpdate.length;
+  };
+
   const categorizeWithAI = async (tx: Transaction) => {
     setAiLoadingId(tx.id);
     try {
@@ -310,7 +360,12 @@ export function RapprochementBancaire() {
       if (error) throw error;
       if (data?.categorie) {
         await supabase.from("transactions_bancaires").update({ categorie: data.categorie }).eq("id", tx.id);
-        toast.success(`Catégorie détectée : ${data.categorie}`);
+        const similar = await autoCategorizeSimilar(tx, data.categorie);
+        if (similar > 0) {
+          toast.success(`Catégorie « ${data.categorie} » appliquée + ${similar} transaction(s) similaire(s) auto-catégorisée(s) ✨`);
+        } else {
+          toast.success(`Catégorie détectée : ${data.categorie}`);
+        }
         await fetchAll();
       } else {
         toast.warning("L'IA n'a pas pu déterminer la catégorie");
