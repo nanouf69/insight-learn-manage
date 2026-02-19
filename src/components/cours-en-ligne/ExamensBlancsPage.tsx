@@ -9,9 +9,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   ArrowLeft, ArrowRight, Clock, CheckCircle2, XCircle, AlertTriangle,
-  FileText, Timer, Trophy, RotateCcw, ChevronRight, BookOpen
+  FileText, Timer, Trophy, RotateCcw, ChevronRight, BookOpen, Pencil
 } from "lucide-react";
 import { tousLesExamens, type ExamenBlanc, type Matiere, type Question } from "./examens-blancs-data";
+import ExamensBlancsEditor from "./ExamensBlancsEditor";
 
 // ===== COMPOSANT TIMER =====
 function TimerBadge({ seconds, onExpire }: { seconds: number; onExpire: () => void }) {
@@ -489,7 +490,7 @@ function EcranResultats({
 
 // ===== COMPOSANT PRINCIPAL =====
 export default function ExamensBlancsPage() {
-  const [phase, setPhase] = useState<"selection" | "intro" | "examen" | "resultats">("selection");
+  const [phase, setPhase] = useState<"selection" | "intro" | "examen" | "resultats" | "edition">("selection");
   const [examenChoisi, setExamenChoisi] = useState<ExamenBlanc | null>(null);
   const [matiereIndex, setMatiereIndex] = useState(0);
   const [tousResultats, setTousResultats] = useState<ResultatMatiere[]>([]);
@@ -547,8 +548,22 @@ export default function ExamensBlancsPage() {
     }
   };
 
+  if (phase === "edition") {
+    return <ExamensBlancsEditor onBack={() => setPhase("selection")} />;
+  }
+
   if (phase === "selection") {
-    return <EcranSelection onStart={handleStart} />;
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-end">
+          <Button variant="outline" size="sm" onClick={() => setPhase("edition")} className="gap-2">
+            <Pencil className="w-4 h-4" />
+            Modifier les examens
+          </Button>
+        </div>
+        <EcranSelection onStart={handleStart} />
+      </div>
+    );
   }
 
   if (phase === "intro" && examenChoisi) {
