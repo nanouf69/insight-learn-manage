@@ -108,6 +108,9 @@ export default function FournisseurPortal() {
   const [documents, setDocuments] = useState<FournisseurDocument[]>([]);
   const [factures, setFactures] = useState<FournisseurFacture[]>([]);
   const [planning, setPlanning] = useState<any[]>([]);
+  const [sharedDocs, setSharedDocs] = useState<any[]>([]);
+  const [isUploadingSharedDoc, setIsUploadingSharedDoc] = useState(false);
+  const [sharedDocTitre, setSharedDocTitre] = useState("");
 
   // Apprenant form
   const [showForm, setShowForm] = useState(false);
@@ -175,14 +178,16 @@ export default function FournisseurPortal() {
   useEffect(() => {
     if (!fournisseur) return;
     const load = async () => {
-      const [appRes, docRes, facRes] = await Promise.all([
+      const [appRes, docRes, facRes, sharedRes] = await Promise.all([
         supabase.from('fournisseur_apprenants').select('id, nom, prenom, formation_choisie, created_at').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false }),
         supabase.from('fournisseur_documents').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false }),
         supabase.from('fournisseur_factures').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false }),
+        supabase.from('fournisseur_shared_docs').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false }),
       ]);
       if (appRes.data) setApprenants(appRes.data);
       if (docRes.data) setDocuments(docRes.data as FournisseurDocument[]);
       if (facRes.data) setFactures(facRes.data as FournisseurFacture[]);
+      if (sharedRes.data) setSharedDocs(sharedRes.data);
 
       // Charger le planning si c'est un formateur (depuis agenda_blocs)
       if (fournisseur.formateur_id) {
@@ -411,21 +416,24 @@ export default function FournisseurPortal() {
       <div className="max-w-6xl mx-auto p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           {fournisseur?.formateur_id ? (
-            // Formateur : planning + factures
-            <TabsList className="grid w-full grid-cols-2 mb-6">
+            // Formateur : planning + documents + factures
+            <TabsList className="grid w-full grid-cols-3 mb-6">
               <TabsTrigger value="planning" className="gap-2"><CalendarDays className="w-4 h-4" />Mon planning</TabsTrigger>
+              <TabsTrigger value="shared-docs" className="gap-2"><FileText className="w-4 h-4" />Documents</TabsTrigger>
               <TabsTrigger value="factures" className="gap-2"><Receipt className="w-4 h-4" />Mes factures</TabsTrigger>
             </TabsList>
           ) : fournisseur?.factures_only ? (
-            // Factures seulement
-            <TabsList className="grid w-full grid-cols-1 mb-6">
+            // Factures + documents
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="shared-docs" className="gap-2"><FileText className="w-4 h-4" />Documents</TabsTrigger>
               <TabsTrigger value="factures" className="gap-2"><Receipt className="w-4 h-4" />Mes factures</TabsTrigger>
             </TabsList>
           ) : (
-            // Standard : apprenants + documents + factures
-            <TabsList className="grid w-full grid-cols-3 mb-6">
+            // Standard : apprenants + documents apprenants + documents partagés + factures
+            <TabsList className="grid w-full grid-cols-4 mb-6">
               <TabsTrigger value="apprenants" className="gap-2"><Users className="w-4 h-4" />Apprenants</TabsTrigger>
-              <TabsTrigger value="documents" className="gap-2"><FileText className="w-4 h-4" />Documents</TabsTrigger>
+              <TabsTrigger value="documents" className="gap-2"><FileText className="w-4 h-4" />Docs apprenants</TabsTrigger>
+              <TabsTrigger value="shared-docs" className="gap-2"><FileText className="w-4 h-4" />Documents</TabsTrigger>
               <TabsTrigger value="factures" className="gap-2"><Receipt className="w-4 h-4" />Factures</TabsTrigger>
             </TabsList>
           )}
@@ -747,6 +755,109 @@ export default function FournisseurPortal() {
                   ))}
                 </div>
               )}
+            </div>
+          </TabsContent>
+
+          {/* ============ TAB DOCUMENTS PARTAGÉS ============ */}
+          <TabsContent value="shared-docs">
+            <div className="space-y-6">
+              {/* Upload section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><FileText className="w-5 h-5" />Envoyer un document</CardTitle>
+                  <CardDescription>Déposez ici vos documents (contrats, fiches, certifications…)</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (!fournisseur) return;
+                    const fileInput = document.getElementById('shared-doc-file') as HTMLInputElement;
+                    const files = fileInput?.files;
+                    if (!files || files.length === 0) {
+                      toast({ title: "Erreur", description: "Veuillez sélectionner un fichier.", variant: "destructive" });
+                      return;
+                    }
+                    setIsUploadingSharedDoc(true);
+                    try {
+                      for (let i = 0; i < files.length; i++) {
+                        const file = files[i];
+                        const filePath = `${fournisseur.id}/${Date.now()}_${file.name}`;
+                        const { error: uploadErr } = await supabase.storage.from('fournisseur-shared-docs').upload(filePath, file);
+                        if (uploadErr) throw uploadErr;
+                        const { data: { publicUrl } } = supabase.storage.from('fournisseur-shared-docs').getPublicUrl(filePath);
+                        const { error: insertErr } = await supabase.from('fournisseur_shared_docs').insert({
+                          fournisseur_id: fournisseur.id,
+                          titre: sharedDocTitre || file.name,
+                          nom_fichier: file.name,
+                          url: publicUrl,
+                          uploaded_by: 'fournisseur',
+                        });
+                        if (insertErr) throw insertErr;
+                      }
+                      toast({ title: "Document envoyé", description: "Le document a été transmis avec succès." });
+                      setSharedDocTitre("");
+                      fileInput.value = "";
+                      const { data } = await supabase.from('fournisseur_shared_docs').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false });
+                      if (data) setSharedDocs(data);
+                    } catch (err: any) {
+                      toast({ title: "Erreur", description: err.message, variant: "destructive" });
+                    } finally {
+                      setIsUploadingSharedDoc(false);
+                    }
+                  }} className="space-y-4">
+                    <div>
+                      <Label htmlFor="shared-doc-titre">Titre du document (optionnel)</Label>
+                      <input
+                        id="shared-doc-titre"
+                        type="text"
+                        placeholder="Ex: Contrat de prestation, Attestation..."
+                        value={sharedDocTitre}
+                        onChange={e => setSharedDocTitre(e.target.value)}
+                        className="w-full border rounded-md px-3 py-2 text-sm mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="shared-doc-file">Fichier(s)</Label>
+                      <input id="shared-doc-file" type="file" multiple className="w-full border rounded-md px-3 py-2 text-sm mt-1" />
+                    </div>
+                    <Button type="submit" disabled={isUploadingSharedDoc} className="gap-2">
+                      {isUploadingSharedDoc ? <><Loader2 className="w-4 h-4 animate-spin" />Envoi...</> : <><Upload className="w-4 h-4" />Envoyer le document</>}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+
+              {/* Liste des documents */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Tous les documents</CardTitle>
+                  <CardDescription>Documents échangés entre vous et Finally Academy</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {sharedDocs.length === 0 ? (
+                    <p className="text-muted-foreground py-4 text-center">Aucun document partagé pour le moment.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {sharedDocs.map((doc: any) => (
+                        <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30">
+                          <div className="flex items-center gap-3">
+                            <FileText className="w-5 h-5 text-primary shrink-0" />
+                            <div>
+                              <p className="font-medium text-sm">{doc.titre}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {doc.uploaded_by === 'admin' ? '📤 Envoyé par Finally Academy' : '📁 Votre document'} · {new Date(doc.created_at).toLocaleDateString('fr-FR')}
+                              </p>
+                            </div>
+                          </div>
+                          <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                            <Button variant="outline" size="sm" className="gap-1"><Eye className="w-3 h-3" />Voir</Button>
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
 

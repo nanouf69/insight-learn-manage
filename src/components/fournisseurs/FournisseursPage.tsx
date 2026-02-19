@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Copy, Loader2, Users, FileText, Receipt, Eye, Building2, CreditCard, Mail, RefreshCw, SendHorizonal } from "lucide-react";
+import { Plus, Copy, Loader2, Users, FileText, Receipt, Eye, Building2, CreditCard, Mail, RefreshCw, SendHorizonal, Upload, Trash2 } from "lucide-react";
 import { EmailDialog } from "@/components/shared/EmailDialog";
 import { BulkEmailSender } from "@/components/shared/BulkEmailSender";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -50,6 +50,10 @@ export function FournisseursPage() {
   const [detailApprenants, setDetailApprenants] = useState<any[]>([]);
   const [detailDocuments, setDetailDocuments] = useState<any[]>([]);
   const [detailFactures, setDetailFactures] = useState<any[]>([]);
+  const [detailSharedDocs, setDetailSharedDocs] = useState<any[]>([]);
+  const [isUploadingSharedDoc, setIsUploadingSharedDoc] = useState(false);
+  const [sharedDocTitre, setSharedDocTitre] = useState("");
+  const sharedDocFileRef = useRef<HTMLInputElement>(null);
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [emailTarget, setEmailTarget] = useState<Fournisseur | null>(null);
   const [sendLinkOpen, setSendLinkOpen] = useState(false);
@@ -88,13 +92,15 @@ export function FournisseursPage() {
   const viewDetails = async (f: Fournisseur) => {
     setSelectedFournisseur(f);
     setDetailTab("coordonnees");
-    const [appRes, docRes, facRes] = await Promise.all([
+    const [appRes, docRes, facRes, sharedRes] = await Promise.all([
       supabase.from('fournisseur_apprenants').select('*').eq('fournisseur_id', f.id).order('created_at', { ascending: false }),
       supabase.from('fournisseur_documents').select('*').eq('fournisseur_id', f.id).order('created_at', { ascending: false }),
       supabase.from('fournisseur_factures').select('*').eq('fournisseur_id', f.id).order('created_at', { ascending: false }),
+      supabase.from('fournisseur_shared_docs').select('*').eq('fournisseur_id', f.id).order('created_at', { ascending: false }),
     ]);
     if (appRes.data) setDetailApprenants(appRes.data);
     if (docRes.data) setDetailDocuments(docRes.data);
+    if (sharedRes.data) setDetailSharedDocs(sharedRes.data);
     if (facRes.data) setDetailFactures(facRes.data);
   };
 
@@ -179,7 +185,8 @@ export function FournisseursPage() {
               <TabsTrigger value="coordonnees" className="gap-2"><Building2 className="w-4 h-4" />Coordonnées</TabsTrigger>
               <TabsTrigger value="bancaire" className="gap-2"><CreditCard className="w-4 h-4" />RIB</TabsTrigger>
               <TabsTrigger value="apprenants" className="gap-2"><Users className="w-4 h-4" />Apprenants ({detailApprenants.length})</TabsTrigger>
-              <TabsTrigger value="documents" className="gap-2"><FileText className="w-4 h-4" />Documents ({detailDocuments.length})</TabsTrigger>
+              <TabsTrigger value="shared-docs" className="gap-2"><FileText className="w-4 h-4" />Documents partagés ({detailSharedDocs.length})</TabsTrigger>
+              <TabsTrigger value="documents" className="gap-2"><FileText className="w-4 h-4" />Docs apprenants ({detailDocuments.length})</TabsTrigger>
               <TabsTrigger value="factures" className="gap-2"><Receipt className="w-4 h-4" />Factures ({detailFactures.length})</TabsTrigger>
             </TabsList>
 
@@ -296,8 +303,97 @@ export function FournisseursPage() {
                 </div>
               )}
             </TabsContent>
+            <TabsContent value="shared-docs">
+              <div className="space-y-4">
+                {/* Upload côté admin */}
+                <Card>
+                  <CardHeader><CardTitle className="text-base">Envoyer un document au fournisseur</CardTitle></CardHeader>
+                  <CardContent>
+                    <form onSubmit={async (e) => {
+                      e.preventDefault();
+                      if (!selectedFournisseur) return;
+                      const fileInput = sharedDocFileRef.current;
+                      const files = fileInput?.files;
+                      if (!files || files.length === 0) {
+                        toast({ title: "Erreur", description: "Veuillez sélectionner un fichier.", variant: "destructive" });
+                        return;
+                      }
+                      setIsUploadingSharedDoc(true);
+                      try {
+                        for (let i = 0; i < files.length; i++) {
+                          const file = files[i];
+                          const filePath = `${selectedFournisseur.id}/${Date.now()}_${file.name}`;
+                          const { error: uploadErr } = await supabase.storage.from('fournisseur-shared-docs').upload(filePath, file);
+                          if (uploadErr) throw uploadErr;
+                          const { data: { publicUrl } } = supabase.storage.from('fournisseur-shared-docs').getPublicUrl(filePath);
+                          const { error: insertErr } = await supabase.from('fournisseur_shared_docs').insert({
+                            fournisseur_id: selectedFournisseur.id,
+                            titre: sharedDocTitre || file.name,
+                            nom_fichier: file.name,
+                            url: publicUrl,
+                            uploaded_by: 'admin',
+                          });
+                          if (insertErr) throw insertErr;
+                        }
+                        toast({ title: "Document envoyé", description: "Le document a été transmis au fournisseur." });
+                        setSharedDocTitre("");
+                        if (fileInput) fileInput.value = "";
+                        const { data } = await supabase.from('fournisseur_shared_docs').select('*').eq('fournisseur_id', selectedFournisseur.id).order('created_at', { ascending: false });
+                        if (data) setDetailSharedDocs(data);
+                      } catch (err: any) {
+                        toast({ title: "Erreur", description: err.message, variant: "destructive" });
+                      } finally {
+                        setIsUploadingSharedDoc(false);
+                      }
+                    }} className="space-y-3">
+                      <div>
+                        <Label>Titre du document</Label>
+                        <Input placeholder="Ex: Contrat, Attestation..." value={sharedDocTitre} onChange={e => setSharedDocTitre(e.target.value)} className="mt-1" />
+                      </div>
+                      <div>
+                        <Label>Fichier(s)</Label>
+                        <input ref={sharedDocFileRef} type="file" multiple className="w-full border rounded-md px-3 py-2 text-sm mt-1" />
+                      </div>
+                      <Button type="submit" disabled={isUploadingSharedDoc} size="sm" className="gap-2">
+                        {isUploadingSharedDoc ? <><Loader2 className="w-4 h-4 animate-spin" />Envoi...</> : <><Upload className="w-4 h-4" />Envoyer</>}
+                      </Button>
+                    </form>
+                  </CardContent>
+                </Card>
+
+                {/* Liste des documents */}
+                {detailSharedDocs.length === 0 ? <p className="text-muted-foreground py-4">Aucun document partagé</p> : (
+                  <div className="grid gap-3">
+                    {detailSharedDocs.map((doc: any) => (
+                      <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <FileText className="w-5 h-5 text-primary shrink-0" />
+                          <div>
+                            <p className="font-medium text-sm">{doc.titre}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {doc.uploaded_by === 'admin' ? '📤 Envoyé par admin' : '📁 Du fournisseur'} · {new Date(doc.created_at).toLocaleDateString('fr-FR')}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                            <Button variant="outline" size="sm" className="gap-1"><Eye className="w-3 h-3" />Voir</Button>
+                          </a>
+                          <Button variant="ghost" size="sm" className="text-destructive gap-1" onClick={async () => {
+                            await supabase.from('fournisseur_shared_docs').delete().eq('id', doc.id);
+                            const { data } = await supabase.from('fournisseur_shared_docs').select('*').eq('fournisseur_id', selectedFournisseur!.id).order('created_at', { ascending: false });
+                            if (data) setDetailSharedDocs(data);
+                          }}><Trash2 className="w-3 h-3" /></Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
             <TabsContent value="documents">
-              {detailDocuments.length === 0 ? <p className="text-muted-foreground py-4">Aucun document</p> : (
+              {detailDocuments.length === 0 ? <p className="text-muted-foreground py-4">Aucun document apprenant</p> : (
                 <div className="grid gap-3">
                   {detailDocuments.map((d: any) => (
                     <Card key={d.id}><CardContent className="pt-4 flex justify-between items-center">
