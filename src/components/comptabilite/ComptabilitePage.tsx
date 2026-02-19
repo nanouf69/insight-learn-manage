@@ -6,13 +6,19 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   Search, Euro, TrendingUp, Clock, CheckCircle, AlertTriangle,
   Download, Filter, Receipt, CreditCard, Banknote, BarChart3,
-  Building2, RefreshCw, Link2, ExternalLink, ArrowDownLeft, ArrowUpRight
+  Building2, RefreshCw, Link2, ExternalLink, ArrowDownLeft, ArrowUpRight,
+  CalendarIcon, CheckCheck
 } from "lucide-react";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 interface Facture {
   id: string;
@@ -49,8 +55,23 @@ interface BridgeTransaction {
   account_id: number;
 }
 
+// Unified "à payer" item
+interface APayer {
+  id: string;
+  type: "apprenant" | "fournisseur";
+  nom: string;
+  description: string;
+  montant: number;
+  date_emission: string;
+  statut: string;
+  date_paiement: string | null;
+  moyen_paiement: string | null;
+  source_id: string; // facture id or fournisseur_facture id
+}
+
 const statutConfig: Record<string, { label: string; color: string }> = {
   payee: { label: "Payée", color: "bg-emerald-100 text-emerald-700" },
+  paye: { label: "Payé", color: "bg-emerald-100 text-emerald-700" },
   en_attente: { label: "En attente", color: "bg-amber-100 text-amber-700" },
   en_retard: { label: "En retard", color: "bg-destructive/10 text-destructive" },
   annulee: { label: "Annulée", color: "bg-muted text-muted-foreground" },
@@ -64,6 +85,8 @@ const financementLabels: Record<string, string> = {
   cpf: "CPF",
 };
 
+const moyensPaiement = ["Virement", "Chèque", "Espèces", "Carte bancaire", "Prélèvement"];
+
 const BRIDGE_USER_KEY = "ftransport_bridge_user";
 
 export function ComptabilitePage() {
@@ -74,6 +97,14 @@ export function ComptabilitePage() {
   const [filterStatut, setFilterStatut] = useState<string>("all");
   const [filterFinancement, setFilterFinancement] = useState<string>("all");
   const [activeTab, setActiveTab] = useState("overview");
+
+  // À payer state
+  const [payerFilter, setPayerFilter] = useState<"tous" | "en_attente" | "paye">("tous");
+  const [payerSearch, setPayerSearch] = useState("");
+  // Per-row payment form state
+  const [paymentDates, setPaymentDates] = useState<Record<string, Date | undefined>>({});
+  const [paymentMoyens, setPaymentMoyens] = useState<Record<string, string>>({});
+  const [savingPayment, setSavingPayment] = useState<Record<string, boolean>>({});
 
   // Bridge state
   const [bridgeUserUuid, setBridgeUserUuid] = useState<string | null>(null);
@@ -114,6 +145,94 @@ export function ComptabilitePage() {
     setLoading(false);
   };
 
+  // Build unified "à payer" list from factures apprenants + factures fournisseurs
+  const aPayerItems = useMemo((): APayer[] => {
+    const apprenantItems: APayer[] = factures
+      .filter(f => f.statut !== "annulee")
+      .map(f => ({
+        id: `apprenant-${f.id}`,
+        type: "apprenant",
+        nom: f.client_nom,
+        description: `Facture ${f.numero} — ${financementLabels[f.type_financement] || f.type_financement}`,
+        montant: Number(f.montant_ttc),
+        date_emission: f.date_emission,
+        statut: f.statut === "payee" ? "paye" : (f.statut || "en_attente"),
+        date_paiement: f.date_paiement,
+        moyen_paiement: null,
+        source_id: f.id,
+      }));
+
+    const fournisseurItems: APayer[] = fournisseurFactures.map(f => ({
+      id: `fournisseur-${f.id}`,
+      type: "fournisseur",
+      nom: f.fournisseurs?.nom || "Fournisseur",
+      description: f.description || f.nom_fichier,
+      montant: Number(f.montant) || 0,
+      date_emission: f.created_at,
+      statut: f.statut || "en_attente",
+      date_paiement: f.date_paiement || null,
+      moyen_paiement: f.moyen_paiement || null,
+      source_id: f.id,
+    }));
+
+    return [...apprenantItems, ...fournisseurItems].sort(
+      (a, b) => new Date(b.date_emission).getTime() - new Date(a.date_emission).getTime()
+    );
+  }, [factures, fournisseurFactures]);
+
+  const filteredAPayerItems = useMemo(() => {
+    return aPayerItems.filter(item => {
+      const matchSearch =
+        item.nom.toLowerCase().includes(payerSearch.toLowerCase()) ||
+        item.description.toLowerCase().includes(payerSearch.toLowerCase());
+      const matchFilter =
+        payerFilter === "tous" ||
+        (payerFilter === "paye" && item.statut === "paye") ||
+        (payerFilter === "en_attente" && item.statut !== "paye");
+      return matchSearch && matchFilter;
+    });
+  }, [aPayerItems, payerSearch, payerFilter]);
+
+  const totalAPayer = useMemo(() =>
+    aPayerItems.filter(i => i.statut !== "paye").reduce((s, i) => s + i.montant, 0),
+    [aPayerItems]
+  );
+  const totalPaye2 = useMemo(() =>
+    aPayerItems.filter(i => i.statut === "paye").reduce((s, i) => s + i.montant, 0),
+    [aPayerItems]
+  );
+
+  const handleMarquerPaye = async (item: APayer) => {
+    const date = paymentDates[item.id];
+    const moyen = paymentMoyens[item.id];
+    if (!date) { toast.error("Veuillez sélectionner une date de paiement"); return; }
+    if (!moyen) { toast.error("Veuillez sélectionner un moyen de paiement"); return; }
+
+    setSavingPayment(prev => ({ ...prev, [item.id]: true }));
+    const dateStr = format(date, "yyyy-MM-dd");
+
+    try {
+      if (item.type === "apprenant") {
+        const { error } = await supabase
+          .from("factures")
+          .update({ statut: "payee", date_paiement: dateStr })
+          .eq("id", item.source_id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("fournisseur_factures")
+          .update({ statut: "paye", date_paiement: dateStr, moyen_paiement: moyen })
+          .eq("id", item.source_id);
+        if (error) throw error;
+      }
+      toast.success(`Paiement enregistré pour ${item.nom}`);
+      await Promise.all([fetchFactures(), fetchFournisseurFactures()]);
+    } catch (err) {
+      toast.error("Erreur lors de l'enregistrement");
+    }
+    setSavingPayment(prev => ({ ...prev, [item.id]: false }));
+  };
+
   const callBridge = async (action: string, extra: Record<string, string> = {}) => {
     const res = await supabase.functions.invoke("bridge-bank", {
       body: { action, ...extra },
@@ -130,8 +249,6 @@ export function ComptabilitePage() {
       setBridgeUserUuid(uuid);
       localStorage.setItem(BRIDGE_USER_KEY, uuid);
       toast.success("Utilisateur Bridge créé");
-
-      // Create connect session
       const session = await callBridge("connect_session", { user_uuid: uuid });
       if (session.url) {
         window.open(session.url, "_blank");
@@ -139,7 +256,6 @@ export function ComptabilitePage() {
         setBridgeConnected(true);
       }
     } catch (err) {
-      console.error(err);
       toast.error("Erreur lors de la création Bridge: " + (err instanceof Error ? err.message : "Erreur inconnue"));
     }
     setBridgeLoading(false);
@@ -150,12 +266,8 @@ export function ComptabilitePage() {
     setBridgeLoading(true);
     try {
       const session = await callBridge("connect_session", { user_uuid: bridgeUserUuid });
-      if (session.url) {
-        window.open(session.url, "_blank");
-        toast.info("Connectez votre banque dans la fenêtre qui s'ouvre");
-      }
+      if (session.url) window.open(session.url, "_blank");
     } catch (err) {
-      console.error(err);
       toast.error("Erreur: " + (err instanceof Error ? err.message : "Erreur inconnue"));
     }
     setBridgeLoading(false);
@@ -169,7 +281,6 @@ export function ComptabilitePage() {
       setBridgeAccounts(data.resources || []);
       toast.success(`${(data.resources || []).length} compte(s) récupéré(s)`);
     } catch (err) {
-      console.error(err);
       toast.error("Erreur: " + (err instanceof Error ? err.message : "Erreur inconnue"));
     }
     setBridgeLoading(false);
@@ -183,7 +294,6 @@ export function ComptabilitePage() {
       setBridgeTransactions(data.resources || []);
       toast.success(`${(data.resources || []).length} transaction(s) récupérée(s)`);
     } catch (err) {
-      console.error(err);
       toast.error("Erreur: " + (err instanceof Error ? err.message : "Erreur inconnue"));
     }
     setBridgeLoading(false);
@@ -253,12 +363,22 @@ export function ComptabilitePage() {
     toast.success("Export CSV téléchargé");
   };
 
+  const nbAPayer = aPayerItems.filter(i => i.statut !== "paye").length;
+
   return (
     <div className="space-y-6 animate-fade-in">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
+        <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="overview" className="gap-2">
             <BarChart3 className="h-4 w-4" /> Vue d'ensemble
+          </TabsTrigger>
+          <TabsTrigger value="a-payer" className="gap-2 relative">
+            <CheckCheck className="h-4 w-4" /> À payer / Payé
+            {nbAPayer > 0 && (
+              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-[10px] flex items-center justify-center font-bold">
+                {nbAPayer > 9 ? "9+" : nbAPayer}
+              </span>
+            )}
           </TabsTrigger>
           <TabsTrigger value="factures" className="gap-2">
             <Receipt className="h-4 w-4" /> Toutes les factures
@@ -355,6 +475,181 @@ export function ComptabilitePage() {
                   <p className="text-muted-foreground col-span-full text-center py-8">Aucune facture enregistrée</p>
                 )}
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* === À PAYER / PAYÉ === */}
+        <TabsContent value="a-payer" className="space-y-4">
+          {/* Stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total à régler</p>
+                    <p className="text-2xl font-bold text-destructive">{formatMontant(totalAPayer)}</p>
+                  </div>
+                  <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
+                    <Clock className="h-6 w-6 text-destructive" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total payé</p>
+                    <p className="text-2xl font-bold text-emerald-600">{formatMontant(totalPaye2)}</p>
+                  </div>
+                  <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center">
+                    <CheckCircle className="h-6 w-6 text-emerald-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">En attente</p>
+                    <p className="text-2xl font-bold text-amber-600">{nbAPayer}</p>
+                  </div>
+                  <div className="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center">
+                    <AlertTriangle className="h-6 w-6 text-amber-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Rechercher..." value={payerSearch} onChange={e => setPayerSearch(e.target.value)} className="pl-10" />
+            </div>
+            <div className="flex gap-2">
+              {(["tous", "en_attente", "paye"] as const).map(f => (
+                <Button
+                  key={f}
+                  variant={payerFilter === f ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setPayerFilter(f)}
+                >
+                  {f === "tous" ? "Tous" : f === "en_attente" ? "À payer" : "Payés"}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Table */}
+          <Card>
+            <CardContent className="p-0">
+              {filteredAPayerItems.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <CheckCheck className="h-12 w-12 text-muted-foreground/50 mb-3" />
+                  <p className="text-muted-foreground">Aucune facture trouvée</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Nom</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead className="text-right">Montant</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Statut</TableHead>
+                      <TableHead>Date de paiement</TableHead>
+                      <TableHead>Moyen</TableHead>
+                      <TableHead>Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredAPayerItems.map((item) => {
+                      const isPaid = item.statut === "paye";
+                      return (
+                        <TableRow key={item.id} className={isPaid ? "opacity-60" : ""}>
+                          <TableCell>
+                            <Badge variant="outline" className={item.type === "fournisseur" ? "border-purple-300 text-purple-700" : "border-blue-300 text-blue-700"}>
+                              {item.type === "fournisseur" ? "Fournisseur" : "Apprenant"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-medium">{item.nom}</TableCell>
+                          <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">{item.description}</TableCell>
+                          <TableCell className="text-right font-semibold">{formatMontant(item.montant)}</TableCell>
+                          <TableCell>{formatDate(item.date_emission)}</TableCell>
+                          <TableCell>{getStatutBadge(item.statut)}</TableCell>
+                          <TableCell>
+                            {isPaid ? (
+                              <span className="text-sm">{formatDate(item.date_paiement)}</span>
+                            ) : (
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className={cn("w-[130px] justify-start text-left font-normal", !paymentDates[item.id] && "text-muted-foreground")}
+                                  >
+                                    <CalendarIcon className="mr-2 h-3 w-3" />
+                                    {paymentDates[item.id] ? format(paymentDates[item.id]!, "dd/MM/yyyy") : "Date..."}
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                  <Calendar
+                                    mode="single"
+                                    selected={paymentDates[item.id]}
+                                    onSelect={(d) => setPaymentDates(prev => ({ ...prev, [item.id]: d }))}
+                                    initialFocus
+                                    className="p-3 pointer-events-auto"
+                                    locale={fr}
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {isPaid ? (
+                              <span className="text-sm">{item.moyen_paiement || "—"}</span>
+                            ) : (
+                              <Select
+                                value={paymentMoyens[item.id] || ""}
+                                onValueChange={(v) => setPaymentMoyens(prev => ({ ...prev, [item.id]: v }))}
+                              >
+                                <SelectTrigger className="w-[130px] h-8 text-xs">
+                                  <SelectValue placeholder="Moyen..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {moyensPaiement.map(m => (
+                                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {isPaid ? (
+                              <CheckCircle className="h-5 w-5 text-emerald-500" />
+                            ) : (
+                              <Button
+                                size="sm"
+                                onClick={() => handleMarquerPaye(item)}
+                                disabled={savingPayment[item.id]}
+                                className="gap-1 h-8 text-xs"
+                              >
+                                <CheckCheck className="h-3 w-3" />
+                                {savingPayment[item.id] ? "..." : "Marquer payé"}
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -543,7 +838,6 @@ export function ComptabilitePage() {
                 </div>
               </div>
 
-              {/* Accounts */}
               {bridgeAccounts.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {bridgeAccounts.map((account) => (
@@ -563,7 +857,6 @@ export function ComptabilitePage() {
                 </div>
               )}
 
-              {/* Transactions */}
               {bridgeTransactions.length > 0 && (
                 <Card>
                   <CardHeader>
@@ -624,7 +917,7 @@ export function ComptabilitePage() {
             </Card>
             <Card>
               <CardContent className="pt-6">
-                <p className="text-sm text-muted-foreground">Montant total à payer</p>
+                <p className="text-sm text-muted-foreground">Montant total</p>
                 <p className="text-2xl font-bold text-destructive">
                   {formatMontant(fournisseurFactures.reduce((s, f) => s + (Number(f.montant) || 0), 0))}
                 </p>
@@ -640,7 +933,7 @@ export function ComptabilitePage() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Factures à payer</CardTitle>
+              <CardTitle className="text-lg">Factures fournisseurs</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {fournisseurFactures.length === 0 ? (
@@ -657,7 +950,9 @@ export function ComptabilitePage() {
                       <TableHead>Destinataire</TableHead>
                       <TableHead className="text-right">Montant</TableHead>
                       <TableHead>Description</TableHead>
-                      <TableHead>Date</TableHead>
+                      <TableHead>Statut</TableHead>
+                      <TableHead>Date paiement</TableHead>
+                      <TableHead>Moyen</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -670,7 +965,9 @@ export function ComptabilitePage() {
                           {f.montant ? formatMontant(Number(f.montant)) : "—"}
                         </TableCell>
                         <TableCell className="text-muted-foreground">{f.description || "—"}</TableCell>
-                        <TableCell>{formatDate(f.created_at)}</TableCell>
+                        <TableCell>{getStatutBadge(f.statut || "en_attente")}</TableCell>
+                        <TableCell>{formatDate(f.date_paiement)}</TableCell>
+                        <TableCell>{f.moyen_paiement || "—"}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

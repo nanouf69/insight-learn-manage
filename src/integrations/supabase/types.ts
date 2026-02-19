@@ -917,35 +917,44 @@ export type Database = {
       fournisseur_factures: {
         Row: {
           created_at: string
+          date_paiement: string | null
           description: string | null
           destinataire: string
           fournisseur_id: string
           id: string
           mois_annee: string | null
           montant: number | null
+          moyen_paiement: string | null
           nom_fichier: string
+          statut: string
           url: string
         }
         Insert: {
           created_at?: string
+          date_paiement?: string | null
           description?: string | null
           destinataire: string
           fournisseur_id: string
           id?: string
           mois_annee?: string | null
           montant?: number | null
+          moyen_paiement?: string | null
           nom_fichier: string
+          statut?: string
           url: string
         }
         Update: {
           created_at?: string
+          date_paiement?: string | null
           description?: string | null
           destinataire?: string
           fournisseur_id?: string
           id?: string
           mois_annee?: string | null
           montant?: number | null
+          moyen_paiement?: string | null
           nom_fichier?: string
+          statut?: string
           url?: string
         }
         Relationships: [
