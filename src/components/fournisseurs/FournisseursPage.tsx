@@ -208,38 +208,37 @@ export function FournisseursPage() {
           </TabsContent>
 
           <TabsContent value="documents">
-            <div className="space-y-3 mt-2">
+            <div className="mt-2">
               {loadingDocs ? (
                 <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin" /></div>
               ) : allDocsFromFournisseurs.length === 0 ? (
                 <Card><CardContent className="pt-6 text-center text-muted-foreground">Aucun document déposé par les fournisseurs.</CardContent></Card>
               ) : (
-                allDocsFromFournisseurs.map((doc: any) => (
-                  <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg bg-card hover:bg-muted/30 transition-colors">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="p-2 rounded-lg bg-primary/10 shrink-0">
-                        <FileText className="w-4 h-4 text-primary" />
+                <div className="grid grid-cols-3 gap-3">
+                  {allDocsFromFournisseurs.map((doc: any) => (
+                    <div key={doc.id} className="flex flex-col gap-2 p-3 border rounded-lg bg-card hover:bg-muted/30 transition-colors">
+                      <div className="flex items-start gap-2 min-w-0">
+                        <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+                          <FileText className="w-4 h-4 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm truncate">{doc.titre}</p>
+                          <p className="text-xs text-muted-foreground font-medium truncate">{(doc.fournisseurs as any)?.nom}</p>
+                          <p className="text-xs text-muted-foreground">{new Date(doc.created_at).toLocaleDateString('fr-FR')}</p>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <p className="font-medium text-sm truncate">{doc.titre}</p>
-                        <p className="text-xs text-muted-foreground">
-                          <span className="font-medium">{(doc.fournisseurs as any)?.nom}</span>
-                          {" · "}{doc.nom_fichier}
-                          {" · "}{new Date(doc.created_at).toLocaleDateString('fr-FR')}
-                        </p>
+                      <div className="flex gap-2 mt-auto">
+                        <a href={doc.url} target="_blank" rel="noopener noreferrer" className="flex-1">
+                          <Button variant="outline" size="sm" className="gap-1 w-full"><Eye className="w-3 h-3" />Voir</Button>
+                        </a>
+                        <Button variant="ghost" size="sm" className="text-destructive" onClick={async () => {
+                          await supabase.from('fournisseur_shared_docs').delete().eq('id', doc.id);
+                          loadAllDocs();
+                        }}><Trash2 className="w-3 h-3" /></Button>
                       </div>
                     </div>
-                    <div className="flex gap-2 shrink-0">
-                      <a href={doc.url} target="_blank" rel="noopener noreferrer">
-                        <Button variant="outline" size="sm" className="gap-1"><Eye className="w-3 h-3" />Voir</Button>
-                      </a>
-                      <Button variant="ghost" size="sm" className="text-destructive" onClick={async () => {
-                        await supabase.from('fournisseur_shared_docs').delete().eq('id', doc.id);
-                        loadAllDocs();
-                      }}><Trash2 className="w-3 h-3" /></Button>
-                    </div>
-                  </div>
-                ))
+                  ))}
+                </div>
               )}
             </div>
           </TabsContent>
