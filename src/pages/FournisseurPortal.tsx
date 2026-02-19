@@ -830,7 +830,7 @@ export default function FournisseurPortal() {
               {/* Liste des documents */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Tous les documents</CardTitle>
+                  <CardTitle>Tous les documents ({sharedDocs.length})</CardTitle>
                   <CardDescription>Documents échangés entre vous et Finally Academy</CardDescription>
                 </CardHeader>
                 <CardContent>
