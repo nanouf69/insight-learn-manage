@@ -416,25 +416,25 @@ export default function FournisseurPortal() {
       <div className="max-w-6xl mx-auto p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           {fournisseur?.formateur_id ? (
-            // Formateur : planning + documents + factures
+            // Formateur : planning + factures + documents
             <TabsList className="grid w-full grid-cols-3 mb-6">
               <TabsTrigger value="planning" className="gap-2"><CalendarDays className="w-4 h-4" />Mon planning</TabsTrigger>
-              <TabsTrigger value="shared-docs" className="gap-2"><FileText className="w-4 h-4" />Documents</TabsTrigger>
               <TabsTrigger value="factures" className="gap-2"><Receipt className="w-4 h-4" />Mes factures</TabsTrigger>
+              <TabsTrigger value="shared-docs" className="gap-2"><FileText className="w-4 h-4" />Documents</TabsTrigger>
             </TabsList>
           ) : fournisseur?.factures_only ? (
             // Factures + documents
             <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="shared-docs" className="gap-2"><FileText className="w-4 h-4" />Documents</TabsTrigger>
               <TabsTrigger value="factures" className="gap-2"><Receipt className="w-4 h-4" />Mes factures</TabsTrigger>
+              <TabsTrigger value="shared-docs" className="gap-2"><FileText className="w-4 h-4" />Documents</TabsTrigger>
             </TabsList>
           ) : (
-            // Standard : apprenants + documents apprenants + documents partagés + factures
+            // Standard : apprenants + documents apprenants + factures + documents partagés
             <TabsList className="grid w-full grid-cols-4 mb-6">
               <TabsTrigger value="apprenants" className="gap-2"><Users className="w-4 h-4" />Apprenants</TabsTrigger>
               <TabsTrigger value="documents" className="gap-2"><FileText className="w-4 h-4" />Docs apprenants</TabsTrigger>
-              <TabsTrigger value="shared-docs" className="gap-2"><FileText className="w-4 h-4" />Documents</TabsTrigger>
               <TabsTrigger value="factures" className="gap-2"><Receipt className="w-4 h-4" />Factures</TabsTrigger>
+              <TabsTrigger value="shared-docs" className="gap-2"><FileText className="w-4 h-4" />Documents</TabsTrigger>
             </TabsList>
           )}
 
