@@ -780,8 +780,11 @@ export default function FournisseurPortal() {
                     setIsUploadingSharedDoc(true);
                     try {
                       for (let i = 0; i < files.length; i++) {
-                        const file = files[i];
-                        const filePath = `${fournisseur.id}/${Date.now()}_${file.name}`;
+                         const file = files[i];
+                         const safeName = file.name
+                           .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // supprimer accents
+                           .replace(/[^a-zA-Z0-9._-]/g, '_'); // remplacer caractères spéciaux
+                         const filePath = `${fournisseur.id}/${Date.now()}_${safeName}`;
                         const { error: uploadErr } = await supabase.storage.from('fournisseur-shared-docs').upload(filePath, file);
                         if (uploadErr) throw uploadErr;
                         const { data: { publicUrl } } = supabase.storage.from('fournisseur-shared-docs').getPublicUrl(filePath);
