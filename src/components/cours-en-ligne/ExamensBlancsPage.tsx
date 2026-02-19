@@ -231,11 +231,16 @@ function PassageMatiere({
       {/* Question */}
       <Card className="border-2 border-primary/10">
         <CardContent className="pt-5 space-y-4">
-          <div className="flex items-start gap-3">
-            <Badge variant={question.type === "QRC" ? "secondary" : "outline"} className="shrink-0 mt-0.5">
-              {question.type}
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3 flex-1">
+              <Badge variant={question.type === "QRC" ? "secondary" : "outline"} className="shrink-0 mt-0.5">
+                {question.type}
+              </Badge>
+              <p className="font-medium leading-relaxed">{question.enonce}</p>
+            </div>
+            <Badge variant="outline" className="shrink-0 text-xs font-semibold text-primary border-primary/40">
+              {(matiere.noteSur / matiere.questions.length).toFixed(2)} pt{matiere.noteSur / matiere.questions.length > 1 ? "s" : ""}
             </Badge>
-            <p className="font-medium leading-relaxed">{question.enonce}</p>
           </div>
 
           {question.type === "QCM" && question.choix && (
@@ -437,7 +442,12 @@ function EcranResultats({
                           <XCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium">{q.id}. {q.enonce}</p>
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <p className="text-sm font-medium">{q.id}. {q.enonce}</p>
+                            <span className={`text-xs font-bold shrink-0 px-1.5 py-0.5 rounded ${isCorrect ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"}`}>
+                              {isCorrect ? "+" : "0"}{(matiere.noteSur / matiere.questions.length).toFixed(2)} pt
+                            </span>
+                          </div>
 
                           {q.type === "QCM" && (
                             <div className="mt-1 space-y-0.5">
