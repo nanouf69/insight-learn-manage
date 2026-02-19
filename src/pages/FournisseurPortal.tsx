@@ -1025,35 +1025,62 @@ export default function FournisseurPortal() {
                         <table className="w-full text-sm">
                           <thead>
                             <tr className="border-b text-muted-foreground text-xs">
-                              <th className="text-left pb-2 pr-4 font-medium">N°</th>
-                              <th className="text-left pb-2 pr-4 font-medium">Client</th>
-                              <th className="text-left pb-2 pr-4 font-medium">Type</th>
-                              <th className="text-left pb-2 pr-4 font-medium">Date</th>
-                              <th className="text-right pb-2 pr-4 font-medium">Montant TTC</th>
+                              <th className="text-left pb-2 pr-3 font-medium">Client / Apprenant</th>
+                              <th className="text-left pb-2 pr-3 font-medium">Formation</th>
+                              <th className="text-left pb-2 pr-3 font-medium">Financement</th>
+                              <th className="text-left pb-2 pr-3 font-medium">Date</th>
+                              <th className="text-right pb-2 pr-3 font-medium">Montant TTC</th>
+                              <th className="text-right pb-2 pr-3 font-medium">Payé</th>
+                              <th className="text-right pb-2 pr-3 font-medium">Restant</th>
                               <th className="text-left pb-2 font-medium">Statut</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {facturesVentes.map((f: any) => (
-                              <tr key={f.id} className="border-b last:border-0 hover:bg-muted/20">
-                                <td className="py-2 pr-4 font-mono text-xs">{f.numero}</td>
-                                <td className="py-2 pr-4 truncate max-w-[150px]">{f.client_nom}</td>
-                                <td className="py-2 pr-4">
-                                  <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-muted">
-                                    {f.type_financement === 'cpf' ? 'CPF' : f.type_financement === 'opco' ? 'OPCO' : f.type_financement === 'france_travail' ? 'France Travail' : 'Particulier'}
-                                  </span>
-                                </td>
-                                <td className="py-2 pr-4 text-xs">{new Date(f.date_emission).toLocaleDateString('fr-FR')}</td>
-                                <td className="py-2 pr-4 text-right font-semibold">{Number(f.montant_ttc).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</td>
-                                <td className="py-2">
-                                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${f.statut === 'payee' ? 'bg-green-100 text-green-700' : f.statut === 'en_attente' ? 'bg-yellow-100 text-yellow-700' : 'bg-muted text-muted-foreground'}`}>
-                                    {f.statut === 'payee' ? 'Payée' : f.statut === 'en_attente' ? 'En attente' : f.statut || '-'}
-                                  </span>
-                                </td>
-                              </tr>
-                            ))}
+                            {facturesVentes.map((f: any) => {
+                              const montantPaye = f.montant_paye ?? 0;
+                              const montantRestant = f.montant_restant ?? ((f.montant_ttc || 0) - montantPaye);
+                              const financementLabel: Record<string, string> = {
+                                cpf: 'CPF', opco: 'OPCO', france_travail: 'France Travail',
+                                personnel: 'Personnel', particulier: 'Particulier'
+                              };
+                              return (
+                                <tr key={f.id} className="border-b last:border-0 hover:bg-muted/20">
+                                  <td className="py-2 pr-3 font-medium">{f.client_nom}</td>
+                                  <td className="py-2 pr-3 text-xs text-muted-foreground max-w-[120px] truncate">{f.formation || f.numero || '-'}</td>
+                                  <td className="py-2 pr-3">
+                                    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-muted">
+                                      {financementLabel[f.type_financement] || f.type_financement || 'Personnel'}
+                                    </span>
+                                  </td>
+                                  <td className="py-2 pr-3 text-xs">{new Date(f.date_emission).toLocaleDateString('fr-FR')}</td>
+                                  <td className="py-2 pr-3 text-right font-semibold">{Number(f.montant_ttc).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</td>
+                                  <td className="py-2 pr-3 text-right text-emerald-600">{Number(montantPaye).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</td>
+                                  <td className="py-2 pr-3 text-right text-amber-600">{Number(montantRestant).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</td>
+                                  <td className="py-2">
+                                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${f.statut === 'payee' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                      {f.statut === 'payee' ? 'Payée' : 'En attente'}
+                                    </span>
+                                  </td>
+                                </tr>
+                              );
+                            })}
                           </tbody>
                         </table>
+                        {/* Totaux */}
+                        <div className="mt-4 pt-4 border-t flex gap-6 justify-end text-sm">
+                          <div className="text-center">
+                            <p className="text-muted-foreground text-xs">Total TTC</p>
+                            <p className="font-bold">{facturesVentes.reduce((s: number, f: any) => s + Number(f.montant_ttc || 0), 0).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-muted-foreground text-xs">Encaissé</p>
+                            <p className="font-bold text-emerald-600">{facturesVentes.reduce((s: number, f: any) => s + Number(f.montant_paye || 0), 0).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-muted-foreground text-xs">Restant dû</p>
+                            <p className="font-bold text-amber-600">{facturesVentes.reduce((s: number, f: any) => s + Number(f.montant_restant ?? ((f.montant_ttc || 0) - (f.montant_paye || 0))), 0).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</p>
+                          </div>
+                        </div>
                       </div>
                     )}
                   </CardContent>
