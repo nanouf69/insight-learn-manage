@@ -149,15 +149,41 @@ export function SessionsList() {
       return matchSearch && matchStatut && matchType;
     });
 
-    // Sort: upcoming (date_debut >= today) ascending, then past descending
-    const upcoming = list
-      .filter(s => new Date(s.date_debut) >= now)
+    // Sort: today first, then upcoming ascending, then past descending
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const todaySessions = list
+      .filter(s => {
+        const d = new Date(s.date_debut);
+        d.setHours(0, 0, 0, 0);
+        const fin = new Date(s.date_fin);
+        fin.setHours(0, 0, 0, 0);
+        return d <= today && fin >= today;
+      })
       .sort((a, b) => new Date(a.date_debut).getTime() - new Date(b.date_debut).getTime());
+
+    const todayIds = new Set(todaySessions.map(s => s.id));
+
+    const upcoming = list
+      .filter(s => {
+        const d = new Date(s.date_debut);
+        d.setHours(0, 0, 0, 0);
+        return d >= tomorrow && !todayIds.has(s.id);
+      })
+      .sort((a, b) => new Date(a.date_debut).getTime() - new Date(b.date_debut).getTime());
+
     const past = list
-      .filter(s => new Date(s.date_debut) < now)
+      .filter(s => {
+        const fin = new Date(s.date_fin);
+        fin.setHours(0, 0, 0, 0);
+        return fin < today && !todayIds.has(s.id);
+      })
       .sort((a, b) => new Date(b.date_debut).getTime() - new Date(a.date_debut).getTime());
 
-    return [...upcoming, ...past];
+    return [...todaySessions, ...upcoming, ...past];
   }, [sessions, search, filterStatut, filterType]);
 
   const hasActiveFilters = search || filterStatut !== "tous" || filterType !== "tous";
