@@ -1549,33 +1549,2612 @@ export const examenBlanc2VTC: ExamenBlanc = {
   ]
 };
 
-// ===== EXAMENS 3, 4, 5, 6 - Variantes avec questions supplémentaires =====
-// Pour les examens 3-6, on réutilise la même structure avec des numéros différents
-// En pratique il faudrait importer les autres fichiers docx
+// ===== EXAMEN BLANC N°3 =====
 
-const createExamen = (num: number, type: "TAXI" | "VTC"): ExamenBlanc => {
-  const baseExamen = num % 2 === 1 ? (type === "TAXI" ? examenBlanc1Taxi : examenBlanc1VTC)
-                                    : (type === "TAXI" ? examenBlanc2Taxi : examenBlanc2VTC);
-  return {
-    ...baseExamen,
-    id: `eb${num}-${type.toLowerCase()}`,
-    numero: num,
-    titre: `Examen Blanc N°${num} - Formation ${type}`,
-    matieres: baseExamen.matieres.map(m => ({
-      ...m,
-      questions: m.questions.map((q, idx) => ({ ...q, id: idx + 1 }))
-    }))
-  };
+const matiere_t3p_examen3: Matiere = {
+  id: "t3p",
+  nom: "A - Transport Public Particulier de Personnes (T3P)",
+  duree: 45,
+  coefficient: 3,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QRC", enonce: "Quel est le poids maximal autorisé en charge (PTAC) d'un véhicule affecté au T3P et pour combien de places maximum ? Précisez avec ou sans chauffeur.",
+      reponseQRC: "3,5 tonnes (3 500 kg) et 9 places, conducteur compris.",
+      reponses_possibles: ["3,5 tonnes", "3500 kg", "9 places", "conducteur compris"]
+    },
+    {
+      id: 2, type: "QRC", enonce: "Citez 4 compétences des commissions locales du T3P.",
+      reponseQRC: "Établir un rapport annuel pour l'observatoire. Recevoir des renseignements et statistiques. Être informées des projets de nouvelles ADS. Rendre un avis sur toutes les questions relatives au T3P.",
+      reponses_possibles: ["rapport annuel", "renseignements", "statistiques", "ADS", "avis", "discipline", "cartes professionnelles"]
+    },
+    {
+      id: 3, type: "QRC", enonce: "Quelles sont les sanctions administratives encourues par un conducteur de T3P en cas de violation de la réglementation de la profession ?",
+      reponseQRC: "L'avertissement. Le retrait temporaire ou définitif de la carte professionnelle.",
+      reponses_possibles: ["avertissement", "retrait temporaire", "retrait définitif", "carte professionnelle"]
+    },
+    {
+      id: 4, type: "QRC", enonce: "Quelles sont les deux assurances obligatoires qu'un conducteur de T3P doit souscrire ?",
+      reponseQRC: "L'assurance du véhicule. La responsabilité civile professionnelle du conducteur (RCP).",
+      reponses_possibles: ["assurance véhicule", "responsabilité civile professionnelle", "RCP"]
+    },
+    {
+      id: 5, type: "QRC", enonce: "Développez le sigle \"T3P\".",
+      reponseQRC: "Transport public particulier de personnes.",
+      reponses_possibles: ["transport public particulier de personnes"]
+    },
+    {
+      id: 6, type: "QCM", enonce: "Quelle est la périodicité de la formation continue pour le T3P ?",
+      choix: [
+        { lettre: "A", texte: "Tous les 5 ans", correct: true },
+        { lettre: "B", texte: "Chaque année" },
+        { lettre: "C", texte: "Jamais" },
+        { lettre: "D", texte: "Tous les 2 ans" }
+      ]
+    },
+    {
+      id: 7, type: "QCM", enonce: "Quelle est la sanction encourue pour l'exercice illégal de l'activité de T3P ?",
+      choix: [
+        { lettre: "A", texte: "un an d'emprisonnement et 20 000 € d'amende" },
+        { lettre: "B", texte: "un an d'emprisonnement et 15 000 € d'amende", correct: true },
+        { lettre: "C", texte: "6 mois d'emprisonnement et 10 000 € d'amende" },
+        { lettre: "D", texte: "6 mois d'emprisonnement et 5 000 € d'amende" }
+      ]
+    },
+    {
+      id: 8, type: "QCM", enonce: "Parmi les condamnations suivantes, lesquelles peuvent être mentionnées au bulletin n°2 du casier judiciaire ?",
+      choix: [
+        { lettre: "A", texte: "Transporter des objets insalubres sans autorisation" },
+        { lettre: "B", texte: "Poursuivre sa route après avoir occasionné un accident", correct: true },
+        { lettre: "C", texte: "Transporter un détecteur de radar", correct: true },
+        { lettre: "D", texte: "Conduire avec un taux d'alcool de 0,8 g/L ou plus", correct: true }
+      ]
+    },
+    {
+      id: 9, type: "QCM", enonce: "Quelle est la périodicité de la visite médicale d'un conducteur, âgé de 61 ans ?",
+      choix: [
+        { lettre: "A", texte: "1 an" },
+        { lettre: "B", texte: "2 ans", correct: true },
+        { lettre: "C", texte: "5 ans" },
+        { lettre: "D", texte: "7 ans" }
+      ]
+    },
+    {
+      id: 10, type: "QCM", enonce: "Si un chauffeur utilise son véhicule T3P dans le cadre d'une activité non-professionnelle que doit-il faire ?",
+      choix: [
+        { lettre: "A", texte: "ne rien faire de spécifique" },
+        { lettre: "B", texte: "enlever ou occulter toutes références à la profession exercée", correct: true }
+      ]
+    },
+    {
+      id: 11, type: "QCM", enonce: "À partir de quel montant minimal, le conducteur de T3P a-t-il l'obligation de fournir une note de course ?",
+      choix: [
+        { lettre: "A", texte: "1 euro" },
+        { lettre: "B", texte: "il n'y a pas de montant minimal si c'est à la demande du client", correct: true },
+        { lettre: "C", texte: "15,24 €" },
+        { lettre: "D", texte: "25 €" }
+      ]
+    },
+    {
+      id: 12, type: "QCM", enonce: "Les conducteurs de T3P bénéficient-ils d'un régime particulier au niveau de la limitation de vitesse ?",
+      choix: [
+        { lettre: "A", texte: "oui, suivant l'accord conclu avec les autorités locales" },
+        { lettre: "B", texte: "oui, suivant l'accord conclu avec le ministère de l'intérieur" },
+        { lettre: "C", texte: "oui ou non en fonction du véhicule utilisé" },
+        { lettre: "D", texte: "pas de régime particulier", correct: true }
+      ]
+    },
+    {
+      id: 13, type: "QCM", enonce: "La carte professionnelle d'un conducteur de T3P :",
+      choix: [
+        { lettre: "A", texte: "doit être apposée de telle manière que la photographie soit visible de l'intérieur par le client", correct: true },
+        { lettre: "B", texte: "doit être apposée de telle manière que la photographie soit visible de l'extérieur" },
+        { lettre: "C", texte: "il n'y a pas d'obligation d'apposer sa carte professionnelle dans le véhicule" }
+      ]
+    },
+    {
+      id: 14, type: "QCM", enonce: "Qui délivre les agréments aux centres de formation ?",
+      choix: [
+        { lettre: "A", texte: "le ministère des transports" },
+        { lettre: "B", texte: "les préfectures", correct: true },
+        { lettre: "C", texte: "l'association permanente des chambres de métiers" },
+        { lettre: "D", texte: "les conseils départementaux" }
+      ]
+    }
+  ]
 };
 
-export const examenBlanc3Taxi = createExamen(3, "TAXI");
-export const examenBlanc3VTC = createExamen(3, "VTC");
-export const examenBlanc4Taxi = createExamen(4, "TAXI");
-export const examenBlanc4VTC = createExamen(4, "VTC");
-export const examenBlanc5Taxi = createExamen(5, "TAXI");
-export const examenBlanc5VTC = createExamen(5, "VTC");
-export const examenBlanc6Taxi = createExamen(6, "TAXI");
-export const examenBlanc6VTC = createExamen(6, "VTC");
+const matiere_gestion_examen3: Matiere = {
+  id: "gestion",
+  nom: "B - Gestion",
+  duree: 45,
+  coefficient: 2,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QRC", enonce: "M. PAUL achète un véhicule le 1er mars 2018 pour une valeur de 24 000 € HT, amortissable de façon linéaire sur 5 ans. Clôture au 31 décembre. Quelle est la valeur comptable du véhicule au 31 décembre 2021 ? (Détaillez les calculs)",
+      reponseQRC: "24000/5 = 4800€/an. 4800/12 = 400€/mois. De mars 2018 à décembre 2021 = 46 mois. 46*400 = 18400€ d'amortissements. Valeur comptable = 24000 - 18400 = 5600€.",
+      reponses_possibles: ["5600", "5 600"]
+    },
+    {
+      id: 2, type: "QRC", enonce: "Expliquez ce que représentent le bilan et le compte de résultat.",
+      reponseQRC: "Bilan : photographie du patrimoine de l'entreprise à un instant donné. Actif (ce que l'entreprise possède) / Passif (ce qu'elle doit). Compte de résultat : présentation de l'activité économique. Charges / Produits. Permet de déterminer le résultat : bénéfice ou perte.",
+      reponses_possibles: ["bilan", "patrimoine", "actif", "passif", "compte de résultat", "charges", "produits", "bénéfice"]
+    },
+    {
+      id: 3, type: "QCM", enonce: "Qu'est-ce qu'une créance ?",
+      choix: [
+        { lettre: "A", texte: "une facture en attente de création" },
+        { lettre: "B", texte: "une facture impayée par un client", correct: true },
+        { lettre: "C", texte: "une facture due à un fournisseur" }
+      ]
+    },
+    {
+      id: 4, type: "QCM", enonce: "Les emprunts sont intégrés dans :",
+      choix: [
+        { lettre: "A", texte: "les immobilisations" },
+        { lettre: "B", texte: "les capitaux permanents (Capitaux propres + Dettes à long terme)", correct: true },
+        { lettre: "C", texte: "les dettes à court terme" },
+        { lettre: "D", texte: "les créances sur client" }
+      ]
+    },
+    {
+      id: 5, type: "QCM", enonce: "Le résultat d'une entreprise est obtenu par :",
+      choix: [
+        { lettre: "A", texte: "la différence entre les produits et les charges", correct: true },
+        { lettre: "B", texte: "la différence entre actif et passif" },
+        { lettre: "C", texte: "stock + créances clients – dettes fournisseurs" }
+      ]
+    },
+    {
+      id: 6, type: "QCM", enonce: "Parmi ces propositions, laquelle se trouve à l'actif du bilan ?",
+      choix: [
+        { lettre: "A", texte: "véhicule", correct: true },
+        { lettre: "B", texte: "autorisation de stationnement (licence de taxi)", correct: true },
+        { lettre: "C", texte: "capital" },
+        { lettre: "D", texte: "prêt bancaire" }
+      ]
+    },
+    {
+      id: 7, type: "QCM", enonce: "Quel est le taux de TVA applicable au transport de personnes ?",
+      choix: [
+        { lettre: "A", texte: "20%" },
+        { lettre: "B", texte: "10%", correct: true },
+        { lettre: "C", texte: "5,5%" }
+      ]
+    },
+    {
+      id: 8, type: "QCM", enonce: "Comment appelle-t-on l'extrait d'immatriculation d'une entreprise artisanale ?",
+      choix: [
+        { lettre: "A", texte: "un extrait K-bis" },
+        { lettre: "B", texte: "un extrait D1", correct: true },
+        { lettre: "C", texte: "un extrait de casier n°2" }
+      ]
+    },
+    {
+      id: 9, type: "QCM", enonce: "La durée de conservation des factures est de :",
+      choix: [
+        { lettre: "A", texte: "1 an à compter de la date d'édition" },
+        { lettre: "B", texte: "6 à 10 ans à compter de la date d'édition", correct: true },
+        { lettre: "C", texte: "tout au long de la vie de l'entreprise" }
+      ]
+    },
+    {
+      id: 10, type: "QCM", enonce: "Quelle est la durée de validité d'un chèque ?",
+      choix: [
+        { lettre: "A", texte: "1 an et 8 jours", correct: true },
+        { lettre: "B", texte: "3 mois et 5 jours" },
+        { lettre: "C", texte: "6 mois" },
+        { lettre: "D", texte: "10 ans et 8 jours" }
+      ]
+    },
+    {
+      id: 11, type: "QCM", enonce: "Quel organisme est chargé de la collecte des cotisations sociales du régime général ?",
+      choix: [
+        { lettre: "A", texte: "la C.A.F." },
+        { lettre: "B", texte: "la C.R.A.M." },
+        { lettre: "C", texte: "l'U.R.S.S.A.F.", correct: true },
+        { lettre: "D", texte: "la C.P.A.M." }
+      ]
+    },
+    {
+      id: 12, type: "QCM", enonce: "Quelle est la durée de validité d'un devis ?",
+      choix: [
+        { lettre: "A", texte: "30 jours" },
+        { lettre: "B", texte: "variable selon les mentions du devis", correct: true },
+        { lettre: "C", texte: "3 mois" }
+      ]
+    },
+    {
+      id: 13, type: "QCM", enonce: "Qu'est-ce que le code NAF ?",
+      choix: [
+        { lettre: "A", texte: "nomenclature d'activités française", correct: true },
+        { lettre: "B", texte: "numéro artisanal français" },
+        { lettre: "C", texte: "nombre d'artisans français" }
+      ]
+    }
+  ]
+};
+
+const matiere_securite_examen3: Matiere = {
+  id: "securite",
+  nom: "C - Sécurité routière",
+  duree: 30,
+  coefficient: 3,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QCM", enonce: "Le changement d'adresse sur une carte grise doit être effectué :",
+      choix: [
+        { lettre: "A", texte: "dans l'année qui suit le déménagement" },
+        { lettre: "B", texte: "n'importe quand, il n'y a pas de délai" },
+        { lettre: "C", texte: "dans le mois qui suit le déménagement", correct: true },
+        { lettre: "D", texte: "dans les six mois qui suivent le déménagement" }
+      ]
+    },
+    {
+      id: 2, type: "QCM", enonce: "L'éclatement d'un pneu, dû à un mauvais gonflage, provient plutôt :",
+      choix: [
+        { lettre: "A", texte: "d'un excès de pression" },
+        { lettre: "B", texte: "d'un manque de pression", correct: true },
+        { lettre: "C", texte: "d'avoir deux pneus de taille différente" }
+      ]
+    },
+    {
+      id: 3, type: "QCM", enonce: "Lorsque je manœuvre :",
+      choix: [
+        { lettre: "A", texte: "je dois la priorité avant de manœuvrer" },
+        { lettre: "B", texte: "je suis toujours prioritaire" },
+        { lettre: "C", texte: "je dois la priorité durant la manœuvre", correct: true }
+      ]
+    },
+    {
+      id: 4, type: "QCM", enonce: "En cas de pluie, la vitesse maximale sur une autoroute est baissée à :",
+      choix: [
+        { lettre: "A", texte: "130 km/h" },
+        { lettre: "B", texte: "120 km/h" },
+        { lettre: "C", texte: "110 km/h", correct: true }
+      ]
+    },
+    {
+      id: 5, type: "QCM", enonce: "En agglomération, l'usage de l'avertisseur sonore :",
+      choix: [
+        { lettre: "A", texte: "est interdit de manière générale et absolue" },
+        { lettre: "B", texte: "n'est autorisé qu'en cas de danger immédiat", correct: true },
+        { lettre: "C", texte: "est autorisé pour donner tout type d'avertissement" }
+      ]
+    },
+    {
+      id: 6, type: "QCM", enonce: "Lorsque le permis a été invalidé en raison d'une perte totale de points, le nouveau permis obtenu est :",
+      choix: [
+        { lettre: "A", texte: "un permis probatoire doté d'un capital de 6 points", correct: true },
+        { lettre: "B", texte: "un permis probatoire doté d'un capital de 12 points" },
+        { lettre: "C", texte: "un permis non probatoire doté d'un capital de 12 points" }
+      ]
+    },
+    {
+      id: 7, type: "QCM", enonce: "Un excès de vitesse de 35 km/h au-dessus de la vitesse maximale autorisée entraîne une perte de :",
+      choix: [
+        { lettre: "A", texte: "1 point" },
+        { lettre: "B", texte: "3 points", correct: true },
+        { lettre: "C", texte: "4 points" }
+      ]
+    },
+    {
+      id: 8, type: "QCM", enonce: "Vous avez consommé de l'alcool. Votre taux est de 0,29 mg par litre d'air expiré. Que se passe-t-il ?",
+      choix: [
+        { lettre: "A", texte: "vous n'avez pas de poursuites" },
+        { lettre: "B", texte: "vous avez une contravention", correct: true },
+        { lettre: "C", texte: "c'est un délit passible de poursuites judiciaires" },
+        { lettre: "D", texte: "vous avez une contravention et une perte de 6 points" }
+      ]
+    },
+    {
+      id: 9, type: "QCM", enonce: "Si mon temps de réaction augmente :",
+      choix: [
+        { lettre: "A", texte: "la distance d'arrêt augmente", correct: true },
+        { lettre: "B", texte: "la distance d'arrêt est inchangée" },
+        { lettre: "C", texte: "la distance de réaction augmente", correct: true },
+        { lettre: "D", texte: "la distance de freinage augmente" }
+      ]
+    },
+    {
+      id: 10, type: "QCM", enonce: "Le niveau 3 des pictogrammes figurant sur les boîtes de médicament est de couleur :",
+      choix: [
+        { lettre: "A", texte: "rouge", correct: true },
+        { lettre: "B", texte: "jaune" },
+        { lettre: "C", texte: "orange" }
+      ]
+    },
+    {
+      id: 11, type: "QCM", enonce: "En cas d'absorption d'alcool, on observe une augmentation :",
+      choix: [
+        { lettre: "A", texte: "du champ visuel" },
+        { lettre: "B", texte: "de la distance de freinage", correct: true },
+        { lettre: "C", texte: "du temps de réaction", correct: true },
+        { lettre: "D", texte: "des réflexes" }
+      ]
+    },
+    {
+      id: 12, type: "QCM", enonce: "En présence d'un accident qui vient d'avoir lieu, je dois :",
+      choix: [
+        { lettre: "A", texte: "protéger, alerter, secourir", correct: true },
+        { lettre: "B", texte: "alerter, secourir, protéger" },
+        { lettre: "C", texte: "secourir, protéger, alerter" }
+      ]
+    }
+  ]
+};
+
+const matiere_francais_examen3: Matiere = {
+  id: "francais",
+  nom: "D - Capacité d'expression et de compréhension en langue française",
+  duree: 30,
+  coefficient: 2,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QRC", enonce: "Que veut dire \"de spectaculaires démonstrations dont les médias sont friands\" ?",
+      reponseQRC: "Les médias aiment le sensationnel. Ils montrent des images fortes pour faire le buzz, souhaitent marquer les esprits. Les spectateurs sont en attente de ces images souvent relayées de manière instantanée.",
+      reponses_possibles: ["sensationnel", "buzz", "images fortes", "médias", "spectateurs", "instantané"]
+    },
+    {
+      id: 2, type: "QRC", enonce: "D'après le texte, quelles sont les promesses de la voiture autonome ?",
+      reponseQRC: "Suppression de la mortalité routière, la mobilité personnelle sera accessible à tous, suppression des embouteillages et non-polluante.",
+      reponses_possibles: ["mortalité routière", "mobilité", "embouteillages", "polluant", "autonome"]
+    },
+    {
+      id: 3, type: "QCM", enonce: "Donnez un synonyme du verbe \"titiller\" :",
+      choix: [
+        { lettre: "A", texte: "tracasser", correct: true },
+        { lettre: "B", texte: "interpeller" },
+        { lettre: "C", texte: "taquiner", correct: true }
+      ]
+    },
+    {
+      id: 4, type: "QCM", enonce: "Que signifie le verbe \"éradiquer\" ?",
+      choix: [
+        { lettre: "A", texte: "maintenir" },
+        { lettre: "B", texte: "faire disparaître", correct: true },
+        { lettre: "C", texte: "conserver" }
+      ]
+    },
+    {
+      id: 5, type: "QCM", enonce: "Donnez le contraire de l'adjectif \"autonome\" :",
+      choix: [
+        { lettre: "A", texte: "assistée", correct: true },
+        { lettre: "B", texte: "libre" },
+        { lettre: "C", texte: "indépendant" }
+      ]
+    },
+    {
+      id: 6, type: "QCM", enonce: "Dans le texte, quel est le sens du mot « bardés » ?",
+      choix: [
+        { lettre: "A", texte: "devenus menaçants" },
+        { lettre: "B", texte: "avec un prix réduit" },
+        { lettre: "C", texte: "couverts", correct: true }
+      ]
+    },
+    {
+      id: 7, type: "QCM", enonce: "Un comportement erratique, c'est :",
+      choix: [
+        { lettre: "A", texte: "un comportement instable", correct: true },
+        { lettre: "B", texte: "un comportement sans cohérence", correct: true },
+        { lettre: "C", texte: "un comportement dangereux" }
+      ]
+    },
+    {
+      id: 8, type: "QCM", enonce: "La voiture autonome est un moyen de communication facile pour les constructeurs car :",
+      choix: [
+        { lettre: "A", texte: "le concept n'intéresse que les médias" },
+        { lettre: "B", texte: "elles échangent des informations entre elles" },
+        { lettre: "C", texte: "les médias diffusent leurs démonstrations, ce qui fait de la publicité aux constructeurs", correct: true }
+      ]
+    }
+  ]
+};
+
+const matiere_anglais_examen3: Matiere = {
+  id: "anglais",
+  nom: "E - Capacité d'expression et de compréhension en langue anglaise",
+  duree: 30,
+  coefficient: 1,
+  noteEliminatoire: 4,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QCM", enonce: "Can you turn left at the next light?",
+      choix: [
+        { lettre: "A", texte: "sorry I have no light, I don't smoke" },
+        { lettre: "B", texte: "sorry the street is closed", correct: true },
+        { lettre: "C", texte: "sorry I never turn left" }
+      ]
+    },
+    {
+      id: 2, type: "QCM", enonce: "How long will it take to get there?",
+      choix: [
+        { lettre: "A", texte: "about two and a half miles" },
+        { lettre: "B", texte: "about twenty minutes", correct: true },
+        { lettre: "C", texte: "around three thirty" }
+      ]
+    },
+    {
+      id: 3, type: "QCM", enonce: "Which currency can I use to pay for the trip?",
+      choix: [
+        { lettre: "A", texte: "I only accept cash and card", correct: true },
+        { lettre: "B", texte: "you can only pay in Euro" },
+        { lettre: "C", texte: "it's possible to pay by cheques" }
+      ]
+    },
+    {
+      id: 4, type: "QCM", enonce: "I'm cold, ……… I ……… the window:",
+      choix: [
+        { lettre: "A", texte: "could, closed" },
+        { lettre: "B", texte: "can, closed" },
+        { lettre: "C", texte: "can, close", correct: true }
+      ]
+    },
+    {
+      id: 5, type: "QCM", enonce: "\"A refound\" signifie :",
+      choix: [
+        { lettre: "A", texte: "un refus" },
+        { lettre: "B", texte: "un remboursement", correct: true },
+        { lettre: "C", texte: "une retrouvaille" }
+      ]
+    },
+    {
+      id: 6, type: "QCM", enonce: "Sorry! It's quite expensive for us. May we get a ……… price?",
+      choix: [
+        { lettre: "A", texte: "lower", correct: true },
+        { lettre: "B", texte: "reduction" },
+        { lettre: "C", texte: "gooder" },
+        { lettre: "D", texte: "less" }
+      ]
+    },
+    {
+      id: 7, type: "QCM", enonce: "\"To demand\" signifie :",
+      choix: [
+        { lettre: "A", texte: "demander" },
+        { lettre: "B", texte: "exiger", correct: true },
+        { lettre: "C", texte: "supplier" }
+      ]
+    },
+    {
+      id: 8, type: "QCM", enonce: "Les ceintures de sécurité sont obligatoires dans le véhicule. En anglais :",
+      choix: [
+        { lettre: "A", texte: "you may fasten your seatbelt in the car" },
+        { lettre: "B", texte: "you will fasten your seatbelt in the car" },
+        { lettre: "C", texte: "you must fasten your seatbelt in the car", correct: true }
+      ]
+    },
+    {
+      id: 9, type: "QCM", enonce: "Où voulez-vous aller ? En anglais :",
+      choix: [
+        { lettre: "A", texte: "where will you go?" },
+        { lettre: "B", texte: "where do you want to go?", correct: true },
+        { lettre: "C", texte: "who do you want to go?" }
+      ]
+    },
+    {
+      id: 10, type: "QCM", enonce: "Y a-t-il une prise USB accessible aux places arrières ? En anglais :",
+      choix: [
+        { lettre: "A", texte: "has it a USB plug available for the backseats?" },
+        { lettre: "B", texte: "is there a USB plug available at the backseats?", correct: true },
+        { lettre: "C", texte: "is there a USB plug available for the rear of the car?", correct: true }
+      ]
+    }
+  ]
+};
+
+const matiere_reglementation_taxi_examen3: Matiere = {
+  id: "reglementation_taxi",
+  nom: "F(T) - Connaissance du territoire et réglementation locale TAXI",
+  duree: 30,
+  coefficient: 3,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QRC", enonce: "Qu'est-ce que la maraude pour un taxi ?",
+      reponseQRC: "La maraude est le fait pour un conducteur T3P de prendre en charge un client sur la voie publique sans réservation préalable. Ce droit est exclusif aux taxis.",
+      reponses_possibles: ["maraude", "voie publique", "sans réservation", "taxi"]
+    },
+    {
+      id: 2, type: "QCM", enonce: "Un client est avec son chien d'aveugle et vous appelle pour une course :",
+      choix: [
+        { lettre: "A", texte: "J'ai le droit de refuser la course" },
+        { lettre: "B", texte: "Je suis dans l'obligation de l'accepter lui et son chien", correct: true },
+        { lettre: "C", texte: "Je n'accepte que le client" },
+        { lettre: "D", texte: "Je risque une amende de 135€ si je refuse" }
+      ]
+    },
+    {
+      id: 3, type: "QCM", enonce: "Qui parmi les T3P peut être conventionné par la caisse d'assurance maladie ?",
+      choix: [
+        { lettre: "A", texte: "les taxis", correct: true },
+        { lettre: "B", texte: "les VTC" },
+        { lettre: "C", texte: "les véhicules motorisés à 2 ou 3 roues" }
+      ]
+    },
+    {
+      id: 4, type: "QCM", enonce: "La réglementation du T3P se trouve dans le :",
+      choix: [
+        { lettre: "A", texte: "code préfectoral" },
+        { lettre: "B", texte: "code du travail" },
+        { lettre: "C", texte: "code pénal" },
+        { lettre: "D", texte: "code des transports", correct: true }
+      ]
+    },
+    {
+      id: 5, type: "QCM", enonce: "Un artisan effectuant du T3P est victime d'un accident corporel dans l'exercice de son activité, sous quel régime est-il ?",
+      choix: [
+        { lettre: "A", texte: "pas de régime particulier" },
+        { lettre: "B", texte: "régime des indemnités journalières au titre de la maladie", correct: true },
+        { lettre: "C", texte: "de l'arrêt maladie classique" }
+      ]
+    },
+    {
+      id: 6, type: "QCM", enonce: "Un conducteur de T3P n'effectuant que des remplacements épisodiques doit-il être titulaire d'une carte professionnelle ?",
+      choix: [
+        { lettre: "A", texte: "non, si ces remplacements représentent moins de 10 heures par semaine" },
+        { lettre: "B", texte: "non" },
+        { lettre: "C", texte: "oui", correct: true }
+      ]
+    },
+    {
+      id: 7, type: "QCM", enonce: "Les centres de formation sont agréés par :",
+      choix: [
+        { lettre: "A", texte: "le préfet du département" },
+        { lettre: "B", texte: "le ministère des transports" },
+        { lettre: "C", texte: "le préfet de la région", correct: true }
+      ]
+    }
+  ]
+};
+
+const matiere_reglementation_taxi2_examen3: Matiere = {
+  id: "reglementation_taxi2",
+  nom: "G(T) - Réglementation nationale TAXI et gestion propre à cette activité",
+  duree: 20,
+  coefficient: 3,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QRC", enonce: "Développez le sigle \"TICPE\".",
+      reponseQRC: "Taxe Intérieure sur la Consommation des Produits Énergétiques.",
+      reponses_possibles: ["taxe intérieure", "consommation", "produits énergétiques"]
+    },
+    {
+      id: 2, type: "QCM", enonce: "L'assurance RCP peut être invoquée par le conducteur s'il :",
+      choix: [
+        { lettre: "A", texte: "abîme le vêtement de son passager", correct: true },
+        { lettre: "B", texte: "accroche un autre véhicule en manœuvrant" },
+        { lettre: "C", texte: "n'a pas sa carte professionnelle lors d'un contrôle" }
+      ]
+    },
+    {
+      id: 3, type: "QCM", enonce: "La formation continue des conducteurs T3P est valable :",
+      choix: [
+        { lettre: "A", texte: "1 an" },
+        { lettre: "B", texte: "5 ans", correct: true },
+        { lettre: "C", texte: "2 ans" },
+        { lettre: "D", texte: "10 ans" }
+      ]
+    },
+    {
+      id: 4, type: "QCM", enonce: "Quel service délivre la carte professionnelle de conducteur de T3P ?",
+      choix: [
+        { lettre: "A", texte: "La préfecture", correct: true },
+        { lettre: "B", texte: "La DIRECCTE" },
+        { lettre: "C", texte: "La DREAL" }
+      ]
+    }
+  ]
+};
+
+const matiere_reglementation_vtc_examen3: Matiere = {
+  id: "reglementation_vtc",
+  nom: "F(V) - Développement commercial et gestion propre à l'activité de VTC",
+  duree: 30,
+  coefficient: 3,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QRC", enonce: "Citez 2 cas dans lesquels la carte professionnelle peut être retirée à un conducteur du T3P.",
+      reponseQRC: "Annulation du permis de conduire. Délit pénal prévu par le code des transports (délits routiers, agressions sexuelles, etc.).",
+      reponses_possibles: ["annulation permis", "délit pénal", "code des transports"]
+    },
+    {
+      id: 2, type: "QCM", enonce: "Un client est avec son chien d'aveugle et appelle pour une course VTC :",
+      choix: [
+        { lettre: "A", texte: "J'ai le droit de refuser" },
+        { lettre: "B", texte: "Je suis dans l'obligation de l'accepter lui et son chien", correct: true },
+        { lettre: "C", texte: "Je n'accepte que le client" }
+      ]
+    },
+    {
+      id: 3, type: "QCM", enonce: "La réglementation du T3P se trouve dans le :",
+      choix: [
+        { lettre: "A", texte: "code préfectoral" },
+        { lettre: "B", texte: "code du travail" },
+        { lettre: "C", texte: "code des transports", correct: true }
+      ]
+    },
+    {
+      id: 4, type: "QCM", enonce: "Un conducteur de T3P n'effectuant que des remplacements épisodiques doit-il être titulaire d'une carte professionnelle ?",
+      choix: [
+        { lettre: "A", texte: "non, si moins de 10h par semaine" },
+        { lettre: "B", texte: "non" },
+        { lettre: "C", texte: "oui", correct: true }
+      ]
+    },
+    {
+      id: 5, type: "QCM", enonce: "Pour s'inscrire à l'examen d'accès à la profession, le candidat ne doit pas avoir été exclu pour fraude :",
+      choix: [
+        { lettre: "A", texte: "dans les 10 ans qui précèdent sa demande" },
+        { lettre: "B", texte: "dans les 5 ans qui précèdent sa demande", correct: true },
+        { lettre: "C", texte: "dans l'année" },
+        { lettre: "D", texte: "dans les 2 ans qui précèdent sa demande" }
+      ]
+    },
+    {
+      id: 6, type: "QCM", enonce: "Un examen médical supplémentaire peut être demandé :",
+      choix: [
+        { lettre: "A", texte: "En cas d'interruption d'activité de plus de six mois", correct: true },
+        { lettre: "B", texte: "En cas de suspension de moins d'un mois" },
+        { lettre: "C", texte: "En cas d'invalidation du permis", correct: true }
+      ]
+    }
+  ]
+};
+
+const matiere_reglementation_vtc2_examen3: Matiere = {
+  id: "reglementation_vtc2",
+  nom: "G(V) - Réglementation nationale spécifique à l'activité de VTC",
+  duree: 20,
+  coefficient: 3,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QRC", enonce: "Qu'est-ce que l'honorabilité dans la profession de conducteur T3P ?",
+      reponseQRC: "Avoir le casier judiciaire B2 vierge.",
+      reponses_possibles: ["casier judiciaire b2 vierge", "b2 vierge", "casier b2"]
+    },
+    {
+      id: 2, type: "QCM", enonce: "La formation continue est valable :",
+      choix: [
+        { lettre: "A", texte: "5 ans", correct: true },
+        { lettre: "B", texte: "1 an" },
+        { lettre: "C", texte: "2 ans" },
+        { lettre: "D", texte: "10 ans" }
+      ]
+    },
+    {
+      id: 3, type: "QCM", enonce: "La carte professionnelle est délivrée par :",
+      choix: [
+        { lettre: "A", texte: "La préfecture", correct: true },
+        { lettre: "B", texte: "La DIRECCTE" },
+        { lettre: "C", texte: "La DREAL" }
+      ]
+    }
+  ]
+};
+
+export const examenBlanc3Taxi: ExamenBlanc = {
+  id: "eb3-taxi",
+  numero: 3,
+  type: "TAXI",
+  titre: "Examen Blanc N°3 - Formation TAXI",
+  matieres: [
+    matiere_t3p_examen3,
+    matiere_gestion_examen3,
+    matiere_securite_examen3,
+    matiere_francais_examen3,
+    matiere_anglais_examen3,
+    matiere_reglementation_taxi_examen3,
+    matiere_reglementation_taxi2_examen3
+  ]
+};
+
+export const examenBlanc3VTC: ExamenBlanc = {
+  id: "eb3-vtc",
+  numero: 3,
+  type: "VTC",
+  titre: "Examen Blanc N°3 - Formation VTC",
+  matieres: [
+    matiere_t3p_examen3,
+    matiere_gestion_examen3,
+    matiere_securite_examen3,
+    matiere_francais_examen3,
+    matiere_anglais_examen3,
+    matiere_reglementation_vtc_examen3,
+    matiere_reglementation_vtc2_examen3
+  ]
+};
+
+// ===== EXAMEN BLANC N°4 =====
+
+const matiere_t3p_examen4: Matiere = {
+  id: "t3p",
+  nom: "A - Transport Public Particulier de Personnes (T3P)",
+  duree: 45,
+  coefficient: 3,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QRC", enonce: "Une centrale de réservation doit justifier de l'existence d'un contrat d'assurance couvrant quel type de responsabilité ?",
+      reponseQRC: "Elle doit prouver l'existence d'un contrat d'assurance couvrant sa responsabilité civile professionnelle.",
+      reponses_possibles: ["responsabilité civile professionnelle", "RCP", "assurance"]
+    },
+    {
+      id: 2, type: "QRC", enonce: "Quelles sont les sanctions administratives encourues par un conducteur de T3P en cas de violation de la réglementation ?",
+      reponseQRC: "L'avertissement. Le retrait temporaire ou définitif de la carte professionnelle.",
+      reponses_possibles: ["avertissement", "retrait temporaire", "retrait définitif", "carte professionnelle"]
+    },
+    {
+      id: 3, type: "QRC", enonce: "Quel est le terme utilisé quand un conducteur T3P prend en charge un client sur la voie publique sans réservation préalable ?",
+      reponseQRC: "La maraude.",
+      reponses_possibles: ["maraude"]
+    },
+    {
+      id: 4, type: "QRC", enonce: "Qu'est-ce qu'un service de transport régulier ?",
+      reponseQRC: "Service collectif dont l'itinéraire, les points d'arrêt, les fréquences, les horaires, les tarifs sont fixés et publiés à l'avance.",
+      reponses_possibles: ["itinéraire", "points d'arrêt", "fréquences", "horaires", "tarifs", "fixés", "publiés"]
+    },
+    {
+      id: 5, type: "QRC", enonce: "Citez deux cas dans lesquels la carte professionnelle peut être retirée à un conducteur du T3P.",
+      reponseQRC: "Annulation du permis de conduire. Délit pénal prévu par le code des transports.",
+      reponses_possibles: ["annulation permis", "délit pénal", "code des transports"]
+    },
+    {
+      id: 6, type: "QCM", enonce: "Pour s'inscrire à l'examen d'accès à la profession, le candidat ne doit pas avoir été exclu pour fraude :",
+      choix: [
+        { lettre: "A", texte: "dans les 10 ans qui précèdent sa demande" },
+        { lettre: "B", texte: "dans les 5 ans qui précèdent sa demande", correct: true },
+        { lettre: "C", texte: "dans l'année" },
+        { lettre: "D", texte: "dans les 2 ans qui précèdent sa demande" }
+      ]
+    },
+    {
+      id: 7, type: "QCM", enonce: "Un examen médical supplémentaire peut être demandé :",
+      choix: [
+        { lettre: "A", texte: "En cas d'interruption d'activité de plus de six mois", correct: true },
+        { lettre: "B", texte: "En cas de suspension de moins d'un mois" },
+        { lettre: "C", texte: "En cas d'invalidation du permis", correct: true }
+      ]
+    },
+    {
+      id: 8, type: "QCM", enonce: "L'assurance RCP peut être invoquée par le conducteur s'il :",
+      choix: [
+        { lettre: "A", texte: "abîme le vêtement de son passager", correct: true },
+        { lettre: "B", texte: "accroche un autre véhicule en manœuvrant" },
+        { lettre: "C", texte: "est contrôlé sans carte professionnelle" }
+      ]
+    },
+    {
+      id: 9, type: "QCM", enonce: "Si un chauffeur utilise son véhicule T3P dans le cadre d'une activité non-professionnelle, que doit-il faire ?",
+      choix: [
+        { lettre: "A", texte: "enlever ou occulter toutes références à la profession exercée", correct: true },
+        { lettre: "B", texte: "il n'a pas le droit d'utiliser son véhicule en dehors de son activité" },
+        { lettre: "C", texte: "ne rien faire de spécifique" }
+      ]
+    },
+    {
+      id: 10, type: "QCM", enonce: "Un client est avec son chien d'aveugle et vous appelle pour une course :",
+      choix: [
+        { lettre: "A", texte: "J'ai le droit de refuser la course" },
+        { lettre: "B", texte: "Je suis dans l'obligation de l'accepter lui et son chien", correct: true },
+        { lettre: "C", texte: "Je n'accepte que le client" }
+      ]
+    },
+    {
+      id: 11, type: "QCM", enonce: "Qui parmi les T3P peut être conventionné par la caisse d'assurance maladie ?",
+      choix: [
+        { lettre: "A", texte: "les taxis", correct: true },
+        { lettre: "B", texte: "les VTC" },
+        { lettre: "C", texte: "les véhicules motorisés à 2 ou 3 roues" }
+      ]
+    },
+    {
+      id: 12, type: "QCM", enonce: "La réglementation du T3P se trouve dans le :",
+      choix: [
+        { lettre: "A", texte: "code préfectoral" },
+        { lettre: "B", texte: "code du travail" },
+        { lettre: "C", texte: "code pénal" },
+        { lettre: "D", texte: "code des transports", correct: true }
+      ]
+    },
+    {
+      id: 13, type: "QCM", enonce: "Un conducteur de T3P n'effectuant que des remplacements épisodiques doit-il être titulaire d'une carte professionnelle ?",
+      choix: [
+        { lettre: "A", texte: "non, si ces remplacements représentent moins de 10 heures par semaine" },
+        { lettre: "B", texte: "non" },
+        { lettre: "C", texte: "oui", correct: true }
+      ]
+    }
+  ]
+};
+
+const matiere_gestion_examen4: Matiere = {
+  id: "gestion",
+  nom: "B - Gestion",
+  duree: 45,
+  coefficient: 2,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QRC", enonce: "Vous créez seul(e) une activité de transport de personnes. Quels sont les statuts juridiques possibles ? (citez-en trois)",
+      reponseQRC: "Entreprise Individuelle et/ou microentreprise. Entreprise Unipersonnelle à Responsabilité Limitée (EURL). SASU.",
+      reponses_possibles: ["entreprise individuelle", "microentreprise", "EURL", "SASU"]
+    },
+    {
+      id: 2, type: "QRC", enonce: "Citez 2 types d'immobilisations.",
+      reponseQRC: "Immobilisations corporelles. Immobilisations incorporelles. Immobilisations financières.",
+      reponses_possibles: ["corporelles", "incorporelles", "financières", "immobilisations"]
+    },
+    {
+      id: 3, type: "QCM", enonce: "Lors de la création d'une société, la rédaction d'une annonce légale est :",
+      choix: [
+        { lettre: "A", texte: "Obligatoire", correct: true },
+        { lettre: "B", texte: "nécessaire pour faire de la publicité" },
+        { lettre: "C", texte: "facultative" }
+      ]
+    },
+    {
+      id: 4, type: "QCM", enonce: "Les achats de carburant figurent :",
+      choix: [
+        { lettre: "A", texte: "Au compte de résultat, dans les charges", correct: true },
+        { lettre: "B", texte: "au bilan, à l'actif" },
+        { lettre: "C", texte: "au compte de résultat, dans les produits" },
+        { lettre: "D", texte: "au bilan, au passif" }
+      ]
+    },
+    {
+      id: 5, type: "QCM", enonce: "Un véhicule est acquis 22 000 € HT le 1er avril 2016. Calculez l'amortissement au 31/12/2016, durée 4 ans :",
+      choix: [
+        { lettre: "A", texte: "5 500 €" },
+        { lettre: "B", texte: "4 125 €", correct: true },
+        { lettre: "C", texte: "6 574 €" },
+        { lettre: "D", texte: "5 885 €" }
+      ]
+    },
+    {
+      id: 6, type: "QCM", enonce: "Le coût de revient d'une prestation est de 22€, vous souhaitez réaliser une marge de 20% sur le prix de vente net. Votre prix de vente sera de :",
+      choix: [
+        { lettre: "A", texte: "26 €" },
+        { lettre: "B", texte: "26,40 €", correct: true },
+        { lettre: "C", texte: "27,50 €" }
+      ]
+    },
+    {
+      id: 7, type: "QCM", enonce: "L'EBE signifie :",
+      choix: [
+        { lettre: "A", texte: "encaissement brut excédentaire" },
+        { lettre: "B", texte: "excédent brut d'exploitation", correct: true },
+        { lettre: "C", texte: "excédent bénéficiaire employé" }
+      ]
+    },
+    {
+      id: 8, type: "QCM", enonce: "Le numéro SIREN identifie :",
+      choix: [
+        { lettre: "A", texte: "La personne (le gérant)" },
+        { lettre: "B", texte: "L'entreprise", correct: true },
+        { lettre: "C", texte: "L'activité" }
+      ]
+    },
+    {
+      id: 9, type: "QCM", enonce: "La CSG :",
+      choix: [
+        { lettre: "A", texte: "est un impôt supporté par le salarié et prélevé sur sa fiche de paie", correct: true },
+        { lettre: "B", texte: "signifie Contribution Salariale Généralisée" },
+        { lettre: "C", texte: "est un impôt prélevé à la source" }
+      ]
+    },
+    {
+      id: 10, type: "QCM", enonce: "Le capital social d'une SARL est divisé en :",
+      choix: [
+        { lettre: "A", texte: "Actions" },
+        { lettre: "B", texte: "parts sociales", correct: true },
+        { lettre: "C", texte: "obligations" }
+      ]
+    }
+  ]
+};
+
+const matiere_securite_examen4: Matiere = {
+  id: "securite",
+  nom: "C - Sécurité routière",
+  duree: 30,
+  coefficient: 3,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QCM", enonce: "Dans quel cas exceptionnel pouvez-vous dépasser un véhicule par la droite ?",
+      choix: [
+        { lettre: "A", texte: "Lorsque le conducteur devant a signalé tourner à gauche", correct: true },
+        { lettre: "B", texte: "Lorsque le conducteur devant a signalé tourner à droite" },
+        { lettre: "C", texte: "Lorsque le conducteur derrière a signalé tourner à gauche" },
+        { lettre: "D", texte: "Il est toujours autorisé de dépasser par la droite" }
+      ]
+    },
+    {
+      id: 2, type: "QCM", enonce: "Est titulaire d'un permis probatoire tout conducteur qui :",
+      choix: [
+        { lettre: "A", texte: "obtient le permis après invalidation administrative", correct: true },
+        { lettre: "B", texte: "obtient le permis après annulation judiciaire", correct: true },
+        { lettre: "C", texte: "réussit la catégorie A avec catégorie B depuis plus de 3 ans" }
+      ]
+    },
+    {
+      id: 3, type: "QCM", enonce: "Contrôlé avec un taux d'alcool de 0,7 g par litre de sang, je risque :",
+      choix: [
+        { lettre: "A", texte: "une amende" },
+        { lettre: "B", texte: "un retrait de 4 points" },
+        { lettre: "C", texte: "un retrait de 6 points sur mon permis de conduire", correct: true },
+        { lettre: "D", texte: "une peine de prison" }
+      ]
+    },
+    {
+      id: 4, type: "QCM", enonce: "Pour dépasser un cycliste hors agglomération, je dois laisser un espace latéral :",
+      choix: [
+        { lettre: "A", texte: "Suffisant, en fonction de la largeur de la chaussée" },
+        { lettre: "B", texte: "De 1,5 mètre au minimum", correct: true },
+        { lettre: "C", texte: "De 1 mètre au minimum" }
+      ]
+    },
+    {
+      id: 5, type: "QCM", enonce: "Dans quel délai un automobiliste doit-il transmettre un constat amiable à son assureur ?",
+      choix: [
+        { lettre: "A", texte: "1 mois" },
+        { lettre: "B", texte: "7 jours" },
+        { lettre: "C", texte: "2 jours" },
+        { lettre: "D", texte: "5 jours", correct: true }
+      ]
+    },
+    {
+      id: 6, type: "QCM", enonce: "Par temps de pluie, l'utilisation des feux de brouillard arrière est :",
+      choix: [
+        { lettre: "A", texte: "Interdite" },
+        { lettre: "B", texte: "Obligatoire", correct: true },
+        { lettre: "C", texte: "Conseillée" }
+      ]
+    },
+    {
+      id: 7, type: "QCM", enonce: "Que faut-il faire en cas d'incendie dans un tunnel :",
+      choix: [
+        { lettre: "A", texte: "faire un demi-tour pour fuir plus vite" },
+        { lettre: "B", texte: "laisser les clefs sur le véhicule, après avoir éteint le moteur", correct: true },
+        { lettre: "C", texte: "évacuer le tunnel par l'issue de secours la plus proche", correct: true }
+      ]
+    },
+    {
+      id: 8, type: "QCM", enonce: "Le non-port de la ceinture de sécurité entraîne un retrait de :",
+      choix: [
+        { lettre: "A", texte: "2 points" },
+        { lettre: "B", texte: "3 points", correct: true },
+        { lettre: "C", texte: "4 points" }
+      ]
+    },
+    {
+      id: 9, type: "QCM", enonce: "A 50 km/h, la distance de sécurité est de :",
+      choix: [
+        { lettre: "A", texte: "20 mètres" },
+        { lettre: "B", texte: "40 mètres" },
+        { lettre: "C", texte: "30 mètres", correct: true }
+      ]
+    },
+    {
+      id: 10, type: "QCM", enonce: "L'ABS (système d'antiblocage des roues) :",
+      choix: [
+        { lettre: "A", texte: "aide à maintenir la direction du véhicule", correct: true },
+        { lettre: "B", texte: "réduit considérablement la distance d'arrêt" },
+        { lettre: "C", texte: "permet de ne pas allonger la distance d'arrêt" }
+      ]
+    }
+  ]
+};
+
+const matiere_francais_examen4: Matiere = {
+  id: "francais",
+  nom: "D - Capacité d'expression et de compréhension en langue française",
+  duree: 30,
+  coefficient: 2,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QRC", enonce: "Qu'est-ce qu'il faudrait faire pour faciliter l'interaction entre voitures autonomes et véhicules classiques ?",
+      reponseQRC: "Interdire la circulation aux véhicules classiques dans certaines zones par exemple.",
+      reponses_possibles: ["interdire", "zones", "circulation", "classiques"]
+    },
+    {
+      id: 2, type: "QRC", enonce: "Quelles situations sont des challenges pour la voiture sans conducteur ?",
+      reponseQRC: "Une place où l'on croise des vélos, des rollers, d'autres conducteurs humains, ou une route passant devant une école avec plein d'enfants.",
+      reponses_possibles: ["vélos", "rollers", "conducteurs humains", "école", "enfants"]
+    },
+    {
+      id: 3, type: "QRC", enonce: "Pourquoi les interactions avec les humains sont-elles complexes pour les robots ?",
+      reponseQRC: "Parce que les robots ne savent pas traiter les intentions.",
+      reponses_possibles: ["robots", "traiter les intentions", "intentions"]
+    },
+    {
+      id: 4, type: "QCM", enonce: "Les dispositifs d'assistance à la conduite permettent au véhicule automatisé de :",
+      choix: [
+        { lettre: "A", texte: "se garer tout seul" },
+        { lettre: "B", texte: "rouler devant les écoles" },
+        { lettre: "C", texte: "rouler sur certaines portions d'autoroute", correct: true }
+      ]
+    },
+    {
+      id: 5, type: "QCM", enonce: "Google teste des taxis :",
+      choix: [
+        { lettre: "A", texte: "sans chauffeurs", correct: true },
+        { lettre: "B", texte: "qui coûtent des milliards de dollars" },
+        { lettre: "C", texte: "sans pédales" }
+      ]
+    },
+    {
+      id: 6, type: "QCM", enonce: "Si deux piétons discutent sur le bord de la route, la voiture sans conducteur :",
+      choix: [
+        { lettre: "A", texte: "s'arrête pour les faire traverser" },
+        { lettre: "B", texte: "a du mal à percevoir s'ils vont traverser ou pas", correct: true },
+        { lettre: "C", texte: "roule plus lentement" }
+      ]
+    },
+    {
+      id: 7, type: "QCM", enonce: "A partir de quand la voiture sans conducteur pourra-t-elle circuler ?",
+      choix: [
+        { lettre: "A", texte: "Demain" },
+        { lettre: "B", texte: "Avant 50 ans" },
+        { lettre: "C", texte: "Dans 50 ans ou jamais", correct: true }
+      ]
+    },
+    {
+      id: 8, type: "QCM", enonce: "Au sujet de la voiture sans chauffeur, les experts sont :",
+      choix: [
+        { lettre: "A", texte: "partagés", correct: true },
+        { lettre: "B", texte: "complètement d'accord" },
+        { lettre: "C", texte: "méfiants" }
+      ]
+    }
+  ]
+};
+
+const matiere_anglais_examen4: Matiere = {
+  id: "anglais",
+  nom: "E - Capacité d'expression et de compréhension en langue anglaise",
+  duree: 30,
+  coefficient: 1,
+  noteEliminatoire: 4,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QCM", enonce: "Est-ce que tout va bien ? En anglais :",
+      choix: [
+        { lettre: "A", texte: "is everything ok?", correct: true },
+        { lettre: "B", texte: "is everything fine?", correct: true },
+        { lettre: "C", texte: "was everything fine?" },
+        { lettre: "D", texte: "are everything ok?" }
+      ]
+    },
+    {
+      id: 2, type: "QCM", enonce: "Sorry! It's quite expensive for us. May we get a ……… price?",
+      choix: [
+        { lettre: "A", texte: "lower", correct: true },
+        { lettre: "B", texte: "gooder" },
+        { lettre: "C", texte: "less" },
+        { lettre: "D", texte: "reduction" }
+      ]
+    },
+    {
+      id: 3, type: "QCM", enonce: "Votre séjour s'est-il bien passé ? En anglais :",
+      choix: [
+        { lettre: "A", texte: "Where would you like to go?" },
+        { lettre: "B", texte: "How was your trip?" },
+        { lettre: "C", texte: "Did you enjoy your stay?", correct: true }
+      ]
+    },
+    {
+      id: 4, type: "QCM", enonce: "Il est interdit de fumer dans la voiture ! En anglais :",
+      choix: [
+        { lettre: "A", texte: "it's allowed of smoke in the car!" },
+        { lettre: "B", texte: "it's forbidden to smoke in the car!", correct: true },
+        { lettre: "C", texte: "it's forbidden of smoke in the car!" }
+      ]
+    },
+    {
+      id: 5, type: "QCM", enonce: "Do you have change on ten euros?",
+      choix: [
+        { lettre: "A", texte: "connaissez-vous un bureau de change pour des euros?" },
+        { lettre: "B", texte: "avez-vous la monnaie sur dix euros?", correct: true },
+        { lettre: "C", texte: "pouvez-vous me donner dix euros?" }
+      ]
+    },
+    {
+      id: 6, type: "QCM", enonce: "Souhaitez-vous un reçu ? En anglais :",
+      choix: [
+        { lettre: "A", texte: "do you want a ticket?" },
+        { lettre: "B", texte: "did you want a bill?" },
+        { lettre: "C", texte: "would you like a receipt?", correct: true }
+      ]
+    },
+    {
+      id: 7, type: "QCM", enonce: "Puis-je mettre vos bagages dans le coffre ? En anglais :",
+      choix: [
+        { lettre: "A", texte: "May I leave your luggage there?" },
+        { lettre: "B", texte: "May I put your luggage in the trunk?", correct: true },
+        { lettre: "C", texte: "May I take your luggage?" }
+      ]
+    }
+  ]
+};
+
+const matiere_reglementation_taxi_examen4: Matiere = {
+  id: "reglementation_taxi",
+  nom: "F(T) - Connaissance du territoire et réglementation locale TAXI",
+  duree: 30,
+  coefficient: 3,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QCM", enonce: "Ce panneau signale :",
+      choix: [
+        { lettre: "A", texte: "Une chaussée à double sens de circulation" },
+        { lettre: "B", texte: "Une obligation de céder le passage à la circulation venant en sens inverse", correct: true },
+        { lettre: "C", texte: "Une priorité de passage par rapport à la circulation venant en sens inverse" }
+      ]
+    },
+    {
+      id: 2, type: "QCM", enonce: "Le dépistage de stupéfiants est :",
+      choix: [
+        { lettre: "A", texte: "possible lors d'un accident corporel ou matériel", correct: true },
+        { lettre: "B", texte: "obligatoire pour toute infraction" },
+        { lettre: "C", texte: "obligatoire lors d'un accident mortel", correct: true }
+      ]
+    },
+    {
+      id: 3, type: "QCM", enonce: "En suivant un stage de sensibilisation à la sécurité routière, un conducteur peut retrouver :",
+      choix: [
+        { lettre: "A", texte: "10 points" },
+        { lettre: "B", texte: "8 points" },
+        { lettre: "C", texte: "4 points", correct: true }
+      ]
+    },
+    {
+      id: 4, type: "QCM", enonce: "La déclaration de cessation de paiement se fait :",
+      choix: [
+        { lettre: "A", texte: "à la chambre de commerce et d'industrie" },
+        { lettre: "B", texte: "à la chambre de métiers et de l'artisanat" },
+        { lettre: "C", texte: "auprès du greffe du Tribunal de Commerce", correct: true }
+      ]
+    }
+  ]
+};
+
+const matiere_reglementation_taxi2_examen4: Matiere = {
+  id: "reglementation_taxi2",
+  nom: "G(T) - Réglementation nationale TAXI et gestion propre à cette activité",
+  duree: 20,
+  coefficient: 3,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QCM", enonce: "Un conducteur qui commet un excès de vitesse de 40 km/h risque :",
+      choix: [
+        { lettre: "A", texte: "une peine d'emprisonnement" },
+        { lettre: "B", texte: "la suspension de son permis de conduire", correct: true },
+        { lettre: "C", texte: "la réduction de six points du permis" }
+      ]
+    },
+    {
+      id: 2, type: "QCM", enonce: "Dans un tunnel éclairé, hors agglomération, je circule :",
+      choix: [
+        { lettre: "A", texte: "en feux de croisement", correct: true },
+        { lettre: "B", texte: "en feux de route" },
+        { lettre: "C", texte: "en feux de brouillard" }
+      ]
+    },
+    {
+      id: 3, type: "QCM", enonce: "Parmi les 3 termes suivants, lequel n'est pas une composante de l'actif du bilan ?",
+      choix: [
+        { lettre: "A", texte: "le résultat de l'exercice", correct: true },
+        { lettre: "B", texte: "les disponibilités" },
+        { lettre: "C", texte: "les frais d'établissement" }
+      ]
+    }
+  ]
+};
+
+const matiere_reglementation_vtc_examen4: Matiere = {
+  id: "reglementation_vtc",
+  nom: "F(V) - Développement commercial et gestion propre à l'activité de VTC",
+  duree: 30,
+  coefficient: 3,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QCM", enonce: "Ce panneau signale :",
+      choix: [
+        { lettre: "A", texte: "Une chaussée à double sens de circulation" },
+        { lettre: "B", texte: "Une obligation de céder le passage à la circulation venant en sens inverse", correct: true },
+        { lettre: "C", texte: "Une priorité de passage" }
+      ]
+    },
+    {
+      id: 2, type: "QCM", enonce: "Le dépistage de stupéfiants est :",
+      choix: [
+        { lettre: "A", texte: "possible lors d'un accident corporel ou matériel", correct: true },
+        { lettre: "B", texte: "obligatoire pour toute infraction" },
+        { lettre: "C", texte: "obligatoire lors d'un accident mortel", correct: true }
+      ]
+    },
+    {
+      id: 3, type: "QCM", enonce: "Un conducteur VTC peut-il exercer dans n'importe quelle ville de France ?",
+      choix: [
+        { lettre: "A", texte: "Non, uniquement dans la ville d'immatriculation" },
+        { lettre: "B", texte: "Oui, sur tout le territoire national", correct: true },
+        { lettre: "C", texte: "Seulement dans sa région" }
+      ]
+    },
+    {
+      id: 4, type: "QCM", enonce: "La déclaration de cessation de paiement se fait :",
+      choix: [
+        { lettre: "A", texte: "à la chambre de commerce et d'industrie" },
+        { lettre: "B", texte: "à la chambre de métiers et de l'artisanat" },
+        { lettre: "C", texte: "auprès du greffe du Tribunal de Commerce", correct: true }
+      ]
+    }
+  ]
+};
+
+const matiere_reglementation_vtc2_examen4: Matiere = {
+  id: "reglementation_vtc2",
+  nom: "G(V) - Réglementation nationale spécifique à l'activité de VTC",
+  duree: 20,
+  coefficient: 3,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QCM", enonce: "Un conducteur qui commet un excès de vitesse de 40 km/h risque :",
+      choix: [
+        { lettre: "A", texte: "une peine d'emprisonnement" },
+        { lettre: "B", texte: "la suspension de son permis de conduire", correct: true },
+        { lettre: "C", texte: "la réduction de six points du permis" }
+      ]
+    },
+    {
+      id: 2, type: "QCM", enonce: "Dans un tunnel éclairé, hors agglomération, je circule :",
+      choix: [
+        { lettre: "A", texte: "en feux de croisement", correct: true },
+        { lettre: "B", texte: "en feux de route" },
+        { lettre: "C", texte: "en feux de brouillard" }
+      ]
+    },
+    {
+      id: 3, type: "QCM", enonce: "En cas de contrôle, le conducteur VTC doit pouvoir justifier :",
+      choix: [
+        { lettre: "A", texte: "d'une réservation préalable électronique ou papier", correct: true },
+        { lettre: "B", texte: "uniquement de sa carte professionnelle" },
+        { lettre: "C", texte: "du montant de la course" }
+      ]
+    }
+  ]
+};
+
+export const examenBlanc4Taxi: ExamenBlanc = {
+  id: "eb4-taxi",
+  numero: 4,
+  type: "TAXI",
+  titre: "Examen Blanc N°4 - Formation TAXI",
+  matieres: [
+    matiere_t3p_examen4,
+    matiere_gestion_examen4,
+    matiere_securite_examen4,
+    matiere_francais_examen4,
+    matiere_anglais_examen4,
+    matiere_reglementation_taxi_examen4,
+    matiere_reglementation_taxi2_examen4
+  ]
+};
+
+export const examenBlanc4VTC: ExamenBlanc = {
+  id: "eb4-vtc",
+  numero: 4,
+  type: "VTC",
+  titre: "Examen Blanc N°4 - Formation VTC",
+  matieres: [
+    matiere_t3p_examen4,
+    matiere_gestion_examen4,
+    matiere_securite_examen4,
+    matiere_francais_examen4,
+    matiere_anglais_examen4,
+    matiere_reglementation_vtc_examen4,
+    matiere_reglementation_vtc2_examen4
+  ]
+};
+
+// ===== EXAMEN BLANC N°5 =====
+
+const matiere_t3p_examen5: Matiere = {
+  id: "t3p",
+  nom: "A - Transport Public Particulier de Personnes (T3P)",
+  duree: 45,
+  coefficient: 3,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QRC", enonce: "Qui agrée les organismes de formation continue des conducteurs de T3P ?",
+      reponseQRC: "Le préfet du département / La préfecture.",
+      reponses_possibles: ["préfecture", "préfet du département", "préfet"]
+    },
+    {
+      id: 2, type: "QRC", enonce: "Vous êtes chauffeur TAXI ou VTC en micro entreprise, quelles sanctions risquez-vous si vous refusez de transporter une femme enceinte ?",
+      reponseQRC: "Une amende de 45 000 euros et 3 ans d'emprisonnement.",
+      reponses_possibles: ["45000", "45 000", "3 ans", "emprisonnement"]
+    },
+    {
+      id: 3, type: "QRC", enonce: "Comment se présente une réservation préalable ? Citez 2 mentions obligatoires.",
+      reponseQRC: "Support papier ou électronique. Nom/dénomination sociale de l'entreprise. Coordonnées de l'entreprise. N° SIREN/SIRET. Nom et coordonnées du client. Lieu de prise en charge. Date et heure de la réservation.",
+      reponses_possibles: ["papier ou électronique", "nom", "coordonnées", "SIREN", "SIRET", "client", "prise en charge", "date", "heure"]
+    },
+    {
+      id: 4, type: "QRC", enonce: "Donnez la périodicité pour la visite médicale en fonction des tranches d'âge :",
+      reponseQRC: "Tous les 5 ans jusqu'à 60 ans. Tous les 2 ans de 60 à 76 ans. Tous les ans à partir de 76 ans.",
+      reponses_possibles: ["5 ans", "60 ans", "2 ans", "76 ans", "1 an"]
+    },
+    {
+      id: 5, type: "QCM", enonce: "Quelle est l'ancienneté maximum pour un véhicule hybride ?",
+      choix: [
+        { lettre: "A", texte: "Aucune" },
+        { lettre: "B", texte: "6 ans" },
+        { lettre: "C", texte: "7 ans", correct: true },
+        { lettre: "D", texte: "2 ans" }
+      ]
+    },
+    {
+      id: 6, type: "QCM", enonce: "Un conducteur sanctionné par le tribunal correctionnel pour délit de fuite peut saisir :",
+      choix: [
+        { lettre: "A", texte: "le tribunal correctionnel qui jugera à nouveau" },
+        { lettre: "B", texte: "le tribunal judiciaire" },
+        { lettre: "C", texte: "la cour de cassation" },
+        { lettre: "D", texte: "la cour d'appel", correct: true }
+      ]
+    },
+    {
+      id: 7, type: "QCM", enonce: "Quelle est l'autorité qui vérifie le casier judiciaire d'un candidat à la carte professionnelle T3P ?",
+      choix: [
+        { lettre: "A", texte: "Le ministère chargé des transports" },
+        { lettre: "B", texte: "Le préfet de région" },
+        { lettre: "C", texte: "Le préfet de police ou le préfet", correct: true },
+        { lettre: "D", texte: "Les forces de l'ordre" }
+      ]
+    },
+    {
+      id: 8, type: "QCM", enonce: "Le retrait de la carte professionnelle est :",
+      choix: [
+        { lettre: "A", texte: "consécutif à la décision d'un juge administratif sous certaines conditions" },
+        { lettre: "B", texte: "une sanction administrative prise par un préfet", correct: true },
+        { lettre: "C", texte: "une sanction administrative prise par un juge" }
+      ]
+    },
+    {
+      id: 9, type: "QCM", enonce: "Quel kilométrage maximum un conducteur de T3P peut-il réaliser pour sa course ?",
+      choix: [
+        { lettre: "A", texte: "500 km" },
+        { lettre: "B", texte: "300 km" },
+        { lettre: "C", texte: "1000 km" },
+        { lettre: "D", texte: "pas de limitation", correct: true }
+      ]
+    },
+    {
+      id: 10, type: "QCM", enonce: "Quels agents sont habilités à effectuer un contrôle routier de conducteur de T3P ?",
+      choix: [
+        { lettre: "A", texte: "Les policiers", correct: true },
+        { lettre: "B", texte: "Le juge du tribunal judiciaire" },
+        { lettre: "C", texte: "Les agents représentant la SNCF" },
+        { lettre: "D", texte: "Les gendarmes", correct: true }
+      ]
+    },
+    {
+      id: 11, type: "QCM", enonce: "Quelle(s) profession(s) du T3P est/sont autorisée(s) à proposer leurs services immédiats sur la voie publique ?",
+      choix: [
+        { lettre: "A", texte: "VMDTR" },
+        { lettre: "B", texte: "VTC dans sa zone de prise en charge" },
+        { lettre: "C", texte: "Aucune" },
+        { lettre: "D", texte: "Taxi dans sa zone de prise en charge", correct: true }
+      ]
+    },
+    {
+      id: 12, type: "QCM", enonce: "Quel est le nom de la formation obligatoire pour travailler dans le secteur des personnes à mobilité réduite ?",
+      choix: [
+        { lettre: "A", texte: "Transport de personnes à mobilité réduite TPMR", correct: true },
+        { lettre: "B", texte: "Transport de personnes handicapées" },
+        { lettre: "C", texte: "Transport de personnes malades" }
+      ]
+    }
+  ]
+};
+
+const matiere_gestion_examen5: Matiere = {
+  id: "gestion",
+  nom: "B - Gestion",
+  duree: 45,
+  coefficient: 2,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QRC", enonce: "Qu'est-ce qu'une personne morale ?",
+      reponseQRC: "Une personne morale est généralement constituée par un regroupement de personnes physiques ou morales qui souhaitent accomplir quelque chose en commun.",
+      reponses_possibles: ["regroupement", "personnes physiques", "personnes morales", "commun"]
+    },
+    {
+      id: 2, type: "QRC", enonce: "Un artisan achète un véhicule 21 000 € HT, amorti sur 3 ans. De combien sera l'amortissement annuel ?",
+      reponseQRC: "21 000 / 3 = 7 000 € HT d'amortissement annuel.",
+      reponses_possibles: ["7000", "7 000"]
+    },
+    {
+      id: 3, type: "QCM", enonce: "Qu'est-ce qu'un investissement ?",
+      choix: [
+        { lettre: "A", texte: "Les assurances professionnelles" },
+        { lettre: "B", texte: "L'acquisition d'un véhicule", correct: true },
+        { lettre: "C", texte: "Les honoraires d'expert-comptable" }
+      ]
+    },
+    {
+      id: 4, type: "QCM", enonce: "Selon le code de commerce, les documents comptables doivent être conservés :",
+      choix: [
+        { lettre: "A", texte: "1 an" },
+        { lettre: "B", texte: "3 ans" },
+        { lettre: "C", texte: "5 ans" },
+        { lettre: "D", texte: "10 ans", correct: true }
+      ]
+    },
+    {
+      id: 5, type: "QCM", enonce: "Quelle est la durée de vie maximum prévue par la loi pour une SARL ?",
+      choix: [
+        { lettre: "A", texte: "99 ans", correct: true },
+        { lettre: "B", texte: "25 ans" },
+        { lettre: "C", texte: "10 ans" },
+        { lettre: "D", texte: "50 ans" }
+      ]
+    },
+    {
+      id: 6, type: "QCM", enonce: "Qui attribue le code APE d'une entreprise ?",
+      choix: [
+        { lettre: "A", texte: "CMA" },
+        { lettre: "B", texte: "URSSAF" },
+        { lettre: "C", texte: "SSI" },
+        { lettre: "D", texte: "INSEE", correct: true }
+      ]
+    },
+    {
+      id: 7, type: "QCM", enonce: "Chaque mois, la TVA à décaisser (à payer) représente :",
+      choix: [
+        { lettre: "A", texte: "la TVA sur les achats" },
+        { lettre: "B", texte: "la TVA déductible moins la TVA collectée" },
+        { lettre: "C", texte: "la TVA collectée moins la TVA déductible", correct: true }
+      ]
+    },
+    {
+      id: 8, type: "QCM", enonce: "La CRDS signifie :",
+      choix: [
+        { lettre: "A", texte: "contribution régionale pour les dépenses sociales" },
+        { lettre: "B", texte: "contribution pour la réduction de la dette sociale" },
+        { lettre: "C", texte: "contribution régionale au développement social" },
+        { lettre: "D", texte: "contribution pour le remboursement de la dette sociale", correct: true }
+      ]
+    },
+    {
+      id: 9, type: "QCM", enonce: "Le président d'une SASU est :",
+      choix: [
+        { lettre: "A", texte: "travailleur salarié" },
+        { lettre: "B", texte: "salarié" },
+        { lettre: "C", texte: "assimilé salarié", correct: true }
+      ]
+    },
+    {
+      id: 10, type: "QCM", enonce: "Parmi les dépenses suivantes, lesquelles constituent des charges pour l'artisan ?",
+      choix: [
+        { lettre: "A", texte: "l'acquisition d'un garage" },
+        { lettre: "B", texte: "la facture du contrôle technique", correct: true },
+        { lettre: "C", texte: "la facture de révision et d'entretien du véhicule", correct: true }
+      ]
+    }
+  ]
+};
+
+const matiere_securite_examen5: Matiere = {
+  id: "securite",
+  nom: "C - Sécurité routière",
+  duree: 30,
+  coefficient: 3,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QCM", enonce: "Sur un trajet de 100 km sur autoroute, si je roule à 130 km/h au lieu de 120 km/h, je \"gagne\" environ :",
+      choix: [
+        { lettre: "A", texte: "10 minutes" },
+        { lettre: "B", texte: "4 minutes", correct: true },
+        { lettre: "C", texte: "8 minutes" },
+        { lettre: "D", texte: "15 minutes" }
+      ]
+    },
+    {
+      id: 2, type: "QCM", enonce: "En cas de panne, à quelle distance placez-vous le triangle de pré-signalisation ?",
+      choix: [
+        { lettre: "A", texte: "30 mètres au moins" },
+        { lettre: "B", texte: "50 mètres au moins", correct: true },
+        { lettre: "C", texte: "10 mètres au moins" }
+      ]
+    },
+    {
+      id: 3, type: "QCM", enonce: "Que risque un conducteur en cas de dépassement de la vitesse autorisée compris entre 40 km/h et moins de 50 km/h ?",
+      choix: [
+        { lettre: "A", texte: "La perte de deux points" },
+        { lettre: "B", texte: "Une contravention de quatrième classe" },
+        { lettre: "C", texte: "La perte de quatre points du permis", correct: true }
+      ]
+    },
+    {
+      id: 4, type: "QCM", enonce: "Combien de points perdez-vous en cas de chevauchement d'une ligne continue ?",
+      choix: [
+        { lettre: "A", texte: "3 points" },
+        { lettre: "B", texte: "1 point", correct: true },
+        { lettre: "C", texte: "2 points" }
+      ]
+    },
+    {
+      id: 5, type: "QCM", enonce: "Les feux de route éclairent à une distance minimale de :",
+      choix: [
+        { lettre: "A", texte: "50 mètres" },
+        { lettre: "B", texte: "100 mètres" },
+        { lettre: "C", texte: "200 mètres", correct: true },
+        { lettre: "D", texte: "150 mètres" }
+      ]
+    },
+    {
+      id: 6, type: "QCM", enonce: "A 90 km/h la distance d'arrêt est approximativement de :",
+      choix: [
+        { lettre: "A", texte: "50 m" },
+        { lettre: "B", texte: "80 m", correct: true },
+        { lettre: "C", texte: "70 m" }
+      ]
+    },
+    {
+      id: 7, type: "QCM", enonce: "Le décret du 13 avril 2016 sur les vitres surteintées impose :",
+      choix: [
+        { lettre: "A", texte: "un taux minimal de transparence de 70% sur les vitres avant et le pare-brise", correct: true },
+        { lettre: "B", texte: "un taux minimal de transparence de 80% sur toutes les vitres" },
+        { lettre: "C", texte: "un taux minimal de transparence de 80% sur les vitres arrières" }
+      ]
+    },
+    {
+      id: 8, type: "QCM", enonce: "Dans quel cas l'arrêt est-il autorisé sur la bande d'arrêt d'urgence de l'autoroute ?",
+      choix: [
+        { lettre: "A", texte: "en cas de panne ou d'accident", correct: true },
+        { lettre: "B", texte: "pour téléphoner" },
+        { lettre: "C", texte: "dans tous les cas" },
+        { lettre: "D", texte: "jamais" }
+      ]
+    },
+    {
+      id: 9, type: "QCM", enonce: "En agglomération, lorsque vous dépassez latéralement un piéton ou cycliste, vous devez laisser :",
+      choix: [
+        { lettre: "A", texte: "1,50 mètres" },
+        { lettre: "B", texte: "1 mètre", correct: true },
+        { lettre: "C", texte: "0,50 mètre" }
+      ]
+    },
+    {
+      id: 10, type: "QCM", enonce: "Par temps de pluie, est allongé(e) :",
+      choix: [
+        { lettre: "A", texte: "la distance d'arrêt", correct: true },
+        { lettre: "B", texte: "l'adhérence sur la route" },
+        { lettre: "C", texte: "la distance de freinage", correct: true }
+      ]
+    }
+  ]
+};
+
+const matiere_francais_examen5: Matiere = {
+  id: "francais",
+  nom: "D - Capacité d'expression et de compréhension en langue française",
+  duree: 30,
+  coefficient: 2,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QRC", enonce: "Pourquoi la présentation du Cybertruck a-t-elle été un échec ?",
+      reponseQRC: "Parce que ce véhicule est censé être très résistant aux attaques extérieures mais sa vitre a été cassée par l'envoi d'une balle d'acier.",
+      reponses_possibles: ["vitre", "cassée", "balle d'acier", "résistant", "Cybertruck"]
+    },
+    {
+      id: 2, type: "QRC", enonce: "D'après le texte, listez au moins 4 caractéristiques du Cybertruck Tesla.",
+      reponseQRC: "Véhicule 100% électrique. Lignes très épurées. Allure futuriste. Six places. Capable de tracter 7 tonnes. Réalisé en acier inoxydable. Passe de 0 à 100 km/h en 3 secondes.",
+      reponses_possibles: ["électrique", "épurées", "futuriste", "six places", "acier", "inoxydable", "3 secondes"]
+    },
+    {
+      id: 3, type: "QCM", enonce: "Pourquoi le Cybertruck pourrait-il avoir du mal à séduire la clientèle traditionnelle ?",
+      choix: [
+        { lettre: "A", texte: "Parce qu'il ne ressemble à rien d'autre", correct: true },
+        { lettre: "B", texte: "Parce qu'il est trop cher" },
+        { lettre: "C", texte: "Parce que c'est un véhicule électrique" }
+      ]
+    },
+    {
+      id: 4, type: "QCM", enonce: "Quelle est l'autonomie maximale d'un modèle Cybertruck ?",
+      choix: [
+        { lettre: "A", texte: "100 km" },
+        { lettre: "B", texte: "400 km" },
+        { lettre: "C", texte: "800 km", correct: true }
+      ]
+    },
+    {
+      id: 5, type: "QCM", enonce: "Qu'est-ce qu'un prototype ?",
+      choix: [
+        { lettre: "A", texte: "modèle diffusé à grande échelle" },
+        { lettre: "B", texte: "dernier modèle d'une série" },
+        { lettre: "C", texte: "un modèle de tests d'un nouveau produit", correct: true }
+      ]
+    },
+    {
+      id: 6, type: "QCM", enonce: "Donnez un (des) synonyme(s) de \"arborer\" :",
+      choix: [
+        { lettre: "A", texte: "Dissimuler" },
+        { lettre: "B", texte: "Révéler" },
+        { lettre: "C", texte: "Cacher" },
+        { lettre: "D", texte: "Afficher", correct: true }
+      ]
+    },
+    {
+      id: 7, type: "QCM", enonce: "Quelle est la signification du mot \"allure\" dans le texte ?",
+      choix: [
+        { lettre: "A", texte: "Vitesse" },
+        { lettre: "B", texte: "Style", correct: true },
+        { lettre: "C", texte: "Aspect" }
+      ]
+    },
+    {
+      id: 8, type: "QCM", enonce: "Quel est le pick le plus apprécié aux États-Unis ?",
+      choix: [
+        { lettre: "A", texte: "Le Blade Runner" },
+        { lettre: "B", texte: "Le Ford F-150", correct: true },
+        { lettre: "C", texte: "Le SpaceX" }
+      ]
+    }
+  ]
+};
+
+const matiere_anglais_examen5: Matiere = {
+  id: "anglais",
+  nom: "E - Capacité d'expression et de compréhension en langue anglaise",
+  duree: 30,
+  coefficient: 1,
+  noteEliminatoire: 4,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QCM", enonce: "Bonjour, êtes-vous disponible pour m'emmener à la gare ? En anglais :",
+      choix: [
+        { lettre: "A", texte: "hello, are you available to make me to the station?" },
+        { lettre: "B", texte: "hello, are you disponible to get me to the station?" },
+        { lettre: "C", texte: "hello, are you available to get me to the station?", correct: true }
+      ]
+    },
+    {
+      id: 2, type: "QCM", enonce: "Thank you for the ride, keep the change:",
+      choix: [
+        { lettre: "A", texte: "merci pour la course, gardez la monnaie", correct: true },
+        { lettre: "B", texte: "merci d'avoir attendu, gardez la monnaie" },
+        { lettre: "C", texte: "merci pour la course, ne changez pas" }
+      ]
+    },
+    {
+      id: 3, type: "QCM", enonce: "I was told to say anything concerning this new advert:",
+      choix: [
+        { lettre: "A", texte: "je n'avais rien à dire concernant ce nouvel adversaire" },
+        { lettre: "B", texte: "je n'ai rien à dire à propos de ce nouvel avertissement" },
+        { lettre: "C", texte: "on m'a dit de ne rien dire de cette nouvelle publicité", correct: true }
+      ]
+    },
+    {
+      id: 4, type: "QCM", enonce: "You will ..............., our island is amazing.",
+      choix: [
+        { lettre: "A", texte: "Watch" },
+        { lettre: "B", texte: "Breathe" },
+        { lettre: "C", texte: "Hear" },
+        { lettre: "D", texte: "See", correct: true }
+      ]
+    },
+    {
+      id: 5, type: "QCM", enonce: "I need a taxi for tomorrow morning:",
+      choix: [
+        { lettre: "A", texte: "j'ai besoin d'un taxi pour ce soir" },
+        { lettre: "B", texte: "j'ai besoin d'un taxi pour demain matin", correct: true },
+        { lettre: "C", texte: "j'ai besoin d'un taxi pour ce matin" }
+      ]
+    },
+    {
+      id: 6, type: "QCM", enonce: "J'ai raté mon avion, ramenez-moi à l'hôtel. En anglais :",
+      choix: [
+        { lettre: "A", texte: "I took my plane, bring me back to the hotel" },
+        { lettre: "B", texte: "I have lost my plane, drive me back to the hotel" },
+        { lettre: "C", texte: "I missed my plane, take me back to the hotel", correct: true }
+      ]
+    }
+  ]
+};
+
+const matiere_reglementation_taxi_examen5: Matiere = {
+  id: "reglementation_taxi",
+  nom: "F(T) - Connaissance du territoire et réglementation locale TAXI",
+  duree: 30,
+  coefficient: 3,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QCM", enonce: "Lorsque les charges d'exploitation d'une entreprise sont inférieures aux produits :",
+      choix: [
+        { lettre: "A", texte: "Il y a perte d'exploitation" },
+        { lettre: "B", texte: "L'entreprise doit poser le bilan" },
+        { lettre: "C", texte: "Il y a bénéfice", correct: true }
+      ]
+    },
+    {
+      id: 2, type: "QCM", enonce: "Dans un bilan :",
+      choix: [
+        { lettre: "A", texte: "si le total de l'actif est inférieur au passif il y a perte" },
+        { lettre: "B", texte: "le total de l'actif est toujours égal au total du passif", correct: true },
+        { lettre: "C", texte: "si le total de l'actif est supérieur au passif il y a bénéfice" }
+      ]
+    },
+    {
+      id: 3, type: "QCM", enonce: "Un artisan au régime réel rembourse 930€/mois dont 620€ de capital. Quel montant de charges déduire au 31 décembre ?",
+      choix: [
+        { lettre: "A", texte: "3 720 €", correct: true },
+        { lettre: "B", texte: "5 580 €" },
+        { lettre: "C", texte: "7 740 €" }
+      ]
+    },
+    {
+      id: 4, type: "QCM", enonce: "Mon voyant d'essence vient de s'allumer :",
+      choix: [
+        { lettre: "A", texte: "j'allume mes feux de détresse" },
+        { lettre: "B", texte: "je continue ma route jusqu'à une station" },
+        { lettre: "C", texte: "je réduis mon allure pour diminuer ma consommation", correct: true },
+        { lettre: "D", texte: "je m'arrête sur ma droite" }
+      ]
+    },
+    {
+      id: 5, type: "QCM", enonce: "Titulaire d'un permis probatoire, dans quel cas dois-je suivre un stage de sensibilisation :",
+      choix: [
+        { lettre: "A", texte: "en cas de perte en une seule fois de 3 points", correct: true },
+        { lettre: "B", texte: "en cas de perte en une seule fois de 4 points" },
+        { lettre: "C", texte: "en cas de perte en une seule fois de 2 points" }
+      ]
+    }
+  ]
+};
+
+const matiere_reglementation_taxi2_examen5: Matiere = {
+  id: "reglementation_taxi2",
+  nom: "G(T) - Réglementation nationale TAXI et gestion propre à cette activité",
+  duree: 20,
+  coefficient: 3,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QCM", enonce: "En cas de récidive d'une conduite sous influence de stupéfiants, vous encourez :",
+      choix: [
+        { lettre: "A", texte: "la confiscation/immobilisation de votre véhicule", correct: true },
+        { lettre: "B", texte: "la suspension de votre permis de conduire", correct: true },
+        { lettre: "C", texte: "l'annulation de votre permis de conduire", correct: true }
+      ]
+    },
+    {
+      id: 2, type: "QCM", enonce: "Vous êtes au volant et recevez un appel. Vous prenez le téléphone en main, vous encourez :",
+      choix: [
+        { lettre: "A", texte: "un retrait de deux points" },
+        { lettre: "B", texte: "un retrait d'un point" },
+        { lettre: "C", texte: "un retrait de trois points", correct: true }
+      ]
+    },
+    {
+      id: 3, type: "QCM", enonce: "La durée du temps de réaction est d'environ :",
+      choix: [
+        { lettre: "A", texte: "1/10 ième de seconde" },
+        { lettre: "B", texte: "1 seconde" },
+        { lettre: "C", texte: "1/2 seconde", correct: true }
+      ]
+    }
+  ]
+};
+
+const matiere_reglementation_vtc_examen5: Matiere = {
+  id: "reglementation_vtc",
+  nom: "F(V) - Développement commercial et gestion propre à l'activité de VTC",
+  duree: 30,
+  coefficient: 3,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QCM", enonce: "Lorsque les charges d'exploitation sont inférieures aux produits :",
+      choix: [
+        { lettre: "A", texte: "Il y a perte" },
+        { lettre: "B", texte: "L'entreprise doit déposer le bilan" },
+        { lettre: "C", texte: "Il y a bénéfice", correct: true }
+      ]
+    },
+    {
+      id: 2, type: "QCM", enonce: "La CET (contribution économique territoriale) fait partie :",
+      choix: [
+        { lettre: "A", texte: "Des impôts locaux", correct: true },
+        { lettre: "B", texte: "Des impôts sur les sociétés" },
+        { lettre: "C", texte: "Des impôts sur le revenu" }
+      ]
+    },
+    {
+      id: 3, type: "QCM", enonce: "Un artisan au régime réel rembourse 930€/mois dont 620€ de capital. Charges déductibles au 31 décembre :",
+      choix: [
+        { lettre: "A", texte: "3 720 €", correct: true },
+        { lettre: "B", texte: "5 580 €" },
+        { lettre: "C", texte: "11 160 €" }
+      ]
+    },
+    {
+      id: 4, type: "QCM", enonce: "Titulaire d'un permis probatoire, dans quel cas dois-je suivre un stage de sensibilisation :",
+      choix: [
+        { lettre: "A", texte: "perte en une seule fois de 3 points", correct: true },
+        { lettre: "B", texte: "perte en une seule fois de 4 points" },
+        { lettre: "C", texte: "perte en une seule fois de 2 points" }
+      ]
+    }
+  ]
+};
+
+const matiere_reglementation_vtc2_examen5: Matiere = {
+  id: "reglementation_vtc2",
+  nom: "G(V) - Réglementation nationale spécifique à l'activité de VTC",
+  duree: 20,
+  coefficient: 3,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QCM", enonce: "En cas de récidive conduite sous stupéfiants, vous encourez :",
+      choix: [
+        { lettre: "A", texte: "confiscation/immobilisation du véhicule", correct: true },
+        { lettre: "B", texte: "suspension du permis", correct: true },
+        { lettre: "C", texte: "annulation du permis", correct: true }
+      ]
+    },
+    {
+      id: 2, type: "QCM", enonce: "Vous prenez votre téléphone en main en conduisant, vous encourez :",
+      choix: [
+        { lettre: "A", texte: "un retrait de deux points" },
+        { lettre: "B", texte: "un retrait d'un point" },
+        { lettre: "C", texte: "un retrait de trois points", correct: true }
+      ]
+    }
+  ]
+};
+
+export const examenBlanc5Taxi: ExamenBlanc = {
+  id: "eb5-taxi",
+  numero: 5,
+  type: "TAXI",
+  titre: "Examen Blanc N°5 - Formation TAXI",
+  matieres: [
+    matiere_t3p_examen5,
+    matiere_gestion_examen5,
+    matiere_securite_examen5,
+    matiere_francais_examen5,
+    matiere_anglais_examen5,
+    matiere_reglementation_taxi_examen5,
+    matiere_reglementation_taxi2_examen5
+  ]
+};
+
+export const examenBlanc5VTC: ExamenBlanc = {
+  id: "eb5-vtc",
+  numero: 5,
+  type: "VTC",
+  titre: "Examen Blanc N°5 - Formation VTC",
+  matieres: [
+    matiere_t3p_examen5,
+    matiere_gestion_examen5,
+    matiere_securite_examen5,
+    matiere_francais_examen5,
+    matiere_anglais_examen5,
+    matiere_reglementation_vtc_examen5,
+    matiere_reglementation_vtc2_examen5
+  ]
+};
+
+// ===== EXAMEN BLANC N°6 =====
+
+const matiere_t3p_examen6: Matiere = {
+  id: "t3p",
+  nom: "A - Transport Public Particulier de Personnes (T3P)",
+  duree: 45,
+  coefficient: 3,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QRC", enonce: "Le renouvellement de la carte professionnelle intervient quand 2 attestations sont produites. Lesquelles ?",
+      reponseQRC: "La visite médicale. La formation continue.",
+      reponses_possibles: ["visite médicale", "formation continue"]
+    },
+    {
+      id: 2, type: "QRC", enonce: "Qu'est-ce que l'honorabilité dans votre profession ?",
+      reponseQRC: "Avoir le casier judiciaire B2 vierge.",
+      reponses_possibles: ["casier judiciaire b2 vierge", "b2 vierge", "casier b2"]
+    },
+    {
+      id: 3, type: "QRC", enonce: "Par qui est donnée l'attestation de formation continue ?",
+      reponseQRC: "Par le représentant légal du centre de formation.",
+      reponses_possibles: ["représentant légal", "centre de formation", "directeur"]
+    },
+    {
+      id: 4, type: "QCM", enonce: "Le stage de formation continue des conducteurs T3P permet d'obtenir une attestation valable :",
+      choix: [
+        { lettre: "A", texte: "5 ans", correct: true },
+        { lettre: "B", texte: "1 an" },
+        { lettre: "C", texte: "2 ans" },
+        { lettre: "D", texte: "10 ans" }
+      ]
+    },
+    {
+      id: 5, type: "QCM", enonce: "Quel service délivre la carte professionnelle de conducteur de T3P ?",
+      choix: [
+        { lettre: "A", texte: "La préfecture", correct: true },
+        { lettre: "B", texte: "La DIRECCTE" },
+        { lettre: "C", texte: "La DREAL" }
+      ]
+    },
+    {
+      id: 6, type: "QCM", enonce: "Qu'est-ce qui caractérise un déplacement en covoiturage ?",
+      choix: [
+        { lettre: "A", texte: "Aucune obligation de réaliser le trajet" },
+        { lettre: "B", texte: "Un conducteur titulaire de la RC PRO" },
+        { lettre: "C", texte: "Partage obligatoire des frais engagés", correct: true },
+        { lettre: "D", texte: "Aucun contrat entre les parties" }
+      ]
+    },
+    {
+      id: 7, type: "QCM", enonce: "L'assurance RCP peut être invoquée par le conducteur s'il :",
+      choix: [
+        { lettre: "A", texte: "accroche un autre véhicule en manœuvrant" },
+        { lettre: "B", texte: "abîme le vêtement de son passager", correct: true },
+        { lettre: "C", texte: "est contrôlé sans carte professionnelle" }
+      ]
+    },
+    {
+      id: 8, type: "QCM", enonce: "La carte professionnelle est délivrée par :",
+      choix: [
+        { lettre: "A", texte: "La commune dans laquelle on est autorisé à exercer" },
+        { lettre: "B", texte: "Le Préfet ou le Préfet de Police", correct: true },
+        { lettre: "C", texte: "La Mairie" }
+      ]
+    },
+    {
+      id: 9, type: "QCM", enonce: "Le fait de ne pas présenter immédiatement sa carte professionnelle lors d'un contrôle est passible :",
+      choix: [
+        { lettre: "A", texte: "d'une amende de première classe" },
+        { lettre: "B", texte: "d'une immobilisation du véhicule" },
+        { lettre: "C", texte: "d'une amende de deuxième classe", correct: true },
+        { lettre: "D", texte: "d'une amende de quatrième classe" }
+      ]
+    },
+    {
+      id: 10, type: "QCM", enonce: "Peuvent siéger aux commissions locales du T3P :",
+      choix: [
+        { lettre: "A", texte: "des représentants des consommateurs", correct: true },
+        { lettre: "B", texte: "les chambres consulaires", correct: true },
+        { lettre: "C", texte: "la CPAM" },
+        { lettre: "D", texte: "des représentants des PMR", correct: true }
+      ]
+    },
+    {
+      id: 11, type: "QCM", enonce: "Quelle(s) infraction(s) peut/peuvent figurer au Bulletin n°2 du casier judiciaire ?",
+      choix: [
+        { lettre: "A", texte: "Non présentation du permis de conduire" },
+        { lettre: "B", texte: "Escroquerie", correct: true },
+        { lettre: "C", texte: "Extorsion de fonds", correct: true },
+        { lettre: "D", texte: "Non respect d'un feu tricolore" }
+      ]
+    },
+    {
+      id: 12, type: "QCM", enonce: "Qu'est-ce que le Comité national des transports publics particuliers de personnes ?",
+      choix: [
+        { lettre: "A", texte: "Il débat des grands enjeux des T3P", correct: true },
+        { lettre: "B", texte: "Il donne un avis uniquement sur les taxis et VTC" },
+        { lettre: "C", texte: "Il comprend 50 membres au plus" },
+        { lettre: "D", texte: "Le comité est établi pour une durée de cinq ans" }
+      ]
+    }
+  ]
+};
+
+const matiere_gestion_examen6: Matiere = {
+  id: "gestion",
+  nom: "B - Gestion",
+  duree: 45,
+  coefficient: 2,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QRC", enonce: "Expliquez le régime de la responsabilité limitée.",
+      reponseQRC: "La responsabilité limitée signifie qu'en cas de faillite, seul le patrimoine professionnel de la société pourra être saisi, pas celui du gérant personnellement.",
+      reponses_possibles: ["patrimoine professionnel", "faillite", "saisi", "gérant", "responsabilité limitée"]
+    },
+    {
+      id: 2, type: "QRC", enonce: "Lorsqu'un artisan vend son véhicule, expliquez comment est calculée la plus-value ou moins-value.",
+      reponseQRC: "Il faut soustraire le prix de vente au prix d'achat du véhicule (diminué des amortissements).",
+      reponses_possibles: ["prix de vente", "prix d'achat", "amortissements", "soustraire"]
+    },
+    {
+      id: 3, type: "QCM", enonce: "Mes clients me payent 30 jours fin de mois. Pour une prestation le 5 avril, quand serai-je réglé ?",
+      choix: [
+        { lettre: "A", texte: "31 mai", correct: true },
+        { lettre: "B", texte: "30 avril" },
+        { lettre: "C", texte: "30 juin" }
+      ]
+    },
+    {
+      id: 4, type: "QCM", enonce: "Développer l'acronyme APE (de code APE) :",
+      choix: [
+        { lettre: "A", texte: "activités professionnelles de l'entreprise" },
+        { lettre: "B", texte: "activité principale exercée", correct: true },
+        { lettre: "C", texte: "accord paritaire d'entreprise" }
+      ]
+    },
+    {
+      id: 5, type: "QCM", enonce: "Parmi les dépenses suivantes, lesquelles n'ont pas un caractère professionnel ?",
+      choix: [
+        { lettre: "A", texte: "Honoraires comptable" },
+        { lettre: "B", texte: "Taxe foncière" },
+        { lettre: "C", texte: "Contravention", correct: true }
+      ]
+    },
+    {
+      id: 6, type: "QCM", enonce: "Quels sont les documents comptables obligatoires pour une micro-entreprise ?",
+      choix: [
+        { lettre: "A", texte: "le livre des recettes", correct: true },
+        { lettre: "B", texte: "le registre des achats", correct: true },
+        { lettre: "C", texte: "le bilan" },
+        { lettre: "D", texte: "le compte de résultat" }
+      ]
+    },
+    {
+      id: 7, type: "QCM", enonce: "Le chiffre d'affaires d'un artisan T3P passe de 10 100 € à 15 440 €. Quel est le pourcentage d'augmentation ?",
+      choix: [
+        { lettre: "A", texte: "54,20%" },
+        { lettre: "B", texte: "52,87%", correct: true },
+        { lettre: "C", texte: "51,83%" }
+      ]
+    },
+    {
+      id: 8, type: "QCM", enonce: "En micro-entreprise en 2024, quel plafond de CA ne dois-je pas dépasser ?",
+      choix: [
+        { lettre: "A", texte: "77 700 €", correct: true },
+        { lettre: "B", texte: "58 000 €" },
+        { lettre: "C", texte: "33 200 €" }
+      ]
+    },
+    {
+      id: 9, type: "QCM", enonce: "L'EURL en T3P avec associé physique est soumise de plein droit à :",
+      choix: [
+        { lettre: "A", texte: "l'impôt sur les revenus catégorie BNC" },
+        { lettre: "B", texte: "l'impôt sur les sociétés" },
+        { lettre: "C", texte: "l'impôt sur les revenus catégorie BIC", correct: true }
+      ]
+    },
+    {
+      id: 10, type: "QCM", enonce: "Quel est le montant HT d'une course de 55 € TTC (TVA 10%) ?",
+      choix: [
+        { lettre: "A", texte: "52,13 €" },
+        { lettre: "B", texte: "45,83 €" },
+        { lettre: "C", texte: "50 €", correct: true }
+      ]
+    },
+    {
+      id: 11, type: "QCM", enonce: "De quoi se compose le chiffre d'affaires annuel d'une entreprise ?",
+      choix: [
+        { lettre: "A", texte: "du nombre de clients de l'année" },
+        { lettre: "B", texte: "du bénéfice" },
+        { lettre: "C", texte: "de la somme des recettes de l'année", correct: true }
+      ]
+    }
+  ]
+};
+
+const matiere_securite_examen6: Matiere = {
+  id: "securite",
+  nom: "C - Sécurité routière",
+  duree: 30,
+  coefficient: 3,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QCM", enonce: "Le titulaire d'un permis de conduire de catégorie B peut conduire un véhicule :",
+      choix: [
+        { lettre: "A", texte: "Pouvant transporter dix passagers, conducteur non compris" },
+        { lettre: "B", texte: "Pouvant transporter neuf passagers, conducteur non compris" },
+        { lettre: "C", texte: "Pouvant transporter huit passagers, conducteur non compris", correct: true },
+        { lettre: "D", texte: "Ayant un PTAC n'excédant pas 3,5 tonnes" }
+      ]
+    },
+    {
+      id: 2, type: "QCM", enonce: "Les enfants peuvent circuler à vélo sur les trottoirs jusqu'à l'âge de :",
+      choix: [
+        { lettre: "A", texte: "6 ans" },
+        { lettre: "B", texte: "8 ans", correct: true },
+        { lettre: "C", texte: "12 ans" }
+      ]
+    },
+    {
+      id: 3, type: "QCM", enonce: "Les feux de route éclairent à une distance minimale de :",
+      choix: [
+        { lettre: "A", texte: "150 mètres" },
+        { lettre: "B", texte: "50 mètres" },
+        { lettre: "C", texte: "100 mètres", correct: true },
+        { lettre: "D", texte: "200 mètres" }
+      ]
+    },
+    {
+      id: 4, type: "QCM", enonce: "Lorsque je manœuvre :",
+      choix: [
+        { lettre: "A", texte: "je suis toujours prioritaire" },
+        { lettre: "B", texte: "je dois la priorité avant de manœuvrer" },
+        { lettre: "C", texte: "je dois la priorité durant la manœuvre", correct: true }
+      ]
+    },
+    {
+      id: 5, type: "QCM", enonce: "L'ABS (système d'antiblocage des roues) :",
+      choix: [
+        { lettre: "A", texte: "réduit considérablement la distance d'arrêt" },
+        { lettre: "B", texte: "permet de ne pas allonger la distance d'arrêt", correct: true },
+        { lettre: "C", texte: "aide à maintenir la direction du véhicule", correct: true }
+      ]
+    },
+    {
+      id: 6, type: "QCM", enonce: "Un conducteur contrôlé avec un taux d'alcoolémie de 0,9 g/litre de sang :",
+      choix: [
+        { lettre: "A", texte: "Risque de retrait de 4 points" },
+        { lettre: "B", texte: "Fait l'objet d'une rétention automatique et immédiate de son permis", correct: true },
+        { lettre: "C", texte: "Peut reprendre son véhicule après dégrisement" }
+      ]
+    },
+    {
+      id: 7, type: "QCM", enonce: "En cas de dépassement entre 30 et 40 km/h au-dessus de la vitesse autorisée, la réduction de points est de :",
+      choix: [
+        { lettre: "A", texte: "4 points" },
+        { lettre: "B", texte: "1 point" },
+        { lettre: "C", texte: "2 points" },
+        { lettre: "D", texte: "3 points", correct: true }
+      ]
+    },
+    {
+      id: 8, type: "QCM", enonce: "Un stage de sensibilisation à la sécurité routière :",
+      choix: [
+        { lettre: "A", texte: "Permet de récupérer jusqu'à 4 points", correct: true },
+        { lettre: "B", texte: "Peut être suivi une fois tous les 6 mois" },
+        { lettre: "C", texte: "Permet de récupérer jusqu'à 6 points" },
+        { lettre: "D", texte: "Peut être suivi une fois par an", correct: true }
+      ]
+    },
+    {
+      id: 9, type: "QCM", enonce: "Les pneumatiques doivent présenter des sculptures apparentes :",
+      choix: [
+        { lettre: "A", texte: "sur les roues avant et arrières gauche" },
+        { lettre: "B", texte: "sur les quatre roues", correct: true },
+        { lettre: "C", texte: "uniquement sur les roues arrières" }
+      ]
+    },
+    {
+      id: 10, type: "QCM", enonce: "Qui signe le constat amiable lors d'un accident ?",
+      choix: [
+        { lettre: "A", texte: "Les deux conducteurs et les témoins" },
+        { lettre: "B", texte: "La victime de l'accident" },
+        { lettre: "C", texte: "Les deux conducteurs", correct: true },
+        { lettre: "D", texte: "L'auteur de l'accident" }
+      ]
+    }
+  ]
+};
+
+const matiere_francais_examen6: Matiere = {
+  id: "francais",
+  nom: "D - Capacité d'expression et de compréhension en langue française",
+  duree: 30,
+  coefficient: 2,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QRC", enonce: "Que veut dire l'auteur par \"un Lyonnais pur jus\" ?",
+      reponseQRC: "Un vrai Lyonnais, quelqu'un qui est né et qui connaît bien la ville de Lyon.",
+      reponses_possibles: ["vrai Lyonnais", "né", "Lyon", "connaît bien"]
+    },
+    {
+      id: 2, type: "QRC", enonce: "Quelle(s) condition(s) pour que le prix des taxis-bateaux se rapproche des tarifs des taxis classiques ?",
+      reponseQRC: "Augmenter le nombre de bateaux et avoir une clientèle présente.",
+      reponses_possibles: ["nombre de bateaux", "clientèle", "augmenter"]
+    },
+    {
+      id: 3, type: "QRC", enonce: "Pourquoi Jeff Fèvre souhaite développer les taxis-bateaux ?",
+      reponseQRC: "Éviter les embouteillages. Aller partout en utilisant la voie d'eau pour se déplacer sur Lyon.",
+      reponses_possibles: ["embouteillages", "voie d'eau", "Lyon", "déplacer"]
+    },
+    {
+      id: 4, type: "QCM", enonce: "A qui Jeff Fèvre doit-il demander les autorisations d'accoster ?",
+      choix: [
+        { lettre: "A", texte: "La Métropole", correct: true },
+        { lettre: "B", texte: "La régie des transports" },
+        { lettre: "C", texte: "La ville de Lyon" },
+        { lettre: "D", texte: "Le conseil Départemental" }
+      ]
+    },
+    {
+      id: 5, type: "QCM", enonce: "Sur quels cours d'eau Jeff Fèvre souhaite-t-il créer un service régulier ?",
+      choix: [
+        { lettre: "A", texte: "Le Rhône", correct: true },
+        { lettre: "B", texte: "La Saône", correct: true },
+        { lettre: "C", texte: "La Seine" }
+      ]
+    },
+    {
+      id: 6, type: "QCM", enonce: "A quoi fait référence \"la Capitale des Gaules\" ?",
+      choix: [
+        { lettre: "A", texte: "La ville de Lyon", correct: true },
+        { lettre: "B", texte: "La Métropole" },
+        { lettre: "C", texte: "La régie des transports" }
+      ]
+    },
+    {
+      id: 7, type: "QCM", enonce: "Que signifie \"s'affranchir\" des bouchons ?",
+      choix: [
+        { lettre: "A", texte: "Timbrer" },
+        { lettre: "B", texte: "Se libérer", correct: true },
+        { lettre: "C", texte: "Rompre" },
+        { lettre: "D", texte: "Quitter" }
+      ]
+    },
+    {
+      id: 8, type: "QCM", enonce: "Quel(s) est (sont) les synonymes d'anecdote ?",
+      choix: [
+        { lettre: "A", texte: "Historiette", correct: true },
+        { lettre: "B", texte: "Rumeur" },
+        { lettre: "C", texte: "Évènement" },
+        { lettre: "D", texte: "Élucubration" }
+      ]
+    }
+  ]
+};
+
+const matiere_anglais_examen6: Matiere = {
+  id: "anglais",
+  nom: "E - Capacité d'expression et de compréhension en langue anglaise",
+  duree: 30,
+  coefficient: 1,
+  noteEliminatoire: 4,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QCM", enonce: "\"Enjoy your stay\" signifie :",
+      choix: [
+        { lettre: "A", texte: "Appréciez le moment !" },
+        { lettre: "B", texte: "Profitez de votre séjour !", correct: true },
+        { lettre: "C", texte: "Restez joyeux !" }
+      ]
+    },
+    {
+      id: 2, type: "QCM", enonce: "A \"tip\" means:",
+      choix: [
+        { lettre: "A", texte: "Un pourboire", correct: true },
+        { lettre: "B", texte: "Un type" },
+        { lettre: "C", texte: "Une idée" }
+      ]
+    },
+    {
+      id: 3, type: "QCM", enonce: "I don't understand what you mean:",
+      choix: [
+        { lettre: "A", texte: "Je ne comprends pas ce que vous suggérez" },
+        { lettre: "B", texte: "Je ne comprends pas ce que vous voulez" },
+        { lettre: "C", texte: "Je ne comprends pas ce que vous voulez dire", correct: true }
+      ]
+    },
+    {
+      id: 4, type: "QCM", enonce: "Do you know a typical site for eating?",
+      choix: [
+        { lettre: "A", texte: "Y-a-t'il une bonne salle de spectacle en ville ?" },
+        { lettre: "B", texte: "Connaissez-vous un endroit typique pour dormir ?" },
+        { lettre: "C", texte: "Connaissez-vous un endroit typique pour manger ?", correct: true }
+      ]
+    },
+    {
+      id: 5, type: "QCM", enonce: "Can you pick me up at the library, please?",
+      choix: [
+        { lettre: "A", texte: "Pouvez-vous me déposer à la librairie ?" },
+        { lettre: "B", texte: "Pouvez-vous venir me prendre à la bibliothèque ?", correct: true },
+        { lettre: "C", texte: "Pouvez-vous me porter jusqu'à une librairie ?" }
+      ]
+    },
+    {
+      id: 6, type: "QCM", enonce: "I should attend a meeting in Rennes in 2 hours:",
+      choix: [
+        { lettre: "A", texte: "Je devrais assister à une réunion à Rennes dans 2 heures", correct: true },
+        { lettre: "B", texte: "Je devrais assister à une réunion à Rennes à 2 heures" },
+        { lettre: "C", texte: "Je devrais attendre une réunion à Rennes dans 2 heures" }
+      ]
+    },
+    {
+      id: 7, type: "QCM", enonce: "Are you free?",
+      choix: [
+        { lettre: "A", texte: "Êtes-vous prêt ?" },
+        { lettre: "B", texte: "Êtes-vous gratuit ?" },
+        { lettre: "C", texte: "Êtes-vous disponible ?", correct: true }
+      ]
+    },
+    {
+      id: 8, type: "QCM", enonce: "Êtes-vous bien installé ? En anglais :",
+      choix: [
+        { lettre: "A", texte: "Are you well ?" },
+        { lettre: "B", texte: "Are you ready ?" },
+        { lettre: "C", texte: "Are you comfortable ?", correct: true }
+      ]
+    },
+    {
+      id: 9, type: "QCM", enonce: "Les gilets jaunes bloquent les autoroutes en ce moment. En anglais :",
+      choix: [
+        { lettre: "A", texte: "The yellow vests block the motorways" },
+        { lettre: "B", texte: "The yellow vests are blocking the motorways", correct: true },
+        { lettre: "C", texte: "The yellow vests blocked the motorways" }
+      ]
+    },
+    {
+      id: 10, type: "QCM", enonce: "I'm very sorry, but you will be late, there are traffic jams:",
+      choix: [
+        { lettre: "A", texte: "je suis triste car vous serez en retard, il y a des bouchons" },
+        { lettre: "B", texte: "je suis extrêmement désolé, mais vous serez en retard, il y a des bouchons", correct: true },
+        { lettre: "C", texte: "je suis désolé mais vous serez en avance, pas de bouchons" }
+      ]
+    }
+  ]
+};
+
+const matiere_reglementation_taxi_examen6: Matiere = {
+  id: "reglementation_taxi",
+  nom: "F(T) - Connaissance du territoire et réglementation locale TAXI",
+  duree: 30,
+  coefficient: 3,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QCM", enonce: "Le titulaire d'un permis de conduire catégorie B peut conduire un véhicule :",
+      choix: [
+        { lettre: "A", texte: "Pouvant transporter 10 passagers, conducteur non compris" },
+        { lettre: "B", texte: "Pouvant transporter 9 passagers, conducteur non compris" },
+        { lettre: "C", texte: "Pouvant transporter 8 passagers, conducteur non compris", correct: true }
+      ]
+    },
+    {
+      id: 2, type: "QCM", enonce: "Dans quel cas le conducteur doit-il réduire sa vitesse ?",
+      choix: [
+        { lettre: "A", texte: "Lors du croisement ou dépassement de piétons", correct: true },
+        { lettre: "B", texte: "Lorsque la route est dégagée" },
+        { lettre: "C", texte: "Lors du croisement ou dépassement de cyclistes", correct: true }
+      ]
+    },
+    {
+      id: 3, type: "QCM", enonce: "Le fait de ne pas présenter immédiatement son permis de conduire aux agents est puni de :",
+      choix: [
+        { lettre: "A", texte: "Une amende de quatrième classe", correct: true },
+        { lettre: "B", texte: "Une amende de seconde classe" },
+        { lettre: "C", texte: "Une amende de troisième classe" }
+      ]
+    },
+    {
+      id: 4, type: "QCM", enonce: "Quelles sont les précautions pour vérifier le niveau d'huile ?",
+      choix: [
+        { lettre: "A", texte: "Moteur chaud" },
+        { lettre: "B", texte: "Moteur froid", correct: true },
+        { lettre: "C", texte: "Terrain plat", correct: true },
+        { lettre: "D", texte: "Moteur allumé" }
+      ]
+    },
+    {
+      id: 5, type: "QCM", enonce: "Pour dépasser un cycliste en ville, je dois laisser un espace latéral minimum de :",
+      choix: [
+        { lettre: "A", texte: "1,00 m", correct: true },
+        { lettre: "B", texte: "2,00 m" }
+      ]
+    },
+    {
+      id: 6, type: "QCM", enonce: "Le marquage au sol de couleur jaune est :",
+      choix: [
+        { lettre: "A", texte: "un indicateur de croisement" },
+        { lettre: "B", texte: "définitif" },
+        { lettre: "C", texte: "provisoire", correct: true }
+      ]
+    }
+  ]
+};
+
+const matiere_reglementation_taxi2_examen6: Matiere = {
+  id: "reglementation_taxi2",
+  nom: "G(T) - Réglementation nationale TAXI et gestion propre à cette activité",
+  duree: 20,
+  coefficient: 3,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QCM", enonce: "Dans une entreprise individuelle :",
+      choix: [
+        { lettre: "A", texte: "L'entrepreneur individuel est responsable des dettes", correct: true },
+        { lettre: "B", texte: "Les biens de l'entreprise et du fondateur sont confondus", correct: true },
+        { lettre: "C", texte: "L'entrepreneur est responsable à hauteur du capital" }
+      ]
+    },
+    {
+      id: 2, type: "QCM", enonce: "Je m'installe en tant qu'artisan. Je souscris un crédit-bail pour l'acquisition de mon véhicule :",
+      choix: [
+        { lettre: "A", texte: "Je l'amortis sur 5 ans" },
+        { lettre: "B", texte: "Je ne peux pas l'amortir", correct: true },
+        { lettre: "C", texte: "Je l'amortis sur 10 ans" }
+      ]
+    },
+    {
+      id: 3, type: "QCM", enonce: "Le dirigeant d'une micro-entreprise :",
+      choix: [
+        { lettre: "A", texte: "est soumis à l'impôt sur les sociétés" },
+        { lettre: "B", texte: "n'est pas soumis à l'impôt" },
+        { lettre: "C", texte: "est soumis à l'impôt sur le revenu", correct: true }
+      ]
+    }
+  ]
+};
+
+const matiere_reglementation_vtc_examen6: Matiere = {
+  id: "reglementation_vtc",
+  nom: "F(V) - Développement commercial et gestion propre à l'activité de VTC",
+  duree: 30,
+  coefficient: 3,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QCM", enonce: "Dans quel cas le conducteur doit-il réduire sa vitesse ?",
+      choix: [
+        { lettre: "A", texte: "Lors du croisement ou dépassement de piétons", correct: true },
+        { lettre: "B", texte: "Lorsque la route est dégagée" },
+        { lettre: "C", texte: "Lors du croisement ou dépassement de cyclistes", correct: true }
+      ]
+    },
+    {
+      id: 2, type: "QCM", enonce: "Le fait de ne pas présenter immédiatement son permis est puni de :",
+      choix: [
+        { lettre: "A", texte: "Une amende de quatrième classe", correct: true },
+        { lettre: "B", texte: "Une amende de seconde classe" },
+        { lettre: "C", texte: "Une amende de troisième classe" }
+      ]
+    },
+    {
+      id: 3, type: "QCM", enonce: "Pour dépasser un cycliste en ville, espace latéral minimum :",
+      choix: [
+        { lettre: "A", texte: "1,00 m", correct: true },
+        { lettre: "B", texte: "2,00 m" }
+      ]
+    },
+    {
+      id: 4, type: "QCM", enonce: "Dans une entreprise individuelle :",
+      choix: [
+        { lettre: "A", texte: "L'entrepreneur individuel est responsable des dettes", correct: true },
+        { lettre: "B", texte: "Les biens de l'entreprise et du fondateur sont confondus", correct: true },
+        { lettre: "C", texte: "Responsabilité limitée au capital" }
+      ]
+    },
+    {
+      id: 5, type: "QCM", enonce: "Le dirigeant d'une micro-entreprise :",
+      choix: [
+        { lettre: "A", texte: "est soumis à l'impôt sur les sociétés" },
+        { lettre: "B", texte: "n'est pas soumis à l'impôt" },
+        { lettre: "C", texte: "est soumis à l'impôt sur le revenu", correct: true }
+      ]
+    }
+  ]
+};
+
+const matiere_reglementation_vtc2_examen6: Matiere = {
+  id: "reglementation_vtc2",
+  nom: "G(V) - Réglementation nationale spécifique à l'activité de VTC",
+  duree: 20,
+  coefficient: 3,
+  noteEliminatoire: 6,
+  noteSur: 20,
+  questions: [
+    {
+      id: 1, type: "QRC", enonce: "Qu'est-ce que le renouvellement de la carte professionnelle VTC ?",
+      reponseQRC: "Le renouvellement de la carte professionnelle intervient lorsque le conducteur produit une attestation de visite médicale et une attestation de formation continue.",
+      reponses_possibles: ["visite médicale", "formation continue", "attestation"]
+    },
+    {
+      id: 2, type: "QCM", enonce: "Je m'installe en tant qu'artisan avec crédit-bail pour mon véhicule :",
+      choix: [
+        { lettre: "A", texte: "Je l'amortis sur 5 ans" },
+        { lettre: "B", texte: "Je ne peux pas l'amortir", correct: true },
+        { lettre: "C", texte: "Je l'amortis sur 10 ans" }
+      ]
+    },
+    {
+      id: 3, type: "QCM", enonce: "Le dirigeant d'une micro-entreprise VTC est soumis à :",
+      choix: [
+        { lettre: "A", texte: "l'impôt sur les sociétés" },
+        { lettre: "B", texte: "aucun impôt" },
+        { lettre: "C", texte: "l'impôt sur le revenu", correct: true }
+      ]
+    }
+  ]
+};
+
+export const examenBlanc6Taxi: ExamenBlanc = {
+  id: "eb6-taxi",
+  numero: 6,
+  type: "TAXI",
+  titre: "Examen Blanc N°6 - Formation TAXI",
+  matieres: [
+    matiere_t3p_examen6,
+    matiere_gestion_examen6,
+    matiere_securite_examen6,
+    matiere_francais_examen6,
+    matiere_anglais_examen6,
+    matiere_reglementation_taxi_examen6,
+    matiere_reglementation_taxi2_examen6
+  ]
+};
+
+export const examenBlanc6VTC: ExamenBlanc = {
+  id: "eb6-vtc",
+  numero: 6,
+  type: "VTC",
+  titre: "Examen Blanc N°6 - Formation VTC",
+  matieres: [
+    matiere_t3p_examen6,
+    matiere_gestion_examen6,
+    matiere_securite_examen6,
+    matiere_francais_examen6,
+    matiere_anglais_examen6,
+    matiere_reglementation_vtc_examen6,
+    matiere_reglementation_vtc2_examen6
+  ]
+};
 
 export const tousLesExamens: ExamenBlanc[] = [
   examenBlanc1Taxi, examenBlanc1VTC,
