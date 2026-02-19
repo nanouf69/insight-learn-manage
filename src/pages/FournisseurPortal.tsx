@@ -837,20 +837,21 @@ export default function FournisseurPortal() {
                   {sharedDocs.length === 0 ? (
                     <p className="text-muted-foreground py-4 text-center">Aucun document partagé pour le moment.</p>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="grid grid-cols-3 gap-3">
                       {sharedDocs.map((doc: any) => (
-                        <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30">
-                          <div className="flex items-center gap-3">
-                            <FileText className="w-5 h-5 text-primary shrink-0" />
-                            <div>
-                              <p className="font-medium text-sm">{doc.titre}</p>
+                        <div key={doc.id} className="flex flex-col gap-2 p-3 border rounded-lg hover:bg-muted/30">
+                          <div className="flex items-start gap-2">
+                            <FileText className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                            <div className="min-w-0">
+                              <p className="font-medium text-sm truncate">{doc.titre}</p>
                               <p className="text-xs text-muted-foreground">
-                                {doc.uploaded_by === 'admin' ? '📤 Envoyé par Finally Academy' : '📁 Votre document'} · {new Date(doc.created_at).toLocaleDateString('fr-FR')}
+                                {doc.uploaded_by === 'admin' ? '📤 Finally Academy' : '📁 Votre document'}
                               </p>
+                              <p className="text-xs text-muted-foreground">{new Date(doc.created_at).toLocaleDateString('fr-FR')}</p>
                             </div>
                           </div>
-                          <a href={doc.url} target="_blank" rel="noopener noreferrer">
-                            <Button variant="outline" size="sm" className="gap-1"><Eye className="w-3 h-3" />Voir</Button>
+                          <a href={doc.url} target="_blank" rel="noopener noreferrer" className="mt-auto">
+                            <Button variant="outline" size="sm" className="gap-1 w-full"><Eye className="w-3 h-3" />Voir</Button>
                           </a>
                         </div>
                       ))}
