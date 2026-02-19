@@ -7,6 +7,7 @@ interface StatCardProps {
   change?: number;
   icon: LucideIcon;
   iconColor?: "primary" | "accent" | "success" | "warning";
+  subtitle?: string;
 }
 
 const iconColorClasses = {
@@ -16,7 +17,7 @@ const iconColorClasses = {
   warning: "bg-warning/10 text-warning",
 };
 
-export function StatCard({ title, value, change, icon: Icon, iconColor = "primary" }: StatCardProps) {
+export function StatCard({ title, value, change, icon: Icon, iconColor = "primary", subtitle }: StatCardProps) {
   const isPositive = change && change > 0;
   const isNegative = change && change < 0;
 
@@ -26,6 +27,9 @@ export function StatCard({ title, value, change, icon: Icon, iconColor = "primar
         <div>
           <p className="text-sm font-medium text-muted-foreground">{title}</p>
           <p className="text-3xl font-bold text-foreground mt-2">{value}</p>
+          {subtitle && (
+            <p className="text-xs text-muted-foreground mt-1 italic">{subtitle}</p>
+          )}
           {change !== undefined && (
             <div className={cn(
               "flex items-center gap-1 mt-2 text-sm font-medium",
