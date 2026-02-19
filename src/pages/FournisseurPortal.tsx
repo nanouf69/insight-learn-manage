@@ -53,7 +53,7 @@ const prixFormations: Record<string, string> = {
   "vtc-e-presentiel": "1599", "taxi-e-presentiel": "1799", "ta-e-presentiel": "999",
   "continue-vtc": "200", "continue-taxi": "299",
   "marketing-digital-24h": "1500", "marketing-digital-26h": "2100", "marketing-digital-28h": "3300",
-  "anglais-20h": "1200", "anglais-35h": "2000", "anglais-45h": "3000"
+  "anglais-17h": "1200", "anglais-28h": "2000", "anglais-35h": "3000", "anglais-45h": "4500"
 };
 
 const formationToType: Record<string, string> = {
@@ -63,7 +63,7 @@ const formationToType: Record<string, string> = {
   "vtc-e-presentiel": "vtc-e-presentiel", "taxi-e-presentiel": "taxi-e-presentiel", "ta-e-presentiel": "ta-e-presentiel",
   "continue-vtc": "vtc", "continue-taxi": "taxi",
   "marketing-digital-24h": "marketing-digital", "marketing-digital-26h": "marketing-digital", "marketing-digital-28h": "marketing-digital",
-  "anglais-20h": "anglais", "anglais-35h": "anglais", "anglais-45h": "anglais"
+  "anglais-17h": "anglais", "anglais-28h": "anglais", "anglais-35h": "anglais", "anglais-45h": "anglais"
 };
 
 interface FournisseurApprenant {
@@ -410,14 +410,19 @@ export default function FournisseurPortal() {
 
       <div className="max-w-6xl mx-auto p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          {fournisseur?.factures_only ? (
-            <TabsList className={`grid w-full mb-6 ${fournisseur.formateur_id ? 'grid-cols-2' : 'grid-cols-1'}`}>
-              {fournisseur.formateur_id && (
-                <TabsTrigger value="planning" className="gap-2"><CalendarDays className="w-4 h-4" />Mon planning</TabsTrigger>
-              )}
+          {fournisseur?.formateur_id ? (
+            // Formateur : planning + factures
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="planning" className="gap-2"><CalendarDays className="w-4 h-4" />Mon planning</TabsTrigger>
+              <TabsTrigger value="factures" className="gap-2"><Receipt className="w-4 h-4" />Mes factures</TabsTrigger>
+            </TabsList>
+          ) : fournisseur?.factures_only ? (
+            // Factures seulement
+            <TabsList className="grid w-full grid-cols-1 mb-6">
               <TabsTrigger value="factures" className="gap-2"><Receipt className="w-4 h-4" />Mes factures</TabsTrigger>
             </TabsList>
           ) : (
+            // Standard : apprenants + documents + factures
             <TabsList className="grid w-full grid-cols-3 mb-6">
               <TabsTrigger value="apprenants" className="gap-2"><Users className="w-4 h-4" />Apprenants</TabsTrigger>
               <TabsTrigger value="documents" className="gap-2"><FileText className="w-4 h-4" />Documents</TabsTrigger>
