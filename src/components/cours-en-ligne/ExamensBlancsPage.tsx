@@ -72,7 +72,7 @@ interface ResultatMatiere {
 }
 
 // ===== ÉCRAN DE SÉLECTION =====
-function EcranSelection({ onStart }: { onStart: (examen: ExamenBlanc) => void }) {
+function EcranSelection({ onStart, onEdit }: { onStart: (examen: ExamenBlanc) => void; onEdit: () => void }) {
   const [typeFiltre, setTypeFiltre] = useState<"tous" | "TAXI" | "VTC">("tous");
 
   const examens = tousLesExamens.filter(e =>
@@ -81,11 +81,17 @@ function EcranSelection({ onStart }: { onStart: (examen: ExamenBlanc) => void })
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold mb-1">Examens Blancs</h2>
-        <p className="text-muted-foreground text-sm">
-          Entraînez-vous avec les 12 examens blancs officiels — 6 TAXI et 6 VTC. Chaque examen comporte 7 matières chronométrées.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold mb-1">Examens Blancs</h2>
+          <p className="text-muted-foreground text-sm">
+            Entraînez-vous avec les 12 examens blancs officiels — 6 TAXI et 6 VTC. Chaque examen comporte 7 matières chronométrées.
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={onEdit} className="gap-2 shrink-0">
+          <Pencil className="w-4 h-4" />
+          Modifier les examens
+        </Button>
       </div>
 
       {/* Filtres */}
@@ -553,17 +559,7 @@ export default function ExamensBlancsPage() {
   }
 
   if (phase === "selection") {
-    return (
-      <div className="space-y-4">
-        <div className="flex justify-end">
-          <Button variant="outline" size="sm" onClick={() => setPhase("edition")} className="gap-2">
-            <Pencil className="w-4 h-4" />
-            Modifier les examens
-          </Button>
-        </div>
-        <EcranSelection onStart={handleStart} />
-      </div>
-    );
+    return <EcranSelection onStart={handleStart} onEdit={() => setPhase("edition")} />;
   }
 
   if (phase === "intro" && examenChoisi) {
