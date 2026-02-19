@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -22,7 +22,8 @@ import { ExamenReussitePage } from "@/components/examens/ExamenReussitePage";
 import CoursEnLignePage from "@/components/cours-en-ligne/CoursEnLignePage";
 import { FournisseursPage } from "@/components/fournisseurs/FournisseursPage";
 import { FournisseurInvoiceAlerts } from "@/components/dashboard/FournisseurInvoiceAlerts";
-import { GraduationCap, Users, Euro, TrendingUp } from "lucide-react";
+import { GraduationCap, Users, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const pageConfig = {
   dashboard: { title: "Tableau de bord", subtitle: "Bienvenue, Marie !" },
@@ -44,11 +45,34 @@ const pageConfig = {
   fournisseurs: { title: "Fournisseurs", subtitle: "Gérez vos fournisseurs et leurs espaces" },
 };
 
+const fmt = (n: number) =>
+  new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
+
 const Index = () => {
   const [currentPage, setCurrentPage] = useState("dashboard");
   const [pageHistory, setPageHistory] = useState<string[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [initialApprenantId, setInitialApprenantId] = useState<string | null>(null);
+  const [totalEntrees, setTotalEntrees] = useState<number>(0);
+  const [totalSorties, setTotalSorties] = useState<number>(0);
+
+  useEffect(() => {
+    const fetchFlux = async () => {
+      const { data } = await supabase
+        .from("transactions_bancaires")
+        .select("montant");
+      if (!data) return;
+      let entrees = 0;
+      let sorties = 0;
+      data.forEach(({ montant }) => {
+        if (montant > 0) entrees += montant;
+        else sorties += montant;
+      });
+      setTotalEntrees(entrees);
+      setTotalSorties(Math.abs(sorties));
+    };
+    fetchFlux();
+  }, []);
 
   const handleNavigate = (page: string) => {
     if (page !== currentPage) {
@@ -92,17 +116,15 @@ const Index = () => {
                 iconColor="accent"
               />
               <StatCard 
-                title="CA ce mois" 
-                value="24 500€" 
-                change={15}
-                icon={Euro}
+                title="Total entré (relevés)" 
+                value={fmt(totalEntrees)}
+                icon={ArrowDownCircle}
                 iconColor="success"
               />
               <StatCard 
-                title="Taux de completion" 
-                value="87%" 
-                change={-2}
-                icon={TrendingUp}
+                title="Total sorti (relevés)" 
+                value={fmt(totalSorties)}
+                icon={ArrowUpCircle}
                 iconColor="warning"
               />
             </div>
