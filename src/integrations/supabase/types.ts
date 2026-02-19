@@ -967,6 +967,47 @@ export type Database = {
           },
         ]
       }
+      fournisseur_shared_docs: {
+        Row: {
+          created_at: string
+          description: string | null
+          fournisseur_id: string
+          id: string
+          nom_fichier: string
+          titre: string
+          uploaded_by: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          fournisseur_id: string
+          id?: string
+          nom_fichier: string
+          titre: string
+          uploaded_by?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          fournisseur_id?: string
+          id?: string
+          nom_fichier?: string
+          titre?: string
+          uploaded_by?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fournisseur_shared_docs_fournisseur_id_fkey"
+            columns: ["fournisseur_id"]
+            isOneToOne: false
+            referencedRelation: "fournisseurs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fournisseurs: {
         Row: {
           actif: boolean
