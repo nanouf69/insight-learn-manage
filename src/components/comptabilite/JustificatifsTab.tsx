@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import {
   Upload, FileText, Trash2, Eye, RefreshCw, Search, Tag,
-  CheckCircle, Clock, AlertCircle, Plus, Edit2, Check, X
+  CheckCircle, Clock, AlertCircle, Plus, Edit2, Check, X, Sparkles, Zap
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -236,6 +236,8 @@ export function JustificatifsTab() {
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Justificatif>>({});
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiProgress, setAiProgress] = useState<{ done: number; total: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchItems = useCallback(async () => {
@@ -314,6 +316,61 @@ export function JustificatifsTab() {
 
   const quickUpdate = async (id: string, updates: Partial<Justificatif>) => {
     await supabase.from("justificatifs").update(updates).eq("id", id);
+    await fetchItems();
+  };
+
+  const categoriserAvecIA = async (item: Justificatif) => {
+    try {
+      const { data, error } = await supabase.functions.invoke("categorize-justificatif", {
+        body: {
+          nom_fichier: item.nom_fichier,
+          description: item.description,
+          fournisseur: item.fournisseur,
+          montant: item.montant_ttc,
+        },
+      });
+      if (error) throw error;
+      if (data?.categorie) {
+        await supabase.from("justificatifs").update({ categorie: data.categorie }).eq("id", item.id);
+      }
+      return data?.categorie;
+    } catch (e) {
+      console.error("Erreur IA pour", item.nom_fichier, e);
+      return null;
+    }
+  };
+
+  const categoriserToutAvecIA = async () => {
+    const nonClassees = items.filter(i => !i.categorie || i.categorie === "compte_attente");
+    if (nonClassees.length === 0) {
+      toast.info("Tous les justificatifs ont déjà une catégorie.");
+      return;
+    }
+    setAiLoading(true);
+    setAiProgress({ done: 0, total: nonClassees.length });
+    let done = 0;
+    for (const item of nonClassees) {
+      await categoriserAvecIA(item);
+      done++;
+      setAiProgress({ done, total: nonClassees.length });
+      // Small delay to avoid rate limiting
+      await new Promise(r => setTimeout(r, 300));
+    }
+    setAiLoading(false);
+    setAiProgress(null);
+    toast.success(`${nonClassees.length} justificatif(s) catégorisé(s) par l'IA !`);
+    await fetchItems();
+  };
+
+  const categoriserUnAvecIA = async (item: Justificatif) => {
+    toast.loading("Analyse IA en cours...", { id: `ai-${item.id}` });
+    const cat = await categoriserAvecIA(item);
+    if (cat) {
+      const found = CATEGORIES.find(c => c.value === cat);
+      toast.success(`Catégorie : ${found?.label || cat}`, { id: `ai-${item.id}` });
+    } else {
+      toast.error("Erreur de catégorisation", { id: `ai-${item.id}` });
+    }
     await fetchItems();
   };
 
@@ -406,6 +463,32 @@ export function JustificatifsTab() {
         className="hidden"
         onChange={e => Array.from(e.target.files || []).forEach(handleUpload)}
       />
+
+      {/* AI Categorization Banner */}
+      {items.filter(i => !i.categorie || i.categorie === "compte_attente").length > 0 && (
+        <div className="flex items-center justify-between p-3 rounded-lg border border-primary/20 bg-primary/5">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium">
+              {items.filter(i => !i.categorie || i.categorie === "compte_attente").length} justificatif(s) sans catégorie
+            </span>
+            {aiProgress && (
+              <span className="text-xs text-muted-foreground">
+                — {aiProgress.done}/{aiProgress.total} traité(s)...
+              </span>
+            )}
+          </div>
+          <Button
+            size="sm"
+            onClick={categoriserToutAvecIA}
+            disabled={aiLoading}
+            className="gap-2"
+          >
+            {aiLoading ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3" />}
+            {aiLoading ? "IA en cours..." : "Catégoriser avec l'IA"}
+          </Button>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center">
@@ -576,6 +659,13 @@ export function JustificatifsTab() {
                                 <CheckCircle className="h-3 w-3 text-emerald-500" /> Traité
                               </Button>
                             )}
+                            <Button
+                              size="sm" variant="outline" className="h-8 px-2 text-primary hover:text-primary"
+                              onClick={() => categoriserUnAvecIA(item)}
+                              title="Catégoriser avec l'IA"
+                            >
+                              <Sparkles className="h-4 w-4" />
+                            </Button>
                             <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => startEdit(item)}>
                               <Edit2 className="h-4 w-4" />
                             </Button>
