@@ -116,6 +116,9 @@ export default function FournisseurPortal() {
 
   // Relevés bancaires (comptable mode)
   const [releves, setReleves] = useState<any[]>([]);
+  // Factures ventes & achats (comptable mode)
+  const [facturesVentes, setFacturesVentes] = useState<any[]>([]);
+  const [facturesAchats, setFacturesAchats] = useState<any[]>([]);
 
   // Email state (comptable mode)
   const [comptableEmails, setComptableEmails] = useState<any[]>([]);
@@ -218,6 +221,18 @@ export default function FournisseurPortal() {
           .select('*')
           .order('mois_annee', { ascending: false });
         if (relevesData) setReleves(relevesData);
+
+        const { data: ventesData } = await supabase
+          .from('factures')
+          .select('id, numero, client_nom, montant_ttc, montant_ht, statut, date_emission, type_financement')
+          .order('date_emission', { ascending: false });
+        if (ventesData) setFacturesVentes(ventesData);
+
+        const { data: achatsData } = await supabase
+          .from('fournisseur_factures')
+          .select('id, nom_fichier, url, destinataire, montant, description, statut, mois_annee, created_at')
+          .order('created_at', { ascending: false });
+        if (achatsData) setFacturesAchats(achatsData);
       }
 
       // Charger le planning si c'est un formateur (depuis agenda_blocs)
@@ -447,12 +462,13 @@ export default function FournisseurPortal() {
       <div className="max-w-6xl mx-auto p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           {fournisseur?.comptable_only ? (
-            // Mode comptable : rapprochement bancaire + relevés + documents + messages
-            <TabsList className="grid w-full grid-cols-4 mb-6">
-              <TabsTrigger value="rapprochement" className="gap-2"><BarChart3 className="w-4 h-4" />Rapprochement</TabsTrigger>
-              <TabsTrigger value="comptable-releves" className="gap-2"><FolderOpen className="w-4 h-4" />Relevés</TabsTrigger>
-              <TabsTrigger value="comptable-docs" className="gap-2"><FileText className="w-4 h-4" />Documents</TabsTrigger>
-              <TabsTrigger value="comptable-messages" className="gap-2"><Mail className="w-4 h-4" />Messages</TabsTrigger>
+            // Mode comptable : rapprochement bancaire + factures + relevés + documents + messages
+            <TabsList className="grid w-full grid-cols-5 mb-6">
+              <TabsTrigger value="rapprochement" className="gap-2 text-xs"><BarChart3 className="w-4 h-4" />Rapprochement</TabsTrigger>
+              <TabsTrigger value="comptable-factures" className="gap-2 text-xs"><Receipt className="w-4 h-4" />Factures</TabsTrigger>
+              <TabsTrigger value="comptable-releves" className="gap-2 text-xs"><FolderOpen className="w-4 h-4" />Relevés</TabsTrigger>
+              <TabsTrigger value="comptable-docs" className="gap-2 text-xs"><FileText className="w-4 h-4" />Documents</TabsTrigger>
+              <TabsTrigger value="comptable-messages" className="gap-2 text-xs"><Mail className="w-4 h-4" />Messages</TabsTrigger>
             </TabsList>
           ) : fournisseur?.formateur_id ? (
             // Formateur : planning + factures + documents
@@ -984,6 +1000,115 @@ export default function FournisseurPortal() {
                   </div>
                 </div>
                 <RapprochementBancaire />
+              </div>
+            </TabsContent>
+          )}
+
+          {/* ============ TAB FACTURES (comptable) ============ */}
+          {fournisseur?.comptable_only && (
+            <TabsContent value="comptable-factures">
+              <div className="space-y-6">
+                {/* Factures de ventes */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-md bg-green-100">
+                        <Receipt className="w-4 h-4 text-green-700" />
+                      </div>
+                      Factures de ventes
+                      <span className="ml-auto text-sm font-normal text-muted-foreground">{facturesVentes.length} facture(s)</span>
+                    </CardTitle>
+                    <CardDescription>Factures émises aux clients (apprenants, OPCO, CPF…)</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {facturesVentes.length === 0 ? (
+                      <p className="text-center text-muted-foreground py-6">Aucune facture de vente.</p>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b text-muted-foreground text-xs">
+                              <th className="text-left pb-2 pr-4 font-medium">N°</th>
+                              <th className="text-left pb-2 pr-4 font-medium">Client</th>
+                              <th className="text-left pb-2 pr-4 font-medium">Type</th>
+                              <th className="text-left pb-2 pr-4 font-medium">Date</th>
+                              <th className="text-right pb-2 pr-4 font-medium">Montant TTC</th>
+                              <th className="text-left pb-2 font-medium">Statut</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {facturesVentes.map((f: any) => (
+                              <tr key={f.id} className="border-b last:border-0 hover:bg-muted/20">
+                                <td className="py-2 pr-4 font-mono text-xs">{f.numero}</td>
+                                <td className="py-2 pr-4 truncate max-w-[150px]">{f.client_nom}</td>
+                                <td className="py-2 pr-4">
+                                  <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-muted">
+                                    {f.type_financement === 'cpf' ? 'CPF' : f.type_financement === 'opco' ? 'OPCO' : f.type_financement === 'france_travail' ? 'France Travail' : 'Particulier'}
+                                  </span>
+                                </td>
+                                <td className="py-2 pr-4 text-xs">{new Date(f.date_emission).toLocaleDateString('fr-FR')}</td>
+                                <td className="py-2 pr-4 text-right font-semibold">{Number(f.montant_ttc).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</td>
+                                <td className="py-2">
+                                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${f.statut === 'payee' ? 'bg-green-100 text-green-700' : f.statut === 'en_attente' ? 'bg-yellow-100 text-yellow-700' : 'bg-muted text-muted-foreground'}`}>
+                                    {f.statut === 'payee' ? 'Payée' : f.statut === 'en_attente' ? 'En attente' : f.statut || '-'}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Factures d'achats */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-md bg-orange-100">
+                        <Receipt className="w-4 h-4 text-orange-700" />
+                      </div>
+                      Factures d'achats
+                      <span className="ml-auto text-sm font-normal text-muted-foreground">{facturesAchats.length} facture(s)</span>
+                    </CardTitle>
+                    <CardDescription>Factures reçues des fournisseurs et formateurs</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {facturesAchats.length === 0 ? (
+                      <p className="text-center text-muted-foreground py-6">Aucune facture d'achat.</p>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {facturesAchats.map((f: any) => (
+                          <div key={f.id} className="flex flex-col gap-2 p-4 border rounded-lg hover:bg-muted/20 transition-colors">
+                            <div className="flex items-start gap-3">
+                              <div className="p-2 rounded-lg bg-orange-50 shrink-0">
+                                <FileText className="w-5 h-5 text-orange-600" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="font-medium text-sm truncate">{f.destinataire}</p>
+                                {f.description && <p className="text-xs text-muted-foreground truncate">{f.description}</p>}
+                                {f.mois_annee && <p className="text-xs text-muted-foreground">{f.mois_annee}</p>}
+                                {f.montant && (
+                                  <p className="text-sm font-semibold mt-1">{Number(f.montant).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</p>
+                                )}
+                                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium mt-1 ${f.statut === 'payee' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                  {f.statut === 'payee' ? 'Payée' : 'En attente'}
+                                </span>
+                              </div>
+                            </div>
+                            <a href={f.url} target="_blank" rel="noopener noreferrer" download>
+                              <Button variant="outline" size="sm" className="w-full gap-2">
+                                <Download className="w-3 h-3" />
+                                Télécharger
+                              </Button>
+                            </a>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
             </TabsContent>
           )}
