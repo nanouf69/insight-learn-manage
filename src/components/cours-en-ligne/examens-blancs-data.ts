@@ -33,6 +33,29 @@ export interface ExamenBlanc {
   matieres: Matiere[];
 }
 
+/**
+ * Retourne les points attribués pour une question selon la matière et le type de question.
+ * - Français (D) : QCM=2pts, QRC=2pts
+ * - Réglementation spécifique (F) et Réglementation locale (G) : QCM=2pts, QRC=4pts
+ * - Toutes les autres matières : QCM=1pt, QRC=2pts
+ */
+export function getPointsParQuestion(matiereId: string, questionType: QuestionType): number {
+  if (matiereId === "francais") {
+    return questionType === "QCM" ? 2 : 2;
+  }
+  if (
+    matiereId === "reglementation_taxi" ||
+    matiereId === "reglementation_vtc" ||
+    matiereId === "reglementation_taxi2" ||
+    matiereId === "reglementation_vtc2"
+  ) {
+    return questionType === "QCM" ? 2 : 4;
+  }
+  // Défaut : t3p, gestion, securite, anglais
+  return questionType === "QCM" ? 1 : 2;
+}
+
+
 // ===== MATIÈRES COMMUNES (T3P, GESTION, SÉCURITÉ ROUTIÈRE, FRANÇAIS, ANGLAIS) =====
 
 const matiere_t3p_examen1: Matiere = {

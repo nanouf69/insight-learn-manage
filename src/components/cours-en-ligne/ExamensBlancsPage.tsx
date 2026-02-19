@@ -11,7 +11,7 @@ import {
   ArrowLeft, ArrowRight, Clock, CheckCircle2, XCircle, AlertTriangle,
   FileText, Timer, Trophy, RotateCcw, ChevronRight, BookOpen, Pencil
 } from "lucide-react";
-import { tousLesExamens, type ExamenBlanc, type Matiere, type Question } from "./examens-blancs-data";
+import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, type Question } from "./examens-blancs-data";
 import ExamensBlancsEditor from "./ExamensBlancsEditor";
 
 // ===== COMPOSANT TIMER =====
@@ -239,7 +239,7 @@ function PassageMatiere({
               <p className="font-medium leading-relaxed">{question.enonce}</p>
             </div>
             <Badge variant="outline" className="shrink-0 text-xs font-semibold text-primary border-primary/40">
-              {(matiere.noteSur / matiere.questions.length).toFixed(2)} pt{matiere.noteSur / matiere.questions.length > 1 ? "s" : ""}
+              {getPointsParQuestion(matiere.id, question.type)} pt{getPointsParQuestion(matiere.id, question.type) > 1 ? "s" : ""}
             </Badge>
           </div>
 
@@ -445,7 +445,7 @@ function EcranResultats({
                           <div className="flex items-start justify-between gap-2 mb-1">
                             <p className="text-sm font-medium">{q.id}. {q.enonce}</p>
                             <span className={`text-xs font-bold shrink-0 px-1.5 py-0.5 rounded ${isCorrect ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"}`}>
-                              {isCorrect ? "+" : "0"}{(matiere.noteSur / matiere.questions.length).toFixed(2)} pt
+                              {isCorrect ? `+${getPointsParQuestion(matiere.id, q.type)}` : "0"} pt{getPointsParQuestion(matiere.id, q.type) > 1 ? "s" : ""}
                             </span>
                           </div>
 
@@ -523,20 +523,23 @@ export default function ExamensBlancsPage() {
   };
 
   const calculerNote = (matiere: Matiere, reponses: Reponses): number => {
-    let bonnes = 0;
+    let totalPoints = 0;
     matiere.questions.forEach(q => {
       const rep = reponses[q.id];
+      const pts = getPointsParQuestion(matiere.id, q.type);
+      let correct = false;
       if (q.type === "QCM" && q.choix) {
         const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
         const donnees = ((rep as string[]) || []).sort();
-        if (JSON.stringify(correctes) === JSON.stringify(donnees)) bonnes++;
+        correct = JSON.stringify(correctes) === JSON.stringify(donnees);
       } else if (q.type === "QRC") {
         const repStr = ((rep as string) || "").toLowerCase();
         const motsCles = q.reponses_possibles || [];
-        if (motsCles.some(mc => repStr.includes(mc.toLowerCase()))) bonnes++;
+        correct = motsCles.some(mc => repStr.includes(mc.toLowerCase()));
       }
+      if (correct) totalPoints += pts;
     });
-    return (bonnes / matiere.questions.length) * matiere.noteSur;
+    return totalPoints;
   };
 
   const handleTerminerMatiere = (reponses: Reponses) => {
