@@ -21,6 +21,7 @@ import { AgendaView } from "@/components/agenda/AgendaView";
 import { ExamenReussitePage } from "@/components/examens/ExamenReussitePage";
 import CoursEnLignePage from "@/components/cours-en-ligne/CoursEnLignePage";
 import { FournisseursPage } from "@/components/fournisseurs/FournisseursPage";
+import { FournisseurInvoiceAlerts } from "@/components/dashboard/FournisseurInvoiceAlerts";
 import { GraduationCap, Users, Euro, TrendingUp } from "lucide-react";
 
 const pageConfig = {
@@ -110,7 +111,10 @@ const Index = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <UpcomingSessions />
               <RecentActivity onNavigateToApprenant={handleNavigateToApprenant} />
-              <PaymentReminders />
+              <div className="space-y-4">
+                <PaymentReminders />
+                <FournisseurInvoiceAlerts onNavigateToComptabilite={() => handleNavigate("comptabilite")} />
+              </div>
             </div>
           </div>
         );
