@@ -9,10 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   ArrowLeft, ArrowRight, Clock, CheckCircle2, XCircle, AlertTriangle,
-  FileText, Timer, Trophy, RotateCcw, ChevronRight, BookOpen, Pencil
+  FileText, Timer, Trophy, RotateCcw, ChevronRight, BookOpen, Pencil, Loader2, Bot
 } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, type Question } from "./examens-blancs-data";
 import ExamensBlancsEditor from "./ExamensBlancsEditor";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 // ===== COMPOSANT TIMER =====
 function TimerBadge({ seconds, onExpire }: { seconds: number; onExpire: () => void }) {
@@ -60,6 +62,16 @@ type ReponseQCM = string[];
 type ReponseQRC = string;
 type Reponses = { [questionId: number]: ReponseQCM | ReponseQRC };
 
+interface CorrectionQRC {
+  estCorrect: boolean;
+  pointsObtenus: number;
+  nombrefautes: number;
+  explication: string;
+}
+
+// Cache des corrections IA : { [questionId]: CorrectionQRC }
+type CorrectionCache = { [questionId: number]: CorrectionQRC | "loading" | "error" };
+
 interface ResultatMatiere {
   matiereId: string;
   nomMatiere: string;
@@ -70,6 +82,7 @@ interface ResultatMatiere {
   coefficient: number;
   admis: boolean;
   reponses: Reponses;
+  correctionsIA?: CorrectionCache; // corrections IA pour les QRC
 }
 
 // ===== ÉCRAN DE SÉLECTION =====
@@ -350,13 +363,134 @@ function EcranResultats({
   onRecommencer: () => void;
   onRetour: () => void;
 }) {
-  // Note /20 par matière = (points obtenus / max points) * 20, puis moyenne pondérée
-  const totalCoef = resultats.reduce((acc, r) => acc + r.coefficient, 0);
-  const noteGlobale = resultats.reduce((acc, r) => acc + (r.noteObtenue / r.maxPoints * 20) * r.coefficient, 0) / totalCoef;
-  const admisGlobal = noteGlobale >= 10 && resultats.every(r => r.admis);
+  const [correctionsIA, setCorrectionsIA] = useState<{ [matiereIdx: number]: CorrectionCache }>({});
+  const [correctionEnCours, setCorrectionEnCours] = useState(false);
+
+  // Lance la correction IA de tous les QRC à l'affichage des résultats
+  useEffect(() => {
+    let cancelled = false;
+    const corrigerTout = async () => {
+      setCorrectionEnCours(true);
+
+      // Initialiser tous les QRC en "loading"
+      const initialCache: { [matiereIdx: number]: CorrectionCache } = {};
+      examen.matieres.forEach((matiere, mi) => {
+        const resultat = resultats[mi];
+        if (!resultat) return;
+        matiere.questions.forEach(q => {
+          if (q.type === "QRC") {
+            if (!initialCache[mi]) initialCache[mi] = {};
+            initialCache[mi][q.id] = "loading";
+          }
+        });
+      });
+      if (!cancelled) setCorrectionsIA({ ...initialCache });
+
+      // Corriger chaque QRC via l'IA (en parallèle par matière, séquentiel par question pour éviter le rate limit)
+      for (let mi = 0; mi < examen.matieres.length; mi++) {
+        const matiere = examen.matieres[mi];
+        const resultat = resultats[mi];
+        if (!resultat) continue;
+
+        for (const q of matiere.questions) {
+          if (q.type !== "QRC") continue;
+          const reponseEtudiant = (resultat.reponses[q.id] as string) || "";
+          const pointsQuestion = getPointsParQuestion(matiere.id, q.type);
+
+          try {
+            const { data, error } = await supabase.functions.invoke("corriger-qrc", {
+              body: {
+                question: q.enonce,
+                reponseEtudiant,
+                reponsesAttendues: q.reponses_possibles || [q.reponseQRC || ""],
+                matiereId: matiere.id,
+                pointsQuestion,
+              },
+            });
+
+            if (cancelled) return;
+
+            if (error || !data || data.error) {
+              setCorrectionsIA(prev => ({
+                ...prev,
+                [mi]: { ...(prev[mi] || {}), [q.id]: "error" },
+              }));
+            } else {
+              setCorrectionsIA(prev => ({
+                ...prev,
+                [mi]: { ...(prev[mi] || {}), [q.id]: data as CorrectionQRC },
+              }));
+            }
+          } catch {
+            if (!cancelled) {
+              setCorrectionsIA(prev => ({
+                ...prev,
+                [mi]: { ...(prev[mi] || {}), [q.id]: "error" },
+              }));
+            }
+          }
+
+          // Petit délai pour éviter le rate limiting
+          await new Promise(r => setTimeout(r, 300));
+        }
+      }
+
+      if (!cancelled) setCorrectionEnCours(false);
+    };
+
+    corrigerTout();
+    return () => { cancelled = true; };
+  }, [examen, resultats]);
+
+  // Recalculer les notes avec les corrections IA
+  const resultatsAvecIA = resultats.map((r, mi) => {
+    const cache = correctionsIA[mi];
+    if (!cache) return r;
+
+    const matiere = examen.matieres[mi];
+    let noteRecalculee = 0;
+    matiere.questions.forEach(q => {
+      if (q.type === "QCM" && q.choix) {
+        const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
+        const donnees = ((r.reponses[q.id] as string[]) || []).sort();
+        if (JSON.stringify(correctes) === JSON.stringify(donnees)) {
+          noteRecalculee += getPointsParQuestion(matiere.id, q.type);
+        }
+      } else if (q.type === "QRC") {
+        const correction = cache[q.id];
+        if (correction && correction !== "loading" && correction !== "error") {
+          noteRecalculee += correction.pointsObtenus;
+        }
+      }
+    });
+
+    // Ne recalculer que si toutes les corrections IA sont terminées
+    const toutTermine = matiere.questions
+      .filter(q => q.type === "QRC")
+      .every(q => cache[q.id] && cache[q.id] !== "loading");
+
+    return {
+      ...r,
+      noteObtenue: toutTermine ? noteRecalculee : r.noteObtenue,
+      admis: toutTermine ? noteRecalculee >= (r.noteEliminatoire / r.noteSur) * r.maxPoints : r.admis,
+    };
+  });
+
+  const totalCoef = resultatsAvecIA.reduce((acc, r) => acc + r.coefficient, 0);
+  const noteGlobale = resultatsAvecIA.reduce((acc, r) => acc + (r.noteObtenue / r.maxPoints * 20) * r.coefficient, 0) / totalCoef;
+  const admisGlobal = noteGlobale >= 10 && resultatsAvecIA.every(r => r.admis);
 
   return (
     <div className="space-y-6">
+      {/* Bandeau correction IA en cours */}
+      {correctionEnCours && (
+        <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-sm">
+          <Bot className="w-4 h-4 shrink-0" />
+          <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+          <span>L'IA corrige vos réponses ouvertes (QRC)... Les notes se mettent à jour automatiquement.</span>
+        </div>
+      )}
+
       {/* Header résultats */}
       <div className={`rounded-xl p-6 text-center ${admisGlobal ? "bg-green-50 border-2 border-green-300" : "bg-red-50 border-2 border-red-300"}`}>
         {admisGlobal ? (
@@ -365,19 +499,22 @@ function EcranResultats({
           <XCircle className="w-12 h-12 text-red-500 mx-auto mb-2" />
         )}
         <h3 className="text-2xl font-bold mb-1">
-          {admisGlobal ? "Admis(e) ✅" : "Non admis(e) ❌"}
+          {correctionEnCours ? "Correction en cours..." : admisGlobal ? "Admis(e) ✅" : "Non admis(e) ❌"}
         </h3>
-        <p className="text-4xl font-black mt-2">
-          {noteGlobale.toFixed(1)} / 20
-        </p>
+        {correctionEnCours ? (
+          <div className="flex justify-center mt-2"><Loader2 className="w-8 h-8 animate-spin" /></div>
+        ) : (
+          <p className="text-4xl font-black mt-2">{noteGlobale.toFixed(1)} / 20</p>
+        )}
         <p className="text-sm text-muted-foreground mt-1">{examen.titre}</p>
       </div>
 
       {/* Détail par matière */}
       <div className="space-y-3">
         <h4 className="font-semibold">Résultats par matière</h4>
-        {resultats.map(r => {
+        {resultatsAvecIA.map((r, mi) => {
           const noteSur20 = (r.noteObtenue / r.maxPoints * 20);
+          const matiereEnCours = Object.values(correctionsIA[mi] || {}).some(v => v === "loading");
           return (
             <Card key={r.matiereId} className={`border-l-4 ${r.admis ? "border-l-green-500" : "border-l-red-500"}`}>
               <CardContent className="py-3 px-4">
@@ -387,6 +524,7 @@ function EcranResultats({
                     <div className="flex items-center gap-3 mt-1">
                       <span className="text-xs text-muted-foreground">Coeff. {r.coefficient}</span>
                       <span className="text-xs text-muted-foreground">Barème : {r.maxPoints} pts</span>
+                      {matiereEnCours && <span className="text-xs text-blue-600 flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" />IA en cours</span>}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -419,6 +557,7 @@ function EcranResultats({
         {examen.matieres.map((matiere, mi) => {
           const resultat = resultats[mi];
           if (!resultat) return null;
+          const cacheMatiere = correctionsIA[mi] || {};
           return (
             <Card key={matiere.id}>
               <CardHeader className="pb-2">
@@ -427,33 +566,63 @@ function EcranResultats({
               <CardContent className="space-y-3">
                 {matiere.questions.map(q => {
                   const rep = resultat.reponses[q.id];
+                  const pts = getPointsParQuestion(matiere.id, q.type);
                   let isCorrect = false;
+                  let pointsObtenus = 0;
+                  let correctionDetail: string | null = null;
+                  let isLoadingIA = false;
 
                   if (q.type === "QCM" && q.choix) {
                     const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
                     const donnees = ((rep as string[]) || []).sort();
                     isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
+                    pointsObtenus = isCorrect ? pts : 0;
                   } else if (q.type === "QRC") {
-                    // Pour QRC : correction auto basique par mots-clés
-                    const repStr = ((rep as string) || "").toLowerCase();
-                    const motsCles = q.reponses_possibles || [];
-                    isCorrect = motsCles.some(mc => repStr.includes(mc.toLowerCase()));
+                    const corrIA = cacheMatiere[q.id];
+                    if (!corrIA || corrIA === "loading") {
+                      isLoadingIA = true;
+                    } else if (corrIA === "error") {
+                      // Fallback mots-clés
+                      const repStr = ((rep as string) || "").toLowerCase().replace(/[^a-z0-9 ]/g, "");
+                      const motsCles = q.reponses_possibles || [];
+                      isCorrect = motsCles.some(mc => repStr.includes(mc.toLowerCase().replace(/[^a-z0-9 ]/g, "")));
+                      pointsObtenus = isCorrect ? pts : 0;
+                      correctionDetail = "⚠️ Correction IA indisponible – correction par mots-clés";
+                    } else {
+                      isCorrect = corrIA.estCorrect;
+                      pointsObtenus = corrIA.pointsObtenus;
+                      correctionDetail = corrIA.explication;
+                    }
                   }
 
                   return (
-                    <div key={q.id} className={`p-3 rounded-lg border ${isCorrect ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
+                    <div key={q.id} className={`p-3 rounded-lg border ${isLoadingIA ? "bg-blue-50 border-blue-200" : isCorrect ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
                       <div className="flex items-start gap-2">
-                        {isCorrect ? (
+                        {isLoadingIA ? (
+                          <Loader2 className="w-4 h-4 text-blue-500 shrink-0 mt-0.5 animate-spin" />
+                        ) : isCorrect ? (
                           <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
                         ) : (
                           <XCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
                         )}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2 mb-1">
-                            <p className="text-sm font-medium">{q.id}. {q.enonce}</p>
-                            <span className={`text-xs font-bold shrink-0 px-1.5 py-0.5 rounded ${isCorrect ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"}`}>
-                              {isCorrect ? `+${getPointsParQuestion(matiere.id, q.type)}` : "0"} pt{getPointsParQuestion(matiere.id, q.type) > 1 ? "s" : ""}
-                            </span>
+                            <div className="flex items-center gap-1.5 flex-1">
+                              <Badge variant={q.type === "QRC" ? "secondary" : "outline"} className="text-xs shrink-0">{q.type}</Badge>
+                              <p className="text-sm font-medium">{q.id}. {q.enonce}</p>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              {q.type === "QRC" && <Bot className="w-3 h-3 text-blue-500" aria-label="Corrigé par IA" />}
+                              {isLoadingIA ? (
+                                <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-blue-200 text-blue-800">
+                                  ? / {pts} pt{pts > 1 ? "s" : ""}
+                                </span>
+                              ) : (
+                                <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${isCorrect ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"}`}>
+                                  +{pointsObtenus} / {pts} pt{pts > 1 ? "s" : ""}
+                                </span>
+                              )}
+                            </div>
                           </div>
 
                           {q.type === "QCM" && (
@@ -479,6 +648,12 @@ function EcranResultats({
                                 <p className="text-xs italic text-muted-foreground">
                                   Votre réponse : {(rep as string) || "Aucune"}
                                 </p>
+                              )}
+                              {correctionDetail && (
+                                <div className="flex items-start gap-1 text-xs text-blue-700 bg-blue-50 rounded p-1.5">
+                                  <Bot className="w-3 h-3 shrink-0 mt-0.5" />
+                                  <span>{correctionDetail}</span>
+                                </div>
                               )}
                               <p className="text-xs text-green-700 font-medium">
                                 Réponse attendue : {q.reponseQRC}
