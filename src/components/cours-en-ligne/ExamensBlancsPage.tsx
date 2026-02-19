@@ -63,8 +63,9 @@ type Reponses = { [questionId: number]: ReponseQCM | ReponseQRC };
 interface ResultatMatiere {
   matiereId: string;
   nomMatiere: string;
-  noteObtenue: number;
-  noteSur: number;
+  noteObtenue: number;     // points réels obtenus
+  maxPoints: number;       // total points possible pour la matière
+  noteSur: number;         // pour affichage référence (noteSur du barème)
   noteEliminatoire: number;
   coefficient: number;
   admis: boolean;
@@ -349,9 +350,9 @@ function EcranResultats({
   onRecommencer: () => void;
   onRetour: () => void;
 }) {
-  // Calcul note globale pondérée
+  // Note /20 par matière = (points obtenus / max points) * 20, puis moyenne pondérée
   const totalCoef = resultats.reduce((acc, r) => acc + r.coefficient, 0);
-  const noteGlobale = resultats.reduce((acc, r) => acc + (r.noteObtenue / r.noteSur * 20) * r.coefficient, 0) / totalCoef;
+  const noteGlobale = resultats.reduce((acc, r) => acc + (r.noteObtenue / r.maxPoints * 20) * r.coefficient, 0) / totalCoef;
   const admisGlobal = noteGlobale >= 10 && resultats.every(r => r.admis);
 
   return (
@@ -375,35 +376,41 @@ function EcranResultats({
       {/* Détail par matière */}
       <div className="space-y-3">
         <h4 className="font-semibold">Résultats par matière</h4>
-        {resultats.map(r => (
-          <Card key={r.matiereId} className={`border-l-4 ${r.admis ? "border-l-green-500" : "border-l-red-500"}`}>
-            <CardContent className="py-3 px-4">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{r.nomMatiere}</p>
-                  <div className="flex items-center gap-3 mt-1">
-                    <span className="text-xs text-muted-foreground">Coeff. {r.coefficient}</span>
-                    <span className="text-xs text-muted-foreground">Min. {r.noteEliminatoire}/{r.noteSur}</span>
+        {resultats.map(r => {
+          const noteSur20 = (r.noteObtenue / r.maxPoints * 20);
+          return (
+            <Card key={r.matiereId} className={`border-l-4 ${r.admis ? "border-l-green-500" : "border-l-red-500"}`}>
+              <CardContent className="py-3 px-4">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{r.nomMatiere}</p>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="text-xs text-muted-foreground">Coeff. {r.coefficient}</span>
+                      <span className="text-xs text-muted-foreground">Barème : {r.maxPoints} pts</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <span className={`text-lg font-bold ${r.admis ? "text-green-600" : "text-red-600"}`}>
+                        {r.noteObtenue} / {r.maxPoints} pts
+                      </span>
+                      <p className="text-xs text-muted-foreground">= {noteSur20.toFixed(1)} / 20</p>
+                    </div>
+                    {r.admis ? (
+                      <CheckCircle2 className="w-5 h-5 text-green-500" />
+                    ) : (
+                      <XCircle className="w-5 h-5 text-red-500" />
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-lg font-bold ${r.admis ? "text-green-600" : "text-red-600"}`}>
-                    {r.noteObtenue.toFixed(1)} / {r.noteSur}
-                  </span>
-                  {r.admis ? (
-                    <CheckCircle2 className="w-5 h-5 text-green-500" />
-                  ) : (
-                    <XCircle className="w-5 h-5 text-red-500" />
-                  )}
-                </div>
-              </div>
-              <Progress
-                value={(r.noteObtenue / r.noteSur) * 100}
-                className={`h-1.5 mt-2 ${r.admis ? "[&>*]:bg-green-500" : "[&>*]:bg-red-500"}`}
-              />
-            </CardContent>
-          </Card>
-        ))}
+                <Progress
+                  value={(r.noteObtenue / r.maxPoints) * 100}
+                  className={`h-1.5 mt-2 ${r.admis ? "[&>*]:bg-green-500" : "[&>*]:bg-red-500"}`}
+                />
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Correction détaillée */}
@@ -522,6 +529,9 @@ export default function ExamensBlancsPage() {
     setPhase("examen");
   };
 
+  const calculerMaxPoints = (matiere: Matiere): number =>
+    matiere.questions.reduce((acc, q) => acc + getPointsParQuestion(matiere.id, q.type), 0);
+
   const calculerNote = (matiere: Matiere, reponses: Reponses): number => {
     let totalPoints = 0;
     matiere.questions.forEach(q => {
@@ -546,14 +556,16 @@ export default function ExamensBlancsPage() {
     if (!examenChoisi) return;
     const matiere = examenChoisi.matieres[matiereIndex];
     const note = calculerNote(matiere, reponses);
+    const maxPoints = calculerMaxPoints(matiere);
     const resultat: ResultatMatiere = {
       matiereId: matiere.id,
       nomMatiere: matiere.nom,
       noteObtenue: note,
+      maxPoints,
       noteSur: matiere.noteSur,
       noteEliminatoire: matiere.noteEliminatoire,
       coefficient: matiere.coefficient,
-      admis: note >= matiere.noteEliminatoire,
+      admis: note >= (matiere.noteEliminatoire / matiere.noteSur) * maxPoints,
       reponses,
     };
 
@@ -617,28 +629,40 @@ export default function ExamensBlancsPage() {
                     <tr>
                       <th className="text-left p-2 font-medium">Matière</th>
                       <th className="text-center p-2 font-medium">Durée</th>
+                      <th className="text-center p-2 font-medium">Barème</th>
+                      <th className="text-center p-2 font-medium">QCM</th>
+                      <th className="text-center p-2 font-medium">QRC</th>
                       <th className="text-center p-2 font-medium">Coeff.</th>
-                      <th className="text-center p-2 font-medium">Note élim.</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {examenChoisi.matieres.map((m, i) => (
-                      <tr key={m.id} className={i % 2 === 0 ? "bg-background" : "bg-muted/30"}>
-                        <td className="p-2 text-xs">{m.nom}</td>
-                        <td className="p-2 text-center">{m.duree} min</td>
-                        <td className="p-2 text-center">{m.coefficient}</td>
-                        <td className="p-2 text-center text-red-600">{m.noteEliminatoire}/{m.noteSur}</td>
-                      </tr>
-                    ))}
+                    {examenChoisi.matieres.map((m, i) => {
+                      const maxPts = m.questions.reduce((acc, q) => acc + getPointsParQuestion(m.id, q.type), 0);
+                      const ptsQCM = getPointsParQuestion(m.id, "QCM");
+                      const ptsQRC = getPointsParQuestion(m.id, "QRC");
+                      return (
+                        <tr key={m.id} className={i % 2 === 0 ? "bg-background" : "bg-muted/30"}>
+                          <td className="p-2 text-xs">{m.nom}</td>
+                          <td className="p-2 text-center">{m.duree} min</td>
+                          <td className="p-2 text-center font-semibold">{maxPts} pts</td>
+                          <td className="p-2 text-center text-blue-600">{ptsQCM} pt</td>
+                          <td className="p-2 text-center text-purple-600">{ptsQRC} pts</td>
+                          <td className="p-2 text-center">{m.coefficient}</td>
+                        </tr>
+                      );
+                    })}
                     <tr className="border-t-2 font-semibold bg-primary/5">
                       <td className="p-2">TOTAL</td>
                       <td className="p-2 text-center">{dureeTotal} min</td>
+                      <td className="p-2 text-center">{examenChoisi.matieres.reduce((acc, m) => acc + m.questions.reduce((a, q) => a + getPointsParQuestion(m.id, q.type), 0), 0)} pts</td>
                       <td className="p-2"></td>
-                      <td className="p-2 text-center">Moy. ≥ 10/20</td>
+                      <td className="p-2"></td>
+                      <td className="p-2 text-center">Note finale /20</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
+
             </div>
 
             <Button className="w-full gap-2 text-base py-5" onClick={handleDebuterExamen}>
