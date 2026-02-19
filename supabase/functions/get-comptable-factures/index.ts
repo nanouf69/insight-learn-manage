@@ -39,13 +39,41 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Fetch factures de ventes (client invoices)
-    const { data: ventesData } = await supabase
+    // Factures de ventes : d'abord depuis la table factures (formelles)
+    const { data: facturesFormelles } = await supabase
       .from("factures")
       .select("id, numero, client_nom, montant_ttc, montant_ht, montant_tva, tva_taux, statut, date_emission, date_echeance, date_paiement, type_financement, client_opco")
       .order("date_emission", { ascending: false });
 
-    // Fetch factures d'achats (supplier invoices) with fournisseur name
+    // Factures de ventes : depuis apprenants si table factures vide
+    const { data: apprenants } = await supabase
+      .from("apprenants")
+      .select("id, nom, prenom, formation_choisie, montant_ttc, montant_paye, mode_financement, organisme_financeur, date_debut_formation, date_fin_formation, statut, created_at")
+      .gt("montant_ttc", 0)
+      .order("created_at", { ascending: false });
+
+    // Construire la liste des ventes
+    let ventes: any[] = [];
+    if (facturesFormelles && facturesFormelles.length > 0) {
+      ventes = facturesFormelles;
+    } else if (apprenants) {
+      // Utiliser les apprenants comme source de facturation
+      ventes = apprenants.map((a) => ({
+        id: a.id,
+        numero: `APP-${a.id.substring(0, 8).toUpperCase()}`,
+        client_nom: `${a.prenom} ${a.nom}`,
+        montant_ttc: a.montant_ttc,
+        montant_paye: a.montant_paye || 0,
+        montant_restant: (a.montant_ttc || 0) - (a.montant_paye || 0),
+        statut: (a.montant_paye || 0) >= (a.montant_ttc || 0) ? "payee" : "en_attente",
+        date_emission: a.created_at,
+        type_financement: a.mode_financement || "personnel",
+        formation: a.formation_choisie,
+        organisme_financeur: a.organisme_financeur,
+      }));
+    }
+
+    // Factures d'achats (supplier invoices) with fournisseur name
     const { data: achatsData } = await supabase
       .from("fournisseur_factures")
       .select("id, nom_fichier, url, destinataire, montant, description, statut, mois_annee, moyen_paiement, date_paiement, created_at, fournisseurs(nom)")
@@ -53,7 +81,7 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        ventes: ventesData || [],
+        ventes,
         achats: achatsData || [],
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
