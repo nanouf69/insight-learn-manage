@@ -145,26 +145,11 @@ export function ComptabilitePage() {
     setLoading(false);
   };
 
-  // Build unified "à payer" list from factures apprenants + factures fournisseurs
+  // Build "à payer" list from factures fournisseurs only
   const aPayerItems = useMemo((): APayer[] => {
-    const apprenantItems: APayer[] = factures
-      .filter(f => f.statut !== "annulee")
-      .map(f => ({
-        id: `apprenant-${f.id}`,
-        type: "apprenant",
-        nom: f.client_nom,
-        description: `Facture ${f.numero} — ${financementLabels[f.type_financement] || f.type_financement}`,
-        montant: Number(f.montant_ttc),
-        date_emission: f.date_emission,
-        statut: f.statut === "payee" ? "paye" : (f.statut || "en_attente"),
-        date_paiement: f.date_paiement,
-        moyen_paiement: null,
-        source_id: f.id,
-      }));
-
-    const fournisseurItems: APayer[] = fournisseurFactures.map(f => ({
+    return fournisseurFactures.map(f => ({
       id: `fournisseur-${f.id}`,
-      type: "fournisseur",
+      type: "fournisseur" as const,
       nom: f.fournisseurs?.nom || "Fournisseur",
       description: f.description || f.nom_fichier,
       montant: Number(f.montant) || 0,
@@ -173,12 +158,8 @@ export function ComptabilitePage() {
       date_paiement: f.date_paiement || null,
       moyen_paiement: f.moyen_paiement || null,
       source_id: f.id,
-    }));
-
-    return [...apprenantItems, ...fournisseurItems].sort(
-      (a, b) => new Date(b.date_emission).getTime() - new Date(a.date_emission).getTime()
-    );
-  }, [factures, fournisseurFactures]);
+    })).sort((a, b) => new Date(b.date_emission).getTime() - new Date(a.date_emission).getTime());
+  }, [fournisseurFactures]);
 
   const filteredAPayerItems = useMemo(() => {
     return aPayerItems.filter(item => {
@@ -212,21 +193,13 @@ export function ComptabilitePage() {
     const dateStr = format(date, "yyyy-MM-dd");
 
     try {
-      if (item.type === "apprenant") {
-        const { error } = await supabase
-          .from("factures")
-          .update({ statut: "payee", date_paiement: dateStr })
-          .eq("id", item.source_id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("fournisseur_factures")
-          .update({ statut: "paye", date_paiement: dateStr, moyen_paiement: moyen })
-          .eq("id", item.source_id);
-        if (error) throw error;
-      }
+      const { error } = await supabase
+        .from("fournisseur_factures")
+        .update({ statut: "paye", date_paiement: dateStr, moyen_paiement: moyen })
+        .eq("id", item.source_id);
+      if (error) throw error;
       toast.success(`Paiement enregistré pour ${item.nom}`);
-      await Promise.all([fetchFactures(), fetchFournisseurFactures()]);
+      await fetchFournisseurFactures();
     } catch (err) {
       toast.error("Erreur lors de l'enregistrement");
     }
@@ -556,8 +529,7 @@ export function ComptabilitePage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Nom</TableHead>
+                      <TableHead>Fournisseur</TableHead>
                       <TableHead>Description</TableHead>
                       <TableHead className="text-right">Montant</TableHead>
                       <TableHead>Date</TableHead>
@@ -572,11 +544,6 @@ export function ComptabilitePage() {
                       const isPaid = item.statut === "paye";
                       return (
                         <TableRow key={item.id} className={isPaid ? "opacity-60" : ""}>
-                          <TableCell>
-                            <Badge variant="outline" className={item.type === "fournisseur" ? "border-purple-300 text-purple-700" : "border-blue-300 text-blue-700"}>
-                              {item.type === "fournisseur" ? "Fournisseur" : "Apprenant"}
-                            </Badge>
-                          </TableCell>
                           <TableCell className="font-medium">{item.nom}</TableCell>
                           <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">{item.description}</TableCell>
                           <TableCell className="text-right font-semibold">{formatMontant(item.montant)}</TableCell>
