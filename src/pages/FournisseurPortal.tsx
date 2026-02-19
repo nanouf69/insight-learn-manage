@@ -16,7 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { parseDateRange } from "@/lib/parseDateRange";
-import { Plus, Loader2, CalendarIcon, Users, FileText, Receipt, Upload, Trash2, Eye, CalendarDays, BarChart3, Mail, Send, Inbox, PenLine } from "lucide-react";
+import { Plus, Loader2, CalendarIcon, Users, FileText, Receipt, Upload, Trash2, Eye, CalendarDays, BarChart3, Mail, Send, Inbox, PenLine, FolderOpen, Download } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import logoFtransport from "@/assets/logo-ftransport.png";
 import { RapprochementBancaire } from "@/components/comptabilite/RapprochementBancaire";
@@ -114,6 +114,9 @@ export default function FournisseurPortal() {
   const [isUploadingSharedDoc, setIsUploadingSharedDoc] = useState(false);
   const [sharedDocTitre, setSharedDocTitre] = useState("");
 
+  // Relevés bancaires (comptable mode)
+  const [releves, setReleves] = useState<any[]>([]);
+
   // Email state (comptable mode)
   const [comptableEmails, setComptableEmails] = useState<any[]>([]);
   const [composingEmail, setComposingEmail] = useState(false);
@@ -201,7 +204,7 @@ export default function FournisseurPortal() {
       if (facRes.data) setFactures(facRes.data as FournisseurFacture[]);
       if (sharedRes.data) setSharedDocs(sharedRes.data);
 
-      // Charger les emails si comptable
+      // Charger les emails et relevés si comptable
       if (fournisseur.comptable_only) {
         const { data: emailData } = await supabase
           .from('emails')
@@ -209,6 +212,12 @@ export default function FournisseurPortal() {
           .order('created_at', { ascending: false })
           .limit(100);
         if (emailData) setComptableEmails(emailData);
+
+        const { data: relevesData } = await supabase
+          .from('releves_bancaires')
+          .select('*')
+          .order('mois_annee', { ascending: false });
+        if (relevesData) setReleves(relevesData);
       }
 
       // Charger le planning si c'est un formateur (depuis agenda_blocs)
@@ -438,9 +447,10 @@ export default function FournisseurPortal() {
       <div className="max-w-6xl mx-auto p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           {fournisseur?.comptable_only ? (
-            // Mode comptable : rapprochement bancaire + documents + messages
-            <TabsList className="grid w-full grid-cols-3 mb-6">
+            // Mode comptable : rapprochement bancaire + relevés + documents + messages
+            <TabsList className="grid w-full grid-cols-4 mb-6">
               <TabsTrigger value="rapprochement" className="gap-2"><BarChart3 className="w-4 h-4" />Rapprochement</TabsTrigger>
+              <TabsTrigger value="comptable-releves" className="gap-2"><FolderOpen className="w-4 h-4" />Relevés</TabsTrigger>
               <TabsTrigger value="comptable-docs" className="gap-2"><FileText className="w-4 h-4" />Documents</TabsTrigger>
               <TabsTrigger value="comptable-messages" className="gap-2"><Mail className="w-4 h-4" />Messages</TabsTrigger>
             </TabsList>
@@ -974,6 +984,60 @@ export default function FournisseurPortal() {
                   </div>
                 </div>
                 <RapprochementBancaire />
+              </div>
+            </TabsContent>
+          )}
+
+          {/* ============ TAB RELEVÉS (comptable) ============ */}
+          {fournisseur?.comptable_only && (
+            <TabsContent value="comptable-releves">
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FolderOpen className="w-5 h-5 text-primary" />
+                      Relevés de comptes
+                    </CardTitle>
+                    <CardDescription>Téléchargez les relevés bancaires mis à disposition</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {releves.length === 0 ? (
+                      <div className="text-center py-10 text-muted-foreground">
+                        <FolderOpen className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                        <p>Aucun relevé disponible pour le moment.</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {releves.map((releve: any) => {
+                          const moisLabel = releve.mois_annee
+                            ? new Date(releve.mois_annee + "-01").toLocaleDateString("fr-FR", { month: "long", year: "numeric" })
+                            : releve.mois_annee;
+                          return (
+                            <div key={releve.id} className="flex flex-col gap-2 p-4 border rounded-lg hover:bg-muted/20 transition-colors">
+                              <div className="flex items-start gap-3">
+                                <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+                                  <FileText className="w-5 h-5 text-primary" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="font-medium text-sm capitalize">{moisLabel}</p>
+                                  <p className="text-xs text-muted-foreground truncate">{releve.banque}</p>
+                                  <p className="text-xs text-muted-foreground truncate">{releve.nom_fichier}</p>
+                                  {releve.notes && <p className="text-xs text-muted-foreground italic mt-1">{releve.notes}</p>}
+                                </div>
+                              </div>
+                              <a href={releve.url} target="_blank" rel="noopener noreferrer" download>
+                                <Button variant="outline" size="sm" className="w-full gap-2">
+                                  <Download className="w-3 h-3" />
+                                  Télécharger
+                                </Button>
+                              </a>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
             </TabsContent>
           )}
