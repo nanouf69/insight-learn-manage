@@ -35,24 +35,22 @@ interface Facture {
   client_opco: string | null;
 }
 
-interface BridgeAccount {
-  id: number;
+interface BankAccount {
+  id: string;
   name: string;
   balance: number;
-  status: string;
   iban: string;
-  currency_code: string;
-  type: string;
+  currency: string;
 }
 
-interface BridgeTransaction {
-  id: number;
+interface BankTransaction {
+  id: string;
   description: string;
   amount: number;
+  currency: string;
   date: string;
-  category_id: number;
-  is_future: boolean;
-  account_id: number;
+  creditor: string;
+  debtor: string;
 }
 
 // Unified "à payer" item
@@ -87,7 +85,7 @@ const financementLabels: Record<string, string> = {
 
 const moyensPaiement = ["Virement", "Chèque", "Espèces", "Carte bancaire", "Prélèvement"];
 
-const BRIDGE_USER_KEY = "ftransport_bridge_user";
+const GC_REQUISITION_KEY = "ftransport_gc_requisition";
 
 export function ComptabilitePage() {
   const [factures, setFactures] = useState<Facture[]>([]);
@@ -106,22 +104,13 @@ export function ComptabilitePage() {
   const [paymentMoyens, setPaymentMoyens] = useState<Record<string, string>>({});
   const [savingPayment, setSavingPayment] = useState<Record<string, boolean>>({});
 
-  // Bridge state
-  const [bridgeUserUuid, setBridgeUserUuid] = useState<string | null>(null);
-  const [bridgeAccounts, setBridgeAccounts] = useState<BridgeAccount[]>([]);
-  const [bridgeTransactions, setBridgeTransactions] = useState<BridgeTransaction[]>([]);
+  // GoCardless state
+  const [gcRequisitionId, setGcRequisitionId] = useState<string | null>(null);
+  const [gcAccounts, setGcAccounts] = useState<BankAccount[]>([]);
+  const [gcSelectedAccountId, setGcSelectedAccountId] = useState<string | null>(null);
+  const [gcTransactions, setGcTransactions] = useState<BankTransaction[]>([]);
   const [bridgeLoading, setBridgeLoading] = useState(false);
   const [bridgeConnected, setBridgeConnected] = useState(false);
-
-  useEffect(() => {
-    fetchFactures();
-    fetchFournisseurFactures();
-    const savedUser = localStorage.getItem(BRIDGE_USER_KEY);
-    if (savedUser) {
-      setBridgeUserUuid(savedUser);
-      setBridgeConnected(true);
-    }
-  }, []);
 
   const fetchFournisseurFactures = async () => {
     const { data, error } = await supabase
@@ -145,114 +134,54 @@ export function ComptabilitePage() {
     setLoading(false);
   };
 
-  // Build "à payer" list from factures fournisseurs only
-  const aPayerItems = useMemo((): APayer[] => {
-    return fournisseurFactures.map(f => ({
-      id: `fournisseur-${f.id}`,
-      type: "fournisseur" as const,
-      nom: f.fournisseurs?.nom || "Fournisseur",
-      description: f.description || f.nom_fichier,
-      montant: Number(f.montant) || 0,
-      date_emission: f.created_at,
-      statut: f.statut || "en_attente",
-      date_paiement: f.date_paiement || null,
-      moyen_paiement: f.moyen_paiement || null,
-      source_id: f.id,
-    })).sort((a, b) => new Date(b.date_emission).getTime() - new Date(a.date_emission).getTime());
-  }, [fournisseurFactures]);
-
-  const filteredAPayerItems = useMemo(() => {
-    return aPayerItems.filter(item => {
-      const matchSearch =
-        item.nom.toLowerCase().includes(payerSearch.toLowerCase()) ||
-        item.description.toLowerCase().includes(payerSearch.toLowerCase());
-      const matchFilter =
-        payerFilter === "tous" ||
-        (payerFilter === "paye" && item.statut === "paye") ||
-        (payerFilter === "en_attente" && item.statut !== "paye");
-      return matchSearch && matchFilter;
-    });
-  }, [aPayerItems, payerSearch, payerFilter]);
-
-  const totalAPayer = useMemo(() =>
-    aPayerItems.filter(i => i.statut !== "paye").reduce((s, i) => s + i.montant, 0),
-    [aPayerItems]
-  );
-  const totalPaye2 = useMemo(() =>
-    aPayerItems.filter(i => i.statut === "paye").reduce((s, i) => s + i.montant, 0),
-    [aPayerItems]
-  );
-
-  const handleMarquerPaye = async (item: APayer) => {
-    const date = paymentDates[item.id];
-    const moyen = paymentMoyens[item.id];
-    if (!date) { toast.error("Veuillez sélectionner une date de paiement"); return; }
-    if (!moyen) { toast.error("Veuillez sélectionner un moyen de paiement"); return; }
-
-    setSavingPayment(prev => ({ ...prev, [item.id]: true }));
-    const dateStr = format(date, "yyyy-MM-dd");
-
-    try {
-      const { error } = await supabase
-        .from("fournisseur_factures")
-        .update({ statut: "paye", date_paiement: dateStr, moyen_paiement: moyen })
-        .eq("id", item.source_id);
-      if (error) throw error;
-      toast.success(`Paiement enregistré pour ${item.nom}`);
-      await fetchFournisseurFactures();
-    } catch (err) {
-      toast.error("Erreur lors de l'enregistrement");
+  useEffect(() => {
+    fetchFactures();
+    fetchFournisseurFactures();
+    const savedRequisition = localStorage.getItem(GC_REQUISITION_KEY);
+    if (savedRequisition) {
+      setGcRequisitionId(savedRequisition);
+      setBridgeConnected(true);
     }
-    setSavingPayment(prev => ({ ...prev, [item.id]: false }));
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const callBridge = async (action: string, extra: Record<string, string> = {}) => {
+  const callGC = async (action: string, extra: Record<string, string> = {}) => {
     const res = await supabase.functions.invoke("bridge-bank", {
       body: { action, ...extra },
     });
     if (res.error) throw new Error(res.error.message);
+    if (res.data?.error) throw new Error(res.data.error);
     return res.data;
   };
 
-  const handleCreateBridgeUser = async () => {
+  const handleConnectBank = async () => {
     setBridgeLoading(true);
     try {
-      const data = await callBridge("create_user");
-      const uuid = data.uuid;
-      setBridgeUserUuid(uuid);
-      localStorage.setItem(BRIDGE_USER_KEY, uuid);
-      toast.success("Utilisateur Bridge créé");
-      const session = await callBridge("connect_session", { user_uuid: uuid });
-      if (session.url) {
-        window.open(session.url, "_blank");
-        toast.info("Connectez votre banque dans la fenêtre qui s'ouvre");
+      const data = await callGC("create_requisition");
+      const reqId = data.id;
+      const linkUrl = data.link;
+      setGcRequisitionId(reqId);
+      localStorage.setItem(GC_REQUISITION_KEY, reqId);
+      if (linkUrl) {
+        window.open(linkUrl, "_blank");
+        toast.info("Connectez votre banque dans la fenêtre qui s'ouvre, puis revenez ici et cliquez sur 'Synchroniser les comptes'");
         setBridgeConnected(true);
       }
     } catch (err) {
-      toast.error("Erreur lors de la création Bridge: " + (err instanceof Error ? err.message : "Erreur inconnue"));
-    }
-    setBridgeLoading(false);
-  };
-
-  const handleReconnect = async () => {
-    if (!bridgeUserUuid) return;
-    setBridgeLoading(true);
-    try {
-      const session = await callBridge("connect_session", { user_uuid: bridgeUserUuid });
-      if (session.url) window.open(session.url, "_blank");
-    } catch (err) {
-      toast.error("Erreur: " + (err instanceof Error ? err.message : "Erreur inconnue"));
+      toast.error("Erreur connexion banque: " + (err instanceof Error ? err.message : "Erreur inconnue"));
     }
     setBridgeLoading(false);
   };
 
   const handleFetchAccounts = async () => {
-    if (!bridgeUserUuid) return;
+    if (!gcRequisitionId) return;
     setBridgeLoading(true);
     try {
-      const data = await callBridge("list_accounts", { user_uuid: bridgeUserUuid });
-      setBridgeAccounts(data.resources || []);
-      toast.success(`${(data.resources || []).length} compte(s) récupéré(s)`);
+      const data = await callGC("list_accounts", { requisition_id: gcRequisitionId });
+      const accounts: BankAccount[] = data.accounts || [];
+      setGcAccounts(accounts);
+      if (accounts.length > 0) setGcSelectedAccountId(accounts[0].id);
+      toast.success(`${accounts.length} compte(s) récupéré(s)`);
     } catch (err) {
       toast.error("Erreur: " + (err instanceof Error ? err.message : "Erreur inconnue"));
     }
@@ -260,16 +189,27 @@ export function ComptabilitePage() {
   };
 
   const handleFetchTransactions = async () => {
-    if (!bridgeUserUuid) return;
+    const accountId = gcSelectedAccountId;
+    if (!accountId) { toast.error("Sélectionnez un compte"); return; }
     setBridgeLoading(true);
     try {
-      const data = await callBridge("list_transactions", { user_uuid: bridgeUserUuid });
-      setBridgeTransactions(data.resources || []);
-      toast.success(`${(data.resources || []).length} transaction(s) récupérée(s)`);
+      const data = await callGC("list_transactions", { account_id: accountId });
+      setGcTransactions(data.transactions || []);
+      toast.success(`${(data.transactions || []).length} transaction(s) récupérée(s)`);
     } catch (err) {
       toast.error("Erreur: " + (err instanceof Error ? err.message : "Erreur inconnue"));
     }
     setBridgeLoading(false);
+  };
+
+  const handleDisconnect = () => {
+    localStorage.removeItem(GC_REQUISITION_KEY);
+    setGcRequisitionId(null);
+    setGcAccounts([]);
+    setGcTransactions([]);
+    setGcSelectedAccountId(null);
+    setBridgeConnected(false);
+    toast.success("Déconnecté du compte bancaire");
   };
 
   const filteredFactures = useMemo(() => {
@@ -336,7 +276,55 @@ export function ComptabilitePage() {
     toast.success("Export CSV téléchargé");
   };
 
-  const nbAPayer = aPayerItems.filter(i => i.statut !== "paye").length;
+  const aPayerItems = fournisseurFactures.map((f: any) => ({
+    id: `fournisseur-${f.id}`,
+    type: "fournisseur" as const,
+    nom: f.fournisseurs?.nom || "Fournisseur",
+    description: f.description || f.nom_fichier,
+    montant: Number(f.montant) || 0,
+    date_emission: f.created_at,
+    statut: f.statut || "en_attente",
+    date_paiement: f.date_paiement || null,
+    moyen_paiement: f.moyen_paiement || null,
+    source_id: f.id,
+  })).sort((a: APayer, b: APayer) => new Date(b.date_emission).getTime() - new Date(a.date_emission).getTime());
+
+  const filteredAPayerItems = aPayerItems.filter((item: APayer) => {
+    const matchSearch =
+      item.nom.toLowerCase().includes(payerSearch.toLowerCase()) ||
+      item.description.toLowerCase().includes(payerSearch.toLowerCase());
+    const matchFilter =
+      payerFilter === "tous" ||
+      (payerFilter === "paye" && item.statut === "paye") ||
+      (payerFilter === "en_attente" && item.statut !== "paye");
+    return matchSearch && matchFilter;
+  });
+
+  const totalAPayer = aPayerItems.filter((i: APayer) => i.statut !== "paye").reduce((s: number, i: APayer) => s + i.montant, 0);
+  const totalPaye2 = aPayerItems.filter((i: APayer) => i.statut === "paye").reduce((s: number, i: APayer) => s + i.montant, 0);
+
+  const handleMarquerPaye = async (item: APayer) => {
+    const date = paymentDates[item.id];
+    const moyen = paymentMoyens[item.id];
+    if (!date) { toast.error("Veuillez sélectionner une date de paiement"); return; }
+    if (!moyen) { toast.error("Veuillez sélectionner un moyen de paiement"); return; }
+    setSavingPayment(prev => ({ ...prev, [item.id]: true }));
+    const dateStr = format(date, "yyyy-MM-dd");
+    try {
+      const { error } = await supabase
+        .from("fournisseur_factures")
+        .update({ statut: "paye", date_paiement: dateStr, moyen_paiement: moyen })
+        .eq("id", item.source_id);
+      if (error) throw error;
+      toast.success(`Paiement enregistré pour ${item.nom}`);
+      await fetchFournisseurFactures();
+    } catch (err) {
+      toast.error("Erreur lors de l'enregistrement");
+    }
+    setSavingPayment(prev => ({ ...prev, [item.id]: false }));
+  };
+
+  const nbAPayer = aPayerItems.filter((i: APayer) => i.statut !== "paye").length;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -769,14 +757,14 @@ export function ComptabilitePage() {
                 <Building2 className="h-16 w-16 text-muted-foreground/30 mb-4" />
                 <h3 className="text-xl font-semibold mb-2">Connectez votre compte bancaire</h3>
                 <p className="text-muted-foreground text-center max-w-md mb-6">
-                  Synchronisez votre compte BNP Paribas professionnel pour voir vos transactions en temps réel et les rapprocher de vos factures.
+                  Synchronisez votre compte bancaire via GoCardless Open Banking (gratuit) pour voir vos transactions en temps réel.
                 </p>
-                <Button onClick={handleCreateBridgeUser} disabled={bridgeLoading} className="gap-2" size="lg">
+                <Button onClick={handleConnectBank} disabled={bridgeLoading} className="gap-2" size="lg">
                   <Link2 className="h-5 w-5" />
                   {bridgeLoading ? "Connexion en cours..." : "Connecter ma banque"}
                 </Button>
                 <p className="text-xs text-muted-foreground mt-4">
-                  Connexion sécurisée via Bridge by Bankin' (agréé ACPR)
+                  Connexion sécurisée via GoCardless Open Banking (PSD2 agréé)
                 </p>
               </CardContent>
             </Card>
@@ -789,34 +777,40 @@ export function ComptabilitePage() {
                   </div>
                   <div>
                     <h3 className="font-semibold">Compte bancaire connecté</h3>
-                    <p className="text-sm text-muted-foreground">BNP Paribas via Bridge</p>
+                    <p className="text-sm text-muted-foreground">Via GoCardless Open Banking</p>
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" onClick={handleReconnect} disabled={bridgeLoading} className="gap-2" size="sm">
-                    <ExternalLink className="h-4 w-4" /> Reconnecter
+                  <Button variant="outline" onClick={handleDisconnect} disabled={bridgeLoading} className="gap-2" size="sm">
+                    <ExternalLink className="h-4 w-4" /> Déconnecter
                   </Button>
                   <Button variant="outline" onClick={handleFetchAccounts} disabled={bridgeLoading} className="gap-2" size="sm">
-                    <RefreshCw className={`h-4 w-4 ${bridgeLoading ? "animate-spin" : ""}`} /> Comptes
+                    <RefreshCw className={`h-4 w-4 ${bridgeLoading ? "animate-spin" : ""}`} /> Synchroniser les comptes
                   </Button>
-                  <Button variant="outline" onClick={handleFetchTransactions} disabled={bridgeLoading} className="gap-2" size="sm">
-                    <RefreshCw className={`h-4 w-4 ${bridgeLoading ? "animate-spin" : ""}`} /> Transactions
-                  </Button>
+                  {gcSelectedAccountId && (
+                    <Button variant="outline" onClick={handleFetchTransactions} disabled={bridgeLoading} className="gap-2" size="sm">
+                      <RefreshCw className={`h-4 w-4 ${bridgeLoading ? "animate-spin" : ""}`} /> Transactions
+                    </Button>
+                  )}
                 </div>
               </div>
 
-              {bridgeAccounts.length > 0 && (
+              {gcAccounts.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {bridgeAccounts.map((account) => (
-                    <Card key={account.id}>
+                  {gcAccounts.map((account) => (
+                    <Card
+                      key={account.id}
+                      className={`cursor-pointer transition-all ${gcSelectedAccountId === account.id ? "ring-2 ring-primary" : ""}`}
+                      onClick={() => setGcSelectedAccountId(account.id)}
+                    >
                       <CardContent className="pt-6">
                         <div className="flex items-center justify-between mb-2">
                           <p className="font-medium text-sm">{account.name}</p>
-                          <Badge variant="outline">{account.type}</Badge>
+                          <Badge variant="outline">{account.currency}</Badge>
                         </div>
-                        <p className="text-2xl font-bold">{formatMontant(account.balance)}</p>
+                        <p className="text-2xl font-bold">{formatMontant(Number(account.balance))}</p>
                         {account.iban && (
-                          <p className="text-xs text-muted-foreground mt-1">{account.iban}</p>
+                          <p className="text-xs text-muted-foreground mt-1 font-mono">{account.iban}</p>
                         )}
                       </CardContent>
                     </Card>
@@ -824,7 +818,7 @@ export function ComptabilitePage() {
                 </div>
               )}
 
-              {bridgeTransactions.length > 0 && (
+              {gcTransactions.length > 0 && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg">Dernières transactions</CardTitle>
@@ -839,7 +833,7 @@ export function ComptabilitePage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {bridgeTransactions.slice(0, 50).map((t) => (
+                        {gcTransactions.slice(0, 50).map((t) => (
                           <TableRow key={t.id}>
                             <TableCell>{formatDate(t.date)}</TableCell>
                             <TableCell className="flex items-center gap-2">
@@ -861,11 +855,14 @@ export function ComptabilitePage() {
                 </Card>
               )}
 
-              {bridgeAccounts.length === 0 && bridgeTransactions.length === 0 && (
+              {gcAccounts.length === 0 && gcTransactions.length === 0 && (
                 <Card>
                   <CardContent className="flex flex-col items-center justify-center py-12">
                     <RefreshCw className="h-12 w-12 text-muted-foreground/30 mb-3" />
-                    <p className="text-muted-foreground">Cliquez sur "Comptes" ou "Transactions" pour synchroniser vos données bancaires</p>
+                    <p className="text-muted-foreground text-center">
+                      Cliquez sur "Synchroniser les comptes" pour récupérer vos comptes bancaires.<br />
+                      <span className="text-xs">Si vous venez de vous connecter, attendez quelques secondes puis synchronisez.</span>
+                    </p>
                   </CardContent>
                 </Card>
               )}
