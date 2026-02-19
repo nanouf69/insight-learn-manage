@@ -45,12 +45,28 @@ const pageConfig = {
 
 const Index = () => {
   const [currentPage, setCurrentPage] = useState("dashboard");
+  const [pageHistory, setPageHistory] = useState<string[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [initialApprenantId, setInitialApprenantId] = useState<string | null>(null);
 
+  const handleNavigate = (page: string) => {
+    if (page !== currentPage) {
+      setPageHistory(prev => [...prev, currentPage]);
+    }
+    setCurrentPage(page);
+  };
+
+  const handleGoBack = () => {
+    if (pageHistory.length > 0) {
+      const prev = pageHistory[pageHistory.length - 1];
+      setPageHistory(h => h.slice(0, -1));
+      setCurrentPage(prev);
+    }
+  };
+
   const handleNavigateToApprenant = (apprenantId: string) => {
     setInitialApprenantId(apprenantId);
-    setCurrentPage("crm");
+    handleNavigate("crm");
   };
 
   const renderContent = () => {
@@ -142,7 +158,7 @@ const Index = () => {
       {/* Sidebar */}
       <Sidebar 
         currentPage={currentPage}
-        onNavigate={setCurrentPage}
+        onNavigate={handleNavigate}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
@@ -153,7 +169,9 @@ const Index = () => {
           title={config.title}
           subtitle={config.subtitle}
           onSelectApprenant={handleNavigateToApprenant}
-          onNavigate={setCurrentPage}
+          onNavigate={handleNavigate}
+          canGoBack={pageHistory.length > 0}
+          onGoBack={handleGoBack}
         />
         
         <main className="flex-1 overflow-auto p-6">
