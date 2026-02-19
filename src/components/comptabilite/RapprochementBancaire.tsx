@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Upload, RefreshCw, CheckCircle, AlertCircle, MinusCircle,
   ArrowDownLeft, ArrowUpRight, Search, Tag, FileText,
-  Link2, Trash2, Eye, MoreHorizontal, Filter, Download
+  Link2, Trash2, Eye, MoreHorizontal, Filter, Download, Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, parse } from "date-fns";
@@ -162,6 +162,7 @@ export function RapprochementBancaire() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Transaction>>({});
   const [linkDialogId, setLinkDialogId] = useState<string | null>(null);
+  const [aiLoadingId, setAiLoadingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchAll = useCallback(async () => {
@@ -235,6 +236,31 @@ export function RapprochementBancaire() {
     setLinkDialogId(null);
     toast.success("Justificatif associé !");
     await fetchAll();
+  };
+
+  const categorizeWithAI = async (tx: Transaction) => {
+    setAiLoadingId(tx.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("categorize-justificatif", {
+        body: {
+          nom_fichier: tx.libelle,
+          fournisseur: tx.fournisseur_client || "",
+          description: tx.notes || "",
+          montant: Math.abs(tx.montant),
+        },
+      });
+      if (error) throw error;
+      if (data?.categorie) {
+        await supabase.from("transactions_bancaires").update({ categorie: data.categorie }).eq("id", tx.id);
+        toast.success(`Catégorie détectée : ${data.categorie}`);
+        await fetchAll();
+      } else {
+        toast.warning("L'IA n'a pas pu déterminer la catégorie");
+      }
+    } catch (err) {
+      toast.error("Erreur IA : " + (err instanceof Error ? err.message : "Erreur"));
+    }
+    setAiLoadingId(null);
   };
 
   const filtered = transactions.filter(tx => {
@@ -500,15 +526,29 @@ export function RapprochementBancaire() {
                                 {tx.categorie ? (
                                   <Badge className={cn("text-[10px]", catCfg.color)}>{catCfg.label}</Badge>
                                 ) : isDebit ? (
-                                  <button
-                                    className="text-[10px] text-amber-600 underline underline-offset-2 hover:text-amber-800"
-                                    onClick={() => {
-                                      setEditingId(tx.id);
-                                      setEditForm({ categorie: tx.categorie, fournisseur_client: tx.fournisseur_client, notes: tx.notes });
-                                    }}
-                                  >
-                                    + Catégoriser
-                                  </button>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      className="text-[10px] text-amber-600 underline underline-offset-2 hover:text-amber-800"
+                                      onClick={() => {
+                                        setEditingId(tx.id);
+                                        setEditForm({ categorie: tx.categorie, fournisseur_client: tx.fournisseur_client, notes: tx.notes });
+                                      }}
+                                    >
+                                      + Catégoriser
+                                    </button>
+                                    <button
+                                      className="flex items-center gap-0.5 text-[10px] text-purple-600 hover:text-purple-800 font-medium"
+                                      onClick={() => categorizeWithAI(tx)}
+                                      disabled={aiLoadingId === tx.id}
+                                      title="Catégoriser avec l'IA"
+                                    >
+                                      {aiLoadingId === tx.id
+                                        ? <RefreshCw className="h-3 w-3 animate-spin" />
+                                        : <Sparkles className="h-3 w-3" />
+                                      }
+                                      IA
+                                    </button>
+                                  </div>
                                 ) : null}
 
                                 {/* Fournisseur */}
