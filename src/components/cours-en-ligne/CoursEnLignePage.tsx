@@ -2,11 +2,12 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Layers, GraduationCap, Plus, Users, TrendingUp, AlertTriangle, FileText, Monitor, ArrowUp, ArrowDown, Pencil, Trash2 } from "lucide-react";
+import { BookOpen, Layers, GraduationCap, Plus, Users, TrendingUp, AlertTriangle, FileText, Monitor, ArrowUp, ArrowDown, Pencil, Trash2, ClipboardList } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import ModuleDetailView from "./ModuleDetailView";
+import ExamensBlancsPage from "./ExamensBlancsPage";
 
 const CoursEnLignePage = () => {
   const [activeTab, setActiveTab] = useState("accueil");
@@ -45,7 +46,7 @@ const CoursEnLignePage = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full max-w-md grid-cols-3">
+        <TabsList className="grid w-full max-w-2xl grid-cols-4">
           <TabsTrigger value="accueil" className="flex items-center gap-2">
             <BookOpen className="w-4 h-4" />
             Accueil
@@ -53,6 +54,10 @@ const CoursEnLignePage = () => {
           <TabsTrigger value="modules" className="flex items-center gap-2">
             <Layers className="w-4 h-4" />
             Modules
+          </TabsTrigger>
+          <TabsTrigger value="examens-blancs" className="flex items-center gap-2">
+            <ClipboardList className="w-4 h-4" />
+            Examens Blancs
           </TabsTrigger>
           <TabsTrigger value="formations" className="flex items-center gap-2">
             <GraduationCap className="w-4 h-4" />
@@ -252,6 +257,11 @@ const CoursEnLignePage = () => {
               </Table>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Examens Blancs */}
+        <TabsContent value="examens-blancs" className="mt-6">
+          <ExamensBlancsPage />
         </TabsContent>
 
         {/* Formations */}
