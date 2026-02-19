@@ -98,7 +98,7 @@ export default function FournisseurPortal() {
   const { token } = useParams<{ token: string }>();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [fournisseur, setFournisseur] = useState<{ id: string; nom: string; factures_only?: boolean; formateur_id?: string | null } | null>(null);
+  const [fournisseur, setFournisseur] = useState<{ id: string; nom: string; factures_only?: boolean; formateur_id?: string | null; comptable_only?: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Tab state
@@ -157,17 +157,19 @@ export default function FournisseurPortal() {
       if (!token) { setError("Lien invalide"); setLoading(false); return; }
       const { data, error: err } = await supabase
         .from('fournisseurs')
-        .select('id, nom, actif, factures_only, formateur_id')
+        .select('id, nom, actif, factures_only, formateur_id, comptable_only')
         .eq('token', token)
         .maybeSingle();
       if (err || !data) { setError("Lien invalide ou expiré"); setLoading(false); return; }
       if (!data.actif) { setError("Ce compte fournisseur est désactivé"); setLoading(false); return; }
       const facOnly = (data as any).factures_only === true;
       const formateurId = (data as any).formateur_id || null;
-      setFournisseur({ id: data.id, nom: data.nom, factures_only: facOnly, formateur_id: formateurId });
+      const comptableOnly = (data as any).comptable_only === true;
+      setFournisseur({ id: data.id, nom: data.nom, factures_only: facOnly, formateur_id: formateurId, comptable_only: comptableOnly });
       // Pré-remplir le destinataire avec le nom du fournisseur lui-même
       setFactureDestinataire(data.nom);
-      if (formateurId) setActiveTab("planning");
+      if (comptableOnly) setActiveTab("rapprochement");
+      else if (formateurId) setActiveTab("planning");
       else if (facOnly) setActiveTab("factures");
       else setActiveTab("apprenants");
       setLoading(false);
@@ -416,7 +418,12 @@ export default function FournisseurPortal() {
 
       <div className="max-w-6xl mx-auto p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          {fournisseur?.formateur_id ? (
+          {fournisseur?.comptable_only ? (
+            // Mode comptable : rapprochement bancaire uniquement
+            <TabsList className="grid w-full grid-cols-1 mb-6">
+              <TabsTrigger value="rapprochement" className="gap-2"><BarChart3 className="w-4 h-4" />Rapprochement bancaire</TabsTrigger>
+            </TabsList>
+          ) : fournisseur?.formateur_id ? (
             // Formateur : planning + factures + documents
             <TabsList className="grid w-full grid-cols-3 mb-6">
               <TabsTrigger value="planning" className="gap-2"><CalendarDays className="w-4 h-4" />Mon planning</TabsTrigger>
@@ -930,6 +937,22 @@ export default function FournisseurPortal() {
                     </div>
                   );
                 })()}
+              </div>
+            </TabsContent>
+          )}
+
+          {/* ============ TAB RAPPROCHEMENT (comptable uniquement) ============ */}
+          {fournisseur?.comptable_only && (
+            <TabsContent value="rapprochement">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 pb-2 border-b">
+                  <BarChart3 className="w-5 h-5 text-primary" />
+                  <div>
+                    <h2 className="text-xl font-semibold">Rapprochement bancaire</h2>
+                    <p className="text-sm text-muted-foreground">Importez les relevés CSV BNP et associez vos justificatifs</p>
+                  </div>
+                </div>
+                <RapprochementBancaire />
               </div>
             </TabsContent>
           )}
