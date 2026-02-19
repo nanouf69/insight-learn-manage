@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.corriger-qrc]
 verify_jwt = false
+
+[functions.categorize-justificatif]
+verify_jwt = false
