@@ -83,102 +83,69 @@ function getStatut(value: string) {
 }
 
 /**
- * Parse BNP CSV — gère tous les formats d'export BNP Paribas :
- * Format 1 (Particuliers): Date;Libellé;Montant;Devise
- * Format 2 (Pro): Date;Libellé opération;Débit euros;Crédit euros;Solde euros
- * Format 3 (export direct): "Date";"Libellé";"Montant";"Solde"
- * Gère l'encodage latin-1/UTF-8, les séparateurs ; et ,
+ * Parse BNP CSV — format exact BNP Paribas Pro (6 colonnes) :
+ * Ligne 0 : info compte (ignorée)
+ * Lignes suivantes : Date;Type;Sous-type;Libellé long;Date valeur;Montant
+ * Montant : "1 500,00" ou "-2 046,30" (espace = milliers, virgule = décimale)
  */
 function parseBNPCsv(text: string): Omit<Transaction, "id" | "statut" | "justificatif_id" | "source" | "created_at" | "categorie" | "fournisseur_client" | "notes" | "reference">[] {
-  // Normalise les fins de ligne
   const rawLines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
   const results: ReturnType<typeof parseBNPCsv> = [];
 
-  // Détecter le séparateur dominant du fichier
-  const sep = rawLines.slice(0, 5).join("").includes(";") ? ";" : ",";
-
   const splitLine = (line: string): string[] =>
-    line.split(sep).map(c => c.trim().replace(/^["'\u00AB\u00BB]|["'\u00AB\u00BB]$/g, "").trim());
+    line.split(";").map(c => c.trim().replace(/^"|"$/g, "").trim());
 
   const parseNum = (s: string): number =>
-    parseFloat(s.replace(/\s/g, "").replace(",", ".")) || 0;
+    parseFloat(s.replace(/\u00A0/g, "").replace(/ /g, "").replace(",", "."));
 
   const parseDate = (s: string): Date | null => {
     const clean = s.trim();
     try {
       if (/^\d{2}\/\d{2}\/\d{4}$/.test(clean)) return parse(clean, "dd/MM/yyyy", new Date());
-      if (/^\d{2}-\d{2}-\d{4}$/.test(clean)) return parse(clean, "dd-MM-yyyy", new Date());
       if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) return new Date(clean);
-      if (/^\d{2}\/\d{2}\/\d{2}$/.test(clean)) return parse(clean, "dd/MM/yy", new Date());
     } catch { /* ignore */ }
     return null;
   };
 
-  // Identifier les colonnes à partir de l'en-tête
-  let headerIdx = -1;
-  let colDate = 0, colLibelle = 1, colDebit = -1, colCredit = -1, colMontant = -1, colSolde = -1;
-
-  for (let i = 0; i < Math.min(rawLines.length, 15); i++) {
-    const cols = splitLine(rawLines[i]);
-    const h = cols.map(c => c.toLowerCase());
-    if (h.some(c => c.includes("date") || c.includes("dat"))) {
-      headerIdx = i;
-      h.forEach((c, idx) => {
-        if (c.includes("date")) colDate = idx;
-        if (c.includes("libel") || c.includes("opér") || c.includes("oper") || c.includes("libell")) colLibelle = idx;
-        if (c.includes("débit") || c.includes("debit")) colDebit = idx;
-        if (c.includes("crédit") || c.includes("credit")) colCredit = idx;
-        if (c.includes("montant")) colMontant = idx;
-        if (c.includes("solde")) colSolde = idx;
-      });
-      break;
-    }
-  }
-
-  // Traiter les lignes de données
-  for (let i = (headerIdx >= 0 ? headerIdx + 1 : 0); i < rawLines.length; i++) {
+  for (let i = 0; i < rawLines.length; i++) {
     const raw = rawLines[i].trim();
     if (!raw) continue;
 
     const cols = splitLine(raw);
-    if (cols.length < 2) continue;
 
-    // Tenter de parser la date dans la colonne détectée, ou en cherchant dans les premières colonnes
-    let dateObj: Date | null = null;
-    for (let di = 0; di <= Math.min(2, cols.length - 1); di++) {
-      dateObj = parseDate(cols[di]);
-      if (dateObj && !isNaN(dateObj.getTime())) { colDate = di; break; }
-    }
+    // Ignorer la 1ère ligne d'info compte (contient "Compte", "****", ou entités HTML "&")
+    if (
+      cols[0].toLowerCase().includes("compte") ||
+      cols[0].includes("****") ||
+      cols[0].includes("&amp") ||
+      cols[0].includes("&")
+    ) continue;
+
+    // La date est toujours en col 0
+    const dateObj = parseDate(cols[0]);
     if (!dateObj || isNaN(dateObj.getTime())) continue;
 
     const date_operation = format(dateObj, "yyyy-MM-dd");
-    const libelle = (cols[colLibelle] || cols[1] || "—").trim() || "—";
-    let montant: number | null = null;
-    let solde: number | null = null;
 
-    if (colDebit >= 0 && colCredit >= 0) {
-      // Format avec colonnes Débit / Crédit séparées
-      const debitStr = cols[colDebit] || "";
-      const creditStr = cols[colCredit] || "";
-      const debit = debitStr ? parseNum(debitStr) : 0;
-      const credit = creditStr ? parseNum(creditStr) : 0;
-      if (credit > 0) montant = credit;
-      else if (debit > 0) montant = -debit;
-      else if (debit < 0) montant = debit; // déjà négatif
-      if (colSolde >= 0 && cols[colSolde]) solde = parseNum(cols[colSolde]) || null;
-    } else if (colMontant >= 0) {
-      montant = parseNum(cols[colMontant]);
-      if (colSolde >= 0 && cols[colSolde]) solde = parseNum(cols[colSolde]) || null;
-    } else {
-      // Fallback : chercher un nombre dans les colonnes 2,3,4
-      for (let ci = 2; ci < Math.min(cols.length, 6); ci++) {
-        const n = parseNum(cols[ci]);
-        if (!isNaN(n) && cols[ci].trim() !== "") { montant = n; break; }
+    if (cols.length >= 6) {
+      // Format BNP 6 colonnes : Date;Type;Sous-type;Libellé long;Date valeur;Montant
+      const type = cols[1] || "";
+      const libelleLong = cols[3] || cols[2] || "";
+      // Libellé = Type – début du libellé long (max 100 chars)
+      const libelle = libelleLong
+        ? `${type} – ${libelleLong}`.slice(0, 100)
+        : (type || "—");
+      const montant = parseNum(cols[5]);
+      if (!isNaN(montant) && montant !== 0) {
+        results.push({ date_operation, libelle, montant, solde: null, banque: "BNP Paribas" });
       }
-    }
-
-    if (montant !== null && !isNaN(montant) && montant !== 0) {
-      results.push({ date_operation, libelle, montant, solde, banque: "BNP Paribas" });
+    } else if (cols.length >= 3) {
+      // Format simplifié : Date;Libellé;Montant[;...]
+      const libelle = cols[1] || "—";
+      const montant = parseNum(cols[cols.length - 1]);
+      if (!isNaN(montant) && montant !== 0) {
+        results.push({ date_operation, libelle, montant, solde: null, banque: "BNP Paribas" });
+      }
     }
   }
   return results;
