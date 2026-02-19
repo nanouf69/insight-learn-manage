@@ -198,6 +198,14 @@ export function RapprochementBancaire() {
     setImporting(false);
   };
 
+  const handlePurgeAll = async () => {
+    if (!confirm(`Supprimer toutes les ${transactions.length} transactions importées et recommencer à zéro ?`)) return;
+    const { error } = await supabase.from("transactions_bancaires").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    if (error) { toast.error("Erreur lors de la suppression"); return; }
+    toast.success("Toutes les transactions supprimées. Vous pouvez réimporter votre CSV.");
+    await fetchAll();
+  };
+
   const quickUpdate = async (id: string, updates: Partial<Transaction>) => {
     await supabase.from("transactions_bancaires").update(updates).eq("id", id);
     await fetchAll();
@@ -326,6 +334,19 @@ export function RapprochementBancaire() {
             className="hidden"
             onChange={e => { const f = e.target.files?.[0]; if (f) handleImportCSV(f); }}
           />
+          {transactions.length > 0 && (
+            <div className="mt-3 flex justify-end">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10 text-xs"
+                onClick={handlePurgeAll}
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                Supprimer toutes les transactions ({transactions.length}) et réimporter
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
