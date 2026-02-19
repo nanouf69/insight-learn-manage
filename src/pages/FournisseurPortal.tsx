@@ -16,7 +16,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { parseDateRange } from "@/lib/parseDateRange";
-import { Plus, Loader2, CalendarIcon, Users, FileText, Receipt, Upload, Trash2, Eye, CalendarDays, BarChart3 } from "lucide-react";
+import { Plus, Loader2, CalendarIcon, Users, FileText, Receipt, Upload, Trash2, Eye, CalendarDays, BarChart3, Mail, Send, Inbox, PenLine } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import logoFtransport from "@/assets/logo-ftransport.png";
 import { RapprochementBancaire } from "@/components/comptabilite/RapprochementBancaire";
 
@@ -113,6 +114,14 @@ export default function FournisseurPortal() {
   const [isUploadingSharedDoc, setIsUploadingSharedDoc] = useState(false);
   const [sharedDocTitre, setSharedDocTitre] = useState("");
 
+  // Email state (comptable mode)
+  const [comptableEmails, setComptableEmails] = useState<any[]>([]);
+  const [composingEmail, setComposingEmail] = useState(false);
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailBody, setEmailBody] = useState("");
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [selectedEmail, setSelectedEmail] = useState<any>(null);
+
   // Apprenant form
   const [showForm, setShowForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -191,6 +200,16 @@ export default function FournisseurPortal() {
       if (docRes.data) setDocuments(docRes.data as FournisseurDocument[]);
       if (facRes.data) setFactures(facRes.data as FournisseurFacture[]);
       if (sharedRes.data) setSharedDocs(sharedRes.data);
+
+      // Charger les emails si comptable
+      if (fournisseur.comptable_only) {
+        const { data: emailData } = await supabase
+          .from('emails')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(100);
+        if (emailData) setComptableEmails(emailData);
+      }
 
       // Charger le planning si c'est un formateur (depuis agenda_blocs)
       if (fournisseur.formateur_id) {
@@ -419,9 +438,11 @@ export default function FournisseurPortal() {
       <div className="max-w-6xl mx-auto p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           {fournisseur?.comptable_only ? (
-            // Mode comptable : rapprochement bancaire uniquement
-            <TabsList className="grid w-full grid-cols-1 mb-6">
-              <TabsTrigger value="rapprochement" className="gap-2"><BarChart3 className="w-4 h-4" />Rapprochement bancaire</TabsTrigger>
+            // Mode comptable : rapprochement bancaire + documents + messages
+            <TabsList className="grid w-full grid-cols-3 mb-6">
+              <TabsTrigger value="rapprochement" className="gap-2"><BarChart3 className="w-4 h-4" />Rapprochement</TabsTrigger>
+              <TabsTrigger value="comptable-docs" className="gap-2"><FileText className="w-4 h-4" />Documents</TabsTrigger>
+              <TabsTrigger value="comptable-messages" className="gap-2"><Mail className="w-4 h-4" />Messages</TabsTrigger>
             </TabsList>
           ) : fournisseur?.formateur_id ? (
             // Formateur : planning + factures + documents
@@ -953,6 +974,210 @@ export default function FournisseurPortal() {
                   </div>
                 </div>
                 <RapprochementBancaire />
+              </div>
+            </TabsContent>
+          )}
+
+          {/* ============ TAB DOCUMENTS (comptable) ============ */}
+          {fournisseur?.comptable_only && (
+            <TabsContent value="comptable-docs">
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Upload className="w-5 h-5" />Envoyer un document</CardTitle>
+                    <CardDescription>Déposez ici vos documents (relevés, justificatifs, rapports…)</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={async (e) => {
+                      e.preventDefault();
+                      if (!fournisseur) return;
+                      const fileInput = document.getElementById('comptable-doc-file') as HTMLInputElement;
+                      const files = fileInput?.files;
+                      if (!files || files.length === 0) {
+                        toast({ title: "Erreur", description: "Veuillez sélectionner un fichier.", variant: "destructive" });
+                        return;
+                      }
+                      setIsUploadingSharedDoc(true);
+                      try {
+                        for (let i = 0; i < files.length; i++) {
+                          const file = files[i];
+                          const safeName = file.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9._-]/g, '_');
+                          const filePath = `${fournisseur.id}/${Date.now()}_${safeName}`;
+                          const { error: uploadErr } = await supabase.storage.from('fournisseur-shared-docs').upload(filePath, file);
+                          if (uploadErr) throw uploadErr;
+                          const { data: { publicUrl } } = supabase.storage.from('fournisseur-shared-docs').getPublicUrl(filePath);
+                          await supabase.from('fournisseur_shared_docs').insert({
+                            fournisseur_id: fournisseur.id,
+                            titre: sharedDocTitre || file.name,
+                            nom_fichier: file.name,
+                            url: publicUrl,
+                            uploaded_by: 'fournisseur',
+                          });
+                        }
+                        toast({ title: "Document envoyé", description: "Le document a été transmis avec succès." });
+                        setSharedDocTitre("");
+                        fileInput.value = "";
+                        const { data } = await supabase.from('fournisseur_shared_docs').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false });
+                        if (data) setSharedDocs(data);
+                      } catch (err: any) {
+                        toast({ title: "Erreur", description: err.message, variant: "destructive" });
+                      } finally {
+                        setIsUploadingSharedDoc(false);
+                      }
+                    }} className="space-y-4">
+                      <div>
+                        <Label htmlFor="comptable-doc-titre">Titre (optionnel)</Label>
+                        <input id="comptable-doc-titre" type="text" placeholder="Ex: Relevé janvier, Rapport mensuel..." value={sharedDocTitre} onChange={e => setSharedDocTitre(e.target.value)} className="w-full border rounded-md px-3 py-2 text-sm mt-1" />
+                      </div>
+                      <div>
+                        <Label htmlFor="comptable-doc-file">Fichier(s)</Label>
+                        <input id="comptable-doc-file" type="file" multiple className="w-full border rounded-md px-3 py-2 text-sm mt-1" />
+                      </div>
+                      <Button type="submit" disabled={isUploadingSharedDoc} className="gap-2">
+                        {isUploadingSharedDoc ? <><Loader2 className="w-4 h-4 animate-spin" />Envoi...</> : <><Upload className="w-4 h-4" />Envoyer</>}
+                      </Button>
+                    </form>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader><CardTitle>Documents partagés ({sharedDocs.length})</CardTitle></CardHeader>
+                  <CardContent>
+                    {sharedDocs.length === 0 ? (
+                      <p className="text-muted-foreground py-4 text-center">Aucun document pour le moment.</p>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {sharedDocs.map((doc: any) => (
+                          <div key={doc.id} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/20">
+                            <div className="p-2 rounded-lg bg-primary/10 shrink-0"><FileText className="w-4 h-4 text-primary" /></div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium text-sm truncate">{doc.titre}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {doc.uploaded_by === 'admin' ? '📤 De Finally Academy' : '📁 Votre document'} · {new Date(doc.created_at).toLocaleDateString('fr-FR')}
+                              </p>
+                            </div>
+                            <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                              <Button variant="outline" size="sm" className="gap-1 shrink-0"><Eye className="w-3 h-3" />Voir</Button>
+                            </a>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          )}
+
+          {/* ============ TAB MESSAGES (comptable) ============ */}
+          {fournisseur?.comptable_only && (
+            <TabsContent value="comptable-messages">
+              <div className="space-y-6">
+                {/* Composer */}
+                {!composingEmail ? (
+                  <Button onClick={() => setComposingEmail(true)} className="gap-2">
+                    <PenLine className="w-4 h-4" />Écrire un message à Finally Academy
+                  </Button>
+                ) : (
+                  <Card>
+                    <CardHeader><CardTitle className="text-base flex items-center gap-2"><PenLine className="w-4 h-4" />Nouveau message</CardTitle></CardHeader>
+                    <CardContent className="space-y-3">
+                      <div>
+                        <Label>Objet</Label>
+                        <input className="w-full border rounded-md px-3 py-2 text-sm mt-1" placeholder="Objet du message" value={emailSubject} onChange={e => setEmailSubject(e.target.value)} />
+                      </div>
+                      <div>
+                        <Label>Message</Label>
+                        <Textarea placeholder="Votre message..." value={emailBody} onChange={e => setEmailBody(e.target.value)} rows={6} className="mt-1" />
+                      </div>
+                      <div className="flex gap-2 justify-end">
+                        <Button variant="outline" onClick={() => { setComposingEmail(false); setEmailSubject(""); setEmailBody(""); }}>Annuler</Button>
+                        <Button disabled={sendingEmail || !emailSubject.trim()} className="gap-2" onClick={async () => {
+                          setSendingEmail(true);
+                          try {
+                            const htmlBody = emailBody.replace(/\n/g, '<br>');
+                            const { data, error } = await supabase.functions.invoke('sync-outlook-emails', {
+                              body: { action: 'send', userEmail: 'contact@ftransport.fr', to: 'contact@ftransport.fr', subject: `[Comptable] ${emailSubject}`, body: htmlBody },
+                            });
+                            if (error) throw error;
+                            if (data?.success) {
+                              await supabase.from('emails').insert({
+                                subject: `[Comptable] ${emailSubject}`,
+                                body_html: htmlBody,
+                                body_preview: emailBody.slice(0, 200),
+                                sender_email: 'mledru@socic.fr',
+                                sender_name: fournisseur.nom,
+                                recipients: ['contact@ftransport.fr'],
+                                type: 'received',
+                                is_read: false,
+                                received_at: new Date().toISOString(),
+                              });
+                              toast({ title: "Message envoyé !" });
+                              setComposingEmail(false); setEmailSubject(""); setEmailBody("");
+                              const { data: emailData } = await supabase.from('emails').select('*').order('created_at', { ascending: false }).limit(100);
+                              if (emailData) setComptableEmails(emailData);
+                            } else throw new Error("Échec de l'envoi");
+                          } catch (err: any) {
+                            toast({ title: "Erreur", description: err.message, variant: "destructive" });
+                          } finally {
+                            setSendingEmail(false);
+                          }
+                        }}>
+                          {sendingEmail ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                          {sendingEmail ? 'Envoi...' : 'Envoyer'}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Historique */}
+                <Card>
+                  <CardHeader><CardTitle className="flex items-center gap-2"><Mail className="w-5 h-5" />Historique des échanges</CardTitle></CardHeader>
+                  <CardContent>
+                    {comptableEmails.length === 0 ? (
+                      <p className="text-muted-foreground py-4 text-center">Aucun message pour le moment.</p>
+                    ) : (
+                      <div className="divide-y">
+                        {comptableEmails.map((email: any) => (
+                          <div key={email.id} className="py-3 cursor-pointer hover:bg-muted/20 rounded px-2" onClick={() => setSelectedEmail(email)}>
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                {email.type === 'sent' ? <Send className="w-3.5 h-3.5 text-primary shrink-0" /> : <Inbox className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
+                                <p className="font-medium text-sm truncate">{email.subject}</p>
+                              </div>
+                              <span className="text-xs text-muted-foreground shrink-0">
+                                {new Date(email.sent_at || email.received_at || email.created_at).toLocaleDateString('fr-FR')}
+                              </span>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1 truncate pl-5">{email.body_preview}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Dialog lecture email */}
+                {selectedEmail && (
+                  <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setSelectedEmail(null)}>
+                    <div className="bg-card rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto p-6 space-y-4" onClick={e => e.stopPropagation()}>
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="font-semibold">{selectedEmail.subject}</h3>
+                        <Button variant="ghost" size="sm" onClick={() => setSelectedEmail(null)}>✕</Button>
+                      </div>
+                      <div className="text-xs text-muted-foreground space-y-1">
+                        <p>De : {selectedEmail.sender_name || selectedEmail.sender_email}</p>
+                        <p>Date : {new Date(selectedEmail.sent_at || selectedEmail.received_at || selectedEmail.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                      </div>
+                      <div className="border rounded p-4 text-sm bg-background">
+                        {selectedEmail.body_html
+                          ? <div dangerouslySetInnerHTML={{ __html: selectedEmail.body_html }} />
+                          : <p className="text-muted-foreground">{selectedEmail.body_preview || 'Aucun contenu'}</p>}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </TabsContent>
           )}

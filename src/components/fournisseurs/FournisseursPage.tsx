@@ -256,13 +256,14 @@ export function FournisseursPage() {
           </div>
 
           <Tabs value={detailTab} onValueChange={setDetailTab}>
-            <TabsList>
+            <TabsList className="flex-wrap">
               <TabsTrigger value="coordonnees" className="gap-2"><Building2 className="w-4 h-4" />Coordonnées</TabsTrigger>
               <TabsTrigger value="bancaire" className="gap-2"><CreditCard className="w-4 h-4" />RIB</TabsTrigger>
               <TabsTrigger value="apprenants" className="gap-2"><Users className="w-4 h-4" />Apprenants ({detailApprenants.length})</TabsTrigger>
-              <TabsTrigger value="shared-docs" className="gap-2"><FileText className="w-4 h-4" />Documents partagés ({detailSharedDocs.length})</TabsTrigger>
+              <TabsTrigger value="shared-docs" className="gap-2"><FileText className="w-4 h-4" />Documents ({detailSharedDocs.length})</TabsTrigger>
               <TabsTrigger value="documents" className="gap-2"><FileText className="w-4 h-4" />Docs apprenants ({detailDocuments.length})</TabsTrigger>
               <TabsTrigger value="factures" className="gap-2"><Receipt className="w-4 h-4" />Factures ({detailFactures.length})</TabsTrigger>
+              <TabsTrigger value="messages" className="gap-2"><Mail className="w-4 h-4" />Messages</TabsTrigger>
             </TabsList>
 
             <TabsContent value="coordonnees">
@@ -490,6 +491,31 @@ export function FournisseursPage() {
                     </CardContent></Card>
                   ))}
                 </div>
+              )}
+            </TabsContent>
+
+            {/* ============ TAB MESSAGES ============ */}
+            <TabsContent value="messages">
+              {selectedFournisseur?.email ? (
+                <div className="space-y-4">
+                  <div className="flex gap-2">
+                    <Button className="gap-2" onClick={() => { setEmailTarget(selectedFournisseur); setEmailDialogOpen(true); }}>
+                      <Mail className="w-4 h-4" />Écrire un email à {selectedFournisseur.nom}
+                    </Button>
+                    <Button variant="outline" className="gap-2" disabled={syncing} onClick={handleSync}>
+                      {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                      Synchroniser Outlook
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Adresse email : <span className="font-medium">{selectedFournisseur.email}</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground italic">
+                    Cliquez sur "Écrire un email" pour consulter l'historique complet des échanges et envoyer un message.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-muted-foreground py-4">Aucune adresse email renseignée pour ce fournisseur.</p>
               )}
             </TabsContent>
           </Tabs>
