@@ -222,17 +222,14 @@ export default function FournisseurPortal() {
           .order('mois_annee', { ascending: false });
         if (relevesData) setReleves(relevesData);
 
-        const { data: ventesData } = await supabase
-          .from('factures')
-          .select('id, numero, client_nom, montant_ttc, montant_ht, statut, date_emission, type_financement')
-          .order('date_emission', { ascending: false });
-        if (ventesData) setFacturesVentes(ventesData);
-
-        const { data: achatsData } = await supabase
-          .from('fournisseur_factures')
-          .select('id, nom_fichier, url, destinataire, montant, description, statut, mois_annee, created_at')
-          .order('created_at', { ascending: false });
-        if (achatsData) setFacturesAchats(achatsData);
+        // Utiliser l'edge function sécurisée pour récupérer les factures (bypasse le RLS admin)
+        const { data: facturesResp, error: facturesErr } = await supabase.functions.invoke('get-comptable-factures', {
+          body: { token },
+        });
+        if (!facturesErr && facturesResp) {
+          setFacturesVentes(facturesResp.ventes || []);
+          setFacturesAchats(facturesResp.achats || []);
+        }
       }
 
       // Charger le planning si c'est un formateur (depuis agenda_blocs)
@@ -1086,9 +1083,11 @@ export default function FournisseurPortal() {
                                 <FileText className="w-5 h-5 text-orange-600" />
                               </div>
                               <div className="min-w-0 flex-1">
-                                <p className="font-medium text-sm truncate">{f.destinataire}</p>
+                                <p className="font-medium text-sm truncate">{(f.fournisseurs as any)?.nom || f.destinataire}</p>
+                                <p className="text-xs text-muted-foreground truncate">{f.nom_fichier}</p>
                                 {f.description && <p className="text-xs text-muted-foreground truncate">{f.description}</p>}
-                                {f.mois_annee && <p className="text-xs text-muted-foreground">{f.mois_annee}</p>}
+                                {f.mois_annee && <p className="text-xs text-muted-foreground">Période : {f.mois_annee}</p>}
+                                {f.date_paiement && <p className="text-xs text-muted-foreground">Payé le {new Date(f.date_paiement).toLocaleDateString('fr-FR')}{f.moyen_paiement ? ` · ${f.moyen_paiement}` : ''}</p>}
                                 {f.montant && (
                                   <p className="text-sm font-semibold mt-1">{Number(f.montant).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</p>
                                 )}
