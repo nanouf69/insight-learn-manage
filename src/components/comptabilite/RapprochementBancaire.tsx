@@ -151,6 +151,19 @@ function parseBNPCsv(text: string): Omit<Transaction, "id" | "statut" | "justifi
   return results;
 }
 
+interface AiSuggestion {
+  scores: { index: number; score: number; raison: string }[];
+  meilleur_index: number;
+  analyse: string;
+}
+
+interface AiConfirmation {
+  valide: boolean;
+  confiance: number;
+  message: string;
+  alerte: string | null;
+}
+
 export function RapprochementBancaire() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [justificatifs, setJustificatifs] = useState<Justificatif[]>([]);
@@ -163,6 +176,10 @@ export function RapprochementBancaire() {
   const [editForm, setEditForm] = useState<Partial<Transaction>>({});
   const [linkDialogId, setLinkDialogId] = useState<string | null>(null);
   const [aiLoadingId, setAiLoadingId] = useState<string | null>(null);
+  const [aiSuggestion, setAiSuggestion] = useState<AiSuggestion | null>(null);
+  const [aiSuggestionLoading, setAiSuggestionLoading] = useState(false);
+  const [aiConfirmation, setAiConfirmation] = useState<AiConfirmation | null>(null);
+  const [confirmingLink, setConfirmingLink] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchAll = useCallback(async () => {
@@ -226,15 +243,56 @@ export function RapprochementBancaire() {
     await fetchAll();
   };
 
+  const openLinkDialog = async (txId: string) => {
+    setLinkDialogId(txId);
+    setAiSuggestion(null);
+    setAiConfirmation(null);
+    const tx = transactions.find(t => t.id === txId);
+    if (!tx || justificatifs.length === 0) return;
+
+    setAiSuggestionLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("match-justificatif", {
+        body: {
+          mode: "suggest",
+          transaction: tx,
+          justificatifs: justificatifs.map((j, i) => ({ ...j, _idx: i })),
+        },
+      });
+      if (!error && data?.scores) setAiSuggestion(data as AiSuggestion);
+    } catch { /* silently ignore */ }
+    setAiSuggestionLoading(false);
+  };
+
   const linkJustificatif = async (txId: string, justId: string) => {
+    const tx = transactions.find(t => t.id === txId);
+    const just = justificatifs.find(j => j.id === justId);
+
+    setConfirmingLink(true);
+    setAiConfirmation(null);
+
+    // Step 1: link in DB
     await supabase.from("transactions_bancaires").update({
       justificatif_id: justId,
       statut: "justifie",
     }).eq("id", txId);
-    // Mark justificatif as linked
     await supabase.from("justificatifs").update({ statut: "traite" }).eq("id", justId);
-    setLinkDialogId(null);
-    toast.success("Justificatif associé !");
+
+    // Step 2: AI confirmation
+    if (tx && just) {
+      try {
+        const { data } = await supabase.functions.invoke("match-justificatif", {
+          body: {
+            mode: "confirm",
+            transaction: tx,
+            selected_justificatif: just,
+          },
+        });
+        if (data) setAiConfirmation(data as AiConfirmation);
+      } catch { /* silently ignore */ }
+    }
+
+    setConfirmingLink(false);
     await fetchAll();
   };
 
@@ -584,10 +642,10 @@ export function RapprochementBancaire() {
                               </>
                             ) : (
                               <>
-                                {/* Quick: link justif */}
+                                {/* Quick: link justif with AI */}
                                 {tx.statut === "non_justifie" && isDebit && (
                                   <Button size="sm" variant="outline" className="h-8 px-2 text-xs gap-1"
-                                    onClick={() => setLinkDialogId(tx.id)}>
+                                    onClick={() => openLinkDialog(tx.id)}>
                                     <Link2 className="h-3.5 w-3.5" />
                                     Justifier
                                   </Button>
@@ -605,7 +663,7 @@ export function RapprochementBancaire() {
                                     }}>
                                       ✏️ Modifier / Catégoriser
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => setLinkDialogId(tx.id)}>
+                                    <DropdownMenuItem onClick={() => openLinkDialog(tx.id)}>
                                       <Link2 className="h-4 w-4 mr-2" /> Associer un justificatif
                                     </DropdownMenuItem>
                                     {tx.statut !== "justifie" && (
@@ -637,56 +695,160 @@ export function RapprochementBancaire() {
         })
       )}
 
-      {/* Dialog: link justificatif */}
-      <Dialog open={!!linkDialogId} onOpenChange={o => !o && setLinkDialogId(null)}>
-        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+      {/* Dialog: link justificatif with AI (pre + post analysis) */}
+      <Dialog open={!!linkDialogId} onOpenChange={o => { if (!o) { setLinkDialogId(null); setAiSuggestion(null); setAiConfirmation(null); } }}>
+        <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Associer un justificatif</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Link2 className="h-5 w-5" />
+              Associer un justificatif
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-2 mt-2">
-            {justificatifs.length === 0 ? (
-              <p className="text-muted-foreground text-sm text-center py-8">
-                Aucun justificatif disponible. Ajoutez-en dans l'onglet "Justificatifs".
-              </p>
-            ) : (
-              justificatifs.map(j => {
-                const tx = transactions.find(t => t.id === linkDialogId);
-                const montantProche = tx && j.montant_ttc
-                  ? Math.abs(Math.abs(tx.montant) - j.montant_ttc) < 1
-                  : false;
 
-                return (
-                  <div
-                    key={j.id}
-                    className={cn(
-                      "flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/40 transition-colors",
-                      montantProche && "border-emerald-400 bg-emerald-50/50"
-                    )}
-                    onClick={() => linkDialogId && linkJustificatif(linkDialogId, j.id)}
-                  >
-                    <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{j.nom_fichier}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {j.fournisseur && <span className="mr-2">{j.fournisseur}</span>}
-                        {j.date_operation && format(new Date(j.date_operation), "dd/MM/yyyy")}
-                      </p>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      {j.montant_ttc != null && (
-                        <p className={cn("text-sm font-semibold", montantProche ? "text-emerald-600" : "")}>
-                          {new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(j.montant_ttc)}
-                        </p>
-                      )}
-                      {montantProche && <Badge className="text-[9px] bg-emerald-100 text-emerald-700">Montant ≈</Badge>}
-                    </div>
+          {/* POST-LINK: AI Confirmation panel */}
+          {aiConfirmation && (
+            <div className={cn(
+              "rounded-lg p-4 border-2 space-y-2",
+              aiConfirmation.valide ? "border-emerald-400 bg-emerald-50" : "border-amber-400 bg-amber-50"
+            )}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {aiConfirmation.valide
+                    ? <CheckCircle className="h-5 w-5 text-emerald-600" />
+                    : <AlertCircle className="h-5 w-5 text-amber-600" />
+                  }
+                  <span className="font-semibold text-sm">
+                    {aiConfirmation.valide ? "✅ Rapprochement validé par l'IA" : "⚠️ Avertissement IA"}
+                  </span>
+                </div>
+                <Badge className={cn(
+                  "text-xs",
+                  aiConfirmation.confiance >= 80 ? "bg-emerald-100 text-emerald-700" :
+                  aiConfirmation.confiance >= 50 ? "bg-amber-100 text-amber-700" :
+                  "bg-red-100 text-red-700"
+                )}>
+                  {aiConfirmation.confiance}% confiance
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground">{aiConfirmation.message}</p>
+              {aiConfirmation.alerte && (
+                <p className="text-sm text-amber-700 font-medium">⚠️ {aiConfirmation.alerte}</p>
+              )}
+              <Button size="sm" variant="outline" className="w-full mt-2"
+                onClick={() => { setLinkDialogId(null); setAiConfirmation(null); }}>
+                Fermer
+              </Button>
+            </div>
+          )}
+
+          {!aiConfirmation && (
+            <>
+              {/* PRE-LINK: AI Analysis loading */}
+              {aiSuggestionLoading && (
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-purple-50 border border-purple-200 text-purple-700">
+                  <RefreshCw className="h-4 w-4 animate-spin flex-shrink-0" />
+                  <span className="text-sm">L'IA analyse les correspondances...</span>
+                </div>
+              )}
+
+              {/* PRE-LINK: AI Analysis result */}
+              {aiSuggestion && !aiSuggestionLoading && (
+                <div className="p-3 rounded-lg bg-purple-50 border border-purple-200 space-y-1">
+                  <div className="flex items-center gap-2 text-purple-700">
+                    <Sparkles className="h-4 w-4" />
+                    <span className="text-sm font-semibold">Analyse IA</span>
                   </div>
-                );
-              })
-            )}
-          </div>
+                  <p className="text-xs text-purple-600">{aiSuggestion.analyse}</p>
+                </div>
+              )}
+
+              {/* Confirming state */}
+              {confirmingLink && (
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-700">
+                  <RefreshCw className="h-4 w-4 animate-spin flex-shrink-0" />
+                  <span className="text-sm">L'IA confirme le rapprochement...</span>
+                </div>
+              )}
+
+              {/* Justificatif list */}
+              <div className="space-y-2 mt-1">
+                {justificatifs.length === 0 ? (
+                  <p className="text-muted-foreground text-sm text-center py-8">
+                    Aucun justificatif disponible. Ajoutez-en dans l'onglet "Justificatifs".
+                  </p>
+                ) : (
+                  justificatifs.map((j, idx) => {
+                    const tx = transactions.find(t => t.id === linkDialogId);
+                    const montantProche = tx && j.montant_ttc
+                      ? Math.abs(Math.abs(tx.montant) - j.montant_ttc) < 1
+                      : false;
+                    const aiScore = aiSuggestion?.scores?.find(s => s.index === idx);
+                    const isBestMatch = aiSuggestion?.meilleur_index === idx;
+
+                    return (
+                      <div
+                        key={j.id}
+                        className={cn(
+                          "flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all",
+                          isBestMatch
+                            ? "border-purple-400 bg-purple-50/60 hover:bg-purple-50"
+                            : montantProche
+                            ? "border-emerald-400 bg-emerald-50/50 hover:bg-emerald-50"
+                            : "border-border hover:bg-muted/40",
+                          confirmingLink && "pointer-events-none opacity-50"
+                        )}
+                        onClick={() => linkDialogId && !confirmingLink && linkJustificatif(linkDialogId, j.id)}
+                      >
+                        <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-sm font-medium truncate">{j.nom_fichier}</p>
+                            {isBestMatch && (
+                              <Badge className="text-[9px] bg-purple-100 text-purple-700 gap-1">
+                                <Sparkles className="h-2.5 w-2.5" /> IA recommande
+                              </Badge>
+                            )}
+                            {montantProche && !isBestMatch && (
+                              <Badge className="text-[9px] bg-emerald-100 text-emerald-700">Montant ≈</Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {j.fournisseur && <span className="mr-2">{j.fournisseur}</span>}
+                            {j.date_operation && format(new Date(j.date_operation), "dd/MM/yyyy")}
+                          </p>
+                          {aiScore && (
+                            <p className="text-[10px] text-purple-600 mt-0.5">{aiScore.raison}</p>
+                          )}
+                        </div>
+                        <div className="text-right flex-shrink-0 space-y-1">
+                          {j.montant_ttc != null && (
+                            <p className={cn("text-sm font-semibold",
+                              montantProche ? "text-emerald-600" : isBestMatch ? "text-purple-700" : ""
+                            )}>
+                              {new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(j.montant_ttc)}
+                            </p>
+                          )}
+                          {aiScore && (
+                            <div className={cn(
+                              "text-[10px] font-bold px-1.5 py-0.5 rounded",
+                              aiScore.score >= 70 ? "bg-purple-100 text-purple-700" :
+                              aiScore.score >= 40 ? "bg-amber-100 text-amber-700" :
+                              "bg-muted text-muted-foreground"
+                            )}>
+                              {aiScore.score}%
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>
   );
 }
+

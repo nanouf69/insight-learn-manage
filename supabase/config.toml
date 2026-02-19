@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.categorize-justificatif]
 verify_jwt = false
+
+[functions.match-justificatif]
+verify_jwt = false
