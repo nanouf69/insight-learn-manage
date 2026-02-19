@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { JustificatifsTab } from "./JustificatifsTab";
+import { RapprochementBancaire } from "./RapprochementBancaire";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -444,6 +445,9 @@ export function ComptabilitePage() {
           </TabsTrigger>
           <TabsTrigger value="justificatifs" className="gap-2">
             <Receipt className="h-4 w-4" /> Justificatifs
+          </TabsTrigger>
+          <TabsTrigger value="rapprochement" className="gap-2 relative">
+            <Link2 className="h-4 w-4" /> Rapprochement bancaire
           </TabsTrigger>
         </TabsList>
 
@@ -1190,6 +1194,11 @@ export function ComptabilitePage() {
         {/* === JUSTIFICATIFS === */}
         <TabsContent value="justificatifs" className="space-y-6">
           <JustificatifsTab />
+        </TabsContent>
+
+        {/* === RAPPROCHEMENT BANCAIRE === */}
+        <TabsContent value="rapprochement" className="space-y-6">
+          <RapprochementBancaire />
         </TabsContent>
       </Tabs>
     </div>
