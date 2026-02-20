@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { FileText, Download, Plus, Trash2, Eye, CheckCircle2, XCircle, Clock, Receipt } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { FileText, Download, Plus, Trash2, Eye, CheckCircle2, XCircle, Clock, Receipt, PenLine, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -187,6 +187,76 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   const [statutDevis, setStatutDevis] = useState<'en_attente' | 'valide' | 'refuse'>('en_attente');
   const [creatingFacture, setCreatingFacture] = useState(false);
   const [factureCreee, setFactureCreee] = useState<string | null>(null);
+  const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const lastPos = useRef<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#1e3a8a';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+  }, []);
+
+  const getPos = (e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    if ('touches' in e) {
+      const touch = e.touches[0];
+      return { x: (touch.clientX - rect.left) * scaleX, y: (touch.clientY - rect.top) * scaleY };
+    }
+    return { x: ((e as React.MouseEvent).clientX - rect.left) * scaleX, y: ((e as React.MouseEvent).clientY - rect.top) * scaleY };
+  };
+
+  const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    setIsDrawing(true);
+    lastPos.current = getPos(e, canvas);
+  };
+
+  const draw = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    if (!isDrawing) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx || !lastPos.current) return;
+    const pos = getPos(e, canvas);
+    ctx.beginPath();
+    ctx.moveTo(lastPos.current.x, lastPos.current.y);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    lastPos.current = pos;
+  };
+
+  const stopDrawing = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    if (!isDrawing) return;
+    setIsDrawing(false);
+    lastPos.current = null;
+    const canvas = canvasRef.current;
+    if (canvas) setSignatureDataUrl(canvas.toDataURL('image/png'));
+  };
+
+  const clearSignature = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    setSignatureDataUrl(null);
+  };
 
   const addLigne = () => {
     setLignes(prev => [...prev, {
@@ -486,12 +556,37 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       doc.setFontSize(8);
       doc.setTextColor(0, 0, 0);
       doc.text(`A Lyon, le ${format(new Date(dateDevis), 'dd MMMM yyyy', { locale: fr })}`, margin, y);
-      y += 5;
+      y += 6;
+
+      // Bloc signature client (gauche) et ftransport (droite)
+      const sigBoxW = 80;
+      const sigBoxH = 30;
+      const sigClientX = margin;
+      const sigFtransX = pageW - margin - sigBoxW;
+
+      // Encadré signature client
       doc.setDrawColor(180, 180, 180);
-      doc.line(margin, y, margin + 75, y);
+      doc.rect(sigClientX, y, sigBoxW, sigBoxH);
       doc.setFontSize(7.5);
       doc.setTextColor(100, 100, 100);
-      doc.text('Signature et mention "Bon pour accord"', margin, y + 4);
+      doc.text('Signature client + "Bon pour accord"', sigClientX + 2, y + 5);
+
+      // Injecter la signature électronique si elle existe
+      if (signatureDataUrl) {
+        doc.addImage(signatureDataUrl, 'PNG', sigClientX + 2, y + 7, sigBoxW - 4, sigBoxH - 9);
+        doc.setFontSize(6.5);
+        doc.setTextColor(30, 58, 138);
+        doc.text(`Signe electroniquement le ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, sigClientX + 2, y + sigBoxH - 2);
+      }
+
+      // Encadré signature Ftransport
+      doc.setDrawColor(180, 180, 180);
+      doc.rect(sigFtransX, y, sigBoxW, sigBoxH);
+      doc.setFontSize(7.5);
+      doc.setTextColor(100, 100, 100);
+      doc.text('Pour FTRANSPORT', sigFtransX + 2, y + 5);
+      doc.setFontSize(7);
+      doc.text('Le responsable de formation', sigFtransX + 2, y + 9);
 
       doc.setFontSize(6.5);
       doc.setTextColor(140, 140, 140);
@@ -711,6 +806,47 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
               placeholder="Conditions particulières, modalités de paiement, informations complémentaires..."
               className="min-h-[80px]"
             />
+          </div>
+
+          <Separator />
+
+          {/* Signature électronique */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-semibold flex items-center gap-2">
+                <PenLine className="w-4 h-4 text-primary" />
+                Signature électronique client
+              </Label>
+              <Button variant="ghost" size="sm" onClick={clearSignature} className="text-muted-foreground hover:text-destructive gap-1 text-xs">
+                <RotateCcw className="w-3 h-3" />
+                Effacer
+              </Button>
+            </div>
+            <div className="border-2 border-dashed border-border rounded-lg overflow-hidden bg-white relative">
+              <canvas
+                ref={canvasRef}
+                width={800}
+                height={200}
+                className="w-full h-32 cursor-crosshair touch-none"
+                onMouseDown={startDrawing}
+                onMouseMove={draw}
+                onMouseUp={stopDrawing}
+                onMouseLeave={stopDrawing}
+                onTouchStart={startDrawing}
+                onTouchMove={draw}
+                onTouchEnd={stopDrawing}
+              />
+              {!signatureDataUrl && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <span className="text-muted-foreground text-sm">Signez ici avec votre souris ou votre doigt</span>
+                </div>
+              )}
+            </div>
+            {signatureDataUrl && (
+              <p className="text-xs text-green-600 flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" /> Signature enregistrée — elle sera intégrée dans le PDF
+              </p>
+            )}
           </div>
 
           <Separator />
