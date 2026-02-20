@@ -40,6 +40,10 @@ export interface ExamenBlanc {
  * - Toutes les autres matières : QCM=1pt, QRC=2pts
  */
 export function getPointsParQuestion(matiereId: string, questionType: QuestionType): number {
+  // Matières Bilan : tout est à 1 point (QCM uniquement)
+  if (matiereId.startsWith("bilan_")) {
+    return 1;
+  }
   if (matiereId === "francais") {
     return questionType === "QCM" ? 2 : 2;
   }
@@ -4179,6 +4183,204 @@ export const examenBlanc6VTC: ExamenBlanc = {
   ]
 };
 
+// ===== BILAN EXAMEN TAXI =====
+
+const bilan_t3p_taxi: Matiere = {
+  id: "bilan_t3p",
+  nom: "A - Transport Public Particulier de Personnes (T3P)",
+  duree: 45,
+  coefficient: 3,
+  noteEliminatoire: 0,
+  noteSur: 7,
+  questions: [
+    { id: 1, type: "QCM", enonce: "Parmi les entreprises du T3P, quelles sont celles soumises à l'obligation de s'assurer en responsabilité civile professionnelle ?", choix: [{ lettre: "A", texte: "VTC et 2 ou 3 roues" }, { lettre: "B", texte: "Le taxi, VTC et 2 ou 3 roues seulement" }, { lettre: "C", texte: "Le taxi seulement" }, { lettre: "D", texte: "Le taxi et le VTC seulement", correct: true }] },
+    { id: 2, type: "QCM", enonce: "Qui préside la commission locale du T3P ?", choix: [{ lettre: "A", texte: "Le représentant de chaque collège à tour de rôle" }, { lettre: "B", texte: "Le directeur des transports du département" }, { lettre: "C", texte: "Le Président de la chambre de métiers" }, { lettre: "D", texte: "Le préfet ou son représentant", correct: true }] },
+    { id: 3, type: "QCM", enonce: "Quelles sont les sanctions possibles en cas d'exercice illégal d'une des professions du T3P ?", choix: [{ lettre: "A", texte: "Une amende de 30 000 € et deux ans d'emprisonnement" }, { lettre: "B", texte: "Une amende de 1 500 € et six mois d'emprisonnement" }, { lettre: "C", texte: "Une amende de 15 000 € et un an d'emprisonnement", correct: true }] },
+    { id: 4, type: "QCM", enonce: "Quels agents sont habilités à effectuer un contrôle routier de conducteur de T3P ?", choix: [{ lettre: "A", texte: "Les agents représentant la SNCF" }, { lettre: "B", texte: "Les gendarmes", correct: true }, { lettre: "C", texte: "Le juge du tribunal d'instance" }, { lettre: "D", texte: "Les policiers", correct: true }] },
+    { id: 5, type: "QCM", enonce: "Quelles sont les conditions requises pour pouvoir passer l'examen de T3P ?", choix: [{ lettre: "A", texte: "Avoir son permis de conduire depuis plus de 5 ans" }, { lettre: "B", texte: "Casier judiciaire B2 vierge", correct: true }, { lettre: "C", texte: "Avoir 10 points minimum sur son permis de conduire", correct: true }] },
+    { id: 6, type: "QCM", enonce: "Quelle est la durée du mandat des membres de la commission locale des T3P ?", choix: [{ lettre: "A", texte: "2 ans" }, { lettre: "B", texte: "5 ans", correct: true }, { lettre: "C", texte: "3 ans" }, { lettre: "D", texte: "1 an" }] },
+    { id: 7, type: "QCM", enonce: "Qui délivre les agréments aux centres de formation ?", choix: [{ lettre: "A", texte: "L'association permanente des chambres de métiers et de l'artisanat" }, { lettre: "B", texte: "Les conseils départementaux" }, { lettre: "C", texte: "Le ministère des transports" }, { lettre: "D", texte: "Les préfectures", correct: true }] },
+  ]
+};
+
+const bilan_gestion_taxi: Matiere = {
+  id: "bilan_gestion",
+  nom: "B - Gestion",
+  duree: 45,
+  coefficient: 2,
+  noteEliminatoire: 0,
+  noteSur: 7,
+  questions: [
+    { id: 1, type: "QCM", enonce: "À l'actif du bilan figure :", choix: [{ lettre: "A", texte: "Les créances des clients", correct: true }, { lettre: "B", texte: "Le capital" }, { lettre: "C", texte: "Le bénéfice de l'année" }] },
+    { id: 2, type: "QCM", enonce: "Quelle mention n'est pas obligatoire sur le bulletin de salaire ?", choix: [{ lettre: "A", texte: "Le montant net à payer" }, { lettre: "B", texte: "Le diplôme du salarié", correct: true }, { lettre: "C", texte: "La convention collective applicable" }] },
+    { id: 3, type: "QCM", enonce: "La SAS est sur le plan juridique :", choix: [{ lettre: "A", texte: "Une personne juridique" }, { lettre: "B", texte: "Une personne morale", correct: true }, { lettre: "C", texte: "Une personne professionnelle" }, { lettre: "D", texte: "Une personne physique" }] },
+    { id: 4, type: "QCM", enonce: "Dans un bilan comptable, un amortissement fait baisser :", choix: [{ lettre: "A", texte: "Les charges" }, { lettre: "B", texte: "Le bénéfice", correct: true }, { lettre: "C", texte: "L'imposition" }] },
+    { id: 5, type: "QCM", enonce: "La libération totale du capital social dans une SARL doit intervenir au plus tard dans un délai de :", choix: [{ lettre: "A", texte: "99 ans" }, { lettre: "B", texte: "5 ans", correct: true }, { lettre: "C", texte: "10 ans" }, { lettre: "D", texte: "1 an" }] },
+    { id: 6, type: "QCM", enonce: "Les montants figurant dans le compte de résultat sont :", choix: [{ lettre: "A", texte: "HT", correct: true }, { lettre: "B", texte: "TTC" }, { lettre: "C", texte: "BIC" }] },
+    { id: 7, type: "QCM", enonce: "Qu'est-ce qu'un chiffre d'affaires ?", choix: [{ lettre: "A", texte: "L'argent qui reste en banque après avoir payé toutes les charges" }, { lettre: "B", texte: "L'ensemble des commandes ou devis" }, { lettre: "C", texte: "L'ensemble des sommes facturées aux clients", correct: true }, { lettre: "D", texte: "La différence entre les produits et les charges" }] },
+  ]
+};
+
+const bilan_securite_taxi: Matiere = {
+  id: "bilan_securite",
+  nom: "C - Sécurité routière",
+  duree: 30,
+  coefficient: 3,
+  noteEliminatoire: 0,
+  noteSur: 7,
+  questions: [
+    { id: 1, type: "QCM", enonce: "Sur les routes à 2x2 voies séparées par une ligne continue, la vitesse est limitée à :", choix: [{ lettre: "A", texte: "90 km/h" }, { lettre: "B", texte: "110 km/h", correct: true }, { lettre: "C", texte: "130 km/h" }] },
+    { id: 2, type: "QCM", enonce: "En agglomération éclairée la nuit :", choix: [{ lettre: "A", texte: "Je dois rouler en feux de croisement" }, { lettre: "B", texte: "Je peux rouler en feux de position", correct: true }, { lettre: "C", texte: "Je peux rouler sans feux" }] },
+    { id: 3, type: "QCM", enonce: "La roue de secours est-elle obligatoire dans une voiture ?", choix: [{ lettre: "A", texte: "Non, la réglementation française ne l'impose pas", correct: true }, { lettre: "B", texte: "Oui, il s'agit d'un équipement de sécurité" }, { lettre: "C", texte: "Oui, il s'agit d'une obligation européenne" }] },
+    { id: 4, type: "QCM", enonce: "En roulant à 90 km/h, un conducteur doit laisser une distance de sécurité de :", choix: [{ lettre: "A", texte: "20 mètres environ" }, { lettre: "B", texte: "80 mètres environ" }, { lettre: "C", texte: "50 mètres environ", correct: true }, { lettre: "D", texte: "30 mètres environ" }] },
+    { id: 5, type: "QCM", enonce: "Je dépasse un cycliste hors agglomération, je dois laisser un espace de sécurité :", choix: [{ lettre: "A", texte: "De 2,50 m" }, { lettre: "B", texte: "De 1 m" }, { lettre: "C", texte: "De 1,5 m", correct: true }] },
+    { id: 6, type: "QCM", enonce: "Pour faire établir une nouvelle carte grise lors d'un changement de domicile, le propriétaire dispose de :", choix: [{ lettre: "A", texte: "3 semaines" }, { lettre: "B", texte: "1 mois", correct: true }, { lettre: "C", texte: "15 jours" }] },
+    { id: 7, type: "QCM", enonce: "Conduire durant une période de suspension :", choix: [{ lettre: "A", texte: "Je commets un délit", correct: true }, { lettre: "B", texte: "Je risque un retrait de 6 points de mon permis de conduire" }, { lettre: "C", texte: "Il ne peut pas y avoir de retrait de point" }] },
+  ]
+};
+
+const bilan_francais_taxi: Matiere = {
+  id: "bilan_francais",
+  nom: "D - Français",
+  duree: 30,
+  coefficient: 2,
+  noteEliminatoire: 0,
+  noteSur: 7,
+  questions: [
+    { id: 1, type: "QCM", enonce: "Quelle phrase est correctement orthographiée ?", choix: [{ lettre: "A", texte: "Le client a réservé son taxi pour demain matin.", correct: true }, { lettre: "B", texte: "Le client as réservé son taxi pour demain matin." }, { lettre: "C", texte: "Le client à réservé son taxi pour demain matin." }] },
+    { id: 2, type: "QCM", enonce: "Quel est le synonyme du mot 'ponctuel' ?", choix: [{ lettre: "A", texte: "En retard" }, { lettre: "B", texte: "À l'heure", correct: true }, { lettre: "C", texte: "Pressé" }] },
+    { id: 3, type: "QCM", enonce: "Quelle est la forme correcte du pluriel de 'œil' ?", choix: [{ lettre: "A", texte: "Œils" }, { lettre: "B", texte: "Yeux", correct: true }, { lettre: "C", texte: "Œuils" }] },
+    { id: 4, type: "QCM", enonce: "Dans la phrase 'Le chauffeur roule prudemment', 'prudemment' est :", choix: [{ lettre: "A", texte: "Un adjectif" }, { lettre: "B", texte: "Un nom" }, { lettre: "C", texte: "Un adverbe", correct: true }] },
+    { id: 5, type: "QCM", enonce: "Quelle est la forme correcte du participe passé ?", choix: [{ lettre: "A", texte: "La cliente que j'ai conduit." }, { lettre: "B", texte: "La cliente que j'ai conduite.", correct: true }, { lettre: "C", texte: "La cliente que j'ai conduits." }] },
+    { id: 6, type: "QCM", enonce: "Quel mot est un antonyme de 'rapide' ?", choix: [{ lettre: "A", texte: "Vif" }, { lettre: "B", texte: "Lent", correct: true }, { lettre: "C", texte: "Alerte" }] },
+    { id: 7, type: "QCM", enonce: "Quelle phrase utilise correctement l'accord du verbe ?", choix: [{ lettre: "A", texte: "Les clients arrivent à l'heure.", correct: true }, { lettre: "B", texte: "Les clients arrive à l'heure." }, { lettre: "C", texte: "Les clients arrives à l'heure." }] },
+  ]
+};
+
+const bilan_anglais_taxi: Matiere = {
+  id: "bilan_anglais",
+  nom: "E - Anglais",
+  duree: 30,
+  coefficient: 1,
+  noteEliminatoire: 0,
+  noteSur: 7,
+  questions: [
+    { id: 1, type: "QCM", enonce: "How do you say 'Bienvenue' in English?", choix: [{ lettre: "A", texte: "Goodbye" }, { lettre: "B", texte: "Welcome", correct: true }, { lettre: "C", texte: "Thank you" }] },
+    { id: 2, type: "QCM", enonce: "Which sentence is correct?", choix: [{ lettre: "A", texte: "Where do you want to go?" , correct: true }, { lettre: "B", texte: "Where you want to go?" }, { lettre: "C", texte: "Where does you want to go?" }] },
+    { id: 3, type: "QCM", enonce: "What does 'Please fasten your seatbelt' mean?", choix: [{ lettre: "A", texte: "Veuillez ouvrir la fenêtre" }, { lettre: "B", texte: "Veuillez attacher votre ceinture", correct: true }, { lettre: "C", texte: "Veuillez éteindre votre téléphone" }] },
+    { id: 4, type: "QCM", enonce: "How do you ask for the destination in English?", choix: [{ lettre: "A", texte: "What is your name?" }, { lettre: "B", texte: "Where are you going?", correct: true }, { lettre: "C", texte: "How much do you want?" }] },
+    { id: 5, type: "QCM", enonce: "What does 'airport' mean in French?", choix: [{ lettre: "A", texte: "Gare" }, { lettre: "B", texte: "Port" }, { lettre: "C", texte: "Aéroport", correct: true }] },
+    { id: 6, type: "QCM", enonce: "Which is the correct way to say the time '14h30' in English?", choix: [{ lettre: "A", texte: "Two thirty PM", correct: true }, { lettre: "B", texte: "Fourteen thirty" }, { lettre: "C", texte: "Two PM thirty" }] },
+    { id: 7, type: "QCM", enonce: "How do you say 'Avez-vous besoin d'aide avec vos bagages?' in English?", choix: [{ lettre: "A", texte: "Do you have luggage?" }, { lettre: "B", texte: "Where is your luggage?" }, { lettre: "C", texte: "Do you need help with your luggage?", correct: true }] },
+  ]
+};
+
+const bilan_reglementation_taxi_specifique: Matiere = {
+  id: "bilan_reglementation_taxi",
+  nom: "F - Réglementation nationale spécifique à l'activité de TAXI",
+  duree: 30,
+  coefficient: 3,
+  noteEliminatoire: 0,
+  noteSur: 7,
+  questions: [
+    { id: 1, type: "QCM", enonce: "Qui a le droit de circuler sur une voie de Bus ?", choix: [{ lettre: "A", texte: "Taxi dans sa zone de rattachement", correct: true }, { lettre: "B", texte: "Taxi dans sa zone de rattachement et hors zone" }, { lettre: "C", texte: "VTC" }, { lettre: "D", texte: "VTC conventionné" }] },
+    { id: 2, type: "QCM", enonce: "Qui a le droit à la location à la place ?", choix: [{ lettre: "A", texte: "Les VTC" }, { lettre: "B", texte: "Les chauffeurs taxi", correct: true }, { lettre: "C", texte: "Les VMDTR" }] },
+    { id: 3, type: "QCM", enonce: "Un client avec une prescription médicale sera remboursé de son transport s'il utilise :", choix: [{ lettre: "A", texte: "Un taxi conventionné ou un VTC conventionné" }, { lettre: "B", texte: "Un VTC conventionné ou un taxi moto conventionné" }, { lettre: "C", texte: "Un taxi conventionné", correct: true }] },
+    { id: 4, type: "QCM", enonce: "À partir de quel montant minimal le conducteur de taxi a-t-il l'obligation de fournir une note de course ?", choix: [{ lettre: "A", texte: "25 €" }, { lettre: "B", texte: "Il n'y a pas de montant minimal si c'est à la demande du client", correct: true }, { lettre: "C", texte: "1 euro" }, { lettre: "D", texte: "15,24 €" }] },
+    { id: 5, type: "QCM", enonce: "La carte professionnelle d'un conducteur de T3P :", choix: [{ lettre: "A", texte: "Doit être apposée de telle manière que la photographie soit visible de l'intérieur par le client", correct: true }, { lettre: "B", texte: "Il n'y a pas d'obligation d'apposer sa carte professionnelle dans le véhicule" }, { lettre: "C", texte: "Doit être apposée de telle manière que la photographie soit visible de l'extérieur" }] },
+    { id: 6, type: "QCM", enonce: "La quelle des professions suivantes peut stationner sur la voie publique en attente de clientèle ?", choix: [{ lettre: "A", texte: "VTC" }, { lettre: "B", texte: "VMDTR" }, { lettre: "C", texte: "TAXI", correct: true }] },
+    { id: 7, type: "QCM", enonce: "Qui parmi les T3P peuvent être conventionnés par la caisse d'assurance maladie ?", choix: [{ lettre: "A", texte: "Les taxis", correct: true }, { lettre: "B", texte: "Les VTC" }, { lettre: "C", texte: "Les véhicules motorisés à 2 ou 3 roues" }] },
+  ]
+};
+
+const bilan_reglementation_taxi_locale: Matiere = {
+  id: "bilan_reglementation_taxi2",
+  nom: "G(T) - Réglementation nationale spécifique à l'activité de TAXI (locale)",
+  duree: 20,
+  coefficient: 3,
+  noteEliminatoire: 0,
+  noteSur: 7,
+  questions: [
+    { id: 1, type: "QCM", enonce: "Quelle est la périodicité de la formation continue pour le T3P ?", choix: [{ lettre: "A", texte: "Tous les 2 ans" }, { lettre: "B", texte: "Tous les 5 ans", correct: true }, { lettre: "C", texte: "Jamais" }, { lettre: "D", texte: "Chaque année" }] },
+    { id: 2, type: "QCM", enonce: "Quelle est la périodicité de la visite médicale d'un conducteur âgé de 61 ans à ce jour ?", choix: [{ lettre: "A", texte: "2 ans" }, { lettre: "B", texte: "5 ans" }, { lettre: "C", texte: "7 ans" }, { lettre: "D", texte: "1 an", correct: true }] },
+    { id: 3, type: "QCM", enonce: "Les conducteurs de T3P bénéficient-ils d'un régime particulier au niveau de la limitation de vitesse ?", choix: [{ lettre: "A", texte: "Pas de régime particulier", correct: true }, { lettre: "B", texte: "Oui, suivant l'accord conclu avec le ministère de l'intérieur" }, { lettre: "C", texte: "Oui ou non en fonction du véhicule utilisé" }] },
+    { id: 4, type: "QCM", enonce: "Quelle est l'autorité compétente organisatrice de l'examen du T3P ?", choix: [{ lettre: "A", texte: "Les centres de formation" }, { lettre: "B", texte: "La chambre de métiers et de l'artisanat" }, { lettre: "C", texte: "La chambre de commerce et d'industrie" }, { lettre: "D", texte: "La préfecture", correct: true }] },
+    { id: 5, type: "QCM", enonce: "Si un chauffeur utilise son véhicule T3P dans le cadre d'une activité non-professionnelle, que doit-il faire ?", choix: [{ lettre: "A", texte: "Enlever ou occulter toutes références à la profession exercée", correct: true }, { lettre: "B", texte: "Ne rien faire de spécifique" }, { lettre: "C", texte: "Il n'a pas le droit d'utiliser son véhicule en dehors de son activité professionnelle" }] },
+    { id: 6, type: "QCM", enonce: "Depuis l'arrêté du Août 2017, la durée minimum de la formation continue obligatoire des conducteurs de T3P est de :", choix: [{ lettre: "A", texte: "35 heures" }, { lettre: "B", texte: "7 heures", correct: true }, { lettre: "C", texte: "14 heures" }] },
+    { id: 7, type: "QCM", enonce: "De quel ministère dépend l'activité principale des T3P ?", choix: [{ lettre: "A", texte: "Ministère du tourisme" }, { lettre: "B", texte: "Ministère de l'économie" }, { lettre: "C", texte: "Ministère du transport", correct: true }, { lettre: "D", texte: "Ministère de l'intérieur" }] },
+  ]
+};
+
+export const bilanExamenTaxi: ExamenBlanc = {
+  id: "bilan-taxi",
+  numero: 7,
+  type: "TAXI",
+  titre: "Bilan Examen TAXI",
+  matieres: [
+    bilan_t3p_taxi,
+    bilan_gestion_taxi,
+    bilan_securite_taxi,
+    bilan_francais_taxi,
+    bilan_anglais_taxi,
+    bilan_reglementation_taxi_specifique,
+    bilan_reglementation_taxi_locale,
+  ]
+};
+
+// ===== BILAN EXAMEN VTC =====
+
+const bilan_reglementation_vtc_specifique: Matiere = {
+  id: "bilan_reglementation_vtc",
+  nom: "F - Réglementation nationale spécifique à l'activité de VTC",
+  duree: 30,
+  coefficient: 3,
+  noteEliminatoire: 0,
+  noteSur: 7,
+  questions: [
+    { id: 1, type: "QCM", enonce: "La location à la place est interdite pour :", choix: [{ lettre: "A", texte: "Les taxis" }, { lettre: "B", texte: "Les VTC", correct: true }, { lettre: "C", texte: "Le transport soumis au régime LOTI" }] },
+    { id: 2, type: "QCM", enonce: "Un chauffeur VMDTR doit :", choix: [{ lettre: "A", texte: "Donner une facture automatiquement à son client dès 25 €" }, { lettre: "B", texte: "Donner une facture si uniquement le client demande lorsque la course est inférieure à 25€", correct: true }, { lettre: "C", texte: "Ne pas donner de facture" }] },
+    { id: 3, type: "QCM", enonce: "Qui parmi les T3P ne peuvent PAS être conventionnés par la caisse d'assurance maladie ?", choix: [{ lettre: "A", texte: "Les taxis" }, { lettre: "B", texte: "Les VTC", correct: true }, { lettre: "C", texte: "Les taxis et VTC" }] },
+    { id: 4, type: "QCM", enonce: "Dans quel cas un bon de mission VTC n'est pas obligatoire ?", choix: [{ lettre: "A", texte: "Pour un transport TPMR" }, { lettre: "B", texte: "Pour le transport d'un colis" }, { lettre: "C", texte: "Il est toujours obligatoire", correct: true }, { lettre: "D", texte: "Si je réalise une mission en sous-traitance" }] },
+    { id: 5, type: "QCM", enonce: "Quelle profession du T3P est autorisée à proposer ses services immédiats sur la voie publique ?", choix: [{ lettre: "A", texte: "VTC dans sa zone de prise en charge" }, { lettre: "B", texte: "Aucune" }, { lettre: "C", texte: "Taxi dans sa zone de prise en charge", correct: true }] },
+    { id: 6, type: "QCM", enonce: "Le ministère chargé des transports est compétent pour :", choix: [{ lettre: "A", texte: "Retirer les cartes professionnelles" }, { lettre: "B", texte: "Gérer les registres des exploitants VTC", correct: true }, { lettre: "C", texte: "Agréer les centres de formation" }] },
+    { id: 7, type: "QCM", enonce: "La location à la place sur un même trajet est autorisée pour :", choix: [{ lettre: "A", texte: "Les VTC" }, { lettre: "B", texte: "Les taxis", correct: true }, { lettre: "C", texte: "Ni les taxis ni les VTC" }] },
+  ]
+};
+
+const bilan_reglementation_vtc_locale: Matiere = {
+  id: "bilan_reglementation_vtc2",
+  nom: "G(V) - Réglementation nationale spécifique à l'activité de VTC (locale)",
+  duree: 20,
+  coefficient: 3,
+  noteEliminatoire: 0,
+  noteSur: 7,
+  questions: [
+    { id: 1, type: "QCM", enonce: "Quelle est la périodicité de la formation continue pour le T3P ?", choix: [{ lettre: "A", texte: "Tous les 2 ans" }, { lettre: "B", texte: "Tous les 5 ans", correct: true }, { lettre: "C", texte: "Jamais" }, { lettre: "D", texte: "Chaque année" }] },
+    { id: 2, type: "QCM", enonce: "Quelle est la périodicité de la visite médicale d'un conducteur VTC de 50 ans ?", choix: [{ lettre: "A", texte: "Tous les ans" }, { lettre: "B", texte: "Tous les 2 ans" }, { lettre: "C", texte: "Tous les 5 ans", correct: true }] },
+    { id: 3, type: "QCM", enonce: "Les conducteurs de VTC bénéficient-ils d'un régime particulier au niveau de la limitation de vitesse ?", choix: [{ lettre: "A", texte: "Pas de régime particulier", correct: true }, { lettre: "B", texte: "Oui, suivant l'accord conclu avec les autorités locales" }, { lettre: "C", texte: "Oui, selon le type de véhicule utilisé" }] },
+    { id: 4, type: "QCM", enonce: "Quelle est l'autorité compétente organisatrice de l'examen du T3P ?", choix: [{ lettre: "A", texte: "Les centres de formation" }, { lettre: "B", texte: "La chambre de métiers et de l'artisanat" }, { lettre: "C", texte: "La chambre de commerce et d'industrie" }, { lettre: "D", texte: "La préfecture", correct: true }] },
+    { id: 5, type: "QCM", enonce: "Pour l'activité VTC, la réservation préalable est :", choix: [{ lettre: "A", texte: "Facultative si le client est présent" }, { lettre: "B", texte: "Obligatoire", correct: true }, { lettre: "C", texte: "Obligatoire seulement pour les trajets de plus de 50 km" }] },
+    { id: 6, type: "QCM", enonce: "Depuis l'arrêté du Août 2017, la durée minimum de la formation continue obligatoire des conducteurs de T3P est de :", choix: [{ lettre: "A", texte: "35 heures" }, { lettre: "B", texte: "7 heures", correct: true }, { lettre: "C", texte: "14 heures" }] },
+    { id: 7, type: "QCM", enonce: "Le retrait de la carte professionnelle peut être effectué par :", choix: [{ lettre: "A", texte: "Le maire" }, { lettre: "B", texte: "Le président de la métropole" }, { lettre: "C", texte: "Le préfet de la région" }, { lettre: "D", texte: "Le préfet de police ou le préfet", correct: true }] },
+  ]
+};
+
+export const bilanExamenVTC: ExamenBlanc = {
+  id: "bilan-vtc",
+  numero: 7,
+  type: "VTC",
+  titre: "Bilan Examen VTC",
+  matieres: [
+    bilan_t3p_taxi,
+    bilan_gestion_taxi,
+    bilan_securite_taxi,
+    bilan_francais_taxi,
+    bilan_anglais_taxi,
+    bilan_reglementation_vtc_specifique,
+    bilan_reglementation_vtc_locale,
+  ]
+};
+
 export const tousLesExamens: ExamenBlanc[] = [
   examenBlanc1Taxi, examenBlanc1VTC,
   examenBlanc2Taxi, examenBlanc2VTC,
@@ -4186,4 +4388,5 @@ export const tousLesExamens: ExamenBlanc[] = [
   examenBlanc4Taxi, examenBlanc4VTC,
   examenBlanc5Taxi, examenBlanc5VTC,
   examenBlanc6Taxi, examenBlanc6VTC,
+  bilanExamenTaxi, bilanExamenVTC,
 ];
