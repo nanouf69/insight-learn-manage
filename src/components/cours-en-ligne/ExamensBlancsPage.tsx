@@ -88,18 +88,25 @@ interface ResultatMatiere {
 // ===== ÉCRAN DE SÉLECTION =====
 function EcranSelection({ onStart, onEdit }: { onStart: (examen: ExamenBlanc) => void; onEdit: () => void }) {
   const [typeFiltre, setTypeFiltre] = useState<"tous" | "TAXI" | "VTC">("tous");
+  const [categorieFiltre, setCategorieFiltre] = useState<"tous" | "examens" | "bilans">("tous");
 
-  const examens = tousLesExamens.filter(e =>
-    typeFiltre === "tous" || e.type === typeFiltre
-  );
+  const examens = tousLesExamens.filter(e => {
+    const typeOk = typeFiltre === "tous" || e.type === typeFiltre;
+    const isBilan = e.id.startsWith("bilan-");
+    const categorieOk = categorieFiltre === "tous" || (categorieFiltre === "bilans" && isBilan) || (categorieFiltre === "examens" && !isBilan);
+    return typeOk && categorieOk;
+  });
+
+  const bilans = tousLesExamens.filter(e => e.id.startsWith("bilan-") && (typeFiltre === "tous" || e.type === typeFiltre));
+  const examensBlancs = tousLesExamens.filter(e => !e.id.startsWith("bilan-") && (typeFiltre === "tous" || e.type === typeFiltre));
 
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold mb-1">Examens Blancs</h2>
+          <h2 className="text-2xl font-bold mb-1">Examens Blancs & Bilans</h2>
           <p className="text-muted-foreground text-sm">
-            Entraînez-vous avec les 12 examens blancs officiels — 6 TAXI et 6 VTC. Chaque examen comporte 7 matières chronométrées.
+            12 examens blancs (6 TAXI, 6 VTC) + 2 bilans examen officiels. Chaque test comporte 7 matières chronométrées.
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={onEdit} className="gap-2 shrink-0">
@@ -109,70 +116,153 @@ function EcranSelection({ onStart, onEdit }: { onStart: (examen: ExamenBlanc) =>
       </div>
 
       {/* Filtres */}
-      <div className="flex gap-2">
-        {(["tous", "TAXI", "VTC"] as const).map(t => (
-          <Button
-            key={t}
-            variant={typeFiltre === t ? "default" : "outline"}
-            size="sm"
-            onClick={() => setTypeFiltre(t)}
-          >
-            {t === "tous" ? "Tous" : t}
-          </Button>
-        ))}
+      <div className="flex flex-wrap gap-2">
+        <div className="flex gap-1 border rounded-lg p-1">
+          {(["tous", "TAXI", "VTC"] as const).map(t => (
+            <Button
+              key={t}
+              variant={typeFiltre === t ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setTypeFiltre(t)}
+              className="h-7 px-3"
+            >
+              {t === "tous" ? "Tous" : t}
+            </Button>
+          ))}
+        </div>
+        <div className="flex gap-1 border rounded-lg p-1">
+          {([["tous", "Tous"], ["examens", "Examens blancs"], ["bilans", "Bilans examen"]] as const).map(([val, label]) => (
+            <Button
+              key={val}
+              variant={categorieFiltre === val ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setCategorieFiltre(val)}
+              className="h-7 px-3"
+            >
+              {label}
+            </Button>
+          ))}
+        </div>
       </div>
 
-      {/* Grille des examens */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {examens.map(examen => {
-          const totalQuestions = examen.matieres.reduce((acc, m) => acc + m.questions.length, 0);
-          const dureeTotal = examen.matieres.reduce((acc, m) => acc + m.duree, 0);
-          return (
-            <Card key={examen.id} className="hover:shadow-md transition-shadow cursor-pointer border-2 hover:border-primary/40">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <Badge variant={examen.type === "TAXI" ? "default" : "secondary"} className="text-xs">
-                    {examen.type}
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">N°{examen.numero}</span>
-                </div>
-                <CardTitle className="text-base mt-2">{examen.titre}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <BookOpen className="w-3 h-3" />
-                    <span>{totalQuestions} questions</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <Clock className="w-3 h-3" />
-                    <span>{dureeTotal} min</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <FileText className="w-3 h-3" />
-                    <span>7 matières</span>
-                  </div>
-                </div>
-
-                {/* Matières */}
-                <div className="space-y-1">
-                  {examen.matieres.map(m => (
-                    <div key={m.id} className="flex justify-between text-xs text-muted-foreground">
-                      <span className="truncate pr-2">{m.nom.split(" - ")[0]}</span>
-                      <span className="shrink-0">{m.duree}min</span>
+      {/* Section Bilans */}
+      {(categorieFiltre === "tous" || categorieFiltre === "bilans") && bilans.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Trophy className="w-4 h-4 text-primary" />
+            <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">Bilans Examen Officiels</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {bilans.map(examen => {
+              const totalQuestions = examen.matieres.reduce((acc, m) => acc + m.questions.length, 0);
+              const dureeTotal = examen.matieres.reduce((acc, m) => acc + m.duree, 0);
+              return (
+                <Card key={examen.id} className="hover:shadow-md transition-shadow cursor-pointer border-2 border-primary/30 hover:border-primary/60 bg-primary/5">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Badge variant={examen.type === "TAXI" ? "default" : "secondary"} className="text-xs">
+                          {examen.type}
+                        </Badge>
+                        <Badge className="text-xs bg-primary text-primary-foreground">BILAN</Badge>
+                      </div>
+                      <span className="text-xs text-muted-foreground">QCM · 1 pt/question</span>
                     </div>
-                  ))}
-                </div>
+                    <CardTitle className="text-base mt-2">{examen.titre}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <BookOpen className="w-3 h-3" />
+                        <span>{totalQuestions} questions</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <Clock className="w-3 h-3" />
+                        <span>{dureeTotal} min</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <FileText className="w-3 h-3" />
+                        <span>7 matières</span>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      {examen.matieres.map(m => (
+                        <div key={m.id} className="flex justify-between text-xs text-muted-foreground">
+                          <span className="truncate pr-2">{m.nom.split(" - ")[0]}</span>
+                          <span className="shrink-0">{m.questions.length} QCM · {m.duree}min</span>
+                        </div>
+                      ))}
+                    </div>
+                    <Button className="w-full mt-2 gap-2" variant="default" onClick={() => onStart(examen)}>
+                      Commencer le bilan
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
-                <Button className="w-full mt-2 gap-2" onClick={() => onStart(examen)}>
-                  Commencer l'examen
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+      {/* Section Examens blancs */}
+      {(categorieFiltre === "tous" || categorieFiltre === "examens") && examensBlancs.length > 0 && (
+        <div className="space-y-3">
+          {categorieFiltre === "tous" && (
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-primary" />
+              <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">Examens Blancs</h3>
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {examensBlancs.map(examen => {
+              const totalQuestions = examen.matieres.reduce((acc, m) => acc + m.questions.length, 0);
+              const dureeTotal = examen.matieres.reduce((acc, m) => acc + m.duree, 0);
+              return (
+                <Card key={examen.id} className="hover:shadow-md transition-shadow cursor-pointer border-2 hover:border-primary/40">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <Badge variant={examen.type === "TAXI" ? "default" : "secondary"} className="text-xs">
+                        {examen.type}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">N°{examen.numero}</span>
+                    </div>
+                    <CardTitle className="text-base mt-2">{examen.titre}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <BookOpen className="w-3 h-3" />
+                        <span>{totalQuestions} questions</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <Clock className="w-3 h-3" />
+                        <span>{dureeTotal} min</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <FileText className="w-3 h-3" />
+                        <span>7 matières</span>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      {examen.matieres.map(m => (
+                        <div key={m.id} className="flex justify-between text-xs text-muted-foreground">
+                          <span className="truncate pr-2">{m.nom.split(" - ")[0]}</span>
+                          <span className="shrink-0">{m.duree}min</span>
+                        </div>
+                      ))}
+                    </div>
+                    <Button className="w-full mt-2 gap-2" onClick={() => onStart(examen)}>
+                      Commencer l'examen
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
