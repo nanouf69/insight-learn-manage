@@ -73,10 +73,10 @@ Deno.serve(async (req) => {
       }));
     }
 
-    // Factures d'achats (supplier invoices) with fournisseur name
+    // Toutes les factures fournisseurs (achats) avec nom du fournisseur
     const { data: achatsData } = await supabase
       .from("fournisseur_factures")
-      .select("id, nom_fichier, url, destinataire, montant, description, statut, mois_annee, moyen_paiement, date_paiement, created_at, fournisseurs(nom)")
+      .select("id, nom_fichier, url, destinataire, montant, description, statut, mois_annee, moyen_paiement, date_paiement, created_at, fournisseur_id, fournisseurs(nom)")
       .order("created_at", { ascending: false });
 
     return new Response(

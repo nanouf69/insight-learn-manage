@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.match-justificatif]
 verify_jwt = false
+
+[functions.get-comptable-factures]
+verify_jwt = false
