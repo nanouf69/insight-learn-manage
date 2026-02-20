@@ -86,9 +86,9 @@ interface ResultatMatiere {
 }
 
 // ===== ÉCRAN DE SÉLECTION =====
-function EcranSelection({ onStart, onEdit }: { onStart: (examen: ExamenBlanc) => void; onEdit: () => void }) {
+function EcranSelection({ onStart, onEdit, defaultBilanId }: { onStart: (examen: ExamenBlanc) => void; onEdit: () => void; defaultBilanId?: string | null }) {
   const [typeFiltre, setTypeFiltre] = useState<"tous" | "TAXI" | "VTC">("tous");
-  const [categorieFiltre, setCategorieFiltre] = useState<"tous" | "examens" | "bilans">("tous");
+  const [categorieFiltre, setCategorieFiltre] = useState<"tous" | "examens" | "bilans">(defaultBilanId ? "bilans" : "tous");
 
   const examens = tousLesExamens.filter(e => {
     const typeOk = typeFiltre === "tous" || e.type === typeFiltre;
@@ -156,8 +156,14 @@ function EcranSelection({ onStart, onEdit }: { onStart: (examen: ExamenBlanc) =>
             {bilans.map(examen => {
               const totalQuestions = examen.matieres.reduce((acc, m) => acc + m.questions.length, 0);
               const dureeTotal = examen.matieres.reduce((acc, m) => acc + m.duree, 0);
+              const isHighlighted = defaultBilanId === examen.id;
               return (
-                <Card key={examen.id} className="hover:shadow-md transition-shadow cursor-pointer border-2 border-primary/30 hover:border-primary/60 bg-primary/5">
+                <Card key={examen.id} className={`hover:shadow-md transition-shadow cursor-pointer border-2 ${isHighlighted ? "border-primary shadow-lg ring-2 ring-primary/40 bg-primary/10" : "border-primary/30 hover:border-primary/60 bg-primary/5"}`}>
+                  {isHighlighted && (
+                    <div className="bg-primary text-primary-foreground text-xs font-semibold text-center py-1 rounded-t-md">
+                      ✦ Module sélectionné depuis la liste
+                    </div>
+                  )}
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -166,7 +172,7 @@ function EcranSelection({ onStart, onEdit }: { onStart: (examen: ExamenBlanc) =>
                         </Badge>
                         <Badge className="text-xs bg-primary text-primary-foreground">BILAN</Badge>
                       </div>
-                      <span className="text-xs text-muted-foreground">QCM · 1 pt/question</span>
+                      <span className="text-xs text-muted-foreground">QCM · 1 pt/question · sans chrono</span>
                     </div>
                     <CardTitle className="text-base mt-2">{examen.titre}</CardTitle>
                   </CardHeader>
@@ -177,10 +183,6 @@ function EcranSelection({ onStart, onEdit }: { onStart: (examen: ExamenBlanc) =>
                         <span>{totalQuestions} questions</span>
                       </div>
                       <div className="flex items-center gap-1 text-muted-foreground">
-                        <Clock className="w-3 h-3" />
-                        <span>{dureeTotal} min</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-muted-foreground">
                         <FileText className="w-3 h-3" />
                         <span>7 matières</span>
                       </div>
@@ -189,7 +191,7 @@ function EcranSelection({ onStart, onEdit }: { onStart: (examen: ExamenBlanc) =>
                       {examen.matieres.map(m => (
                         <div key={m.id} className="flex justify-between text-xs text-muted-foreground">
                           <span className="truncate pr-2">{m.nom.split(" - ")[0]}</span>
-                          <span className="shrink-0">{m.questions.length} QCM · {m.duree}min</span>
+                          <span className="shrink-0">{m.questions.length} QCM</span>
                         </div>
                       ))}
                     </div>
@@ -786,18 +788,35 @@ function EcranResultats({
 }
 
 // ===== COMPOSANT PRINCIPAL =====
-export default function ExamensBlancsPage() {
+export default function ExamensBlancsPage({
+  defaultBilanId,
+  onBilanConsumed,
+}: {
+  defaultBilanId?: string | null;
+  onBilanConsumed?: () => void;
+} = {}) {
   const [phase, setPhase] = useState<"selection" | "intro" | "examen" | "resultats" | "edition">("selection");
   const [examenChoisi, setExamenChoisi] = useState<ExamenBlanc | null>(null);
   const [matiereIndex, setMatiereIndex] = useState(0);
   const [tousResultats, setTousResultats] = useState<ResultatMatiere[]>([]);
+  const [bilanPrefiltre, setBilanPrefiltre] = useState<string | null>(null);
+
+  // Quand un bilan est demandé depuis les modules, on le met en avant
+  useEffect(() => {
+    if (defaultBilanId) {
+      setBilanPrefiltre(defaultBilanId);
+      onBilanConsumed?.();
+    }
+  }, [defaultBilanId]);
 
   const handleStart = (examen: ExamenBlanc) => {
+    setBilanPrefiltre(null);
     setExamenChoisi(examen);
     setMatiereIndex(0);
     setTousResultats([]);
     setPhase("intro");
   };
+
 
   const handleDebuterExamen = () => {
     setPhase("examen");
@@ -858,7 +877,7 @@ export default function ExamensBlancsPage() {
   }
 
   if (phase === "selection") {
-    return <EcranSelection onStart={handleStart} onEdit={() => setPhase("edition")} />;
+    return <EcranSelection onStart={handleStart} onEdit={() => setPhase("edition")} defaultBilanId={bilanPrefiltre} />;
   }
 
   if (phase === "intro" && examenChoisi) {

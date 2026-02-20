@@ -2,17 +2,24 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Layers, GraduationCap, Plus, Users, TrendingUp, AlertTriangle, FileText, Monitor, ArrowUp, ArrowDown, Pencil, Trash2, ClipboardList } from "lucide-react";
+import { BookOpen, Layers, GraduationCap, Plus, Users, TrendingUp, AlertTriangle, FileText, Monitor, ArrowUp, ArrowDown, Pencil, Trash2, ClipboardList, Trophy } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import ModuleDetailView from "./ModuleDetailView";
 import ExamensBlancsPage from "./ExamensBlancsPage";
 
+// IDs des modules bilan qui ouvrent directement l'onglet examens
+const BILAN_MODULE_IDS: Record<number, string> = {
+  11: "bilan-taxi",  // 6.BILAN EXAMEN TAXI
+  5:  "bilan-vtc",   // 6.BILAN EXAMEN VTC
+};
+
 const CoursEnLignePage = () => {
   const [activeTab, setActiveTab] = useState("accueil");
   const [selectedFormation, setSelectedFormation] = useState("vtc");
   const [editingModule, setEditingModule] = useState<{ id: number; nom: string } | null>(null);
+  const [bilanActif, setBilanActif] = useState<string | null>(null);
   const [modules, setModules] = useState([
     { id: 1, nom: "1.INTRODUCTION", eleves: 2, progression: "0%", statut: "Actif" },
     { id: 2, nom: "2.COURS ET EXERCICES VTC", eleves: 2, progression: "6%", statut: "Actif" },
@@ -39,9 +46,20 @@ const CoursEnLignePage = () => {
     setModules(modules.filter(m => m.id !== id));
   };
 
+  const handleEditerModule = (module: { id: number; nom: string }) => {
+    if (BILAN_MODULE_IDS[module.id]) {
+      // Ouvre directement l'onglet Examens Blancs avec le bilan correspondant
+      setBilanActif(BILAN_MODULE_IDS[module.id]);
+      setActiveTab("examens-blancs");
+    } else {
+      setEditingModule(module);
+    }
+  };
+
   if (editingModule) {
     return <ModuleDetailView module={editingModule} onBack={() => setEditingModule(null)} />;
   }
+
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -206,9 +224,21 @@ const CoursEnLignePage = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {modules.map((module, index) => (
+                  {modules.map((module, index) => {
+                    const isBilanModule = !!BILAN_MODULE_IDS[module.id];
+                    return (
                     <TableRow key={module.id}>
-                      <TableCell className="font-medium">{module.nom}</TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {module.nom}
+                          {isBilanModule && (
+                            <Badge className="text-xs bg-primary text-primary-foreground gap-1">
+                              <Trophy className="w-3 h-3" />
+                              BILAN
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>{module.eleves}</TableCell>
                       <TableCell>{module.progression}</TableCell>
                       <TableCell>
@@ -236,9 +266,14 @@ const CoursEnLignePage = () => {
                           >
                             <ArrowDown className="w-4 h-4" />
                           </Button>
-                          <Button variant="secondary" size="sm" className="gap-1" onClick={() => setEditingModule({ id: module.id, nom: module.nom })}>
-                            <Pencil className="w-3 h-3" />
-                            Éditer
+                          <Button
+                            variant={isBilanModule ? "default" : "secondary"}
+                            size="sm"
+                            className="gap-1"
+                            onClick={() => handleEditerModule({ id: module.id, nom: module.nom })}
+                          >
+                            {isBilanModule ? <Trophy className="w-3 h-3" /> : <Pencil className="w-3 h-3" />}
+                            {isBilanModule ? "Ouvrir Bilan" : "Éditer"}
                           </Button>
                           <Button
                             variant="destructive"
@@ -252,7 +287,8 @@ const CoursEnLignePage = () => {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
             </CardContent>
@@ -261,7 +297,7 @@ const CoursEnLignePage = () => {
 
         {/* Examens Blancs */}
         <TabsContent value="examens-blancs" className="mt-6">
-          <ExamensBlancsPage />
+          <ExamensBlancsPage defaultBilanId={bilanActif} onBilanConsumed={() => setBilanActif(null)} />
         </TabsContent>
 
         {/* Formations */}
