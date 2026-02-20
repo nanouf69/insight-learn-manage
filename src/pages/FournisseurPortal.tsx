@@ -109,6 +109,7 @@ export default function FournisseurPortal() {
   // Apprenants list
   const [apprenants, setApprenants] = useState<FournisseurApprenant[]>([]);
   const [documents, setDocuments] = useState<FournisseurDocument[]>([]);
+  const [crmDocuments, setCrmDocuments] = useState<any[]>([]);
   const [factures, setFactures] = useState<FournisseurFacture[]>([]);
   const [planning, setPlanning] = useState<any[]>([]);
   const [sharedDocs, setSharedDocs] = useState<any[]>([]);
@@ -198,7 +199,7 @@ export default function FournisseurPortal() {
     if (!fournisseur) return;
     const load = async () => {
       const [appRes, docRes, facRes, sharedRes] = await Promise.all([
-        supabase.from('fournisseur_apprenants').select('id, nom, prenom, formation_choisie, created_at').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false }),
+        supabase.from('fournisseur_apprenants').select('id, nom, prenom, formation_choisie, created_at, notes').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false }),
         supabase.from('fournisseur_documents').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false }),
         supabase.from('fournisseur_factures').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false }),
         supabase.from('fournisseur_shared_docs').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false }),
@@ -207,6 +208,37 @@ export default function FournisseurPortal() {
       if (docRes.data) setDocuments(docRes.data as FournisseurDocument[]);
       if (facRes.data) setFactures(facRes.data as FournisseurFacture[]);
       if (sharedRes.data) setSharedDocs(sharedRes.data);
+
+      // Récupérer les documents CRM (documents_inscription) pour tous les apprenants liés
+      if (appRes.data && appRes.data.length > 0) {
+        // Extraire les apprenant_id depuis les notes (format: "apprenant_id:UUID")
+        const crmIds = appRes.data
+          .map((a: any) => {
+            const match = a.notes?.match(/apprenant_id:([a-f0-9-]+)/);
+            return match ? match[1] : null;
+          })
+          .filter(Boolean) as string[];
+
+        if (crmIds.length > 0) {
+          const { data: crmDocs } = await supabase
+            .from('documents_inscription')
+            .select('id, titre, nom_fichier, url, statut, created_at, apprenant_id, type_document')
+            .in('apprenant_id', crmIds)
+            .order('created_at', { ascending: false });
+
+          if (crmDocs) {
+            // Enrichir avec le nom de l'apprenant
+            const docsWithNames = crmDocs.map(doc => {
+              const fa = appRes.data!.find((a: any) => {
+                const match = a.notes?.match(/apprenant_id:([a-f0-9-]+)/);
+                return match && match[1] === doc.apprenant_id;
+              });
+              return { ...doc, apprenant_nom: fa ? `${fa.prenom} ${fa.nom}` : 'Inconnu' };
+            });
+            setCrmDocuments(docsWithNames);
+          }
+        }
+      }
 
       // Charger les emails et relevés si comptable
       if (fournisseur.comptable_only) {
@@ -692,18 +724,43 @@ export default function FournisseurPortal() {
                 </CardContent>
               </Card>
 
-              <h3 className="text-lg font-semibold">Documents envoyés ({documents.length})</h3>
+              {/* Documents CRM (depuis le dossier apprenant) */}
+              {crmDocuments.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">Documents du dossier apprenant ({crmDocuments.length})</h3>
+                  <div className="grid gap-3">
+                    {crmDocuments.map(d => (
+                      <Card key={d.id}>
+                        <CardContent className="pt-4 flex justify-between items-center">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate">{d.titre}</p>
+                            <p className="text-sm text-muted-foreground">{d.apprenant_nom} • {d.nom_fichier} • {new Date(d.created_at).toLocaleDateString('fr-FR')}</p>
+                          </div>
+                          <a href={d.url.startsWith('http') ? d.url : supabase.storage.from('documents-inscription').getPublicUrl(d.url).data.publicUrl} target="_blank" rel="noopener noreferrer">
+                            <Button variant="ghost" size="sm" className="gap-2 ml-2"><Eye className="w-4 h-4" />Voir</Button>
+                          </a>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <h3 className="text-lg font-semibold">Documents envoyés via portail ({documents.length})</h3>
               {documents.length === 0 ? (
-                <Card><CardContent className="pt-6 text-center text-muted-foreground">Aucun document envoyé.</CardContent></Card>
+                <Card><CardContent className="pt-6 text-center text-muted-foreground">Aucun document envoyé via le portail.</CardContent></Card>
               ) : (
                 <div className="grid gap-3">
                   {documents.map(d => (
                     <Card key={d.id}>
                       <CardContent className="pt-4 flex justify-between items-center">
-                        <div>
-                          <p className="font-medium">{d.titre}</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{d.titre}</p>
                           <p className="text-sm text-muted-foreground">{d.nom_fichier} • {new Date(d.created_at).toLocaleDateString('fr-FR')}</p>
                         </div>
+                        <a href={d.url} target="_blank" rel="noopener noreferrer">
+                          <Button variant="ghost" size="sm" className="gap-2 ml-2"><Eye className="w-4 h-4" />Voir</Button>
+                        </a>
                       </CardContent>
                     </Card>
                   ))}
