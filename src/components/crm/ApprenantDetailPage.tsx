@@ -19,6 +19,7 @@ import { DocumentsDossier } from "./apprenant-sections/DocumentsDossier";
 import { DocumentsInscription } from "./apprenant-sections/DocumentsInscription";
 import { ExamensSection } from "./apprenant-sections/ExamensSection";
 import { EmailsSection } from "./apprenant-sections/EmailsSection";
+import { DevisSection } from "./apprenant-sections/DevisSection";
 import { ApprenantEditForm } from "@/components/apprenants/ApprenantEditForm";
 import { cn } from "@/lib/utils";
 
@@ -245,13 +246,14 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:inline-grid">
           <TabsTrigger value="infos">Infos</TabsTrigger>
           <TabsTrigger value="docs-formation">Documents Formation</TabsTrigger>
           <TabsTrigger value="dossier">Dossier</TabsTrigger>
           <TabsTrigger value="docs-inscription">Inscription</TabsTrigger>
           <TabsTrigger value="examens">Examens</TabsTrigger>
           <TabsTrigger value="emails">Emails</TabsTrigger>
+          <TabsTrigger value="devis">Devis</TabsTrigger>
         </TabsList>
 
         {/* Infos Tab */}
@@ -521,6 +523,11 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
         {/* Emails Tab */}
         <TabsContent value="emails">
           <EmailsSection apprenant={apprenant} />
+        </TabsContent>
+
+        {/* Devis Tab */}
+        <TabsContent value="devis">
+          <DevisSection apprenant={apprenant} />
         </TabsContent>
       </Tabs>
     </div>
