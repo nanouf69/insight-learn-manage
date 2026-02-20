@@ -149,16 +149,31 @@ Ftransport n'est pas assujetti a la TVA
 Services Pro - FTransport - SASU au capital social de 5 000 euros
 SIRET : 82346156100018 | 86 route de Genas - 69003 LYON | Tel : 04.28.29.60.91 | contact@ftransport.fr`;
 
+// Formatteur de nombre compatible jsPDF (pas d'espaces insécables)
+const formatEUR = (n: number): string => {
+  const parts = n.toFixed(2).replace('.', ',').split(',');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return `${parts[0]},${parts[1]} EUR`;
+};
+
 export function DevisSection({ apprenant }: DevisSectionProps) {
   const today = format(new Date(), 'yyyy-MM-dd');
   const validiteDate = format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
 
+  // Trouver la désignation correcte depuis le catalogue
+  const getDesignationInitiale = () => {
+    if (!apprenant.formation_choisie) return "Formation professionnelle";
+    const found = FORMATIONS_CATALOGUE.find(f =>
+      apprenant.formation_choisie === f.label ||
+      f.label.toLowerCase().includes((apprenant.formation_choisie || '').toLowerCase())
+    );
+    return found?.designation || apprenant.formation_choisie;
+  };
+
   const [lignes, setLignes] = useState<LigneDevis[]>([
     {
       id: crypto.randomUUID(),
-      designation: apprenant.formation_choisie
-        ? FORMATIONS_CATALOGUE.find(f => apprenant.formation_choisie.includes(f.prix.toString()))?.designation || apprenant.formation_choisie
-        : "Formation professionnelle",
+      designation: getDesignationInitiale(),
       quantite: 1,
       prixUnitaire: apprenant.montant_ttc || 0,
     }
@@ -260,85 +275,121 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       doc.text('DETAIL DE LA PRESTATION', margin, y);
       y += 6;
 
-      // Tableau lignes
-      const colWidths = [contentW * 0.55, 20, 35, 35];
-      const headers = ['Designation', 'Qte', 'Prix unitaire', 'Total TTC'];
+      // Colonnes : Designation | Qte | Prix unit. | Total TTC
+      // x de départ de chaque colonne
+      const col0x = margin;           // Designation
+      const col1x = margin + 100;     // Qte (centre à col1x+10)
+      const col2x = margin + 125;     // Prix unitaire (right align à col2x+42)
+      const col3x = margin + 152;     // Total TTC (right align à pageW-margin)
+      const tableRight = pageW - margin;
 
       // Header tableau
       doc.setFillColor(30, 58, 138);
-      doc.rect(margin, y, contentW, 7, 'F');
+      doc.rect(margin, y, contentW, 8, 'F');
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(8);
+      doc.setFontSize(8.5);
       doc.setFont('helvetica', 'bold');
-      let xCol = margin;
-      headers.forEach((h, i) => {
-        doc.text(h, xCol + 2, y + 5, { maxWidth: colWidths[i] - 4 });
-        xCol += colWidths[i];
-      });
-      y += 7;
+      doc.text('Designation', col0x + 2, y + 5.5);
+      doc.text('Qte', col1x + 10, y + 5.5, { align: 'center' });
+      doc.text('Prix unitaire', col2x + 21, y + 5.5, { align: 'center' });
+      doc.text('Total TTC', tableRight - 2, y + 5.5, { align: 'right' });
+      y += 8;
 
-      // Lignes
+      // Lignes de prestation
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(0, 0, 0);
       lignes.forEach((ligne, idx) => {
-        const rowH = 12;
-        doc.setFillColor(idx % 2 === 0 ? 249 : 255, idx % 2 === 0 ? 250 : 255, idx % 2 === 0 ? 251 : 255);
+        // Calculer la hauteur de ligne selon le texte de désignation
+        const designW = col1x - col0x - 4;
+        const designLines = doc.splitTextToSize(ligne.designation, designW);
+        const nbLines = Math.max(1, Math.min(designLines.length, 3));
+        const rowH = Math.max(10, nbLines * 4.5 + 4);
+
+        doc.setFillColor(idx % 2 === 0 ? 248 : 255, idx % 2 === 0 ? 249 : 255, idx % 2 === 0 ? 250 : 255);
         doc.rect(margin, y, contentW, rowH, 'F');
-        doc.setDrawColor(220, 220, 220);
-        doc.rect(margin, y, contentW, rowH);
+        doc.setDrawColor(210, 210, 210);
+        doc.line(margin, y, tableRight, y);
+        doc.line(margin, y + rowH, tableRight, y + rowH);
+        // Séparateurs verticaux
+        doc.line(col1x, y, col1x, y + rowH);
+        doc.line(col2x, y, col2x, y + rowH);
+        doc.line(col3x, y, col3x, y + rowH);
+        doc.line(margin, y, margin, y + rowH);
+        doc.line(tableRight, y, tableRight, y + rowH);
 
-        xCol = margin;
         doc.setFontSize(8);
+        const vertCenter = y + rowH / 2 + 1;
 
-        // Designation (peut wrapper)
-        const designLines = doc.splitTextToSize(ligne.designation, colWidths[0] - 4);
-        doc.text(designLines[0], xCol + 2, y + 5);
-        if (designLines.length > 1) doc.text(designLines[1], xCol + 2, y + 9);
-        xCol += colWidths[0];
+        // Designation (texte wrappé, aligné en haut)
+        const linesToShow = designLines.slice(0, 3);
+        const textStartY = y + 4;
+        linesToShow.forEach((l: string, li: number) => {
+          doc.text(l, col0x + 2, textStartY + li * 4);
+        });
 
-        doc.text(String(ligne.quantite), xCol + colWidths[1] / 2, y + 6, { align: 'center' });
-        xCol += colWidths[1];
+        // Quantité centrée
+        doc.text(String(ligne.quantite), col1x + 10, vertCenter, { align: 'center' });
 
-        doc.text(`${ligne.prixUnitaire.toLocaleString('fr-FR')} EUR`, xCol + 2, y + 6);
-        xCol += colWidths[2];
+        // Prix unitaire aligné à droite dans sa colonne
+        doc.text(formatEUR(ligne.prixUnitaire), col2x + 26, vertCenter, { align: 'right' });
 
+        // Total aligné à droite
         const total = ligne.quantite * ligne.prixUnitaire;
-        doc.text(`${total.toLocaleString('fr-FR')} EUR`, xCol + 2, y + 6);
+        doc.text(formatEUR(total), tableRight - 2, vertCenter, { align: 'right' });
 
         y += rowH;
       });
 
-      // Totaux
-      y += 5;
+      // Ligne de fermeture du tableau
+      doc.setDrawColor(210, 210, 210);
+      doc.line(margin, y, tableRight, y);
+
+      // Bloc totaux
+      y += 6;
+      const totBoxX = margin + contentW * 0.55;
+      const totBoxW = contentW * 0.45;
+      const totBoxH = 22;
       doc.setFillColor(243, 244, 246);
-      doc.rect(margin + contentW * 0.6, y, contentW * 0.4, 18, 'F');
+      doc.rect(totBoxX, y, totBoxW, totBoxH, 'F');
+      doc.setDrawColor(210, 210, 210);
+      doc.rect(totBoxX, y, totBoxW, totBoxH);
+
+      // Séparateur vertical dans le bloc totaux (libellé | montant)
+      const totSepX = totBoxX + totBoxW * 0.58;
+      doc.line(totSepX, y, totSepX, y + totBoxH);
+      // Séparateurs horizontaux
+      doc.line(totBoxX, y + 8, totBoxX + totBoxW, y + 8);
+      doc.line(totBoxX, y + 15, totBoxX + totBoxW, y + 15);
+
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
-      doc.setTextColor(100, 100, 100);
-      doc.text('Total HT :', margin + contentW * 0.6 + 3, y + 5);
-      doc.text('TVA (0% - Non assujetti) :', margin + contentW * 0.6 + 3, y + 10);
+      doc.setTextColor(80, 80, 80);
+      doc.text('Total HT :', totSepX - 2, y + 5.5, { align: 'right' });
+      doc.text('TVA (0% - Non assujetti) :', totSepX - 2, y + 12.5, { align: 'right' });
+
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
+      doc.setFontSize(8.5);
       doc.setTextColor(30, 58, 138);
-      doc.text('TOTAL TTC :', margin + contentW * 0.6 + 3, y + 16);
+      doc.text('TOTAL TTC :', totSepX - 2, y + 19.5, { align: 'right' });
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
       doc.setTextColor(0, 0, 0);
-      doc.text(`${totalHT.toLocaleString('fr-FR')} EUR`, pageW - margin, y + 5, { align: 'right' });
-      doc.text('0,00 EUR', pageW - margin, y + 10, { align: 'right' });
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.setTextColor(30, 58, 138);
-      doc.text(`${totalTTC.toLocaleString('fr-FR')} EUR`, pageW - margin, y + 16, { align: 'right' });
+      doc.text(formatEUR(totalHT), totBoxX + totBoxW - 3, y + 5.5, { align: 'right' });
+      doc.text('0,00 EUR', totBoxX + totBoxW - 3, y + 12.5, { align: 'right' });
 
-      y += 24;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(30, 58, 138);
+      doc.text(formatEUR(totalTTC), totBoxX + totBoxW - 3, y + 19.5, { align: 'right' });
+
+      y += totBoxH + 8;
 
       // Notes
       if (notes) {
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8);
-        doc.setTextColor(0, 0, 0);
+        doc.setTextColor(60, 60, 60);
         doc.text('Notes :', margin, y);
         y += 4;
         const noteLines = doc.splitTextToSize(notes, contentW);
@@ -347,15 +398,22 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       }
 
       // Signature
-      y = Math.max(y + 5, 220);
-      doc.setDrawColor(200, 200, 200);
-      doc.line(margin, y, margin + 70, y);
+      y = Math.max(y + 8, 215);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`A Lyon, le ${format(new Date(dateDevis), 'dd MMMM yyyy', { locale: fr })}`, margin, y);
+      y += 5;
+      doc.setDrawColor(180, 180, 180);
+      doc.line(margin, y, margin + 75, y);
+      doc.setFontSize(7.5);
+      doc.setTextColor(100, 100, 100);
       doc.text('Signature et mention "Bon pour accord"', margin, y + 4);
-      doc.text(`A Lyon, le ${format(new Date(dateDevis), 'dd MMMM yyyy', { locale: fr })}`, margin, y + 9);
-      doc.setFontSize(7);
-      doc.setTextColor(120, 120, 120);
-      doc.text('FTRANSPORT - SASU au capital de 5 000 EUR - SIRET : 82346156100018 - N Decl : 84 69 15114 69', margin, 290);
-      doc.text('Non assujetti TVA - contact@ftransport.fr - 04.28.29.60.91 - 86 route de Genas, 69003 Lyon', margin, 294);
+
+      doc.setFontSize(6.5);
+      doc.setTextColor(140, 140, 140);
+      doc.text('FTRANSPORT - SASU au capital de 5 000 EUR - SIRET : 82346156100018 - N Decl. : 84 69 15114 69', margin, 288);
+      doc.text('Non assujetti TVA | contact@ftransport.fr | 04.28.29.60.91 | 86 route de Genas, 69003 Lyon', margin, 293);
 
       // === PAGE 2 : CGV ===
       doc.addPage();
