@@ -16,7 +16,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { parseDateRange } from "@/lib/parseDateRange";
-import { Plus, Loader2, CalendarIcon, Users, FileText, Receipt, Upload, Trash2, Eye, CalendarDays, BarChart3, Mail, Send, Inbox, PenLine, FolderOpen, Download } from "lucide-react";
+import { Plus, Loader2, CalendarIcon, Users, FileText, Receipt, Upload, Trash2, Eye, CalendarDays, BarChart3, Mail, Send, Inbox, PenLine, FolderOpen, Download, TrendingUp } from "lucide-react";
+import { FinancialCharts } from "@/components/comptabilite/FinancialCharts";
 import { Textarea } from "@/components/ui/textarea";
 import logoFtransport from "@/assets/logo-ftransport.png";
 import { RapprochementBancaire } from "@/components/comptabilite/RapprochementBancaire";
@@ -459,9 +460,10 @@ export default function FournisseurPortal() {
       <div className="max-w-6xl mx-auto p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           {fournisseur?.comptable_only ? (
-            // Mode comptable : rapprochement bancaire + factures + relevés + documents + messages
-            <TabsList className="grid w-full grid-cols-5 mb-6">
+            // Mode comptable : rapprochement bancaire + graphiques + factures + relevés + documents + messages
+            <TabsList className="grid w-full grid-cols-6 mb-6">
               <TabsTrigger value="rapprochement" className="gap-2 text-xs"><BarChart3 className="w-4 h-4" />Rapprochement</TabsTrigger>
+              <TabsTrigger value="comptable-graphiques" className="gap-2 text-xs"><TrendingUp className="w-4 h-4" />Graphiques</TabsTrigger>
               <TabsTrigger value="comptable-factures" className="gap-2 text-xs"><Receipt className="w-4 h-4" />Factures</TabsTrigger>
               <TabsTrigger value="comptable-releves" className="gap-2 text-xs"><FolderOpen className="w-4 h-4" />Relevés</TabsTrigger>
               <TabsTrigger value="comptable-docs" className="gap-2 text-xs"><FileText className="w-4 h-4" />Documents</TabsTrigger>
@@ -997,6 +999,22 @@ export default function FournisseurPortal() {
                   </div>
                 </div>
                 <RapprochementBancaire />
+              </div>
+            </TabsContent>
+          )}
+
+          {/* ============ TAB GRAPHIQUES (comptable uniquement) ============ */}
+          {fournisseur?.comptable_only && (
+            <TabsContent value="comptable-graphiques">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 pb-2 border-b">
+                  <TrendingUp className="w-5 h-5 text-primary" />
+                  <div>
+                    <h2 className="text-xl font-semibold">Analyse financière</h2>
+                    <p className="text-sm text-muted-foreground">CA mensuel, bénéfices et évolution cumulée</p>
+                  </div>
+                </div>
+                <FinancialCharts />
               </div>
             </TabsContent>
           )}
