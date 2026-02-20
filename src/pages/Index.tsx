@@ -17,6 +17,7 @@ import { FormateursList } from "@/components/formateurs/FormateursList";
 import { BPFForm } from "@/components/bpf/BPFForm";
 import { FactureForm } from "@/components/factures/FactureForm";
 import { ComptabilitePage } from "@/components/comptabilite/ComptabilitePage";
+import { FinancialCharts } from "@/components/comptabilite/FinancialCharts";
 import { AgendaView } from "@/components/agenda/AgendaView";
 import { ExamenReussitePage } from "@/components/examens/ExamenReussitePage";
 import CoursEnLignePage from "@/components/cours-en-ligne/CoursEnLignePage";
@@ -154,6 +155,12 @@ const Index = () => {
                 <PaymentReminders />
                 <FournisseurInvoiceAlerts onNavigateToComptabilite={() => handleNavigate("comptabilite")} />
               </div>
+            </div>
+
+            {/* Financial Charts */}
+            <div>
+              <h2 className="text-lg font-semibold mb-3">Analyse financière</h2>
+              <FinancialCharts />
             </div>
           </div>
         );
