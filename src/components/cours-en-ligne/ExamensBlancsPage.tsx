@@ -273,11 +273,13 @@ function PassageMatiere({
   numero,
   total,
   onTerminer,
+  isBilan = false,
 }: {
   matiere: Matiere;
   numero: number;
   total: number;
   onTerminer: (reponses: Reponses) => void;
+  isBilan?: boolean;
 }) {
   const [reponses, setReponses] = useState<Reponses>({});
   const [questionIndex, setQuestionIndex] = useState(0);
@@ -320,7 +322,14 @@ function PassageMatiere({
           <p className="text-xs text-muted-foreground">Matière {numero}/{total}</p>
           <h3 className="font-semibold text-base">{matiere.nom}</h3>
         </div>
-        <TimerBadge seconds={dureeSecondes} onExpire={handleExpire} />
+        {isBilan ? (
+          <div className="flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-primary/30 bg-primary/5 text-primary text-sm font-medium">
+            <BookOpen className="w-4 h-4" />
+            <span>Sans chronomètre</span>
+          </div>
+        ) : (
+          <TimerBadge seconds={dureeSecondes} onExpire={handleExpire} />
+        )}
       </div>
 
       {/* Progression questions */}
@@ -964,6 +973,7 @@ export default function ExamensBlancsPage() {
           numero={matiereIndex + 1}
           total={examenChoisi.matieres.length}
           onTerminer={handleTerminerMatiere}
+          isBilan={examenChoisi.id.startsWith("bilan-")}
         />
       </div>
     );
