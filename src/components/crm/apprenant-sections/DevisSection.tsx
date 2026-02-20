@@ -318,6 +318,39 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
 
       y += 35;
 
+      // Bloc dates de formation
+      const dateDebut = apprenant.date_debut_formation;
+      const dateFin = apprenant.date_fin_formation;
+      const dateCatalogue = apprenant.date_formation_catalogue;
+
+      if (dateDebut || dateFin || dateCatalogue) {
+        doc.setFillColor(239, 246, 255);
+        doc.rect(margin, y, contentW, 14, 'F');
+        doc.setDrawColor(191, 219, 254);
+        doc.rect(margin, y, contentW, 14);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.setTextColor(30, 58, 138);
+        doc.text('DATES DE LA FORMATION', margin + 3, y + 5.5);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(0, 0, 0);
+        const dateInfos: string[] = [];
+        if (dateCatalogue) dateInfos.push(`Session catalogue : ${dateCatalogue}`);
+        if (dateDebut) {
+          try { dateInfos.push(`Debut : ${format(new Date(dateDebut + 'T12:00:00'), 'dd MMMM yyyy', { locale: fr })}`); }
+          catch { dateInfos.push(`Debut : ${dateDebut}`); }
+        }
+        if (dateFin) {
+          try { dateInfos.push(`Fin : ${format(new Date(dateFin + 'T12:00:00'), 'dd MMMM yyyy', { locale: fr })}`); }
+          catch { dateInfos.push(`Fin : ${dateFin}`); }
+        }
+        doc.text(dateInfos.join('   |   '), margin + 3, y + 11);
+        y += 20;
+      } else {
+        y += 6;
+      }
+
       // Titre formation
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(11);
