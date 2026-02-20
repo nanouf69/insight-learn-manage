@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { FileText, Download, Plus, Trash2, Eye } from "lucide-react";
+import { FileText, Download, Plus, Trash2, Eye, CheckCircle2, XCircle, Clock, Receipt } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -183,6 +184,9 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   const [notes, setNotes] = useState("");
   const [generating, setGenerating] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [statutDevis, setStatutDevis] = useState<'en_attente' | 'valide' | 'refuse'>('en_attente');
+  const [creatingFacture, setCreatingFacture] = useState(false);
+  const [factureCreee, setFactureCreee] = useState<string | null>(null);
 
   const addLigne = () => {
     setLignes(prev => [...prev, {
@@ -209,6 +213,52 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
 
   const totalHT = lignes.reduce((sum, l) => sum + (l.quantite * l.prixUnitaire), 0);
   const totalTTC = totalHT; // Non assujetti TVA
+
+  const creerFacture = async () => {
+    setCreatingFacture(true);
+    try {
+      // Générer un numéro de facture
+      const { data: lastFacture } = await supabase
+        .from('factures')
+        .select('numero')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const year = new Date().getFullYear();
+      let nextNum = 1;
+      if (lastFacture?.numero) {
+        const match = lastFacture.numero.match(/(\d+)$/);
+        if (match) nextNum = parseInt(match[1]) + 1;
+      }
+      const numero = `FAC-${year}-${String(nextNum).padStart(4, '0')}`;
+
+      const designation = lignes.map(l => l.designation).join(' / ');
+      const { data, error } = await supabase.from('factures').insert({
+        numero,
+        apprenant_id: apprenant.id,
+        client_nom: `${apprenant.civilite || ''} ${apprenant.prenom} ${apprenant.nom}`.trim(),
+        client_adresse: [apprenant.adresse, apprenant.code_postal, apprenant.ville].filter(Boolean).join(', '),
+        date_emission: dateDevis,
+        date_echeance: dateValidite,
+        montant_ht: totalHT,
+        montant_tva: 0,
+        montant_ttc: totalTTC,
+        tva_taux: 0,
+        type_financement: apprenant.mode_financement || 'particulier',
+        statut: 'en_attente',
+      }).select().single();
+
+      if (error) throw error;
+      setFactureCreee(data.numero);
+      toast.success(`Facture ${data.numero} créée avec succès !`);
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Erreur lors de la création de la facture");
+    } finally {
+      setCreatingFacture(false);
+    }
+  };
 
   const generateDevisPDF = async () => {
     setGenerating(true);
@@ -630,8 +680,85 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
             />
           </div>
 
-          {/* Actions */}
-          <div className="flex items-center gap-3 pt-2">
+          <Separator />
+
+          {/* Statut du devis */}
+          <div className="space-y-3">
+            <Label className="text-sm font-semibold">Statut du devis</Label>
+            <div className="flex items-center gap-3 flex-wrap">
+              <button
+                onClick={() => { setStatutDevis('en_attente'); setFactureCreee(null); }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
+                  statutDevis === 'en_attente'
+                    ? 'border-amber-400 bg-amber-50 text-amber-700'
+                    : 'border-border bg-background text-muted-foreground hover:border-amber-200'
+                }`}
+              >
+                <Clock className="w-4 h-4" />
+                En attente
+              </button>
+              <button
+                onClick={() => setStatutDevis('valide')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
+                  statutDevis === 'valide'
+                    ? 'border-green-500 bg-green-50 text-green-700'
+                    : 'border-border bg-background text-muted-foreground hover:border-green-200'
+                }`}
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                Validé
+              </button>
+              <button
+                onClick={() => { setStatutDevis('refuse'); setFactureCreee(null); }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
+                  statutDevis === 'refuse'
+                    ? 'border-red-500 bg-red-50 text-red-700'
+                    : 'border-border bg-background text-muted-foreground hover:border-red-200'
+                }`}
+              >
+                <XCircle className="w-4 h-4" />
+                Refusé
+              </button>
+
+              {/* Badge statut actif */}
+              {statutDevis === 'en_attente' && (
+                <Badge className="bg-amber-100 text-amber-800 border-amber-300">⏳ En attente de réponse client</Badge>
+              )}
+              {statutDevis === 'valide' && (
+                <Badge className="bg-green-100 text-green-800 border-green-300">✅ Devis accepté par le client</Badge>
+              )}
+              {statutDevis === 'refuse' && (
+                <Badge className="bg-red-100 text-red-800 border-red-300">❌ Devis refusé par le client</Badge>
+              )}
+            </div>
+
+            {/* Zone facturation si validé */}
+            {statutDevis === 'valide' && (
+              <div className="mt-3 p-4 rounded-lg border-2 border-green-200 bg-green-50/50 space-y-3">
+                <p className="text-sm font-medium text-green-800">
+                  Le devis est validé — vous pouvez générer la facture correspondante.
+                </p>
+                {factureCreee ? (
+                  <div className="flex items-center gap-2 text-green-700 font-medium text-sm">
+                    <CheckCircle2 className="w-5 h-5" />
+                    Facture <strong>{factureCreee}</strong> créée avec succès dans le module Comptabilité.
+                  </div>
+                ) : (
+                  <Button
+                    onClick={creerFacture}
+                    disabled={creatingFacture}
+                    className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+                  >
+                    <Receipt className="w-4 h-4" />
+                    {creatingFacture ? "Création en cours..." : "Générer la facture"}
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Actions PDF */}
+          <div className="flex items-center gap-3 pt-2 flex-wrap">
             <Button
               onClick={generateDevisPDF}
               disabled={generating}
