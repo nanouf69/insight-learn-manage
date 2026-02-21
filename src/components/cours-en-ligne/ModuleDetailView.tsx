@@ -386,6 +386,35 @@ function ExerciceCard({
   );
 }
 
+// ===== Éditeur inline pour un cours =====
+function CoursEditor({ item, onSave, onCancel }: { item: ContentItem; onSave: (updated: ContentItem) => void; onCancel: () => void }) {
+  const [titre, setTitre] = useState(item.titre);
+  const [sousTitre, setSousTitre] = useState(item.sousTitre || "");
+  return (
+    <Card className="border-2 border-primary/30 transition-all">
+      <CardContent className="p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <Badge>Modifier le cours</Badge>
+          <div className="flex gap-2">
+            <Button size="sm" variant="ghost" onClick={onCancel}><X className="w-4 h-4" /></Button>
+            <Button size="sm" onClick={() => { onSave({ ...item, titre, sousTitre: sousTitre || undefined }); toast.success("Cours modifié"); }} className="gap-1">
+              <Save className="w-3 h-3" /> Enregistrer
+            </Button>
+          </div>
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-semibold">Titre</label>
+          <Input value={titre} onChange={e => setTitre(e.target.value)} className="text-sm" />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-semibold">Sous-titre / Contenu</label>
+          <Textarea value={sousTitre} onChange={e => setSousTitre(e.target.value)} rows={3} className="text-sm" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 const ContentCard = ({
   item,
   index,
@@ -393,6 +422,7 @@ const ContentCard = ({
   onMove,
   onDelete,
   onToggle,
+  onEdit,
   borderColor,
 }: {
   item: ContentItem;
@@ -401,6 +431,7 @@ const ContentCard = ({
   onMove: (index: number, direction: "up" | "down") => void;
   onDelete: (id: number) => void;
   onToggle: (id: number) => void;
+  onEdit: (id: number) => void;
   borderColor: string;
 }) => (
   <Card className={`border-2 ${borderColor} transition-all hover:shadow-md`}>
@@ -418,7 +449,7 @@ const ContentCard = ({
         <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onMove(index, "down")} disabled={index === total - 1}>
           <ArrowDown className="w-4 h-4" />
         </Button>
-        <Button variant="default" size="sm" className="gap-1">
+        <Button variant="default" size="sm" className="gap-1" onClick={() => onEdit(item.id)}>
           <Pencil className="w-3 h-3" />
           Modifier
         </Button>
@@ -438,6 +469,7 @@ const ContentCard = ({
 
 const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
   const [moduleData, setModuleData] = useState<ModuleData>(() => getInitialModuleData(module));
+  const [editingCoursId, setEditingCoursId] = useState<number | null>(null);
 
   const isPratique = module.id === 6 || module.id === 8;
 
@@ -656,16 +688,29 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {moduleData.cours.map((cours, index) => (
-                    <ContentCard
-                      key={cours.id}
-                      item={cours}
-                      index={index}
-                      total={moduleData.cours.length}
-                      onMove={(i, d) => moveItem("cours", i, d)}
-                      onDelete={(id) => deleteItem("cours", id)}
-                      onToggle={(id) => toggleItem("cours", id)}
-                      borderColor="border-emerald-400"
-                    />
+                    editingCoursId === cours.id ? (
+                      <CoursEditor
+                        key={cours.id}
+                        item={cours}
+                        onSave={(updated) => {
+                          setModuleData({ ...moduleData, cours: moduleData.cours.map(c => c.id === updated.id ? updated : c) });
+                          setEditingCoursId(null);
+                        }}
+                        onCancel={() => setEditingCoursId(null)}
+                      />
+                    ) : (
+                      <ContentCard
+                        key={cours.id}
+                        item={cours}
+                        index={index}
+                        total={moduleData.cours.length}
+                        onMove={(i, d) => moveItem("cours", i, d)}
+                        onDelete={(id) => deleteItem("cours", id)}
+                        onToggle={(id) => toggleItem("cours", id)}
+                        onEdit={(id) => setEditingCoursId(id)}
+                        borderColor="border-emerald-400"
+                      />
+                    )
                   ))}
                 </div>
               )}
@@ -709,6 +754,7 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                           onMove={(i, d) => moveItem("exercices", i, d)}
                           onDelete={(id) => deleteItem("exercices", id)}
                           onToggle={(id) => toggleItem("exercices", id)}
+                          onEdit={() => {}}
                           borderColor="border-slate-300"
                         />
                       ))}
