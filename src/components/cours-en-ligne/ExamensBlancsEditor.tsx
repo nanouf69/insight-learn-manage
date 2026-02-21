@@ -316,11 +316,11 @@ function MatiereEditor({
 }
 
 // ===== COMPOSANT PRINCIPAL =====
-export default function ExamensBlancsEditor({ onBack }: { onBack: () => void }) {
+export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBack: () => void; defaultExamenId?: string | null }) {
   const [examens, setExamens] = useState<ExamenBlanc[]>(
     () => JSON.parse(JSON.stringify(tousLesExamens))
   );
-  const [examenSelId, setExamenSelId] = useState<string | null>(null);
+  const [examenSelId, setExamenSelId] = useState<string | null>(defaultExamenId || null);
   const [typeFiltre, setTypeFiltre] = useState<"tous" | "TAXI" | "VTC">("tous");
   const [saved, setSaved] = useState(false);
 

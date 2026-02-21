@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import ModuleDetailView from "./ModuleDetailView";
 import ExamensBlancsPage from "./ExamensBlancsPage";
+import ExamensBlancsEditor from "./ExamensBlancsEditor";
 
 // IDs des modules bilan qui ouvrent directement l'onglet examens
 const BILAN_MODULE_IDS: Record<number, string> = {
@@ -46,15 +47,20 @@ const CoursEnLignePage = () => {
     setModules(modules.filter(m => m.id !== id));
   };
 
+  const [editingBilanId, setEditingBilanId] = useState<string | null>(null);
+
   const handleEditerModule = (module: { id: number; nom: string }) => {
     if (BILAN_MODULE_IDS[module.id]) {
-      // Ouvre directement l'onglet Examens Blancs avec le bilan correspondant
-      setBilanActif(BILAN_MODULE_IDS[module.id]);
-      setActiveTab("examens-blancs");
+      // Ouvre directement l'éditeur de questions pour le bilan correspondant
+      setEditingBilanId(BILAN_MODULE_IDS[module.id]);
     } else {
       setEditingModule(module);
     }
   };
+
+  if (editingBilanId) {
+    return <ExamensBlancsEditor onBack={() => setEditingBilanId(null)} defaultExamenId={editingBilanId} />;
+  }
 
   if (editingModule) {
     return <ModuleDetailView module={editingModule} onBack={() => setEditingModule(null)} />;
