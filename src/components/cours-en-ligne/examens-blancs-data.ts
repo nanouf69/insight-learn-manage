@@ -41,7 +41,7 @@ export interface ExamenBlanc {
  */
 export function getPointsParQuestion(matiereId: string, questionType: QuestionType): number {
   // Matières Bilan : tout est à 1 point (QCM uniquement)
-  if (matiereId.startsWith("bilan_")) {
+  if (matiereId.startsWith("bilan_") || matiereId.startsWith("bilan_pratique")) {
     return 1;
   }
   if (matiereId === "francais") {
@@ -4311,6 +4311,25 @@ const bilan_reglementation_taxi_locale: Matiere = {
   ]
 };
 
+// ===== PRATIQUE TAXI =====
+const bilan_pratique_taxi: Matiere = {
+  id: "bilan_pratique_taxi",
+  nom: "H - Pratique TAXI",
+  duree: 0,
+  coefficient: 1,
+  noteEliminatoire: 0,
+  noteSur: 7,
+  questions: [
+    { id: 1, type: "QCM", enonce: "Quelle est la note minimale requise pour être reçu à l'épreuve pratique TAXI ?", choix: [{ lettre: "A", texte: "10/20" }, { lettre: "B", texte: "12/20", correct: true }, { lettre: "C", texte: "14/20" }, { lettre: "D", texte: "8/20" }] },
+    { id: 2, type: "QCM", enonce: "Combien de points sont attribués à la 'Préparation et réalisation du parcours' lors de l'épreuve pratique TAXI ?", choix: [{ lettre: "A", texte: "5 points" }, { lettre: "B", texte: "2 points", correct: true }, { lettre: "C", texte: "3 points" }, { lettre: "D", texte: "10 points" }] },
+    { id: 3, type: "QCM", enonce: "Combien de temps avez-vous pour actionner le taximètre, écrire l'adresse GPS et montrer les points sur la carte ?", choix: [{ lettre: "A", texte: "3 minutes" }, { lettre: "B", texte: "10 minutes" }, { lettre: "C", texte: "6 minutes", correct: true }, { lettre: "D", texte: "8 minutes" }] },
+    { id: 4, type: "QCM", enonce: "Que devez-vous présenter aux jurys avant de démarrer l'épreuve pratique TAXI ?", choix: [{ lettre: "A", texte: "Le permis de conduire uniquement" }, { lettre: "B", texte: "La carte grise et l'assurance du véhicule", correct: true }, { lettre: "C", texte: "La carte professionnelle uniquement" }, { lettre: "D", texte: "Le certificat médical" }] },
+    { id: 5, type: "QCM", enonce: "Que faire si vous ne connaissez pas la réponse à une question touristique posée par le jury ?", choix: [{ lettre: "A", texte: "Inventer une réponse" }, { lettre: "B", texte: "Ne rien dire" }, { lettre: "C", texte: "Dire 'Je ne sais pas mais je peux me renseigner'", correct: true }, { lettre: "D", texte: "Changer de sujet" }] },
+    { id: 6, type: "QCM", enonce: "Avez-vous le droit de prendre un client qui vous a hélé à moins de 50 mètres d'une station de taxi ?", choix: [{ lettre: "A", texte: "Oui, toujours" }, { lettre: "B", texte: "Non", correct: true }, { lettre: "C", texte: "Oui, si la station est vide" }] },
+    { id: 7, type: "QCM", enonce: "À partir de quel montant la délivrance d'une note de course TAXI est-elle obligatoire ?", choix: [{ lettre: "A", texte: "15,24 €" }, { lettre: "B", texte: "25 € TTC", correct: true }, { lettre: "C", texte: "10 €" }, { lettre: "D", texte: "50 €" }] },
+  ]
+};
+
 export const bilanExamenTaxi: ExamenBlanc = {
   id: "bilan-taxi",
   numero: 7,
@@ -4324,6 +4343,7 @@ export const bilanExamenTaxi: ExamenBlanc = {
     bilan_anglais_taxi,
     bilan_reglementation_taxi_specifique,
     bilan_reglementation_taxi_locale,
+    bilan_pratique_taxi,
   ]
 };
 
@@ -4365,6 +4385,25 @@ const bilan_reglementation_vtc_locale: Matiere = {
   ]
 };
 
+// ===== PRATIQUE VTC =====
+const bilan_pratique_vtc: Matiere = {
+  id: "bilan_pratique_vtc",
+  nom: "H - Pratique VTC",
+  duree: 0,
+  coefficient: 1,
+  noteEliminatoire: 0,
+  noteSur: 7,
+  questions: [
+    { id: 1, type: "QCM", enonce: "Quelle est la note minimale requise pour être reçu à l'épreuve pratique VTC ?", choix: [{ lettre: "A", texte: "10/20" }, { lettre: "B", texte: "12/20", correct: true }, { lettre: "C", texte: "14/20" }, { lettre: "D", texte: "8/20" }] },
+    { id: 2, type: "QCM", enonce: "Combien de temps avez-vous pour faire le devis, écrire l'adresse GPS et montrer les points sur la carte ?", choix: [{ lettre: "A", texte: "3 minutes" }, { lettre: "B", texte: "10 minutes" }, { lettre: "C", texte: "6 minutes", correct: true }, { lettre: "D", texte: "8 minutes" }] },
+    { id: 3, type: "QCM", enonce: "Que faites-vous une fois arrivé à destination en tant que VTC ?", choix: [{ lettre: "A", texte: "Je reste stationné sur la chaussée en attente de clients" }, { lettre: "B", texte: "Je retourne au siège de mon entreprise ou je stationne hors de la chaussée", correct: true }, { lettre: "C", texte: "Je cherche d'autres clients dans la rue" }] },
+    { id: 4, type: "QCM", enonce: "Quel document devez-vous faire signer au client avant de démarrer la course VTC ?", choix: [{ lettre: "A", texte: "Un contrat de transport" }, { lettre: "B", texte: "Le devis", correct: true }, { lettre: "C", texte: "Une attestation d'assurance" }, { lettre: "D", texte: "Aucun document" }] },
+    { id: 5, type: "QCM", enonce: "Quel est le taux de TVA applicable pour une prestation VTC ?", choix: [{ lettre: "A", texte: "20%" }, { lettre: "B", texte: "10%", correct: true }, { lettre: "C", texte: "5,5%" }, { lettre: "D", texte: "0%" }] },
+    { id: 6, type: "QCM", enonce: "Que faire si le client ne paie pas sa course VTC ?", choix: [{ lettre: "A", texte: "Appeler la police immédiatement" }, { lettre: "B", texte: "Faire une demande en injonction de payer devant le tribunal d'instance", correct: true }, { lettre: "C", texte: "Refuser de le laisser sortir du véhicule" }] },
+    { id: 7, type: "QCM", enonce: "Quelles précautions prendre pour transporter un enfant de 9 mois à 4 ans ?", choix: [{ lettre: "A", texte: "Ceinture de sécurité classique" }, { lettre: "B", texte: "Siège auto adapté à l'arrière face à la route", correct: true }, { lettre: "C", texte: "Pas de précaution particulière" }, { lettre: "D", texte: "Siège auto à l'avant dos à la route" }] },
+  ]
+};
+
 export const bilanExamenVTC: ExamenBlanc = {
   id: "bilan-vtc",
   numero: 7,
@@ -4378,6 +4417,7 @@ export const bilanExamenVTC: ExamenBlanc = {
     bilan_anglais_taxi,
     bilan_reglementation_vtc_specifique,
     bilan_reglementation_vtc_locale,
+    bilan_pratique_vtc,
   ]
 };
 
