@@ -4,7 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings } from "lucide-react";
 import { toast } from "sonner";
 
 interface ContentItem {
@@ -489,6 +490,124 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
     });
   };
 
+  // === Aperçu apprenant ===
+  const LearnerPreview = () => {
+    const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
+    const [showResults, setShowResults] = useState(false);
+
+    const activeCours = moduleData.cours.filter(c => c.actif);
+    const activeExercices = moduleData.exercices.filter(e => e.actif) as ExerciceItem[];
+
+    const handleAnswer = (exoId: number, qId: number, lettre: string) => {
+      if (showResults) return;
+      setSelectedAnswers(prev => ({ ...prev, [`${exoId}-${qId}`]: lettre }));
+    };
+
+    const totalQuestions = activeExercices.reduce((sum, e) => sum + (e.questions?.length || 0), 0);
+    const correctCount = activeExercices.reduce((sum, e) => {
+      if (!e.questions) return sum;
+      return sum + e.questions.filter(q => {
+        const key = `${e.id}-${q.id}`;
+        const selected = selectedAnswers[key];
+        const correct = q.choix.find(c => c.correct);
+        return selected && correct && selected === correct.lettre;
+      }).length;
+    }, 0);
+
+    return (
+      <div className="space-y-6 max-w-3xl mx-auto">
+        <div className="text-center space-y-2">
+          <h2 className="text-2xl font-bold">{moduleData.nom}</h2>
+          <p className="text-muted-foreground">{moduleData.description}</p>
+        </div>
+
+        {/* Cours */}
+        {activeCours.length > 0 && (
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              <h3 className="text-lg font-bold flex items-center gap-2">📚 Cours</h3>
+              <div className="space-y-3">
+                {activeCours.map((cours, i) => (
+                  <div key={cours.id} className="p-4 border rounded-lg bg-muted/30">
+                    <h4 className="font-semibold">{cours.titre}</h4>
+                    {cours.sousTitre && <p className="text-sm text-muted-foreground mt-1">{cours.sousTitre}</p>}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Exercices QCM */}
+        {activeExercices.length > 0 && (
+          <div className="space-y-4">
+            {activeExercices.map(exo => (
+              <Card key={exo.id}>
+                <CardContent className="p-6 space-y-4">
+                  <h3 className="text-lg font-bold">📝 {exo.titre}</h3>
+                  {exo.questions && exo.questions.map((q, qi) => {
+                    const key = `${exo.id}-${q.id}`;
+                    const selected = selectedAnswers[key];
+                    const correctChoice = q.choix.find(c => c.correct);
+                    return (
+                      <div key={q.id} className="space-y-2 p-4 border rounded-lg">
+                        <p className="font-medium">{qi + 1}. {q.enonce}</p>
+                        <div className="space-y-1.5 ml-2">
+                          {q.choix.map(c => {
+                            let bg = "bg-background hover:bg-muted/50 border";
+                            if (selected === c.lettre && !showResults) bg = "bg-primary/10 border-primary border-2";
+                            if (showResults && c.correct) bg = "bg-emerald-50 border-emerald-500 border-2 dark:bg-emerald-950";
+                            if (showResults && selected === c.lettre && !c.correct) bg = "bg-destructive/10 border-destructive border-2";
+                            return (
+                              <button
+                                key={c.lettre}
+                                onClick={() => handleAnswer(exo.id, q.id, c.lettre)}
+                                className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-all ${bg}`}
+                              >
+                                <span className="w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0">
+                                  {c.lettre}
+                                </span>
+                                <span className="text-sm">{c.texte}</span>
+                                {showResults && c.correct && <CheckCircle2 className="w-4 h-4 text-emerald-600 ml-auto shrink-0" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Score */}
+        {totalQuestions > 0 && (
+          <div className="flex justify-center gap-4">
+            {!showResults ? (
+              <Button size="lg" onClick={() => setShowResults(true)} className="gap-2">
+                <CheckCircle2 className="w-5 h-5" /> Valider mes réponses
+              </Button>
+            ) : (
+              <Card className="w-full">
+                <CardContent className="p-6 text-center space-y-2">
+                  <p className="text-2xl font-bold">{correctCount} / {totalQuestions}</p>
+                  <p className="text-muted-foreground">
+                    {correctCount === totalQuestions ? "🎉 Parfait !" : correctCount >= totalQuestions * 0.6 ? "👍 Bon travail !" : "📖 Continuez à réviser"}
+                  </p>
+                  <Button variant="outline" onClick={() => { setSelectedAnswers({}); setShowResults(false); }}>
+                    Recommencer
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center gap-3">
@@ -498,100 +617,113 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
         <h2 className="text-2xl font-bold">Détail du module</h2>
       </div>
 
-      <Card>
-        <CardContent className="p-6 space-y-4">
-          <div>
-            <label className="text-lg font-bold block mb-2">Titre du module</label>
-            <Input value={moduleData.nom} onChange={(e) => setModuleData({ ...moduleData, nom: e.target.value })} className="text-base font-semibold" />
-          </div>
-          <div>
-            <label className="text-lg font-bold block mb-2">Description du module</label>
-            <Textarea value={moduleData.description} onChange={(e) => setModuleData({ ...moduleData, description: e.target.value })} rows={2} />
-          </div>
-          <div className="flex justify-end">
-            <Button onClick={() => toast.success("Module sauvegardé")} className="gap-2">
-              Sauvegarder le module
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="edition" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="edition" className="gap-2"><Settings className="w-4 h-4" /> Édition</TabsTrigger>
+          <TabsTrigger value="apercu" className="gap-2"><Eye className="w-4 h-4" /> Aperçu apprenant</TabsTrigger>
+        </TabsList>
 
-      {/* Cours */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold">Cours</h3>
-            <Button onClick={() => addItem("cours")} className="gap-2">
-              <Plus className="w-4 h-4" /> Ajouter un cours
-            </Button>
-          </div>
-          {moduleData.cours.length === 0 ? (
-            <p className="text-muted-foreground text-sm text-center py-8">Aucun cours dans ce module</p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {moduleData.cours.map((cours, index) => (
-                <ContentCard
-                  key={cours.id}
-                  item={cours}
-                  index={index}
-                  total={moduleData.cours.length}
-                  onMove={(i, d) => moveItem("cours", i, d)}
-                  onDelete={(id) => deleteItem("cours", id)}
-                  onToggle={(id) => toggleItem("cours", id)}
-                  borderColor="border-emerald-400"
-                />
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        <TabsContent value="edition" className="space-y-6">
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              <div>
+                <label className="text-lg font-bold block mb-2">Titre du module</label>
+                <Input value={moduleData.nom} onChange={(e) => setModuleData({ ...moduleData, nom: e.target.value })} className="text-base font-semibold" />
+              </div>
+              <div>
+                <label className="text-lg font-bold block mb-2">Description du module</label>
+                <Textarea value={moduleData.description} onChange={(e) => setModuleData({ ...moduleData, description: e.target.value })} rows={2} />
+              </div>
+              <div className="flex justify-end">
+                <Button onClick={() => toast.success("Module sauvegardé")} className="gap-2">
+                  Sauvegarder le module
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
-      {/* Exercices */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold">Exercices</h3>
-            <Button onClick={() => addItem("exercices")} className="gap-2">
-              <Plus className="w-4 h-4" /> Ajouter un exercice
-            </Button>
-          </div>
-          {moduleData.exercices.length === 0 ? (
-            <p className="text-muted-foreground text-sm text-center py-8">Aucun exercice dans ce module</p>
-          ) : (
-            <div className="space-y-4">
-              {isPratique ? (
-                moduleData.exercices.map((exercice, index) => (
-                  <ExerciceCard
-                    key={exercice.id}
-                    item={exercice as ExerciceItem}
-                    index={index}
-                    total={moduleData.exercices.length}
-                    onMove={(i, d) => moveItem("exercices", i, d)}
-                    onDelete={(id) => deleteItem("exercices", id)}
-                    onToggle={(id) => toggleItem("exercices", id)}
-                    onUpdateQuestions={updateExerciceQuestions}
-                  />
-                ))
+          {/* Cours */}
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold">Cours</h3>
+                <Button onClick={() => addItem("cours")} className="gap-2">
+                  <Plus className="w-4 h-4" /> Ajouter un cours
+                </Button>
+              </div>
+              {moduleData.cours.length === 0 ? (
+                <p className="text-muted-foreground text-sm text-center py-8">Aucun cours dans ce module</p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {moduleData.exercices.map((exercice, index) => (
+                  {moduleData.cours.map((cours, index) => (
                     <ContentCard
-                      key={exercice.id}
-                      item={exercice}
+                      key={cours.id}
+                      item={cours}
                       index={index}
-                      total={moduleData.exercices.length}
-                      onMove={(i, d) => moveItem("exercices", i, d)}
-                      onDelete={(id) => deleteItem("exercices", id)}
-                      onToggle={(id) => toggleItem("exercices", id)}
-                      borderColor="border-slate-300"
+                      total={moduleData.cours.length}
+                      onMove={(i, d) => moveItem("cours", i, d)}
+                      onDelete={(id) => deleteItem("cours", id)}
+                      onToggle={(id) => toggleItem("cours", id)}
+                      borderColor="border-emerald-400"
                     />
                   ))}
                 </div>
               )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+
+          {/* Exercices */}
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold">Exercices</h3>
+                <Button onClick={() => addItem("exercices")} className="gap-2">
+                  <Plus className="w-4 h-4" /> Ajouter un exercice
+                </Button>
+              </div>
+              {moduleData.exercices.length === 0 ? (
+                <p className="text-muted-foreground text-sm text-center py-8">Aucun exercice dans ce module</p>
+              ) : (
+                <div className="space-y-4">
+                  {isPratique ? (
+                    moduleData.exercices.map((exercice, index) => (
+                      <ExerciceCard
+                        key={exercice.id}
+                        item={exercice as ExerciceItem}
+                        index={index}
+                        total={moduleData.exercices.length}
+                        onMove={(i, d) => moveItem("exercices", i, d)}
+                        onDelete={(id) => deleteItem("exercices", id)}
+                        onToggle={(id) => toggleItem("exercices", id)}
+                        onUpdateQuestions={updateExerciceQuestions}
+                      />
+                    ))
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {moduleData.exercices.map((exercice, index) => (
+                        <ContentCard
+                          key={exercice.id}
+                          item={exercice}
+                          index={index}
+                          total={moduleData.exercices.length}
+                          onMove={(i, d) => moveItem("exercices", i, d)}
+                          onDelete={(id) => deleteItem("exercices", id)}
+                          onToggle={(id) => toggleItem("exercices", id)}
+                          borderColor="border-slate-300"
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="apercu">
+          <LearnerPreview />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
