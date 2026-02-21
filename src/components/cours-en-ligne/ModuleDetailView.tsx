@@ -8,10 +8,34 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings } from "lucide-react";
 import { toast } from "sonner";
 
+// Images des monuments et lieux de Lyon
+import imgCathedraleStJean from "@/assets/pratique/cathedrale-st-jean.jpg";
+import imgBasiliqueFourviere from "@/assets/pratique/basilique-fourviere.jpg";
+import imgEgliseStGeorges from "@/assets/pratique/eglise-st-georges.jpg";
+import imgPlaceBellecour from "@/assets/pratique/place-bellecour.jpg";
+import imgPlaceTerreaux from "@/assets/pratique/place-terreaux.jpg";
+import imgOperaLyon from "@/assets/pratique/opera-lyon.jpg";
+import imgHotelDeVille from "@/assets/pratique/hotel-de-ville.jpg";
+import imgParcTeteDor from "@/assets/pratique/parc-tete-dor.jpg";
+import imgHotelDieu from "@/assets/pratique/hotel-dieu.jpg";
+import imgMuseeConfluences from "@/assets/pratique/musee-confluences.jpg";
+import imgTourOxygene from "@/assets/pratique/tour-oxygene.jpg";
+import imgTourIncity from "@/assets/pratique/tour-incity.jpg";
+import imgFresqueLyonnais from "@/assets/pratique/fresque-lyonnais.jpg";
+import imgMurCanuts from "@/assets/pratique/mur-canuts.jpg";
+import imgPaulBocuse from "@/assets/pratique/paul-bocuse.jpg";
+import imgChateauMotte from "@/assets/pratique/chateau-motte.jpg";
+import imgBrasserieGeorges from "@/assets/pratique/brasserie-georges.jpg";
+import imgParcBlandan from "@/assets/pratique/parc-blandan.jpg";
+import imgQuenelle from "@/assets/pratique/quenelle.jpg";
+import imgBugnes from "@/assets/pratique/bugnes.jpg";
+
 interface ContentItem {
   id: number;
   titre: string;
   sousTitre?: string;
+  description?: string;
+  image?: string;
   actif: boolean;
 }
 
@@ -54,16 +78,16 @@ const PRATIQUE_TAXI_DATA: ModuleData = {
   nom: "8.PRATIQUE TAXI",
   description: "Cours et exercices pour la préparation à l'épreuve pratique TAXI — Déroulement de l'examen, lieux touristiques de Lyon, facturation et relation client.",
   cours: [
-    { id: 1, titre: "1. Grille de notation de l'épreuve pratique TAXI", sousTitre: "Barème : Parcours (2pts), Sécurité/Conduite (10pts), Relation client (5pts), Facturation (3pts) — Note min. 12/20", actif: true },
-    { id: 2, titre: "2. Déroulement de l'épreuve pratique TAXI", sousTitre: "Accueil des jurys, tirage au sort de la destination, taximètre, parcours aller-retour, prise de congé", actif: true },
-    { id: 3, titre: "3. Monuments historiques de Lyon", sousTitre: "Cathédrale St Jean, Basilique de Fourvière, Église St Georges, Place Bellecour, Palais de Justice", actif: true },
-    { id: 4, titre: "4. Places et bâtiments remarquables", sousTitre: "Place des Terreaux, Opéra de Lyon, Hôtel de Ville, Hôtel-Dieu, Musée des Confluences", actif: true },
-    { id: 5, titre: "5. Tours et architecture moderne", sousTitre: "Tour Part-Dieu (le crayon, 165m), Tour Oxygène (117m), Tour Incity (la gomme, 202m)", actif: true },
-    { id: 6, titre: "6. Fresques et personnalités lyonnaises", sousTitre: "Fresque des Lyonnais, Mur des Canuts, Mur du cinéma — Paul Bocuse, Frères Lumière, Tony Garnier", actif: true },
-    { id: 7, titre: "7. Parcs et châteaux", sousTitre: "Parc de la Tête d'Or, Parc Blandan, Parc de Parilly, Parc de Gerland — Châteaux de la Motte, Fort St Jean", actif: true },
-    { id: 8, titre: "8. Spécialités culinaires et restaurants", sousTitre: "Quenelle, Cervelle de canut, Tablier de sapeur, Bugnes — Brasserie Georges, Bouchons lyonnais", actif: true },
-    { id: 9, titre: "9. Facturation et taximètre", sousTitre: "Utilisation du compteur horokilométrique, sélection du tarif, suppléments, terminal de paiement", actif: true },
-    { id: 10, titre: "10. Conseils pratiques pour le jour de l'examen", sousTitre: "Tenue vestimentaire, GPS, gestion du feu orange, comportement neutre, questions de confort", actif: true },
+    { id: 1, titre: "1. Grille de notation de l'épreuve pratique TAXI", sousTitre: "Barème : Parcours (2pts), Sécurité/Conduite (10pts), Relation client (5pts), Facturation (3pts) — Note min. 12/20", description: "L'épreuve pratique comprend une phase de conduite en circulation d'une durée minimum de 20 minutes, notée sur 20 points. Est déclaré reçu le candidat ayant obtenu au moins 12/20.", actif: true },
+    { id: 2, titre: "2. Déroulement de l'épreuve pratique TAXI", sousTitre: "Accueil des jurys, tirage au sort de la destination, taximètre, parcours aller-retour, prise de congé", description: "1) Arrangements techniques. 2) Accueil des jurys. 3) Présentation carte grise et assurance. 4) Tirage au sort destination. 5) Démarrage taximètre et GPS (6 min max). 6) Parcours aller-retour. 7) Facturation et prise de congé.", actif: true },
+    { id: 3, titre: "3. Monuments historiques de Lyon", sousTitre: "Cathédrale St Jean, Basilique de Fourvière, Église St Georges", image: imgCathedraleStJean, description: "• Cathédrale St Jean (1480) — Vieux Lyon, 5e arr., près du funiculaire de Fourvière.\n• Basilique de Fourvière (1886) — Patrimoine mondial UNESCO 1998, surplombe la ville.\n• Église St Georges (1848) — Vieux Lyon, entre Quarantaine et St-Jean.", actif: true },
+    { id: 4, titre: "4. Places et bâtiments remarquables", sousTitre: "Place Bellecour, Palais de Justice, Place des Terreaux, Opéra, Hôtel de Ville", image: imgPlaceBellecour, description: "• Place Bellecour — 5e plus grande place de France, statue de Louis XIV.\n• Palais de Justice (1835) — 5e arr., « Palais des 24 colonnes ».\n• Place des Terreaux — 1er arr., fontaine Bartholdi.\n• Opéra de Lyon (1831) — restructuré par Jean Nouvel (1993).\n• Hôtel de Ville — entre Place des Terreaux et Place de la Comédie.", actif: true },
+    { id: 5, titre: "5. Tours et architecture moderne", sousTitre: "Tour Part-Dieu (le crayon, 165m), Tour Oxygène (117m), Tour Incity (la gomme, 202m)", image: imgTourIncity, description: "• Tour Part-Dieu « le crayon » — 42 étages, 165m, ouverte depuis 1977.\n• Tour Oxygène — 28 niveaux, 117m, inaugurée en 2010.\n• Tour Incity « la gomme » — 39 étages, 202m, 3e plus haut gratte-ciel de France, inaugurée en 2016.", actif: true },
+    { id: 6, titre: "6. Fresques et personnalités lyonnaises", sousTitre: "Fresque des Lyonnais, Mur des Canuts, Mur du cinéma — Paul Bocuse, Frères Lumière", image: imgFresqueLyonnais, description: "• Fresque des Lyonnais — 800m², 30 personnages, 2 rue de la Martinière 69001.\n• Mur des Canuts — 36 Bd des Canuts 69004, plus grand d'Europe (1200m²).\n• Mur du cinéma — Place Gabriel Péri 69007.\n• Paul Bocuse — 3 étoiles Michelin 53 ans.\n• Frères Lumière — pionniers du cinéma.\n• Tony Garnier — architecte urbaniste.", actif: true },
+    { id: 7, titre: "7. Parcs et châteaux", sousTitre: "Parc de la Tête d'Or, Parc Blandan, Parc de Parilly, Parc de Gerland", image: imgParcTeteDor, description: "• Parc de la Tête d'Or (117 ha) — zoo, jardin botanique, vélodrome, Guignol.\n• Parc Blandan — skate park, carousel, jeux enfants.\n• Parc de Parilly — hippodrome, stade d'athlétisme, 10 terrains de foot.\n• Château de la Motte — 7e arr., motte castrale.\n• Fort St Jean — 1er arr., première ceinture.\n• Domaine de la Bachasse — Sainte-Foy-lès-Lyon.", actif: true },
+    { id: 8, titre: "8. Spécialités culinaires et restaurants", sousTitre: "Quenelle, Cervelle de canut, Tablier de sapeur, Bugnes, Bouchons lyonnais", image: imgQuenelle, description: "• Quenelle — semoule de blé dur, beurre, œufs, lait.\n• Cervelle de canut — fromage blanc, herbes, échalote.\n• Tablier de sapeur — gras-double (estomac de bœuf).\n• Bugnes, Coussins lyonnais, Tarte praline.\n• Brasserie Georges (2e, cours Verdun) — fruits de mer, choucroute.\n• Bouchons lyonnais — restaurants typiques (Le Mercière, Aux Trois Maries).", actif: true },
+    { id: 9, titre: "9. Facturation et taximètre", sousTitre: "Compteur horokilométrique, sélection du tarif, suppléments, terminal de paiement", description: "Utilisation du compteur horokilométrique, sélection du tarif approprié, établissement de la facturation avec suppléments, terminal de paiement électronique. Note de course obligatoire à partir de 25€ TTC.", actif: true },
+    { id: 10, titre: "10. Conseils pratiques pour le jour de l'examen", sousTitre: "Tenue vestimentaire, GPS, gestion du feu orange, comportement neutre", description: "• Tenue élégante (pas de baskets/casquettes).\n• GPS sur téléphone (Waze/Maps), tester avant l'examen.\n• Feu orange : s'arrêter sauf danger pour véhicules suivants.\n• Rester poli, courtois, neutre (pas d'opinions politiques/religieuses).\n• « Je ne sais pas mais je peux me renseigner » si question inconnue.", actif: true },
   ],
   exercices: [
     {
@@ -110,16 +134,16 @@ const PRATIQUE_VTC_DATA: ModuleData = {
   nom: "7.PRATIQUE VTC",
   description: "Cours et exercices pour la préparation à l'épreuve pratique VTC — Déroulement de l'examen, devis et facturation, lieux touristiques de Lyon, relation client.",
   cours: [
-    { id: 1, titre: "1. Grille de notation de l'épreuve pratique VTC", sousTitre: "Barème : Parcours (2pts), Sécurité/Conduite (10pts), Relation client (5pts), Facturation (3pts) — Note min. 12/20", actif: true },
-    { id: 2, titre: "2. Déroulement de l'épreuve pratique VTC", sousTitre: "Accueil des jurys, tirage au sort, devis (transfert ou mise à disposition), parcours, facture, prise de congé", actif: true },
-    { id: 3, titre: "3. Monuments historiques de Lyon", sousTitre: "Cathédrale St Jean, Basilique de Fourvière, Église St Georges, Place Bellecour, Palais de Justice", actif: true },
-    { id: 4, titre: "4. Places et bâtiments remarquables", sousTitre: "Place des Terreaux, Opéra de Lyon, Hôtel de Ville, Hôtel-Dieu, Musée des Confluences", actif: true },
-    { id: 5, titre: "5. Tours et architecture moderne", sousTitre: "Tour Part-Dieu (le crayon, 165m), Tour Oxygène (117m), Tour Incity (la gomme, 202m)", actif: true },
-    { id: 6, titre: "6. Fresques et personnalités lyonnaises", sousTitre: "Fresque des Lyonnais, Mur des Canuts, Mur du cinéma — Paul Bocuse, Frères Lumière, Tony Garnier", actif: true },
-    { id: 7, titre: "7. Parcs et châteaux", sousTitre: "Parc de la Tête d'Or, Parc Blandan, Parc de Parilly, Parc de Gerland — Châteaux, Domaine de la Bachasse", actif: true },
-    { id: 8, titre: "8. Spécialités culinaires et restaurants", sousTitre: "Quenelle, Cervelle de canut, Tablier de sapeur, Bugnes — Brasserie Georges, Bouchons lyonnais", actif: true },
-    { id: 9, titre: "9. Devis et facturation VTC", sousTitre: "Transfert vs Mise à disposition, calcul TVA 10%, signature du devis, modèle de facture", actif: true },
-    { id: 10, titre: "10. Conseils pratiques pour le jour de l'examen", sousTitre: "Tenue vestimentaire, GPS, gestion du feu orange, comportement neutre, questions de confort", actif: true },
+    { id: 1, titre: "1. Grille de notation de l'épreuve pratique VTC", sousTitre: "Barème : Parcours (2pts), Sécurité/Conduite (10pts), Relation client (5pts), Facturation (3pts) — Note min. 12/20", description: "L'épreuve pratique comprend une phase de conduite en circulation d'une durée minimum de 20 minutes, notée sur 20 points. Est déclaré reçu le candidat ayant obtenu au moins 12/20.", actif: true },
+    { id: 2, titre: "2. Déroulement de l'épreuve pratique VTC", sousTitre: "Accueil des jurys, tirage au sort, devis, parcours, facture, prise de congé", description: "1) Arrangements techniques. 2) Accueil des jurys. 3) Présentation carte grise et assurance. 4) Tirage au sort destination. 5) Réalisation du devis (transfert ou mise à disposition) + GPS (6 min max). 6) Signature du devis par le client. 7) Parcours aller-retour. 8) Facturation et prise de congé.", actif: true },
+    { id: 3, titre: "3. Monuments historiques de Lyon", sousTitre: "Cathédrale St Jean, Basilique de Fourvière, Église St Georges", image: imgCathedraleStJean, description: "• Cathédrale St Jean (1480) — Vieux Lyon, 5e arr., près du funiculaire de Fourvière.\n• Basilique de Fourvière (1886) — Patrimoine mondial UNESCO 1998, surplombe la ville.\n• Église St Georges (1848) — Vieux Lyon, entre Quarantaine et St-Jean.", actif: true },
+    { id: 4, titre: "4. Places et bâtiments remarquables", sousTitre: "Place Bellecour, Palais de Justice, Place des Terreaux, Opéra, Hôtel de Ville", image: imgPlaceTerreaux, description: "• Place Bellecour — 5e plus grande place de France, statue de Louis XIV.\n• Palais de Justice (1835) — 5e arr., « Palais des 24 colonnes ».\n• Place des Terreaux — 1er arr., fontaine Bartholdi.\n• Opéra de Lyon (1831) — restructuré par Jean Nouvel (1993).\n• Hôtel de Ville — entre Place des Terreaux et Place de la Comédie.\n• Hôtel-Dieu — premier hôpital lyonnais (1184), aujourd'hui InterContinental.\n• Musée des Confluences — inauguré en 2014.", actif: true },
+    { id: 5, titre: "5. Tours et architecture moderne", sousTitre: "Tour Part-Dieu (le crayon, 165m), Tour Oxygène (117m), Tour Incity (la gomme, 202m)", image: imgTourOxygene, description: "• Tour Part-Dieu « le crayon » — 42 étages, 165m, ouverte depuis 1977.\n• Tour Oxygène — 28 niveaux, 117m, inaugurée en 2010.\n• Tour Incity « la gomme » — 39 étages, 202m, 3e plus haut gratte-ciel de France, inaugurée en 2016.", actif: true },
+    { id: 6, titre: "6. Fresques et personnalités lyonnaises", sousTitre: "Fresque des Lyonnais, Mur des Canuts — Paul Bocuse, Frères Lumière", image: imgMurCanuts, description: "• Fresque des Lyonnais — 800m², 30 personnages, 2 rue de la Martinière 69001.\n• Mur des Canuts — 36 Bd des Canuts 69004, plus grand d'Europe (1200m²).\n• Paul Bocuse — 3 étoiles Michelin 53 ans.\n• Frères Lumière — pionniers du cinéma.\n• Tony Garnier — architecte urbaniste.", actif: true },
+    { id: 7, titre: "7. Parcs et châteaux", sousTitre: "Parc de la Tête d'Or, Parc Blandan, Parc de Parilly, Châteaux", image: imgParcBlandan, description: "• Parc de la Tête d'Or (117 ha) — zoo, jardin botanique, vélodrome, Guignol.\n• Parc Blandan — skate park, carousel, jeux enfants.\n• Parc de Parilly — hippodrome, stade d'athlétisme.\n• Château de la Motte — 7e arr.\n• Fort St Jean — 1er arr.\n• Domaine de la Bachasse — Sainte-Foy-lès-Lyon.", actif: true },
+    { id: 8, titre: "8. Spécialités culinaires et restaurants", sousTitre: "Quenelle, Cervelle de canut, Tablier de sapeur, Bugnes, Bouchons lyonnais", image: imgBrasserieGeorges, description: "• Quenelle — semoule de blé dur, beurre, œufs, lait.\n• Cervelle de canut — fromage blanc, herbes, échalote.\n• Tablier de sapeur — gras-double.\n• Bugnes, Coussins lyonnais, Tarte praline.\n• Brasserie Georges (2e, cours Verdun) — fruits de mer, choucroute.\n• Bouchons lyonnais — restaurants typiques.", actif: true },
+    { id: 9, titre: "9. Devis et facturation VTC", sousTitre: "Transfert vs Mise à disposition, calcul TVA 10%, signature du devis", description: "• Transfert (A→B) : prix forfaitaire HT + TVA 10%.\n• Mise à disposition : tarif horaire.\n• Minimum 10€ HT (11€ TTC).\n• Faire signer le devis par le client avant de démarrer.\n• Facture à établir à l'arrivée.", actif: true },
+    { id: 10, titre: "10. Conseils pratiques pour le jour de l'examen", sousTitre: "Tenue vestimentaire, GPS, gestion du feu orange, comportement neutre", description: "• Tenue élégante (pas de baskets/casquettes).\n• GPS sur téléphone (Waze/Maps), tester avant l'examen.\n• Feu orange : s'arrêter sauf danger pour véhicules suivants.\n• Rester poli, courtois, neutre.\n• Bien écrire le point de départ de la facturation sur le devis.\n• À destination : retourner au siège ou stationner hors chaussée.", actif: true },
   ],
   exercices: [
     {
@@ -555,19 +579,27 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
 
         {/* Cours */}
         {activeCours.length > 0 && (
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              <h3 className="text-lg font-bold flex items-center gap-2">📚 Cours</h3>
-              <div className="space-y-3">
-                {activeCours.map((cours, i) => (
-                  <div key={cours.id} className="p-4 border rounded-lg bg-muted/30">
-                    <h4 className="font-semibold">{cours.titre}</h4>
-                    {cours.sousTitre && <p className="text-sm text-muted-foreground mt-1">{cours.sousTitre}</p>}
+          <div className="space-y-4">
+            <h3 className="text-xl font-bold flex items-center gap-2">📚 Cours</h3>
+            {activeCours.map((cours) => (
+              <Card key={cours.id} className="overflow-hidden">
+                {cours.image && (
+                  <div className="w-full h-48 sm:h-64 overflow-hidden">
+                    <img src={cours.image} alt={cours.titre} className="w-full h-full object-cover" />
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                )}
+                <CardContent className="p-5 space-y-2">
+                  <h4 className="font-bold text-lg">{cours.titre}</h4>
+                  {cours.sousTitre && <p className="text-sm text-muted-foreground">{cours.sousTitre}</p>}
+                  {cours.description && (
+                    <div className="text-sm whitespace-pre-line leading-relaxed mt-2">
+                      {cours.description}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         )}
 
         {/* Exercices QCM */}
