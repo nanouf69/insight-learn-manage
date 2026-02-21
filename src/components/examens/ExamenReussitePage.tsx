@@ -37,9 +37,39 @@ export function ExamenReussitePage() {
   const [sentVTCSMS, setSentVTCSMS] = useState(false);
   const [sendingTAXISMS, setSendingTAXISMS] = useState(false);
   const [sentTAXISMS, setSentTAXISMS] = useState(false);
+  const [sendingRepassage, setSendingRepassage] = useState(false);
+  const [sentRepassage, setSentRepassage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const planningFileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
+
+  const handleSendRepassageEmails = async () => {
+    const echoues = apprenants?.filter(a => (a as any).resultat_examen === 'non' && a.email) || [];
+    if (echoues.length === 0) return;
+    setSendingRepassage(true);
+    let sent = 0;
+    for (const apprenant of echoues) {
+      const type = (apprenant.type_apprenant || '').toLowerCase();
+      let formation = 'VTC';
+      if (type.includes('ta-e') || type === 'ta') formation = 'TAXI (mobilité VTC vers TAXI)';
+      else if (type.includes('taxi') || type.includes('ta-i')) formation = 'TAXI';
+
+      const subject = `Réinscription à l'examen théorique T3P - ${apprenant.prenom} ${apprenant.nom}`;
+      const body = `Bonjour ${apprenant.prenom},<br><br>Suite à votre précédent examen théorique ${formation}, vous devez procéder à une nouvelle inscription pour repasser l'examen théorique.<br><br>📌 <strong>ÉTAPES À SUIVRE :</strong><br><br><strong>1️⃣ Rendez-vous sur le site :</strong><br>👉 <a href="https://www.exament3p.fr" target="_blank">www.exament3p.fr</a><br><br><strong>2️⃣ Connectez-vous avec :</strong><br>• Login : votre adresse email<br>• Mot de passe : cliquez sur "Mot de passe oublié" pour en créer un nouveau<br><br><strong>3️⃣ Une fois connecté(e), procédez à votre réinscription à l'examen théorique</strong> en suivant les instructions du site.<br><br>⚠️ <strong>IMPORTANT — Département 69 obligatoire :</strong><br><span style="color: red; font-size: 16px; font-weight: bold;">🔴 ATTENTION : Lors de votre réinscription, vous devez IMPÉRATIVEMENT sélectionner le département 69 (Rhône), même si vous résidez dans un autre département. Si vous choisissez un autre département, nous ne pourrons pas vous former ni vous louer un véhicule pour l'examen pratique.</span><br><br>⚠️ <strong>IMPORTANT :</strong> Une fois votre réinscription effectuée sur le site, merci de nous recontacter immédiatement afin que nous puissions finaliser votre dossier et vous accompagner pour la suite.<br><br>📞 Tél : <strong>04 28 29 60 91</strong><br>📧 Email : contact@ftransport.fr<br><br>N'hésitez pas à nous contacter si vous rencontrez des difficultés lors de votre réinscription.<br><br>Cordialement,<br><strong>L'équipe Ftransport</strong><br>86 Route de Genas, 69003 Lyon`;
+
+      try {
+        await supabase.functions.invoke('sync-outlook-emails', {
+          body: { action: 'send', userEmail: 'contact@ftransport.fr', to: apprenant.email, subject, body, apprenantId: apprenant.id }
+        });
+        sent++;
+      } catch (e) {
+        console.error(`Erreur envoi repassage à ${apprenant.email}:`, e);
+      }
+    }
+    setSendingRepassage(false);
+    setSentRepassage(true);
+    toast.success(`📧 ${sent}/${echoues.length} email(s) "Repassage examen théorique" envoyé(s)`);
+  };
 
   // Déplacer un candidat à la prochaine session d'entraînement
   const handleDecalerProchaineSession = async (apprenantId: string, apprenantNom: string) => {
@@ -516,6 +546,28 @@ export function ExamenReussitePage() {
                   </div>
                 ))}
               </div>
+            )}
+            {nonReussis.length > 0 && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" variant="outline" disabled={sendingRepassage || sentRepassage} className={`mt-2 w-full gap-1.5 text-xs ${sentRepassage ? 'text-green-700 border-green-300' : ''}`}>
+                    {sentRepassage ? <CheckCircle2 className="h-3 w-3" /> : <Mail className="h-3 w-3" />}
+                    {sendingRepassage ? 'Envoi...' : sentRepassage ? 'Envoyé ✓' : `Email repassage (${nonReussis.filter(a => a.email).length})`}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Envoyer l'email de repassage théorique ?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      L'email "Repassage examen théorique" sera envoyé à {nonReussis.filter(a => a.email).length} apprenant(s) ayant échoué. Il contient le lien vers exament3p.fr et l'obligation de choisir le département 69.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleSendRepassageEmails}>Confirmer l'envoi</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
           </CardContent>
         </Card>
