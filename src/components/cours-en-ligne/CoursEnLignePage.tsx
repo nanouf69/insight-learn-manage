@@ -33,6 +33,7 @@ const CoursEnLignePage = () => {
     { id: 9, nom: "4.BILAN EXERCICES TAXI", eleves: 0, progression: "0%", statut: "Actif" },
     { id: 10, nom: "2.COURS ET EXERCICES TAXI", eleves: 0, progression: "0%", statut: "Actif" },
     { id: 11, nom: "6.BILAN EXAMEN TAXI", eleves: 0, progression: "0%", statut: "Actif" },
+    { id: 12, nom: "9.CAS PRATIQUE TAXI", eleves: 0, progression: "0%", statut: "Actif" },
   ]);
 
   const moveModule = (index: number, direction: "up" | "down") => {
