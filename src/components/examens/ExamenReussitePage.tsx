@@ -338,6 +338,42 @@ export function ExamenReussitePage() {
         const absent = result.details?.filter((d: any) => d.resultat === 'absent').length || 0;
         toast.success(`Résultats mis à jour ! ✅ ${oui} admis, ❌ ${non} non admis, 🔶 ${absent} absents`);
         queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] });
+
+        // Envoi automatique du mail "Repassage examen théorique" aux non-admis
+        if (non > 0) {
+          const echoues = result.details?.filter((d: any) => d.resultat === 'non') || [];
+          // Récupérer les infos des apprenants échoués
+          const { data: echouesApprenants } = await supabase
+            .from('apprenants')
+            .select('id, nom, prenom, email, type_apprenant')
+            .in('numero_dossier_cma', echoues.map((e: any) => e.dossier).filter(Boolean));
+          
+          if (echouesApprenants && echouesApprenants.length > 0) {
+            let emailsSent = 0;
+            for (const apprenant of echouesApprenants) {
+              if (!apprenant.email) continue;
+              const type = (apprenant.type_apprenant || '').toLowerCase();
+              let formation = 'VTC';
+              if (type.includes('ta-e') || type === 'ta') formation = 'TAXI (mobilité VTC vers TAXI)';
+              else if (type.includes('taxi') || type.includes('ta-i')) formation = 'TAXI';
+
+              const subject = `Réinscription à l'examen théorique T3P - ${apprenant.prenom} ${apprenant.nom}`;
+              const body = `Bonjour ${apprenant.prenom},<br><br>Suite à votre précédent examen théorique ${formation}, vous devez procéder à une nouvelle inscription pour repasser l'examen théorique.<br><br>📌 <strong>ÉTAPES À SUIVRE :</strong><br><br><strong>1️⃣ Rendez-vous sur le site :</strong><br>👉 <a href="https://www.exament3p.fr" target="_blank">www.exament3p.fr</a><br><br><strong>2️⃣ Connectez-vous avec :</strong><br>• Login : votre adresse email<br>• Mot de passe : cliquez sur "Mot de passe oublié" pour en créer un nouveau<br><br><strong>3️⃣ Une fois connecté(e), procédez à votre réinscription à l'examen théorique</strong> en suivant les instructions du site.<br><br>⚠️ <strong>IMPORTANT — Département 69 obligatoire :</strong><br><span style="color: red; font-size: 16px; font-weight: bold;">🔴 ATTENTION : Lors de votre réinscription, vous devez IMPÉRATIVEMENT sélectionner le département 69 (Rhône), même si vous résidez dans un autre département. Si vous choisissez un autre département, nous ne pourrons pas vous former ni vous louer un véhicule pour l'examen pratique.</span><br><br>⚠️ <strong>IMPORTANT :</strong> Une fois votre réinscription effectuée sur le site, merci de nous recontacter immédiatement afin que nous puissions finaliser votre dossier et vous accompagner pour la suite.<br><br>📞 Tél : <strong>04 28 29 60 91</strong><br>📧 Email : contact@ftransport.fr<br><br>N'hésitez pas à nous contacter si vous rencontrez des difficultés lors de votre réinscription.<br><br>Cordialement,<br><strong>L'équipe Ftransport</strong><br>86 Route de Genas, 69003 Lyon`;
+
+              try {
+                await supabase.functions.invoke('sync-outlook-emails', {
+                  body: { action: 'send', userEmail: 'contact@ftransport.fr', to: apprenant.email, subject, body, apprenantId: apprenant.id }
+                });
+                emailsSent++;
+              } catch (e) {
+                console.error(`Erreur envoi email repassage à ${apprenant.email}:`, e);
+              }
+            }
+            if (emailsSent > 0) {
+              toast.success(`📧 ${emailsSent} email(s) "Repassage examen théorique" envoyé(s) automatiquement`);
+            }
+          }
+        }
       }
     } catch (err: any) {
       toast.error("Erreur : " + err.message);
