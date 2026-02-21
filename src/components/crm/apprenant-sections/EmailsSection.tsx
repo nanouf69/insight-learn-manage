@@ -152,30 +152,7 @@ L'équipe Ftransport
     getSubject: (a) => `Réinscription à l'examen T3P - ${a.prenom} ${a.nom}`,
     getBody: (a) => {
       const formation = getFormationType(a.type_apprenant);
-      return `Bonjour ${a.prenom},
-
-Suite à votre précédent examen ${formation}, vous devez procéder à une nouvelle inscription pour repasser l'examen.
-
-📌 ÉTAPES À SUIVRE :
-
-1️⃣ Rendez-vous sur le site : www.exament3p.fr
-
-2️⃣ Connectez-vous avec :
-   • Login : votre adresse email
-   • Mot de passe : cliquez sur "Mot de passe oublié" pour en créer un nouveau
-
-3️⃣ Une fois connecté(e), procédez à votre réinscription à l'examen en suivant les instructions du site.
-
-⚠️ IMPORTANT : Une fois votre réinscription effectuée sur le site, merci de nous recontacter immédiatement afin que nous puissions finaliser votre dossier et vous accompagner pour la suite.
-
-📞 Tél : 04 28 29 60 91
-📧 Email : contact@ftransport.fr
-
-N'hésitez pas à nous contacter si vous rencontrez des difficultés lors de votre réinscription.
-
-Cordialement,
-L'équipe Ftransport
-86 Route de Genas, 69003 Lyon`;
+      return `Bonjour ${a.prenom},<br><br>Suite à votre précédent examen ${formation}, vous devez procéder à une nouvelle inscription pour repasser l'examen.<br><br>📌 <strong>ÉTAPES À SUIVRE :</strong><br><br><strong>1️⃣ Rendez-vous sur le site :</strong><br>👉 <a href="https://www.exament3p.fr" target="_blank">www.exament3p.fr</a><br><br><strong>2️⃣ Connectez-vous avec :</strong><br>• Login : votre adresse email<br>• Mot de passe : cliquez sur "Mot de passe oublié" pour en créer un nouveau<br><br><strong>3️⃣ Une fois connecté(e), procédez à votre réinscription à l'examen</strong> en suivant les instructions du site.<br><br>⚠️ <strong>IMPORTANT — Département 69 obligatoire :</strong><br><span style="color: red; font-size: 16px; font-weight: bold;">🔴 ATTENTION : Lors de votre réinscription, vous devez IMPÉRATIVEMENT sélectionner le département 69 (Rhône), même si vous résidez dans un autre département. Si vous choisissez un autre département, nous ne pourrons pas vous former ni vous louer un véhicule pour l'examen pratique.</span><br><br>⚠️ <strong>IMPORTANT :</strong> Une fois votre réinscription effectuée sur le site, merci de nous recontacter immédiatement afin que nous puissions finaliser votre dossier et vous accompagner pour la suite.<br><br>📞 Tél : <strong>04 28 29 60 91</strong><br>📧 Email : contact@ftransport.fr<br><br>N'hésitez pas à nous contacter si vous rencontrez des difficultés lors de votre réinscription.<br><br>Cordialement,<br><strong>L'équipe Ftransport</strong><br>86 Route de Genas, 69003 Lyon`;
     },
   },
   {
