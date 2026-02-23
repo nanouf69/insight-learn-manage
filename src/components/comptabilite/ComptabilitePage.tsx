@@ -637,12 +637,37 @@ export function ComptabilitePage() {
                           <TableCell>{formatDate(item.date_emission)}</TableCell>
                           <TableCell>
                             {item.url ? (
-                              <a href={item.url} target="_blank" rel="noopener noreferrer">
-                                <Button variant="outline" size="sm" className="gap-1 h-8 text-xs">
-                                  <Download className="h-3 w-3" />
-                                  Télécharger
-                                </Button>
-                              </a>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-1 h-8 text-xs"
+                                onClick={async () => {
+                                  try {
+                                    // Extract storage path from full URL
+                                    const match = item.url!.match(/\/storage\/v1\/object\/public\/(.+)/);
+                                    if (!match) {
+                                      window.open(item.url!, '_blank');
+                                      return;
+                                    }
+                                    const fullPath = decodeURIComponent(match[1]);
+                                    const bucketName = fullPath.split('/')[0];
+                                    const filePath = fullPath.substring(bucketName.length + 1);
+                                    const { data, error } = await supabase.storage
+                                      .from(bucketName)
+                                      .createSignedUrl(filePath, 300);
+                                    if (error || !data?.signedUrl) {
+                                      toast.error("Impossible de générer le lien de téléchargement");
+                                      return;
+                                    }
+                                    window.open(data.signedUrl, '_blank');
+                                  } catch {
+                                    toast.error("Erreur lors du téléchargement");
+                                  }
+                                }}
+                              >
+                                <Download className="h-3 w-3" />
+                                Télécharger
+                              </Button>
                             ) : (
                               <span className="text-muted-foreground text-xs">—</span>
                             )}
