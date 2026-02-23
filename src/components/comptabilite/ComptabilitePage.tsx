@@ -76,7 +76,8 @@ interface APayer {
   statut: string;
   date_paiement: string | null;
   moyen_paiement: string | null;
-  source_id: string; // facture id or fournisseur_facture id
+  source_id: string;
+  url: string | null;
 }
 
 const statutConfig: Record<string, { label: string; color: string }> = {
@@ -373,6 +374,7 @@ export function ComptabilitePage() {
     date_paiement: f.date_paiement || null,
     moyen_paiement: f.moyen_paiement || null,
     source_id: f.id,
+    url: f.url || null,
   })).sort((a: APayer, b: APayer) => new Date(b.date_emission).getTime() - new Date(a.date_emission).getTime());
 
   const filteredAPayerItems = aPayerItems.filter((item: APayer) => {
@@ -617,6 +619,7 @@ export function ComptabilitePage() {
                       <TableHead>Description</TableHead>
                       <TableHead className="text-right">Montant</TableHead>
                       <TableHead>Date</TableHead>
+                      <TableHead>Facture</TableHead>
                       <TableHead>Statut</TableHead>
                       <TableHead>Date de paiement</TableHead>
                       <TableHead>Moyen</TableHead>
@@ -632,6 +635,18 @@ export function ComptabilitePage() {
                           <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">{item.description}</TableCell>
                           <TableCell className="text-right font-semibold">{formatMontant(item.montant)}</TableCell>
                           <TableCell>{formatDate(item.date_emission)}</TableCell>
+                          <TableCell>
+                            {item.url ? (
+                              <a href={item.url} target="_blank" rel="noopener noreferrer">
+                                <Button variant="outline" size="sm" className="gap-1 h-8 text-xs">
+                                  <Download className="h-3 w-3" />
+                                  Télécharger
+                                </Button>
+                              </a>
+                            ) : (
+                              <span className="text-muted-foreground text-xs">—</span>
+                            )}
+                          </TableCell>
                           <TableCell>{getStatutBadge(item.statut)}</TableCell>
                           <TableCell>
                             {isPaid ? (
