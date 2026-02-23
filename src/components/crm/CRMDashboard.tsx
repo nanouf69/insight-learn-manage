@@ -244,7 +244,7 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-4">
                     <Avatar className="w-12 h-12">
-                      <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${apprenant.prenom}${apprenant.nom}`} />
+                      <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${apprenant.prenom} ${apprenant.nom}`} />
                       <AvatarFallback>{initials}</AvatarFallback>
                     </Avatar>
                     <div>

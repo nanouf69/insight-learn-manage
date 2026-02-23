@@ -212,7 +212,7 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
         <div className="flex items-center gap-4 flex-1">
           <Avatar className="w-16 h-16">
             <AvatarImage 
-              src={photoDoc?.url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${apprenant.prenom}${apprenant.nom}`} 
+              src={photoDoc?.url || `https://api.dicebear.com/7.x/initials/svg?seed=${apprenant.prenom} ${apprenant.nom}`} 
               className="object-cover"
             />
             <AvatarFallback className="text-lg">{initials}</AvatarFallback>
