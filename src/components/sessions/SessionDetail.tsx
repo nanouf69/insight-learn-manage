@@ -600,8 +600,8 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
       return;
     }
 
-    const dateDebut = parseFrenchDate(session.dateDebut);
-    const dateFin = parseFrenchDate(session.dateFin);
+    const dateDebut = session.dateDebut;
+    const dateFin = session.dateFin;
 
     // Récupérer les noms des formateurs assignés
     const formateurNames = formateursInSession.length > 0 
@@ -614,8 +614,8 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
     const sessionData = {
       title: session.title,
       formation: session.formation,
-      dateDebut: dateDebut.toISOString().split("T")[0],
-      dateFin: dateFin.toISOString().split("T")[0],
+      dateDebut: dateDebut,
+      dateFin: dateFin,
       lieu: session.lieu,
       formateurs: formateurNames,
     };
@@ -738,7 +738,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
         <div className="flex flex-wrap gap-4 p-4 rounded-xl bg-muted/50 text-sm">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-primary" />
-            <span className="font-medium">{session.dateDebut} au {session.dateFin}</span>
+            <span className="font-medium">{format(new Date(session.dateDebut), "dd MMM yyyy", { locale: fr })} au {format(new Date(session.dateFin), "dd MMM yyyy", { locale: fr })}</span>
           </div>
           <div className="flex items-center gap-2">
             <MapPin className="w-4 h-4 text-muted-foreground" />
