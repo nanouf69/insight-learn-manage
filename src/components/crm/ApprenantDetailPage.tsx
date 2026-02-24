@@ -22,6 +22,7 @@ import { EmailsSection } from "./apprenant-sections/EmailsSection";
 import { DevisSection } from "./apprenant-sections/DevisSection";
 import { ApprenantEditForm } from "@/components/apprenants/ApprenantEditForm";
 import { cn } from "@/lib/utils";
+import { getAvatarUrl } from "@/lib/avatarUrl";
 
 interface ApprenantDetailPageProps {
   apprenantId: string;
@@ -212,7 +213,7 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
         <div className="flex items-center gap-4 flex-1">
           <Avatar className="w-16 h-16">
             <AvatarImage 
-              src={photoDoc?.url || `https://api.dicebear.com/7.x/initials/svg?seed=${apprenant.prenom} ${apprenant.nom}`} 
+              src={photoDoc?.url || getAvatarUrl(apprenant.prenom, apprenant.nom, apprenant.civilite)} 
               className="object-cover"
             />
             <AvatarFallback className="text-lg">{initials}</AvatarFallback>

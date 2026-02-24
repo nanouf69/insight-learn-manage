@@ -17,6 +17,7 @@ import { fr } from "date-fns/locale";
 import { ApprenantDetailPage } from "./ApprenantDetailPage";
 import { ApprenantForm } from "@/components/apprenants/ApprenantForm";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { getAvatarUrl } from "@/lib/avatarUrl";
 const typeLabels: Record<string, string> = {
   'vtc': 'VTC',
   'vtc-e': 'VTC E',
@@ -244,7 +245,7 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-4">
                     <Avatar className="w-12 h-12">
-                      <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${apprenant.prenom} ${apprenant.nom}`} />
+                      <AvatarImage src={getAvatarUrl(apprenant.prenom, apprenant.nom, apprenant.civilite)} />
                       <AvatarFallback>{initials}</AvatarFallback>
                     </Avatar>
                     <div>
