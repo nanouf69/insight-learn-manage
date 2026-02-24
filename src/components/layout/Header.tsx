@@ -60,7 +60,7 @@ export function Header({ title, subtitle, onMenuClick, onSelectApprenant, onNavi
 
           <div className="flex items-center gap-3 pl-4 border-l border-border">
             <Avatar className="w-9 h-9">
-              <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=Marie" />
+              <AvatarImage src="https://api.dicebear.com/7.x/initials/svg?seed=MC" />
               <AvatarFallback>MC</AvatarFallback>
             </Avatar>
             <div className="hidden sm:block">
