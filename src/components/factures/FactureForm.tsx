@@ -181,7 +181,7 @@ export function FactureForm() {
             email: a.email || '',
             phone: a.telephone || '',
             address: [a.adresse, a.code_postal, a.ville].filter(Boolean).join(', '),
-            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${a.prenom}`,
+            avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${a.prenom} ${a.nom}`,
           }));
           allData.push(...mapped);
           offset += batchSize;
