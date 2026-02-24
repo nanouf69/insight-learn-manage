@@ -1147,6 +1147,51 @@ export type Database = {
           },
         ]
       }
+      notes_frais: {
+        Row: {
+          categorie: string | null
+          created_at: string
+          date_depense: string
+          description: string
+          fournisseur: string | null
+          id: string
+          montant: number
+          nom_fichier: string | null
+          notes: string | null
+          statut: string
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          categorie?: string | null
+          created_at?: string
+          date_depense?: string
+          description: string
+          fournisseur?: string | null
+          id?: string
+          montant?: number
+          nom_fichier?: string | null
+          notes?: string | null
+          statut?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          categorie?: string | null
+          created_at?: string
+          date_depense?: string
+          description?: string
+          fournisseur?: string | null
+          id?: string
+          montant?: number
+          nom_fichier?: string | null
+          notes?: string | null
+          statut?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
       organismes: {
         Row: {
           adresse: string | null
