@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { getAvatarUrl } from "@/lib/avatarUrl";
 import { 
   FileText, 
   GraduationCap, 
@@ -171,7 +172,7 @@ export function FactureForm() {
       while (hasMore) {
         const { data, error } = await supabase
           .from('apprenants')
-          .select('id, nom, prenom, email, telephone, adresse, ville, code_postal')
+          .select('id, nom, prenom, email, telephone, adresse, ville, code_postal, civilite')
           .range(offset, offset + batchSize - 1);
         if (error) break;
         if (data && data.length > 0) {
@@ -181,7 +182,7 @@ export function FactureForm() {
             email: a.email || '',
             phone: a.telephone || '',
             address: [a.adresse, a.code_postal, a.ville].filter(Boolean).join(', '),
-            avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${a.prenom} ${a.nom}`,
+            avatar: getAvatarUrl(a.prenom, a.nom, a.civilite),
           }));
           allData.push(...mapped);
           offset += batchSize;
