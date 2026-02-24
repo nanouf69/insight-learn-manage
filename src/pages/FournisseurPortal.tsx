@@ -21,6 +21,7 @@ import { FinancialCharts } from "@/components/comptabilite/FinancialCharts";
 import { Textarea } from "@/components/ui/textarea";
 import logoFtransport from "@/assets/logo-ftransport.png";
 import { RapprochementBancaire } from "@/components/comptabilite/RapprochementBancaire";
+import { NotesFraisTab } from "@/components/comptabilite/NotesFraisTab";
 
 // Dates formations (same as ApprenantForm)
 const datesFormations = {
@@ -493,11 +494,12 @@ export default function FournisseurPortal() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           {fournisseur?.comptable_only ? (
             // Mode comptable : rapprochement bancaire + graphiques + factures + relevés + documents + messages
-            <TabsList className="grid w-full grid-cols-6 mb-6">
+            <TabsList className="grid w-full grid-cols-7 mb-6">
               <TabsTrigger value="rapprochement" className="gap-2 text-xs"><BarChart3 className="w-4 h-4" />Rapprochement</TabsTrigger>
               <TabsTrigger value="comptable-graphiques" className="gap-2 text-xs"><TrendingUp className="w-4 h-4" />Graphiques</TabsTrigger>
               <TabsTrigger value="comptable-factures" className="gap-2 text-xs"><Receipt className="w-4 h-4" />Factures</TabsTrigger>
               <TabsTrigger value="comptable-releves" className="gap-2 text-xs"><FolderOpen className="w-4 h-4" />Relevés</TabsTrigger>
+              <TabsTrigger value="comptable-notes-frais" className="gap-2 text-xs"><Receipt className="w-4 h-4" />Notes de frais</TabsTrigger>
               <TabsTrigger value="comptable-docs" className="gap-2 text-xs"><FileText className="w-4 h-4" />Documents</TabsTrigger>
               <TabsTrigger value="comptable-messages" className="gap-2 text-xs"><Mail className="w-4 h-4" />Messages</TabsTrigger>
             </TabsList>
@@ -1469,6 +1471,13 @@ export default function FournisseurPortal() {
                   </div>
                 )}
               </div>
+            </TabsContent>
+          )}
+
+          {/* ============ TAB NOTES DE FRAIS (comptable) ============ */}
+          {fournisseur?.comptable_only && (
+            <TabsContent value="comptable-notes-frais">
+              <NotesFraisTab readOnly />
             </TabsContent>
           )}
         </Tabs>
