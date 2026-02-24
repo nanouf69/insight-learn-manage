@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Send, Inbox, Eye, PenLine, Loader2 } from "lucide-react";
+import { Mail, Send, Inbox, Eye, PenLine, Loader2, Save, FileEdit, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
@@ -25,7 +25,9 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
   const [selectedEmail, setSelectedEmail] = useState<any>(null);
+  const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const { data: emails = [] } = useQuery({
@@ -56,6 +58,77 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
   const receivedEmails = emails
     .filter(e => e.type === 'received')
     .sort((a: any, b: any) => new Date(b.received_at || b.created_at).getTime() - new Date(a.received_at || a.created_at).getTime());
+
+  const draftEmails = emails
+    .filter(e => e.type === 'draft')
+    .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  const handleSaveDraft = async () => {
+    if (!subject.trim() && !body.trim()) {
+      toast.error("Rien à sauvegarder");
+      return;
+    }
+    setSavingDraft(true);
+    try {
+      const htmlBody = body.replace(/\n/g, '<br>');
+      if (editingDraftId) {
+        const { error } = await supabase.from('emails').update({
+          subject: subject || '(Sans objet)',
+          body_html: htmlBody,
+          body_preview: body.slice(0, 200),
+        }).eq('id', editingDraftId);
+        if (error) throw error;
+        toast.success('Brouillon mis à jour');
+      } else {
+        const { error } = await supabase.from('emails').insert({
+          subject: subject || '(Sans objet)',
+          body_html: htmlBody,
+          body_preview: body.slice(0, 200),
+          sender_email: 'contact@ftransport.fr',
+          recipients: [contactEmail],
+          type: 'draft',
+          is_read: true,
+        });
+        if (error) throw error;
+        toast.success('Brouillon enregistré');
+      }
+      setComposing(false);
+      setSubject("");
+      setBody("");
+      setEditingDraftId(null);
+      queryClient.invalidateQueries({ queryKey: [queryKey, contactEmail] });
+    } catch (err: any) {
+      toast.error('Erreur : ' + (err.message || 'Échec'));
+    } finally {
+      setSavingDraft(false);
+    }
+  };
+
+  const handleEditDraft = (draft: any) => {
+    setSubject(draft.subject || '');
+    setBody(draft.body_html?.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>/g, '') || draft.body_preview || '');
+    setEditingDraftId(draft.id);
+    setComposing(true);
+  };
+
+  const handleDeleteDraft = async (draftId: string) => {
+    try {
+      const { error } = await supabase.from('emails').delete().eq('id', draftId);
+      if (error) throw error;
+      toast.success('Brouillon supprimé');
+      queryClient.invalidateQueries({ queryKey: [queryKey, contactEmail] });
+    } catch (err: any) {
+      toast.error('Erreur : ' + (err.message || 'Échec'));
+    }
+  };
+
+  const handleSendDraft = async () => {
+    await handleSend();
+    if (editingDraftId) {
+      await supabase.from('emails').delete().eq('id', editingDraftId);
+      setEditingDraftId(null);
+    }
+  };
 
   const handleSend = async () => {
     if (!subject.trim()) {
@@ -106,6 +179,7 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
     setSubject("");
     setBody("");
     setSelectedEmail(null);
+    setEditingDraftId(null);
     onOpenChange(false);
   };
 
@@ -159,8 +233,12 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
                   <p>📧 contact@ftransport.fr</p>
                   <p>🕐 Du lundi au vendredi, 9h - 18h</p>
                 </div>
-                <div className="flex justify-end">
-                  <Button onClick={handleSend} disabled={sending || !subject.trim()} className="gap-2">
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={handleSaveDraft} disabled={sending || savingDraft} className="gap-2">
+                    {savingDraft ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    {savingDraft ? 'Sauvegarde...' : editingDraftId ? 'Mettre à jour le brouillon' : 'Sauvegarder brouillon'}
+                  </Button>
+                  <Button onClick={editingDraftId ? handleSendDraft : handleSend} disabled={sending || !subject.trim()} className="gap-2">
                     {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                     {sending ? 'Envoi...' : 'Envoyer'}
                   </Button>
@@ -179,6 +257,12 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
                   <Inbox className="w-4 h-4" />
                   Reçus ({receivedEmails.length})
                 </TabsTrigger>
+                {draftEmails.length > 0 && (
+                  <TabsTrigger value="drafts" className="flex-1 gap-2">
+                    <FileEdit className="w-4 h-4" />
+                    Brouillons ({draftEmails.length})
+                  </TabsTrigger>
+                )}
               </TabsList>
 
               <TabsContent value="sent">
@@ -236,6 +320,44 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
                             <TableCell className="text-sm text-muted-foreground">{email.sender_name || email.sender_email}</TableCell>
                             <TableCell>
                               <Eye className="w-4 h-4 text-muted-foreground" />
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="drafts">
+                {draftEmails.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">Aucun brouillon</p>
+                ) : (
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Objet</TableHead>
+                          <TableHead className="w-24">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {draftEmails.map((email: any) => (
+                          <TableRow key={email.id}>
+                            <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                              {format(new Date(email.created_at), 'dd/MM/yyyy HH:mm', { locale: fr })}
+                            </TableCell>
+                            <TableCell className="font-medium text-sm">{email.subject}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditDraft(email)} title="Modifier">
+                                  <PenLine className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteDraft(email.id)} title="Supprimer">
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
