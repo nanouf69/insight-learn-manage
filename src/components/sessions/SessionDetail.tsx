@@ -297,6 +297,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
           montant_total,
           montant_paye,
           moyen_paiement,
+          statut_suivi,
           apprenant:apprenants (
             id,
             nom,
@@ -520,7 +521,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
 
   const updateSessionApprenant = async (
     sessionApprenantId: string, 
-    updates: { notes?: string; presence_pratique?: string | null }
+    updates: { notes?: string; presence_pratique?: string | null; statut_suivi?: string | null }
   ) => {
     try {
       const { error } = await supabase
@@ -914,6 +915,28 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                           <Badge className={getFinancementBadge(sessionApprenant.mode_financement || apprenant.mode_financement).color}>
                             {getFinancementBadge(sessionApprenant.mode_financement || apprenant.mode_financement).label}
                           </Badge>
+
+                          <Select
+                            value={sessionApprenant.statut_suivi || ''}
+                            onValueChange={async (val) => {
+                              await updateSessionApprenant(sessionApprenant.id, { statut_suivi: val || null });
+                            }}
+                          >
+                            <SelectTrigger className={`h-7 w-[200px] text-xs ${
+                              sessionApprenant.statut_suivi === 'inscription_validee' ? 'border-green-300 text-green-700' :
+                              sessionApprenant.statut_suivi ? 'border-orange-300 text-orange-700' : ''
+                            }`}>
+                              <SelectValue placeholder="⚙️ Statut suivi" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="manque_document">📄 Manque un document</SelectItem>
+                              <SelectItem value="mdp_change">🔑 Mot de passe changé</SelectItem>
+                              <SelectItem value="email_non_valide">📧 Adresse mail non validée</SelectItem>
+                              <SelectItem value="injoignable">📵 Injoignable</SelectItem>
+                              <SelectItem value="a_payer">💰 À payer</SelectItem>
+                              <SelectItem value="inscription_validee">✅ Inscription validée</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
 
                         {/* Ligne 3: Présence (pratique) + Examen + Notes + Paiement */}

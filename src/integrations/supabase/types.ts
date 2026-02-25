@@ -1343,6 +1343,7 @@ export type Database = {
           notes: string | null
           presence_pratique: string | null
           session_id: string
+          statut_suivi: string | null
         }
         Insert: {
           apprenant_id: string
@@ -1357,6 +1358,7 @@ export type Database = {
           notes?: string | null
           presence_pratique?: string | null
           session_id: string
+          statut_suivi?: string | null
         }
         Update: {
           apprenant_id?: string
@@ -1371,6 +1373,7 @@ export type Database = {
           notes?: string | null
           presence_pratique?: string | null
           session_id?: string
+          statut_suivi?: string | null
         }
         Relationships: [
           {
