@@ -475,8 +475,29 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
     setCropperImageSrc('');
   }, [pendingPhotoDocId]);
 
-  const openDocument = (url: string) => {
-    window.open(url, '_blank');
+  const openDocument = async (url: string) => {
+    // If url is a full public URL, extract the path
+    const bucketPrefix = '/storage/v1/object/public/documents-inscription/';
+    let filePath = url;
+    if (url.includes(bucketPrefix)) {
+      filePath = url.split(bucketPrefix)[1];
+    } else if (url.startsWith('http')) {
+      // Try to extract path from any URL format
+      const match = url.match(/documents-inscription\/(.+)$/);
+      if (match) filePath = match[1];
+    }
+    
+    // Generate a signed URL for private bucket access
+    const { data, error } = await supabase.storage
+      .from('documents-inscription')
+      .createSignedUrl(filePath, 300);
+    
+    if (error || !data?.signedUrl) {
+      toast.error("Impossible d'ouvrir le document");
+      console.error('Signed URL error:', error);
+      return;
+    }
+    window.open(data.signedUrl, '_blank');
   };
 
   const validDocuments = documents.filter(d => d.uploaded && d.status === 'valid');
