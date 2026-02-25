@@ -1,0 +1,1 @@
+ALTER TABLE public.session_apprenants ADD COLUMN statut_suivi text DEFAULT NULL;
