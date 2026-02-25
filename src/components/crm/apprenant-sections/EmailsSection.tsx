@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Mail, Send, Inbox, Clock, Plus, Search, RefreshCw, Loader2, FileText } from "lucide-react";
+import { Mail, Send, Inbox, Clock, Plus, Search, RefreshCw, Loader2, FileText, Forward } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -226,6 +226,8 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
   const [newEmailSubject, setNewEmailSubject] = useState("");
   const [newEmailBody, setNewEmailBody] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
+  const [forwardTo, setForwardTo] = useState("");
+  const [isForwarding, setIsForwarding] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -360,6 +362,60 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
     }
   };
 
+  const handleForwardEmail = (email: EmailRecord) => {
+    setIsForwarding(true);
+    setForwardTo("");
+    const fwdSubject = email.subject.startsWith('Fwd:') ? email.subject : `Fwd: ${email.subject}`;
+    const dateStr = email.sent_at || email.received_at || email.created_at;
+    const formattedDate = dateStr ? format(new Date(dateStr), "dd MMMM yyyy 'à' HH:mm", { locale: fr }) : '';
+    const originalHeader = `<br><br>---------- Message transféré ----------<br>De : ${email.sender_name || email.sender_email || ORGANISME_EMAIL}<br>Date : ${formattedDate}<br>Objet : ${email.subject}<br>À : ${email.recipients?.join(', ') || apprenant.email}<br><br>`;
+    const originalBody = email.body_html || email.body_preview?.replace(/\n/g, '<br>') || '';
+    setNewEmailSubject(fwdSubject);
+    setNewEmailBody(originalHeader + originalBody);
+    setSelectedEmail(null);
+    setIsComposeOpen(true);
+  };
+
+  const handleSendForward = async () => {
+    if (!forwardTo.trim() || !newEmailSubject.trim()) {
+      toast({ title: "Champs requis", description: "Veuillez renseigner le destinataire et l'objet", variant: "destructive" });
+      return;
+    }
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-outlook-emails', {
+        body: {
+          action: 'send',
+          apprenantId: apprenant.id,
+          userEmail: ORGANISME_EMAIL,
+          to: forwardTo.trim(),
+          subject: newEmailSubject,
+          body: newEmailBody,
+        },
+      });
+      if (error) throw error;
+      await supabase.from('emails').insert({
+        subject: newEmailSubject,
+        body_html: newEmailBody,
+        body_preview: newEmailBody.replace(/<[^>]*>/g, '').slice(0, 200),
+        sender_email: ORGANISME_EMAIL,
+        recipients: [forwardTo.trim()],
+        type: 'sent',
+        is_read: true,
+        sent_at: new Date().toISOString(),
+        apprenant_id: apprenant.id,
+      });
+      toast({ title: "Email transféré", description: `Email transféré à ${forwardTo}` });
+      setIsComposeOpen(false);
+      setIsForwarding(false);
+      setForwardTo("");
+      setNewEmailSubject("");
+      setNewEmailBody("");
+      queryClient.invalidateQueries({ queryKey: ['emails', apprenant.id] });
+    } catch (err: any) {
+      toast({ title: "Erreur", description: err.message, variant: "destructive" });
+    }
+  };
+
   const getEmailDate = (email: EmailRecord) => {
     const dateStr = email.type === 'sent' ? email.sent_at : email.received_at;
     return dateStr ? new Date(dateStr) : new Date(email.created_at);
@@ -392,6 +448,8 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
               setSelectedTemplate("");
               setNewEmailSubject("");
               setNewEmailBody("");
+              setIsForwarding(false);
+              setForwardTo("");
             }
           }}>
             <DialogTrigger asChild>
@@ -402,32 +460,46 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Nouveau mail à {apprenant.prenom} {apprenant.nom}</DialogTitle>
+                <DialogTitle>
+                  {isForwarding ? 'Transférer un email' : `Nouveau mail à ${apprenant.prenom} ${apprenant.nom}`}
+                </DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-4">
-                {/* Template selector */}
-                <div>
-                  <Label className="flex items-center gap-2 mb-2">
-                    <FileText className="w-4 h-4" />
-                    Modèle d'email
-                  </Label>
-                  <Select value={selectedTemplate} onValueChange={handleTemplateSelect}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choisir un modèle d'email..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {EMAIL_TEMPLATES.map((template) => (
-                        <SelectItem key={template.id} value={template.id}>
-                          {template.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/* Template selector - hidden when forwarding */}
+                {!isForwarding && (
+                  <div>
+                    <Label className="flex items-center gap-2 mb-2">
+                      <FileText className="w-4 h-4" />
+                      Modèle d'email
+                    </Label>
+                    <Select value={selectedTemplate} onValueChange={handleTemplateSelect}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choisir un modèle d'email..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {EMAIL_TEMPLATES.map((template) => (
+                          <SelectItem key={template.id} value={template.id}>
+                            {template.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
+                {/* Destinataire */}
                 <div>
                   <Label>Destinataire</Label>
-                  <Input value={apprenant.email || "Pas d'email"} disabled />
+                  {isForwarding ? (
+                    <Input 
+                      value={forwardTo} 
+                      onChange={(e) => setForwardTo(e.target.value)}
+                      placeholder="Adresse email du destinataire..."
+                      type="email"
+                    />
+                  ) : (
+                    <Input value={apprenant.email || "Pas d'email"} disabled />
+                  )}
                 </div>
                 <div>
                   <Label>Sujet</Label>
@@ -454,16 +526,21 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
                   )}
                 </div>
                 <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setIsComposeOpen(false)}>
+                  <Button variant="outline" onClick={() => { setIsComposeOpen(false); setIsForwarding(false); setForwardTo(""); }}>
                     Annuler
                   </Button>
-                  <Button onClick={handleSendEmail} disabled={sendMutation.isPending}>
+                  <Button 
+                    onClick={isForwarding ? handleSendForward : handleSendEmail} 
+                    disabled={sendMutation.isPending}
+                  >
                     {sendMutation.isPending ? (
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : isForwarding ? (
+                      <Forward className="w-4 h-4 mr-2" />
                     ) : (
                       <Send className="w-4 h-4 mr-2" />
                     )}
-                    Envoyer
+                    {isForwarding ? 'Transférer' : 'Envoyer'}
                   </Button>
                 </div>
               </div>
@@ -629,6 +706,12 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
                     {selectedEmail.body_preview}
                   </pre>
                 )}
+                <div className="flex justify-end pt-2 border-t">
+                  <Button size="sm" variant="outline" onClick={() => handleForwardEmail(selectedEmail)} className="gap-2">
+                    <Forward className="w-4 h-4" />
+                    Transférer
+                  </Button>
+                </div>
               </div>
             </>
           )}
