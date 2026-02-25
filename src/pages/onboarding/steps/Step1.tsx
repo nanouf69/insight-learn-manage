@@ -441,6 +441,7 @@ export default function Step1() {
                     description={doc.description}
                     icon={doc.icon}
                     sessionId={sessionId}
+                    apprenantId={apprenantId}
                     expectedNom={doc.id === 'piece_identite' ? nom : undefined}
                     expectedPrenom={doc.id === 'piece_identite' ? prenom : undefined}
                     onStatusChange={handleStatusChange}

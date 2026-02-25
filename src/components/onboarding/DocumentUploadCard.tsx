@@ -11,6 +11,7 @@ interface DocumentUploadCardProps {
   description: string;
   icon: React.ComponentType<{ className?: string }>;
   sessionId: string;
+  apprenantId?: string | null;
   expectedNom?: string;
   expectedPrenom?: string;
   onStatusChange?: (docId: string, status: 'pending' | 'valid' | 'rejected', reason?: string) => void;
@@ -26,6 +27,7 @@ export function DocumentUploadCard({
   description,
   icon: Icon,
   sessionId,
+  apprenantId,
   expectedNom,
   expectedPrenom,
   onStatusChange,
@@ -117,6 +119,25 @@ export function DocumentUploadCard({
 
       toast.success(`Document "${title}" uploadé avec succès`);
       
+      // Save record in documents_inscription table
+      if (apprenantId) {
+        const { error: dbError } = await supabase
+          .from('documents_inscription')
+          .insert({
+            apprenant_id: apprenantId,
+            titre: title,
+            type_document: docId,
+            nom_fichier: file.name,
+            url: filePath,
+            statut: 'valid',
+          });
+
+        if (dbError) {
+          console.error('DB insert error:', dbError);
+          // Don't block the flow, file is already uploaded
+        }
+      }
+
       // Mark as valid immediately (no AI analysis)
       setStatus('valid');
       onStatusChange?.(docId, 'valid');
