@@ -514,6 +514,36 @@ export type Database = {
           },
         ]
       }
+      email_templates: {
+        Row: {
+          body_template: string
+          created_at: string
+          icon: string
+          id: string
+          label: string
+          subject_template: string
+          updated_at: string
+        }
+        Insert: {
+          body_template: string
+          created_at?: string
+          icon?: string
+          id: string
+          label: string
+          subject_template: string
+          updated_at?: string
+        }
+        Update: {
+          body_template?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          label?: string
+          subject_template?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       emails: {
         Row: {
           apprenant_id: string | null
