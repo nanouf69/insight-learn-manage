@@ -192,6 +192,14 @@ function generatePage(
     return row;
   });
 
+  // Ligne vide supplémentaire au cas où un élève a été oublié
+  const extraRow: string[] = ["", ""];
+  days.forEach(() => {
+    extraRow.push("");
+    extraRow.push("");
+  });
+  tableData.push(extraRow);
+
   const totalCols = 2 + days.length * 2;
   const availableWidth = pageWidth - margin * 2;
   const fixedWidth = 8 + 38; // N° + Nom
