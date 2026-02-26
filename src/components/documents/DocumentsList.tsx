@@ -1,8 +1,15 @@
-import { useState } from "react";
-import { Search, Filter, MoreVertical, FileText, FileCheck, FileWarning, Download, Eye, Mail } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Search, Filter, MoreVertical, FileText, FileCheck, FileWarning, Download, Eye, Mail, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -76,6 +83,33 @@ const statusConfig = {
 
 export function DocumentsList() {
   const [activeTab, setActiveTab] = useState("documents");
+  const [search, setSearch] = useState("");
+  const [filterType, setFilterType] = useState("all");
+  const [filterFormation, setFilterFormation] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [showFilters, setShowFilters] = useState(false);
+
+  const types = useMemo(() => [...new Set(documents.map(d => d.type))], []);
+  const formations = useMemo(() => [...new Set(documents.map(d => d.formation))], []);
+
+  const filtered = useMemo(() => {
+    return documents.filter(doc => {
+      const matchSearch = !search || doc.name.toLowerCase().includes(search.toLowerCase()) || doc.type.toLowerCase().includes(search.toLowerCase()) || doc.formation.toLowerCase().includes(search.toLowerCase());
+      const matchType = filterType === "all" || doc.type === filterType;
+      const matchFormation = filterFormation === "all" || doc.formation === filterFormation;
+      const matchStatus = filterStatus === "all" || doc.status === filterStatus;
+      return matchSearch && matchType && matchFormation && matchStatus;
+    });
+  }, [search, filterType, filterFormation, filterStatus]);
+
+  const hasActiveFilters = filterType !== "all" || filterFormation !== "all" || filterStatus !== "all";
+
+  const clearFilters = () => {
+    setFilterType("all");
+    setFilterFormation("all");
+    setFilterStatus("all");
+    setSearch("");
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -100,14 +134,68 @@ export function DocumentsList() {
                 <Input 
                   placeholder="Rechercher un document..." 
                   className="pl-10"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
-              <Button variant="outline" size="icon">
+              <Button
+                variant={showFilters ? "default" : "outline"}
+                size="icon"
+                onClick={() => setShowFilters(!showFilters)}
+                className="relative"
+              >
                 <Filter className="w-4 h-4" />
+                {hasActiveFilters && (
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-primary" />
+                )}
               </Button>
             </div>
             <DocumentForm />
           </div>
+
+          {/* Filters */}
+          {showFilters && (
+            <div className="flex flex-wrap gap-3 items-center p-4 bg-muted/50 rounded-lg border border-border">
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les types</SelectItem>
+                  {types.map(t => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterFormation} onValueChange={setFilterFormation}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Formation" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les formations</SelectItem>
+                  {formations.map(f => (
+                    <SelectItem key={f} value={f}>{f}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
+                  <SelectItem value="draft">Brouillon</SelectItem>
+                  <SelectItem value="pending">En attente</SelectItem>
+                  <SelectItem value="signed">Signé</SelectItem>
+                </SelectContent>
+              </Select>
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-muted-foreground">
+                  <X className="w-3 h-3" /> Réinitialiser
+                </Button>
+              )}
+            </div>
+          )}
 
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -144,7 +232,14 @@ export function DocumentsList() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {documents.map((doc) => {
+                {filtered.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      Aucun document ne correspond aux filtres sélectionnés.
+                    </TableCell>
+                  </TableRow>
+                ) : null}
+                {filtered.map((doc) => {
                   const StatusIcon = statusConfig[doc.status as keyof typeof statusConfig].icon;
                   return (
                     <TableRow key={doc.id} className="table-row-hover">
