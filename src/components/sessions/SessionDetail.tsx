@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -277,6 +278,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
   const [showAddFormateur, setShowAddFormateur] = useState(false);
   const [searchFormateur, setSearchFormateur] = useState("");
   const [sendingEmails, setSendingEmails] = useState(false);
+  const [sendingTemplateId, setSendingTemplateId] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Charger les apprenants de cette session depuis la base de données
@@ -385,6 +387,20 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
         .select('id, nom, prenom, email, telephone, specialites, type, civilite')
         .order('nom', { ascending: true });
       
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: open,
+  });
+
+  // Charger les mails types depuis la base de données
+  const { data: emailTemplates = [] } = useQuery({
+    queryKey: ['email_templates'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('email_templates')
+        .select('*')
+        .order('label');
       if (error) throw error;
       return data || [];
     },
@@ -637,7 +653,40 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
 
   const isFormationContinue = session.title?.toLowerCase().includes('continue');
 
-  const handleSendConfirmationEmails = async () => {
+  const getFormationTypeLocal = (typeApprenant: string | null | undefined): string => {
+    const type = (typeApprenant || '').toLowerCase();
+    if (type.includes('ta-e') || type === 'ta') return 'TAXI (mobilité VTC vers TAXI)';
+    if (type.includes('va-e') || type === 'va') return 'VTC (mobilité TAXI vers VTC)';
+    if (type.includes('taxi')) return 'TAXI';
+    if (type.includes('vtc')) return 'VTC';
+    return 'TAXI / VTC';
+  };
+
+  const replaceTemplateVars = (template: string, a: any): string => {
+    const formation = getFormationTypeLocal(a.type_apprenant);
+    const dateDebut = a.date_debut_formation || session.dateDebut || '[date à compléter]';
+    const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+    const bookingUrl = `https://insight-learn-manage.lovable.app/reservation-pratique?id=${a.id}&type=${formation.toLowerCase().includes('vtc') ? 'vtc' : 'taxi'}`;
+    const onboardingUrl = 'https://insight-learn-manage.lovable.app/bienvenue';
+
+    return template
+      .replace(/\{\{prenom\}\}/g, a.prenom || '')
+      .replace(/\{\{nom\}\}/g, a.nom || '')
+      .replace(/\{\{formation\}\}/g, formation)
+      .replace(/\{\{date_debut\}\}/g, dateDebut)
+      .replace(/\{\{date_jour\}\}/g, today)
+      .replace(/\{\{civilite\}\}/g, a.civilite || '')
+      .replace(/\{\{adresse\}\}/g, a.adresse || '')
+      .replace(/\{\{code_postal\}\}/g, a.code_postal || '')
+      .replace(/\{\{ville\}\}/g, a.ville || '')
+      .replace(/\{\{onboarding_url\}\}/g, onboardingUrl)
+      .replace(/\{\{booking_url\}\}/g, bookingUrl);
+  };
+
+  const handleSendTemplateEmail = async (templateId: string) => {
+    const template = emailTemplates.find((t: any) => t.id === templateId);
+    if (!template) return;
+
     const apprenantsWithEmail = apprenantsInSession.filter((sa: any) => sa.apprenant?.email);
     
     if (apprenantsWithEmail.length === 0) {
@@ -650,18 +699,14 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
     }
 
     setSendingEmails(true);
+    setSendingTemplateId(templateId);
     let sent = 0;
     let failed = 0;
 
     for (const sa of apprenantsWithEmail) {
       const a = sa.apprenant;
-      const typeApprenant = (a.type_apprenant || '').toLowerCase();
-      const formation = typeApprenant.includes('taxi') ? 'TAXI' : typeApprenant.includes('vtc') ? 'VTC' : 'TAXI / VTC';
-      const dateDebut = a.date_debut_formation || session.dateDebut || '[date à compléter]';
-      const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-
-      const subject = `Confirmation d'inscription formation continue - ${a.prenom} ${a.nom}`;
-      const body = `${a.civilite || ''} ${a.prenom} ${a.nom}<br><br>${a.adresse || ''}<br>${a.code_postal || ''} ${a.ville || ''}<br><br><br><br><br>Lyon, le ${today}<br><br>Bonjour,<br><br>Nous avons le plaisir de vous convier pour la formation :<br><br><strong>${formation}</strong><br><br>Le <strong>${dateDebut}</strong><br><br>Horaires : de 9h à 12h et de 13h à 17h<br><br>Adresse : 86 route de Genas 69003 Lyon<br><br><br>A l'issue des quatorze heures de formation, une attestation de formation continue vous sera délivrée et vous pourrez effectuer votre demande de renouvellement de carte professionnelle auprès de la préfecture.<br><br>Le reste des informations vous sera communiqué ce mardi.<br><br>Attention, si vous venez en voiture, merci de venir en avance, actuellement, il y a de nombreux travaux sur la route de Genas. Nous vous conseillons de vous garer sur l'avenue des Acacias à Lyon et de rejoindre le centre à pied.<br><br>Rappel, pour la formation vous devez :<br>- savoir lire et écrire le français<br>- avoir un permis de conduire plus de 3 ans en cours de validité<br>- avoir le casier judiciaire B2 vierge<br><br><span style="color: red; font-size: 18px; font-weight: bold;">⚠️ IMPORTANT : Nous vous rappelons que votre présence est obligatoire. En cas d'absence et/ou de retard, l'attestation de formation continue ne vous sera pas remise. Il est inutile de négocier ou de trouver des raisons : vous serez reporté(e) à la session suivante.</span><br><br>Pour les personnes qui n'ont pas réglé leur formation, merci de préparer l'appoint. Les chèques et la carte bleue ne seront pas acceptés le jour de l'entrée en formation. Pour les personnes qui souhaiteraient payer par virement, vous trouverez ci-joint le RIB du centre de formation. Une facture vous sera bien sûr remise pour les paiements effectués.<br><br>Nous vous souhaitons une excellente formation et espérons qu'elle répondra pleinement à vos attentes.<br><br><strong>RIB - SASU SERVICES PRO F TRANSPORT</strong><br><br>IBAN : FR76 3000 4014 1800 0101 2475 357<br>BIC : BNPAFRPPXXX<br>Code banque : 30004<br>Code agence : 01418<br>N° de compte : 00010124753<br>Clé RIB : 57<br><br>SERVICES PRO 86 ROUTE DE GENAS 69003, LYON 3EME - FR<br><br>Cordialement,<br>FTRANSPORT`;
+      const subject = replaceTemplateVars(template.subject_template, a);
+      const body = replaceTemplateVars(template.body_template, a);
 
       try {
         await supabase.functions.invoke('sync-outlook-emails', {
@@ -681,9 +726,10 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
     }
 
     setSendingEmails(false);
+    setSendingTemplateId(null);
     toast({
       title: "Envoi terminé",
-      description: `${sent} email(s) envoyé(s)${failed > 0 ? `, ${failed} échec(s)` : ''}.`,
+      description: `${sent} email(s) "${template.label}" envoyé(s)${failed > 0 ? `, ${failed} échec(s)` : ''}.`,
     });
   };
 
@@ -710,18 +756,34 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
               {getStatusBadge(session.status)}
             </DialogTitle>
             <div className="flex gap-2">
-              {isFormationContinue && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleSendConfirmationEmails}
-                  disabled={sendingEmails || apprenantsInSession.length === 0}
-                  className="gap-2"
-                >
-                  {sendingEmails ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  📩 Envoyer confirmations
-                </Button>
-              )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={sendingEmails || apprenantsInSession.length === 0}
+                    className="gap-2"
+                  >
+                    {sendingEmails ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    {sendingEmails ? 'Envoi en cours...' : '📩 Envoyer mail type'}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="max-h-80 overflow-y-auto w-72">
+                  {emailTemplates.map((t: any) => (
+                    <DropdownMenuItem
+                      key={t.id}
+                      onClick={() => handleSendTemplateEmail(t.id)}
+                      className="cursor-pointer"
+                    >
+                      <span className="mr-2">{t.icon}</span>
+                      <span className="text-sm">{t.label}</span>
+                    </DropdownMenuItem>
+                  ))}
+                  {emailTemplates.length === 0 && (
+                    <DropdownMenuItem disabled>Aucun modèle disponible</DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button
                 size="sm"
                 variant="outline"
