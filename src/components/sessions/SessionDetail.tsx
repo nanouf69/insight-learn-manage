@@ -682,9 +682,16 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
       .replace(/\{\{booking_url\}\}/g, bookingUrl);
   };
 
-  const [sendingForApprenant, setSendingForApprenant] = useState<string | null>(null);
+  // State pour l'aperçu du mail
+  const [emailPreview, setEmailPreview] = useState<{
+    templateId: string;
+    apprenant: any;
+    subject: string;
+    body: string;
+    label: string;
+  } | null>(null);
 
-  const handleSendTemplateEmailToOne = async (templateId: string, apprenant: any) => {
+  const handlePreviewTemplateEmail = (templateId: string, apprenant: any) => {
     const template = emailTemplates.find((t: any) => t.id === templateId);
     if (!template) return;
 
@@ -697,10 +704,19 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
       return;
     }
 
-    setSendingForApprenant(apprenant.id);
-
     const subject = replaceTemplateVars(template.subject_template, apprenant);
     const body = replaceTemplateVars(template.body_template, apprenant);
+
+    setEmailPreview({ templateId, apprenant, subject, body, label: template.label });
+  };
+
+  const handleConfirmSendEmail = async () => {
+    if (!emailPreview) return;
+    const { apprenant, subject, body } = emailPreview;
+    const label = emailPreview.label;
+
+    setSendingEmailForApprenant(apprenant.id);
+    setEmailPreview(null);
 
     try {
       await supabase.functions.invoke('sync-outlook-emails', {
@@ -715,7 +731,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
       });
       toast({
         title: "Email envoyé",
-        description: `"${template.label}" envoyé à ${apprenant.prenom} ${apprenant.nom}.`,
+        description: `"${label}" envoyé à ${apprenant.prenom} ${apprenant.nom}.`,
       });
     } catch {
       toast({
@@ -725,7 +741,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
       });
     }
 
-    setSendingForApprenant(null);
+    setSendingEmailForApprenant(null);
   };
 
   // Compter les apprenants par type
@@ -742,6 +758,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
   const formateursCount = formateursInSession.length;
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
@@ -1028,9 +1045,9 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                                   variant="ghost"
                                   size="sm"
                                   className="h-8 px-2 gap-1 text-muted-foreground"
-                                  disabled={sendingForApprenant === apprenant.id}
+                                  disabled={sendingEmailForApprenant === apprenant.id}
                                 >
-                                  {sendingForApprenant === apprenant.id ? (
+                                  {sendingEmailForApprenant === apprenant.id ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
                                   ) : (
                                     <Send className="w-4 h-4" />
@@ -1042,7 +1059,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                                 {emailTemplates.map((t: any) => (
                                   <DropdownMenuItem
                                     key={t.id}
-                                    onClick={() => handleSendTemplateEmailToOne(t.id, apprenant)}
+                                    onClick={() => handlePreviewTemplateEmail(t.id, apprenant)}
                                     className="cursor-pointer"
                                   >
                                     <span className="text-sm">{t.label}</span>
@@ -1275,5 +1292,55 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
         </Tabs>
       </DialogContent>
     </Dialog>
+
+    {/* Modale d'aperçu email */}
+    <Dialog open={!!emailPreview} onOpenChange={(open) => !open && setEmailPreview(null)}>
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Mail className="w-5 h-5" />
+            Aperçu du mail
+          </DialogTitle>
+        </DialogHeader>
+        {emailPreview && (
+          <div className="flex-1 overflow-auto space-y-4">
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-muted-foreground w-10">À :</span>
+                <span className="font-medium">{emailPreview.apprenant.prenom} {emailPreview.apprenant.nom} &lt;{emailPreview.apprenant.email}&gt;</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-muted-foreground w-10">Objet :</span>
+                <span className="font-semibold">{emailPreview.subject}</span>
+              </div>
+            </div>
+            <div className="border rounded-lg p-4 bg-muted/30 overflow-auto max-h-[400px]">
+              <div 
+                className="prose prose-sm max-w-none text-foreground"
+                dangerouslySetInnerHTML={{ __html: emailPreview.body }} 
+              />
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <Button variant="outline" onClick={() => setEmailPreview(null)}>
+                Annuler
+              </Button>
+              <Button 
+                onClick={handleConfirmSendEmail}
+                className="gap-2"
+                disabled={sendingEmailForApprenant === emailPreview.apprenant.id}
+              >
+                {sendingEmailForApprenant === emailPreview.apprenant.id ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+                Confirmer l'envoi
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
