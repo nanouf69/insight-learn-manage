@@ -93,31 +93,47 @@ export function SessionsList() {
     },
   });
 
-  // Fetch pass rates and counts per session
-  const { data: sessionStats = {} } = useQuery({
-    queryKey: ['session-stats'],
+  // Fetch pass rates, counts, and apprenant details per session
+  const { data: sessionApprenants = [] } = useQuery({
+    queryKey: ['session-apprenants-search'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('session_apprenants')
-        .select('session_id, apprenant_id, apprenants(resultat_examen)');
+        .select('session_id, apprenant_id, apprenants(nom, prenom, email, telephone, resultat_examen)');
       
       if (error) throw error;
-      
-      const stats: Record<string, { inscrits: number; passed: number; failed: number; absent: number; total: number }> = {};
-      for (const sa of data || []) {
-        if (!stats[sa.session_id]) stats[sa.session_id] = { inscrits: 0, passed: 0, failed: 0, absent: 0, total: 0 };
-        stats[sa.session_id].inscrits++;
-        const resultat = (sa as any).apprenants?.resultat_examen;
-        if (resultat) {
-          const r = resultat.toLowerCase();
-          if (r === 'oui') { stats[sa.session_id].passed++; stats[sa.session_id].total++; }
-          else if (r === 'non') { stats[sa.session_id].failed++; stats[sa.session_id].total++; }
-          else if (r === 'absent') { stats[sa.session_id].absent++; }
-        }
-      }
-      return stats;
+      return data || [];
     },
   });
+
+  const sessionStats = useMemo(() => {
+    const stats: Record<string, { inscrits: number; passed: number; failed: number; absent: number; total: number }> = {};
+    for (const sa of sessionApprenants) {
+      if (!stats[sa.session_id]) stats[sa.session_id] = { inscrits: 0, passed: 0, failed: 0, absent: 0, total: 0 };
+      stats[sa.session_id].inscrits++;
+      const resultat = (sa as any).apprenants?.resultat_examen;
+      if (resultat) {
+        const r = resultat.toLowerCase();
+        if (r === 'oui') { stats[sa.session_id].passed++; stats[sa.session_id].total++; }
+        else if (r === 'non') { stats[sa.session_id].failed++; stats[sa.session_id].total++; }
+        else if (r === 'absent') { stats[sa.session_id].absent++; }
+      }
+    }
+    return stats;
+  }, [sessionApprenants]);
+
+  // Build a map of session_id -> apprenant search strings
+  const sessionApprenantSearchMap = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    for (const sa of sessionApprenants) {
+      const a = (sa as any).apprenants;
+      if (!a) continue;
+      if (!map[sa.session_id]) map[sa.session_id] = [];
+      const parts = [a.nom, a.prenom, a.email, a.telephone].filter(Boolean).join(' ').toLowerCase();
+      map[sa.session_id].push(parts);
+    }
+    return map;
+  }, [sessionApprenants]);
 
   // Sort: upcoming sessions first (closest to today), then past sessions
   // Formation filter matchers (on session name)
@@ -139,7 +155,8 @@ export function SessionsList() {
       const matchSearch = !q
         || nom.toLowerCase().includes(q)
         || (s.lieu || "").toLowerCase().includes(q)
-        || (s.types_apprenant || []).some(t => t.toLowerCase().includes(q));
+        || (s.types_apprenant || []).some(t => t.toLowerCase().includes(q))
+        || (sessionApprenantSearchMap[s.id] || []).some(str => str.includes(q));
       const matchStatut = filterStatut === "tous" || s.statut === filterStatut;
       const matchType = filterType === "tous"
         ? true
@@ -184,7 +201,7 @@ export function SessionsList() {
       .sort((a, b) => new Date(b.date_debut).getTime() - new Date(a.date_debut).getTime());
 
     return [...todaySessions, ...upcoming, ...past];
-  }, [sessions, search, filterStatut, filterType]);
+  }, [sessions, search, filterStatut, filterType, sessionApprenantSearchMap]);
 
   const hasActiveFilters = search || filterStatut !== "tous" || filterType !== "tous";
 
@@ -283,7 +300,7 @@ export function SessionsList() {
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Rechercher une session..."
+            placeholder="Rechercher par session, apprenant, téléphone, email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
