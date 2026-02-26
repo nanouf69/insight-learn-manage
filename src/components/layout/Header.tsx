@@ -2,6 +2,7 @@ import { Bell, Plus, Menu, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { GlobalSearch } from "./GlobalSearch";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface HeaderProps {
   title: string;
@@ -14,6 +15,16 @@ interface HeaderProps {
 }
 
 export function Header({ title, subtitle, onMenuClick, onSelectApprenant, onNavigate, canGoBack, onGoBack }: HeaderProps) {
+  const { profile } = useAuth();
+
+  const displayName = profile?.full_name || "Administrateur";
+  const initials = displayName
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
   return (
     <header className="bg-card border-b border-border px-6 py-4">
       <div className="flex items-center justify-between">
@@ -60,11 +71,11 @@ export function Header({ title, subtitle, onMenuClick, onSelectApprenant, onNavi
 
           <div className="flex items-center gap-3 pl-4 border-l border-border">
             <Avatar className="w-9 h-9">
-              <AvatarImage src="https://api.dicebear.com/7.x/initials/svg?seed=MC" />
-              <AvatarFallback>MC</AvatarFallback>
+              <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${initials}`} />
+              <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
             <div className="hidden sm:block">
-              <p className="text-sm font-medium">Marie Dupont</p>
+              <p className="text-sm font-medium">{displayName}</p>
               <p className="text-xs text-muted-foreground">Administrateur</p>
             </div>
           </div>
