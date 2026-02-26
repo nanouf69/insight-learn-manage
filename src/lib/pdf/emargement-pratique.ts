@@ -2,6 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import logoImage from "@/assets/logo-ftransport.png";
 
 interface CandidatPratique {
   nom: string;
@@ -36,10 +37,17 @@ export function generateEmargementPratiquePDF(
   doc.setFillColor(41, 128, 185);
   doc.rect(0, 0, pageWidth, 28, "F");
 
+  // Logo Ftransport
+  try {
+    doc.addImage(logoImage, "PNG", margin, 4, 45, 16);
+  } catch (e) {
+    console.log("Logo non charge");
+  }
+
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(22);
   doc.setFont("helvetica", "bold");
-  doc.text(organisme.nom, margin, 14);
+  doc.text(organisme.nom, margin + 48, 14);
 
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
