@@ -73,6 +73,7 @@ interface ApprenantDB {
   date_debut_formation: string | null;
   date_fin_formation: string | null;
   date_examen_theorique: string | null;
+  date_examen_pratique: string | null;
   statut: string | null;
 }
 
@@ -318,6 +319,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
             date_debut_formation,
             date_fin_formation,
             date_examen_theorique,
+            date_examen_pratique,
             resultat_examen,
             statut,
             montant_ttc,
@@ -375,7 +377,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
     queryFn: async () => {
       const { data, error } = await supabase
         .from('apprenants')
-        .select('id, nom, prenom, email, telephone, type_apprenant, mode_financement, numero_dossier_cma, date_debut_formation, date_fin_formation, date_examen_theorique, statut')
+        .select('id, nom, prenom, email, telephone, type_apprenant, mode_financement, numero_dossier_cma, date_debut_formation, date_fin_formation, date_examen_theorique, date_examen_pratique, statut')
         .order('nom', { ascending: true });
       
       if (error) throw error;
@@ -671,6 +673,9 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
   const replaceTemplateVars = (template: string, a: any): string => {
     const formation = getFormationTypeLocal(a.type_apprenant);
     const dateDebut = a.date_debut_formation || session.dateDebut || '[date à compléter]';
+    const dateFin = a.date_fin_formation || session.dateFin || '[date à compléter]';
+    const dateExamenTheorique = a.date_examen_theorique || '[date à compléter]';
+    const dateExamenPratique = a.date_examen_pratique || '[date à compléter]';
     const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
     const bookingUrl = `https://insight-learn-manage.lovable.app/reservation-pratique?id=${a.id}&type=${formation.toLowerCase().includes('vtc') ? 'vtc' : 'taxi'}`;
     const onboardingUrl = 'https://insight-learn-manage.lovable.app/bienvenue';
@@ -680,6 +685,9 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
       .replace(/\{\{nom\}\}/g, a.nom || '')
       .replace(/\{\{formation\}\}/g, formation)
       .replace(/\{\{date_debut\}\}/g, dateDebut)
+      .replace(/\{\{date_fin\}\}/g, dateFin)
+      .replace(/\{\{date_examen_theorique\}\}/g, dateExamenTheorique)
+      .replace(/\{\{date_examen_pratique\}\}/g, dateExamenPratique)
       .replace(/\{\{date_jour\}\}/g, today)
       .replace(/\{\{civilite\}\}/g, a.civilite || '')
       .replace(/\{\{adresse\}\}/g, a.adresse || '')
