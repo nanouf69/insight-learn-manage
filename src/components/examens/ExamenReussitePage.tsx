@@ -104,6 +104,35 @@ export function ExamenReussitePage() {
     }
   };
 
+  // Annuler le statut "déplacé" d'un candidat
+  const handleAnnulerDeplace = async (apprenantId: string, apprenantNom: string) => {
+    try {
+      const { data: sessionsApprenant } = await supabase
+        .from('session_apprenants')
+        .select('id, session_id, sessions!inner(type_session)')
+        .eq('apprenant_id', apprenantId)
+        .eq('presence_pratique', 'deplace')
+        .eq('sessions.type_session', 'pratique' as any);
+      if (sessionsApprenant && sessionsApprenant.length > 0) {
+        for (const sa of sessionsApprenant) {
+          await supabase
+            .from('session_apprenants')
+            .update({ presence_pratique: 'present' })
+            .eq('id', sa.id);
+        }
+      }
+      await supabase
+        .from('apprenants')
+        .update({ resultat_examen_pratique: null } as any)
+        .eq('id', apprenantId);
+      queryClient.invalidateQueries({ queryKey: ['deplaces-session-pratique'] });
+      queryClient.invalidateQueries({ queryKey: ['all-apprenants'] });
+      toast.success(`Statut "Déplacé" annulé pour ${apprenantNom}`);
+    } catch (err: any) {
+      toast.error('Erreur: ' + (err.message || 'Échec'));
+    }
+  };
+
   // Cancel a reservation
   const handleCancelReservation = async (apprenantId: string, apprenantNom: string) => {
     try {
@@ -767,8 +796,6 @@ export function ExamenReussitePage() {
           !paRpApprenants.some(r => r.id === a.id)
         );
         const reussisLettre = [...reussisTheorique, ...paRpApprenants, ...deplacesApprenantsCMA];
-
-
 
 
         const getCategorieCMA = (type: string | null) => {
@@ -1931,6 +1958,7 @@ export function ExamenReussitePage() {
                           <TableHead className="w-6">#</TableHead>
                           <TableHead>Nom Prénom</TableHead>
                           <TableHead>Type</TableHead>
+                          <TableHead className="w-20">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1946,10 +1974,20 @@ export function ExamenReussitePage() {
                                 {a.type_apprenant?.toUpperCase()}
                               </Badge>
                             </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-xs text-red-600 hover:text-red-800 hover:bg-red-50 gap-1 h-7 px-2"
+                                onClick={() => handleAnnulerDeplace(a.id, `${a.nom} ${a.prenom}`)}
+                              >
+                                <X className="h-3 w-3" /> Annuler
+                              </Button>
+                            </TableCell>
                           </TableRow>
                         ))}
                         {deplacesAff.filter(a => isVTC(a.type_apprenant)).length === 0 && (
-                          <TableRow><TableCell colSpan={3} className="text-xs text-muted-foreground italic">Aucun</TableCell></TableRow>
+                          <TableRow><TableCell colSpan={4} className="text-xs text-muted-foreground italic">Aucun</TableCell></TableRow>
                         )}
                       </TableBody>
                     </Table>
@@ -1963,6 +2001,7 @@ export function ExamenReussitePage() {
                           <TableHead className="w-6">#</TableHead>
                           <TableHead>Nom Prénom</TableHead>
                           <TableHead>Type</TableHead>
+                          <TableHead className="w-20">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1978,10 +2017,20 @@ export function ExamenReussitePage() {
                                 {a.type_apprenant?.toUpperCase()}
                               </Badge>
                             </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-xs text-red-600 hover:text-red-800 hover:bg-red-50 gap-1 h-7 px-2"
+                                onClick={() => handleAnnulerDeplace(a.id, `${a.nom} ${a.prenom}`)}
+                              >
+                                <X className="h-3 w-3" /> Annuler
+                              </Button>
+                            </TableCell>
                           </TableRow>
                         ))}
                         {deplacesAff.filter(a => isTAXI(a.type_apprenant)).length === 0 && (
-                          <TableRow><TableCell colSpan={3} className="text-xs text-muted-foreground italic">Aucun</TableCell></TableRow>
+                          <TableRow><TableCell colSpan={4} className="text-xs text-muted-foreground italic">Aucun</TableCell></TableRow>
                         )}
                       </TableBody>
                     </Table>
