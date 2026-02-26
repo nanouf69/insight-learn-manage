@@ -277,8 +277,7 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
   const [showAddApprenant, setShowAddApprenant] = useState(false);
   const [showAddFormateur, setShowAddFormateur] = useState(false);
   const [searchFormateur, setSearchFormateur] = useState("");
-  const [sendingEmails, setSendingEmails] = useState(false);
-  const [sendingTemplateId, setSendingTemplateId] = useState<string | null>(null);
+  const [sendingEmailForApprenant, setSendingEmailForApprenant] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Charger les apprenants de cette session depuis la base de données
@@ -683,54 +682,50 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
       .replace(/\{\{booking_url\}\}/g, bookingUrl);
   };
 
-  const handleSendTemplateEmail = async (templateId: string) => {
+  const [sendingForApprenant, setSendingForApprenant] = useState<string | null>(null);
+
+  const handleSendTemplateEmailToOne = async (templateId: string, apprenant: any) => {
     const template = emailTemplates.find((t: any) => t.id === templateId);
     if (!template) return;
 
-    const apprenantsWithEmail = apprenantsInSession.filter((sa: any) => sa.apprenant?.email);
-    
-    if (apprenantsWithEmail.length === 0) {
+    if (!apprenant.email) {
       toast({
-        title: "Aucun email",
-        description: "Aucun apprenant de cette session n'a d'adresse email.",
+        title: "Pas d'email",
+        description: `${apprenant.prenom} ${apprenant.nom} n'a pas d'adresse email.`,
         variant: "destructive",
       });
       return;
     }
 
-    setSendingEmails(true);
-    setSendingTemplateId(templateId);
-    let sent = 0;
-    let failed = 0;
+    setSendingForApprenant(apprenant.id);
 
-    for (const sa of apprenantsWithEmail) {
-      const a = sa.apprenant;
-      const subject = replaceTemplateVars(template.subject_template, a);
-      const body = replaceTemplateVars(template.body_template, a);
+    const subject = replaceTemplateVars(template.subject_template, apprenant);
+    const body = replaceTemplateVars(template.body_template, apprenant);
 
-      try {
-        await supabase.functions.invoke('sync-outlook-emails', {
-          body: {
-            action: 'send',
-            apprenantId: a.id,
-            userEmail: 'contact@ftransport.fr',
-            to: a.email,
-            subject,
-            body,
-          },
-        });
-        sent++;
-      } catch {
-        failed++;
-      }
+    try {
+      await supabase.functions.invoke('sync-outlook-emails', {
+        body: {
+          action: 'send',
+          apprenantId: apprenant.id,
+          userEmail: 'contact@ftransport.fr',
+          to: apprenant.email,
+          subject,
+          body,
+        },
+      });
+      toast({
+        title: "Email envoyé",
+        description: `"${template.label}" envoyé à ${apprenant.prenom} ${apprenant.nom}.`,
+      });
+    } catch {
+      toast({
+        title: "Erreur",
+        description: `Échec de l'envoi à ${apprenant.prenom} ${apprenant.nom}.`,
+        variant: "destructive",
+      });
     }
 
-    setSendingEmails(false);
-    setSendingTemplateId(null);
-    toast({
-      title: "Envoi terminé",
-      description: `${sent} email(s) "${template.label}" envoyé(s)${failed > 0 ? `, ${failed} échec(s)` : ''}.`,
-    });
+    setSendingForApprenant(null);
   };
 
   // Compter les apprenants par type
@@ -756,34 +751,6 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
               {getStatusBadge(session.status)}
             </DialogTitle>
             <div className="flex gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={sendingEmails || apprenantsInSession.length === 0}
-                    className="gap-2"
-                  >
-                    {sendingEmails ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                    {sendingEmails ? 'Envoi en cours...' : '📩 Envoyer mail type'}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="max-h-80 overflow-y-auto w-72">
-                  {emailTemplates.map((t: any) => (
-                    <DropdownMenuItem
-                      key={t.id}
-                      onClick={() => handleSendTemplateEmail(t.id)}
-                      className="cursor-pointer"
-                    >
-                      <span className="mr-2">{t.icon}</span>
-                      <span className="text-sm">{t.label}</span>
-                    </DropdownMenuItem>
-                  ))}
-                  {emailTemplates.length === 0 && (
-                    <DropdownMenuItem disabled>Aucun modèle disponible</DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
               <Button
                 size="sm"
                 variant="outline"
@@ -1053,8 +1020,41 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                             </div>
                           </div>
 
-                          {/* Boutons Notes et Paiement */}
+                          {/* Boutons Notes, Mail type et Paiement */}
                           <div className="flex items-center gap-2">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 px-2 gap-1 text-muted-foreground"
+                                  disabled={sendingForApprenant === apprenant.id}
+                                >
+                                  {sendingForApprenant === apprenant.id ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <Send className="w-4 h-4" />
+                                  )}
+                                  Mail type
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="max-h-80 overflow-y-auto w-72">
+                                {emailTemplates.map((t: any) => (
+                                  <DropdownMenuItem
+                                    key={t.id}
+                                    onClick={() => handleSendTemplateEmailToOne(t.id, apprenant)}
+                                    className="cursor-pointer"
+                                  >
+                                    <span className="mr-2">{t.icon}</span>
+                                    <span className="text-sm">{t.label}</span>
+                                  </DropdownMenuItem>
+                                ))}
+                                {emailTemplates.length === 0 && (
+                                  <DropdownMenuItem disabled>Aucun modèle</DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+
                             <NotesPopover 
                               sessionApprenantId={sessionApprenant.id}
                               notes={sessionApprenant.notes || apprenant.notes || ""}
