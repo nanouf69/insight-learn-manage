@@ -23,6 +23,7 @@ import { ExamenReussitePage } from "@/components/examens/ExamenReussitePage";
 import CoursEnLignePage from "@/components/cours-en-ligne/CoursEnLignePage";
 import { FournisseursPage } from "@/components/fournisseurs/FournisseursPage";
 import { FournisseurInvoiceAlerts } from "@/components/dashboard/FournisseurInvoiceAlerts";
+import { SmallTransfersTable } from "@/components/dashboard/SmallTransfersTable";
 import { GraduationCap, Users, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -156,6 +157,9 @@ const Index = () => {
                 <FournisseurInvoiceAlerts onNavigateToComptabilite={() => handleNavigate("comptabilite")} />
               </div>
             </div>
+
+            {/* Small Transfers */}
+            <SmallTransfersTable />
 
             {/* Financial Charts */}
             <div>
