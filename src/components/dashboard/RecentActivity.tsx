@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { GraduationCap, UserPlus, FileCheck, CreditCard, CheckCircle, AlertTriangle, CalendarCheck, Receipt } from "lucide-react";
+import { GraduationCap, UserPlus, FileCheck, CreditCard, CheckCircle, AlertTriangle, CalendarCheck, Receipt, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -170,6 +170,29 @@ export function RecentActivity({ onNavigateToApprenant }: RecentActivityProps) {
             icon: Receipt,
             iconBg: "bg-orange-500/10",
             iconColor: "text-orange-600",
+          });
+        });
+
+        // Fetch recent received emails
+        const { data: recentEmails } = await supabase
+          .from('emails')
+          .select('id, subject, sender_name, sender_email, received_at, created_at, type, apprenant_id')
+          .eq('type', 'received')
+          .order('received_at', { ascending: false })
+          .limit(5);
+
+        recentEmails?.forEach((e) => {
+          const sender = e.sender_name || e.sender_email || 'Inconnu';
+          activityList.push({
+            apprenantId: e.apprenant_id || '',
+            id: `email-${e.id}`,
+            type: "email_received",
+            message: `✉️ Email reçu de ${sender}`,
+            target: e.subject,
+            time: formatDistanceToNow(new Date(e.received_at || e.created_at), { addSuffix: true, locale: fr }),
+            icon: Mail,
+            iconBg: "bg-indigo-500/10",
+            iconColor: "text-indigo-600",
           });
         });
         // Alerts stay on top, sort rest by most recent
