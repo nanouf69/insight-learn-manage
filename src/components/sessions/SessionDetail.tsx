@@ -1045,7 +1045,6 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                                     onClick={() => handleSendTemplateEmailToOne(t.id, apprenant)}
                                     className="cursor-pointer"
                                   >
-                                    <span className="mr-2">{t.icon}</span>
                                     <span className="text-sm">{t.label}</span>
                                   </DropdownMenuItem>
                                 ))}
