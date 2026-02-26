@@ -158,14 +158,14 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Small Transfers */}
-            <SmallTransfersTable />
-
             {/* Financial Charts */}
             <div>
               <h2 className="text-lg font-semibold mb-3">Analyse financière</h2>
               <FinancialCharts />
             </div>
+
+            {/* Small Transfers */}
+            <SmallTransfersTable />
           </div>
         );
       case "agenda":
