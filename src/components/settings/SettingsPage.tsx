@@ -1,11 +1,73 @@
-import { User, Building2, CreditCard, Bell, Shield, Palette } from "lucide-react";
+import { useState, useEffect } from "react";
+import { User, Building2, CreditCard, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export function SettingsPage() {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [profileLoaded, setProfileLoaded] = useState(false);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      setEmail(user.email ?? "");
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (profile) {
+        const parts = (profile.full_name || "").split(" ");
+        setFirstName(parts[0] || "");
+        setLastName(parts.slice(1).join(" ") || "");
+        setEmail(profile.email || user.email || "");
+      }
+      setProfileLoaded(true);
+    };
+    loadProfile();
+  }, []);
+
+  const handleSaveProfile = async () => {
+    setSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Utilisateur non connecté");
+        return;
+      }
+
+      const fullName = `${firstName} ${lastName}`.trim();
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          full_name: fullName,
+          email: email,
+        })
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+      toast.success("Profil enregistré avec succès");
+    } catch (err: any) {
+      toast.error("Erreur lors de l'enregistrement : " + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="max-w-4xl animate-fade-in">
       <Tabs defaultValue="profile" className="space-y-6">
@@ -34,22 +96,24 @@ export function SettingsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName">Prénom</Label>
-                <Input id="firstName" defaultValue="Marie" />
+                <Input id="firstName" value={firstName} onChange={e => setFirstName(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lastName">Nom</Label>
-                <Input id="lastName" defaultValue="Dupont" />
+                <Input id="lastName" value={lastName} onChange={e => setLastName(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" defaultValue="marie.dupont@formacloud.fr" />
+                <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Téléphone</Label>
-                <Input id="phone" defaultValue="06 12 34 56 78" />
+                <Input id="phone" value={phone} onChange={e => setPhone(e.target.value)} />
               </div>
             </div>
-            <Button className="mt-6">Enregistrer les modifications</Button>
+            <Button className="mt-6" onClick={handleSaveProfile} disabled={saving || !profileLoaded}>
+              {saving ? "Enregistrement..." : "Enregistrer les modifications"}
+            </Button>
           </div>
 
           <div className="stat-card">
