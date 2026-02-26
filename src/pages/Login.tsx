@@ -6,15 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Truck } from 'lucide-react';
 import logoFtransport from '@/assets/logo-ftransport.png';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [fullName, setFullName] = useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -23,34 +20,14 @@ export default function Login() {
     setLoading(true);
 
     try {
-      if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: window.location.origin,
-            data: {
-              full_name: fullName,
-            },
-          },
-        });
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-        if (error) throw error;
+      if (error) throw error;
 
-        toast({
-          title: "Inscription réussie",
-          description: "Vérifiez votre email pour confirmer votre compte.",
-        });
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (error) throw error;
-
-        navigate('/');
-      }
+      navigate('/');
     } catch (error: any) {
       toast({
         title: "Erreur",
@@ -73,31 +50,13 @@ export default function Login() {
               className="h-16 object-contain"
             />
           </div>
-          <CardTitle className="text-2xl font-bold">
-            {isSignUp ? "Créer un compte" : "Connexion"}
-          </CardTitle>
+          <CardTitle className="text-2xl font-bold">Connexion</CardTitle>
           <CardDescription>
-            {isSignUp 
-              ? "Remplissez le formulaire pour créer votre compte"
-              : "Connectez-vous pour accéder à la plateforme de gestion"
-            }
+            Connectez-vous pour accéder à la plateforme de gestion
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleAuth} className="space-y-4">
-            {isSignUp && (
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Nom complet</Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  placeholder="Jean Dupont"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required={isSignUp}
-                />
-              </div>
-            )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -122,21 +81,9 @@ export default function Login() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Chargement..." : isSignUp ? "S'inscrire" : "Se connecter"}
+              {loading ? "Chargement..." : "Se connecter"}
             </Button>
           </form>
-          <div className="mt-4 text-center text-sm">
-            <button
-              type="button"
-              onClick={() => setIsSignUp(!isSignUp)}
-              className="text-primary hover:underline"
-            >
-              {isSignUp 
-                ? "Déjà un compte ? Se connecter"
-                : "Pas de compte ? S'inscrire"
-              }
-            </button>
-          </div>
         </CardContent>
       </Card>
     </div>
