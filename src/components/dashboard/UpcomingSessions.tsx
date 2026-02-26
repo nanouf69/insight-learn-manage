@@ -72,9 +72,6 @@ export function UpcomingSessions() {
                       </span>
                     </div>
                   </div>
-                  {session.lieu && (
-                    <span className="badge-primary">{session.lieu}</span>
-                  )}
                 </div>
               </div>
             );
