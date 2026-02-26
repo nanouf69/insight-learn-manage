@@ -278,6 +278,13 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
   const [showAddFormateur, setShowAddFormateur] = useState(false);
   const [searchFormateur, setSearchFormateur] = useState("");
   const [sendingEmailForApprenant, setSendingEmailForApprenant] = useState<string | null>(null);
+  const [emailPreview, setEmailPreview] = useState<{
+    templateId: string;
+    apprenant: any;
+    subject: string;
+    body: string;
+    label: string;
+  } | null>(null);
   const { toast } = useToast();
 
   // Charger les apprenants de cette session depuis la base de données
@@ -682,14 +689,6 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
       .replace(/\{\{booking_url\}\}/g, bookingUrl);
   };
 
-  // State pour l'aperçu du mail
-  const [emailPreview, setEmailPreview] = useState<{
-    templateId: string;
-    apprenant: any;
-    subject: string;
-    body: string;
-    label: string;
-  } | null>(null);
 
   const handlePreviewTemplateEmail = (templateId: string, apprenant: any) => {
     const template = emailTemplates.find((t: any) => t.id === templateId);
