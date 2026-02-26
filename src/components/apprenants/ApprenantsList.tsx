@@ -328,11 +328,17 @@ export function ApprenantsList() {
   const normalize = (str: string) =>
     str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
 
+  const stripNonAlpha = (str: string) => str.replace(/[\s\-\.\(\)]/g, "");
+
   const filteredApprenants = apprenants.filter(a => {
     if (!searchTerm.trim()) return true;
-    const keywords = normalize(searchTerm).split(" ").filter(Boolean);
-    const haystack = normalize([a.nom, a.prenom, a.email || "", a.telephone || "", a.ville || ""].join(" "));
-    return keywords.every(kw => haystack.includes(kw));
+    const normalizedSearch = normalize(searchTerm);
+    const keywords = normalizedSearch.split(" ").filter(Boolean);
+    const haystack = normalize([a.nom, a.prenom, a.email || "", a.telephone || "", a.ville || "", a.adresse || "", a.code_postal || ""].join(" "));
+    // Also build a stripped version for phone/email matching without spaces
+    const haystackStripped = stripNonAlpha([a.telephone || "", a.email || ""].join(" "));
+    const searchStripped = stripNonAlpha(normalizedSearch);
+    return keywords.every(kw => haystack.includes(kw)) || (searchStripped.length >= 3 && haystackStripped.includes(searchStripped));
   });
 
   if (isLoading) {
