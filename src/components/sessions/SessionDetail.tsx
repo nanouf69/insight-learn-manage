@@ -33,7 +33,8 @@ import {
   CreditCard,
   Euro,
   Save,
-  Send
+  Send,
+  UserPlus
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { generateEmargementPDF } from "./EmargementGenerator";
@@ -278,6 +279,8 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
   const [showAddApprenant, setShowAddApprenant] = useState(false);
   const [showAddFormateur, setShowAddFormateur] = useState(false);
   const [searchFormateur, setSearchFormateur] = useState("");
+  const [showHorsSession, setShowHorsSession] = useState(false);
+  const [searchHorsSession, setSearchHorsSession] = useState("");
   const [sendingEmailForApprenant, setSendingEmailForApprenant] = useState<string | null>(null);
   const [emailPreview, setEmailPreview] = useState<{
     templateId: string;
@@ -1140,6 +1143,87 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                   <span className="text-muted-foreground">/ 18 max</span>
                 </div>
               </div>
+            </div>
+
+            {/* Envoyer convocation à un élève hors session */}
+            <div className="mt-4">
+              <Button
+                variant={showHorsSession ? "secondary" : "outline"}
+                size="sm"
+                onClick={() => setShowHorsSession(!showHorsSession)}
+                className="gap-2 w-full"
+              >
+                {showHorsSession ? <X className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
+                {showHorsSession ? "Fermer" : "📬 Envoyer une convocation à un élève oublié"}
+              </Button>
+              {showHorsSession && (
+                <div className="mt-3 p-3 border rounded-lg bg-muted/30 space-y-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Rechercher un élève (nom, prénom, email)..."
+                      value={searchHorsSession}
+                      onChange={(e) => setSearchHorsSession(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  {searchHorsSession.length >= 2 && (
+                    <div className="max-h-48 overflow-auto space-y-1">
+                      {allApprenants
+                        .filter(a => 
+                          !sessionApprenantIds.includes(a.id) &&
+                          (a.nom.toLowerCase().includes(searchHorsSession.toLowerCase()) ||
+                           a.prenom.toLowerCase().includes(searchHorsSession.toLowerCase()) ||
+                           (a.email || '').toLowerCase().includes(searchHorsSession.toLowerCase()))
+                        )
+                        .slice(0, 10)
+                        .map(a => (
+                          <div key={a.id} className="flex items-center justify-between p-2 rounded-md hover:bg-accent/50 border">
+                            <div className="flex-1 min-w-0">
+                              <span className="font-medium text-sm">{a.nom} {a.prenom}</span>
+                              {a.email && <span className="text-xs text-muted-foreground ml-2">{a.email}</span>}
+                              {a.type_apprenant && (
+                                <Badge variant="outline" className="ml-2 text-[10px]">{a.type_apprenant.toUpperCase()}</Badge>
+                              )}
+                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-7 px-2 gap-1 text-xs">
+                                  <Send className="w-3.5 h-3.5" />
+                                  Convocation
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="max-h-80 overflow-y-auto w-72">
+                                {emailTemplates
+                                  .filter((t: any) => t.id.includes('convocation'))
+                                  .map((t: any) => (
+                                    <DropdownMenuItem
+                                      key={t.id}
+                                      onClick={() => handlePreviewTemplateEmail(t.id, a)}
+                                      className="cursor-pointer"
+                                    >
+                                      <span className="text-sm">{t.label}</span>
+                                    </DropdownMenuItem>
+                                  ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        ))}
+                      {allApprenants.filter(a => 
+                        !sessionApprenantIds.includes(a.id) &&
+                        (a.nom.toLowerCase().includes(searchHorsSession.toLowerCase()) ||
+                         a.prenom.toLowerCase().includes(searchHorsSession.toLowerCase()) ||
+                         (a.email || '').toLowerCase().includes(searchHorsSession.toLowerCase()))
+                      ).length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-2">Aucun élève trouvé</p>
+                      )}
+                    </div>
+                  )}
+                  {searchHorsSession.length < 2 && (
+                    <p className="text-xs text-muted-foreground text-center">Tapez au moins 2 caractères pour rechercher</p>
+                  )}
+                </div>
+              )}
             </div>
           </TabsContent>
 
