@@ -2,6 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format, eachDayOfInterval, parseISO, isWeekend } from "date-fns";
 import { fr } from "date-fns/locale";
+import logoImage from "@/assets/logo-ftransport.png";
 
 interface Apprenant {
   id: number;
@@ -98,10 +99,17 @@ function generatePage(
   doc.setFillColor(41, 128, 185);
   doc.rect(0, 0, pageWidth, 22, "F");
 
+  // Logo Ftransport
+  try {
+    doc.addImage(logoImage, "PNG", margin, 3, 40, 14);
+  } catch (e) {
+    console.log("Logo non charge");
+  }
+
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
-  doc.text(organisme.nom, margin, 12);
+  doc.text(organisme.nom, margin + 43, 12);
 
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
