@@ -142,8 +142,8 @@ export function SessionEditor({ session, onUpdate }: SessionEditorProps) {
       if (error) throw error;
 
       // Gérer le formateur assigné
-      if (selectedFormateurId) {
-        await supabase.from('session_formateurs').delete().eq('session_id', session.id);
+      await supabase.from('session_formateurs').delete().eq('session_id', session.id);
+      if (selectedFormateurId && selectedFormateurId !== "none") {
         await supabase.from('session_formateurs').insert({
           session_id: session.id,
           formateur_id: selectedFormateurId,
@@ -373,7 +373,7 @@ export function SessionEditor({ session, onUpdate }: SessionEditorProps) {
                   <SelectValue placeholder="Choisir un formateur..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Aucun</SelectItem>
+                  <SelectItem value="none">Aucun</SelectItem>
                   {formateurs.map((f) => (
                     <SelectItem key={f.id} value={f.id}>
                       {f.prenom} {f.nom}
