@@ -1091,7 +1091,7 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                         const isPptx = f.nom.endsWith(".pptx") || f.nom.endsWith(".ppt") || f.url.endsWith(".pptx") || f.url.endsWith(".ppt");
                         const isPublicUrl = f.url.startsWith("http");
                         const viewerUrl = isPptx && isPublicUrl
-                          ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(f.url)}`
+                          ? `https://docs.google.com/gview?url=${encodeURIComponent(f.url)}&embedded=true`
                           : null;
                         return (
                           <div key={i} className="space-y-2">
