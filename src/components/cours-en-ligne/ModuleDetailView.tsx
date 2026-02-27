@@ -5,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings, Download, FileText, Upload, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings, Download, FileText, Upload, Loader2, ZoomIn, ZoomOut, RotateCcw, Maximize } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import PptxZoomableViewer from "./PptxZoomableViewer";
 
 // Images des monuments et lieux de Lyon
 import imgCathedraleStJean from "@/assets/pratique/cathedrale-st-jean.jpg";
@@ -1107,14 +1108,7 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                               </a>
                             </div>
                             {viewerUrl ? (
-                              <div className="border rounded-lg overflow-hidden" style={{ height: "800px" }}>
-                                <iframe
-                                  src={viewerUrl}
-                                  className="w-full h-full border-0"
-                                  allowFullScreen
-                                  title={`Aperçu ${f.nom}`}
-                                />
-                              </div>
+                              <PptxZoomableViewer url={viewerUrl} nom={f.nom} />
                             ) : isPptx && !isPublicUrl ? (
                               <div className="border rounded-lg p-6 text-center text-muted-foreground bg-muted/30">
                                 <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
