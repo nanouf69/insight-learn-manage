@@ -1107,19 +1107,10 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                               </a>
                             </div>
                             {viewerUrl ? (
-                              <div className="border rounded-lg overflow-hidden relative" style={{ height: "700px" }}>
+                              <div className="border rounded-lg overflow-hidden" style={{ height: "800px" }}>
                                 <iframe
                                   src={viewerUrl}
-                                  style={{
-                                    position: "absolute",
-                                    top: 0,
-                                    left: 0,
-                                    width: "166.66%",
-                                    height: "166.66%",
-                                    transform: "scale(0.6)",
-                                    transformOrigin: "top left",
-                                    border: "none",
-                                  }}
+                                  className="w-full h-full border-0"
                                   allowFullScreen
                                   title={`Aperçu ${f.nom}`}
                                 />
