@@ -1107,7 +1107,7 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                               </a>
                             </div>
                             {viewerUrl ? (
-                              <div className="border rounded-lg overflow-hidden" style={{ height: "600px" }}>
+                              <div className="border rounded-lg overflow-hidden" style={{ height: "900px" }}>
                                 <iframe
                                   src={viewerUrl}
                                   className="w-full h-full border-0"
