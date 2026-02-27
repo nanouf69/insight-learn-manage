@@ -166,7 +166,8 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
         .select('url')
         .eq('apprenant_id', apprenantId)
         .eq('type_document', 'photo_identite')
-        .eq('statut', 'valid')
+        .in('statut', ['valid', 'recu'])
+        .order('created_at', { ascending: false })
         .maybeSingle();
       
       if (error) {
