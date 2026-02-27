@@ -38,14 +38,14 @@ interface ModuleData {
 }
 
 // =============================================
-// MATIÈRE A — RÉGLEMENTATION T3P (2 parties)
+// MATIÈRE A — RÉGLEMENTATION T3P (1 partie)
 // =============================================
 
 const MATIERE_A: ContentItem[] = [
   {
     id: 1001, actif: true,
-    titre: "A. RÉGLEMENTATION T3P — Partie 1",
-    sousTitre: "Cadre général, Transport public/privé, Loi LOTI, Taxis, VTC, VMDTR, Organismes, Assurances, Formation continue",
+    titre: "A. RÉGLEMENTATION T3P",
+    sousTitre: "Cadre général, Transport public/privé, Loi LOTI, Taxis, VTC, VMDTR, Organismes, Assurances, Formation continue, Agents de contrôle, Juridictions, Sanctions, TPMR, Covoiturage, Intermédiaires, VSS & Discriminations",
     description: `Arrêté du 20 mars 2024 — En vigueur depuis le 1er avril 2024
 
 ═══════════════════════════════════════
@@ -220,13 +220,9 @@ Visite médicale — Fréquence selon l'âge :
 • 76 ans et plus : Chaque ANNÉE
 
 ⚠ CHIFFRES À RETENIR :
-14h formation / 5 ans | 3 750 € défaut assurance | 15 000 € exercice illégal | 1 an prison | 10 ans retrait carte | 5 ans fraude | 12/20 note min pratique | 6/20 note éliminatoire`,
-  },
-  {
-    id: 1002, actif: true,
-    titre: "A. RÉGLEMENTATION T3P — Partie 2",
-    sousTitre: "Agents de contrôle, Juridictions, Sanctions, TPMR, Covoiturage, Intermédiaires, VSS & Discriminations",
-    description: `═══════════════════════════════════════
+14h formation / 5 ans | 3 750 € défaut assurance | 15 000 € exercice illégal | 1 an prison | 10 ans retrait carte | 5 ans fraude | 12/20 note min pratique | 6/20 note éliminatoire
+
+═══════════════════════════════════════
 8b. AGENTS DE CONTRÔLE ET DOCUMENTS T3P
 ═══════════════════════════════════════
 
@@ -352,14 +348,14 @@ Critères protégés : origine, sexe, situation de famille, grossesse, apparence
 ];
 
 // =============================================
-// MATIÈRE B — GESTION (3 parties)
+// MATIÈRE B — GESTION (1 partie)
 // =============================================
 
 const MATIERE_B: ContentItem[] = [
   {
     id: 2001, actif: true,
-    titre: "B. GESTION — Partie 1",
-    sousTitre: "Types d'entrepreneurs, Personne physique/morale, Formes juridiques (EI → SA)",
+    titre: "B. GESTION",
+    sousTitre: "Types d'entrepreneurs, Formes juridiques, Amortissements, Coût de revient, TVA, Régimes d'imposition, Régimes sociaux, Marge, Dividendes, CMA/CGA, Moyens de paiement",
     description: `═══════════════════════════════════════
 1. LES TYPES D'ENTREPRENEURS
 ═══════════════════════════════════════
@@ -419,13 +415,9 @@ SAS (Société par Actions Simplifiée) :
 SA (Société Anonyme) :
 • 7+ actionnaires | Capital min 37 000 € | Conseil d'administration | IS
 
-✔ VTC/Taxi → souvent SASU ou micro-entreprise.`,
-  },
-  {
-    id: 2002, actif: true,
-    titre: "B. GESTION — Partie 2",
-    sousTitre: "Amortissements, Coût de revient, TVA, Régimes d'imposition, Régimes sociaux",
-    description: `═══════════════════════════════════════
+✔ VTC/Taxi → souvent SASU ou micro-entreprise.
+
+═══════════════════════════════════════
 1. L'AMORTISSEMENT
 ═══════════════════════════════════════
 
@@ -507,13 +499,9 @@ ASSIMILÉ SALARIÉ :
 • Meilleure couverture sociale
 • Pas d'assurance chômage non plus
 
-CSG : 9,2% sur tous les revenus | CRDS : 0,5%`,
-  },
-  {
-    id: 2003, actif: true,
-    titre: "B. GESTION — Partie 3",
-    sousTitre: "Marge, Dividendes, Statuts du conjoint, CMA/CGA, Moyens de paiement",
-    description: `═══════════════════════════════════════
+CSG : 9,2% sur tous les revenus | CRDS : 0,5%
+
+═══════════════════════════════════════
 1. MARGE, TVA ET CALCUL DU PRIX DE VENTE
 ═══════════════════════════════════════
 
@@ -577,14 +565,14 @@ ESPÈCES :
 ];
 
 // =============================================
-// MATIÈRE C — SÉCURITÉ ROUTIÈRE (3 parties)
+// MATIÈRE C — SÉCURITÉ ROUTIÈRE (1 partie)
 // =============================================
 
 const MATIERE_C: ContentItem[] = [
   {
     id: 3001, actif: true,
-    titre: "C. SÉCURITÉ ROUTIÈRE — Partie 1",
-    sousTitre: "Avertisseurs, Panneaux, Vérifications, Marquages au sol, Stationnements, Priorités & Feux",
+    titre: "C. SÉCURITÉ ROUTIÈRE",
+    sousTitre: "Avertisseurs, Panneaux, Vérifications, Marquages au sol, Stationnements, Priorités, Distances, Alcool & Stupéfiants, Vitesses, Accidents, Permis à points",
     description: `═══════════════════════════════════════
 1. AVERTISSEURS : SONORE, LUMINEUX, CLIGNOTANTS & DÉTRESSE
 ═══════════════════════════════════════
@@ -653,13 +641,9 @@ FEUX TRICOLORES :
 • Orange : arrêt sauf si arrêt dangereux
 • Rouge : arrêt obligatoire
 
-CROISEMENT EN PENTE : Le véhicule qui monte a la priorité.`,
-  },
-  {
-    id: 3002, actif: true,
-    titre: "C. SÉCURITÉ ROUTIÈRE — Partie 2",
-    sousTitre: "Distances, Sièges auto, Alcool & Stupéfiants, Vitesses, Dépassements",
-    description: `═══════════════════════════════════════
+CROISEMENT EN PENTE : Le véhicule qui monte a la priorité.
+
+═══════════════════════════════════════
 1. DISTANCES : RÉACTION, ARRÊT, FREINAGE
 ═══════════════════════════════════════
 
@@ -714,13 +698,9 @@ LIMITATIONS :
 DÉPASSEMENT :
 • Par la GAUCHE (sauf véhicule tournant à gauche)
 • Interdit : ligne continue, virage, sommet de côte, passage piéton
-• Distance latérale : 1 m en agglomération, 1,5 m hors agglomération`,
-  },
-  {
-    id: 3003, actif: true,
-    titre: "C. SÉCURITÉ ROUTIÈRE — Partie 3",
-    sousTitre: "Médicaments, Fatigue, Prise en charge passagers, Éco-conduite, Contrôle technique, Accidents, Permis à points",
-    description: `═══════════════════════════════════════
+• Distance latérale : 1 m en agglomération, 1,5 m hors agglomération
+
+═══════════════════════════════════════
 1. MÉDICAMENTS, STRESS ET FATIGUE AU VOLANT
 ═══════════════════════════════════════
 
@@ -1439,7 +1419,7 @@ LA FACTURE : Reprend toutes les mentions du devis + le numéro de la facture (un
 export const VTC_COURS_DATA: ModuleData = {
   id: 2,
   nom: "2.COURS ET EXERCICES VTC",
-  description: "Cours complets pour les 7 matières de l'examen VTC : A. Réglementation T3P (2 parties), B. Gestion (3 parties), C. Sécurité Routière (3 parties), D. Français (1 partie), E. Anglais (1 partie), F. Réglementation Spécifique VTC (1 partie), G. Développement Commercial (1 partie).",
+  description: "Cours complets pour les 7 matières de l'examen VTC : A. Réglementation T3P, B. Gestion, C. Sécurité Routière, D. Français, E. Anglais, F. Réglementation Spécifique VTC, G. Développement Commercial.",
   cours: [
     ...MATIERE_A,
     ...MATIERE_B,
