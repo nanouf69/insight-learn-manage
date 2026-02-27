@@ -26,6 +26,7 @@ import { FournisseurInvoiceAlerts } from "@/components/dashboard/FournisseurInvo
 import { SmallTransfersTable } from "@/components/dashboard/SmallTransfersTable";
 import { GraduationCap, Users, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const pageConfig = {
   dashboard: { title: "Tableau de bord", subtitle: "Bienvenue, Marie !" },
@@ -51,6 +52,7 @@ const fmt = (n: number) =>
   new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 
 const Index = () => {
+  const { profile } = useAuth();
   const [currentPage, setCurrentPage] = useState("dashboard");
   const [pageHistory, setPageHistory] = useState<string[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -221,7 +223,7 @@ const Index = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header 
           title={config.title}
-          subtitle={config.subtitle}
+          subtitle={currentPage === 'dashboard' ? `Bienvenue, ${profile?.full_name?.split(' ')[0] || 'Admin'} !` : config.subtitle}
           onSelectApprenant={handleNavigateToApprenant}
           onNavigate={handleNavigate}
           canGoBack={pageHistory.length > 0}
