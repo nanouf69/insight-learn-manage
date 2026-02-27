@@ -1,12 +1,14 @@
 // ===== Données du module "2. COURS ET EXERCICES VTC" =====
-// Structure : 7 matières (A à G), 1 carte par matière — contenu sur PowerPoint
+// Structure : 7 matières (A à G), fichiers PowerPoint originaux
 
 interface ContentItem {
   id: number;
   titre: string;
   sousTitre?: string;
   description?: string;
+  image?: string;
   actif: boolean;
+  fichiers?: { nom: string; url: string }[];
 }
 
 interface ExerciceChoix {
@@ -38,7 +40,7 @@ interface ModuleData {
 }
 
 // =============================================
-// MATIÈRE A — RÉGLEMENTATION T3P
+// MATIÈRE A — RÉGLEMENTATION T3P (2 parties)
 // =============================================
 
 const MATIERE_A: ContentItem[] = [
@@ -46,11 +48,15 @@ const MATIERE_A: ContentItem[] = [
     id: 1001, actif: true,
     titre: "A. RÉGLEMENTATION T3P",
     sousTitre: "Réglementation du transport public particulier de personnes",
+    fichiers: [
+      { nom: "Partie 1", url: "/cours/vtc/A_T3P_partie_1.pptx" },
+      { nom: "Partie 2", url: "/cours/vtc/A_T3P_partie_2.pptx" },
+    ],
   },
 ];
 
 // =============================================
-// MATIÈRE B — GESTION
+// MATIÈRE B — GESTION (3 parties)
 // =============================================
 
 const MATIERE_B: ContentItem[] = [
@@ -58,11 +64,16 @@ const MATIERE_B: ContentItem[] = [
     id: 2001, actif: true,
     titre: "B. GESTION",
     sousTitre: "Gestion d'entreprise et comptabilité",
+    fichiers: [
+      { nom: "Partie 1", url: "/cours/vtc/B_Gestion_partie_1.pptx" },
+      { nom: "Partie 2", url: "/cours/vtc/B_Gestion_partie_2.pptx" },
+      { nom: "Partie 3", url: "/cours/vtc/B_Gestion_partie_3.pptx" },
+    ],
   },
 ];
 
 // =============================================
-// MATIÈRE C — SÉCURITÉ ROUTIÈRE
+// MATIÈRE C — SÉCURITÉ ROUTIÈRE (3 parties)
 // =============================================
 
 const MATIERE_C: ContentItem[] = [
@@ -70,6 +81,11 @@ const MATIERE_C: ContentItem[] = [
     id: 3001, actif: true,
     titre: "C. SÉCURITÉ ROUTIÈRE",
     sousTitre: "Sécurité routière et prévention des risques",
+    fichiers: [
+      { nom: "Partie 1", url: "/cours/vtc/C_Securite_Routiere_partie_1.pptx" },
+      { nom: "Partie 2", url: "/cours/vtc/C_Securite_Routiere_partie_2.pptx" },
+      { nom: "Partie 3", url: "/cours/vtc/C_Securite_Routiere_partie_3.pptx" },
+    ],
   },
 ];
 
