@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings, Download, FileText, Upload, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings, Download, FileText, Upload, Loader2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -856,6 +856,7 @@ const ContentCard = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -906,21 +907,56 @@ const ContentCard = ({
             <p className="text-sm text-muted-foreground">{item.sousTitre}</p>
           )}
         </div>
+        {/* Aperçu PowerPoint en iframe */}
+        {previewUrl && (
+          <div className="relative border rounded-lg overflow-hidden bg-muted">
+            <div className="flex items-center justify-between px-3 py-2 bg-muted/50 border-b">
+              <span className="text-xs font-medium text-muted-foreground">Aperçu du fichier</span>
+              <Button variant="ghost" size="sm" onClick={() => setPreviewUrl(null)} className="h-6 w-6 p-0">
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <iframe
+              src={previewUrl}
+              className="w-full h-[400px] border-0"
+              allowFullScreen
+              title="Aperçu PowerPoint"
+            />
+          </div>
+        )}
         {/* Fichiers PowerPoint */}
         {item.fichiers && item.fichiers.length > 0 && (
           <div className="flex flex-wrap gap-2">
-            {item.fichiers.map((f, i) => (
-              <a
-                key={i}
-                href={f.url}
-                download
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
-              >
-                <FileText className="w-4 h-4" />
-                {f.nom}
-                <Download className="w-3 h-3" />
-              </a>
-            ))}
+            {item.fichiers.map((f, i) => {
+              const isPptx = f.nom.endsWith(".pptx") || f.nom.endsWith(".ppt");
+              const officeViewerUrl = isPptx
+                ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(f.url)}`
+                : null;
+              return (
+                <div key={i} className="flex items-center gap-1">
+                  <a
+                    href={f.url}
+                    download
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
+                  >
+                    <FileText className="w-4 h-4" />
+                    {f.nom}
+                    <Download className="w-3 h-3" />
+                  </a>
+                  {officeViewerUrl && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1 h-8"
+                      onClick={() => setPreviewUrl(prev => prev === officeViewerUrl ? null : officeViewerUrl)}
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      Aperçu
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
         {/* Upload PowerPoint */}
