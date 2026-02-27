@@ -76,8 +76,8 @@ export async function autoAssignToSession(
     const { data: sessions, error: sessionsError } = await supabase
       .from('sessions')
       .select('*')
-      .eq('date_debut', dateDebut)
-      .eq('date_fin', dateFin);
+      .lte('date_debut', dateFin)
+      .gte('date_fin', dateDebut);
 
     if (sessionsError) throw sessionsError;
 
