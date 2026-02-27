@@ -131,7 +131,7 @@ export function SessionForm() {
           heure_debut: heureDebut || null,
           heure_fin: heureFin || null,
           lieu,
-          places_disponibles: parseInt(places) || (typeSession === 'pratique' ? 4 : 18),
+          places_disponibles: parseInt(places) || (typeSession === 'pratique' ? 4 : 17),
           statut: 'planifiee',
         });
 
