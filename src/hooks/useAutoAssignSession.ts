@@ -121,7 +121,7 @@ export async function autoAssignToSession(
           date_fin: dateFin,
           types_apprenant: typesCompatibles.length > 0 ? [typesCompatibles[0].toUpperCase()] : [],
           creneaux: creneauxSession,
-          places_disponibles: 17,
+          places_disponibles: 18,
           statut: 'planifiee',
           lieu: '86 route de genas 69003 Lyon',
         })
