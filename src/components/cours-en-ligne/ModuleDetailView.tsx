@@ -1089,9 +1089,9 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                     <div className="space-y-3 mt-3">
                       {cours.fichiers.map((f, i) => {
                         const isPptx = f.nom.endsWith(".pptx") || f.nom.endsWith(".ppt") || f.url.endsWith(".pptx") || f.url.endsWith(".ppt");
-                        const fullFileUrl = f.url.startsWith("http") ? f.url : `${window.location.origin}${f.url}`;
-                        const viewerUrl = isPptx
-                          ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fullFileUrl)}`
+                        const isPublicUrl = f.url.startsWith("http");
+                        const viewerUrl = isPptx && isPublicUrl
+                          ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(f.url)}`
                           : null;
                         return (
                           <div key={i} className="space-y-2">
@@ -1106,7 +1106,7 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                                 <Download className="w-3 h-3" />
                               </a>
                             </div>
-                            {viewerUrl && (
+                            {viewerUrl ? (
                               <div className="border rounded-lg overflow-hidden" style={{ height: "600px" }}>
                                 <iframe
                                   src={viewerUrl}
@@ -1115,7 +1115,13 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                                   title={`Aperçu ${f.nom}`}
                                 />
                               </div>
-                            )}
+                            ) : isPptx && !isPublicUrl ? (
+                              <div className="border rounded-lg p-6 text-center text-muted-foreground bg-muted/30">
+                                <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                <p className="text-sm">Aperçu non disponible pour les fichiers locaux.</p>
+                                <p className="text-xs mt-1">Téléchargez le fichier ou uploadez-le dans le gestionnaire de cours pour l'aperçu en ligne.</p>
+                              </div>
+                            ) : null}
                           </div>
                         );
                       })}
