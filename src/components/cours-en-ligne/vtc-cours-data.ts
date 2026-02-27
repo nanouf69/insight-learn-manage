@@ -9,6 +9,7 @@ interface ContentItem {
   image?: string;
   actif: boolean;
   fichiers?: { nom: string; url: string }[];
+  slidesKey?: string; // clé pour ouvrir le viewer de slides
 }
 
 interface ExerciceChoix {
@@ -46,11 +47,19 @@ interface ModuleData {
 const MATIERE_A: ContentItem[] = [
   {
     id: 1001, actif: true,
-    titre: "A. RÉGLEMENTATION T3P",
-    sousTitre: "Réglementation du transport public particulier de personnes",
+    titre: "A. RÉGLEMENTATION T3P — Partie 1",
+    sousTitre: "Transport public, loi LOTI, taxis, VTC, VMDTR, assurances, formation continue",
+    slidesKey: "t3p-partie1",
     fichiers: [
-      { nom: "Partie 1", url: "/cours/vtc/A_T3P_partie_1.pptx" },
-      { nom: "Partie 2", url: "/cours/vtc/A_T3P_partie_2.pptx" },
+      { nom: "PowerPoint Partie 1", url: "/cours/vtc/A_T3P_partie_1.pptx" },
+    ],
+  },
+  {
+    id: 1002, actif: true,
+    titre: "A. RÉGLEMENTATION T3P — Partie 2",
+    sousTitre: "Suite de la réglementation T3P",
+    fichiers: [
+      { nom: "PowerPoint Partie 2", url: "/cours/vtc/A_T3P_partie_2.pptx" },
     ],
   },
 ];
