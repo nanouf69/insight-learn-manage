@@ -843,6 +843,7 @@ const ContentCard = ({
   onEdit,
   borderColor,
   onFileUploaded,
+  onFileDeleted,
 }: {
   item: ContentItem;
   index: number;
@@ -853,6 +854,7 @@ const ContentCard = ({
   onEdit: (id: number) => void;
   borderColor: string;
   onFileUploaded?: (itemId: number, fichier: { nom: string; url: string }) => void;
+  onFileDeleted?: (itemId: number, fichierIndex: number, url: string) => void;
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -910,16 +912,24 @@ const ContentCard = ({
         {item.fichiers && item.fichiers.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {item.fichiers.map((f, i) => (
-              <a
-                key={i}
-                href={f.url}
-                download
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
-              >
-                <FileText className="w-4 h-4" />
-                {f.nom}
-                <Download className="w-3 h-3" />
-              </a>
+              <div key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-sm font-medium">
+                <a
+                  href={f.url}
+                  download
+                  className="inline-flex items-center gap-1.5 hover:underline"
+                >
+                  <FileText className="w-4 h-4" />
+                  {f.nom}
+                  <Download className="w-3 h-3" />
+                </a>
+                <button
+                  onClick={() => onFileDeleted?.(item.id, i, f.url)}
+                  className="ml-1 p-0.5 rounded hover:bg-destructive/20 text-destructive transition-colors"
+                  title="Supprimer ce fichier"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
             ))}
           </div>
         )}
@@ -1264,6 +1274,26 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                                 : c
                             ),
                           }));
+                        }}
+                        onFileDeleted={async (itemId, fichierIndex, url) => {
+                          try {
+                            // Extract storage path from URL
+                            const match = url.match(/cours-fichiers\/(.+)$/);
+                            if (match) {
+                              await supabase.storage.from("cours-fichiers").remove([match[1]]);
+                            }
+                            setModuleData(prev => ({
+                              ...prev,
+                              cours: prev.cours.map(c =>
+                                c.id === itemId
+                                  ? { ...c, fichiers: (c.fichiers || []).filter((_, idx) => idx !== fichierIndex) }
+                                  : c
+                              ),
+                            }));
+                            toast.success("Fichier supprimé");
+                          } catch (err) {
+                            toast.error("Erreur lors de la suppression");
+                          }
                         }}
                       />
                     )
