@@ -71,7 +71,7 @@ const formatDate = (dateString: string) => {
   }
 };
 
-export function SessionsList() {
+export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?: (apprenantId: string) => void }) {
   const [selectedSession, setSelectedSession] = useState<any | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [duplicating, setDuplicating] = useState<string | null>(null);
@@ -495,6 +495,7 @@ export function SessionsList() {
         session={selectedSession}
         open={detailOpen}
         onOpenChange={setDetailOpen}
+        onNavigateToApprenant={onNavigateToApprenant}
       />
     </div>
   );

@@ -59,6 +59,7 @@ interface SessionDetailProps {
   session: Session | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onNavigateToApprenant?: (apprenantId: string) => void;
 }
 
 // Interface pour l'apprenant depuis la base de données
@@ -274,7 +275,7 @@ function PaiementPopover({
   );
 }
 
-export function SessionDetail({ session, open, onOpenChange }: SessionDetailProps) {
+export function SessionDetail({ session, open, onOpenChange, onNavigateToApprenant }: SessionDetailProps) {
   const [searchApprenant, setSearchApprenant] = useState("");
   const [showAddApprenant, setShowAddApprenant] = useState(false);
   const [showAddFormateur, setShowAddFormateur] = useState(false);
@@ -947,7 +948,16 @@ export function SessionDetail({ session, open, onOpenChange }: SessionDetailProp
                             </Avatar>
                             <div>
                               <div className="flex items-center gap-2">
-                                <span className="font-semibold text-foreground">{apprenant.prenom} {apprenant.nom}</span>
+                                <span 
+                                  className="font-semibold text-foreground hover:text-primary hover:underline cursor-pointer transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (onNavigateToApprenant) {
+                                      onOpenChange(false);
+                                      onNavigateToApprenant(apprenant.id);
+                                    }
+                                  }}
+                                >{apprenant.prenom} {apprenant.nom}</span>
                                 <Badge className={`text-xs ${getTypeBadgeColor(apprenant.type_apprenant)}`}>
                                   {apprenant.type_apprenant?.toUpperCase() || "N/A"}
                                 </Badge>
