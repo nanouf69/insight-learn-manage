@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -122,6 +122,25 @@ export function OrganisationsList() {
     },
     enabled: !!selectedOrg?.email,
   });
+
+  // Mark unread emails as read when opening an org dialog
+  useEffect(() => {
+    if (!selectedOrg?.email || !orgEmails) return;
+    const domain = selectedOrg.email.split('@')[1]?.toLowerCase();
+    if (!domain) return;
+    const unreadIds = orgEmails
+      .filter(e => !e.is_read && e.sender_email?.toLowerCase().includes(domain))
+      .map(e => e.id);
+    if (unreadIds.length > 0) {
+      supabase
+        .from('emails')
+        .update({ is_read: true })
+        .in('id', unreadIds)
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: ['org-unread-emails'] });
+        });
+    }
+  }, [selectedOrg?.email, orgEmails, queryClient]);
 
   const sentEmails = (orgEmails?.filter(e => e.type === 'sent' || e.recipients?.some((r: string) => r.toLowerCase().includes(selectedOrg?.email?.split('@')[1]?.toLowerCase() || ''))) || [])
     .sort((a, b) => new Date(b.sent_at || b.created_at).getTime() - new Date(a.sent_at || a.created_at).getTime());
