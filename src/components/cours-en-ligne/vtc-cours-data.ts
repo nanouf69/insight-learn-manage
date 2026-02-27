@@ -799,39 +799,38 @@ ANNULATION (judiciaire) vs INVALIDATION (administrative = 0 point)
 ];
 
 // =============================================
-// MATIÈRE D — FRANÇAIS (7 parties)
+// MATIÈRE D — FRANÇAIS (1 partie)
 // =============================================
 
 const MATIERE_D: ContentItem[] = [
   {
     id: 4001, actif: true,
-    titre: "D. FRANÇAIS — Partie 1 : Conjugaison",
-    sousTitre: "Les 3 groupes verbaux, terminaisons, accords du participe passé",
-    description: `LE 1er GROUPE — Verbes en -er (sauf aller) :
+    titre: "D. FRANÇAIS",
+    sousTitre: "Conjugaison, Compréhension de texte, Accueil clientèle, Demandes, Confort, Conversation, Prise de congé",
+    description: `═══════════════════════════════════════
+1. CONJUGAISON
+═══════════════════════════════════════
+
+LE 1er GROUPE — Verbes en -er (sauf aller) :
 90% des verbes | Terminaisons : -e, -es, -e, -ons, -ez, -ent
-Ex : donner → je donne, tu donnes, il donne, nous donnons, vous donnez, ils donnent
 
 LE 2ème GROUPE — Verbes en -ir (participe présent en -issant) :
 Terminaisons : -is, -is, -it, -issons, -issez, -issent
-Ex : finir → finissant | choisir → choisissant
 
 LE 3ème GROUPE — Verbes irréguliers (-ir, -oir, -re + aller) :
 Règle générale : -s, -s, -t, -ons, -ez, -ent
 Exceptions : pouvoir/vouloir/valoir → -x, -x, -t
-ouvrir/cueillir → comme le 1er groupe (-e, -es, -e)
 
 ACCORD DU PARTICIPE PASSÉ :
-• Avec ÊTRE : accord avec le SUJET (ex : "Les filles sont parties")
-• Avec AVOIR : accord avec le COD si placé AVANT (ex : "Les pommes qu'ils ont cueillies")
+• Avec ÊTRE : accord avec le SUJET
+• Avec AVOIR : accord avec le COD si placé AVANT
 • PRONOMINAL : pas d'accord si COD après le verbe
 
-Terminaisons PP : 1er groupe → -é | 2ème → -i | 3ème → -i, -is, -t, -u`,
-  },
-  {
-    id: 4002, actif: true,
-    titre: "D. FRANÇAIS — Partie 2 : Compréhension de texte",
-    sousTitre: "6 étapes · Mots clés · Antonymes, paradoxes",
-    description: `MÉTHODOLOGIE — 6 étapes :
+═══════════════════════════════════════
+2. COMPRÉHENSION DE TEXTE
+═══════════════════════════════════════
+
+MÉTHODOLOGIE — 6 étapes :
 1. Lire les questions et définir les mots clés avant de lire le texte
 2. Lire le texte et s'arrêter aux passages pertinents
 3. Lire minimum 3 lignes autour de la réponse
@@ -839,42 +838,34 @@ Terminaisons PP : 1er groupe → -é | 2ème → -i | 3ème → -i, -is, -t, -u`
 5. Procéder par élimination si hésitation
 6. Si question trop difficile, répondre avec logique
 
-VOCABULAIRE UTILE :
-• Antonyme : mot de sens opposé (grand/petit, monter/descendre)
-• Paradoxe : opinion contraire à l'avis général ("Il faut se dépêcher d'attendre")`,
-  },
-  {
-    id: 4003, actif: true,
-    titre: "D. FRANÇAIS — Partie 3 : Accueillir la clientèle",
-    sousTitre: "Formules d'accueil · Première impression · Erreurs à éviter",
-    description: `FORMULES D'ACCUEIL :
+• Antonyme : mot de sens opposé (grand/petit)
+• Paradoxe : opinion contraire à l'avis général
+
+═══════════════════════════════════════
+3. ACCUEILLIR LA CLIENTÈLE
+═══════════════════════════════════════
+
+FORMULES D'ACCUEIL :
 • "Bonjour Monsieur/Madame [Nom]."
 • "Bienvenue, je suis [Prénom], votre chauffeur."
 • "Puis-je prendre vos bagages ?"
 • "Installez-vous confortablement."
-• "Nous allons à [destination], c'est bien cela ?"
 
 CLÉS DE LA PREMIÈRE IMPRESSION :
-✓ Sourire naturel et chaleureux
-✓ Tenue soignée et professionnelle
-✓ Ponctualité : arriver 5 minutes avant
-✓ Sortir du véhicule, ouvrir la porte
-✓ Confirmer la destination
+✓ Sourire naturel | ✓ Tenue soignée | ✓ Ponctualité (5 min avant)
+✓ Sortir du véhicule, ouvrir la porte | ✓ Confirmer la destination
 
 ERREURS À ÉVITER :
-✗ Rester dans la voiture sans sortir
-✗ Téléphoner pendant l'accueil
-✗ Tutoyer un client sans y être invité
-✗ Voiture sale ou malodorante`,
-  },
-  {
-    id: 4004, actif: true,
-    titre: "D. FRANÇAIS — Partie 4 : Comprendre les demandes",
-    sousTitre: "Écoute active · Reformulation · Vocabulaire des courses",
-    description: `DEMANDES FRÉQUENTES :
+✗ Rester dans la voiture | ✗ Téléphoner pendant l'accueil
+✗ Tutoyer un client | ✗ Voiture sale ou malodorante
+
+═══════════════════════════════════════
+4. COMPRENDRE LES DEMANDES
+═══════════════════════════════════════
+
+DEMANDES FRÉQUENTES :
 • "Pouvez-vous passer par [rue] ?" → Trajet spécifique
 • "Peut-on faire un arrêt rapide ?" → Arrêt intermédiaire
-• "À quelle heure arrivons-nous ?" → Estimation durée
 • "Combien va coûter la course ?" → Tarification
 
 TECHNIQUES D'ÉCOUTE ACTIVE :
@@ -884,251 +875,178 @@ TECHNIQUES D'ÉCOUTE ACTIVE :
 4. Proposer des alternatives
 5. Rester calme face à un client mécontent
 
-VOCABULAIRE TRANSPORT : prise en charge, destination, itinéraire, détour, péage, embouteillage, forfait, course, tarif, supplément, bagages, coffre, climatisation, réservation préalable`,
-  },
-  {
-    id: 4005, actif: true,
-    titre: "D. FRANÇAIS — Partie 5 : Interroger sur le confort",
-    sousTitre: "Questions types · Température, musique, trajet",
-    description: `QUESTIONS À POSER :
+═══════════════════════════════════════
+5. INTERROGER SUR LE CONFORT
+═══════════════════════════════════════
+
 • "La température vous convient-elle ?"
 • "Souhaitez-vous de la musique ?"
 • "Préférez-vous l'autoroute ou les nationales ?"
-• "Avez-vous besoin de quelque chose ?"
 
 BONNES PRATIQUES :
-✓ Poser la question en début de course
-✓ Proposer eau, bonbons, chargeurs
-✓ Conduite douce : vitesse et freinages souples
-✓ Anticiper : clim avant que le client monte
-✓ Ne pas insister si le client décline
+✓ Proposer eau, bonbons, chargeurs | ✓ Conduite douce
+✓ Anticiper : clim avant que le client monte | ✓ Ne pas insister si décliné
 
-SERVICES À BORD : Eau, bonbons, chargeurs USB, journaux, Wi-Fi, mouchoirs, parapluie
+🎯 Client confortable = client satisfait = client qui revient
 
-🎯 Client confortable = client satisfait = client qui revient`,
-  },
-  {
-    id: 4006, actif: true,
-    titre: "D. FRANÇAIS — Partie 6 : Conversation neutre et courtoise",
-    sousTitre: "Sujets appropriés / à éviter · Adapter son langage",
-    description: `SUJETS APPROPRIÉS ✓ :
-• La météo, le trafic, la ville, les événements locaux, le voyage, le sport
+═══════════════════════════════════════
+6. CONVERSATION NEUTRE ET COURTOISE
+═══════════════════════════════════════
 
-SUJETS À ÉVITER ✗ :
-✗ Politique, religion, sujets polémiques, problèmes personnels, critiques
+SUJETS APPROPRIÉS ✓ : Météo, trafic, ville, événements, voyage, sport
+SUJETS À ÉVITER ✗ : Politique, religion, sujets polémiques, problèmes personnels
 
 RÈGLES :
-• Vouvoyer systématiquement
-• Respecter le silence (c'est un choix du client)
-• Rester positif, ne pas se plaindre
-• Adapter son langage (pas d'argot, articuler)
-• Être discret, ne pas donner son avis personnel`,
-  },
-  {
-    id: 4007, actif: true,
-    titre: "D. FRANÇAIS — Partie 7 : Prendre congé",
-    sousTitre: "Formules de départ · Remerciements · Fidélisation",
-    description: `FORMULES DE DÉPART :
+• Vouvoyer systématiquement | • Respecter le silence du client
+• Rester positif | • Adapter son langage (pas d'argot)
+
+═══════════════════════════════════════
+7. PRENDRE CONGÉ
+═══════════════════════════════════════
+
+FORMULES DE DÉPART :
 • "Nous sommes arrivés, Monsieur/Madame."
 • "Merci d'avoir fait appel à nos services."
 • "Je vous souhaite une excellente journée/soirée."
 • "Au plaisir de vous revoir."
 
 GESTES DE FIN DE COURSE :
-• Sortir du véhicule, ouvrir la porte au client
-• Aider avec les bagages
-• Remettre sa carte de visite
-• Vérifier les oublis : "Rien oublié ?"
-• Proposer un reçu / une facture
-• Demander un avis en ligne
+• Ouvrir la porte | • Aider avec les bagages | • Carte de visite
+• "Rien oublié ?" | • Proposer un reçu | • Demander un avis en ligne
 
 FIDÉLISATION :
 • Donner PLUSIEURS cartes de visite
-• Proposer réductions fidélité : "10% pour votre prochaine course"
-• Rester joignable : numéro, site web, réseaux sociaux
+• "10% pour votre prochaine course"
 
-🤝 La fin de course = le début de la fidélisation
-Client satisfait = 2 personnes informées | Client insatisfait = 10 personnes informées !`,
+🤝 Client satisfait = 2 personnes informées | Client insatisfait = 10 !`,
   },
 ];
 
 // =============================================
-// MATIÈRE E — ANGLAIS (8 parties)
+// MATIÈRE E — ANGLAIS (1 partie)
 // =============================================
 
 const MATIERE_E: ContentItem[] = [
   {
     id: 5001, actif: true,
-    titre: "E. ANGLAIS — Partie 1 : Vocabulary",
-    sousTitre: "Station, Airport, Vehicle, Weather",
-    description: `AT THE STATION :
-The train (Le train) | The platform (Le quai) | A passenger (Un voyageur) | The ticket office (Le guichet) | A single ticket (Aller simple) | A return ticket (Aller-retour) | Lost property office (Objets trouvés) | To punch (Composter)
+    titre: "E. ANGLAIS",
+    sousTitre: "Vocabulary, Grammar, Welcoming, During the Ride, Lyon, Saying Goodbye, Question Words",
+    description: `═══════════════════════════════════════
+1. VOCABULARY — Station, Airport, Vehicle, Weather
+═══════════════════════════════════════
+
+AT THE STATION :
+The train | The platform (Quai) | A passenger | The ticket office (Guichet) | A single ticket (Aller simple) | A return ticket (Aller-retour) | Lost property office (Objets trouvés)
 
 AIRPORT :
-To go through customs (Passer la douane) | To fly / To board (Voler / Embarquer) | The flight number (Numéro de vol) | Jetlag (Décalage horaire) | Business / Economy class | To take off / To land (Décoller / Atterrir) | A seat belt (Ceinture de sécurité)
+To go through customs (Douane) | To fly / To board | The flight number | Jetlag | Business / Economy class | To take off / To land | A seat belt (Ceinture)
 
 THE VEHICLE :
-Back seat / Front seat | Battery / Engine | Boot (GB) / Trunk (US) = Coffre | Brake / Clutch | Dashboard (Tableau de bord) | Steering wheel (Volant) | Tire / Wheel | Air conditioned (Climatisé)
+Back seat / Front seat | Battery / Engine | Boot (GB) / Trunk (US) = Coffre | Brake / Clutch | Dashboard (Tableau de bord) | Steering wheel (Volant) | Air conditioned
 
 WEATHER :
-Hot / Boiling hot | Cold / Freezing | Sunny / Cloudy | It's raining / It's snowing`,
-  },
-  {
-    id: 5002, actif: true,
-    titre: "E. ANGLAIS — Partie 2 : Vocabulary (Verbs & Words)",
-    sousTitre: "Transport words, BE & HAVE, Useful words",
-    description: `TRANSPORT WORDS :
-Board / Get-off (Monter/Descendre) | Cancellation / Delay (Annulation/Retard) | An extra charge (Supplément) | Break down (Tomber en panne) | Keep the change (Gardez la monnaie) | The ride (La course) | A tip (Pourboire) | Toll (Péage)
+Hot / Boiling hot | Cold / Freezing | Sunny / Cloudy | It's raining / It's snowing
 
-TO BE — ÊTRE :
-I am / You are / He is / We are / They are
-Past: I was / You were / He was
+TRANSPORT WORDS :
+Board / Get-off | Cancellation / Delay | An extra charge (Supplément) | Break down (Panne) | Keep the change | The ride (La course) | A tip (Pourboire) | Toll (Péage)
 
-TO HAVE — AVOIR :
-I have / You have / He has / We have / They have
-Past: I had / You had / He had
+⚠ Mots toujours SINGULIERS : accommodation, advice, baggage, bread, furniture, information, luggage, news, work
 
-There is + singulier | There are + pluriel = Il y a
+═══════════════════════════════════════
+2. GRAMMAR — BE, HAVE, Tenses
+═══════════════════════════════════════
 
-⚠ Mots toujours SINGULIERS en anglais : accommodation, advice, baggage, bread, furniture, information, luggage, news, work`,
-  },
-  {
-    id: 5003, actif: true,
-    titre: "E. ANGLAIS — Partie 3 : Grammar (Tenses)",
-    sousTitre: "Prepositions, Preterit, Present Perfect, Future, Conditional, Modals",
-    description: `PREPOSITIONS :
-IN : mois (in July), saisons (in winter), pays (in Italy), villes (in Lyon)
-ON : jours précis (on Tuesday)
-AT : heures (at 11 o'clock), AT night
-TO : mouvement (go TO the cinema)
+TO BE : I am / You are / He is / We are / They are | Past: was/were
+TO HAVE : I have / You have / He has | Past: had
+There is + singulier | There are + pluriel
 
-THE PRETERIT (passé) :
-Réguliers : base + ED (worked) | Irréguliers : à apprendre (go → went)
+PREPOSITIONS :
+IN : mois, saisons, pays, villes | ON : jours | AT : heures, AT night | TO : mouvement
 
-THE PRESENT PERFECT :
-HAVE + participe passé | FOR = durée | SINCE = date précise
+THE PRETERIT : base + ED (réguliers) | Irréguliers (go → went)
+PRESENT PERFECT : HAVE + PP | FOR = durée | SINCE = date
+FUTURE : WILL + verbe | CONDITIONAL : WOULD + verbe
 
-FUTURE : Sujet + WILL + verbe
-CONDITIONAL : Sujet + WOULD + verbe
+MODALS : CAN/COULD | MAY/MIGHT | MUST | SHOULD | WOULD | SHALL | NEED
 
-MODAL VERBS :
-CAN/COULD (pouvoir) | MAY/MIGHT (peut-être) | MUST (devoir)
-SHOULD (conseil) | WOULD (conditionnel) | SHALL (suggestion) | NEED (avoir besoin)`,
-  },
-  {
-    id: 5004, actif: true,
-    titre: "E. ANGLAIS — Partie 4 : Grammar (Comparatives, Time, Plural)",
-    sousTitre: "Comparatifs, superlatifs, heure, quantifieurs",
-    description: `COMPARATIFS :
-• Supériorité : adj + ER + than (taller than) — adj long : MORE + adj + than
-• Égalité : AS + adj + AS
-• Infériorité : LESS + adj + THAN
+═══════════════════════════════════════
+3. GRAMMAR — Comparatives, Time, Plural, Quantifiers
+═══════════════════════════════════════
+
+COMPARATIFS :
+• adj + ER + than (court) | MORE + adj + than (long)
+• AS + adj + AS (égalité) | LESS + adj + THAN (infériorité)
 Irréguliers : good → better → best | bad → worse → worst
 
-TELLING THE TIME :
-AM (matin) / PM (soir) | O'CLOCK = pile | QUARTER = 15 min | HALF = 30 min
-PAST (1-30 min) / TO (31-59 min)
-8:15 → quarter past eight | 8:30 → half past eight | 7:45 → quarter to eight
+TIME : AM/PM | O'CLOCK | QUARTER | HALF | PAST (1-30) / TO (31-59)
 
-THE PLURAL :
-Régulier : +S (cats) | En S/SS : +ES (buses) | En O : +ES (potatoes)
-Irréguliers : man→men, woman→women, person→people, tooth→teeth
+PLURAL : +S | S/SS → +ES | O → +ES | man→men, woman→women, person→people
 
-QUANTIFIERS :
-MUCH (indénombrables) | MANY (dénombrables) | A LOT OF (les deux)`,
-  },
-  {
-    id: 5005, actif: true,
-    titre: "E. ANGLAIS — Partie 5 : Welcoming & Directions",
-    sousTitre: "Accueillir la clientèle en anglais + Directions",
-    description: `WELCOMING :
+QUANTIFIERS : MUCH (indénombrables) | MANY (dénombrables) | A LOT OF (les deux)
+
+═══════════════════════════════════════
+4. WELCOMING & DIRECTIONS
+═══════════════════════════════════════
+
 "Hello, are you Mr or Mrs…?" | "May I confirm your identity?"
-"You're welcome." | "If you'd like to get into the car…"
-"Do you mind if I check your identity?"
+"If you'd like to get into the car…" | "Do you mind if I check your identity?"
 
-DIRECTIONS & MEETING POINT :
-"What's your current location?" | "What can you see around?"
-"Are you in a parking lot?" | "I'm close to…"
-"Go straight on" | "Could you open the boot?"
-"I'm afraid you're late" — Vous êtes en retard
+DIRECTIONS :
+"What's your current location?" | "Go straight on" | "Could you open the boot?"
+"I'm afraid you're late"
 
-🎯 First impression matters! A warm welcome makes clients feel valued.
-
-ERREURS :
 ✗ "What is your name?" → ✓ "May I have your name, please?"
-✗ "You want go where?" → ✓ "Where would you like to go?"`,
-  },
-  {
-    id: 5006, actif: true,
-    titre: "E. ANGLAIS — Partie 6 : During the Ride",
-    sousTitre: "Confort & conversation en anglais",
-    description: `COMFORT PHRASES :
-"Make yourself comfortable." — Installez-vous.
-"Is everything alright?" — Tout va bien ?
-"What's your destination?" — Où allez-vous ?
-"Fine, I'll take you there." — Je vous y emmène.
-"Would you like some water?" — De l'eau ?
-"Is the temperature OK?" — Température OK ?
-"Shall I increase/decrease the temp.?" — Augmenter/baisser ?
+✗ "You want go where?" → ✓ "Where would you like to go?"
 
-SMALL TALK & SAFETY :
-"What line of business are you in?" — Que faites-vous ?
-"What a beautiful day!" — Il fait beau !
-"There's a bit of traffic." — Il y a de la circulation.
-"Have you been here before?" — Vous connaissez ?
-"Please, fasten your seat-belt." — Ceinture SVP.
+═══════════════════════════════════════
+5. DURING THE RIDE — Comfort & Small Talk
+═══════════════════════════════════════
 
-✗ Avoid: politics, religion, personal questions, controversial topics
-💡 "I'm sorry, could you say that again more slowly?"`,
-  },
-  {
-    id: 5007, actif: true,
-    titre: "E. ANGLAIS — Partie 7 : Lyon & Saying Goodbye",
-    sousTitre: "Parler de Lyon en anglais + Prendre congé",
-    description: `TALKING ABOUT LYON :
-"Lyon has a population of over 500,000." — Plus de 500 000 habitants.
-"The city is well-known for pharmaceuticals." — Chimie, pharmacie, biotech.
+"Make yourself comfortable." | "Is everything alright?"
+"What's your destination?" | "Fine, I'll take you there."
+"Would you like some water?" | "Is the temperature OK?"
+
+SMALL TALK :
+"What line of business are you in?" | "What a beautiful day!"
+"There's a bit of traffic." | "Have you been here before?"
+"Please, fasten your seat-belt."
+
+✗ Avoid: politics, religion, personal questions
+💡 "I'm sorry, could you say that again more slowly?"
+
+═══════════════════════════════════════
+6. TALKING ABOUT LYON
+═══════════════════════════════════════
+
+"Lyon has a population of over 500,000."
+"The city is well-known for pharmaceuticals."
 "Lyon is at the forefront of vaccines." — 1er centre vaccins au monde.
 "Lyon has prestigious universities." — 2ème ville étudiante.
 
-SAYING GOODBYE :
-"Here we are! We've arrived." — Nous sommes arrivés.
-"Thank you for choosing us." — Merci !
-"I hope you enjoyed the ride." — Le trajet vous a plu ?
-"Have a great day/evening!" — Bonne journée !
-"Enjoy your stay in Lyon!" — Profitez de Lyon !
-"It was a pleasure. Goodbye!" — Au revoir !
+═══════════════════════════════════════
+7. SAYING GOODBYE
+═══════════════════════════════════════
 
-END-OF-RIDE ACTIONS :
+"Here we are! We've arrived." | "Thank you for choosing us."
+"I hope you enjoyed the ride." | "Have a great day/evening!"
+"Enjoy your stay in Lyon!" | "It was a pleasure. Goodbye!"
+
 ✓ Open the door | ✓ Help with luggage | ✓ Hand over business card
 ✓ "Have you got everything?" | ✓ Offer a receipt | ✓ Ask for a review
-✓ "10% discount for returning clients." — 10% fidélité
+✓ "10% discount for returning clients."
 
-🤝 The end of the ride is the beginning of the next booking!`,
-  },
-  {
-    id: 5008, actif: true,
-    titre: "E. ANGLAIS — Partie 8 : Question Words",
-    sousTitre: "Which, Where, When, Who, What, How long",
-    description: `QUESTION WORDS :
+🤝 The end of the ride is the beginning of the next booking!
 
-WHICH (Qui — chose, antécédent non humain) :
-"The car which is pink is mine." — La voiture qui est rose est la mienne.
+═══════════════════════════════════════
+8. QUESTION WORDS
+═══════════════════════════════════════
 
-WHERE (Où — antécédent = lieu) :
-"The city where I live is beautiful." — La ville où je vis est belle.
-
-WHEN (Quand — antécédent = date) :
-"She was born the day when Diana died."
-
-WHO (Qui — personne, antécédent humain) :
-"The woman who drives is my neighbour."
-
-WHAT (Que, quoi — question ouverte) :
-"What do you want?" — Que veux-tu ?
-
-HOW LONG (Combien de temps — durée) :
-"How long are you staying in France?" — Combien de temps restez-vous ?`,
+WHICH : "The car which is pink is mine." (chose)
+WHERE : "The city where I live is beautiful." (lieu)
+WHEN : "She was born the day when Diana died." (date)
+WHO : "The woman who drives is my neighbour." (personne)
+WHAT : "What do you want?" (question ouverte)
+HOW LONG : "How long are you staying in France?" (durée)`,
   },
 ];
 
@@ -1139,7 +1057,7 @@ HOW LONG (Combien de temps — durée) :
 export const VTC_COURS_DATA: ModuleData = {
   id: 2,
   nom: "2.COURS ET EXERCICES VTC",
-  description: "Cours complets pour les 5 matières communes de l'examen VTC : A. Réglementation T3P (2 parties), B. Gestion (3 parties), C. Sécurité Routière (3 parties), D. Français (7 parties), E. Anglais (8 parties).",
+  description: "Cours complets pour les 5 matières communes de l'examen VTC : A. Réglementation T3P (2 parties), B. Gestion (3 parties), C. Sécurité Routière (3 parties), D. Français (1 partie), E. Anglais (1 partie).",
   cours: [
     ...MATIERE_A,
     ...MATIERE_B,
