@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings } from "lucide-react";
+import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings, Download, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 // Images des monuments et lieux de Lyon
@@ -38,6 +38,7 @@ interface ContentItem {
   description?: string;
   image?: string;
   actif: boolean;
+  fichiers?: { nom: string; url: string }[];
 }
 
 interface ExerciceChoix {
@@ -857,6 +858,23 @@ const ContentCard = ({
           <p className="text-sm text-muted-foreground">{item.sousTitre}</p>
         )}
       </div>
+      {/* Fichiers PowerPoint */}
+      {item.fichiers && item.fichiers.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {item.fichiers.map((f, i) => (
+            <a
+              key={i}
+              href={f.url}
+              download
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
+            >
+              <FileText className="w-4 h-4" />
+              {f.nom}
+              <Download className="w-3 h-3" />
+            </a>
+          ))}
+        </div>
+      )}
       <div className="flex items-center gap-2 flex-wrap">
         <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onMove(index, "up")} disabled={index === 0}>
           <ArrowUp className="w-4 h-4" />
