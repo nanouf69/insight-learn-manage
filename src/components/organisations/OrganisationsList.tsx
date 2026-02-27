@@ -82,6 +82,27 @@ export function OrganisationsList() {
     },
   });
 
+  // Fetch all unread received emails to count per org
+  const { data: allUnreadEmails } = useQuery({
+    queryKey: ['org-unread-emails'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('emails')
+        .select('id, sender_email, is_read')
+        .eq('is_read', false)
+        .not('sender_email', 'is', null);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const getUnreadCount = (orgEmail: string | null) => {
+    if (!orgEmail || !allUnreadEmails) return 0;
+    const domain = orgEmail.split('@')[1]?.toLowerCase();
+    if (!domain) return 0;
+    return allUnreadEmails.filter(e => e.sender_email?.toLowerCase().includes(domain)).length;
+  };
+
   // Fetch emails for the selected org
   const { data: orgEmails } = useQuery({
     queryKey: ['org-emails', selectedOrg?.email],
@@ -211,6 +232,11 @@ export function OrganisationsList() {
                     <span>Voir les échanges</span>
                     <ChevronRight className="w-3 h-3" />
                   </div>
+                  {getUnreadCount(org.email) > 0 && (
+                    <Badge variant="destructive" className="text-xs px-2 py-0.5 animate-pulse">
+                      {getUnreadCount(org.email)} non lu{getUnreadCount(org.email) > 1 ? 's' : ''}
+                    </Badge>
+                  )}
                 </div>
               </div>
             </CardContent>
