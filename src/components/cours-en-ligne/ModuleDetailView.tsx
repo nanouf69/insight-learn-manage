@@ -1090,7 +1090,7 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                       {cours.fichiers.map((f, i) => {
                         const isPptx = f.nom.endsWith(".pptx") || f.nom.endsWith(".ppt");
                         const viewerUrl = isPptx
-                          ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(f.url)}`
+                          ? `https://docs.google.com/gview?url=${encodeURIComponent(f.url)}&embedded=true`
                           : null;
                         return (
                           <div key={i} className="space-y-2">
@@ -1106,7 +1106,7 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                               </a>
                             </div>
                             {viewerUrl && (
-                              <div className="border rounded-lg overflow-hidden aspect-[16/9]">
+                              <div className="border rounded-lg overflow-hidden" style={{ height: "600px" }}>
                                 <iframe
                                   src={viewerUrl}
                                   className="w-full h-full border-0"
