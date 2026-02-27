@@ -1051,19 +1051,403 @@ HOW LONG : "How long are you staying in France?" (durée)`,
 ];
 
 // =============================================
+// MATIÈRE F — RÉGLEMENTATION SPÉCIFIQUE VTC (1 partie)
+// =============================================
+
+const MATIERE_F: ContentItem[] = [
+  {
+    id: 6001, actif: true,
+    titre: "F. RÉGLEMENTATION SPÉCIFIQUE VTC",
+    sousTitre: "Registre VTC, Garantie financière, Vignettes, Véhicule, Bon de commande, Carte professionnelle, Sanctions",
+    description: `═══════════════════════════════════════
+1. INSCRIPTION AU REGISTRE DES VTC
+═══════════════════════════════════════
+
+OBLIGATION D'INSCRIPTION :
+Après avoir reçu votre carte professionnelle, pour créer votre entreprise il va falloir vous inscrire au registre des VTC (cette inscription ne concerne que les personnes qui souhaitent travailler à leur compte). En tant qu'exploitant vous devez obligatoirement vous inscrire sur le registre des VTC et payer une taxe de 170 euros tous les 5 ans.
+
+Site : https://registre-vtc.developpement-durable.gouv.fr/
+
+DURÉE DE VALIDITÉ :
+L'inscription au registre des VTC dure 5 ans. Vous devez faire un renouvellement au bout de ces 5 ans si vous n'avez pas changé d'entreprise dans les 3 mois qui précèdent la fin de l'inscription.
+
+• Taxe : 170€ / 5 ans
+• Durée inscription : 5 ans
+• Garantie / véhicule : 1 500€
+
+DOCUMENTS À FOURNIR (exploitant) :
+1. Attestation d'assurance (responsabilité civile professionnelle)
+2. Copie de l'extrait KBIS, D1 ou répertoire SIREN à jour
+3. Copie du certificat d'immatriculation (carte grise) pour chaque véhicule
+4. Copie de la carte professionnelle pour chaque conducteur
+5. Justificatif de la capacité financière : 1 500€ par véhicule (sauf propriétaires, location > 6 mois, événements exceptionnels)
+
+═══════════════════════════════════════
+2. LA GARANTIE FINANCIÈRE : 1 500€ PAR VÉHICULE
+═══════════════════════════════════════
+
+La garantie financière est un indice de votre capacité à détenir des ressources financières suffisantes pour assurer une gestion optimale de votre activité.
+
+ORGANISMES : Ces garanties sont accordées par un ou plusieurs organismes financiers agréés par l'Autorité de contrôle prudentiel et de résolution, ou par tout établissement de crédit fournissant des prestations en France.
+
+CAS D'EXEMPTION — Vous n'avez PAS besoin de la garantie financière si :
+• Vous êtes propriétaire de votre véhicule
+• Vous avez loué un véhicule pour ≥ 6 mois
+• En cas de panne ou d'événements commerciaux, culturels, éducatifs, politiques…
+
+Dans ces cas, envoyer au registre VTC : copie certificat d'immatriculation + carte pro + période du recours. Ce recours ne peut excéder 1 mois.
+
+═══════════════════════════════════════
+3. MODIFICATIONS & CESSATION DE VALIDITÉ
+═══════════════════════════════════════
+
+Si vous changez de véhicule, de statut ou toute autre information administrative, vous devez prévenir le registre des VTC dans un délai maximum de 15 jours.
+
+L'inscription cesse d'être valide quand :
+• Le véhicule déclaré n'est plus conforme aux caractéristiques techniques
+• L'inscription arrive à échéance (maximum 5 ans)
+• La durée du recours à des véhicules exceptionnels est expirée (au-delà de la durée déclarée, 3 mois max)
+
+📌 Délai de déclaration des modifications : 15 jours maximum
+
+═══════════════════════════════════════
+4. VIGNETTES VTC : TEMPORAIRE & DÉFINITIVES
+═══════════════════════════════════════
+
+VIGNETTE TEMPORAIRE :
+Après être enregistré au registre des VTC et avoir reçu l'attestation d'inscription (sous 2 mois), il faut commander les vignettes (2 au total). Avant de recevoir les définitives, imprimer une vignette temporaire à placer sur le pare-brise avant côté chauffeur. Valable 30 jours ouvrés.
+
+2 VIGNETTES DÉFINITIVES :
+• 1ère : angle du pare-brise avant, en bas à gauche (côté conducteur)
+• 2ème : angle du pare-brise arrière, en bas à droite (opposé au conducteur)
+• Prix : 36€ (obligatoirement délivrées par l'Imprimerie nationale)
+
+MENTIONS INSCRITES SUR LA VIGNETTE :
+• Le numéro d'inscription de l'entreprise au registre des VTC (1er carré blanc)
+• Le numéro d'immatriculation du véhicule (2nd carré blanc)
+• La référence de la vignette
+
+LA VIGNETTE N'EST PLUS VALABLE SI :
+• Véhicule non conforme aux caractéristiques techniques
+• Inscription arrivée à échéance (max 5 ans)
+• Durée du recours expiré (1 mois max)
+• Changement de véhicule → nouvelles vignettes à payer
+
+═══════════════════════════════════════
+5. CARACTÉRISTIQUES TECHNIQUES DU VÉHICULE VTC
+═══════════════════════════════════════
+
+• Places : entre 4 et 9 places, chauffeur compris
+• Âge : moins de 7 ans
+• Portes : au moins 4 portes
+• Dimensions : minimum 4,50 m × 1,70 m
+• Puissance : moteur ≥ 84 kW (environ 115 CV)
+
+Exceptions : Les véhicules hybrides, électriques et de collection ne sont pas dans l'obligation de respecter ces conditions.
+Un véhicule est considéré comme collection lorsqu'il a au moins 30 ans et que sa production a cessé.
+
+═══════════════════════════════════════
+6. JUSTIFICATIF DE RÉSERVATION PRÉALABLE
+═══════════════════════════════════════
+
+Obligation (arrêté du 6 août 2025 — en vigueur depuis le 29 octobre 2025)
+
+En tant que chauffeur VTC, vous devez disposer d'un justificatif de réservation préalable pour chaque course effectuée. Ce document peut être sur support papier ou électronique (« bon de commande », « bon de réservation », « billet individuel » ou « billet collectif »).
+
+📋 7 MENTIONS OBLIGATOIRES (article 1 de l'arrêté du 6 août 2025) :
+1. Nom ou dénomination sociale et coordonnées de la société VTC
+2. Numéro d'inscription de l'exploitant au registre des VTC (REVTC)
+3. Numéro unique d'identification de l'exploitant (SIREN)
+4. Nom et coordonnées téléphoniques du client
+5. Date et heure de la réservation préalable effectuée par le client
+6. Date et heure de la prise en charge souhaitées par le client
+7. Lieu de prise en charge indiqué par le client
+
+⚠ Absence de réservation préalable = 1 an de prison + 15 000€ d'amende + immobilisation véhicule
+
+═══════════════════════════════════════
+7. CARTE PROFESSIONNELLE VTC
+═══════════════════════════════════════
+
+DOCUMENTS À FOURNIR (à la préfecture) :
+1. Photocopie de votre pièce d'identité recto-verso
+2. Photocopie recto-verso de votre permis de conduire
+3. Certificat médical
+4. Justificatif de domicile de moins de 3 mois
+5. 1 photo d'identité
+6. Attestation de formation continue
+
+AU RECTO : Code à barres bidimensionnel « 2D-DOC », date de fin de validité, numéro de la carte, photographie d'identité du conducteur.
+AU VERSO : Nom, prénom, date et lieu de naissance, signature du conducteur.
+
+• Coût : environ 60€ TTC (Imprimerie nationale)
+• Valable 5 ans
+• Doit être apposée sur le pare-brise ou à défaut à l'intérieur du véhicule (de façon visible)
+
+═══════════════════════════════════════
+8. DOCUMENTS À PRÉSENTER EN CAS DE CONTRÔLE ROUTIER
+═══════════════════════════════════════
+
+7 DOCUMENTS OBLIGATOIRES :
+1. Carte professionnelle VTC — apposée sur le pare-brise ou visible dans le véhicule (valable 5 ans)
+2. Permis de conduire — catégorie B en cours de validité
+3. Certificat d'immatriculation (carte grise) — du véhicule utilisé pour l'activité
+4. Attestation d'assurance — responsabilité civile professionnelle en cours de validité
+5. Justificatif de réservation préalable — papier ou numérique, avec les 7 mentions obligatoires
+6. Vignettes VTC — 2 vignettes (ou temporaire) apposées sur les pare-brises avant et arrière
+7. Attestation d'inscription au registre des VTC — délivrée dans les 2 mois suivant l'inscription
+
+⚠ L'absence de l'un de ces documents peut entraîner une contravention ou la suspension de l'activité.
+
+═══════════════════════════════════════
+9. SANCTIONS ADMINISTRATIVES ET PÉNALES
+═══════════════════════════════════════
+
+SANCTIONS ADMINISTRATIVES :
+L'autorité compétente (le Préfet), en cas de violation de la réglementation par le conducteur VTC, peut :
+• Donner un avertissement
+• Procéder au retrait temporaire de sa carte professionnelle
+• Procéder au retrait définitif de sa carte professionnelle
+
+DÉLITS — 1 an de prison + 15 000€ :
+• Prise en charge d'un client sur la voie publique sans réservation préalable
+• Location à la place
+• Exercice illégal de l'activité
+• Absence d'inscription au registre
+
+CONTRAVENTIONS DE 5ÈME CLASSE :
+• Circulation sur voie publique en quête de clients
+• Arrêt/stationnement en quête de clients
+• Stationnement en gare/aérogare au-delà de 1h avant la prise en charge
+
+SANCTIONS PÉNALES (peines complémentaires) :
+• Suspension du permis de conduire pour une durée maximale de 5 ans
+• Immobilisation du véhicule pour une durée maximale de 1 an`,
+  },
+];
+
+// =============================================
+// MATIÈRE G — DÉVELOPPEMENT COMMERCIAL (1 partie)
+// =============================================
+
+const MATIERE_G: ContentItem[] = [
+  {
+    id: 7001, actif: true,
+    titre: "G. DÉVELOPPEMENT COMMERCIAL",
+    sousTitre: "Marketing, Mercatique, SWOT, PESTEL, Porter, Segmentation, Fidélisation, Communication numérique, Partenaires, Devis & Facture",
+    description: `═══════════════════════════════════════
+1. LA MERCATIQUE : PRINCIPES FONDAMENTAUX
+═══════════════════════════════════════
+
+DÉFINITION :
+Le marketing peut être défini comme l'ensemble des actions ayant pour objectifs d'étudier et d'influencer les besoins et comportements des consommateurs et de réaliser en continu les adaptations de la production et de l'appareil commercial.
+
+LA DÉMARCHE MERCATIQUE :
+Consiste, à partir de l'analyse des attentes des consommateurs, à définir l'offre de biens et de services avec leurs moyens de commercialisation. Elle est composée du marketing stratégique et opérationnel.
+
+• Marketing stratégique : analyse externe (marché, demande, offre, environnement) + analyse interne (forces et faiblesses de l'entreprise).
+• Marketing opérationnel : les 4P (Produit, Prix, Communication, Distribution). Actions à court terme pour atteindre les objectifs stratégiques.
+
+LES 4P DU MIX MARKETING :
+• Produit : Quel service VTC proposer ?
+• Prix : À quel tarif ? (prix psychologique, forfaits, grille tarifaire)
+• Communication : Comment se faire connaître ? (pub, réseaux, partenariats)
+• Distribution : Comment accéder au client ? (applis, plateformes, direct)
+
+COHÉRENCE DU PLAN DE MARCHÉAGE :
+• Cohérence interne : Prix élevé = produit de qualité = communication ciblée = distribution sélective
+• Cohérence externe : Le plan doit être en cohérence avec les capacités financières et techniques de l'entreprise
+• Cohérence temporelle : Les promotions doivent être temporaires
+
+═══════════════════════════════════════
+2. OUTILS D'ANALYSE STRATÉGIQUE
+═══════════════════════════════════════
+
+ANALYSE SWOT (Strengths – Weaknesses – Opportunities – Threats) :
+• S — Forces : véhicule premium, service personnalisé, ponctualité, connaissance terrain
+• W — Faiblesses : coûts fixes élevés, dépendance aux plateformes, travail seul
+• O — Opportunités : tourisme croissant, événementiel, partenariats entreprises, transport PMR
+• T — Menaces : concurrence plateformes, hausse carburant, réglementation changeante
+
+LES 5 FORCES DE PORTER :
+1. Concurrents actuels — état de la concurrence, quels sont leurs moyens ?
+2. Menace des nouveaux entrants — anticiper l'arrivée de concurrents
+3. Menace des produits de substitution — covoiturage, trottinettes…
+4. Pouvoir des fournisseurs — peu de fournisseurs = position de force
+5. Pouvoir des clients — comparaison via applis, sensibilité au prix
+
+ANALYSE PESTEL :
+• P — Politique : évolution de la population et caractéristiques
+• E — Économique : taux de croissance, inflation, confiance consommateurs
+• S — Social : démographie, nouveaux comportements socioculturels
+• T — Technologique : applis, GPS, véhicules électriques
+• E — Écologique : ZFE, CRIT'AIR, développement durable
+• L — Légal : Code des transports, RGPD, obligations fiscales
+
+═══════════════════════════════════════
+3. DÉFINITIONS ESSENTIELLES DU MARKETING
+═══════════════════════════════════════
+
+ÉTUDE DE MARCHÉ : Rechercher des informations sur le secteur d'activité (offre, demande, réglementation).
+
+ZONE DE CHALANDISE : Zone habituelle ou prévisionnelle de provenance de l'essentiel des clients.
+
+PRIX PSYCHOLOGIQUE (prix d'acceptabilité) : Le prix accepté par le plus grand nombre de consommateurs selon les caractéristiques du produit/service.
+
+MARKETING DIRECT : Approche du client sans intermédiaire, personnalisée et à distance. C'est à la fois un mode de distribution, de communication, de vente et de stratégie.
+
+B2B (Business to Business) : Activités commerciales réalisées entre professionnels uniquement.
+B2C (Business to Consumer) : Activités commerciales réalisées par des entreprises pour des particuliers.
+
+NOTORIÉTÉ : Le nombre de personnes qui connaissent votre marque/service dans votre zone.
+
+PACKAGING : Pour un VTC : l'apparence globale du service (véhicule, tenue du chauffeur, carte de visite, site web…).
+
+STREET MARKETING : Distribution de matériel publicitaire dans un espace public pour créer un bouche-à-oreille favorable.
+
+MARCHÉ DE NICHE : Marché très étroit correspondant à un service très spécialisé. Ex : transport PMR, VTC luxe, navettes entreprise.
+
+SERVICE PREMIUM : Service haut de gamme. Véhicule haut de gamme, eau/bonbons/chargeurs, tenue soignée, tarif justifié par la qualité.
+
+═══════════════════════════════════════
+4. SEGMENTATION, CIBLAGE, POSITIONNEMENT
+═══════════════════════════════════════
+
+CIBLE : La clientèle à qui nous allons vendre le service. Ex VTC : particuliers, entreprises, touristes, patients médicaux…
+
+SEGMENTATION : Diviser le marché en sous-groupes ayant les mêmes caractéristiques et comportements.
+
+POSITIONNEMENT : Quel service allons-nous proposer ? Haut de gamme / Moyen de gamme / Entrée de gamme.
+
+═══════════════════════════════════════
+5. VALORISER LA PRESTATION VTC
+═══════════════════════════════════════
+
+QUALITÉS DU CHAUFFEUR VTC :
+• Bonne présentation vestimentaire
+• Courtois, serviable, chaleureux
+• Véhicule de qualité (< 7 ans, ≥ 4m50 de long)
+• Bouteilles d'eau, bonbons, chargeurs à disposition
+• Ponctualité irréprochable
+• Discrétion et adaptation au client
+• Véhicule toujours propre (pas de désodorisant)
+• Pas de sujets politiques ou religieux
+
+STRATÉGIE DE DIFFÉRENCIATION TARIFAIRE :
+• Forfait aéroport/gare — prix fixe rassurant
+• Tarif horaire (mise à disposition) — événements, mariages, journées business
+• Abonnement entreprise — contrat mensuel, tarifs négociés
+• Tarif premium — véhicule haut de gamme, services VIP
+• Réductions fidélité — petite remise pour client régulier (pas excessive)
+
+⚠ Un client insatisfait le dira à 10 personnes, un client satisfait le dira à 2 personnes !
+
+═══════════════════════════════════════
+6. FIDÉLISATION & PROSPECTION
+═══════════════════════════════════════
+
+FIDÉLISATION : Ensemble des actions pour que les clients restent fidèles et continuent à consommer vos services.
+
+PROSPECTION : Ensemble des actions qui visent à identifier et contacter de nouveaux clients (prospects = clients potentiels).
+
+COMMENT FIDÉLISER :
+• Être disponible et réactif (téléphone, mail, WhatsApp)
+• Envoyer régulièrement des courriels ou SMS avec offres et promotions (1× toutes les 2 semaines min.)
+• Laisser PLUSIEURS cartes de visite au client
+• Prestation irréprochable à chaque course
+• Se distinguer : journaux, chargeurs, tablettes, eau, bonbons
+• Petites réductions fidélité (pas de remise importante)
+
+FACTEURS DE RÉUSSITE :
+• Être respectueux, courtois et serviable
+• Le sourire est toujours plus agréable
+• Apprendre à connaître le client, utiliser son langage
+• Ne pas parler s'il n'a pas envie, parler s'il a envie
+• Être au besoin du client, repérer ses besoins
+• Voiture toujours propre, pas d'odeurs
+
+PROSPECTION TRADITIONNELLE : Porte à porte (hôtels, restaurants, entreprises), téléphone, cartes de visite et flyers, événements locaux.
+PROSPECTION NUMÉRIQUE : Site web professionnel, réseaux sociaux (Instagram, Facebook, LinkedIn), emailing/SMS, Google My Business, plateformes VTC.
+
+═══════════════════════════════════════
+7. COMMUNICATION & PRÉSENCE NUMÉRIQUE
+═══════════════════════════════════════
+
+SITE WEB PROFESSIONNEL : Page d'accueil, services, tarifs, réservation en ligne, mentions légales. Responsive mobile. Nom de domaine professionnel.
+
+GOOGLE MY BUSINESS : Fiche gratuite sur Google. Apparaître dans les recherches locales ("VTC Lyon"). Photos, horaires, avis, lien de réservation.
+
+RÉSEAUX SOCIAUX :
+• Instagram : photos véhicule, stories
+• Facebook : page pro, avis
+• LinkedIn : clients B2B
+• Publication régulière (2-3/semaine)
+• 90% des clients consultent les avis avant de réserver
+
+COMMUNICATION MÉDIA : Publicité en ligne (Google Ads, Facebook Ads), référencement naturel (SEO), articles sponsorisés, vidéos YouTube/TikTok.
+
+COMMUNICATION HORS MÉDIA : Carte de visite et flyers, emailing/SMS personnalisés, parrainage client, partenariats locaux, événementiel.
+
+ASTUCES SEO : Mots-clés locaux ("VTC Lyon", "chauffeur privé Lyon"), créer du contenu utile (blog), optimiser images et vitesse du site, annuaires locaux.
+
+═══════════════════════════════════════
+8. RÉSEAU DE PARTENAIRES & PLATEFORMES
+═══════════════════════════════════════
+
+HÔTELS & RESTAURANTS : Tarif préférentiel, cartes à la réception, commission sur course recommandée, cibler le haut de gamme.
+
+ENTREPRISES & CE : Contrats mensuels, navettes salariés, clients VIP, séminaires, facturation sur compte.
+
+PLATEFORMES VTC : Uber, Bolt, Marcel, Heetch, LeCab. Diversifier les sources. Commissions 20-25%. Complément, pas dépendance.
+
+CONCIERGERIES & ÉVÉNEMENTIEL : Mariages, événements d'entreprise, tourisme premium. Marge plus élevée. Confiance à construire.
+
+CLINIQUES, HÔPITAUX, CPAM : Transport médical conventionné. Régulier et prévisible. Conventionnement CPAM nécessaire.
+
+AGENCES DE VOYAGE & TOURS : Transferts aéroport/gare. Circuits touristiques. Service multilingue. Contrats annuels.
+
+🤝 Un partenaire vous recommande si VOTRE qualité de service le fait bien paraître auprès de SES clients.
+
+═══════════════════════════════════════
+9. DEVIS & FACTURE VTC
+═══════════════════════════════════════
+
+11 MENTIONS OBLIGATOIRES DU DEVIS :
+1. Date du devis et durée de validité de l'offre
+2. Nom, raison sociale et adresse de l'entreprise (n° de tél. et adresse email)
+3. Statut et forme juridique de l'entreprise
+4. Pour un artisan : n° au Répertoire des métiers (n° Siren + RM + n° département)
+5. Numéro individuel d'identification à la TVA
+6. Nom et adresse du client
+7. Date de début et durée estimée de la prestation
+8. Décompte détaillé de chaque prestation, en quantité et en prix unitaire
+9. Prix horaire ou forfaitaire de main d'œuvre
+10. Modalités de paiement, de livraison et d'exécution du contrat ; modalités des réclamations et conditions du SAV
+11. Somme globale à payer HT et TTC, en précisant les taux de TVA applicables
+
+LA FACTURE : Reprend toutes les mentions du devis + le numéro de la facture (unique et chronologique).
+
+⚠ Le capital social n'est PAS obligatoire sur le devis VTC.
+📌 Conservation : 10 ans minimum.`,
+  },
+];
+
+// =============================================
 // ASSEMBLAGE DU MODULE COMPLET
 // =============================================
 
 export const VTC_COURS_DATA: ModuleData = {
   id: 2,
   nom: "2.COURS ET EXERCICES VTC",
-  description: "Cours complets pour les 5 matières communes de l'examen VTC : A. Réglementation T3P (2 parties), B. Gestion (3 parties), C. Sécurité Routière (3 parties), D. Français (1 partie), E. Anglais (1 partie).",
+  description: "Cours complets pour les 7 matières de l'examen VTC : A. Réglementation T3P (2 parties), B. Gestion (3 parties), C. Sécurité Routière (3 parties), D. Français (1 partie), E. Anglais (1 partie), F. Réglementation Spécifique VTC (1 partie), G. Développement Commercial (1 partie).",
   cours: [
     ...MATIERE_A,
     ...MATIERE_B,
     ...MATIERE_C,
     ...MATIERE_D,
     ...MATIERE_E,
+    ...MATIERE_F,
+    ...MATIERE_G,
   ],
   exercices: [],
 };
