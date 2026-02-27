@@ -700,12 +700,27 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     return 'TAXI / VTC';
   };
 
+  const formatDateFr = (dateStr: string | null | undefined): string => {
+    if (!dateStr) return '[date à compléter]';
+    try {
+      const d = new Date(dateStr + 'T00:00:00');
+      if (isNaN(d.getTime())) return dateStr;
+      const jours = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+      const mois = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+      return `${jours[d.getDay()]} ${d.getDate()} ${mois[d.getMonth()]} ${d.getFullYear()}`;
+    } catch {
+      return dateStr;
+    }
+  };
+
   const replaceTemplateVars = (template: string, a: any): string => {
     const formation = getFormationTypeLocal(a.type_apprenant);
-    const dateDebut = a.date_debut_formation || session.dateDebut || '[date à compléter]';
-    const dateFin = a.date_fin_formation || session.dateFin || '[date à compléter]';
-    const dateExamenTheorique = a.date_examen_theorique || '[date à compléter]';
-    const dateExamenPratique = a.date_examen_pratique || '[date à compléter]';
+    const dateDebutRaw = a.date_debut_formation || session.dateDebut || null;
+    const dateFinRaw = a.date_fin_formation || session.dateFin || null;
+    const dateDebut = formatDateFr(dateDebutRaw);
+    const dateFin = formatDateFr(dateFinRaw);
+    const dateExamenTheorique = formatDateFr(a.date_examen_theorique);
+    const dateExamenPratique = formatDateFr(a.date_examen_pratique);
     const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
     const bookingUrl = `https://insight-learn-manage.lovable.app/reservation-pratique?id=${a.id}&type=${formation.toLowerCase().includes('vtc') ? 'vtc' : 'taxi'}`;
     const onboardingUrl = 'https://insight-learn-manage.lovable.app/bienvenue';
