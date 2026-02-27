@@ -1089,8 +1089,9 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                     <div className="space-y-3 mt-3">
                       {cours.fichiers.map((f, i) => {
                         const isPptx = f.nom.endsWith(".pptx") || f.nom.endsWith(".ppt") || f.url.endsWith(".pptx") || f.url.endsWith(".ppt");
+                        const fullFileUrl = f.url.startsWith("http") ? f.url : `${window.location.origin}${f.url}`;
                         const viewerUrl = isPptx
-                          ? `https://docs.google.com/gview?url=${encodeURIComponent(f.url)}&embedded=true`
+                          ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fullFileUrl)}`
                           : null;
                         return (
                           <div key={i} className="space-y-2">
