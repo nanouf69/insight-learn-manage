@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings, Download, FileText } from "lucide-react";
+import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings, Download, FileText, Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 // Images des monuments et lieux de Lyon
 import imgCathedraleStJean from "@/assets/pratique/cathedrale-st-jean.jpg";
@@ -841,7 +842,7 @@ const ContentCard = ({
   onToggle,
   onEdit,
   borderColor,
-  
+  onFileUploaded,
 }: {
   item: ContentItem;
   index: number;
@@ -851,57 +852,122 @@ const ContentCard = ({
   onToggle: (id: number) => void;
   onEdit: (id: number) => void;
   borderColor: string;
-  
-}) => (
-  <Card className={`border-2 ${borderColor} transition-all hover:shadow-md`}>
-    <CardContent className="p-4 space-y-3">
-      <div>
-        <h4 className="font-bold text-base">{item.titre}</h4>
-        {item.sousTitre && (
-          <p className="text-sm text-muted-foreground">{item.sousTitre}</p>
-        )}
-      </div>
-      {/* Fichiers PowerPoint */}
-      {item.fichiers && item.fichiers.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {item.fichiers.map((f, i) => (
-            <a
-              key={i}
-              href={f.url}
-              download
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
-            >
-              <FileText className="w-4 h-4" />
-              {f.nom}
-              <Download className="w-3 h-3" />
-            </a>
-          ))}
+  onFileUploaded?: (itemId: number, fichier: { nom: string; url: string }) => void;
+}) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = [
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      "application/vnd.ms-powerpoint",
+      "application/pdf",
+    ];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Format non supporté. Utilisez un fichier .pptx, .ppt ou .pdf");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const path = `vtc/${item.id}_${Date.now()}_${safeName}`;
+      
+      const { error } = await supabase.storage
+        .from("cours-fichiers")
+        .upload(path, file, { upsert: true });
+
+      if (error) throw error;
+
+      const { data: publicUrlData } = supabase.storage
+        .from("cours-fichiers")
+        .getPublicUrl(path);
+
+      onFileUploaded?.(item.id, { nom: file.name, url: publicUrlData.publicUrl });
+      toast.success(`Fichier "${file.name}" uploadé avec succès`);
+    } catch (err: any) {
+      console.error("Upload error:", err);
+      toast.error(err.message || "Erreur lors de l'upload");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  return (
+    <Card className={`border-2 ${borderColor} transition-all hover:shadow-md`}>
+      <CardContent className="p-4 space-y-3">
+        <div>
+          <h4 className="font-bold text-base">{item.titre}</h4>
+          {item.sousTitre && (
+            <p className="text-sm text-muted-foreground">{item.sousTitre}</p>
+          )}
         </div>
-      )}
-      <div className="flex items-center gap-2 flex-wrap">
-        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onMove(index, "up")} disabled={index === 0}>
-          <ArrowUp className="w-4 h-4" />
-        </Button>
-        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onMove(index, "down")} disabled={index === total - 1}>
-          <ArrowDown className="w-4 h-4" />
-        </Button>
-        <Button variant="default" size="sm" className="gap-1" onClick={() => onEdit(item.id)}>
-          <Pencil className="w-3 h-3" />
-          Modifier
-        </Button>
-      </div>
-      <div className="flex items-center gap-2">
-        <Button variant="destructive" size="sm" className="gap-1" onClick={() => onDelete(item.id)}>
-          <Trash2 className="w-3 h-3" />
-          Supprimer
-        </Button>
-        <button onClick={() => onToggle(item.id)} className="text-muted-foreground hover:text-foreground transition-colors" title={item.actif ? "Désactiver" : "Activer"}>
-          {item.actif ? <ToggleRight className="w-8 h-8 text-emerald-500" /> : <ToggleLeft className="w-8 h-8" />}
-        </button>
-      </div>
-    </CardContent>
-  </Card>
-);
+        {/* Fichiers PowerPoint */}
+        {item.fichiers && item.fichiers.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {item.fichiers.map((f, i) => (
+              <a
+                key={i}
+                href={f.url}
+                download
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
+              >
+                <FileText className="w-4 h-4" />
+                {f.nom}
+                <Download className="w-3 h-3" />
+              </a>
+            ))}
+          </div>
+        )}
+        {/* Upload PowerPoint */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pptx,.ppt,.pdf"
+            className="hidden"
+            onChange={handleFileUpload}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+            {uploading ? "Upload en cours..." : "Ajouter un PowerPoint"}
+          </Button>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onMove(index, "up")} disabled={index === 0}>
+            <ArrowUp className="w-4 h-4" />
+          </Button>
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onMove(index, "down")} disabled={index === total - 1}>
+            <ArrowDown className="w-4 h-4" />
+          </Button>
+          <Button variant="default" size="sm" className="gap-1" onClick={() => onEdit(item.id)}>
+            <Pencil className="w-3 h-3" />
+            Modifier
+          </Button>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="destructive" size="sm" className="gap-1" onClick={() => onDelete(item.id)}>
+            <Trash2 className="w-3 h-3" />
+            Supprimer
+          </Button>
+          <button onClick={() => onToggle(item.id)} className="text-muted-foreground hover:text-foreground transition-colors" title={item.actif ? "Désactiver" : "Activer"}>
+            {item.actif ? <ToggleRight className="w-8 h-8 text-emerald-500" /> : <ToggleLeft className="w-8 h-8" />}
+          </button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
   const [moduleData, setModuleData] = useState<ModuleData>(() => getInitialModuleData(module));
@@ -1153,7 +1219,16 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                         onToggle={(id) => toggleItem("cours", id)}
                         onEdit={(id) => setEditingCoursId(id)}
                         borderColor="border-emerald-400"
-                        
+                        onFileUploaded={(itemId, fichier) => {
+                          setModuleData(prev => ({
+                            ...prev,
+                            cours: prev.cours.map(c =>
+                              c.id === itemId
+                                ? { ...c, fichiers: [...(c.fichiers || []), fichier] }
+                                : c
+                            ),
+                          }));
+                        }}
                       />
                     )
                   ))}
