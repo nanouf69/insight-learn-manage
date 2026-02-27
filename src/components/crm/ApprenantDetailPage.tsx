@@ -163,7 +163,7 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
     queryFn: async () => {
       const { data, error } = await supabase
         .from('documents_inscription')
-        .select('url')
+        .select('url, nom_fichier')
         .eq('apprenant_id', apprenantId)
         .eq('type_document', 'photo_identite')
         .in('statut', ['valid', 'recu'])
@@ -174,11 +174,24 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
         console.error('Erreur récupération photo:', error);
         return null;
       }
-      console.log('Photo récupérée:', data);
-      return data;
+      
+      if (!data?.url) return null;
+
+      // Ignorer les PDFs - ce ne sont pas des images affichables
+      const isPdf = data.nom_fichier?.toLowerCase().endsWith('.pdf') || data.url.toLowerCase().endsWith('.pdf');
+      if (isPdf) return null;
+
+      // Construire l'URL complète si c'est un chemin relatif
+      let fullUrl = data.url;
+      if (!fullUrl.startsWith('http')) {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        fullUrl = `${supabaseUrl}/storage/v1/object/public/documents-inscription/${fullUrl}`;
+      }
+      
+      return { url: fullUrl };
     },
     enabled: !!apprenantId,
-    staleTime: 0, // Toujours refetch
+    staleTime: 0,
   });
 
   if (isLoading) {
