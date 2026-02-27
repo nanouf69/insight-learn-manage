@@ -1088,7 +1088,7 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                   {cours.fichiers && cours.fichiers.length > 0 && (
                     <div className="space-y-3 mt-3">
                       {cours.fichiers.map((f, i) => {
-                        const isPptx = f.nom.endsWith(".pptx") || f.nom.endsWith(".ppt");
+                        const isPptx = f.nom.endsWith(".pptx") || f.nom.endsWith(".ppt") || f.url.endsWith(".pptx") || f.url.endsWith(".ppt");
                         const viewerUrl = isPptx
                           ? `https://docs.google.com/gview?url=${encodeURIComponent(f.url)}&embedded=true`
                           : null;
