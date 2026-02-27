@@ -183,7 +183,7 @@ const Index = () => {
       case "planning":
         return <PlanningCalendar />;
       case "sessions":
-        return <SessionsList />;
+        return <SessionsList onNavigateToApprenant={handleNavigateToApprenant} />;
       case "formateurs":
         return <FormateursList />;
       case "organisations":
