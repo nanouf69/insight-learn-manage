@@ -18,6 +18,7 @@ interface DocumentUploadCardProps {
 }
 
 const ACCEPTED_FORMATS = '.pdf,.jpg,.jpeg,.png,.heic,.heif,.webp';
+const ACCEPTED_IMAGE_FORMATS = '.jpg,.jpeg,.png,.heic,.heif,.webp';
 const MAX_FILE_SIZE_MB = 4;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
@@ -55,15 +56,27 @@ export function DocumentUploadCard({
       return;
     }
 
-    // Validate file type
-    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/heic', 'image/heif', 'image/webp'];
-    const fileExtension = file.name.toLowerCase().split('.').pop();
-    const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'heic', 'heif', 'webp'];
+    // For photo_identite, only accept image files (no PDF)
+    if (docId === 'photo_identite') {
+      const imageTypes = ['image/jpeg', 'image/png', 'image/heic', 'image/heif', 'image/webp'];
+      const imageExtensions = ['jpg', 'jpeg', 'png', 'heic', 'heif', 'webp'];
+      const fileExtension = file.name.toLowerCase().split('.').pop();
+      if (!imageTypes.includes(file.type) && !imageExtensions.includes(fileExtension || '')) {
+        toast.error("La photo d'identité doit être une image (JPG, PNG, HEIC, WebP). Les PDF ne sont pas acceptés.");
+        event.target.value = '';
+        return;
+      }
+    } else {
+      // Validate file type for other documents
+      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/heic', 'image/heif', 'image/webp'];
+      const fileExtension = file.name.toLowerCase().split('.').pop();
+      const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'heic', 'heif', 'webp'];
 
-    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension || '')) {
-      toast.error("Format non accepté. Formats autorisés: PDF, JPG, PNG, HEIC, WebP");
-      event.target.value = '';
-      return;
+      if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension || '')) {
+        toast.error("Format non accepté. Formats autorisés: PDF, JPG, PNG, HEIC, WebP");
+        event.target.value = '';
+        return;
+      }
     }
 
     // For photo_identite: open cropper instead of uploading directly
@@ -335,7 +348,7 @@ export function DocumentUploadCard({
         <input
           ref={fileInputRef}
           type="file"
-          accept={ACCEPTED_FORMATS}
+          accept={docId === 'photo_identite' ? ACCEPTED_IMAGE_FORMATS : ACCEPTED_FORMATS}
           onChange={handleFileChange}
           className="hidden"
         />
