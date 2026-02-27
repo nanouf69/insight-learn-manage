@@ -150,6 +150,59 @@ export function SessionEditor({ session, onUpdate }: SessionEditorProps) {
         });
       }
 
+      // Auto-assigner les apprenants dont le type est coché et les dates chevauchent
+      if (typesApprenant.length > 0 && dateDebut && dateFin) {
+        const sessionDateDebut = format(dateDebut, "yyyy-MM-dd");
+        const sessionDateFin = format(dateFin, "yyyy-MM-dd");
+
+        // Récupérer les apprenants compatibles
+        const { data: allApprenants } = await supabase
+          .from('apprenants')
+          .select('id, type_apprenant, date_debut_formation, date_fin_formation, montant_ttc, montant_paye, mode_financement');
+
+        // Récupérer les apprenants déjà inscrits
+        const { data: existingLinks } = await supabase
+          .from('session_apprenants')
+          .select('apprenant_id')
+          .eq('session_id', session.id);
+
+        const existingIds = new Set((existingLinks || []).map(l => l.apprenant_id));
+
+        const toAssign = (allApprenants || []).filter(a => {
+          if (existingIds.has(a.id)) return false;
+          if (!a.type_apprenant || !a.date_debut_formation || !a.date_fin_formation) return false;
+
+          // Vérifier le chevauchement de dates
+          const aDebut = a.date_debut_formation;
+          const aFin = a.date_fin_formation;
+          const datesOverlap = aDebut <= sessionDateFin && aFin >= sessionDateDebut;
+          if (!datesOverlap) return false;
+
+          // Vérifier le type (support du séparateur " + ")
+          const appTypes = a.type_apprenant.split(' + ').map((t: string) => t.trim().toLowerCase());
+          const sessionTypesLower = typesApprenant.map(t => t.toLowerCase());
+          const typeMatch = appTypes.some((at: string) => 
+            sessionTypesLower.some(st => st === at || st.startsWith(at) || at.startsWith(st.split(' ')[0]))
+          );
+          return typeMatch;
+        });
+
+        if (toAssign.length > 0) {
+          const inserts = toAssign.map(a => ({
+            session_id: session.id,
+            apprenant_id: a.id,
+            montant_total: a.montant_ttc || 0,
+            montant_paye: a.montant_paye || 0,
+            mode_financement: a.mode_financement || 'personnel',
+          }));
+          await supabase.from('session_apprenants').insert(inserts);
+          
+          // Mettre à jour les places disponibles
+          const newPlaces = Math.max(0, (parseInt(places) || 18) - (existingIds.size + toAssign.length));
+          await supabase.from('sessions').update({ places_disponibles: newPlaces }).eq('id', session.id);
+        }
+      }
+
       toast({
         title: "Session mise à jour",
         description: "Les modifications ont été enregistrées.",
