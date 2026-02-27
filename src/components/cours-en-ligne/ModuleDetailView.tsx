@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings, Download, FileText } from "lucide-react";
+import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings, Download, FileText, Play } from "lucide-react";
 import { toast } from "sonner";
 
 // Images des monuments et lieux de Lyon
@@ -30,6 +30,13 @@ import imgParcBlandan from "@/assets/pratique/parc-blandan.jpg";
 import imgQuenelle from "@/assets/pratique/quenelle.jpg";
 import imgBugnes from "@/assets/pratique/bugnes.jpg";
 import { VTC_COURS_DATA } from "./vtc-cours-data";
+import SlideViewer from "./slides/SlideViewer";
+import { T3P_PARTIE1_SLIDES } from "./slides/t3p-partie1-data";
+
+// Map des slides disponibles
+const SLIDES_MAP: Record<string, { slides: any[]; titre: string }> = {
+  "t3p-partie1": { slides: T3P_PARTIE1_SLIDES, titre: "PARTIE 1 — Réglementation T3P" },
+};
 
 interface ContentItem {
   id: number;
@@ -39,6 +46,7 @@ interface ContentItem {
   image?: string;
   actif: boolean;
   fichiers?: { nom: string; url: string }[];
+  slidesKey?: string;
 }
 
 interface ExerciceChoix {
@@ -840,6 +848,7 @@ const ContentCard = ({
   onToggle,
   onEdit,
   borderColor,
+  onOpenSlides,
 }: {
   item: ContentItem;
   index: number;
@@ -849,6 +858,7 @@ const ContentCard = ({
   onToggle: (id: number) => void;
   onEdit: (id: number) => void;
   borderColor: string;
+  onOpenSlides?: (slidesKey: string) => void;
 }) => (
   <Card className={`border-2 ${borderColor} transition-all hover:shadow-md`}>
     <CardContent className="p-4 space-y-3">
@@ -874,6 +884,12 @@ const ContentCard = ({
             </a>
           ))}
         </div>
+      )}
+      {/* Bouton voir le cours en slides */}
+      {item.slidesKey && onOpenSlides && (
+        <Button size="sm" className="gap-1.5 bg-amber-500 hover:bg-amber-600 text-white" onClick={() => onOpenSlides(item.slidesKey!)}>
+          <Play className="w-3.5 h-3.5" /> Voir le cours
+        </Button>
       )}
       <div className="flex items-center gap-2 flex-wrap">
         <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onMove(index, "up")} disabled={index === 0}>
@@ -903,8 +919,19 @@ const ContentCard = ({
 const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
   const [moduleData, setModuleData] = useState<ModuleData>(() => getInitialModuleData(module));
   const [editingCoursId, setEditingCoursId] = useState<number | null>(null);
+  const [activeSlidesKey, setActiveSlidesKey] = useState<string | null>(null);
 
   const isPratique = module.id === 6 || module.id === 8;
+
+  // Si un viewer de slides est actif, l'afficher
+  if (activeSlidesKey && SLIDES_MAP[activeSlidesKey]) {
+    const { slides, titre } = SLIDES_MAP[activeSlidesKey];
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <SlideViewer slides={slides} titre={titre} onBack={() => setActiveSlidesKey(null)} />
+      </div>
+    );
+  }
 
   const moveItem = (type: "cours" | "exercices", index: number, direction: "up" | "down") => {
     const items = [...moduleData[type]];
@@ -1150,6 +1177,7 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                         onToggle={(id) => toggleItem("cours", id)}
                         onEdit={(id) => setEditingCoursId(id)}
                         borderColor="border-emerald-400"
+                        onOpenSlides={(key) => setActiveSlidesKey(key)}
                       />
                     )
                   ))}
