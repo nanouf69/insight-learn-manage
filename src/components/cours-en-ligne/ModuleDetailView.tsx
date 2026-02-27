@@ -1096,10 +1096,10 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                               </a>
                             </div>
                             {viewerUrl && (
-                              <div className="border rounded-lg overflow-hidden">
+                              <div className="border rounded-lg overflow-hidden aspect-[16/9]">
                                 <iframe
                                   src={viewerUrl}
-                                  className="w-full h-[450px] border-0"
+                                  className="w-full h-full border-0"
                                   allowFullScreen
                                   title={`Aperçu ${f.nom}`}
                                 />
