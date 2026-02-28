@@ -29,6 +29,7 @@ const CoursPublic = () => {
         <ModuleDetailView
           module={selectedModule}
           onBack={() => setSelectedModule(null)}
+          studentOnly
         />
       </div>
     );

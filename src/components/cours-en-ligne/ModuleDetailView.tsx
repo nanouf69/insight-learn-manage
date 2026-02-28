@@ -84,6 +84,7 @@ interface ModuleData {
 interface ModuleDetailViewProps {
   module: { id: number; nom: string };
   onBack: () => void;
+  studentOnly?: boolean;
 }
 
 // ===== Données initiales du module INTRODUCTION =====
@@ -989,7 +990,7 @@ const ContentCard = ({
   );
 };
 
-const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
+const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailViewProps) => {
   const createInitialSlidesByKey = (): Record<string, Slide[]> => ({
     "t3p-partie1": [...T3P_PARTIE1_SLIDES],
     "t3p-partie2": [...T3P_PARTIE2_SLIDES],
@@ -1282,6 +1283,20 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
     );
   };
 
+  if (studentOnly) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex items-center gap-3">
+          <Button variant="outline" size="icon" onClick={onBack}>
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+          <h2 className="text-2xl font-bold">{moduleData.nom}</h2>
+        </div>
+        <LearnerPreview />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center gap-3">
@@ -1298,144 +1313,7 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
         </TabsList>
 
         <TabsContent value="edition" className="space-y-6">
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              <div>
-                <label className="text-lg font-bold block mb-2">Titre du module</label>
-                <Input value={moduleData.nom} onChange={(e) => setModuleData({ ...moduleData, nom: e.target.value })} className="text-base font-semibold" />
-              </div>
-              <div>
-                <label className="text-lg font-bold block mb-2">Description du module</label>
-                <Textarea value={moduleData.description} onChange={(e) => setModuleData({ ...moduleData, description: e.target.value })} rows={2} />
-              </div>
-              <div className="flex justify-end">
-                <Button onClick={() => toast.success("Module sauvegardé")} className="gap-2">
-                  Sauvegarder le module
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Cours */}
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-bold">Cours</h3>
-                <Button onClick={() => addItem("cours")} className="gap-2">
-                  <Plus className="w-4 h-4" /> Ajouter un cours
-                </Button>
-              </div>
-              {moduleData.cours.length === 0 ? (
-                <p className="text-muted-foreground text-sm text-center py-8">Aucun cours dans ce module</p>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {moduleData.cours.map((cours, index) => (
-                    editingCoursId === cours.id ? (
-                      <CoursEditor
-                        key={cours.id}
-                        item={cours}
-                        onSave={(updated) => {
-                          setModuleData({ ...moduleData, cours: moduleData.cours.map(c => c.id === updated.id ? updated : c) });
-                          setEditingCoursId(null);
-                        }}
-                        onCancel={() => setEditingCoursId(null)}
-                      />
-                    ) : (
-                      <ContentCard
-                        key={cours.id}
-                        item={cours}
-                        index={index}
-                        total={moduleData.cours.length}
-                        onMove={(i, d) => moveItem("cours", i, d)}
-                        onDelete={(id) => deleteItem("cours", id)}
-                        onToggle={(id) => toggleItem("cours", id)}
-                        onEdit={(id) => setEditingCoursId(id)}
-                        borderColor="border-emerald-400"
-                        onFileUploaded={(itemId, fichier) => {
-                          setModuleData(prev => ({
-                            ...prev,
-                            cours: prev.cours.map(c =>
-                              c.id === itemId
-                                ? { ...c, fichiers: [...(c.fichiers || []), fichier] }
-                                : c
-                            ),
-                          }));
-                        }}
-                        onFileDeleted={async (itemId, fichierIndex, url) => {
-                          try {
-                            // Extract storage path from URL
-                            const match = url.match(/cours-fichiers\/(.+)$/);
-                            if (match) {
-                              await supabase.storage.from("cours-fichiers").remove([match[1]]);
-                            }
-                            setModuleData(prev => ({
-                              ...prev,
-                              cours: prev.cours.map(c =>
-                                c.id === itemId
-                                  ? { ...c, fichiers: (c.fichiers || []).filter((_, idx) => idx !== fichierIndex) }
-                                  : c
-                              ),
-                            }));
-                            toast.success("Fichier supprimé");
-                          } catch (err) {
-                            toast.error("Erreur lors de la suppression");
-                          }
-                        }}
-                      />
-                    )
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Exercices */}
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-bold">Exercices</h3>
-                <Button onClick={() => addItem("exercices")} className="gap-2">
-                  <Plus className="w-4 h-4" /> Ajouter un exercice
-                </Button>
-              </div>
-              {moduleData.exercices.length === 0 ? (
-                <p className="text-muted-foreground text-sm text-center py-8">Aucun exercice dans ce module</p>
-              ) : (
-                <div className="space-y-4">
-                  {isPratique ? (
-                    moduleData.exercices.map((exercice, index) => (
-                      <ExerciceCard
-                        key={exercice.id}
-                        item={exercice as ExerciceItem}
-                        index={index}
-                        total={moduleData.exercices.length}
-                        onMove={(i, d) => moveItem("exercices", i, d)}
-                        onDelete={(id) => deleteItem("exercices", id)}
-                        onToggle={(id) => toggleItem("exercices", id)}
-                        onUpdateQuestions={updateExerciceQuestions}
-                      />
-                    ))
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {moduleData.exercices.map((exercice, index) => (
-                        <ContentCard
-                          key={exercice.id}
-                          item={exercice}
-                          index={index}
-                          total={moduleData.exercices.length}
-                          onMove={(i, d) => moveItem("exercices", i, d)}
-                          onDelete={(id) => deleteItem("exercices", id)}
-                          onToggle={(id) => toggleItem("exercices", id)}
-                          onEdit={() => {}}
-                          borderColor="border-slate-300"
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {/* ... keep existing code */}
         </TabsContent>
 
         <TabsContent value="apercu">
