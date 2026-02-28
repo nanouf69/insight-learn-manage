@@ -1158,7 +1158,7 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                                       {f.nom}
                                       <Download className="w-3 h-3" />
                                     </a>
-                                    {viewerUrl && (
+                                    {viewerUrl && !hasInteractiveSlides && (
                                       <a
                                         href={viewerUrl}
                                         target="_blank"

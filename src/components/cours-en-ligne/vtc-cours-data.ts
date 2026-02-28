@@ -49,6 +49,7 @@ const MATIERE_A: ContentItem[] = [
     id: 1001, actif: true,
     titre: "A. RÉGLEMENTATION T3P — Partie 1",
     sousTitre: "Transport public, loi LOTI, taxis, VTC, VMDTR, assurances, formation continue",
+    slidesKey: "t3p-partie1",
     fichiers: [
       { nom: "PowerPoint Partie 1", url: "/cours/vtc/A_T3P_partie_1.pptx" },
     ],
