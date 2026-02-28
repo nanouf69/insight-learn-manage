@@ -985,6 +985,7 @@ const ContentCard = ({
 const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
   const [moduleData, setModuleData] = useState<ModuleData>(() => getInitialModuleData(module));
   const [editingCoursId, setEditingCoursId] = useState<number | null>(null);
+  const [t3pSlides, setT3pSlides] = useState(() => [...T3P_PARTIE1_SLIDES]);
 
   const isPratique = module.id === 6 || module.id === 8;
 
@@ -1134,10 +1135,12 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                   {cours.slidesKey && cours.slidesKey === "t3p-partie1" && (
                     <div className="mt-4">
                       <SlideViewer
-                        slides={T3P_PARTIE1_SLIDES}
+                        slides={t3pSlides}
                         titre={cours.titre}
                         brand="FTRANSPORT"
                         onBack={() => {}}
+                        editable
+                        onSlidesChange={setT3pSlides}
                       />
                     </div>
                   )}
