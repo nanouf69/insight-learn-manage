@@ -5,9 +5,20 @@ interface ParseOptions {
 }
 
 const FOOTER_PATTERN = /FTRANSPORT\s*[-–—]\s*SERVICES\s*PRO/i;
-const PAGE_NUM_PATTERN = /^\d+\s*\/\s*\d+$/;
-const IMAGE_REF_PATTERN = /^parsed-documents:\/\//;
-const IMAGES_HEADER = /^###?\s*Images from page/i;
+const PAGE_COUNTER_PATTERN = /^\d+\s*\/\s*\d+$/;
+
+const BLOCK_COLORS = [
+  "#3498db",
+  "#e67e22",
+  "#2ecc71",
+  "#9b59b6",
+  "#e74c3c",
+  "#1abc9c",
+  "#f39c12",
+  "#2980b9",
+  "#8e44ad",
+  "#27ae60",
+];
 
 const decodeEntities = (text: string) =>
   text
@@ -17,29 +28,44 @@ const decodeEntities = (text: string) =>
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'");
 
-function isTableRow(line: string): boolean {
-  const trimmed = line.trim();
-  return trimmed.startsWith("|") && trimmed.endsWith("|") && trimmed.split("|").length >= 3;
-}
+const normalizeLine = (line: string) => decodeEntities(line).replace(/\r/g, "").trim();
 
-function isSeparatorRow(line: string): boolean {
-  return /^\|[\s\-:|]+\|$/.test(line.trim());
-}
+const stripMdPrefix = (line: string) =>
+  line
+    .replace(/^#{1,6}\s+/, "")
+    .replace(/^[-•▸]\s*/, "")
+    .replace(/\*\*/g, "")
+    .replace(/`/g, "")
+    .trim();
+
+const isTableRow = (line: string) => {
+  const t = line.trim();
+  return t.startsWith("|") && t.endsWith("|") && t.split("|").length >= 3;
+};
+
+const isSeparatorRow = (line: string) => /^\|[\s\-:|]+\|$/.test(line.trim());
 
 function parseTableBlock(lines: string[]): { headers: string[]; rows: string[][] } | null {
-  if (lines.length < 2) return null;
-  const parseCells = (line: string) =>
-    line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map(c => c.replace(/\*\*/g, "").trim());
+  const tableLines = lines.filter(isTableRow);
+  if (tableLines.length < 2) return null;
 
-  let headerLine = 0;
-  let dataStart = 1;
-  if (isSeparatorRow(lines[0])) return null;
-  if (lines.length > 1 && isSeparatorRow(lines[1])) {
-    dataStart = 2;
-  }
-  const headers = parseCells(lines[headerLine]);
-  const rows = lines.slice(dataStart).filter(l => !isSeparatorRow(l)).map(parseCells);
-  return { headers, rows };
+  const parseCells = (line: string) =>
+    line
+      .trim()
+      .replace(/^\|/, "")
+      .replace(/\|$/, "")
+      .split("|")
+      .map((c) => stripMdPrefix(c));
+
+  const headerLine = tableLines[0];
+  const secondLine = tableLines[1];
+  const hasSeparator = isSeparatorRow(secondLine);
+
+  const headers = parseCells(headerLine);
+  const dataRows = tableLines.slice(hasSeparator ? 2 : 1).filter((l) => !isSeparatorRow(l));
+  const rows = dataRows.map(parseCells);
+
+  return headers.length > 0 ? { headers, rows } : null;
 }
 
 interface PageSection {
@@ -48,11 +74,6 @@ interface PageSection {
   tableLines: string[];
 }
 
-const BLOCK_COLORS = [
-  "#3498db", "#e67e22", "#2ecc71", "#9b59b6", "#e74c3c",
-  "#1abc9c", "#f39c12", "#2980b9", "#8e44ad", "#27ae60",
-];
-
 export function createSlidesFromParsedMarkdown(markdown: string, options?: ParseOptions): Slide[] {
   const pageRegex = /^## Page\s+(\d+)\s*$([\s\S]*?)(?=^## Page\s+\d+\s*$|$)/gm;
   const slides: Slide[] = [];
@@ -60,72 +81,76 @@ export function createSlidesFromParsedMarkdown(markdown: string, options?: Parse
 
   while ((match = pageRegex.exec(markdown)) !== null) {
     const pageNumber = Number(match[1]);
-    const rawPage = match[2];
+    const rawPage = match[2] ?? "";
 
-    // Remove image references section entirely
-    const cleanedPage = rawPage
-      .replace(/^###?\s*Images from page[\s\S]*?(?=^#|\Z)/gm, "")
-      .replace(/^-\s*`?parsed-documents:\/\/[^\n]*/gm, "");
+    // Nettoyage robuste sans regex destructive
+    const pageLines = rawPage
+      .split("\n")
+      .map(normalizeLine)
+      .filter(Boolean)
+      .filter((line) => !line.startsWith("### Images from page"))
+      .filter((line) => !line.includes("parsed-documents://"))
+      .filter((line) => !FOOTER_PATTERN.test(line))
+      .filter((line) => !PAGE_COUNTER_PATTERN.test(line));
 
-    // Split into lines, decode entities, filter junk
-    const allLines = cleanedPage.split("\n").map(l => decodeEntities(l)).filter(line => {
-      const t = line.trim();
-      if (!t) return false;
-      if (FOOTER_PATTERN.test(t)) return false;
-      if (PAGE_NUM_PATTERN.test(t)) return false;
-      if (/^\d+$/.test(t)) return false;
-      if (IMAGE_REF_PATTERN.test(t)) return false;
-      if (IMAGES_HEADER.test(t)) return false;
-      if (t.startsWith("- `parsed-documents://")) return false;
-      return true;
-    });
+    const meaningfulLines = pageLines.map(stripMdPrefix).filter(Boolean);
 
-    if (allLines.length === 0) {
+    if (meaningfulLines.length === 0) {
       slides.push({ type: "section", title: `Slide ${pageNumber}`, subtitle: "" });
       continue;
     }
 
-    // Parse sections: lines starting with # are headings, others are body
     const sections: PageSection[] = [];
     let currentSection: PageSection | null = null;
 
-    for (const rawLine of allLines) {
-      const trimmed = rawLine.trim();
-      const headingMatch = trimmed.match(/^#{1,3}\s+(.+)$/);
+    for (const rawLine of pageLines) {
+      const line = rawLine.trim();
 
-      if (headingMatch) {
-        const heading = headingMatch[1].replace(/\*\*/g, "").trim();
+      if (isTableRow(line)) {
+        if (!currentSection) {
+          currentSection = { heading: "", bullets: [], tableLines: [] };
+          sections.push(currentSection);
+        }
+        currentSection.tableLines.push(line);
+        continue;
+      }
+
+      if (/^#{1,6}\s+/.test(line)) {
+        const heading = stripMdPrefix(line);
         currentSection = { heading, bullets: [], tableLines: [] };
         sections.push(currentSection);
-      } else if (isTableRow(trimmed)) {
-        if (!currentSection) {
-          currentSection = { heading: "", bullets: [], tableLines: [] };
-          sections.push(currentSection);
-        }
-        currentSection.tableLines.push(trimmed);
-      } else {
-        // Bullet or plain text
-        let text = trimmed
-          .replace(/^[-•▸]\s*/, "")
-          .replace(/\*\*/g, "")
-          .replace(/`/g, "")
-          .trim();
-        if (!text) continue;
-        if (!currentSection) {
-          currentSection = { heading: "", bullets: [], tableLines: [] };
-          sections.push(currentSection);
-        }
-        currentSection.bullets.push(text);
+        continue;
       }
+
+      const bullet = stripMdPrefix(line);
+      if (!bullet) continue;
+
+      if (!currentSection) {
+        currentSection = { heading: "", bullets: [], tableLines: [] };
+        sections.push(currentSection);
+      }
+
+      currentSection.bullets.push(bullet);
     }
 
-    // Determine slide type
-    const firstHeading = sections[0]?.heading || sections[0]?.bullets[0] || `Slide ${pageNumber}`;
+    if (sections.length === 0) {
+      slides.push({
+        type: "section",
+        title: meaningfulLines[0] || `Slide ${pageNumber}`,
+        subtitle: meaningfulLines[1],
+      });
+      continue;
+    }
 
-    // Page 1 → title slide
+    const firstHeading = sections[0].heading || sections[0].bullets[0] || meaningfulLines[0] || `Slide ${pageNumber}`;
+    const totalBullets = sections.reduce((acc, s) => acc + s.bullets.length, 0);
+    const allBullets = sections.flatMap((s) => s.bullets);
+    const allTableLines = sections.flatMap((s) => s.tableLines);
+
+    // Page 1 = couverture
     if (pageNumber === 1) {
-      const subtitle = sections[0]?.bullets[0] || sections[1]?.heading || "";
-      const footer = sections.flatMap(s => s.bullets).find(b => /Formation|Éligible|Qualiopi/i.test(b)) || "";
+      const subtitle = meaningfulLines[1] || "";
+      const footer = meaningfulLines.find((l) => /Formation|Qualiopi|CPF|Lyon/i.test(l));
       slides.push({
         type: "title",
         title: firstHeading,
@@ -136,53 +161,49 @@ export function createSlidesFromParsedMarkdown(markdown: string, options?: Parse
       continue;
     }
 
-    // Check if page has significant table content
-    const allTableLines = sections.flatMap(s => s.tableLines);
-    const hasTable = allTableLines.length >= 2;
-    const totalBullets = sections.reduce((n, s) => n + s.bullets.length, 0);
-
-    // Sommaire detection
+    // Sommaire
     if (/sommaire|plan du cours/i.test(firstHeading)) {
-      const items = sections
-        .filter(s => s.heading && s.heading !== firstHeading)
-        .map((s, i) => {
-          const numMatch = s.heading.match(/^(\d+[a-z]?)\.\s*/);
-          return {
-            n: numMatch ? numMatch[1] : String(i + 1),
-            label: numMatch ? s.heading.replace(numMatch[0], "").trim() : s.heading,
-            page: 0,
-          };
-        });
+      const headingCandidates = sections
+        .map((s) => s.heading)
+        .filter(Boolean)
+        .filter((h) => h !== firstHeading)
+        .filter((h) => !/^—\s*PARTIE/i.test(h));
+
+      const items = headingCandidates.slice(0, 20).map((h, i) => {
+        const matchNum = h.match(/^(\d+[a-z]?)\.\s*/i);
+        return {
+          n: matchNum ? matchNum[1] : String(i + 1),
+          label: matchNum ? h.replace(matchNum[0], "").trim() : h,
+          page: 0,
+        };
+      });
+
       if (items.length > 0) {
         slides.push({ type: "sommaire", title: firstHeading, items });
         continue;
       }
     }
 
-    // Section slide (few content, just a heading + maybe subtitle)
-    if (sections.length <= 2 && totalBullets <= 1 && !hasTable) {
-      slides.push({
-        type: "section",
-        title: firstHeading,
-        subtitle: sections[0]?.bullets[0] || sections[1]?.heading || "",
-      });
+    // Slide de section (intro de chapitre)
+    const hasTable = allTableLines.length >= 2;
+    if (!hasTable && sections.length <= 2 && totalBullets <= 1) {
+      const subtitle = sections[0].bullets[0] || sections[1]?.heading || meaningfulLines[1] || "";
+      slides.push({ type: "section", title: firstHeading, subtitle });
       continue;
     }
 
-    // Detect key rule
-    const allBullets = sections.flatMap(s => s.bullets);
-    const keyRuleIdx = allBullets.findIndex(b => /^✔|^⚠|^Règle clé/i.test(b));
-    const keyRule = keyRuleIdx >= 0 ? allBullets[keyRuleIdx] : undefined;
+    const keyRule = allBullets.find((b) => /^✔|^⚠|^Règle clé/i.test(b));
 
-    // Table-heavy slide
-    if (hasTable && totalBullets <= 4) {
+    // Slides à dominante tableau
+    if (hasTable && totalBullets <= 6) {
       const table = parseTableBlock(allTableLines);
-      if (table && table.headers.length > 0) {
-        const intro = allBullets.filter(b => b !== keyRule).slice(0, 2).join(" ") || undefined;
+      if (table) {
+        const intro = allBullets.filter((b) => b !== keyRule).slice(0, 2).join(" ") || undefined;
         const extraSections = sections
-          .filter(s => s.heading && s.heading !== firstHeading && s.bullets.length > 0)
-          .map(s => ({ heading: s.heading, items: s.bullets.filter(b => b !== keyRule) }))
-          .filter(s => s.items.length > 0);
+          .filter((s) => s.heading && s.heading !== firstHeading)
+          .map((s) => ({ heading: s.heading, items: s.bullets.filter((b) => b !== keyRule) }))
+          .filter((s) => s.items.length > 0);
+
         slides.push({
           type: "table",
           title: firstHeading,
@@ -196,83 +217,65 @@ export function createSlidesFromParsedMarkdown(markdown: string, options?: Parse
       }
     }
 
-    // Content slide with blocks
+    // Slide de contenu riche
     const blocks: SlideBlock[] = [];
     let intro: string | undefined;
     let ref: string | undefined;
 
     for (let i = 0; i < sections.length; i++) {
-      const s = sections[i];
-      // First section without heading → intro text
-      if (i === 0 && !s.heading && s.bullets.length > 0) {
-        intro = s.bullets.filter(b => b !== keyRule).join(" ");
-        continue;
-      }
-      if (i === 0 && s.heading === firstHeading) {
-        // Main title section — bullets become intro or first block
-        const filteredBullets = s.bullets.filter(b => b !== keyRule);
-        if (filteredBullets.length > 0 && !intro) {
-          // Check if first bullet looks like a reference
-          if (/^Art\.|^Loi |^Arrêté|^Décret|^Code /i.test(filteredBullets[0])) {
-            ref = filteredBullets[0];
-            intro = filteredBullets.slice(1).join(" ") || undefined;
+      const section = sections[i];
+      const cleanBullets = section.bullets.filter((b) => b !== keyRule);
+
+      if (i === 0 && section.heading === firstHeading) {
+        if (cleanBullets.length > 0) {
+          const maybeRef = cleanBullets[0];
+          if (/^Art\.|^Loi\b|^Arrêté\b|^Décret\b|^Code\b/i.test(maybeRef)) {
+            ref = maybeRef;
+            intro = cleanBullets.slice(1).join(" ") || undefined;
           } else {
-            intro = filteredBullets[0];
-            if (filteredBullets.length > 1) {
+            intro = cleanBullets[0];
+            if (cleanBullets.length > 1) {
               blocks.push({
-                heading: firstHeading,
-                color: BLOCK_COLORS[0],
-                points: filteredBullets.slice(1),
+                heading: section.heading || firstHeading,
+                color: BLOCK_COLORS[blocks.length % BLOCK_COLORS.length],
+                points: cleanBullets.slice(1),
               });
             }
           }
         }
-        // Include table data as extra block
-        if (s.tableLines.length >= 2) {
-          const tbl = parseTableBlock(s.tableLines);
-          if (tbl) {
-            blocks.push({
-              heading: "Tableau",
-              color: BLOCK_COLORS[blocks.length % BLOCK_COLORS.length],
-              points: tbl.rows.map(r => r.join(" — ")),
-            });
+      } else {
+        const points = [...cleanBullets];
+
+        if (section.tableLines.length >= 2) {
+          const sectionTable = parseTableBlock(section.tableLines);
+          if (sectionTable) {
+            sectionTable.rows.forEach((row) => points.push(row.join(" — ")));
           }
         }
-        continue;
-      }
 
-      // Named section → block
-      const filteredPoints = s.bullets.filter(b => b !== keyRule);
-      // Include table rows as text points
-      if (s.tableLines.length >= 2) {
-        const tbl = parseTableBlock(s.tableLines);
-        if (tbl) {
-          tbl.rows.forEach(r => filteredPoints.push(r.join(" — ")));
+        if (section.heading || points.length > 0) {
+          blocks.push({
+            heading: section.heading || `Section ${i + 1}`,
+            color: BLOCK_COLORS[blocks.length % BLOCK_COLORS.length],
+            points: points.length > 0 ? points : ["—"],
+          });
         }
-      }
-
-      if (s.heading || filteredPoints.length > 0) {
-        blocks.push({
-          heading: s.heading || `Section ${i + 1}`,
-          color: BLOCK_COLORS[blocks.length % BLOCK_COLORS.length],
-          points: filteredPoints.length > 0 ? filteredPoints : ["—"],
-        });
       }
     }
 
+    // Garde-fou anti-slides vides
+    const safeTitle = /^Slide\s+\d+$/i.test(firstHeading) && meaningfulLines[0] ? meaningfulLines[0] : firstHeading;
+
     slides.push({
       type: "content",
-      title: firstHeading,
+      title: safeTitle,
       ref,
       intro,
-      blocks: blocks.length > 0 ? blocks : undefined,
+      blocks: blocks.length > 0 ? blocks : [{ heading: "Contenu", color: BLOCK_COLORS[0], points: meaningfulLines.slice(1) }],
       keyRule,
     });
   }
 
-  if (options?.maxSlides) {
-    return slides.slice(0, options.maxSlides);
-  }
-
-  return slides;
+  const result = options?.maxSlides ? slides.slice(0, options.maxSlides) : slides;
+  return result;
 }
