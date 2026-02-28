@@ -10,6 +10,9 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 import SlideViewer from "./slides/SlideViewer";
+import PdfSlideViewer from "./PdfSlideViewer";
+import ImageCarouselViewer from "./ImageCarouselViewer";
+import PptxViewerComparison from "./PptxViewerComparison";
 import { T3P_PARTIE1_SLIDES, type Slide } from "./slides/t3p-partie1-data";
 import { T3P_PARTIE2_SLIDES } from "./slides/t3p-partie2-data";
 import { GESTION_PARTIE1_SLIDES } from "./slides/gestion-partie1-data";
@@ -1132,6 +1135,8 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                   )}
                   {(() => {
                     const hasInteractiveSlides = Boolean(cours.slidesKey && slidesByKey[cours.slidesKey]?.length > 0);
+                    // Viewer mode state is stored per-course in a local map
+                    const courseViewerKey = `viewer-mode-${cours.id}`;
 
                     return (
                       <>
@@ -1141,13 +1146,16 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                             {cours.fichiers.map((f, i) => {
                               const isPptx = f.nom.endsWith(".pptx") || f.nom.endsWith(".ppt") || f.url.endsWith(".pptx") || f.url.endsWith(".ppt");
                               const absoluteFileUrl = resolvePublicFileUrl(f.url);
-                              const viewerUrl = isPptx
+                              const googleViewerUrl = isPptx
+                                ? `https://docs.google.com/viewer?url=${encodeURIComponent(absoluteFileUrl)}&embedded=true`
+                                : null;
+                              const msViewerUrl = isPptx
                                 ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(absoluteFileUrl)}`
                                 : null;
-                              const shouldEmbedOfficeViewer = Boolean(viewerUrl && !hasInteractiveSlides);
+                              const shouldShowViewers = Boolean(isPptx && !hasInteractiveSlides);
 
                               return (
-                                <div key={i} className="space-y-2">
+                                <div key={i} className="space-y-3">
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <a
                                       href={f.url}
@@ -1158,30 +1166,16 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                                       {f.nom}
                                       <Download className="w-3 h-3" />
                                     </a>
-                                    {viewerUrl && !hasInteractiveSlides && (
-                                      <a
-                                        href={viewerUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-secondary text-secondary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
-                                      >
-                                        <Eye className="w-4 h-4" />
-                                        Ouvrir le PowerPoint
-                                      </a>
-                                    )}
                                   </div>
-                                  {shouldEmbedOfficeViewer ? (
-                                    <div className="border rounded-lg overflow-hidden w-full max-w-[1280px] mx-auto">
-                                      <div className="w-full" style={{ height: "68vh", minHeight: "560px", maxHeight: "680px" }}>
-                                        <iframe
-                                          src={viewerUrl!}
-                                          className="w-full h-full border-0"
-                                          allowFullScreen
-                                          title={`Aperçu ${f.nom}`}
-                                        />
-                                      </div>
-                                    </div>
-                                  ) : null}
+
+                                  {shouldShowViewers && (
+                                    <PptxViewerComparison
+                                      googleViewerUrl={googleViewerUrl!}
+                                      msViewerUrl={msViewerUrl!}
+                                      absoluteFileUrl={absoluteFileUrl}
+                                      nom={f.nom}
+                                    />
+                                  )}
                                 </div>
                               );
                             })}
