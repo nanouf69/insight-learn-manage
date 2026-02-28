@@ -1164,7 +1164,7 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                                     )}
                                   </div>
                                   {shouldEmbedOfficeViewer ? (
-                                    <div className="border rounded-lg overflow-hidden" style={{ height: "800px" }}>
+                                    <div className="border rounded-lg overflow-hidden" style={{ height: "85vh", minHeight: "700px" }}>
                                       <iframe
                                         src={viewerUrl!}
                                         className="w-full h-full border-0"
