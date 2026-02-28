@@ -57,7 +57,8 @@ const MATIERE_A: ContentItem[] = [
   {
     id: 1002, actif: true,
     titre: "A. RÉGLEMENTATION T3P — Partie 2",
-    sousTitre: "Suite de la réglementation T3P",
+    sousTitre: "Suite de la réglementation T3P (Juridictions, Sanctions, TPMR...)",
+    slidesKey: "t3p-partie2",
     fichiers: [
       { nom: "PowerPoint Partie 2", url: "/cours/vtc/A_T3P_partie_2.pptx" },
     ],
@@ -71,11 +72,28 @@ const MATIERE_A: ContentItem[] = [
 const MATIERE_B: ContentItem[] = [
   {
     id: 2001, actif: true,
-    titre: "B. GESTION",
-    sousTitre: "Gestion d'entreprise et comptabilité",
+    titre: "B. GESTION — Partie 1",
+    sousTitre: "Entrepreneurs et Formes Juridiques",
+    slidesKey: "gestion-partie1",
     fichiers: [
       { nom: "Partie 1", url: "/cours/vtc/B_Gestion_partie_1.pptx" },
+    ],
+  },
+  {
+    id: 2002, actif: true,
+    titre: "B. GESTION — Partie 2",
+    sousTitre: "Comptabilité et Fiscalité",
+    slidesKey: "gestion-partie2",
+    fichiers: [
       { nom: "Partie 2", url: "/cours/vtc/B_Gestion_partie_2.pptx" },
+    ],
+  },
+  {
+    id: 2003, actif: true,
+    titre: "B. GESTION — Partie 3",
+    sousTitre: "Gestion financière et Administrative",
+    slidesKey: "gestion-partie3",
+    fichiers: [
       { nom: "Partie 3", url: "/cours/vtc/B_Gestion_partie_3.pptx" },
     ],
   },
