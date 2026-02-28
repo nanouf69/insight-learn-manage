@@ -9,6 +9,8 @@ import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, Toggle
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import PptxZoomableViewer from "./PptxZoomableViewer";
+import SlideViewer from "./slides/SlideViewer";
+import { T3P_PARTIE1_SLIDES } from "./slides/t3p-partie1-data";
 
 // Images des monuments et lieux de Lyon
 import imgCathedraleStJean from "@/assets/pratique/cathedrale-st-jean.jpg";
@@ -41,7 +43,7 @@ interface ContentItem {
   image?: string;
   actif: boolean;
   fichiers?: { nom: string; url: string }[];
-  
+  slidesKey?: string;
 }
 
 interface ExerciceChoix {
@@ -1126,6 +1128,17 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                           </div>
                         );
                       })}
+                    </div>
+                  )}
+                  {/* Slide Viewer intégré */}
+                  {cours.slidesKey && cours.slidesKey === "t3p-partie1" && (
+                    <div className="mt-4">
+                      <SlideViewer
+                        slides={T3P_PARTIE1_SLIDES}
+                        titre={cours.titre}
+                        brand="FTRANSPORT"
+                        onBack={() => {}}
+                      />
                     </div>
                   )}
                 </CardContent>
