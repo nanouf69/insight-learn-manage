@@ -1095,6 +1095,15 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
       }).length;
     }, 0);
 
+    const resolvePublicFileUrl = (fileUrl: string) => {
+      if (fileUrl.startsWith("http")) return fileUrl;
+      const normalizedPath = fileUrl.startsWith("/") ? fileUrl : `/${fileUrl}`;
+      const fallbackPublicOrigin = "https://insight-learn-manage.lovable.app";
+      const isPreviewHost = window.location.hostname.endsWith("lovableproject.com");
+      const baseOrigin = isPreviewHost ? fallbackPublicOrigin : window.location.origin;
+      return `${baseOrigin}${normalizedPath}`;
+    };
+
     return (
       <div className="space-y-6 max-w-3xl mx-auto">
         <div className="text-center space-y-2">
@@ -1122,10 +1131,7 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                     </div>
                   )}
                   {(() => {
-                    const isT3PPartie1 = moduleData.id === 2 && cours.id === 1001;
-                    const hasInteractiveSlides = Boolean(
-                      !isT3PPartie1 && cours.slidesKey && slidesByKey[cours.slidesKey]?.length > 0
-                    );
+                    const hasInteractiveSlides = Boolean(cours.slidesKey && slidesByKey[cours.slidesKey]?.length > 0);
 
                     return (
                       <>
@@ -1134,9 +1140,7 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                           <div className="space-y-3 mt-3">
                             {cours.fichiers.map((f, i) => {
                               const isPptx = f.nom.endsWith(".pptx") || f.nom.endsWith(".ppt") || f.url.endsWith(".pptx") || f.url.endsWith(".ppt");
-                              const absoluteFileUrl = f.url.startsWith("http")
-                                ? f.url
-                                : `${window.location.origin}${f.url.startsWith("/") ? f.url : `/${f.url}`}`;
+                              const absoluteFileUrl = resolvePublicFileUrl(f.url);
                               const viewerUrl = isPptx
                                 ? `https://docs.google.com/viewer?url=${encodeURIComponent(absoluteFileUrl)}&pid=explorer&efh=false&a=v&chrome=false&embedded=true`
                                 : null;
