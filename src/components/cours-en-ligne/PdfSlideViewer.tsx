@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
@@ -19,12 +19,24 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(960);
 
-  const onDocumentLoadSuccess = useCallback(({ numPages }: { numPages: number }) => {
-    setNumPages(numPages);
+  // Recalculate width on resize / fullscreen changes
+  const updateWidth = useCallback(() => {
     if (containerRef.current) {
       setContainerWidth(containerRef.current.clientWidth - 32);
     }
   }, []);
+
+  useEffect(() => {
+    updateWidth();
+    const observer = new ResizeObserver(updateWidth);
+    if (containerRef.current) observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [updateWidth]);
+
+  const onDocumentLoadSuccess = useCallback(({ numPages }: { numPages: number }) => {
+    setNumPages(numPages);
+    updateWidth();
+  }, [updateWidth]);
 
   const prev = () => setPage((p) => Math.max(1, p - 1));
   const next = () => setPage((p) => Math.min(numPages, p + 1));
@@ -67,8 +79,8 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
         <Button variant="ghost" size="sm" onClick={fullscreen}><Maximize className="w-4 h-4" /></Button>
       </div>
 
-      {/* PDF Page */}
-      <div className="flex justify-center items-center overflow-auto" style={{ minHeight: 400, maxHeight: "72vh" }}>
+      {/* PDF Page — scrollable when zoomed */}
+      <div className="flex justify-center overflow-auto" style={{ maxHeight: "72vh" }}>
         <Document
           file={url}
           onLoadSuccess={onDocumentLoadSuccess}
