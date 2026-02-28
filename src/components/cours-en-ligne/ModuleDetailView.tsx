@@ -1002,12 +1002,19 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
   useEffect(() => {
     setSlidesByKey((current) => {
       const hasPlaceholderSlides = Object.values(current).some((slides) =>
-        slides.some((slide, index) => index > 0 && /^Slide\s+\d+$/i.test(slide.title))
+        slides.some((slide) => /^Slide\s+\d+$/i.test(slide.title))
       );
 
       return hasPlaceholderSlides ? createInitialSlidesByKey() : current;
     });
-  }, []);
+  }, [
+    module.id,
+    T3P_PARTIE1_SLIDES[0]?.title,
+    T3P_PARTIE2_SLIDES[0]?.title,
+    GESTION_PARTIE1_SLIDES[0]?.title,
+    GESTION_PARTIE2_SLIDES[0]?.title,
+    GESTION_PARTIE3_SLIDES[0]?.title,
+  ]);
 
   const updateSlidesForKey = (key: string, slides: Slide[]) => {
     setSlidesByKey((prev) => ({ ...prev, [key]: slides }));
