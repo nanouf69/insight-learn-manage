@@ -1122,7 +1122,10 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                     </div>
                   )}
                   {(() => {
-                    const hasInteractiveSlides = Boolean(cours.slidesKey && slidesByKey[cours.slidesKey]?.length > 0);
+                    const isT3PPartie1 = moduleData.id === 2 && cours.id === 1001;
+                    const hasInteractiveSlides = Boolean(
+                      !isT3PPartie1 && cours.slidesKey && slidesByKey[cours.slidesKey]?.length > 0
+                    );
 
                     return (
                       <>
@@ -1135,7 +1138,7 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                                 ? f.url
                                 : `${window.location.origin}${f.url.startsWith("/") ? f.url : `/${f.url}`}`;
                               const viewerUrl = isPptx
-                                ? `https://docs.google.com/gview?url=${encodeURIComponent(absoluteFileUrl)}&embedded=true`
+                                ? `https://docs.google.com/viewer?url=${encodeURIComponent(absoluteFileUrl)}&pid=explorer&efh=false&a=v&chrome=false&embedded=true`
                                 : null;
                               const shouldEmbedOfficeViewer = Boolean(viewerUrl && !hasInteractiveSlides);
 
@@ -1165,7 +1168,7 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                                   </div>
                                   {shouldEmbedOfficeViewer ? (
                                     <div className="border rounded-lg overflow-hidden w-full max-w-[1280px] mx-auto">
-                                      <div className="w-full" style={{ aspectRatio: "16 / 9" }}>
+                                      <div className="w-full" style={{ height: "68vh", minHeight: "560px", maxHeight: "680px" }}>
                                         <iframe
                                           src={viewerUrl!}
                                           className="w-full h-full border-0"
