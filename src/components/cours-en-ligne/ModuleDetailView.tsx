@@ -1142,9 +1142,9 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                       <>
                         {/* Fichiers source */}
                         {cours.fichiers && cours.fichiers.length > 0 && (() => {
-                          // Find PDF file in the same cours item to pass to PptxViewerComparison
+                          // PDF uses relative path (loaded locally by react-pdf, not by external viewer)
                           const pdfFile = cours.fichiers!.find(f => f.nom.endsWith(".pdf") || f.url.endsWith(".pdf"));
-                          const pdfAbsoluteUrl = pdfFile ? resolvePublicFileUrl(pdfFile.url) : undefined;
+                          const pdfLocalUrl = pdfFile ? (pdfFile.url.startsWith("http") ? pdfFile.url : pdfFile.url.startsWith("/") ? pdfFile.url : `/${pdfFile.url}`) : undefined;
 
                           return (
                             <div className="space-y-3 mt-3">
@@ -1180,7 +1180,7 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                                         msViewerUrl={msViewerUrl!}
                                         absoluteFileUrl={absoluteFileUrl}
                                         nom={f.nom}
-                                        pdfUrl={pdfAbsoluteUrl}
+                                        pdfUrl={pdfLocalUrl}
                                       />
                                     )}
                                   </div>
