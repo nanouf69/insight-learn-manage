@@ -11,6 +11,10 @@ import { supabase } from "@/integrations/supabase/client";
 import PptxZoomableViewer from "./PptxZoomableViewer";
 import SlideViewer from "./slides/SlideViewer";
 import { T3P_PARTIE1_SLIDES } from "./slides/t3p-partie1-data";
+import { T3P_PARTIE2_SLIDES } from "./slides/t3p-partie2-data";
+import { GESTION_PARTIE1_SLIDES } from "./slides/gestion-partie1-data";
+import { GESTION_PARTIE2_SLIDES } from "./slides/gestion-partie2-data";
+import { GESTION_PARTIE3_SLIDES } from "./slides/gestion-partie3-data";
 
 // Images des monuments et lieux de Lyon
 import imgCathedraleStJean from "@/assets/pratique/cathedrale-st-jean.jpg";
