@@ -1164,13 +1164,15 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                                     )}
                                   </div>
                                   {shouldEmbedOfficeViewer ? (
-                                    <div className="border rounded-lg overflow-hidden" style={{ height: "85vh", minHeight: "700px" }}>
-                                      <iframe
-                                        src={viewerUrl!}
-                                        className="w-full h-full border-0"
-                                        allowFullScreen
-                                        title={`Aperçu ${f.nom}`}
-                                      />
+                                    <div className="border rounded-lg overflow-hidden w-full max-w-[1280px] mx-auto">
+                                      <div className="w-full" style={{ aspectRatio: "16 / 9" }}>
+                                        <iframe
+                                          src={viewerUrl!}
+                                          className="w-full h-full border-0"
+                                          allowFullScreen
+                                          title={`Aperçu ${f.nom}`}
+                                        />
+                                      </div>
                                     </div>
                                   ) : null}
                                 </div>
