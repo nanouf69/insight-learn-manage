@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -987,15 +987,27 @@ const ContentCard = ({
 };
 
 const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
-  const [moduleData, setModuleData] = useState<ModuleData>(() => getInitialModuleData(module));
-  const [editingCoursId, setEditingCoursId] = useState<number | null>(null);
-  const [slidesByKey, setSlidesByKey] = useState<Record<string, Slide[]>>(() => ({
+  const createInitialSlidesByKey = (): Record<string, Slide[]> => ({
     "t3p-partie1": [...T3P_PARTIE1_SLIDES],
     "t3p-partie2": [...T3P_PARTIE2_SLIDES],
     "gestion-partie1": [...GESTION_PARTIE1_SLIDES],
     "gestion-partie2": [...GESTION_PARTIE2_SLIDES],
     "gestion-partie3": [...GESTION_PARTIE3_SLIDES],
-  }));
+  });
+
+  const [moduleData, setModuleData] = useState<ModuleData>(() => getInitialModuleData(module));
+  const [editingCoursId, setEditingCoursId] = useState<number | null>(null);
+  const [slidesByKey, setSlidesByKey] = useState<Record<string, Slide[]>>(() => createInitialSlidesByKey());
+
+  useEffect(() => {
+    setSlidesByKey((current) => {
+      const hasPlaceholderSlides = Object.values(current).some((slides) =>
+        slides.some((slide, index) => index > 0 && /^Slide\s+\d+$/i.test(slide.title))
+      );
+
+      return hasPlaceholderSlides ? createInitialSlidesByKey() : current;
+    });
+  }, []);
 
   const updateSlidesForKey = (key: string, slides: Slide[]) => {
     setSlidesByKey((prev) => ({ ...prev, [key]: slides }));
