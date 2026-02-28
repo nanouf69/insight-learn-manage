@@ -1092,7 +1092,7 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                         const isPptx = f.nom.endsWith(".pptx") || f.nom.endsWith(".ppt") || f.url.endsWith(".pptx") || f.url.endsWith(".ppt");
                         const isPublicUrl = f.url.startsWith("http");
                         const viewerUrl = isPptx && isPublicUrl
-                          ? `https://docs.google.com/gview?url=${encodeURIComponent(f.url)}&embedded=true`
+                          ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(f.url)}`
                           : null;
                         return (
                           <div key={i} className="space-y-2">
@@ -1108,7 +1108,14 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                               </a>
                             </div>
                             {viewerUrl ? (
-                              <PptxZoomableViewer url={viewerUrl} nom={f.nom} />
+                              <div className="border rounded-lg overflow-hidden" style={{ height: "800px" }}>
+                                <iframe
+                                  src={viewerUrl}
+                                  className="w-full h-full border-0"
+                                  allowFullScreen
+                                  title={`Aperçu ${f.nom}`}
+                                />
+                              </div>
                             ) : isPptx && !isPublicUrl ? (
                               <div className="border rounded-lg p-6 text-center text-muted-foreground bg-muted/30">
                                 <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
