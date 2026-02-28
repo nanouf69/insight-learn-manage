@@ -1,0 +1,109 @@
+import { useState, useRef } from "react";
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Maximize } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+interface ImageCarouselViewerProps {
+  /** Array of image URLs (one per slide) */
+  images: string[];
+  nom: string;
+}
+
+export default function ImageCarouselViewer({ images, nom }: ImageCarouselViewerProps) {
+  const [page, setPage] = useState(0);
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
+  const lastPos = useRef({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const total = images.length;
+  const prev = () => { setPage((p) => Math.max(0, p - 1)); resetView(); };
+  const next = () => { setPage((p) => Math.min(total - 1, p + 1)); resetView(); };
+  const zoomIn = () => setZoom((z) => Math.min(z + 0.25, 4));
+  const zoomOut = () => setZoom((z) => Math.max(z - 0.25, 0.5));
+  const resetView = () => { setZoom(1); setPan({ x: 0, y: 0 }); };
+  const fullscreen = () => containerRef.current?.requestFullscreen?.();
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowLeft") prev();
+    if (e.key === "ArrowRight") next();
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (zoom > 1) { setDragging(true); lastPos.current = { x: e.clientX, y: e.clientY }; }
+  };
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (dragging && zoom > 1) {
+      const dx = e.clientX - lastPos.current.x;
+      const dy = e.clientY - lastPos.current.y;
+      lastPos.current = { x: e.clientX, y: e.clientY };
+      setPan((p) => ({ x: p.x + dx, y: p.y + dy }));
+    }
+  };
+  const handleMouseUp = () => setDragging(false);
+
+  if (total === 0) return <div className="p-8 text-center text-muted-foreground">Aucune image de slide disponible.</div>;
+
+  return (
+    <div
+      ref={containerRef}
+      className="border rounded-lg overflow-hidden bg-black focus:outline-none"
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+    >
+      {/* Toolbar */}
+      <div className="flex items-center gap-1 p-2 bg-muted/50 border-b flex-wrap">
+        <Button variant="ghost" size="sm" onClick={prev} disabled={page <= 0}>
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
+        <span className="text-xs font-medium text-muted-foreground min-w-[4rem] text-center">
+          {page + 1} / {total}
+        </span>
+        <Button variant="ghost" size="sm" onClick={next} disabled={page >= total - 1}>
+          <ChevronRight className="w-4 h-4" />
+        </Button>
+        <div className="w-px h-5 bg-border mx-1" />
+        <Button variant="ghost" size="sm" onClick={zoomOut}><ZoomOut className="w-4 h-4" /></Button>
+        <span className="text-xs font-medium text-muted-foreground min-w-[3rem] text-center">
+          {Math.round(zoom * 100)}%
+        </span>
+        <Button variant="ghost" size="sm" onClick={zoomIn}><ZoomIn className="w-4 h-4" /></Button>
+        <Button variant="ghost" size="sm" onClick={() => resetView()}><RotateCcw className="w-4 h-4" /></Button>
+        <div className="flex-1" />
+        <Button variant="ghost" size="sm" onClick={fullscreen}><Maximize className="w-4 h-4" /></Button>
+      </div>
+
+      {/* Image viewer */}
+      <div
+        className="flex justify-center items-center overflow-hidden relative"
+        style={{ height: "68vh", minHeight: 400, maxHeight: 720, cursor: zoom > 1 ? (dragging ? "grabbing" : "grab") : "default" }}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+      >
+        <img
+          src={images[page]}
+          alt={`${nom} — Slide ${page + 1}`}
+          draggable={false}
+          className="select-none"
+          style={{
+            maxWidth: "100%",
+            maxHeight: "100%",
+            objectFit: "contain",
+            transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
+            transformOrigin: "center center",
+            transition: dragging ? "none" : "transform 0.15s ease",
+          }}
+        />
+      </div>
+
+      {/* Bottom nav mobile */}
+      <div className="flex items-center justify-between p-2 border-t bg-muted/50 sm:hidden">
+        <Button variant="outline" size="sm" onClick={prev} disabled={page <= 0}>← Précédent</Button>
+        <span className="text-xs text-muted-foreground">{page + 1}/{total}</span>
+        <Button variant="outline" size="sm" onClick={next} disabled={page >= total - 1}>Suivant →</Button>
+      </div>
+    </div>
+  );
+}
