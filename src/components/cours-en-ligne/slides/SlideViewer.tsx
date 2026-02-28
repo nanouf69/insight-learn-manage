@@ -28,9 +28,9 @@ function SlideSommaire({ slide }: { slide: Slide & { type: "sommaire" } }) {
       <h2 className="text-2xl font-bold text-slate-800 mb-6">{slide.title}</h2>
       <div className="space-y-2">
         {slide.items.map((it, i) => (
-          <div key={i} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 transition-colors">
-            <span className="flex-shrink-0 w-10 h-10 bg-amber-500 text-white rounded-lg flex items-center justify-center font-bold text-sm">{it.n}</span>
-            <span className="text-sm font-medium text-slate-700 flex-1">{it.label}</span>
+          <div key={i} className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${it.page === 0 ? 'bg-slate-100 mt-4' : 'hover:bg-slate-50'}`}>
+            <span className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm ${it.page === 0 ? 'bg-slate-700 text-white' : 'bg-amber-500 text-white'}`}>{it.n}</span>
+            <span className={`text-sm font-medium flex-1 ${it.page === 0 ? 'text-slate-800 font-bold' : 'text-slate-700'}`}>{it.label}</span>
           </div>
         ))}
       </div>
@@ -79,8 +79,9 @@ function SlideContent({ slide }: { slide: Slide & { type: "content" } }) {
 
 function SlideTable({ slide }: { slide: Slide & { type: "table" } }) {
   return (
-    <div className="p-5">
-      <h2 className="text-xl font-bold text-slate-800 mb-4">{slide.title}</h2>
+    <div className="p-5 space-y-4">
+      <h2 className="text-xl font-bold text-slate-800">{slide.title}</h2>
+      {slide.intro && <p className="text-sm text-slate-600 mb-2">{slide.intro}</p>}
       <div className="overflow-x-auto">
         <table className="w-full text-xs border-collapse">
           <thead>
@@ -95,6 +96,21 @@ function SlideTable({ slide }: { slide: Slide & { type: "table" } }) {
           </tbody>
         </table>
       </div>
+      {slide.keyRule && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+          <p className="text-xs font-semibold text-amber-800">✔ {slide.keyRule}</p>
+        </div>
+      )}
+      {slide.extraSections?.map((section, i) => (
+        <div key={i} className="mt-3">
+          <h3 className="text-sm font-bold text-slate-700 mb-2">{section.heading}</h3>
+          <ul className="space-y-1">
+            {section.items.map((item, j) => (
+              <li key={j} className="text-xs text-slate-600 pl-3 relative before:content-['▸'] before:absolute before:left-0 before:text-amber-500">{item}</li>
+            ))}
+          </ul>
+        </div>
+      ))}
     </div>
   );
 }
@@ -115,6 +131,72 @@ function SlideChiffres({ slide }: { slide: Slide & { type: "chiffres" } }) {
   );
 }
 
+function SlideSchema({ slide }: { slide: Slide & { type: "schema" } }) {
+  return (
+    <div className="p-5 space-y-4">
+      <h2 className="text-xl font-bold text-slate-800">{slide.title}</h2>
+      {slide.intro && <p className="text-sm text-slate-600 mb-2">{slide.intro}</p>}
+      {slide.tables?.map((table, i) => (
+        <div key={i} className="overflow-x-auto">
+          <table className="w-full text-xs border-collapse">
+            <thead>
+              <tr>{table.headers.map((h, j) => <th key={j} className="bg-slate-700 text-amber-300 p-2 text-left font-semibold">{h}</th>)}</tr>
+            </thead>
+            <tbody>
+              {table.rows.map((row, ri) => (
+                <tr key={ri} className={ri % 2 === 0 ? "bg-slate-50" : "bg-white"}>
+                  {row.map((cell, ci) => <td key={ci} className="p-2 border-b border-slate-200 text-slate-700 text-xs">{cell}</td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ))}
+      {slide.lists?.map((list, i) => (
+        <div key={i} className="rounded-lg border-l-4 border-amber-400 bg-white shadow-sm p-3">
+          <h3 className="font-bold text-sm text-slate-800 mb-2">{list.heading}</h3>
+          <ul className="space-y-1">
+            {list.items.map((item, j) => (
+              <li key={j} className="text-xs text-slate-700 pl-3 relative before:content-['▸'] before:absolute before:left-0 before:text-amber-500">{item}</li>
+            ))}
+          </ul>
+        </div>
+      ))}
+      {slide.keyRule && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+          <p className="text-xs font-semibold text-amber-800">✔ {slide.keyRule}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SlideSynthesis({ slide }: { slide: Slide & { type: "synthesis" } }) {
+  return (
+    <div className="p-5 space-y-4">
+      <h2 className="text-xl font-bold text-slate-800">{slide.title}</h2>
+      {slide.intro && <p className="text-sm text-slate-600 mb-2">{slide.intro}</p>}
+      <div className="space-y-3">
+        {slide.sections.map((s, i) => (
+          <div key={i} className="rounded-lg border-l-4 bg-white shadow-sm p-3" style={{ borderColor: s.color }}>
+            <h3 className="font-bold text-sm mb-2" style={{ color: s.color }}>{s.heading}</h3>
+            <ul className="space-y-1">
+              {s.points.map((p, j) => (
+                <li key={j} className="text-xs text-slate-700 leading-relaxed pl-3 relative before:content-['▸'] before:absolute before:left-0 before:text-amber-500">{p}</li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+      {slide.keyRule && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+          <p className="text-xs font-semibold text-amber-800">✔ {slide.keyRule}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function renderSlide(slide: Slide) {
   switch (slide.type) {
     case "title": return <SlideTitle slide={slide} />;
@@ -123,6 +205,8 @@ function renderSlide(slide: Slide) {
     case "content": return <SlideContent slide={slide} />;
     case "table": return <SlideTable slide={slide} />;
     case "chiffres": return <SlideChiffres slide={slide} />;
+    case "schema": return <SlideSchema slide={slide} />;
+    case "synthesis": return <SlideSynthesis slide={slide} />;
     default: return null;
   }
 }
