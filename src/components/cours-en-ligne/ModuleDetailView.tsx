@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings, Download, FileText, Upload, Loader2, ZoomIn, ZoomOut, RotateCcw, Maximize } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import PptxZoomableViewer from "./PptxZoomableViewer";
+
 import SlideViewer from "./slides/SlideViewer";
 import { T3P_PARTIE1_SLIDES, type Slide } from "./slides/t3p-partie1-data";
 import { T3P_PARTIE2_SLIDES } from "./slides/t3p-partie2-data";
@@ -1102,58 +1102,80 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                       {cours.description}
                     </div>
                   )}
-                  {/* Aperçu des fichiers PowerPoint */}
-                  {cours.fichiers && cours.fichiers.length > 0 && (
-                    <div className="space-y-3 mt-3">
-                      {cours.fichiers.map((f, i) => {
-                        const isPptx = f.nom.endsWith(".pptx") || f.nom.endsWith(".ppt") || f.url.endsWith(".pptx") || f.url.endsWith(".ppt");
-                        const absoluteFileUrl = f.url.startsWith("http")
-                          ? f.url
-                          : `${window.location.origin}${f.url.startsWith("/") ? f.url : `/${f.url}`}`;
-                        const viewerUrl = isPptx
-                          ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(absoluteFileUrl)}`
-                          : null;
-                        return (
-                          <div key={i} className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <a
-                                href={f.url}
-                                download
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
-                              >
-                                <FileText className="w-4 h-4" />
-                                {f.nom}
-                                <Download className="w-3 h-3" />
-                              </a>
-                            </div>
-                            {viewerUrl ? (
-                              <div className="border rounded-lg overflow-hidden" style={{ height: "800px" }}>
-                                <iframe
-                                  src={viewerUrl}
-                                  className="w-full h-full border-0"
-                                  allowFullScreen
-                                  title={`Aperçu ${f.nom}`}
-                                />
-                              </div>
-                            ) : null}
+                  {(() => {
+                    const hasInteractiveSlides = Boolean(cours.slidesKey && slidesByKey[cours.slidesKey]?.length > 0);
+
+                    return (
+                      <>
+                        {/* Fichiers source */}
+                        {cours.fichiers && cours.fichiers.length > 0 && (
+                          <div className="space-y-3 mt-3">
+                            {cours.fichiers.map((f, i) => {
+                              const isPptx = f.nom.endsWith(".pptx") || f.nom.endsWith(".ppt") || f.url.endsWith(".pptx") || f.url.endsWith(".ppt");
+                              const absoluteFileUrl = f.url.startsWith("http")
+                                ? f.url
+                                : `${window.location.origin}${f.url.startsWith("/") ? f.url : `/${f.url}`}`;
+                              const viewerUrl = isPptx
+                                ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(absoluteFileUrl)}`
+                                : null;
+                              const shouldEmbedOfficeViewer = Boolean(viewerUrl && !hasInteractiveSlides);
+
+                              return (
+                                <div key={i} className="space-y-2">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <a
+                                      href={f.url}
+                                      download
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
+                                    >
+                                      <FileText className="w-4 h-4" />
+                                      {f.nom}
+                                      <Download className="w-3 h-3" />
+                                    </a>
+                                    {viewerUrl && (
+                                      <a
+                                        href={viewerUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-secondary text-secondary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+                                      >
+                                        <Eye className="w-4 h-4" />
+                                        Ouvrir le PowerPoint
+                                      </a>
+                                    )}
+                                  </div>
+                                  {shouldEmbedOfficeViewer ? (
+                                    <div className="border rounded-lg overflow-hidden" style={{ height: "800px" }}>
+                                      <iframe
+                                        src={viewerUrl!}
+                                        className="w-full h-full border-0"
+                                        allowFullScreen
+                                        title={`Aperçu ${f.nom}`}
+                                      />
+                                    </div>
+                                  ) : null}
+                                </div>
+                              );
+                            })}
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                  {/* Slide Viewer intégré (fallback si aucun fichier source n'est disponible) */}
-                  {cours.slidesKey && slidesByKey[cours.slidesKey]?.length > 0 && (!cours.fichiers || cours.fichiers.length === 0) && (
-                    <div className="mt-4">
-                      <SlideViewer
-                        slides={slidesByKey[cours.slidesKey] ?? []}
-                        titre={cours.titre}
-                        brand="FTRANSPORT"
-                        onBack={() => {}}
-                        editable
-                        onSlidesChange={(slides) => updateSlidesForKey(cours.slidesKey!, slides)}
-                      />
-                    </div>
-                  )}
+                        )}
+
+                        {/* Slides interactives complètes */}
+                        {hasInteractiveSlides && cours.slidesKey && (
+                          <div className="mt-4">
+                            <SlideViewer
+                              slides={slidesByKey[cours.slidesKey] ?? []}
+                              titre={cours.titre}
+                              brand="FTRANSPORT"
+                              onBack={() => {}}
+                              editable
+                              onSlidesChange={(slides) => updateSlidesForKey(cours.slidesKey!, slides)}
+                            />
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             ))}
