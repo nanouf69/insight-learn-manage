@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import PptxZoomableViewer from "./PptxZoomableViewer";
 import SlideViewer from "./slides/SlideViewer";
-import { T3P_PARTIE1_SLIDES } from "./slides/t3p-partie1-data";
+import { T3P_PARTIE1_SLIDES, type Slide } from "./slides/t3p-partie1-data";
 import { T3P_PARTIE2_SLIDES } from "./slides/t3p-partie2-data";
 import { GESTION_PARTIE1_SLIDES } from "./slides/gestion-partie1-data";
 import { GESTION_PARTIE2_SLIDES } from "./slides/gestion-partie2-data";
@@ -989,7 +989,17 @@ const ContentCard = ({
 const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
   const [moduleData, setModuleData] = useState<ModuleData>(() => getInitialModuleData(module));
   const [editingCoursId, setEditingCoursId] = useState<number | null>(null);
-  const [t3pSlides, setT3pSlides] = useState(() => [...T3P_PARTIE1_SLIDES]);
+  const [slidesByKey, setSlidesByKey] = useState<Record<string, Slide[]>>(() => ({
+    "t3p-partie1": [...T3P_PARTIE1_SLIDES],
+    "t3p-partie2": [...T3P_PARTIE2_SLIDES],
+    "gestion-partie1": [...GESTION_PARTIE1_SLIDES],
+    "gestion-partie2": [...GESTION_PARTIE2_SLIDES],
+    "gestion-partie3": [...GESTION_PARTIE3_SLIDES],
+  }));
+
+  const updateSlidesForKey = (key: string, slides: Slide[]) => {
+    setSlidesByKey((prev) => ({ ...prev, [key]: slides }));
+  };
 
   const isPratique = module.id === 6 || module.id === 8;
 
@@ -1097,9 +1107,11 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                     <div className="space-y-3 mt-3">
                       {cours.fichiers.map((f, i) => {
                         const isPptx = f.nom.endsWith(".pptx") || f.nom.endsWith(".ppt") || f.url.endsWith(".pptx") || f.url.endsWith(".ppt");
-                        const isPublicUrl = f.url.startsWith("http");
-                        const viewerUrl = isPptx && isPublicUrl
-                          ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(f.url)}`
+                        const absoluteFileUrl = f.url.startsWith("http")
+                          ? f.url
+                          : `${window.location.origin}${f.url.startsWith("/") ? f.url : `/${f.url}`}`;
+                        const viewerUrl = isPptx
+                          ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(absoluteFileUrl)}`
                           : null;
                         return (
                           <div key={i} className="space-y-2">
@@ -1123,28 +1135,22 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                                   title={`Aperçu ${f.nom}`}
                                 />
                               </div>
-                            ) : isPptx && !isPublicUrl ? (
-                              <div className="border rounded-lg p-6 text-center text-muted-foreground bg-muted/30">
-                                <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                                <p className="text-sm">Aperçu non disponible pour les fichiers locaux.</p>
-                                <p className="text-xs mt-1">Téléchargez le fichier ou uploadez-le dans le gestionnaire de cours pour l'aperçu en ligne.</p>
-                              </div>
                             ) : null}
                           </div>
                         );
                       })}
                     </div>
                   )}
-                  {/* Slide Viewer intégré */}
-                  {cours.slidesKey && cours.slidesKey === "t3p-partie1" && (
+                  {/* Slide Viewer intégré (fallback si aucun fichier source n'est disponible) */}
+                  {cours.slidesKey && slidesByKey[cours.slidesKey]?.length > 0 && (!cours.fichiers || cours.fichiers.length === 0) && (
                     <div className="mt-4">
                       <SlideViewer
-                        slides={t3pSlides}
+                        slides={slidesByKey[cours.slidesKey] ?? []}
                         titre={cours.titre}
                         brand="FTRANSPORT"
                         onBack={() => {}}
                         editable
-                        onSlidesChange={setT3pSlides}
+                        onSlidesChange={(slides) => updateSlidesForKey(cours.slidesKey!, slides)}
                       />
                     </div>
                   )}
