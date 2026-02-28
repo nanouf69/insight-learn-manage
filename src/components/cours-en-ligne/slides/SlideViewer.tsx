@@ -54,20 +54,20 @@ function EditableMultiline({ value, onChange, className, placeholder }: {
 function SlideTitle({ slide, editing, onChange }: { slide: Slide & { type: "title" }; editing: boolean; onChange?: (s: Slide) => void }) {
   if (!editing) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-8 rounded-xl">
-        <h1 className="text-2xl md:text-3xl font-bold text-amber-400 text-center leading-tight mb-4">{slide.title}</h1>
-        {slide.subtitle && <p className="text-base md:text-lg text-slate-300 text-center mb-6">{slide.subtitle}</p>}
-        <div className="w-20 h-1 bg-amber-400 rounded mb-6" />
+      <div className="flex flex-col items-center justify-center min-h-full bg-gradient-to-br from-blue-800 via-blue-700 to-blue-900 text-white p-8 rounded-xl">
+        <h1 className="text-2xl md:text-3xl font-bold text-white text-center leading-tight mb-4">{slide.title}</h1>
+        {slide.subtitle && <p className="text-base md:text-lg text-blue-100 text-center mb-6">{slide.subtitle}</p>}
+        <div className="w-20 h-1 bg-white rounded mb-6" />
         {slide.footer && <p className="text-sm text-slate-400 text-center">{slide.footer}</p>}
         {slide.brand && <p className="text-xs text-slate-500 mt-4">{slide.brand}</p>}
       </div>
     );
   }
   return (
-    <div className="flex flex-col items-center justify-center min-h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-8 rounded-xl space-y-3">
-      <EditableText value={slide.title} onChange={v => onChange?.({ ...slide, title: v })} className="text-2xl font-bold text-amber-400 text-center" placeholder="Titre" />
-      <EditableText value={slide.subtitle || ""} onChange={v => onChange?.({ ...slide, subtitle: v })} className="text-lg text-slate-300 text-center" placeholder="Sous-titre" />
-      <div className="w-20 h-1 bg-amber-400 rounded" />
+    <div className="flex flex-col items-center justify-center min-h-full bg-gradient-to-br from-blue-800 via-blue-700 to-blue-900 text-white p-8 rounded-xl space-y-3">
+      <EditableText value={slide.title} onChange={v => onChange?.({ ...slide, title: v })} className="text-2xl font-bold text-white text-center" placeholder="Titre" />
+      <EditableText value={slide.subtitle || ""} onChange={v => onChange?.({ ...slide, subtitle: v })} className="text-lg text-blue-100 text-center" placeholder="Sous-titre" />
+      <div className="w-20 h-1 bg-white rounded" />
       <EditableText value={slide.footer || ""} onChange={v => onChange?.({ ...slide, footer: v })} className="text-sm text-slate-400 text-center" placeholder="Pied de page" />
       <EditableText value={slide.brand || ""} onChange={v => onChange?.({ ...slide, brand: v })} className="text-xs text-slate-500" placeholder="Marque" />
     </div>
@@ -91,13 +91,13 @@ function SlideSommaire({ slide, editing, onChange }: { slide: Slide & { type: "s
           <div key={i} className={`flex items-center gap-3 p-2 rounded-lg ${it.page === 0 ? 'bg-slate-100 mt-4' : 'hover:bg-slate-50'}`}>
             {editing ? (
               <>
-                <EditableText value={it.n} onChange={v => updateItem(i, "n", v)} className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm bg-amber-500 text-white text-center" />
+                <EditableText value={it.n} onChange={v => updateItem(i, "n", v)} className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm bg-blue-600 text-white text-center" />
                 <EditableText value={it.label} onChange={v => updateItem(i, "label", v)} className="text-sm font-medium flex-1 text-slate-700" />
                 <button onClick={() => removeItem(i)} className="text-destructive hover:text-destructive/80 p-1"><Trash2 className="w-3.5 h-3.5" /></button>
               </>
             ) : (
               <>
-                <span className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm ${it.page === 0 ? 'bg-slate-700 text-white' : 'bg-amber-500 text-white'}`}>{it.n}</span>
+                <span className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm ${it.page === 0 ? 'bg-slate-700 text-white' : 'bg-blue-600 text-white'}`}>{it.n}</span>
                 <span className={`text-sm font-medium flex-1 ${it.page === 0 ? 'text-slate-800 font-bold' : 'text-slate-700'}`}>{it.label}</span>
               </>
             )}
@@ -112,18 +112,18 @@ function SlideSommaire({ slide, editing, onChange }: { slide: Slide & { type: "s
 function SlideSection({ slide, editing, onChange }: { slide: Slide & { type: "section" }; editing: boolean; onChange?: (s: Slide) => void }) {
   if (!editing) {
     return (
-      <div className="flex flex-col items-start justify-center min-h-full bg-gradient-to-br from-slate-900 to-slate-800 text-white p-8 rounded-xl">
-        <h1 className="text-2xl md:text-3xl font-bold text-amber-400 leading-tight mb-3">{slide.title}</h1>
-        {slide.subtitle && <p className="text-base text-slate-300">{slide.subtitle}</p>}
-        <div className="w-16 h-1 bg-amber-400 rounded mt-4" />
+      <div className="flex flex-col items-start justify-center min-h-full bg-gradient-to-br from-blue-800 to-blue-900 text-white p-8 rounded-xl">
+        <h1 className="text-2xl md:text-3xl font-bold text-white leading-tight mb-3">{slide.title}</h1>
+        {slide.subtitle && <p className="text-base text-blue-100">{slide.subtitle}</p>}
+        <div className="w-16 h-1 bg-white rounded mt-4" />
       </div>
     );
   }
   return (
-    <div className="flex flex-col items-start justify-center min-h-full bg-gradient-to-br from-slate-900 to-slate-800 text-white p-8 rounded-xl space-y-3">
-      <EditableText value={slide.title} onChange={v => onChange?.({ ...slide, title: v })} className="text-2xl font-bold text-amber-400" placeholder="Titre section" />
-      <EditableText value={slide.subtitle || ""} onChange={v => onChange?.({ ...slide, subtitle: v })} className="text-base text-slate-300" placeholder="Sous-titre" />
-      <div className="w-16 h-1 bg-amber-400 rounded mt-4" />
+    <div className="flex flex-col items-start justify-center min-h-full bg-gradient-to-br from-blue-800 to-blue-900 text-white p-8 rounded-xl space-y-3">
+      <EditableText value={slide.title} onChange={v => onChange?.({ ...slide, title: v })} className="text-2xl font-bold text-white" placeholder="Titre section" />
+      <EditableText value={slide.subtitle || ""} onChange={v => onChange?.({ ...slide, subtitle: v })} className="text-base text-blue-100" placeholder="Sous-titre" />
+      <div className="w-16 h-1 bg-white rounded mt-4" />
     </div>
   );
 }
@@ -146,7 +146,7 @@ function EditableBlock({ block, onChange, onRemove }: { block: SlideBlock; onCha
       </div>
       {block.points.map((p, j) => (
         <div key={j} className="flex items-start gap-1">
-          <span className="text-amber-500 text-xs mt-1">▸</span>
+           <span className="text-blue-500 text-xs mt-1">▸</span>
           <EditableText value={p} onChange={v => updatePoint(j, v)} className="text-xs text-slate-700 flex-1" />
           <button onClick={() => removePoint(j)} className="text-destructive/60 hover:text-destructive p-0.5"><Trash2 className="w-3 h-3" /></button>
         </div>
@@ -179,16 +179,16 @@ function SlideContent({ slide, editing, onChange }: { slide: Slide & { type: "co
               <h3 className="font-bold text-sm mb-2" style={{ color: b.color }}>{b.heading}</h3>
               <ul className="space-y-1">
                 {b.points.map((p, j) => (
-                  <li key={j} className="text-xs text-slate-700 leading-relaxed pl-3 relative before:content-['▸'] before:absolute before:left-0 before:text-amber-500">{p}</li>
+                   <li key={j} className="text-xs text-slate-700 leading-relaxed pl-3 relative before:content-['▸'] before:absolute before:left-0 before:text-blue-500">{p}</li>
                 ))}
               </ul>
             </div>
           ))}
         </div>
-        {slide.keyRule && (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-            <p className="text-xs font-semibold text-amber-800">✔ {slide.keyRule}</p>
-          </div>
+         {slide.keyRule && (
+           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+             <p className="text-xs font-semibold text-blue-800">✔ {slide.keyRule}</p>
+           </div>
         )}
       </div>
     );
@@ -205,7 +205,7 @@ function SlideContent({ slide, editing, onChange }: { slide: Slide & { type: "co
         ))}
         <Button variant="outline" size="sm" className="gap-1" onClick={addBlock}><Plus className="w-3 h-3" /> Ajouter un bloc</Button>
       </div>
-      <EditableText value={slide.keyRule || ""} onChange={v => onChange?.({ ...slide, keyRule: v })} className="text-xs text-amber-800 bg-amber-50 p-2 rounded" placeholder="Règle clé (optionnel)" />
+      <EditableText value={slide.keyRule || ""} onChange={v => onChange?.({ ...slide, keyRule: v })} className="text-xs text-blue-800 bg-blue-50 p-2 rounded" placeholder="Règle clé (optionnel)" />
     </div>
   );
 }
@@ -240,11 +240,11 @@ function SlideTable({ slide, editing, onChange }: { slide: Slide & { type: "tabl
             ))}</tbody>
           </table>
         </div>
-        {slide.keyRule && <div className="bg-amber-50 border border-amber-200 rounded-lg p-3"><p className="text-xs font-semibold text-amber-800">✔ {slide.keyRule}</p></div>}
+        {slide.keyRule && <div className="bg-blue-50 border border-blue-200 rounded-lg p-3"><p className="text-xs font-semibold text-blue-800">✔ {slide.keyRule}</p></div>}
         {slide.extraSections?.map((section, i) => (
           <div key={i} className="mt-3">
             <h3 className="text-sm font-bold text-slate-700 mb-2">{section.heading}</h3>
-            <ul className="space-y-1">{section.items.map((item, j) => <li key={j} className="text-xs text-slate-600 pl-3 relative before:content-['▸'] before:absolute before:left-0 before:text-amber-500">{item}</li>)}</ul>
+            <ul className="space-y-1">{section.items.map((item, j) => <li key={j} className="text-xs text-slate-600 pl-3 relative before:content-['▸'] before:absolute before:left-0 before:text-blue-500">{item}</li>)}</ul>
           </div>
         ))}
       </div>
@@ -259,7 +259,7 @@ function SlideTable({ slide, editing, onChange }: { slide: Slide & { type: "tabl
         <table className="w-full text-xs border-collapse">
           <thead><tr>
             {slide.headers.map((h, i) => <th key={i} className="bg-slate-800 p-1"><EditableText value={h} onChange={v => updateHeader(i, v)} className="text-white font-semibold text-xs" /></th>)}
-            <th className="bg-slate-800 p-1"><button onClick={addCol} className="text-amber-400 text-xs">+Col</button></th>
+            <th className="bg-slate-800 p-1"><button onClick={addCol} className="text-blue-300 text-xs">+Col</button></th>
           </tr></thead>
           <tbody>{slide.rows.map((row, i) => (
             <tr key={i} className={i % 2 === 0 ? "bg-slate-50" : "bg-white"}>
@@ -270,7 +270,7 @@ function SlideTable({ slide, editing, onChange }: { slide: Slide & { type: "tabl
         </table>
         <Button variant="outline" size="sm" className="mt-2 gap-1" onClick={addRow}><Plus className="w-3 h-3" /> Ligne</Button>
       </div>
-      <EditableText value={slide.keyRule || ""} onChange={v => onChange?.({ ...slide, keyRule: v })} className="text-xs text-amber-800 bg-amber-50 p-2 rounded" placeholder="Règle clé" />
+      <EditableText value={slide.keyRule || ""} onChange={v => onChange?.({ ...slide, keyRule: v })} className="text-xs text-blue-800 bg-blue-50 p-2 rounded" placeholder="Règle clé" />
     </div>
   );
 }
@@ -291,7 +291,7 @@ function SlideChiffres({ slide, editing, onChange }: { slide: Slide & { type: "c
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {slide.items.map((it, i) => (
             <div key={i} className="bg-white rounded-lg shadow-sm border p-3 text-center">
-              <div className="text-lg font-bold text-amber-600">{it.val}</div>
+              <div className="text-lg font-bold text-blue-600">{it.val}</div>
               <div className="text-xs text-slate-600 mt-1">{it.desc}</div>
             </div>
           ))}
@@ -306,7 +306,7 @@ function SlideChiffres({ slide, editing, onChange }: { slide: Slide & { type: "c
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         {slide.items.map((it, i) => (
           <div key={i} className="bg-white rounded-lg shadow-sm border p-3 text-center space-y-1 relative">
-            <EditableText value={it.val} onChange={v => updateItem(i, "val", v)} className="text-lg font-bold text-amber-600 text-center" />
+            <EditableText value={it.val} onChange={v => updateItem(i, "val", v)} className="text-lg font-bold text-blue-600 text-center" />
             <EditableText value={it.desc} onChange={v => updateItem(i, "desc", v)} className="text-xs text-slate-600 text-center" />
             <button onClick={() => removeItem(i)} className="absolute top-1 right-1 text-destructive/60 hover:text-destructive"><Trash2 className="w-3 h-3" /></button>
           </div>
@@ -326,7 +326,7 @@ function SlideSchema({ slide, editing, onChange }: { slide: Slide & { type: "sch
         {slide.tables?.map((table, i) => (
           <div key={i} className="overflow-x-auto">
             <table className="w-full text-xs border-collapse">
-              <thead><tr>{table.headers.map((h, j) => <th key={j} className="bg-slate-700 text-amber-300 p-2 text-left font-semibold">{h}</th>)}</tr></thead>
+              <thead><tr>{table.headers.map((h, j) => <th key={j} className="bg-blue-700 text-white p-2 text-left font-semibold">{h}</th>)}</tr></thead>
               <tbody>{table.rows.map((row, ri) => (
                 <tr key={ri} className={ri % 2 === 0 ? "bg-slate-50" : "bg-white"}>
                   {row.map((cell, ci) => <td key={ci} className="p-2 border-b border-slate-200 text-slate-700 text-xs">{cell}</td>)}
@@ -336,12 +336,12 @@ function SlideSchema({ slide, editing, onChange }: { slide: Slide & { type: "sch
           </div>
         ))}
         {slide.lists?.map((list, i) => (
-          <div key={i} className="rounded-lg border-l-4 border-amber-400 bg-white shadow-sm p-3">
+           <div key={i} className="rounded-lg border-l-4 border-blue-400 bg-white shadow-sm p-3">
             <h3 className="font-bold text-sm text-slate-800 mb-2">{list.heading}</h3>
-            <ul className="space-y-1">{list.items.map((item, j) => <li key={j} className="text-xs text-slate-700 pl-3 relative before:content-['▸'] before:absolute before:left-0 before:text-amber-500">{item}</li>)}</ul>
+            <ul className="space-y-1">{list.items.map((item, j) => <li key={j} className="text-xs text-slate-700 pl-3 relative before:content-['▸'] before:absolute before:left-0 before:text-blue-500">{item}</li>)}</ul>
           </div>
         ))}
-        {slide.keyRule && <div className="bg-amber-50 border border-amber-200 rounded-lg p-3"><p className="text-xs font-semibold text-amber-800">✔ {slide.keyRule}</p></div>}
+        {slide.keyRule && <div className="bg-blue-50 border border-blue-200 rounded-lg p-3"><p className="text-xs font-semibold text-blue-800">✔ {slide.keyRule}</p></div>}
       </div>
     );
   }
@@ -352,7 +352,7 @@ function SlideSchema({ slide, editing, onChange }: { slide: Slide & { type: "sch
       <EditableMultiline value={slide.intro || ""} onChange={v => onChange?.({ ...slide, intro: v })} className="text-sm text-slate-600" placeholder="Introduction" />
       <p className="text-xs text-muted-foreground italic">Tableaux et listes (édition simplifiée)</p>
       {slide.lists?.map((list, i) => (
-        <div key={i} className="rounded-lg border-l-4 border-amber-400 bg-white shadow-sm p-3 space-y-1">
+        <div key={i} className="rounded-lg border-l-4 border-blue-400 bg-white shadow-sm p-3 space-y-1">
           <EditableText value={list.heading} onChange={v => {
             const lists = [...(slide.lists || [])];
             lists[i] = { ...lists[i], heading: v };
@@ -360,7 +360,7 @@ function SlideSchema({ slide, editing, onChange }: { slide: Slide & { type: "sch
           }} className="font-bold text-sm text-slate-800" />
           {list.items.map((item, j) => (
             <div key={j} className="flex items-center gap-1">
-              <span className="text-amber-500 text-xs">▸</span>
+              <span className="text-blue-500 text-xs">▸</span>
               <EditableText value={item} onChange={v => {
                 const lists = [...(slide.lists || [])];
                 const items = [...lists[i].items];
@@ -372,7 +372,7 @@ function SlideSchema({ slide, editing, onChange }: { slide: Slide & { type: "sch
           ))}
         </div>
       ))}
-      <EditableText value={slide.keyRule || ""} onChange={v => onChange?.({ ...slide, keyRule: v })} className="text-xs text-amber-800 bg-amber-50 p-2 rounded" placeholder="Règle clé" />
+      <EditableText value={slide.keyRule || ""} onChange={v => onChange?.({ ...slide, keyRule: v })} className="text-xs text-blue-800 bg-blue-50 p-2 rounded" placeholder="Règle clé" />
     </div>
   );
 }
@@ -387,11 +387,11 @@ function SlideSynthesis({ slide, editing, onChange }: { slide: Slide & { type: "
           {slide.sections.map((s, i) => (
             <div key={i} className="rounded-lg border-l-4 bg-white shadow-sm p-3" style={{ borderColor: s.color }}>
               <h3 className="font-bold text-sm mb-2" style={{ color: s.color }}>{s.heading}</h3>
-              <ul className="space-y-1">{s.points.map((p, j) => <li key={j} className="text-xs text-slate-700 leading-relaxed pl-3 relative before:content-['▸'] before:absolute before:left-0 before:text-amber-500">{p}</li>)}</ul>
+              <ul className="space-y-1">{s.points.map((p, j) => <li key={j} className="text-xs text-slate-700 leading-relaxed pl-3 relative before:content-['▸'] before:absolute before:left-0 before:text-blue-500">{p}</li>)}</ul>
             </div>
           ))}
         </div>
-        {slide.keyRule && <div className="bg-amber-50 border border-amber-200 rounded-lg p-3"><p className="text-xs font-semibold text-amber-800">✔ {slide.keyRule}</p></div>}
+        {slide.keyRule && <div className="bg-blue-50 border border-blue-200 rounded-lg p-3"><p className="text-xs font-semibold text-blue-800">✔ {slide.keyRule}</p></div>}
       </div>
     );
   }
@@ -415,7 +415,7 @@ function SlideSynthesis({ slide, editing, onChange }: { slide: Slide & { type: "
             </div>
             {s.points.map((p, j) => (
               <div key={j} className="flex items-start gap-1">
-                <span className="text-amber-500 text-xs mt-1">▸</span>
+                <span className="text-blue-500 text-xs mt-1">▸</span>
                 <EditableText value={p} onChange={v => {
                   const points = [...s.points];
                   points[j] = v;
@@ -426,7 +426,7 @@ function SlideSynthesis({ slide, editing, onChange }: { slide: Slide & { type: "
           </div>
         ))}
       </div>
-      <EditableText value={slide.keyRule || ""} onChange={v => onChange?.({ ...slide, keyRule: v })} className="text-xs text-amber-800 bg-amber-50 p-2 rounded" placeholder="Règle clé" />
+      <EditableText value={slide.keyRule || ""} onChange={v => onChange?.({ ...slide, keyRule: v })} className="text-xs text-blue-800 bg-blue-50 p-2 rounded" placeholder="Règle clé" />
     </div>
   );
 }
@@ -463,19 +463,19 @@ export default function SlideViewer({ slides, titre, brand, onBack, editable, on
   return (
     <div className="flex flex-col h-full min-h-[600px]">
       {/* Header */}
-      <div className="bg-slate-800 text-white px-4 py-2.5 flex items-center justify-between rounded-t-xl">
+      <div className="bg-blue-800 text-white px-4 py-2.5 flex items-center justify-between rounded-t-xl">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-slate-700" onClick={onBack}>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-blue-700" onClick={onBack}>
             <ArrowLeft className="w-4 h-4" />
           </Button>
-          <span className="font-bold text-amber-400 text-sm">{titre}</span>
+          <span className="font-bold text-white text-sm">{titre}</span>
         </div>
         <div className="flex items-center gap-2">
           {editable && (
             <Button
               variant={editing ? "default" : "ghost"}
               size="sm"
-              className={`gap-1.5 text-xs ${editing ? "bg-amber-500 hover:bg-amber-600 text-white" : "text-white hover:bg-slate-700"}`}
+              className={`gap-1.5 text-xs ${editing ? "bg-white hover:bg-blue-50 text-blue-800" : "text-white hover:bg-blue-700"}`}
               onClick={() => setEditing(!editing)}
             >
               {editing ? <><Eye className="w-3.5 h-3.5" /> Aperçu</> : <><Pencil className="w-3.5 h-3.5" /> Modifier</>}
@@ -504,10 +504,10 @@ export default function SlideViewer({ slides, titre, brand, onBack, editable, on
             max={total - 1}
             value={idx}
             onChange={e => setIdx(+e.target.value)}
-            className="w-24 sm:w-32 accent-amber-500"
+            className="w-24 sm:w-32 accent-blue-600"
           />
         </div>
-        <Button size="sm" onClick={next} disabled={idx === total - 1} className="gap-1 bg-amber-500 hover:bg-amber-600 text-white">
+        <Button size="sm" onClick={next} disabled={idx === total - 1} className="gap-1 bg-blue-600 hover:bg-blue-700 text-white">
           Suivant <ChevronRight className="w-4 h-4" />
         </Button>
       </div>
