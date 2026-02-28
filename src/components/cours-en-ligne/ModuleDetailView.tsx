@@ -1135,7 +1135,7 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                                 ? f.url
                                 : `${window.location.origin}${f.url.startsWith("/") ? f.url : `/${f.url}`}`;
                               const viewerUrl = isPptx
-                                ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(absoluteFileUrl)}`
+                                ? `https://docs.google.com/gview?url=${encodeURIComponent(absoluteFileUrl)}&embedded=true`
                                 : null;
                               const shouldEmbedOfficeViewer = Boolean(viewerUrl && !hasInteractiveSlides);
 
