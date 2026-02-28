@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Eye, FileImage, ZoomIn, ZoomOut, Images } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -18,10 +18,24 @@ export default function PptxViewerComparison({
   imageUrls,
 }: PptxViewerComparisonProps) {
   const [mode, setMode] = useState<"google" | "google-zoom" | "ms-office" | "images">("google-zoom");
-  const [zoomLevel, setZoomLevel] = useState(1.35);
+  const [zoomLevel, setZoomLevel] = useState(1.25);
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const hasImages = imageUrls && imageUrls.length > 0;
+
+  const googleSingleSlideUrl = useMemo(() => {
+    try {
+      const url = new URL(googleViewerUrl);
+      url.searchParams.set("embedded", "true");
+      url.searchParams.set("pid", "explorer");
+      url.searchParams.set("chrome", "false");
+      url.searchParams.set("efh", "false");
+      url.searchParams.set("a", "v");
+      return url.toString();
+    } catch {
+      return googleViewerUrl;
+    }
+  }, [googleViewerUrl]);
 
   return (
     <div className="space-y-2">
@@ -88,9 +102,9 @@ export default function PptxViewerComparison({
       <div className="w-full max-w-[1280px] mx-auto">
         {mode === "google" && (
           <div className="border rounded-lg overflow-hidden">
-            <div className="w-full" style={{ height: "68vh", minHeight: "560px", maxHeight: "680px" }}>
+            <div className="w-full h-[68vh] min-h-[560px] max-h-[680px] max-w-[1210px] mx-auto">
               <iframe
-                src={googleViewerUrl}
+                src={googleSingleSlideUrl}
                 className="w-full h-full border-0"
                 allowFullScreen
                 title={`Google Slides — ${nom}`}
@@ -102,11 +116,11 @@ export default function PptxViewerComparison({
         {mode === "google-zoom" && (
           <div className="border rounded-lg overflow-hidden">
             <div
-              className="w-full relative"
-              style={{ height: "68vh", minHeight: "560px", maxHeight: "680px", overflow: "hidden" }}
+              className="w-full h-[68vh] min-h-[560px] max-h-[680px] max-w-[1210px] mx-auto relative"
+              style={{ overflow: "hidden" }}
             >
               <iframe
-                src={googleViewerUrl}
+                src={googleSingleSlideUrl}
                 style={{
                   width: "100%",
                   height: "100%",
@@ -123,7 +137,7 @@ export default function PptxViewerComparison({
 
         {mode === "ms-office" && (
           <div className="border rounded-lg overflow-hidden">
-            <div className="w-full" style={{ height: "68vh", minHeight: "560px", maxHeight: "680px" }}>
+            <div className="w-full h-[68vh] min-h-[560px] max-h-[680px] max-w-[1210px] mx-auto">
               <iframe
                 src={msViewerUrl}
                 className="w-full h-full border-0"
