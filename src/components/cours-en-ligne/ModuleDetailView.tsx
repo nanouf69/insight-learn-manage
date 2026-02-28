@@ -1142,7 +1142,7 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                               const isPptx = f.nom.endsWith(".pptx") || f.nom.endsWith(".ppt") || f.url.endsWith(".pptx") || f.url.endsWith(".ppt");
                               const absoluteFileUrl = resolvePublicFileUrl(f.url);
                               const viewerUrl = isPptx
-                                ? `https://docs.google.com/viewer?url=${encodeURIComponent(absoluteFileUrl)}&pid=explorer&efh=false&a=v&chrome=false&embedded=true`
+                                ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(absoluteFileUrl)}`
                                 : null;
                               const shouldEmbedOfficeViewer = Boolean(viewerUrl && !hasInteractiveSlides);
 
