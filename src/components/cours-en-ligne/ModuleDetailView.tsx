@@ -1145,6 +1145,7 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                           <div className="space-y-3 mt-3">
                             {cours.fichiers.map((f, i) => {
                               const isPptx = f.nom.endsWith(".pptx") || f.nom.endsWith(".ppt") || f.url.endsWith(".pptx") || f.url.endsWith(".ppt");
+                              const isPdf = f.nom.endsWith(".pdf") || f.url.endsWith(".pdf");
                               const absoluteFileUrl = resolvePublicFileUrl(f.url);
                               const googleViewerUrl = isPptx
                                 ? `https://docs.google.com/viewer?url=${encodeURIComponent(absoluteFileUrl)}&embedded=true`
@@ -1173,6 +1174,13 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                                       googleViewerUrl={googleViewerUrl!}
                                       msViewerUrl={msViewerUrl!}
                                       absoluteFileUrl={absoluteFileUrl}
+                                      nom={f.nom}
+                                    />
+                                  )}
+
+                                  {isPdf && (
+                                    <PdfSlideViewer
+                                      url={absoluteFileUrl}
                                       nom={f.nom}
                                     />
                                   )}
