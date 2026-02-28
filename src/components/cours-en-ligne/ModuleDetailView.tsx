@@ -1141,54 +1141,54 @@ const ModuleDetailView = ({ module, onBack }: ModuleDetailViewProps) => {
                     return (
                       <>
                         {/* Fichiers source */}
-                        {cours.fichiers && cours.fichiers.length > 0 && (
-                          <div className="space-y-3 mt-3">
-                            {cours.fichiers.map((f, i) => {
-                              const isPptx = f.nom.endsWith(".pptx") || f.nom.endsWith(".ppt") || f.url.endsWith(".pptx") || f.url.endsWith(".ppt");
-                              const isPdf = f.nom.endsWith(".pdf") || f.url.endsWith(".pdf");
-                              const absoluteFileUrl = resolvePublicFileUrl(f.url);
-                              const googleViewerUrl = isPptx
-                                ? `https://docs.google.com/viewer?url=${encodeURIComponent(absoluteFileUrl)}&embedded=true`
-                                : null;
-                              const msViewerUrl = isPptx
-                                ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(absoluteFileUrl)}`
-                                : null;
-                              const shouldShowViewers = Boolean(isPptx && !hasInteractiveSlides);
+                        {cours.fichiers && cours.fichiers.length > 0 && (() => {
+                          // Find PDF file in the same cours item to pass to PptxViewerComparison
+                          const pdfFile = cours.fichiers!.find(f => f.nom.endsWith(".pdf") || f.url.endsWith(".pdf"));
+                          const pdfAbsoluteUrl = pdfFile ? resolvePublicFileUrl(pdfFile.url) : undefined;
 
-                              return (
-                                <div key={i} className="space-y-3">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <a
-                                      href={f.url}
-                                      download
-                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
-                                    >
-                                      <FileText className="w-4 h-4" />
-                                      {f.nom}
-                                      <Download className="w-3 h-3" />
-                                    </a>
+                          return (
+                            <div className="space-y-3 mt-3">
+                              {cours.fichiers!.map((f, i) => {
+                                const isPptx = f.nom.endsWith(".pptx") || f.nom.endsWith(".ppt") || f.url.endsWith(".pptx") || f.url.endsWith(".ppt");
+                                const isPdf = f.nom.endsWith(".pdf") || f.url.endsWith(".pdf");
+                                const absoluteFileUrl = resolvePublicFileUrl(f.url);
+                                const googleViewerUrl = isPptx
+                                  ? `https://docs.google.com/viewer?url=${encodeURIComponent(absoluteFileUrl)}&embedded=true`
+                                  : null;
+                                const msViewerUrl = isPptx
+                                  ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(absoluteFileUrl)}`
+                                  : null;
+                                const shouldShowViewers = Boolean(isPptx && !hasInteractiveSlides);
+
+                                return (
+                                  <div key={i} className="space-y-3">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <a
+                                        href={f.url}
+                                        download
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
+                                      >
+                                        <FileText className="w-4 h-4" />
+                                        {f.nom}
+                                        <Download className="w-3 h-3" />
+                                      </a>
+                                    </div>
+
+                                    {shouldShowViewers && (
+                                      <PptxViewerComparison
+                                        googleViewerUrl={googleViewerUrl!}
+                                        msViewerUrl={msViewerUrl!}
+                                        absoluteFileUrl={absoluteFileUrl}
+                                        nom={f.nom}
+                                        pdfUrl={pdfAbsoluteUrl}
+                                      />
+                                    )}
                                   </div>
-
-                                  {shouldShowViewers && (
-                                    <PptxViewerComparison
-                                      googleViewerUrl={googleViewerUrl!}
-                                      msViewerUrl={msViewerUrl!}
-                                      absoluteFileUrl={absoluteFileUrl}
-                                      nom={f.nom}
-                                    />
-                                  )}
-
-                                  {isPdf && (
-                                    <PdfSlideViewer
-                                      url={absoluteFileUrl}
-                                      nom={f.nom}
-                                    />
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
+                                );
+                              })}
+                            </div>
+                          );
+                        })()}
 
                         {/* Slides interactives complètes */}
                         {hasInteractiveSlides && cours.slidesKey && (

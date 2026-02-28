@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
-import { Eye, FileImage, ZoomIn, ZoomOut, Images } from "lucide-react";
+import { Eye, FileImage, ZoomIn, ZoomOut, Images, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import PdfSlideViewer from "./PdfSlideViewer";
 
 interface PptxViewerComparisonProps {
   googleViewerUrl: string;
@@ -9,6 +10,7 @@ interface PptxViewerComparisonProps {
   absoluteFileUrl: string;
   nom: string;
   imageUrls?: string[];
+  pdfUrl?: string;
 }
 
 export default function PptxViewerComparison({
@@ -16,8 +18,11 @@ export default function PptxViewerComparison({
   msViewerUrl,
   nom,
   imageUrls,
+  pdfUrl,
 }: PptxViewerComparisonProps) {
-  const [mode, setMode] = useState<"google" | "google-zoom" | "ms-office" | "images">("google-zoom");
+  const [mode, setMode] = useState<"google" | "google-zoom" | "ms-office" | "images" | "pdf">(
+    pdfUrl ? "pdf" : "google-zoom"
+  );
   const [zoomLevel, setZoomLevel] = useState(1.25);
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -42,6 +47,17 @@ export default function PptxViewerComparison({
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-xs font-medium text-muted-foreground">Mode :</span>
         <div className="flex rounded-lg border bg-muted/30 p-0.5 gap-0.5">
+          {pdfUrl && (
+            <Button
+              variant={mode === "pdf" ? "default" : "ghost"}
+              size="sm"
+              className="text-xs h-7 px-2.5"
+              onClick={() => setMode("pdf")}
+            >
+              <FileText className="w-3.5 h-3.5 mr-1" />
+              PDF HD
+            </Button>
+          )}
           <Button
             variant={mode === "google-zoom" ? "default" : "ghost"}
             size="sm"
@@ -100,6 +116,10 @@ export default function PptxViewerComparison({
       </div>
 
       <div className="w-full max-w-[1280px] mx-auto">
+        {mode === "pdf" && pdfUrl && (
+          <PdfSlideViewer url={pdfUrl} nom={nom} />
+        )}
+
         {mode === "google" && (
           <div className="border rounded-lg overflow-hidden">
             <div className="w-full h-[68vh] min-h-[560px] max-h-[680px] max-w-[1210px] mx-auto">
