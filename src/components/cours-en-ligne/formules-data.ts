@@ -25,6 +25,7 @@ interface InlineQuizQuestion {
   id: number;
   enonce: string;
   choix: { lettre: string; texte: string; correct?: boolean }[];
+  explication?: string;
 }
 
 interface ContentItem {
@@ -74,8 +75,8 @@ Exemple : Une prestation de 80 €, remise de 5 %
 → 80 × 5 / 100 = 4 €`,
       actif: true,
       quiz: [
-        { id: 1, enonce: "Une prestation de 120 €, remise de 10 %. Quel est le montant de la remise ?", choix: [{ lettre: "A", texte: "10 €" }, { lettre: "B", texte: "12 €", correct: true }, { lettre: "C", texte: "15 €" }] },
-        { id: 2, enonce: "Un transfert de 200 € avec 8 % de remise. Montant de la remise ?", choix: [{ lettre: "A", texte: "16 €", correct: true }, { lettre: "B", texte: "20 €" }, { lettre: "C", texte: "8 €" }] },
+        { id: 1, enonce: "Une prestation de 120 €, remise de 10 %. Quel est le montant de la remise ?", choix: [{ lettre: "A", texte: "10 €" }, { lettre: "B", texte: "12 €", correct: true }, { lettre: "C", texte: "15 €" }], explication: "120 × 10 / 100 = 12 €" },
+        { id: 2, enonce: "Un transfert de 200 € avec 8 % de remise. Montant de la remise ?", choix: [{ lettre: "A", texte: "16 €", correct: true }, { lettre: "B", texte: "20 €" }, { lettre: "C", texte: "8 €" }], explication: "200 × 8 / 100 = 16 €" },
       ],
     },
     {
@@ -92,7 +93,7 @@ Exemple : 100 km, à 130 km/h vs 120 km/h
 → Gain = 4 minutes`,
       actif: true,
       quiz: [
-        { id: 1, enonce: "Sur 200 km, à 100 km/h puis à 80 km/h. Quel est le gain de temps ?", choix: [{ lettre: "A", texte: "20 min" }, { lettre: "B", texte: "30 min", correct: true }, { lettre: "C", texte: "15 min" }] },
+        { id: 1, enonce: "Sur 200 km, à 100 km/h puis à 80 km/h. Quel est le gain de temps ?", choix: [{ lettre: "A", texte: "20 min" }, { lettre: "B", texte: "30 min", correct: true }, { lettre: "C", texte: "15 min" }], explication: "200 × 60 / 100 = 120 min — 200 × 60 / 80 = 150 min → Gain = 150 − 120 = 30 min" },
       ],
     },
     {
@@ -109,8 +110,8 @@ Exemples :
 • À 60 km/h → 6 × 3 = 18 mètres`,
       actif: true,
       quiz: [
-        { id: 1, enonce: "À 90 km/h, quelle est la distance de réaction (1 seconde) ?", choix: [{ lettre: "A", texte: "18 m" }, { lettre: "B", texte: "27 m", correct: true }, { lettre: "C", texte: "33 m" }] },
-        { id: 2, enonce: "À 130 km/h, quelle est la distance de réaction ?", choix: [{ lettre: "A", texte: "33 m" }, { lettre: "B", texte: "36 m" }, { lettre: "C", texte: "39 m", correct: true }] },
+        { id: 1, enonce: "À 90 km/h, quelle est la distance de réaction (1 seconde) ?", choix: [{ lettre: "A", texte: "18 m" }, { lettre: "B", texte: "27 m", correct: true }, { lettre: "C", texte: "33 m" }], explication: "Dizaines × 3 → 9 × 3 = 27 m" },
+        { id: 2, enonce: "À 130 km/h, quelle est la distance de réaction ?", choix: [{ lettre: "A", texte: "33 m" }, { lettre: "B", texte: "36 m" }, { lettre: "C", texte: "39 m", correct: true }], explication: "Dizaines × 3 → 13 × 3 = 39 m" },
       ],
     },
     {
@@ -126,7 +127,7 @@ Exemple : CA HT de 43 500 €, charges = 65 % du CA
 → Résultat = 43 500 − 28 275 = 15 225 €`,
       actif: true,
       quiz: [
-        { id: 1, enonce: "CA HT = 60 000 €, charges = 70 % du CA. Quel est le résultat comptable ?", choix: [{ lettre: "A", texte: "18 000 €", correct: true }, { lettre: "B", texte: "42 000 €" }, { lettre: "C", texte: "20 000 €" }] },
+        { id: 1, enonce: "CA HT = 60 000 €, charges = 70 % du CA. Quel est le résultat comptable ?", choix: [{ lettre: "A", texte: "18 000 €", correct: true }, { lettre: "B", texte: "42 000 €" }, { lettre: "C", texte: "20 000 €" }], explication: "Charges = 60 000 × 70 / 100 = 42 000 € → Résultat = 60 000 − 42 000 = 18 000 €" },
       ],
     },
     {
@@ -145,7 +146,7 @@ Exemple : Charges fixes = 2 000 €, course = 10 €, frais variables = 2 €
 → 2 000 / (10 − 2) = 2 000 / 8 = 250 courses`,
       actif: true,
       quiz: [
-        { id: 1, enonce: "Charges fixes = 3 000 €, course à 15 €, frais variables = 5 €. Combien de courses pour le seuil de rentabilité ?", choix: [{ lettre: "A", texte: "200" }, { lettre: "B", texte: "300", correct: true }, { lettre: "C", texte: "600" }] },
+        { id: 1, enonce: "Charges fixes = 3 000 €, course à 15 €, frais variables = 5 €. Combien de courses pour le seuil de rentabilité ?", choix: [{ lettre: "A", texte: "200" }, { lettre: "B", texte: "300", correct: true }, { lettre: "C", texte: "600" }], explication: "3 000 / (15 − 5) = 3 000 / 10 = 300 courses" },
       ],
     },
     {
@@ -160,7 +161,7 @@ Exemple : CF = 25 000 €, CV = 8 000 €, 55 000 km/an
 → CRK = (25 000 + 8 000) / 55 000 = 0,60 €/km`,
       actif: true,
       quiz: [
-        { id: 1, enonce: "CF = 30 000 €, CV = 10 000 €, 50 000 km/an. Quel est le CRK ?", choix: [{ lettre: "A", texte: "0,60 €/km" }, { lettre: "B", texte: "0,80 €/km", correct: true }, { lettre: "C", texte: "1,00 €/km" }] },
+        { id: 1, enonce: "CF = 30 000 €, CV = 10 000 €, 50 000 km/an. Quel est le CRK ?", choix: [{ lettre: "A", texte: "0,60 €/km" }, { lettre: "B", texte: "0,80 €/km", correct: true }, { lettre: "C", texte: "1,00 €/km" }], explication: "CRK = (30 000 + 10 000) / 50 000 = 40 000 / 50 000 = 0,80 €/km" },
       ],
     },
     {
@@ -177,8 +178,8 @@ Exemple : CF = 25 000 €, CV = 8 000 €, 55 000 km en 280 jours
 → TJ = 25 000 / 280 = 89,29 €/jour`,
       actif: true,
       quiz: [
-        { id: 1, enonce: "CV = 10 000 €, 50 000 km. Quel est le terme kilométrique (TK) ?", choix: [{ lettre: "A", texte: "0,20 €/km", correct: true }, { lettre: "B", texte: "0,15 €/km" }, { lettre: "C", texte: "0,25 €/km" }] },
-        { id: 2, enonce: "CF = 30 000 €, 250 jours. Quel est le terme journalier (TJ) ?", choix: [{ lettre: "A", texte: "100 €" }, { lettre: "B", texte: "120 €", correct: true }, { lettre: "C", texte: "89,29 €" }] },
+        { id: 1, enonce: "CV = 10 000 €, 50 000 km. Quel est le terme kilométrique (TK) ?", choix: [{ lettre: "A", texte: "0,20 €/km", correct: true }, { lettre: "B", texte: "0,15 €/km" }, { lettre: "C", texte: "0,25 €/km" }], explication: "TK = 10 000 / 50 000 = 0,20 €/km" },
+        { id: 2, enonce: "CF = 30 000 €, 250 jours. Quel est le terme journalier (TJ) ?", choix: [{ lettre: "A", texte: "100 €" }, { lettre: "B", texte: "120 €", correct: true }, { lettre: "C", texte: "89,29 €" }], explication: "TJ = 30 000 / 250 = 120 €/jour" },
       ],
     },
     {
@@ -196,8 +197,8 @@ Exemples :
 • 90 km/h sol mouillé → 9 × 9 × 1,5 = 121,5 m`,
       actif: true,
       quiz: [
-        { id: 1, enonce: "À 110 km/h sur sol sec, quelle est la distance d'arrêt ?", choix: [{ lettre: "A", texte: "100 m" }, { lettre: "B", texte: "121 m", correct: true }, { lettre: "C", texte: "130 m" }] },
-        { id: 2, enonce: "À 80 km/h sur sol mouillé, quelle est la distance d'arrêt ?", choix: [{ lettre: "A", texte: "64 m" }, { lettre: "B", texte: "80 m" }, { lettre: "C", texte: "96 m", correct: true }] },
+        { id: 1, enonce: "À 110 km/h sur sol sec, quelle est la distance d'arrêt ?", choix: [{ lettre: "A", texte: "100 m" }, { lettre: "B", texte: "121 m", correct: true }, { lettre: "C", texte: "130 m" }], explication: "Sol sec : 11 × 11 = 121 m" },
+        { id: 2, enonce: "À 80 km/h sur sol mouillé, quelle est la distance d'arrêt ?", choix: [{ lettre: "A", texte: "64 m" }, { lettre: "B", texte: "80 m" }, { lettre: "C", texte: "96 m", correct: true }], explication: "Sol mouillé : 8 × 8 × 1,5 = 96 m" },
       ],
     },
     {
@@ -214,7 +215,7 @@ Exemples :
 • 50 km/h sol mouillé → (25 − 15) × 2 = 20 m`,
       actif: true,
       quiz: [
-        { id: 1, enonce: "À 110 km/h sur sol sec, quelle est la distance de freinage ?", choix: [{ lettre: "A", texte: "88 m", correct: true }, { lettre: "B", texte: "100 m" }, { lettre: "C", texte: "121 m" }] },
+        { id: 1, enonce: "À 110 km/h sur sol sec, quelle est la distance de freinage ?", choix: [{ lettre: "A", texte: "88 m", correct: true }, { lettre: "B", texte: "100 m" }, { lettre: "C", texte: "121 m" }], explication: "Distance d'arrêt = 11 × 11 = 121 m — Distance de réaction = 11 × 3 = 33 m → Freinage = 121 − 33 = 88 m" },
       ],
     },
     {
@@ -231,7 +232,7 @@ Exemples :
 • À 60 km/h → 6 × 6 = 36 m`,
       actif: true,
       quiz: [
-        { id: 1, enonce: "À 130 km/h, quelle distance de sécurité respecter ?", choix: [{ lettre: "A", texte: "66 m" }, { lettre: "B", texte: "72 m" }, { lettre: "C", texte: "78 m", correct: true }] },
+        { id: 1, enonce: "À 130 km/h, quelle distance de sécurité respecter ?", choix: [{ lettre: "A", texte: "66 m" }, { lettre: "B", texte: "72 m" }, { lettre: "C", texte: "78 m", correct: true }], explication: "Dizaines × 6 → 13 × 6 = 78 m" },
       ],
     },
     {
@@ -248,7 +249,7 @@ Exemple : Course de 10 € HT, TVA à 10 %
 Rappel : TVA transport de personnes = 10 %`,
       actif: true,
       quiz: [
-        { id: 1, enonce: "Une course de 25 € HT avec TVA à 10 %. Quel est le montant de la TVA ?", choix: [{ lettre: "A", texte: "2 €" }, { lettre: "B", texte: "2,50 €", correct: true }, { lettre: "C", texte: "5 €" }] },
+        { id: 1, enonce: "Une course de 25 € HT avec TVA à 10 %. Quel est le montant de la TVA ?", choix: [{ lettre: "A", texte: "2 €" }, { lettre: "B", texte: "2,50 €", correct: true }, { lettre: "C", texte: "5 €" }], explication: "25 × 10 / 100 = 2,50 €" },
       ],
     },
     {
@@ -266,8 +267,8 @@ Exemples :
 • Gasoil 70 € TTC → 70 / 1,2 = 58,33 € HT → TVA = 11,67 €`,
       actif: true,
       quiz: [
-        { id: 1, enonce: "Un transfert de 110 € TTC (TVA 10 %). Quel est le montant HT ?", choix: [{ lettre: "A", texte: "99 €" }, { lettre: "B", texte: "100 €", correct: true }, { lettre: "C", texte: "91,67 €" }] },
-        { id: 2, enonce: "Même transfert (110 € TTC, TVA 10 %). Montant de la TVA ?", choix: [{ lettre: "A", texte: "10 €", correct: true }, { lettre: "B", texte: "11 €" }, { lettre: "C", texte: "18,33 €" }] },
+        { id: 1, enonce: "Un transfert de 110 € TTC (TVA 10 %). Quel est le montant HT ?", choix: [{ lettre: "A", texte: "99 €" }, { lettre: "B", texte: "100 €", correct: true }, { lettre: "C", texte: "91,67 €" }], explication: "HT = 110 / 1,1 = 100 €" },
+        { id: 2, enonce: "Même transfert (110 € TTC, TVA 10 %). Montant de la TVA ?", choix: [{ lettre: "A", texte: "10 €", correct: true }, { lettre: "B", texte: "11 €" }, { lettre: "C", texte: "18,33 €" }], explication: "TVA = 110 − 100 = 10 €" },
       ],
     },
     {
@@ -283,7 +284,7 @@ Exemples :
 Exemple : Course de 55 € TTC → 55 / 1,1 = 50 € HT`,
       actif: true,
       quiz: [
-        { id: 1, enonce: "Une course de 88 € TTC (TVA 10 %). Quel est le montant HT ?", choix: [{ lettre: "A", texte: "78 €" }, { lettre: "B", texte: "80 €", correct: true }, { lettre: "C", texte: "73,33 €" }] },
+        { id: 1, enonce: "Une course de 88 € TTC (TVA 10 %). Quel est le montant HT ?", choix: [{ lettre: "A", texte: "78 €" }, { lettre: "B", texte: "80 €", correct: true }, { lettre: "C", texte: "73,33 €" }], explication: "HT = 88 / 1,1 = 80 €" },
       ],
     },
     {
@@ -301,8 +302,8 @@ Exemple : Véhicule 28 000 € HT, amorti sur 4 ans, acheté le 1er avril
 → 1ère année (9 mois) = 7 000 / 12 × 9 = 5 250 €`,
       actif: true,
       quiz: [
-        { id: 1, enonce: "Véhicule 24 000 € HT amorti sur 4 ans. Quelle est la dotation annuelle ?", choix: [{ lettre: "A", texte: "4 000 €" }, { lettre: "B", texte: "6 000 €", correct: true }, { lettre: "C", texte: "8 000 €" }] },
-        { id: 2, enonce: "Même véhicule acheté le 1er juillet. Amortissement la 1ère année (6 mois) ?", choix: [{ lettre: "A", texte: "2 000 €" }, { lettre: "B", texte: "3 000 €", correct: true }, { lettre: "C", texte: "4 000 €" }] },
+        { id: 1, enonce: "Véhicule 24 000 € HT amorti sur 4 ans. Quelle est la dotation annuelle ?", choix: [{ lettre: "A", texte: "4 000 €" }, { lettre: "B", texte: "6 000 €", correct: true }, { lettre: "C", texte: "8 000 €" }], explication: "24 000 / 4 = 6 000 €/an" },
+        { id: 2, enonce: "Même véhicule acheté le 1er juillet. Amortissement la 1ère année (6 mois) ?", choix: [{ lettre: "A", texte: "2 000 €" }, { lettre: "B", texte: "3 000 €", correct: true }, { lettre: "C", texte: "4 000 €" }], explication: "6 000 / 12 × 6 = 3 000 €" },
       ],
     },
     {
@@ -317,7 +318,7 @@ Exemple : CA passe de 10 100 € à 15 440 €
 → (15 440 − 10 100) / 10 100 × 100 = 52,87 %`,
       actif: true,
       quiz: [
-        { id: 1, enonce: "Le CA passe de 20 000 € à 25 000 €. Quel est le pourcentage d'augmentation ?", choix: [{ lettre: "A", texte: "20 %" }, { lettre: "B", texte: "25 %", correct: true }, { lettre: "C", texte: "30 %" }] },
+        { id: 1, enonce: "Le CA passe de 20 000 € à 25 000 €. Quel est le pourcentage d'augmentation ?", choix: [{ lettre: "A", texte: "20 %" }, { lettre: "B", texte: "25 %", correct: true }, { lettre: "C", texte: "30 %" }], explication: "(25 000 − 20 000) / 20 000 × 100 = 5 000 / 20 000 × 100 = 25 %" },
       ],
     },
   ],
