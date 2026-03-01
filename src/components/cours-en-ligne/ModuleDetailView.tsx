@@ -1094,6 +1094,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
     const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
     const [showResults, setShowResults] = useState(false);
     const [currentPage, setCurrentPage] = useState(0);
+    const [completedPages, setCompletedPages] = useState<Set<number>>(new Set());
 
     const activeCours = moduleData.cours.filter(c => c.actif);
     const activeExercices = moduleData.exercices.filter(e => e.actif) as ExerciceItem[];
@@ -1134,8 +1135,41 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
       return `${baseOrigin}${normalizedPath}`;
     };
 
+    const markPageCompleted = (pageIndex: number) => {
+      setCompletedPages(prev => {
+        const next = new Set(prev);
+        next.add(pageIndex);
+        return next;
+      });
+    };
+
+    // Auto-complete pages that have no PDF (text-only cours)
+    useEffect(() => {
+      pages.forEach((p, i) => {
+        if (p.type === "cours") {
+          const hasPdf = p.cours.fichiers?.some(f => f.nom.endsWith(".pdf") || f.url.endsWith(".pdf"));
+          const hasSlides = p.cours.slidesKey && slidesByKey[p.cours.slidesKey]?.length > 0;
+          if (!hasPdf && !hasSlides) {
+            markPageCompleted(i);
+          }
+        }
+        if (p.type === "exercices") {
+          markPageCompleted(i);
+        }
+      });
+    }, [pages.length]);
+
+    const isPageUnlocked = (pageIndex: number): boolean => {
+      if (pageIndex === 0) return true;
+      // All previous pages must be completed
+      for (let i = 0; i < pageIndex; i++) {
+        if (!completedPages.has(i)) return false;
+      }
+      return true;
+    };
+
     const goToPage = (page: number) => {
-      if (page >= 0 && page < totalPages) {
+      if (page >= 0 && page < totalPages && isPageUnlocked(page)) {
         setCurrentPage(page);
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
@@ -1212,6 +1246,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
                                   <PdfSlideViewer
                                     url={f.url.startsWith("http") ? f.url : f.url.startsWith("/") ? f.url : `/${f.url}`}
                                     nom={cours.titre}
+                                    onLastPageReached={() => markPageCompleted(currentPage)}
                                   />
                                 </div>
                               )}
@@ -1339,23 +1374,36 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
             </div>
             {/* Page dots */}
             <div className="flex items-center justify-center gap-1.5 pt-1 flex-wrap">
-              {pages.map((p, i) => (
-                <button
-                  key={i}
-                  onClick={() => goToPage(i)}
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    i === currentPage
-                      ? "w-6 bg-primary"
-                      : i < currentPage
-                        ? "w-2 bg-primary/40"
-                        : "w-2 bg-muted-foreground/20"
-                  }`}
-                  title={p.type === "cours" ? p.cours.titre : "Exercices"}
-                />
-              ))}
+              {pages.map((p, i) => {
+                const unlocked = isPageUnlocked(i);
+                return (
+                  <button
+                    key={i}
+                    onClick={() => unlocked && goToPage(i)}
+                    className={`h-2 rounded-full transition-all duration-300 ${
+                      i === currentPage
+                        ? "w-6 bg-primary"
+                        : completedPages.has(i)
+                          ? "w-2 bg-primary/40"
+                          : unlocked
+                            ? "w-2 bg-muted-foreground/30"
+                            : "w-2 bg-muted-foreground/10 cursor-not-allowed"
+                    }`}
+                    title={!unlocked ? "🔒 Terminez la partie précédente" : p.type === "cours" ? p.cours.titre : "Exercices"}
+                  />
+                );
+              })}
             </div>
           </div>
         </div>
+
+        {/* Lock message */}
+        {!completedPages.has(currentPage) && currentPage < totalPages - 1 && (
+          <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-sm">
+            <span>🔒</span>
+            <span>Parcourez toutes les slides jusqu'à la dernière pour débloquer la partie suivante.</span>
+          </div>
+        )}
 
         {/* Current page content */}
         <div className="animate-fade-in">
@@ -1379,8 +1427,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
           {currentPage < totalPages - 1 ? (
             <Button
               onClick={() => goToPage(currentPage + 1)}
+              disabled={!completedPages.has(currentPage)}
               className="gap-2"
+              title={!completedPages.has(currentPage) ? "Parcourez toutes les slides pour continuer" : ""}
             >
+              {!completedPages.has(currentPage) && <span>🔒</span>}
               Suivant <ArrowDown className="w-4 h-4 -rotate-90" />
             </Button>
           ) : (
