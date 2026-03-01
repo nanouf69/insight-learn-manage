@@ -31,10 +31,11 @@ interface ApprenantInfo {
 }
 
 interface CoursPublicProps {
-  embedded?: boolean; // true when shown inside admin tab
+  embedded?: boolean;
+  apprenantOverride?: ApprenantInfo | null;
 }
 
-const CoursPublic = ({ embedded }: CoursPublicProps) => {
+const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(!embedded);
   const [apprenantLoading, setApprenantLoading] = useState(false);
@@ -83,6 +84,14 @@ const CoursPublic = ({ embedded }: CoursPublicProps) => {
     };
     fetchApprenant();
   }, [user, embedded]);
+
+  // Use apprenantOverride when provided (admin preview of specific student)
+  useEffect(() => {
+    if (!apprenantOverride) return;
+    setApprenant(apprenantOverride);
+    const formationId = TYPE_TO_FORMATION[apprenantOverride.type_apprenant || ""] || null;
+    setSelectedFormation(formationId);
+  }, [apprenantOverride]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
