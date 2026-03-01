@@ -37,6 +37,7 @@ interface CoursPublicProps {
 const CoursPublic = ({ embedded }: CoursPublicProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(!embedded);
+  const [apprenantLoading, setApprenantLoading] = useState(false);
   const [apprenant, setApprenant] = useState<ApprenantInfo | null>(null);
   const [selectedModule, setSelectedModule] = useState<{ id: number; nom: string } | null>(null);
   const [selectedFormation, setSelectedFormation] = useState<FormationId | null>(null);
@@ -61,19 +62,24 @@ const CoursPublic = ({ embedded }: CoursPublicProps) => {
   useEffect(() => {
     if (!user || embedded) return;
 
+    setApprenantLoading(true);
     const fetchApprenant = async () => {
       const { data } = await supabase
         .from("apprenants")
         .select("nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, modules_autorises")
         .eq("auth_user_id", user.id)
-        .single();
+        .maybeSingle();
 
       if (data) {
         setApprenant(data as any);
-        // Auto-select formation based on type_apprenant
         const formationId = TYPE_TO_FORMATION[data.type_apprenant || ""] || null;
         setSelectedFormation(formationId);
+      } else {
+        // User has no apprenant record — sign them out so they see the login
+        await supabase.auth.signOut();
+        setUser(null);
       }
+      setApprenantLoading(false);
     };
     fetchApprenant();
   }, [user, embedded]);
@@ -86,7 +92,7 @@ const CoursPublic = ({ embedded }: CoursPublicProps) => {
   };
 
   // Loading state
-  if (loading) {
+  if (loading || apprenantLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
