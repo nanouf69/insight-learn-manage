@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, User, FileText, BookOpen, Calendar, Mail, Phone, MapPin, CreditCard, Edit2, Download, CheckCircle2, XCircle, Plus, CalendarIcon, Pencil, KeyRound, Loader2, Copy, Monitor } from "lucide-react";
+import { ArrowLeft, User, FileText, BookOpen, Calendar, Mail, Phone, MapPin, CreditCard, Edit2, Download, CheckCircle2, XCircle, Plus, CalendarIcon, Pencil, KeyRound, Loader2, Copy, Monitor, Send } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MODULES_DATA, FORMATIONS, type FormationId } from "@/components/cours-en-ligne/formations-data";
 import { Button } from "@/components/ui/button";
@@ -82,6 +82,7 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
   const [dateDebutOpen, setDateDebutOpen] = useState(false);
   const [dateFinOpen, setDateFinOpen] = useState(false);
   const [creatingAccount, setCreatingAccount] = useState(false);
+  const [resendingCredentials, setResendingCredentials] = useState(false);
   const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
   const [dateDebutCoursOpen, setDateDebutCoursOpen] = useState(false);
   const [dateFinCoursOpen, setDateFinCoursOpen] = useState(false);
@@ -282,10 +283,40 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
             </Button>
           )}
           {(generatedPassword || (apprenant as any).auth_user_id) && (
-            <Badge variant="secondary" className="gap-1">
-              <CheckCircle2 className="w-3 h-3" />
-              Compte actif
-            </Badge>
+            <>
+              <Badge variant="secondary" className="gap-1">
+                <CheckCircle2 className="w-3 h-3" />
+                Compte actif
+              </Badge>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  setResendingCredentials(true);
+                  try {
+                    const { data, error } = await supabase.functions.invoke("resend-credentials", {
+                      body: { apprenant_id: apprenantId },
+                    });
+                    if (error) throw error;
+                    if (data?.error) throw new Error(data.error);
+                    setGeneratedPassword(data.password);
+                    if (data.emailSent) {
+                      toast.success(`Identifiants renvoyés à ${data.email} !`);
+                    } else {
+                      toast.warning(`Mot de passe réinitialisé mais l'email n'a pas pu être envoyé`);
+                    }
+                  } catch (err: any) {
+                    toast.error(err.message || "Erreur lors du renvoi");
+                  } finally {
+                    setResendingCredentials(false);
+                  }
+                }}
+                disabled={resendingCredentials}
+              >
+                {resendingCredentials ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                Renvoyer identifiants
+              </Button>
+            </>
           )}
           {generatedPassword && (
             <Button
