@@ -1076,7 +1076,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
   };
 
   // === Aperçu apprenant ===
-  const LearnerPreview = () => {
+  const LearnerPreview = ({ secureMode = true }: { secureMode?: boolean }) => {
     const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
     const [showResults, setShowResults] = useState(false);
 
@@ -1163,8 +1163,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
 
                                 return (
                                   <div key={i} className="space-y-3">
-                                    {/* Hide download links for students */}
-                                    {!studentOnly && (
+                                    {/* Hide download links in secure learner mode */}
+                                    {!secureMode && (
                                       <div className="flex items-center gap-2 flex-wrap">
                                         <a
                                           href={f.url}
@@ -1185,7 +1185,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
                                         absoluteFileUrl={absoluteFileUrl}
                                         nom={f.nom}
                                         pdfUrl={pdfLocalUrl}
-                                        studentOnly={studentOnly}
+                                        studentOnly={secureMode}
                                       />
                                     )}
                                   </div>
@@ -1296,7 +1296,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
           </Button>
           <h2 className="text-2xl font-bold">{moduleData.nom}</h2>
         </div>
-        <LearnerPreview />
+        <LearnerPreview secureMode />
       </div>
     );
   }
@@ -1321,7 +1321,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
         </TabsContent>
 
         <TabsContent value="apercu">
-          <LearnerPreview />
+          <LearnerPreview secureMode />
         </TabsContent>
       </Tabs>
     </div>

@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
@@ -35,7 +36,7 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
     const observer = new ResizeObserver(updateWidth);
     if (containerRef.current) observer.observe(containerRef.current);
     return () => observer.disconnect();
-  }, [updateWidth]);
+  }, [updateWidth, isPseudoFullscreen]);
 
   // Listen for native fullscreen changes
   useEffect(() => {
@@ -103,6 +104,9 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
     try {
       if (containerRef.current.requestFullscreen) {
         await containerRef.current.requestFullscreen();
+        if (!document.fullscreenElement) {
+          setIsPseudoFullscreen(true);
+        }
       } else {
         setIsPseudoFullscreen(true);
       }
@@ -119,14 +123,14 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
     if (e.key === "Escape" && isNativeFullscreen) document.exitFullscreen();
   };
 
-  return (
+  const viewerContent = (
     <div
       ref={containerRef}
       className={`border overflow-hidden focus:outline-none ${
         isPseudoFullscreen
-          ? "fixed inset-0 z-50 rounded-none bg-black flex flex-col"
+          ? "fixed inset-0 z-[9999] rounded-none bg-black flex flex-col"
           : isExpanded
-            ? "rounded-lg bg-black flex flex-col"
+            ? "rounded-none bg-black flex flex-col"
             : "rounded-lg bg-muted/30"
       }`}
       tabIndex={0}
@@ -160,7 +164,7 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
       {/* PDF Page — scrollable when zoomed, touch-action for mobile */}
       <div
         className={`flex justify-center overflow-auto ${isExpanded ? "flex-1" : ""}`}
-        style={{ maxHeight: isExpanded ? "calc(100vh - 100px)" : "80vh", touchAction: "pan-x pan-y" }}
+        style={{ maxHeight: isExpanded ? "calc(100dvh - 100px)" : "80vh", touchAction: "pan-x pan-y" }}
       >
         <Document
           file={url}
@@ -198,4 +202,10 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
       </div>
     </div>
   );
+
+  if (isPseudoFullscreen) {
+    return createPortal(viewerContent, document.body);
+  }
+
+  return viewerContent;
 }
