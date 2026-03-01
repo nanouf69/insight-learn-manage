@@ -25,6 +25,9 @@ interface ApprenantInfo {
   prenom: string;
   type_apprenant: string | null;
   formation_choisie: string | null;
+  date_debut_cours_en_ligne: string | null;
+  date_fin_cours_en_ligne: string | null;
+  modules_autorises: number[] | null;
 }
 
 interface CoursPublicProps {
@@ -61,12 +64,12 @@ const CoursPublic = ({ embedded }: CoursPublicProps) => {
     const fetchApprenant = async () => {
       const { data } = await supabase
         .from("apprenants")
-        .select("nom, prenom, type_apprenant, formation_choisie")
+        .select("nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, modules_autorises")
         .eq("auth_user_id", user.id)
         .single();
 
       if (data) {
-        setApprenant(data);
+        setApprenant(data as any);
         // Auto-select formation based on type_apprenant
         const formationId = TYPE_TO_FORMATION[data.type_apprenant || ""] || null;
         setSelectedFormation(formationId);
@@ -94,6 +97,37 @@ const CoursPublic = ({ embedded }: CoursPublicProps) => {
   // Auth required (unless embedded in admin)
   if (!embedded && !user) {
     return <StudentLogin onLogin={() => {}} />;
+  }
+
+  // Check course access dates
+  if (!embedded && user && apprenant) {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const debut = apprenant.date_debut_cours_en_ligne ? new Date(apprenant.date_debut_cours_en_ligne) : null;
+    const fin = apprenant.date_fin_cours_en_ligne ? new Date(apprenant.date_fin_cours_en_ligne) : null;
+
+    if (!debut || !fin || now < debut || now > fin) {
+      return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+          <div className="text-center max-w-md">
+            <div className="text-6xl mb-4">🔒</div>
+            <h1 className="text-2xl font-bold text-slate-900 mb-2">Accès non disponible</h1>
+            <p className="text-slate-500 mb-4">
+              {!debut || !fin
+                ? "Votre accès aux cours en ligne n'a pas encore été configuré. Contactez votre centre de formation."
+                : now < debut
+                  ? `Votre accès sera disponible à partir du ${debut.toLocaleDateString('fr-FR')}.`
+                  : `Votre accès a expiré le ${fin.toLocaleDateString('fr-FR')}. Contactez votre centre de formation.`
+              }
+            </p>
+            <Button variant="destructive" size="sm" onClick={handleLogout}>
+              <LogOut className="w-3.5 h-3.5 mr-1" />
+              Déconnexion
+            </Button>
+          </div>
+        </div>
+      );
+    }
   }
 
   // Module detail view
@@ -147,7 +181,12 @@ const CoursPublic = ({ embedded }: CoursPublicProps) => {
 
   // Dashboard
   const formation = FORMATIONS.find((f) => f.id === selectedFormation)!;
-  const modules = MODULES_DATA.filter((m) => m.formations.includes(selectedFormation));
+  const allModules = MODULES_DATA.filter((m) => m.formations.includes(selectedFormation));
+  // Filter by authorized modules if set (admin-side), otherwise show all
+  const authorizedIds = apprenant?.modules_autorises;
+  const modules = !embedded && authorizedIds && authorizedIds.length > 0
+    ? allModules.filter((m) => authorizedIds.includes(m.id))
+    : allModules;
   const globalProgress = 7;
   const lowModules = modules.filter((_, i) => i === 0 || i === 2).slice(0, 3);
   const studentName = apprenant ? `${apprenant.prenom} ${apprenant.nom}` : "Apprenant";
