@@ -1093,9 +1093,21 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
   const LearnerPreview = ({ secureMode = true }: { secureMode?: boolean }) => {
     const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
     const [showResults, setShowResults] = useState(false);
+    const [currentPage, setCurrentPage] = useState(0);
 
     const activeCours = moduleData.cours.filter(c => c.actif);
     const activeExercices = moduleData.exercices.filter(e => e.actif) as ExerciceItem[];
+
+    // Build pages: each cours = 1 page, then exercices = 1 page (if any)
+    type PageType = { type: "cours"; cours: ContentItem } | { type: "exercices" };
+    const pages: PageType[] = [
+      ...activeCours.map(c => ({ type: "cours" as const, cours: c })),
+      ...(activeExercices.length > 0 ? [{ type: "exercices" as const }] : []),
+    ];
+
+    const totalPages = pages.length;
+    const currentPageData = pages[currentPage];
+    const progressPercent = totalPages > 0 ? Math.round(((currentPage + 1) / totalPages) * 100) : 0;
 
     const handleAnswer = (exoId: number, qId: number, lettre: string) => {
       if (showResults) return;
@@ -1122,170 +1134,154 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
       return `${baseOrigin}${normalizedPath}`;
     };
 
-    return (
-      <div className="space-y-6 max-w-3xl mx-auto">
-        <div className="text-center space-y-2">
-          <h2 className="text-2xl font-bold">{moduleData.nom}</h2>
-          <p className="text-muted-foreground">{moduleData.description}</p>
-        </div>
+    const goToPage = (page: number) => {
+      if (page >= 0 && page < totalPages) {
+        setCurrentPage(page);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    };
 
-        {/* Cours */}
-        {activeCours.length > 0 && (
-          <div className="space-y-4">
-            <h3 className="text-xl font-bold flex items-center gap-2">📚 Cours</h3>
-            {activeCours.map((cours) => (
-              <Card key={cours.id} className="overflow-hidden">
-                {cours.image && (
-                  <div className="w-full h-48 sm:h-64 overflow-hidden">
-                    <img src={cours.image} alt={cours.titre} className="w-full h-full object-cover" />
-                  </div>
-                )}
-                <CardContent className="p-5 space-y-2">
-                  <h4 className="font-bold text-lg">{cours.titre}</h4>
-                  {cours.sousTitre && <p className="text-sm text-muted-foreground">{cours.sousTitre}</p>}
-                  {cours.description && (
-                    <div className="text-sm whitespace-pre-line leading-relaxed mt-2">
-                      {cours.description}
-                    </div>
-                  )}
-                  {(() => {
-                    const hasInteractiveSlides = Boolean(cours.slidesKey && slidesByKey[cours.slidesKey]?.length > 0);
-                    // Viewer mode state is stored per-course in a local map
-                    const courseViewerKey = `viewer-mode-${cours.id}`;
+    const renderCoursPage = (cours: ContentItem) => {
+      const hasInteractiveSlides = Boolean(cours.slidesKey && slidesByKey[cours.slidesKey]?.length > 0);
+
+      return (
+        <Card key={cours.id} className="overflow-hidden">
+          {cours.image && (
+            <div className="w-full h-48 sm:h-64 overflow-hidden">
+              <img src={cours.image} alt={cours.titre} className="w-full h-full object-cover" />
+            </div>
+          )}
+          <CardContent className="p-5 space-y-2">
+            <h4 className="font-bold text-lg">{cours.titre}</h4>
+            {cours.sousTitre && <p className="text-sm text-muted-foreground">{cours.sousTitre}</p>}
+            {cours.description && (
+              <div className="text-sm whitespace-pre-line leading-relaxed mt-2">
+                {cours.description}
+              </div>
+            )}
+            {(() => {
+              return (
+                <>
+                  {cours.fichiers && cours.fichiers.length > 0 && (() => {
+                    const pdfFile = cours.fichiers!.find(f => f.nom.endsWith(".pdf") || f.url.endsWith(".pdf"));
+                    const pdfLocalUrl = pdfFile ? (pdfFile.url.startsWith("http") ? pdfFile.url : pdfFile.url.startsWith("/") ? pdfFile.url : `/${pdfFile.url}`) : undefined;
 
                     return (
-                      <>
-                        {/* Fichiers source */}
-                        {cours.fichiers && cours.fichiers.length > 0 && (() => {
-                          // PDF uses relative path (loaded locally by react-pdf, not by external viewer)
-                          const pdfFile = cours.fichiers!.find(f => f.nom.endsWith(".pdf") || f.url.endsWith(".pdf"));
-                          const pdfLocalUrl = pdfFile ? (pdfFile.url.startsWith("http") ? pdfFile.url : pdfFile.url.startsWith("/") ? pdfFile.url : `/${pdfFile.url}`) : undefined;
+                      <div className="space-y-3 mt-3">
+                        {cours.fichiers!.map((f, i) => {
+                          const isPptx = f.nom.endsWith(".pptx") || f.nom.endsWith(".ppt") || f.url.endsWith(".pptx") || f.url.endsWith(".ppt");
+                          const isPdf = f.nom.endsWith(".pdf") || f.url.endsWith(".pdf");
+                          const absoluteFileUrl = resolvePublicFileUrl(f.url);
+                          const googleViewerUrl = isPptx
+                            ? `https://docs.google.com/viewer?url=${encodeURIComponent(absoluteFileUrl)}&embedded=true`
+                            : null;
+                          const msViewerUrl = isPptx
+                            ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(absoluteFileUrl)}`
+                            : null;
+                          const shouldShowViewers = Boolean(isPptx && !hasInteractiveSlides);
 
                           return (
-                            <div className="space-y-3 mt-3">
-                              {cours.fichiers!.map((f, i) => {
-                                const isPptx = f.nom.endsWith(".pptx") || f.nom.endsWith(".ppt") || f.url.endsWith(".pptx") || f.url.endsWith(".ppt");
-                                const isPdf = f.nom.endsWith(".pdf") || f.url.endsWith(".pdf");
-                                const absoluteFileUrl = resolvePublicFileUrl(f.url);
-                                const googleViewerUrl = isPptx
-                                  ? `https://docs.google.com/viewer?url=${encodeURIComponent(absoluteFileUrl)}&embedded=true`
-                                  : null;
-                                const msViewerUrl = isPptx
-                                  ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(absoluteFileUrl)}`
-                                  : null;
-                                const shouldShowViewers = Boolean(isPptx && !hasInteractiveSlides);
+                            <div key={i} className="space-y-3">
+                              {!secureMode && (
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <a
+                                    href={f.url}
+                                    download
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
+                                  >
+                                    <FileText className="w-4 h-4" />
+                                    {f.nom}
+                                    <Download className="w-3 h-3" />
+                                  </a>
+                                </div>
+                              )}
 
-                                return (
-                                  <div key={i} className="space-y-3">
-                                    {/* Hide download links in secure learner mode */}
-                                    {!secureMode && (
-                                      <div className="flex items-center gap-2 flex-wrap">
-                                        <a
-                                          href={f.url}
-                                          download
-                                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
-                                        >
-                                          <FileText className="w-4 h-4" />
-                                          {f.nom}
-                                          <Download className="w-3 h-3" />
-                                        </a>
-                                      </div>
-                                    )}
+                              {shouldShowViewers && (
+                                <PptxViewerComparison
+                                  googleViewerUrl={googleViewerUrl!}
+                                  msViewerUrl={msViewerUrl!}
+                                  absoluteFileUrl={absoluteFileUrl}
+                                  nom={f.nom}
+                                  pdfUrl={pdfLocalUrl}
+                                  studentOnly={secureMode}
+                                />
+                              )}
 
-                                    {shouldShowViewers && (
-                                      <PptxViewerComparison
-                                        googleViewerUrl={googleViewerUrl!}
-                                        msViewerUrl={msViewerUrl!}
-                                        absoluteFileUrl={absoluteFileUrl}
-                                        nom={f.nom}
-                                        pdfUrl={pdfLocalUrl}
-                                        studentOnly={secureMode}
-                                      />
-                                    )}
-
-                                    {/* Afficher le lecteur PDF HD directement pour les fichiers PDF */}
-                                    {isPdf && !shouldShowViewers && (
-                                      <div className="mt-2">
-                                        <PdfSlideViewer
-                                          url={f.url.startsWith("http") ? f.url : f.url.startsWith("/") ? f.url : `/${f.url}`}
-                                          nom={cours.titre}
-                                        />
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })}
+                              {isPdf && !shouldShowViewers && (
+                                <div className="mt-2">
+                                  <PdfSlideViewer
+                                    url={f.url.startsWith("http") ? f.url : f.url.startsWith("/") ? f.url : `/${f.url}`}
+                                    nom={cours.titre}
+                                  />
+                                </div>
+                              )}
                             </div>
                           );
-                        })()}
-
-                        {/* Slides interactives complètes */}
-                        {hasInteractiveSlides && cours.slidesKey && (
-                          <div className="mt-4">
-                            <SlideViewer
-                              slides={slidesByKey[cours.slidesKey] ?? []}
-                              titre={cours.titre}
-                              brand="FTRANSPORT"
-                              onBack={() => {}}
-                              editable
-                              onSlidesChange={(slides) => updateSlidesForKey(cours.slidesKey!, slides)}
-                            />
-                          </div>
-                        )}
-                      </>
-                    );
-                  })()}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-
-        {/* Exercices QCM */}
-        {activeExercices.length > 0 && (
-          <div className="space-y-4">
-            {activeExercices.map(exo => (
-              <Card key={exo.id}>
-                <CardContent className="p-6 space-y-4">
-                  <h3 className="text-lg font-bold">📝 {exo.titre}</h3>
-                  {exo.questions && exo.questions.map((q, qi) => {
-                    const key = `${exo.id}-${q.id}`;
-                    const selected = selectedAnswers[key];
-                    const correctChoice = q.choix.find(c => c.correct);
-                    return (
-                      <div key={q.id} className="space-y-2 p-4 border rounded-lg">
-                        <p className="font-medium">{qi + 1}. {q.enonce}</p>
-                        <div className="space-y-1.5 ml-2">
-                          {q.choix.map(c => {
-                            let bg = "bg-background hover:bg-muted/50 border";
-                            if (selected === c.lettre && !showResults) bg = "bg-primary/10 border-primary border-2";
-                            if (showResults && c.correct) bg = "bg-emerald-50 border-emerald-500 border-2 dark:bg-emerald-950";
-                            if (showResults && selected === c.lettre && !c.correct) bg = "bg-destructive/10 border-destructive border-2";
-                            return (
-                              <button
-                                key={c.lettre}
-                                onClick={() => handleAnswer(exo.id, q.id, c.lettre)}
-                                className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-all ${bg}`}
-                              >
-                                <span className="w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0">
-                                  {c.lettre}
-                                </span>
-                                <span className="text-sm">{c.texte}</span>
-                                {showResults && c.correct && <CheckCircle2 className="w-4 h-4 text-emerald-600 ml-auto shrink-0" />}
-                              </button>
-                            );
-                          })}
-                        </div>
+                        })}
                       </div>
                     );
-                  })}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+                  })()}
 
-        {/* Score */}
+                  {hasInteractiveSlides && cours.slidesKey && (
+                    <div className="mt-4">
+                      <SlideViewer
+                        slides={slidesByKey[cours.slidesKey] ?? []}
+                        titre={cours.titre}
+                        brand="FTRANSPORT"
+                        onBack={() => {}}
+                        editable
+                        onSlidesChange={(slides) => updateSlidesForKey(cours.slidesKey!, slides)}
+                      />
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </CardContent>
+        </Card>
+      );
+    };
+
+    const renderExercicesPage = () => (
+      <div className="space-y-4">
+        {activeExercices.map(exo => (
+          <Card key={exo.id}>
+            <CardContent className="p-6 space-y-4">
+              <h3 className="text-lg font-bold">📝 {exo.titre}</h3>
+              {exo.questions && exo.questions.map((q, qi) => {
+                const key = `${exo.id}-${q.id}`;
+                const selected = selectedAnswers[key];
+                return (
+                  <div key={q.id} className="space-y-2 p-4 border rounded-lg">
+                    <p className="font-medium">{qi + 1}. {q.enonce}</p>
+                    <div className="space-y-1.5 ml-2">
+                      {q.choix.map(c => {
+                        let bg = "bg-background hover:bg-muted/50 border";
+                        if (selected === c.lettre && !showResults) bg = "bg-primary/10 border-primary border-2";
+                        if (showResults && c.correct) bg = "bg-emerald-50 border-emerald-500 border-2 dark:bg-emerald-950";
+                        if (showResults && selected === c.lettre && !c.correct) bg = "bg-destructive/10 border-destructive border-2";
+                        return (
+                          <button
+                            key={c.lettre}
+                            onClick={() => handleAnswer(exo.id, q.id, c.lettre)}
+                            className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-all ${bg}`}
+                          >
+                            <span className="w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0">
+                              {c.lettre}
+                            </span>
+                            <span className="text-sm">{c.texte}</span>
+                            {showResults && c.correct && <CheckCircle2 className="w-4 h-4 text-emerald-600 ml-auto shrink-0" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        ))}
+
         {totalQuestions > 0 && (
           <div className="flex justify-center gap-4">
             {!showResults ? (
@@ -1307,6 +1303,92 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
             )}
           </div>
         )}
+      </div>
+    );
+
+    if (totalPages === 0) {
+      return (
+        <div className="text-center py-12 text-muted-foreground">
+          <p>Aucun contenu disponible pour ce module.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6 max-w-3xl mx-auto">
+        {/* Header with progress */}
+        <div className="space-y-3">
+          <div className="text-center space-y-1">
+            <h2 className="text-2xl font-bold">{moduleData.nom}</h2>
+            <p className="text-muted-foreground text-sm">{moduleData.description}</p>
+          </div>
+
+          {/* Progress bar */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>
+                {currentPageData?.type === "cours" ? "📚 Cours" : "📝 Exercices"} — {currentPage + 1} / {totalPages}
+              </span>
+              <span className="font-semibold text-primary">{progressPercent}%</span>
+            </div>
+            <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-secondary">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500 ease-out"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+            {/* Page dots */}
+            <div className="flex items-center justify-center gap-1.5 pt-1 flex-wrap">
+              {pages.map((p, i) => (
+                <button
+                  key={i}
+                  onClick={() => goToPage(i)}
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    i === currentPage
+                      ? "w-6 bg-primary"
+                      : i < currentPage
+                        ? "w-2 bg-primary/40"
+                        : "w-2 bg-muted-foreground/20"
+                  }`}
+                  title={p.type === "cours" ? p.cours.titre : "Exercices"}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Current page content */}
+        <div className="animate-fade-in">
+          {currentPageData?.type === "cours" && renderCoursPage(currentPageData.cours)}
+          {currentPageData?.type === "exercices" && renderExercicesPage()}
+        </div>
+
+        {/* Navigation buttons */}
+        <div className="flex items-center justify-between pt-2">
+          <Button
+            variant="outline"
+            onClick={() => goToPage(currentPage - 1)}
+            disabled={currentPage === 0}
+            className="gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" /> Précédent
+          </Button>
+          <span className="text-sm text-muted-foreground font-medium">
+            {currentPage + 1} / {totalPages}
+          </span>
+          {currentPage < totalPages - 1 ? (
+            <Button
+              onClick={() => goToPage(currentPage + 1)}
+              className="gap-2"
+            >
+              Suivant <ArrowDown className="w-4 h-4 -rotate-90" />
+            </Button>
+          ) : (
+            <Button variant="secondary" disabled className="gap-2">
+              <CheckCircle2 className="w-4 h-4" /> Terminé
+            </Button>
+          )}
+        </div>
       </div>
     );
   };
