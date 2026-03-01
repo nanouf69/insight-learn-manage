@@ -10,6 +10,7 @@ import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
 import { FORMATIONS, MODULES_DATA, type FormationId } from "@/components/cours-en-ligne/formations-data";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
+import { safeDateParse } from "@/lib/safeDateParse";
 
 // Map type_apprenant from CRM to formation IDs
 const TYPE_TO_FORMATION: Record<string, FormationId> = {
@@ -142,7 +143,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
       if (data) {
         setApprenant(data as any);
-        const formationId = TYPE_TO_FORMATION[data.type_apprenant || ""] || null;
+        const formationId = TYPE_TO_FORMATION[data.type_apprenant || ""] || (data.formation_choisie as FormationId) || null;
         setSelectedFormation(formationId);
       } else {
         // User has no apprenant record — sign them out so they see the login
@@ -158,7 +159,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   useEffect(() => {
     if (!apprenantOverride) return;
     setApprenant(apprenantOverride);
-    const formationId = TYPE_TO_FORMATION[apprenantOverride.type_apprenant || ""] || null;
+    const formationId = TYPE_TO_FORMATION[apprenantOverride.type_apprenant || ""] || (apprenantOverride.formation_choisie as FormationId) || null;
     setSelectedFormation(formationId);
   }, [apprenantOverride]);
 
@@ -186,9 +187,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // Check course access dates
   if (!embedded && user && apprenant) {
     const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    const debut = apprenant.date_debut_cours_en_ligne ? new Date(apprenant.date_debut_cours_en_ligne) : null;
-    const fin = apprenant.date_fin_cours_en_ligne ? new Date(apprenant.date_fin_cours_en_ligne) : null;
+    now.setHours(12, 0, 0, 0);
+    const debut = apprenant.date_debut_cours_en_ligne ? safeDateParse(apprenant.date_debut_cours_en_ligne) : null;
+    const fin = apprenant.date_fin_cours_en_ligne ? safeDateParse(apprenant.date_fin_cours_en_ligne) : null;
 
     if (!debut || !fin || now < debut || now > fin) {
       return (
