@@ -44,6 +44,12 @@ import { VTC_COURS_DATA } from "./vtc-cours-data";
 import { FORMULES_DATA } from "./formules-data";
 import { TAXI_COURS_DATA } from "./taxi-cours-data";
 
+interface InlineQuizQuestion {
+  id: number;
+  enonce: string;
+  choix: { lettre: string; texte: string; correct?: boolean }[];
+}
+
 interface ContentItem {
   id: number;
   titre: string;
@@ -53,6 +59,7 @@ interface ContentItem {
   actif: boolean;
   fichiers?: { nom: string; url: string }[];
   slidesKey?: string;
+  quiz?: InlineQuizQuestion[];
 }
 
 interface ExerciceChoix {
@@ -1095,6 +1102,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
     const [showResults, setShowResults] = useState(false);
     const [currentPage, setCurrentPage] = useState(0);
     const [completedPages, setCompletedPages] = useState<Set<number>>(new Set());
+    const [inlineQuizAnswers, setInlineQuizAnswers] = useState<Record<string, string>>({});
+    const [inlineQuizValidated, setInlineQuizValidated] = useState<Set<number>>(new Set());
 
     const activeCours = moduleData.cours.filter(c => c.actif);
     const activeExercices = moduleData.exercices.filter(e => e.actif) as ExerciceItem[];
@@ -1143,13 +1152,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
       });
     };
 
-    // Auto-complete pages that have no PDF (text-only cours)
+    // Auto-complete pages that have no PDF and no quiz (text-only cours)
     useEffect(() => {
       pages.forEach((p, i) => {
         if (p.type === "cours") {
           const hasPdf = p.cours.fichiers?.some(f => f.nom.endsWith(".pdf") || f.url.endsWith(".pdf"));
           const hasSlides = p.cours.slidesKey && slidesByKey[p.cours.slidesKey]?.length > 0;
-          if (!hasPdf && !hasSlides) {
+          const hasQuiz = p.cours.quiz && p.cours.quiz.length > 0;
+          if (!hasPdf && !hasSlides && !hasQuiz) {
             markPageCompleted(i);
           }
         }
@@ -1179,6 +1189,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
       const hasInteractiveSlides = Boolean(cours.slidesKey && slidesByKey[cours.slidesKey]?.length > 0);
 
       return (
+        <div className="space-y-4">
         <Card key={cours.id} className="overflow-hidden">
           {cours.image && (
             <div className="w-full h-48 sm:h-64 overflow-hidden">
@@ -1274,7 +1285,96 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
             })()}
           </CardContent>
         </Card>
-      );
+
+        {/* Inline Quiz after course content */}
+        {cours.quiz && cours.quiz.length > 0 && (() => {
+          const pageIdx = currentPage;
+          const isValidated = inlineQuizValidated.has(cours.id);
+          const allAnswered = cours.quiz!.every(q => inlineQuizAnswers[`inline-${cours.id}-${q.id}`]);
+          const correctInline = cours.quiz!.filter(q => {
+            const sel = inlineQuizAnswers[`inline-${cours.id}-${q.id}`];
+            const correct = q.choix.find(c => c.correct);
+            return sel && correct && sel === correct.lettre;
+          }).length;
+
+          return (
+            <Card className="border-primary/30 bg-primary/5">
+              <CardContent className="p-5 space-y-4">
+                <h4 className="font-bold text-lg flex items-center gap-2">
+                  🧠 Exercice d'application
+                </h4>
+                {cours.quiz!.map((q, qi) => {
+                  const key = `inline-${cours.id}-${q.id}`;
+                  const selected = inlineQuizAnswers[key];
+                  return (
+                    <div key={q.id} className="space-y-2 p-4 border rounded-lg bg-background">
+                      <p className="font-medium">{qi + 1}. {q.enonce}</p>
+                      <div className="space-y-1.5 ml-2">
+                        {q.choix.map(c => {
+                          let bg = "bg-background hover:bg-muted/50 border";
+                          if (selected === c.lettre && !isValidated) bg = "bg-primary/10 border-primary border-2";
+                          if (isValidated && c.correct) bg = "bg-emerald-50 border-emerald-500 border-2 dark:bg-emerald-950";
+                          if (isValidated && selected === c.lettre && !c.correct) bg = "bg-destructive/10 border-destructive border-2";
+                          return (
+                            <button
+                              key={c.lettre}
+                              onClick={() => {
+                                if (isValidated) return;
+                                setInlineQuizAnswers(prev => ({ ...prev, [key]: c.lettre }));
+                              }}
+                              className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-all ${bg}`}
+                            >
+                              <span className="w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0">
+                                {c.lettre}
+                              </span>
+                              <span className="text-sm">{c.texte}</span>
+                              {isValidated && c.correct && <CheckCircle2 className="w-4 h-4 text-emerald-600 ml-auto shrink-0" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {!isValidated ? (
+                  <Button
+                    onClick={() => {
+                      if (!allAnswered) {
+                        toast.error("Répondez à toutes les questions avant de valider");
+                        return;
+                      }
+                      setInlineQuizValidated(prev => {
+                        const next = new Set(prev);
+                        next.add(cours.id);
+                        return next;
+                      });
+                      markPageCompleted(pageIdx);
+                      if (correctInline === cours.quiz!.length) {
+                        toast.success("🎉 Parfait ! Toutes les réponses sont correctes !");
+                      } else {
+                        toast("📖 Consultez les corrections ci-dessus");
+                      }
+                    }}
+                    className="gap-2"
+                    disabled={!allAnswered}
+                  >
+                    <CheckCircle2 className="w-4 h-4" /> Valider mes réponses
+                  </Button>
+                ) : (
+                  <div className="text-center space-y-1">
+                    <p className="text-lg font-bold">{correctInline} / {cours.quiz!.length}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {correctInline === cours.quiz!.length ? "🎉 Parfait !" : "📖 Révisez les corrections ci-dessus"}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })()}
+      </div>
+    );
     };
 
     const renderExercicesPage = () => (
@@ -1401,7 +1501,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
         {!completedPages.has(currentPage) && currentPage < totalPages - 1 && (
           <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-sm">
             <span>🔒</span>
-            <span>Parcourez toutes les slides jusqu'à la dernière pour débloquer la partie suivante.</span>
+            <span>
+              {currentPageData?.type === "cours" && currentPageData.cours.quiz?.length
+                ? "Répondez au QCM ci-dessous pour débloquer la partie suivante."
+                : "Parcourez toutes les slides jusqu'à la dernière pour débloquer la partie suivante."}
+            </span>
           </div>
         )}
 
