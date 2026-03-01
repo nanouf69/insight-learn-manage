@@ -355,9 +355,9 @@ const ApprenantSearchPreview = () => {
                   {modules.map((module, index) => {
                     const isBilanModule = !!BILAN_MODULE_IDS[module.id];
                     return (
-                    <TableRow key={module.id}>
+                    <TableRow key={module.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleEditerModule(module)}>
                       <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 text-primary hover:underline">
                           {module.nom}
                           {isBilanModule && (
                             <Badge className="text-xs bg-primary text-primary-foreground gap-1">
