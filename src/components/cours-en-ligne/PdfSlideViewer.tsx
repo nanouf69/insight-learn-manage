@@ -19,17 +19,24 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
   const [zoom, setZoom] = useState(1);
   const [isNativeFullscreen, setIsNativeFullscreen] = useState(false);
   const [isPseudoFullscreen, setIsPseudoFullscreen] = useState(false);
+  const [pageAspectRatio, setPageAspectRatio] = useState(16 / 9);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(960);
+  const [containerHeight, setContainerHeight] = useState(720);
 
   const isExpanded = isNativeFullscreen || isPseudoFullscreen;
 
-  // Recalculate width on resize / fullscreen changes
+  // Recalculate width/height on resize / fullscreen changes
   const updateWidth = useCallback(() => {
     if (containerRef.current) {
-      setContainerWidth(containerRef.current.clientWidth - 32);
+      setContainerWidth(Math.max(320, containerRef.current.clientWidth - 16));
+      setContainerHeight(Math.max(320, containerRef.current.clientHeight));
     }
   }, []);
+
+  const controlsHeight = typeof window !== "undefined" && window.innerWidth < 640 ? 112 : 56;
+  const usableHeight = Math.max(260, containerHeight - controlsHeight);
+  const fitHeightZoom = Math.min(4, Math.max(1, (usableHeight * pageAspectRatio) / Math.max(containerWidth, 1)));
 
   useEffect(() => {
     updateWidth();
@@ -37,6 +44,14 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
     if (containerRef.current) observer.observe(containerRef.current);
     return () => observer.disconnect();
   }, [updateWidth, isPseudoFullscreen]);
+
+  // Auto-fit on small screens when entering fullscreen so the course uses the whole page better
+  useEffect(() => {
+    if (!isExpanded || typeof window === "undefined") return;
+    if (window.matchMedia("(max-width: 1024px)").matches) {
+      setZoom((z) => Math.max(z, fitHeightZoom));
+    }
+  }, [isExpanded, fitHeightZoom]);
 
   // Listen for native fullscreen changes
   useEffect(() => {
@@ -84,7 +99,7 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
 
   const prev = () => setPage((p) => Math.max(1, p - 1));
   const next = () => setPage((p) => Math.min(numPages, p + 1));
-  const zoomIn = () => setZoom((z) => Math.min(z + 0.25, 3));
+  const zoomIn = () => setZoom((z) => Math.min(z + 0.25, 4));
   const zoomOut = () => setZoom((z) => Math.max(z - 0.25, 0.5));
   const resetZoom = () => setZoom(1);
 
@@ -164,7 +179,11 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
       {/* PDF Page — scrollable when zoomed, touch-action for mobile */}
       <div
         className={`flex justify-center overflow-auto ${isExpanded ? "flex-1" : ""}`}
-        style={{ maxHeight: isExpanded ? "calc(100dvh - 100px)" : "80vh", touchAction: "pan-x pan-y" }}
+        style={{
+          maxHeight: isExpanded ? "none" : "80vh",
+          height: isExpanded ? "100%" : "auto",
+          touchAction: "pan-x pan-y",
+        }}
       >
         <Document
           file={url}
@@ -175,6 +194,12 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
           <Page
             pageNumber={page}
             width={containerWidth * zoom}
+            onLoadSuccess={(loadedPage: { width: number; height: number }) => {
+              const ratio = loadedPage.width / loadedPage.height;
+              if (Number.isFinite(ratio) && ratio > 0) {
+                setPageAspectRatio(ratio);
+              }
+            }}
             renderTextLayer={false}
             renderAnnotationLayer={false}
           />
