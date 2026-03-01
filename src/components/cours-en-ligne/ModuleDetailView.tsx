@@ -48,6 +48,7 @@ interface InlineQuizQuestion {
   id: number;
   enonce: string;
   choix: { lettre: string; texte: string; correct?: boolean }[];
+  explication?: string;
 }
 
 interface ContentItem {
@@ -1333,6 +1334,21 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
                           );
                         })}
                       </div>
+                      {/* Explanation after validation */}
+                      {isValidated && q.explication && (
+                        <div className="mt-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 text-sm">
+                          <p className="font-semibold text-blue-800 dark:text-blue-200 mb-1">💡 Explication :</p>
+                          <p className="text-blue-700 dark:text-blue-300">{q.explication}</p>
+                        </div>
+                      )}
+                      {isValidated && !q.explication && (() => {
+                        const correctChoice = q.choix.find(c => c.correct);
+                        return correctChoice ? (
+                          <div className="mt-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 text-sm">
+                            <p className="font-semibold text-blue-800 dark:text-blue-200">✅ Bonne réponse : {correctChoice.lettre}. {correctChoice.texte}</p>
+                          </div>
+                        ) : null;
+                      })()}
                     </div>
                   );
                 })}
