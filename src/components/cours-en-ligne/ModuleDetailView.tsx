@@ -1163,17 +1163,20 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
 
                                 return (
                                   <div key={i} className="space-y-3">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <a
-                                        href={f.url}
-                                        download
-                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
-                                      >
-                                        <FileText className="w-4 h-4" />
-                                        {f.nom}
-                                        <Download className="w-3 h-3" />
-                                      </a>
-                                    </div>
+                                    {/* Hide download links for students */}
+                                    {!studentOnly && (
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <a
+                                          href={f.url}
+                                          download
+                                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
+                                        >
+                                          <FileText className="w-4 h-4" />
+                                          {f.nom}
+                                          <Download className="w-3 h-3" />
+                                        </a>
+                                      </div>
+                                    )}
 
                                     {shouldShowViewers && (
                                       <PptxViewerComparison
@@ -1182,6 +1185,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
                                         absoluteFileUrl={absoluteFileUrl}
                                         nom={f.nom}
                                         pdfUrl={pdfLocalUrl}
+                                        studentOnly={studentOnly}
                                       />
                                     )}
                                   </div>
