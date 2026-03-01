@@ -1317,7 +1317,89 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
         </TabsList>
 
         <TabsContent value="edition" className="space-y-6">
-          {/* ... keep existing code */}
+          {/* Description */}
+          <Card>
+            <CardContent className="p-4">
+              <h3 className="font-bold text-lg mb-1">{moduleData.nom}</h3>
+              <p className="text-sm text-muted-foreground">{moduleData.description}</p>
+            </CardContent>
+          </Card>
+
+          {/* Cours */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold flex items-center gap-2">📚 Cours ({moduleData.cours.length})</h3>
+              <Button size="sm" className="gap-1" onClick={() => addItem("cours")}>
+                <Plus className="w-4 h-4" /> Ajouter un cours
+              </Button>
+            </div>
+            {moduleData.cours.map((cours, index) =>
+              editingCoursId === cours.id ? (
+                <CoursEditor
+                  key={cours.id}
+                  item={cours}
+                  onSave={(updated) => {
+                    setModuleData({
+                      ...moduleData,
+                      cours: moduleData.cours.map(c => c.id === updated.id ? updated : c),
+                    });
+                    setEditingCoursId(null);
+                  }}
+                  onCancel={() => setEditingCoursId(null)}
+                />
+              ) : (
+                <ContentCard
+                  key={cours.id}
+                  item={cours}
+                  index={index}
+                  total={moduleData.cours.length}
+                  onMove={(i, d) => moveItem("cours", i, d)}
+                  onDelete={(id) => deleteItem("cours", id)}
+                  onToggle={(id) => toggleItem("cours", id)}
+                  onEdit={(id) => setEditingCoursId(id)}
+                  borderColor="border-primary/30"
+                />
+              )
+            )}
+          </div>
+
+          {/* Exercices */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold flex items-center gap-2">📝 Exercices ({moduleData.exercices.length})</h3>
+              <Button size="sm" className="gap-1" onClick={() => addItem("exercices")}>
+                <Plus className="w-4 h-4" /> Ajouter un exercice
+              </Button>
+            </div>
+            {isPratique ? (
+              moduleData.exercices.map((exo, index) => (
+                <ExerciceCard
+                  key={exo.id}
+                  item={exo as ExerciceItem}
+                  index={index}
+                  total={moduleData.exercices.length}
+                  onMove={(i, d) => moveItem("exercices", i, d)}
+                  onDelete={(id) => deleteItem("exercices", id)}
+                  onToggle={(id) => toggleItem("exercices", id)}
+                  onUpdateQuestions={(id, questions) => updateExerciceQuestions(id, questions)}
+                />
+              ))
+            ) : (
+              moduleData.exercices.map((exo, index) => (
+                <ContentCard
+                  key={exo.id}
+                  item={exo as ContentItem}
+                  index={index}
+                  total={moduleData.exercices.length}
+                  onMove={(i, d) => moveItem("exercices", i, d)}
+                  onDelete={(id) => deleteItem("exercices", id)}
+                  onToggle={(id) => toggleItem("exercices", id)}
+                  onEdit={() => {}}
+                  borderColor="border-muted"
+                />
+              ))
+            )}
+          </div>
         </TabsContent>
 
         <TabsContent value="apercu">
