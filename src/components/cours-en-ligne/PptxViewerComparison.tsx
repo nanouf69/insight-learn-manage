@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Eye, FileImage, ZoomIn, ZoomOut, Images, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -28,10 +28,19 @@ export default function PptxViewerComparison({
   const [zoomLevel, setZoomLevel] = useState(1.25);
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  // Students can only use PDF HD mode
-  const isStudentPdfOnly = studentOnly && pdfUrl;
-
   const hasImages = imageUrls && imageUrls.length > 0;
+
+  // Students are restricted to non-downloadable viewers
+  const isStudentRestricted = studentOnly;
+  const effectiveMode: "google" | "google-zoom" | "ms-office" | "images" | "pdf" | "blocked" = isStudentRestricted
+    ? (pdfUrl ? "pdf" : hasImages ? "images" : "blocked")
+    : mode;
+
+  useEffect(() => {
+    if (isStudentRestricted && pdfUrl) {
+      setMode("pdf");
+    }
+  }, [isStudentRestricted, pdfUrl]);
 
   const googleSingleSlideUrl = useMemo(() => {
     try {
@@ -49,7 +58,7 @@ export default function PptxViewerComparison({
 
   return (
     <div className="space-y-2">
-      {!isStudentPdfOnly && (
+      {!isStudentRestricted && (
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs font-medium text-muted-foreground">Mode :</span>
           <div className="flex rounded-lg border bg-muted/30 p-0.5 gap-0.5">
@@ -123,11 +132,11 @@ export default function PptxViewerComparison({
       )}
 
       <div className="w-full max-w-[1280px] mx-auto">
-        {mode === "pdf" && pdfUrl && (
+        {effectiveMode === "pdf" && pdfUrl && (
           <PdfSlideViewer url={pdfUrl} nom={nom} />
         )}
 
-        {mode === "google" && (
+        {effectiveMode === "google" && (
           <div className="border rounded-lg overflow-hidden">
             <div className="w-full h-[68vh] min-h-[560px] max-h-[680px] max-w-[1210px] mx-auto">
               <iframe
@@ -140,7 +149,7 @@ export default function PptxViewerComparison({
           </div>
         )}
 
-        {mode === "google-zoom" && (
+        {effectiveMode === "google-zoom" && (
           <div className="border rounded-lg overflow-hidden">
             <div
               className="w-full h-[68vh] min-h-[560px] max-h-[680px] max-w-[1210px] mx-auto relative"
@@ -162,7 +171,7 @@ export default function PptxViewerComparison({
           </div>
         )}
 
-        {mode === "ms-office" && (
+        {effectiveMode === "ms-office" && (
           <div className="border rounded-lg overflow-hidden">
             <div className="w-full h-[68vh] min-h-[560px] max-h-[680px] max-w-[1210px] mx-auto">
               <iframe
@@ -175,7 +184,7 @@ export default function PptxViewerComparison({
           </div>
         )}
 
-        {mode === "images" && hasImages && (
+        {effectiveMode === "images" && hasImages && (
           <div className="border rounded-lg overflow-hidden bg-black/95">
             <div
               className="w-full flex flex-col items-center justify-center"
@@ -208,6 +217,12 @@ export default function PptxViewerComparison({
                 </Button>
               </div>
             </div>
+          </div>
+        )}
+
+        {effectiveMode === "blocked" && (
+          <div className="border rounded-lg p-6 text-center text-muted-foreground">
+            Ce format n'est pas disponible en mode apprenant sécurisé.
           </div>
         )}
       </div>

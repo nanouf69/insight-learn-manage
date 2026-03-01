@@ -16,9 +16,12 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
   const [numPages, setNumPages] = useState(0);
   const [page, setPage] = useState(1);
   const [zoom, setZoom] = useState(1);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isNativeFullscreen, setIsNativeFullscreen] = useState(false);
+  const [isPseudoFullscreen, setIsPseudoFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(960);
+
+  const isExpanded = isNativeFullscreen || isPseudoFullscreen;
 
   // Recalculate width on resize / fullscreen changes
   const updateWidth = useCallback(() => {
@@ -34,16 +37,26 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
     return () => observer.disconnect();
   }, [updateWidth]);
 
-  // Listen for fullscreen changes
+  // Listen for native fullscreen changes
   useEffect(() => {
     const handleFsChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      setIsNativeFullscreen(!!document.fullscreenElement);
     };
     document.addEventListener("fullscreenchange", handleFsChange);
     return () => document.removeEventListener("fullscreenchange", handleFsChange);
   }, []);
 
-  // Block right-click, print, copy shortcuts
+  // Lock page scroll in pseudo fullscreen mode
+  useEffect(() => {
+    if (!isPseudoFullscreen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isPseudoFullscreen]);
+
+  // Block right-click, print, save shortcuts
   useEffect(() => {
     const blockContextMenu = (e: MouseEvent) => {
       if (containerRef.current?.contains(e.target as Node)) {
@@ -51,8 +64,7 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
       }
     };
     const blockKeys = (e: KeyboardEvent) => {
-      // Block Ctrl+P (print), Ctrl+S (save), Ctrl+C (copy)
-      if ((e.ctrlKey || e.metaKey) && (e.key === "p" || e.key === "s")) {
+      if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === "p" || e.key.toLowerCase() === "s")) {
         e.preventDefault();
       }
     };
@@ -75,25 +87,48 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
   const zoomOut = () => setZoom((z) => Math.max(z - 0.25, 0.5));
   const resetZoom = () => setZoom(1);
 
-  const toggleFullscreen = () => {
+  const toggleFullscreen = async () => {
     if (!containerRef.current) return;
+
+    if (isPseudoFullscreen) {
+      setIsPseudoFullscreen(false);
+      return;
+    }
+
     if (document.fullscreenElement) {
-      document.exitFullscreen();
-    } else {
-      containerRef.current.requestFullscreen();
+      await document.exitFullscreen();
+      return;
+    }
+
+    try {
+      if (containerRef.current.requestFullscreen) {
+        await containerRef.current.requestFullscreen();
+      } else {
+        setIsPseudoFullscreen(true);
+      }
+    } catch {
+      // Fallback when native fullscreen is blocked in iframe/browser
+      setIsPseudoFullscreen(true);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowLeft") prev();
     if (e.key === "ArrowRight") next();
-    if (e.key === "Escape" && isFullscreen) document.exitFullscreen();
+    if (e.key === "Escape" && isPseudoFullscreen) setIsPseudoFullscreen(false);
+    if (e.key === "Escape" && isNativeFullscreen) document.exitFullscreen();
   };
 
   return (
     <div
       ref={containerRef}
-      className={`border rounded-lg overflow-hidden focus:outline-none ${isFullscreen ? "bg-black flex flex-col" : "bg-muted/30"}`}
+      className={`border overflow-hidden focus:outline-none ${
+        isPseudoFullscreen
+          ? "fixed inset-0 z-50 rounded-none bg-black flex flex-col"
+          : isExpanded
+            ? "rounded-lg bg-black flex flex-col"
+            : "rounded-lg bg-muted/30"
+      }`}
       tabIndex={0}
       onKeyDown={handleKeyDown}
       style={{ userSelect: "none", WebkitUserSelect: "none" }}
@@ -118,14 +153,14 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
         <Button variant="ghost" size="sm" onClick={resetZoom}><RotateCcw className="w-4 h-4" /></Button>
         <div className="flex-1" />
         <Button variant="ghost" size="sm" onClick={toggleFullscreen}>
-          {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+          {isExpanded ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
         </Button>
       </div>
 
       {/* PDF Page — scrollable when zoomed, touch-action for mobile */}
       <div
-        className={`flex justify-center overflow-auto ${isFullscreen ? "flex-1" : ""}`}
-        style={{ maxHeight: isFullscreen ? "calc(100vh - 100px)" : "80vh", touchAction: "pan-x pan-y" }}
+        className={`flex justify-center overflow-auto ${isExpanded ? "flex-1" : ""}`}
+        style={{ maxHeight: isExpanded ? "calc(100vh - 100px)" : "80vh", touchAction: "pan-x pan-y" }}
       >
         <Document
           file={url}
