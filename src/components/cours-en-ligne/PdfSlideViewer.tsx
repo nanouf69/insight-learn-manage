@@ -79,8 +79,11 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
         <Button variant="ghost" size="sm" onClick={fullscreen}><Maximize className="w-4 h-4" /></Button>
       </div>
 
-      {/* PDF Page — scrollable when zoomed */}
-      <div className="flex justify-center overflow-auto" style={{ maxHeight: "72vh" }}>
+      {/* PDF Page — scrollable when zoomed, touch-action for mobile */}
+      <div
+        className="flex justify-center overflow-auto"
+        style={{ maxHeight: "80vh", touchAction: "pan-x pan-y" }}
+      >
         <Document
           file={url}
           onLoadSuccess={onDocumentLoadSuccess}
@@ -96,11 +99,24 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
         </Document>
       </div>
 
-      {/* Bottom nav for mobile */}
-      <div className="flex items-center justify-between p-2 border-t bg-muted/50 sm:hidden">
-        <Button variant="outline" size="sm" onClick={prev} disabled={page <= 1}>← Précédent</Button>
+      {/* Bottom nav for mobile — with zoom controls */}
+      <div className="flex items-center justify-between gap-2 p-2 border-t bg-muted/50 sm:hidden">
+        <Button variant="outline" size="icon" className="h-10 w-10" onClick={prev} disabled={page <= 1}>
+          <ChevronLeft className="w-5 h-5" />
+        </Button>
+        <div className="flex items-center gap-1">
+          <Button variant="outline" size="icon" className="h-10 w-10" onClick={zoomOut}>
+            <ZoomOut className="w-5 h-5" />
+          </Button>
+          <span className="text-xs text-muted-foreground min-w-[3rem] text-center">{Math.round(zoom * 100)}%</span>
+          <Button variant="outline" size="icon" className="h-10 w-10" onClick={zoomIn}>
+            <ZoomIn className="w-5 h-5" />
+          </Button>
+        </div>
         <span className="text-xs text-muted-foreground">{page}/{numPages}</span>
-        <Button variant="outline" size="sm" onClick={next} disabled={page >= numPages}>Suivant →</Button>
+        <Button variant="outline" size="icon" className="h-10 w-10" onClick={next} disabled={page >= numPages}>
+          <ChevronRight className="w-5 h-5" />
+        </Button>
       </div>
     </div>
   );
