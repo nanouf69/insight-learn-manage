@@ -9,7 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGr
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Loader2, CalendarIcon, User, UserCheck, PlusCircle, X } from "lucide-react";
+import { Loader2, CalendarIcon, User, UserCheck, PlusCircle, X, Monitor } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { MODULES_DATA } from "@/components/cours-en-ligne/formations-data";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -160,6 +162,9 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
   const [documentsComplets, setDocumentsComplets] = useState(false);
   const [secondFormation, setSecondFormation] = useState("");
   const [secondTypeApprenant, setSecondTypeApprenant] = useState("");
+  const [dateDebutCours, setDateDebutCours] = useState<Date | undefined>();
+  const [dateFinCours, setDateFinCours] = useState<Date | undefined>();
+  const [modulesAutorises, setModulesAutorises] = useState<number[]>([]);
   
   const [formData, setFormData] = useState({
     civilite: "",
@@ -249,6 +254,10 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
       } else {
         setSecondTypeApprenant("");
       }
+      // Restaurer les dates d'accès cours en ligne
+      setDateDebutCours((apprenant as any).date_debut_cours_en_ligne ? new Date((apprenant as any).date_debut_cours_en_ligne) : undefined);
+      setDateFinCours((apprenant as any).date_fin_cours_en_ligne ? new Date((apprenant as any).date_fin_cours_en_ligne) : undefined);
+      setModulesAutorises((apprenant as any).modules_autorises || []);
     }
   }, [apprenant]);
 
@@ -363,6 +372,9 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
       inscrit_france_travail: inscritFranceTravail,
       date_examen_pratique: dateExamenPratique || null,
       documents_complets: documentsComplets,
+      date_debut_cours_en_ligne: dateDebutCours ? format(dateDebutCours, 'yyyy-MM-dd') : null,
+      date_fin_cours_en_ligne: dateFinCours ? format(dateFinCours, 'yyyy-MM-dd') : null,
+      modules_autorises: modulesAutorises.length > 0 ? modulesAutorises : null,
     };
 
     try {
@@ -1217,6 +1229,62 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
               </div>
             </div>
           )}
+
+          {/* Accès cours en ligne */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-muted-foreground border-b pb-2 flex items-center gap-2">
+              <Monitor className="w-4 h-4" />
+              Accès cours en ligne
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Date de début d'accès</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateDebutCours && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateDebutCours ? format(dateDebutCours, "dd/MM/yyyy") : "Sélectionner"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={dateDebutCours} onSelect={setDateDebutCours} initialFocus locale={fr} className="pointer-events-auto" />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-2">
+                <Label>Date de fin d'accès</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateFinCours && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateFinCours ? format(dateFinCours, "dd/MM/yyyy") : "Sélectionner"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={dateFinCours} onSelect={setDateFinCours} initialFocus locale={fr} className="pointer-events-auto" />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Modules autorisés</Label>
+              <div className="grid grid-cols-1 gap-1.5 max-h-[200px] overflow-y-auto border rounded-md p-3">
+                {MODULES_DATA.map((mod) => (
+                  <label key={mod.id} className="flex items-center gap-2 py-1 cursor-pointer hover:bg-muted/50 rounded px-1">
+                    <Checkbox
+                      checked={modulesAutorises.includes(mod.id)}
+                      onCheckedChange={(checked) => {
+                        setModulesAutorises(prev => 
+                          checked ? [...prev, mod.id] : prev.filter(id => id !== mod.id)
+                        );
+                      }}
+                    />
+                    <span className="text-sm">{mod.nom}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
 
           {/* Notes */}
           <div className="space-y-4">
