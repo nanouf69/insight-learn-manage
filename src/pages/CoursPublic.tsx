@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { LogOut, Target, RotateCcw, ChevronRight, KeyRound, Loader2 } from "lucide-react";
+import { LogOut, Target, RotateCcw, ChevronRight, KeyRound, Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import ModuleDetailView from "@/components/cours-en-ligne/ModuleDetailView";
 import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import { safeDateParse } from "@/lib/safeDateParse";
 import { useConnexionTracking } from "@/hooks/useConnexionTracking";
+import { useInactivityAlert } from "@/hooks/useInactivityAlert";
 
 // Map type_apprenant from CRM to formation IDs
 const TYPE_TO_FORMATION: Record<string, FormationId> = {
@@ -120,6 +121,16 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     apprenantId: !embedded && apprenant?.id ? apprenant.id : null,
     userId: user?.id || null,
     enabled: !embedded && !!user && !!apprenant?.id,
+  });
+
+  // Inactivity alert after 2h
+  const [showInactivityModal, setShowInactivityModal] = useState(false);
+  const handleInactive = useCallback(() => {
+    setShowInactivityModal(true);
+  }, []);
+  useInactivityAlert({
+    enabled: !embedded && !!user && !!apprenant?.id,
+    onInactive: handleInactive,
   });
 
   useEffect(() => {
@@ -287,6 +298,29 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
   return (
     <div className={embedded ? "" : "min-h-screen bg-slate-50"}>
+      {/* Inactivity modal */}
+      <Dialog open={showInactivityModal} onOpenChange={setShowInactivityModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-600">
+              <AlertTriangle className="w-5 h-5" />
+              Êtes-vous encore là ?
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <p className="text-sm text-slate-600">
+              Nous avons remarqué qu'il n'y a plus eu d'activité depuis <strong>2 heures</strong> sur la plateforme.
+            </p>
+            <p className="text-sm text-slate-600">
+              N'oubliez pas de continuer vos révisions pour bien préparer votre examen ! 💪
+            </p>
+            <Button className="w-full" onClick={() => setShowInactivityModal(false)}>
+              Je suis là, je continue !
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Top navbar */}
       <nav className="bg-slate-900 text-white">
         <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
