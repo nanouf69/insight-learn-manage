@@ -42,6 +42,7 @@ import imgQuenelle from "@/assets/pratique/quenelle.jpg";
 import imgBugnes from "@/assets/pratique/bugnes.jpg";
 import { VTC_COURS_DATA } from "./vtc-cours-data";
 import { FORMULES_DATA } from "./formules-data";
+import { TAXI_COURS_DATA } from "./taxi-cours-data";
 
 interface ContentItem {
   id: number;
@@ -606,6 +607,7 @@ function getInitialModuleData(module: { id: number; nom: string }): ModuleData {
   if (module.id === 8) return JSON.parse(JSON.stringify(PRATIQUE_VTC_DATA));
   if (module.id === 12) return JSON.parse(JSON.stringify(CAS_PRATIQUE_TAXI_DATA));
   if (module.id === 3) return JSON.parse(JSON.stringify(FORMULES_DATA));
+  if (module.id === 10) return JSON.parse(JSON.stringify(TAXI_COURS_DATA));
   return {
     id: module.id,
     nom: module.nom,
