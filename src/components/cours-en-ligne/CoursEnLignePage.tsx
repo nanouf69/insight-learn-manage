@@ -340,7 +340,7 @@ const CoursEnLignePage = () => {
               <Eye className="w-4 h-4 text-muted-foreground" />
               <span className="text-sm font-medium text-muted-foreground">Aperçu de l'interface apprenant</span>
             </div>
-            <CoursPublic />
+            <CoursPublic embedded />
           </div>
         </TabsContent>
       </Tabs>

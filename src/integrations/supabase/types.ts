@@ -100,6 +100,7 @@ export type Database = {
       apprenants: {
         Row: {
           adresse: string | null
+          auth_user_id: string | null
           b2_vierge: boolean | null
           civilite: string | null
           code_postal: string | null
@@ -139,6 +140,7 @@ export type Database = {
         }
         Insert: {
           adresse?: string | null
+          auth_user_id?: string | null
           b2_vierge?: boolean | null
           civilite?: string | null
           code_postal?: string | null
@@ -178,6 +180,7 @@ export type Database = {
         }
         Update: {
           adresse?: string | null
+          auth_user_id?: string | null
           b2_vierge?: boolean | null
           civilite?: string | null
           code_postal?: string | null
