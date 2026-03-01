@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { LogOut, Target, RotateCcw, ChevronRight, KeyRound, Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import ModuleDetailView from "@/components/cours-en-ligne/ModuleDetailView";
+import ExamensBlancsPage from "@/components/cours-en-ligne/ExamensBlancsPage";
 import NotesView from "@/components/cours-en-ligne/NotesView";
 import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
 import { FORMATIONS, MODULES_DATA, type FormationId } from "@/components/cours-en-ligne/formations-data";
@@ -25,6 +26,12 @@ const TYPE_TO_FORMATION: Record<string, FormationId> = {
   "TAXI-E": "taxi-elearning",
   "TA-E": "taxi-pour-vtc-elearning",
   "VTC-S": "vtc-cours-du-soir",
+};
+
+// Module IDs that should open ExamensBlancsPage (bilans)
+const BILAN_MODULE_IDS: Record<number, string> = {
+  5: "bilan-vtc",
+  11: "bilan-taxi",
 };
 
 interface ApprenantInfo {
@@ -239,6 +246,22 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
   // Module detail view
   if (selectedModule) {
+    const bilanId = BILAN_MODULE_IDS[selectedModule.id];
+    if (bilanId) {
+      // Bilan modules open ExamensBlancsPage directly
+      return (
+        <div className="min-h-screen bg-background p-4">
+          <Button variant="ghost" size="sm" className="mb-4" onClick={() => setSelectedModule(null)}>
+            <ChevronRight className="w-4 h-4 mr-1 rotate-180" /> Retour
+          </Button>
+          <ExamensBlancsPage
+            defaultBilanId={bilanId}
+            apprenantId={apprenant?.id || null}
+            userId={user?.id || null}
+          />
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen bg-background">
         <ModuleDetailView
