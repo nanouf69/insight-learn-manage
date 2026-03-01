@@ -19,24 +19,17 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
   const [zoom, setZoom] = useState(1);
   const [isNativeFullscreen, setIsNativeFullscreen] = useState(false);
   const [isPseudoFullscreen, setIsPseudoFullscreen] = useState(false);
-  const [pageAspectRatio, setPageAspectRatio] = useState(16 / 9);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(960);
-  const [containerHeight, setContainerHeight] = useState(720);
 
   const isExpanded = isNativeFullscreen || isPseudoFullscreen;
 
-  // Recalculate width/height on resize / fullscreen changes
+  // Recalculate width on resize / fullscreen changes
   const updateWidth = useCallback(() => {
     if (containerRef.current) {
       setContainerWidth(Math.max(320, containerRef.current.clientWidth - 16));
-      setContainerHeight(Math.max(320, containerRef.current.clientHeight));
     }
   }, []);
-
-  const controlsHeight = typeof window !== "undefined" && window.innerWidth < 640 ? 112 : 56;
-  const usableHeight = Math.max(260, containerHeight - controlsHeight);
-  const fitHeightZoom = Math.min(4, Math.max(1, (usableHeight * pageAspectRatio) / Math.max(containerWidth, 1)));
 
   useEffect(() => {
     updateWidth();
@@ -44,14 +37,6 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
     if (containerRef.current) observer.observe(containerRef.current);
     return () => observer.disconnect();
   }, [updateWidth, isPseudoFullscreen]);
-
-  // Auto-fit on small screens when entering fullscreen so the course uses the whole page better
-  useEffect(() => {
-    if (!isExpanded || typeof window === "undefined") return;
-    if (window.matchMedia("(max-width: 1024px)").matches) {
-      setZoom((z) => Math.max(z, fitHeightZoom));
-    }
-  }, [isExpanded, fitHeightZoom]);
 
   // Listen for native fullscreen changes
   useEffect(() => {
@@ -62,13 +47,22 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
     return () => document.removeEventListener("fullscreenchange", handleFsChange);
   }, []);
 
-  // Lock page scroll in pseudo fullscreen mode
+  // Lock page scroll in pseudo fullscreen mode & try to lock orientation
   useEffect(() => {
     if (!isPseudoFullscreen) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+
+    // Try to lock screen orientation to landscape (works on Android Chrome)
+    try {
+      (screen.orientation as any)?.lock?.("landscape").catch(() => {});
+    } catch {}
+
     return () => {
       document.body.style.overflow = previousOverflow;
+      try {
+        screen.orientation?.unlock?.();
+      } catch {}
     };
   }, [isPseudoFullscreen]);
 
@@ -138,6 +132,19 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
     if (e.key === "Escape" && isNativeFullscreen) document.exitFullscreen();
   };
 
+  // Detect portrait mobile for CSS rotation fallback
+  const [isPortraitMobile, setIsPortraitMobile] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia("(max-width: 768px) and (orientation: portrait)");
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => setIsPortraitMobile(e.matches);
+    handler(mql);
+    mql.addEventListener("change", handler as any);
+    return () => mql.removeEventListener("change", handler as any);
+  }, []);
+
+  const rotateLandscape = isPseudoFullscreen && isPortraitMobile;
+
   const viewerContent = (
     <div
       ref={containerRef}
@@ -150,7 +157,16 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
       }`}
       tabIndex={0}
       onKeyDown={handleKeyDown}
-      style={{ userSelect: "none", WebkitUserSelect: "none" }}
+      style={rotateLandscape ? {
+        userSelect: "none",
+        WebkitUserSelect: "none" as any,
+        transform: "rotate(90deg)",
+        transformOrigin: "top left",
+        width: "100vh",
+        height: "100vw",
+        top: 0,
+        left: "100vw",
+      } : { userSelect: "none", WebkitUserSelect: "none" as any }}
     >
       {/* Toolbar */}
       <div className="flex items-center gap-1 p-2 bg-muted/50 border-b flex-wrap">
@@ -194,12 +210,6 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
           <Page
             pageNumber={page}
             width={containerWidth * zoom}
-            onLoadSuccess={(loadedPage: { width: number; height: number }) => {
-              const ratio = loadedPage.width / loadedPage.height;
-              if (Number.isFinite(ratio) && ratio > 0) {
-                setPageAspectRatio(ratio);
-              }
-            }}
             renderTextLayer={false}
             renderAnnotationLayer={false}
           />
