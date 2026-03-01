@@ -3,7 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { LogOut, Target, RotateCcw, ChevronRight, KeyRound, Loader2, AlertTriangle } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { LogOut, Target, RotateCcw, ChevronRight, KeyRound, Loader2, AlertTriangle, BookOpen, GraduationCap, TrendingUp, Clock, ArrowRight, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import ModuleDetailView from "@/components/cours-en-ligne/ModuleDetailView";
 import ExamensBlancsPage from "@/components/cours-en-ligne/ExamensBlancsPage";
@@ -322,7 +324,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const studentName = apprenant ? `${apprenant.prenom} ${apprenant.nom}` : "Apprenant";
 
   return (
-    <div className={embedded ? "" : "min-h-screen bg-slate-50"}>
+    <div className={embedded ? "" : "min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50"}>
       {/* Inactivity modal */}
       <Dialog open={showInactivityModal} onOpenChange={setShowInactivityModal}>
         <DialogContent className="sm:max-w-md">
@@ -333,10 +335,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-muted-foreground">
               Nous avons remarqué qu'il n'y a plus eu d'activité depuis <strong>2 heures</strong> sur la plateforme.
             </p>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-muted-foreground">
               N'oubliez pas de continuer vos révisions pour bien préparer votre examen ! 💪
             </p>
             <Button className="w-full" onClick={() => setShowInactivityModal(false)}>
@@ -347,17 +349,17 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       </Dialog>
 
       {/* Top navbar */}
-      <nav className="bg-slate-900 text-white">
+      <nav className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-lg">
         <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-1">
             {(["accueil", "examens", "notes"] as const).map((tab) => (
-              <span
+              <button
                 key={tab}
-                className={`text-sm cursor-pointer transition-colors ${activeTab === tab ? "font-bold text-white border-b-2 border-white pb-0.5" : "hover:text-primary text-slate-400"}`}
+                className={`px-4 py-2 text-sm rounded-lg transition-all ${activeTab === tab ? "font-bold text-white bg-white/15 shadow-inner" : "hover:bg-white/10 text-slate-400 hover:text-white"}`}
                 onClick={() => setActiveTab(tab)}
               >
-                {tab === "accueil" ? "Accueil" : tab === "examens" ? "Examens" : "Notes"}
-              </span>
+                {tab === "accueil" ? "🏠 Accueil" : tab === "examens" ? "📝 Examens" : "📊 Notes"}
+              </button>
             ))}
           </div>
           {!embedded && (
@@ -377,12 +379,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         </div>
       </nav>
 
-      <div className="max-w-6xl mx-auto px-4 py-6">
-        <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">{formation.label}</h1>
-          <p className="text-slate-500 text-lg">{studentName}</p>
-        </div>
-
+      <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Notes tab */}
         {activeTab === "notes" && apprenant?.id && (
           <NotesView apprenantId={apprenant.id} studentName={studentName} />
@@ -390,78 +387,168 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
         {/* Examens tab placeholder */}
         {activeTab === "examens" && (
-          <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-            <p className="text-slate-500">Section Examens — à venir</p>
-          </div>
+          <Card className="p-8 text-center">
+            <p className="text-muted-foreground">Section Examens — à venir</p>
+          </Card>
         )}
 
         {/* Accueil tab */}
         {activeTab === "accueil" && (
           <>
-            {/* Dashboard cards */}
-            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-              <h2 className="text-xl font-bold text-slate-900 mb-4">Bienvenue sur votre tableau de bord</h2>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="border rounded-xl p-6 flex flex-col items-center justify-center">
-                  <h3 className="font-bold text-slate-700 mb-2">Progression générale</h3>
-                  <span className="text-4xl font-bold text-slate-900">{globalProgress}%</span>
-                  <Progress value={globalProgress} className="mt-3 w-3/4 h-2" />
+            {/* Hero welcome section */}
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-blue-900 to-slate-800 p-8 mb-8 text-white shadow-xl">
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute top-0 right-0 w-96 h-96 bg-blue-400 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+                <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-400 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4" />
+              </div>
+              <div className="relative z-10">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-blue-200 text-sm font-medium mb-1">
+                      <Sparkles className="w-4 h-4 inline mr-1" />
+                      {formation.label}
+                    </p>
+                    <h1 className="text-3xl md:text-4xl font-bold mb-2">
+                      Bonjour, {apprenant?.prenom || "Apprenant"} 👋
+                    </h1>
+                    <p className="text-blue-200/80 text-base">
+                      Continue tes efforts, chaque module te rapproche de la réussite !
+                    </p>
+                  </div>
+                  <div className="hidden md:flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-5 py-4 border border-white/10">
+                    <div className="text-center">
+                      <p className="text-4xl font-black">{globalProgress}%</p>
+                      <p className="text-xs text-blue-200 mt-0.5">Progression</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="border rounded-xl p-6">
-                  <h3 className="font-bold text-slate-700 mb-3 text-center">À revoir</h3>
-                  <div className="space-y-2 max-h-40 overflow-y-auto">
-                    {lowModules.map((mod) => (
-                      <div key={mod.id} className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-slate-700">{mod.nom}</span>
-                          <span className="text-xs font-semibold text-red-500">0%</span>
-                        </div>
-                        <Button variant="secondary" size="sm" className="text-xs" onClick={() => { trackModuleActivity(mod.id, mod.nom); setSelectedModule(mod); }}>
-                          <RotateCcw className="w-3 h-3 mr-1" />
-                          Refaire
-                        </Button>
-                      </div>
-                    ))}
+                
+                {/* Progress bar */}
+                <div className="mt-6 max-w-xl">
+                  <div className="flex justify-between text-xs text-blue-200 mb-1.5">
+                    <span>{modules.length} modules</span>
+                    <span>{globalProgress}% complété</span>
+                  </div>
+                  <div className="h-3 rounded-full bg-white/10 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-blue-400 to-emerald-400 transition-all duration-700 ease-out"
+                      style={{ width: `${globalProgress}%` }}
+                    />
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="bg-blue-50 border-l-4 border-blue-400 rounded-r-xl p-4 mb-6">
-              <p className="text-sm text-slate-700">
-                <Target className="w-4 h-4 inline mr-1 text-primary" />
-                Continue comme ça ! Pense à réviser les modules où ta progression est inférieure à 50%.
-              </p>
-            </div>
-
-            {/* Modules table */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="hidden md:grid grid-cols-12 gap-2 px-6 py-3 bg-slate-50 border-b text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                <div className="col-span-2">Nom</div>
-                <div className="col-span-4">Description</div>
-                <div className="col-span-1 text-center">Taux de réussite</div>
-                <div className="col-span-2 text-center">Progression</div>
-                <div className="col-span-1 text-center">Statut</div>
-                <div className="col-span-2 text-center">Actions</div>
-              </div>
-              {modules.map((mod) => (
-                <div key={mod.id} className="grid grid-cols-1 md:grid-cols-12 gap-2 px-6 py-4 border-b last:border-b-0 hover:bg-slate-50/50 transition-colors items-center">
-                  <div className="md:col-span-2 font-semibold text-slate-800 text-sm">{mod.nom}</div>
-                  <div className="md:col-span-4 text-sm text-slate-500 line-clamp-2">{mod.description}</div>
-                  <div className="md:col-span-1 text-center"><span className="text-sm text-slate-600">0%</span></div>
-                  <div className="md:col-span-2 text-center"><span className="text-sm text-slate-600">0%</span></div>
-                  <div className="md:col-span-1 text-center"><span className="text-sm font-semibold text-emerald-500">Actif</span></div>
-                  <div className="md:col-span-2 text-center">
-                    <Button size="sm" className="bg-slate-800 hover:bg-slate-700 text-white text-xs" onClick={() => { trackModuleActivity(mod.id, mod.nom); setSelectedModule(mod); }}>
-                      Consulter <ChevronRight className="w-3.5 h-3.5 ml-1" />
-                    </Button>
-                  </div>
-                  <div className="flex items-center justify-between md:hidden text-xs text-slate-400 pt-1">
-                    <span>Réussite: 0% · Progression: 0%</span>
-                    <span className="text-emerald-500 font-semibold">Actif</span>
-                  </div>
-                </div>
+            {/* Stats cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              {[
+                { icon: BookOpen, label: "Modules", value: modules.length.toString(), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
+                { icon: GraduationCap, label: "Complétés", value: "0", color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
+                { icon: TrendingUp, label: "Progression", value: `${globalProgress}%`, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
+                { icon: Clock, label: "À revoir", value: lowModules.length.toString(), color: "text-rose-600", bg: "bg-rose-50 dark:bg-rose-950/30" },
+              ].map((stat) => (
+                <Card key={stat.label} className="border-0 shadow-sm hover:shadow-md transition-shadow">
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <div className={`p-2.5 rounded-xl ${stat.bg}`}>
+                      <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+                      <p className="text-xs text-muted-foreground">{stat.label}</p>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
+            </div>
+
+            {/* Modules à revoir */}
+            {lowModules.length > 0 && (
+              <Card className="border-0 shadow-sm mb-8 overflow-hidden">
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 px-6 py-3 border-b">
+                  <h3 className="font-bold text-amber-800 dark:text-amber-200 flex items-center gap-2">
+                    <Target className="w-4 h-4" />
+                    Modules à réviser en priorité
+                  </h3>
+                </div>
+                <CardContent className="p-4 space-y-2">
+                  {lowModules.map((mod) => (
+                    <div key={mod.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-700 dark:text-amber-300 font-bold text-sm">
+                          {mod.id}
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm text-foreground">{mod.nom}</p>
+                          <p className="text-xs text-muted-foreground">Progression : 0%</p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs gap-1.5 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-300"
+                        onClick={() => { trackModuleActivity(mod.id, mod.nom); setSelectedModule(mod); }}
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        Réviser
+                      </Button>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Modules list as cards */}
+            <div className="space-y-3">
+              <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-primary" />
+                Tous les modules
+              </h2>
+              <div className="grid gap-3">
+                {modules.map((mod, idx) => (
+                  <Card
+                    key={mod.id}
+                    className="border-0 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group overflow-hidden"
+                    onClick={() => { trackModuleActivity(mod.id, mod.nom); setSelectedModule(mod); }}
+                  >
+                    <CardContent className="p-0">
+                      <div className="flex items-center gap-4 p-5">
+                        {/* Module number badge */}
+                        <div className="shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center border border-primary/10 group-hover:from-primary/20 group-hover:to-primary/10 transition-colors">
+                          <span className="text-lg font-bold text-primary">{idx + 1}</span>
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <h3 className="font-bold text-foreground text-sm group-hover:text-primary transition-colors">
+                              {mod.nom}
+                            </h3>
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-emerald-600 border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30">
+                              Actif
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground line-clamp-1">{mod.description}</p>
+                          
+                          {/* Mini progress bar */}
+                          <div className="mt-2 flex items-center gap-3">
+                            <div className="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden max-w-[200px]">
+                              <div className="h-full rounded-full bg-primary/40 transition-all" style={{ width: "0%" }} />
+                            </div>
+                            <span className="text-[10px] font-medium text-muted-foreground">0%</span>
+                          </div>
+                        </div>
+
+                        {/* Action */}
+                        <div className="shrink-0">
+                          <div className="w-9 h-9 rounded-full bg-primary/5 group-hover:bg-primary group-hover:text-white flex items-center justify-center transition-all duration-300">
+                            <ArrowRight className="w-4 h-4 text-primary group-hover:text-white transition-colors" />
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
           </>
         )}
