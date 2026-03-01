@@ -41,6 +41,7 @@ import imgParcBlandan from "@/assets/pratique/parc-blandan.jpg";
 import imgQuenelle from "@/assets/pratique/quenelle.jpg";
 import imgBugnes from "@/assets/pratique/bugnes.jpg";
 import { VTC_COURS_DATA } from "./vtc-cours-data";
+import { FORMULES_DATA } from "./formules-data";
 
 interface ContentItem {
   id: number;
@@ -444,6 +445,16 @@ const CAS_PRATIQUE_TAXI_DATA: ModuleData = {
   cours: [
     {
       id: 1,
+      titre: "📥 Document complet — Cas Pratique Taxi",
+      sousTitre: "Téléchargez le document avec tous les cas pratiques de facturation taxi",
+      description: "Ce document contient l'ensemble des 10 cas pratiques de facturation taxi avec les tarifs, suppléments, réservations et bagages.",
+      actif: true,
+      fichiers: [
+        { nom: "Cas Pratique Taxi (Word)", url: "/cours/vtc/CAS_PRATIQUE.docx" },
+      ],
+    },
+    {
+      id: 2,
       titre: "Précisions importantes",
       description: `Avant de commencer les cas pratiques, retenez bien ces règles :
 
@@ -594,6 +605,7 @@ function getInitialModuleData(module: { id: number; nom: string }): ModuleData {
   if (module.id === 2) return JSON.parse(JSON.stringify(VTC_COURS_DATA));
   if (module.id === 8) return JSON.parse(JSON.stringify(PRATIQUE_VTC_DATA));
   if (module.id === 12) return JSON.parse(JSON.stringify(CAS_PRATIQUE_TAXI_DATA));
+  if (module.id === 3) return JSON.parse(JSON.stringify(FORMULES_DATA));
   return {
     id: module.id,
     nom: module.nom,
