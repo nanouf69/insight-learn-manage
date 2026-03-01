@@ -11,6 +11,7 @@ import { FORMATIONS, MODULES_DATA, type FormationId } from "@/components/cours-e
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import { safeDateParse } from "@/lib/safeDateParse";
+import { useConnexionTracking } from "@/hooks/useConnexionTracking";
 
 // Map type_apprenant from CRM to formation IDs
 const TYPE_TO_FORMATION: Record<string, FormationId> = {
@@ -25,6 +26,7 @@ const TYPE_TO_FORMATION: Record<string, FormationId> = {
 };
 
 interface ApprenantInfo {
+  id?: string;
   nom: string;
   prenom: string;
   type_apprenant: string | null;
@@ -113,6 +115,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [selectedModule, setSelectedModule] = useState<{ id: number; nom: string } | null>(null);
   const [selectedFormation, setSelectedFormation] = useState<FormationId | null>(null);
 
+  // Tracking connexion élève (only for real student sessions, not admin preview)
+  const { trackModuleActivity } = useConnexionTracking({
+    apprenantId: !embedded && apprenant?.id ? apprenant.id : null,
+    userId: user?.id || null,
+    enabled: !embedded && !!user && !!apprenant?.id,
+  });
+
   useEffect(() => {
     if (embedded) return; // skip auth in admin preview
 
@@ -137,7 +146,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const fetchApprenant = async () => {
       const { data } = await supabase
         .from("apprenants")
-        .select("nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, modules_autorises")
+        .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, modules_autorises")
         .eq("auth_user_id", user.id)
         .maybeSingle();
 
@@ -332,7 +341,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                       <span className="text-sm font-medium text-slate-700">{mod.nom}</span>
                       <span className="text-xs font-semibold text-red-500">0%</span>
                     </div>
-                    <Button variant="secondary" size="sm" className="text-xs" onClick={() => setSelectedModule(mod)}>
+                    <Button variant="secondary" size="sm" className="text-xs" onClick={() => { trackModuleActivity(mod.id, mod.nom); setSelectedModule(mod); }}>
                       <RotateCcw className="w-3 h-3 mr-1" />
                       Refaire
                     </Button>
@@ -368,7 +377,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
               <div className="md:col-span-2 text-center"><span className="text-sm text-slate-600">0%</span></div>
               <div className="md:col-span-1 text-center"><span className="text-sm font-semibold text-emerald-500">Actif</span></div>
               <div className="md:col-span-2 text-center">
-                <Button size="sm" className="bg-slate-800 hover:bg-slate-700 text-white text-xs" onClick={() => setSelectedModule(mod)}>
+                <Button size="sm" className="bg-slate-800 hover:bg-slate-700 text-white text-xs" onClick={() => { trackModuleActivity(mod.id, mod.nom); setSelectedModule(mod); }}>
                   Consulter <ChevronRight className="w-3.5 h-3.5 ml-1" />
                 </Button>
               </div>

@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { BookOpen, Layers, GraduationCap, Plus, Users, TrendingUp, AlertTriangle, FileText, Monitor, ArrowUp, ArrowDown, Pencil, Trash2, ClipboardList, Trophy, Eye, Search, X, ChevronRight } from "lucide-react";
+import { BookOpen, Layers, GraduationCap, Plus, Users, TrendingUp, AlertTriangle, FileText, Monitor, ArrowUp, ArrowDown, Pencil, Trash2, ClipboardList, Trophy, Eye, Search, X, ChevronRight, BarChart3 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import ModuleDetailView from "./ModuleDetailView";
 import ExamensBlancsPage from "./ExamensBlancsPage";
 import ExamensBlancsEditor from "./ExamensBlancsEditor";
 import CoursPublic from "@/pages/CoursPublic";
+import ApprenantActivityReport from "./ApprenantActivityReport";
 import { supabase } from "@/integrations/supabase/client";
 
 // IDs des modules bilan qui ouvrent directement l'onglet examens
@@ -188,7 +189,7 @@ const ApprenantSearchPreview = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full max-w-3xl grid-cols-5">
+        <TabsList className="grid w-full max-w-4xl grid-cols-6">
           <TabsTrigger value="accueil" className="flex items-center gap-2">
             <BookOpen className="w-4 h-4" />
             Accueil
@@ -208,6 +209,10 @@ const ApprenantSearchPreview = () => {
           <TabsTrigger value="vue-apprenant" className="flex items-center gap-2">
             <Eye className="w-4 h-4" />
             Vue apprenant
+          </TabsTrigger>
+          <TabsTrigger value="rapport-activite" className="flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" />
+            Rapport activité
           </TabsTrigger>
         </TabsList>
 
@@ -452,6 +457,10 @@ const ApprenantSearchPreview = () => {
         {/* Vue Apprenant */}
         <TabsContent value="vue-apprenant" className="mt-6">
           <ApprenantSearchPreview />
+        </TabsContent>
+        {/* Rapport Activité */}
+        <TabsContent value="rapport-activite" className="mt-6">
+          <ApprenantActivityReport onBack={() => setActiveTab("accueil")} />
         </TabsContent>
       </Tabs>
     </div>

@@ -97,6 +97,104 @@ export type Database = {
         }
         Relationships: []
       }
+      apprenant_connexions: {
+        Row: {
+          apprenant_id: string
+          created_at: string
+          ended_at: string | null
+          id: string
+          last_seen_at: string
+          source: string
+          started_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          apprenant_id: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          last_seen_at?: string
+          source?: string
+          started_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          apprenant_id?: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          last_seen_at?: string
+          source?: string
+          started_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apprenant_connexions_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: false
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      apprenant_module_activites: {
+        Row: {
+          action_type: string
+          apprenant_id: string
+          connexion_id: string | null
+          created_at: string
+          id: string
+          metadata: Json
+          module_id: number
+          module_nom: string
+          occurred_at: string
+          user_id: string
+        }
+        Insert: {
+          action_type?: string
+          apprenant_id: string
+          connexion_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          module_id: number
+          module_nom: string
+          occurred_at?: string
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          apprenant_id?: string
+          connexion_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          module_id?: number
+          module_nom?: string
+          occurred_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apprenant_module_activites_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: false
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apprenant_module_activites_connexion_id_fkey"
+            columns: ["connexion_id"]
+            isOneToOne: false
+            referencedRelation: "apprenant_connexions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       apprenants: {
         Row: {
           adresse: string | null
