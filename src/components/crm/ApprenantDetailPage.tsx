@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, User, FileText, BookOpen, Calendar, Mail, Phone, MapPin, CreditCard, Edit2, Download, CheckCircle2, XCircle, Plus, CalendarIcon, Pencil } from "lucide-react";
+import { ArrowLeft, User, FileText, BookOpen, Calendar, Mail, Phone, MapPin, CreditCard, Edit2, Download, CheckCircle2, XCircle, Plus, CalendarIcon, Pencil, KeyRound, Loader2, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -79,6 +79,8 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [dateDebutOpen, setDateDebutOpen] = useState(false);
   const [dateFinOpen, setDateFinOpen] = useState(false);
+  const [creatingAccount, setCreatingAccount] = useState(false);
+  const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   // Fonction pour mettre à jour une date
@@ -246,10 +248,59 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
             </div>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={() => setIsEditOpen(true)}>
-          <Edit2 className="w-4 h-4 mr-2" />
-          Modifier
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* Bouton créer compte apprenant */}
+          {apprenant.email && !(apprenant as any).auth_user_id && !generatedPassword && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                setCreatingAccount(true);
+                try {
+                  const { data, error } = await supabase.functions.invoke("create-apprenant-account", {
+                    body: { apprenant_id: apprenantId, email: apprenant.email },
+                  });
+                  if (error) throw error;
+                  if (data?.error) throw new Error(data.error);
+                  setGeneratedPassword(data.password);
+                  toast.success(`Compte créé ! Mot de passe : ${data.password}`);
+                  queryClient.invalidateQueries({ queryKey: ['apprenant-detail', apprenantId] });
+                } catch (err: any) {
+                  toast.error(err.message || "Erreur lors de la création du compte");
+                } finally {
+                  setCreatingAccount(false);
+                }
+              }}
+              disabled={creatingAccount}
+            >
+              {creatingAccount ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <KeyRound className="w-4 h-4 mr-2" />}
+              Créer compte cours
+            </Button>
+          )}
+          {(generatedPassword || (apprenant as any).auth_user_id) && (
+            <Badge variant="secondary" className="gap-1">
+              <CheckCircle2 className="w-3 h-3" />
+              Compte actif
+            </Badge>
+          )}
+          {generatedPassword && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                navigator.clipboard.writeText(generatedPassword);
+                toast.success("Mot de passe copié !");
+              }}
+            >
+              <Copy className="w-4 h-4 mr-1" />
+              MDP: {generatedPassword}
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={() => setIsEditOpen(true)}>
+            <Edit2 className="w-4 h-4 mr-2" />
+            Modifier
+          </Button>
+        </div>
       </div>
 
       {/* Modal d'édition */}
