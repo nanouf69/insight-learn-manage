@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, User, FileText, BookOpen, Calendar, Mail, Phone, MapPin, CreditCard, Edit2, Download, CheckCircle2, XCircle, Plus, CalendarIcon, Pencil, KeyRound, Loader2, Copy } from "lucide-react";
+import { ArrowLeft, User, FileText, BookOpen, Calendar, Mail, Phone, MapPin, CreditCard, Edit2, Download, CheckCircle2, XCircle, Plus, CalendarIcon, Pencil, KeyRound, Loader2, Copy, Monitor } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { MODULES_DATA, FORMATIONS, type FormationId } from "@/components/cours-en-ligne/formations-data";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -81,6 +83,8 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
   const [dateFinOpen, setDateFinOpen] = useState(false);
   const [creatingAccount, setCreatingAccount] = useState(false);
   const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
+  const [dateDebutCoursOpen, setDateDebutCoursOpen] = useState(false);
+  const [dateFinCoursOpen, setDateFinCoursOpen] = useState(false);
   const queryClient = useQueryClient();
 
   // Fonction pour mettre à jour une date
@@ -561,6 +565,140 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
                 <p className="text-muted-foreground whitespace-pre-wrap">
                   {apprenant.notes || 'Aucune note'}
                 </p>
+              </CardContent>
+            </Card>
+
+            {/* Accès cours en ligne */}
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Monitor className="w-5 h-5" />
+                  Accès cours en ligne
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Date de début d'accès</p>
+                    <Popover open={dateDebutCoursOpen} onOpenChange={setDateDebutCoursOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={cn(
+                            "h-auto p-1 font-medium justify-start hover:bg-muted",
+                            !(apprenant as any).date_debut_cours_en_ligne && "text-muted-foreground"
+                          )}
+                        >
+                          {(apprenant as any).date_debut_cours_en_ligne
+                            ? format(parseDate((apprenant as any).date_debut_cours_en_ligne) || new Date(), 'dd MMMM yyyy', { locale: fr })
+                            : 'Cliquer pour définir'}
+                          <Pencil className="w-3 h-3 ml-2 text-muted-foreground" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={parseDate((apprenant as any).date_debut_cours_en_ligne)}
+                          onSelect={async (date) => {
+                            if (!date) return;
+                            try {
+                              await supabase.from('apprenants').update({ date_debut_cours_en_ligne: format(date, 'yyyy-MM-dd') } as any).eq('id', apprenantId);
+                              toast.success("Date de début d'accès mise à jour");
+                              queryClient.invalidateQueries({ queryKey: ['apprenant-detail', apprenantId] });
+                              setDateDebutCoursOpen(false);
+                            } catch { toast.error("Erreur"); }
+                          }}
+                          initialFocus
+                          locale={fr}
+                          className="p-3 pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Date de fin d'accès</p>
+                    <Popover open={dateFinCoursOpen} onOpenChange={setDateFinCoursOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={cn(
+                            "h-auto p-1 font-medium justify-start hover:bg-muted",
+                            !(apprenant as any).date_fin_cours_en_ligne && "text-muted-foreground"
+                          )}
+                        >
+                          {(apprenant as any).date_fin_cours_en_ligne
+                            ? format(parseDate((apprenant as any).date_fin_cours_en_ligne) || new Date(), 'dd MMMM yyyy', { locale: fr })
+                            : 'Cliquer pour définir'}
+                          <Pencil className="w-3 h-3 ml-2 text-muted-foreground" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={parseDate((apprenant as any).date_fin_cours_en_ligne)}
+                          onSelect={async (date) => {
+                            if (!date) return;
+                            try {
+                              await supabase.from('apprenants').update({ date_fin_cours_en_ligne: format(date, 'yyyy-MM-dd') } as any).eq('id', apprenantId);
+                              toast.success("Date de fin d'accès mise à jour");
+                              queryClient.invalidateQueries({ queryKey: ['apprenant-detail', apprenantId] });
+                              setDateFinCoursOpen(false);
+                            } catch { toast.error("Erreur"); }
+                          }}
+                          initialFocus
+                          locale={fr}
+                          className="p-3 pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+
+                {/* Statut accès */}
+                {(() => {
+                  const now = new Date();
+                  const debut = parseDate((apprenant as any).date_debut_cours_en_ligne);
+                  const fin = parseDate((apprenant as any).date_fin_cours_en_ligne);
+                  if (!debut || !fin) return (
+                    <p className="text-sm text-muted-foreground italic">Définissez les deux dates pour activer l'accès aux cours en ligne.</p>
+                  );
+                  const isActive = now >= debut && now <= fin;
+                  return (
+                    <Badge className={isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
+                      {isActive ? "✅ Accès actif" : "🔒 Accès inactif"}
+                    </Badge>
+                  );
+                })()}
+
+                {/* Modules autorisés */}
+                <div>
+                  <p className="text-sm font-medium text-foreground mb-3">Modules autorisés</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {MODULES_DATA.map((mod) => {
+                      const currentModules: number[] = (apprenant as any).modules_autorises || [];
+                      const isChecked = currentModules.includes(mod.id);
+                      return (
+                        <label key={mod.id} className="flex items-center gap-2 p-2 rounded-md hover:bg-muted/50 cursor-pointer">
+                          <Checkbox
+                            checked={isChecked}
+                            onCheckedChange={async (checked) => {
+                              const updated = checked
+                                ? [...currentModules, mod.id]
+                                : currentModules.filter((id: number) => id !== mod.id);
+                              try {
+                                await supabase.from('apprenants').update({ modules_autorises: updated } as any).eq('id', apprenantId);
+                                queryClient.invalidateQueries({ queryKey: ['apprenant-detail', apprenantId] });
+                              } catch { toast.error("Erreur"); }
+                            }}
+                          />
+                          <span className="text-sm">{mod.nom}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>

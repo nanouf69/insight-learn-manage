@@ -106,9 +106,11 @@ export type Database = {
           code_postal: string | null
           created_at: string
           creneau_horaire: string | null
+          date_debut_cours_en_ligne: string | null
           date_debut_formation: string | null
           date_examen_pratique: string | null
           date_examen_theorique: string | null
+          date_fin_cours_en_ligne: string | null
           date_fin_formation: string | null
           date_formation_catalogue: string | null
           date_naissance: string | null
@@ -121,6 +123,7 @@ export type Database = {
           inscrit_france_travail: boolean | null
           lieu_examen: string | null
           mode_financement: string | null
+          modules_autorises: number[] | null
           montant_paye: number | null
           montant_ttc: number | null
           moyen_paiement: string | null
@@ -146,9 +149,11 @@ export type Database = {
           code_postal?: string | null
           created_at?: string
           creneau_horaire?: string | null
+          date_debut_cours_en_ligne?: string | null
           date_debut_formation?: string | null
           date_examen_pratique?: string | null
           date_examen_theorique?: string | null
+          date_fin_cours_en_ligne?: string | null
           date_fin_formation?: string | null
           date_formation_catalogue?: string | null
           date_naissance?: string | null
@@ -161,6 +166,7 @@ export type Database = {
           inscrit_france_travail?: boolean | null
           lieu_examen?: string | null
           mode_financement?: string | null
+          modules_autorises?: number[] | null
           montant_paye?: number | null
           montant_ttc?: number | null
           moyen_paiement?: string | null
@@ -186,9 +192,11 @@ export type Database = {
           code_postal?: string | null
           created_at?: string
           creneau_horaire?: string | null
+          date_debut_cours_en_ligne?: string | null
           date_debut_formation?: string | null
           date_examen_pratique?: string | null
           date_examen_theorique?: string | null
+          date_fin_cours_en_ligne?: string | null
           date_fin_formation?: string | null
           date_formation_catalogue?: string | null
           date_naissance?: string | null
@@ -201,6 +209,7 @@ export type Database = {
           inscrit_france_travail?: boolean | null
           lieu_examen?: string | null
           mode_financement?: string | null
+          modules_autorises?: number[] | null
           montant_paye?: number | null
           montant_ttc?: number | null
           moyen_paiement?: string | null
