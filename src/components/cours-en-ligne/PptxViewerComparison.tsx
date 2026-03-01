@@ -11,6 +11,7 @@ interface PptxViewerComparisonProps {
   nom: string;
   imageUrls?: string[];
   pdfUrl?: string;
+  studentOnly?: boolean;
 }
 
 export default function PptxViewerComparison({
@@ -19,12 +20,16 @@ export default function PptxViewerComparison({
   nom,
   imageUrls,
   pdfUrl,
+  studentOnly = false,
 }: PptxViewerComparisonProps) {
   const [mode, setMode] = useState<"google" | "google-zoom" | "ms-office" | "images" | "pdf">(
     pdfUrl ? "pdf" : "google-zoom"
   );
   const [zoomLevel, setZoomLevel] = useState(1.25);
   const [currentSlide, setCurrentSlide] = useState(0);
+
+  // Students can only use PDF HD mode
+  const isStudentPdfOnly = studentOnly && pdfUrl;
 
   const hasImages = imageUrls && imageUrls.length > 0;
 
@@ -44,76 +49,78 @@ export default function PptxViewerComparison({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs font-medium text-muted-foreground">Mode :</span>
-        <div className="flex rounded-lg border bg-muted/30 p-0.5 gap-0.5">
-          {pdfUrl && (
+      {!isStudentPdfOnly && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-medium text-muted-foreground">Mode :</span>
+          <div className="flex rounded-lg border bg-muted/30 p-0.5 gap-0.5">
+            {pdfUrl && (
+              <Button
+                variant={mode === "pdf" ? "default" : "ghost"}
+                size="sm"
+                className="text-xs h-7 px-2.5"
+                onClick={() => setMode("pdf")}
+              >
+                <FileText className="w-3.5 h-3.5 mr-1" />
+                PDF HD
+              </Button>
+            )}
             <Button
-              variant={mode === "pdf" ? "default" : "ghost"}
+              variant={mode === "google-zoom" ? "default" : "ghost"}
               size="sm"
               className="text-xs h-7 px-2.5"
-              onClick={() => setMode("pdf")}
+              onClick={() => setMode("google-zoom")}
             >
-              <FileText className="w-3.5 h-3.5 mr-1" />
-              PDF HD
+              <ZoomIn className="w-3.5 h-3.5 mr-1" />
+              Google Zoomé
             </Button>
-          )}
-          <Button
-            variant={mode === "google-zoom" ? "default" : "ghost"}
-            size="sm"
-            className="text-xs h-7 px-2.5"
-            onClick={() => setMode("google-zoom")}
-          >
-            <ZoomIn className="w-3.5 h-3.5 mr-1" />
-            Google Zoomé
-          </Button>
-          <Button
-            variant={mode === "google" ? "default" : "ghost"}
-            size="sm"
-            className="text-xs h-7 px-2.5"
-            onClick={() => setMode("google")}
-          >
-            <Eye className="w-3.5 h-3.5 mr-1" />
-            Google Normal
-          </Button>
-          <Button
-            variant={mode === "ms-office" ? "default" : "ghost"}
-            size="sm"
-            className="text-xs h-7 px-2.5"
-            onClick={() => setMode("ms-office")}
-          >
-            <FileImage className="w-3.5 h-3.5 mr-1" />
-            Microsoft
-          </Button>
-          {hasImages && (
             <Button
-              variant={mode === "images" ? "default" : "ghost"}
+              variant={mode === "google" ? "default" : "ghost"}
               size="sm"
               className="text-xs h-7 px-2.5"
-              onClick={() => setMode("images")}
+              onClick={() => setMode("google")}
             >
-              <Images className="w-3.5 h-3.5 mr-1" />
-              Images HD
+              <Eye className="w-3.5 h-3.5 mr-1" />
+              Google Normal
             </Button>
+            <Button
+              variant={mode === "ms-office" ? "default" : "ghost"}
+              size="sm"
+              className="text-xs h-7 px-2.5"
+              onClick={() => setMode("ms-office")}
+            >
+              <FileImage className="w-3.5 h-3.5 mr-1" />
+              Microsoft
+            </Button>
+            {hasImages && (
+              <Button
+                variant={mode === "images" ? "default" : "ghost"}
+                size="sm"
+                className="text-xs h-7 px-2.5"
+                onClick={() => setMode("images")}
+              >
+                <Images className="w-3.5 h-3.5 mr-1" />
+                Images HD
+              </Button>
+            )}
+          </div>
+
+          {mode === "google-zoom" && (
+            <div className="flex items-center gap-2 ml-2">
+              <ZoomOut className="w-3.5 h-3.5 text-muted-foreground" />
+              <Slider
+                value={[zoomLevel]}
+                onValueChange={([v]) => setZoomLevel(v)}
+                min={1}
+                max={2}
+                step={0.05}
+                className="w-24"
+              />
+              <ZoomIn className="w-3.5 h-3.5 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">{Math.round(zoomLevel * 100)}%</span>
+            </div>
           )}
         </div>
-
-        {mode === "google-zoom" && (
-          <div className="flex items-center gap-2 ml-2">
-            <ZoomOut className="w-3.5 h-3.5 text-muted-foreground" />
-            <Slider
-              value={[zoomLevel]}
-              onValueChange={([v]) => setZoomLevel(v)}
-              min={1}
-              max={2}
-              step={0.05}
-              className="w-24"
-            />
-            <ZoomIn className="w-3.5 h-3.5 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">{Math.round(zoomLevel * 100)}%</span>
-          </div>
-        )}
-      </div>
+      )}
 
       <div className="w-full max-w-[1280px] mx-auto">
         {mode === "pdf" && pdfUrl && (
