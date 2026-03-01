@@ -130,7 +130,7 @@ const MATIERE_C: ContentItem[] = [
     titre: "C. SÉCURITÉ ROUTIÈRE — Partie 1",
     sousTitre: "Sécurité routière et prévention des risques",
     fichiers: [
-      { nom: "PowerPoint Partie 1", url: "/cours/vtc/C_Securite_Routiere_FINAL_1.pptx" },
+      { nom: "PDF HD Partie 1", url: "/cours/vtc/C_Securite_Routiere_1.pdf" },
     ],
   },
   {
@@ -138,7 +138,7 @@ const MATIERE_C: ContentItem[] = [
     titre: "C. SÉCURITÉ ROUTIÈRE — Partie 2",
     sousTitre: "Sécurité routière (suite)",
     fichiers: [
-      { nom: "PowerPoint Partie 2", url: "/cours/vtc/C_Securite_Routiere_FINAL_2.pptx" },
+      { nom: "PDF HD Partie 2", url: "/cours/vtc/C_Securite_Routiere_2.pdf" },
     ],
   },
   {
@@ -146,7 +146,7 @@ const MATIERE_C: ContentItem[] = [
     titre: "C. SÉCURITÉ ROUTIÈRE — Partie 3",
     sousTitre: "Sécurité routière (fin)",
     fichiers: [
-      { nom: "PowerPoint Partie 3", url: "/cours/vtc/C_Securite_Routiere_FINAL_3.pptx" },
+      { nom: "PDF HD Partie 3", url: "/cours/vtc/C_Securite_Routiere_3.pdf" },
     ],
   },
 ];
@@ -212,8 +212,51 @@ const MATIERE_E: ContentItem[] = [
 const MATIERE_F: ContentItem[] = [
   {
     id: 6001, actif: true,
-    titre: "F. RÉGLEMENTATION SPÉCIFIQUE VTC",
+    titre: "F. RÉGLEMENTATION NATIONALE — Partie 1",
     sousTitre: "Réglementation nationale spécifique aux VTC",
+    fichiers: [
+      { nom: "PDF HD Partie 1", url: "/cours/vtc/F_Nationale_1.pdf" },
+    ],
+  },
+  {
+    id: 6002, actif: true,
+    titre: "F. RÉGLEMENTATION NATIONALE — Partie 2",
+    sousTitre: "Réglementation nationale (suite)",
+    fichiers: [
+      { nom: "PDF HD Partie 2", url: "/cours/vtc/F_Nationale_2.pdf" },
+    ],
+  },
+  {
+    id: 6003, actif: true,
+    titre: "F. RÉGLEMENTATION SPÉCIFIQUE VTC",
+    sousTitre: "Réglementation spécifique aux VTC",
+    fichiers: [
+      { nom: "PDF HD", url: "/cours/vtc/F_Reglementation_Specifique_1.pdf" },
+    ],
+  },
+  {
+    id: 6004, actif: true,
+    titre: "F. RÉGLEMENTATION LOCALE — Partie 1",
+    sousTitre: "Réglementation locale",
+    fichiers: [
+      { nom: "PDF HD Partie 1", url: "/cours/vtc/F_Locale_1.pdf" },
+    ],
+  },
+  {
+    id: 6005, actif: true,
+    titre: "F. RÉGLEMENTATION LOCALE — Partie 2",
+    sousTitre: "Réglementation locale (suite)",
+    fichiers: [
+      { nom: "PDF HD Partie 2", url: "/cours/vtc/F_Locale_2.pdf" },
+    ],
+  },
+  {
+    id: 6006, actif: true,
+    titre: "F. RÉGLEMENTATION LOCALE — Partie 3",
+    sousTitre: "Réglementation locale (fin)",
+    fichiers: [
+      { nom: "PDF HD Partie 3", url: "/cours/vtc/F_Locale_3.pdf" },
+    ],
   },
 ];
 
@@ -226,6 +269,9 @@ const MATIERE_G: ContentItem[] = [
     id: 7001, actif: true,
     titre: "G. DÉVELOPPEMENT COMMERCIAL",
     sousTitre: "Marketing et développement commercial VTC",
+    fichiers: [
+      { nom: "PDF HD Marketing", url: "/cours/vtc/G_Marketing_1.pdf" },
+    ],
   },
 ];
 
