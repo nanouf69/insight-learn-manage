@@ -50,41 +50,15 @@ const MATIERE_A: ContentItem[] = [
     titre: "A. RÉGLEMENTATION T3P — Partie 1",
     sousTitre: "Transport public, loi LOTI, taxis, VTC, VMDTR, assurances, formation continue",
     fichiers: [
-      { nom: "PowerPoint Partie 1", url: "/cours/vtc/A_T3P_partie_1.pptx" },
-      { nom: "Version PDF HD", url: "/cours/vtc/T3P_partie_1_2.pdf" },
+      { nom: "PDF HD Partie 1", url: "/cours/vtc/A_T3P_1.pdf" },
     ],
   },
   {
     id: 1002, actif: true,
     titre: "A. RÉGLEMENTATION T3P — Partie 2",
     sousTitre: "Suite de la réglementation T3P",
-    slidesKey: "t3p-partie2",
     fichiers: [
-      { nom: "PowerPoint Partie 2", url: "/cours/vtc/A_T3P_partie_2_vrai.pptx" },
-    ],
-  },
-  {
-    id: 1003, actif: true,
-    titre: "A. RÉGLEMENTATION T3P — Partie 3",
-    sousTitre: "Réglementation T3P (suite)",
-    fichiers: [
-      { nom: "PowerPoint Partie 3", url: "/cours/vtc/A_T3P_partie_3_vrai.pptx" },
-    ],
-  },
-  {
-    id: 1004, actif: true,
-    titre: "A. RÉGLEMENTATION T3P — Partie 4",
-    sousTitre: "Réglementation T3P (suite)",
-    fichiers: [
-      { nom: "PowerPoint Partie 4", url: "/cours/vtc/A_T3P_partie_4_vrai.pptx" },
-    ],
-  },
-  {
-    id: 1005, actif: true,
-    titre: "A. RÉGLEMENTATION T3P — Partie 5",
-    sousTitre: "Réglementation T3P (fin)",
-    fichiers: [
-      { nom: "PowerPoint Partie 5", url: "/cours/vtc/A_T3P_partie_5_vrai.pptx" },
+      { nom: "PDF HD Partie 2", url: "/cours/vtc/A_T3P_2.pdf" },
     ],
   },
 ];
