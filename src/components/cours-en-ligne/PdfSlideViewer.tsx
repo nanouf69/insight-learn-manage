@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Maximize } from "lucide-react";
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Maximize, Minimize } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -16,6 +16,7 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
   const [numPages, setNumPages] = useState(0);
   const [page, setPage] = useState(1);
   const [zoom, setZoom] = useState(1);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(960);
 
@@ -33,6 +34,36 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
     return () => observer.disconnect();
   }, [updateWidth]);
 
+  // Listen for fullscreen changes
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener("fullscreenchange", handleFsChange);
+    return () => document.removeEventListener("fullscreenchange", handleFsChange);
+  }, []);
+
+  // Block right-click, print, copy shortcuts
+  useEffect(() => {
+    const blockContextMenu = (e: MouseEvent) => {
+      if (containerRef.current?.contains(e.target as Node)) {
+        e.preventDefault();
+      }
+    };
+    const blockKeys = (e: KeyboardEvent) => {
+      // Block Ctrl+P (print), Ctrl+S (save), Ctrl+C (copy)
+      if ((e.ctrlKey || e.metaKey) && (e.key === "p" || e.key === "s")) {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener("contextmenu", blockContextMenu);
+    document.addEventListener("keydown", blockKeys);
+    return () => {
+      document.removeEventListener("contextmenu", blockContextMenu);
+      document.removeEventListener("keydown", blockKeys);
+    };
+  }, []);
+
   const onDocumentLoadSuccess = useCallback(({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
     updateWidth();
@@ -43,19 +74,29 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
   const zoomIn = () => setZoom((z) => Math.min(z + 0.25, 3));
   const zoomOut = () => setZoom((z) => Math.max(z - 0.25, 0.5));
   const resetZoom = () => setZoom(1);
-  const fullscreen = () => containerRef.current?.requestFullscreen?.();
+
+  const toggleFullscreen = () => {
+    if (!containerRef.current) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      containerRef.current.requestFullscreen();
+    }
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowLeft") prev();
     if (e.key === "ArrowRight") next();
+    if (e.key === "Escape" && isFullscreen) document.exitFullscreen();
   };
 
   return (
     <div
       ref={containerRef}
-      className="border rounded-lg overflow-hidden bg-muted/30 focus:outline-none"
+      className={`border rounded-lg overflow-hidden focus:outline-none ${isFullscreen ? "bg-black flex flex-col" : "bg-muted/30"}`}
       tabIndex={0}
       onKeyDown={handleKeyDown}
+      style={{ userSelect: "none", WebkitUserSelect: "none" }}
     >
       {/* Toolbar */}
       <div className="flex items-center gap-1 p-2 bg-muted/50 border-b flex-wrap">
@@ -76,13 +117,15 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
         <Button variant="ghost" size="sm" onClick={zoomIn}><ZoomIn className="w-4 h-4" /></Button>
         <Button variant="ghost" size="sm" onClick={resetZoom}><RotateCcw className="w-4 h-4" /></Button>
         <div className="flex-1" />
-        <Button variant="ghost" size="sm" onClick={fullscreen}><Maximize className="w-4 h-4" /></Button>
+        <Button variant="ghost" size="sm" onClick={toggleFullscreen}>
+          {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+        </Button>
       </div>
 
       {/* PDF Page — scrollable when zoomed, touch-action for mobile */}
       <div
-        className="flex justify-center overflow-auto"
-        style={{ maxHeight: "80vh", touchAction: "pan-x pan-y" }}
+        className={`flex justify-center overflow-auto ${isFullscreen ? "flex-1" : ""}`}
+        style={{ maxHeight: isFullscreen ? "calc(100vh - 100px)" : "80vh", touchAction: "pan-x pan-y" }}
       >
         <Document
           file={url}
@@ -93,8 +136,8 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
           <Page
             pageNumber={page}
             width={containerWidth * zoom}
-            renderTextLayer
-            renderAnnotationLayer
+            renderTextLayer={false}
+            renderAnnotationLayer={false}
           />
         </Document>
       </div>
