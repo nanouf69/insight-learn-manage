@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { LogOut, Target, RotateCcw, ChevronRight, KeyRound, Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import ModuleDetailView from "@/components/cours-en-ligne/ModuleDetailView";
+import NotesView from "@/components/cours-en-ligne/NotesView";
 import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
 import { FORMATIONS, MODULES_DATA, type FormationId } from "@/components/cours-en-ligne/formations-data";
 import { supabase } from "@/integrations/supabase/client";
@@ -115,6 +116,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [apprenant, setApprenant] = useState<ApprenantInfo | null>(null);
   const [selectedModule, setSelectedModule] = useState<{ id: number; nom: string } | null>(null);
   const [selectedFormation, setSelectedFormation] = useState<FormationId | null>(null);
+  const [activeTab, setActiveTab] = useState<"accueil" | "examens" | "notes">("accueil");
 
   // Tracking connexion élève (only for real student sessions, not admin preview)
   const { trackModuleActivity } = useConnexionTracking({
@@ -325,14 +327,15 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       <nav className="bg-slate-900 text-white">
         <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-6">
-            <span
-              className="font-semibold text-sm cursor-pointer hover:text-primary transition-colors"
-              onClick={() => setSelectedFormation(null)}
-            >
-              Accueil
-            </span>
-            <span className="text-sm cursor-pointer hover:text-primary transition-colors">Examens</span>
-            <span className="text-sm cursor-pointer hover:text-primary transition-colors">Notes</span>
+            {(["accueil", "examens", "notes"] as const).map((tab) => (
+              <span
+                key={tab}
+                className={`text-sm cursor-pointer transition-colors ${activeTab === tab ? "font-bold text-white border-b-2 border-white pb-0.5" : "hover:text-primary text-slate-400"}`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab === "accueil" ? "Accueil" : tab === "examens" ? "Examens" : "Notes"}
+              </span>
+            ))}
           </div>
           {!embedded && (
             <div className="flex items-center gap-2">
@@ -357,71 +360,88 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           <p className="text-slate-500 text-lg">{studentName}</p>
         </div>
 
-        {/* Dashboard cards */}
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-          <h2 className="text-xl font-bold text-slate-900 mb-4">Bienvenue sur votre tableau de bord</h2>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="border rounded-xl p-6 flex flex-col items-center justify-center">
-              <h3 className="font-bold text-slate-700 mb-2">Progression générale</h3>
-              <span className="text-4xl font-bold text-slate-900">{globalProgress}%</span>
-              <Progress value={globalProgress} className="mt-3 w-3/4 h-2" />
+        {/* Notes tab */}
+        {activeTab === "notes" && apprenant?.id && (
+          <NotesView apprenantId={apprenant.id} studentName={studentName} />
+        )}
+
+        {/* Examens tab placeholder */}
+        {activeTab === "examens" && (
+          <div className="bg-white rounded-xl shadow-sm p-8 text-center">
+            <p className="text-slate-500">Section Examens — à venir</p>
+          </div>
+        )}
+
+        {/* Accueil tab */}
+        {activeTab === "accueil" && (
+          <>
+            {/* Dashboard cards */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+              <h2 className="text-xl font-bold text-slate-900 mb-4">Bienvenue sur votre tableau de bord</h2>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="border rounded-xl p-6 flex flex-col items-center justify-center">
+                  <h3 className="font-bold text-slate-700 mb-2">Progression générale</h3>
+                  <span className="text-4xl font-bold text-slate-900">{globalProgress}%</span>
+                  <Progress value={globalProgress} className="mt-3 w-3/4 h-2" />
+                </div>
+                <div className="border rounded-xl p-6">
+                  <h3 className="font-bold text-slate-700 mb-3 text-center">À revoir</h3>
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {lowModules.map((mod) => (
+                      <div key={mod.id} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-slate-700">{mod.nom}</span>
+                          <span className="text-xs font-semibold text-red-500">0%</span>
+                        </div>
+                        <Button variant="secondary" size="sm" className="text-xs" onClick={() => { trackModuleActivity(mod.id, mod.nom); setSelectedModule(mod); }}>
+                          <RotateCcw className="w-3 h-3 mr-1" />
+                          Refaire
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="border rounded-xl p-6">
-              <h3 className="font-bold text-slate-700 mb-3 text-center">À revoir</h3>
-              <div className="space-y-2 max-h-40 overflow-y-auto">
-                {lowModules.map((mod) => (
-                  <div key={mod.id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-slate-700">{mod.nom}</span>
-                      <span className="text-xs font-semibold text-red-500">0%</span>
-                    </div>
-                    <Button variant="secondary" size="sm" className="text-xs" onClick={() => { trackModuleActivity(mod.id, mod.nom); setSelectedModule(mod); }}>
-                      <RotateCcw className="w-3 h-3 mr-1" />
-                      Refaire
+
+            <div className="bg-blue-50 border-l-4 border-blue-400 rounded-r-xl p-4 mb-6">
+              <p className="text-sm text-slate-700">
+                <Target className="w-4 h-4 inline mr-1 text-primary" />
+                Continue comme ça ! Pense à réviser les modules où ta progression est inférieure à 50%.
+              </p>
+            </div>
+
+            {/* Modules table */}
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="hidden md:grid grid-cols-12 gap-2 px-6 py-3 bg-slate-50 border-b text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                <div className="col-span-2">Nom</div>
+                <div className="col-span-4">Description</div>
+                <div className="col-span-1 text-center">Taux de réussite</div>
+                <div className="col-span-2 text-center">Progression</div>
+                <div className="col-span-1 text-center">Statut</div>
+                <div className="col-span-2 text-center">Actions</div>
+              </div>
+              {modules.map((mod) => (
+                <div key={mod.id} className="grid grid-cols-1 md:grid-cols-12 gap-2 px-6 py-4 border-b last:border-b-0 hover:bg-slate-50/50 transition-colors items-center">
+                  <div className="md:col-span-2 font-semibold text-slate-800 text-sm">{mod.nom}</div>
+                  <div className="md:col-span-4 text-sm text-slate-500 line-clamp-2">{mod.description}</div>
+                  <div className="md:col-span-1 text-center"><span className="text-sm text-slate-600">0%</span></div>
+                  <div className="md:col-span-2 text-center"><span className="text-sm text-slate-600">0%</span></div>
+                  <div className="md:col-span-1 text-center"><span className="text-sm font-semibold text-emerald-500">Actif</span></div>
+                  <div className="md:col-span-2 text-center">
+                    <Button size="sm" className="bg-slate-800 hover:bg-slate-700 text-white text-xs" onClick={() => { trackModuleActivity(mod.id, mod.nom); setSelectedModule(mod); }}>
+                      Consulter <ChevronRight className="w-3.5 h-3.5 ml-1" />
                     </Button>
                   </div>
-                ))}
-              </div>
+                  <div className="flex items-center justify-between md:hidden text-xs text-slate-400 pt-1">
+                    <span>Réussite: 0% · Progression: 0%</span>
+                    <span className="text-emerald-500 font-semibold">Actif</span>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
-        </div>
-
-        <div className="bg-blue-50 border-l-4 border-blue-400 rounded-r-xl p-4 mb-6">
-          <p className="text-sm text-slate-700">
-            <Target className="w-4 h-4 inline mr-1 text-primary" />
-            Continue comme ça ! Pense à réviser les modules où ta progression est inférieure à 50%.
-          </p>
-        </div>
-
-        {/* Modules table */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="hidden md:grid grid-cols-12 gap-2 px-6 py-3 bg-slate-50 border-b text-xs font-semibold text-slate-500 uppercase tracking-wide">
-            <div className="col-span-2">Nom</div>
-            <div className="col-span-4">Description</div>
-            <div className="col-span-1 text-center">Taux de réussite</div>
-            <div className="col-span-2 text-center">Progression</div>
-            <div className="col-span-1 text-center">Statut</div>
-            <div className="col-span-2 text-center">Actions</div>
-          </div>
-          {modules.map((mod) => (
-            <div key={mod.id} className="grid grid-cols-1 md:grid-cols-12 gap-2 px-6 py-4 border-b last:border-b-0 hover:bg-slate-50/50 transition-colors items-center">
-              <div className="md:col-span-2 font-semibold text-slate-800 text-sm">{mod.nom}</div>
-              <div className="md:col-span-4 text-sm text-slate-500 line-clamp-2">{mod.description}</div>
-              <div className="md:col-span-1 text-center"><span className="text-sm text-slate-600">0%</span></div>
-              <div className="md:col-span-2 text-center"><span className="text-sm text-slate-600">0%</span></div>
-              <div className="md:col-span-1 text-center"><span className="text-sm font-semibold text-emerald-500">Actif</span></div>
-              <div className="md:col-span-2 text-center">
-                <Button size="sm" className="bg-slate-800 hover:bg-slate-700 text-white text-xs" onClick={() => { trackModuleActivity(mod.id, mod.nom); setSelectedModule(mod); }}>
-                  Consulter <ChevronRight className="w-3.5 h-3.5 ml-1" />
-                </Button>
-              </div>
-              <div className="flex items-center justify-between md:hidden text-xs text-slate-400 pt-1">
-                <span>Réussite: 0% · Progression: 0%</span>
-                <span className="text-emerald-500 font-semibold">Actif</span>
-              </div>
-            </div>
-          ))}
-        </div>
+          </>
+        )}
       </div>
     </div>
   );
