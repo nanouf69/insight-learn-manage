@@ -98,27 +98,24 @@ const MATIERE_B: ContentItem[] = [
     id: 2001, actif: true,
     titre: "B. GESTION — Partie 1",
     sousTitre: "Entrepreneurs et Formes Juridiques",
-    slidesKey: "gestion-partie1",
     fichiers: [
-      { nom: "PowerPoint Partie 1", url: "/cours/vtc/B_Gestion_partie_1_vrai.pptx" },
+      { nom: "PDF HD Partie 1", url: "/cours/vtc/B_Gestion_1.pdf" },
     ],
   },
   {
     id: 2002, actif: true,
     titre: "B. GESTION — Partie 2",
     sousTitre: "Comptabilité et Fiscalité",
-    slidesKey: "gestion-partie2",
     fichiers: [
-      { nom: "PowerPoint Partie 2", url: "/cours/vtc/B_Gestion_partie_2_vrai.pptx" },
+      { nom: "PDF HD Partie 2", url: "/cours/vtc/B_Gestion_2.pdf" },
     ],
   },
   {
     id: 2003, actif: true,
     titre: "B. GESTION — Partie 3",
     sousTitre: "Gestion financière et Administrative",
-    slidesKey: "gestion-partie3",
     fichiers: [
-      { nom: "PowerPoint Partie 3", url: "/cours/vtc/B_Gestion_partie_3_vrai.pptx" },
+      { nom: "PDF HD Partie 3", url: "/cours/vtc/B_Gestion_3.pdf" },
     ],
   },
 ];
@@ -164,7 +161,7 @@ const MATIERE_D: ContentItem[] = [
     titre: "D. FRANÇAIS",
     sousTitre: "Expression et compréhension écrite",
     fichiers: [
-      { nom: "PowerPoint Français VTC", url: "/cours/vtc/D_Francais_VTC.pptx" },
+      { nom: "PDF HD Français", url: "/cours/vtc/D_Francais_1.pdf" },
     ],
   },
 ];
@@ -176,10 +173,34 @@ const MATIERE_D: ContentItem[] = [
 const MATIERE_E: ContentItem[] = [
   {
     id: 5001, actif: true,
-    titre: "E. ANGLAIS",
+    titre: "E. ANGLAIS — Partie 1",
     sousTitre: "Expression et compréhension en anglais",
     fichiers: [
-      { nom: "PowerPoint Anglais VTC", url: "/cours/vtc/E_Anglais_VTC.pptx" },
+      { nom: "PDF HD Partie 1", url: "/cours/vtc/E_Anglais_1.pdf" },
+    ],
+  },
+  {
+    id: 5002, actif: true,
+    titre: "E. ANGLAIS — Partie 2",
+    sousTitre: "Anglais (suite)",
+    fichiers: [
+      { nom: "PDF HD Partie 2", url: "/cours/vtc/E_Anglais_2.pdf" },
+    ],
+  },
+  {
+    id: 5003, actif: true,
+    titre: "E. ANGLAIS — Partie 3",
+    sousTitre: "Anglais (suite)",
+    fichiers: [
+      { nom: "PDF HD Partie 3", url: "/cours/vtc/E_Anglais_3.pdf" },
+    ],
+  },
+  {
+    id: 5004, actif: true,
+    titre: "E. ANGLAIS — Partie 4",
+    sousTitre: "Anglais (fin)",
+    fichiers: [
+      { nom: "PDF HD Partie 4", url: "/cours/vtc/E_Anglais_4.pdf" },
     ],
   },
 ];
