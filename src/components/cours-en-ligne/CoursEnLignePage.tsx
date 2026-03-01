@@ -2,13 +2,14 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Layers, GraduationCap, Plus, Users, TrendingUp, AlertTriangle, FileText, Monitor, ArrowUp, ArrowDown, Pencil, Trash2, ClipboardList, Trophy } from "lucide-react";
+import { BookOpen, Layers, GraduationCap, Plus, Users, TrendingUp, AlertTriangle, FileText, Monitor, ArrowUp, ArrowDown, Pencil, Trash2, ClipboardList, Trophy, Eye } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import ModuleDetailView from "./ModuleDetailView";
 import ExamensBlancsPage from "./ExamensBlancsPage";
 import ExamensBlancsEditor from "./ExamensBlancsEditor";
+import CoursPublic from "@/pages/CoursPublic";
 
 // IDs des modules bilan qui ouvrent directement l'onglet examens
 const BILAN_MODULE_IDS: Record<number, string> = {
@@ -71,7 +72,7 @@ const CoursEnLignePage = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full max-w-2xl grid-cols-4">
+        <TabsList className="grid w-full max-w-3xl grid-cols-5">
           <TabsTrigger value="accueil" className="flex items-center gap-2">
             <BookOpen className="w-4 h-4" />
             Accueil
@@ -87,6 +88,10 @@ const CoursEnLignePage = () => {
           <TabsTrigger value="formations" className="flex items-center gap-2">
             <GraduationCap className="w-4 h-4" />
             Formations
+          </TabsTrigger>
+          <TabsTrigger value="vue-apprenant" className="flex items-center gap-2">
+            <Eye className="w-4 h-4" />
+            Vue apprenant
           </TabsTrigger>
         </TabsList>
 
@@ -327,6 +332,16 @@ const CoursEnLignePage = () => {
               </Button>
             </CardContent>
           </Card>
+        </TabsContent>
+        {/* Vue Apprenant */}
+        <TabsContent value="vue-apprenant" className="mt-6">
+          <div className="border rounded-xl overflow-hidden bg-background">
+            <div className="p-3 bg-muted/50 border-b flex items-center gap-2">
+              <Eye className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-medium text-muted-foreground">Aperçu de l'interface apprenant</span>
+            </div>
+            <CoursPublic />
+          </div>
         </TabsContent>
       </Tabs>
     </div>
