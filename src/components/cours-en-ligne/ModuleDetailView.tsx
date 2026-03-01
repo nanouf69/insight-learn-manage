@@ -1108,7 +1108,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
 
     const totalPages = pages.length;
     const currentPageData = pages[currentPage];
-    const progressPercent = totalPages > 0 ? Math.round(((currentPage + 1) / totalPages) * 100) : 0;
+    const progressPercent = totalPages > 0 ? Math.round((completedPages.size / totalPages) * 100) : 0;
 
     const handleAnswer = (exoId: number, qId: number, lettre: string) => {
       if (showResults) return;
