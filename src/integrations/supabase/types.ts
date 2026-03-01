@@ -195,6 +195,71 @@ export type Database = {
           },
         ]
       }
+      apprenant_quiz_results: {
+        Row: {
+          apprenant_id: string
+          completed_at: string
+          created_at: string
+          details: Json | null
+          duree_secondes: number | null
+          id: string
+          matiere_id: string | null
+          matiere_nom: string | null
+          note_sur_20: number | null
+          quiz_id: string
+          quiz_titre: string
+          quiz_type: string
+          reussi: boolean | null
+          score_max: number
+          score_obtenu: number
+          user_id: string
+        }
+        Insert: {
+          apprenant_id: string
+          completed_at?: string
+          created_at?: string
+          details?: Json | null
+          duree_secondes?: number | null
+          id?: string
+          matiere_id?: string | null
+          matiere_nom?: string | null
+          note_sur_20?: number | null
+          quiz_id: string
+          quiz_titre: string
+          quiz_type?: string
+          reussi?: boolean | null
+          score_max?: number
+          score_obtenu?: number
+          user_id: string
+        }
+        Update: {
+          apprenant_id?: string
+          completed_at?: string
+          created_at?: string
+          details?: Json | null
+          duree_secondes?: number | null
+          id?: string
+          matiere_id?: string | null
+          matiere_nom?: string | null
+          note_sur_20?: number | null
+          quiz_id?: string
+          quiz_titre?: string
+          quiz_type?: string
+          reussi?: boolean | null
+          score_max?: number
+          score_obtenu?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apprenant_quiz_results_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: false
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       apprenants: {
         Row: {
           adresse: string | null

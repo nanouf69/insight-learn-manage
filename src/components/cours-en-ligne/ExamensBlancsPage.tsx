@@ -791,15 +791,20 @@ function EcranResultats({
 export default function ExamensBlancsPage({
   defaultBilanId,
   onBilanConsumed,
+  apprenantId,
+  userId,
 }: {
   defaultBilanId?: string | null;
   onBilanConsumed?: () => void;
+  apprenantId?: string | null;
+  userId?: string | null;
 } = {}) {
   const [phase, setPhase] = useState<"selection" | "intro" | "examen" | "resultats" | "edition">("selection");
   const [examenChoisi, setExamenChoisi] = useState<ExamenBlanc | null>(null);
   const [matiereIndex, setMatiereIndex] = useState(0);
   const [tousResultats, setTousResultats] = useState<ResultatMatiere[]>([]);
   const [bilanPrefiltre, setBilanPrefiltre] = useState<string | null>(null);
+  const examStartTimeRef = useRef<number>(Date.now());
 
   // Quand un bilan est demandé depuis les modules, on le met en avant
   useEffect(() => {
@@ -819,6 +824,7 @@ export default function ExamensBlancsPage({
 
 
   const handleDebuterExamen = () => {
+    examStartTimeRef.current = Date.now();
     setPhase("examen");
   };
 
@@ -869,6 +875,33 @@ export default function ExamensBlancsPage({
       setMatiereIndex(i => i + 1);
     } else {
       setPhase("resultats");
+      // Save results to database
+      if (apprenantId && userId) {
+        const duree = Math.round((Date.now() - examStartTimeRef.current) / 1000);
+        const allResults = [...newResultats];
+        // Save each matière result
+        const rows = allResults.map(r => ({
+          apprenant_id: apprenantId,
+          user_id: userId,
+          quiz_type: examenChoisi.id.startsWith("bilan-") ? "bilan" : "examen_blanc",
+          quiz_id: examenChoisi.id,
+          quiz_titre: examenChoisi.titre,
+          matiere_id: r.matiereId,
+          matiere_nom: r.nomMatiere,
+          score_obtenu: r.noteObtenue,
+          score_max: r.maxPoints,
+          note_sur_20: Number(((r.noteObtenue / r.maxPoints) * r.noteSur).toFixed(1)),
+          reussi: r.admis,
+          duree_secondes: Math.round(duree / allResults.length),
+          details: {},
+        }));
+        supabase
+          .from("apprenant_quiz_results" as any)
+          .insert(rows)
+          .then(({ error }) => {
+            if (error) console.error("Failed to save quiz results:", error);
+          });
+      }
     }
   };
 
