@@ -11,9 +11,10 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 interface PdfSlideViewerProps {
   url: string;
   nom: string;
+  onLastPageReached?: () => void;
 }
 
-export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
+export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlideViewerProps) {
   const [numPages, setNumPages] = useState(0);
   const [page, setPage] = useState(1);
   const [zoom, setZoom] = useState(1);
@@ -92,7 +93,13 @@ export default function PdfSlideViewer({ url, nom }: PdfSlideViewerProps) {
   }, [updateWidth]);
 
   const prev = () => setPage((p) => Math.max(1, p - 1));
-  const next = () => setPage((p) => Math.min(numPages, p + 1));
+  const next = () => setPage((p) => {
+    const nextPage = Math.min(numPages, p + 1);
+    if (nextPage === numPages && onLastPageReached) {
+      onLastPageReached();
+    }
+    return nextPage;
+  });
   const zoomIn = () => setZoom((z) => Math.min(z + 0.25, 4));
   const zoomOut = () => setZoom((z) => Math.max(z - 0.25, 0.5));
   const resetZoom = () => setZoom(1);
