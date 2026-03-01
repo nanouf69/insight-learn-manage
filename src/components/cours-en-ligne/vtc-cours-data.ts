@@ -57,10 +57,34 @@ const MATIERE_A: ContentItem[] = [
   {
     id: 1002, actif: true,
     titre: "A. RÉGLEMENTATION T3P — Partie 2",
-    sousTitre: "Suite de la réglementation T3P (Juridictions, Sanctions, TPMR...)",
+    sousTitre: "Suite de la réglementation T3P",
     slidesKey: "t3p-partie2",
     fichiers: [
-      { nom: "PowerPoint Partie 2", url: "/cours/vtc/A_T3P_partie_2.pptx" },
+      { nom: "PowerPoint Partie 2", url: "/cours/vtc/A_T3P_partie_2_vrai.pptx" },
+    ],
+  },
+  {
+    id: 1003, actif: true,
+    titre: "A. RÉGLEMENTATION T3P — Partie 3",
+    sousTitre: "Réglementation T3P (suite)",
+    fichiers: [
+      { nom: "PowerPoint Partie 3", url: "/cours/vtc/A_T3P_partie_3_vrai.pptx" },
+    ],
+  },
+  {
+    id: 1004, actif: true,
+    titre: "A. RÉGLEMENTATION T3P — Partie 4",
+    sousTitre: "Réglementation T3P (suite)",
+    fichiers: [
+      { nom: "PowerPoint Partie 4", url: "/cours/vtc/A_T3P_partie_4_vrai.pptx" },
+    ],
+  },
+  {
+    id: 1005, actif: true,
+    titre: "A. RÉGLEMENTATION T3P — Partie 5",
+    sousTitre: "Réglementation T3P (fin)",
+    fichiers: [
+      { nom: "PowerPoint Partie 5", url: "/cours/vtc/A_T3P_partie_5_vrai.pptx" },
     ],
   },
 ];
@@ -76,7 +100,7 @@ const MATIERE_B: ContentItem[] = [
     sousTitre: "Entrepreneurs et Formes Juridiques",
     slidesKey: "gestion-partie1",
     fichiers: [
-      { nom: "Partie 1", url: "/cours/vtc/B_Gestion_partie_1.pptx" },
+      { nom: "PowerPoint Partie 1", url: "/cours/vtc/B_Gestion_partie_1_vrai.pptx" },
     ],
   },
   {
@@ -85,7 +109,7 @@ const MATIERE_B: ContentItem[] = [
     sousTitre: "Comptabilité et Fiscalité",
     slidesKey: "gestion-partie2",
     fichiers: [
-      { nom: "Partie 2", url: "/cours/vtc/B_Gestion_partie_2.pptx" },
+      { nom: "PowerPoint Partie 2", url: "/cours/vtc/B_Gestion_partie_2_vrai.pptx" },
     ],
   },
   {
@@ -94,7 +118,7 @@ const MATIERE_B: ContentItem[] = [
     sousTitre: "Gestion financière et Administrative",
     slidesKey: "gestion-partie3",
     fichiers: [
-      { nom: "Partie 3", url: "/cours/vtc/B_Gestion_partie_3.pptx" },
+      { nom: "PowerPoint Partie 3", url: "/cours/vtc/B_Gestion_partie_3_vrai.pptx" },
     ],
   },
 ];
@@ -106,12 +130,26 @@ const MATIERE_B: ContentItem[] = [
 const MATIERE_C: ContentItem[] = [
   {
     id: 3001, actif: true,
-    titre: "C. SÉCURITÉ ROUTIÈRE",
+    titre: "C. SÉCURITÉ ROUTIÈRE — Partie 1",
     sousTitre: "Sécurité routière et prévention des risques",
     fichiers: [
-      { nom: "Partie 1", url: "/cours/vtc/C_Securite_Routiere_partie_1.pptx" },
-      { nom: "Partie 2", url: "/cours/vtc/C_Securite_Routiere_partie_2.pptx" },
-      { nom: "Partie 3", url: "/cours/vtc/C_Securite_Routiere_partie_3.pptx" },
+      { nom: "PowerPoint Partie 1", url: "/cours/vtc/C_Securite_Routiere_FINAL_1.pptx" },
+    ],
+  },
+  {
+    id: 3002, actif: true,
+    titre: "C. SÉCURITÉ ROUTIÈRE — Partie 2",
+    sousTitre: "Sécurité routière (suite)",
+    fichiers: [
+      { nom: "PowerPoint Partie 2", url: "/cours/vtc/C_Securite_Routiere_FINAL_2.pptx" },
+    ],
+  },
+  {
+    id: 3003, actif: true,
+    titre: "C. SÉCURITÉ ROUTIÈRE — Partie 3",
+    sousTitre: "Sécurité routière (fin)",
+    fichiers: [
+      { nom: "PowerPoint Partie 3", url: "/cours/vtc/C_Securite_Routiere_FINAL_3.pptx" },
     ],
   },
 ];
@@ -125,6 +163,9 @@ const MATIERE_D: ContentItem[] = [
     id: 4001, actif: true,
     titre: "D. FRANÇAIS",
     sousTitre: "Expression et compréhension écrite",
+    fichiers: [
+      { nom: "PowerPoint Français VTC", url: "/cours/vtc/D_Francais_VTC.pptx" },
+    ],
   },
 ];
 
@@ -137,6 +178,9 @@ const MATIERE_E: ContentItem[] = [
     id: 5001, actif: true,
     titre: "E. ANGLAIS",
     sousTitre: "Expression et compréhension en anglais",
+    fichiers: [
+      { nom: "PowerPoint Anglais VTC", url: "/cours/vtc/E_Anglais_VTC.pptx" },
+    ],
   },
 ];
 
