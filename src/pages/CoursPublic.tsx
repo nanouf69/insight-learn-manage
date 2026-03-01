@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { LogOut, Target, RotateCcw, ChevronRight } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { LogOut, Target, RotateCcw, ChevronRight, KeyRound, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import ModuleDetailView from "@/components/cours-en-ligne/ModuleDetailView";
 import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
 import { FORMATIONS, MODULES_DATA, type FormationId } from "@/components/cours-en-ligne/formations-data";
@@ -34,6 +37,72 @@ interface CoursPublicProps {
   embedded?: boolean;
   apprenantOverride?: ApprenantInfo | null;
 }
+
+const ChangePasswordDialog = () => {
+  const [open, setOpen] = useState(false);
+  const [currentPw, setCurrentPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const handleChange = async () => {
+    if (newPw.length < 6) {
+      toast.error("Le nouveau mot de passe doit contenir au moins 6 caractères");
+      return;
+    }
+    if (newPw !== confirmPw) {
+      toast.error("Les mots de passe ne correspondent pas");
+      return;
+    }
+    setSaving(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPw });
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success("Mot de passe modifié avec succès !");
+        setOpen(false);
+        setCurrentPw("");
+        setNewPw("");
+        setConfirmPw("");
+      }
+    } catch {
+      toast.error("Erreur lors du changement de mot de passe");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="secondary" size="sm" className="text-xs">
+          <KeyRound className="w-3.5 h-3.5 mr-1" />
+          Changer le mot de passe
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Changer votre mot de passe</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 pt-2">
+          <div>
+            <label className="text-sm font-medium mb-1 block">Nouveau mot de passe</label>
+            <Input type="password" placeholder="Minimum 6 caractères" value={newPw} onChange={(e) => setNewPw(e.target.value)} />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1 block">Confirmer le mot de passe</label>
+            <Input type="password" placeholder="Retapez le mot de passe" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} />
+          </div>
+          <Button className="w-full" onClick={handleChange} disabled={saving}>
+            {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <KeyRound className="w-4 h-4 mr-2" />}
+            Enregistrer
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [user, setUser] = useState<User | null>(null);
@@ -222,10 +291,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             <span className="text-sm cursor-pointer hover:text-primary transition-colors">Notes</span>
           </div>
           {!embedded && (
-            <Button variant="destructive" size="sm" className="text-xs" onClick={handleLogout}>
-              <LogOut className="w-3.5 h-3.5 mr-1" />
-              Déconnexion
-            </Button>
+            <div className="flex items-center gap-2">
+              <ChangePasswordDialog />
+              <Button variant="destructive" size="sm" className="text-xs" onClick={handleLogout}>
+                <LogOut className="w-3.5 h-3.5 mr-1" />
+                Déconnexion
+              </Button>
+            </div>
           )}
           {embedded && (
             <Button variant="secondary" size="sm" className="text-xs" onClick={() => setSelectedFormation(null)}>

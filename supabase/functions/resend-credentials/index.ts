@@ -141,14 +141,9 @@ serve(async (req) => {
           const formation = apprenant.formation_choisie || "Non spécifiée";
           const dateDebut = apprenant.date_debut_cours_en_ligne || "Non définie";
           const dateFin = apprenant.date_fin_cours_en_ligne || "Non définie";
-          const modules = apprenant.modules_autorises || [];
           const prenom = apprenant.prenom || "";
           const nom = apprenant.nom || "";
           const coursUrl = "https://insight-learn-manage.lovable.app/cours";
-
-          const modulesHtml = modules.length > 0
-            ? `<ul>${modules.map((m: number) => `<li>Module ${m}</li>`).join("")}</ul>`
-            : "<p>Tous les modules</p>";
 
           const emailBody = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -166,8 +161,6 @@ serve(async (req) => {
                   <h3 style="color: #1e40af; margin-top: 0;">📋 Informations de formation</h3>
                   <p><strong>Formation :</strong> ${formation}</p>
                   <p><strong>Période des cours :</strong> du <strong>${dateDebut}</strong> au <strong>${dateFin}</strong></p>
-                  <p><strong>Modules autorisés :</strong></p>
-                  ${modulesHtml}
                 </div>
                 
                 <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px;">
@@ -175,6 +168,8 @@ serve(async (req) => {
                   <p><strong>Email :</strong> ${apprenant.email}</p>
                   <p><strong>Nouveau mot de passe :</strong> <code style="background: #e5e7eb; padding: 2px 8px; border-radius: 4px; font-size: 16px; letter-spacing: 1px;">${newPassword}</code></p>
                 </div>
+
+                <p style="color: #6b7280; font-size: 14px;">🔑 Vous pouvez modifier votre mot de passe à tout moment depuis votre espace apprenant.</p>
                 
                 <div style="text-align: center; margin: 30px 0;">
                   <a href="${coursUrl}" style="background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 14px 30px; border-radius: 8px; font-size: 16px; font-weight: bold; display: inline-block;">
