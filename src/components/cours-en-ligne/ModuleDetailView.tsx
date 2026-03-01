@@ -1188,6 +1188,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
                                         studentOnly={secureMode}
                                       />
                                     )}
+
+                                    {/* Afficher le lecteur PDF HD directement pour les fichiers PDF */}
+                                    {isPdf && !shouldShowViewers && (
+                                      <div className="mt-2">
+                                        <PdfSlideViewer
+                                          url={f.url.startsWith("http") ? f.url : f.url.startsWith("/") ? f.url : `/${f.url}`}
+                                          nom={cours.titre}
+                                        />
+                                      </div>
+                                    )}
                                   </div>
                                 );
                               })}
