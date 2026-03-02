@@ -195,6 +195,38 @@ export type Database = {
           },
         ]
       }
+      apprenant_module_completion: {
+        Row: {
+          apprenant_id: string
+          completed_at: string
+          created_at: string
+          id: string
+          module_id: number
+        }
+        Insert: {
+          apprenant_id: string
+          completed_at?: string
+          created_at?: string
+          id?: string
+          module_id: number
+        }
+        Update: {
+          apprenant_id?: string
+          completed_at?: string
+          created_at?: string
+          id?: string
+          module_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apprenant_module_completion_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: false
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       apprenant_quiz_results: {
         Row: {
           apprenant_id: string

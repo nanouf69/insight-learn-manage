@@ -98,6 +98,8 @@ interface ModuleDetailViewProps {
   module: { id: number; nom: string };
   onBack: () => void;
   studentOnly?: boolean;
+  apprenantId?: string | null;
+  onModuleCompleted?: (moduleId: number) => void;
 }
 
 // ===== Données initiales du module INTRODUCTION =====
@@ -1026,7 +1028,7 @@ const ContentCard = ({
   );
 };
 
-const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailViewProps) => {
+const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, onModuleCompleted }: ModuleDetailViewProps) => {
   const createInitialSlidesByKey = (): Record<string, Slide[]> => ({
     "t3p-partie1": [...T3P_PARTIE1_SLIDES],
     "t3p-partie2": [...T3P_PARTIE2_SLIDES],
@@ -1664,7 +1666,19 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
               Suivant <ArrowDown className="w-4 h-4 -rotate-90" />
             </Button>
           ) : (
-            <Button variant="secondary" disabled className="gap-2">
+            <Button variant="secondary" className="gap-2" onClick={async () => {
+              if (apprenantId) {
+                try {
+                  await supabase.from("apprenant_module_completion" as any).upsert({
+                    apprenant_id: apprenantId,
+                    module_id: module.id,
+                  }, { onConflict: "apprenant_id,module_id" });
+                } catch {}
+              }
+              onModuleCompleted?.(module.id);
+              onBack();
+              toast.success("🎉 Module terminé !");
+            }}>
               <CheckCircle2 className="w-4 h-4" /> Terminé
             </Button>
           )}

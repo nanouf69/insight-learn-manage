@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, Target, RotateCcw, ChevronRight, KeyRound, Loader2, AlertTriangle, BookOpen, GraduationCap, TrendingUp, Clock, ArrowRight, Sparkles } from "lucide-react";
+import { LogOut, Target, RotateCcw, ChevronRight, KeyRound, Loader2, AlertTriangle, BookOpen, GraduationCap, TrendingUp, Clock, ArrowRight, Sparkles, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import ModuleDetailView from "@/components/cours-en-ligne/ModuleDetailView";
 import ExamensBlancsPage from "@/components/cours-en-ligne/ExamensBlancsPage";
@@ -126,6 +126,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [selectedModule, setSelectedModule] = useState<{ id: number; nom: string } | null>(null);
   const [selectedFormation, setSelectedFormation] = useState<FormationId | null>(null);
   const [activeTab, setActiveTab] = useState<"accueil" | "examens" | "notes">("accueil");
+  const [completedModuleIds, setCompletedModuleIds] = useState<Set<number>>(new Set());
 
   // Tracking connexion élève (only for real student sessions, not admin preview)
   const { trackModuleActivity } = useConnexionTracking({
@@ -193,6 +194,25 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const formationId = TYPE_TO_FORMATION[apprenantOverride.type_apprenant || ""] || (apprenantOverride.formation_choisie as FormationId) || null;
     setSelectedFormation(formationId);
   }, [apprenantOverride]);
+
+  // Fetch completed modules
+  useEffect(() => {
+    if (!apprenant?.id) return;
+    const fetchCompletions = async () => {
+      const { data } = await supabase
+        .from("apprenant_module_completion" as any)
+        .select("module_id")
+        .eq("apprenant_id", apprenant.id!);
+      if (data) {
+        setCompletedModuleIds(new Set((data as any[]).map((d: any) => d.module_id)));
+      }
+    };
+    fetchCompletions();
+  }, [apprenant?.id]);
+
+  const handleModuleCompleted = (moduleId: number) => {
+    setCompletedModuleIds(prev => new Set([...prev, moduleId]));
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -270,6 +290,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           module={selectedModule}
           onBack={() => setSelectedModule(null)}
           studentOnly
+          apprenantId={apprenant?.id || null}
+          onModuleCompleted={handleModuleCompleted}
         />
       </div>
     );
@@ -319,8 +341,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const modules = !embedded && authorizedIds && authorizedIds.length > 0
     ? allModules.filter((m) => authorizedIds.includes(m.id))
     : allModules;
-  const globalProgress = 7;
-  const lowModules = modules.filter((_, i) => i === 0 || i === 2).slice(0, 3);
+  const completedCount = modules.filter(m => completedModuleIds.has(m.id)).length;
+  const globalProgress = modules.length > 0 ? Math.round((completedCount / modules.length) * 100) : 0;
+  const remainingModules = modules.filter(m => !completedModuleIds.has(m.id));
+  const doneModules = modules.filter(m => completedModuleIds.has(m.id));
+  const lowModules = remainingModules.slice(0, 3);
   const studentName = apprenant ? `${apprenant.prenom} ${apprenant.nom}` : "Apprenant";
 
   return (
@@ -443,9 +468,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
               {[
                 { icon: BookOpen, label: "Modules", value: modules.length.toString(), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
-                { icon: GraduationCap, label: "Complétés", value: "0", color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
+                { icon: GraduationCap, label: "Complétés", value: completedCount.toString(), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
                 { icon: TrendingUp, label: "Progression", value: `${globalProgress}%`, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
-                { icon: Clock, label: "À revoir", value: lowModules.length.toString(), color: "text-rose-600", bg: "bg-rose-50 dark:bg-rose-950/30" },
+                { icon: Clock, label: "Restants", value: remainingModules.length.toString(), color: "text-rose-600", bg: "bg-rose-50 dark:bg-rose-950/30" },
               ].map((stat) => (
                 <Card key={stat.label} className="border-0 shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-4 flex items-center gap-3">
@@ -497,57 +522,88 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
               </Card>
             )}
 
-            {/* Modules list as cards */}
-            <div className="space-y-3">
-              <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-primary" />
-                Tous les modules
-              </h2>
-              <div className="grid gap-3">
-                {modules.map((mod, idx) => (
-                  <Card
-                    key={mod.id}
-                    className="border-0 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group overflow-hidden"
-                    onClick={() => { trackModuleActivity(mod.id, mod.nom); setSelectedModule(mod); }}
-                  >
-                    <CardContent className="p-0">
-                      <div className="flex items-center gap-4 p-5">
-                        {/* Module number badge */}
-                        <div className="shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center border border-primary/10 group-hover:from-primary/20 group-hover:to-primary/10 transition-colors">
-                          <span className="text-lg font-bold text-primary">{idx + 1}</span>
-                        </div>
-
-                        {/* Content */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-0.5">
+            {/* Modules grid: À faire + Réalisés */}
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* À faire */}
+              <div className="space-y-3">
+                <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-primary" />
+                  À faire ({remainingModules.length})
+                </h2>
+                <div className="grid gap-3">
+                  {remainingModules.length === 0 && (
+                    <Card className="border-0 shadow-sm p-8 text-center">
+                      <p className="text-muted-foreground text-sm">🎉 Tous les modules sont terminés !</p>
+                    </Card>
+                  )}
+                  {remainingModules.map((mod, idx) => (
+                    <Card
+                      key={mod.id}
+                      className="border-0 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group overflow-hidden"
+                      onClick={() => { trackModuleActivity(mod.id, mod.nom); setSelectedModule(mod); }}
+                    >
+                      <CardContent className="p-0">
+                        <div className="flex items-center gap-4 p-4">
+                          <div className="shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center border border-primary/10 group-hover:from-primary/20 group-hover:to-primary/10 transition-colors">
+                            <span className="text-sm font-bold text-primary">{idx + 1}</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
                             <h3 className="font-bold text-foreground text-sm group-hover:text-primary transition-colors">
                               {mod.nom}
                             </h3>
+                            <p className="text-xs text-muted-foreground line-clamp-1">{mod.description}</p>
+                          </div>
+                          <div className="shrink-0">
+                            <div className="w-8 h-8 rounded-full bg-primary/5 group-hover:bg-primary group-hover:text-white flex items-center justify-center transition-all duration-300">
+                              <ArrowRight className="w-4 h-4 text-primary group-hover:text-white transition-colors" />
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+
+              {/* Réalisés */}
+              <div className="space-y-3">
+                <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                  Réalisés ({doneModules.length})
+                </h2>
+                <div className="grid gap-3">
+                  {doneModules.length === 0 && (
+                    <Card className="border-0 shadow-sm p-8 text-center">
+                      <p className="text-muted-foreground text-sm">Aucun module terminé pour l'instant</p>
+                    </Card>
+                  )}
+                  {doneModules.map((mod) => (
+                    <Card
+                      key={mod.id}
+                      className="border-0 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer group overflow-hidden border-l-4 border-l-emerald-400"
+                      onClick={() => { trackModuleActivity(mod.id, mod.nom); setSelectedModule(mod); }}
+                    >
+                      <CardContent className="p-0">
+                        <div className="flex items-center gap-4 p-4">
+                          <div className="shrink-0 w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center">
+                            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-bold text-foreground text-sm group-hover:text-emerald-600 transition-colors">
+                              {mod.nom}
+                            </h3>
+                            <p className="text-xs text-emerald-600">✅ Terminé</p>
+                          </div>
+                          <div className="shrink-0">
                             <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-emerald-600 border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30">
-                              Actif
+                              Revoir
                             </Badge>
                           </div>
-                          <p className="text-xs text-muted-foreground line-clamp-1">{mod.description}</p>
-                          
-                          {/* Mini progress bar */}
-                          <div className="mt-2 flex items-center gap-3">
-                            <div className="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden max-w-[200px]">
-                              <div className="h-full rounded-full bg-primary/40 transition-all" style={{ width: "0%" }} />
-                            </div>
-                            <span className="text-[10px] font-medium text-muted-foreground">0%</span>
-                          </div>
                         </div>
-
-                        {/* Action */}
-                        <div className="shrink-0">
-                          <div className="w-9 h-9 rounded-full bg-primary/5 group-hover:bg-primary group-hover:text-white flex items-center justify-center transition-all duration-300">
-                            <ArrowRight className="w-4 h-4 text-primary group-hover:text-white transition-colors" />
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
             </div>
           </>
