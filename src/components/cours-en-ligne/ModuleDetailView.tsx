@@ -83,6 +83,7 @@ interface ExerciceItem {
   sousTitre?: string;
   actif: boolean;
   questions?: ExerciceQuestion[];
+  fichiers?: { nom: string; url: string }[];
 }
 
 interface ModuleData {
@@ -775,6 +776,15 @@ function ExerciceCard({
             )}
           </div>
           {item.sousTitre && <p className="text-sm text-muted-foreground">{item.sousTitre}</p>}
+          {item.fichiers && item.fichiers.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-1">
+              {item.fichiers.map((f, i) => (
+                <a key={i} href={f.url} download className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline">
+                  <FileText className="w-3 h-3" /> {f.nom}
+                </a>
+              ))}
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onMove(index, "up")} disabled={index === 0}>

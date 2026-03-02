@@ -16,6 +16,7 @@ interface ExerciceItem {
   sousTitre?: string;
   actif: boolean;
   questions?: { id: number; enonce: string; choix: { lettre: string; texte: string; correct?: boolean }[] }[];
+  fichiers?: { nom: string; url: string }[];
 }
 
 interface ModuleData {
@@ -151,5 +152,66 @@ export const CONNAISSANCES_VILLE_TAXI_DATA: ModuleData = {
       fichiers: [{ nom: "Stations de Taxi (Word)", url: "/cours/vtc/STATIONS_DE_TAXI.docx" }],
     },
   ],
-  exercices: [],
+  exercices: [
+    {
+      id: 1, actif: true,
+      titre: "Adresses Administrations",
+      sousTitre: "QCM sur les adresses des administrations lyonnaises",
+      fichiers: [{ nom: "Adresses Administrations (Word)", url: "/cours/vtc/ADRESSES_ADMINISTRATIONS.docx" }],
+    },
+    {
+      id: 2, actif: true,
+      titre: "Adresses Autoroutes",
+      sousTitre: "QCM sur les autoroutes traversant le Rhône",
+      fichiers: [{ nom: "Adresses Autoroutes (Word)", url: "/cours/vtc/ADRESSES_AUTOROUTES.docx" }],
+    },
+    {
+      id: 3, actif: true,
+      titre: "Adresses Avenues",
+      sousTitre: "QCM sur les avenues de Lyon",
+      fichiers: [{ nom: "Adresses Avenues (Word)", url: "/cours/vtc/ADRESSES_AVENUES.docx" }],
+    },
+    {
+      id: 4, actif: true,
+      titre: "Adresses Boulevards",
+      sousTitre: "QCM sur les boulevards de Lyon",
+      fichiers: [{ nom: "Adresses Boulevards (Word)", url: "/cours/vtc/ADRESSES_BOULEVARDS.docx" }],
+    },
+    {
+      id: 5, actif: true,
+      titre: "Adresses Consulats",
+      sousTitre: "QCM sur les consulats de Lyon",
+      fichiers: [{ nom: "Adresses Consulats (Word)", url: "/cours/vtc/ADRESSES_CONSULATS.docx" }],
+    },
+    {
+      id: 6, actif: true,
+      titre: "Adresses Cours",
+      sousTitre: "QCM sur les cours de Lyon",
+      fichiers: [{ nom: "Adresses Cours (Word)", url: "/cours/vtc/ADRESSES_COURS.docx" }],
+    },
+    {
+      id: 7, actif: true,
+      titre: "Adresses Divers",
+      sousTitre: "QCM sur des adresses diverses de Lyon",
+      fichiers: [{ nom: "Adresses Divers (Word)", url: "/cours/vtc/ADRESSES_DIVERS.docx" }],
+    },
+    {
+      id: 8, actif: true,
+      titre: "Adresses Hôpitaux et Cliniques",
+      sousTitre: "QCM sur les hôpitaux et cliniques de Lyon",
+      fichiers: [{ nom: "Adresses Hôpitaux (Word)", url: "/cours/vtc/ADRESSES_HOPITAUX_ET_CLINIQUES.docx" }],
+    },
+    {
+      id: 9, actif: true,
+      titre: "Adresses Musées",
+      sousTitre: "QCM sur les musées de Lyon",
+      fichiers: [{ nom: "Adresses Musées (Word)", url: "/cours/vtc/ADRESSES_MUSEE.docx" }],
+    },
+    {
+      id: 10, actif: true,
+      titre: "Adresses Places",
+      sousTitre: "QCM sur les places de Lyon par arrondissement",
+      fichiers: [{ nom: "Adresses Places (Word)", url: "/cours/vtc/ADRESSES_PLACES.docx" }],
+    },
+  ],
 };
