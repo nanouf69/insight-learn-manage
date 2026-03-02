@@ -1241,13 +1241,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       return true;
     };
 
-    const handleModuleCompletedFlow = async (pageIndex: number) => {
+    const handleModuleCompletedFlow = async () => {
       if (moduleCompleted) return true;
-
-      const nextCompletedPages = new Set(completedPages);
-      nextCompletedPages.add(pageIndex);
-      const isModuleFullyCompleted = pages.every((_, idx) => nextCompletedPages.has(idx));
-      if (!isModuleFullyCompleted) return false;
 
       await persistModuleCompletion();
       setModuleCompleted(true);
@@ -1469,7 +1464,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                       });
                       markPageCompleted(pageIdx);
 
-                      const completedNow = await handleModuleCompletedFlow(pageIdx);
+                      const completedNow = await handleModuleCompletedFlow();
                       if (completedNow) return;
 
                       if (correctInline === cours.quiz!.length) {
@@ -1621,7 +1616,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         setShowResultsFor(prev => new Set(prev).add(exo.id));
                         markPageCompleted(currentPage);
 
-                        const completedNow = await handleModuleCompletedFlow(currentPage);
+                        const completedNow = await handleModuleCompletedFlow();
                         if (completedNow) return;
 
                         toast.success("✅ Quiz validé ! La partie suivante est débloquée.");
