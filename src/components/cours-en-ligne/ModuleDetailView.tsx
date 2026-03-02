@@ -1669,11 +1669,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             <Button variant="secondary" className="gap-2" onClick={async () => {
               if (apprenantId) {
                 try {
-                  await supabase.from("apprenant_module_completion" as any).upsert({
+                  const { error } = await supabase.from("apprenant_module_completion").upsert({
                     apprenant_id: apprenantId,
                     module_id: module.id,
                   }, { onConflict: "apprenant_id,module_id" });
-                } catch {}
+                  if (error) {
+                    console.error("Erreur completion module:", error);
+                    toast.error("Erreur lors de la sauvegarde de la completion");
+                  }
+                } catch (e) {
+                  console.error("Erreur completion module:", e);
+                }
               }
               onModuleCompleted?.(module.id);
               onBack();
