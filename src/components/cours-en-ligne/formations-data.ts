@@ -94,4 +94,10 @@ export const MODULES_DATA: ModuleInfo[] = [
     description: "Cas pratiques de facturation et de tarification Taxi",
     formations: ["taxi", "taxi-pour-vtc", "taxi-elearning", "taxi-pour-vtc-elearning"],
   },
+  {
+    id: 13,
+    nom: "CONTRÔLE DE CONNAISSANCES TAXI",
+    description: "65 questions QCM et QRC pour vérifier vos connaissances taxi (réglementation, tarification, territoire)",
+    formations: ["taxi", "taxi-pour-vtc", "taxi-elearning", "taxi-pour-vtc-elearning"],
+  },
 ];
