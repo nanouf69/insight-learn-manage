@@ -1107,6 +1107,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
     const [completedPages, setCompletedPages] = useState<Set<number>>(new Set());
     const [inlineQuizAnswers, setInlineQuizAnswers] = useState<Record<string, string>>({});
     const [inlineQuizValidated, setInlineQuizValidated] = useState<Set<number>>(new Set());
+    const [qrcAnswers, setQrcAnswers] = useState<Record<string, string>>({});
+    const [qrcResults, setQrcResults] = useState<Record<string, { estCorrect: boolean; pointsObtenus: number; explication: string } | "loading">>({});
 
     const activeCours = moduleData.cours.filter(c => c.actif);
     const activeExercices = moduleData.exercices.filter(e => e.actif) as ExerciceItem[];
@@ -1395,20 +1397,87 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
     );
     };
 
-    const renderExercicesPage = () => (
+    const renderExercicesPage = () => {
+      const handleQrcCorrection = async (exoId: number, q: any, key: string) => {
+        const reponse = qrcAnswers[key]?.trim();
+        if (!reponse) { toast.error("Écrivez une réponse avant de valider"); return; }
+        setQrcResults(prev => ({ ...prev, [key]: "loading" }));
+        try {
+          const { data, error } = await supabase.functions.invoke("corriger-qrc", {
+            body: {
+              question: q.enonce,
+              reponseEtudiant: reponse,
+              reponsesAttendues: q.reponsesAttendues || [],
+              matiereId: "reglementation_taxi",
+              pointsQuestion: 2,
+            },
+          });
+          if (error) throw error;
+          setQrcResults(prev => ({ ...prev, [key]: data }));
+        } catch (e) {
+          console.error(e);
+          setQrcResults(prev => ({ ...prev, [key]: { estCorrect: false, pointsObtenus: 0, explication: "Erreur de correction" } }));
+          toast.error("Erreur lors de la correction IA");
+        }
+      };
+
+      return (
       <div className="space-y-4">
         {activeExercices.map(exo => (
           <Card key={exo.id}>
             <CardContent className="p-6 space-y-4">
               <h3 className="text-lg font-bold">📝 {exo.titre}</h3>
-              {exo.questions && exo.questions.map((q, qi) => {
+              {exo.sousTitre && <p className="text-sm text-muted-foreground">{exo.sousTitre}</p>}
+              {exo.questions && exo.questions.map((q: any, qi: number) => {
                 const key = `${exo.id}-${q.id}`;
+                const isQrc = q.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
                 const selected = selectedAnswers[key];
+                const qrcResult = qrcResults[key];
+
+                if (isQrc) {
+                  return (
+                    <div key={q.id} className="space-y-2 p-4 border rounded-lg">
+                      <p className="font-medium">{qi + 1}. {q.enonce}</p>
+                      <Badge variant="outline" className="text-xs">QRC — Réponse libre</Badge>
+                      <Textarea
+                        placeholder="Écrivez votre réponse ici..."
+                        value={qrcAnswers[key] || ""}
+                        onChange={(e) => setQrcAnswers(prev => ({ ...prev, [key]: e.target.value }))}
+                        disabled={qrcResult !== undefined && qrcResult !== "loading"}
+                        className="mt-2"
+                      />
+                      {!qrcResult && (
+                        <Button size="sm" onClick={() => handleQrcCorrection(exo.id, q, key)} className="gap-2 mt-1">
+                          🤖 Corriger par IA
+                        </Button>
+                      )}
+                      {qrcResult === "loading" && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Loader2 className="w-4 h-4 animate-spin" /> Correction en cours...
+                        </div>
+                      )}
+                      {qrcResult && qrcResult !== "loading" && (
+                        <div className={`p-3 rounded-lg border-2 mt-2 ${qrcResult.estCorrect ? "bg-emerald-50 border-emerald-500 dark:bg-emerald-950" : "bg-destructive/10 border-destructive"}`}>
+                          <p className="font-semibold text-sm">
+                            🤖 {qrcResult.estCorrect ? "✅ Correct" : "❌ Incorrect"} — {qrcResult.pointsObtenus}/2 pts
+                          </p>
+                          <p className="text-sm mt-1">{qrcResult.explication}</p>
+                          {q.reponsesAttendues && (
+                            <p className="text-xs text-muted-foreground mt-2">
+                              💡 Réponses attendues : {q.reponsesAttendues.join(" / ")}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
                 return (
                   <div key={q.id} className="space-y-2 p-4 border rounded-lg">
                     <p className="font-medium">{qi + 1}. {q.enonce}</p>
                     <div className="space-y-1.5 ml-2">
-                      {q.choix.map(c => {
+                      {q.choix.map((c: any) => {
                         let bg = "bg-background hover:bg-muted/50 border";
                         if (selected === c.lettre && !showResults) bg = "bg-primary/10 border-primary border-2";
                         if (showResults && c.correct) bg = "bg-emerald-50 border-emerald-500 border-2 dark:bg-emerald-950";
@@ -1439,7 +1508,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
           <div className="flex justify-center gap-4">
             {!showResults ? (
               <Button size="lg" onClick={() => setShowResults(true)} className="gap-2">
-                <CheckCircle2 className="w-5 h-5" /> Valider mes réponses
+                <CheckCircle2 className="w-5 h-5" /> Valider les QCM
               </Button>
             ) : (
               <Card className="w-full">
@@ -1458,6 +1527,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
         )}
       </div>
     );
+    };
 
     if (totalPages === 0) {
       return (
