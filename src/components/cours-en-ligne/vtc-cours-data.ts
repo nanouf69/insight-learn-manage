@@ -30,6 +30,7 @@ interface ExerciceItem {
   sousTitre?: string;
   actif: boolean;
   questions?: ExerciceQuestion[];
+  fichiers?: { nom: string; url: string }[];
 }
 
 interface ModuleData {
@@ -266,5 +267,48 @@ export const VTC_COURS_DATA: ModuleData = {
     ...MATIERE_F,
     ...MATIERE_G,
   ],
-  exercices: [],
+  exercices: [
+    {
+      id: 1, actif: true,
+      titre: "Exercices T3P — Partie 1",
+      sousTitre: "Exercices sur la réglementation T3P (partie 1)",
+      fichiers: [{ nom: "Exercices T3P Partie 1 (Word)", url: "/cours/vtc/Exercices_T3P_Partie1.docx" }],
+    },
+    {
+      id: 2, actif: true,
+      titre: "Exercices T3P — Partie 2",
+      sousTitre: "Exercices sur la réglementation T3P (partie 2)",
+      fichiers: [{ nom: "Exercices T3P Partie 2 (Word)", url: "/cours/vtc/Exercices_T3P_Partie2.docx" }],
+    },
+    {
+      id: 3, actif: true,
+      titre: "Exercices Anglais — Partie 1",
+      sousTitre: "Exercices d'anglais (partie 1)",
+      fichiers: [{ nom: "Anglais Exercices Part 1 (Word)", url: "/cours/vtc/Anglais_Exercices_Part1.docx" }],
+    },
+    {
+      id: 4, actif: true,
+      titre: "Exercices Anglais — Partie 2",
+      sousTitre: "Exercices d'anglais (partie 2)",
+      fichiers: [{ nom: "Anglais Exercices Part 2 (Word)", url: "/cours/vtc/Anglais_Exercices_Part2.docx" }],
+    },
+    {
+      id: 5, actif: true,
+      titre: "Exercices Anglais — Partie 3",
+      sousTitre: "Exercices d'anglais (partie 3)",
+      fichiers: [{ nom: "Anglais Exercices Part 3 (Word)", url: "/cours/vtc/Anglais_Exercices_Part3.docx" }],
+    },
+    {
+      id: 6, actif: true,
+      titre: "Exercices Anglais — Partie 4",
+      sousTitre: "Exercices d'anglais (partie 4)",
+      fichiers: [{ nom: "Anglais Exercices Part 4 (Word)", url: "/cours/vtc/Anglais_Exercices_Part4.docx" }],
+    },
+    {
+      id: 7, actif: true,
+      titre: "Exercices Développement Commercial",
+      sousTitre: "Exercices sur le marketing et développement commercial VTC",
+      fichiers: [{ nom: "Développement Commercial Exercices (Word)", url: "/cours/vtc/Developpement_Commercial_Exercices.docx" }],
+    },
+  ],
 };
