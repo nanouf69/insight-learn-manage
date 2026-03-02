@@ -43,6 +43,7 @@ import imgBugnes from "@/assets/pratique/bugnes.jpg";
 import { VTC_COURS_DATA } from "./vtc-cours-data";
 import { FORMULES_DATA } from "./formules-data";
 import { TAXI_COURS_DATA } from "./taxi-cours-data";
+import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "./controle-connaissances-taxi-data";
 
 interface InlineQuizQuestion {
   id: number;
@@ -616,6 +617,7 @@ function getInitialModuleData(module: { id: number; nom: string }): ModuleData {
   if (module.id === 12) return JSON.parse(JSON.stringify(CAS_PRATIQUE_TAXI_DATA));
   if (module.id === 3) return JSON.parse(JSON.stringify(FORMULES_DATA));
   if (module.id === 10) return JSON.parse(JSON.stringify(TAXI_COURS_DATA));
+  if (module.id === 13) return JSON.parse(JSON.stringify(CONTROLE_CONNAISSANCES_TAXI_DATA));
   return {
     id: module.id,
     nom: module.nom,
