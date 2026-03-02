@@ -1125,11 +1125,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
     const activeCours = moduleData.cours.filter(c => c.actif);
     const activeExercices = moduleData.exercices.filter(e => e.actif) as ExerciceItem[];
 
-    // Build pages: each cours = 1 page, then exercices = 1 page (if any)
-    type PageType = { type: "cours"; cours: ContentItem } | { type: "exercices" };
+    // Build pages: each cours = 1 page, each exercice set = 1 page
+    type PageType = { type: "cours"; cours: ContentItem } | { type: "exercices" } | { type: "exercice-single"; exercice: ExerciceItem };
     const pages: PageType[] = [
       ...activeCours.map(c => ({ type: "cours" as const, cours: c })),
-      ...(activeExercices.length > 0 ? [{ type: "exercices" as const }] : []),
+      ...activeExercices.map(e => ({ type: "exercice-single" as const, exercice: e })),
     ];
 
     const totalPages = pages.length;
@@ -1180,9 +1180,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
             markPageCompleted(i);
           }
         }
-        if (p.type === "exercices") {
-          markPageCompleted(i);
-        }
+        // exercice-single pages: don't auto-complete, user must validate
+
       });
     }, [pages.length]);
 
@@ -1409,7 +1408,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
     );
     };
 
-    const renderExercicesPage = () => {
+    const renderSingleExercicePage = (exo: ExerciceItem) => {
       const handleQrcCorrection = async (exoId: number, q: any, key: string) => {
         const reponse = qrcAnswers[key]?.trim();
         if (!reponse) { toast.error("Écrivez une réponse avant de valider"); return; }
@@ -1433,9 +1432,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
         }
       };
 
+      const exoQuestions = exo.questions || [];
+      const exoTotalQ = exoQuestions.length;
+      const exoCorrect = exoQuestions.filter(q => {
+        const key = `${exo.id}-${q.id}`;
+        const selected = selectedAnswers[key];
+        const correct = (q as any).choix?.find((c: any) => c.correct);
+        return selected && correct && selected === correct.lettre;
+      }).length;
+
       return (
       <div className="space-y-4">
-        {activeExercices.map(exo => (
           <Card key={exo.id}>
             <CardContent className="p-6 space-y-4">
               <h3 className="text-lg font-bold">📝 {exo.titre}</h3>
@@ -1512,31 +1519,28 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
                   </div>
                 );
               })}
+
+              {exoTotalQ > 0 && (
+                <div className="flex justify-center gap-4">
+                  {!showResults ? (
+                    <Button size="lg" onClick={() => { setShowResults(true); markPageCompleted(currentPage); }} className="gap-2">
+                      <CheckCircle2 className="w-5 h-5" /> Valider les QCM
+                    </Button>
+                  ) : (
+                    <div className="w-full text-center space-y-2">
+                      <p className="text-2xl font-bold">{exoCorrect} / {exoTotalQ}</p>
+                      <p className="text-muted-foreground">
+                        {exoCorrect === exoTotalQ ? "🎉 Parfait !" : exoCorrect >= exoTotalQ * 0.6 ? "👍 Bon travail !" : "📖 Continuez à réviser"}
+                      </p>
+                      <Button variant="outline" onClick={() => { setSelectedAnswers({}); setShowResults(false); }}>
+                        Recommencer
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
-        ))}
-
-        {totalQuestions > 0 && (
-          <div className="flex justify-center gap-4">
-            {!showResults ? (
-              <Button size="lg" onClick={() => setShowResults(true)} className="gap-2">
-                <CheckCircle2 className="w-5 h-5" /> Valider les QCM
-              </Button>
-            ) : (
-              <Card className="w-full">
-                <CardContent className="p-6 text-center space-y-2">
-                  <p className="text-2xl font-bold">{correctCount} / {totalQuestions}</p>
-                  <p className="text-muted-foreground">
-                    {correctCount === totalQuestions ? "🎉 Parfait !" : correctCount >= totalQuestions * 0.6 ? "👍 Bon travail !" : "📖 Continuez à réviser"}
-                  </p>
-                  <Button variant="outline" onClick={() => { setSelectedAnswers({}); setShowResults(false); }}>
-                    Recommencer
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        )}
       </div>
     );
     };
@@ -1589,7 +1593,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
                             ? "w-2 bg-muted-foreground/30"
                             : "w-2 bg-muted-foreground/10 cursor-not-allowed"
                     }`}
-                    title={!unlocked ? "🔒 Terminez la partie précédente" : p.type === "cours" ? p.cours.titre : "Exercices"}
+                    title={!unlocked ? "🔒 Terminez la partie précédente" : p.type === "cours" ? p.cours.titre : p.type === "exercice-single" ? `📝 ${p.exercice.titre}` : "Exercices"}
                   />
                 );
               })}
@@ -1612,7 +1616,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
         {/* Current page content */}
         <div className="animate-fade-in">
           {currentPageData?.type === "cours" && renderCoursPage(currentPageData.cours)}
-          {currentPageData?.type === "exercices" && renderExercicesPage()}
+          {currentPageData?.type === "exercice-single" && renderSingleExercicePage(currentPageData.exercice)}
         </div>
 
         {/* Navigation buttons */}
