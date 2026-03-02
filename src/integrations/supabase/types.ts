@@ -202,6 +202,8 @@ export type Database = {
           created_at: string
           id: string
           module_id: number
+          score_max: number | null
+          score_obtenu: number | null
         }
         Insert: {
           apprenant_id: string
@@ -209,6 +211,8 @@ export type Database = {
           created_at?: string
           id?: string
           module_id: number
+          score_max?: number | null
+          score_obtenu?: number | null
         }
         Update: {
           apprenant_id?: string
@@ -216,6 +220,8 @@ export type Database = {
           created_at?: string
           id?: string
           module_id?: number
+          score_max?: number | null
+          score_obtenu?: number | null
         }
         Relationships: [
           {
