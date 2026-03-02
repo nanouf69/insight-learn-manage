@@ -1560,7 +1560,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               {exoTotalQ > 0 && (
                 <div className="flex justify-center gap-4">
                   {!showResultsFor.has(exo.id) ? (
-                    <Button size="lg" onClick={() => { setShowResultsFor(prev => new Set(prev).add(exo.id)); markPageCompleted(currentPage); }} className="gap-2">
+                    <Button
+                      size="lg"
+                      onClick={() => {
+                        setShowResultsFor(prev => new Set(prev).add(exo.id));
+                        markPageCompleted(currentPage);
+                        if (currentPage < totalPages - 1) {
+                          toast.success("✅ Quiz validé ! La partie suivante est débloquée.");
+                        }
+                      }}
+                      className="gap-2"
+                    >
                       <CheckCircle2 className="w-5 h-5" /> Valider les QCM
                     </Button>
                   ) : (
@@ -1569,6 +1579,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                       <p className="text-muted-foreground">
                         {exoCorrect === exoTotalQ ? "🎉 Parfait !" : exoCorrect >= exoTotalQ * 0.6 ? "👍 Bon travail !" : "📖 Continuez à réviser"}
                       </p>
+                      {currentPage === totalPages - 1 ? (
+                        <p className="text-sm font-medium text-primary">
+                          ✅ Quiz validé. Cliquez sur « Terminé », puis retrouvez le cours dans la colonne Réalisé.
+                        </p>
+                      ) : (
+                        <p className="text-sm font-medium text-primary">
+                          ✅ Quiz validé. Vous pouvez passer à la partie suivante.
+                        </p>
+                      )}
                       <Button variant="outline" onClick={() => { 
                         // Clear answers only for this exercise
                         const exoKeys = (exo.questions || []).map(q => `${exo.id}-${q.id}`);
@@ -1653,8 +1672,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             <span>🔒</span>
             <span>
               {currentPageData?.type === "cours" && currentPageData.cours.quiz?.length
-                ? "Répondez au QCM ci-dessous pour débloquer la partie suivante."
-                : "Parcourez toutes les slides jusqu'à la dernière pour débloquer la partie suivante."}
+                ? "Répondez au QCM ci-dessous pour débloquer les exercices et la partie suivante."
+                : "Parcourez toutes les slides jusqu'à la dernière pour débloquer les exercices et la partie suivante."}
             </span>
           </div>
         )}
