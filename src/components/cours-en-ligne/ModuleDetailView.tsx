@@ -1152,6 +1152,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const [inlineQuizValidated, setInlineQuizValidated] = useState<Set<number>>(new Set());
     const [qrcAnswers, setQrcAnswers] = useState<Record<string, string>>({});
     const [qrcResults, setQrcResults] = useState<Record<string, { estCorrect: boolean; pointsObtenus: number; explication: string } | "loading">>({});
+    const [moduleCompleted, setModuleCompleted] = useState(false);
 
     const activeCours = moduleData.cours.filter(c => c.actif);
     const activeExercices = moduleData.exercices.filter(e => e.actif) as ExerciceItem[];
@@ -1208,6 +1209,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       return `${baseOrigin}${normalizedPath}`;
     };
 
+    const completionPersistedRef = useRef(false);
+
     const markPageCompleted = (pageIndex: number) => {
       setCompletedPages(prev => {
         const next = new Set(prev);
@@ -1217,6 +1220,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     };
 
     const persistModuleCompletion = async () => {
+      if (completionPersistedRef.current) return true;
+      completionPersistedRef.current = true;
+
       if (apprenantId) {
         try {
           const { error } = await supabase.from("apprenant_module_completion").upsert({
@@ -1232,6 +1238,21 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }
       // Always update local state even if DB fails
       onModuleCompleted?.(module.id);
+      return true;
+    };
+
+    const handleModuleCompletedFlow = async (pageIndex: number) => {
+      if (moduleCompleted) return true;
+
+      const nextCompletedPages = new Set(completedPages);
+      nextCompletedPages.add(pageIndex);
+      const isModuleFullyCompleted = pages.every((_, idx) => nextCompletedPages.has(idx));
+      if (!isModuleFullyCompleted) return false;
+
+      await persistModuleCompletion();
+      setModuleCompleted(true);
+      toast.success("✅ Partie validée ! Pour revoir votre cours, dirigez-vous dans « Réalisés ».");
+      onBack();
       return true;
     };
 
@@ -1436,7 +1457,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
                 {!isValidated ? (
                   <Button
-                    onClick={() => {
+                    onClick={async () => {
                       if (!allAnswered) {
                         toast.error("Répondez à toutes les questions avant de valider");
                         return;
@@ -1447,6 +1468,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         return next;
                       });
                       markPageCompleted(pageIdx);
+
+                      const completedNow = await handleModuleCompletedFlow(pageIdx);
+                      if (completedNow) return;
+
                       if (correctInline === cours.quiz!.length) {
                         toast.success("🎉 Parfait ! Toutes les réponses sont correctes !");
                       } else {
@@ -1596,12 +1621,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         setShowResultsFor(prev => new Set(prev).add(exo.id));
                         markPageCompleted(currentPage);
 
-                        if (currentPage === totalPages - 1) {
-                          await persistModuleCompletion();
-                          toast.success("✅ Partie validée !");
-                        } else {
-                          toast.success("✅ Quiz validé ! La partie suivante est débloquée.");
-                        }
+                        const completedNow = await handleModuleCompletedFlow(currentPage);
+                        if (completedNow) return;
+
+                        toast.success("✅ Quiz validé ! La partie suivante est débloquée.");
                       }}
                       className="gap-2"
                     >
@@ -1613,15 +1636,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                       <p className="text-muted-foreground">
                         {exoCorrect === exoTotalQ ? "🎉 Parfait !" : exoCorrect >= exoTotalQ * 0.6 ? "👍 Bon travail !" : "📖 Continuez à réviser"}
                       </p>
-                      {currentPage === totalPages - 1 ? (
-                        <div className="space-y-3 mt-2">
-                          <p className="text-sm font-medium text-primary">
-                            ✅ Partie terminée ! Pour revoir votre cours, dirigez-vous dans la colonne « Réalisés ».
-                          </p>
-                          <Button onClick={onBack} className="gap-2">
-                            <ArrowLeft className="w-4 h-4" /> Retour au tableau de bord
-                          </Button>
-                        </div>
+                      {moduleCompleted ? (
+                        <p className="text-sm font-medium text-primary">
+                          ✅ Partie terminée ! Pour revoir votre cours, dirigez-vous dans la colonne « Réalisés ».
+                        </p>
                       ) : (
                         <p className="text-sm font-medium text-primary">
                           ✅ Quiz validé. Vous pouvez passer à la partie suivante.
