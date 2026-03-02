@@ -42,7 +42,7 @@ import imgQuenelle from "@/assets/pratique/quenelle.jpg";
 import imgBugnes from "@/assets/pratique/bugnes.jpg";
 import { VTC_COURS_DATA, VTC_SECTIONS } from "./vtc-cours-data";
 import { FORMULES_DATA } from "./formules-data";
-import { TAXI_COURS_DATA } from "./taxi-cours-data";
+import { TAXI_COURS_DATA, TAXI_SECTIONS } from "./taxi-cours-data";
 import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "./controle-connaissances-taxi-data";
 import { CONNAISSANCES_VILLE_TAXI_DATA } from "./connaissances-ville-taxi-data";
 
@@ -1129,10 +1129,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
     type PageType = { type: "cours"; cours: ContentItem } | { type: "exercices" } | { type: "exercice-single"; exercice: ExerciceItem };
     const pages: PageType[] = (() => {
       const isVtcCoursModule = Number(moduleData.id) === 2 || /COURS ET EXERCICES VTC/i.test(moduleData.nom);
-      if (isVtcCoursModule) {
-        // Module VTC: Cours 1 → Exercice 1 → Cours 2 → Exercice 2 → etc.
+      const isTaxiCoursModule = Number(moduleData.id) === 10 || /COURS ET EXERCICES TAXI/i.test(moduleData.nom);
+      const buildInterleavedPages = (sections: Array<{ cours: ContentItem[]; exercices: ExerciceItem[] }>) => {
         const result: PageType[] = [];
-        for (const section of VTC_SECTIONS) {
+        for (const section of sections) {
           const ac = section.cours.filter(c => c.actif);
           const ae = section.exercices.filter(e => e.actif);
           const maxLen = Math.max(ac.length, ae.length);
@@ -1142,7 +1142,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
           }
         }
         return result;
-      }
+      };
+
+      if (isVtcCoursModule) return buildInterleavedPages(VTC_SECTIONS);
+      if (isTaxiCoursModule) return buildInterleavedPages(TAXI_SECTIONS);
       // Other modules: all cours first, then exercises
       return [
         ...activeCours.map(c => ({ type: "cours" as const, cours: c })),

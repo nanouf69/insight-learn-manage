@@ -1,5 +1,10 @@
 // ===== Données du module "10. COURS ET EXERCICES TAXI" =====
 // Mêmes matières que VTC sauf : pas de Réglementation Spécifique VTC (F.6003) ni de Marketing (G)
+import { T3P_EXERCICES } from "./exercices/t3p-exercices-data";
+import { ANGLAIS_EXERCICES } from "./exercices/anglais-exercices-data";
+import { FRANCAIS_EXERCICES } from "./exercices/francais-exercices-data";
+import { GESTION_EXERCICES } from "./exercices/gestion-exercices-data";
+import { REGLEMENTATION_NATIONALE_EXERCICES } from "./exercices/reglementation-exercices-data";
 
 interface ContentItem {
   id: number;
@@ -210,21 +215,28 @@ const MATIERE_F: ContentItem[] = [
 ];
 
 // =============================================
-// ASSEMBLAGE DU MODULE COMPLET
-// (pas de Matière G Marketing, pas de Réglementation Spécifique VTC)
+// ASSEMBLAGE DU MODULE COMPLET — ordonné par matière
+// Cours A → Exercices A → Cours B → Exercices B → etc.
 // =============================================
+
+export interface MatiereSection {
+  cours: ContentItem[];
+  exercices: ExerciceItem[];
+}
+
+export const TAXI_SECTIONS: MatiereSection[] = [
+  { cours: MATIERE_A, exercices: T3P_EXERCICES },
+  { cours: MATIERE_B, exercices: GESTION_EXERCICES },
+  { cours: MATIERE_C, exercices: [] },
+  { cours: MATIERE_D, exercices: FRANCAIS_EXERCICES },
+  { cours: MATIERE_E, exercices: ANGLAIS_EXERCICES },
+  { cours: MATIERE_F, exercices: REGLEMENTATION_NATIONALE_EXERCICES },
+];
 
 export const TAXI_COURS_DATA: ModuleData = {
   id: 10,
   nom: "2.COURS ET EXERCICES TAXI",
   description: "Cours complets pour les matières de l'examen TAXI : A. Réglementation T3P, B. Gestion, C. Sécurité Routière, D. Français, E. Anglais, F. Réglementation Nationale et Locale.",
-  cours: [
-    ...MATIERE_A,
-    ...MATIERE_B,
-    ...MATIERE_C,
-    ...MATIERE_D,
-    ...MATIERE_E,
-    ...MATIERE_F,
-  ],
-  exercices: [],
+  cours: TAXI_SECTIONS.flatMap(s => s.cours),
+  exercices: TAXI_SECTIONS.flatMap(s => s.exercices),
 };
