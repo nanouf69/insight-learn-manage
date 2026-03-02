@@ -1134,7 +1134,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   // === Aperçu apprenant ===
   const LearnerPreview = ({ secureMode = true }: { secureMode?: boolean }) => {
     const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
-    const [showResults, setShowResults] = useState(false);
+    const [showResultsFor, setShowResultsFor] = useState<Set<number>>(new Set());
     const [currentPage, setCurrentPage] = useState(0);
     const [completedPages, setCompletedPages] = useState<Set<number>>(new Set());
     const [inlineQuizAnswers, setInlineQuizAnswers] = useState<Record<string, string>>({});
@@ -1173,7 +1173,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const progressPercent = totalPages > 0 ? Math.round((completedPages.size / totalPages) * 100) : 0;
 
     const handleAnswer = (exoId: number, qId: number, lettre: string) => {
-      if (showResults) return;
+      if (showResultsFor.has(exoId)) return;
       setSelectedAnswers(prev => ({ ...prev, [`${exoId}-${qId}`]: lettre }));
     };
 
@@ -1533,10 +1533,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                     <p className="font-medium">{qi + 1}. {q.enonce}</p>
                     <div className="space-y-1.5 ml-2">
                       {q.choix.map((c: any) => {
+                        const exoShowResults = showResultsFor.has(exo.id);
                         let bg = "bg-background hover:bg-muted/50 border";
-                        if (selected === c.lettre && !showResults) bg = "bg-primary/10 border-primary border-2";
-                        if (showResults && c.correct) bg = "bg-emerald-50 border-emerald-500 border-2 dark:bg-emerald-950";
-                        if (showResults && selected === c.lettre && !c.correct) bg = "bg-destructive/10 border-destructive border-2";
+                        if (selected === c.lettre && !exoShowResults) bg = "bg-primary/10 border-primary border-2";
+                        if (exoShowResults && c.correct) bg = "bg-emerald-50 border-emerald-500 border-2 dark:bg-emerald-950";
+                        if (exoShowResults && selected === c.lettre && !c.correct) bg = "bg-destructive/10 border-destructive border-2";
                         return (
                           <button
                             key={c.lettre}
@@ -1547,7 +1548,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               {c.lettre}
                             </span>
                             <span className="text-sm">{c.texte}</span>
-                            {showResults && c.correct && <CheckCircle2 className="w-4 h-4 text-emerald-600 ml-auto shrink-0" />}
+                            {exoShowResults && c.correct && <CheckCircle2 className="w-4 h-4 text-emerald-600 ml-auto shrink-0" />}
                           </button>
                         );
                       })}
@@ -1558,8 +1559,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
               {exoTotalQ > 0 && (
                 <div className="flex justify-center gap-4">
-                  {!showResults ? (
-                    <Button size="lg" onClick={() => { setShowResults(true); markPageCompleted(currentPage); }} className="gap-2">
+                  {!showResultsFor.has(exo.id) ? (
+                    <Button size="lg" onClick={() => { setShowResultsFor(prev => new Set(prev).add(exo.id)); markPageCompleted(currentPage); }} className="gap-2">
                       <CheckCircle2 className="w-5 h-5" /> Valider les QCM
                     </Button>
                   ) : (
@@ -1568,7 +1569,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                       <p className="text-muted-foreground">
                         {exoCorrect === exoTotalQ ? "🎉 Parfait !" : exoCorrect >= exoTotalQ * 0.6 ? "👍 Bon travail !" : "📖 Continuez à réviser"}
                       </p>
-                      <Button variant="outline" onClick={() => { setSelectedAnswers({}); setShowResults(false); }}>
+                      <Button variant="outline" onClick={() => { 
+                        // Clear answers only for this exercise
+                        const exoKeys = (exo.questions || []).map(q => `${exo.id}-${q.id}`);
+                        setSelectedAnswers(prev => {
+                          const next = { ...prev };
+                          exoKeys.forEach(k => delete next[k]);
+                          return next;
+                        });
+                        setShowResultsFor(prev => { const next = new Set(prev); next.delete(exo.id); return next; });
+                      }}>
                         Recommencer
                       </Button>
                     </div>
