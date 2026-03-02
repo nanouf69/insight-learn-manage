@@ -100,7 +100,7 @@ export function FournisseursPage() {
   };
 
   const copyLink = (token: string) => {
-    const url = `${window.location.origin}/fournisseur/${token}`;
+    const url = `https://insight-learn-manage.lovable.app/fournisseur/${token}`;
     navigator.clipboard.writeText(url);
     toast({ title: "Lien copié !", description: "Le lien d'accès a été copié dans le presse-papier." });
   };
