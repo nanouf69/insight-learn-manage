@@ -213,5 +213,41 @@ export const CONNAISSANCES_VILLE_TAXI_DATA: ModuleData = {
       sousTitre: "QCM sur les places de Lyon par arrondissement",
       fichiers: [{ nom: "Adresses Places (Word)", url: "/cours/vtc/ADRESSES_PLACES.docx" }],
     },
+    {
+      id: 11, actif: true,
+      titre: "Adresses Ponts",
+      sousTitre: "QCM sur les ponts de Lyon",
+      fichiers: [{ nom: "Adresses Ponts (Word)", url: "/cours/vtc/ADRESSES_PONTS.docx" }],
+    },
+    {
+      id: 12, actif: true,
+      titre: "Adresses Quais",
+      sousTitre: "QCM sur les quais de Lyon",
+      fichiers: [{ nom: "Adresses Quais (Word)", url: "/cours/vtc/ADRESSES_QUAIS.docx" }],
+    },
+    {
+      id: 13, actif: true,
+      titre: "Adresses Rues",
+      sousTitre: "QCM sur les rues de Lyon",
+      fichiers: [{ nom: "Adresses Rues (Word)", url: "/cours/vtc/ADRESSES_RUES.docx" }],
+    },
+    {
+      id: 14, actif: true,
+      titre: "Adresses Stations de Taxis",
+      sousTitre: "QCM sur les stations de taxis de Lyon",
+      fichiers: [{ nom: "Adresses Stations de Taxis (Word)", url: "/cours/vtc/ADRESSES_STATIONS_DE_TAXIS.docx" }],
+    },
+    {
+      id: 15, actif: true,
+      titre: "Adresses Statues",
+      sousTitre: "QCM sur les statues de Lyon",
+      fichiers: [{ nom: "Adresses Statues (Word)", url: "/cours/vtc/ADRESSES_STATUES.docx" }],
+    },
+    {
+      id: 16, actif: true,
+      titre: "Les Quartiers",
+      sousTitre: "QCM sur les quartiers de Lyon",
+      fichiers: [{ nom: "Les Quartiers (Word)", url: "/cours/vtc/LES_QUARTIERS.docx" }],
+    },
   ],
 };
