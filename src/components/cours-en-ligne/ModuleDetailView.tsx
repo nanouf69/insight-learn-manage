@@ -1242,13 +1242,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     };
 
     const handleModuleCompletedFlow = async () => {
-      if (moduleCompleted) return true;
+      if (moduleCompleted) return;
 
       await persistModuleCompletion();
       setModuleCompleted(true);
-      toast.success("✅ Partie validée ! Pour revoir votre cours, dirigez-vous dans « Réalisés ».");
-      onBack();
-      return true;
     };
 
     // Auto-complete pages that have no PDF and no quiz (text-only cours)
@@ -1464,9 +1461,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                       });
                       markPageCompleted(pageIdx);
 
-                      const completedNow = await handleModuleCompletedFlow();
-                      if (completedNow) return;
-
                       if (correctInline === cours.quiz!.length) {
                         toast.success("🎉 Parfait ! Toutes les réponses sont correctes !");
                       } else {
@@ -1616,10 +1610,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         setShowResultsFor(prev => new Set(prev).add(exo.id));
                         markPageCompleted(currentPage);
 
-                        const completedNow = await handleModuleCompletedFlow();
-                        if (completedNow) return;
-
-                        toast.success("✅ Quiz validé ! La partie suivante est débloquée.");
+                        toast.success("✅ Quiz validé ! Consultez vos résultats puis cliquez sur Suivant.");
                       }}
                       className="gap-2"
                     >
@@ -1751,7 +1742,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           </span>
           {currentPage < totalPages - 1 ? (
             <Button
-              onClick={() => goToPage(currentPage + 1)}
+              onClick={async () => {
+                // If this is the last completed page (quiz done), trigger module completion
+                await handleModuleCompletedFlow();
+                goToPage(currentPage + 1);
+              }}
               disabled={!completedPages.has(currentPage)}
               className="gap-2"
               title={!completedPages.has(currentPage) ? "Parcourez toutes les slides pour continuer" : ""}
