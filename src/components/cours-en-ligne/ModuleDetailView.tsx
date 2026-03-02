@@ -1225,14 +1225,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           }, { onConflict: "apprenant_id,module_id" });
           if (error) {
             console.error("Erreur completion module:", error);
-            toast.error("Erreur lors de la sauvegarde de la completion");
-            return false;
           }
         } catch (e) {
           console.error("Erreur completion module:", e);
-          return false;
         }
       }
+      // Always update local state even if DB fails
       onModuleCompleted?.(module.id);
       return true;
     };
