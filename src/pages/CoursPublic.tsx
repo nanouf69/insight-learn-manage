@@ -11,7 +11,7 @@ import ModuleDetailView from "@/components/cours-en-ligne/ModuleDetailView";
 import ExamensBlancsPage from "@/components/cours-en-ligne/ExamensBlancsPage";
 import NotesView from "@/components/cours-en-ligne/NotesView";
 import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
-import { FORMATIONS, MODULES_DATA, type FormationId } from "@/components/cours-en-ligne/formations-data";
+import { FORMATIONS, MODULES_DATA, expandModulesAutorises, type FormationId } from "@/components/cours-en-ligne/formations-data";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import { safeDateParse } from "@/lib/safeDateParse";
@@ -338,8 +338,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const allModules = MODULES_DATA.filter((m) => m.formations.includes(selectedFormation));
   // Filter by authorized modules if set (admin-side), otherwise show all
   const authorizedIds = apprenant?.modules_autorises;
-  const modules = !embedded && authorizedIds && authorizedIds.length > 0
-    ? allModules.filter((m) => authorizedIds.includes(m.id))
+  const expandedIds = expandModulesAutorises(authorizedIds);
+  const modules = !embedded && expandedIds && expandedIds.length > 0
+    ? allModules.filter((m) => expandedIds.includes(m.id))
     : allModules;
   const completedCount = modules.filter(m => completedModuleIds.has(m.id)).length;
   const globalProgress = modules.length > 0 ? Math.round((completedCount / modules.length) * 100) : 0;
