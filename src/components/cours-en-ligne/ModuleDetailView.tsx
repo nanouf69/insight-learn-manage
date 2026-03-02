@@ -616,28 +616,46 @@ function getInitialModuleData(module: { id: number; nom: string }): ModuleData {
   // Module IDs: 1 = INTRODUCTION, 6 = PRATIQUE TAXI, 8 = PRATIQUE VTC, 12 = CAS PRATIQUE TAXI
   if (module.id === 1) return JSON.parse(JSON.stringify(INTRODUCTION_DATA));
   if (module.id === 6) return JSON.parse(JSON.stringify(PRATIQUE_TAXI_DATA));
-  if (module.id === 2) return JSON.parse(JSON.stringify(VTC_COURS_DATA));
   if (module.id === 8) return JSON.parse(JSON.stringify(PRATIQUE_VTC_DATA));
   if (module.id === 12) return JSON.parse(JSON.stringify(CAS_PRATIQUE_TAXI_DATA));
   if (module.id === 3) return JSON.parse(JSON.stringify(FORMULES_DATA));
-  if (module.id === 10) return JSON.parse(JSON.stringify(TAXI_COURS_DATA));
   if (module.id === 13) return JSON.parse(JSON.stringify(CONTROLE_CONNAISSANCES_TAXI_DATA));
   if (module.id === 7) return JSON.parse(JSON.stringify(CONNAISSANCES_VILLE_TAXI_DATA));
+
+  // VTC sub-modules (matières A-G, anciennement module 2)
+  if (module.id === 2) return createSectionModuleData(2, "A. Réglementation T3P", "Cours et exercices T3P", VTC_SECTIONS[0]);
+  if (module.id === 14) return createSectionModuleData(14, "B. Gestion", "Cours et exercices de gestion", VTC_SECTIONS[1]);
+  if (module.id === 15) return createSectionModuleData(15, "C. Sécurité Routière", "Cours sur la sécurité routière", VTC_SECTIONS[2]);
+  if (module.id === 16) return createSectionModuleData(16, "D. Français", "Cours et exercices de français", VTC_SECTIONS[3]);
+  if (module.id === 17) return createSectionModuleData(17, "E. Anglais", "Cours et exercices d'anglais", VTC_SECTIONS[4]);
+  if (module.id === 18) return createSectionModuleData(18, "F. Réglementation Spécifique", "Réglementation nationale, spécifique VTC et locale", VTC_SECTIONS[5]);
+  if (module.id === 19) return createSectionModuleData(19, "G. Développement Commercial", "Marketing et développement commercial", VTC_SECTIONS[6]);
+
+  // TAXI sub-modules (matières A-F, anciennement module 10)
+  if (module.id === 10) return createSectionModuleData(10, "A. Réglementation T3P", "Cours et exercices T3P (TAXI)", TAXI_SECTIONS[0]);
+  if (module.id === 20) return createSectionModuleData(20, "B. Gestion", "Cours et exercices de gestion (TAXI)", TAXI_SECTIONS[1]);
+  if (module.id === 21) return createSectionModuleData(21, "C. Sécurité Routière", "Cours sur la sécurité routière (TAXI)", TAXI_SECTIONS[2]);
+  if (module.id === 22) return createSectionModuleData(22, "D. Français", "Cours et exercices de français (TAXI)", TAXI_SECTIONS[3]);
+  if (module.id === 23) return createSectionModuleData(23, "E. Anglais", "Cours et exercices d'anglais (TAXI)", TAXI_SECTIONS[4]);
+  if (module.id === 24) return createSectionModuleData(24, "F. Réglementation", "Réglementation nationale et locale (TAXI)", TAXI_SECTIONS[5]);
+
   return {
     id: module.id,
     nom: module.nom,
-    description: "Il s'agit des cours et d'exercices à effectuer",
-    cours: [
-      { id: 1, titre: "1.T3P 1/2", actif: true },
-      { id: 2, titre: "1.T3P 2/3", actif: true },
-      { id: 3, titre: "1.T3P 3/3", actif: true },
-    ],
-    exercices: [
-      { id: 10, titre: "1.T3P", sousTitre: "1/2", actif: true },
-      { id: 11, titre: "1.T3P", sousTitre: "2/2", actif: true },
-      { id: 12, titre: "2.Gestion", sousTitre: "1/3", actif: true },
-    ],
+    description: "Module en cours de construction",
+    cours: [],
+    exercices: [],
   };
+}
+
+function createSectionModuleData(id: number, nom: string, description: string, section: { cours: any[]; exercices: any[] }): ModuleData {
+  return JSON.parse(JSON.stringify({
+    id,
+    nom,
+    description,
+    cours: section.cours,
+    exercices: section.exercices,
+  }));
 }
 
 // ===== Éditeur de question QCM =====
@@ -1127,27 +1145,22 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const activeCours = moduleData.cours.filter(c => c.actif);
     const activeExercices = moduleData.exercices.filter(e => e.actif) as ExerciceItem[];
 
-    // Build pages: interleave cours and exercises by matière for module 2 (VTC)
+    // Build pages: interleave cours and exercises for matière sub-modules
     type PageType = { type: "cours"; cours: ContentItem } | { type: "exercices" } | { type: "exercice-single"; exercice: ExerciceItem };
+    const INTERLEAVED_IDS = new Set([2, 10, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]);
     const pages: PageType[] = (() => {
-      const isVtcCoursModule = Number(moduleData.id) === 2 || /COURS ET EXERCICES VTC/i.test(moduleData.nom);
-      const isTaxiCoursModule = Number(moduleData.id) === 10 || /COURS ET EXERCICES TAXI/i.test(moduleData.nom);
-      const buildInterleavedPages = (sections: Array<{ cours: ContentItem[]; exercices: ExerciceItem[] }>) => {
+      if (INTERLEAVED_IDS.has(Number(moduleData.id))) {
+        // Simple zip: cours[0] → exo[0] → cours[1] → exo[1] → ...
+        const ac = activeCours;
+        const ae = activeExercices;
         const result: PageType[] = [];
-        for (const section of sections) {
-          const ac = section.cours.filter(c => c.actif);
-          const ae = section.exercices.filter(e => e.actif);
-          const maxLen = Math.max(ac.length, ae.length);
-          for (let i = 0; i < maxLen; i++) {
-            if (i < ac.length) result.push({ type: "cours", cours: ac[i] });
-            if (i < ae.length) result.push({ type: "exercice-single", exercice: ae[i] });
-          }
+        const maxLen = Math.max(ac.length, ae.length);
+        for (let i = 0; i < maxLen; i++) {
+          if (i < ac.length) result.push({ type: "cours", cours: ac[i] });
+          if (i < ae.length) result.push({ type: "exercice-single", exercice: ae[i] });
         }
         return result;
-      };
-
-      if (isVtcCoursModule) return buildInterleavedPages(VTC_SECTIONS);
-      if (isTaxiCoursModule) return buildInterleavedPages(TAXI_SECTIONS);
+      }
       // Other modules: all cours first, then exercises
       return [
         ...activeCours.map(c => ({ type: "cours" as const, cours: c })),
