@@ -623,7 +623,18 @@ function getInitialModuleData(module: { id: number; nom: string }): ModuleData {
   if (module.id === 7) return JSON.parse(JSON.stringify(CONNAISSANCES_VILLE_TAXI_DATA));
 
   // VTC sub-modules (matières A-G, anciennement module 2)
-  if (module.id === 2) return createSectionModuleData(2, "A. Réglementation T3P", "Cours et exercices T3P", VTC_SECTIONS[0]);
+  if (module.id === 2) {
+    return createSectionModuleData(2, "A. Réglementation T3P — Partie 1/2", "Cours et exercices T3P — Partie 1", {
+      cours: VTC_SECTIONS[0].cours.slice(0, 1),
+      exercices: VTC_SECTIONS[0].exercices.slice(0, 1),
+    });
+  }
+  if (module.id === 25) {
+    return createSectionModuleData(25, "A. Réglementation T3P — Partie 2/2", "Cours et exercices T3P — Partie 2", {
+      cours: VTC_SECTIONS[0].cours.slice(1, 2),
+      exercices: VTC_SECTIONS[0].exercices.slice(1, 2),
+    });
+  }
   if (module.id === 14) return createSectionModuleData(14, "B. Gestion", "Cours et exercices de gestion", VTC_SECTIONS[1]);
   if (module.id === 15) return createSectionModuleData(15, "C. Sécurité Routière", "Cours sur la sécurité routière", VTC_SECTIONS[2]);
   if (module.id === 16) return createSectionModuleData(16, "D. Français", "Cours et exercices de français", VTC_SECTIONS[3]);
@@ -1147,7 +1158,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     // Build pages: interleave cours and exercises for matière sub-modules
     type PageType = { type: "cours"; cours: ContentItem } | { type: "exercices" } | { type: "exercice-single"; exercice: ExerciceItem };
-    const INTERLEAVED_IDS = new Set([2, 10, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]);
+    const INTERLEAVED_IDS = new Set([2, 10, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]);
     const pages: PageType[] = (() => {
       if (INTERLEAVED_IDS.has(Number(moduleData.id))) {
         // Simple zip: cours[0] → exo[0] → cours[1] → exo[1] → ...
@@ -1203,6 +1214,27 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         next.add(pageIndex);
         return next;
       });
+    };
+
+    const persistModuleCompletion = async () => {
+      if (apprenantId) {
+        try {
+          const { error } = await supabase.from("apprenant_module_completion").upsert({
+            apprenant_id: apprenantId,
+            module_id: module.id,
+          }, { onConflict: "apprenant_id,module_id" });
+          if (error) {
+            console.error("Erreur completion module:", error);
+            toast.error("Erreur lors de la sauvegarde de la completion");
+            return false;
+          }
+        } catch (e) {
+          console.error("Erreur completion module:", e);
+          return false;
+        }
+      }
+      onModuleCompleted?.(module.id);
+      return true;
     };
 
     // Auto-complete pages that have no PDF and no quiz (text-only cours)
@@ -1562,10 +1594,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   {!showResultsFor.has(exo.id) ? (
                     <Button
                       size="lg"
-                      onClick={() => {
+                      onClick={async () => {
                         setShowResultsFor(prev => new Set(prev).add(exo.id));
                         markPageCompleted(currentPage);
-                        if (currentPage < totalPages - 1) {
+
+                        if (currentPage === totalPages - 1) {
+                          const ok = await persistModuleCompletion();
+                          if (ok) toast.success("✅ Partie validée. Retrouvez-la dans la colonne Réalisés.");
+                        } else {
                           toast.success("✅ Quiz validé ! La partie suivante est débloquée.");
                         }
                       }}
@@ -1709,23 +1745,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             </Button>
           ) : (
             <Button variant="secondary" className="gap-2" onClick={async () => {
-              if (apprenantId) {
-                try {
-                  const { error } = await supabase.from("apprenant_module_completion").upsert({
-                    apprenant_id: apprenantId,
-                    module_id: module.id,
-                  }, { onConflict: "apprenant_id,module_id" });
-                  if (error) {
-                    console.error("Erreur completion module:", error);
-                    toast.error("Erreur lors de la sauvegarde de la completion");
-                  }
-                } catch (e) {
-                  console.error("Erreur completion module:", e);
-                }
+              const ok = await persistModuleCompletion();
+              if (ok) {
+                onBack();
+                toast.success("🎉 Module terminé !");
               }
-              onModuleCompleted?.(module.id);
-              onBack();
-              toast.success("🎉 Module terminé !");
             }}>
               <CheckCircle2 className="w-4 h-4" /> Terminé
             </Button>
