@@ -1600,7 +1600,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
                         if (currentPage === totalPages - 1) {
                           const ok = await persistModuleCompletion();
-                          if (ok) toast.success("✅ Partie validée. Retrouvez-la dans la colonne Réalisés.");
+                          if (ok) {
+                            toast.success("✅ Partie validée ! Pour revoir votre cours, allez dans « Réalisés ».");
+                            onBack();
+                          }
                         } else {
                           toast.success("✅ Quiz validé ! La partie suivante est débloquée.");
                         }
@@ -1615,11 +1618,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                       <p className="text-muted-foreground">
                         {exoCorrect === exoTotalQ ? "🎉 Parfait !" : exoCorrect >= exoTotalQ * 0.6 ? "👍 Bon travail !" : "📖 Continuez à réviser"}
                       </p>
-                      {currentPage === totalPages - 1 ? (
-                        <p className="text-sm font-medium text-primary">
-                          ✅ Quiz validé. Cliquez sur « Terminé », puis retrouvez le cours dans la colonne Réalisé.
-                        </p>
-                      ) : (
+                      {currentPage < totalPages - 1 && (
                         <p className="text-sm font-medium text-primary">
                           ✅ Quiz validé. Vous pouvez passer à la partie suivante.
                         </p>
