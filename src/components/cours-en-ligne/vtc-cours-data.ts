@@ -3,6 +3,9 @@
 import { T3P_EXERCICES } from "./exercices/t3p-exercices-data";
 import { ANGLAIS_EXERCICES } from "./exercices/anglais-exercices-data";
 import { DEV_COMMERCIAL_EXERCICES } from "./exercices/dev-commercial-exercices-data";
+import { FRANCAIS_EXERCICES } from "./exercices/francais-exercices-data";
+import { GESTION_EXERCICES } from "./exercices/gestion-exercices-data";
+import { REGLEMENTATION_NATIONALE_EXERCICES, REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES } from "./exercices/reglementation-exercices-data";
 interface ContentItem {
   id: number;
   titre: string;
@@ -271,7 +274,11 @@ export const VTC_COURS_DATA: ModuleData = {
   ],
   exercices: [
     ...T3P_EXERCICES,
+    ...GESTION_EXERCICES,
+    ...FRANCAIS_EXERCICES,
     ...ANGLAIS_EXERCICES,
+    ...REGLEMENTATION_NATIONALE_EXERCICES,
+    ...REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES,
     ...DEV_COMMERCIAL_EXERCICES,
   ],
 };
