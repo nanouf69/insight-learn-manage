@@ -1597,11 +1597,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         markPageCompleted(currentPage);
 
                         if (currentPage === totalPages - 1) {
-                          const ok = await persistModuleCompletion();
-                          if (ok) {
-                            toast.success("✅ Partie validée ! Pour revoir votre cours, allez dans « Réalisés ».");
-                            onBack();
-                          }
+                          await persistModuleCompletion();
+                          toast.success("✅ Partie validée !");
                         } else {
                           toast.success("✅ Quiz validé ! La partie suivante est débloquée.");
                         }
@@ -1616,7 +1613,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                       <p className="text-muted-foreground">
                         {exoCorrect === exoTotalQ ? "🎉 Parfait !" : exoCorrect >= exoTotalQ * 0.6 ? "👍 Bon travail !" : "📖 Continuez à réviser"}
                       </p>
-                      {currentPage < totalPages - 1 && (
+                      {currentPage === totalPages - 1 ? (
+                        <div className="space-y-3 mt-2">
+                          <p className="text-sm font-medium text-primary">
+                            ✅ Partie terminée ! Pour revoir votre cours, dirigez-vous dans la colonne « Réalisés ».
+                          </p>
+                          <Button onClick={onBack} className="gap-2">
+                            <ArrowLeft className="w-4 h-4" /> Retour au tableau de bord
+                          </Button>
+                        </div>
+                      ) : (
                         <p className="text-sm font-medium text-primary">
                           ✅ Quiz validé. Vous pouvez passer à la partie suivante.
                         </p>
