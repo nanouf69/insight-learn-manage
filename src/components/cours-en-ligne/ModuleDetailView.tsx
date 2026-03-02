@@ -1128,7 +1128,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
     // Build pages: interleave cours and exercises by matière for module 2 (VTC)
     type PageType = { type: "cours"; cours: ContentItem } | { type: "exercices" } | { type: "exercice-single"; exercice: ExerciceItem };
     const pages: PageType[] = (() => {
-      if (moduleData.id === 2) {
+      const isVtcCoursModule = Number(moduleData.id) === 2 || /COURS ET EXERCICES VTC/i.test(moduleData.nom);
+      if (isVtcCoursModule) {
         // Module VTC: Cours 1 → Exercice 1 → Cours 2 → Exercice 2 → etc.
         const result: PageType[] = [];
         for (const section of VTC_SECTIONS) {
@@ -1140,7 +1141,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
             if (i < ae.length) result.push({ type: "exercice-single", exercice: ae[i] });
           }
         }
-        console.log("[VTC PAGES ORDER]", result.map((p, i) => `${i}: ${p.type === "cours" ? p.cours.titre : p.type === "exercice-single" ? `📝 ${p.exercice.titre}` : "exos"}`));
         return result;
       }
       // Other modules: all cours first, then exercises
