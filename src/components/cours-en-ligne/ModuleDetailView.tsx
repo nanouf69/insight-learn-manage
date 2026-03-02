@@ -1129,14 +1129,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
     type PageType = { type: "cours"; cours: ContentItem } | { type: "exercices" } | { type: "exercice-single"; exercice: ExerciceItem };
     const pages: PageType[] = (() => {
       if (moduleData.id === 2) {
-        // Module VTC: Cours A → Exos A → Cours B → Exos B → etc.
+        // Module VTC: Cours 1 → Exercice 1 → Cours 2 → Exercice 2 → etc.
         const result: PageType[] = [];
         for (const section of VTC_SECTIONS) {
-          for (const c of section.cours) {
-            if (c.actif) result.push({ type: "cours", cours: c });
-          }
-          for (const e of section.exercices) {
-            if (e.actif) result.push({ type: "exercice-single", exercice: e });
+          const ac = section.cours.filter(c => c.actif);
+          const ae = section.exercices.filter(e => e.actif);
+          const maxLen = Math.max(ac.length, ae.length);
+          for (let i = 0; i < maxLen; i++) {
+            if (i < ac.length) result.push({ type: "cours", cours: ac[i] });
+            if (i < ae.length) result.push({ type: "exercice-single", exercice: ae[i] });
           }
         }
         return result;
