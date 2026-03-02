@@ -40,7 +40,7 @@ import imgBrasserieGeorges from "@/assets/pratique/brasserie-georges.jpg";
 import imgParcBlandan from "@/assets/pratique/parc-blandan.jpg";
 import imgQuenelle from "@/assets/pratique/quenelle.jpg";
 import imgBugnes from "@/assets/pratique/bugnes.jpg";
-import { VTC_COURS_DATA } from "./vtc-cours-data";
+import { VTC_COURS_DATA, VTC_SECTIONS } from "./vtc-cours-data";
 import { FORMULES_DATA } from "./formules-data";
 import { TAXI_COURS_DATA } from "./taxi-cours-data";
 import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "./controle-connaissances-taxi-data";
@@ -1125,12 +1125,28 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
     const activeCours = moduleData.cours.filter(c => c.actif);
     const activeExercices = moduleData.exercices.filter(e => e.actif) as ExerciceItem[];
 
-    // Build pages: each cours = 1 page, each exercice set = 1 page
+    // Build pages: interleave cours and exercises by matière for module 2 (VTC)
     type PageType = { type: "cours"; cours: ContentItem } | { type: "exercices" } | { type: "exercice-single"; exercice: ExerciceItem };
-    const pages: PageType[] = [
-      ...activeCours.map(c => ({ type: "cours" as const, cours: c })),
-      ...activeExercices.map(e => ({ type: "exercice-single" as const, exercice: e })),
-    ];
+    const pages: PageType[] = (() => {
+      if (moduleData.id === 2) {
+        // Module VTC: Cours A → Exos A → Cours B → Exos B → etc.
+        const result: PageType[] = [];
+        for (const section of VTC_SECTIONS) {
+          for (const c of section.cours) {
+            if (c.actif) result.push({ type: "cours", cours: c });
+          }
+          for (const e of section.exercices) {
+            if (e.actif) result.push({ type: "exercice-single", exercice: e });
+          }
+        }
+        return result;
+      }
+      // Other modules: all cours first, then exercises
+      return [
+        ...activeCours.map(c => ({ type: "cours" as const, cours: c })),
+        ...activeExercices.map(e => ({ type: "exercice-single" as const, exercice: e })),
+      ];
+    })();
 
     const totalPages = pages.length;
     const currentPageData = pages[currentPage];
