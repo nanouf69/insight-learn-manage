@@ -24,8 +24,8 @@ const VTC_FORMATIONS: FormationId[] = ["vtc", "vtc-pour-taxi", "vtc-elearning", 
 const TAXI_FORMATIONS: FormationId[] = ["taxi", "taxi-pour-vtc", "taxi-elearning", "taxi-pour-vtc-elearning"];
 const ALL_FORMATIONS: FormationId[] = ["vtc", "taxi", "taxi-pour-vtc", "vtc-pour-taxi", "vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning", "vtc-cours-du-soir"];
 
-// IDs 2, 14-19 = VTC matières (anciennement module 2 unique)
-// IDs 10, 20-24 = TAXI matières (anciennement module 10 unique)
+// IDs 2 + 25 + 14-19 = VTC matières (anciennement module 2 unique)
+// IDs 10 + 20-24 = TAXI matières (anciennement module 10 unique)
 
 // Mapping par défaut — l'admin pourra le modifier via des checkboxes
 export const MODULES_DATA: ModuleInfo[] = [
@@ -38,8 +38,14 @@ export const MODULES_DATA: ModuleInfo[] = [
   // === VTC Matières (anciennement module 2) ===
   {
     id: 2,
-    nom: "A. Réglementation T3P",
-    description: "Cours et exercices sur la réglementation du Transport Public Particulier de Personnes",
+    nom: "A. Réglementation T3P — Partie 1/2",
+    description: "Cours et exercices T3P — Partie 1",
+    formations: VTC_FORMATIONS,
+  },
+  {
+    id: 25,
+    nom: "A. Réglementation T3P — Partie 2/2",
+    description: "Cours et exercices T3P — Partie 2",
     formations: VTC_FORMATIONS,
   },
   {
@@ -177,11 +183,13 @@ export const MODULES_DATA: ModuleInfo[] = [
   },
 ];
 
-// Expansion des modules_autorises : si 2 est autorisé, 14-19 le sont aussi ; si 10 est autorisé, 20-24 aussi
+// Expansion des modules_autorises :
+// - si 2 est autorisé, on autorise aussi la Partie 2 (25) + matières B-G (14-19)
+// - si 10 est autorisé, 20-24 aussi
 export function expandModulesAutorises(ids: number[] | null | undefined): number[] | null {
   if (!ids || ids.length === 0) return null;
   const expanded = new Set(ids);
-  if (expanded.has(2)) { [14, 15, 16, 17, 18, 19].forEach(id => expanded.add(id)); }
+  if (expanded.has(2)) { [25, 14, 15, 16, 17, 18, 19].forEach(id => expanded.add(id)); }
   if (expanded.has(10)) { [20, 21, 22, 23, 24].forEach(id => expanded.add(id)); }
   return Array.from(expanded);
 }
