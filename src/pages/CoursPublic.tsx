@@ -127,6 +127,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [selectedFormation, setSelectedFormation] = useState<FormationId | null>(null);
   const [activeTab, setActiveTab] = useState<"accueil" | "examens" | "notes">("accueil");
   const [completedModuleIds, setCompletedModuleIds] = useState<Set<number>>(new Set());
+  const [moduleScores, setModuleScores] = useState<Record<number, { score_obtenu: number | null; score_max: number | null }>>({});
 
   // Tracking connexion élève (only for real student sessions, not admin preview)
   const { trackModuleActivity } = useConnexionTracking({
@@ -201,10 +202,15 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const fetchCompletions = async () => {
       const { data } = await supabase
         .from("apprenant_module_completion" as any)
-        .select("module_id")
+        .select("module_id, score_obtenu, score_max")
         .eq("apprenant_id", apprenant.id!);
       if (data) {
         setCompletedModuleIds(new Set((data as any[]).map((d: any) => d.module_id)));
+        const scores: Record<number, { score_obtenu: number | null; score_max: number | null }> = {};
+        (data as any[]).forEach((d: any) => {
+          scores[d.module_id] = { score_obtenu: d.score_obtenu, score_max: d.score_max };
+        });
+        setModuleScores(scores);
       }
     };
     fetchCompletions();
@@ -593,7 +599,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                             <h3 className="font-bold text-foreground text-sm group-hover:text-emerald-600 transition-colors">
                               {mod.nom}
                             </h3>
-                            <p className="text-xs text-emerald-600">✅ Terminé</p>
+                            <p className="text-xs text-emerald-600">
+                              ✅ Terminé
+                              {moduleScores[mod.id]?.score_obtenu != null && moduleScores[mod.id]?.score_max != null && (
+                                <span className="ml-2 font-semibold">
+                                  — Score : {moduleScores[mod.id].score_obtenu}/{moduleScores[mod.id].score_max}
+                                </span>
+                              )}
+                            </p>
                           </div>
                           <div className="shrink-0">
                             <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-emerald-600 border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30">

@@ -1228,7 +1228,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           const { error } = await supabase.from("apprenant_module_completion").upsert({
             apprenant_id: apprenantId,
             module_id: module.id,
-          }, { onConflict: "apprenant_id,module_id" });
+            score_obtenu: totalQuestions > 0 ? correctCount : null,
+            score_max: totalQuestions > 0 ? totalQuestions : null,
+          } as any, { onConflict: "apprenant_id,module_id" });
           if (error) {
             console.error("Erreur completion module:", error);
           }
