@@ -1140,6 +1140,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false }: ModuleDetailV
             if (i < ae.length) result.push({ type: "exercice-single", exercice: ae[i] });
           }
         }
+        console.log("[VTC PAGES ORDER]", result.map((p, i) => `${i}: ${p.type === "cours" ? p.cours.titre : p.type === "exercice-single" ? `📝 ${p.exercice.titre}` : "exos"}`));
         return result;
       }
       // Other modules: all cours first, then exercises
