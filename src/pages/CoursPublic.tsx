@@ -603,7 +603,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                               ✅ Terminé
                               {moduleScores[mod.id]?.score_obtenu != null && moduleScores[mod.id]?.score_max != null && (
                                 <span className="ml-2 font-semibold">
-                                  — Score : {moduleScores[mod.id].score_obtenu}/{moduleScores[mod.id].score_max}
+                                  — Score : {moduleScores[mod.id].score_obtenu}/{moduleScores[mod.id].score_max} ({Math.round((moduleScores[mod.id].score_obtenu! / moduleScores[mod.id].score_max!) * 100)}%)
                                 </span>
                               )}
                             </p>
