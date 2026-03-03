@@ -119,7 +119,7 @@ const Index = () => {
         return (
           <div className="space-y-6 animate-fade-in">
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
               <StatCard 
                 title="Formations actives" 
                 value={12} 
@@ -151,7 +151,7 @@ const Index = () => {
             </div>
 
             {/* Two Column Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
               <UpcomingSessions />
               <RecentActivity onNavigateToApprenant={handleNavigateToApprenant} />
               <div className="space-y-4">
@@ -220,7 +220,7 @@ const Index = () => {
       />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
         <Header 
           title={config.title}
           subtitle={currentPage === 'dashboard' ? `Bienvenue, ${profile?.full_name?.split(' ')[0] || 'Admin'} !` : config.subtitle}
