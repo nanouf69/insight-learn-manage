@@ -5,7 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings, Download, FileText, Upload, Loader2, ZoomIn, ZoomOut, RotateCcw, Maximize } from "lucide-react";
+import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings, Download, FileText, Upload, Loader2, ZoomIn, ZoomOut, RotateCcw, Maximize, Users } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -1871,6 +1874,122 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     );
   }
 
+  // ===== Résultats élèves par module =====
+  const ModuleResultsTab = ({ moduleId, moduleName }: { moduleId: number; moduleName: string }) => {
+    const { data: results, isLoading: loadingResults } = useQuery({
+      queryKey: ['module-results', moduleId],
+      queryFn: async () => {
+        // Get completions for this module
+        const { data: completions, error } = await supabase
+          .from('apprenant_module_completion')
+          .select('apprenant_id, score_obtenu, score_max, completed_at')
+          .eq('module_id', moduleId)
+          .order('completed_at', { ascending: false });
+        if (error) throw error;
+        if (!completions?.length) return [];
+
+        // Get apprenant names
+        const ids = [...new Set(completions.map(c => c.apprenant_id))];
+        const { data: apprenants } = await supabase
+          .from('apprenants')
+          .select('id, nom, prenom, type_apprenant, formation_choisie')
+          .in('id', ids);
+
+        const appMap = new Map((apprenants || []).map(a => [a.id, a]));
+
+        // Group by apprenant, keep best attempt
+        const bestByApprenant = new Map<string, typeof completions[0]>();
+        for (const c of completions) {
+          const existing = bestByApprenant.get(c.apprenant_id);
+          if (!existing || (c.score_obtenu || 0) > (existing.score_obtenu || 0)) {
+            bestByApprenant.set(c.apprenant_id, c);
+          }
+        }
+
+        return Array.from(bestByApprenant.values()).map(c => {
+          const app = appMap.get(c.apprenant_id);
+          const pct = c.score_max ? Math.round(((c.score_obtenu || 0) / c.score_max) * 100) : 0;
+          return {
+            ...c,
+            nom: app ? `${app.prenom} ${app.nom}` : 'Inconnu',
+            type: app?.type_apprenant || '',
+            formation: app?.formation_choisie || '',
+            pct,
+          };
+        }).sort((a, b) => b.pct - a.pct);
+      },
+    });
+
+    if (loadingResults) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin" /></div>;
+
+    if (!results?.length) return (
+      <Card><CardContent className="py-12 text-center text-muted-foreground">
+        Aucun résultat enregistré pour ce module.
+      </CardContent></Card>
+    );
+
+    const avgScore = Math.round(results.reduce((s, r) => s + r.pct, 0) / results.length);
+
+    return (
+      <div className="space-y-4">
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-4">
+          <Card><CardContent className="pt-6 text-center">
+            <p className="text-3xl font-bold">{results.length}</p>
+            <p className="text-sm text-muted-foreground">Élèves</p>
+          </CardContent></Card>
+          <Card><CardContent className="pt-6 text-center">
+            <p className={`text-3xl font-bold ${avgScore >= 60 ? 'text-emerald-600' : 'text-destructive'}`}>{avgScore}%</p>
+            <p className="text-sm text-muted-foreground">Moyenne</p>
+          </CardContent></Card>
+          <Card><CardContent className="pt-6 text-center">
+            <p className="text-3xl font-bold text-emerald-600">{results.filter(r => r.pct >= 60).length}</p>
+            <p className="text-sm text-muted-foreground">Réussi (≥60%)</p>
+          </CardContent></Card>
+        </div>
+
+        {/* Table */}
+        <Card>
+          <CardContent className="pt-6">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Élève</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Score</TableHead>
+                  <TableHead className="w-[200px]">Progression</TableHead>
+                  <TableHead>Date</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {results.map((r, i) => (
+                  <TableRow key={i}>
+                    <TableCell className="font-medium">{r.nom}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-xs">{r.type?.toUpperCase() || '-'}</Badge>
+                    </TableCell>
+                    <TableCell className="font-mono">{r.score_obtenu}/{r.score_max}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Progress value={r.pct} className="h-2 flex-1" />
+                        <span className={`text-xs font-bold min-w-[3ch] ${r.pct >= 80 ? 'text-emerald-600' : r.pct >= 60 ? 'text-amber-500' : 'text-destructive'}`}>
+                          {r.pct}%
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {new Date(r.completed_at).toLocaleDateString('fr-FR')}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center gap-3">
@@ -1881,9 +2000,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       </div>
 
       <Tabs defaultValue="edition" className="w-full">
-        <TabsList className="mb-4">
+         <TabsList className="mb-4">
           <TabsTrigger value="edition" className="gap-2"><Settings className="w-4 h-4" /> Édition</TabsTrigger>
           <TabsTrigger value="apercu" className="gap-2"><Eye className="w-4 h-4" /> Aperçu apprenant</TabsTrigger>
+          <TabsTrigger value="resultats" className="gap-2"><Users className="w-4 h-4" /> Résultats élèves</TabsTrigger>
         </TabsList>
 
         <TabsContent value="edition" className="space-y-6">
@@ -1974,6 +2094,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         <TabsContent value="apercu">
           <LearnerPreview secureMode />
+        </TabsContent>
+        <TabsContent value="resultats">
+          <ModuleResultsTab moduleId={module.id} moduleName={module.nom} />
         </TabsContent>
       </Tabs>
     </div>
