@@ -1709,19 +1709,25 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                             }}>
                               🔄 Recommencer
                             </Button>
+                            {currentPage < totalPages - 1 && completedPages.has(currentPage) && (
+                              <Button size="sm" className="gap-2" onClick={async () => {
+                                await handleModuleCompletedFlow();
+                                goToPage(currentPage + 1);
+                              }}>
+                                Suivant ➡️
+                              </Button>
+                            )}
+                            {currentPage === totalPages - 1 && (
+                              <Button size="sm" variant="secondary" className="gap-2" onClick={async () => {
+                                const ok = await persistModuleCompletion();
+                                if (ok) { onBack(); toast.success("🎉 Module terminé !"); }
+                              }}>
+                                <CheckCircle2 className="w-4 h-4" /> Terminé
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </div>
-
-                      {moduleCompleted ? (
-                        <p className="text-sm font-medium text-primary text-center">
-                          ✅ Partie terminée ! Pour revoir votre cours, dirigez-vous dans la colonne « Réalisés ».
-                        </p>
-                      ) : (
-                        <p className="text-sm font-medium text-primary text-center">
-                          ✅ Quiz validé. Vous pouvez passer à la partie suivante.
-                        </p>
-                      )}
                     </div>
                   );
                   })()}
