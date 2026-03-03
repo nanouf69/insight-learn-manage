@@ -6,6 +6,7 @@ import { DEV_COMMERCIAL_EXERCICES } from "./exercices/dev-commercial-exercices-d
 import { FRANCAIS_EXERCICES } from "./exercices/francais-exercices-data";
 import { GESTION_EXERCICES } from "./exercices/gestion-exercices-data";
 import { REGLEMENTATION_NATIONALE_EXERCICES, REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES } from "./exercices/reglementation-exercices-data";
+import { SECURITE_ROUTIERE_EXERCICES } from "./exercices/securite-routiere-exercices-data";
 interface ContentItem {
   id: number;
   titre: string;
@@ -268,7 +269,7 @@ export interface MatiereSection {
 export const VTC_SECTIONS: MatiereSection[] = [
   { cours: MATIERE_A, exercices: T3P_EXERCICES },
   { cours: MATIERE_B, exercices: GESTION_EXERCICES },
-  { cours: MATIERE_C, exercices: [] },
+  { cours: MATIERE_C, exercices: SECURITE_ROUTIERE_EXERCICES },
   { cours: MATIERE_D, exercices: FRANCAIS_EXERCICES },
   { cours: MATIERE_E, exercices: ANGLAIS_EXERCICES },
   { cours: MATIERE_F, exercices: [...REGLEMENTATION_NATIONALE_EXERCICES, ...REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES] },
