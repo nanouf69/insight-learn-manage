@@ -356,7 +356,7 @@ export default function FournisseurPortal() {
 
   const handleUploadDocument = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fournisseur) return;
+    if (!fournisseur || !token) return;
     const fileInput = document.getElementById('doc-file') as HTMLInputElement;
     const files = fileInput?.files;
     if (!files || files.length === 0 || !selectedApprenantForDoc) {
@@ -380,29 +380,19 @@ export default function FournisseurPortal() {
       let successCount = 0;
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const filePath = `${fournisseur.id}/${selectedApprenantForDoc}/${Date.now()}_${file.name}`;
-        const { error: uploadErr } = await supabase.storage.from('fournisseur-documents').upload(filePath, file);
-        if (uploadErr) throw uploadErr;
-        const { data: { publicUrl } } = supabase.storage.from('fournisseur-documents').getPublicUrl(filePath);
-        const { error: insertErr } = await supabase.from('fournisseur_documents').insert({
-          fournisseur_id: fournisseur.id, fournisseur_apprenant_id: selectedApprenantForDoc,
-          titre: file.name, nom_fichier: file.name, url: publicUrl,
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('token', token);
+        formData.append('fournisseur_id', fournisseur.id);
+        formData.append('type', 'document');
+        formData.append('fournisseur_apprenant_id', selectedApprenantForDoc);
+        if (mainApprenantId) formData.append('main_apprenant_id', mainApprenantId);
+
+        const { data, error } = await supabase.functions.invoke('upload-fournisseur-document', {
+          body: formData,
         });
-        if (insertErr) throw insertErr;
-
-        // Also insert into documents_inscription for CRM visibility
-        if (mainApprenantId) {
-          await supabase.from('documents_inscription').insert({
-            apprenant_id: mainApprenantId,
-            type_document: 'custom',
-            titre: file.name,
-            description: `Document fournisseur: ${fournisseur.nom}`,
-            url: publicUrl,
-            nom_fichier: file.name,
-            statut: 'valid',
-          });
-        }
-
+        if (error) throw new Error(error.message || "Erreur lors de l'upload");
+        if (data?.error) throw new Error(data.error);
         successCount++;
       }
       toast({ title: "Documents envoyés", description: `${successCount} document(s) uploadé(s) avec succès.` });
@@ -418,7 +408,7 @@ export default function FournisseurPortal() {
 
   const handleUploadFacture = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fournisseur) return;
+    if (!fournisseur || !token) return;
     const fileInput = document.getElementById('facture-file') as HTMLInputElement;
     const file = fileInput?.files?.[0];
     const isFormateur = !!fournisseur.formateur_id;
@@ -435,22 +425,26 @@ export default function FournisseurPortal() {
     }
     setIsUploadingFacture(true);
     try {
-      const filePath = `factures/${fournisseur.id}/${Date.now()}_${file.name}`;
-      const { error: uploadErr } = await supabase.storage.from('fournisseur-documents').upload(filePath, file);
-      if (uploadErr) throw uploadErr;
-      const { data: { publicUrl } } = supabase.storage.from('fournisseur-documents').getPublicUrl(filePath);
-      const { error: insertErr } = await supabase.from('fournisseur_factures').insert({
-        fournisseur_id: fournisseur.id, nom_fichier: file.name, url: publicUrl,
-        destinataire: factureDestinataire,
-        montant: factureMontant ? parseFloat(factureMontant) : null,
-        description: factureDescription || null,
-        mois_annee: moisValue,
-      } as any);
-      if (insertErr) throw insertErr;
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('token', token);
+      formData.append('fournisseur_id', fournisseur.id);
+      formData.append('type', 'facture');
+      formData.append('destinataire', factureDestinataire);
+      if (factureMontant) formData.append('montant', factureMontant);
+      if (factureDescription) formData.append('description', factureDescription);
+      if (moisValue) formData.append('mois_annee', moisValue);
+
+      const { data, error } = await supabase.functions.invoke('upload-fournisseur-document', {
+        body: formData,
+      });
+      if (error) throw new Error(error.message || "Erreur lors de l'upload");
+      if (data?.error) throw new Error(data.error);
+
       toast({ title: "Facture envoyée", description: `Facture envoyée avec succès.` });
       setFactureMontant(""); setFactureDescription("Prestation de services"); setFactureMoisAnnee(""); setFactureMoisMultiples([]); fileInput.value = "";
-      const { data } = await supabase.from('fournisseur_factures').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false });
-      if (data) setFactures(data as FournisseurFacture[]);
+      const { data: refreshed } = await supabase.from('fournisseur_factures').select('*').eq('fournisseur_id', fournisseur.id).order('created_at', { ascending: false });
+      if (refreshed) setFactures(refreshed as FournisseurFacture[]);
     } catch (err: any) {
       toast({ title: "Erreur", description: err.message, variant: "destructive" });
     } finally {
