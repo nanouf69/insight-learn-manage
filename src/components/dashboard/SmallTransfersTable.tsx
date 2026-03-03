@@ -22,14 +22,23 @@ export function SmallTransfersTable() {
 
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("transactions_bancaires")
         .select("montant, date_operation, libelle")
-        .or("montant.eq.50,montant.eq.150,montant.eq.200")
+        .gt("montant", 0)
         .order("date_operation", { ascending: false })
-        .limit(500);
+        .limit(1000);
 
-      setTxns(data ?? []);
+      if (error) {
+        console.error("SmallTransfersTable error:", error);
+        setLoading(false);
+        return;
+      }
+
+      const filtered = (data ?? []).filter(t => 
+        t.montant === 50 || t.montant === 150 || t.montant === 200
+      );
+      setTxns(filtered);
       setLoading(false);
     };
     load();
