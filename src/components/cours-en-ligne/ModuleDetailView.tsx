@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings, Download, FileText, Upload, Loader2, ZoomIn, ZoomOut, RotateCcw, Maximize, Users } from "lucide-react";
+import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings, Download, FileText, Upload, Loader2, ZoomIn, ZoomOut, RotateCcw, Maximize, Users, ChevronDown, ChevronUp } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
@@ -1228,11 +1228,30 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
       if (apprenantId) {
         try {
+          // Build question-level details
+          const questionDetails = activeExercices.flatMap(e => 
+            (e.questions || []).map(q => {
+              const key = `${e.id}-${q.id}`;
+              const selected = selectedAnswers[key];
+              const correct = q.choix.find(c => c.correct);
+              return {
+                exerciceId: e.id,
+                exerciceTitre: e.titre,
+                questionId: q.id,
+                enonce: q.enonce,
+                reponseEleve: selected || null,
+                reponseCorrecte: correct?.lettre || null,
+                correct: selected != null && correct != null && selected === correct.lettre,
+              };
+            })
+          );
+
           const { error } = await supabase.from("apprenant_module_completion").upsert({
             apprenant_id: apprenantId,
             module_id: module.id,
             score_obtenu: totalQuestions > 0 ? correctCount : null,
             score_max: totalQuestions > 0 ? totalQuestions : null,
+            details: questionDetails,
           } as any, { onConflict: "apprenant_id,module_id" });
           if (error) {
             console.error("Erreur completion module:", error);
@@ -1876,19 +1895,19 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
   // ===== Résultats élèves par module =====
   const ModuleResultsTab = ({ moduleId, moduleName }: { moduleId: number; moduleName: string }) => {
+    const [expandedRow, setExpandedRow] = useState<string | null>(null);
+
     const { data: results, isLoading: loadingResults } = useQuery({
       queryKey: ['module-results', moduleId],
       queryFn: async () => {
-        // Get completions for this module
         const { data: completions, error } = await supabase
           .from('apprenant_module_completion')
-          .select('apprenant_id, score_obtenu, score_max, completed_at')
+          .select('apprenant_id, score_obtenu, score_max, completed_at, details')
           .eq('module_id', moduleId)
           .order('completed_at', { ascending: false });
         if (error) throw error;
         if (!completions?.length) return [];
 
-        // Get apprenant names
         const ids = [...new Set(completions.map(c => c.apprenant_id))];
         const { data: apprenants } = await supabase
           .from('apprenants')
@@ -1897,7 +1916,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         const appMap = new Map((apprenants || []).map(a => [a.id, a]));
 
-        // Group by apprenant, keep best attempt
         const bestByApprenant = new Map<string, typeof completions[0]>();
         for (const c of completions) {
           const existing = bestByApprenant.get(c.apprenant_id);
@@ -1948,12 +1966,19 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           </CardContent></Card>
         </div>
 
+        {/* Module number */}
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="text-sm px-3 py-1">Module n°{moduleId}</Badge>
+          <span className="text-sm font-medium text-muted-foreground">{moduleName}</span>
+        </div>
+
         {/* Table */}
         <Card>
           <CardContent className="pt-6">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-8"></TableHead>
                   <TableHead>Élève</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Score</TableHead>
@@ -1962,26 +1987,97 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {results.map((r, i) => (
-                  <TableRow key={i}>
-                    <TableCell className="font-medium">{r.nom}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="text-xs">{r.type?.toUpperCase() || '-'}</Badge>
-                    </TableCell>
-                    <TableCell className="font-mono">{r.score_obtenu}/{r.score_max}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Progress value={r.pct} className="h-2 flex-1" />
-                        <span className={`text-xs font-bold min-w-[3ch] ${r.pct >= 80 ? 'text-emerald-600' : r.pct >= 60 ? 'text-amber-500' : 'text-destructive'}`}>
-                          {r.pct}%
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {new Date(r.completed_at).toLocaleDateString('fr-FR')}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {results.map((r, i) => {
+                  const details = Array.isArray(r.details) ? r.details as Array<{
+                    questionId: number;
+                    enonce: string;
+                    reponseEleve: string | null;
+                    reponseCorrecte: string | null;
+                    correct: boolean;
+                    exerciceTitre?: string;
+                  }> : [];
+                  const isExpanded = expandedRow === r.apprenant_id;
+                  const hasDetails = details.length > 0;
+
+                  return (
+                    <>
+                      <TableRow
+                        key={i}
+                        className={hasDetails ? 'cursor-pointer' : ''}
+                        onClick={() => hasDetails && setExpandedRow(isExpanded ? null : r.apprenant_id)}
+                      >
+                        <TableCell className="w-8 px-2">
+                          {hasDetails && (
+                            isExpanded
+                              ? <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                              : <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                          )}
+                        </TableCell>
+                        <TableCell className="font-medium">{r.nom}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">{r.type?.toUpperCase() || '-'}</Badge>
+                        </TableCell>
+                        <TableCell className="font-mono">{r.score_obtenu}/{r.score_max}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Progress value={r.pct} className="h-2 flex-1" />
+                            <span className={`text-xs font-bold min-w-[3ch] ${r.pct >= 80 ? 'text-emerald-600' : r.pct >= 60 ? 'text-amber-500' : 'text-destructive'}`}>
+                              {r.pct}%
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {new Date(r.completed_at).toLocaleDateString('fr-FR')}
+                        </TableCell>
+                      </TableRow>
+                      {isExpanded && details.length > 0 && (
+                        <TableRow key={`${i}-details`}>
+                          <TableCell colSpan={6} className="p-0">
+                            <div className="bg-muted/30 px-6 py-4 space-y-1">
+                              <p className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
+                                Détail des {details.length} questions
+                              </p>
+                              <div className="grid gap-1.5">
+                                {details.map((q, qi) => (
+                                  <div
+                                    key={qi}
+                                    className={`flex items-start gap-3 rounded-lg px-3 py-2 text-sm ${
+                                      q.correct
+                                        ? 'bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800'
+                                        : 'bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800'
+                                    }`}
+                                  >
+                                    <span className={`shrink-0 font-bold text-xs mt-0.5 rounded-full w-6 h-6 flex items-center justify-center ${
+                                      q.correct
+                                        ? 'bg-emerald-500 text-white'
+                                        : 'bg-red-500 text-white'
+                                    }`}>
+                                      {qi + 1}
+                                    </span>
+                                    <div className="flex-1 min-w-0">
+                                      <p className={`text-sm ${q.correct ? 'text-emerald-800 dark:text-emerald-300' : 'text-red-800 dark:text-red-300'}`}>
+                                        {q.enonce}
+                                      </p>
+                                      {!q.correct && q.reponseCorrecte && (
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                          Réponse : <span className="font-semibold text-emerald-600">{q.reponseCorrecte}</span>
+                                          {q.reponseEleve && <> — Élève : <span className="font-semibold text-red-500">{q.reponseEleve}</span></>}
+                                        </p>
+                                      )}
+                                    </div>
+                                    <span className="shrink-0">
+                                      {q.correct ? '✅' : '❌'}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </>
+                  );
+                })}
               </TableBody>
             </Table>
           </CardContent>
