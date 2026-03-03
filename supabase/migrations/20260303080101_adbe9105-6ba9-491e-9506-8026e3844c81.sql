@@ -1,0 +1,1 @@
+ALTER TABLE public.apprenant_module_completion ADD COLUMN IF NOT EXISTS details jsonb DEFAULT '[]'::jsonb;

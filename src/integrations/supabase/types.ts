@@ -200,6 +200,7 @@ export type Database = {
           apprenant_id: string
           completed_at: string
           created_at: string
+          details: Json | null
           id: string
           module_id: number
           score_max: number | null
@@ -209,6 +210,7 @@ export type Database = {
           apprenant_id: string
           completed_at?: string
           created_at?: string
+          details?: Json | null
           id?: string
           module_id: number
           score_max?: number | null
@@ -218,6 +220,7 @@ export type Database = {
           apprenant_id?: string
           completed_at?: string
           created_at?: string
+          details?: Json | null
           id?: string
           module_id?: number
           score_max?: number | null
