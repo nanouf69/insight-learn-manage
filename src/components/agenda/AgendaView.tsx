@@ -526,7 +526,7 @@ export function AgendaView() {
   return (
     <Card className="animate-fade-in">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
             Agenda des cours
@@ -534,7 +534,8 @@ export function AgendaView() {
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             )}
           </CardTitle>
-          <div className="flex items-center gap-2">
+
+          <div className="flex flex-wrap items-center gap-2">
             <input
               type="file"
               ref={planningFileInputRef}
@@ -542,6 +543,7 @@ export function AgendaView() {
               className="hidden"
               onChange={handlePlanningUpload}
             />
+
             <Button
               size="sm"
               variant="outline"
@@ -552,19 +554,23 @@ export function AgendaView() {
               <Upload className="h-3 w-3" />
               {uploadingPlanning ? 'Upload...' : analyzingPlanning ? 'Analyse IA...' : 'Importer planning CMA (PDF)'}
             </Button>
+
             <Button variant="outline" size="sm" onClick={() => setIsDisciplineDialogOpen(true)}>
               <Layers className="h-4 w-4 mr-2" />
               Disciplines
             </Button>
-            <Button variant="outline" size="sm" onClick={handlePrevWeek}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleToday}>
-              Aujourd'hui
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleNextWeek}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+
+            <div className="ml-auto flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={handlePrevWeek}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleToday}>
+                Aujourd'hui
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleNextWeek}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
         <p className="text-sm text-muted-foreground">
