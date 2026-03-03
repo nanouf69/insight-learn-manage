@@ -1474,14 +1474,30 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   >
                     <CheckCircle2 className="w-4 h-4" /> Valider mes réponses
                   </Button>
-                ) : (
-                  <div className="text-center space-y-1">
-                    <p className="text-lg font-bold">{correctInline} / {cours.quiz!.length}</p>
+                ) : (() => {
+                  const totalInline = cours.quiz!.length;
+                  const pctInline = totalInline > 0 ? Math.round((correctInline / totalInline) * 100) : 0;
+                  const cColor = pctInline >= 80 ? "text-emerald-500" : pctInline >= 50 ? "text-amber-500" : "text-destructive";
+                  const cBg = pctInline >= 80 ? "bg-emerald-50 dark:bg-emerald-950/30" : pctInline >= 50 ? "bg-amber-50 dark:bg-amber-950/30" : "bg-red-50 dark:bg-red-950/30";
+                  const circ = 2 * Math.PI * 40;
+                  const offset = circ - (pctInline / 100) * circ;
+                  return (
+                  <div className="flex flex-col items-center gap-3 py-2">
+                    <div className={`relative w-24 h-24 rounded-full flex items-center justify-center ${cBg}`}>
+                      <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 90 90">
+                        <circle cx="45" cy="45" r="40" fill="none" stroke="currentColor" strokeWidth="6" className="text-muted/20" />
+                        <circle cx="45" cy="45" r="40" fill="none" stroke="currentColor" strokeWidth="6" className={cColor} strokeLinecap="round"
+                          strokeDasharray={circ} strokeDashoffset={offset} style={{ transition: "stroke-dashoffset 1s ease-out" }} />
+                      </svg>
+                      <span className={`text-2xl font-black ${cColor}`}>{pctInline}%</span>
+                    </div>
+                    <p className="text-lg font-bold">Points : {correctInline} / {totalInline}</p>
                     <p className="text-sm text-muted-foreground">
-                      {correctInline === cours.quiz!.length ? "🎉 Parfait !" : "📖 Révisez les corrections ci-dessus"}
+                      {correctInline === totalInline ? "🎉 Parfait !" : "📖 Révisez les corrections ci-dessus"}
                     </p>
                   </div>
-                )}
+                  );
+                })()}
               </CardContent>
             </Card>
           );
@@ -1618,35 +1634,97 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                     >
                       <CheckCircle2 className="w-5 h-5" /> Valider les QCM
                     </Button>
-                  ) : (
-                    <div className="w-full text-center space-y-2">
-                      <p className="text-2xl font-bold">{exoCorrect} / {exoTotalQ}</p>
-                      <p className="text-muted-foreground">
-                        {exoCorrect === exoTotalQ ? "🎉 Parfait !" : exoCorrect >= exoTotalQ * 0.6 ? "👍 Bon travail !" : "📖 Continuez à réviser"}
-                      </p>
+                  ) : (() => {
+                    const pct = exoTotalQ > 0 ? Math.round((exoCorrect / exoTotalQ) * 100) : 0;
+                    const circleColor = pct >= 80 ? "text-emerald-500" : pct >= 50 ? "text-amber-500" : "text-destructive";
+                    const circleBg = pct >= 80 ? "bg-emerald-50 dark:bg-emerald-950/30" : pct >= 50 ? "bg-amber-50 dark:bg-amber-950/30" : "bg-red-50 dark:bg-red-950/30";
+                    const circumference = 2 * Math.PI * 54;
+                    const strokeDashoffset = circumference - (pct / 100) * circumference;
+
+                    return (
+                    <div className="w-full space-y-5">
+                      {/* Score circle */}
+                      <div className="flex flex-col items-center gap-3">
+                        <div className={`relative w-36 h-36 rounded-full flex items-center justify-center ${circleBg}`}>
+                          <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 120 120">
+                            <circle cx="60" cy="60" r="54" fill="none" stroke="currentColor" strokeWidth="8" className="text-muted/20" />
+                            <circle cx="60" cy="60" r="54" fill="none" stroke="currentColor" strokeWidth="8" className={circleColor} strokeLinecap="round"
+                              strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} style={{ transition: "stroke-dashoffset 1s ease-out" }} />
+                          </svg>
+                          <span className={`text-4xl font-black ${circleColor}`}>{pct}%</span>
+                        </div>
+                        <p className="text-lg font-bold">Points : {exoCorrect} / {exoTotalQ}</p>
+                      </div>
+
+                      {/* Answer grid */}
+                      <div className="rounded-lg border p-4 space-y-2">
+                        <h4 className="font-semibold text-sm">Réponses</h4>
+                        <p className="text-xs text-muted-foreground">Cliquez sur une case pour revenir à la question</p>
+                        <div className="flex flex-wrap gap-1">
+                          {(exo.questions || []).map((q, qi) => {
+                            const key = `${exo.id}-${q.id}`;
+                            const selected = selectedAnswers[key];
+                            const correct = q.choix.find((c: any) => c.correct);
+                            const isCorrect = selected && correct && selected === correct.lettre;
+                            return (
+                              <div key={q.id} className={`w-8 h-8 rounded flex items-center justify-center text-xs font-bold text-white ${isCorrect ? "bg-emerald-500" : "bg-destructive"}`}
+                                title={`Q${qi + 1}: ${isCorrect ? "Correct" : "Incorrect"}`}>
+                                {qi + 1}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Progress + Actions */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="rounded-lg border p-4 space-y-2">
+                          <h4 className="font-semibold text-sm">Progrès</h4>
+                          <div className="flex gap-4">
+                            <div className="flex flex-col items-center gap-1">
+                              <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                              </div>
+                              <span className="text-xs text-muted-foreground">Soumis</span>
+                            </div>
+                            <div className="flex flex-col items-center gap-1">
+                              <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                              </div>
+                              <span className="text-xs text-muted-foreground">Noté</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="rounded-lg border p-4 space-y-2">
+                          <h4 className="font-semibold text-sm">Actions</h4>
+                          <div className="flex flex-col gap-2">
+                            <Button variant="outline" size="sm" className="gap-2" onClick={() => {
+                              const exoKeys = (exo.questions || []).map(q => `${exo.id}-${q.id}`);
+                              setSelectedAnswers(prev => {
+                                const next = { ...prev };
+                                exoKeys.forEach(k => delete next[k]);
+                                return next;
+                              });
+                              setShowResultsFor(prev => { const next = new Set(prev); next.delete(exo.id); return next; });
+                            }}>
+                              🔄 Recommencer
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+
                       {moduleCompleted ? (
-                        <p className="text-sm font-medium text-primary">
+                        <p className="text-sm font-medium text-primary text-center">
                           ✅ Partie terminée ! Pour revoir votre cours, dirigez-vous dans la colonne « Réalisés ».
                         </p>
                       ) : (
-                        <p className="text-sm font-medium text-primary">
+                        <p className="text-sm font-medium text-primary text-center">
                           ✅ Quiz validé. Vous pouvez passer à la partie suivante.
                         </p>
                       )}
-                      <Button variant="outline" onClick={() => { 
-                        // Clear answers only for this exercise
-                        const exoKeys = (exo.questions || []).map(q => `${exo.id}-${q.id}`);
-                        setSelectedAnswers(prev => {
-                          const next = { ...prev };
-                          exoKeys.forEach(k => delete next[k]);
-                          return next;
-                        });
-                        setShowResultsFor(prev => { const next = new Set(prev); next.delete(exo.id); return next; });
-                      }}>
-                        Recommencer
-                      </Button>
                     </div>
-                  )}
+                  );
+                  })()}
                 </div>
               )}
             </CardContent>
