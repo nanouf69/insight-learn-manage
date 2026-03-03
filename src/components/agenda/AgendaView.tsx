@@ -535,7 +535,7 @@ export function AgendaView() {
             )}
           </CardTitle>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex w-full flex-wrap items-center gap-2">
             <input
               type="file"
               ref={planningFileInputRef}
@@ -560,7 +560,7 @@ export function AgendaView() {
               Disciplines
             </Button>
 
-            <div className="ml-auto flex items-center gap-2">
+            <div className="flex w-full items-center justify-end gap-2 sm:ml-auto sm:w-auto">
               <Button variant="outline" size="sm" onClick={handlePrevWeek}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -580,7 +580,7 @@ export function AgendaView() {
       <CardContent>
         {/* Grille horaire */}
         <div className="overflow-x-auto border border-border rounded-xl bg-card shadow-sm">
-          <div className="min-w-[900px]">
+          <div className="min-w-[760px] lg:min-w-[900px]">
             {/* En-têtes des jours */}
             <div className="grid grid-cols-8 border-b border-border bg-muted/40">
               <div className="p-3 text-center font-medium text-muted-foreground text-xs uppercase tracking-wide border-r border-border">
