@@ -25,8 +25,9 @@ export function SmallTransfersTable() {
       const { data } = await supabase
         .from("transactions_bancaires")
         .select("montant, date_operation, libelle")
-        .in("montant", [50, 150, 200])
-        .order("date_operation", { ascending: false });
+        .or("montant.eq.50,montant.eq.150,montant.eq.200")
+        .order("date_operation", { ascending: false })
+        .limit(500);
 
       setTxns(data ?? []);
       setLoading(false);
