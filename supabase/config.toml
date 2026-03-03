@@ -38,3 +38,6 @@ verify_jwt = false
 
 [functions.get-comptable-factures]
 verify_jwt = false
+
+[functions.upload-fournisseur-document]
+verify_jwt = false

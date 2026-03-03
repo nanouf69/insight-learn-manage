@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 Deno.serve(async (req) => {
@@ -65,11 +65,13 @@ Deno.serve(async (req) => {
     const timestamp = Date.now();
     const bucketName = "fournisseur-documents";
 
-    // Ensure bucket exists
+    // Ensure bucket exists and is public
     const { data: buckets } = await supabase.storage.listBuckets();
-    const bucketExists = buckets?.some((b: any) => b.name === bucketName);
-    if (!bucketExists) {
+    const existingBucket = buckets?.find((b: any) => b.name === bucketName);
+    if (!existingBucket) {
       await supabase.storage.createBucket(bucketName, { public: true });
+    } else if (!existingBucket.public) {
+      await supabase.storage.updateBucket(bucketName, { public: true });
     }
 
     if (type === "facture") {
