@@ -1659,17 +1659,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                       {/* Answer grid */}
                       <div className="rounded-lg border p-4 space-y-2">
                         <h4 className="font-semibold text-sm">Réponses</h4>
-                        <p className="text-xs text-muted-foreground">Cliquez sur une case pour revenir à la question</p>
-                        <div className="flex flex-wrap gap-1">
+                        <p className="text-xs text-muted-foreground">Cliquez sur une question pour revoir la correction</p>
+                        <div className="grid grid-cols-5 sm:grid-cols-8 gap-2">
                           {(exo.questions || []).map((q, qi) => {
                             const key = `${exo.id}-${q.id}`;
                             const selected = selectedAnswers[key];
                             const correct = q.choix.find((c: any) => c.correct);
                             const isCorrect = selected && correct && selected === correct.lettre;
                             return (
-                              <div key={q.id} className={`w-8 h-8 rounded flex items-center justify-center text-xs font-bold text-white ${isCorrect ? "bg-emerald-500" : "bg-destructive"}`}
+                              <div key={q.id} className="flex items-center gap-2 rounded-lg border bg-background p-2 cursor-default"
                                 title={`Q${qi + 1}: ${isCorrect ? "Correct" : "Incorrect"}`}>
-                                {qi + 1}
+                                <span className="text-sm font-bold min-w-[1.2rem] text-center">{qi + 1}</span>
+                                <span className={`w-3.5 h-3.5 rounded-full shrink-0 ${isCorrect ? "bg-emerald-500" : "bg-destructive"}`} />
                               </div>
                             );
                           })}
