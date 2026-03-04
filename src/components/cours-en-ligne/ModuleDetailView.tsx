@@ -714,7 +714,7 @@ function getInitialModuleData(module: { id: number; nom: string }, apprenantType
       nom: "4.BILAN EXERCICES TA",
       description: "Exercices de réglementation nationale et locale. Refaites-les autant de fois que nécessaire.",
       cours: [],
-      exercices: BILAN_EXERCICES_TAXI.filter(e => e.id === 203),
+      exercices: BILAN_EXERCICES_TAXI.filter(e => e.id === 203 || e.id === 204),
     };
   }
 
