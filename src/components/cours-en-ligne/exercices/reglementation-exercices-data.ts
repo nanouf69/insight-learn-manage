@@ -324,3 +324,455 @@ export const REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES: {
     ],
   },
 ];
+
+export const REGLEMENTATION_LOCALE_EXERCICES: {
+  id: number; titre: string; sousTitre?: string; actif: boolean; questions: ExerciceQuestion[];
+}[] = [
+  {
+    id: 73, actif: true,
+    titre: "Réglementation Locale — Partie 1 : Conducteur, stations, tarification",
+    sousTitre: "Carte pro, objets trouvés, refus de course, ZUPC, tarifs A/B/C/D, suppléments, sanctions",
+    questions: [
+      { id: 1, enonce: "Quelles sont les obligations du conducteur en service concernant sa carte professionnelle (art. 6) ?", choix: [
+        { lettre: "A", texte: "La carte doit être rangée dans la boîte à gants" },
+        { lettre: "B", texte: "La carte doit être apposée sur le pare-brise ou la custode, photographie visible de l'extérieur", correct: true },
+        { lettre: "C", texte: "La carte doit être présentée uniquement sur demande des forces de l'ordre" },
+        { lettre: "D", texte: "La carte doit être portée autour du cou" },
+      ]},
+      { id: 2, enonce: "Quel est le délai pour déposer un objet trouvé dans le véhicule au guichet de l'unité taxis de la Métropole ?", choix: [
+        { lettre: "A", texte: "24 heures" },{ lettre: "B", texte: "48 heures" },
+        { lettre: "C", texte: "72 heures", correct: true },{ lettre: "D", texte: "1 semaine" },
+      ]},
+      { id: 3, enonce: "Quelles sont les interdictions formelles pour le conducteur pendant le trajet (art. 6) ?", choix: [
+        { lettre: "A", texte: "Fumer dans le véhicule (y compris cigarette électronique)" },
+        { lettre: "B", texte: "Être accompagné par une personne autre que le client" },
+        { lettre: "C", texte: "Accueillir un animal lui appartenant" },
+        { lettre: "D", texte: "Toutes les réponses ci-dessus", correct: true },
+      ]},
+      { id: 4, enonce: "Dans quels cas le conducteur peut-il refuser une course ?", choix: [
+        { lettre: "A", texte: "Si le comportement du client présente un danger", correct: true },
+        { lettre: "B", texte: "Si la tenue ou les bagages risquent de détériorer le véhicule", correct: true },
+        { lettre: "C", texte: "Si le client est accompagné d'un chien guide d'aveugle" },
+        { lettre: "D", texte: "Si le client souhaite un trajet trop court" },
+      ]},
+      { id: 5, enonce: "Quel document remplace le permis de circuler selon l'arrêté métropolitain de novembre 2024 ?", choix: [
+        { lettre: "A", texte: "Une carte de circulation provisoire" },
+        { lettre: "B", texte: "Une attestation de conformité délivrée par le guichet de l'unité taxis (valable 1 an)", correct: true },
+        { lettre: "C", texte: "Un certificat de conformité européen" },
+        { lettre: "D", texte: "Un permis de circuler numérique" },
+      ]},
+      { id: 6, enonce: "Combien de documents doivent être présentés lors du contrôle annuel (art. 8) ?", choix: [
+        { lettre: "A", texte: "8 documents" },{ lettre: "B", texte: "9 documents" },
+        { lettre: "C", texte: "10 documents" },{ lettre: "D", texte: "11 documents", correct: true },
+      ]},
+      { id: 7, enonce: "Sur les stations de taxi ≥ 6 places, quelles sont les règles pour les pauses ?", choix: [
+        { lettre: "A", texte: "Pauses interdites" },
+        { lettre: "B", texte: "Pauses tolérées en queue de station, lumineux éclairé + disque de stationnement, 2h max", correct: true },
+        { lettre: "C", texte: "Pauses tolérées uniquement la nuit" },
+        { lettre: "D", texte: "Pauses sans limitation de durée" },
+      ]},
+      { id: 8, enonce: "Quelles sont les caractéristiques obligatoires du véhicule taxi (art. 7) ?", choix: [
+        { lettre: "A", texte: "Véhicule < 10 ans, 8 places assises max + conducteur", correct: true },
+        { lettre: "B", texte: "Coffre 400L min (300L faibles émissions), vignette CRIT'AIR", correct: true },
+        { lettre: "C", texte: "Taximètre homologué, imprimante connectée, TPE", correct: true },
+        { lettre: "D", texte: "GPS obligatoire et caméra embarquée" },
+      ]},
+      { id: 9, enonce: "Combien de communes composent la ZUPC ?", choix: [
+        { lettre: "A", texte: "20 communes" },{ lettre: "B", texte: "23 communes + Aéroport" },
+        { lettre: "C", texte: "25 communes + Aéroport Saint-Exupéry", correct: true },{ lettre: "D", texte: "30 communes" },
+      ]},
+      { id: 10, enonce: "Concernant Genas, quelle affirmation est correcte ?", choix: [
+        { lettre: "A", texte: "Genas fait partie du Grand Lyon et de la ZUPC" },
+        { lettre: "B", texte: "Genas ne fait partie ni du Grand Lyon ni de la ZUPC" },
+        { lettre: "C", texte: "Genas ne fait pas partie du Grand Lyon mais fait partie de la ZUPC", correct: true },
+        { lettre: "D", texte: "Genas fait partie du Grand Lyon mais pas de la ZUPC" },
+      ]},
+      { id: 11, enonce: "Qui gère les licences de l'Aéroport Saint-Exupéry ?", choix: [
+        { lettre: "A", texte: "La Métropole de Lyon" },{ lettre: "B", texte: "La commune de Colombier-Saugnieu" },
+        { lettre: "C", texte: "La préfecture du Rhône", correct: true },{ lettre: "D", texte: "Aéroports de Lyon" },
+      ]},
+      { id: 12, enonce: "Le tarif A s'applique de 7h à 19h (course de jour avec retour en charge). Vrai ou Faux ?", choix: [
+        { lettre: "A", texte: "Vrai", correct: true },{ lettre: "B", texte: "Faux" },
+      ]},
+      { id: 13, enonce: "Quel tarif pour une course de nuit avec retour à vide à la station ?", choix: [
+        { lettre: "A", texte: "Tarif A" },{ lettre: "B", texte: "Tarif B" },
+        { lettre: "C", texte: "Tarif C" },{ lettre: "D", texte: "Tarif D", correct: true },
+      ]},
+      { id: 14, enonce: "Quel tarif pour une course de jour en semaine avec retour à vide à la station ?", choix: [
+        { lettre: "A", texte: "Tarif A" },{ lettre: "B", texte: "Tarif B" },
+        { lettre: "C", texte: "Tarif C", correct: true },{ lettre: "D", texte: "Tarif D" },
+      ]},
+      { id: 15, enonce: "Course le jeudi 1er novembre (jour férié) à 9h, retour à vide. Quel tarif ?", choix: [
+        { lettre: "A", texte: "Tarif A" },{ lettre: "B", texte: "Tarif B" },
+        { lettre: "C", texte: "Tarif C" },{ lettre: "D", texte: "Tarif D", correct: true },
+      ]},
+      { id: 16, enonce: "Quel est le montant maximum de la prise en charge ?", choix: [
+        { lettre: "A", texte: "2,00 €" },{ lettre: "B", texte: "2,50 €" },
+        { lettre: "C", texte: "3,00 €", correct: true },{ lettre: "D", texte: "3,50 €" },
+      ]},
+      { id: 17, enonce: "Quel est le prix maximum de l'heure d'attente ?", choix: [
+        { lettre: "A", texte: "32,74 €" },{ lettre: "B", texte: "36,60 €" },
+        { lettre: "C", texte: "38,50 €" },{ lettre: "D", texte: "40,40 €", correct: true },
+      ]},
+      { id: 18, enonce: "Quel est le tarif minimum d'une course ?", choix: [
+        { lettre: "A", texte: "6,50 €" },{ lettre: "B", texte: "7,00 €" },
+        { lettre: "C", texte: "7,30 €" },{ lettre: "D", texte: "8,00 €", correct: true },
+      ]},
+      { id: 19, enonce: "Quels sont les montants des suppléments ?", choix: [
+        { lettre: "A", texte: "Passager supplémentaire (à partir du 5ème) : 4 €" },
+        { lettre: "B", texte: "Bagages encombrants : 2 € par encombrant" },
+        { lettre: "C", texte: "Réservation immédiate : 2 € / Réservation à l'avance : 4 €" },
+        { lettre: "D", texte: "Toutes les réponses ci-dessus", correct: true },
+      ]},
+      { id: 20, enonce: "Quel supplément pour le chien d'un non-voyant ?", choix: [
+        { lettre: "A", texte: "1,05 €" },{ lettre: "B", texte: "2,00 €" },
+        { lettre: "C", texte: "Pas de supplément", correct: true },{ lettre: "D", texte: "0,50 €" },
+      ]},
+      { id: 21, enonce: "Quelles conditions pour appliquer le tarif « neige-verglas » ?", choix: [
+        { lettre: "A", texte: "Tarifs B/D + présence effective de neige ou verglas + pneus neige obligatoires", correct: true },
+        { lettre: "B", texte: "Tarifs B/D + prévisions météo annonçant neige" },
+        { lettre: "C", texte: "Tarifs A/D + présence effective de neige" },
+        { lettre: "D", texte: "Le tarif neige-verglas n'existe pas" },
+      ]},
+      { id: 22, enonce: "Quelles communes n'appartiennent PAS à la ZUPC ?", choix: [
+        { lettre: "A", texte: "Vernaison", correct: true },{ lettre: "B", texte: "Vénissieux" },
+        { lettre: "C", texte: "Pusignan", correct: true },{ lettre: "D", texte: "Oullins-Pierre-Bénite" },
+      ]},
+      { id: 23, enonce: "Quelle autorité délivre l'ADS pour les gares Part-Dieu et Perrache ?", choix: [
+        { lettre: "A", texte: "La région Auvergne-Rhône-Alpes" },
+        { lettre: "B", texte: "La Métropole de Lyon", correct: true },
+        { lettre: "C", texte: "Le département du Rhône" },
+        { lettre: "D", texte: "La préfecture du Rhône" },
+      ]},
+      { id: 24, enonce: "Conséquence d'une non-exploitation d'ADS pendant plus de 12 mois ?", choix: [
+        { lettre: "A", texte: "Avertissement simple" },{ lettre: "B", texte: "Suspension temporaire" },
+        { lettre: "C", texte: "Retrait définitif de l'ADS", correct: true },{ lettre: "D", texte: "Amende financière" },
+      ]},
+      { id: 25, enonce: "Quels sont les deux niveaux de sanctions disciplinaires ?", choix: [
+        { lettre: "A", texte: "Métropole (ADS) : avertissement → retrait temporaire/définitif ADS" },
+        { lettre: "B", texte: "Préfecture (carte pro) : avertissement → retrait temporaire → définitif" },
+        { lettre: "C", texte: "Les deux réponses ci-dessus", correct: true },
+        { lettre: "D", texte: "Seule la préfecture peut sanctionner" },
+      ]},
+      { id: 26, enonce: "Le conducteur doit emprunter quel itinéraire pendant la course ?", choix: [
+        { lettre: "A", texte: "Le plus court en distance" },
+        { lettre: "B", texte: "Le plus adapté aux besoins exprimés par le client", correct: true },
+        { lettre: "C", texte: "Le plus rapide selon le GPS" },
+        { lettre: "D", texte: "Celui passant par les grands axes" },
+      ]},
+      { id: 27, enonce: "Le conducteur est tenu de référencer son véhicule sur quel registre ?", choix: [
+        { lettre: "A", texte: "Google Maps" },{ lettre: "B", texte: "Waze" },
+        { lettre: "C", texte: "le.taxi", correct: true },{ lettre: "D", texte: "Uber" },
+      ]},
+      { id: 28, enonce: "Qu'est-ce qu'un taxi-relais (art. 10, nouveau 2024) ?", choix: [
+        { lettre: "A", texte: "Un taxi travaillant en relais avec un autre conducteur" },
+        { lettre: "B", texte: "Un véhicule de remplacement temporaire en cas d'immobilisation, gestion préfectorale", correct: true },
+        { lettre: "C", texte: "Un taxi assurant des courses entre stations" },
+        { lettre: "D", texte: "Un taxi réservé aux PMR" },
+      ]},
+      { id: 29, enonce: "La carte grise du véhicule taxi doit-elle être au nom du titulaire de l'ADS ?", choix: [
+        { lettre: "A", texte: "Oui", correct: true },{ lettre: "B", texte: "Non" },
+      ]},
+      { id: 30, enonce: "Quel est le montant minimum qu'un chauffeur taxi peut accepter pour un paiement ?", choix: [
+        { lettre: "A", texte: "Aucun montant minimum", correct: true },{ lettre: "B", texte: "5 euros" },
+        { lettre: "C", texte: "10 euros" },{ lettre: "D", texte: "15 euros" },
+      ]},
+    ],
+  },
+  {
+    id: 74, actif: true,
+    titre: "Réglementation Locale — Partie 2 : Taximètre, affichette, ADS, véhicule",
+    sousTitre: "Taximètre hors ZUPC, affichette, notes de course, IMC, ADS, permis de circuler, véhicule, remplacement, listes d'attente",
+    questions: [
+      { id: 1, enonce: "À quel moment le taximètre peut-il être mis en marche hors ZUPC ?", choix: [
+        { lettre: "A", texte: "Au départ de la station du conducteur" },
+        { lettre: "B", texte: "Au passage de la dernière station de la ZUPC, ou à la dernière station de la commune de rattachement", correct: true },
+        { lettre: "C", texte: "Au moment de la prise en charge du client" },
+        { lettre: "D", texte: "À la sortie de la commune du conducteur" },
+      ]},
+      { id: 2, enonce: "Quelles sont les 6 mentions obligatoires de l'affichette taxi ?", choix: [
+        { lettre: "A", texte: "Taux horaires/kilométriques + conditions, Montants prise en charge/suppléments, Conditions de délivrance de la note" },
+        { lettre: "B", texte: "Le client peut demander nom + lieux départ/arrivée, Information paiement CB, Adresse de réclamation" },
+        { lettre: "C", texte: "Les deux réponses ci-dessus regroupent les 6 mentions", correct: true },
+        { lettre: "D", texte: "Seules les 3 premières mentions sont obligatoires" },
+      ]},
+      { id: 3, enonce: "Quelles sont les mentions imprimées obligatoires sur la note de course ?", choix: [
+        { lettre: "A", texte: "Date de rédaction, Nom/dénomination sociale, Adresse de réclamation" },
+        { lettre: "B", texte: "N° immatriculation véhicule, Montant course minimum, Prix TTC hors suppléments" },
+        { lettre: "C", texte: "Somme totale TTC (inclut suppléments), Détail de chaque supplément" },
+        { lettre: "D", texte: "Toutes les réponses ci-dessus", correct: true },
+      ]},
+      { id: 4, enonce: "À partir de quel montant la remise de la note est-elle obligatoire ?", choix: [
+        { lettre: "A", texte: "15 € TTC" },{ lettre: "B", texte: "20 € TTC" },
+        { lettre: "C", texte: "25 € TTC", correct: true },{ lettre: "D", texte: "30 € TTC" },
+      ]},
+      { id: 5, enonce: "Quelle est la durée de conservation des doubles des notes ?", choix: [
+        { lettre: "A", texte: "1 an" },{ lettre: "B", texte: "2 ans", correct: true },
+        { lettre: "C", texte: "3 ans" },{ lettre: "D", texte: "5 ans" },
+      ]},
+      { id: 6, enonce: "Si le client le demande, quelles mentions supplémentaires doivent figurer sur la note ?", choix: [
+        { lettre: "A", texte: "Le nom du client" },
+        { lettre: "B", texte: "Le lieu de départ et le lieu d'arrivée de la course" },
+        { lettre: "C", texte: "Les heures de début et de fin de course" },
+        { lettre: "D", texte: "Les réponses A et B", correct: true },
+      ]},
+      { id: 7, enonce: "Quelles sont les caractéristiques de la lettre apposée sur le cadran du taximètre après adaptation tarifaire ?", choix: [
+        { lettre: "A", texte: "Lettre majuscule E de couleur bleue", correct: true },
+        { lettre: "B", texte: "Lettre majuscule U de couleur verte" },
+        { lettre: "C", texte: "Lettre majuscule T de couleur rouge" },
+        { lettre: "D", texte: "Lettre majuscule A de couleur noire" },
+      ]},
+      { id: 8, enonce: "Quel est le délai pour modifier la table tarifaire du taximètre ?", choix: [
+        { lettre: "A", texte: "15 jours" },{ lettre: "B", texte: "1 mois" },
+        { lettre: "C", texte: "2 mois", correct: true },{ lettre: "D", texte: "3 mois" },
+      ]},
+      { id: 9, enonce: "Quel est l'objet de l'IMC (Instance Métropolitaine de Concertation) ?", choix: [
+        { lettre: "A", texte: "Traiter de l'ensemble des questions relatives à l'organisation et au fonctionnement de la profession taxi sur le territoire de la Métropole", correct: true },
+        { lettre: "B", texte: "Délivrer les cartes professionnelles" },
+        { lettre: "C", texte: "Gérer les examens de taxi" },
+        { lettre: "D", texte: "Fixer les tarifs nationaux" },
+      ]},
+      { id: 10, enonce: "Qui préside l'IMC et à quelle fréquence se réunit-elle ?", choix: [
+        { lettre: "A", texte: "Le Président de la Métropole de Lyon, 1 fois par trimestre", correct: true },
+        { lettre: "B", texte: "Le Préfet du Rhône, 1 fois par semestre" },
+        { lettre: "C", texte: "Le Maire de Lyon, 1 fois par mois" },
+        { lettre: "D", texte: "Le Ministre des Transports, 1 fois par an" },
+      ]},
+      { id: 11, enonce: "Qui est le seul habilité à gérer, attribuer, suspendre ou retirer les ADS sur la Métropole ?", choix: [
+        { lettre: "A", texte: "Le Président de la région" },
+        { lettre: "B", texte: "Le Président de la Métropole de Lyon", correct: true },
+        { lettre: "C", texte: "Le Maire de Lyon" },
+        { lettre: "D", texte: "Le Préfet du Rhône" },
+      ]},
+      { id: 12, enonce: "Qu'est-ce que le « bissage » et est-il autorisé ?", choix: [
+        { lettre: "A", texte: "Le bissage (2 entreprises sur une même licence) est interdit pour les ADS d'avant le 1er octobre 2014", correct: true },
+        { lettre: "B", texte: "Le bissage est autorisé pour toutes les ADS" },
+        { lettre: "C", texte: "Le bissage est autorisé uniquement pour les ADS d'après 2014" },
+        { lettre: "D", texte: "Le bissage désigne le partage d'un véhicule entre 2 conducteurs" },
+      ]},
+      { id: 13, enonce: "Quel document un salarié doit-il présenter lors de tout contrôle ?", choix: [
+        { lettre: "A", texte: "Sa fiche de paie" },{ lettre: "B", texte: "Son contrat de travail", correct: true },
+        { lettre: "C", texte: "Les papiers de l'entreprise" },{ lettre: "D", texte: "Son attestation de formation" },
+      ]},
+      { id: 14, enonce: "Quelle est la validité du Permis de Circuler et par qui est-il établi ?", choix: [
+        { lettre: "A", texte: "Établi par la Préfecture, valable 2 ans" },
+        { lettre: "B", texte: "Établi par le Service Taxis Métropole, valable 1 an, sécurisé par hologramme", correct: true },
+        { lettre: "C", texte: "Établi par la commune, valable 6 mois" },
+        { lettre: "D", texte: "Établi par le conducteur, valable indéfiniment" },
+      ]},
+      { id: 15, enonce: "Quel est le délai pour signaler un changement de contenu du Permis de Circuler ?", choix: [
+        { lettre: "A", texte: "24 heures" },{ lettre: "B", texte: "3 jours ouvrés", correct: true },
+        { lettre: "C", texte: "1 semaine" },{ lettre: "D", texte: "1 mois" },
+      ]},
+      { id: 16, enonce: "Quelles sont les couleurs autorisées pour les véhicules taxi ?", choix: [
+        { lettre: "A", texte: "Blanche, grise ou noire", correct: true },{ lettre: "B", texte: "Toutes les couleurs" },
+        { lettre: "C", texte: "Blanche ou noire uniquement" },{ lettre: "D", texte: "Blanche, grise, noire ou bleue" },
+      ]},
+      { id: 17, enonce: "Quelles sont les règles concernant le covering publicitaire sur un véhicule taxi ?", choix: [
+        { lettre: "A", texte: "Interdit sans autorisation écrite du Service Taxis Métropole, ne doit pas gêner la lecture de la grille tarifaire ni la visibilité des vitres", correct: true },
+        { lettre: "B", texte: "Totalement interdit" },
+        { lettre: "C", texte: "Autorisé sans restriction" },
+        { lettre: "D", texte: "Autorisé uniquement sur le capot" },
+      ]},
+      { id: 18, enonce: "Qui peut disposer de véhicules de remplacement ?", choix: [
+        { lettre: "A", texte: "Titulaires de 10 ADS ou plus", correct: true },
+        { lettre: "B", texte: "Centres radio comportant plus de 50 affiliés/abonnés", correct: true },
+        { lettre: "C", texte: "Organisations professionnelles de plus de 150 adhérents", correct: true },
+        { lettre: "D", texte: "Tout conducteur de taxi" },
+      ]},
+      { id: 19, enonce: "Combien de véhicules de remplacement sont autorisés au maximum ?", choix: [
+        { lettre: "A", texte: "10 véhicules au total, 2 par bénéficiaire" },
+        { lettre: "B", texte: "20 véhicules au total, 3 par bénéficiaire" },
+        { lettre: "C", texte: "26 véhicules au total, 4 par bénéficiaire", correct: true },
+        { lettre: "D", texte: "30 véhicules au total, 5 par bénéficiaire" },
+      ]},
+      { id: 20, enonce: "Quelle est la date limite pour les demandes de renouvellement de véhicules de remplacement ?", choix: [
+        { lettre: "A", texte: "15 septembre pour l'IMC d'octobre" },
+        { lettre: "B", texte: "15 octobre pour l'IMC de novembre" },
+        { lettre: "C", texte: "15 novembre pour l'IMC de décembre", correct: true },
+        { lettre: "D", texte: "15 décembre pour l'IMC de janvier" },
+      ]},
+      { id: 21, enonce: "Comment s'inscrire sur la liste d'attente pour une ADS gratuite ?", choix: [
+        { lettre: "A", texte: "Lettre recommandée AR au Service Taxis Métropole" },
+        { lettre: "B", texte: "Courriel à taximetropole@grandlyon.com (avec récépissé)" },
+        { lettre: "C", texte: "Accueil direct sur RDV (avec récépissé)" },
+        { lettre: "D", texte: "Toutes les réponses ci-dessus", correct: true },
+      ]},
+      { id: 22, enonce: "Quelle condition d'exercice est requise pour l'inscription sur liste d'attente ?", choix: [
+        { lettre: "A", texte: "Exercice de conducteur de taxi ≥ 1 an sur les 3 dernières années" },
+        { lettre: "B", texte: "Exercice de conducteur de taxi ≥ 2 ans sur les 5 dernières années", correct: true },
+        { lettre: "C", texte: "Exercice de conducteur de taxi ≥ 3 ans sur les 7 dernières années" },
+        { lettre: "D", texte: "Aucune condition d'exercice" },
+      ]},
+      { id: 23, enonce: "Quand doit être effectuée la demande de renouvellement d'inscription sur liste d'attente ?", choix: [
+        { lettre: "A", texte: "1 mois avant l'échéance" },{ lettre: "B", texte: "2 mois avant l'échéance" },
+        { lettre: "C", texte: "3 mois avant l'échéance", correct: true },{ lettre: "D", texte: "6 mois avant l'échéance" },
+      ]},
+      { id: 24, enonce: "Quels documents sont nécessaires pour une 1ère inscription sur liste d'attente (ADS gratuite) ?", choix: [
+        { lettre: "A", texte: "Attestation sur l'honneur de non-détention d'ADS + carte professionnelle en cours de validité" },
+        { lettre: "B", texte: "Certificat de capacité ou formation continue + attestation préfectorale d'aptitude physique" },
+        { lettre: "C", texte: "Les deux réponses ci-dessus", correct: true },
+        { lettre: "D", texte: "Seule la carte professionnelle suffit" },
+      ]},
+      { id: 25, enonce: "Les droits de stationnement sont fixés et perçus par qui ?", choix: [
+        { lettre: "A", texte: "La Métropole de Lyon" },
+        { lettre: "B", texte: "La commune de rattachement de l'ADS", correct: true },
+        { lettre: "C", texte: "La préfecture du Rhône" },
+        { lettre: "D", texte: "Le Service Taxis" },
+      ]},
+      { id: 26, enonce: "Quelle est la conséquence d'un défaut de paiement des droits de stationnement ?", choix: [
+        { lettre: "A", texte: "Retrait de points sur le permis de conduire" },
+        { lettre: "B", texte: "Sanction administrative (incident d'exploitation)", correct: true },
+        { lettre: "C", texte: "Suspension du permis de conduire" },
+        { lettre: "D", texte: "Aucune conséquence" },
+      ]},
+      { id: 27, enonce: "La location-gérance exonère-t-elle le titulaire de sa responsabilité sur l'exploitation de l'ADS ?", choix: [
+        { lettre: "A", texte: "Oui, le locataire-gérant assume toute la responsabilité" },
+        { lettre: "B", texte: "Non, le titulaire reste responsable de l'exploitation", correct: true },
+        { lettre: "C", texte: "Oui, si le contrat le prévoit expressément" },
+        { lettre: "D", texte: "La responsabilité est partagée à 50/50" },
+      ]},
+      { id: 28, enonce: "Dans quels cas est-il possible de suspendre une ADS délivrée avant le 1er octobre 2014 ?", choix: [
+        { lettre: "A", texte: "Non-conformité réglementaire du véhicule constatée par un agent assermenté", correct: true },
+        { lettre: "B", texte: "Droits de stationnement non honorés", correct: true },
+        { lettre: "C", texte: "Perte de 4 points sur le permis de conduire" },
+        { lettre: "D", texte: "Non-respect du code de la route" },
+      ]},
+      { id: 29, enonce: "À qui doit être adressé le contrat de location-gérance avant enregistrement au Service Taxis ?", choix: [
+        { lettre: "A", texte: "La mairie" },
+        { lettre: "B", texte: "La chambre des métiers et de l'artisanat", correct: true },
+        { lettre: "C", texte: "La chambre de commerce et d'industrie" },
+        { lettre: "D", texte: "La préfecture" },
+      ]},
+    ],
+  },
+  {
+    id: 75, actif: true,
+    titre: "Réglementation Locale — Partie 3 : Convention CPAM, transport sanitaire",
+    sousTitre: "Conventionnement CPAM, tarification sanitaire, abattements, majorations, PMR, sanctions, trousse de secours",
+    questions: [
+      { id: 1, enonce: "Quelles sont les pièces à fournir pour le conventionnement CPAM ?", choix: [
+        { lettre: "A", texte: "Convention complétée signée, carte grise véhicule, carte pro, K-bis ou D1, permis de circuler" },
+        { lettre: "B", texte: "Attestation d'assurance taxi, contrat location-gérance, convention CPAM signée" },
+        { lettre: "C", texte: "Contrat de travail pour chaque salarié, déclaration préalable à l'embauche (URSSAF)" },
+        { lettre: "D", texte: "Toutes les réponses ci-dessus (10 documents obligatoires)", correct: true },
+      ]},
+      { id: 2, enonce: "Quel est le forfait de prise en charge pour un transport sanitaire ?", choix: [
+        { lettre: "A", texte: "18,05 €" },{ lettre: "B", texte: "25 €" },
+        { lettre: "C", texte: "28 € (13 € prise en charge + 15 € grande ville)", correct: true },{ lettre: "D", texte: "32 €" },
+      ]},
+      { id: 3, enonce: "Combien de kilomètres sont inclus dans le forfait de prise en charge ?", choix: [
+        { lettre: "A", texte: "2 km" },{ lettre: "B", texte: "3 km" },
+        { lettre: "C", texte: "4 km", correct: true },{ lettre: "D", texte: "5 km" },
+      ]},
+      { id: 4, enonce: "Quel est le prix du kilomètre au-delà des 4 premiers km (transport sanitaire de jour) ?", choix: [
+        { lettre: "A", texte: "0,87 €" },{ lettre: "B", texte: "0,97 €" },
+        { lettre: "C", texte: "1,07 €", correct: true },{ lettre: "D", texte: "1,17 €" },
+      ]},
+      { id: 5, enonce: "Comment est calculé le tarif de JOUR pour un transport sanitaire en charge ?", choix: [
+        { lettre: "A", texte: "Nombre de km × 1,07 € + 28 €" },
+        { lettre: "B", texte: "(Nombre de km − 4) × 1,07 € + 28 €", correct: true },
+        { lettre: "C", texte: "Nombre de km × 1,50 € + 28 €" },
+        { lettre: "D", texte: "(28 € + km) × 1,5" },
+      ]},
+      { id: 6, enonce: "Comment est calculé le tarif de NUIT/dimanche/fériés pour un transport sanitaire ?", choix: [
+        { lettre: "A", texte: "(Nombre de km − 4) × 1,07 € + 28 €" },
+        { lettre: "B", texte: "(28 € + nombre de km) × 1,5", correct: true },
+        { lettre: "C", texte: "Nombre de km × 2,30 € + 28 €" },
+        { lettre: "D", texte: "Nombre de km × 1,07 € × 2" },
+      ]},
+      { id: 7, enonce: "Le tarif D (route enneigée/verglacée) s'applique-t-il aux transports sanitaires ?", choix: [
+        { lettre: "A", texte: "Oui" },{ lettre: "B", texte: "Non", correct: true },
+      ]},
+      { id: 8, enonce: "À partir de quel moment le kilométrage est-il pris en compte pour un transport sanitaire ?", choix: [
+        { lettre: "A", texte: "À partir de la station du taxi" },
+        { lettre: "B", texte: "À partir du siège de l'entreprise" },
+        { lettre: "C", texte: "À partir du lieu de prise en charge du patient", correct: true },
+        { lettre: "D", texte: "À partir de la sortie de la commune" },
+      ]},
+      { id: 9, enonce: "Quel est l'abattement pour le transport simultané de 2 patients ?", choix: [
+        { lettre: "A", texte: "20 %" },{ lettre: "B", texte: "23 %", correct: true },
+        { lettre: "C", texte: "30 %" },{ lettre: "D", texte: "35 %" },
+      ]},
+      { id: 10, enonce: "Quel est l'abattement pour le transport simultané de 3 patients ?", choix: [
+        { lettre: "A", texte: "25 %" },{ lettre: "B", texte: "30 %" },
+        { lettre: "C", texte: "33 %" },{ lettre: "D", texte: "35 %", correct: true },
+      ]},
+      { id: 11, enonce: "Quel est l'abattement pour 4 patients ou plus ?", choix: [
+        { lettre: "A", texte: "35 %" },{ lettre: "B", texte: "37 %", correct: true },
+        { lettre: "C", texte: "40 %" },{ lettre: "D", texte: "45 %" },
+      ]},
+      { id: 12, enonce: "Quel abattement s'applique en cas de longue distance (≥ 30 km seul) dans un transport partagé ?", choix: [
+        { lettre: "A", texte: "0 % (pas d'abattement)" },
+        { lettre: "B", texte: "5 % pour le patient seul sur la longue distance", correct: true },
+        { lettre: "C", texte: "10 %" },{ lettre: "D", texte: "23 %" },
+      ]},
+      { id: 13, enonce: "Quelle majoration s'applique pour une hospitalisation avec retour à vide, distance en charge < 50 km ?", choix: [
+        { lettre: "A", texte: "+10 %" },{ lettre: "B", texte: "+20 %" },
+        { lettre: "C", texte: "+25 %", correct: true },{ lettre: "D", texte: "+50 %" },
+      ]},
+      { id: 14, enonce: "Quelle majoration s'applique pour une hospitalisation avec retour à vide, distance en charge ≥ 50 km ?", choix: [
+        { lettre: "A", texte: "+25 %" },{ lettre: "B", texte: "+35 %" },
+        { lettre: "C", texte: "+50 %", correct: true },{ lettre: "D", texte: "+75 %" },
+      ]},
+      { id: 15, enonce: "Quel est le montant du supplément PMR pour le transport sanitaire ?", choix: [
+        { lettre: "A", texte: "20 €" },{ lettre: "B", texte: "25 €" },
+        { lettre: "C", texte: "30 €", correct: true },{ lettre: "D", texte: "35 €" },
+      ]},
+      { id: 16, enonce: "Les frais de péage sont-ils remboursables pour les transports sanitaires ?", choix: [
+        { lettre: "A", texte: "Oui, sur présentation des justificatifs de passage", correct: true },
+        { lettre: "B", texte: "Non, ils sont à la charge du transporteur" },
+        { lettre: "C", texte: "Oui, mais uniquement pour les trajets > 100 km" },
+        { lettre: "D", texte: "Oui, forfaitairement" },
+      ]},
+      { id: 17, enonce: "Combien de temps le transporteur doit-il conserver les relevés de péage ?", choix: [
+        { lettre: "A", texte: "12 mois" },{ lettre: "B", texte: "24 mois" },
+        { lettre: "C", texte: "33 mois", correct: true },{ lettre: "D", texte: "60 mois" },
+      ]},
+      { id: 18, enonce: "Quels cas nécessitent la majoration hospitalisation retour à vide ?", choix: [
+        { lettre: "A", texte: "Hospitalisations complètes, partielles ou ambulatoires" },
+        { lettre: "B", texte: "Séances de chimiothérapie, radiothérapie et hémodialyse" },
+        { lettre: "C", texte: "Les deux réponses ci-dessus", correct: true },
+        { lettre: "D", texte: "Uniquement les hospitalisations complètes" },
+      ]},
+      { id: 19, enonce: "Quels transports sont soumis à accord préalable de la CPAM ?", choix: [
+        { lettre: "A", texte: "Séries ≥ 4 transports d'une distance > 50 km aller, sur 2 mois, pour le même traitement" },
+        { lettre: "B", texte: "Transports en un lieu distant de plus de 150 km aller" },
+        { lettre: "C", texte: "Les deux réponses ci-dessus", correct: true },
+        { lettre: "D", texte: "Tous les transports sanitaires" },
+      ]},
+      { id: 20, enonce: "Qui doit signer la facture de transport sanitaire ?", choix: [
+        { lettre: "A", texte: "Le conducteur uniquement" },
+        { lettre: "B", texte: "La personne transportée (ou son représentant légal)", correct: true },
+        { lettre: "C", texte: "Le médecin prescripteur" },
+        { lettre: "D", texte: "La CPAM" },
+      ]},
+      { id: 21, enonce: "Si le patient n'est pas en état de signer la facture, que doit faire le transporteur ?", choix: [
+        { lettre: "A", texte: "Faire signer un témoin" },
+        { lettre: "B", texte: "Porter la mention « impossibilité physique ou mentale de signer »", correct: true },
+        { lettre: "C", texte: "Laisser la facture sans signature" },
+        { lettre: "D", texte: "Appeler la CPAM pour autorisation" },
+      ]},
+      { id: 22, enonce: "Dans quels cas l'entreprise peut-elle voir son conventionnement CPAM suspendu ?", choix: [
+        { lettre: "A", texte: "Absence de permis de conduire" },
+        { lettre: "B", texte: "Absence de carte professionnelle" },
+        { lettre: "C", texte: "Perte d'exploitation ADS" },
+        { lettre: "D", texte: "Toutes les réponses ci-dessus", correct: true },
+      ]},
+      { id: 23, enonce: "De quel délai dispose l'entreprise pour présenter ses observations suite à une constatation de non-respect ?", choix: [
+        { lettre: "A", texte: "7 jours" },{ lettre: "B", texte: "15 jours" },
+        { lettre: "C", texte: "21 jours", correct: true },{ lettre: "D", texte: "30 jours" },
+      ]},
+      { id: 24, enonce: "Quelle est la durée maximale d'un déconventionnement ?", choix: [
+        { lettre: "A", texte: "1 an" },{ lettre: "B", texte: "3 ans" },
+        { lettre: "C", texte: "5 ans", correct: true },{ lettre: "D", texte: "10 ans" },
+      ]},
+      { id: 25, enonce: "Que doit comporter la trousse de secours obligatoire ? (10 éléments)", choix: [
+        { lettre: "A", texte: "Compresses stériles, pansement américain, bande extensible, solution antiseptique non iodée" },
+        { lettre: "B", texte: "Ciseaux, 2 clips de fixation, gants stériles" },
+        { lettre: "C", texte: "Sucre en morceaux, sacs vomitifs, couverture de survie" },
+        { lettre: "D", texte: "Toutes les réponses ci-dessus (10 éléments obligatoires)", correct: true },
+      ]},
+    ],
+  },
+];

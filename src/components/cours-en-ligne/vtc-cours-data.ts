@@ -5,7 +5,7 @@ import { ANGLAIS_EXERCICES } from "./exercices/anglais-exercices-data";
 import { DEV_COMMERCIAL_EXERCICES } from "./exercices/dev-commercial-exercices-data";
 import { FRANCAIS_EXERCICES } from "./exercices/francais-exercices-data";
 import { GESTION_EXERCICES } from "./exercices/gestion-exercices-data";
-import { REGLEMENTATION_NATIONALE_EXERCICES, REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES } from "./exercices/reglementation-exercices-data";
+import { REGLEMENTATION_NATIONALE_EXERCICES, REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES, REGLEMENTATION_LOCALE_EXERCICES } from "./exercices/reglementation-exercices-data";
 import { SECURITE_ROUTIERE_EXERCICES } from "./exercices/securite-routiere-exercices-data";
 interface ContentItem {
   id: number;
@@ -272,7 +272,7 @@ export const VTC_SECTIONS: MatiereSection[] = [
   { cours: MATIERE_C, exercices: SECURITE_ROUTIERE_EXERCICES },
   { cours: MATIERE_D, exercices: FRANCAIS_EXERCICES },
   { cours: MATIERE_E, exercices: ANGLAIS_EXERCICES },
-  { cours: MATIERE_F, exercices: [...REGLEMENTATION_NATIONALE_EXERCICES, ...REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES] },
+  { cours: MATIERE_F, exercices: [...REGLEMENTATION_NATIONALE_EXERCICES, ...REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES, ...REGLEMENTATION_LOCALE_EXERCICES] },
   { cours: MATIERE_G, exercices: DEV_COMMERCIAL_EXERCICES },
 ];
 
