@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -292,6 +293,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     label: string;
   } | null>(null);
   const [emailPreviewEditing, setEmailPreviewEditing] = useState(false);
+  const [selectedApprenants, setSelectedApprenants] = useState<Set<string>>(new Set());
+  const [bulkSending, setBulkSending] = useState(false);
   const [editingMailType, setEditingMailType] = useState<any | null>(null);
   const [editLabel, setEditLabel] = useState("");
   const [editSubject, setEditSubject] = useState("");
@@ -804,7 +807,69 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     setSendingEmailForApprenant(null);
   };
 
-  // Compter les apprenants par type
+  const toggleSelectApprenant = (id: string) => {
+    setSelectedApprenants(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedApprenants.size === apprenantsInSession.length) {
+      setSelectedApprenants(new Set());
+    } else {
+      setSelectedApprenants(new Set(apprenantsInSession.map((sa: any) => sa.apprenant?.id).filter(Boolean)));
+    }
+  };
+
+  const handleBulkSendEmail = async (templateId: string) => {
+    const template = emailTemplates.find((t: any) => t.id === templateId);
+    if (!template) return;
+
+    const selectedList = apprenantsInSession
+      .filter((sa: any) => sa.apprenant && selectedApprenants.has(sa.apprenant.id) && sa.apprenant.email)
+      .map((sa: any) => sa.apprenant);
+
+    if (selectedList.length === 0) {
+      toast({ title: "Aucun apprenant sélectionné", description: "Cochez au moins un apprenant avec une adresse email.", variant: "destructive" });
+      return;
+    }
+
+    setBulkSending(true);
+    let sent = 0;
+    let failed = 0;
+
+    for (const apprenant of selectedList) {
+      const subject = replaceTemplateVars(template.subject_template, apprenant);
+      const body = replaceTemplateVars(template.body_template, apprenant);
+      try {
+        await supabase.functions.invoke('sync-outlook-emails', {
+          body: {
+            action: 'send',
+            apprenantId: apprenant.id,
+            userEmail: 'contact@ftransport.fr',
+            to: apprenant.email,
+            subject,
+            body,
+          },
+        });
+        sent++;
+      } catch {
+        failed++;
+      }
+    }
+
+    toast({
+      title: "Envoi groupé terminé",
+      description: `${sent} email(s) envoyé(s)${failed > 0 ? `, ${failed} échec(s)` : ''}.`,
+    });
+    await queryClient.invalidateQueries({ queryKey: ['convocations-sent'] });
+    setBulkSending(false);
+    setSelectedApprenants(new Set());
+  };
+
+
   const countByType = (type: string) => {
     return apprenantsInSession.filter((sa: any) => {
       const t = sa.apprenant?.type_apprenant?.toLowerCase() || "";
@@ -882,11 +947,46 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
           {/* Apprenants Tab */}
           <TabsContent value="apprenants" className="flex-1 overflow-hidden flex flex-col mt-4">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="font-medium text-foreground">Liste des apprenants</h4>
+            {/* Barre d'envoi groupé */}
+            <div className="flex items-center gap-3 mb-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
+              <Checkbox 
+                checked={apprenantsInSession.length > 0 && selectedApprenants.size === apprenantsInSession.length}
+                onCheckedChange={toggleSelectAll}
+              />
+              <span className="text-sm font-medium text-foreground">
+                {selectedApprenants.size > 0 ? `${selectedApprenants.size} sélectionné(s)` : "Tout sélectionner"}
+              </span>
+              <div className="flex-1" />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    size="sm" 
+                    variant="default" 
+                    className="gap-2"
+                    disabled={selectedApprenants.size === 0 || bulkSending}
+                  >
+                    {bulkSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    Envoyer un mail type ({selectedApprenants.size})
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="max-h-80 overflow-y-auto w-72">
+                  {emailTemplates.map((t: any) => (
+                    <DropdownMenuItem
+                      key={t.id}
+                      onClick={() => handleBulkSendEmail(t.id)}
+                      className="cursor-pointer"
+                    >
+                      <span className="text-sm">{t.label}</span>
+                    </DropdownMenuItem>
+                  ))}
+                  {emailTemplates.length === 0 && (
+                    <DropdownMenuItem disabled>Aucun modèle</DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button 
                 size="sm" 
-                variant={showAddApprenant ? "secondary" : "default"}
+                variant={showAddApprenant ? "secondary" : "outline"}
                 onClick={() => setShowAddApprenant(!showAddApprenant)}
                 className="gap-1"
               >
@@ -894,6 +994,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 {showAddApprenant ? "Fermer" : "Ajouter"}
               </Button>
             </div>
+
 
             {showAddApprenant && (
               <div className="mb-4 p-3 border rounded-lg bg-muted/30">
@@ -964,7 +1065,13 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                         {/* Ligne 1: Identité + Badge type + Actions */}
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
+                            <Checkbox 
+                              checked={selectedApprenants.has(apprenant.id)}
+                              onCheckedChange={() => toggleSelectApprenant(apprenant.id)}
+                              onClick={(e) => e.stopPropagation()}
+                            />
                             <Avatar className="w-10 h-10">
+
                               <AvatarFallback className="bg-primary/10 text-primary font-medium">
                                 {apprenant.prenom?.[0] || ""}{apprenant.nom?.[0] || ""}
                               </AvatarFallback>
