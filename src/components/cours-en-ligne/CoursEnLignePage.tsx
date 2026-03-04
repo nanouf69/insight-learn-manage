@@ -43,6 +43,10 @@ const CoursEnLignePage = () => {
     { id: 11, nom: "6.BILAN EXAMEN TAXI", eleves: 0, progression: "0%", statut: "Actif" },
     { id: 12, nom: "9.CAS PRATIQUE TAXI", eleves: 0, progression: "0%", statut: "Actif" },
     { id: 13, nom: "CONTRÔLE DE CONNAISSANCES TAXI", eleves: 0, progression: "0%", statut: "Actif" },
+    { id: 27, nom: "4.BILAN EXERCICES TA", eleves: 0, progression: "0%", statut: "Actif" },
+    { id: 28, nom: "6.BILAN EXAMEN TA", eleves: 0, progression: "0%", statut: "Actif" },
+    { id: 29, nom: "4.BILAN EXERCICES VA", eleves: 0, progression: "0%", statut: "Actif" },
+    { id: 30, nom: "6.BILAN EXAMEN VA", eleves: 0, progression: "0%", statut: "Actif" },
   ]);
 
   const moveModule = (index: number, direction: "up" | "down") => {
