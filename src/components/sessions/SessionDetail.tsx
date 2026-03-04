@@ -295,6 +295,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [emailPreviewEditing, setEmailPreviewEditing] = useState(false);
   const [selectedApprenants, setSelectedApprenants] = useState<Set<string>>(new Set());
   const [bulkSending, setBulkSending] = useState(false);
+  const [bulkPreview, setBulkPreview] = useState<{ template: any; apprenants: any[]; previewBody: string; previewSubject: string } | null>(null);
   const [editingMailType, setEditingMailType] = useState<any | null>(null);
   const [editLabel, setEditLabel] = useState("");
   const [editSubject, setEditSubject] = useState("");
@@ -836,11 +837,21 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       return;
     }
 
+    // Show preview with first apprenant as example
+    const previewSubject = replaceTemplateVars(template.subject_template, selectedList[0]);
+    const previewBody = replaceTemplateVars(template.body_template, selectedList[0]);
+    setBulkPreview({ template, apprenants: selectedList, previewSubject, previewBody });
+  };
+
+  const handleConfirmBulkSend = async () => {
+    if (!bulkPreview) return;
+    const { template, apprenants } = bulkPreview;
+    setBulkPreview(null);
     setBulkSending(true);
     let sent = 0;
     let failed = 0;
 
-    for (const apprenant of selectedList) {
+    for (const apprenant of apprenants) {
       const subject = replaceTemplateVars(template.subject_template, apprenant);
       const body = replaceTemplateVars(template.body_template, apprenant);
       try {
@@ -1706,6 +1717,55 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             </Button>
           </div>
         </div>
+      </DialogContent>
+    </Dialog>
+
+    {/* Modale aperçu envoi groupé */}
+    <Dialog open={!!bulkPreview} onOpenChange={(open) => !open && setBulkPreview(null)}>
+      <DialogContent className="sm:max-w-[650px] max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Send className="w-5 h-5" />
+            Envoi groupé — Aperçu
+          </DialogTitle>
+        </DialogHeader>
+        {bulkPreview && (
+          <div className="flex-1 overflow-auto space-y-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Destinataires ({bulkPreview.apprenants.length})</Label>
+              <div className="flex flex-wrap gap-2 p-3 rounded-lg border bg-muted/30 max-h-[120px] overflow-y-auto">
+                {bulkPreview.apprenants.map((a: any) => (
+                  <Badge key={a.id} variant="secondary" className="text-xs gap-1">
+                    <Mail className="w-3 h-3" />
+                    {a.prenom} {a.nom}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-sm font-medium">Objet (exemple pour {bulkPreview.apprenants[0]?.prenom})</Label>
+              <div className="text-sm font-semibold p-2 rounded border bg-muted/20">{bulkPreview.previewSubject}</div>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-sm font-medium">Contenu (personnalisé pour chaque élève)</Label>
+              <div className="border rounded-lg p-4 bg-muted/30 overflow-auto max-h-[300px]">
+                <div 
+                  className="prose prose-sm max-w-none text-foreground"
+                  dangerouslySetInnerHTML={{ __html: bulkPreview.previewBody }} 
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <Button variant="outline" onClick={() => setBulkPreview(null)}>
+                Annuler
+              </Button>
+              <Button onClick={handleConfirmBulkSend} className="gap-2">
+                <Send className="w-4 h-4" />
+                Envoyer à {bulkPreview.apprenants.length} élève(s)
+              </Button>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
     </>
