@@ -27,7 +27,8 @@ const CoursEnLignePage = () => {
   const [editingModule, setEditingModule] = useState<{ id: number; nom: string } | null>(null);
   const [bilanActif, setBilanActif] = useState<string | null>(null);
   const [modules, setModules] = useState([
-    { id: 1, nom: "1.INTRODUCTION", eleves: 2, progression: "0%", statut: "Actif" },
+    { id: 1, nom: "1.INTRODUCTION PRÉSENTIEL", eleves: 2, progression: "0%", statut: "Actif" },
+    { id: 26, nom: "1.INTRODUCTION E-LEARNING", eleves: 2, progression: "0%", statut: "Actif" },
     { id: 2, nom: "2.COURS ET EXERCICES VTC", eleves: 2, progression: "6%", statut: "Actif" },
     { id: 3, nom: "3.FORMULES", eleves: 2, progression: "0%", statut: "Actif" },
     { id: 4, nom: "4.BILAN EXERCICES VTC", eleves: 2, progression: "4%", statut: "Actif" },
