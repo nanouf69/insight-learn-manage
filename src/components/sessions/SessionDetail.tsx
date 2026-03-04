@@ -295,7 +295,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [emailPreviewEditing, setEmailPreviewEditing] = useState(false);
   const [selectedApprenants, setSelectedApprenants] = useState<Set<string>>(new Set());
   const [bulkSending, setBulkSending] = useState(false);
-  const [bulkPreview, setBulkPreview] = useState<{ template: any; apprenants: any[]; previewBody: string; previewSubject: string } | null>(null);
+  const [bulkPreview, setBulkPreview] = useState<{ template: any; apprenants: any[]; previewBody: string; previewSubject: string; editedBody?: string; editedSubject?: string } | null>(null);
+  const [bulkPreviewEditing, setBulkPreviewEditing] = useState(false);
   const [editingMailType, setEditingMailType] = useState<any | null>(null);
   const [editLabel, setEditLabel] = useState("");
   const [editSubject, setEditSubject] = useState("");
@@ -845,15 +846,18 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
   const handleConfirmBulkSend = async () => {
     if (!bulkPreview) return;
-    const { template, apprenants } = bulkPreview;
+    const { template, apprenants, editedBody, editedSubject } = bulkPreview;
+    const useEditedBody = editedBody !== undefined;
+    const useEditedSubject = editedSubject !== undefined;
     setBulkPreview(null);
+    setBulkPreviewEditing(false);
     setBulkSending(true);
     let sent = 0;
     let failed = 0;
 
     for (const apprenant of apprenants) {
-      const subject = replaceTemplateVars(template.subject_template, apprenant);
-      const body = replaceTemplateVars(template.body_template, apprenant);
+      const subject = useEditedSubject ? replaceTemplateVars(editedSubject, apprenant) : replaceTemplateVars(template.subject_template, apprenant);
+      const body = useEditedBody ? replaceTemplateVars(editedBody, apprenant) : replaceTemplateVars(template.body_template, apprenant);
       try {
         await supabase.functions.invoke('sync-outlook-emails', {
           body: {
@@ -1743,26 +1747,47 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
               </div>
             </div>
             <div className="space-y-1">
-              <Label className="text-sm font-medium">Objet (exemple pour {bulkPreview.apprenants[0]?.prenom})</Label>
-              <div className="text-sm font-semibold p-2 rounded border bg-muted/20">{bulkPreview.previewSubject}</div>
+              <Label className="text-sm font-medium">Objet</Label>
+              {bulkPreviewEditing ? (
+                <Input 
+                  value={bulkPreview.editedSubject ?? bulkPreview.template.subject_template}
+                  onChange={(e) => setBulkPreview({...bulkPreview, editedSubject: e.target.value, previewSubject: replaceTemplateVars(e.target.value, bulkPreview.apprenants[0])})}
+                />
+              ) : (
+                <div className="text-sm font-semibold p-2 rounded border bg-muted/20">{bulkPreview.previewSubject}</div>
+              )}
             </div>
             <div className="space-y-1">
               <Label className="text-sm font-medium">Contenu (personnalisé pour chaque élève)</Label>
-              <div className="border rounded-lg p-4 bg-muted/30 overflow-auto max-h-[300px]">
-                <div 
-                  className="prose prose-sm max-w-none text-foreground"
-                  dangerouslySetInnerHTML={{ __html: bulkPreview.previewBody }} 
+              {bulkPreviewEditing ? (
+                <Textarea 
+                  value={bulkPreview.editedBody ?? bulkPreview.template.body_template}
+                  onChange={(e) => setBulkPreview({...bulkPreview, editedBody: e.target.value, previewBody: replaceTemplateVars(e.target.value, bulkPreview.apprenants[0])})}
+                  className="min-h-[300px] font-mono text-xs"
                 />
-              </div>
+              ) : (
+                <div className="border rounded-lg p-4 bg-muted/30 overflow-auto max-h-[300px]">
+                  <div 
+                    className="prose prose-sm max-w-none text-foreground"
+                    dangerouslySetInnerHTML={{ __html: bulkPreview.previewBody }} 
+                  />
+                </div>
+              )}
             </div>
-            <div className="flex justify-end gap-3 pt-2">
-              <Button variant="outline" onClick={() => setBulkPreview(null)}>
-                Annuler
+            <div className="flex justify-between pt-2">
+              <Button variant="ghost" size="sm" onClick={() => setBulkPreviewEditing(!bulkPreviewEditing)} className="gap-2">
+                <Pencil className="w-4 h-4" />
+                {bulkPreviewEditing ? "Aperçu" : "Modifier"}
               </Button>
-              <Button onClick={handleConfirmBulkSend} className="gap-2">
-                <Send className="w-4 h-4" />
-                Envoyer à {bulkPreview.apprenants.length} élève(s)
-              </Button>
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => { setBulkPreview(null); setBulkPreviewEditing(false); }}>
+                  Annuler
+                </Button>
+                <Button onClick={() => { setBulkPreviewEditing(false); handleConfirmBulkSend(); }} className="gap-2">
+                  <Send className="w-4 h-4" />
+                  Envoyer à {bulkPreview.apprenants.length} élève(s)
+                </Button>
+              </div>
             </div>
           </div>
         )}
