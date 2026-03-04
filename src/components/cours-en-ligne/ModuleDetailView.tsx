@@ -49,6 +49,7 @@ import { TAXI_COURS_DATA, TAXI_SECTIONS } from "./taxi-cours-data";
 import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "./controle-connaissances-taxi-data";
 import { CONNAISSANCES_VILLE_TAXI_DATA } from "./connaissances-ville-taxi-data";
 import { BILAN_EXERCICES_VTC } from "./bilan-exercices-vtc-data";
+import { BILAN_EXERCICES_TAXI } from "./bilan-exercices-taxi-data";
 
 interface InlineQuizQuestion {
   id: number;
@@ -691,6 +692,17 @@ function getInitialModuleData(module: { id: number; nom: string }): ModuleData {
       description: "Tous les exercices regroupés par matière. Refaites-les autant de fois que nécessaire pour maîtriser chaque sujet.",
       cours: [],
       exercices: BILAN_EXERCICES_VTC,
+    };
+  }
+
+  // Bilan Exercices TAXI (module 9) — tous les exercices regroupés par matière (sauf Français/Anglais/Marketing/Réglem. VTC)
+  if (module.id === 9) {
+    return {
+      id: 9,
+      nom: "4.BILAN EXERCICES TAXI",
+      description: "Tous les exercices regroupés par matière. Refaites-les autant de fois que nécessaire pour maîtriser chaque sujet.",
+      cours: [],
+      exercices: BILAN_EXERCICES_TAXI,
     };
   }
 
