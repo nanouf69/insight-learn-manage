@@ -189,6 +189,19 @@ export const MODULES_DATA: ModuleInfo[] = [
     description: "65 questions QCM et QRC pour vérifier vos connaissances taxi (réglementation, tarification, territoire)",
     formations: TAXI_FORMATIONS,
   },
+  // === Modules spécifiques TA (passerelle taxi pour VTC) ===
+  {
+    id: 27,
+    nom: "4.BILAN EXERCICES TA",
+    description: "Exercices de réglementation nationale et locale — spécifique passerelle TA",
+    formations: ["taxi-pour-vtc", "taxi-pour-vtc-elearning"],
+  },
+  {
+    id: 28,
+    nom: "6.BILAN EXAMEN TA",
+    description: "Questions d'examen réglementation nationale et locale — spécifique passerelle TA",
+    formations: ["taxi-pour-vtc", "taxi-pour-vtc-elearning"],
+  },
 ];
 
 // Expansion des modules_autorises :
