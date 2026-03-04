@@ -1037,6 +1037,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="manque_document">📄 Manque un document</SelectItem>
+                              <SelectItem value="document_complet">✅ Document complet</SelectItem>
                               <SelectItem value="mdp_change">🔑 Mot de passe changé</SelectItem>
                               <SelectItem value="email_non_valide">📧 Adresse mail non validée</SelectItem>
                               <SelectItem value="injoignable">📵 Injoignable</SelectItem>
