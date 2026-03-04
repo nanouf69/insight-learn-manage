@@ -4,7 +4,7 @@ import { T3P_EXERCICES } from "./exercices/t3p-exercices-data";
 import { ANGLAIS_EXERCICES } from "./exercices/anglais-exercices-data";
 import { FRANCAIS_EXERCICES } from "./exercices/francais-exercices-data";
 import { GESTION_EXERCICES } from "./exercices/gestion-exercices-data";
-import { REGLEMENTATION_NATIONALE_EXERCICES } from "./exercices/reglementation-exercices-data";
+import { REGLEMENTATION_NATIONALE_EXERCICES, REGLEMENTATION_LOCALE_EXERCICES } from "./exercices/reglementation-exercices-data";
 import { SECURITE_ROUTIERE_EXERCICES } from "./exercices/securite-routiere-exercices-data";
 
 interface ContentItem {
@@ -231,7 +231,7 @@ export const TAXI_SECTIONS: MatiereSection[] = [
   { cours: MATIERE_C, exercices: SECURITE_ROUTIERE_EXERCICES },
   { cours: MATIERE_D, exercices: FRANCAIS_EXERCICES },
   { cours: MATIERE_E, exercices: ANGLAIS_EXERCICES },
-  { cours: MATIERE_F, exercices: REGLEMENTATION_NATIONALE_EXERCICES },
+  { cours: MATIERE_F, exercices: [...REGLEMENTATION_NATIONALE_EXERCICES, ...REGLEMENTATION_LOCALE_EXERCICES] },
 ];
 
 export const TAXI_COURS_DATA: ModuleData = {
