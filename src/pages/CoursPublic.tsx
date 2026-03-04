@@ -35,6 +35,7 @@ const BILAN_MODULE_IDS: Record<number, string> = {
   5: "bilan-vtc",
   11: "bilan-taxi",
   28: "bilan-ta",
+  30: "bilan-va",
 };
 
 interface ApprenantInfo {

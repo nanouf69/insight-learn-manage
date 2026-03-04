@@ -718,6 +718,17 @@ function getInitialModuleData(module: { id: number; nom: string }, apprenantType
     };
   }
 
+  // Bilan Exercices VA (module 29) — uniquement développement commercial + réglementation spécifique
+  if (module.id === 29) {
+    return {
+      id: 29,
+      nom: "4.BILAN EXERCICES VA",
+      description: "Exercices développement commercial et réglementation spécifique. Refaites-les autant de fois que nécessaire.",
+      cours: [],
+      exercices: BILAN_EXERCICES_VTC.filter(e => e.id === 104 || e.id === 103),
+    };
+  }
+
   // VTC sub-modules (matières A-G, anciennement module 2)
   if (module.id === 2) {
     return createSectionModuleData(2, "A. Réglementation T3P — Partie 1/2", "Cours et exercices T3P — Partie 1", {

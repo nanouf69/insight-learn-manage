@@ -202,6 +202,19 @@ export const MODULES_DATA: ModuleInfo[] = [
     description: "Questions d'examen réglementation nationale et locale — spécifique passerelle TA",
     formations: ["taxi-pour-vtc", "taxi-pour-vtc-elearning"],
   },
+  // === Modules spécifiques VA (passerelle VTC pour TAXI) ===
+  {
+    id: 29,
+    nom: "4.BILAN EXERCICES VA",
+    description: "Exercices développement commercial et réglementation spécifique — spécifique passerelle VA",
+    formations: ["vtc-pour-taxi"],
+  },
+  {
+    id: 30,
+    nom: "6.BILAN EXAMEN VA",
+    description: "Questions d'examen développement commercial et réglementation spécifique — spécifique passerelle VA",
+    formations: ["vtc-pour-taxi"],
+  },
 ];
 
 // Expansion des modules_autorises :

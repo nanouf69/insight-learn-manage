@@ -20,6 +20,7 @@ const BILAN_MODULE_IDS: Record<number, string> = {
   11: "bilan-taxi",  // 6.BILAN EXAMEN TAXI
   5:  "bilan-vtc",   // 6.BILAN EXAMEN VTC
   28: "bilan-ta",    // 6.BILAN EXAMEN TA
+  30: "bilan-va",    // 6.BILAN EXAMEN VA
 };
 
 const CoursEnLignePage = () => {
