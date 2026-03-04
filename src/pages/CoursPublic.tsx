@@ -286,6 +286,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             defaultBilanId={bilanId}
             apprenantId={apprenant?.id || null}
             userId={user?.id || null}
+            apprenantType={apprenant?.type_apprenant || null}
           />
         </div>
       );
@@ -298,6 +299,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           studentOnly
           apprenantId={apprenant?.id || null}
           onModuleCompleted={handleModuleCompleted}
+          apprenantType={apprenant?.type_apprenant || null}
         />
       </div>
     );

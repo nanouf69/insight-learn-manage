@@ -105,6 +105,7 @@ interface ModuleDetailViewProps {
   studentOnly?: boolean;
   apprenantId?: string | null;
   onModuleCompleted?: (moduleId: number) => void;
+  apprenantType?: string | null;
 }
 
 // ===== Données initiales du module INTRODUCTION PRÉSENTIEL =====
@@ -673,7 +674,7 @@ const CAS_PRATIQUE_TAXI_DATA: ModuleData = {
   ],
 };
 
-function getInitialModuleData(module: { id: number; nom: string }): ModuleData {
+function getInitialModuleData(module: { id: number; nom: string }, apprenantType?: string | null): ModuleData {
   // Module IDs: 1 = INTRODUCTION PRÉSENTIEL, 26 = INTRODUCTION E-LEARNING, 6 = PRATIQUE TAXI, 8 = PRATIQUE VTC, 12 = CAS PRATIQUE TAXI
   if (module.id === 1) return JSON.parse(JSON.stringify(INTRODUCTION_PRESENTIEL_DATA));
   if (module.id === 26) return JSON.parse(JSON.stringify(INTRODUCTION_ELEARNING_DATA));
@@ -697,12 +698,17 @@ function getInitialModuleData(module: { id: number; nom: string }): ModuleData {
 
   // Bilan Exercices TAXI (module 9) — tous les exercices regroupés par matière (sauf Français/Anglais/Marketing/Réglem. VTC)
   if (module.id === 9) {
+    // Pour TA/TAE, ne montrer que le bilan Réglementation (Nationale + Locale)
+    const isTA = apprenantType && /^ta/i.test(apprenantType.split(' ')[0].replace(/[+ ]/g, ''));
+    const exercices = isTA
+      ? BILAN_EXERCICES_TAXI.filter(e => e.id === 203)
+      : BILAN_EXERCICES_TAXI;
     return {
       id: 9,
       nom: "4.BILAN EXERCICES TAXI",
       description: "Tous les exercices regroupés par matière. Refaites-les autant de fois que nécessaire pour maîtriser chaque sujet.",
       cours: [],
-      exercices: BILAN_EXERCICES_TAXI,
+      exercices,
     };
   }
 
@@ -1141,7 +1147,7 @@ const ContentCard = ({
   );
 };
 
-const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, onModuleCompleted }: ModuleDetailViewProps) => {
+const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, onModuleCompleted, apprenantType }: ModuleDetailViewProps) => {
   const createInitialSlidesByKey = (): Record<string, Slide[]> => ({
     "t3p-partie1": [...T3P_PARTIE1_SLIDES],
     "t3p-partie2": [...T3P_PARTIE2_SLIDES],
@@ -1150,7 +1156,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     "gestion-partie3": [...GESTION_PARTIE3_SLIDES],
   });
 
-  const [moduleData, setModuleData] = useState<ModuleData>(() => getInitialModuleData(module));
+  const [moduleData, setModuleData] = useState<ModuleData>(() => getInitialModuleData(module, apprenantType));
   const [editingCoursId, setEditingCoursId] = useState<number | null>(null);
   const [slidesByKey, setSlidesByKey] = useState<Record<string, Slide[]>>(() => createInitialSlidesByKey());
 
