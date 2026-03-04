@@ -1031,13 +1031,14 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           >
                             <SelectTrigger className={`h-7 w-[200px] text-xs ${
                               sessionApprenant.statut_suivi === 'inscription_validee' ? 'border-green-300 text-green-700' :
+                              sessionApprenant.statut_suivi === 'document_complet' ? 'border-green-300 text-green-700' :
                               sessionApprenant.statut_suivi ? 'border-orange-300 text-orange-700' : ''
                             }`}>
                               <SelectValue placeholder="⚙️ Statut suivi" />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="manque_document">📄 Manque un document</SelectItem>
-                               <SelectItem value="document_complet" className="text-green-600">✅ Dossier complet</SelectItem>
+                                <SelectItem value="document_complet">✅ Dossier complet</SelectItem>
                                <SelectItem value="mdp_change">🔑 Mot de passe changé</SelectItem>
                               <SelectItem value="email_non_valide">📧 Adresse mail non validée</SelectItem>
                               <SelectItem value="injoignable">📵 Injoignable</SelectItem>
