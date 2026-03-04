@@ -291,6 +291,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     body: string;
     label: string;
   } | null>(null);
+  const [emailPreviewEditing, setEmailPreviewEditing] = useState(false);
   const [editingMailType, setEditingMailType] = useState<any | null>(null);
   const [editLabel, setEditLabel] = useState("");
   const [editSubject, setEditSubject] = useState("");
@@ -1491,31 +1492,53 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-medium text-muted-foreground w-10">Objet :</span>
-                <span className="font-semibold">{emailPreview.subject}</span>
+                {emailPreviewEditing ? (
+                  <Input 
+                    value={emailPreview.subject} 
+                    onChange={(e) => setEmailPreview({...emailPreview, subject: e.target.value})}
+                    className="flex-1"
+                  />
+                ) : (
+                  <span className="font-semibold">{emailPreview.subject}</span>
+                )}
               </div>
             </div>
-            <div className="border rounded-lg p-4 bg-muted/30 overflow-auto max-h-[400px]">
-              <div 
-                className="prose prose-sm max-w-none text-foreground"
-                dangerouslySetInnerHTML={{ __html: emailPreview.body }} 
+            {emailPreviewEditing ? (
+              <Textarea 
+                value={emailPreview.body}
+                onChange={(e) => setEmailPreview({...emailPreview, body: e.target.value})}
+                className="min-h-[350px] font-mono text-xs"
               />
-            </div>
-            <div className="flex justify-end gap-3 pt-2">
-              <Button variant="outline" onClick={() => setEmailPreview(null)}>
-                Annuler
+            ) : (
+              <div className="border rounded-lg p-4 bg-muted/30 overflow-auto max-h-[400px]">
+                <div 
+                  className="prose prose-sm max-w-none text-foreground"
+                  dangerouslySetInnerHTML={{ __html: emailPreview.body }} 
+                />
+              </div>
+            )}
+            <div className="flex justify-between pt-2">
+              <Button variant="ghost" size="sm" onClick={() => setEmailPreviewEditing(!emailPreviewEditing)} className="gap-2">
+                <Pencil className="w-4 h-4" />
+                {emailPreviewEditing ? "Aperçu" : "Modifier"}
               </Button>
-              <Button 
-                onClick={handleConfirmSendEmail}
-                className="gap-2"
-                disabled={sendingEmailForApprenant === emailPreview.apprenant.id}
-              >
-                {sendingEmailForApprenant === emailPreview.apprenant.id ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
-                Confirmer l'envoi
-              </Button>
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => { setEmailPreview(null); setEmailPreviewEditing(false); }}>
+                  Annuler
+                </Button>
+                <Button 
+                  onClick={() => { setEmailPreviewEditing(false); handleConfirmSendEmail(); }}
+                  className="gap-2"
+                  disabled={sendingEmailForApprenant === emailPreview.apprenant.id}
+                >
+                  {sendingEmailForApprenant === emailPreview.apprenant.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                  Confirmer l'envoi
+                </Button>
+              </div>
             </div>
           </div>
         )}
