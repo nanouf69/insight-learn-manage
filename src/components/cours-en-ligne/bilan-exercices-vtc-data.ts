@@ -46,12 +46,21 @@ export const BILAN_EXERCICES_VTC = [
   },
   {
     id: 103,
-    titre: "📕 Bilan Réglementation — Nationale + Spécifique VTC + Locale",
-    sousTitre: `${[...REGLEMENTATION_NATIONALE_EXERCICES, ...REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES, ...REGLEMENTATION_LOCALE_EXERCICES].reduce((acc, e) => acc + (e.questions?.length || 0), 0)} questions — ADS, Carte pro, Registre VTC, Tarification, Sanctions`,
+    titre: "📕 Bilan Réglementation Nationale + Spécifique VTC",
+    sousTitre: `${[...REGLEMENTATION_NATIONALE_EXERCICES, ...REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES].reduce((acc, e) => acc + (e.questions?.length || 0), 0)} questions — ADS, Carte pro, Registre VTC, Tarification, Sanctions`,
     actif: true,
     questions: renumberQuestions(
-      [...REGLEMENTATION_NATIONALE_EXERCICES, ...REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES, ...REGLEMENTATION_LOCALE_EXERCICES]
+      [...REGLEMENTATION_NATIONALE_EXERCICES, ...REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES]
         .flatMap(e => e.questions || [])
+    ),
+  },
+  {
+    id: 105,
+    titre: "📕 Bilan Réglementation Locale",
+    sousTitre: `${REGLEMENTATION_LOCALE_EXERCICES.reduce((acc, e) => acc + (e.questions?.length || 0), 0)} questions — Réglementation Locale Lyon`,
+    actif: true,
+    questions: renumberQuestions(
+      REGLEMENTATION_LOCALE_EXERCICES.flatMap(e => e.questions || [])
     ),
   },
   {
