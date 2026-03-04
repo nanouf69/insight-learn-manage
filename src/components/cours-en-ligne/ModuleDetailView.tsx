@@ -725,7 +725,7 @@ function getInitialModuleData(module: { id: number; nom: string }, apprenantType
       nom: "4.BILAN EXERCICES VA",
       description: "Exercices développement commercial et réglementation spécifique. Refaites-les autant de fois que nécessaire.",
       cours: [],
-      exercices: BILAN_EXERCICES_VTC.filter(e => e.id === 104 || e.id === 103),
+      exercices: BILAN_EXERCICES_VTC.filter(e => e.id === 104 || e.id === 106),
     };
   }
 
