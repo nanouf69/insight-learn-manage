@@ -48,6 +48,7 @@ import { FORMULES_DATA } from "./formules-data";
 import { TAXI_COURS_DATA, TAXI_SECTIONS } from "./taxi-cours-data";
 import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "./controle-connaissances-taxi-data";
 import { CONNAISSANCES_VILLE_TAXI_DATA } from "./connaissances-ville-taxi-data";
+import { BILAN_EXERCICES_VTC } from "./bilan-exercices-vtc-data";
 
 interface InlineQuizQuestion {
   id: number;
@@ -681,6 +682,17 @@ function getInitialModuleData(module: { id: number; nom: string }): ModuleData {
   if (module.id === 3) return JSON.parse(JSON.stringify(FORMULES_DATA));
   if (module.id === 13) return JSON.parse(JSON.stringify(CONTROLE_CONNAISSANCES_TAXI_DATA));
   if (module.id === 7) return JSON.parse(JSON.stringify(CONNAISSANCES_VILLE_TAXI_DATA));
+
+  // Bilan Exercices VTC (module 4) — tous les exercices regroupés par matière (sauf Français/Anglais)
+  if (module.id === 4) {
+    return {
+      id: 4,
+      nom: "4.BILAN EXERCICES VTC",
+      description: "Tous les exercices regroupés par matière. Refaites-les autant de fois que nécessaire pour maîtriser chaque sujet.",
+      cours: [],
+      exercices: BILAN_EXERCICES_VTC,
+    };
+  }
 
   // VTC sub-modules (matières A-G, anciennement module 2)
   if (module.id === 2) {
