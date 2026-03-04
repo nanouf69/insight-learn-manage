@@ -10,12 +10,28 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
-import { Plus, User, UserCheck, Loader2, CalendarIcon, PlusCircle, X } from "lucide-react";
+import { Plus, User, UserCheck, Loader2, CalendarIcon, PlusCircle, X, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { autoAssignToSession } from "@/hooks/useAutoAssignSession";
 import { parseDateRange } from "@/lib/parseDateRange";
+import { Checkbox } from "@/components/ui/checkbox";
+import { MODULES_DATA } from "@/components/cours-en-ligne/formations-data";
+
+// Mapping type d'apprenant → modules par défaut
+const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {
+  "vtc":               [1, 2, 25, 14, 15, 16, 17, 18, 19, 3, 5, 4, 8],
+  "vtc-e-presentiel":  [1, 2, 25, 14, 15, 16, 17, 18, 19, 3, 5, 4, 8],
+  "vtc-e":             [26, 2, 25, 14, 15, 16, 17, 18, 19, 3, 5, 4, 8],
+  "taxi":              [1, 10, 20, 21, 22, 23, 24, 7, 3, 11, 9, 13, 6],
+  "taxi-e-presentiel": [1, 10, 20, 21, 22, 23, 24, 7, 3, 11, 9, 13, 6],
+  "taxi-e":            [26, 10, 20, 21, 22, 23, 24, 7, 3, 11, 9, 13, 6],
+  "ta":                [1, 10, 20, 21, 22, 23, 24, 7, 3, 11, 9, 6],
+  "ta-e-presentiel":   [1, 10, 20, 21, 22, 23, 24, 7, 3, 11, 9, 6],
+  "ta-e":              [26, 10, 20, 21, 22, 23, 24, 7, 3, 11, 9, 13, 6],
+  "va-e":              [26, 2, 25, 14, 15, 16, 17, 18, 19, 7, 3, 5, 4, 13, 6],
+};
 
 interface Apprenant {
   id: string;
@@ -136,6 +152,7 @@ export function ApprenantForm() {
   const [documentsComplets, setDocumentsComplets] = useState(false);
   const [secondFormation, setSecondFormation] = useState("");
   const [secondTypeApprenant, setSecondTypeApprenant] = useState("");
+  const [modulesAutorises, setModulesAutorises] = useState<number[]>([]);
 
   // Prix par défaut selon la formation
   const prixFormations: Record<string, string> = {
@@ -194,7 +211,12 @@ export function ApprenantForm() {
       setMontantTtc(prixFormations[value]);
     }
     if (formationToType[value]) {
-      setTypeApprenantFormation(formationToType[value]);
+      const newType = formationToType[value];
+      setTypeApprenantFormation(newType);
+      // Pré-sélectionner les modules par défaut selon le type
+      if (DEFAULT_MODULES_BY_TYPE[newType]) {
+        setModulesAutorises([...DEFAULT_MODULES_BY_TYPE[newType]]);
+      }
     }
 
     // Pour les RP, forcer le mode de financement à "personnel"
@@ -215,21 +237,25 @@ export function ApprenantForm() {
     }
   };
 
-  // Charger les apprenants existants
+  // Charger les apprenants existants + initialiser les modules par défaut
   useEffect(() => {
-    const fetchApprenants = async () => {
-      const { data, error } = await supabase
-        .from('apprenants')
-        .select('id, nom, prenom')
-        .order('nom', { ascending: true });
-      
-      if (!error && data) {
-        setApprenants(data);
-      }
-    };
-    
     if (open) {
+      const fetchApprenants = async () => {
+        const { data, error } = await supabase
+          .from('apprenants')
+          .select('id, nom, prenom')
+          .order('nom', { ascending: true });
+        
+        if (!error && data) {
+          setApprenants(data);
+        }
+      };
       fetchApprenants();
+      
+      // Initialiser les modules si vides (premier affichage)
+      if (modulesAutorises.length === 0 && DEFAULT_MODULES_BY_TYPE[typeApprenantFormation]) {
+        setModulesAutorises([...DEFAULT_MODULES_BY_TYPE[typeApprenantFormation]]);
+      }
     }
   }, [open]);
 
@@ -326,6 +352,7 @@ export function ApprenantForm() {
     setDocumentsComplets(false);
     setSecondFormation("");
     setSecondTypeApprenant("");
+    setModulesAutorises([]);
   };
 
   // Ref pour éviter les doubles soumissions
@@ -376,6 +403,7 @@ export function ApprenantForm() {
       inscrit_france_travail: inscritFranceTravail,
       date_examen_pratique: dateExamenPratique || null,
       documents_complets: documentsComplets,
+      modules_autorises: modulesAutorises.length > 0 ? modulesAutorises : null,
     };
 
     try {
@@ -740,7 +768,12 @@ export function ApprenantForm() {
             {/* Type d'apprenant - rempli automatiquement */}
             <div className="space-y-2">
               <Label htmlFor="typeApprenantFormation">Type d'apprenant</Label>
-              <Select value={typeApprenantFormation} onValueChange={setTypeApprenantFormation}>
+              <Select value={typeApprenantFormation} onValueChange={(v) => {
+                setTypeApprenantFormation(v);
+                if (DEFAULT_MODULES_BY_TYPE[v]) {
+                  setModulesAutorises([...DEFAULT_MODULES_BY_TYPE[v]]);
+                }
+              }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionné automatiquement" />
                 </SelectTrigger>
@@ -806,6 +839,61 @@ export function ApprenantForm() {
                 <PlusCircle className="w-4 h-4" />
                 Ajouter un type d'apprenant supplémentaire
               </Button>
+            )}
+
+            {/* Modules autorisés — checkboxes */}
+            {modulesAutorises.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2">
+                    <BookOpen className="w-4 h-4" />
+                    Modules autorisés ({modulesAutorises.length})
+                  </Label>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => setModulesAutorises(MODULES_DATA.map(m => m.id))}
+                    >
+                      Tout cocher
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => setModulesAutorises([])}
+                    >
+                      Tout décocher
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-1.5 max-h-48 overflow-y-auto rounded-lg border p-3">
+                  {MODULES_DATA.map((mod) => (
+                    <label
+                      key={mod.id}
+                      className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5"
+                    >
+                      <Checkbox
+                        checked={modulesAutorises.includes(mod.id)}
+                        onCheckedChange={(checked) => {
+                          setModulesAutorises(prev =>
+                            checked
+                              ? [...prev, mod.id]
+                              : prev.filter(id => id !== mod.id)
+                          );
+                        }}
+                      />
+                      <span className="truncate">{mod.nom}</span>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Pré-rempli selon le type d'apprenant. Vous pouvez cocher/décocher manuellement.
+                </p>
+              </div>
             )}
 
             {/* Créneau horaire pour formation présentiel */}
