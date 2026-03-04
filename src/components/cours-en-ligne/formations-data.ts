@@ -23,6 +23,8 @@ export interface ModuleInfo {
 const VTC_FORMATIONS: FormationId[] = ["vtc", "vtc-pour-taxi", "vtc-elearning", "vtc-cours-du-soir"];
 const TAXI_FORMATIONS: FormationId[] = ["taxi", "taxi-pour-vtc", "taxi-elearning", "taxi-pour-vtc-elearning"];
 const ALL_FORMATIONS: FormationId[] = ["vtc", "taxi", "taxi-pour-vtc", "vtc-pour-taxi", "vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning", "vtc-cours-du-soir"];
+const PRESENTIEL_FORMATIONS: FormationId[] = ["vtc", "taxi", "taxi-pour-vtc", "vtc-pour-taxi", "vtc-cours-du-soir"];
+const ELEARNING_FORMATIONS: FormationId[] = ["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"];
 
 // IDs 2 + 25 + 14-19 = VTC matières (anciennement module 2 unique)
 // IDs 10 + 20-24 = TAXI matières (anciennement module 10 unique)
@@ -31,9 +33,15 @@ const ALL_FORMATIONS: FormationId[] = ["vtc", "taxi", "taxi-pour-vtc", "vtc-pour
 export const MODULES_DATA: ModuleInfo[] = [
   {
     id: 1,
-    nom: "1.INTRODUCTION",
-    description: "A lire absolument, cela vous explique l'organisation de l'examen, le programme, les coefficients, les éléments importants...",
-    formations: ALL_FORMATIONS,
+    nom: "1.INTRODUCTION PRÉSENTIEL",
+    description: "Livret d'accueil pour les formations en présentiel : organisation de l'examen, programme, coefficients, CGV, règlement intérieur...",
+    formations: PRESENTIEL_FORMATIONS,
+  },
+  {
+    id: 26,
+    nom: "1.INTRODUCTION E-LEARNING",
+    description: "Livret d'accueil pour les formations en e-learning : organisation de l'examen, programme, coefficients, CGV...",
+    formations: ELEARNING_FORMATIONS,
   },
   // === VTC Matières (anciennement module 2) ===
   {

@@ -105,18 +105,16 @@ interface ModuleDetailViewProps {
   onModuleCompleted?: (moduleId: number) => void;
 }
 
-// ===== Données initiales du module INTRODUCTION =====
-const INTRODUCTION_DATA: ModuleData = {
+// ===== Données initiales du module INTRODUCTION PRÉSENTIEL =====
+const INTRODUCTION_PRESENTIEL_DATA: ModuleData = {
   id: 1,
-  nom: "1.INTRODUCTION",
-  description: "Présentation de la plateforme, contenu de l'examen TAXI/VTC, modalités d'évaluation et conditions générales.",
+  nom: "1.INTRODUCTION PRÉSENTIEL",
+  description: "Livret d'accueil pour les formations en présentiel : organisation de l'examen, programme, coefficients, CGV, règlement intérieur.",
   cours: [
     {
       id: 1,
       titre: "Bienvenue sur la plateforme",
-      description: `Cette plateforme est dédiée aux futurs chauffeurs VTC et TAXIS.
-
-Vous devez réussir deux épreuves pour obtenir votre carte de chauffeur VTC ou de chauffeur TAXI :
+      description: `Cette plateforme est dédiée aux futurs chauffeurs VTC et TAXIS. Vous devez réussir deux épreuves pour obtenir votre carte de chauffeur VTC ou de chauffeur TAXI :
 • L'épreuve d'admissibilité (théorie avec 7 matières) — minimum 10/20
 • L'épreuve d'admission (pratique) — minimum 12/20
 Le tout sans note éliminatoire.
@@ -208,25 +206,34 @@ L'épreuve pratique comprend une phase de conduite en circulation d'une durée m
     },
     {
       id: 6,
-      titre: "Conditions générales et informations pratiques",
+      titre: "Horaires et accueil — Formation présentielle",
       description: `🏢 FTRANSPORT — Centre de formation
 86 Route de Genas, 69003 Lyon
 
 📞 Tel : 04 28 29 60 91
 📧 Email : contact@ftransport.fr
 
+⏰ Horaires de formation : 9h-12h et 13h-17h
+📋 Effectif maximum : 21 stagiaires par session
+
+📌 Prérequis : savoir lire et écrire, casier B2 vierge.
+
 👥 Équipe :
 • Responsable pédagogique : Guenichi Naoufal
 • Responsable administrative : Baaziz Fadela
 • Formatrice Taxi : Rim Touil
 • Formateur VTC : Guenichi Naoufal
-• Formateur Anglais : Albert Akono
-
-⏰ Horaires : 9h-12h et 13h-17h
-📋 Effectif maximum : 21 stagiaires par session
-
-📌 Prérequis : savoir lire et écrire, casier B2 vierge.`,
+• Formateur Anglais : Albert Akono`,
       actif: true,
+    },
+    {
+      id: 7,
+      titre: "Livret d'accueil complet (PDF)",
+      description: "Téléchargez le livret d'accueil complet au format PDF pour la formation en présentiel.",
+      actif: true,
+      fichiers: [
+        { nom: "Livret d'accueil Présentiel", url: "/cours/vtc/INTRODUCTION_presentiel.docx" },
+      ],
     },
   ],
   exercices: [
@@ -236,106 +243,155 @@ L'épreuve pratique comprend une phase de conduite en circulation d'une durée m
       sousTitre: "Vérifiez vos connaissances sur l'examen",
       actif: true,
       questions: [
-        {
-          id: 1,
-          enonce: "Quelle note minimale faut-il obtenir à l'épreuve théorique (admissibilité) ?",
-          choix: [
-            { lettre: "A", texte: "8/20", correct: false },
-            { lettre: "B", texte: "10/20", correct: true },
-            { lettre: "C", texte: "12/20", correct: false },
-            { lettre: "D", texte: "14/20", correct: false },
-          ],
-        },
-        {
-          id: 2,
-          enonce: "Quelle note minimale faut-il obtenir à l'épreuve pratique (admission) ?",
-          choix: [
-            { lettre: "A", texte: "10/20", correct: false },
-            { lettre: "B", texte: "11/20", correct: false },
-            { lettre: "C", texte: "12/20", correct: true },
-            { lettre: "D", texte: "14/20", correct: false },
-          ],
-        },
-        {
-          id: 3,
-          enonce: "Combien de matières comporte l'épreuve théorique ?",
-          choix: [
-            { lettre: "A", texte: "5 matières", correct: false },
-            { lettre: "B", texte: "6 matières", correct: false },
-            { lettre: "C", texte: "7 matières", correct: true },
-            { lettre: "D", texte: "8 matières", correct: false },
-          ],
-        },
-        {
-          id: 4,
-          enonce: "Quelle est la durée de l'épreuve A (Réglementation T3P) ?",
-          choix: [
-            { lettre: "A", texte: "20 minutes", correct: false },
-            { lettre: "B", texte: "30 minutes", correct: false },
-            { lettre: "C", texte: "45 minutes", correct: true },
-            { lettre: "D", texte: "60 minutes", correct: false },
-          ],
-        },
-        {
-          id: 5,
-          enonce: "En cas d'échec à l'examen théorique, quel est le coût approximatif des frais d'examen ?",
-          choix: [
-            { lettre: "A", texte: "150€", correct: false },
-            { lettre: "B", texte: "237€", correct: true },
-            { lettre: "C", texte: "300€", correct: false },
-            { lettre: "D", texte: "180€", correct: false },
-          ],
-        },
-        {
-          id: 6,
-          enonce: "Pour l'épreuve de Français (D), combien de fautes d'orthographe entraînent une pénalité de -1 point ?",
-          choix: [
-            { lettre: "A", texte: "3 fautes", correct: false },
-            { lettre: "B", texte: "5 fautes", correct: true },
-            { lettre: "C", texte: "10 fautes", correct: false },
-            { lettre: "D", texte: "Aucune pénalité", correct: false },
-          ],
-        },
-        {
-          id: 7,
-          enonce: "Combien de fois un candidat admissible peut-il se présenter à l'épreuve pratique ?",
-          choix: [
-            { lettre: "A", texte: "1 fois", correct: false },
-            { lettre: "B", texte: "2 fois", correct: false },
-            { lettre: "C", texte: "3 fois", correct: true },
-            { lettre: "D", texte: "Illimité", correct: false },
-          ],
-        },
-        {
-          id: 8,
-          enonce: "Quel est le délai pour réussir l'examen théorique après réception des identifiants ?",
-          choix: [
-            { lettre: "A", texte: "3 mois", correct: false },
-            { lettre: "B", texte: "6 mois", correct: true },
-            { lettre: "C", texte: "12 mois", correct: false },
-            { lettre: "D", texte: "Pas de délai", correct: false },
-          ],
-        },
-        {
-          id: 9,
-          enonce: "Quelle est la note éliminatoire pour l'épreuve d'Anglais (E) ?",
-          choix: [
-            { lettre: "A", texte: "4/20", correct: true },
-            { lettre: "B", texte: "6/20", correct: false },
-            { lettre: "C", texte: "8/20", correct: false },
-            { lettre: "D", texte: "10/20", correct: false },
-          ],
-        },
-        {
-          id: 10,
-          enonce: "Quelle est la durée minimale de la phase de conduite lors de l'épreuve pratique ?",
-          choix: [
-            { lettre: "A", texte: "10 minutes", correct: false },
-            { lettre: "B", texte: "15 minutes", correct: false },
-            { lettre: "C", texte: "20 minutes", correct: true },
-            { lettre: "D", texte: "30 minutes", correct: false },
-          ],
-        },
+        { id: 1, enonce: "Quelle note minimale faut-il obtenir à l'épreuve théorique (admissibilité) ?", choix: [{ lettre: "A", texte: "8/20" }, { lettre: "B", texte: "10/20", correct: true }, { lettre: "C", texte: "12/20" }, { lettre: "D", texte: "14/20" }] },
+        { id: 2, enonce: "Quelle note minimale faut-il obtenir à l'épreuve pratique (admission) ?", choix: [{ lettre: "A", texte: "10/20" }, { lettre: "B", texte: "11/20" }, { lettre: "C", texte: "12/20", correct: true }, { lettre: "D", texte: "14/20" }] },
+        { id: 3, enonce: "Combien de matières comporte l'épreuve théorique ?", choix: [{ lettre: "A", texte: "5 matières" }, { lettre: "B", texte: "6 matières" }, { lettre: "C", texte: "7 matières", correct: true }, { lettre: "D", texte: "8 matières" }] },
+        { id: 4, enonce: "Quelle est la durée de l'épreuve A (Réglementation T3P) ?", choix: [{ lettre: "A", texte: "20 minutes" }, { lettre: "B", texte: "30 minutes" }, { lettre: "C", texte: "45 minutes", correct: true }, { lettre: "D", texte: "60 minutes" }] },
+        { id: 5, enonce: "En cas d'échec à l'examen théorique, quel est le coût approximatif des frais d'examen ?", choix: [{ lettre: "A", texte: "150€" }, { lettre: "B", texte: "237€", correct: true }, { lettre: "C", texte: "300€" }, { lettre: "D", texte: "180€" }] },
+        { id: 6, enonce: "Pour l'épreuve de Français (D), combien de fautes d'orthographe entraînent une pénalité de -1 point ?", choix: [{ lettre: "A", texte: "3 fautes" }, { lettre: "B", texte: "5 fautes", correct: true }, { lettre: "C", texte: "10 fautes" }, { lettre: "D", texte: "Aucune pénalité" }] },
+        { id: 7, enonce: "Combien de fois un candidat admissible peut-il se présenter à l'épreuve pratique ?", choix: [{ lettre: "A", texte: "1 fois" }, { lettre: "B", texte: "2 fois" }, { lettre: "C", texte: "3 fois", correct: true }, { lettre: "D", texte: "Illimité" }] },
+        { id: 8, enonce: "Quel est le délai pour réussir l'examen théorique après réception des identifiants ?", choix: [{ lettre: "A", texte: "3 mois" }, { lettre: "B", texte: "6 mois", correct: true }, { lettre: "C", texte: "12 mois" }, { lettre: "D", texte: "Pas de délai" }] },
+        { id: 9, enonce: "Quelle est la note éliminatoire pour l'épreuve d'Anglais (E) ?", choix: [{ lettre: "A", texte: "4/20", correct: true }, { lettre: "B", texte: "6/20" }, { lettre: "C", texte: "8/20" }, { lettre: "D", texte: "10/20" }] },
+        { id: 10, enonce: "Quelle est la durée minimale de la phase de conduite lors de l'épreuve pratique ?", choix: [{ lettre: "A", texte: "10 minutes" }, { lettre: "B", texte: "15 minutes" }, { lettre: "C", texte: "20 minutes", correct: true }, { lettre: "D", texte: "30 minutes" }] },
+      ],
+    },
+  ],
+};
+
+// ===== Données initiales du module INTRODUCTION E-LEARNING =====
+const INTRODUCTION_ELEARNING_DATA: ModuleData = {
+  id: 26,
+  nom: "1.INTRODUCTION E-LEARNING",
+  description: "Livret d'accueil pour les formations en e-learning : organisation de l'examen, programme, coefficients, CGV.",
+  cours: [
+    {
+      id: 1,
+      titre: "Bienvenue sur la plateforme",
+      description: `Cette plateforme est dédiée aux futurs chauffeurs VTC et TAXIS. Vous devez réussir deux épreuves pour obtenir votre carte de chauffeur VTC ou de chauffeur TAXI :
+• L'épreuve d'admissibilité (théorie avec 7 matières) — minimum 10/20
+• L'épreuve d'admission (pratique) — minimum 12/20
+Le tout sans note éliminatoire.
+
+Vous avez à disposition : des cours, des exercices, des examens blancs et des bilans. L'accès à cette plateforme est limité. Réalisez bien le Bilan QCM examen et révisez bien les QRC examen : ce sont des questions type examen.
+
+📌 Étapes conseillées :
+1. Commencez par les cours et les exercices
+2. Puis les bilans exercices
+3. Ensuite les examens blancs
+4. Enfin les bilans examen
+
+Lorsque vous aurez fini vos examens blancs, merci de nous envoyer un mail pour correction.`,
+      actif: true,
+    },
+    {
+      id: 2,
+      titre: "Informations importantes",
+      description: `💰 Frais d'examen en cas d'échec (toujours à votre charge) :
+• Examen théorique : environ 240€
+• Examen pratique : environ 200€
+
+📋 Les examens sont organisés par la Chambre des Métiers et de l'Artisanat. Vérifiez bien que vous êtes inscrit aux examens ; vous pouvez toujours nous contacter pour cela.
+
+📞 Merci de nous contacter le jour des résultats de l'examen théorique (épreuve d'admissibilité) et non le jour de réception de la convocation de l'épreuve d'admission.
+
+En nous contactant plus tard, le centre ne peut vous garantir un entraînement pratique Taxi/VTC et un véhicule pour l'épreuve d'admission (pratique).`,
+      actif: true,
+    },
+    {
+      id: 3,
+      titre: "Contenu de l'examen — Épreuves communes",
+      description: `L'examen se compose d'épreuves théoriques d'admissibilité (QCM + QRC) et d'une épreuve pratique d'admission.
+
+📝 ÉPREUVES COMMUNES TAXI & VTC :
+
+A — Réglementation T3P et prévention des discriminations
+   Durée : 45 min | Note sur 20 | Coeff. 3 | Éliminatoire : 6/20
+
+B — Gestion et développement commercial
+   Durée : 45 min | Note sur 20 | Coeff. 2 | Éliminatoire : 6/20
+
+C — Sécurité routière
+   Durée : 30 min | Note sur 20 | Coeff. 3 | Éliminatoire : 6/20
+
+D — Français (expression et compréhension)
+   Durée : 30 min | Note sur 20 | Coeff. 2 | Éliminatoire : 6/20
+   ⚠️ -1 point toutes les 5 fautes d'orthographe sur les QRC
+
+E — Anglais (expression et compréhension)
+   Durée : 30 min | Note sur 20 | Coeff. 1 | Éliminatoire : 4/20`,
+      actif: true,
+    },
+    {
+      id: 4,
+      titre: "Épreuves spécifiques VTC & TAXI",
+      description: `📝 ÉPREUVES SPÉCIFIQUES VTC :
+F(V) — Développement commercial et gestion VTC
+   Durée : 30 min | Note sur 20 | Coeff. 3 | Éliminatoire : 6/20
+G(V) — Réglementation nationale spécifique VTC
+   Durée : 20 min | Note sur 20 | Coeff. 3 | Éliminatoire : 6/20
+
+📝 ÉPREUVES SPÉCIFIQUES TAXI :
+F(T) — Connaissance du territoire et réglementation locale
+   Durée : 30 min | Note sur 20 | Coeff. 3 | Éliminatoire : 6/20
+G(T) — Réglementation nationale TAXI et gestion
+   Durée : 20 min | Note sur 20 | Coeff. 3 | Éliminatoire : 6/20
+
+✅ CONDITIONS D'ADMISSIBILITÉ :
+• Moyenne ≥ 10/20 (pondérée des coefficients)
+• Aucune note éliminatoire
+
+Un candidat admissible peut se présenter 3 fois à l'épreuve pratique dans un délai d'1 an.`,
+      actif: true,
+    },
+    {
+      id: 5,
+      titre: "L'épreuve d'admission (pratique)",
+      description: `Après chaque session d'admissibilité, une session d'admission est organisée dans un délai maximum de 2 mois.
+
+L'épreuve pratique comprend une phase de conduite en circulation d'une durée minimum de 20 minutes, notée sur 20 points.
+
+📌 Note minimale requise : 12/20`,
+      actif: true,
+    },
+    {
+      id: 6,
+      titre: "Contact et informations pratiques",
+      description: `🏢 FTRANSPORT — Centre de formation
+86 Route de Genas, 69003 Lyon
+
+📞 Tel : 04 28 29 60 91
+📧 Email : contact@ftransport.fr
+
+📌 Prérequis : savoir lire et écrire, casier B2 vierge.`,
+      actif: true,
+    },
+    {
+      id: 7,
+      titre: "Livret d'accueil complet (PDF)",
+      description: "Téléchargez le livret d'accueil complet au format PDF pour la formation en e-learning.",
+      actif: true,
+      fichiers: [
+        { nom: "Livret d'accueil E-learning", url: "/cours/vtc/INTRODUCTION_elearning.docx" },
+      ],
+    },
+  ],
+  exercices: [
+    {
+      id: 1,
+      titre: "Quiz Introduction",
+      sousTitre: "Vérifiez vos connaissances sur l'examen",
+      actif: true,
+      questions: [
+        { id: 1, enonce: "Quelle note minimale faut-il obtenir à l'épreuve théorique (admissibilité) ?", choix: [{ lettre: "A", texte: "8/20" }, { lettre: "B", texte: "10/20", correct: true }, { lettre: "C", texte: "12/20" }, { lettre: "D", texte: "14/20" }] },
+        { id: 2, enonce: "Quelle note minimale faut-il obtenir à l'épreuve pratique (admission) ?", choix: [{ lettre: "A", texte: "10/20" }, { lettre: "B", texte: "11/20" }, { lettre: "C", texte: "12/20", correct: true }, { lettre: "D", texte: "14/20" }] },
+        { id: 3, enonce: "Combien de matières comporte l'épreuve théorique ?", choix: [{ lettre: "A", texte: "5 matières" }, { lettre: "B", texte: "6 matières" }, { lettre: "C", texte: "7 matières", correct: true }, { lettre: "D", texte: "8 matières" }] },
+        { id: 4, enonce: "Quelle est la durée de l'épreuve A (Réglementation T3P) ?", choix: [{ lettre: "A", texte: "20 minutes" }, { lettre: "B", texte: "30 minutes" }, { lettre: "C", texte: "45 minutes", correct: true }, { lettre: "D", texte: "60 minutes" }] },
+        { id: 5, enonce: "En cas d'échec à l'examen théorique, quel est le coût approximatif des frais d'examen ?", choix: [{ lettre: "A", texte: "150€" }, { lettre: "B", texte: "240€", correct: true }, { lettre: "C", texte: "300€" }, { lettre: "D", texte: "180€" }] },
+        { id: 6, enonce: "Pour l'épreuve de Français (D), combien de fautes d'orthographe entraînent une pénalité de -1 point ?", choix: [{ lettre: "A", texte: "3 fautes" }, { lettre: "B", texte: "5 fautes", correct: true }, { lettre: "C", texte: "10 fautes" }, { lettre: "D", texte: "Aucune pénalité" }] },
+        { id: 7, enonce: "Combien de fois un candidat admissible peut-il se présenter à l'épreuve pratique ?", choix: [{ lettre: "A", texte: "1 fois" }, { lettre: "B", texte: "2 fois" }, { lettre: "C", texte: "3 fois", correct: true }, { lettre: "D", texte: "Illimité" }] },
+        { id: 8, enonce: "Quelle est la note éliminatoire pour l'épreuve d'Anglais (E) ?", choix: [{ lettre: "A", texte: "4/20", correct: true }, { lettre: "B", texte: "6/20" }, { lettre: "C", texte: "8/20" }, { lettre: "D", texte: "10/20" }] },
+        { id: 9, enonce: "Quelle est la durée minimale de la phase de conduite lors de l'épreuve pratique ?", choix: [{ lettre: "A", texte: "10 minutes" }, { lettre: "B", texte: "15 minutes" }, { lettre: "C", texte: "20 minutes", correct: true }, { lettre: "D", texte: "30 minutes" }] },
+        { id: 10, enonce: "Quel est le coefficient de l'épreuve C (Sécurité routière) ?", choix: [{ lettre: "A", texte: "1" }, { lettre: "B", texte: "2" }, { lettre: "C", texte: "3", correct: true }, { lettre: "D", texte: "4" }] },
       ],
     },
   ],
@@ -616,8 +672,9 @@ const CAS_PRATIQUE_TAXI_DATA: ModuleData = {
 };
 
 function getInitialModuleData(module: { id: number; nom: string }): ModuleData {
-  // Module IDs: 1 = INTRODUCTION, 6 = PRATIQUE TAXI, 8 = PRATIQUE VTC, 12 = CAS PRATIQUE TAXI
-  if (module.id === 1) return JSON.parse(JSON.stringify(INTRODUCTION_DATA));
+  // Module IDs: 1 = INTRODUCTION PRÉSENTIEL, 26 = INTRODUCTION E-LEARNING, 6 = PRATIQUE TAXI, 8 = PRATIQUE VTC, 12 = CAS PRATIQUE TAXI
+  if (module.id === 1) return JSON.parse(JSON.stringify(INTRODUCTION_PRESENTIEL_DATA));
+  if (module.id === 26) return JSON.parse(JSON.stringify(INTRODUCTION_ELEARNING_DATA));
   if (module.id === 6) return JSON.parse(JSON.stringify(PRATIQUE_TAXI_DATA));
   if (module.id === 8) return JSON.parse(JSON.stringify(PRATIQUE_VTC_DATA));
   if (module.id === 12) return JSON.parse(JSON.stringify(CAS_PRATIQUE_TAXI_DATA));
