@@ -39,7 +39,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { generateEmargementPDF } from "./EmargementGenerator";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface Session {
   id: string;
@@ -291,6 +291,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     label: string;
   } | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Charger les apprenants de cette session depuis la base de données
   const { data: apprenantsInSession = [], isLoading: loadingApprenants, refetch: refetchApprenants } = useQuery({
@@ -431,9 +432,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
        const { data, error } = await supabase
          .from('emails')
          .select('apprenant_id, subject, sent_at')
-         .in('apprenant_id', apprenantIds)
-         .ilike('subject', '%convocation%formation%continue%')
-         .eq('type', 'sent');
+          .in('apprenant_id', apprenantIds)
+          .ilike('subject', '%convocation%')
+          .eq('type', 'sent');
        
        if (error) throw error;
        return data || [];
@@ -785,6 +786,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         title: "Email envoyé",
         description: `"${label}" envoyé à ${apprenant.prenom} ${apprenant.nom}.`,
       });
+      await queryClient.invalidateQueries({ queryKey: ['convocations-sent'] });
     } catch {
       toast({
         title: "Erreur",
