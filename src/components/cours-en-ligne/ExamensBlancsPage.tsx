@@ -818,18 +818,7 @@ export default function ExamensBlancsPage({
 
   const handleStart = (examen: ExamenBlanc) => {
     setBilanPrefiltre(null);
-    // Pour TA/TAE, filtrer le bilan-taxi pour ne garder que réglementation nationale et locale
-    const isTA = apprenantType && /^ta/i.test(apprenantType.split(' ')[0].replace(/[+ ]/g, ''));
-    let filteredExamen = examen;
-    if (isTA && examen.id === "bilan-taxi") {
-      filteredExamen = {
-        ...examen,
-        matieres: examen.matieres.filter(m =>
-          m.id === "bilan_reglementation_taxi" || m.id === "bilan_reglementation_taxi2"
-        ),
-      };
-    }
-    setExamenChoisi(filteredExamen);
+    setExamenChoisi(examen);
     setMatiereIndex(0);
     setTousResultats([]);
     setPhase("intro");

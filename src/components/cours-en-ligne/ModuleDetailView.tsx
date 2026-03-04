@@ -698,17 +698,23 @@ function getInitialModuleData(module: { id: number; nom: string }, apprenantType
 
   // Bilan Exercices TAXI (module 9) — tous les exercices regroupés par matière (sauf Français/Anglais/Marketing/Réglem. VTC)
   if (module.id === 9) {
-    // Pour TA/TAE, ne montrer que le bilan Réglementation (Nationale + Locale)
-    const isTA = apprenantType && /^ta/i.test(apprenantType.split(' ')[0].replace(/[+ ]/g, ''));
-    const exercices = isTA
-      ? BILAN_EXERCICES_TAXI.filter(e => e.id === 203)
-      : BILAN_EXERCICES_TAXI;
     return {
       id: 9,
       nom: "4.BILAN EXERCICES TAXI",
       description: "Tous les exercices regroupés par matière. Refaites-les autant de fois que nécessaire pour maîtriser chaque sujet.",
       cours: [],
-      exercices,
+      exercices: BILAN_EXERCICES_TAXI,
+    };
+  }
+
+  // Bilan Exercices TA (module 27) — uniquement réglementation nationale + locale
+  if (module.id === 27) {
+    return {
+      id: 27,
+      nom: "4.BILAN EXERCICES TA",
+      description: "Exercices de réglementation nationale et locale. Refaites-les autant de fois que nécessaire.",
+      cours: [],
+      exercices: BILAN_EXERCICES_TAXI.filter(e => e.id === 203),
     };
   }
 

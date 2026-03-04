@@ -4381,6 +4381,18 @@ export const bilanExamenVTC: ExamenBlanc = {
   ]
 };
 
+// ===== BILAN EXAMEN TA (passerelle taxi pour VTC) =====
+export const bilanExamenTA: ExamenBlanc = {
+  id: "bilan-ta",
+  numero: 8,
+  type: "TAXI",
+  titre: "Bilan Examen TA — Réglementation",
+  matieres: [
+    bilan_reglementation_taxi_specifique,
+    bilan_reglementation_taxi_locale,
+  ]
+};
+
 export const tousLesExamens: ExamenBlanc[] = [
   examenBlanc1Taxi, examenBlanc1VTC,
   examenBlanc2Taxi, examenBlanc2VTC,
@@ -4388,5 +4400,5 @@ export const tousLesExamens: ExamenBlanc[] = [
   examenBlanc4Taxi, examenBlanc4VTC,
   examenBlanc5Taxi, examenBlanc5VTC,
   examenBlanc6Taxi, examenBlanc6VTC,
-  bilanExamenTaxi, bilanExamenVTC,
+  bilanExamenTaxi, bilanExamenVTC, bilanExamenTA,
 ];
