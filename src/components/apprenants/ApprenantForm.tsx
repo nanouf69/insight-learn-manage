@@ -30,7 +30,9 @@ const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {
   "ta":                [1, 24, 7, 3, 27, 28, 13, 6],
   "ta-e-presentiel":   [1, 24, 7, 3, 27, 28, 13, 6],
   "ta-e":              [26, 24, 7, 3, 27, 28, 13, 6],
-  "va-e":              [26, 2, 25, 14, 15, 16, 17, 18, 19, 7, 3, 5, 4, 13, 6],
+  "va":                [1, 18, 19, 3, 29, 30, 8],
+  "va-e-presentiel":   [1, 18, 19, 3, 29, 30, 8],
+  "va-e":              [26, 18, 19, 3, 29, 30, 8],
 };
 
 interface Apprenant {
