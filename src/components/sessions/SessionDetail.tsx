@@ -420,30 +420,30 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   });
 
   // Charger les convocations envoyées pour les apprenants de cette session
-  const { data: convocationsSent = [] } = useQuery({
-    queryKey: ['convocations-sent', session?.id, apprenantsInSession.map((sa: any) => sa.apprenant?.id).join(',')],
-    queryFn: async () => {
-      const apprenantIds = apprenantsInSession
-        .map((sa: any) => sa.apprenant?.id)
-        .filter(Boolean);
-      if (apprenantIds.length === 0) return [];
-      
-      const { data, error } = await supabase
-        .from('emails')
-        .select('apprenant_id, subject, sent_at')
-        .in('apprenant_id', apprenantIds)
-        .ilike('subject', '%convocation%')
-        .eq('type', 'sent');
-      
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!session?.id && open && apprenantsInSession.length > 0,
-  });
+   const { data: convocationsSent = [] } = useQuery({
+     queryKey: ['convocations-sent', session?.id, apprenantsInSession.map((sa: any) => sa.apprenant?.id).join(',')],
+     queryFn: async () => {
+       const apprenantIds = apprenantsInSession
+         .map((sa: any) => sa.apprenant?.id)
+         .filter(Boolean);
+       if (apprenantIds.length === 0) return [];
+       
+       const { data, error } = await supabase
+         .from('emails')
+         .select('apprenant_id, subject, sent_at')
+         .in('apprenant_id', apprenantIds)
+         .ilike('subject', '%convocation%formation%continue%')
+         .eq('type', 'sent');
+       
+       if (error) throw error;
+       return data || [];
+     },
+     enabled: !!session?.id && open && apprenantsInSession.length > 0,
+   });
 
-  const hasConvocation = (apprenantId: string) => {
-    return convocationsSent.some((c: any) => c.apprenant_id === apprenantId);
-  };
+   const hasConvocation = (apprenantId: string) => {
+     return convocationsSent.some((c: any) => c.apprenant_id === apprenantId);
+   };
 
   if (!session) return null;
 
@@ -1072,16 +1072,16 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                         <div className="flex items-center justify-between gap-4 pt-2 border-t text-sm">
                           <div className="flex items-center gap-4 flex-wrap">
                             {/* Convocation status */}
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full" style={hasConvocation(apprenant.id) ? { backgroundColor: 'hsl(142.1, 76.2%, 36.3%)', color: 'white' } : { backgroundColor: 'hsl(0, 0%, 90%)', color: 'hsl(0, 84.2%, 60.2%)' }}>
                               {hasConvocation(apprenant.id) ? (
                                 <>
-                                  <CheckCircle className="w-4 h-4 text-green-600" />
-                                  <span className="text-green-600 font-medium">Convocation envoyée ✅</span>
+                                  <CheckCircle className="w-4 h-4" />
+                                  <span className="font-medium text-sm">Convocation envoyée ✅</span>
                                 </>
                               ) : (
                                 <>
-                                  <XCircle className="w-4 h-4 text-red-500" />
-                                  <span className="text-red-500 font-medium">Convocation non envoyée ❌</span>
+                                  <XCircle className="w-4 h-4" />
+                                  <span className="font-medium text-sm">Convocation non envoyée ❌</span>
                                 </>
                               )}
                             </div>
