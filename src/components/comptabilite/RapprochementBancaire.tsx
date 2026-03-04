@@ -164,9 +164,20 @@ interface AiConfirmation {
   alerte: string | null;
 }
 
+interface ApprenantWithSession {
+  id: string;
+  nom: string;
+  prenom: string;
+  date_debut_formation: string | null;
+  date_fin_formation: string | null;
+  session_date_debut: string | null;
+  session_date_fin: string | null;
+}
+
 export function RapprochementBancaire() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [justificatifs, setJustificatifs] = useState<Justificatif[]>([]);
+  const [apprenants, setApprenants] = useState<ApprenantWithSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
   const [filterStatut, setFilterStatut] = useState("tous");
@@ -184,12 +195,32 @@ export function RapprochementBancaire() {
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
-    const [{ data: txs }, { data: just }] = await Promise.all([
+    const [{ data: txs }, { data: just }, { data: apprenantsData }, { data: saData }] = await Promise.all([
       supabase.from("transactions_bancaires").select("*").order("date_operation", { ascending: false }),
       supabase.from("justificatifs").select("id, nom_fichier, url, montant_ttc, date_operation, categorie, fournisseur, statut"),
+      supabase.from("apprenants").select("id, nom, prenom, date_debut_formation, date_fin_formation"),
+      supabase.from("session_apprenants").select("apprenant_id, date_debut, date_fin, sessions(date_debut, date_fin)"),
     ]);
     if (txs) setTransactions(txs as Transaction[]);
     if (just) setJustificatifs(just as Justificatif[]);
+    
+    // Build apprenants with session dates
+    if (apprenantsData) {
+      const enriched: ApprenantWithSession[] = (apprenantsData as any[]).map(a => {
+        const sa = (saData as any[] || []).find((s: any) => s.apprenant_id === a.id);
+        const session = sa?.sessions;
+        return {
+          id: a.id,
+          nom: a.nom,
+          prenom: a.prenom,
+          date_debut_formation: a.date_debut_formation,
+          date_fin_formation: a.date_fin_formation,
+          session_date_debut: sa?.date_debut || session?.date_debut || null,
+          session_date_fin: sa?.date_fin || session?.date_fin || null,
+        };
+      });
+      setApprenants(enriched);
+    }
     setLoading(false);
   }, []);
 
@@ -403,6 +434,25 @@ export function RapprochementBancaire() {
 
   const fmt = (n: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(n);
 
+  // Match apprenant from transaction libelle (search uppercase name in libelle)
+  const findApprenantInLibelle = (libelle: string): ApprenantWithSession | null => {
+    const upper = libelle.toUpperCase();
+    for (const a of apprenants) {
+      const nomUpper = a.nom.toUpperCase();
+      if (nomUpper.length >= 3 && upper.includes(nomUpper)) {
+        return a;
+      }
+    }
+    return null;
+  };
+
+  const formatDateShort = (d: string | null) => {
+    if (!d) return null;
+    try {
+      return format(new Date(d), "dd/MM/yyyy");
+    } catch { return d; }
+  };
+
   const linkedJustif = (tx: Transaction) => justificatifs.find(j => j.id === tx.justificatif_id);
 
   return (
@@ -568,6 +618,7 @@ export function RapprochementBancaire() {
                     const StatutIcon = statutCfg.icon;
                     const catCfg = getCat(tx.categorie);
                     const jlié = linkedJustif(tx);
+                    const matchedApprenant = !isDebit ? findApprenantInLibelle(tx.libelle) : null;
 
                     return (
                       <div key={tx.id} className={cn(
@@ -596,6 +647,19 @@ export function RapprochementBancaire() {
                                   {format(new Date(tx.date_operation), "dd MMMM yyyy", { locale: fr })}
                                   {tx.solde != null && <span className="ml-2">· Solde : {fmt(tx.solde)}</span>}
                                 </p>
+                                {matchedApprenant && (
+                                  <p className="text-[10px] text-primary font-medium mt-0.5">
+                                    📅 {matchedApprenant.prenom} {matchedApprenant.nom}
+                                    {" — "}
+                                    {(() => {
+                                      const debut = formatDateShort(matchedApprenant.session_date_debut || matchedApprenant.date_debut_formation);
+                                      const fin = formatDateShort(matchedApprenant.session_date_fin || matchedApprenant.date_fin_formation);
+                                      if (debut && fin) return `${debut} → ${fin}`;
+                                      if (debut) return `à partir du ${debut}`;
+                                      return "dates non renseignées";
+                                    })()}
+                                  </p>
+                                )}
                               </div>
                               <div className="text-right flex-shrink-0">
                                 <p className={cn("font-bold text-base", isDebit ? "text-destructive" : "text-emerald-600")}>
