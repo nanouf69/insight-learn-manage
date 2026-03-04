@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -34,7 +34,8 @@ import {
   Euro,
   Save,
   Send,
-  UserPlus
+  UserPlus,
+  Pencil
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { generateEmargementPDF } from "./EmargementGenerator";
@@ -290,6 +291,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     body: string;
     label: string;
   } | null>(null);
+  const [editingMailType, setEditingMailType] = useState<any | null>(null);
+  const [editLabel, setEditLabel] = useState("");
+  const [editSubject, setEditSubject] = useState("");
+  const [editBody, setEditBody] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -1136,13 +1141,28 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="max-h-80 overflow-y-auto w-72">
                                 {emailTemplates.map((t: any) => (
-                                  <DropdownMenuItem
-                                    key={t.id}
-                                    onClick={() => handlePreviewTemplateEmail(t.id, apprenant)}
-                                    className="cursor-pointer"
-                                  >
-                                    <span className="text-sm">{t.label}</span>
-                                  </DropdownMenuItem>
+                                  <div key={t.id} className="flex items-center">
+                                    <DropdownMenuItem
+                                      onClick={() => handlePreviewTemplateEmail(t.id, apprenant)}
+                                      className="cursor-pointer flex-1"
+                                    >
+                                      <span className="text-sm">{t.label}</span>
+                                    </DropdownMenuItem>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7 shrink-0 mr-1"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEditingMailType(t);
+                                        setEditLabel(t.label);
+                                        setEditSubject(t.subject_template);
+                                        setEditBody(t.body_template);
+                                      }}
+                                    >
+                                      <Pencil className="h-3 w-3" />
+                                    </Button>
+                                  </div>
                                 ))}
                                 {emailTemplates.length === 0 && (
                                   <DropdownMenuItem disabled>Aucun modèle</DropdownMenuItem>
@@ -1499,6 +1519,63 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             </div>
           </div>
         )}
+      </DialogContent>
+    </Dialog>
+
+    {/* Dialog pour modifier un mail type */}
+    <Dialog open={!!editingMailType} onOpenChange={(open) => !open && setEditingMailType(null)}>
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Pencil className="h-5 w-5" />
+            Modifier le mail type
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 mt-2">
+          <div>
+            <Label>Nom du modèle</Label>
+            <Input value={editLabel} onChange={(e) => setEditLabel(e.target.value)} />
+          </div>
+          <div>
+            <Label>Objet de l'email</Label>
+            <Input value={editSubject} onChange={(e) => setEditSubject(e.target.value)} />
+          </div>
+          <div>
+            <Label>Corps de l'email (HTML autorisé)</Label>
+            <Textarea
+              value={editBody}
+              onChange={(e) => setEditBody(e.target.value)}
+              className="min-h-[300px] font-mono text-xs"
+            />
+          </div>
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border border-border">
+            <span className="text-xs text-muted-foreground">
+              Variables : <code className="bg-muted px-1 rounded">{"{{prenom}}"}</code> <code className="bg-muted px-1 rounded">{"{{nom}}"}</code> <code className="bg-muted px-1 rounded">{"{{formation}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_debut}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_fin}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_examen_theorique}}"}</code> <code className="bg-muted px-1 rounded">{"{{date_examen_pratique}}"}</code> <code className="bg-muted px-1 rounded">{"{{civilite}}"}</code>
+            </span>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setEditingMailType(null)}>
+              Annuler
+            </Button>
+            <Button onClick={async () => {
+              if (!editingMailType) return;
+              const { error } = await supabase
+                .from('email_templates')
+                .update({ label: editLabel, subject_template: editSubject, body_template: editBody })
+                .eq('id', editingMailType.id);
+              if (error) {
+                toast({ title: "Erreur", description: error.message, variant: "destructive" });
+              } else {
+                toast({ title: "Modèle mis à jour", description: "Le mail type a été enregistré." });
+                queryClient.invalidateQueries({ queryKey: ['email_templates'] });
+                setEditingMailType(null);
+              }
+            }} className="gap-2">
+              <Save className="w-4 h-4" />
+              Enregistrer
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
     </>
