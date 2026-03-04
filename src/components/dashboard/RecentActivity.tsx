@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { GraduationCap, UserPlus, FileCheck, CreditCard, CheckCircle, AlertTriangle, CalendarCheck, Receipt, Mail } from "lucide-react";
+import { GraduationCap, UserPlus, FileCheck, CreditCard, CheckCircle, AlertTriangle, CalendarCheck, Receipt, Mail, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -193,6 +193,42 @@ export function RecentActivity({ onNavigateToApprenant }: RecentActivityProps) {
             icon: Mail,
             iconBg: "bg-indigo-500/10",
             iconColor: "text-indigo-600",
+          });
+        });
+
+        // Fetch recent sent emails to apprenants
+        const { data: sentEmails } = await supabase
+          .from('emails')
+          .select('id, subject, sent_at, created_at, type, apprenant_id')
+          .eq('type', 'sent')
+          .not('apprenant_id', 'is', null)
+          .order('sent_at', { ascending: false })
+          .limit(10);
+
+        // Fetch apprenant names for sent emails
+        const sentApprenantIds = [...new Set(sentEmails?.map(e => e.apprenant_id).filter(Boolean) || [])];
+        let sentApprenantMap: Record<string, { nom: string; prenom: string }> = {};
+        if (sentApprenantIds.length > 0) {
+          const { data: sentApprenants } = await supabase
+            .from('apprenants')
+            .select('id, nom, prenom')
+            .in('id', sentApprenantIds);
+          sentApprenants?.forEach(a => { sentApprenantMap[a.id] = a; });
+        }
+
+        sentEmails?.forEach((e) => {
+          const app = e.apprenant_id ? sentApprenantMap[e.apprenant_id] : null;
+          const recipientName = app ? `${app.prenom} ${app.nom}` : 'apprenant';
+          activityList.push({
+            apprenantId: e.apprenant_id || '',
+            id: `email-sent-${e.id}`,
+            type: "email_sent",
+            message: `📤 Email envoyé à ${recipientName}`,
+            target: e.subject,
+            time: formatDistanceToNow(new Date(e.sent_at || e.created_at), { addSuffix: true, locale: fr }),
+            icon: Send,
+            iconBg: "bg-green-500/10",
+            iconColor: "text-green-600",
           });
         });
         // Alerts stay on top, sort rest by most recent
