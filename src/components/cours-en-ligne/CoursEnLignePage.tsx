@@ -45,6 +45,10 @@ const CoursEnLignePage = () => {
     { id: 28, nom: "6.BILAN EXAMEN TA", eleves: 0, progression: "0%", statut: "Actif" },
     { id: 29, nom: "4.BILAN EXERCICES VA", eleves: 0, progression: "0%", statut: "Actif" },
     { id: 30, nom: "6.BILAN EXAMEN VA", eleves: 0, progression: "0%", statut: "Actif" },
+    { id: 31, nom: "1.INTRODUCTION TA", eleves: 0, progression: "0%", statut: "Actif" },
+    { id: 32, nom: "1.INTRODUCTION TA E-LEARNING", eleves: 0, progression: "0%", statut: "Actif" },
+    { id: 33, nom: "1.INTRODUCTION VA", eleves: 0, progression: "0%", statut: "Actif" },
+    { id: 34, nom: "1.INTRODUCTION VA E-LEARNING", eleves: 0, progression: "0%", statut: "Actif" },
   ]);
 
   const moveModule = (index: number, direction: "up" | "down") => {
