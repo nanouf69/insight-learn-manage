@@ -1,5 +1,8 @@
 import { BILAN_T3P_QUESTIONS } from "./bilan-questions-t3p";
 import { BILAN_GESTION_QUESTIONS } from "./bilan-questions-gestion";
+import { BILAN_SECURITE_QUESTIONS } from "./bilan-questions-securite";
+import { BILAN_FRANCAIS_QUESTIONS } from "./bilan-questions-francais";
+import { BILAN_ANGLAIS_QUESTIONS } from "./bilan-questions-anglais";
 
 export type QuestionType = "QCM" | "QRC";
 
@@ -4214,16 +4217,8 @@ const bilan_securite_taxi: Matiere = {
   duree: 30,
   coefficient: 3,
   noteEliminatoire: 0,
-  noteSur: 7,
-  questions: [
-    { id: 1, type: "QCM", enonce: "Sur les routes à 2x2 voies séparées par une ligne continue, la vitesse est limitée à :", choix: [{ lettre: "A", texte: "90 km/h" }, { lettre: "B", texte: "110 km/h", correct: true }, { lettre: "C", texte: "130 km/h" }] },
-    { id: 2, type: "QCM", enonce: "En agglomération éclairée la nuit :", choix: [{ lettre: "A", texte: "Je dois rouler en feux de croisement" }, { lettre: "B", texte: "Je peux rouler en feux de position", correct: true }, { lettre: "C", texte: "Je peux rouler sans feux" }] },
-    { id: 3, type: "QCM", enonce: "La roue de secours est-elle obligatoire dans une voiture ?", choix: [{ lettre: "A", texte: "Non, la réglementation française ne l'impose pas", correct: true }, { lettre: "B", texte: "Oui, il s'agit d'un équipement de sécurité" }, { lettre: "C", texte: "Oui, il s'agit d'une obligation européenne" }] },
-    { id: 4, type: "QCM", enonce: "En roulant à 90 km/h, un conducteur doit laisser une distance de sécurité de :", choix: [{ lettre: "A", texte: "20 mètres environ" }, { lettre: "B", texte: "80 mètres environ" }, { lettre: "C", texte: "50 mètres environ", correct: true }, { lettre: "D", texte: "30 mètres environ" }] },
-    { id: 5, type: "QCM", enonce: "Je dépasse un cycliste hors agglomération, je dois laisser un espace de sécurité :", choix: [{ lettre: "A", texte: "De 2,50 m" }, { lettre: "B", texte: "De 1 m" }, { lettre: "C", texte: "De 1,5 m", correct: true }] },
-    { id: 6, type: "QCM", enonce: "Pour faire établir une nouvelle carte grise lors d'un changement de domicile, le propriétaire dispose de :", choix: [{ lettre: "A", texte: "3 semaines" }, { lettre: "B", texte: "1 mois", correct: true }, { lettre: "C", texte: "15 jours" }] },
-    { id: 7, type: "QCM", enonce: "Conduire durant une période de suspension :", choix: [{ lettre: "A", texte: "Je commets un délit", correct: true }, { lettre: "B", texte: "Je risque un retrait de 6 points de mon permis de conduire" }, { lettre: "C", texte: "Il ne peut pas y avoir de retrait de point" }] },
-  ]
+  noteSur: BILAN_SECURITE_QUESTIONS.length,
+  questions: BILAN_SECURITE_QUESTIONS,
 };
 
 const bilan_francais_taxi: Matiere = {
@@ -4232,16 +4227,8 @@ const bilan_francais_taxi: Matiere = {
   duree: 30,
   coefficient: 2,
   noteEliminatoire: 0,
-  noteSur: 7,
-  questions: [
-    { id: 1, type: "QCM", enonce: "Quelle phrase est correctement orthographiée ?", choix: [{ lettre: "A", texte: "Le client a réservé son taxi pour demain matin.", correct: true }, { lettre: "B", texte: "Le client as réservé son taxi pour demain matin." }, { lettre: "C", texte: "Le client à réservé son taxi pour demain matin." }] },
-    { id: 2, type: "QCM", enonce: "Quel est le synonyme du mot 'ponctuel' ?", choix: [{ lettre: "A", texte: "En retard" }, { lettre: "B", texte: "À l'heure", correct: true }, { lettre: "C", texte: "Pressé" }] },
-    { id: 3, type: "QCM", enonce: "Quelle est la forme correcte du pluriel de 'œil' ?", choix: [{ lettre: "A", texte: "Œils" }, { lettre: "B", texte: "Yeux", correct: true }, { lettre: "C", texte: "Œuils" }] },
-    { id: 4, type: "QCM", enonce: "Dans la phrase 'Le chauffeur roule prudemment', 'prudemment' est :", choix: [{ lettre: "A", texte: "Un adjectif" }, { lettre: "B", texte: "Un nom" }, { lettre: "C", texte: "Un adverbe", correct: true }] },
-    { id: 5, type: "QCM", enonce: "Quelle est la forme correcte du participe passé ?", choix: [{ lettre: "A", texte: "La cliente que j'ai conduit." }, { lettre: "B", texte: "La cliente que j'ai conduite.", correct: true }, { lettre: "C", texte: "La cliente que j'ai conduits." }] },
-    { id: 6, type: "QCM", enonce: "Quel mot est un antonyme de 'rapide' ?", choix: [{ lettre: "A", texte: "Vif" }, { lettre: "B", texte: "Lent", correct: true }, { lettre: "C", texte: "Alerte" }] },
-    { id: 7, type: "QCM", enonce: "Quelle phrase utilise correctement l'accord du verbe ?", choix: [{ lettre: "A", texte: "Les clients arrivent à l'heure.", correct: true }, { lettre: "B", texte: "Les clients arrive à l'heure." }, { lettre: "C", texte: "Les clients arrives à l'heure." }] },
-  ]
+  noteSur: BILAN_FRANCAIS_QUESTIONS.length,
+  questions: BILAN_FRANCAIS_QUESTIONS,
 };
 
 const bilan_anglais_taxi: Matiere = {
@@ -4250,16 +4237,8 @@ const bilan_anglais_taxi: Matiere = {
   duree: 30,
   coefficient: 1,
   noteEliminatoire: 0,
-  noteSur: 7,
-  questions: [
-    { id: 1, type: "QCM", enonce: "How do you say 'Bienvenue' in English?", choix: [{ lettre: "A", texte: "Goodbye" }, { lettre: "B", texte: "Welcome", correct: true }, { lettre: "C", texte: "Thank you" }] },
-    { id: 2, type: "QCM", enonce: "Which sentence is correct?", choix: [{ lettre: "A", texte: "Where do you want to go?" , correct: true }, { lettre: "B", texte: "Where you want to go?" }, { lettre: "C", texte: "Where does you want to go?" }] },
-    { id: 3, type: "QCM", enonce: "What does 'Please fasten your seatbelt' mean?", choix: [{ lettre: "A", texte: "Veuillez ouvrir la fenêtre" }, { lettre: "B", texte: "Veuillez attacher votre ceinture", correct: true }, { lettre: "C", texte: "Veuillez éteindre votre téléphone" }] },
-    { id: 4, type: "QCM", enonce: "How do you ask for the destination in English?", choix: [{ lettre: "A", texte: "What is your name?" }, { lettre: "B", texte: "Where are you going?", correct: true }, { lettre: "C", texte: "How much do you want?" }] },
-    { id: 5, type: "QCM", enonce: "What does 'airport' mean in French?", choix: [{ lettre: "A", texte: "Gare" }, { lettre: "B", texte: "Port" }, { lettre: "C", texte: "Aéroport", correct: true }] },
-    { id: 6, type: "QCM", enonce: "Which is the correct way to say the time '14h30' in English?", choix: [{ lettre: "A", texte: "Two thirty PM", correct: true }, { lettre: "B", texte: "Fourteen thirty" }, { lettre: "C", texte: "Two PM thirty" }] },
-    { id: 7, type: "QCM", enonce: "How do you say 'Avez-vous besoin d'aide avec vos bagages?' in English?", choix: [{ lettre: "A", texte: "Do you have luggage?" }, { lettre: "B", texte: "Where is your luggage?" }, { lettre: "C", texte: "Do you need help with your luggage?", correct: true }] },
-  ]
+  noteSur: BILAN_ANGLAIS_QUESTIONS.length,
+  questions: BILAN_ANGLAIS_QUESTIONS,
 };
 
 const bilan_reglementation_taxi_specifique: Matiere = {
