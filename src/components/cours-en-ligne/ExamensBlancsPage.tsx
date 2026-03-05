@@ -88,25 +88,23 @@ interface ResultatMatiere {
 // ===== ÉCRAN DE SÉLECTION =====
 function EcranSelection({ onStart, onEdit, defaultBilanId }: { onStart: (examen: ExamenBlanc) => void; onEdit: () => void; defaultBilanId?: string | null }) {
   const [typeFiltre, setTypeFiltre] = useState<"tous" | "TAXI" | "VTC">("tous");
-  const [categorieFiltre, setCategorieFiltre] = useState<"tous" | "examens" | "bilans">(defaultBilanId ? "bilans" : "tous");
+  const [categorieFiltre, setCategorieFiltre] = useState<"tous" | "examens">("tous");
 
   const examens = tousLesExamens.filter(e => {
     const typeOk = typeFiltre === "tous" || e.type === typeFiltre;
     const isBilan = e.id.startsWith("bilan-");
-    const categorieOk = categorieFiltre === "tous" || (categorieFiltre === "bilans" && isBilan) || (categorieFiltre === "examens" && !isBilan);
-    return typeOk && categorieOk;
+    return typeOk && !isBilan;
   });
 
-  const bilans = tousLesExamens.filter(e => e.id.startsWith("bilan-") && (typeFiltre === "tous" || e.type === typeFiltre));
   const examensBlancs = tousLesExamens.filter(e => !e.id.startsWith("bilan-") && (typeFiltre === "tous" || e.type === typeFiltre));
 
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold mb-1">Examens Blancs & Bilans</h2>
+          <h2 className="text-2xl font-bold mb-1">Examens Blancs</h2>
           <p className="text-muted-foreground text-sm">
-            12 examens blancs (6 TAXI, 6 VTC) + 2 bilans examen officiels. Chaque test comporte 7 matières chronométrées.
+            12 examens blancs (6 TAXI, 6 VTC). Chaque test comporte 7 matières chronométrées.
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={onEdit} className="gap-2 shrink-0">
@@ -130,82 +128,7 @@ function EcranSelection({ onStart, onEdit, defaultBilanId }: { onStart: (examen:
             </Button>
           ))}
         </div>
-        <div className="flex gap-1 border rounded-lg p-1">
-          {([["tous", "Tous"], ["examens", "Examens blancs"], ["bilans", "Bilans examen"]] as const).map(([val, label]) => (
-            <Button
-              key={val}
-              variant={categorieFiltre === val ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setCategorieFiltre(val)}
-              className="h-7 px-3"
-            >
-              {label}
-            </Button>
-          ))}
-        </div>
       </div>
-
-      {/* Section Bilans */}
-      {(categorieFiltre === "tous" || categorieFiltre === "bilans") && bilans.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Trophy className="w-4 h-4 text-primary" />
-            <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">Bilans Examen Officiels</h3>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {bilans.map(examen => {
-              const totalQuestions = examen.matieres.reduce((acc, m) => acc + m.questions.length, 0);
-              const dureeTotal = examen.matieres.reduce((acc, m) => acc + m.duree, 0);
-              const isHighlighted = defaultBilanId === examen.id;
-              return (
-                <Card key={examen.id} className={`hover:shadow-md transition-shadow cursor-pointer border-2 ${isHighlighted ? "border-primary shadow-lg ring-2 ring-primary/40 bg-primary/10" : "border-primary/30 hover:border-primary/60 bg-primary/5"}`}>
-                  {isHighlighted && (
-                    <div className="bg-primary text-primary-foreground text-xs font-semibold text-center py-1 rounded-t-md">
-                      ✦ Module sélectionné depuis la liste
-                    </div>
-                  )}
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Badge variant={examen.type === "TAXI" ? "default" : "secondary"} className="text-xs">
-                          {examen.type}
-                        </Badge>
-                        <Badge className="text-xs bg-primary text-primary-foreground">BILAN</Badge>
-                      </div>
-                      <span className="text-xs text-muted-foreground">QCM · 1 pt/question · sans chrono</span>
-                    </div>
-                    <CardTitle className="text-base mt-2">{examen.titre}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <BookOpen className="w-3 h-3" />
-                        <span>{totalQuestions} questions</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <FileText className="w-3 h-3" />
-                        <span>7 matières</span>
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      {examen.matieres.map(m => (
-                        <div key={m.id} className="flex justify-between text-xs text-muted-foreground">
-                          <span className="truncate pr-2">{m.nom.split(" - ")[0]}</span>
-                          <span className="shrink-0">{m.questions.length} QCM</span>
-                        </div>
-                      ))}
-                    </div>
-                    <Button className="w-full mt-2 gap-2" variant="default" onClick={() => onStart(examen)}>
-                      Commencer le bilan
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Section Examens blancs */}
       {(categorieFiltre === "tous" || categorieFiltre === "examens") && examensBlancs.length > 0 && (
