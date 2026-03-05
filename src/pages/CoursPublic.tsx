@@ -133,6 +133,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [activeTab, setActiveTab] = useState<"accueil" | "examens" | "notes">("accueil");
   const [completedModuleIds, setCompletedModuleIds] = useState<Set<number>>(new Set());
   const [moduleScores, setModuleScores] = useState<Record<number, { score_obtenu: number | null; score_max: number | null }>>({});
+  const [moduleCompletionsForNotes, setModuleCompletionsForNotes] = useState<Array<{ id: string; module_id: number; score_obtenu: number | null; score_max: number | null; completed_at: string; details: any }>>([]);
 
   // Tracking connexion élève (only for real student sessions, not admin preview)
   const { trackModuleActivity } = useConnexionTracking({
@@ -206,9 +207,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     if (!apprenant?.id) return;
     const fetchCompletions = async () => {
       const { data } = await supabase
-        .from("apprenant_module_completion" as any)
-        .select("module_id, score_obtenu, score_max")
+        .from("apprenant_module_completion")
+        .select("id, module_id, score_obtenu, score_max, completed_at, details")
         .eq("apprenant_id", apprenant.id!);
+
       if (data) {
         setCompletedModuleIds(new Set((data as any[]).map((d: any) => d.module_id)));
         const scores: Record<number, { score_obtenu: number | null; score_max: number | null }> = {};
@@ -216,6 +218,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           scores[d.module_id] = { score_obtenu: d.score_obtenu, score_max: d.score_max };
         });
         setModuleScores(scores);
+        setModuleCompletionsForNotes(data as any);
       }
     };
     fetchCompletions();
@@ -443,7 +446,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Notes tab */}
         {activeTab === "notes" && apprenant?.id && (
-          <NotesView apprenantId={apprenant.id} studentName={studentName} />
+          <NotesView apprenantId={apprenant.id} studentName={studentName} moduleCompletionsSeed={moduleCompletionsForNotes} />
         )}
 
         {/* Examens tab - Examens Blancs */}

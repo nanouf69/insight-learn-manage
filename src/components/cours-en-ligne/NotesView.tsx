@@ -33,6 +33,7 @@ interface ModuleCompletion {
 interface NotesViewProps {
   apprenantId: string;
   studentName: string;
+  moduleCompletionsSeed?: ModuleCompletion[];
 }
 
 // Map module IDs to matière categories
@@ -61,41 +62,52 @@ const MODULE_TO_MATIERE: Record<number, string> = {
   8: "Pratique VTC",
 };
 
-const NotesView = ({ apprenantId, studentName }: NotesViewProps) => {
+const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: NotesViewProps) => {
   const [quizResults, setQuizResults] = useState<QuizResult[]>([]);
-  const [moduleCompletions, setModuleCompletions] = useState<ModuleCompletion[]>([]);
+  const [moduleCompletions, setModuleCompletions] = useState<ModuleCompletion[]>(moduleCompletionsSeed);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"matiere" | "module" | "examens">("matiere");
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    setModuleCompletions(moduleCompletionsSeed);
+  }, [apprenantId, moduleCompletionsSeed]);
 
   useEffect(() => {
     if (!apprenantId) {
       setLoading(false);
       return;
     }
+
     const fetchAll = async () => {
-      console.log("[NotesView] Fetching data for apprenantId:", apprenantId);
-      const [quizRes, moduleRes] = await Promise.all([
-        supabase
-          .from("apprenant_quiz_results")
-          .select("*")
-          .eq("apprenant_id", apprenantId)
-          .order("completed_at", { ascending: true }),
-        supabase
-          .from("apprenant_module_completion")
-          .select("*")
-          .eq("apprenant_id", apprenantId)
-          .order("completed_at", { ascending: true }),
-      ]);
-      if (quizRes.error) console.error("[NotesView] quiz error:", quizRes.error);
-      if (moduleRes.error) console.error("[NotesView] module error:", moduleRes.error);
-      console.log("[NotesView] quizResults:", quizRes.data?.length, "moduleCompletions:", moduleRes.data?.length);
-      if (quizRes.data) setQuizResults(quizRes.data as any);
-      if (moduleRes.data) setModuleCompletions(moduleRes.data as any);
-      setLoading(false);
+      try {
+        const [quizRes, moduleRes] = await Promise.all([
+          supabase
+            .from("apprenant_quiz_results")
+            .select("*")
+            .eq("apprenant_id", apprenantId)
+            .order("completed_at", { ascending: true }),
+          supabase
+            .from("apprenant_module_completion")
+            .select("*")
+            .eq("apprenant_id", apprenantId)
+            .order("completed_at", { ascending: true }),
+        ]);
+
+        if (quizRes.data) setQuizResults(quizRes.data as any);
+
+        if (moduleRes.data && moduleRes.data.length > 0) {
+          setModuleCompletions(moduleRes.data as any);
+        } else if (moduleCompletionsSeed.length === 0) {
+          setModuleCompletions([]);
+        }
+      } finally {
+        setLoading(false);
+      }
     };
+
     fetchAll();
-  }, [apprenantId]);
+  }, [apprenantId, moduleCompletionsSeed]);
 
   const toggleGroup = (key: string) => {
     setExpandedGroups(prev => {
