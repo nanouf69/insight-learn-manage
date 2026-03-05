@@ -4,6 +4,7 @@ import { BILAN_SECURITE_QUESTIONS } from "./bilan-questions-securite";
 import { BILAN_FRANCAIS_QUESTIONS } from "./bilan-questions-francais";
 import { BILAN_ANGLAIS_QUESTIONS } from "./bilan-questions-anglais";
 import { BILAN_REGLEMENTATION_VTC_QUESTIONS } from "./bilan-questions-reglementation-vtc";
+import { BILAN_DEV_COMMERCIAL_QUESTIONS } from "./bilan-questions-dev-commercial";
 
 export type QuestionType = "QCM" | "QRC";
 
@@ -4359,16 +4360,8 @@ const bilan_dev_commercial_va: Matiere = {
   duree: 30,
   coefficient: 3,
   noteEliminatoire: 0,
-  noteSur: 7,
-  questions: [
-    { id: 1, type: "QCM", enonce: "Qu'est-ce que le SWOT ?", choix: [{ lettre: "A", texte: "Un outil de comptabilité" }, { lettre: "B", texte: "Un outil d'analyse stratégique", correct: true }, { lettre: "C", texte: "Un logiciel de navigation" }, { lettre: "D", texte: "Un type de contrat" }] },
-    { id: 2, type: "QCM", enonce: "Dans l'analyse PESTEL, que signifie le 'E' ?", choix: [{ lettre: "A", texte: "Éducation" }, { lettre: "B", texte: "Économique", correct: true }, { lettre: "C", texte: "Énergie" }, { lettre: "D", texte: "Éthique" }] },
-    { id: 3, type: "QCM", enonce: "Quel est l'objectif principal de la fidélisation client ?", choix: [{ lettre: "A", texte: "Augmenter les tarifs" }, { lettre: "B", texte: "Réduire les coûts d'acquisition et augmenter le chiffre d'affaires récurrent", correct: true }, { lettre: "C", texte: "Diminuer le nombre de clients" }] },
-    { id: 4, type: "QCM", enonce: "Quel document doit obligatoirement être remis au client après une prestation VTC ?", choix: [{ lettre: "A", texte: "Un devis" }, { lettre: "B", texte: "Une facture si le montant dépasse 25€ ou si le client la demande", correct: true }, { lettre: "C", texte: "Un bon de commande" }] },
-    { id: 5, type: "QCM", enonce: "Quelle est la différence entre un devis et une facture ?", choix: [{ lettre: "A", texte: "Le devis est émis avant la prestation, la facture après", correct: true }, { lettre: "B", texte: "Il n'y a aucune différence" }, { lettre: "C", texte: "Le devis est obligatoire, la facture non" }] },
-    { id: 6, type: "QCM", enonce: "Les 4P du marketing mix sont :", choix: [{ lettre: "A", texte: "Produit, Prix, Place, Promotion", correct: true }, { lettre: "B", texte: "Produit, Personnel, Profit, Publicité" }, { lettre: "C", texte: "Prix, Profit, Production, Promotion" }] },
-    { id: 7, type: "QCM", enonce: "Quel est l'intérêt d'une stratégie de différenciation pour un VTC ?", choix: [{ lettre: "A", texte: "Proposer les mêmes services que la concurrence" }, { lettre: "B", texte: "Se démarquer par la qualité de service, le confort ou des services additionnels", correct: true }, { lettre: "C", texte: "Baisser ses prix au maximum" }] },
-  ]
+  noteSur: BILAN_DEV_COMMERCIAL_QUESTIONS.length,
+  questions: BILAN_DEV_COMMERCIAL_QUESTIONS,
 };
 
 export const bilanExamenVA: ExamenBlanc = {
