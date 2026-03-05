@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, User, FileText, BookOpen, Calendar, Mail, Phone, MapPin, CreditCard, Edit2, Download, CheckCircle2, XCircle, Plus, CalendarIcon, Pencil, KeyRound, Loader2, Copy, Monitor, Send, BarChart3 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -74,6 +74,62 @@ const creneauLabels: Record<string, string> = {
   'elearning': 'Formation en ligne',
   'repassage': 'Repassage',
   'pas-encore-choisi': 'Pas encore choisi',
+};
+
+const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {
+  "vtc": [1, 2, 25, 14, 15, 16, 17, 18, 19, 3, 5, 4, 8],
+  "vtc-e-presentiel": [1, 2, 25, 14, 15, 16, 17, 18, 19, 3, 5, 4, 8],
+  "vtc-e": [26, 2, 25, 14, 15, 16, 17, 18, 19, 3, 5, 4, 8],
+  "taxi": [1, 10, 20, 21, 22, 23, 24, 7, 3, 11, 9, 13, 6],
+  "taxi-e-presentiel": [1, 10, 20, 21, 22, 23, 24, 7, 3, 11, 9, 13, 6],
+  "taxi-e": [26, 10, 20, 21, 22, 23, 24, 7, 3, 11, 9, 13, 6],
+  "ta": [31, 24, 7, 3, 27, 28, 13, 6],
+  "ta-e-presentiel": [31, 24, 7, 3, 27, 28, 13, 6],
+  "ta-e": [32, 24, 7, 3, 27, 28, 13, 6],
+  "va": [33, 18, 19, 3, 29, 30, 8],
+  "va-e-presentiel": [33, 18, 19, 3, 29, 30, 8],
+  "va-e": [34, 18, 19, 3, 29, 30, 8],
+};
+
+const FORMATION_TO_TYPE: Record<string, string> = {
+  "vtc": "vtc",
+  "vtc-exam": "vtc",
+  "vtc-elearning-1099": "vtc-e",
+  "vtc-elearning": "vtc-e",
+  "taxi": "taxi",
+  "taxi-exam": "taxi",
+  "taxi-elearning": "taxi-e",
+  "passerelle-taxi": "ta",
+  "passerelle-taxi-elearning": "ta-e",
+  "passerelle-vtc-elearning": "va-e",
+  "vtc-e-presentiel": "vtc-e-presentiel",
+  "taxi-e-presentiel": "taxi-e-presentiel",
+  "ta-e-presentiel": "ta-e-presentiel",
+};
+
+const normalizeTypeApprenant = (rawType: string | null | undefined): string => {
+  if (!rawType) return "";
+
+  const normalized = rawType.trim().toLowerCase();
+  if (!normalized) return "";
+
+  if (DEFAULT_MODULES_BY_TYPE[normalized]) return normalized;
+
+  const dashed = normalized.replace(/\s+/g, "-");
+  if (DEFAULT_MODULES_BY_TYPE[dashed]) return dashed;
+
+  const aliases: Record<string, string> = {
+    "vtc e": "vtc-e",
+    "vtc e presentiel": "vtc-e-presentiel",
+    "taxi e": "taxi-e",
+    "taxi e presentiel": "taxi-e-presentiel",
+    "ta e": "ta-e",
+    "ta e presentiel": "ta-e-presentiel",
+    "va e": "va-e",
+    "va e presentiel": "va-e-presentiel",
+  };
+
+  return aliases[normalized] || aliases[dashed] || normalized;
 };
 
 export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPageProps) {
@@ -200,6 +256,40 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
     enabled: !!apprenantId,
     staleTime: 0,
   });
+
+  const rawModules = (apprenant as any)?.modules_autorises;
+  const hasStoredModulesArray = Array.isArray(rawModules);
+  const currentModules: number[] = hasStoredModulesArray
+    ? rawModules.map((id: any) => Number(id)).filter((id: number) => Number.isFinite(id))
+    : [];
+
+  const primaryType = normalizeTypeApprenant((((apprenant as any)?.type_apprenant || "") as string).split(" + ")[0]);
+  const formationKey = ((((apprenant as any)?.formation_choisie || "") as string).split(" + ")[0]);
+  const fallbackTypeFromFormation = normalizeTypeApprenant(FORMATION_TO_TYPE[formationKey]);
+  const fallbackDefaultModules = DEFAULT_MODULES_BY_TYPE[primaryType]
+    || (fallbackTypeFromFormation ? DEFAULT_MODULES_BY_TYPE[fallbackTypeFromFormation] : undefined)
+    || [];
+  const effectiveModules = currentModules.length > 0 ? currentModules : fallbackDefaultModules;
+  const fallbackSignature = fallbackDefaultModules.join(",");
+
+  useEffect(() => {
+    if (!apprenant?.id) return;
+    if (hasStoredModulesArray) return;
+    if (fallbackDefaultModules.length === 0) return;
+
+    const autoFillModules = async () => {
+      const { error } = await supabase
+        .from("apprenants")
+        .update({ modules_autorises: fallbackDefaultModules } as any)
+        .eq("id", apprenantId);
+
+      if (!error) {
+        queryClient.invalidateQueries({ queryKey: ["apprenant-detail", apprenantId] });
+      }
+    };
+
+    void autoFillModules();
+  }, [apprenant?.id, apprenantId, hasStoredModulesArray, fallbackSignature, queryClient]);
 
   if (isLoading) {
     return (
@@ -709,16 +799,16 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
                   <p className="text-sm font-medium text-foreground mb-3">Modules autorisés</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     {MODULES_DATA.map((mod) => {
-                      const currentModules: number[] = (apprenant as any).modules_autorises || [];
-                      const isChecked = currentModules.includes(mod.id);
+                      const isChecked = effectiveModules.includes(mod.id);
                       return (
                         <label key={mod.id} className="flex items-center gap-2 p-2 rounded-md hover:bg-muted/50 cursor-pointer">
                           <Checkbox
                             checked={isChecked}
                             onCheckedChange={async (checked) => {
+                              const baseModules = effectiveModules;
                               const updated = checked
-                                ? [...currentModules, mod.id]
-                                : currentModules.filter((id: number) => id !== mod.id);
+                                ? Array.from(new Set([...baseModules, mod.id]))
+                                : baseModules.filter((id: number) => id !== mod.id);
                               try {
                                 await supabase.from('apprenants').update({ modules_autorises: updated } as any).eq('id', apprenantId);
                                 queryClient.invalidateQueries({ queryKey: ['apprenant-detail', apprenantId] });
