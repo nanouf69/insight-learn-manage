@@ -1739,6 +1739,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                                   absoluteFileUrl={absoluteFileUrl}
                                   nom={f.nom}
                                   pdfUrl={pdfLocalUrl}
+                                  onLastPageReached={() => markPageCompleted(currentPage)}
                                   studentOnly={secureMode}
                                 />
                               )}

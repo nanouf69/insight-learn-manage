@@ -12,6 +12,7 @@ interface PptxViewerComparisonProps {
   imageUrls?: string[];
   pdfUrl?: string;
   studentOnly?: boolean;
+  onLastPageReached?: () => void;
 }
 
 export default function PptxViewerComparison({
@@ -21,6 +22,7 @@ export default function PptxViewerComparison({
   imageUrls,
   pdfUrl,
   studentOnly = false,
+  onLastPageReached,
 }: PptxViewerComparisonProps) {
   const [mode, setMode] = useState<"google" | "google-zoom" | "ms-office" | "images" | "pdf">(
     pdfUrl ? "pdf" : "google-zoom"
@@ -41,6 +43,13 @@ export default function PptxViewerComparison({
       setMode("pdf");
     }
   }, [isStudentRestricted, pdfUrl]);
+
+  useEffect(() => {
+    if (!onLastPageReached || effectiveMode !== "images" || !hasImages) return;
+    if (currentSlide === imageUrls.length - 1) {
+      onLastPageReached();
+    }
+  }, [currentSlide, effectiveMode, hasImages, imageUrls, onLastPageReached]);
 
   const googleSingleSlideUrl = useMemo(() => {
     try {
@@ -133,7 +142,7 @@ export default function PptxViewerComparison({
 
       <div className="w-full max-w-[1280px] mx-auto">
         {effectiveMode === "pdf" && pdfUrl && (
-          <PdfSlideViewer url={pdfUrl} nom={nom} />
+          <PdfSlideViewer url={pdfUrl} nom={nom} onLastPageReached={onLastPageReached} />
         )}
 
         {effectiveMode === "google" && (
