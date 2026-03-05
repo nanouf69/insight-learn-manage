@@ -74,6 +74,8 @@ export function FormateurResultsTab({ token }: Props) {
   const moduleLabels: Record<number, string> = {
     18: "F. Réglementation (VTC)",
     24: "F. Réglementation (TAXI)",
+    27: "Bilan Exercices TA (Nationale/Locale)",
+    28: "Bilan Examen TA (Nationale/Locale)",
   };
 
   return (
@@ -81,7 +83,7 @@ export function FormateurResultsTab({ token }: Props) {
       <div className="flex items-center gap-3 pb-2 border-b">
         <GraduationCap className="w-5 h-5 text-primary" />
         <div>
-          <h2 className="text-xl font-semibold">Résultats — Réglementation Nationale & Locale</h2>
+          <h2 className="text-xl font-semibold">Résultats — Réglementation Nationale & Locale (TAXI / TA)</h2>
           <p className="text-sm text-muted-foreground">{allApprenantIds.size} candidat(s) avec des résultats</p>
         </div>
       </div>

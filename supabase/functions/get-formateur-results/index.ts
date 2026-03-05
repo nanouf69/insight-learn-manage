@@ -31,7 +31,9 @@ Deno.serve(async (req) => {
     // Module IDs for réglementation nationale et locale
     // 18 = F. Réglementation Spécifique (VTC - nationale + spécifique VTC + locale)
     // 24 = F. Réglementation (TAXI - nationale + locale)
-    const moduleIds = [18, 24];
+    // 27 = Bilan Exercices TA (réglementation nationale + locale)
+    // 28 = Bilan Examen TA (réglementation nationale + locale)
+    const moduleIds = [18, 24, 27, 28];
 
     // Get module completion results for all apprenants
     const { data: completions } = await supabase
