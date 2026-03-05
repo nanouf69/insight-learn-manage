@@ -1112,28 +1112,6 @@ export default function FournisseurPortal() {
                   </CardContent>
                 </Card>
 
-                {/* Réglementation Spécifique VTC */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <span className="text-lg">📕</span> Réglementation Spécifique VTC
-                    </CardTitle>
-                    <CardDescription>Cours PDF sur la réglementation spécifique aux VTC</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <a href="/cours/vtc/F_Reglementation_Specifique_1.pdf" target="_blank" rel="noopener noreferrer">
-                        <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
-                          <FileText className="w-5 h-5 text-primary" />
-                          <div>
-                            <p className="font-medium text-sm">Réglementation Spécifique VTC — Partie 1</p>
-                            <p className="text-xs text-muted-foreground">PDF HD</p>
-                          </div>
-                        </div>
-                      </a>
-                    </div>
-                  </CardContent>
-                </Card>
               </div>
             </TabsContent>
           )}
