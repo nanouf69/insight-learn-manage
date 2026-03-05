@@ -3,6 +3,7 @@ import { BILAN_GESTION_QUESTIONS } from "./bilan-questions-gestion";
 import { BILAN_SECURITE_QUESTIONS } from "./bilan-questions-securite";
 import { BILAN_FRANCAIS_QUESTIONS } from "./bilan-questions-francais";
 import { BILAN_ANGLAIS_QUESTIONS } from "./bilan-questions-anglais";
+import { BILAN_REGLEMENTATION_VTC_QUESTIONS } from "./bilan-questions-reglementation-vtc";
 
 export type QuestionType = "QCM" | "QRC";
 
@@ -4301,16 +4302,8 @@ const bilan_reglementation_vtc_specifique: Matiere = {
   duree: 30,
   coefficient: 3,
   noteEliminatoire: 0,
-  noteSur: 7,
-  questions: [
-    { id: 1, type: "QCM", enonce: "La location à la place est interdite pour :", choix: [{ lettre: "A", texte: "Les taxis" }, { lettre: "B", texte: "Les VTC", correct: true }, { lettre: "C", texte: "Le transport soumis au régime LOTI" }] },
-    { id: 2, type: "QCM", enonce: "Un chauffeur VMDTR doit :", choix: [{ lettre: "A", texte: "Donner une facture automatiquement à son client dès 25 €" }, { lettre: "B", texte: "Donner une facture si uniquement le client demande lorsque la course est inférieure à 25€", correct: true }, { lettre: "C", texte: "Ne pas donner de facture" }] },
-    { id: 3, type: "QCM", enonce: "Qui parmi les T3P ne peuvent PAS être conventionnés par la caisse d'assurance maladie ?", choix: [{ lettre: "A", texte: "Les taxis" }, { lettre: "B", texte: "Les VTC", correct: true }, { lettre: "C", texte: "Les taxis et VTC" }] },
-    { id: 4, type: "QCM", enonce: "Dans quel cas un bon de mission VTC n'est pas obligatoire ?", choix: [{ lettre: "A", texte: "Pour un transport TPMR" }, { lettre: "B", texte: "Pour le transport d'un colis" }, { lettre: "C", texte: "Il est toujours obligatoire", correct: true }, { lettre: "D", texte: "Si je réalise une mission en sous-traitance" }] },
-    { id: 5, type: "QCM", enonce: "Quelle profession du T3P est autorisée à proposer ses services immédiats sur la voie publique ?", choix: [{ lettre: "A", texte: "VTC dans sa zone de prise en charge" }, { lettre: "B", texte: "Aucune" }, { lettre: "C", texte: "Taxi dans sa zone de prise en charge", correct: true }] },
-    { id: 6, type: "QCM", enonce: "Le ministère chargé des transports est compétent pour :", choix: [{ lettre: "A", texte: "Retirer les cartes professionnelles" }, { lettre: "B", texte: "Gérer les registres des exploitants VTC", correct: true }, { lettre: "C", texte: "Agréer les centres de formation" }] },
-    { id: 7, type: "QCM", enonce: "La location à la place sur un même trajet est autorisée pour :", choix: [{ lettre: "A", texte: "Les VTC" }, { lettre: "B", texte: "Les taxis", correct: true }, { lettre: "C", texte: "Ni les taxis ni les VTC" }] },
-  ]
+  noteSur: BILAN_REGLEMENTATION_VTC_QUESTIONS.length,
+  questions: BILAN_REGLEMENTATION_VTC_QUESTIONS,
 };
 
 const bilan_reglementation_vtc_locale: Matiere = {
