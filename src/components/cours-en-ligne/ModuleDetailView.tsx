@@ -692,7 +692,7 @@ function getInitialModuleData(module: { id: number; nom: string }, apprenantType
       nom: "4.BILAN EXERCICES VTC",
       description: "Tous les exercices regroupés par matière. Refaites-les autant de fois que nécessaire pour maîtriser chaque sujet.",
       cours: [],
-      exercices: BILAN_EXERCICES_VTC,
+      exercices: BILAN_EXERCICES_VTC.filter(e => e.id !== 103 && e.id !== 105),
     };
   }
 
