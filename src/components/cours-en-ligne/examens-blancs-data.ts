@@ -36,7 +36,7 @@ export interface Matiere {
 export interface ExamenBlanc {
   id: string;
   numero: number;
-  type: "TAXI" | "VTC";
+  type: "TAXI" | "VTC" | "TA" | "VA";
   titre: string;
   matieres: Matiere[];
 }
@@ -4375,6 +4375,72 @@ export const bilanExamenVA: ExamenBlanc = {
   ]
 };
 
+// ===== EXAMENS BLANCS TA (Passerelle Taxi) — Réglementation Nationale + Locale =====
+
+export const examenBlanc1TA: ExamenBlanc = {
+  id: "eb1-ta", numero: 1, type: "TA",
+  titre: "Examen Blanc N°1 - Passerelle TA",
+  matieres: [matiere_reglementation_taxi_examen1, matiere_reglementation_taxi2_examen1]
+};
+export const examenBlanc2TA: ExamenBlanc = {
+  id: "eb2-ta", numero: 2, type: "TA",
+  titre: "Examen Blanc N°2 - Passerelle TA",
+  matieres: [matiere_reglementation_taxi_examen2, matiere_reglementation_taxi2_examen2]
+};
+export const examenBlanc3TA: ExamenBlanc = {
+  id: "eb3-ta", numero: 3, type: "TA",
+  titre: "Examen Blanc N°3 - Passerelle TA",
+  matieres: [matiere_reglementation_taxi_examen3, matiere_reglementation_taxi2_examen3]
+};
+export const examenBlanc4TA: ExamenBlanc = {
+  id: "eb4-ta", numero: 4, type: "TA",
+  titre: "Examen Blanc N°4 - Passerelle TA",
+  matieres: [matiere_reglementation_taxi_examen4, matiere_reglementation_taxi2_examen4]
+};
+export const examenBlanc5TA: ExamenBlanc = {
+  id: "eb5-ta", numero: 5, type: "TA",
+  titre: "Examen Blanc N°5 - Passerelle TA",
+  matieres: [matiere_reglementation_taxi_examen5, matiere_reglementation_taxi2_examen5]
+};
+export const examenBlanc6TA: ExamenBlanc = {
+  id: "eb6-ta", numero: 6, type: "TA",
+  titre: "Examen Blanc N°6 - Passerelle TA",
+  matieres: [matiere_reglementation_taxi_examen6, matiere_reglementation_taxi2_examen6]
+};
+
+// ===== EXAMENS BLANCS VA (Passerelle VTC) — Dév. Commercial + Réglementation Spécifique VTC =====
+
+export const examenBlanc1VA: ExamenBlanc = {
+  id: "eb1-va", numero: 1, type: "VA",
+  titre: "Examen Blanc N°1 - Passerelle VA",
+  matieres: [matiere_reglementation_vtc_examen1, matiere_reglementation_vtc2_examen1]
+};
+export const examenBlanc2VA: ExamenBlanc = {
+  id: "eb2-va", numero: 2, type: "VA",
+  titre: "Examen Blanc N°2 - Passerelle VA",
+  matieres: [matiere_reglementation_vtc_examen2, matiere_reglementation_vtc2_examen2]
+};
+export const examenBlanc3VA: ExamenBlanc = {
+  id: "eb3-va", numero: 3, type: "VA",
+  titre: "Examen Blanc N°3 - Passerelle VA",
+  matieres: [matiere_reglementation_vtc_examen3, matiere_reglementation_vtc2_examen3]
+};
+export const examenBlanc4VA: ExamenBlanc = {
+  id: "eb4-va", numero: 4, type: "VA",
+  titre: "Examen Blanc N°4 - Passerelle VA",
+  matieres: [matiere_reglementation_vtc_examen4, matiere_reglementation_vtc2_examen4]
+};
+export const examenBlanc5VA: ExamenBlanc = {
+  id: "eb5-va", numero: 5, type: "VA",
+  titre: "Examen Blanc N°5 - Passerelle VA",
+  matieres: [matiere_reglementation_vtc_examen5, matiere_reglementation_vtc2_examen5]
+};
+export const examenBlanc6VA: ExamenBlanc = {
+  id: "eb6-va", numero: 6, type: "VA",
+  titre: "Examen Blanc N°6 - Passerelle VA",
+  matieres: [matiere_reglementation_vtc_examen6, matiere_reglementation_vtc2_examen6]
+};
+
 export const tousLesExamens: ExamenBlanc[] = [
   examenBlanc1Taxi, examenBlanc1VTC,
   examenBlanc2Taxi, examenBlanc2VTC,
@@ -4382,5 +4448,7 @@ export const tousLesExamens: ExamenBlanc[] = [
   examenBlanc4Taxi, examenBlanc4VTC,
   examenBlanc5Taxi, examenBlanc5VTC,
   examenBlanc6Taxi, examenBlanc6VTC,
+  examenBlanc1TA, examenBlanc2TA, examenBlanc3TA, examenBlanc4TA, examenBlanc5TA, examenBlanc6TA,
+  examenBlanc1VA, examenBlanc2VA, examenBlanc3VA, examenBlanc4VA, examenBlanc5VA, examenBlanc6VA,
   bilanExamenTaxi, bilanExamenVTC, bilanExamenTA, bilanExamenVA,
 ];

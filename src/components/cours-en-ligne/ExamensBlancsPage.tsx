@@ -87,8 +87,7 @@ interface ResultatMatiere {
 
 // ===== ÉCRAN DE SÉLECTION =====
 function EcranSelection({ onStart, onEdit, defaultBilanId }: { onStart: (examen: ExamenBlanc) => void; onEdit: () => void; defaultBilanId?: string | null }) {
-  const [typeFiltre, setTypeFiltre] = useState<"tous" | "TAXI" | "VTC">("tous");
-  const [categorieFiltre, setCategorieFiltre] = useState<"tous" | "examens">("tous");
+  const [typeFiltre, setTypeFiltre] = useState<"tous" | "TAXI" | "VTC" | "TA" | "VA">("tous");
 
   const examens = tousLesExamens.filter(e => {
     const typeOk = typeFiltre === "tous" || e.type === typeFiltre;
@@ -104,7 +103,7 @@ function EcranSelection({ onStart, onEdit, defaultBilanId }: { onStart: (examen:
         <div>
           <h2 className="text-2xl font-bold mb-1">Examens Blancs</h2>
           <p className="text-muted-foreground text-sm">
-            12 examens blancs (6 TAXI, 6 VTC). Chaque test comporte 7 matières chronométrées.
+            24 examens blancs (6 TAXI, 6 VTC, 6 Passerelle TA, 6 Passerelle VA). Chaque test comporte les matières correspondantes chronométrées.
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={onEdit} className="gap-2 shrink-0">
@@ -116,7 +115,7 @@ function EcranSelection({ onStart, onEdit, defaultBilanId }: { onStart: (examen:
       {/* Filtres */}
       <div className="flex flex-wrap gap-2">
         <div className="flex gap-1 border rounded-lg p-1">
-          {(["tous", "TAXI", "VTC"] as const).map(t => (
+          {(["tous", "TAXI", "VTC", "TA", "VA"] as const).map(t => (
             <Button
               key={t}
               variant={typeFiltre === t ? "default" : "ghost"}
@@ -124,21 +123,19 @@ function EcranSelection({ onStart, onEdit, defaultBilanId }: { onStart: (examen:
               onClick={() => setTypeFiltre(t)}
               className="h-7 px-3"
             >
-              {t === "tous" ? "Tous" : t}
+              {t === "tous" ? "Tous" : t === "TA" ? "Passerelle TA" : t === "VA" ? "Passerelle VA" : t}
             </Button>
           ))}
         </div>
       </div>
 
       {/* Section Examens blancs */}
-      {(categorieFiltre === "tous" || categorieFiltre === "examens") && examensBlancs.length > 0 && (
+      {examensBlancs.length > 0 && (
         <div className="space-y-3">
-          {categorieFiltre === "tous" && (
-            <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-primary" />
-              <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">Examens Blancs</h3>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <FileText className="w-4 h-4 text-primary" />
+            <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">Examens Blancs</h3>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {examensBlancs.map(examen => {
               const totalQuestions = examen.matieres.reduce((acc, m) => acc + m.questions.length, 0);
@@ -166,7 +163,7 @@ function EcranSelection({ onStart, onEdit, defaultBilanId }: { onStart: (examen:
                       </div>
                       <div className="flex items-center gap-1 text-muted-foreground">
                         <FileText className="w-3 h-3" />
-                        <span>7 matières</span>
+                        <span>{examen.matieres.length} matière{examen.matieres.length > 1 ? "s" : ""}</span>
                       </div>
                     </div>
                     <div className="space-y-1">
