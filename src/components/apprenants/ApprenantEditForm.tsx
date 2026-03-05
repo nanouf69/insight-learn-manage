@@ -1350,25 +1350,46 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
             </div>
             <div className="space-y-2">
               <Label>Modules autorisés</Label>
-              <div className="grid grid-cols-1 gap-1.5 max-h-[200px] overflow-y-auto border rounded-md p-3">
-                {MODULES_DATA.map((mod) => (
-                  <label key={mod.id} className="flex items-center gap-2 py-1 cursor-pointer hover:bg-muted/50 rounded px-1">
-                    <Checkbox
-                      checked={effectiveModulesAutorises.includes(mod.id)}
-                      onCheckedChange={(checked) => {
-                        setHasTouchedModules(true);
-                        const baseModules = (modulesAutorises.length > 0 || hasTouchedModules)
-                          ? modulesAutorises
-                          : fallbackDefaultModules;
-                        const nextModules = checked
-                          ? Array.from(new Set([...baseModules, mod.id]))
-                          : baseModules.filter(id => id !== mod.id);
-                        setModulesAutorises(nextModules);
-                      }}
-                    />
-                    <span className="text-sm">{mod.nom}</span>
-                  </label>
-                ))}
+              <div className="grid grid-cols-1 gap-1.5 max-h-[300px] overflow-y-auto border rounded-md p-3">
+                {MODULES_DATA.map((mod) => {
+                  const isIntro = mod.nom.includes("INTRODUCTION");
+                  const isTA = mod.nom.includes(" TA") || mod.formations.includes("taxi-pour-vtc" as any);
+                  const isVA = mod.nom.includes(" VA") || mod.formations.includes("vtc-pour-taxi" as any);
+                  const isVTC = !isIntro && !isTA && !isVA && mod.formations.some((f: string) => f.includes("vtc"));
+                  const isTaxi = !isIntro && !isTA && !isVA && mod.formations.some((f: string) => f.includes("taxi"));
+                  const isCommon = isVTC && isTaxi;
+
+                  let colorClass = "bg-muted/30 border-muted";
+                  let dotColor = "bg-gray-400";
+                  let label = "";
+                  if (isIntro) { colorClass = "bg-blue-50 border-blue-200"; dotColor = "bg-blue-500"; label = "INTRO"; }
+                  else if (isCommon) { colorClass = "bg-purple-50 border-purple-200"; dotColor = "bg-purple-500"; label = "COMMUN"; }
+                  else if (isTA) { colorClass = "bg-amber-50 border-amber-200"; dotColor = "bg-amber-500"; label = "TA"; }
+                  else if (isVA) { colorClass = "bg-teal-50 border-teal-200"; dotColor = "bg-teal-500"; label = "VA"; }
+                  else if (isVTC) { colorClass = "bg-emerald-50 border-emerald-200"; dotColor = "bg-emerald-500"; label = "VTC"; }
+                  else if (isTaxi) { colorClass = "bg-orange-50 border-orange-200"; dotColor = "bg-orange-500"; label = "TAXI"; }
+
+                  return (
+                    <label key={mod.id} className={cn("flex items-center gap-2 py-1.5 cursor-pointer rounded px-2 border", colorClass)}>
+                      <Checkbox
+                        checked={effectiveModulesAutorises.includes(mod.id)}
+                        onCheckedChange={(checked) => {
+                          setHasTouchedModules(true);
+                          const baseModules = (modulesAutorises.length > 0 || hasTouchedModules)
+                            ? modulesAutorises
+                            : fallbackDefaultModules;
+                          const nextModules = checked
+                            ? Array.from(new Set([...baseModules, mod.id]))
+                            : baseModules.filter(id => id !== mod.id);
+                          setModulesAutorises(nextModules);
+                        }}
+                      />
+                      <span className={cn("w-2 h-2 rounded-full shrink-0", dotColor)} />
+                      <span className="text-sm flex-1">{mod.nom}</span>
+                      {label && <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0", dotColor, "text-white")}>{label}</span>}
+                    </label>
+                  );
+                })}
               </div>
             </div>
           </div>
