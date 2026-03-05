@@ -1168,8 +1168,13 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="manque_document">📄 Manque un document</SelectItem>
+                              <SelectItem value="manque_piece_identite">📋 Manque pièce d'identité</SelectItem>
+                              <SelectItem value="manque_justificatif_domicile">🏠 Manque justificatif de domicile récent</SelectItem>
+                              <SelectItem value="manque_permis">🚗 Manque permis de conduire</SelectItem>
+                              <SelectItem value="manque_signature">✍️ Manque signature</SelectItem>
+                              <SelectItem value="manque_photo">📸 Manque photo</SelectItem>
                                 <SelectItem value="document_complet">✅ Dossier complet</SelectItem>
-                               <SelectItem value="mdp_change">🔑 Mot de passe changé</SelectItem>
+                                <SelectItem value="mdp_change">🔑 Mot de passe changé</SelectItem>
                               <SelectItem value="email_non_valide">📧 Adresse mail non validée</SelectItem>
                               <SelectItem value="injoignable">📵 Injoignable</SelectItem>
                               <SelectItem value="a_payer">💰 À payer</SelectItem>
