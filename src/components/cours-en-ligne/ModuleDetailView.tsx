@@ -1597,45 +1597,54 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     const persistModuleCompletion = async () => {
       if (completionPersistedRef.current) return true;
-      completionPersistedRef.current = true;
 
-      if (apprenantId) {
-        try {
-          // Build question-level details
-          const questionDetails = activeExercices.flatMap(e => 
-            (e.questions || []).map(q => {
-              const key = `${e.id}-${q.id}`;
-              const selected = selectedAnswers[key];
-              const correct = q.choix.find(c => c.correct);
-              return {
-                exerciceId: e.id,
-                exerciceTitre: e.titre,
-                questionId: q.id,
-                enonce: q.enonce,
-                reponseEleve: selected || null,
-                reponseCorrecte: correct?.lettre || null,
-                correct: selected != null && correct != null && selected === correct.lettre,
-              };
-            })
-          );
-
-          const { error } = await supabase.from("apprenant_module_completion").upsert({
-            apprenant_id: apprenantId,
-            module_id: module.id,
-            score_obtenu: totalQuestions > 0 ? correctCount : null,
-            score_max: totalQuestions > 0 ? totalQuestions : null,
-            details: questionDetails,
-          } as any, { onConflict: "apprenant_id,module_id" });
-          if (error) {
-            console.error("Erreur completion module:", error);
-          }
-        } catch (e) {
-          console.error("Erreur completion module:", e);
-        }
+      if (!apprenantId) {
+        return true;
       }
-      // Always update local state even if DB fails
-      onModuleCompleted?.(module.id);
-      return true;
+
+      try {
+        // Build question-level details
+        const questionDetails = activeExercices.flatMap(e =>
+          (e.questions || []).map(q => {
+            const key = `${e.id}-${q.id}`;
+            const selected = selectedAnswers[key];
+            const correct = q.choix.find(c => c.correct);
+            return {
+              exerciceId: e.id,
+              exerciceTitre: e.titre,
+              questionId: q.id,
+              enonce: q.enonce,
+              reponseEleve: selected || null,
+              reponseCorrecte: correct?.lettre || null,
+              correct: selected != null && correct != null && selected === correct.lettre,
+            };
+          })
+        );
+
+        const { error } = await supabase.from("apprenant_module_completion").upsert({
+          apprenant_id: apprenantId,
+          module_id: module.id,
+          score_obtenu: totalQuestions > 0 ? correctCount : null,
+          score_max: totalQuestions > 0 ? totalQuestions : null,
+          details: questionDetails,
+        } as any, { onConflict: "apprenant_id,module_id" });
+
+        if (error) {
+          completionPersistedRef.current = false;
+          console.error("Erreur completion module:", error);
+          toast.error("Le résultat du quiz n'a pas pu être enregistré");
+          return false;
+        }
+
+        completionPersistedRef.current = true;
+        onModuleCompleted?.(module.id);
+        return true;
+      } catch (e) {
+        completionPersistedRef.current = false;
+        console.error("Erreur completion module:", e);
+        toast.error("Le résultat du quiz n'a pas pu être enregistré");
+        return false;
+      }
     };
 
 
