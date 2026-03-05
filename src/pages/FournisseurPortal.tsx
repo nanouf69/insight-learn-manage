@@ -16,11 +16,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { parseDateRange } from "@/lib/parseDateRange";
-import { Plus, Loader2, CalendarIcon, Users, FileText, Receipt, Upload, Trash2, Eye, CalendarDays, BarChart3, Mail, Send, Inbox, PenLine, FolderOpen, Download, TrendingUp } from "lucide-react";
+import { Plus, Loader2, CalendarIcon, Users, FileText, Receipt, Upload, Trash2, Eye, CalendarDays, BarChart3, Mail, Send, Inbox, PenLine, FolderOpen, Download, TrendingUp, BookOpen, GraduationCap } from "lucide-react";
 import { FinancialCharts } from "@/components/comptabilite/FinancialCharts";
 import { Textarea } from "@/components/ui/textarea";
 import logoFtransport from "@/assets/logo-ftransport.png";
 import { RapprochementBancaire } from "@/components/comptabilite/RapprochementBancaire";
+import { FormateurResultsTab } from "@/components/fournisseurs/FormateurResultsTab";
 import { NotesFraisTab } from "@/components/comptabilite/NotesFraisTab";
 
 // Dates formations (same as ApprenantForm)
@@ -498,9 +499,11 @@ export default function FournisseurPortal() {
               <TabsTrigger value="comptable-messages" className="gap-2 text-xs"><Mail className="w-4 h-4" />Messages</TabsTrigger>
             </TabsList>
           ) : fournisseur?.formateur_id ? (
-            // Formateur : planning + factures + documents
-            <TabsList className="grid w-full grid-cols-3 mb-6">
+  // Formateur : planning + cours + résultats + factures + documents
+            <TabsList className="grid w-full grid-cols-5 mb-6">
               <TabsTrigger value="planning" className="gap-2"><CalendarDays className="w-4 h-4" />Mon planning</TabsTrigger>
+              <TabsTrigger value="cours-formateur" className="gap-2"><BookOpen className="w-4 h-4" />Cours</TabsTrigger>
+              <TabsTrigger value="resultats-formateur" className="gap-2"><GraduationCap className="w-4 h-4" />Résultats</TabsTrigger>
               <TabsTrigger value="factures" className="gap-2"><Receipt className="w-4 h-4" />Mes factures</TabsTrigger>
               <TabsTrigger value="shared-docs" className="gap-2"><FileText className="w-4 h-4" />Documents</TabsTrigger>
             </TabsList>
@@ -1037,6 +1040,108 @@ export default function FournisseurPortal() {
                   );
                 })()}
               </div>
+            </TabsContent>
+          )}
+
+          {/* ============ TAB COURS FORMATEUR ============ */}
+          {fournisseur?.formateur_id && (
+            <TabsContent value="cours-formateur">
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 pb-2 border-b">
+                  <BookOpen className="w-5 h-5 text-primary" />
+                  <div>
+                    <h2 className="text-xl font-semibold">Cours — Réglementation Nationale & Locale</h2>
+                    <p className="text-sm text-muted-foreground">Supports de cours et exercices pour vos matières</p>
+                  </div>
+                </div>
+
+                {/* Réglementation Nationale */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <span className="text-lg">📘</span> Réglementation Nationale
+                    </CardTitle>
+                    <CardDescription>Cours PDF sur la réglementation nationale du transport</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <a href="/cours/vtc/F_Nationale_1.pdf" target="_blank" rel="noopener noreferrer">
+                        <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+                          <FileText className="w-5 h-5 text-primary" />
+                          <div>
+                            <p className="font-medium text-sm">Réglementation Nationale — Partie 1</p>
+                            <p className="text-xs text-muted-foreground">PDF HD</p>
+                          </div>
+                        </div>
+                      </a>
+                      <a href="/cours/vtc/F_Nationale_2.pdf" target="_blank" rel="noopener noreferrer">
+                        <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+                          <FileText className="w-5 h-5 text-primary" />
+                          <div>
+                            <p className="font-medium text-sm">Réglementation Nationale — Partie 2</p>
+                            <p className="text-xs text-muted-foreground">PDF HD</p>
+                          </div>
+                        </div>
+                      </a>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Réglementation Locale */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <span className="text-lg">📗</span> Réglementation Locale
+                    </CardTitle>
+                    <CardDescription>Cours PDF sur la réglementation locale (Lyon)</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {[1, 2, 3].map(i => (
+                        <a key={i} href={`/cours/vtc/F_Locale_${i}.pdf`} target="_blank" rel="noopener noreferrer">
+                          <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+                            <FileText className="w-5 h-5 text-primary" />
+                            <div>
+                              <p className="font-medium text-sm">Réglementation Locale — Partie {i}</p>
+                              <p className="text-xs text-muted-foreground">PDF HD</p>
+                            </div>
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Réglementation Spécifique VTC */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <span className="text-lg">📕</span> Réglementation Spécifique VTC
+                    </CardTitle>
+                    <CardDescription>Cours PDF sur la réglementation spécifique aux VTC</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <a href="/cours/vtc/F_Reglementation_Specifique_1.pdf" target="_blank" rel="noopener noreferrer">
+                        <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+                          <FileText className="w-5 h-5 text-primary" />
+                          <div>
+                            <p className="font-medium text-sm">Réglementation Spécifique VTC — Partie 1</p>
+                            <p className="text-xs text-muted-foreground">PDF HD</p>
+                          </div>
+                        </div>
+                      </a>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          )}
+
+          {/* ============ TAB RÉSULTATS FORMATEUR ============ */}
+          {fournisseur?.formateur_id && (
+            <TabsContent value="resultats-formateur">
+              <FormateurResultsTab token={token || ""} />
             </TabsContent>
           )}
 
