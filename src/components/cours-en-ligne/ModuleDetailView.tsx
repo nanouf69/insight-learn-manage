@@ -402,6 +402,290 @@ L'épreuve pratique comprend une phase de conduite en circulation d'une durée m
   ],
 };
 
+// ===== Introduction TA Présentiel (ID 31) =====
+const INTRODUCTION_TA_PRESENTIEL_DATA: ModuleData = {
+  id: 31,
+  nom: "1.INTRODUCTION TA",
+  description: "Livret d'accueil pour la formation passerelle TA (présentiel) : programme, planning, règlement intérieur.",
+  cours: [
+    {
+      id: 1,
+      titre: "Bienvenue — Formation TAXI pour chauffeurs VTC",
+      description: `Cette formation passerelle vous permet d'obtenir votre carte de chauffeur TAXI si vous êtes déjà titulaire de la carte VTC.
+
+L'examen comporte 2 matières spécifiques :
+• Réglementation nationale TAXI
+• Réglementation locale
+
+📌 Étapes conseillées :
+1. Commencez par les cours et les exercices
+2. Puis les bilans exercices
+3. Ensuite les examens blancs
+4. Enfin les bilans examen`,
+      actif: true,
+    },
+    {
+      id: 2,
+      titre: "Programme — Réglementation nationale",
+      description: `📝 RÉGLEMENTATION NATIONALE TAXI :
+
+• Connaître le fonctionnement des équipements spéciaux obligatoires et du terminal de paiement électronique
+• Connaître l'articulation entre les réglementations nationales et locales
+• Connaître les régimes d'autorisation de stationnement
+• Connaître les règles de tarification d'une course de Taxi
+• Connaître les activités complémentaires ouvertes aux taxis : services réguliers de transport, transport assis professionnalisé
+• Connaître les règles de détaxation partielle de la TICPE
+• Connaître la réglementation relative à la taxe de stationnement
+• Connaître le territoire d'exercice de l'activité
+• Connaître le règlement local en vigueur`,
+      actif: true,
+    },
+    {
+      id: 3,
+      titre: "Programme — Réglementation locale",
+      description: `📝 RÉGLEMENTATION LOCALE (spécifique TAXI) :
+
+Connaître le territoire d'exercice de l'activité :
+• Les principaux lieux, sites, bâtiments publics
+• Les principaux axes routiers
+• Connaître le règlement local en vigueur`,
+      actif: true,
+    },
+    {
+      id: 4,
+      titre: "Planning de formation",
+      description: `🏢 FTRANSPORT — Centre de formation
+86 Route de Genas, 69003 Lyon
+
+📞 Tel : 04 28 29 60 91
+📧 Email : contact@ftransport.fr
+
+⏰ Horaires de formation : 9h-12h et 13h-17h
+
+Le planning détaillé vous sera communiqué en début de formation.`,
+      actif: true,
+    },
+    {
+      id: 5,
+      titre: "Règlement intérieur",
+      description: `📋 RÈGLEMENT INTÉRIEUR :
+
+• Ponctualité obligatoire — toute absence doit être signalée
+• Tenue correcte exigée
+• Interdiction d'utiliser le téléphone pendant les cours
+• Respect des locaux et du matériel
+• Respect mutuel entre stagiaires et formateurs
+• Toute forme de discrimination est interdite
+
+Le règlement intérieur complet est disponible en téléchargement.`,
+      actif: true,
+    },
+  ],
+  exercices: [],
+};
+
+// ===== Introduction TA E-Learning (ID 32) =====
+const INTRODUCTION_TA_ELEARNING_DATA: ModuleData = {
+  id: 32,
+  nom: "1.INTRODUCTION TA E-LEARNING",
+  description: "Livret d'accueil pour la formation passerelle TA (e-learning) : programme des 2 matières.",
+  cours: [
+    {
+      id: 1,
+      titre: "Bienvenue — Formation TAXI pour chauffeurs VTC (E-learning)",
+      description: `Cette formation passerelle en e-learning vous permet d'obtenir votre carte de chauffeur TAXI si vous êtes déjà titulaire de la carte VTC.
+
+L'examen comporte 2 matières spécifiques :
+• Réglementation nationale TAXI
+• Réglementation locale
+
+📌 Étapes conseillées :
+1. Commencez par les cours et les exercices
+2. Puis les bilans exercices
+3. Ensuite les examens blancs
+4. Enfin les bilans examen
+
+Lorsque vous aurez fini vos examens blancs, merci de nous envoyer un mail pour correction.`,
+      actif: true,
+    },
+    {
+      id: 2,
+      titre: "Programme — Réglementation nationale",
+      description: `📝 RÉGLEMENTATION NATIONALE TAXI :
+
+• Connaître le fonctionnement des équipements spéciaux obligatoires et du terminal de paiement électronique
+• Connaître l'articulation entre les réglementations nationales et locales
+• Connaître les régimes d'autorisation de stationnement
+• Connaître les règles de tarification d'une course de Taxi
+• Connaître les activités complémentaires ouvertes aux taxis : services réguliers de transport, transport assis professionnalisé
+• Connaître les règles de détaxation partielle de la TICPE
+• Connaître la réglementation relative à la taxe de stationnement
+• Connaître le territoire d'exercice de l'activité
+• Connaître le règlement local en vigueur`,
+      actif: true,
+    },
+    {
+      id: 3,
+      titre: "Programme — Réglementation locale",
+      description: `📝 RÉGLEMENTATION LOCALE (spécifique TAXI) :
+
+Connaître le territoire d'exercice de l'activité :
+• Les principaux lieux, sites, bâtiments publics
+• Les principaux axes routiers
+• Connaître le règlement local en vigueur`,
+      actif: true,
+    },
+    {
+      id: 4,
+      titre: "Contact",
+      description: `🏢 FTRANSPORT — Centre de formation
+86 Route de Genas, 69003 Lyon
+
+📞 Tel : 04 28 29 60 91
+📧 Email : contact@ftransport.fr`,
+      actif: true,
+    },
+  ],
+  exercices: [],
+};
+
+// ===== Introduction VA Présentiel (ID 33) =====
+const INTRODUCTION_VA_PRESENTIEL_DATA: ModuleData = {
+  id: 33,
+  nom: "1.INTRODUCTION VA",
+  description: "Livret d'accueil pour la formation passerelle VA (présentiel) : programme, planning, règlement intérieur.",
+  cours: [
+    {
+      id: 1,
+      titre: "Bienvenue — Formation VTC pour chauffeurs TAXI",
+      description: `Cette formation passerelle vous permet d'obtenir votre carte de chauffeur VTC si vous êtes déjà titulaire de la carte TAXI.
+
+L'examen comporte 2 matières spécifiques :
+• Développement Commercial
+• Réglementation spécifique VTC
+
+📌 Étapes conseillées :
+1. Commencez par les cours et les exercices
+2. Puis les bilans exercices
+3. Ensuite les examens blancs
+4. Enfin les bilans examen`,
+      actif: true,
+    },
+    {
+      id: 2,
+      titre: "Programme — Développement Commercial",
+      description: `📝 DÉVELOPPEMENT COMMERCIAL :
+
+• Connaître et comprendre les principes généraux du marketing (analyse de marché, ciblage de l'offre, compétitivité, détermination du prix...)
+• Savoir valoriser les qualités de la prestation commerciale VTC
+• Savoir fidéliser ses clients et prospecter pour en obtenir d'autres
+• Savoir mener des actions de communication pour faire connaître son entreprise, notamment par internet et les moyens numériques
+• Savoir développer un réseau de partenaires favorisant l'accès à la clientèle (hôtels, entreprises...)`,
+      actif: true,
+    },
+    {
+      id: 3,
+      titre: "Programme — Réglementation spécifique VTC",
+      description: `📝 RÉGLEMENTATION SPÉCIFIQUE VTC :
+
+• Connaître les dispositions relatives aux exploitants : les modalités d'inscription au registre des VTC, les règles relatives à la capacité financière…
+• Connaître les obligations spécifiques relatives aux véhicules d'exploitation (dimensions, puissance, âge...) et connaître leur signalisation
+• Savoir établir les documents relatifs à l'exécution de la prestation de transport qui doivent être présentés en cas de contrôle`,
+      actif: true,
+    },
+    {
+      id: 4,
+      titre: "Planning de formation",
+      description: `🏢 FTRANSPORT — Centre de formation
+86 Route de Genas, 69003 Lyon
+
+📞 Tel : 04 28 29 60 91
+📧 Email : contact@ftransport.fr
+
+⏰ Horaires de formation : 9h-12h et 13h-17h
+
+Le planning détaillé vous sera communiqué en début de formation.`,
+      actif: true,
+    },
+    {
+      id: 5,
+      titre: "Règlement intérieur",
+      description: `📋 RÈGLEMENT INTÉRIEUR :
+
+• Ponctualité obligatoire — toute absence doit être signalée
+• Tenue correcte exigée
+• Interdiction d'utiliser le téléphone pendant les cours
+• Respect des locaux et du matériel
+• Respect mutuel entre stagiaires et formateurs
+• Toute forme de discrimination est interdite
+
+Le règlement intérieur complet est disponible en téléchargement.`,
+      actif: true,
+    },
+  ],
+  exercices: [],
+};
+
+// ===== Introduction VA E-Learning (ID 34) =====
+const INTRODUCTION_VA_ELEARNING_DATA: ModuleData = {
+  id: 34,
+  nom: "1.INTRODUCTION VA E-LEARNING",
+  description: "Livret d'accueil pour la formation passerelle VA (e-learning) : programme des 2 matières.",
+  cours: [
+    {
+      id: 1,
+      titre: "Bienvenue — Formation VTC pour chauffeurs TAXI (E-learning)",
+      description: `Cette formation passerelle en e-learning vous permet d'obtenir votre carte de chauffeur VTC si vous êtes déjà titulaire de la carte TAXI.
+
+L'examen comporte 2 matières spécifiques :
+• Développement Commercial
+• Réglementation spécifique VTC
+
+📌 Étapes conseillées :
+1. Commencez par les cours et les exercices
+2. Puis les bilans exercices
+3. Ensuite les examens blancs
+4. Enfin les bilans examen
+
+Lorsque vous aurez fini vos examens blancs, merci de nous envoyer un mail pour correction.`,
+      actif: true,
+    },
+    {
+      id: 2,
+      titre: "Programme — Développement Commercial",
+      description: `📝 DÉVELOPPEMENT COMMERCIAL :
+
+• Connaître et comprendre les principes généraux du marketing (analyse de marché, ciblage de l'offre, compétitivité, détermination du prix...)
+• Savoir valoriser les qualités de la prestation commerciale VTC
+• Savoir fidéliser ses clients et prospecter pour en obtenir d'autres
+• Savoir mener des actions de communication pour faire connaître son entreprise, notamment par internet et les moyens numériques
+• Savoir développer un réseau de partenaires favorisant l'accès à la clientèle (hôtels, entreprises...)`,
+      actif: true,
+    },
+    {
+      id: 3,
+      titre: "Programme — Réglementation spécifique VTC",
+      description: `📝 RÉGLEMENTATION SPÉCIFIQUE VTC :
+
+• Connaître les dispositions relatives aux exploitants : les modalités d'inscription au registre des VTC, les règles relatives à la capacité financière…
+• Connaître les obligations spécifiques relatives aux véhicules d'exploitation (dimensions, puissance, âge...) et connaître leur signalisation
+• Savoir établir les documents relatifs à l'exécution de la prestation de transport qui doivent être présentés en cas de contrôle`,
+      actif: true,
+    },
+    {
+      id: 4,
+      titre: "Contact",
+      description: `🏢 FTRANSPORT — Centre de formation
+86 Route de Genas, 69003 Lyon
+
+📞 Tel : 04 28 29 60 91
+📧 Email : contact@ftransport.fr`,
+      actif: true,
+    },
+  ],
+  exercices: [],
+};
+
 // ===== Données initiales des modules PRATIQUE =====
 const PRATIQUE_TAXI_DATA: ModuleData = {
   id: 6,
@@ -680,6 +964,10 @@ function getInitialModuleData(module: { id: number; nom: string }, apprenantType
   // Module IDs: 1 = INTRODUCTION PRÉSENTIEL, 26 = INTRODUCTION E-LEARNING, 6 = PRATIQUE TAXI, 8 = PRATIQUE VTC, 12 = CAS PRATIQUE TAXI
   if (module.id === 1) return JSON.parse(JSON.stringify(INTRODUCTION_PRESENTIEL_DATA));
   if (module.id === 26) return JSON.parse(JSON.stringify(INTRODUCTION_ELEARNING_DATA));
+  if (module.id === 31) return JSON.parse(JSON.stringify(INTRODUCTION_TA_PRESENTIEL_DATA));
+  if (module.id === 32) return JSON.parse(JSON.stringify(INTRODUCTION_TA_ELEARNING_DATA));
+  if (module.id === 33) return JSON.parse(JSON.stringify(INTRODUCTION_VA_PRESENTIEL_DATA));
+  if (module.id === 34) return JSON.parse(JSON.stringify(INTRODUCTION_VA_ELEARNING_DATA));
   if (module.id === 6) return JSON.parse(JSON.stringify(PRATIQUE_TAXI_DATA));
   if (module.id === 8) return JSON.parse(JSON.stringify(PRATIQUE_VTC_DATA));
   if (module.id === 12) return JSON.parse(JSON.stringify(CAS_PRATIQUE_TAXI_DATA));
