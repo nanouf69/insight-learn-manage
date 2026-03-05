@@ -19,6 +19,22 @@ import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { parseDateRange } from "@/lib/parseDateRange";
 
+// Mapping type d'apprenant → modules par défaut
+const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {
+  "vtc":               [1, 2, 25, 14, 15, 16, 17, 18, 19, 3, 5, 4, 8],
+  "vtc-e-presentiel":  [1, 2, 25, 14, 15, 16, 17, 18, 19, 3, 5, 4, 8],
+  "vtc-e":             [26, 2, 25, 14, 15, 16, 17, 18, 19, 3, 5, 4, 8],
+  "taxi":              [1, 10, 20, 21, 22, 23, 24, 7, 3, 11, 9, 13, 6],
+  "taxi-e-presentiel": [1, 10, 20, 21, 22, 23, 24, 7, 3, 11, 9, 13, 6],
+  "taxi-e":            [26, 10, 20, 21, 22, 23, 24, 7, 3, 11, 9, 13, 6],
+  "ta":                [31, 24, 7, 3, 27, 28, 13, 6],
+  "ta-e-presentiel":   [31, 24, 7, 3, 27, 28, 13, 6],
+  "ta-e":              [32, 24, 7, 3, 27, 28, 13, 6],
+  "va":                [33, 18, 19, 3, 29, 30, 8],
+  "va-e-presentiel":   [33, 18, 19, 3, 29, 30, 8],
+  "va-e":              [34, 18, 19, 3, 29, 30, 8],
+};
+
 interface Apprenant {
   id: string;
   nom: string;
@@ -297,10 +313,11 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
   };
 
   const handleFormationChange = (value: string) => {
+    const newType = formationToType[value] || undefined;
     const updates: any = {
       selected_formation: value,
       montant_ttc: prixFormations[value] || undefined,
-      type_apprenant: formationToType[value] || undefined
+      type_apprenant: newType
     };
 
     // Pour les RP, forcer le mode de financement à "personnel"
@@ -313,6 +330,11 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
       ...prev,
       ...Object.fromEntries(Object.entries(updates).filter(([_, v]) => v !== undefined))
     }));
+
+    // Auto-assigner les modules par défaut selon le type
+    if (newType && DEFAULT_MODULES_BY_TYPE[newType]) {
+      setModulesAutorises([...DEFAULT_MODULES_BY_TYPE[newType]]);
+    }
     
     if (value === "vtc" || value === "vtc-exam") {
       setSelectedDateOption(datesFormations.vtc.dates[0]);
@@ -714,7 +736,12 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
             {/* Type d'apprenant - rempli automatiquement */}
             <div className="space-y-2">
               <Label htmlFor="type_apprenant">Type d'apprenant</Label>
-              <Select value={formData.type_apprenant} onValueChange={(value) => setFormData({ ...formData, type_apprenant: value })}>
+              <Select value={formData.type_apprenant} onValueChange={(value) => {
+                setFormData({ ...formData, type_apprenant: value });
+                if (DEFAULT_MODULES_BY_TYPE[value]) {
+                  setModulesAutorises([...DEFAULT_MODULES_BY_TYPE[value]]);
+                }
+              }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionné automatiquement" />
                 </SelectTrigger>
