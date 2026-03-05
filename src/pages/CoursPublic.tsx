@@ -446,11 +446,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           <NotesView apprenantId={apprenant.id} studentName={studentName} />
         )}
 
-        {/* Examens tab placeholder */}
+        {/* Examens tab - Examens Blancs */}
         {activeTab === "examens" && (
-          <Card className="p-8 text-center">
-            <p className="text-muted-foreground">Section Examens — à venir</p>
-          </Card>
+          <ExamensBlancsPage
+            apprenantId={apprenant?.id || null}
+            userId={user?.id || null}
+            apprenantType={apprenant?.type_apprenant || null}
+          />
         )}
 
         {/* Accueil tab */}
