@@ -1,3 +1,6 @@
+import { BILAN_T3P_QUESTIONS } from "./bilan-questions-t3p";
+import { BILAN_GESTION_QUESTIONS } from "./bilan-questions-gestion";
+
 export type QuestionType = "QCM" | "QRC";
 
 export interface Choix {
@@ -4192,15 +4195,7 @@ const bilan_t3p_taxi: Matiere = {
   coefficient: 3,
   noteEliminatoire: 0,
   noteSur: 7,
-  questions: [
-    { id: 1, type: "QCM", enonce: "Parmi les entreprises du T3P, quelles sont celles soumises à l'obligation de s'assurer en responsabilité civile professionnelle ?", choix: [{ lettre: "A", texte: "VTC et 2 ou 3 roues" }, { lettre: "B", texte: "Le taxi, VTC et 2 ou 3 roues seulement" }, { lettre: "C", texte: "Le taxi seulement" }, { lettre: "D", texte: "Le taxi et le VTC seulement", correct: true }] },
-    { id: 2, type: "QCM", enonce: "Qui préside la commission locale du T3P ?", choix: [{ lettre: "A", texte: "Le représentant de chaque collège à tour de rôle" }, { lettre: "B", texte: "Le directeur des transports du département" }, { lettre: "C", texte: "Le Président de la chambre de métiers" }, { lettre: "D", texte: "Le préfet ou son représentant", correct: true }] },
-    { id: 3, type: "QCM", enonce: "Quelles sont les sanctions possibles en cas d'exercice illégal d'une des professions du T3P ?", choix: [{ lettre: "A", texte: "Une amende de 30 000 € et deux ans d'emprisonnement" }, { lettre: "B", texte: "Une amende de 1 500 € et six mois d'emprisonnement" }, { lettre: "C", texte: "Une amende de 15 000 € et un an d'emprisonnement", correct: true }] },
-    { id: 4, type: "QCM", enonce: "Quels agents sont habilités à effectuer un contrôle routier de conducteur de T3P ?", choix: [{ lettre: "A", texte: "Les agents représentant la SNCF" }, { lettre: "B", texte: "Les gendarmes", correct: true }, { lettre: "C", texte: "Le juge du tribunal d'instance" }, { lettre: "D", texte: "Les policiers", correct: true }] },
-    { id: 5, type: "QCM", enonce: "Quelles sont les conditions requises pour pouvoir passer l'examen de T3P ?", choix: [{ lettre: "A", texte: "Avoir son permis de conduire depuis plus de 5 ans" }, { lettre: "B", texte: "Casier judiciaire B2 vierge", correct: true }, { lettre: "C", texte: "Avoir 10 points minimum sur son permis de conduire", correct: true }] },
-    { id: 6, type: "QCM", enonce: "Quelle est la durée du mandat des membres de la commission locale des T3P ?", choix: [{ lettre: "A", texte: "2 ans" }, { lettre: "B", texte: "5 ans", correct: true }, { lettre: "C", texte: "3 ans" }, { lettre: "D", texte: "1 an" }] },
-    { id: 7, type: "QCM", enonce: "Qui délivre les agréments aux centres de formation ?", choix: [{ lettre: "A", texte: "L'association permanente des chambres de métiers et de l'artisanat" }, { lettre: "B", texte: "Les conseils départementaux" }, { lettre: "C", texte: "Le ministère des transports" }, { lettre: "D", texte: "Les préfectures", correct: true }] },
-  ]
+  questions: BILAN_T3P_QUESTIONS,
 };
 
 const bilan_gestion_taxi: Matiere = {
@@ -4210,15 +4205,7 @@ const bilan_gestion_taxi: Matiere = {
   coefficient: 2,
   noteEliminatoire: 0,
   noteSur: 7,
-  questions: [
-    { id: 1, type: "QCM", enonce: "À l'actif du bilan figure :", choix: [{ lettre: "A", texte: "Les créances des clients", correct: true }, { lettre: "B", texte: "Le capital" }, { lettre: "C", texte: "Le bénéfice de l'année" }] },
-    { id: 2, type: "QCM", enonce: "Quelle mention n'est pas obligatoire sur le bulletin de salaire ?", choix: [{ lettre: "A", texte: "Le montant net à payer" }, { lettre: "B", texte: "Le diplôme du salarié", correct: true }, { lettre: "C", texte: "La convention collective applicable" }] },
-    { id: 3, type: "QCM", enonce: "La SAS est sur le plan juridique :", choix: [{ lettre: "A", texte: "Une personne juridique" }, { lettre: "B", texte: "Une personne morale", correct: true }, { lettre: "C", texte: "Une personne professionnelle" }, { lettre: "D", texte: "Une personne physique" }] },
-    { id: 4, type: "QCM", enonce: "Dans un bilan comptable, un amortissement fait baisser :", choix: [{ lettre: "A", texte: "Les charges" }, { lettre: "B", texte: "Le bénéfice", correct: true }, { lettre: "C", texte: "L'imposition" }] },
-    { id: 5, type: "QCM", enonce: "La libération totale du capital social dans une SARL doit intervenir au plus tard dans un délai de :", choix: [{ lettre: "A", texte: "99 ans" }, { lettre: "B", texte: "5 ans", correct: true }, { lettre: "C", texte: "10 ans" }, { lettre: "D", texte: "1 an" }] },
-    { id: 6, type: "QCM", enonce: "Les montants figurant dans le compte de résultat sont :", choix: [{ lettre: "A", texte: "HT", correct: true }, { lettre: "B", texte: "TTC" }, { lettre: "C", texte: "BIC" }] },
-    { id: 7, type: "QCM", enonce: "Qu'est-ce qu'un chiffre d'affaires ?", choix: [{ lettre: "A", texte: "L'argent qui reste en banque après avoir payé toutes les charges" }, { lettre: "B", texte: "L'ensemble des commandes ou devis" }, { lettre: "C", texte: "L'ensemble des sommes facturées aux clients", correct: true }, { lettre: "D", texte: "La différence entre les produits et les charges" }] },
-  ]
+  questions: BILAN_GESTION_QUESTIONS,
 };
 
 const bilan_securite_taxi: Matiere = {
