@@ -273,7 +273,18 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
       // Restaurer les dates d'accès cours en ligne
       setDateDebutCours((apprenant as any).date_debut_cours_en_ligne ? new Date((apprenant as any).date_debut_cours_en_ligne) : undefined);
       setDateFinCours((apprenant as any).date_fin_cours_en_ligne ? new Date((apprenant as any).date_fin_cours_en_ligne) : undefined);
-      setModulesAutorises((apprenant as any).modules_autorises || []);
+      const savedModules = (apprenant as any).modules_autorises || [];
+      if (savedModules.length > 0) {
+        setModulesAutorises(savedModules);
+      } else {
+        // Pour les apprenants existants sans modules enregistrés, auto-assigner selon le type
+        const type = apprenant.type_apprenant?.split(" + ")[0] || "";
+        if (type && DEFAULT_MODULES_BY_TYPE[type]) {
+          setModulesAutorises([...DEFAULT_MODULES_BY_TYPE[type]]);
+        } else {
+          setModulesAutorises([]);
+        }
+      }
     }
   }, [apprenant]);
 
