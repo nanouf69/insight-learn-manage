@@ -6,6 +6,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LogOut, Target, RotateCcw, ChevronRight, KeyRound, Loader2, AlertTriangle, BookOpen, GraduationCap, TrendingUp, Clock, ArrowRight, Sparkles, CheckCircle2, Lock } from "lucide-react";
+import { WelcomeBanner } from "@/components/cours-en-ligne/motivation/WelcomeBanner";
+import { XPBar } from "@/components/cours-en-ligne/motivation/XPBar";
+import { BadgeGrid } from "@/components/cours-en-ligne/motivation/BadgeGrid";
+import { buildBadges, calculateXP } from "@/components/cours-en-ligne/motivation/badges-data";
 import { toast } from "sonner";
 import ModuleDetailView from "@/components/cours-en-ligne/ModuleDetailView";
 import ExamensBlancsPage from "@/components/cours-en-ligne/ExamensBlancsPage";
@@ -451,71 +455,25 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         {/* Accueil tab */}
         {activeTab === "accueil" && (
           <>
-            {/* Hero welcome section */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-blue-900 to-slate-800 p-8 mb-8 text-white shadow-xl">
-              <div className="absolute inset-0 opacity-10">
-                <div className="absolute top-0 right-0 w-96 h-96 bg-blue-400 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
-                <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-400 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4" />
-              </div>
-              <div className="relative z-10">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-blue-200 text-sm font-medium mb-1">
-                      <Sparkles className="w-4 h-4 inline mr-1" />
-                      {formation.label}
-                    </p>
-                    <h1 className="text-3xl md:text-4xl font-bold mb-2">
-                      Bonjour, {apprenant?.prenom || "Apprenant"} 👋
-                    </h1>
-                    <p className="text-blue-200/80 text-base">
-                      Continue tes efforts, chaque module te rapproche de la réussite !
-                    </p>
-                  </div>
-                  <div className="hidden md:flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-5 py-4 border border-white/10">
-                    <div className="text-center">
-                      <p className="text-4xl font-black">{globalProgress}%</p>
-                      <p className="text-xs text-blue-200 mt-0.5">Progression</p>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Progress bar */}
-                <div className="mt-6 max-w-xl">
-                  <div className="flex justify-between text-xs text-blue-200 mb-1.5">
-                    <span>{modules.length} modules</span>
-                    <span>{globalProgress}% complété</span>
-                  </div>
-                  <div className="h-3 rounded-full bg-white/10 overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-blue-400 to-emerald-400 transition-all duration-700 ease-out"
-                      style={{ width: `${globalProgress}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Stats cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              {[
-                { icon: BookOpen, label: "Modules", value: modules.length.toString(), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
-                { icon: GraduationCap, label: "Complétés", value: completedCount.toString(), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
-                { icon: TrendingUp, label: "Progression", value: `${globalProgress}%`, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
-                { icon: Clock, label: "Restants", value: remainingModules.length.toString(), color: "text-rose-600", bg: "bg-rose-50 dark:bg-rose-950/30" },
-              ].map((stat) => (
-                <Card key={stat.label} className="border-0 shadow-sm hover:shadow-md transition-shadow">
-                  <CardContent className="p-4 flex items-center gap-3">
-                    <div className={`p-2.5 rounded-xl ${stat.bg}`}>
-                      <stat.icon className={`w-5 h-5 ${stat.color}`} />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-                      <p className="text-xs text-muted-foreground">{stat.label}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            {/* Gamification: Welcome Banner + XP + Badges */}
+            {(() => {
+              const xp = calculateXP(completedModuleIds, moduleScores);
+              const badges = buildBadges(completedModuleIds, modules.length, moduleScores);
+              return (
+                <>
+                  <WelcomeBanner
+                    prenom={apprenant?.prenom || "Apprenant"}
+                    formationLabel={formation.label}
+                    xp={xp}
+                    completedCount={completedCount}
+                    totalModules={modules.length}
+                    globalProgress={globalProgress}
+                  />
+                  <XPBar xp={xp} />
+                  <BadgeGrid badges={badges} />
+                </>
+              );
+            })()}
 
             {/* Modules à revoir */}
             {lowModules.length > 0 && (
