@@ -215,6 +215,32 @@ export const MODULES_DATA: ModuleInfo[] = [
     description: "Questions d'examen développement commercial et réglementation spécifique — spécifique passerelle VA",
     formations: ["vtc-pour-taxi"],
   },
+  // === Introductions TA (passerelle taxi pour VTC) ===
+  {
+    id: 31,
+    nom: "1.INTRODUCTION TA",
+    description: "Livret d'accueil passerelle TA (présentiel) : programme, planning, règlement intérieur.",
+    formations: ["taxi-pour-vtc"],
+  },
+  {
+    id: 32,
+    nom: "1.INTRODUCTION TA E-LEARNING",
+    description: "Livret d'accueil passerelle TA (e-learning) : programme des 2 matières.",
+    formations: ["taxi-pour-vtc-elearning"],
+  },
+  // === Introductions VA (passerelle VTC pour TAXI) ===
+  {
+    id: 33,
+    nom: "1.INTRODUCTION VA",
+    description: "Livret d'accueil passerelle VA (présentiel) : programme, planning, règlement intérieur.",
+    formations: ["vtc-pour-taxi"],
+  },
+  {
+    id: 34,
+    nom: "1.INTRODUCTION VA E-LEARNING",
+    description: "Livret d'accueil passerelle VA (e-learning) : programme des 2 matières.",
+    formations: ["vtc-pour-taxi"],
+  },
 ];
 
 // Expansion des modules_autorises :
