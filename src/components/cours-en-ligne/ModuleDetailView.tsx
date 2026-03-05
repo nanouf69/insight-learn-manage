@@ -1572,6 +1572,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const [qrcAnswers, setQrcAnswers] = useState<Record<string, string>>({});
     const [qrcResults, setQrcResults] = useState<Record<string, { estCorrect: boolean; pointsObtenus: number; explication: string } | "loading">>({});
     const [moduleCompleted, setModuleCompleted] = useState(false);
+    const [introAcknowledged, setIntroAcknowledged] = useState<Set<number>>(new Set());
 
     const activeCours = moduleData.cours.filter(c => c.actif);
     const activeExercices = moduleData.exercices.filter(e => e.actif) as ExerciceItem[];
@@ -1688,14 +1689,19 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       setModuleCompleted(true);
     };
 
+    // Introduction module IDs that require acknowledgment before quiz
+    const INTRO_MODULE_IDS = new Set([1, 26, 31, 32, 33, 34]);
+    const isIntroModule = INTRO_MODULE_IDS.has(Number(moduleData.id));
+
     // Auto-complete pages that have no PDF and no quiz (text-only cours)
+    // BUT NOT for intro modules — those require explicit acknowledgment
     useEffect(() => {
       pages.forEach((p, i) => {
         if (p.type === "cours") {
           const hasPdf = p.cours.fichiers?.some(f => f.nom.endsWith(".pdf") || f.url.endsWith(".pdf"));
           const hasSlides = p.cours.slidesKey && slidesByKey[p.cours.slidesKey]?.length > 0;
           const hasQuiz = p.cours.quiz && p.cours.quiz.length > 0;
-          if (!hasPdf && !hasSlides && !hasQuiz) {
+          if (!hasPdf && !hasSlides && !hasQuiz && !isIntroModule) {
             markPageCompleted(i);
           }
         }
@@ -1820,6 +1826,53 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             })()}
           </CardContent>
         </Card>
+
+        {/* Acknowledgment button for intro modules (text-only pages) */}
+        {isIntroModule && (() => {
+          const hasPdf = cours.fichiers?.some(f => f.nom.endsWith(".pdf") || f.url.endsWith(".pdf"));
+          const hasSlides = cours.slidesKey && slidesByKey[cours.slidesKey]?.length > 0;
+          const hasQuiz = cours.quiz && cours.quiz.length > 0;
+          const isTextOnly = !hasPdf && !hasSlides && !hasQuiz;
+          const isAcknowledged = introAcknowledged.has(cours.id);
+          
+          if (isTextOnly && !completedPages.has(currentPage)) {
+            return (
+              <Card className="border-primary/30 bg-primary/5">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      id={`ack-${cours.id}`}
+                      checked={isAcknowledged}
+                      onChange={(e) => {
+                        setIntroAcknowledged(prev => {
+                          const next = new Set(prev);
+                          if (e.target.checked) next.add(cours.id);
+                          else next.delete(cours.id);
+                          return next;
+                        });
+                      }}
+                      className="mt-1 h-4 w-4 rounded border-primary accent-primary cursor-pointer"
+                    />
+                    <label htmlFor={`ack-${cours.id}`} className="text-sm cursor-pointer select-none">
+                      J'ai lu et compris le contenu ci-dessus.
+                    </label>
+                  </div>
+                  <Button
+                    size="sm"
+                    disabled={!isAcknowledged}
+                    onClick={() => markPageCompleted(currentPage)}
+                    className="w-full gap-2"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    Valider et continuer
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          }
+          return null;
+        })()}
 
         {/* Inline Quiz after course content */}
         {cours.quiz && cours.quiz.length > 0 && (() => {
@@ -2239,9 +2292,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-sm">
             <span>🔒</span>
             <span>
-              {currentPageData?.type === "cours" && currentPageData.cours.quiz?.length
-                ? "Répondez au QCM ci-dessous pour débloquer les exercices et la partie suivante."
-                : "Parcourez toutes les slides jusqu'à la dernière pour débloquer les exercices et la partie suivante."}
+              {isIntroModule && currentPageData?.type === "cours" && !currentPageData.cours.quiz?.length
+                ? "Lisez le contenu puis cochez « J'ai lu et compris » pour continuer."
+                : currentPageData?.type === "cours" && currentPageData.cours.quiz?.length
+                  ? "Répondez au QCM ci-dessous pour débloquer les exercices et la partie suivante."
+                  : "Parcourez toutes les slides jusqu'à la dernière pour débloquer les exercices et la partie suivante."}
             </span>
           </div>
         )}
