@@ -50,6 +50,8 @@ import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "./controle-connaissances-taxi-
 import { CONNAISSANCES_VILLE_TAXI_DATA } from "./connaissances-ville-taxi-data";
 import { BILAN_EXERCICES_VTC } from "./bilan-exercices-vtc-data";
 import { BILAN_EXERCICES_TAXI } from "./bilan-exercices-taxi-data";
+import { BILAN_EXAMEN_VTC } from "./bilan-examen-vtc-data";
+import { BILAN_EXAMEN_TAXI } from "./bilan-examen-taxi-data";
 
 interface InlineQuizQuestion {
   id: number;
@@ -756,6 +758,28 @@ function getInitialModuleData(module: { id: number; nom: string }, apprenantType
   if (module.id === 22) return createSectionModuleData(22, "D. Français", "Cours et exercices de français (TAXI)", TAXI_SECTIONS[3]);
   if (module.id === 23) return createSectionModuleData(23, "E. Anglais", "Cours et exercices d'anglais (TAXI)", TAXI_SECTIONS[4]);
   if (module.id === 24) return createSectionModuleData(24, "F. Réglementation", "Réglementation nationale et locale (TAXI)", TAXI_SECTIONS[5]);
+
+  // Bilan Examen VTC (module 5) — 7 matières séparées sans chronomètre
+  if (module.id === 5) {
+    return {
+      id: 5,
+      nom: "6.BILAN EXAMEN VTC",
+      description: "Bilan examen VTC — 7 matières séparées. Questions type examen, sans chronomètre.",
+      cours: [],
+      exercices: BILAN_EXAMEN_VTC,
+    };
+  }
+
+  // Bilan Examen TAXI (module 11) — 7 matières séparées sans chronomètre
+  if (module.id === 11) {
+    return {
+      id: 11,
+      nom: "6.BILAN EXAMEN TAXI",
+      description: "Bilan examen TAXI — 7 matières séparées. Questions type examen, sans chronomètre.",
+      cours: [],
+      exercices: BILAN_EXAMEN_TAXI,
+    };
+  }
 
   return {
     id: module.id,
