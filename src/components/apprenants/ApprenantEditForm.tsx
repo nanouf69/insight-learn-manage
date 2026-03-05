@@ -206,6 +206,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
   const [dateDebutCours, setDateDebutCours] = useState<Date | undefined>();
   const [dateFinCours, setDateFinCours] = useState<Date | undefined>();
   const [modulesAutorises, setModulesAutorises] = useState<number[]>([]);
+  const [hasTouchedModules, setHasTouchedModules] = useState(false);
   
   const [formData, setFormData] = useState({
     civilite: "",
@@ -298,7 +299,12 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
       // Restaurer les dates d'accès cours en ligne
       setDateDebutCours((apprenant as any).date_debut_cours_en_ligne ? new Date((apprenant as any).date_debut_cours_en_ligne) : undefined);
       setDateFinCours((apprenant as any).date_fin_cours_en_ligne ? new Date((apprenant as any).date_fin_cours_en_ligne) : undefined);
-      const savedModules = (apprenant as any).modules_autorises || [];
+      setHasTouchedModules(false);
+      const savedModulesRaw = (apprenant as any).modules_autorises || [];
+      const savedModules = Array.isArray(savedModulesRaw)
+        ? savedModulesRaw.map((id: any) => Number(id)).filter((id: number) => Number.isFinite(id))
+        : [];
+
       if (savedModules.length > 0) {
         setModulesAutorises(savedModules);
       } else {
@@ -347,6 +353,16 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
     "ta-e-presentiel": "ta-e-presentiel"
   };
 
+  const normalizedFormType = normalizeTypeApprenant(formData.type_apprenant);
+  const formationKey = (formData.selected_formation || "").split(" + ")[0];
+  const fallbackTypeFromFormation = normalizeTypeApprenant(formationToType[formationKey]);
+  const fallbackDefaultModules = DEFAULT_MODULES_BY_TYPE[normalizedFormType]
+    || (fallbackTypeFromFormation ? DEFAULT_MODULES_BY_TYPE[fallbackTypeFromFormation] : undefined)
+    || [];
+  const effectiveModulesAutorises = (modulesAutorises.length > 0 || hasTouchedModules)
+    ? modulesAutorises
+    : fallbackDefaultModules;
+
   const handleFormationChange = (value: string) => {
     const newType = formationToType[value] || undefined;
     const updates: any = {
@@ -368,6 +384,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
 
     // Auto-assigner les modules par défaut selon le type
     if (newType && DEFAULT_MODULES_BY_TYPE[newType]) {
+      setHasTouchedModules(false);
       setModulesAutorises([...DEFAULT_MODULES_BY_TYPE[newType]]);
     }
     
@@ -431,7 +448,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
       documents_complets: documentsComplets,
       date_debut_cours_en_ligne: dateDebutCours ? format(dateDebutCours, 'yyyy-MM-dd') : null,
       date_fin_cours_en_ligne: dateFinCours ? format(dateFinCours, 'yyyy-MM-dd') : null,
-      modules_autorises: modulesAutorises.length > 0 ? modulesAutorises : null,
+      modules_autorises: effectiveModulesAutorises.length > 0 ? effectiveModulesAutorises : null,
     };
 
     try {
@@ -774,6 +791,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
               <Select value={formData.type_apprenant} onValueChange={(value) => {
                 setFormData({ ...formData, type_apprenant: value });
                 if (DEFAULT_MODULES_BY_TYPE[value]) {
+                  setHasTouchedModules(false);
                   setModulesAutorises([...DEFAULT_MODULES_BY_TYPE[value]]);
                 }
               }}>
@@ -1336,11 +1354,16 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                 {MODULES_DATA.map((mod) => (
                   <label key={mod.id} className="flex items-center gap-2 py-1 cursor-pointer hover:bg-muted/50 rounded px-1">
                     <Checkbox
-                      checked={modulesAutorises.includes(mod.id)}
+                      checked={effectiveModulesAutorises.includes(mod.id)}
                       onCheckedChange={(checked) => {
-                        setModulesAutorises(prev => 
-                          checked ? [...prev, mod.id] : prev.filter(id => id !== mod.id)
-                        );
+                        setHasTouchedModules(true);
+                        const baseModules = (modulesAutorises.length > 0 || hasTouchedModules)
+                          ? modulesAutorises
+                          : fallbackDefaultModules;
+                        const nextModules = checked
+                          ? Array.from(new Set([...baseModules, mod.id]))
+                          : baseModules.filter(id => id !== mod.id);
+                        setModulesAutorises(nextModules);
                       }}
                     />
                     <span className="text-sm">{mod.nom}</span>
