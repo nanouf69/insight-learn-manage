@@ -10,6 +10,7 @@ import { WelcomeBanner } from "@/components/cours-en-ligne/motivation/WelcomeBan
 import { XPBar } from "@/components/cours-en-ligne/motivation/XPBar";
 import { BadgeGrid } from "@/components/cours-en-ligne/motivation/BadgeGrid";
 import { buildBadges, calculateXP } from "@/components/cours-en-ligne/motivation/badges-data";
+import { QuizBlock } from "@/components/cours-en-ligne/motivation/QuizBlock";
 import { toast } from "sonner";
 import ModuleDetailView from "@/components/cours-en-ligne/ModuleDetailView";
 import ExamensBlancsPage from "@/components/cours-en-ligne/ExamensBlancsPage";
@@ -455,22 +456,27 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         {/* Accueil tab */}
         {activeTab === "accueil" && (
           <>
-            {/* Gamification: Welcome Banner + XP + Badges */}
+            {/* Gamification: Welcome Banner + XP + Badges + Quiz */}
             {(() => {
               const xp = calculateXP(completedModuleIds, moduleScores);
               const badges = buildBadges(completedModuleIds, modules.length, moduleScores);
+              // Estimate streak (simplified: always show 1 if user is active today)
+              const streak = completedCount > 0 ? Math.min(completedCount, 7) : 0;
               return (
                 <>
                   <WelcomeBanner
                     prenom={apprenant?.prenom || "Apprenant"}
                     formationLabel={formation.label}
                     xp={xp}
+                    xpToday={0}
+                    streak={streak}
                     completedCount={completedCount}
                     totalModules={modules.length}
                     globalProgress={globalProgress}
                   />
                   <XPBar xp={xp} />
                   <BadgeGrid badges={badges} />
+                  <QuizBlock />
                 </>
               );
             })()}
