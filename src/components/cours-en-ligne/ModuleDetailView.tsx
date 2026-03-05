@@ -124,15 +124,7 @@ const INTRODUCTION_PRESENTIEL_DATA: ModuleData = {
 • L'épreuve d'admission (pratique) — minimum 12/20
 Le tout sans note éliminatoire.
 
-Vous avez à disposition : des cours, des exercices, des examens blancs et des bilans. L'accès à cette plateforme est limité.
-
-📌 Étapes conseillées :
-1. Commencez par les cours et les exercices
-2. Puis les bilans exercices
-3. Ensuite les examens blancs
-4. Enfin les bilans examen
-
-Lorsque vous aurez fini vos examens blancs, merci de nous envoyer un mail pour correction.`,
+Vous avez à disposition : des cours, des exercices, des examens blancs et des bilans. L'accès à cette plateforme est limité.`,
       actif: true,
     },
     {
@@ -277,15 +269,7 @@ const INTRODUCTION_ELEARNING_DATA: ModuleData = {
 • L'épreuve d'admission (pratique) — minimum 12/20
 Le tout sans note éliminatoire.
 
-Vous avez à disposition : des cours, des exercices, des examens blancs et des bilans. L'accès à cette plateforme est limité. Réalisez bien le Bilan QCM examen et révisez bien les QRC examen : ce sont des questions type examen.
-
-📌 Étapes conseillées :
-1. Commencez par les cours et les exercices
-2. Puis les bilans exercices
-3. Ensuite les examens blancs
-4. Enfin les bilans examen
-
-Lorsque vous aurez fini vos examens blancs, merci de nous envoyer un mail pour correction.`,
+Vous avez à disposition : des cours, des exercices, des examens blancs et des bilans. L'accès à cette plateforme est limité. Réalisez bien le Bilan QCM examen et révisez bien les QRC examen : ce sont des questions type examen.`,
       actif: true,
     },
     {
@@ -415,13 +399,7 @@ const INTRODUCTION_TA_PRESENTIEL_DATA: ModuleData = {
 
 L'examen comporte 2 matières spécifiques :
 • Réglementation nationale TAXI
-• Réglementation locale
-
-📌 Étapes conseillées :
-1. Commencez par les cours et les exercices
-2. Puis les bilans exercices
-3. Ensuite les examens blancs
-4. Enfin les bilans examen`,
+• Réglementation locale`,
       actif: true,
     },
     {
@@ -497,15 +475,7 @@ const INTRODUCTION_TA_ELEARNING_DATA: ModuleData = {
 
 L'examen comporte 2 matières spécifiques :
 • Réglementation nationale TAXI
-• Réglementation locale
-
-📌 Étapes conseillées :
-1. Commencez par les cours et les exercices
-2. Puis les bilans exercices
-3. Ensuite les examens blancs
-4. Enfin les bilans examen
-
-Lorsque vous aurez fini vos examens blancs, merci de nous envoyer un mail pour correction.`,
+• Réglementation locale`,
       actif: true,
     },
     {
@@ -562,13 +532,7 @@ const INTRODUCTION_VA_PRESENTIEL_DATA: ModuleData = {
 
 L'examen comporte 2 matières spécifiques :
 • Développement Commercial
-• Réglementation spécifique VTC
-
-📌 Étapes conseillées :
-1. Commencez par les cours et les exercices
-2. Puis les bilans exercices
-3. Ensuite les examens blancs
-4. Enfin les bilans examen`,
+• Réglementation spécifique VTC`,
       actif: true,
     },
     {
@@ -639,15 +603,7 @@ const INTRODUCTION_VA_ELEARNING_DATA: ModuleData = {
 
 L'examen comporte 2 matières spécifiques :
 • Développement Commercial
-• Réglementation spécifique VTC
-
-📌 Étapes conseillées :
-1. Commencez par les cours et les exercices
-2. Puis les bilans exercices
-3. Ensuite les examens blancs
-4. Enfin les bilans examen
-
-Lorsque vous aurez fini vos examens blancs, merci de nous envoyer un mail pour correction.`,
+• Réglementation spécifique VTC`,
       actif: true,
     },
     {
