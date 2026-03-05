@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, Target, RotateCcw, ChevronRight, KeyRound, Loader2, AlertTriangle, BookOpen, GraduationCap, TrendingUp, Clock, ArrowRight, Sparkles, CheckCircle2 } from "lucide-react";
+import { LogOut, Target, RotateCcw, ChevronRight, KeyRound, Loader2, AlertTriangle, BookOpen, GraduationCap, TrendingUp, Clock, ArrowRight, Sparkles, CheckCircle2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import ModuleDetailView from "@/components/cours-en-ligne/ModuleDetailView";
 import ExamensBlancsPage from "@/components/cours-en-ligne/ExamensBlancsPage";
@@ -357,6 +357,28 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const lowModules = remainingModules.slice(0, 3);
   const studentName = apprenant ? `${apprenant.prenom} ${apprenant.nom}` : "Apprenant";
 
+  // E-learning sequential order enforcement
+  const ELEARNING_FORMATION_IDS: FormationId[] = ["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"];
+  const isElearning = ELEARNING_FORMATION_IDS.includes(selectedFormation);
+
+  // Build a set of unlocked module IDs for e-learning
+  const unlockedModuleIds = new Set<number>();
+  if (isElearning) {
+    for (let i = 0; i < modules.length; i++) {
+      if (i === 0) {
+        // First module is always unlocked
+        unlockedModuleIds.add(modules[i].id);
+      } else if (completedModuleIds.has(modules[i - 1].id)) {
+        // Unlock if previous module is completed
+        unlockedModuleIds.add(modules[i].id);
+      }
+    }
+    // Completed modules are always accessible (for review)
+    modules.forEach(m => { if (completedModuleIds.has(m.id)) unlockedModuleIds.add(m.id); });
+  }
+
+  const isModuleLocked = (modId: number) => isElearning && !unlockedModuleIds.has(modId) && !completedModuleIds.has(modId);
+
   return (
     <div className={embedded ? "" : "min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50"}>
       {/* Inactivity modal */}
@@ -505,17 +527,22 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                   </h3>
                 </div>
                 <CardContent className="p-4 space-y-2">
-                  {lowModules.map((mod) => (
-                    <div key={mod.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
+                  {lowModules.map((mod) => {
+                    const locked = isModuleLocked(mod.id);
+                    return (
+                    <div key={mod.id} className={`flex items-center justify-between p-3 rounded-xl transition-colors ${locked ? "bg-muted/20 opacity-60" : "bg-muted/30 hover:bg-muted/50"}`}>
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-700 dark:text-amber-300 font-bold text-sm">
-                          {mod.id}
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm ${locked ? "bg-muted text-muted-foreground" : "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300"}`}>
+                          {locked ? <Lock className="w-4 h-4" /> : mod.id}
                         </div>
                         <div>
                           <p className="font-medium text-sm text-foreground">{mod.nom}</p>
-                          <p className="text-xs text-muted-foreground">Progression : 0%</p>
+                          <p className="text-xs text-muted-foreground">
+                            {locked ? "🔒 Terminez le module précédent" : "Progression : 0%"}
+                          </p>
                         </div>
                       </div>
+                      {!locked && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -525,8 +552,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                         <RotateCcw className="w-3.5 h-3.5" />
                         Réviser
                       </Button>
+                      )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </CardContent>
               </Card>
             )}
@@ -545,32 +574,46 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                       <p className="text-muted-foreground text-sm">🎉 Tous les modules sont terminés !</p>
                     </Card>
                   )}
-                  {remainingModules.map((mod, idx) => (
+                  {remainingModules.map((mod, idx) => {
+                    const locked = isModuleLocked(mod.id);
+                    return (
                     <Card
                       key={mod.id}
-                      className="border-0 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group overflow-hidden"
-                      onClick={() => { trackModuleActivity(mod.id, mod.nom); setSelectedModule(mod); }}
+                      className={`border-0 shadow-sm transition-all duration-300 overflow-hidden ${locked ? "opacity-60 cursor-not-allowed" : "hover:shadow-lg cursor-pointer group"}`}
+                      onClick={() => { if (!locked) { trackModuleActivity(mod.id, mod.nom); setSelectedModule(mod); } }}
                     >
                       <CardContent className="p-0">
                         <div className="flex items-center gap-4 p-4">
-                          <div className="shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center border border-primary/10 group-hover:from-primary/20 group-hover:to-primary/10 transition-colors">
-                            <span className="text-sm font-bold text-primary">{idx + 1}</span>
+                          <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center border transition-colors ${locked ? "bg-muted border-muted" : "bg-gradient-to-br from-primary/10 to-primary/5 border-primary/10 group-hover:from-primary/20 group-hover:to-primary/10"}`}>
+                            {locked
+                              ? <Lock className="w-4 h-4 text-muted-foreground" />
+                              : <span className="text-sm font-bold text-primary">{idx + 1}</span>
+                            }
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-bold text-foreground text-sm group-hover:text-primary transition-colors">
+                            <h3 className={`font-bold text-sm transition-colors ${locked ? "text-muted-foreground" : "text-foreground group-hover:text-primary"}`}>
                               {mod.nom}
                             </h3>
-                            <p className="text-xs text-muted-foreground line-clamp-1">{mod.description}</p>
+                            <p className="text-xs text-muted-foreground line-clamp-1">
+                              {locked ? "🔒 Terminez le module précédent pour débloquer" : mod.description}
+                            </p>
                           </div>
                           <div className="shrink-0">
-                            <div className="w-8 h-8 rounded-full bg-primary/5 group-hover:bg-primary group-hover:text-white flex items-center justify-center transition-all duration-300">
-                              <ArrowRight className="w-4 h-4 text-primary group-hover:text-white transition-colors" />
-                            </div>
+                            {locked ? (
+                              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                                <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+                              </div>
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-primary/5 group-hover:bg-primary group-hover:text-white flex items-center justify-center transition-all duration-300">
+                                <ArrowRight className="w-4 h-4 text-primary group-hover:text-white transition-colors" />
+                              </div>
+                            )}
                           </div>
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
