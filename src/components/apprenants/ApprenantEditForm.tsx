@@ -35,6 +35,31 @@ const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {
   "va-e":              [34, 18, 19, 3, 29, 30, 8],
 };
 
+const normalizeTypeApprenant = (rawType: string | null | undefined): string => {
+  if (!rawType) return "";
+
+  const normalized = rawType.trim().toLowerCase();
+  if (!normalized) return "";
+
+  if (DEFAULT_MODULES_BY_TYPE[normalized]) return normalized;
+
+  const dashed = normalized.replace(/\s+/g, "-");
+  if (DEFAULT_MODULES_BY_TYPE[dashed]) return dashed;
+
+  const aliases: Record<string, string> = {
+    "vtc e": "vtc-e",
+    "vtc e presentiel": "vtc-e-presentiel",
+    "taxi e": "taxi-e",
+    "taxi e presentiel": "taxi-e-presentiel",
+    "ta e": "ta-e",
+    "ta e presentiel": "ta-e-presentiel",
+    "va e": "va-e",
+    "va e presentiel": "va-e-presentiel",
+  };
+
+  return aliases[normalized] || aliases[dashed] || normalized;
+};
+
 interface Apprenant {
   id: string;
   nom: string;
@@ -226,7 +251,7 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
         organisme_financeur: apprenant.organisme_financeur || "cpf-cdc",
         date_naissance: apprenant.date_naissance || "",
         numero_dossier_cma: apprenant.numero_dossier_cma || "",
-        type_apprenant: apprenant.type_apprenant || "",
+        type_apprenant: normalizeTypeApprenant(apprenant.type_apprenant),
         selected_formation: apprenant.formation_choisie || "",
         creneau_horaire: apprenant.creneau_horaire || "",
         montant_ttc: apprenant.montant_ttc?.toString() || "1299",
@@ -263,13 +288,13 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
       }
       // Restaurer le 2ème type d'apprenant si il existe
       const typeApprenantVal = apprenant.type_apprenant || "";
-      if (typeApprenantVal.includes(" + ")) {
-        const parts = typeApprenantVal.split(" + ");
-        setFormData(prev => ({ ...prev, type_apprenant: parts[0] }));
-        setSecondTypeApprenant(parts[1] || "");
-      } else {
-        setSecondTypeApprenant("");
-      }
+      const typeParts = typeApprenantVal.split(" + ").map(normalizeTypeApprenant).filter(Boolean);
+      const primaryType = typeParts[0] || "";
+      const secondaryType = typeParts[1] || "";
+
+      setFormData(prev => ({ ...prev, type_apprenant: primaryType }));
+      setSecondTypeApprenant(secondaryType);
+
       // Restaurer les dates d'accès cours en ligne
       setDateDebutCours((apprenant as any).date_debut_cours_en_ligne ? new Date((apprenant as any).date_debut_cours_en_ligne) : undefined);
       setDateFinCours((apprenant as any).date_fin_cours_en_ligne ? new Date((apprenant as any).date_fin_cours_en_ligne) : undefined);
@@ -278,9 +303,8 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
         setModulesAutorises(savedModules);
       } else {
         // Pour les apprenants existants sans modules enregistrés, auto-assigner selon le type
-        const type = apprenant.type_apprenant?.split(" + ")[0] || "";
-        if (type && DEFAULT_MODULES_BY_TYPE[type]) {
-          setModulesAutorises([...DEFAULT_MODULES_BY_TYPE[type]]);
+        if (primaryType && DEFAULT_MODULES_BY_TYPE[primaryType]) {
+          setModulesAutorises([...DEFAULT_MODULES_BY_TYPE[primaryType]]);
         } else {
           setModulesAutorises([]);
         }
@@ -766,7 +790,9 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                   <SelectItem value="ta">TA (Passerelle TAXI)</SelectItem>
                   <SelectItem value="ta-e">TA E (Passerelle TAXI E-learning)</SelectItem>
                   <SelectItem value="ta-e-presentiel">TA E Présentiel</SelectItem>
+                  <SelectItem value="va">VA (Passerelle VTC)</SelectItem>
                   <SelectItem value="va-e">VA E (Passerelle VTC E-learning)</SelectItem>
+                  <SelectItem value="va-e-presentiel">VA E Présentiel</SelectItem>
                   <SelectItem value="pa-vtc">PA VTC</SelectItem>
                   <SelectItem value="pa-taxi">PA TAXI</SelectItem>
                   <SelectItem value="rp-vtc">RP VTC</SelectItem>
