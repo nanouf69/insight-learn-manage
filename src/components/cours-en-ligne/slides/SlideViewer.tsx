@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,6 +14,7 @@ interface SlideViewerProps {
   onBack: () => void;
   editable?: boolean;
   onSlidesChange?: (slides: Slide[]) => void;
+  onLastSlideReached?: () => void;
 }
 
 // ---- Editable text helpers ----
@@ -447,7 +448,7 @@ function renderSlide(slide: Slide, editing: boolean, onChange?: (s: Slide) => vo
   }
 }
 
-export default function SlideViewer({ slides, titre, brand, onBack, editable, onSlidesChange }: SlideViewerProps) {
+export default function SlideViewer({ slides, titre, brand, onBack, editable, onSlidesChange, onLastSlideReached }: SlideViewerProps) {
   const [idx, setIdx] = useState(0);
   const [editing, setEditing] = useState(false);
   const total = slides.length;
@@ -459,6 +460,13 @@ export default function SlideViewer({ slides, titre, brand, onBack, editable, on
     newSlides[idx] = updatedSlide;
     onSlidesChange?.(newSlides);
   };
+
+
+  useEffect(() => {
+    if (total > 0 && idx === total - 1) {
+      onLastSlideReached?.();
+    }
+  }, [idx, total, onLastSlideReached]);
 
   const brandText = brand || "FTRANSPORT - SERVICES PRO • Qualiopi • CPF • Lyon";
 

@@ -1768,6 +1768,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         brand="FTRANSPORT"
                         onBack={() => {}}
                         editable
+                        onLastSlideReached={() => markPageCompleted(currentPage)}
                         onSlidesChange={(slides) => updateSlidesForKey(cours.slidesKey!, slides)}
                       />
                     </div>
