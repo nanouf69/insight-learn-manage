@@ -1527,7 +1527,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const [inlineQuizValidated, setInlineQuizValidated] = useState<Set<number>>(new Set());
     const [qrcAnswers, setQrcAnswers] = useState<Record<string, string>>({});
     const [qrcResults, setQrcResults] = useState<Record<string, { estCorrect: boolean; pointsObtenus: number; explication: string } | "loading">>({});
-    const [moduleCompleted, setModuleCompleted] = useState(false);
+    
     const [introAcknowledged, setIntroAcknowledged] = useState<Set<number>>(new Set());
 
     const activeCours = moduleData.cours.filter(c => c.actif);
@@ -1638,12 +1638,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       return true;
     };
 
-    const handleModuleCompletedFlow = async () => {
-      if (moduleCompleted) return;
-
-      await persistModuleCompletion();
-      setModuleCompleted(true);
-    };
 
     // Introduction module IDs that require acknowledgment before quiz
     const INTRO_MODULE_IDS = new Set([1, 26, 31, 32, 33, 34]);
@@ -1817,7 +1811,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   <Button
                     size="sm"
                     disabled={!isAcknowledged}
-                    onClick={() => markPageCompleted(currentPage)}
+                    onClick={() => {
+                      markPageCompleted(currentPage);
+                      if (currentPage < totalPages - 1) {
+                        goToPage(currentPage + 1);
+                      }
+                    }}
                     className="w-full gap-2"
                   >
                     <CheckCircle2 className="w-4 h-4" />
@@ -2158,8 +2157,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               🔄 Recommencer
                             </Button>
                             {currentPage < totalPages - 1 && completedPages.has(currentPage) && (
-                              <Button size="sm" className="gap-2" onClick={async () => {
-                                await handleModuleCompletedFlow();
+                              <Button size="sm" className="gap-2" onClick={() => {
                                 goToPage(currentPage + 1);
                               }}>
                                 Suivant ➡️
@@ -2244,7 +2242,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         </div>
 
         {/* Lock message */}
-        {!moduleCompleted && !completedPages.has(currentPage) && currentPage < totalPages - 1 && (
+        {!completedPages.has(currentPage) && currentPage < totalPages - 1 && (
           <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-sm">
             <span>🔒</span>
             <span>
@@ -2278,9 +2276,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           </span>
           {currentPage < totalPages - 1 ? (
             <Button
-              onClick={async () => {
-                // If this is the last completed page (quiz done), trigger module completion
-                await handleModuleCompletedFlow();
+              onClick={() => {
                 goToPage(currentPage + 1);
               }}
               disabled={!completedPages.has(currentPage)}
