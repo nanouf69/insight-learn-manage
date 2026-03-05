@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, User, FileText, BookOpen, Calendar, Mail, Phone, MapPin, CreditCard, Edit2, Download, CheckCircle2, XCircle, Plus, CalendarIcon, Pencil, KeyRound, Loader2, Copy, Monitor, Send, BarChart3 } from "lucide-react";
+import { ArrowLeft, User, FileText, BookOpen, Calendar, Mail, Phone, MapPin, CreditCard, Edit2, Download, CheckCircle2, XCircle, Plus, CalendarIcon, Pencil, KeyRound, Loader2, Copy, Monitor, Send, BarChart3, RotateCcw, AlertTriangle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MODULES_DATA, FORMATIONS, type FormationId } from "@/components/cours-en-ligne/formations-data";
 import { Button } from "@/components/ui/button";
@@ -437,7 +437,7 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-9 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-10 lg:w-auto lg:inline-grid">
           <TabsTrigger value="infos">Infos</TabsTrigger>
           <TabsTrigger value="cours">Attribuer les cours</TabsTrigger>
           <TabsTrigger value="resultats">Résultats</TabsTrigger>
@@ -447,6 +447,7 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
           <TabsTrigger value="examens">Examens</TabsTrigger>
           <TabsTrigger value="emails">Emails</TabsTrigger>
           <TabsTrigger value="devis">Devis</TabsTrigger>
+          <TabsTrigger value="reset-cours" className="text-destructive">Remise à zéro</TabsTrigger>
         </TabsList>
 
         {/* Infos Tab */}
@@ -858,6 +859,77 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
         {/* Devis Tab */}
         <TabsContent value="devis">
           <DevisSection apprenant={apprenant} />
+        </TabsContent>
+
+        {/* Remise à zéro Tab */}
+        <TabsContent value="reset-cours">
+          <Card className="border-destructive/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg text-destructive">
+                <AlertTriangle className="w-5 h-5" />
+                Remise à zéro des cours en ligne
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4 space-y-2">
+                <p className="font-medium text-destructive">⚠️ Attention : cette action est irréversible !</p>
+                <p className="text-sm text-muted-foreground">
+                  En cliquant sur le bouton ci-dessous, toutes les données de progression de <strong>{apprenant.prenom} {apprenant.nom}</strong> seront supprimées :
+                </p>
+                <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                  <li>Tous les exercices et quiz complétés</li>
+                  <li>Tous les résultats d'examens blancs</li>
+                  <li>Toute la progression des modules</li>
+                </ul>
+                <p className="text-sm text-muted-foreground">
+                  L'apprenant devra tout recommencer depuis le début.
+                </p>
+              </div>
+              <Button
+                variant="destructive"
+                size="lg"
+                className="w-full"
+                onClick={async () => {
+                  const confirmed = window.confirm(
+                    `Êtes-vous sûr de vouloir remettre à zéro TOUS les cours de ${apprenant.prenom} ${apprenant.nom} ? Cette action est irréversible.`
+                  );
+                  if (!confirmed) return;
+
+                  try {
+                    // Delete module completions
+                    const { error: err1 } = await supabase
+                      .from("apprenant_module_completion")
+                      .delete()
+                      .eq("apprenant_id", apprenant.id);
+                    if (err1) throw err1;
+
+                    // Delete quiz results
+                    const { error: err2 } = await supabase
+                      .from("apprenant_quiz_results")
+                      .delete()
+                      .eq("apprenant_id", apprenant.id);
+                    if (err2) throw err2;
+
+                    // Delete module activity logs
+                    const { error: err3 } = await supabase
+                      .from("apprenant_module_activites")
+                      .delete()
+                      .eq("apprenant_id", apprenant.id);
+                    if (err3) throw err3;
+
+                    queryClient.invalidateQueries();
+                    toast.success(`Cours remis à zéro pour ${apprenant.prenom} ${apprenant.nom}`);
+                  } catch (error: any) {
+                    console.error("Reset error:", error);
+                    toast.error("Erreur lors de la remise à zéro : " + error.message);
+                  }
+                }}
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Remettre tous les cours à zéro
+              </Button>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
