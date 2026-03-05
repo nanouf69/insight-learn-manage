@@ -2001,7 +2001,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
                 if (isQrc) {
                   return (
-                    <div key={q.id} className="space-y-2 p-4 border rounded-lg">
+                    <div key={q.id} id={`exo-q-${exo.id}-${qi}`} className="space-y-2 p-4 border rounded-lg scroll-mt-20">
                       <p className="font-medium">{qi + 1}. {q.enonce}</p>
                       <Badge variant="outline" className="text-xs">QRC — Réponse libre</Badge>
                       <Textarea
@@ -2039,7 +2039,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 }
 
                 return (
-                  <div key={q.id} className="space-y-2 p-4 border rounded-lg">
+                  <div key={q.id} id={`exo-q-${exo.id}-${qi}`} className="space-y-2 p-4 border rounded-lg scroll-mt-20">
                     <p className="font-medium">{qi + 1}. {q.enonce}</p>
                     <div className="space-y-1.5 ml-2">
                       {q.choix.map((c: any) => {
@@ -2115,8 +2115,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                             const correct = q.choix.find((c: any) => c.correct);
                             const isCorrect = selected && correct && selected === correct.lettre;
                             return (
-                              <div key={q.id} className="flex items-center gap-2 rounded-lg border bg-background p-2 cursor-default"
-                                title={`Q${qi + 1}: ${isCorrect ? "Correct" : "Incorrect"}`}>
+                              <div key={q.id}
+                                className="flex items-center gap-2 rounded-lg border bg-background p-2 cursor-pointer hover:bg-muted/50 transition-colors"
+                                title={`Q${qi + 1}: ${isCorrect ? "Correct" : "Incorrect"} — Cliquer pour voir`}
+                                onClick={() => {
+                                  const el = document.getElementById(`exo-q-${exo.id}-${qi}`);
+                                  if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+                                }}
+                              >
                                 <span className="text-sm font-bold min-w-[1.2rem] text-center">{qi + 1}</span>
                                 <span className={`w-3.5 h-3.5 rounded-full shrink-0 ${isCorrect ? "bg-emerald-500" : "bg-destructive"}`} />
                               </div>
