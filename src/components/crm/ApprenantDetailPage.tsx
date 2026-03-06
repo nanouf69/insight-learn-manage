@@ -156,6 +156,8 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
   const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
   const [dateDebutCoursOpen, setDateDebutCoursOpen] = useState(false);
   const [dateFinCoursOpen, setDateFinCoursOpen] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [selectedFormationForAccount, setSelectedFormationForAccount] = useState<string>("");
   const queryClient = useQueryClient();
 
   // Fonction pour mettre à jour une date
