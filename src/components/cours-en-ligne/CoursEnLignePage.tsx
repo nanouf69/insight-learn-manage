@@ -466,9 +466,9 @@ const ApprenantSearchPreview = () => {
               "vtc-e": { label: "VTC E-learning", color: "bg-emerald-50 text-emerald-700 border-emerald-200", modules: [26, 2, 3, 4, 5, 35, 8] },
               "taxi": { label: "TAXI", color: "bg-orange-100 text-orange-800 border-orange-300", modules: [1, 10, 7, 3, 9, 13, 11, 36, 6] },
               "taxi-e": { label: "TAXI E-learning", color: "bg-orange-50 text-orange-700 border-orange-200", modules: [26, 10, 7, 3, 9, 13, 11, 36, 6] },
-              "ta":   { label: "TA (Présentiel)", color: "bg-amber-100 text-amber-800 border-amber-300", modules: [31, 24, 7, 3, 27, 28, 37, 6] },
-              "ta-e": { label: "TA E-learning", color: "bg-amber-50 text-amber-700 border-amber-200", modules: [32, 24, 7, 3, 27, 13, 28, 37, 6] },
-              "va":   { label: "VA (Passerelle VTC)", color: "bg-teal-100 text-teal-800 border-teal-300", modules: [34, 18, 19, 7, 3, 29, 30, 38, 8] },
+              "ta":   { label: "TA (Présentiel)", color: "bg-amber-100 text-amber-800 border-amber-300", modules: [31, 40, 7, 3, 27, 28, 37, 6] },
+              "ta-e": { label: "TA E-learning", color: "bg-amber-50 text-amber-700 border-amber-200", modules: [32, 40, 7, 3, 27, 13, 28, 37, 6] },
+              "va":   { label: "VA (Passerelle VTC)", color: "bg-teal-100 text-teal-800 border-teal-300", modules: [34, 41, 7, 3, 29, 30, 38, 8] },
             };
 
             return (
@@ -488,6 +488,8 @@ const ApprenantSearchPreview = () => {
                           const displayNames: Record<number, string> = {
                             2: "2.COURS ET EXERCICES VTC",
                             10: "2.COURS ET EXERCICES TAXI",
+                            40: "2.COURS ET EXERCICES TA",
+                            41: "2.COURS ET EXERCICES VA",
                           };
                           const mod = MODULES_DATA.find(m => m.id === id);
                           const name = displayNames[id] || mod?.nom || `Module ${id}`;
