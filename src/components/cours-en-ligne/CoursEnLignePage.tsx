@@ -462,8 +462,8 @@ const ApprenantSearchPreview = () => {
 
           {(() => {
             const FORMATION_MODULES: Record<string, { label: string; color: string; modules: number[] }> = {
-              "vtc":  { label: "VTC", color: "bg-emerald-100 text-emerald-800 border-emerald-300", modules: [1, 2, 3, 4, 5, 35, 8] },
-              "vtc-e": { label: "VTC E-learning", color: "bg-emerald-50 text-emerald-700 border-emerald-200", modules: [26, 2, 3, 4, 5, 35, 8] },
+              "vtc":  { label: "VTC", color: "bg-emerald-100 text-emerald-800 border-emerald-300", modules: [1, 2, 3, 4, 35, 5, 8] },
+              "vtc-e": { label: "VTC E-learning", color: "bg-emerald-50 text-emerald-700 border-emerald-200", modules: [26, 2, 3, 4, 35, 5, 8] },
               "taxi": { label: "TAXI", color: "bg-orange-100 text-orange-800 border-orange-300", modules: [1, 10, 7, 3, 9, 13, 11, 36, 6] },
               "taxi-e": { label: "TAXI E-learning", color: "bg-orange-50 text-orange-700 border-orange-200", modules: [26, 10, 7, 3, 9, 13, 11, 36, 6] },
               "ta":   { label: "TA (Présentiel)", color: "bg-amber-100 text-amber-800 border-amber-300", modules: [31, 40, 7, 3, 27, 28, 37, 6] },
