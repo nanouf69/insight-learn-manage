@@ -1527,10 +1527,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const [inlineQuizValidated, setInlineQuizValidated] = useState<Set<number>>(new Set());
     const [qrcAnswers, setQrcAnswers] = useState<Record<string, string>>({});
     const [qrcResults, setQrcResults] = useState<Record<string, { estCorrect: boolean; pointsObtenus: number; explication: string } | "loading">>({});
-    
+
     const [introAcknowledged, setIntroAcknowledged] = useState<Set<number>>(new Set());
     const [savedAnswersLoaded, setSavedAnswersLoaded] = useState(false);
+    const [uiStateHydrated, setUiStateHydrated] = useState(false);
     const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const learnerUiStateKey = `module-ui-state:${apprenantId ?? "anonymous"}:${module.id}`;
 
     const activeCours = moduleData.cours.filter(c => c.actif);
     const activeExercices = moduleData.exercices.filter(e => e.actif) as ExerciceItem[];
