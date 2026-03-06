@@ -705,7 +705,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                   />
                   <XPBar xp={xp} />
                   <BadgeGrid badges={badges} />
-                  <QuizBlock />
+                  <QuizBlock category={
+                    ["taxi", "taxi-elearning", "taxi-pour-vtc", "taxi-pour-vtc-elearning"].includes(selectedFormation) ? "taxi" : "vtc"
+                  } />
                 </>
               );
             })()}
