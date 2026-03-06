@@ -900,7 +900,6 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
                     value="__placeholder__"
                     onValueChange={async (formationId) => {
                       if (formationId === "__placeholder__") return;
-                    onValueChange={async (formationId) => {
                       const newModules = DEFAULT_MODULES_BY_TYPE[formationId] || [];
                       if (newModules.length === 0) return;
                       try {
