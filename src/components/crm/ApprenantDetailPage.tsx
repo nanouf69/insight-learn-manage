@@ -897,9 +897,7 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
                     🎓 Choisir la formation à attribuer
                   </p>
                   <Select
-                    value="__placeholder__"
                     onValueChange={async (formationId) => {
-                      if (formationId === "__placeholder__") return;
                       const newModules = DEFAULT_MODULES_BY_TYPE[formationId] || [];
                       if (newModules.length === 0) return;
                       try {
