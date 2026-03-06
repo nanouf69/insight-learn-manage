@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -22,6 +22,8 @@ import type { User } from "@supabase/supabase-js";
 import { safeDateParse } from "@/lib/safeDateParse";
 import { useConnexionTracking } from "@/hooks/useConnexionTracking";
 import { useInactivityAlert } from "@/hooks/useInactivityAlert";
+
+const StableModuleDetailView = memo(ModuleDetailView);
 
 // Map CRM values to formation IDs (supports lowercase, aliases and multi-selection values like "x + y")
 const FORMATION_ALIASES: Record<string, FormationId> = {
