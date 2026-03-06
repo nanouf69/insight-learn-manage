@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 const VTC_QUESTIONS = [
   {
@@ -91,6 +91,16 @@ export function QuizBlock({ onXPGained, category = "vtc" }: QuizBlockProps) {
   const [confetti, setConfetti] = useState<{ id: number; x: number; delay: number; color: string; size: number }[]>([]);
 
   const q = questions[qIndex];
+
+  useEffect(() => {
+    setQIndex(0);
+    setSelected(null);
+    setAnswers([]);
+    setPhase("quiz");
+    setScoreAnim(0);
+    setXpAnim(false);
+    setConfetti([]);
+  }, [category]);
 
   function handleAnswer(idx: number) {
     if (selected !== null) return;
