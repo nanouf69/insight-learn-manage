@@ -83,11 +83,11 @@ const resolveFormationId = (
   const byModules = inferFormationFromModules(modulesAutorises);
   if (byModules) return byModules;
 
-  const byFormation = FORMATION_ALIASES[normalizeFormationKey(formationChoisie)];
-  if (byFormation) return byFormation;
-
   const byType = FORMATION_ALIASES[normalizeFormationKey(typeApprenant)];
   if (byType) return byType;
+
+  const byFormation = FORMATION_ALIASES[normalizeFormationKey(formationChoisie)];
+  if (byFormation) return byFormation;
 
   return null;
 };
@@ -593,6 +593,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const ELEARNING_FORMATION_IDS: FormationId[] = ["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"];
   const isElearning = ELEARNING_FORMATION_IDS.includes(selectedFormation);
 
+  const quizCategory: "taxi" | "vtc" =
+    ["taxi", "taxi-elearning", "taxi-pour-vtc", "taxi-pour-vtc-elearning"].includes(selectedFormation)
+      ? "taxi"
+      : "vtc";
+
   // Build a set of unlocked module IDs for e-learning
   const unlockedModuleIds = new Set<number>();
   if (isElearning) {
@@ -705,9 +710,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                   />
                   <XPBar xp={xp} />
                   <BadgeGrid badges={badges} />
-                  <QuizBlock category={
-                    ["taxi", "taxi-elearning", "taxi-pour-vtc", "taxi-pour-vtc-elearning"].includes(selectedFormation) ? "taxi" : "vtc"
-                  } />
+                  <QuizBlock
+                    key={`mini-quiz-${quizCategory}-${selectedFormation}`}
+                    category={quizCategory}
+                  />
                 </>
               );
             })()}
