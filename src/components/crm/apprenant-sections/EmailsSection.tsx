@@ -336,6 +336,11 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
         email.subject?.toLowerCase().includes(query) ||
         email.body_preview?.toLowerCase().includes(query)
       );
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.sent_at || a.received_at || a.created_at).getTime();
+      const dateB = new Date(b.sent_at || b.received_at || b.created_at).getTime();
+      return dateB - dateA;
     });
 
   const sentCount = emails.filter(e => e.type === 'sent').length;
