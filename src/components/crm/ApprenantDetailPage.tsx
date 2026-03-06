@@ -80,19 +80,30 @@ const creneauLabels: Record<string, string> = {
 };
 
 const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {
-  "vtc": [1, 2, 25, 14, 15, 16, 17, 18, 19, 3, 5, 4, 8],
-  "vtc-e-presentiel": [1, 2, 25, 14, 15, 16, 17, 18, 19, 3, 5, 4, 8],
-  "vtc-e": [26, 2, 25, 14, 15, 16, 17, 18, 19, 3, 5, 4, 8],
-  "taxi": [1, 10, 20, 21, 22, 23, 24, 7, 3, 11, 9, 13, 6],
-  "taxi-e-presentiel": [1, 10, 20, 21, 22, 23, 24, 7, 3, 11, 9, 13, 6],
-  "taxi-e": [26, 10, 20, 21, 22, 23, 24, 7, 3, 11, 9, 13, 6],
-  "ta": [31, 24, 7, 3, 27, 28, 13, 6],
-  "ta-e-presentiel": [31, 24, 7, 3, 27, 28, 13, 6],
-  "ta-e": [32, 24, 7, 3, 27, 28, 13, 6],
-  "va": [33, 18, 19, 3, 29, 30, 8],
-  "va-e-presentiel": [33, 18, 19, 3, 29, 30, 8],
-  "va-e": [34, 18, 19, 3, 29, 30, 8],
+  "vtc": [1, 2, 25, 14, 15, 16, 17, 18, 19, 3, 4, 5, 8],
+  "vtc-e-presentiel": [1, 2, 25, 14, 15, 16, 17, 18, 19, 3, 4, 5, 8],
+  "vtc-e": [26, 2, 25, 14, 15, 16, 17, 18, 19, 3, 4, 5, 8],
+  "taxi": [1, 10, 20, 21, 22, 23, 24, 7, 3, 9, 13, 11, 6],
+  "taxi-e-presentiel": [1, 10, 20, 21, 22, 23, 24, 7, 3, 9, 13, 11, 6],
+  "taxi-e": [26, 10, 20, 21, 22, 23, 24, 7, 3, 9, 13, 11, 6],
+  "ta": [31, 24, 7, 3, 4, 5, 6],
+  "ta-e-presentiel": [31, 24, 7, 3, 4, 5, 6],
+  "ta-e": [32, 24, 7, 3, 27, 13, 28, 6],
+  "va": [33, 18, 19, 7, 3, 29, 30, 8],
+  "va-e-presentiel": [33, 18, 19, 7, 3, 29, 30, 8],
+  "va-e": [34, 18, 19, 7, 3, 29, 30, 8],
 };
+
+// Formations disponibles pour la création de compte cours
+const COMPTE_FORMATIONS = [
+  { id: "vtc", label: "Formation VTC", types: ["vtc", "vtc-e-presentiel"] },
+  { id: "vtc-e", label: "Formation VTC E-learning", types: ["vtc-e"] },
+  { id: "taxi", label: "Formation TAXI", types: ["taxi", "taxi-e-presentiel"] },
+  { id: "taxi-e", label: "Formation TAXI E-learning", types: ["taxi-e"] },
+  { id: "ta", label: "Formation TAXI pour chauffeur VTC (TA)", types: ["ta", "ta-e-presentiel"] },
+  { id: "ta-e", label: "Formation TA E-learning", types: ["ta-e"] },
+  { id: "va", label: "Formation VTC pour chauffeur TAXI (VA)", types: ["va", "va-e-presentiel", "va-e"] },
+];
 
 const FORMATION_TO_TYPE: Record<string, string> = {
   "vtc": "vtc",
