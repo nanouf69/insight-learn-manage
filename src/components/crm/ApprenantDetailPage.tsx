@@ -937,7 +937,9 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
                   const fallbackType2 = normalizeTypeApprenant(FORMATION_TO_TYPE[formationKey2]);
                   const resolvedType = type || fallbackType2;
                   const formationModuleIds = DEFAULT_MODULES_BY_TYPE[resolvedType] || [];
-                  const formationModules = MODULES_DATA.filter(m => formationModuleIds.includes(m.id));
+                  const formationModules = formationModuleIds
+                    .map(id => MODULES_DATA.find(m => m.id === id))
+                    .filter((m): m is typeof MODULES_DATA[0] => !!m);
                   const otherModules = MODULES_DATA.filter(m => !formationModuleIds.includes(m.id));
                   const matchedFormation = COMPTE_FORMATIONS.find(f => f.types.includes(resolvedType));
 
