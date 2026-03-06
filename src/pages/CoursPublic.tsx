@@ -569,9 +569,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     .map((id) => MODULES_DATA.find((module) => module.id === id))
     .filter((module): module is (typeof MODULES_DATA)[number] => !!module);
 
+  const fallbackModules = formationDefaultIds
+    .map((id) => MODULES_DATA.find((module) => module.id === id))
+    .filter((module): module is (typeof MODULES_DATA)[number] => !!module);
+
   const sourceModules = orderedAuthorizedModules.length > 0
     ? orderedAuthorizedModules
-    : allModules;
+    : (fallbackModules.length > 0 ? fallbackModules : allModules);
 
   const modules = sourceModules.map((module) => ({
     ...module,
