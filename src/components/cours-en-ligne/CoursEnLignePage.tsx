@@ -453,26 +453,54 @@ const ApprenantSearchPreview = () => {
           <ExamensBlancsPage defaultBilanId={bilanActif} onBilanConsumed={() => setBilanActif(null)} />
         </TabsContent>
 
-        {/* Formations */}
+        {/* Formations — Mapping modules par formation */}
         <TabsContent value="formations" className="space-y-6 mt-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold">Formations en ligne</h2>
-            <Button className="gap-2">
-              <Plus className="w-4 h-4" />
-              Nouvelle formation
-            </Button>
+          <div>
+            <h2 className="text-2xl font-bold">Modules par formation</h2>
+            <p className="text-sm text-muted-foreground mt-1">Vue synthétique des modules attribués à chaque type de formation</p>
           </div>
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-              <GraduationCap className="w-12 h-12 mb-4 opacity-50" />
-              <p className="text-lg font-medium">Aucune formation en ligne</p>
-              <p className="text-sm mt-1">Assemblez vos modules pour créer des parcours de formation complets.</p>
-              <Button className="mt-4 gap-2">
-                <Plus className="w-4 h-4" />
-                Créer une formation
-              </Button>
-            </CardContent>
-          </Card>
+
+          {(() => {
+            const FORMATION_MODULES: Record<string, { label: string; color: string; modules: number[] }> = {
+              "vtc":  { label: "VTC", color: "bg-emerald-100 text-emerald-800 border-emerald-300", modules: [1, 2, 25, 14, 15, 16, 17, 18, 19, 3, 4, 5, 35, 8] },
+              "vtc-e": { label: "VTC E-learning", color: "bg-emerald-50 text-emerald-700 border-emerald-200", modules: [26, 2, 25, 14, 15, 16, 17, 18, 19, 3, 4, 5, 35, 8] },
+              "taxi": { label: "TAXI", color: "bg-orange-100 text-orange-800 border-orange-300", modules: [1, 10, 20, 21, 22, 23, 24, 7, 3, 9, 13, 11, 36, 6] },
+              "taxi-e": { label: "TAXI E-learning", color: "bg-orange-50 text-orange-700 border-orange-200", modules: [26, 10, 20, 21, 22, 23, 24, 7, 3, 9, 13, 11, 36, 6] },
+              "ta":   { label: "TA (Présentiel)", color: "bg-amber-100 text-amber-800 border-amber-300", modules: [31, 24, 7, 3, 27, 28, 37, 6] },
+              "ta-e": { label: "TA E-learning", color: "bg-amber-50 text-amber-700 border-amber-200", modules: [32, 24, 7, 3, 27, 13, 28, 37, 6] },
+              "va":   { label: "VA (Passerelle VTC)", color: "bg-teal-100 text-teal-800 border-teal-300", modules: [34, 18, 19, 7, 3, 29, 30, 38, 8] },
+            };
+
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+                {Object.entries(FORMATION_MODULES).map(([key, { label, color, modules: modIds }]) => (
+                  <Card key={key} className="border">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">
+                        <Badge className={`${color} border font-semibold text-sm`}>{label}</Badge>
+                        <span className="text-xs text-muted-foreground ml-2">{modIds.length} modules</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <ul className="space-y-1.5">
+                        {modIds.map((id) => {
+                          const mod = MODULES_DATA.find(m => m.id === id);
+                          return (
+                            <li key={id} className="flex items-start gap-2 text-sm">
+                              <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 text-primary shrink-0" />
+                              <span className="text-foreground leading-tight">
+                                <span className="font-medium">{mod?.nom || `Module ${id}`}</span>
+                              </span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            );
+          })()}
         </TabsContent>
         {/* Vue Apprenant */}
         <TabsContent value="vue-apprenant" className="mt-6">
