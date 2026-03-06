@@ -2222,8 +2222,27 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                     <Button
                       size="lg"
                       onClick={async () => {
-                        setShowResultsFor(prev => new Set(prev).add(exo.id));
-                        markPageCompleted(currentPage);
+                        const nextShowResults = new Set(showResultsFor);
+                        nextShowResults.add(exo.id);
+                        setShowResultsFor(nextShowResults);
+
+                        const nextCompletedPages = new Set(completedPages);
+                        nextCompletedPages.add(currentPage);
+                        setCompletedPages(nextCompletedPages);
+
+                        try {
+                          window.sessionStorage.setItem(
+                            learnerUiStateKey,
+                            JSON.stringify({
+                              currentPage,
+                              selectedAnswers,
+                              showResultsFor: Array.from(nextShowResults),
+                              completedPages: Array.from(nextCompletedPages),
+                            })
+                          );
+                        } catch (error) {
+                          console.error("Erreur snapshot UI module:", error);
+                        }
 
                         // Persist immediately to DB so it shows in "Réalisés"
                         if (apprenantId && !completionPersistedRef.current) {
