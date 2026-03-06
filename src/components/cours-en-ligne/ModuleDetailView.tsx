@@ -2193,7 +2193,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               details: questionDetails,
                             } as any, { onConflict: "apprenant_id,module_id" });
                             if (!error) {
-                              onModuleCompleted?.(module.id);
+                              completionPersistedRef.current = true;
+                              // Don't call onModuleCompleted here to avoid parent re-render
+                              // which would reset the quiz view. Completion will be picked up on back navigation.
                             }
                           } catch (e) {
                             console.error("Erreur sauvegarde quiz:", e);
