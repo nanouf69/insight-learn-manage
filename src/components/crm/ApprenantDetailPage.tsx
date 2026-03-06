@@ -128,6 +128,21 @@ const FORMATION_TO_TYPE: Record<string, string> = {
   "ta-e-presentiel": "ta-e-presentiel",
 };
 
+const FORMATION_LABELS_BY_TYPE: Record<string, Record<number, string>> = {
+  "vtc": { 1: "1.INTRODUCTION PRÉSENTIEL", 2: "2.COURS ET EXERCICES VTC", 3: "3.FORMULES", 4: "4.BILAN EXERCICES VTC", 35: "5.EXAMENS BLANCS VTC", 5: "6.BILAN EXAMEN VTC", 8: "7.PRATIQUE VTC" },
+  "vtc-e": { 26: "1.INTRODUCTION E-LEARNING", 2: "2.COURS ET EXERCICES VTC", 3: "3.FORMULES", 4: "4.BILAN EXERCICES VTC", 35: "5.EXAMENS BLANCS VTC", 5: "6.BILAN EXAMEN VTC", 8: "7.PRATIQUE VTC" },
+  "taxi": { 1: "1.INTRODUCTION PRÉSENTIEL", 10: "2.COURS ET EXERCICES TAXI", 7: "3.CONNAISSANCES DE LA VILLE TAXI", 3: "4.FORMULES", 9: "5.BILAN EXERCICES TAXI", 13: "6.CONTRÔLE DE CONNAISSANCES TAXI", 11: "7.BILAN EXAMEN TAXI", 36: "8.EXAMENS BLANCS TAXI", 6: "9.PRATIQUE TAXI" },
+  "taxi-e": { 26: "1.INTRODUCTION E-LEARNING", 10: "2.COURS ET EXERCICES TAXI", 7: "3.CONNAISSANCES DE LA VILLE TAXI", 3: "4.FORMULES", 9: "5.BILAN EXERCICES TAXI", 13: "6.CONTRÔLE DE CONNAISSANCES TAXI", 11: "7.BILAN EXAMEN TAXI", 36: "8.EXAMENS BLANCS TAXI", 6: "9.PRATIQUE TAXI" },
+  "ta": { 31: "1.INTRODUCTION TA", 40: "2.COURS ET EXERCICES TA", 7: "3.CONNAISSANCES DE LA VILLE TAXI", 3: "4.FORMULES", 27: "5.BILAN EXERCICES TA", 28: "6.BILAN EXAMEN TA", 37: "7.EXAMENS BLANCS TA", 6: "8.PRATIQUE TAXI" },
+  "ta-e": { 32: "1.INTRODUCTION TA E-LEARNING", 40: "2.COURS ET EXERCICES TA", 7: "3.CONNAISSANCES DE LA VILLE TAXI", 3: "4.FORMULES", 27: "5.BILAN EXERCICES TA", 13: "6.CONTRÔLE DE CONNAISSANCES TAXI", 28: "7.BILAN EXAMEN TA", 37: "8.EXAMENS BLANCS TA", 6: "9.PRATIQUE TAXI" },
+  "va": { 34: "1.INTRODUCTION VA", 41: "2.COURS ET EXERCICES VA", 7: "3.CONNAISSANCES DE LA VILLE TAXI", 3: "4.FORMULES", 29: "5.BILAN EXERCICES VA", 30: "6.BILAN EXAMEN VA", 38: "7.EXAMENS BLANCS VA", 8: "8.PRATIQUE VTC" },
+  "vtc-e-presentiel": { 1: "1.INTRODUCTION PRÉSENTIEL", 2: "2.COURS ET EXERCICES VTC", 3: "3.FORMULES", 4: "4.BILAN EXERCICES VTC", 35: "5.EXAMENS BLANCS VTC", 5: "6.BILAN EXAMEN VTC", 8: "7.PRATIQUE VTC" },
+  "taxi-e-presentiel": { 1: "1.INTRODUCTION PRÉSENTIEL", 10: "2.COURS ET EXERCICES TAXI", 7: "3.CONNAISSANCES DE LA VILLE TAXI", 3: "4.FORMULES", 9: "5.BILAN EXERCICES TAXI", 13: "6.CONTRÔLE DE CONNAISSANCES TAXI", 11: "7.BILAN EXAMEN TAXI", 36: "8.EXAMENS BLANCS TAXI", 6: "9.PRATIQUE TAXI" },
+  "ta-e-presentiel": { 31: "1.INTRODUCTION TA", 40: "2.COURS ET EXERCICES TA", 7: "3.CONNAISSANCES DE LA VILLE TAXI", 3: "4.FORMULES", 27: "5.BILAN EXERCICES TA", 28: "6.BILAN EXAMEN TA", 37: "7.EXAMENS BLANCS TA", 6: "8.PRATIQUE TAXI" },
+  "va-e-presentiel": { 34: "1.INTRODUCTION VA", 41: "2.COURS ET EXERCICES VA", 7: "3.CONNAISSANCES DE LA VILLE TAXI", 3: "4.FORMULES", 29: "5.BILAN EXERCICES VA", 30: "6.BILAN EXAMEN VA", 38: "7.EXAMENS BLANCS VA", 8: "8.PRATIQUE VTC" },
+  "va-e": { 34: "1.INTRODUCTION VA", 41: "2.COURS ET EXERCICES VA", 7: "3.CONNAISSANCES DE LA VILLE TAXI", 3: "4.FORMULES", 29: "5.BILAN EXERCICES VA", 30: "6.BILAN EXAMEN VA", 38: "7.EXAMENS BLANCS VA", 8: "8.PRATIQUE VTC" },
+};
+
 const normalizeTypeApprenant = (rawType: string | null | undefined): string => {
   if (!rawType) return "";
 
@@ -483,15 +498,18 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
             {selectedFormationForAccount && (
               <div>
                 <p className="text-sm font-medium mb-2">Modules qui seront attribués :</p>
-                <div className="max-h-60 overflow-y-auto space-y-1 border rounded-md p-3 bg-muted/30">
-                  {(DEFAULT_MODULES_BY_TYPE[selectedFormationForAccount] || []).map(modId => {
-                    const mod = MODULES_DATA.find(m => m.id === modId);
-                    return mod ? (
-                      <div key={mod.id} className="flex items-center gap-2 text-sm py-1">
+                <div className="space-y-1 border rounded-md p-3 bg-muted/30">
+                  {(DEFAULT_MODULES_BY_TYPE[selectedFormationForAccount] || []).map((modId) => {
+                    const mod = MODULES_DATA.find((m) => m.id === modId);
+                    const displayLabel = FORMATION_LABELS_BY_TYPE[selectedFormationForAccount]?.[modId]
+                      || mod?.nom
+                      || `Module ${modId}`;
+                    return (
+                      <div key={modId} className="flex items-center gap-2 text-sm py-1">
                         <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0" />
-                        <span>{mod.nom}</span>
+                        <span>{displayLabel}</span>
                       </div>
-                    ) : null;
+                    );
                   })}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
@@ -959,23 +977,7 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
                     .filter(m => !formationModuleIds.includes(m.id) && MANAGED_MODULE_IDS.includes(m.id));
                   const matchedFormation = COMPTE_FORMATIONS.find(f => f.types.includes(resolvedType));
 
-                  // Numbered display labels per formation (matching Formations tab)
-                  const FORMATION_LABELS: Record<string, Record<number, string>> = {
-                    "vtc": { 1: "1.INTRODUCTION PRÉSENTIEL", 2: "2.COURS ET EXERCICES VTC", 3: "3.FORMULES", 4: "4.BILAN EXERCICES VTC", 35: "5.EXAMENS BLANCS VTC", 5: "6.BILAN EXAMEN VTC", 8: "7.PRATIQUE VTC" },
-                    "vtc-e": { 26: "1.INTRODUCTION E-LEARNING", 2: "2.COURS ET EXERCICES VTC", 3: "3.FORMULES", 4: "4.BILAN EXERCICES VTC", 35: "5.EXAMENS BLANCS VTC", 5: "6.BILAN EXAMEN VTC", 8: "7.PRATIQUE VTC" },
-                    "taxi": { 1: "1.INTRODUCTION PRÉSENTIEL", 10: "2.COURS ET EXERCICES TAXI", 7: "3.CONNAISSANCES DE LA VILLE TAXI", 3: "4.FORMULES", 9: "5.BILAN EXERCICES TAXI", 13: "6.CONTRÔLE DE CONNAISSANCES TAXI", 11: "7.BILAN EXAMEN TAXI", 36: "8.EXAMENS BLANCS TAXI", 6: "9.PRATIQUE TAXI" },
-                    "taxi-e": { 26: "1.INTRODUCTION E-LEARNING", 10: "2.COURS ET EXERCICES TAXI", 7: "3.CONNAISSANCES DE LA VILLE TAXI", 3: "4.FORMULES", 9: "5.BILAN EXERCICES TAXI", 13: "6.CONTRÔLE DE CONNAISSANCES TAXI", 11: "7.BILAN EXAMEN TAXI", 36: "8.EXAMENS BLANCS TAXI", 6: "9.PRATIQUE TAXI" },
-                    "ta": { 31: "1.INTRODUCTION TA", 40: "2.COURS ET EXERCICES TA", 7: "3.CONNAISSANCES DE LA VILLE TAXI", 3: "4.FORMULES", 27: "5.BILAN EXERCICES TA", 28: "6.BILAN EXAMEN TA", 37: "7.EXAMENS BLANCS TA", 6: "8.PRATIQUE TAXI" },
-                    "ta-e": { 32: "1.INTRODUCTION TA E-LEARNING", 40: "2.COURS ET EXERCICES TA", 7: "3.CONNAISSANCES DE LA VILLE TAXI", 3: "4.FORMULES", 27: "5.BILAN EXERCICES TA", 13: "6.CONTRÔLE DE CONNAISSANCES TAXI", 28: "7.BILAN EXAMEN TA", 37: "8.EXAMENS BLANCS TA", 6: "9.PRATIQUE TAXI" },
-                    "va": { 34: "1.INTRODUCTION VA", 41: "2.COURS ET EXERCICES VA", 7: "3.CONNAISSANCES DE LA VILLE TAXI", 3: "4.FORMULES", 29: "5.BILAN EXERCICES VA", 30: "6.BILAN EXAMEN VA", 38: "7.EXAMENS BLANCS VA", 8: "8.PRATIQUE VTC" },
-                  };
-                  // Also apply to presentiel variants
-                  (["vtc-e-presentiel", "taxi-e-presentiel", "ta-e-presentiel", "va-e-presentiel", "va-e"] as string[]).forEach(k => {
-                    const base = k.replace("-e-presentiel", "").replace("-e", "");
-                    if (!FORMATION_LABELS[k] && FORMATION_LABELS[base]) FORMATION_LABELS[k] = FORMATION_LABELS[base];
-                  });
-
-                  const labelsForType = FORMATION_LABELS[resolvedType] || {};
+                  const labelsForType = FORMATION_LABELS_BY_TYPE[resolvedType] || {};
 
                   const renderModuleCheckbox = (mod: typeof MODULES_DATA[0]) => {
                     const isChecked = effectiveModules.includes(mod.id);
