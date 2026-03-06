@@ -90,9 +90,9 @@ const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {
   "taxi-e-presentiel": [1, 10, 20, 21, 22, 23, 24, 7, 3, 9, 13, 11, 36, 6],
   // Formation TAXI E-learning — Intro e-learning
   "taxi-e": [26, 10, 20, 21, 22, 23, 24, 7, 3, 9, 13, 11, 36, 6],
-  // Formation TA présentiel — Intro TA, cours TA (réglementation), connaissances ville, formules, bilan exercices VTC, bilan examen VTC, examens blancs TA, pratique TAXI
-  "ta": [31, 24, 7, 3, 4, 5, 37, 6],
-  "ta-e-presentiel": [31, 24, 7, 3, 4, 5, 37, 6],
+  // Formation TA présentiel — Intro TA, cours TA (réglementation), connaissances ville, formules, bilan exercices TA, bilan examen TA, examens blancs TA, pratique TAXI
+  "ta": [31, 24, 7, 3, 27, 28, 37, 6],
+  "ta-e-presentiel": [31, 24, 7, 3, 27, 28, 37, 6],
   // Formation TA E-learning — Intro TA e-learning, cours TA, connaissances ville, formules, bilan exercices TA, contrôle connaissances, bilan examen TA, examens blancs TA, pratique TAXI
   "ta-e": [32, 24, 7, 3, 27, 13, 28, 37, 6],
   // Formation VA — Intro VA e-learning, cours VA (réglem spé + dev commercial), connaissances ville, formules, bilan exercices VA, bilan examen VA, examens blancs VA, pratique VTC
