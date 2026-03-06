@@ -883,8 +883,18 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
               {/* Modules autorisés */}
               <div>
                 <p className="text-sm font-medium text-foreground mb-3">Modules autorisés</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {MODULES_DATA.map((mod) => {
+                {(() => {
+                  // Detect current formation type to separate modules
+                  const type = normalizeTypeApprenant((apprenant.type_apprenant || "").split(" + ")[0]);
+                  const formationKey2 = (apprenant.formation_choisie || "").split(" + ")[0];
+                  const fallbackType2 = normalizeTypeApprenant(FORMATION_TO_TYPE[formationKey2]);
+                  const resolvedType = type || fallbackType2;
+                  const formationModuleIds = DEFAULT_MODULES_BY_TYPE[resolvedType] || [];
+                  const formationModules = MODULES_DATA.filter(m => formationModuleIds.includes(m.id));
+                  const otherModules = MODULES_DATA.filter(m => !formationModuleIds.includes(m.id));
+                  const matchedFormation = COMPTE_FORMATIONS.find(f => f.types.includes(resolvedType));
+
+                  const renderModuleCheckbox = (mod: typeof MODULES_DATA[0]) => {
                     const isChecked = effectiveModules.includes(mod.id);
                     return (
                       <label key={mod.id} className="flex items-center gap-2 p-2 rounded-md hover:bg-muted/50 cursor-pointer">
@@ -904,8 +914,31 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
                         <span className="text-sm">{mod.nom}</span>
                       </label>
                     );
-                  })}
-                </div>
+                  };
+
+                  return (
+                    <div className="space-y-4">
+                      {matchedFormation && formationModules.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-primary mb-2 uppercase tracking-wider">
+                            📋 Modules {matchedFormation.label}
+                          </p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-1 border rounded-md p-3 bg-primary/5">
+                            {formationModules.map(renderModuleCheckbox)}
+                          </div>
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">
+                          ➕ Modules supplémentaires
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+                          {(formationModules.length > 0 ? otherModules : MODULES_DATA).map(renderModuleCheckbox)}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </CardContent>
           </Card>
