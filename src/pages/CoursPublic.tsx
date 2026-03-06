@@ -254,10 +254,36 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // Use apprenantOverride when provided (admin preview of specific student)
   useEffect(() => {
     if (!apprenantOverride) return;
-    setApprenant(apprenantOverride);
-    const formationId = resolveFormationId(apprenantOverride.type_apprenant, apprenantOverride.formation_choisie, apprenantOverride.modules_autorises);
-    setSelectedFormation(formationId);
-  }, [apprenantOverride]);
+
+    const applyApprenant = (value: ApprenantInfo) => {
+      setApprenant(value);
+      const formationId = resolveFormationId(value.type_apprenant, value.formation_choisie, value.modules_autorises);
+      setSelectedFormation(formationId);
+    };
+
+    applyApprenant(apprenantOverride);
+
+    // In embedded preview, force-refresh latest DB state to avoid stale search result snapshot
+    if (!embedded || !apprenantOverride.id) return;
+
+    let cancelled = false;
+    const refreshApprenant = async () => {
+      const { data, error } = await supabase
+        .from("apprenants")
+        .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, modules_autorises")
+        .eq("id", apprenantOverride.id)
+        .maybeSingle();
+
+      if (cancelled || error || !data) return;
+      applyApprenant(data as ApprenantInfo);
+    };
+
+    void refreshApprenant();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [apprenantOverride, embedded]);
 
   // Fetch completed modules
   useEffect(() => {
