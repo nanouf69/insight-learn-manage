@@ -499,14 +499,17 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
               <div>
                 <p className="text-sm font-medium mb-2">Modules qui seront attribués :</p>
                 <div className="max-h-60 overflow-y-auto space-y-1 border rounded-md p-3 bg-muted/30">
-                  {(DEFAULT_MODULES_BY_TYPE[selectedFormationForAccount] || []).map(modId => {
-                    const mod = MODULES_DATA.find(m => m.id === modId);
-                    return mod ? (
-                      <div key={mod.id} className="flex items-center gap-2 text-sm py-1">
+                  {(DEFAULT_MODULES_BY_TYPE[selectedFormationForAccount] || []).map((modId) => {
+                    const mod = MODULES_DATA.find((m) => m.id === modId);
+                    const displayLabel = FORMATION_LABELS_BY_TYPE[selectedFormationForAccount]?.[modId]
+                      || mod?.nom
+                      || `Module ${modId}`;
+                    return (
+                      <div key={modId} className="flex items-center gap-2 text-sm py-1">
                         <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0" />
-                        <span>{mod.nom}</span>
+                        <span>{displayLabel}</span>
                       </div>
-                    ) : null;
+                    );
                   })}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
