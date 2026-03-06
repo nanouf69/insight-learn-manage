@@ -441,7 +441,81 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
         onOpenChange={setIsEditOpen} 
       />
 
-      {/* Tabs */}
+      {/* Dialog de création de compte cours */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Créer un compte cours en ligne</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <p className="text-sm font-medium mb-2">Formation *</p>
+              <Select value={selectedFormationForAccount} onValueChange={setSelectedFormationForAccount}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir une formation..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {COMPTE_FORMATIONS.map(f => (
+                    <SelectItem key={f.id} value={f.id}>{f.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {selectedFormationForAccount && (
+              <div>
+                <p className="text-sm font-medium mb-2">Modules qui seront attribués :</p>
+                <div className="max-h-60 overflow-y-auto space-y-1 border rounded-md p-3 bg-muted/30">
+                  {(DEFAULT_MODULES_BY_TYPE[selectedFormationForAccount] || []).map(modId => {
+                    const mod = MODULES_DATA.find(m => m.id === modId);
+                    return mod ? (
+                      <div key={mod.id} className="flex items-center gap-2 text-sm py-1">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <span>{mod.nom}</span>
+                      </div>
+                    ) : null;
+                  })}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Vous pourrez ajouter des modules supplémentaires dans l'onglet « Attribuer les cours ».
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Annuler</Button>
+            <Button
+              disabled={!selectedFormationForAccount || creatingAccount}
+              onClick={async () => {
+                setCreatingAccount(true);
+                try {
+                  // Set modules for this formation
+                  const modules = DEFAULT_MODULES_BY_TYPE[selectedFormationForAccount] || [];
+                  await supabase.from('apprenants').update({ modules_autorises: modules } as any).eq('id', apprenantId);
+
+                  // Create the auth account
+                  const { data, error } = await supabase.functions.invoke("create-apprenant-account", {
+                    body: { apprenant_id: apprenantId, email: apprenant.email },
+                  });
+                  if (error) throw error;
+                  if (data?.error) throw new Error(data.error);
+                  setGeneratedPassword(data.password);
+                  toast.success(`Compte créé pour la formation « ${COMPTE_FORMATIONS.find(f => f.id === selectedFormationForAccount)?.label} » ! Mot de passe : ${data.password}`);
+                  queryClient.invalidateQueries({ queryKey: ['apprenant-detail', apprenantId] });
+                  setShowCreateDialog(false);
+                } catch (err: any) {
+                  toast.error(err.message || "Erreur lors de la création du compte");
+                } finally {
+                  setCreatingAccount(false);
+                }
+              }}
+            >
+              {creatingAccount ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <KeyRound className="w-4 h-4 mr-2" />}
+              Créer le compte
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-10 lg:w-auto lg:inline-grid">
           <TabsTrigger value="infos">Infos</TabsTrigger>
