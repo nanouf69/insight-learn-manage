@@ -111,7 +111,10 @@ function EcranSelection({ onStart, onEdit, defaultBilanId, apprenantType }: { on
         <div>
           <h2 className="text-2xl font-bold mb-1">Examens Blancs</h2>
           <p className="text-muted-foreground text-sm">
-            24 examens blancs (6 TAXI, 6 VTC, 6 Passerelle TA, 6 Passerelle VA). Chaque test comporte les matières correspondantes chronométrées.
+            {forcedType
+              ? `${examensBlancs.length} examens blancs ${forcedType}. Chaque test comporte les matières correspondantes chronométrées.`
+              : "24 examens blancs (6 TAXI, 6 VTC, 6 Passerelle TA, 6 Passerelle VA). Chaque test comporte les matières correspondantes chronométrées."
+            }
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={onEdit} className="gap-2 shrink-0">
