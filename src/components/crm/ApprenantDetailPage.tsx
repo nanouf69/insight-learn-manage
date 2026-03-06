@@ -165,6 +165,7 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
   const [dateFinCoursOpen, setDateFinCoursOpen] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedFormationForAccount, setSelectedFormationForAccount] = useState<string>("");
+  const [selectedFormationForModules, setSelectedFormationForModules] = useState<string>("");
   const queryClient = useQueryClient();
 
   // Fonction pour mettre à jour une date
@@ -289,11 +290,22 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
   const primaryType = normalizeTypeApprenant((((apprenant as any)?.type_apprenant || "") as string).split(" + ")[0]);
   const formationKey = ((((apprenant as any)?.formation_choisie || "") as string).split(" + ")[0]);
   const fallbackTypeFromFormation = normalizeTypeApprenant(FORMATION_TO_TYPE[formationKey]);
-  const fallbackDefaultModules = DEFAULT_MODULES_BY_TYPE[primaryType]
-    || (fallbackTypeFromFormation ? DEFAULT_MODULES_BY_TYPE[fallbackTypeFromFormation] : undefined)
-    || [];
+  const resolvedTypeFromApprenant = primaryType || fallbackTypeFromFormation;
+  const activeFormationType = selectedFormationForModules || resolvedTypeFromApprenant;
+
+  const fallbackDefaultModules = DEFAULT_MODULES_BY_TYPE[resolvedTypeFromApprenant] || [];
   const effectiveModules = currentModules.length > 0 ? currentModules : fallbackDefaultModules;
   const fallbackSignature = fallbackDefaultModules.join(",");
+
+  useEffect(() => {
+    setSelectedFormationForModules("");
+  }, [apprenantId]);
+
+  useEffect(() => {
+    if (!selectedFormationForModules && resolvedTypeFromApprenant) {
+      setSelectedFormationForModules(resolvedTypeFromApprenant);
+    }
+  }, [resolvedTypeFromApprenant, selectedFormationForModules]);
 
   useEffect(() => {
     if (!apprenant?.id) return;
@@ -897,14 +909,27 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
                     🎓 Choisir la formation à attribuer
                   </p>
                   <Select
+                    value={activeFormationType || undefined}
                     onValueChange={async (formationId) => {
+                      setSelectedFormationForModules(formationId);
                       const newModules = DEFAULT_MODULES_BY_TYPE[formationId] || [];
                       if (newModules.length === 0) return;
                       try {
-                        await supabase.from('apprenants').update({ modules_autorises: newModules } as any).eq('id', apprenantId);
-                        toast.success("Modules mis à jour pour la formation sélectionnée");
+                        const { error } = await supabase
+                          .from('apprenants')
+                          .update({ modules_autorises: newModules } as any)
+                          .eq('id', apprenantId);
+
+                        if (error) throw error;
+
+                        queryClient.setQueryData(['apprenant-detail', apprenantId], (prev: any) => (
+                          prev ? { ...prev, modules_autorises: newModules } : prev
+                        ));
                         queryClient.invalidateQueries({ queryKey: ['apprenant-detail', apprenantId] });
-                      } catch { toast.error("Erreur lors de la mise à jour"); }
+                        toast.success("Modules mis à jour pour la formation sélectionnée");
+                      } catch {
+                        toast.error("Erreur lors de la mise à jour");
+                      }
                     }}
                   >
                     <SelectTrigger className="w-full max-w-md">
@@ -923,11 +948,7 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
                 </div>
 
                 {(() => {
-                  // Detect current formation type to separate modules
-                  const type = normalizeTypeApprenant((apprenant.type_apprenant || "").split(" + ")[0]);
-                  const formationKey2 = (apprenant.formation_choisie || "").split(" + ")[0];
-                  const fallbackType2 = normalizeTypeApprenant(FORMATION_TO_TYPE[formationKey2]);
-                  const resolvedType = type || fallbackType2;
+                  const resolvedType = activeFormationType;
                   const formationModuleIds = DEFAULT_MODULES_BY_TYPE[resolvedType] || [];
                   // Only show modules that exist in the managed modules list (no sub-matières)
                   const MANAGED_MODULE_IDS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 41];
