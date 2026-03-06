@@ -1,5 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, User, FileText, BookOpen, Calendar, Mail, Phone, MapPin, CreditCard, Edit2, Download, CheckCircle2, XCircle, Plus, CalendarIcon, Pencil, KeyRound, Loader2, Copy, Monitor, Send, BarChart3 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MODULES_DATA, FORMATIONS, type FormationId } from "@/components/cours-en-ligne/formations-data";
@@ -78,19 +80,30 @@ const creneauLabels: Record<string, string> = {
 };
 
 const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {
-  "vtc": [1, 2, 25, 14, 15, 16, 17, 18, 19, 3, 5, 4, 8],
-  "vtc-e-presentiel": [1, 2, 25, 14, 15, 16, 17, 18, 19, 3, 5, 4, 8],
-  "vtc-e": [26, 2, 25, 14, 15, 16, 17, 18, 19, 3, 5, 4, 8],
-  "taxi": [1, 10, 20, 21, 22, 23, 24, 7, 3, 11, 9, 13, 6],
-  "taxi-e-presentiel": [1, 10, 20, 21, 22, 23, 24, 7, 3, 11, 9, 13, 6],
-  "taxi-e": [26, 10, 20, 21, 22, 23, 24, 7, 3, 11, 9, 13, 6],
-  "ta": [31, 24, 7, 3, 27, 28, 13, 6],
-  "ta-e-presentiel": [31, 24, 7, 3, 27, 28, 13, 6],
-  "ta-e": [32, 24, 7, 3, 27, 28, 13, 6],
-  "va": [33, 18, 19, 3, 29, 30, 8],
-  "va-e-presentiel": [33, 18, 19, 3, 29, 30, 8],
-  "va-e": [34, 18, 19, 3, 29, 30, 8],
+  "vtc": [1, 2, 25, 14, 15, 16, 17, 18, 19, 3, 4, 5, 8],
+  "vtc-e-presentiel": [1, 2, 25, 14, 15, 16, 17, 18, 19, 3, 4, 5, 8],
+  "vtc-e": [26, 2, 25, 14, 15, 16, 17, 18, 19, 3, 4, 5, 8],
+  "taxi": [1, 10, 20, 21, 22, 23, 24, 7, 3, 9, 13, 11, 6],
+  "taxi-e-presentiel": [1, 10, 20, 21, 22, 23, 24, 7, 3, 9, 13, 11, 6],
+  "taxi-e": [26, 10, 20, 21, 22, 23, 24, 7, 3, 9, 13, 11, 6],
+  "ta": [31, 24, 7, 3, 4, 5, 6],
+  "ta-e-presentiel": [31, 24, 7, 3, 4, 5, 6],
+  "ta-e": [32, 24, 7, 3, 27, 13, 28, 6],
+  "va": [33, 18, 19, 7, 3, 29, 30, 8],
+  "va-e-presentiel": [33, 18, 19, 7, 3, 29, 30, 8],
+  "va-e": [34, 18, 19, 7, 3, 29, 30, 8],
 };
+
+// Formations disponibles pour la création de compte cours
+const COMPTE_FORMATIONS = [
+  { id: "vtc", label: "Formation VTC", types: ["vtc", "vtc-e-presentiel"] },
+  { id: "vtc-e", label: "Formation VTC E-learning", types: ["vtc-e"] },
+  { id: "taxi", label: "Formation TAXI", types: ["taxi", "taxi-e-presentiel"] },
+  { id: "taxi-e", label: "Formation TAXI E-learning", types: ["taxi-e"] },
+  { id: "ta", label: "Formation TAXI pour chauffeur VTC (TA)", types: ["ta", "ta-e-presentiel"] },
+  { id: "ta-e", label: "Formation TA E-learning", types: ["ta-e"] },
+  { id: "va", label: "Formation VTC pour chauffeur TAXI (VA)", types: ["va", "va-e-presentiel", "va-e"] },
+];
 
 const FORMATION_TO_TYPE: Record<string, string> = {
   "vtc": "vtc",
@@ -143,6 +156,8 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
   const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
   const [dateDebutCoursOpen, setDateDebutCoursOpen] = useState(false);
   const [dateFinCoursOpen, setDateFinCoursOpen] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [selectedFormationForAccount, setSelectedFormationForAccount] = useState<string>("");
   const queryClient = useQueryClient();
 
   // Fonction pour mettre à jour une date
@@ -350,22 +365,12 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
             <Button
               variant="outline"
               size="sm"
-              onClick={async () => {
-                setCreatingAccount(true);
-                try {
-                  const { data, error } = await supabase.functions.invoke("create-apprenant-account", {
-                    body: { apprenant_id: apprenantId, email: apprenant.email },
-                  });
-                  if (error) throw error;
-                  if (data?.error) throw new Error(data.error);
-                  setGeneratedPassword(data.password);
-                  toast.success(`Compte créé ! Mot de passe : ${data.password}`);
-                  queryClient.invalidateQueries({ queryKey: ['apprenant-detail', apprenantId] });
-                } catch (err: any) {
-                  toast.error(err.message || "Erreur lors de la création du compte");
-                } finally {
-                  setCreatingAccount(false);
-                }
+              onClick={() => {
+                // Auto-detect formation from type_apprenant
+                const type = normalizeTypeApprenant((apprenant.type_apprenant || "").split(" + ")[0]);
+                const matched = COMPTE_FORMATIONS.find(f => f.types.includes(type));
+                setSelectedFormationForAccount(matched?.id || "");
+                setShowCreateDialog(true);
               }}
               disabled={creatingAccount}
             >
@@ -436,7 +441,81 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
         onOpenChange={setIsEditOpen} 
       />
 
-      {/* Tabs */}
+      {/* Dialog de création de compte cours */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Créer un compte cours en ligne</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <p className="text-sm font-medium mb-2">Formation *</p>
+              <Select value={selectedFormationForAccount} onValueChange={setSelectedFormationForAccount}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir une formation..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {COMPTE_FORMATIONS.map(f => (
+                    <SelectItem key={f.id} value={f.id}>{f.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {selectedFormationForAccount && (
+              <div>
+                <p className="text-sm font-medium mb-2">Modules qui seront attribués :</p>
+                <div className="max-h-60 overflow-y-auto space-y-1 border rounded-md p-3 bg-muted/30">
+                  {(DEFAULT_MODULES_BY_TYPE[selectedFormationForAccount] || []).map(modId => {
+                    const mod = MODULES_DATA.find(m => m.id === modId);
+                    return mod ? (
+                      <div key={mod.id} className="flex items-center gap-2 text-sm py-1">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <span>{mod.nom}</span>
+                      </div>
+                    ) : null;
+                  })}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Vous pourrez ajouter des modules supplémentaires dans l'onglet « Attribuer les cours ».
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Annuler</Button>
+            <Button
+              disabled={!selectedFormationForAccount || creatingAccount}
+              onClick={async () => {
+                setCreatingAccount(true);
+                try {
+                  // Set modules for this formation
+                  const modules = DEFAULT_MODULES_BY_TYPE[selectedFormationForAccount] || [];
+                  await supabase.from('apprenants').update({ modules_autorises: modules } as any).eq('id', apprenantId);
+
+                  // Create the auth account
+                  const { data, error } = await supabase.functions.invoke("create-apprenant-account", {
+                    body: { apprenant_id: apprenantId, email: apprenant.email },
+                  });
+                  if (error) throw error;
+                  if (data?.error) throw new Error(data.error);
+                  setGeneratedPassword(data.password);
+                  toast.success(`Compte créé pour la formation « ${COMPTE_FORMATIONS.find(f => f.id === selectedFormationForAccount)?.label} » ! Mot de passe : ${data.password}`);
+                  queryClient.invalidateQueries({ queryKey: ['apprenant-detail', apprenantId] });
+                  setShowCreateDialog(false);
+                } catch (err: any) {
+                  toast.error(err.message || "Erreur lors de la création du compte");
+                } finally {
+                  setCreatingAccount(false);
+                }
+              }}
+            >
+              {creatingAccount ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <KeyRound className="w-4 h-4 mr-2" />}
+              Créer le compte
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-10 lg:w-auto lg:inline-grid">
           <TabsTrigger value="infos">Infos</TabsTrigger>
@@ -804,8 +883,18 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
               {/* Modules autorisés */}
               <div>
                 <p className="text-sm font-medium text-foreground mb-3">Modules autorisés</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {MODULES_DATA.map((mod) => {
+                {(() => {
+                  // Detect current formation type to separate modules
+                  const type = normalizeTypeApprenant((apprenant.type_apprenant || "").split(" + ")[0]);
+                  const formationKey2 = (apprenant.formation_choisie || "").split(" + ")[0];
+                  const fallbackType2 = normalizeTypeApprenant(FORMATION_TO_TYPE[formationKey2]);
+                  const resolvedType = type || fallbackType2;
+                  const formationModuleIds = DEFAULT_MODULES_BY_TYPE[resolvedType] || [];
+                  const formationModules = MODULES_DATA.filter(m => formationModuleIds.includes(m.id));
+                  const otherModules = MODULES_DATA.filter(m => !formationModuleIds.includes(m.id));
+                  const matchedFormation = COMPTE_FORMATIONS.find(f => f.types.includes(resolvedType));
+
+                  const renderModuleCheckbox = (mod: typeof MODULES_DATA[0]) => {
                     const isChecked = effectiveModules.includes(mod.id);
                     return (
                       <label key={mod.id} className="flex items-center gap-2 p-2 rounded-md hover:bg-muted/50 cursor-pointer">
@@ -825,8 +914,31 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
                         <span className="text-sm">{mod.nom}</span>
                       </label>
                     );
-                  })}
-                </div>
+                  };
+
+                  return (
+                    <div className="space-y-4">
+                      {matchedFormation && formationModules.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-primary mb-2 uppercase tracking-wider">
+                            📋 Modules {matchedFormation.label}
+                          </p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-1 border rounded-md p-3 bg-primary/5">
+                            {formationModules.map(renderModuleCheckbox)}
+                          </div>
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">
+                          ➕ Modules supplémentaires
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+                          {(formationModules.length > 0 ? otherModules : MODULES_DATA).map(renderModuleCheckbox)}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </CardContent>
           </Card>
