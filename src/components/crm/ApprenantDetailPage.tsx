@@ -890,6 +890,46 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
               {/* Modules autorisés */}
               <div>
                 <p className="text-sm font-medium text-foreground mb-3">Modules autorisés</p>
+
+                {/* Menu déroulant pour choisir la formation */}
+                <div className="mb-4">
+                  <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">
+                    🎓 Choisir la formation à attribuer
+                  </p>
+                  <Select
+                    value={(() => {
+                      const type = normalizeTypeApprenant((apprenant.type_apprenant || "").split(" + ")[0]);
+                      const formationKey2 = (apprenant.formation_choisie || "").split(" + ")[0];
+                      const fallbackType2 = normalizeTypeApprenant(FORMATION_TO_TYPE[formationKey2]);
+                      const resolvedType = type || fallbackType2;
+                      const matched = COMPTE_FORMATIONS.find(f => f.types.includes(resolvedType));
+                      return matched?.id || "";
+                    })()}
+                    onValueChange={async (formationId) => {
+                      const newModules = DEFAULT_MODULES_BY_TYPE[formationId] || [];
+                      if (newModules.length === 0) return;
+                      try {
+                        await supabase.from('apprenants').update({ modules_autorises: newModules } as any).eq('id', apprenantId);
+                        toast.success("Modules mis à jour pour la formation sélectionnée");
+                        queryClient.invalidateQueries({ queryKey: ['apprenant-detail', apprenantId] });
+                      } catch { toast.error("Erreur lors de la mise à jour"); }
+                    }}
+                  >
+                    <SelectTrigger className="w-full max-w-md">
+                      <SelectValue placeholder="Sélectionner une formation..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="vtc">VTC (Présentiel)</SelectItem>
+                      <SelectItem value="vtc-e">VTC E-learning</SelectItem>
+                      <SelectItem value="taxi">TAXI (Présentiel)</SelectItem>
+                      <SelectItem value="taxi-e">TAXI E-learning</SelectItem>
+                      <SelectItem value="ta">TA — Taxi pour VTC (Présentiel)</SelectItem>
+                      <SelectItem value="ta-e">TA — Taxi pour VTC (E-learning)</SelectItem>
+                      <SelectItem value="va">VA — VTC pour Taxi</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {(() => {
                   // Detect current formation type to separate modules
                   const type = normalizeTypeApprenant((apprenant.type_apprenant || "").split(" + ")[0]);
