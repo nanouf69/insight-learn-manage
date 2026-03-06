@@ -365,22 +365,12 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
             <Button
               variant="outline"
               size="sm"
-              onClick={async () => {
-                setCreatingAccount(true);
-                try {
-                  const { data, error } = await supabase.functions.invoke("create-apprenant-account", {
-                    body: { apprenant_id: apprenantId, email: apprenant.email },
-                  });
-                  if (error) throw error;
-                  if (data?.error) throw new Error(data.error);
-                  setGeneratedPassword(data.password);
-                  toast.success(`Compte créé ! Mot de passe : ${data.password}`);
-                  queryClient.invalidateQueries({ queryKey: ['apprenant-detail', apprenantId] });
-                } catch (err: any) {
-                  toast.error(err.message || "Erreur lors de la création du compte");
-                } finally {
-                  setCreatingAccount(false);
-                }
+              onClick={() => {
+                // Auto-detect formation from type_apprenant
+                const type = normalizeTypeApprenant((apprenant.type_apprenant || "").split(" + ")[0]);
+                const matched = COMPTE_FORMATIONS.find(f => f.types.includes(type));
+                setSelectedFormationForAccount(matched?.id || "");
+                setShowCreateDialog(true);
               }}
               disabled={creatingAccount}
             >
