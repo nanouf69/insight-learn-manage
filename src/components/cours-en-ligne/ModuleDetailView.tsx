@@ -1527,10 +1527,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const [inlineQuizValidated, setInlineQuizValidated] = useState<Set<number>>(new Set());
     const [qrcAnswers, setQrcAnswers] = useState<Record<string, string>>({});
     const [qrcResults, setQrcResults] = useState<Record<string, { estCorrect: boolean; pointsObtenus: number; explication: string } | "loading">>({});
-    
+
     const [introAcknowledged, setIntroAcknowledged] = useState<Set<number>>(new Set());
     const [savedAnswersLoaded, setSavedAnswersLoaded] = useState(false);
+    const [uiStateHydrated, setUiStateHydrated] = useState(false);
     const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const learnerUiStateKey = `module-ui-state:${apprenantId ?? "anonymous"}:${module.id}`;
 
     const activeCours = moduleData.cours.filter(c => c.actif);
     const activeExercices = moduleData.exercices.filter(e => e.actif) as ExerciceItem[];
@@ -1562,6 +1564,63 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const currentPageData = pages[currentPage];
     const progressPercent = totalPages > 0 ? Math.round((completedPages.size / totalPages) * 100) : 0;
 
+    // --- Restore learner UI state (page + results) to prevent unwanted reset ---
+    useEffect(() => {
+      if (uiStateHydrated) return;
+
+      try {
+        const rawState = window.sessionStorage.getItem(learnerUiStateKey);
+        if (!rawState) {
+          setUiStateHydrated(true);
+          return;
+        }
+
+        const parsed = JSON.parse(rawState) as {
+          currentPage?: number;
+          selectedAnswers?: Record<string, string>;
+          showResultsFor?: number[];
+          completedPages?: number[];
+        };
+
+        if (parsed.selectedAnswers && typeof parsed.selectedAnswers === "object") {
+          setSelectedAnswers(parsed.selectedAnswers);
+        }
+        if (Array.isArray(parsed.showResultsFor)) {
+          setShowResultsFor(new Set(parsed.showResultsFor));
+        }
+        if (Array.isArray(parsed.completedPages)) {
+          setCompletedPages(new Set(parsed.completedPages));
+        }
+        if (typeof parsed.currentPage === "number" && totalPages > 0) {
+          const clampedPage = Math.max(0, Math.min(parsed.currentPage, totalPages - 1));
+          setCurrentPage(clampedPage);
+        }
+      } catch (error) {
+        console.error("Erreur restauration état module:", error);
+      } finally {
+        setUiStateHydrated(true);
+      }
+    }, [learnerUiStateKey, totalPages, uiStateHydrated]);
+
+    // --- Persist learner UI state while progressing in module ---
+    useEffect(() => {
+      if (!uiStateHydrated) return;
+
+      try {
+        window.sessionStorage.setItem(
+          learnerUiStateKey,
+          JSON.stringify({
+            currentPage,
+            selectedAnswers,
+            showResultsFor: Array.from(showResultsFor),
+            completedPages: Array.from(completedPages),
+          })
+        );
+      } catch (error) {
+        console.error("Erreur sauvegarde état module:", error);
+      }
+    }, [learnerUiStateKey, uiStateHydrated, currentPage, selectedAnswers, showResultsFor, completedPages]);
+
     // --- Load saved partial answers from DB on mount ---
     useEffect(() => {
       if (!apprenantId || savedAnswersLoaded) return;
@@ -1581,7 +1640,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               }
             });
             if (Object.keys(restored).length > 0) {
-              setSelectedAnswers(restored);
+              setSelectedAnswers((prev) => (Object.keys(prev).length > 0 ? prev : restored));
             }
           }
         } catch (e) {
@@ -2163,8 +2222,27 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                     <Button
                       size="lg"
                       onClick={async () => {
-                        setShowResultsFor(prev => new Set(prev).add(exo.id));
-                        markPageCompleted(currentPage);
+                        const nextShowResults = new Set(showResultsFor);
+                        nextShowResults.add(exo.id);
+                        setShowResultsFor(nextShowResults);
+
+                        const nextCompletedPages = new Set(completedPages);
+                        nextCompletedPages.add(currentPage);
+                        setCompletedPages(nextCompletedPages);
+
+                        try {
+                          window.sessionStorage.setItem(
+                            learnerUiStateKey,
+                            JSON.stringify({
+                              currentPage,
+                              selectedAnswers,
+                              showResultsFor: Array.from(nextShowResults),
+                              completedPages: Array.from(nextCompletedPages),
+                            })
+                          );
+                        } catch (error) {
+                          console.error("Erreur snapshot UI module:", error);
+                        }
 
                         // Persist immediately to DB so it shows in "Réalisés"
                         if (apprenantId && !completionPersistedRef.current) {
