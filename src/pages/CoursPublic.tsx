@@ -251,7 +251,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   useEffect(() => {
     if (!apprenantOverride) return;
     setApprenant(apprenantOverride);
-    const formationId = TYPE_TO_FORMATION[apprenantOverride.type_apprenant || ""] || (apprenantOverride.formation_choisie as FormationId) || null;
+    const formationId = resolveFormationId(apprenantOverride.type_apprenant, apprenantOverride.formation_choisie, apprenantOverride.modules_autorises);
     setSelectedFormation(formationId);
   }, [apprenantOverride]);
 
