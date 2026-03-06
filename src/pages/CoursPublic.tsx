@@ -92,6 +92,93 @@ const resolveFormationId = (
   return null;
 };
 
+const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, string>>> = {
+  "vtc": {
+    1: "1.INTRODUCTION PRÉSENTIEL",
+    2: "2.COURS ET EXERCICES VTC",
+    3: "3.FORMULES",
+    4: "4.BILAN EXERCICES VTC",
+    35: "5.EXAMENS BLANCS VTC",
+    5: "6.BILAN EXAMEN VTC",
+    8: "7.PRATIQUE VTC",
+  },
+  "vtc-cours-du-soir": {
+    1: "1.INTRODUCTION PRÉSENTIEL",
+    2: "2.COURS ET EXERCICES VTC",
+    3: "3.FORMULES",
+    4: "4.BILAN EXERCICES VTC",
+    35: "5.EXAMENS BLANCS VTC",
+    5: "6.BILAN EXAMEN VTC",
+    8: "7.PRATIQUE VTC",
+  },
+  "vtc-elearning": {
+    26: "1.INTRODUCTION E-LEARNING",
+    2: "2.COURS ET EXERCICES VTC",
+    3: "3.FORMULES",
+    4: "4.BILAN EXERCICES VTC",
+    35: "5.EXAMENS BLANCS VTC",
+    5: "6.BILAN EXAMEN VTC",
+    8: "7.PRATIQUE VTC",
+  },
+  "taxi": {
+    1: "1.INTRODUCTION PRÉSENTIEL",
+    10: "2.COURS ET EXERCICES TAXI",
+    7: "3.CONNAISSANCES DE LA VILLE TAXI",
+    3: "4.FORMULES",
+    9: "5.BILAN EXERCICES TAXI",
+    13: "6.CONTRÔLE DE CONNAISSANCES TAXI",
+    11: "7.BILAN EXAMEN TAXI",
+    36: "8.EXAMENS BLANCS TAXI",
+    6: "9.PRATIQUE TAXI",
+  },
+  "taxi-elearning": {
+    26: "1.INTRODUCTION E-LEARNING",
+    10: "2.COURS ET EXERCICES TAXI",
+    7: "3.CONNAISSANCES DE LA VILLE TAXI",
+    3: "4.FORMULES",
+    9: "5.BILAN EXERCICES TAXI",
+    13: "6.CONTRÔLE DE CONNAISSANCES TAXI",
+    11: "7.BILAN EXAMEN TAXI",
+    36: "8.EXAMENS BLANCS TAXI",
+    6: "9.PRATIQUE TAXI",
+  },
+  "taxi-pour-vtc": {
+    31: "1.INTRODUCTION TA",
+    40: "2.COURS ET EXERCICES TA",
+    7: "3.CONNAISSANCES DE LA VILLE TAXI",
+    3: "4.FORMULES",
+    27: "5.BILAN EXERCICES TA",
+    28: "6.BILAN EXAMEN TA",
+    37: "7.EXAMENS BLANCS TA",
+    6: "8.PRATIQUE TAXI",
+  },
+  "taxi-pour-vtc-elearning": {
+    32: "1.INTRODUCTION TA E-LEARNING",
+    40: "2.COURS ET EXERCICES TA",
+    7: "3.CONNAISSANCES DE LA VILLE TAXI",
+    3: "4.FORMULES",
+    27: "5.BILAN EXERCICES TA",
+    13: "6.CONTRÔLE DE CONNAISSANCES TAXI",
+    28: "7.BILAN EXAMEN TA",
+    37: "8.EXAMENS BLANCS TA",
+    6: "9.PRATIQUE TAXI",
+  },
+  "vtc-pour-taxi": {
+    33: "1.INTRODUCTION VA",
+    34: "1.INTRODUCTION VA",
+    41: "2.COURS ET EXERCICES VA",
+    7: "3.CONNAISSANCES DE LA VILLE TAXI",
+    3: "4.FORMULES",
+    29: "5.BILAN EXERCICES VA",
+    30: "6.BILAN EXAMEN VA",
+    38: "7.EXAMENS BLANCS VA",
+    8: "8.PRATIQUE VTC",
+  },
+};
+
+const getModuleDisplayName = (formationId: FormationId, moduleId: number, fallback: string) =>
+  FORMATION_DISPLAY_LABELS[formationId]?.[moduleId] || fallback;
+
 // Module IDs that should open ExamensBlancsPage (bilans)
 const BILAN_MODULE_IDS: Record<number, string> = {
   28: "bilan-ta",
@@ -435,16 +522,29 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // Dashboard
   const formation = FORMATIONS.find((f) => f.id === selectedFormation)!;
   const allModules = MODULES_DATA.filter((m) => m.formations.includes(selectedFormation));
-  // Filter by authorized modules if set (admin-side), otherwise show all
-  const authorizedIds = apprenant?.modules_autorises;
-  const expandedIds = expandModulesAutorises(authorizedIds);
-  const modules = !embedded && expandedIds && expandedIds.length > 0
-    ? allModules.filter((m) => expandedIds.includes(m.id))
+
+  // Keep learner list aligned with CRM order and module selection (no auto-expansion in UI list)
+  const authorizedIds = Array.isArray(apprenant?.modules_autorises)
+    ? Array.from(new Set(apprenant.modules_autorises.map((id) => Number(id)).filter((id) => Number.isFinite(id))))
+    : [];
+
+  const orderedAuthorizedModules = authorizedIds
+    .map((id) => allModules.find((module) => module.id === id))
+    .filter((module): module is (typeof MODULES_DATA)[number] => !!module);
+
+  const sourceModules = !embedded && orderedAuthorizedModules.length > 0
+    ? orderedAuthorizedModules
     : allModules;
-  const completedCount = modules.filter(m => completedModuleIds.has(m.id)).length;
+
+  const modules = sourceModules.map((module) => ({
+    ...module,
+    nom: getModuleDisplayName(selectedFormation, module.id, module.nom),
+  }));
+
+  const completedCount = modules.filter((m) => completedModuleIds.has(m.id)).length;
   const globalProgress = modules.length > 0 ? Math.round((completedCount / modules.length) * 100) : 0;
-  const remainingModules = modules.filter(m => !completedModuleIds.has(m.id));
-  const doneModules = modules.filter(m => completedModuleIds.has(m.id));
+  const remainingModules = modules.filter((m) => !completedModuleIds.has(m.id));
+  const doneModules = modules.filter((m) => completedModuleIds.has(m.id));
   const lowModules = remainingModules.slice(0, 3);
   const studentName = apprenant ? `${apprenant.prenom} ${apprenant.nom}` : "Apprenant";
 
