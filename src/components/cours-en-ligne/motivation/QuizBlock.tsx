@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 
-const SAMPLE_QUESTIONS = [
+const VTC_QUESTIONS = [
   {
     q: "Un VTC doit-il afficher sa carte pro dans le véhicule ?",
     options: ["Oui, obligatoirement", "Non, jamais", "Seulement en Île-de-France", "Uniquement la nuit"],
@@ -16,13 +16,72 @@ const SAMPLE_QUESTIONS = [
     options: ["4 passagers", "7 passagers", "9 passagers", "Illimitée"],
     answer: 2,
   },
+  {
+    q: "Un VTC peut-il stationner sur la voie publique en attente de clients ?",
+    options: ["Oui, librement", "Non, c'est interdit", "Seulement la nuit", "Seulement en zone rurale"],
+    answer: 1,
+  },
+  {
+    q: "La carte professionnelle VTC est délivrée par :",
+    options: ["La mairie", "La préfecture", "La CMA (Chambre des Métiers)", "Le ministère des Transports"],
+    answer: 1,
+  },
+  {
+    q: "Un VTC doit-il avoir un macaron visible sur son véhicule ?",
+    options: ["Non, jamais", "Oui, un macaron vert", "Oui, une signalétique spécifique", "Seulement en Île-de-France"],
+    answer: 2,
+  },
 ];
+
+const TAXI_QUESTIONS = [
+  {
+    q: "De quelle couleur est le lumineux d'un taxi libre ?",
+    options: ["Rouge", "Vert", "Blanc", "Bleu"],
+    answer: 1,
+  },
+  {
+    q: "Un taxi peut-il refuser une course ?",
+    options: ["Oui, toujours", "Non, sauf exceptions légales", "Seulement la nuit", "Seulement pour les courtes distances"],
+    answer: 1,
+  },
+  {
+    q: "L'ADS (Autorisation de Stationnement) est délivrée par :",
+    options: ["La préfecture", "Le maire de la commune", "La CMA", "Le ministère des Transports"],
+    answer: 1,
+  },
+  {
+    q: "Un taxi doit-il appliquer le tarif au compteur (horodateur) ?",
+    options: ["Non, il fixe son prix librement", "Oui, obligatoirement", "Seulement pour les longues courses", "Seulement en ville"],
+    answer: 1,
+  },
+  {
+    q: "La capacité maximale d'un taxi est de :",
+    options: ["4 passagers", "7 passagers", "9 passagers", "Illimitée"],
+    answer: 2,
+  },
+  {
+    q: "Quel supplément un taxi peut-il facturer pour les bagages ?",
+    options: ["Aucun supplément", "Un forfait libre", "Le 4ème bagage et au-delà", "Tout bagage dès le 1er"],
+    answer: 2,
+  },
+];
+
+function pickRandom<T>(arr: T[], count: number): T[] {
+  const shuffled = [...arr].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, count);
+}
 
 interface QuizBlockProps {
   onXPGained?: (xp: number) => void;
+  category?: "vtc" | "taxi";
 }
 
-export function QuizBlock({ onXPGained }: QuizBlockProps) {
+export function QuizBlock({ onXPGained, category = "vtc" }: QuizBlockProps) {
+  const questions = useMemo(
+    () => pickRandom(category === "taxi" ? TAXI_QUESTIONS : VTC_QUESTIONS, 3),
+    [category]
+  );
+
   const [qIndex, setQIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [answers, setAnswers] = useState<boolean[]>([]);
@@ -31,7 +90,7 @@ export function QuizBlock({ onXPGained }: QuizBlockProps) {
   const [xpAnim, setXpAnim] = useState(false);
   const [confetti, setConfetti] = useState<{ id: number; x: number; delay: number; color: string; size: number }[]>([]);
 
-  const q = SAMPLE_QUESTIONS[qIndex];
+  const q = questions[qIndex];
 
   function handleAnswer(idx: number) {
     if (selected !== null) return;
@@ -39,7 +98,7 @@ export function QuizBlock({ onXPGained }: QuizBlockProps) {
     setTimeout(() => {
       const next = [...answers, idx === q.answer];
       setAnswers(next);
-      if (qIndex + 1 < SAMPLE_QUESTIONS.length) {
+      if (qIndex + 1 < questions.length) {
         setQIndex(qIndex + 1);
         setSelected(null);
       } else {
@@ -80,7 +139,7 @@ export function QuizBlock({ onXPGained }: QuizBlockProps) {
   }
 
   const score = answers.filter(Boolean).length;
-  const pct = Math.round((score / SAMPLE_QUESTIONS.length) * 100);
+  const pct = Math.round((score / questions.length) * 100);
   const xpGain = score * 20;
   const resultEmoji = pct >= 70 ? "🎉" : pct >= 40 ? "👍" : "💪";
   const resultMsg = pct >= 70 ? "Excellent ! Tu maîtrises ce sujet !" : pct >= 40 ? "Bien joué, continue tes révisions !" : "Encore un effort, tu vas y arriver !";
@@ -114,10 +173,10 @@ export function QuizBlock({ onXPGained }: QuizBlockProps) {
         <div style={{ animation: "fadeSlide 0.35s ease both" }} key={qIndex}>
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-extrabold text-foreground text-base flex items-center gap-2">
-              🎯 Mini Quiz Rapide
+              🎯 Mini Quiz {category === "taxi" ? "TAXI" : "VTC"}
             </h3>
             <span className="text-xs text-muted-foreground">
-              {qIndex + 1}/{SAMPLE_QUESTIONS.length}
+              {qIndex + 1}/{questions.length}
             </span>
           </div>
 
@@ -125,7 +184,7 @@ export function QuizBlock({ onXPGained }: QuizBlockProps) {
           <div className="bg-muted rounded-full h-1.5 mb-5 overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-primary to-slate-900 rounded-full transition-all duration-400"
-              style={{ width: `${(qIndex / SAMPLE_QUESTIONS.length) * 100}%` }}
+              style={{ width: `${(qIndex / questions.length) * 100}%` }}
             />
           </div>
 
@@ -177,7 +236,7 @@ export function QuizBlock({ onXPGained }: QuizBlockProps) {
               animation: "popBounce 0.6s 0.1s ease both",
             }}
           >
-            {score}/{SAMPLE_QUESTIONS.length}
+            {score}/{questions.length}
           </div>
           <p className="text-sm text-muted-foreground mt-2 mb-4">
             bonnes réponses · {pct}% de réussite
