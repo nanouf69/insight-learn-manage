@@ -615,8 +615,23 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const ELEARNING_FORMATION_IDS: FormationId[] = ["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"];
   const isElearning = ELEARNING_FORMATION_IDS.includes(selectedFormation);
 
+  const normalizedTypeApprenant = normalizeFormationKey(apprenant?.type_apprenant);
+  const normalizedFormationChoisie = normalizeFormationKey(apprenant?.formation_choisie);
+
+  const isTaxiProfile =
+    normalizedTypeApprenant === "taxi" ||
+    normalizedTypeApprenant.startsWith("taxi-") ||
+    normalizedTypeApprenant === "ta" ||
+    normalizedTypeApprenant.startsWith("ta-") ||
+    normalizedTypeApprenant.startsWith("passerelle-taxi") ||
+    normalizedFormationChoisie === "taxi" ||
+    normalizedFormationChoisie.startsWith("taxi-") ||
+    normalizedFormationChoisie === "ta" ||
+    normalizedFormationChoisie.startsWith("ta-") ||
+    normalizedFormationChoisie.startsWith("passerelle-taxi");
+
   const quizCategory: "taxi" | "vtc" =
-    ["taxi", "taxi-elearning", "taxi-pour-vtc", "taxi-pour-vtc-elearning"].includes(selectedFormation)
+    isTaxiProfile || ["taxi", "taxi-elearning", "taxi-pour-vtc", "taxi-pour-vtc-elearning"].includes(selectedFormation)
       ? "taxi"
       : "vtc";
 
