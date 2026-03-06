@@ -176,6 +176,25 @@ const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, strin
   },
 };
 
+const FORMATION_DEFAULT_MODULES: Record<FormationId, number[]> = {
+  "vtc": [1, 2, 3, 4, 35, 5, 8],
+  "vtc-cours-du-soir": [1, 2, 3, 4, 35, 5, 8],
+  "vtc-elearning": [26, 2, 3, 4, 35, 5, 8],
+  "taxi": [1, 10, 7, 3, 9, 13, 11, 36, 6],
+  "taxi-elearning": [26, 10, 7, 3, 9, 13, 11, 36, 6],
+  "taxi-pour-vtc": [31, 40, 7, 3, 27, 28, 37, 6],
+  "taxi-pour-vtc-elearning": [32, 40, 7, 3, 27, 13, 28, 37, 6],
+  "vtc-pour-taxi": [34, 41, 7, 3, 29, 30, 38, 8],
+};
+
+const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 41]);
+const GROUPED_PARENT_MODULES: Partial<Record<number, number[]>> = {
+  2: [25, 14, 15, 16, 17, 18, 19],
+  10: [20, 21, 22, 23, 24],
+  40: [24],
+  41: [18, 19],
+};
+
 const getModuleDisplayName = (formationId: FormationId, moduleId: number, fallback: string) =>
   FORMATION_DISPLAY_LABELS[formationId]?.[moduleId] || fallback;
 
