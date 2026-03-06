@@ -14,11 +14,78 @@ interface ResetCoursTabProps {
   queryClient: QueryClient;
 }
 
+const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 41]);
+
+const FORMATION_TO_TYPE: Record<string, string> = {
+  "vtc": "vtc",
+  "vtc-exam": "vtc",
+  "vtc-elearning-1099": "vtc-e",
+  "vtc-elearning": "vtc-e",
+  "taxi": "taxi",
+  "taxi-exam": "taxi",
+  "taxi-elearning": "taxi-e",
+  "passerelle-taxi": "ta",
+  "passerelle-taxi-elearning": "ta-e",
+  "passerelle-vtc-elearning": "va-e",
+  "vtc-e-presentiel": "vtc-e-presentiel",
+  "taxi-e-presentiel": "taxi-e-presentiel",
+  "ta-e-presentiel": "ta-e-presentiel",
+};
+
+const normalizeTypeApprenant = (rawType: string | null | undefined): string => {
+  if (!rawType) return "";
+
+  const normalized = rawType.trim().toLowerCase();
+  if (!normalized) return "";
+
+  const dashed = normalized.replace(/\s+/g, "-");
+
+  const aliases: Record<string, string> = {
+    "vtc-e": "vtc-e",
+    "taxi-e": "taxi-e",
+    "ta-e": "ta-e",
+    "va-e": "va-e",
+    "vtc-e-presentiel": "vtc-e-presentiel",
+    "taxi-e-presentiel": "taxi-e-presentiel",
+    "ta-e-presentiel": "ta-e-presentiel",
+    "va-e-presentiel": "va-e-presentiel",
+  };
+
+  return aliases[normalized] || aliases[dashed] || dashed;
+};
+
+const FORMATION_LABELS: Record<string, Record<number, string>> = {
+  "vtc": { 1: "1.INTRODUCTION PRÉSENTIEL", 2: "2.COURS ET EXERCICES VTC", 3: "3.FORMULES", 4: "4.BILAN EXERCICES VTC", 35: "5.EXAMENS BLANCS VTC", 5: "6.BILAN EXAMEN VTC", 8: "7.PRATIQUE VTC" },
+  "vtc-e": { 26: "1.INTRODUCTION E-LEARNING", 2: "2.COURS ET EXERCICES VTC", 3: "3.FORMULES", 4: "4.BILAN EXERCICES VTC", 35: "5.EXAMENS BLANCS VTC", 5: "6.BILAN EXAMEN VTC", 8: "7.PRATIQUE VTC" },
+  "taxi": { 1: "1.INTRODUCTION PRÉSENTIEL", 10: "2.COURS ET EXERCICES TAXI", 7: "3.CONNAISSANCES DE LA VILLE TAXI", 3: "4.FORMULES", 9: "5.BILAN EXERCICES TAXI", 13: "6.CONTRÔLE DE CONNAISSANCES TAXI", 11: "7.BILAN EXAMEN TAXI", 36: "8.EXAMENS BLANCS TAXI", 6: "9.PRATIQUE TAXI" },
+  "taxi-e": { 26: "1.INTRODUCTION E-LEARNING", 10: "2.COURS ET EXERCICES TAXI", 7: "3.CONNAISSANCES DE LA VILLE TAXI", 3: "4.FORMULES", 9: "5.BILAN EXERCICES TAXI", 13: "6.CONTRÔLE DE CONNAISSANCES TAXI", 11: "7.BILAN EXAMEN TAXI", 36: "8.EXAMENS BLANCS TAXI", 6: "9.PRATIQUE TAXI" },
+  "ta": { 31: "1.INTRODUCTION TA", 40: "2.COURS ET EXERCICES TA", 7: "3.CONNAISSANCES DE LA VILLE TAXI", 3: "4.FORMULES", 27: "5.BILAN EXERCICES TA", 28: "6.BILAN EXAMEN TA", 37: "7.EXAMENS BLANCS TA", 6: "8.PRATIQUE TAXI" },
+  "ta-e": { 32: "1.INTRODUCTION TA E-LEARNING", 40: "2.COURS ET EXERCICES TA", 7: "3.CONNAISSANCES DE LA VILLE TAXI", 3: "4.FORMULES", 27: "5.BILAN EXERCICES TA", 13: "6.CONTRÔLE DE CONNAISSANCES TAXI", 28: "7.BILAN EXAMEN TA", 37: "8.EXAMENS BLANCS TA", 6: "9.PRATIQUE TAXI" },
+  "va": { 34: "1.INTRODUCTION VA", 41: "2.COURS ET EXERCICES VA", 7: "3.CONNAISSANCES DE LA VILLE TAXI", 3: "4.FORMULES", 29: "5.BILAN EXERCICES VA", 30: "6.BILAN EXAMEN VA", 38: "7.EXAMENS BLANCS VA", 8: "8.PRATIQUE VTC" },
+};
+
+["vtc-e-presentiel", "taxi-e-presentiel", "ta-e-presentiel", "va-e-presentiel", "va-e"].forEach((k) => {
+  const base = k.replace("-e-presentiel", "").replace("-e", "");
+  if (!FORMATION_LABELS[k] && FORMATION_LABELS[base]) {
+    FORMATION_LABELS[k] = FORMATION_LABELS[base];
+  }
+});
+
 export function ResetCoursTab({ apprenant, queryClient }: ResetCoursTabProps) {
   const [resettingModule, setResettingModule] = useState<number | null>(null);
   const [resettingAll, setResettingAll] = useState(false);
 
-  const modulesAutorises: number[] = apprenant.modules_autorises || [];
+  const authorizedModuleIds: number[] = Array.isArray(apprenant.modules_autorises)
+    ? apprenant.modules_autorises
+        .map((id: any) => Number(id))
+        .filter((id: number) => Number.isFinite(id))
+    : [];
+
+  const primaryType = normalizeTypeApprenant((apprenant.type_apprenant || "").split(" + ")[0]);
+  const formationKey = (apprenant.formation_choisie || "").split(" + ")[0];
+  const fallbackType = normalizeTypeApprenant(FORMATION_TO_TYPE[formationKey]);
+  const resolvedType = primaryType || fallbackType;
+  const labelsForType = FORMATION_LABELS[resolvedType] || {};
 
   // Fetch completions for this learner
   const { data: completions = [] } = useQuery({
@@ -44,16 +111,22 @@ export function ResetCoursTab({ apprenant, queryClient }: ResetCoursTabProps) {
     },
   });
 
-  const visibleModules = MODULES_DATA.filter(m => modulesAutorises.includes(m.id));
+  const visibleModules = Array.from(new Set(authorizedModuleIds))
+    .filter((id) => MANAGED_MODULE_IDS.has(id))
+    .map((id) => MODULES_DATA.find((m) => m.id === id))
+    .filter((m): m is typeof MODULES_DATA[number] => !!m);
+
+  const getDisplayLabel = (moduleId: number, fallbackName: string) => labelsForType[moduleId] || fallbackName;
 
   const getModuleCompletion = (moduleId: number) => {
     return completions.find((c: any) => c.module_id === moduleId);
   };
 
   const resetModule = async (moduleId: number) => {
-    const mod = MODULES_DATA.find(m => m.id === moduleId);
+    const mod = MODULES_DATA.find((m) => m.id === moduleId);
+    const moduleLabel = getDisplayLabel(moduleId, mod?.nom || "Module");
     const confirmed = window.confirm(
-      `Remettre à zéro le module "${mod?.nom}" pour ${apprenant.prenom} ${apprenant.nom} ?`
+      `Remettre à zéro le module "${moduleLabel}" pour ${apprenant.prenom} ${apprenant.nom} ?`
     );
     if (!confirmed) return;
 
@@ -75,7 +148,7 @@ export function ResetCoursTab({ apprenant, queryClient }: ResetCoursTabProps) {
 
       queryClient.invalidateQueries({ queryKey: ["reset-completions"] });
       queryClient.invalidateQueries({ queryKey: ["reset-quiz-results"] });
-      toast.success(`Module "${mod?.nom}" remis à zéro`);
+      toast.success(`Module "${moduleLabel}" remis à zéro`);
     } catch (error: any) {
       toast.error("Erreur : " + error.message);
     } finally {
@@ -168,7 +241,7 @@ export function ResetCoursTab({ apprenant, queryClient }: ResetCoursTabProps) {
                   return (
                     <TableRow key={mod.id}>
                       <TableCell className="font-medium text-primary">
-                        {mod.nom}
+                        {getDisplayLabel(mod.id, mod.nom)}
                       </TableCell>
                       <TableCell className="text-center">
                         {isCompleted ? score : "0%"}
