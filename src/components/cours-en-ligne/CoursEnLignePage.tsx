@@ -460,20 +460,6 @@ const ApprenantSearchPreview = () => {
               <h2 className="text-2xl font-bold">Modules par formation</h2>
               <p className="text-sm text-muted-foreground mt-1">Vue synthétique des modules attribués à chaque type de formation</p>
             </div>
-            <Select value={selectedFormation} onValueChange={setSelectedFormation}>
-              <SelectTrigger className="w-[280px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="vtc">VTC (Présentiel)</SelectItem>
-                <SelectItem value="vtc-e">VTC E-learning</SelectItem>
-                <SelectItem value="taxi">TAXI (Présentiel)</SelectItem>
-                <SelectItem value="taxi-e">TAXI E-learning</SelectItem>
-                <SelectItem value="ta">TA — Taxi pour VTC (Présentiel)</SelectItem>
-                <SelectItem value="ta-e">TA — Taxi pour VTC (E-learning)</SelectItem>
-                <SelectItem value="va">VA — VTC pour Taxi</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
           {(() => {
@@ -551,28 +537,31 @@ const ApprenantSearchPreview = () => {
               ]},
             };
 
-            const current = FORMATION_MODULES[selectedFormation];
-            if (!current) return null;
+            const entries = Object.entries(FORMATION_MODULES);
 
             return (
-              <Card className="border max-w-lg">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-3">
-                    <Badge className={`${current.color} border font-semibold text-sm`}>{current.label}</Badge>
-                    <span className="text-xs text-muted-foreground">{current.modules.length} modules</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <ul className="space-y-2">
-                    {current.modules.map((mod) => (
-                      <li key={mod.id} className="flex items-start gap-2 text-sm">
-                        <CheckCircle2 className="w-4 h-4 mt-0.5 text-primary shrink-0" />
-                        <span className="font-medium text-foreground">{mod.label}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {entries.map(([key, formation]) => (
+                  <Card key={key} className="border">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-3">
+                        <Badge className={`${formation.color} border font-semibold text-sm`}>{formation.label}</Badge>
+                        <span className="text-xs text-muted-foreground">{formation.modules.length} modules</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <ul className="space-y-2">
+                        {formation.modules.map((mod) => (
+                          <li key={mod.id} className="flex items-start gap-2 text-sm">
+                            <CheckCircle2 className="w-4 h-4 mt-0.5 text-primary shrink-0" />
+                            <span className="font-medium text-foreground">{mod.label}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             );
           })()}
         </TabsContent>
