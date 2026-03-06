@@ -23,16 +23,69 @@ import { safeDateParse } from "@/lib/safeDateParse";
 import { useConnexionTracking } from "@/hooks/useConnexionTracking";
 import { useInactivityAlert } from "@/hooks/useInactivityAlert";
 
-// Map type_apprenant from CRM to formation IDs
-const TYPE_TO_FORMATION: Record<string, FormationId> = {
-  "VTC": "vtc",
-  "TAXI": "taxi",
-  "TA": "taxi-pour-vtc",
-  "VA": "vtc-pour-taxi",
-  "VTC-E": "vtc-elearning",
-  "TAXI-E": "taxi-elearning",
-  "TA-E": "taxi-pour-vtc-elearning",
-  "VTC-S": "vtc-cours-du-soir",
+// Map CRM values to formation IDs (supports lowercase, aliases and multi-selection values like "x + y")
+const FORMATION_ALIASES: Record<string, FormationId> = {
+  "vtc": "vtc",
+  "vtc-exam": "vtc",
+  "vtc-e-presentiel": "vtc",
+  "vtc-e": "vtc-elearning",
+  "vtc-elearning": "vtc-elearning",
+  "vtc-elearning-1099": "vtc-elearning",
+  "taxi": "taxi",
+  "taxi-exam": "taxi",
+  "taxi-e-presentiel": "taxi",
+  "taxi-e": "taxi-elearning",
+  "taxi-elearning": "taxi-elearning",
+  "ta": "taxi-pour-vtc",
+  "ta-e-presentiel": "taxi-pour-vtc",
+  "ta-e": "taxi-pour-vtc-elearning",
+  "passerelle-taxi": "taxi-pour-vtc",
+  "passerelle-taxi-elearning": "taxi-pour-vtc-elearning",
+  "va": "vtc-pour-taxi",
+  "va-e-presentiel": "vtc-pour-taxi",
+  "va-e": "vtc-pour-taxi",
+  "passerelle-vtc": "vtc-pour-taxi",
+  "passerelle-vtc-elearning": "vtc-pour-taxi",
+  "vtc-s": "vtc-cours-du-soir",
+  "vtc-cours-du-soir": "vtc-cours-du-soir",
+};
+
+const normalizeFormationKey = (value: string | null | undefined): string =>
+  (value || "").split(" + ")[0].trim().toLowerCase().replace(/\s+/g, "-");
+
+const inferFormationFromModules = (modulesAutorises: number[] | null | undefined): FormationId | null => {
+  if (!modulesAutorises || modulesAutorises.length === 0) return null;
+
+  const expanded = new Set(expandModulesAutorises(modulesAutorises) || modulesAutorises);
+  let best: { id: FormationId; score: number } | null = null;
+
+  for (const formation of FORMATIONS) {
+    const formationModuleIds = MODULES_DATA
+      .filter((module) => module.formations.includes(formation.id))
+      .map((module) => module.id);
+
+    const score = formationModuleIds.reduce((acc, moduleId) => acc + (expanded.has(moduleId) ? 1 : 0), 0);
+
+    if (!best || score > best.score) {
+      best = { id: formation.id, score };
+    }
+  }
+
+  return best && best.score > 0 ? best.id : null;
+};
+
+const resolveFormationId = (
+  typeApprenant: string | null | undefined,
+  formationChoisie: string | null | undefined,
+  modulesAutorises: number[] | null | undefined,
+): FormationId | null => {
+  const byType = FORMATION_ALIASES[normalizeFormationKey(typeApprenant)];
+  if (byType) return byType;
+
+  const byFormation = FORMATION_ALIASES[normalizeFormationKey(formationChoisie)];
+  if (byFormation) return byFormation;
+
+  return inferFormationFromModules(modulesAutorises);
 };
 
 // Module IDs that should open ExamensBlancsPage (bilans)
