@@ -266,6 +266,19 @@ export const MODULES_DATA: ModuleInfo[] = [
     description: "6 examens blancs Passerelle VA chronométrés (Développement Commercial et Réglementation Spécifique VTC)",
     formations: ["vtc-pour-taxi"],
   },
+  // === Modules cours groupés TA et VA ===
+  {
+    id: 40,
+    nom: "2.COURS ET EXERCICES TA",
+    description: "Cours et exercices Réglementation Nationale et Locale — passerelle TA",
+    formations: ["taxi-pour-vtc", "taxi-pour-vtc-elearning"],
+  },
+  {
+    id: 41,
+    nom: "2.COURS ET EXERCICES VA",
+    description: "Cours et exercices Développement Commercial et Réglementation Spécifique VTC — passerelle VA",
+    formations: ["vtc-pour-taxi"],
+  },
 ];
 
 // Expansion des modules_autorises :
