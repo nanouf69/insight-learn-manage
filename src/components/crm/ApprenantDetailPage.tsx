@@ -165,6 +165,7 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
   const [dateFinCoursOpen, setDateFinCoursOpen] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedFormationForAccount, setSelectedFormationForAccount] = useState<string>("");
+  const [selectedFormationForModules, setSelectedFormationForModules] = useState<string>("");
   const queryClient = useQueryClient();
 
   // Fonction pour mettre à jour une date
@@ -289,11 +290,22 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
   const primaryType = normalizeTypeApprenant((((apprenant as any)?.type_apprenant || "") as string).split(" + ")[0]);
   const formationKey = ((((apprenant as any)?.formation_choisie || "") as string).split(" + ")[0]);
   const fallbackTypeFromFormation = normalizeTypeApprenant(FORMATION_TO_TYPE[formationKey]);
-  const fallbackDefaultModules = DEFAULT_MODULES_BY_TYPE[primaryType]
-    || (fallbackTypeFromFormation ? DEFAULT_MODULES_BY_TYPE[fallbackTypeFromFormation] : undefined)
-    || [];
+  const resolvedTypeFromApprenant = primaryType || fallbackTypeFromFormation;
+  const activeFormationType = selectedFormationForModules || resolvedTypeFromApprenant;
+
+  const fallbackDefaultModules = DEFAULT_MODULES_BY_TYPE[resolvedTypeFromApprenant] || [];
   const effectiveModules = currentModules.length > 0 ? currentModules : fallbackDefaultModules;
   const fallbackSignature = fallbackDefaultModules.join(",");
+
+  useEffect(() => {
+    setSelectedFormationForModules("");
+  }, [apprenantId]);
+
+  useEffect(() => {
+    if (!selectedFormationForModules && resolvedTypeFromApprenant) {
+      setSelectedFormationForModules(resolvedTypeFromApprenant);
+    }
+  }, [resolvedTypeFromApprenant, selectedFormationForModules]);
 
   useEffect(() => {
     if (!apprenant?.id) return;
