@@ -498,7 +498,7 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
             {selectedFormationForAccount && (
               <div>
                 <p className="text-sm font-medium mb-2">Modules qui seront attribués :</p>
-                <div className="max-h-60 overflow-y-auto space-y-1 border rounded-md p-3 bg-muted/30">
+                <div className="space-y-1 border rounded-md p-3 bg-muted/30">
                   {(DEFAULT_MODULES_BY_TYPE[selectedFormationForAccount] || []).map((modId) => {
                     const mod = MODULES_DATA.find((m) => m.id === modId);
                     const displayLabel = FORMATION_LABELS_BY_TYPE[selectedFormationForAccount]?.[modId]
