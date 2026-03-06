@@ -484,12 +484,18 @@ const ApprenantSearchPreview = () => {
                     <CardContent className="pt-0">
                       <ul className="space-y-1.5">
                         {modIds.map((id) => {
+                          // Afficher le nom parent pour les modules cours groupés
+                          const displayNames: Record<number, string> = {
+                            2: "2.COURS ET EXERCICES VTC",
+                            10: "2.COURS ET EXERCICES TAXI",
+                          };
                           const mod = MODULES_DATA.find(m => m.id === id);
+                          const name = displayNames[id] || mod?.nom || `Module ${id}`;
                           return (
                             <li key={id} className="flex items-start gap-2 text-sm">
                               <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 text-primary shrink-0" />
                               <span className="text-foreground leading-tight">
-                                <span className="font-medium">{mod?.nom || `Module ${id}`}</span>
+                                <span className="font-medium">{name}</span>
                               </span>
                             </li>
                           );
