@@ -241,6 +241,31 @@ export const MODULES_DATA: ModuleInfo[] = [
     description: "Livret d'accueil passerelle VA (e-learning) : programme des 2 matières.",
     formations: ["vtc-pour-taxi"],
   },
+  // === Examens Blancs ===
+  {
+    id: 35,
+    nom: "5.EXAMENS BLANCS VTC",
+    description: "6 examens blancs VTC chronométrés avec toutes les matières",
+    formations: ["vtc", "vtc-elearning", "vtc-cours-du-soir"],
+  },
+  {
+    id: 36,
+    nom: "5.EXAMENS BLANCS TAXI",
+    description: "6 examens blancs TAXI chronométrés avec toutes les matières",
+    formations: ["taxi", "taxi-elearning"],
+  },
+  {
+    id: 37,
+    nom: "5.EXAMENS BLANCS TA",
+    description: "6 examens blancs Passerelle TA chronométrés (Réglementation Nationale et Locale)",
+    formations: ["taxi-pour-vtc", "taxi-pour-vtc-elearning"],
+  },
+  {
+    id: 38,
+    nom: "5.EXAMENS BLANCS VA",
+    description: "6 examens blancs Passerelle VA chronométrés (Développement Commercial et Réglementation Spécifique VTC)",
+    formations: ["vtc-pour-taxi"],
+  },
 ];
 
 // Expansion des modules_autorises :

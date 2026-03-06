@@ -21,25 +21,25 @@ import { MODULES_DATA } from "@/components/cours-en-ligne/formations-data";
 
 // Mapping type d'apprenant → modules par défaut
 const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {
-  // Formation VTC — Intro présentiel, cours VTC, formules, bilan exercices VTC, bilan examen VTC, pratique VTC
-  "vtc":               [1, 2, 25, 14, 15, 16, 17, 18, 19, 3, 4, 5, 8],
-  "vtc-e-presentiel":  [1, 2, 25, 14, 15, 16, 17, 18, 19, 3, 4, 5, 8],
+  // Formation VTC — Intro présentiel, cours VTC, formules, bilan exercices VTC, bilan examen VTC, examens blancs VTC, pratique VTC
+  "vtc":               [1, 2, 25, 14, 15, 16, 17, 18, 19, 3, 4, 5, 35, 8],
+  "vtc-e-presentiel":  [1, 2, 25, 14, 15, 16, 17, 18, 19, 3, 4, 5, 35, 8],
   // Formation VTC E-learning — Intro e-learning
-  "vtc-e":             [26, 2, 25, 14, 15, 16, 17, 18, 19, 3, 4, 5, 8],
-  // Formation TAXI — Intro présentiel, cours TAXI, connaissances ville, formules, bilan exercices TAXI, contrôle connaissances, bilan examen TAXI, pratique TAXI
-  "taxi":              [1, 10, 20, 21, 22, 23, 24, 7, 3, 9, 13, 11, 6],
-  "taxi-e-presentiel": [1, 10, 20, 21, 22, 23, 24, 7, 3, 9, 13, 11, 6],
+  "vtc-e":             [26, 2, 25, 14, 15, 16, 17, 18, 19, 3, 4, 5, 35, 8],
+  // Formation TAXI — Intro présentiel, cours TAXI, connaissances ville, formules, bilan exercices TAXI, contrôle connaissances, bilan examen TAXI, examens blancs TAXI, pratique TAXI
+  "taxi":              [1, 10, 20, 21, 22, 23, 24, 7, 3, 9, 13, 11, 36, 6],
+  "taxi-e-presentiel": [1, 10, 20, 21, 22, 23, 24, 7, 3, 9, 13, 11, 36, 6],
   // Formation TAXI E-learning — Intro e-learning
-  "taxi-e":            [26, 10, 20, 21, 22, 23, 24, 7, 3, 9, 13, 11, 6],
-  // Formation TA présentiel — Intro TA, cours TA (réglementation), connaissances ville, formules, bilan exercices VTC, bilan examen VTC, pratique TAXI
-  "ta":                [31, 24, 7, 3, 4, 5, 6],
-  "ta-e-presentiel":   [31, 24, 7, 3, 4, 5, 6],
-  // Formation TA E-learning — Intro TA e-learning, cours TA, connaissances ville, formules, bilan exercices TA, contrôle connaissances, bilan examen TA, pratique TAXI
-  "ta-e":              [32, 24, 7, 3, 27, 13, 28, 6],
-  // Formation VA — Intro VA e-learning, cours VA (réglem spé + dev commercial), connaissances ville, formules, bilan exercices VA, bilan examen VA, pratique VTC
-  "va":                [34, 18, 19, 7, 3, 29, 30, 8],
-  "va-e-presentiel":   [34, 18, 19, 7, 3, 29, 30, 8],
-  "va-e":              [34, 18, 19, 7, 3, 29, 30, 8],
+  "taxi-e":            [26, 10, 20, 21, 22, 23, 24, 7, 3, 9, 13, 11, 36, 6],
+  // Formation TA présentiel — Intro TA, cours TA (réglementation), connaissances ville, formules, bilan exercices VTC, bilan examen VTC, examens blancs TA, pratique TAXI
+  "ta":                [31, 24, 7, 3, 4, 5, 37, 6],
+  "ta-e-presentiel":   [31, 24, 7, 3, 4, 5, 37, 6],
+  // Formation TA E-learning — Intro TA e-learning, cours TA, connaissances ville, formules, bilan exercices TA, contrôle connaissances, bilan examen TA, examens blancs TA, pratique TAXI
+  "ta-e":              [32, 24, 7, 3, 27, 13, 28, 37, 6],
+  // Formation VA — Intro VA e-learning, cours VA (réglem spé + dev commercial), connaissances ville, formules, bilan exercices VA, bilan examen VA, examens blancs VA, pratique VTC
+  "va":                [34, 18, 19, 7, 3, 29, 30, 38, 8],
+  "va-e-presentiel":   [34, 18, 19, 7, 3, 29, 30, 38, 8],
+  "va-e":              [34, 18, 19, 7, 3, 29, 30, 38, 8],
 };
 
 interface Apprenant {

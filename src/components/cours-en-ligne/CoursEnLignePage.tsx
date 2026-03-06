@@ -49,6 +49,10 @@ const CoursEnLignePage = () => {
     { id: 32, nom: "1.INTRODUCTION TA E-LEARNING", eleves: 0, progression: "0%", statut: "Actif" },
     { id: 33, nom: "1.INTRODUCTION VA", eleves: 0, progression: "0%", statut: "Actif" },
     { id: 34, nom: "1.INTRODUCTION VA E-LEARNING", eleves: 0, progression: "0%", statut: "Actif" },
+    { id: 35, nom: "5.EXAMENS BLANCS VTC", eleves: 0, progression: "0%", statut: "Actif" },
+    { id: 36, nom: "5.EXAMENS BLANCS TAXI", eleves: 0, progression: "0%", statut: "Actif" },
+    { id: 37, nom: "5.EXAMENS BLANCS TA", eleves: 0, progression: "0%", statut: "Actif" },
+    { id: 38, nom: "5.EXAMENS BLANCS VA", eleves: 0, progression: "0%", statut: "Actif" },
   ]);
 
   const moveModule = (index: number, direction: "up" | "down") => {
