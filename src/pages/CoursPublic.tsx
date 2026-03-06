@@ -419,9 +419,25 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     setCompletedModuleIds(prev => new Set([...prev, moduleId]));
   }, []);
 
-  const handleBackFromModule = useCallback(() => {
+  const handleBackFromModule = useCallback(async () => {
     setSelectedModule(null);
-  }, []);
+    // Re-fetch completions to pick up any quiz results saved during the module
+    if (apprenant?.id) {
+      const { data } = await supabase
+        .from("apprenant_module_completion")
+        .select("id, module_id, score_obtenu, score_max, completed_at, details")
+        .eq("apprenant_id", apprenant.id);
+      if (data) {
+        setCompletedModuleIds(new Set((data as any[]).map((d: any) => d.module_id)));
+        const scores: Record<number, { score_obtenu: number | null; score_max: number | null }> = {};
+        (data as any[]).forEach((d: any) => {
+          scores[d.module_id] = { score_obtenu: d.score_obtenu, score_max: d.score_max };
+        });
+        setModuleScores(scores);
+        setModuleCompletionsForNotes(data as any);
+      }
+    }
+  }, [apprenant?.id]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
