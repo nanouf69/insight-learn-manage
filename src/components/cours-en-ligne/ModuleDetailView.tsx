@@ -1529,6 +1529,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const [qrcResults, setQrcResults] = useState<Record<string, { estCorrect: boolean; pointsObtenus: number; explication: string } | "loading">>({});
     
     const [introAcknowledged, setIntroAcknowledged] = useState<Set<number>>(new Set());
+    const [savedAnswersLoaded, setSavedAnswersLoaded] = useState(false);
+    const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const activeCours = moduleData.cours.filter(c => c.actif);
     const activeExercices = moduleData.exercices.filter(e => e.actif) as ExerciceItem[];
@@ -1560,9 +1562,88 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const currentPageData = pages[currentPage];
     const progressPercent = totalPages > 0 ? Math.round((completedPages.size / totalPages) * 100) : 0;
 
+    // --- Load saved partial answers from DB on mount ---
+    useEffect(() => {
+      if (!apprenantId || savedAnswersLoaded) return;
+      (async () => {
+        try {
+          const { data } = await supabase
+            .from("apprenant_module_completion")
+            .select("details, score_obtenu")
+            .eq("apprenant_id", apprenantId)
+            .eq("module_id", module.id)
+            .maybeSingle();
+          if (data?.details && Array.isArray(data.details)) {
+            const restored: Record<string, string> = {};
+            (data.details as any[]).forEach((d: any) => {
+              if (d.reponseEleve) {
+                restored[`${d.exerciceId}-${d.questionId}`] = d.reponseEleve;
+              }
+            });
+            if (Object.keys(restored).length > 0) {
+              setSelectedAnswers(restored);
+            }
+          }
+        } catch (e) {
+          console.error("Erreur chargement réponses sauvegardées:", e);
+        }
+        setSavedAnswersLoaded(true);
+      })();
+    }, [apprenantId, module.id, savedAnswersLoaded]);
+
+    // --- Auto-save partial answers to DB (debounced 3s) ---
+    const autoSaveAnswers = (answers: Record<string, string>) => {
+      if (!apprenantId || completionPersistedRef.current) return;
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = setTimeout(async () => {
+        try {
+          const questionDetails = activeExercices.flatMap(e =>
+            (e.questions || []).map(q => {
+              const key = `${e.id}-${q.id}`;
+              const selected = answers[key];
+              const correct = q.choix.find(c => c.correct);
+              return {
+                exerciceId: e.id,
+                exerciceTitre: e.titre,
+                questionId: q.id,
+                enonce: q.enonce,
+                reponseEleve: selected || null,
+                reponseCorrecte: correct?.lettre || null,
+                correct: selected != null && correct != null && selected === correct.lettre,
+              };
+            })
+          );
+          const answeredCount = Object.keys(answers).length;
+          const totalQ = activeExercices.reduce((s, e) => s + (e.questions?.length || 0), 0);
+          const correctC = questionDetails.filter(d => d.correct).length;
+          await supabase.from("apprenant_module_completion").upsert({
+            apprenant_id: apprenantId,
+            module_id: module.id,
+            score_obtenu: correctC,
+            score_max: totalQ,
+            details: questionDetails,
+          } as any, { onConflict: "apprenant_id,module_id" });
+          console.log(`[AutoSave] ${answeredCount}/${totalQ} réponses sauvegardées pour module ${module.id}`);
+        } catch (e) {
+          console.error("Auto-save erreur:", e);
+        }
+      }, 3000);
+    };
+
+    // Cleanup timer on unmount
+    useEffect(() => {
+      return () => {
+        if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+      };
+    }, []);
+
     const handleAnswer = (exoId: number, qId: number, lettre: string) => {
       if (showResultsFor.has(exoId)) return;
-      setSelectedAnswers(prev => ({ ...prev, [`${exoId}-${qId}`]: lettre }));
+      setSelectedAnswers(prev => {
+        const next = { ...prev, [`${exoId}-${qId}`]: lettre };
+        autoSaveAnswers(next);
+        return next;
+      });
     };
 
     const totalQuestions = activeExercices.reduce((sum, e) => sum + (e.questions?.length || 0), 0);
@@ -2277,6 +2358,42 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           {currentPageData?.type === "cours" && renderCoursPage(currentPageData.cours)}
           {currentPageData?.type === "exercice-single" && renderSingleExercicePage(currentPageData.exercice)}
         </div>
+
+        {/* Quiz completion rate */}
+        {(() => {
+          const totalQ = activeExercices.reduce((s, e) => s + (e.questions?.length || 0), 0);
+          const answeredQ = activeExercices.reduce((s, e) => {
+            if (!e.questions) return s;
+            return s + e.questions.filter(q => selectedAnswers[`${e.id}-${q.id}`]).length;
+          }, 0);
+          if (totalQ === 0) return null;
+          const pctAnswered = Math.round((answeredQ / totalQ) * 100);
+          const remaining = totalQ - answeredQ;
+          return (
+            <div className="flex items-center gap-3 px-4 py-2 rounded-lg border bg-muted/30 text-sm">
+              <div className="flex-1">
+                <div className="flex justify-between mb-1">
+                  <span className="font-medium">📝 Réponses : {answeredQ} / {totalQ}</span>
+                  <span className="text-muted-foreground">{pctAnswered}%</span>
+                </div>
+                <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-primary/60 transition-all duration-500"
+                    style={{ width: `${pctAnswered}%` }}
+                  />
+                </div>
+              </div>
+              {remaining > 0 && (
+                <span className="text-xs text-muted-foreground shrink-0">
+                  {remaining} restante{remaining > 1 ? "s" : ""}
+                </span>
+              )}
+              {remaining === 0 && (
+                <span className="text-xs text-emerald-600 font-semibold shrink-0">✅ Complet</span>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Navigation buttons */}
         <div className="flex items-center justify-between pt-2">
