@@ -79,13 +79,17 @@ const resolveFormationId = (
   formationChoisie: string | null | undefined,
   modulesAutorises: number[] | null | undefined,
 ): FormationId | null => {
-  const byType = FORMATION_ALIASES[normalizeFormationKey(typeApprenant)];
-  if (byType) return byType;
+  // Priority: explicit assigned modules (source of truth for learner access)
+  const byModules = inferFormationFromModules(modulesAutorises);
+  if (byModules) return byModules;
 
   const byFormation = FORMATION_ALIASES[normalizeFormationKey(formationChoisie)];
   if (byFormation) return byFormation;
 
-  return inferFormationFromModules(modulesAutorises);
+  const byType = FORMATION_ALIASES[normalizeFormationKey(typeApprenant)];
+  if (byType) return byType;
+
+  return null;
 };
 
 // Module IDs that should open ExamensBlancsPage (bilans)
