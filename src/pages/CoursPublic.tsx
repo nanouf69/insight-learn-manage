@@ -235,9 +235,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
       if (data) {
         setApprenant(data as any);
-        const formationId = TYPE_TO_FORMATION[data.type_apprenant || ""] || (data.formation_choisie as FormationId) || null;
+        const formationId = resolveFormationId(data.type_apprenant, data.formation_choisie, data.modules_autorises);
         setSelectedFormation(formationId);
-      } else {
+      }
         // User has no apprenant record — sign them out so they see the login
         await supabase.auth.signOut();
         setUser(null);
