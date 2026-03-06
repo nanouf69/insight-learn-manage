@@ -2166,6 +2166,40 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         setShowResultsFor(prev => new Set(prev).add(exo.id));
                         markPageCompleted(currentPage);
 
+                        // Persist immediately to DB so it shows in "Réalisés"
+                        if (apprenantId && !completionPersistedRef.current) {
+                          try {
+                            const questionDetails = activeExercices.flatMap(e =>
+                              (e.questions || []).map(q => {
+                                const key = `${e.id}-${q.id}`;
+                                const sel = selectedAnswers[key];
+                                const cor = q.choix.find(c => c.correct);
+                                return {
+                                  exerciceId: e.id, exerciceTitre: e.titre,
+                                  questionId: q.id, enonce: q.enonce,
+                                  reponseEleve: sel || null,
+                                  reponseCorrecte: cor?.lettre || null,
+                                  correct: sel != null && cor != null && sel === cor.lettre,
+                                };
+                              })
+                            );
+                            const totalQ = activeExercices.reduce((s, e) => s + (e.questions?.length || 0), 0);
+                            const correctC = questionDetails.filter(d => d.correct).length;
+                            const { error } = await supabase.from("apprenant_module_completion").upsert({
+                              apprenant_id: apprenantId,
+                              module_id: module.id,
+                              score_obtenu: correctC,
+                              score_max: totalQ,
+                              details: questionDetails,
+                            } as any, { onConflict: "apprenant_id,module_id" });
+                            if (!error) {
+                              onModuleCompleted?.(module.id);
+                            }
+                          } catch (e) {
+                            console.error("Erreur sauvegarde quiz:", e);
+                          }
+                        }
+
                         toast.success("✅ Quiz validé ! Consultez vos résultats puis cliquez sur Suivant.");
                       }}
                       className="gap-2"
