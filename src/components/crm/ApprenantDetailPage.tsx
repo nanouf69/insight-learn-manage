@@ -937,10 +937,13 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
                   const fallbackType2 = normalizeTypeApprenant(FORMATION_TO_TYPE[formationKey2]);
                   const resolvedType = type || fallbackType2;
                   const formationModuleIds = DEFAULT_MODULES_BY_TYPE[resolvedType] || [];
+                  // Only show modules that exist in the managed modules list (no sub-matières)
+                  const MANAGED_MODULE_IDS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 41];
                   const formationModules = formationModuleIds
                     .map(id => MODULES_DATA.find(m => m.id === id))
                     .filter((m): m is typeof MODULES_DATA[0] => !!m);
-                  const otherModules = MODULES_DATA.filter(m => !formationModuleIds.includes(m.id));
+                  const otherModules = MODULES_DATA
+                    .filter(m => !formationModuleIds.includes(m.id) && MANAGED_MODULE_IDS.includes(m.id));
                   const matchedFormation = COMPTE_FORMATIONS.find(f => f.types.includes(resolvedType));
 
                   // Numbered display labels per formation (matching Formations tab)
