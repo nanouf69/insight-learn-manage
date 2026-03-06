@@ -455,58 +455,124 @@ const ApprenantSearchPreview = () => {
 
         {/* Formations — Mapping modules par formation */}
         <TabsContent value="formations" className="space-y-6 mt-6">
-          <div>
-            <h2 className="text-2xl font-bold">Modules par formation</h2>
-            <p className="text-sm text-muted-foreground mt-1">Vue synthétique des modules attribués à chaque type de formation</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold">Modules par formation</h2>
+              <p className="text-sm text-muted-foreground mt-1">Vue synthétique des modules attribués à chaque type de formation</p>
+            </div>
+            <Select value={selectedFormation} onValueChange={setSelectedFormation}>
+              <SelectTrigger className="w-[280px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="vtc">VTC (Présentiel)</SelectItem>
+                <SelectItem value="vtc-e">VTC E-learning</SelectItem>
+                <SelectItem value="taxi">TAXI (Présentiel)</SelectItem>
+                <SelectItem value="taxi-e">TAXI E-learning</SelectItem>
+                <SelectItem value="ta">TA — Taxi pour VTC (Présentiel)</SelectItem>
+                <SelectItem value="ta-e">TA — Taxi pour VTC (E-learning)</SelectItem>
+                <SelectItem value="va">VA — VTC pour Taxi</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {(() => {
-            const FORMATION_MODULES: Record<string, { label: string; color: string; modules: number[] }> = {
-              "vtc":  { label: "VTC", color: "bg-emerald-100 text-emerald-800 border-emerald-300", modules: [1, 2, 3, 4, 35, 5, 8] },
-              "vtc-e": { label: "VTC E-learning", color: "bg-emerald-50 text-emerald-700 border-emerald-200", modules: [26, 2, 3, 4, 35, 5, 8] },
-              "taxi": { label: "TAXI", color: "bg-orange-100 text-orange-800 border-orange-300", modules: [1, 10, 7, 3, 9, 13, 11, 36, 6] },
-              "taxi-e": { label: "TAXI E-learning", color: "bg-orange-50 text-orange-700 border-orange-200", modules: [26, 10, 7, 3, 9, 13, 11, 36, 6] },
-              "ta":   { label: "TA (Présentiel)", color: "bg-amber-100 text-amber-800 border-amber-300", modules: [31, 40, 7, 3, 27, 28, 37, 6] },
-              "ta-e": { label: "TA E-learning", color: "bg-amber-50 text-amber-700 border-amber-200", modules: [32, 40, 7, 3, 27, 13, 28, 37, 6] },
-              "va":   { label: "VA (Passerelle VTC)", color: "bg-teal-100 text-teal-800 border-teal-300", modules: [34, 41, 7, 3, 29, 30, 38, 8] },
+            const FORMATION_MODULES: Record<string, { label: string; color: string; modules: { id: number; label: string }[] }> = {
+              "vtc": { label: "VTC", color: "bg-emerald-100 text-emerald-800 border-emerald-300", modules: [
+                { id: 1, label: "1.INTRODUCTION PRÉSENTIEL" },
+                { id: 2, label: "2.COURS ET EXERCICES VTC" },
+                { id: 3, label: "3.FORMULES" },
+                { id: 4, label: "4.BILAN EXERCICES VTC" },
+                { id: 35, label: "5.EXAMENS BLANCS VTC" },
+                { id: 5, label: "6.BILAN EXAMEN VTC" },
+                { id: 8, label: "7.PRATIQUE VTC" },
+              ]},
+              "vtc-e": { label: "VTC E-learning", color: "bg-emerald-50 text-emerald-700 border-emerald-200", modules: [
+                { id: 26, label: "1.INTRODUCTION E-LEARNING" },
+                { id: 2, label: "2.COURS ET EXERCICES VTC" },
+                { id: 3, label: "3.FORMULES" },
+                { id: 4, label: "4.BILAN EXERCICES VTC" },
+                { id: 35, label: "5.EXAMENS BLANCS VTC" },
+                { id: 5, label: "6.BILAN EXAMEN VTC" },
+                { id: 8, label: "7.PRATIQUE VTC" },
+              ]},
+              "taxi": { label: "TAXI", color: "bg-orange-100 text-orange-800 border-orange-300", modules: [
+                { id: 1, label: "1.INTRODUCTION PRÉSENTIEL" },
+                { id: 10, label: "2.COURS ET EXERCICES TAXI" },
+                { id: 7, label: "3.CONNAISSANCES DE LA VILLE TAXI" },
+                { id: 3, label: "4.FORMULES" },
+                { id: 9, label: "5.BILAN EXERCICES TAXI" },
+                { id: 13, label: "6.CONTRÔLE DE CONNAISSANCES TAXI" },
+                { id: 11, label: "7.BILAN EXAMEN TAXI" },
+                { id: 36, label: "8.EXAMENS BLANCS TAXI" },
+                { id: 6, label: "9.PRATIQUE TAXI" },
+              ]},
+              "taxi-e": { label: "TAXI E-learning", color: "bg-orange-50 text-orange-700 border-orange-200", modules: [
+                { id: 26, label: "1.INTRODUCTION E-LEARNING" },
+                { id: 10, label: "2.COURS ET EXERCICES TAXI" },
+                { id: 7, label: "3.CONNAISSANCES DE LA VILLE TAXI" },
+                { id: 3, label: "4.FORMULES" },
+                { id: 9, label: "5.BILAN EXERCICES TAXI" },
+                { id: 13, label: "6.CONTRÔLE DE CONNAISSANCES TAXI" },
+                { id: 11, label: "7.BILAN EXAMEN TAXI" },
+                { id: 36, label: "8.EXAMENS BLANCS TAXI" },
+                { id: 6, label: "9.PRATIQUE TAXI" },
+              ]},
+              "ta": { label: "TA (Présentiel)", color: "bg-amber-100 text-amber-800 border-amber-300", modules: [
+                { id: 31, label: "1.INTRODUCTION TA" },
+                { id: 40, label: "2.COURS ET EXERCICES TA" },
+                { id: 7, label: "3.CONNAISSANCES DE LA VILLE TAXI" },
+                { id: 3, label: "4.FORMULES" },
+                { id: 27, label: "5.BILAN EXERCICES TA" },
+                { id: 28, label: "6.BILAN EXAMEN TA" },
+                { id: 37, label: "7.EXAMENS BLANCS TA" },
+                { id: 6, label: "8.PRATIQUE TAXI" },
+              ]},
+              "ta-e": { label: "TA E-learning", color: "bg-amber-50 text-amber-700 border-amber-200", modules: [
+                { id: 32, label: "1.INTRODUCTION TA E-LEARNING" },
+                { id: 40, label: "2.COURS ET EXERCICES TA" },
+                { id: 7, label: "3.CONNAISSANCES DE LA VILLE TAXI" },
+                { id: 3, label: "4.FORMULES" },
+                { id: 27, label: "5.BILAN EXERCICES TA" },
+                { id: 13, label: "6.CONTRÔLE DE CONNAISSANCES TAXI" },
+                { id: 28, label: "7.BILAN EXAMEN TA" },
+                { id: 37, label: "8.EXAMENS BLANCS TA" },
+                { id: 6, label: "9.PRATIQUE TAXI" },
+              ]},
+              "va": { label: "VA (Passerelle VTC)", color: "bg-teal-100 text-teal-800 border-teal-300", modules: [
+                { id: 34, label: "1.INTRODUCTION VA" },
+                { id: 41, label: "2.COURS ET EXERCICES VA" },
+                { id: 7, label: "3.CONNAISSANCES DE LA VILLE TAXI" },
+                { id: 3, label: "4.FORMULES" },
+                { id: 29, label: "5.BILAN EXERCICES VA" },
+                { id: 30, label: "6.BILAN EXAMEN VA" },
+                { id: 38, label: "7.EXAMENS BLANCS VA" },
+                { id: 8, label: "8.PRATIQUE VTC" },
+              ]},
             };
 
+            const current = FORMATION_MODULES[selectedFormation];
+            if (!current) return null;
+
             return (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-                {Object.entries(FORMATION_MODULES).map(([key, { label, color, modules: modIds }]) => (
-                  <Card key={key} className="border">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base">
-                        <Badge className={`${color} border font-semibold text-sm`}>{label}</Badge>
-                        <span className="text-xs text-muted-foreground ml-2">{modIds.length} modules</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <ul className="space-y-1.5">
-                        {modIds.map((id) => {
-                          // Afficher le nom parent pour les modules cours groupés
-                          const displayNames: Record<number, string> = {
-                            2: "2.COURS ET EXERCICES VTC",
-                            10: "2.COURS ET EXERCICES TAXI",
-                            40: "2.COURS ET EXERCICES TA",
-                            41: "2.COURS ET EXERCICES VA",
-                          };
-                          const mod = MODULES_DATA.find(m => m.id === id);
-                          const name = displayNames[id] || mod?.nom || `Module ${id}`;
-                          return (
-                            <li key={id} className="flex items-start gap-2 text-sm">
-                              <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 text-primary shrink-0" />
-                              <span className="text-foreground leading-tight">
-                                <span className="font-medium">{name}</span>
-                              </span>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              <Card className="border max-w-lg">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-3">
+                    <Badge className={`${current.color} border font-semibold text-sm`}>{current.label}</Badge>
+                    <span className="text-xs text-muted-foreground">{current.modules.length} modules</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <ul className="space-y-2">
+                    {current.modules.map((mod) => (
+                      <li key={mod.id} className="flex items-start gap-2 text-sm">
+                        <CheckCircle2 className="w-4 h-4 mt-0.5 text-primary shrink-0" />
+                        <span className="font-medium text-foreground">{mod.label}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
             );
           })()}
         </TabsContent>
