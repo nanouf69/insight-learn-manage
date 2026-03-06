@@ -542,16 +542,34 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const formation = FORMATIONS.find((f) => f.id === selectedFormation)!;
   const allModules = MODULES_DATA.filter((m) => m.formations.includes(selectedFormation));
 
-  // Keep learner list aligned with CRM order and module selection (no auto-expansion in UI list)
-  const authorizedIds = Array.isArray(apprenant?.modules_autorises)
+  // Aligner strictement la vue apprenant avec le bloc CRM: modules gérés uniquement + ordre de la formation
+  const rawAuthorizedIds = Array.isArray(apprenant?.modules_autorises)
     ? Array.from(new Set(apprenant.modules_autorises.map((id) => Number(id)).filter((id) => Number.isFinite(id))))
     : [];
 
-  const orderedAuthorizedModules = authorizedIds
-    .map((id) => allModules.find((module) => module.id === id))
+  const formationDefaultIds = FORMATION_DEFAULT_MODULES[selectedFormation] || [];
+  const normalizedAuthorizedSet = new Set(rawAuthorizedIds.filter((id) => MANAGED_MODULE_IDS.has(id)));
+
+  // Compat legacy: si seules les sous-matières existent en base, réactiver le module parent géré
+  [2, 10, 40, 41].forEach((parentId) => {
+    if (!formationDefaultIds.includes(parentId)) return;
+    const children = GROUPED_PARENT_MODULES[parentId] || [];
+    if (children.some((childId) => rawAuthorizedIds.includes(childId))) {
+      normalizedAuthorizedSet.add(parentId);
+    }
+  });
+
+  const orderedPrimaryIds = formationDefaultIds.filter((id) => normalizedAuthorizedSet.has(id));
+  const orderedExtraIds = rawAuthorizedIds.filter(
+    (id) => normalizedAuthorizedSet.has(id) && MANAGED_MODULE_IDS.has(id) && !formationDefaultIds.includes(id)
+  );
+  const orderedAuthorizedIds = [...orderedPrimaryIds, ...orderedExtraIds];
+
+  const orderedAuthorizedModules = orderedAuthorizedIds
+    .map((id) => MODULES_DATA.find((module) => module.id === id))
     .filter((module): module is (typeof MODULES_DATA)[number] => !!module);
 
-  const sourceModules = !embedded && orderedAuthorizedModules.length > 0
+  const sourceModules = orderedAuthorizedModules.length > 0
     ? orderedAuthorizedModules
     : allModules;
 
