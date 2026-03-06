@@ -897,14 +897,6 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
                     🎓 Choisir la formation à attribuer
                   </p>
                   <Select
-                    value={(() => {
-                      const type = normalizeTypeApprenant((apprenant.type_apprenant || "").split(" + ")[0]);
-                      const formationKey2 = (apprenant.formation_choisie || "").split(" + ")[0];
-                      const fallbackType2 = normalizeTypeApprenant(FORMATION_TO_TYPE[formationKey2]);
-                      const resolvedType = type || fallbackType2;
-                      const matched = COMPTE_FORMATIONS.find(f => f.types.includes(resolvedType));
-                      return matched?.id || "";
-                    })()}
                     onValueChange={async (formationId) => {
                       const newModules = DEFAULT_MODULES_BY_TYPE[formationId] || [];
                       if (newModules.length === 0) return;
