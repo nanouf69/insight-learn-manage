@@ -488,6 +488,8 @@ const ApprenantSearchPreview = () => {
                           const displayNames: Record<number, string> = {
                             2: "2.COURS ET EXERCICES VTC",
                             10: "2.COURS ET EXERCICES TAXI",
+                            40: "2.COURS ET EXERCICES TA",
+                            41: "2.COURS ET EXERCICES VA",
                           };
                           const mod = MODULES_DATA.find(m => m.id === id);
                           const name = displayNames[id] || mod?.nom || `Module ${id}`;
