@@ -86,8 +86,16 @@ interface ResultatMatiere {
 }
 
 // ===== ÉCRAN DE SÉLECTION =====
-function EcranSelection({ onStart, onEdit, defaultBilanId }: { onStart: (examen: ExamenBlanc) => void; onEdit: () => void; defaultBilanId?: string | null }) {
-  const [typeFiltre, setTypeFiltre] = useState<"tous" | "TAXI" | "VTC" | "TA" | "VA">("tous");
+function EcranSelection({ onStart, onEdit, defaultBilanId, apprenantType }: { onStart: (examen: ExamenBlanc) => void; onEdit: () => void; defaultBilanId?: string | null; apprenantType?: string | null }) {
+  // Determine the forced exam type from the student's formation type
+  const forcedType = (() => {
+    if (!apprenantType) return null;
+    const t = apprenantType.replace(/-E$/, "").toUpperCase();
+    if (["TAXI", "VTC", "TA", "VA"].includes(t)) return t as "TAXI" | "VTC" | "TA" | "VA";
+    return null;
+  })();
+
+  const [typeFiltre, setTypeFiltre] = useState<"tous" | "TAXI" | "VTC" | "TA" | "VA">(forcedType || "tous");
 
   const examens = tousLesExamens.filter(e => {
     const typeOk = typeFiltre === "tous" || e.type === typeFiltre;
@@ -103,7 +111,10 @@ function EcranSelection({ onStart, onEdit, defaultBilanId }: { onStart: (examen:
         <div>
           <h2 className="text-2xl font-bold mb-1">Examens Blancs</h2>
           <p className="text-muted-foreground text-sm">
-            24 examens blancs (6 TAXI, 6 VTC, 6 Passerelle TA, 6 Passerelle VA). Chaque test comporte les matières correspondantes chronométrées.
+            {forcedType
+              ? `${examensBlancs.length} examens blancs ${forcedType}. Chaque test comporte les matières correspondantes chronométrées.`
+              : "24 examens blancs (6 TAXI, 6 VTC, 6 Passerelle TA, 6 Passerelle VA). Chaque test comporte les matières correspondantes chronométrées."
+            }
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={onEdit} className="gap-2 shrink-0">
@@ -112,22 +123,24 @@ function EcranSelection({ onStart, onEdit, defaultBilanId }: { onStart: (examen:
         </Button>
       </div>
 
-      {/* Filtres */}
-      <div className="flex flex-wrap gap-2">
-        <div className="flex gap-1 border rounded-lg p-1">
-          {(["tous", "TAXI", "VTC", "TA", "VA"] as const).map(t => (
-            <Button
-              key={t}
-              variant={typeFiltre === t ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setTypeFiltre(t)}
-              className="h-7 px-3"
-            >
-              {t === "tous" ? "Tous" : t === "TA" ? "Passerelle TA" : t === "VA" ? "Passerelle VA" : t}
-            </Button>
-          ))}
+      {/* Filtres — masqués si l'apprenant a un type forcé */}
+      {!forcedType && (
+        <div className="flex flex-wrap gap-2">
+          <div className="flex gap-1 border rounded-lg p-1">
+            {(["tous", "TAXI", "VTC", "TA", "VA"] as const).map(t => (
+              <Button
+                key={t}
+                variant={typeFiltre === t ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setTypeFiltre(t)}
+                className="h-7 px-3"
+              >
+                {t === "tous" ? "Tous" : t === "TA" ? "Passerelle TA" : t === "VA" ? "Passerelle VA" : t}
+              </Button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Section Examens blancs */}
       {examensBlancs.length > 0 && (
@@ -832,7 +845,7 @@ export default function ExamensBlancsPage({
   }
 
   if (phase === "selection") {
-    return <EcranSelection onStart={handleStart} onEdit={() => setPhase("edition")} defaultBilanId={bilanPrefiltre} />;
+    return <EcranSelection onStart={handleStart} onEdit={() => setPhase("edition")} defaultBilanId={bilanPrefiltre} apprenantType={apprenantType} />;
   }
 
   if (phase === "intro" && examenChoisi) {
