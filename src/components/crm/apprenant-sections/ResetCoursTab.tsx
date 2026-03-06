@@ -101,9 +101,8 @@ export function ResetCoursTab({ apprenant, queryClient }: ResetCoursTabProps) {
   const inferTypeFromModules = (moduleIds: number[]): string => {
     for (const [type, defaults] of Object.entries(DEFAULT_MODULES_BY_TYPE)) {
       const uniqueDefaults = Array.from(new Set(defaults));
-      const sameLength = uniqueDefaults.length === moduleIds.length;
-      const sameSet = uniqueDefaults.every((id) => moduleIds.includes(id));
-      if (sameLength && sameSet) return type;
+      const containsAllDefaults = uniqueDefaults.every((id) => moduleIds.includes(id));
+      if (containsAllDefaults) return type;
     }
     return "";
   };
