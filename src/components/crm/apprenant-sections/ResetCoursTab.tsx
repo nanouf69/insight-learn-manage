@@ -16,6 +16,21 @@ interface ResetCoursTabProps {
 
 const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 41]);
 
+const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {
+  "vtc": [1, 2, 3, 4, 35, 5, 8],
+  "vtc-e-presentiel": [1, 2, 3, 4, 35, 5, 8],
+  "vtc-e": [26, 2, 3, 4, 35, 5, 8],
+  "taxi": [1, 10, 7, 3, 9, 13, 11, 36, 6],
+  "taxi-e-presentiel": [1, 10, 7, 3, 9, 13, 11, 36, 6],
+  "taxi-e": [26, 10, 7, 3, 9, 13, 11, 36, 6],
+  "ta": [31, 40, 7, 3, 27, 28, 37, 6],
+  "ta-e-presentiel": [31, 40, 7, 3, 27, 28, 37, 6],
+  "ta-e": [32, 40, 7, 3, 27, 13, 28, 37, 6],
+  "va": [34, 41, 7, 3, 29, 30, 38, 8],
+  "va-e-presentiel": [34, 41, 7, 3, 29, 30, 38, 8],
+  "va-e": [34, 41, 7, 3, 29, 30, 38, 8],
+};
+
 const FORMATION_TO_TYPE: Record<string, string> = {
   "vtc": "vtc",
   "vtc-exam": "vtc",
@@ -81,10 +96,23 @@ export function ResetCoursTab({ apprenant, queryClient }: ResetCoursTabProps) {
         .filter((id: number) => Number.isFinite(id))
     : [];
 
+  const managedAuthorizedModuleIds = Array.from(new Set(authorizedModuleIds)).filter((id) => MANAGED_MODULE_IDS.has(id));
+
+  const inferTypeFromModules = (moduleIds: number[]): string => {
+    for (const [type, defaults] of Object.entries(DEFAULT_MODULES_BY_TYPE)) {
+      const uniqueDefaults = Array.from(new Set(defaults));
+      const sameLength = uniqueDefaults.length === moduleIds.length;
+      const sameSet = uniqueDefaults.every((id) => moduleIds.includes(id));
+      if (sameLength && sameSet) return type;
+    }
+    return "";
+  };
+
   const primaryType = normalizeTypeApprenant((apprenant.type_apprenant || "").split(" + ")[0]);
   const formationKey = (apprenant.formation_choisie || "").split(" + ")[0];
   const fallbackType = normalizeTypeApprenant(FORMATION_TO_TYPE[formationKey]);
-  const resolvedType = primaryType || fallbackType;
+  const inferredTypeFromModules = inferTypeFromModules(managedAuthorizedModuleIds);
+  const resolvedType = inferredTypeFromModules || primaryType || fallbackType;
   const labelsForType = FORMATION_LABELS[resolvedType] || {};
 
   // Fetch completions for this learner
@@ -111,8 +139,13 @@ export function ResetCoursTab({ apprenant, queryClient }: ResetCoursTabProps) {
     },
   });
 
-  const visibleModules = Array.from(new Set(authorizedModuleIds))
-    .filter((id) => MANAGED_MODULE_IDS.has(id))
+  const formationModuleIds = DEFAULT_MODULES_BY_TYPE[resolvedType] || [];
+  const orderedVisibleModuleIds = [
+    ...formationModuleIds.filter((id) => managedAuthorizedModuleIds.includes(id)),
+    ...managedAuthorizedModuleIds.filter((id) => !formationModuleIds.includes(id)),
+  ];
+
+  const visibleModules = orderedVisibleModuleIds
     .map((id) => MODULES_DATA.find((m) => m.id === id))
     .filter((m): m is typeof MODULES_DATA[number] => !!m);
 
