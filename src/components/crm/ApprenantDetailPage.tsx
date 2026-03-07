@@ -41,6 +41,7 @@ const typeLabels: Record<string, string> = {
   'taxi-e': 'TAXI E',
   'ta': 'TA',
   'ta-e': 'TA E',
+  'va': 'VA',
   'va-e': 'VA E',
 };
 
@@ -119,6 +120,16 @@ const FORMATION_TO_TYPE: Record<string, string> = {
   "vtc-e-presentiel": "vtc-e-presentiel",
   "taxi-e-presentiel": "taxi-e-presentiel",
   "ta-e-presentiel": "ta-e-presentiel",
+};
+
+const TYPE_TO_FORMATION_KEY: Record<string, string> = {
+  "vtc": "vtc",
+  "vtc-e": "vtc-elearning",
+  "taxi": "taxi",
+  "taxi-e": "taxi-elearning",
+  "ta": "passerelle-taxi",
+  "ta-e": "passerelle-taxi-elearning",
+  "va": "passerelle-vtc-elearning",
 };
 
 const FORMATION_LABELS_BY_TYPE: Record<string, Record<number, string>> = {
@@ -1068,21 +1079,29 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
                     value={activeFormationType || undefined}
                     onValueChange={async (formationId) => {
                       setSelectedFormationForModules(formationId);
+
                       const newModules = DEFAULT_MODULES_BY_TYPE[formationId] || [];
-                      if (newModules.length === 0) return;
+                      const nextFormationKey = TYPE_TO_FORMATION_KEY[formationId] || formationId;
+                      const updatePayload = {
+                        modules_autorises: newModules,
+                        type_apprenant: formationId,
+                        formation_choisie: nextFormationKey,
+                      };
+
                       try {
                         const { error } = await supabase
                           .from('apprenants')
-                          .update({ modules_autorises: newModules } as any)
+                          .update(updatePayload as any)
                           .eq('id', apprenantId);
 
                         if (error) throw error;
 
                         queryClient.setQueryData(['apprenant-detail', apprenantId], (prev: any) => (
-                          prev ? { ...prev, modules_autorises: newModules } : prev
+                          prev ? { ...prev, ...updatePayload } : prev
                         ));
                         queryClient.invalidateQueries({ queryKey: ['apprenant-detail', apprenantId] });
-                        toast.success("Modules mis à jour pour la formation sélectionnée");
+                        queryClient.invalidateQueries({ queryKey: ['apprenants'] });
+                        toast.success("Formation et modules mis à jour");
                       } catch {
                         toast.error("Erreur lors de la mise à jour");
                       }
