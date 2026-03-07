@@ -121,6 +121,16 @@ const FORMATION_TO_TYPE: Record<string, string> = {
   "ta-e-presentiel": "ta-e-presentiel",
 };
 
+const TYPE_TO_FORMATION_KEY: Record<string, string> = {
+  "vtc": "vtc",
+  "vtc-e": "vtc-elearning",
+  "taxi": "taxi",
+  "taxi-e": "taxi-elearning",
+  "ta": "passerelle-taxi",
+  "ta-e": "passerelle-taxi-elearning",
+  "va": "passerelle-vtc-elearning",
+};
+
 const FORMATION_LABELS_BY_TYPE: Record<string, Record<number, string>> = {
   "vtc": {
     1: "1.INTRODUCTION PRÉSENTIEL",
