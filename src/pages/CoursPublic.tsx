@@ -10,7 +10,6 @@ import { WelcomeBanner } from "@/components/cours-en-ligne/motivation/WelcomeBan
 import { XPBar } from "@/components/cours-en-ligne/motivation/XPBar";
 import { BadgeGrid } from "@/components/cours-en-ligne/motivation/BadgeGrid";
 import { buildBadges, calculateXP } from "@/components/cours-en-ligne/motivation/badges-data";
-import { QuizBlock } from "@/components/cours-en-ligne/motivation/QuizBlock";
 import { toast } from "sonner";
 import ModuleDetailView from "@/components/cours-en-ligne/ModuleDetailView";
 import ExamensBlancsPage from "@/components/cours-en-ligne/ExamensBlancsPage";
@@ -745,12 +744,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                     totalModules={modules.length}
                     globalProgress={globalProgress}
                   />
-                  <XPBar xp={xp} />
-                  <BadgeGrid badges={badges} />
-                  <QuizBlock
-                    key={`mini-quiz-${quizCategory}-${selectedFormation}`}
-                    category={quizCategory}
-                  />
+                   <XPBar xp={xp} />
+                   <BadgeGrid badges={badges} />
                 </>
               );
             })()}
