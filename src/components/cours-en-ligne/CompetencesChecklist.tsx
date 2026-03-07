@@ -132,7 +132,7 @@ export default function CompetencesChecklist({ data, apprenantNom, apprenantId, 
                 const saved = await saveFormDocument({
                   apprenantId,
                   typeDocument: "test-competences",
-                  titre: `Test de compétences - ${data.titre || "Formation"}`,
+                  titre: `Test de compétences - ${data.formationLabel || "Formation"}`,
                   donnees: { answers, sections: data.sections.map(s => s.titre), formationLabel: data.formationLabel },
                 });
                 if (saved) toast.success("Test de compétences enregistré !");
