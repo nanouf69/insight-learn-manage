@@ -6,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { CheckCircle2, Star } from "lucide-react";
 import { toast } from "sonner";
+import { saveFormDocument } from "@/lib/saveFormDocument";
 
 interface CritereRow {
   label: string;
@@ -75,10 +76,11 @@ const getFormationLabel = (formationType: string) => {
 
 interface SatisfactionFormProps {
   formationType: string;
+  apprenantId?: string;
   onComplete: () => void;
 }
 
-const SatisfactionForm = ({ formationType, onComplete }: SatisfactionFormProps) => {
+const SatisfactionForm = ({ formationType, apprenantId, onComplete }: SatisfactionFormProps) => {
   const label = getFormationLabel(formationType);
   const [parties, setParties] = useState<PartieData[]>(buildSatisfactionData(label));
   const [noteGlobale, setNoteGlobale] = useState<number | null>(null);
@@ -96,10 +98,23 @@ const SatisfactionForm = ({ formationType, onComplete }: SatisfactionFormProps) 
 
   const allFilled = parties.every(p => p.criteres.every(c => c.value !== null)) && noteGlobale !== null;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!allFilled) {
       toast.error("Veuillez répondre à toutes les questions et donner une note globale");
       return;
+    }
+    if (apprenantId) {
+      const saved = await saveFormDocument({
+        apprenantId,
+        typeDocument: "satisfaction",
+        titre: `Questionnaire de satisfaction - ${getFormationLabel(formationType)}`,
+        donnees: {
+          formationType,
+          parties: parties.map(p => ({ titre: p.titre, criteres: p.criteres })),
+          noteGlobale, pointsForts, pointsAmeliorer, suggestions,
+        },
+      });
+      if (saved) toast.success("Questionnaire de satisfaction enregistré !");
     }
     setSubmitted(true);
     toast.success("✅ Questionnaire de satisfaction envoyé avec succès !");

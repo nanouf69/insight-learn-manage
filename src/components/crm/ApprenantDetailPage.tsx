@@ -25,6 +25,7 @@ import { ExamensSection } from "./apprenant-sections/ExamensSection";
 import { EmailsSection } from "./apprenant-sections/EmailsSection";
 import { DevisSection } from "./apprenant-sections/DevisSection";
 import { ResetCoursTab } from "./apprenant-sections/ResetCoursTab";
+import { DocumentsCompletes } from "./apprenant-sections/DocumentsCompletes";
 import { ApprenantEditForm } from "@/components/apprenants/ApprenantEditForm";
 import { cn } from "@/lib/utils";
 import { getAvatarUrl } from "@/lib/avatarUrl";
@@ -702,10 +703,11 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
       </Dialog>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-11 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-12 lg:w-auto lg:inline-grid">
           <TabsTrigger value="infos">Infos</TabsTrigger>
           <TabsTrigger value="cours">Attribuer les cours</TabsTrigger>
           <TabsTrigger value="resultats">Résultats</TabsTrigger>
+          <TabsTrigger value="docs-completes">Formulaires</TabsTrigger>
           <TabsTrigger value="docs-formation">Documents Formation</TabsTrigger>
           <TabsTrigger value="dossier">Dossier</TabsTrigger>
           <TabsTrigger value="docs-inscription">Inscription</TabsTrigger>
@@ -1185,6 +1187,10 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+        {/* Formulaires complétés Tab */}
+        <TabsContent value="docs-completes">
+          <DocumentsCompletes apprenant={apprenant} />
         </TabsContent>
 
         {/* Documents Formation Tab */}

@@ -2008,6 +2008,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         return (
           <CompetencesChecklist
             data={competencesData}
+            apprenantId={apprenantId || undefined}
             completed={completedPages.has(currentPage)}
             onComplete={() => {
               markPageCompleted(currentPage);
@@ -2028,6 +2029,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             apprenantCodePostal={apprenantInfo?.code_postal}
             apprenantVille={apprenantInfo?.ville}
             apprenantType={apprenantType || ""}
+            apprenantId={apprenantId || undefined}
             completed={completedPages.has(currentPage)}
             onComplete={() => {
               markPageCompleted(currentPage);
@@ -2047,6 +2049,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             apprenantAdresse={apprenantInfo?.adresse}
             apprenantDateNaissance={apprenantInfo?.date_naissance || ""}
             apprenantType={apprenantType || ""}
+            apprenantId={apprenantId || undefined}
             isAdmin={!studentOnly}
             completed={completedPages.has(currentPage)}
             onComplete={() => {
@@ -2061,6 +2064,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         return (
           <EvaluationAcquisForm
             formationType={cours.formationType || "vtc"}
+            apprenantId={apprenantId || undefined}
             onComplete={() => {
               markPageCompleted(currentPage);
               if (currentPage < totalPages - 1) goToPage(currentPage + 1);
@@ -2073,6 +2077,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         return (
           <SatisfactionForm
             formationType={cours.formationType || "vtc"}
+            apprenantId={apprenantId || undefined}
             onComplete={() => {
               markPageCompleted(currentPage);
               if (currentPage < totalPages - 1) {

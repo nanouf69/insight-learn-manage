@@ -141,6 +141,53 @@ export type Database = {
           },
         ]
       }
+      apprenant_documents_completes: {
+        Row: {
+          apprenant_id: string
+          completed_at: string
+          created_at: string
+          donnees: Json
+          id: string
+          module_id: number | null
+          titre: string
+          type_document: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          apprenant_id: string
+          completed_at?: string
+          created_at?: string
+          donnees?: Json
+          id?: string
+          module_id?: number | null
+          titre: string
+          type_document: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          apprenant_id?: string
+          completed_at?: string
+          created_at?: string
+          donnees?: Json
+          id?: string
+          module_id?: number | null
+          titre?: string
+          type_document?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apprenant_documents_completes_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: false
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       apprenant_module_activites: {
         Row: {
           action_type: string

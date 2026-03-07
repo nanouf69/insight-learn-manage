@@ -6,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { saveFormDocument } from "@/lib/saveFormDocument";
 
 type NiveauAcquis = "A" | "B" | "C" | "D";
 
@@ -167,10 +168,11 @@ const getFormationLabel = (formationType: string) => {
 
 interface EvaluationAcquisFormProps {
   formationType: string;
+  apprenantId?: string;
   onComplete: () => void;
 }
 
-const EvaluationAcquisForm = ({ formationType, onComplete }: EvaluationAcquisFormProps) => {
+const EvaluationAcquisForm = ({ formationType, apprenantId, onComplete }: EvaluationAcquisFormProps) => {
   const [parties, setParties] = useState<PartieData[]>(getFormationData(formationType));
   const [commentaires, setCommentaires] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -187,10 +189,23 @@ const EvaluationAcquisForm = ({ formationType, onComplete }: EvaluationAcquisFor
 
   const allFilled = parties.every(p => p.competences.every(c => c.value !== null));
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!allFilled) {
       toast.error("Veuillez évaluer toutes les compétences avant de valider");
       return;
+    }
+    if (apprenantId) {
+      const saved = await saveFormDocument({
+        apprenantId,
+        typeDocument: "evaluation-acquis",
+        titre: `Évaluation des acquis - ${getFormationLabel(formationType)}`,
+        donnees: {
+          formationType,
+          parties: parties.map(p => ({ titre: p.titre, competences: p.competences })),
+          commentaires,
+        },
+      });
+      if (saved) toast.success("Évaluation des acquis enregistrée !");
     }
     setSubmitted(true);
     toast.success("✅ Évaluation des acquis envoyée avec succès !");

@@ -5,15 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, CheckSquare, XSquare } from "lucide-react";
 import { type CompetencesData } from "./competences-checklist-data";
+import { saveFormDocument } from "@/lib/saveFormDocument";
+import { toast } from "sonner";
 
 interface Props {
   data: CompetencesData;
   apprenantNom?: string;
+  apprenantId?: string;
   onComplete: () => void;
   completed?: boolean;
 }
 
-export default function CompetencesChecklist({ data, apprenantNom, onComplete, completed }: Props) {
+export default function CompetencesChecklist({ data, apprenantNom, apprenantId, onComplete, completed }: Props) {
   const [answers, setAnswers] = useState<Record<string, "oui" | "non">>({});
 
   const totalItems = data.sections.reduce((acc, s) => acc + s.items.length, 0);
@@ -124,7 +127,18 @@ export default function CompetencesChecklist({ data, apprenantNom, onComplete, c
           <Button
             className="w-full"
             disabled={!allAnswered}
-            onClick={onComplete}
+            onClick={async () => {
+              if (apprenantId) {
+                const saved = await saveFormDocument({
+                  apprenantId,
+                  typeDocument: "test-competences",
+                  titre: `Test de compétences - ${data.formationLabel || "Formation"}`,
+                  donnees: { answers, sections: data.sections.map(s => s.titre), formationLabel: data.formationLabel },
+                });
+                if (saved) toast.success("Test de compétences enregistré !");
+              }
+              onComplete();
+            }}
           >
             {allAnswered ? "✅ Valider le test de compétences" : `Répondez à toutes les questions (${answeredCount}/${totalItems})`}
           </Button>
