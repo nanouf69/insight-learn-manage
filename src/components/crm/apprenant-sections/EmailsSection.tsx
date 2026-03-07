@@ -623,7 +623,7 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
                     key={email.id}
                     onClick={() => setSelectedEmail(email)}
                     className={`flex items-start gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer ${
-                      !email.is_read ? 'bg-primary/5 border-primary/20' : ''
+                      !email.is_read ? 'bg-blue-50 border-l-4 border-l-blue-500 border-blue-200 shadow-sm' : ''
                     }`}
                   >
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
@@ -637,7 +637,8 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <h4 className={`font-medium truncate ${!email.is_read ? 'font-semibold' : ''}`}>
+                        <h4 className={`truncate ${!email.is_read ? 'font-bold text-foreground' : 'font-medium'}`}>
+                          {!email.is_read && <span className="inline-block w-2 h-2 rounded-full bg-blue-500 mr-2 align-middle" />}
                           {email.subject}
                         </h4>
                         <Badge variant="outline" className="text-xs shrink-0">
@@ -649,7 +650,7 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
                           </Badge>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground truncate">
+                      <p className={`text-sm truncate ${!email.is_read ? 'text-foreground/70 font-medium' : 'text-muted-foreground'}`}>
                         {email.body_preview}
                       </p>
                     </div>

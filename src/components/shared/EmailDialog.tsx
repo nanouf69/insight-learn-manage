@@ -390,11 +390,14 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
                       </TableHeader>
                       <TableBody>
                         {receivedEmails.map((email: any) => (
-                          <TableRow key={email.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedEmail(email)}>
+                          <TableRow key={email.id} className={`cursor-pointer hover:bg-muted/50 ${!email.is_read ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''}`} onClick={() => setSelectedEmail(email)}>
                             <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                               {email.received_at ? format(new Date(email.received_at), 'dd/MM/yyyy HH:mm', { locale: fr }) : '-'}
                             </TableCell>
-                            <TableCell className="font-medium text-sm">{email.subject}</TableCell>
+                            <TableCell className={`text-sm ${!email.is_read ? 'font-bold' : 'font-medium'}`}>
+                              {!email.is_read && <span className="inline-block w-2 h-2 rounded-full bg-blue-500 mr-2 align-middle" />}
+                              {email.subject}
+                            </TableCell>
                             <TableCell className="text-sm text-muted-foreground">{email.sender_name || email.sender_email}</TableCell>
                             <TableCell>
                               <Eye className="w-4 h-4 text-muted-foreground" />
