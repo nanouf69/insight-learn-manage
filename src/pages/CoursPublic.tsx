@@ -1064,6 +1064,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                             </h3>
                             <p className="text-xs text-emerald-600">
                               ✅ Terminé
+                              {moduleRealizedPointsById[mod.id]?.length > 0 && (
+                                <span className="ml-2 font-semibold">
+                                  — Point{moduleRealizedPointsById[mod.id].length > 1 ? "s" : ""} réalisé{moduleRealizedPointsById[mod.id].length > 1 ? "s" : ""} : {moduleRealizedPointsById[mod.id].join(", ")}
+                                </span>
+                              )}
                               {moduleScores[mod.id]?.score_obtenu != null && moduleScores[mod.id]?.score_max != null && (
                                 <span className="ml-2 font-semibold">
                                   — Score : {moduleScores[mod.id].score_obtenu}/{moduleScores[mod.id].score_max} ({Math.round((moduleScores[mod.id].score_obtenu! / moduleScores[mod.id].score_max!) * 100)}%)
