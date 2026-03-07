@@ -1548,6 +1548,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       19: { parentTitle: "2. COURS ET EXERCICES VTC", subjectNum: 7 },
       // TAXI sub-modules
       10: { parentTitle: "2. COURS ET EXERCICES TAXI", subjectNum: 1 },
+      39: { parentTitle: "2. COURS ET EXERCICES TAXI", subjectNum: 1 },
       20: { parentTitle: "2. COURS ET EXERCICES TAXI", subjectNum: 2 },
       21: { parentTitle: "2. COURS ET EXERCICES TAXI", subjectNum: 3 },
       22: { parentTitle: "2. COURS ET EXERCICES TAXI", subjectNum: 4 },
@@ -1564,7 +1565,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     // Build pages: interleave cours and exercises for matière sub-modules
     type PageType = { type: "cours"; cours: ContentItem } | { type: "exercices" } | { type: "exercice-single"; exercice: ExerciceItem };
-    const INTERLEAVED_IDS = new Set([2, 10, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 40, 41, 42, 43]);
+    const INTERLEAVED_IDS = new Set([2, 10, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 39, 40, 41, 42, 43]);
     const pages: PageType[] = (() => {
       if (INTERLEAVED_IDS.has(Number(moduleData.id))) {
         // Simple zip: cours[0] → exo[0] → cours[1] → exo[1] → ...
@@ -2877,9 +2878,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               14: "2. COURS ET EXERCICES VTC", 15: "2. COURS ET EXERCICES VTC",
               16: "2. COURS ET EXERCICES VTC", 17: "2. COURS ET EXERCICES VTC",
               18: "2. COURS ET EXERCICES VTC", 19: "2. COURS ET EXERCICES VTC",
-              10: "2. COURS ET EXERCICES TAXI", 20: "2. COURS ET EXERCICES TAXI",
-              21: "2. COURS ET EXERCICES TAXI", 22: "2. COURS ET EXERCICES TAXI",
-              23: "2. COURS ET EXERCICES TAXI", 24: "2. COURS ET EXERCICES TAXI",
+              10: "2. COURS ET EXERCICES TAXI", 39: "2. COURS ET EXERCICES TAXI",
+              20: "2. COURS ET EXERCICES TAXI", 21: "2. COURS ET EXERCICES TAXI",
+              22: "2. COURS ET EXERCICES TAXI", 23: "2. COURS ET EXERCICES TAXI", 24: "2. COURS ET EXERCICES TAXI",
               40: "2. COURS ET EXERCICES TA", 42: "2. COURS ET EXERCICES TA",
               41: "2. COURS ET EXERCICES VA", 43: "2. COURS ET EXERCICES VA",
             };
