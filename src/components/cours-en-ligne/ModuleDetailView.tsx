@@ -1847,6 +1847,33 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const renderCoursPage = (cours: ContentItem) => {
       const hasInteractiveSlides = Boolean(cours.slidesKey && slidesByKey[cours.slidesKey]?.length > 0);
 
+      // --- Interactive checklist types ---
+      if (cours.checklistType === "competences") {
+        const competencesData = getCompetencesForFormation(apprenantType);
+        return (
+          <CompetencesChecklist
+            data={competencesData}
+            completed={completedPages.has(currentPage)}
+            onComplete={() => {
+              markPageCompleted(currentPage);
+              if (currentPage < totalPages - 1) goToPage(currentPage + 1);
+            }}
+          />
+        );
+      }
+
+      if (cours.checklistType === "analyse-besoin") {
+        return (
+          <AnalyseBesoinForm
+            completed={completedPages.has(currentPage)}
+            onComplete={() => {
+              markPageCompleted(currentPage);
+              if (currentPage < totalPages - 1) goToPage(currentPage + 1);
+            }}
+          />
+        );
+      }
+
       return (
         <div className="space-y-4">
         <Card key={cours.id} className="overflow-hidden">
