@@ -46,6 +46,8 @@ import imgBugnes from "@/assets/pratique/bugnes.jpg";
 import { VTC_COURS_DATA, VTC_SECTIONS } from "./vtc-cours-data";
 import { FORMULES_DATA } from "./formules-data";
 import { TAXI_COURS_DATA, TAXI_SECTIONS } from "./taxi-cours-data";
+import { TA_COURS_DATA, TA_SECTIONS } from "./ta-cours-data";
+import { VA_COURS_DATA, VA_SECTIONS } from "./va-cours-data";
 import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "./controle-connaissances-taxi-data";
 import { CONNAISSANCES_VILLE_TAXI_DATA } from "./connaissances-ville-taxi-data";
 import { BILAN_EXERCICES_VTC } from "./bilan-exercices-vtc-data";
