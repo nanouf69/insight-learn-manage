@@ -123,7 +123,12 @@ const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, strin
   },
   "taxi": {
     1: "1.INTRODUCTION PRÉSENTIEL",
-    10: "2.COURS ET EXERCICES TAXI",
+    10: "2a.COURS ET EXERCICES — A. Réglementation T3P",
+    20: "2b.COURS ET EXERCICES — B. Gestion",
+    21: "2c.COURS ET EXERCICES — C. Sécurité Routière",
+    22: "2d.COURS ET EXERCICES — D. Français",
+    23: "2e.COURS ET EXERCICES — E. Anglais",
+    24: "2f.COURS ET EXERCICES — F. Réglementation",
     7: "3.CONNAISSANCES DE LA VILLE TAXI",
     3: "4.FORMULES",
     9: "5.BILAN EXERCICES TAXI",
@@ -134,7 +139,12 @@ const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, strin
   },
   "taxi-elearning": {
     26: "1.INTRODUCTION E-LEARNING",
-    10: "2.COURS ET EXERCICES TAXI",
+    10: "2a.COURS ET EXERCICES — A. Réglementation T3P",
+    20: "2b.COURS ET EXERCICES — B. Gestion",
+    21: "2c.COURS ET EXERCICES — C. Sécurité Routière",
+    22: "2d.COURS ET EXERCICES — D. Français",
+    23: "2e.COURS ET EXERCICES — E. Anglais",
+    24: "2f.COURS ET EXERCICES — F. Réglementation",
     7: "3.CONNAISSANCES DE LA VILLE TAXI",
     3: "4.FORMULES",
     9: "5.BILAN EXERCICES TAXI",
@@ -181,17 +191,16 @@ const FORMATION_DEFAULT_MODULES: Record<FormationId, number[]> = {
   "vtc": [1, 2, 3, 4, 35, 5, 8, 60, 50],
   "vtc-cours-du-soir": [1, 2, 3, 4, 35, 5, 8, 60, 50],
   "vtc-elearning": [26, 2, 3, 4, 35, 5, 8, 60, 50],
-  "taxi": [1, 10, 7, 3, 9, 13, 11, 36, 6, 61, 51],
-  "taxi-elearning": [26, 10, 7, 3, 9, 13, 11, 36, 6, 61, 51],
+  "taxi": [1, 10, 20, 21, 22, 23, 24, 7, 3, 9, 13, 11, 36, 6, 61, 51],
+  "taxi-elearning": [26, 10, 20, 21, 22, 23, 24, 7, 3, 9, 13, 11, 36, 6, 61, 51],
   "taxi-pour-vtc": [31, 40, 7, 3, 27, 28, 37, 6, 62, 52],
   "taxi-pour-vtc-elearning": [32, 40, 7, 3, 27, 13, 28, 37, 6, 62, 52],
   "vtc-pour-taxi": [34, 41, 7, 3, 29, 30, 38, 8, 63, 53],
 };
 
-const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 41, 50, 51, 52, 53, 60, 61, 62, 63]);
+const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 20, 21, 22, 23, 24, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 41, 50, 51, 52, 53, 60, 61, 62, 63]);
 const GROUPED_PARENT_MODULES: Partial<Record<number, number[]>> = {
   2: [25, 14, 15, 16, 17, 18, 19],
-  10: [20, 21, 22, 23, 24],
   40: [24],
   41: [18, 19],
 };
