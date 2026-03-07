@@ -1,5 +1,5 @@
 // ===== Données du module "7. CONNAISSANCES DE LA VILLE TAXI" =====
-
+import { CONNAISSANCES_VILLE_QUIZZES } from "./exercices/connaissances-ville-quiz-data";
 interface ContentItem {
   id: number;
   titre: string;
@@ -159,6 +159,8 @@ export const CONNAISSANCES_VILLE_TAXI_DATA: ModuleData = {
       sousTitre: "QCM sur les adresses des administrations lyonnaises",
       fichiers: [{ nom: "Adresses Administrations (Word)", url: "/cours/vtc/ADRESSES_ADMINISTRATIONS.docx" }],
     },
+    // Quiz interactif Administrations
+    ...CONNAISSANCES_VILLE_QUIZZES.filter(q => q.id === 7001),
     {
       id: 2, actif: true,
       titre: "Adresses Autoroutes",
@@ -183,6 +185,8 @@ export const CONNAISSANCES_VILLE_TAXI_DATA: ModuleData = {
       sousTitre: "QCM sur les consulats de Lyon",
       fichiers: [{ nom: "Adresses Consulats (Word)", url: "/cours/vtc/ADRESSES_CONSULATS.docx" }],
     },
+    // Quiz interactif Consulats
+    ...CONNAISSANCES_VILLE_QUIZZES.filter(q => q.id === 7002),
     {
       id: 6, actif: true,
       titre: "Adresses Cours",
@@ -195,18 +199,24 @@ export const CONNAISSANCES_VILLE_TAXI_DATA: ModuleData = {
       sousTitre: "QCM sur des adresses diverses de Lyon",
       fichiers: [{ nom: "Adresses Divers (Word)", url: "/cours/vtc/ADRESSES_DIVERS.docx" }],
     },
+    // Quiz interactif Divers
+    ...CONNAISSANCES_VILLE_QUIZZES.filter(q => q.id === 7005),
     {
       id: 8, actif: true,
       titre: "Adresses Hôpitaux et Cliniques",
       sousTitre: "QCM sur les hôpitaux et cliniques de Lyon",
       fichiers: [{ nom: "Adresses Hôpitaux (Word)", url: "/cours/vtc/ADRESSES_HOPITAUX_ET_CLINIQUES.docx" }],
     },
+    // Quiz interactif Hôpitaux
+    ...CONNAISSANCES_VILLE_QUIZZES.filter(q => q.id === 7003),
     {
       id: 9, actif: true,
       titre: "Adresses Musées",
       sousTitre: "QCM sur les musées de Lyon",
       fichiers: [{ nom: "Adresses Musées (Word)", url: "/cours/vtc/ADRESSES_MUSEE.docx" }],
     },
+    // Quiz interactif Musées
+    ...CONNAISSANCES_VILLE_QUIZZES.filter(q => q.id === 7004),
     {
       id: 10, actif: true,
       titre: "Adresses Places",
