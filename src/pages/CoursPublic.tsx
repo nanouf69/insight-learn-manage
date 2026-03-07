@@ -637,9 +637,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const allModules = MODULES_DATA.filter((m) => m.formations.includes(selectedFormation));
 
   // Aligner strictement la vue apprenant avec le bloc CRM: modules gérés uniquement + ordre de la formation
-  const rawAuthorizedIds = Array.isArray(apprenant?.modules_autorises)
-    ? Array.from(new Set(apprenant.modules_autorises.map((id) => Number(id)).filter((id) => Number.isFinite(id))))
-    : [];
+  const rawAuthorizedIds = Array.from(
+    new Set(
+      (expandModulesAutorises(apprenant?.modules_autorises) || apprenant?.modules_autorises || [])
+        .map((id) => Number(id))
+        .filter((id) => Number.isFinite(id)),
+    ),
+  );
 
   const formationDefaultIds = FORMATION_DEFAULT_MODULES[selectedFormation] || [];
   const normalizedAuthorizedSet = new Set(rawAuthorizedIds.filter((id) => MANAGED_MODULE_IDS.has(id)));

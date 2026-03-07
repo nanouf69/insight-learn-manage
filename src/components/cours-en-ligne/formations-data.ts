@@ -137,9 +137,15 @@ export const MODULES_DATA: ModuleInfo[] = [
   // === TAXI Matières (anciennement module 10) ===
   {
     id: 10,
-    nom: "A. Réglementation T3P",
-    description: "Cours et exercices sur la réglementation T3P (TAXI)",
+    nom: "A. Réglementation T3P — Partie 1/2",
+    description: "Cours et exercices T3P — Partie 1 (TAXI)",
     formations: TAXI_FORMATIONS,
+  },
+  {
+    id: 39,
+    nom: "A. Réglementation T3P — Partie 2/2",
+    description: "Cours et exercices T3P — Partie 2 (TAXI)",
+    formations: ["taxi", "taxi-elearning"],
   },
   {
     id: 20,
