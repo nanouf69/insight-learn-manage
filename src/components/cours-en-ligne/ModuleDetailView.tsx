@@ -44,6 +44,8 @@ import imgParcBlandan from "@/assets/pratique/parc-blandan.jpg";
 import imgQuenelle from "@/assets/pratique/quenelle.jpg";
 import imgBugnes from "@/assets/pratique/bugnes.jpg";
 import { VTC_COURS_DATA, VTC_SECTIONS } from "./vtc-cours-data";
+import { REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES } from "./exercices/reglementation-exercices-data";
+import { DEV_COMMERCIAL_EXERCICES } from "./exercices/dev-commercial-exercices-data";
 import { FORMULES_DATA } from "./formules-data";
 import { TAXI_COURS_DATA, TAXI_SECTIONS } from "./taxi-cours-data";
 import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "./controle-connaissances-taxi-data";
