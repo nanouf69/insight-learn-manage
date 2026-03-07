@@ -42,7 +42,7 @@ export interface MatiereSection {
 const MATIERE_MARKETING: ContentItem[] = [
   {
     id: 41001, actif: true,
-    titre: "G. DÉVELOPPEMENT COMMERCIAL",
+    titre: "F. DÉVELOPPEMENT COMMERCIAL",
     sousTitre: "Marketing et développement commercial VTC",
     fichiers: [
       { nom: "PDF HD Marketing", url: "/cours/vtc/G_Marketing_1.pdf" },
@@ -56,7 +56,7 @@ const MATIERE_MARKETING: ContentItem[] = [
 const MATIERE_SPECIFIQUE: ContentItem[] = [
   {
     id: 41002, actif: true,
-    titre: "F. RÉGLEMENTATION SPÉCIFIQUE VTC",
+    titre: "G. RÉGLEMENTATION SPÉCIFIQUE VTC",
     sousTitre: "Réglementation spécifique aux VTC",
     fichiers: [
       { nom: "PDF HD", url: "/cours/vtc/F_Reglementation_Specifique_1.pdf" },
