@@ -780,8 +780,7 @@ function getInitialModuleData(
 
   // VA sub-modules (Passerelle VTC : Marketing + Spécifique VTC)
   if (module.id === 41) {
-    if (!studentOnly) return JSON.parse(JSON.stringify(VA_COURS_DATA));
-    return createSectionModuleData(41, "F. Développement Commercial", "Marketing et développement commercial (VA)", VA_SECTIONS[0]);
+    return JSON.parse(JSON.stringify(VA_COURS_DATA));
   }
   if (module.id === 43) return createSectionModuleData(43, "G. Réglementation Spécifique VTC", "Réglementation spécifique VTC (VA)", VA_SECTIONS[1]);
 
