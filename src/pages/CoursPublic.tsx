@@ -544,6 +544,15 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           apprenantId={apprenant?.id || null}
           onModuleCompleted={handleModuleCompleted}
           apprenantType={apprenant?.type_apprenant || null}
+          apprenantInfo={apprenant ? {
+            nom: apprenant.nom,
+            prenom: apprenant.prenom,
+            email: apprenant.email || undefined,
+            telephone: apprenant.telephone || undefined,
+            adresse: apprenant.adresse || undefined,
+            code_postal: apprenant.code_postal || undefined,
+            ville: apprenant.ville || undefined,
+          } : null}
         />
       </div>
     );
