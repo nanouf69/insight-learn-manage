@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts";
-import { Trophy, TrendingUp, Clock, Target, BookOpen, ChevronDown, ChevronUp, GraduationCap, FileText } from "lucide-react";
+import { Trophy, TrendingUp, Clock, Target, BookOpen, ChevronDown, ChevronUp, GraduationCap, FileText, CheckCircle2, XCircle, ArrowLeft, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { MODULES_DATA } from "./formations-data";
@@ -19,6 +19,7 @@ interface QuizResult {
   reussi: boolean;
   duree_secondes: number | null;
   completed_at: string;
+  details: any;
 }
 
 interface ModuleCompletion {
@@ -68,7 +69,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"matiere" | "module" | "examens">("matiere");
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-
+  const [selectedDetail, setSelectedDetail] = useState<{ title: string; date: string; score: number; max: number; details: any[] } | null>(null);
   useEffect(() => {
     setModuleCompletions(moduleCompletionsSeed);
   }, [apprenantId, moduleCompletionsSeed]);
@@ -143,7 +144,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
 
   // Group module completions by matière
   const byMatiere = useMemo(() => {
-    const map: Record<string, { moduleName: string; moduleId: number; score: number; max: number; pct: number; date: string }[]> = {};
+    const map: Record<string, { moduleName: string; moduleId: number; score: number; max: number; pct: number; date: string; details: any[] }[]> = {};
     
     moduleCompletions.forEach(m => {
       if (m.score_obtenu == null || m.score_max == null) return;
@@ -157,6 +158,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
         max: m.score_max,
         pct: m.score_max > 0 ? Math.round((m.score_obtenu / m.score_max) * 100) : 0,
         date: m.completed_at,
+        details: Array.isArray(m.details) ? m.details : [],
       });
     });
 
@@ -172,6 +174,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
           max: r.score_max,
           pct: r.score_max > 0 ? Math.round((r.score_obtenu / r.score_max) * 100) : 0,
           date: r.completed_at,
+          details: Array.isArray((r as any).details) ? (r as any).details : [],
         });
       }
     });
@@ -181,7 +184,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
 
   // Group by module
   const byModule = useMemo(() => {
-    const map: Record<string, { score: number; max: number; pct: number; date: string; type: string }[]> = {};
+    const map: Record<string, { score: number; max: number; pct: number; date: string; type: string; details: any[] }[]> = {};
     
     moduleCompletions.forEach(m => {
       if (m.score_obtenu == null || m.score_max == null) return;
@@ -194,6 +197,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
         pct: m.score_max > 0 ? Math.round((m.score_obtenu / m.score_max) * 100) : 0,
         date: m.completed_at,
         type: "module",
+        details: Array.isArray(m.details) ? m.details : [],
       });
     });
 
@@ -206,6 +210,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
         pct: r.score_max > 0 ? Math.round((r.score_obtenu / r.score_max) * 100) : 0,
         date: r.completed_at,
         type: "examen",
+        details: Array.isArray((r as any).details) ? (r as any).details : [],
       });
     });
 
@@ -420,16 +425,27 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
                   {isExpanded && (
                     <div className="border-t px-5 pb-3">
                       {items.map((item, i) => (
-                        <div key={i} className="flex items-center justify-between py-2.5 border-b last:border-b-0 text-sm">
-                          <div>
-                            <p className="text-slate-700">{item.moduleName}</p>
-                            <p className="text-xs text-slate-400">{format(new Date(item.date), "dd/MM/yyyy HH:mm", { locale: fr })}</p>
+                        <div
+                          key={i}
+                          className={`flex items-center justify-between py-2.5 border-b last:border-b-0 text-sm ${item.details.length > 0 ? "cursor-pointer hover:bg-blue-50/50 transition-colors" : ""}`}
+                          onClick={() => {
+                            if (item.details.length > 0) {
+                              setSelectedDetail({ title: item.moduleName, date: item.date, score: item.score, max: item.max, details: item.details });
+                            }
+                          }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div>
+                              <p className="text-slate-700">{item.moduleName}</p>
+                              <p className="text-xs text-slate-400">{format(new Date(item.date), "dd/MM/yyyy HH:mm", { locale: fr })}</p>
+                            </div>
                           </div>
-                          <div className="text-right">
+                          <div className="flex items-center gap-2">
                             <span className={`font-bold ${pctColor(item.pct)}`}>{item.score}/{item.max}</span>
-                            <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${pctBg(item.pct)} ${pctColor(item.pct)}`}>
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${pctBg(item.pct)} ${pctColor(item.pct)}`}>
                               {item.pct}%
                             </span>
+                            {item.details.length > 0 && <Eye className="w-3.5 h-3.5 text-slate-400" />}
                           </div>
                         </div>
                       ))}
@@ -471,18 +487,27 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
                   {isExpanded && (
                     <div className="border-t px-5 pb-3">
                       {items.map((item, i) => (
-                        <div key={i} className="flex items-center justify-between py-2.5 border-b last:border-b-0 text-sm">
-                          <div>
+                        <div
+                          key={i}
+                          className={`flex items-center justify-between py-2.5 border-b last:border-b-0 text-sm ${item.details.length > 0 ? "cursor-pointer hover:bg-blue-50/50 transition-colors" : ""}`}
+                          onClick={() => {
+                            if (item.details.length > 0) {
+                              setSelectedDetail({ title: moduleName, date: item.date, score: item.score, max: item.max, details: item.details });
+                            }
+                          }}
+                        >
+                          <div className="flex items-center gap-2">
                             <span className={`text-xs px-2 py-0.5 rounded-full ${item.type === "examen" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"}`}>
                               {item.type === "examen" ? "Examen" : "Quiz"}
                             </span>
-                            <span className="ml-2 text-xs text-slate-400">{format(new Date(item.date), "dd/MM/yyyy HH:mm", { locale: fr })}</span>
+                            <span className="text-xs text-slate-400">{format(new Date(item.date), "dd/MM/yyyy HH:mm", { locale: fr })}</span>
                           </div>
-                          <div className="text-right">
+                          <div className="flex items-center gap-2">
                             <span className={`font-bold ${pctColor(item.pct)}`}>{item.score}/{item.max}</span>
-                            <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${pctBg(item.pct)} ${pctColor(item.pct)}`}>
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${pctBg(item.pct)} ${pctColor(item.pct)}`}>
                               {item.pct}%
                             </span>
+                            {item.details.length > 0 && <Eye className="w-3.5 h-3.5 text-slate-400" />}
                           </div>
                         </div>
                       ))}
@@ -536,6 +561,109 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
               ))}
             </>
           )}
+        </div>
+      )}
+
+      {/* Detail panel overlay */}
+      {selectedDetail && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setSelectedDetail(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="px-6 py-4 border-b flex items-center justify-between bg-slate-50">
+              <div className="flex items-center gap-3">
+                <button onClick={() => setSelectedDetail(null)} className="p-1 hover:bg-slate-200 rounded-lg transition-colors">
+                  <ArrowLeft className="w-5 h-5 text-slate-600" />
+                </button>
+                <div>
+                  <h3 className="font-bold text-slate-800">{selectedDetail.title}</h3>
+                  <p className="text-xs text-slate-500">
+                    {format(new Date(selectedDetail.date), "dd/MM/yyyy HH:mm", { locale: fr })} — {selectedDetail.score}/{selectedDetail.max} ({selectedDetail.max > 0 ? Math.round((selectedDetail.score / selectedDetail.max) * 100) : 0}%)
+                  </p>
+                </div>
+              </div>
+              <div className={`px-3 py-1 rounded-full text-sm font-bold ${
+                selectedDetail.max > 0 && (selectedDetail.score / selectedDetail.max) >= 0.5
+                  ? "bg-emerald-100 text-emerald-700"
+                  : "bg-red-100 text-red-600"
+              }`}>
+                {selectedDetail.score}/{selectedDetail.max}
+              </div>
+            </div>
+
+            {/* Questions list */}
+            <div className="overflow-y-auto flex-1 px-6 py-4 space-y-3">
+              {(() => {
+                // Group details by exercice
+                const grouped: Record<string, { titre: string; questions: any[] }> = {};
+                selectedDetail.details.forEach((d: any) => {
+                  const key = d.exerciceId || "default";
+                  if (!grouped[key]) grouped[key] = { titre: d.exerciceTitre || "", questions: [] };
+                  grouped[key].questions.push(d);
+                });
+
+                return Object.entries(grouped).map(([exoId, group]) => (
+                  <div key={exoId}>
+                    {group.titre && Object.keys(grouped).length > 1 && (
+                      <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 mt-2">{group.titre}</h4>
+                    )}
+                    {group.questions.map((q: any, qi: number) => {
+                      const isCorrect = q.correct === true;
+                      const hasAnswer = q.reponseEleve != null && String(q.reponseEleve).trim() !== "";
+                      return (
+                        <div
+                          key={qi}
+                          className={`rounded-lg border p-3 mb-2 ${
+                            isCorrect
+                              ? "border-emerald-200 bg-emerald-50/50"
+                              : hasAnswer
+                                ? "border-red-200 bg-red-50/50"
+                                : "border-slate-200 bg-slate-50/50"
+                          }`}
+                        >
+                          <div className="flex items-start gap-2">
+                            <div className="shrink-0 mt-0.5">
+                              {isCorrect ? (
+                                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                              ) : (
+                                <XCircle className="w-4 h-4 text-red-400" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm text-slate-800 font-medium">
+                                <span className="text-xs text-slate-400 mr-1">Q{q.questionId || qi + 1}.</span>
+                                {q.enonce}
+                              </p>
+                              <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                                <span className="flex items-center gap-1">
+                                  <span className="text-slate-500">Réponse élève :</span>
+                                  {hasAnswer ? (
+                                    <span className={`font-semibold ${isCorrect ? "text-emerald-600" : "text-red-600"}`}>
+                                      {q.reponseEleve}
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-400 italic">Pas de réponse</span>
+                                  )}
+                                </span>
+                                {!isCorrect && q.reponseCorrecte && (
+                                  <span className="flex items-center gap-1">
+                                    <span className="text-slate-500">Bonne réponse :</span>
+                                    <span className="font-semibold text-emerald-600">{q.reponseCorrecte}</span>
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ));
+              })()}
+              {selectedDetail.details.length === 0 && (
+                <p className="text-center text-slate-400 py-8">Aucun détail disponible pour ce résultat.</p>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
