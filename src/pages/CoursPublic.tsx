@@ -290,17 +290,47 @@ const inferSubjectNumberFromExerciseTitle = (title: string): number | null => {
   return null;
 };
 
+// Infer sequential quiz number for bilan modules from exercise title
+const inferBilanQuizNumber = (title: string): number | null => {
+  const normalizedTitle = normalizeLabelText(title);
+
+  // Bilan Exercices titles: "Bilan T3P", "Bilan Gestion", "Bilan Sécurité Routière", etc.
+  if (normalizedTitle.includes("bilan t3p")) return 1;
+  if (normalizedTitle.includes("bilan gestion")) return 2;
+  if (normalizedTitle.includes("bilan securite")) return 3;
+  if (normalizedTitle.includes("bilan reglementation nationale + specifique") || normalizedTitle.includes("bilan reglementation nationale +")) return 4;
+  if (normalizedTitle.includes("bilan reglementation locale")) return 5;
+  if (normalizedTitle.includes("bilan developpement")) return 6;
+  if (normalizedTitle.includes("bilan reglementation specifique")) return 7;
+  if (normalizedTitle.includes("bilan reglementation nationale")) return 4;
+
+  // Bilan Examen titles: "📝 A - Transport Public", "📝 B - Gestion", etc.
+  const letterMatch = normalizedTitle.match(/^(?:\u{1f4dd}\s*)?([a-g])(?:\(.*?\))?\s*-/u);
+  if (letterMatch) {
+    const letterMap: Record<string, number> = { a: 1, b: 2, c: 3, d: 4, e: 5, f: 6, g: 7 };
+    return letterMap[letterMatch[1]] || null;
+  }
+
+  return null;
+};
+
 const getPointLabelFromExerciseTitle = (title: string): string | null => {
   if (!title) return null;
 
+  // First try standard cours/exercices mapping
   const subjectNum = inferSubjectNumberFromExerciseTitle(title);
-  if (!subjectNum) return null;
+  if (subjectNum) {
+    const partMatch = title.match(/partie\s*(\d+)/i);
+    const partNum = partMatch ? Number(partMatch[1]) : 1;
+    const safePartNum = Number.isFinite(partNum) && partNum > 0 ? partNum : 1;
+    return `${subjectNum}.${safePartNum}`;
+  }
 
-  const partMatch = title.match(/partie\s*(\d+)/i);
-  const partNum = partMatch ? Number(partMatch[1]) : 1;
-  const safePartNum = Number.isFinite(partNum) && partNum > 0 ? partNum : 1;
+  // Then try bilan quiz number
+  const bilanNum = inferBilanQuizNumber(title);
+  if (bilanNum) return `${bilanNum}`;
 
-  return `${subjectNum}.${safePartNum}`;
+  return null;
 };
 
 const getCompletionPointLabels = (completion: any): string[] => {
