@@ -229,6 +229,8 @@ export const CONNAISSANCES_VILLE_TAXI_DATA: ModuleData = {
       sousTitre: "QCM sur les ponts de Lyon",
       fichiers: [{ nom: "Adresses Ponts (Word)", url: "/cours/vtc/ADRESSES_PONTS.docx" }],
     },
+    // Quiz interactif Ponts
+    ...CONNAISSANCES_VILLE_QUIZZES.filter(q => q.id === 7006),
     {
       id: 12, actif: true,
       titre: "Adresses Quais",
@@ -247,12 +249,16 @@ export const CONNAISSANCES_VILLE_TAXI_DATA: ModuleData = {
       sousTitre: "QCM sur les stations de taxis de Lyon",
       fichiers: [{ nom: "Adresses Stations de Taxis (Word)", url: "/cours/vtc/ADRESSES_STATIONS_DE_TAXIS.docx" }],
     },
+    // Quiz interactif Stations de Taxis
+    ...CONNAISSANCES_VILLE_QUIZZES.filter(q => q.id === 7008),
     {
       id: 15, actif: true,
       titre: "Adresses Statues",
       sousTitre: "QCM sur les statues de Lyon",
       fichiers: [{ nom: "Adresses Statues (Word)", url: "/cours/vtc/ADRESSES_STATUES.docx" }],
     },
+    // Quiz interactif Statues
+    ...CONNAISSANCES_VILLE_QUIZZES.filter(q => q.id === 7007),
     {
       id: 16, actif: true,
       titre: "Les Quartiers",
