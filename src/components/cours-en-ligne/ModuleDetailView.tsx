@@ -3049,6 +3049,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   onToggle={(id) => toggleItem("cours", id)}
                   onEdit={(id) => setEditingCoursId(id)}
                   borderColor="border-primary/30"
+                  onFileUploaded={(itemId, fichier) => handleFileUploaded("cours", itemId, fichier)}
+                  onFileDeleted={(itemId, fichierIndex, url) => handleFileDeleted("cours", itemId, fichierIndex, url)}
                 />
               )
             )}
@@ -3087,6 +3089,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   onToggle={(id) => toggleItem("exercices", id)}
                   onEdit={() => {}}
                   borderColor="border-muted"
+                  onFileUploaded={(itemId, fichier) => handleFileUploaded("exercices", itemId, fichier)}
+                  onFileDeleted={(itemId, fichierIndex, url) => handleFileDeleted("exercices", itemId, fichierIndex, url)}
                 />
               ))
             )}
