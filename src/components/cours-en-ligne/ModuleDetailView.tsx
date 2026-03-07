@@ -1578,6 +1578,34 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       ];
     })();
 
+    const shouldUseHierarchicalStepper = Number(moduleData.id) === 2 || Number(moduleData.id) === 10;
+    const hierarchicalLabelsByPage = useMemo<Record<number, string>>(() => {
+      if (!shouldUseHierarchicalStepper) return {};
+
+      const subjectNums: Record<string, number> = { A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7 };
+      const partBySubject: Record<number, number> = {};
+      const labels: Record<number, string> = {};
+      let currentMeta: { subjectNum: number; partNum: number } | null = null;
+
+      pages.forEach((page, index) => {
+        if (page.type === "cours") {
+          const subjectLetter = page.cours.titre.match(/^\s*([A-G])\./i)?.[1]?.toUpperCase() || "A";
+          const subjectNum = subjectNums[subjectLetter] || 1;
+          const nextPart = (partBySubject[subjectNum] || 0) + 1;
+          partBySubject[subjectNum] = nextPart;
+          currentMeta = { subjectNum, partNum: nextPart };
+          labels[index] = `${subjectNum}.${nextPart} ${page.cours.titre}`;
+          return;
+        }
+
+        if (page.type === "exercice-single" && currentMeta) {
+          labels[index] = `${currentMeta.subjectNum}.${currentMeta.partNum} 📝 ${page.exercice.titre}`;
+        }
+      });
+
+      return labels;
+    }, [pages, shouldUseHierarchicalStepper]);
+
     const totalPages = pages.length;
     const currentPageData = pages[currentPage];
     const progressPercent = totalPages > 0 ? Math.round((completedPages.size / totalPages) * 100) : 0;
