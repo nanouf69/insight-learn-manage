@@ -227,8 +227,8 @@ L'épreuve pratique comprend une phase de conduite en circulation d'une durée m
 📌 Note minimale requise : 12/20
 
 💰 En cas d'échec à l'examen pratique :
-• Frais d'examen CMA à votre charge
-• Location du véhicule : environ 200€ TTC`,
+• Frais d'examen CMA à la charge de l'élève : environ 200€
+• Frais de location de voiture à la charge de l'élève : environ 80€`,
       actif: true,
     },
     {
