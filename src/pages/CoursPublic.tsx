@@ -289,6 +289,17 @@ const inferSubjectNumberFromExerciseTitle = (title: string): number | null => {
   return null;
 };
 
+// Short label for each standard subject number (cours/exercices modules)
+const SUBJECT_QUIZ_LABELS: Record<number, string> = {
+  1: "T3P",
+  2: "Gestion",
+  3: "Sécurité Routière",
+  4: "Français",
+  5: "Anglais",
+  6: "Dév. Commercial / Réglem. Nationale",
+  7: "Réglem. Spécifique / Réglem. Locale",
+};
+
 // Short label for each bilan quiz number
 const BILAN_QUIZ_LABELS: Record<number, string> = {
   1: "T3P",
