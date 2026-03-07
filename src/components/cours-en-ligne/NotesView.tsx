@@ -562,6 +562,109 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
           )}
         </div>
       )}
+
+      {/* Detail panel overlay */}
+      {selectedDetail && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setSelectedDetail(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="px-6 py-4 border-b flex items-center justify-between bg-slate-50">
+              <div className="flex items-center gap-3">
+                <button onClick={() => setSelectedDetail(null)} className="p-1 hover:bg-slate-200 rounded-lg transition-colors">
+                  <ArrowLeft className="w-5 h-5 text-slate-600" />
+                </button>
+                <div>
+                  <h3 className="font-bold text-slate-800">{selectedDetail.title}</h3>
+                  <p className="text-xs text-slate-500">
+                    {format(new Date(selectedDetail.date), "dd/MM/yyyy HH:mm", { locale: fr })} — {selectedDetail.score}/{selectedDetail.max} ({selectedDetail.max > 0 ? Math.round((selectedDetail.score / selectedDetail.max) * 100) : 0}%)
+                  </p>
+                </div>
+              </div>
+              <div className={`px-3 py-1 rounded-full text-sm font-bold ${
+                selectedDetail.max > 0 && (selectedDetail.score / selectedDetail.max) >= 0.5
+                  ? "bg-emerald-100 text-emerald-700"
+                  : "bg-red-100 text-red-600"
+              }`}>
+                {selectedDetail.score}/{selectedDetail.max}
+              </div>
+            </div>
+
+            {/* Questions list */}
+            <div className="overflow-y-auto flex-1 px-6 py-4 space-y-3">
+              {(() => {
+                // Group details by exercice
+                const grouped: Record<string, { titre: string; questions: any[] }> = {};
+                selectedDetail.details.forEach((d: any) => {
+                  const key = d.exerciceId || "default";
+                  if (!grouped[key]) grouped[key] = { titre: d.exerciceTitre || "", questions: [] };
+                  grouped[key].questions.push(d);
+                });
+
+                return Object.entries(grouped).map(([exoId, group]) => (
+                  <div key={exoId}>
+                    {group.titre && Object.keys(grouped).length > 1 && (
+                      <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 mt-2">{group.titre}</h4>
+                    )}
+                    {group.questions.map((q: any, qi: number) => {
+                      const isCorrect = q.correct === true;
+                      const hasAnswer = q.reponseEleve != null && String(q.reponseEleve).trim() !== "";
+                      return (
+                        <div
+                          key={qi}
+                          className={`rounded-lg border p-3 mb-2 ${
+                            isCorrect
+                              ? "border-emerald-200 bg-emerald-50/50"
+                              : hasAnswer
+                                ? "border-red-200 bg-red-50/50"
+                                : "border-slate-200 bg-slate-50/50"
+                          }`}
+                        >
+                          <div className="flex items-start gap-2">
+                            <div className="shrink-0 mt-0.5">
+                              {isCorrect ? (
+                                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                              ) : (
+                                <XCircle className="w-4 h-4 text-red-400" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm text-slate-800 font-medium">
+                                <span className="text-xs text-slate-400 mr-1">Q{q.questionId || qi + 1}.</span>
+                                {q.enonce}
+                              </p>
+                              <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                                <span className="flex items-center gap-1">
+                                  <span className="text-slate-500">Réponse élève :</span>
+                                  {hasAnswer ? (
+                                    <span className={`font-semibold ${isCorrect ? "text-emerald-600" : "text-red-600"}`}>
+                                      {q.reponseEleve}
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-400 italic">Pas de réponse</span>
+                                  )}
+                                </span>
+                                {!isCorrect && q.reponseCorrecte && (
+                                  <span className="flex items-center gap-1">
+                                    <span className="text-slate-500">Bonne réponse :</span>
+                                    <span className="font-semibold text-emerald-600">{q.reponseCorrecte}</span>
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ));
+              })()}
+              {selectedDetail.details.length === 0 && (
+                <p className="text-center text-slate-400 py-8">Aucun détail disponible pour ce résultat.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
