@@ -221,6 +221,26 @@ interface CoursPublicProps {
   apprenantOverride?: ApprenantInfo | null;
 }
 
+const isModuleCompletionFullyDone = (completion: any) => {
+  const scoreMax = Number(completion?.score_max ?? 0);
+
+  // Modules sans quiz noté: une ligne de complétion suffit
+  if (!Number.isFinite(scoreMax) || scoreMax <= 0) return true;
+
+  const details = Array.isArray(completion?.details) ? completion.details : [];
+
+  // Compat legacy: anciennes complétions sans détails question par question
+  if (details.length === 0) return true;
+
+  const answeredCount = details.reduce((count: number, detail: any) => {
+    const answer = detail?.reponseEleve;
+    if (answer === null || answer === undefined) return count;
+    return String(answer).trim().length > 0 ? count + 1 : count;
+  }, 0);
+
+  return answeredCount >= scoreMax;
+};
+
 const ChangePasswordDialog = () => {
   const [open, setOpen] = useState(false);
   const [currentPw, setCurrentPw] = useState("");
@@ -402,13 +422,21 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         .eq("apprenant_id", apprenant.id!);
 
       if (data) {
-        setCompletedModuleIds(new Set((data as any[]).map((d: any) => d.module_id)));
+        const completionRows = data as any[];
+        setCompletedModuleIds(
+          new Set(
+            completionRows
+              .filter(isModuleCompletionFullyDone)
+              .map((d) => d.module_id),
+          ),
+        );
+
         const scores: Record<number, { score_obtenu: number | null; score_max: number | null }> = {};
-        (data as any[]).forEach((d: any) => {
+        completionRows.forEach((d) => {
           scores[d.module_id] = { score_obtenu: d.score_obtenu, score_max: d.score_max };
         });
         setModuleScores(scores);
-        setModuleCompletionsForNotes(data as any);
+        setModuleCompletionsForNotes(completionRows);
       }
     };
     fetchCompletions();
@@ -427,13 +455,21 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         .select("id, module_id, score_obtenu, score_max, completed_at, details")
         .eq("apprenant_id", apprenant.id);
       if (data) {
-        setCompletedModuleIds(new Set((data as any[]).map((d: any) => d.module_id)));
+        const completionRows = data as any[];
+        setCompletedModuleIds(
+          new Set(
+            completionRows
+              .filter(isModuleCompletionFullyDone)
+              .map((d) => d.module_id),
+          ),
+        );
+
         const scores: Record<number, { score_obtenu: number | null; score_max: number | null }> = {};
-        (data as any[]).forEach((d: any) => {
+        completionRows.forEach((d) => {
           scores[d.module_id] = { score_obtenu: d.score_obtenu, score_max: d.score_max };
         });
         setModuleScores(scores);
-        setModuleCompletionsForNotes(data as any);
+        setModuleCompletionsForNotes(completionRows);
       }
     }
   }, [apprenant?.id]);
