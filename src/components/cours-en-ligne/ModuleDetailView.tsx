@@ -342,6 +342,8 @@ const INTRODUCTION_TA_PRESENTIEL_DATA: ModuleData = {
       { id: 5, enonce: "Quelle note minimale faut-il obtenir à l'épreuve théorique ?", choix: [{ lettre: "A", texte: "8/20" }, { lettre: "B", texte: "10/20", correct: true }, { lettre: "C", texte: "12/20" }] },
     ] },
   ],
+};
+// ===== Introduction TA E-Learning (ID 32) =====
 const INTRODUCTION_TA_ELEARNING_DATA: ModuleData = {
   id: 32, nom: "1.INTRODUCTION TA E-LEARNING", description: "Introduction passerelle TA (e-learning).",
   cours: [
@@ -350,7 +352,14 @@ const INTRODUCTION_TA_ELEARNING_DATA: ModuleData = {
     { id: 1, titre: "Bienvenue — Passerelle TA (E-learning)", description: "Formation passerelle TAXI en e-learning.\n\n2 matières : Réglementation nationale TAXI + Réglementation locale", actif: true },
     { id: 2, titre: "Contact", description: "🏢 FTRANSPORT — 86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91\n📧 contact@ftransport.fr", actif: true },
   ],
-  exercices: [],
+  exercices: [
+    { id: 1, titre: "Quiz Coefficients TA", sousTitre: "Connaissez-vous les coefficients de vos épreuves passerelle ?", actif: true, questions: [
+      { id: 1, enonce: "Combien de matières comporte l'examen passerelle TA ?", choix: [{ lettre: "A", texte: "2 matières", correct: true }, { lettre: "B", texte: "5 matières" }, { lettre: "C", texte: "7 matières" }] },
+      { id: 2, enonce: "Quel est le coefficient de l'épreuve F(T) — Réglementation nationale TAXI ?", choix: [{ lettre: "A", texte: "1" }, { lettre: "B", texte: "2" }, { lettre: "C", texte: "3", correct: true }, { lettre: "D", texte: "4" }] },
+      { id: 3, enonce: "Quel est le coefficient de l'épreuve G(T) — Réglementation locale ?", choix: [{ lettre: "A", texte: "1" }, { lettre: "B", texte: "2" }, { lettre: "C", texte: "3", correct: true }, { lettre: "D", texte: "4" }] },
+      { id: 4, enonce: "Quelle note minimale faut-il obtenir à l'épreuve théorique ?", choix: [{ lettre: "A", texte: "8/20" }, { lettre: "B", texte: "10/20", correct: true }, { lettre: "C", texte: "12/20" }] },
+    ] },
+  ],
 };
 // ===== Introduction VA Présentiel (ID 33) =====
 const INTRODUCTION_VA_PRESENTIEL_DATA: ModuleData = {
@@ -362,7 +371,14 @@ const INTRODUCTION_VA_PRESENTIEL_DATA: ModuleData = {
     { id: 2, titre: "Programme", description: "📝 Développement Commercial + Réglementation spécifique VTC", actif: true },
     { id: 3, titre: "Planning et contact", description: "🏢 FTRANSPORT — 86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91\n⏰ 9h-12h / 13h-17h", actif: true },
   ],
-  exercices: [],
+  exercices: [
+    { id: 1, titre: "Quiz Coefficients VA", sousTitre: "Connaissez-vous les coefficients de vos épreuves passerelle ?", actif: true, questions: [
+      { id: 1, enonce: "Combien de matières comporte l'examen passerelle VA ?", choix: [{ lettre: "A", texte: "2 matières", correct: true }, { lettre: "B", texte: "5 matières" }, { lettre: "C", texte: "7 matières" }] },
+      { id: 2, enonce: "Quel est le coefficient de l'épreuve F(V) — Développement commercial ?", choix: [{ lettre: "A", texte: "1" }, { lettre: "B", texte: "2" }, { lettre: "C", texte: "3", correct: true }, { lettre: "D", texte: "4" }] },
+      { id: 3, enonce: "Quel est le coefficient de l'épreuve G(V) — Réglementation spécifique VTC ?", choix: [{ lettre: "A", texte: "1" }, { lettre: "B", texte: "2" }, { lettre: "C", texte: "3", correct: true }, { lettre: "D", texte: "4" }] },
+      { id: 4, enonce: "Quelle note minimale faut-il obtenir à l'épreuve théorique ?", choix: [{ lettre: "A", texte: "8/20" }, { lettre: "B", texte: "10/20", correct: true }, { lettre: "C", texte: "12/20" }] },
+    ] },
+  ],
 };
 // ===== Introduction VA E-Learning (ID 34) =====
 const INTRODUCTION_VA_ELEARNING_DATA: ModuleData = {
@@ -373,7 +389,14 @@ const INTRODUCTION_VA_ELEARNING_DATA: ModuleData = {
     { id: 1, titre: "Bienvenue — Passerelle VA (E-learning)", description: "Formation passerelle VTC en e-learning.\n\n2 matières : Développement Commercial + Réglementation spécifique VTC", actif: true },
     { id: 2, titre: "Contact", description: "🏢 FTRANSPORT — 86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91\n📧 contact@ftransport.fr", actif: true },
   ],
-  exercices: [],
+  exercices: [
+    { id: 1, titre: "Quiz Coefficients VA", sousTitre: "Connaissez-vous les coefficients de vos épreuves passerelle ?", actif: true, questions: [
+      { id: 1, enonce: "Combien de matières comporte l'examen passerelle VA ?", choix: [{ lettre: "A", texte: "2 matières", correct: true }, { lettre: "B", texte: "5 matières" }, { lettre: "C", texte: "7 matières" }] },
+      { id: 2, enonce: "Quel est le coefficient de l'épreuve F(V) — Développement commercial ?", choix: [{ lettre: "A", texte: "1" }, { lettre: "B", texte: "2" }, { lettre: "C", texte: "3", correct: true }, { lettre: "D", texte: "4" }] },
+      { id: 3, enonce: "Quel est le coefficient de l'épreuve G(V) — Réglementation spécifique VTC ?", choix: [{ lettre: "A", texte: "1" }, { lettre: "B", texte: "2" }, { lettre: "C", texte: "3", correct: true }, { lettre: "D", texte: "4" }] },
+      { id: 4, enonce: "Quelle note minimale faut-il obtenir à l'épreuve théorique ?", choix: [{ lettre: "A", texte: "8/20" }, { lettre: "B", texte: "10/20", correct: true }, { lettre: "C", texte: "12/20" }] },
+    ] },
+  ],
 };
 
 // ===== Données initiales des modules PRATIQUE =====
