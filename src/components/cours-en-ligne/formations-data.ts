@@ -279,6 +279,31 @@ export const MODULES_DATA: ModuleInfo[] = [
     description: "Cours et exercices Développement Commercial et Réglementation Spécifique VTC — passerelle VA",
     formations: ["vtc-pour-taxi"],
   },
+  // === Modules Fin de Formation (Évaluation + Satisfaction) ===
+  {
+    id: 50,
+    nom: "📋 FIN DE FORMATION VTC",
+    description: "Évaluation des acquis et enquête de satisfaction — Formation VTC",
+    formations: ["vtc", "vtc-elearning", "vtc-cours-du-soir"],
+  },
+  {
+    id: 51,
+    nom: "📋 FIN DE FORMATION TAXI",
+    description: "Évaluation des acquis et enquête de satisfaction — Formation TAXI",
+    formations: ["taxi", "taxi-elearning"],
+  },
+  {
+    id: 52,
+    nom: "📋 FIN DE FORMATION TA",
+    description: "Évaluation des acquis et enquête de satisfaction — Passerelle TA",
+    formations: ["taxi-pour-vtc", "taxi-pour-vtc-elearning"],
+  },
+  {
+    id: 53,
+    nom: "📋 FIN DE FORMATION VA",
+    description: "Évaluation des acquis et enquête de satisfaction — Passerelle VA",
+    formations: ["vtc-pour-taxi"],
+  },
 ];
 
 // Expansion des modules_autorises :
