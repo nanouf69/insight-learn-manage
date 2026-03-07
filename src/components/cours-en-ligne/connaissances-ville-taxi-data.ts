@@ -1,5 +1,5 @@
 // ===== Données du module "7. CONNAISSANCES DE LA VILLE TAXI" =====
-
+import { CONNAISSANCES_VILLE_QUIZZES } from "./exercices/connaissances-ville-quiz-data";
 interface ContentItem {
   id: number;
   titre: string;
