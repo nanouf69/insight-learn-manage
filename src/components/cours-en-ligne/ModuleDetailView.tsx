@@ -1723,7 +1723,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         return false;
       }
     };
-}
+
 
     // Introduction module IDs that require acknowledgment before quiz
     const INTRO_MODULE_IDS = new Set([1, 26, 31, 32, 33, 34]);
