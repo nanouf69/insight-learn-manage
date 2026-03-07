@@ -694,18 +694,18 @@ function getInitialModuleData(
   if (module.id === 13) return JSON.parse(JSON.stringify(CONTROLE_CONNAISSANCES_TAXI_DATA));
   if (module.id === 7) return JSON.parse(JSON.stringify(CONNAISSANCES_VILLE_TAXI_DATA));
 
-  // Bilan Exercices VTC (module 4) — tous les exercices regroupés par matière (sauf Français/Anglais)
+  // Bilan Exercices VTC (module 4) — toutes les matières
   if (module.id === 4) {
     return {
       id: 4,
       nom: "4.BILAN EXERCICES VTC",
       description: "Tous les exercices regroupés par matière. Refaites-les autant de fois que nécessaire pour maîtriser chaque sujet.",
       cours: [],
-      exercices: BILAN_EXERCICES_VTC.filter(e => e.id !== 103 && e.id !== 105),
+      exercices: BILAN_EXERCICES_VTC,
     };
   }
 
-  // Bilan Exercices TAXI (module 9) — tous les exercices regroupés par matière (sauf Français/Anglais/Marketing/Réglem. VTC)
+  // Bilan Exercices TAXI (module 9) — toutes les matières
   if (module.id === 9) {
     return {
       id: 9,
@@ -716,25 +716,25 @@ function getInitialModuleData(
     };
   }
 
-  // Bilan Exercices TA (module 27) — uniquement réglementation nationale + locale
+  // Bilan Exercices TA (module 27) — toutes les matières
   if (module.id === 27) {
     return {
       id: 27,
       nom: "4.BILAN EXERCICES TA",
-      description: "Exercices de réglementation nationale et locale. Refaites-les autant de fois que nécessaire.",
+      description: "Tous les exercices regroupés par matière. Refaites-les autant de fois que nécessaire pour maîtriser chaque sujet.",
       cours: [],
-      exercices: BILAN_EXERCICES_TAXI.filter(e => e.id === 203 || e.id === 204),
+      exercices: BILAN_EXERCICES_TAXI,
     };
   }
 
-  // Bilan Exercices VA (module 29) — uniquement développement commercial + réglementation spécifique
+  // Bilan Exercices VA (module 29) — toutes les matières
   if (module.id === 29) {
     return {
       id: 29,
       nom: "4.BILAN EXERCICES VA",
-      description: "Exercices développement commercial et réglementation spécifique. Refaites-les autant de fois que nécessaire.",
+      description: "Tous les exercices regroupés par matière. Refaites-les autant de fois que nécessaire pour maîtriser chaque sujet.",
       cours: [],
-      exercices: BILAN_EXERCICES_VTC.filter(e => e.id === 104 || e.id === 106),
+      exercices: BILAN_EXERCICES_VTC,
     };
   }
 
@@ -827,6 +827,28 @@ function getInitialModuleData(
       description: "Bilan examen TAXI — 7 matières séparées. Questions type examen, sans chronomètre.",
       cours: [],
       exercices: BILAN_EXAMEN_TAXI,
+    };
+  }
+
+  // Bilan Examen TA (module 28) — toutes les matières
+  if (module.id === 28) {
+    return {
+      id: 28,
+      nom: "6.BILAN EXAMEN TA",
+      description: "Bilan examen TA — toutes les matières. Questions type examen, sans chronomètre.",
+      cours: [],
+      exercices: BILAN_EXAMEN_TAXI,
+    };
+  }
+
+  // Bilan Examen VA (module 30) — toutes les matières
+  if (module.id === 30) {
+    return {
+      id: 30,
+      nom: "6.BILAN EXAMEN VA",
+      description: "Bilan examen VA — toutes les matières. Questions type examen, sans chronomètre.",
+      cours: [],
+      exercices: BILAN_EXAMEN_VTC,
     };
   }
 
