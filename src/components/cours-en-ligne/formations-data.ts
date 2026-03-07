@@ -46,8 +46,8 @@ export const MODULES_DATA: ModuleInfo[] = [
   // === VTC Matières (anciennement module 2) ===
   {
     id: 2,
-    nom: "A. Réglementation T3P — Partie 1/2",
-    description: "Cours et exercices T3P — Partie 1",
+    nom: "2.COURS ET EXERCICES VTC",
+    description: "Module principal regroupant toutes les sous-matières VTC (A à G)",
     formations: VTC_FORMATIONS,
   },
   {
@@ -137,8 +137,8 @@ export const MODULES_DATA: ModuleInfo[] = [
   // === TAXI Matières (anciennement module 10) ===
   {
     id: 10,
-    nom: "A. Réglementation T3P — Partie 1/2",
-    description: "Cours et exercices T3P — Partie 1 (TAXI)",
+    nom: "2.COURS ET EXERCICES TAXI",
+    description: "Module principal regroupant toutes les sous-matières TAXI (A à F)",
     formations: TAXI_FORMATIONS,
   },
   {
