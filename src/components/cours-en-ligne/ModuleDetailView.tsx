@@ -1919,6 +1919,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const goToPage = (page: number) => {
       if (page >= 0 && page < totalPages && isPageUnlocked(page)) {
         setCurrentPage(page);
+        if (pendingResultRestore && page !== pendingResultRestore.page) {
+          setPendingResultRestore(null);
+        }
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
     };
@@ -2320,7 +2323,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                     <Button
                       size="lg"
                       onClick={async () => {
-                        const validatedResultState = { exoId: exo.id, page: currentPage };
+                        const validatedResultState = { exoId: exo.id, page: currentPage, validatedAt: Date.now() };
 
                         const nextShowResults = new Set(showResultsFor);
                         nextShowResults.add(exo.id);
