@@ -239,7 +239,7 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
         .from('emails')
         .select('*')
         .eq('apprenant_id', apprenant.id)
-        .order('received_at', { ascending: false, nullsFirst: false });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       return (data || []) as EmailRecord[];
