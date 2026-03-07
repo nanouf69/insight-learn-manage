@@ -1825,6 +1825,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         );
       }
 
+      return (
         <div className="space-y-4">
         <Card key={cours.id} className="overflow-hidden">
           {cours.image && (
