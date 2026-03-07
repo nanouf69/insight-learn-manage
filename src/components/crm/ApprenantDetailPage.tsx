@@ -547,7 +547,7 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
       </Dialog>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-10 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-11 lg:w-auto lg:inline-grid">
           <TabsTrigger value="infos">Infos</TabsTrigger>
           <TabsTrigger value="cours">Attribuer les cours</TabsTrigger>
           <TabsTrigger value="resultats">Résultats</TabsTrigger>
@@ -558,6 +558,7 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
           <TabsTrigger value="emails">Emails</TabsTrigger>
           <TabsTrigger value="devis">Devis</TabsTrigger>
           <TabsTrigger value="reset-cours" className="text-destructive">Remise à zéro</TabsTrigger>
+          <TabsTrigger value="delete-account" className="text-destructive">Supprimer compte</TabsTrigger>
         </TabsList>
 
         {/* Infos Tab */}
