@@ -44,8 +44,6 @@ import imgParcBlandan from "@/assets/pratique/parc-blandan.jpg";
 import imgQuenelle from "@/assets/pratique/quenelle.jpg";
 import imgBugnes from "@/assets/pratique/bugnes.jpg";
 import { VTC_COURS_DATA, VTC_SECTIONS } from "./vtc-cours-data";
-import { REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES } from "./exercices/reglementation-exercices-data";
-import { DEV_COMMERCIAL_EXERCICES } from "./exercices/dev-commercial-exercices-data";
 import { FORMULES_DATA } from "./formules-data";
 import { TAXI_COURS_DATA, TAXI_SECTIONS } from "./taxi-cours-data";
 import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "./controle-connaissances-taxi-data";
@@ -761,15 +759,6 @@ function getInitialModuleData(module: { id: number; nom: string }, apprenantType
   if (module.id === 22) return createSectionModuleData(22, "D. Français", "Cours et exercices de français (TAXI)", TAXI_SECTIONS[3]);
   if (module.id === 23) return createSectionModuleData(23, "E. Anglais", "Cours et exercices d'anglais (TAXI)", TAXI_SECTIONS[4]);
   if (module.id === 24) return createSectionModuleData(24, "F. Réglementation", "Réglementation nationale et locale (TAXI)", TAXI_SECTIONS[5]);
-
-  // TA (Passerelle Taxi) — module 40 = Réglementation Nationale + Locale
-  if (module.id === 40) return createSectionModuleData(40, "F. Réglementation Nationale & Locale", "Cours et exercices Réglementation Nationale et Locale — passerelle TA", TAXI_SECTIONS[5]);
-
-  // VA (Passerelle VTC) — module 41 = Développement Commercial + Réglementation Spécifique VTC
-  if (module.id === 41) return createSectionModuleData(41, "Cours et Exercices VA", "Développement Commercial et Réglementation Spécifique VTC — passerelle VA", {
-    cours: [...VTC_SECTIONS[6].cours, ...VTC_SECTIONS[5].cours.filter(c => c.id === 6003)],
-    exercices: [...DEV_COMMERCIAL_EXERCICES, ...REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES],
-  });
 
   // Bilan Examen VTC (module 5) — 7 matières séparées sans chronomètre
   if (module.id === 5) {
