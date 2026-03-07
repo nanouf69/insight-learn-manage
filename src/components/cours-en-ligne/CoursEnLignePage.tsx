@@ -501,6 +501,7 @@ const ApprenantSearchPreview = () => {
                 { id: 11, label: "7.BILAN EXAMEN TAXI" },
                 { id: 36, label: "8.EXAMENS BLANCS TAXI" },
                 { id: 6, label: "9.PRATIQUE TAXI" },
+                { id: 12, label: "10.CAS PRATIQUE TAXI" },
               ]},
               "taxi-e": { label: "TAXI E-learning", color: "bg-orange-50 text-orange-700 border-orange-200", modules: [
                 { id: 26, label: "1.INTRODUCTION E-LEARNING" },
@@ -512,6 +513,7 @@ const ApprenantSearchPreview = () => {
                 { id: 11, label: "7.BILAN EXAMEN TAXI" },
                 { id: 36, label: "8.EXAMENS BLANCS TAXI" },
                 { id: 6, label: "9.PRATIQUE TAXI" },
+                { id: 12, label: "10.CAS PRATIQUE TAXI" },
               ]},
               "ta": { label: "TA (Présentiel)", color: "bg-amber-100 text-amber-800 border-amber-300", modules: [
                 { id: 31, label: "1.INTRODUCTION TA" },
@@ -534,8 +536,18 @@ const ApprenantSearchPreview = () => {
                 { id: 37, label: "8.EXAMENS BLANCS TA" },
                 { id: 6, label: "9.PRATIQUE TAXI" },
               ]},
-              "va": { label: "VA (Passerelle VTC)", color: "bg-teal-100 text-teal-800 border-teal-300", modules: [
-                { id: 34, label: "1.INTRODUCTION VA" },
+              "va": { label: "VA (Présentiel)", color: "bg-teal-100 text-teal-800 border-teal-300", modules: [
+                { id: 33, label: "1.INTRODUCTION VA" },
+                { id: 41, label: "2.COURS ET EXERCICES VA" },
+                { id: 7, label: "3.CONNAISSANCES DE LA VILLE TAXI" },
+                { id: 3, label: "4.FORMULES" },
+                { id: 29, label: "5.BILAN EXERCICES VA" },
+                { id: 30, label: "6.BILAN EXAMEN VA" },
+                { id: 38, label: "7.EXAMENS BLANCS VA" },
+                { id: 8, label: "8.PRATIQUE VTC" },
+              ]},
+              "va-e": { label: "VA E-learning", color: "bg-teal-50 text-teal-700 border-teal-200", modules: [
+                { id: 34, label: "1.INTRODUCTION VA E-LEARNING" },
                 { id: 41, label: "2.COURS ET EXERCICES VA" },
                 { id: 7, label: "3.CONNAISSANCES DE LA VILLE TAXI" },
                 { id: 3, label: "4.FORMULES" },
