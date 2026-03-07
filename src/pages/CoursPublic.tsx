@@ -330,10 +330,13 @@ const BILAN_EXERCISE_MODULE_IDS = new Set([4, 5, 9, 11, 27, 28, 29, 30]);
 const getPointLabelFromExerciseTitle = (title: string, moduleId?: number): string | null => {
   if (!title) return null;
 
-  // For bilan modules, use bilan-specific numbering (clean 1, 2, 3…)
+  // For bilan modules, use bilan-specific numbering with label (e.g. "1. T3P")
   if (moduleId != null && BILAN_EXERCISE_MODULE_IDS.has(moduleId)) {
     const bilanNum = inferBilanQuizNumber(title);
-    if (bilanNum) return `${bilanNum}`;
+    if (bilanNum) {
+      const label = BILAN_QUIZ_LABELS[bilanNum] || "";
+      return label ? `${bilanNum}. ${label}` : `${bilanNum}`;
+    }
     return null;
   }
 
