@@ -1159,7 +1159,7 @@ Un texte inférieur ne peut jamais contredire un texte supérieur.`,
       description: "Sources légales et textes réglementaires de la formation VTC. Consultez le document PDF en mode HD puis testez vos connaissances.",
       cours: [
         ...SOURCES_JURIDIQUES_INTRO,
-        { id: 1, titre: "Sources légales VTC (PDF HD)", description: "Consultez l'intégralité des sources juridiques de la formation VTC.", actif: true, slidesKey: "sources-juridiques-vtc" },
+        { id: 1, titre: "Sources légales VTC (PDF HD)", description: "Consultez l'intégralité des sources juridiques de la formation VTC.", actif: true, fichiers: [{ nom: "Sources_Legales_VTC.pdf", url: "/cours/vtc/Sources_Legales_VTC.pdf" }] },
       ],
       exercices: SOURCES_JURIDIQUES_QUIZ,
     };
