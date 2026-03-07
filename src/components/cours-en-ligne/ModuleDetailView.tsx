@@ -673,7 +673,11 @@ const CAS_PRATIQUE_TAXI_DATA: ModuleData = {
   ],
 };
 
-function getInitialModuleData(module: { id: number; nom: string }, apprenantType?: string | null): ModuleData {
+function getInitialModuleData(
+  module: { id: number; nom: string },
+  apprenantType?: string | null,
+  studentOnly = false,
+): ModuleData {
   // Module IDs: 1 = INTRODUCTION PRÉSENTIEL, 26 = INTRODUCTION E-LEARNING, 6 = PRATIQUE TAXI, 8 = PRATIQUE VTC, 12 = CAS PRATIQUE TAXI
   if (module.id === 1) return JSON.parse(JSON.stringify(INTRODUCTION_PRESENTIEL_DATA));
   if (module.id === 26) return JSON.parse(JSON.stringify(INTRODUCTION_ELEARNING_DATA));
@@ -734,6 +738,7 @@ function getInitialModuleData(module: { id: number; nom: string }, apprenantType
 
   // VTC sub-modules (matières A-G, anciennement module 2)
   if (module.id === 2) {
+    if (!studentOnly) return JSON.parse(JSON.stringify(VTC_COURS_DATA));
     return createSectionModuleData(2, "A. Réglementation T3P — Partie 1/2", "Cours et exercices T3P — Partie 1", {
       cours: VTC_SECTIONS[0].cours.slice(0, 1),
       exercices: VTC_SECTIONS[0].exercices.slice(0, 1),
@@ -753,7 +758,10 @@ function getInitialModuleData(module: { id: number; nom: string }, apprenantType
   if (module.id === 19) return createSectionModuleData(19, "G. Développement Commercial", "Marketing et développement commercial", VTC_SECTIONS[6]);
 
   // TAXI sub-modules (matières A-F, anciennement module 10)
-  if (module.id === 10) return createSectionModuleData(10, "A. Réglementation T3P", "Cours et exercices T3P (TAXI)", TAXI_SECTIONS[0]);
+  if (module.id === 10) {
+    if (!studentOnly) return JSON.parse(JSON.stringify(TAXI_COURS_DATA));
+    return createSectionModuleData(10, "A. Réglementation T3P", "Cours et exercices T3P (TAXI)", TAXI_SECTIONS[0]);
+  }
   if (module.id === 20) return createSectionModuleData(20, "B. Gestion", "Cours et exercices de gestion (TAXI)", TAXI_SECTIONS[1]);
   if (module.id === 21) return createSectionModuleData(21, "C. Sécurité Routière", "Cours sur la sécurité routière (TAXI)", TAXI_SECTIONS[2]);
   if (module.id === 22) return createSectionModuleData(22, "D. Français", "Cours et exercices de français (TAXI)", TAXI_SECTIONS[3]);
@@ -1343,7 +1351,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     "gestion-partie3": [...GESTION_PARTIE3_SLIDES],
   });
 
-  const [moduleData, setModuleData] = useState<ModuleData>(() => getInitialModuleData(module, apprenantType));
+  const [moduleData, setModuleData] = useState<ModuleData>(() => getInitialModuleData(module, apprenantType, studentOnly));
   const [editingCoursId, setEditingCoursId] = useState<number | null>(null);
   const [slidesByKey, setSlidesByKey] = useState<Record<string, Slide[]>>(() => createInitialSlidesByKey());
 
