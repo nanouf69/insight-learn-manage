@@ -656,7 +656,7 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
                     </div>
                     <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
                       <Clock className="w-3 h-3" />
-                      {format(getEmailDate(email), 'dd MMM yyyy', { locale: fr })}
+                      {format(getEmailDate(email), 'dd MMM yyyy HH:mm', { locale: fr })}
                     </div>
                   </div>
                 ))}
