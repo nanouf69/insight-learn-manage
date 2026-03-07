@@ -142,14 +142,14 @@ export const CONNAISSANCES_VILLE_TAXI_DATA: ModuleData = {
       titre: "Lyon et ses Arrondissements",
       sousTitre: "Les 9 arrondissements de Lyon et leurs caractéristiques",
       description: "Présentation géographique et administrative des arrondissements lyonnais.",
-      fichiers: [{ nom: "Lyon et ses Arrondissements (Word)", url: "/cours/vtc/LYON_ET_SES_ARRONDISSEMENTS.docx" }],
+      fichiers: [{ nom: "PDF HD Lyon et ses Arrondissements", url: "/cours/vtc/LYON_ET_SES_ARRONDISSEMENTS.pdf" }],
     },
     {
       id: 17, actif: true,
       titre: "Stations de Taxi",
       sousTitre: "Emplacements des stations de taxi à Lyon",
       description: "Localisation de toutes les stations de taxi dans Lyon et sa métropole.",
-      fichiers: [{ nom: "Stations de Taxi (Word)", url: "/cours/vtc/STATIONS_DE_TAXI.docx" }],
+      fichiers: [{ nom: "PDF HD Stations de Taxi", url: "/cours/vtc/STATIONS_DE_TAXI.pdf" }],
     },
   ],
   exercices: [
