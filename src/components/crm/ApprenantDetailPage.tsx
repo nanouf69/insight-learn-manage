@@ -80,25 +80,18 @@ const creneauLabels: Record<string, string> = {
 };
 
 const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {
-  // Formation VTC — modules parents uniquement (ID 2 regroupe les matières A-G via expandModulesAutorises)
-  "vtc":               [1, 2, 3, 4, 35, 5, 8],
-  "vtc-e-presentiel":  [1, 2, 3, 4, 35, 5, 8],
-  // Formation VTC E-learning — Intro e-learning
-  "vtc-e":             [26, 2, 3, 4, 35, 5, 8],
-  // Formation TAXI — modules parents uniquement (ID 10 regroupe les matières A-F via expandModulesAutorises)
-  "taxi":              [1, 10, 7, 3, 9, 13, 11, 36, 6],
-  "taxi-e-presentiel": [1, 10, 7, 3, 9, 13, 11, 36, 6],
-  // Formation TAXI E-learning — Intro e-learning
-  "taxi-e":            [26, 10, 7, 3, 9, 13, 11, 36, 6],
-  // Formation TA présentiel
-  "ta":                [31, 40, 7, 3, 27, 28, 37, 6],
-  "ta-e-presentiel":   [31, 40, 7, 3, 27, 28, 37, 6],
-  // Formation TA E-learning
-  "ta-e":              [32, 40, 7, 3, 27, 13, 28, 37, 6],
-  // Formation VA
-  "va":                [34, 41, 7, 3, 29, 30, 38, 8],
-  "va-e-presentiel":   [34, 41, 7, 3, 29, 30, 38, 8],
-  "va-e":              [34, 41, 7, 3, 29, 30, 38, 8],
+  "vtc":               [1, 2, 3, 4, 35, 5, 8, 60, 50],
+  "vtc-e-presentiel":  [1, 2, 3, 4, 35, 5, 8, 60, 50],
+  "vtc-e":             [26, 2, 3, 4, 35, 5, 8, 60, 50],
+  "taxi":              [1, 10, 7, 3, 9, 13, 11, 36, 6, 61, 51],
+  "taxi-e-presentiel": [1, 10, 7, 3, 9, 13, 11, 36, 6, 61, 51],
+  "taxi-e":            [26, 10, 7, 3, 9, 13, 11, 36, 6, 61, 51],
+  "ta":                [31, 40, 7, 3, 27, 28, 37, 6, 62, 52],
+  "ta-e-presentiel":   [31, 40, 7, 3, 27, 28, 37, 6, 62, 52],
+  "ta-e":              [32, 40, 7, 3, 27, 13, 28, 37, 6, 62, 52],
+  "va":                [34, 41, 7, 3, 29, 30, 38, 8, 63, 53],
+  "va-e-presentiel":   [34, 41, 7, 3, 29, 30, 38, 8, 63, 53],
+  "va-e":              [34, 41, 7, 3, 29, 30, 38, 8, 63, 53],
 };
 
 // Formations disponibles pour la création de compte cours
