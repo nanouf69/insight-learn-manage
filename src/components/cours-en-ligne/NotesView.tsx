@@ -183,7 +183,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
 
   // Group by module
   const byModule = useMemo(() => {
-    const map: Record<string, { score: number; max: number; pct: number; date: string; type: string }[]> = {};
+    const map: Record<string, { score: number; max: number; pct: number; date: string; type: string; details: any[] }[]> = {};
     
     moduleCompletions.forEach(m => {
       if (m.score_obtenu == null || m.score_max == null) return;
@@ -196,6 +196,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
         pct: m.score_max > 0 ? Math.round((m.score_obtenu / m.score_max) * 100) : 0,
         date: m.completed_at,
         type: "module",
+        details: Array.isArray(m.details) ? m.details : [],
       });
     });
 
@@ -208,6 +209,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
         pct: r.score_max > 0 ? Math.round((r.score_obtenu / r.score_max) * 100) : 0,
         date: r.completed_at,
         type: "examen",
+        details: Array.isArray((r as any).details) ? (r as any).details : [],
       });
     });
 
