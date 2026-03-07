@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, CheckSquare, XSquare } from "lucide-react";
 import { type CompetencesData } from "./competences-checklist-data";
 
 interface Props {
@@ -14,7 +14,6 @@ interface Props {
 }
 
 export default function CompetencesChecklist({ data, apprenantNom, onComplete, completed }: Props) {
-  // Track every item answer: key = "sectionIdx-itemIdx", value = "oui" | "non"
   const [answers, setAnswers] = useState<Record<string, "oui" | "non">>({});
 
   const totalItems = data.sections.reduce((acc, s) => acc + s.items.length, 0);
@@ -26,12 +25,22 @@ export default function CompetencesChecklist({ data, apprenantNom, onComplete, c
     setAnswers(prev => {
       const next = { ...prev };
       if (next[key] === value) {
-        delete next[key]; // deselect
+        delete next[key];
       } else {
         next[key] = value;
       }
       return next;
     });
+  };
+
+  const setAll = (value: "oui" | "non") => {
+    const allAnswers: Record<string, "oui" | "non"> = {};
+    data.sections.forEach((section, sIdx) => {
+      section.items.forEach((_, iIdx) => {
+        allAnswers[`${sIdx}-${iIdx}`] = value;
+      });
+    });
+    setAnswers(allAnswers);
   };
 
   if (completed) {
@@ -61,6 +70,16 @@ export default function CompetencesChecklist({ data, apprenantNom, onComplete, c
           <div className="flex items-center justify-center gap-2">
             <Badge variant={allAnswered ? "default" : "secondary"}>{answeredCount}/{totalItems} répondu(s)</Badge>
             <span className="text-xs text-muted-foreground">{progress}%</span>
+          </div>
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <Button variant="outline" size="sm" onClick={() => setAll("oui")} className="gap-1.5">
+              <CheckSquare className="w-4 h-4 text-green-600" />
+              Tout cocher Oui
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setAll("non")} className="gap-1.5">
+              <XSquare className="w-4 h-4 text-red-500" />
+              Tout cocher Non
+            </Button>
           </div>
         </CardContent>
       </Card>
