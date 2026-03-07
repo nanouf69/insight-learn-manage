@@ -10,7 +10,6 @@ import { WelcomeBanner } from "@/components/cours-en-ligne/motivation/WelcomeBan
 import { XPBar } from "@/components/cours-en-ligne/motivation/XPBar";
 import { BadgeGrid } from "@/components/cours-en-ligne/motivation/BadgeGrid";
 import { buildBadges, calculateXP } from "@/components/cours-en-ligne/motivation/badges-data";
-import { QuizBlock } from "@/components/cours-en-ligne/motivation/QuizBlock";
 import { toast } from "sonner";
 import ModuleDetailView from "@/components/cours-en-ligne/ModuleDetailView";
 import ExamensBlancsPage from "@/components/cours-en-ligne/ExamensBlancsPage";
@@ -618,23 +617,6 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const normalizedTypeApprenant = normalizeFormationKey(apprenant?.type_apprenant);
   const normalizedFormationChoisie = normalizeFormationKey(apprenant?.formation_choisie);
 
-  const isTaxiProfile =
-    normalizedTypeApprenant === "taxi" ||
-    normalizedTypeApprenant.startsWith("taxi-") ||
-    normalizedTypeApprenant === "ta" ||
-    normalizedTypeApprenant.startsWith("ta-") ||
-    normalizedTypeApprenant.startsWith("passerelle-taxi") ||
-    normalizedFormationChoisie === "taxi" ||
-    normalizedFormationChoisie.startsWith("taxi-") ||
-    normalizedFormationChoisie === "ta" ||
-    normalizedFormationChoisie.startsWith("ta-") ||
-    normalizedFormationChoisie.startsWith("passerelle-taxi");
-
-  const quizCategory: "taxi" | "vtc" =
-    isTaxiProfile || ["taxi", "taxi-elearning", "taxi-pour-vtc", "taxi-pour-vtc-elearning"].includes(selectedFormation)
-      ? "taxi"
-      : "vtc";
-
   // Build a set of unlocked module IDs for e-learning
   const unlockedModuleIds = new Set<number>();
   if (isElearning) {
@@ -745,12 +727,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                     totalModules={modules.length}
                     globalProgress={globalProgress}
                   />
-                  <XPBar xp={xp} />
-                  <BadgeGrid badges={badges} />
-                  <QuizBlock
-                    key={`mini-quiz-${quizCategory}-${selectedFormation}`}
-                    category={quizCategory}
-                  />
+                   <XPBar xp={xp} />
+                   <BadgeGrid badges={badges} />
                 </>
               );
             })()}
