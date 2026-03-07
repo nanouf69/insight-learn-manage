@@ -314,10 +314,19 @@ const inferBilanQuizNumber = (title: string): number | null => {
   return null;
 };
 
-const getPointLabelFromExerciseTitle = (title: string): string | null => {
+const BILAN_EXERCISE_MODULE_IDS = new Set([4, 5, 9, 11, 27, 28, 29, 30]);
+
+const getPointLabelFromExerciseTitle = (title: string, moduleId?: number): string | null => {
   if (!title) return null;
 
-  // First try standard cours/exercices mapping
+  // For bilan modules, use bilan-specific numbering (clean 1, 2, 3…)
+  if (moduleId != null && BILAN_EXERCISE_MODULE_IDS.has(moduleId)) {
+    const bilanNum = inferBilanQuizNumber(title);
+    if (bilanNum) return `${bilanNum}`;
+    return null;
+  }
+
+  // Standard cours/exercices mapping
   const subjectNum = inferSubjectNumberFromExerciseTitle(title);
   if (subjectNum) {
     const partMatch = title.match(/partie\s*(\d+)/i);
@@ -326,14 +335,14 @@ const getPointLabelFromExerciseTitle = (title: string): string | null => {
     return `${subjectNum}.${safePartNum}`;
   }
 
-  // Then try bilan quiz number
+  // Fallback: try bilan quiz number
   const bilanNum = inferBilanQuizNumber(title);
   if (bilanNum) return `${bilanNum}`;
 
   return null;
 };
 
-const getCompletionPointLabels = (completion: any): string[] => {
+const getCompletionPointLabels = (completion: any, moduleId?: number): string[] => {
   const details = Array.isArray(completion?.details) ? completion.details : null;
   if (!details || details.length === 0) return [];
 
@@ -344,7 +353,7 @@ const getCompletionPointLabels = (completion: any): string[] => {
     if (answer === null || answer === undefined || `${answer}`.trim() === "") return;
 
     const exerciseTitle = typeof detail?.exerciceTitre === "string" ? detail.exerciceTitre : "";
-    const pointLabel = getPointLabelFromExerciseTitle(exerciseTitle);
+    const pointLabel = getPointLabelFromExerciseTitle(exerciseTitle, moduleId);
     if (pointLabel) pointLabels.add(pointLabel);
   });
 
