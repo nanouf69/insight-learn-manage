@@ -46,6 +46,8 @@ import imgBugnes from "@/assets/pratique/bugnes.jpg";
 import { VTC_COURS_DATA, VTC_SECTIONS } from "./vtc-cours-data";
 import { FORMULES_DATA } from "./formules-data";
 import { TAXI_COURS_DATA, TAXI_SECTIONS } from "./taxi-cours-data";
+import { TA_COURS_DATA, TA_SECTIONS } from "./ta-cours-data";
+import { VA_COURS_DATA, VA_SECTIONS } from "./va-cours-data";
 import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "./controle-connaissances-taxi-data";
 import { CONNAISSANCES_VILLE_TAXI_DATA } from "./connaissances-ville-taxi-data";
 import { BILAN_EXERCICES_VTC } from "./bilan-exercices-vtc-data";
@@ -768,7 +770,20 @@ function getInitialModuleData(
   if (module.id === 23) return createSectionModuleData(23, "E. Anglais", "Cours et exercices d'anglais (TAXI)", TAXI_SECTIONS[4]);
   if (module.id === 24) return createSectionModuleData(24, "F. Réglementation", "Réglementation nationale et locale (TAXI)", TAXI_SECTIONS[5]);
 
-  // Bilan Examen VTC (module 5) — 7 matières séparées sans chronomètre
+  // TA sub-modules (Passerelle Taxi : Nationale + Locale)
+  if (module.id === 40) {
+    if (!studentOnly) return JSON.parse(JSON.stringify(TA_COURS_DATA));
+    return createSectionModuleData(40, "F. Réglementation Nationale", "Réglementation nationale (TA)", TA_SECTIONS[0]);
+  }
+  if (module.id === 42) return createSectionModuleData(42, "F. Réglementation Locale", "Réglementation locale (TA)", TA_SECTIONS[1]);
+
+  // VA sub-modules (Passerelle VTC : Marketing + Spécifique VTC)
+  if (module.id === 41) {
+    if (!studentOnly) return JSON.parse(JSON.stringify(VA_COURS_DATA));
+    return createSectionModuleData(41, "G. Développement Commercial", "Marketing et développement commercial (VA)", VA_SECTIONS[0]);
+  }
+  if (module.id === 43) return createSectionModuleData(43, "F. Réglementation Spécifique VTC", "Réglementation spécifique VTC (VA)", VA_SECTIONS[1]);
+
   if (module.id === 5) {
     return {
       id: 5,
