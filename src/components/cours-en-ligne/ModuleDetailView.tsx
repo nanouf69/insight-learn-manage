@@ -1578,9 +1578,26 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       ];
     })();
 
-    const shouldUseHierarchicalStepper = Number(moduleData.id) === 2 || Number(moduleData.id) === 10;
+    const BILAN_MODULE_IDS_SET = new Set([4, 5, 9, 11, 27, 28, 29, 30]);
+    const isBilanModule = BILAN_MODULE_IDS_SET.has(Number(moduleData.id));
+    const shouldUseHierarchicalStepper = Number(moduleData.id) === 2 || Number(moduleData.id) === 10 || isBilanModule;
     const hierarchicalLabelsByPage = useMemo<Record<number, string>>(() => {
       if (!shouldUseHierarchicalStepper) return {};
+
+      // For bilan modules (exercices-only), number each quiz sequentially: 1, 2, 3…
+      if (isBilanModule) {
+        const labels: Record<number, string> = {};
+        let quizIndex = 0;
+        pages.forEach((page, index) => {
+          if (page.type === "exercice-single") {
+            quizIndex++;
+            // Strip emoji prefix for cleaner label
+            const cleanTitle = page.exercice.titre.replace(/^📝\s*|^📘\s*|^📗\s*|^📙\s*|^📕\s*|^📓\s*/, "");
+            labels[index] = `${quizIndex}. ${cleanTitle}`;
+          }
+        });
+        return labels;
+      }
 
       const subjectNums: Record<string, number> = { A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7 };
       const partBySubject: Record<number, number> = {};
@@ -1604,7 +1621,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       });
 
       return labels;
-    }, [pages, shouldUseHierarchicalStepper]);
+    }, [pages, shouldUseHierarchicalStepper, isBilanModule]);
 
     const totalPages = pages.length;
     const currentPageData = pages[currentPage];
