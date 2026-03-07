@@ -267,6 +267,65 @@ const isModuleCompletionFullyDone = (completion: any) => {
   return getCompletionAnsweredCount(completion) === details.length;
 };
 
+const normalizeLabelText = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+const inferSubjectNumberFromExerciseTitle = (title: string): number | null => {
+  const normalizedTitle = normalizeLabelText(title);
+
+  if (normalizedTitle.includes("t3p")) return 1;
+  if (normalizedTitle.includes("gestion")) return 2;
+  if (normalizedTitle.includes("securite")) return 3;
+  if (normalizedTitle.includes("francais")) return 4;
+  if (normalizedTitle.includes("anglais")) return 5;
+  if (normalizedTitle.includes("developpement commercial")) return 6;
+  if (normalizedTitle.includes("reglementation nationale")) return 6;
+  if (normalizedTitle.includes("reglementation locale")) return 7;
+  if (normalizedTitle.includes("reglementation specifique")) return 7;
+  if (normalizedTitle.includes("reglementation vtc")) return 7;
+
+  return null;
+};
+
+const getPointLabelFromExerciseTitle = (title: string): string | null => {
+  if (!title) return null;
+
+  const subjectNum = inferSubjectNumberFromExerciseTitle(title);
+  if (!subjectNum) return null;
+
+  const partMatch = title.match(/partie\s*(\d+)/i);
+  const partNum = partMatch ? Number(partMatch[1]) : 1;
+  const safePartNum = Number.isFinite(partNum) && partNum > 0 ? partNum : 1;
+
+  return `${subjectNum}.${safePartNum}`;
+};
+
+const getCompletionPointLabels = (completion: any): string[] => {
+  const details = Array.isArray(completion?.details) ? completion.details : null;
+  if (!details || details.length === 0) return [];
+
+  const pointLabels = new Set<string>();
+
+  details.forEach((detail: any) => {
+    const answer = detail?.reponseEleve;
+    if (answer === null || answer === undefined || `${answer}`.trim() === "") return;
+
+    const exerciseTitle = typeof detail?.exerciceTitre === "string" ? detail.exerciceTitre : "";
+    const pointLabel = getPointLabelFromExerciseTitle(exerciseTitle);
+    if (pointLabel) pointLabels.add(pointLabel);
+  });
+
+  return Array.from(pointLabels).sort((a, b) => {
+    const [aSubject = 0, aPart = 0] = a.split(".").map(Number);
+    const [bSubject = 0, bPart = 0] = b.split(".").map(Number);
+    if (aSubject !== bSubject) return aSubject - bSubject;
+    return aPart - bPart;
+  });
+};
+
 const getModuleDisplayName = (formationId: FormationId, moduleId: number, fallback: string) =>
   FORMATION_DISPLAY_LABELS[formationId]?.[moduleId] || fallback;
 
