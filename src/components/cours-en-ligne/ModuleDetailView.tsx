@@ -126,6 +126,7 @@ interface ModuleDetailViewProps {
     adresse?: string;
     code_postal?: string;
     ville?: string;
+    date_naissance?: string;
   } | null;
 }
 
