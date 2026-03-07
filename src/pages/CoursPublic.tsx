@@ -289,6 +289,17 @@ const inferSubjectNumberFromExerciseTitle = (title: string): number | null => {
   return null;
 };
 
+// Short label for each standard subject number (cours/exercices modules)
+const SUBJECT_QUIZ_LABELS: Record<number, string> = {
+  1: "T3P",
+  2: "Gestion",
+  3: "Sécurité Routière",
+  4: "Français",
+  5: "Anglais",
+  6: "Dév. Commercial / Réglem. Nationale",
+  7: "Réglem. Spécifique / Réglem. Locale",
+};
+
 // Short label for each bilan quiz number
 const BILAN_QUIZ_LABELS: Record<number, string> = {
   1: "T3P",
@@ -345,7 +356,8 @@ const getPointLabelFromExerciseTitle = (title: string, moduleId?: number): strin
     const partMatch = title.match(/partie\s*(\d+)/i);
     const partNum = partMatch ? Number(partMatch[1]) : 1;
     const safePartNum = Number.isFinite(partNum) && partNum > 0 ? partNum : 1;
-    return `${subjectNum}.${safePartNum}`;
+    const subjectName = SUBJECT_QUIZ_LABELS[subjectNum] || "";
+    return subjectName ? `${subjectNum}.${safePartNum} ${subjectName}` : `${subjectNum}.${safePartNum}`;
   }
 
   // Fallback: try bilan quiz number
