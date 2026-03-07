@@ -760,6 +760,9 @@ function getInitialModuleData(module: { id: number; nom: string }, apprenantType
   if (module.id === 23) return createSectionModuleData(23, "E. Anglais", "Cours et exercices d'anglais (TAXI)", TAXI_SECTIONS[4]);
   if (module.id === 24) return createSectionModuleData(24, "F. Réglementation", "Réglementation nationale et locale (TAXI)", TAXI_SECTIONS[5]);
 
+  // TA (Passerelle Taxi) — module 40 = Réglementation Nationale + Locale
+  if (module.id === 40) return createSectionModuleData(40, "F. Réglementation Nationale & Locale", "Cours et exercices Réglementation Nationale et Locale — passerelle TA", TAXI_SECTIONS[5]);
+
   // Bilan Examen VTC (module 5) — 7 matières séparées sans chronomètre
   if (module.id === 5) {
     return {
