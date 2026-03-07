@@ -221,6 +221,26 @@ interface CoursPublicProps {
   apprenantOverride?: ApprenantInfo | null;
 }
 
+const isModuleCompletionFullyDone = (completion: any) => {
+  const scoreMax = Number(completion?.score_max ?? 0);
+
+  // Modules sans quiz noté: une ligne de complétion suffit
+  if (!Number.isFinite(scoreMax) || scoreMax <= 0) return true;
+
+  const details = Array.isArray(completion?.details) ? completion.details : [];
+
+  // Compat legacy: anciennes complétions sans détails question par question
+  if (details.length === 0) return true;
+
+  const answeredCount = details.reduce((count: number, detail: any) => {
+    const answer = detail?.reponseEleve;
+    if (answer === null || answer === undefined) return count;
+    return String(answer).trim().length > 0 ? count + 1 : count;
+  }, 0);
+
+  return answeredCount >= scoreMax;
+};
+
 const ChangePasswordDialog = () => {
   const [open, setOpen] = useState(false);
   const [currentPw, setCurrentPw] = useState("");
