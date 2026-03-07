@@ -664,38 +664,34 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const formation = FORMATIONS.find((f) => f.id === selectedFormation)!;
   const allModules = MODULES_DATA.filter((m) => m.formations.includes(selectedFormation));
 
-  // Aligner strictement la vue apprenant avec le bloc CRM: modules gérés uniquement + ordre de la formation
+  // Aligner la vue apprenant avec les modules gérés + fusionner les sous-modules sous le parent (2/10)
   const rawAuthorizedIds = Array.from(
     new Set(
       (expandModulesAutorises(apprenant?.modules_autorises) || apprenant?.modules_autorises || [])
         .map((id) => Number(id))
         .filter((id) => Number.isFinite(id)),
     ),
-  );
+  ) as number[];
+
+  const normalizedAuthorizedIds = Array.from(
+    new Set(rawAuthorizedIds.map((id) => normalizeModuleIdForDashboard(id))),
+  ).filter((id) => MANAGED_MODULE_IDS.has(id));
 
   const formationDefaultIds = FORMATION_DEFAULT_MODULES[selectedFormation] || [];
-  const normalizedAuthorizedSet = new Set(rawAuthorizedIds.filter((id) => MANAGED_MODULE_IDS.has(id)));
+  const normalizedFormationDefaultIds = Array.from(
+    new Set(formationDefaultIds.map((id) => normalizeModuleIdForDashboard(id))),
+  ).filter((id) => MANAGED_MODULE_IDS.has(id));
 
-  // Compat legacy: si seules les sous-matières existent en base, réactiver le module parent géré
-  [2, 10, 40, 41].forEach((parentId) => {
-    if (!formationDefaultIds.includes(parentId)) return;
-    const children = GROUPED_PARENT_MODULES[parentId] || [];
-    if (children.some((childId) => rawAuthorizedIds.includes(childId))) {
-      normalizedAuthorizedSet.add(parentId);
-    }
-  });
-
-  const orderedPrimaryIds = formationDefaultIds.filter((id) => normalizedAuthorizedSet.has(id));
-  const orderedExtraIds = rawAuthorizedIds.filter(
-    (id) => normalizedAuthorizedSet.has(id) && MANAGED_MODULE_IDS.has(id) && !formationDefaultIds.includes(id)
-  );
+  const normalizedAuthorizedSet = new Set(normalizedAuthorizedIds);
+  const orderedPrimaryIds = normalizedFormationDefaultIds.filter((id) => normalizedAuthorizedSet.has(id));
+  const orderedExtraIds = normalizedAuthorizedIds.filter((id) => !normalizedFormationDefaultIds.includes(id));
   const orderedAuthorizedIds = [...orderedPrimaryIds, ...orderedExtraIds];
 
   const orderedAuthorizedModules = orderedAuthorizedIds
     .map((id) => MODULES_DATA.find((module) => module.id === id))
     .filter((module): module is (typeof MODULES_DATA)[number] => !!module);
 
-  const fallbackModules = formationDefaultIds
+  const fallbackModules = normalizedFormationDefaultIds
     .map((id) => MODULES_DATA.find((module) => module.id === id))
     .filter((module): module is (typeof MODULES_DATA)[number] => !!module);
 
@@ -708,11 +704,27 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     nom: getModuleDisplayName(selectedFormation, module.id, module.nom),
   }));
 
-  const completedCount = modules.filter((m) => completedModuleIds.has(m.id)).length;
+  const completionsByModuleId = moduleCompletionsForNotes.reduce<Record<number, any[]>>((acc, completion) => {
+    const normalizedId = normalizeModuleIdForDashboard(Number(completion.module_id));
+    if (!acc[normalizedId]) acc[normalizedId] = [];
+    acc[normalizedId].push(completion);
+    return acc;
+  }, {});
+
+  const moduleProgressById = modules.reduce<Record<number, { isDone: boolean; hasProgress: boolean }>>((acc, module) => {
+    const rows = completionsByModuleId[module.id] || [];
+    acc[module.id] = {
+      isDone: rows.some(isModuleCompletionFullyDone),
+      hasProgress: rows.some(hasModuleCompletionProgress),
+    };
+    return acc;
+  }, {});
+
+  const completedCount = modules.filter((m) => moduleProgressById[m.id]?.isDone).length;
   const globalProgress = modules.length > 0 ? Math.round((completedCount / modules.length) * 100) : 0;
-  const remainingModules = modules.filter((m) => !completedModuleIds.has(m.id));
-  const doneModules = modules.filter((m) => completedModuleIds.has(m.id));
-  const lowModules = remainingModules.slice(0, 3);
+  const remainingModules = modules.filter((m) => !moduleProgressById[m.id]?.isDone);
+  const doneModules = modules.filter((m) => moduleProgressById[m.id]?.hasProgress);
+  const lowModules = remainingModules.filter((m) => !moduleProgressById[m.id]?.hasProgress).slice(0, 3);
   const studentName = apprenant ? `${apprenant.prenom} ${apprenant.nom}` : "Apprenant";
 
   // E-learning sequential order enforcement
