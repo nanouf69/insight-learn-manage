@@ -825,7 +825,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const pointLabels = new Set<string>();
 
     rows.forEach((row) => {
-      getCompletionPointLabels(row).forEach((label) => pointLabels.add(label));
+      getCompletionPointLabels(row, module.id).forEach((label) => pointLabels.add(label));
     });
 
     acc[module.id] = Array.from(pointLabels).sort((a, b) => {
