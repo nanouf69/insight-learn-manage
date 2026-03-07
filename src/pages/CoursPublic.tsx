@@ -225,7 +225,7 @@ const FORMATION_DEFAULT_MODULES: Record<FormationId, number[]> = {
   "vtc-pour-taxi": [33, 41, 7, 3, 29, 30, 38, 8, 63, 53],
 };
 
-const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 20, 21, 22, 23, 24, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 41, 50, 51, 52, 53, 60, 61, 62, 63]);
+const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 41, 50, 51, 52, 53, 60, 61, 62, 63]);
 const GROUPED_PARENT_MODULES: Partial<Record<number, number[]>> = {
   2: [25, 14, 15, 16, 17, 18, 19],
   40: [24],

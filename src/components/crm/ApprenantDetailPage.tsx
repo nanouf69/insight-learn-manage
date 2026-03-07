@@ -83,9 +83,9 @@ const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {
   "vtc":               [1, 2, 3, 4, 35, 5, 8, 60, 50],
   "vtc-e-presentiel":  [1, 2, 3, 4, 35, 5, 8, 60, 50],
   "vtc-e":             [26, 2, 3, 4, 35, 5, 8, 60, 50],
-  "taxi":              [1, 10, 20, 21, 22, 23, 24, 7, 3, 9, 13, 11, 36, 6, 61, 51],
-  "taxi-e-presentiel": [1, 10, 20, 21, 22, 23, 24, 7, 3, 9, 13, 11, 36, 6, 61, 51],
-  "taxi-e":            [26, 10, 20, 21, 22, 23, 24, 7, 3, 9, 13, 11, 36, 6, 61, 51],
+  "taxi":              [1, 10, 7, 3, 9, 13, 11, 36, 6, 12, 61, 51],
+  "taxi-e-presentiel": [1, 10, 7, 3, 9, 13, 11, 36, 6, 12, 61, 51],
+  "taxi-e":            [26, 10, 7, 3, 9, 13, 11, 36, 6, 12, 61, 51],
   "ta":                [31, 40, 7, 3, 27, 28, 37, 6, 62, 52],
   "ta-e-presentiel":   [31, 40, 7, 3, 27, 28, 37, 6, 62, 52],
   "ta-e":              [32, 40, 7, 3, 27, 13, 28, 37, 6, 62, 52],
@@ -1120,7 +1120,7 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
                   const resolvedType = activeFormationType;
                   const formationModuleIds = DEFAULT_MODULES_BY_TYPE[resolvedType] || [];
                   // Only show modules that exist in the managed modules list (no sub-matières)
-                  const MANAGED_MODULE_IDS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 20, 21, 22, 23, 24, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 41, 50, 51, 52, 53, 60, 61, 62, 63];
+                  const MANAGED_MODULE_IDS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 41, 50, 51, 52, 53, 60, 61, 62, 63];
                   const formationModules = formationModuleIds
                     .map(id => MODULES_DATA.find(m => m.id === id))
                     .filter((m): m is typeof MODULES_DATA[0] => !!m);
