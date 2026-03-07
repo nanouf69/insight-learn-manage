@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { CheckCircle2, Download } from "lucide-react";
+import { saveFormDocument } from "@/lib/saveFormDocument";
+import { toast } from "sonner";
 
 interface Props {
   apprenantNom?: string;
@@ -14,7 +16,8 @@ interface Props {
   apprenantTelephone?: string;
   apprenantAdresse?: string;
   apprenantDateNaissance?: string;
-  apprenantType?: string; // "VTC" | "TAXI" | "TA" | "VA" etc.
+  apprenantType?: string;
+  apprenantId?: string;
   onComplete: () => void;
   completed?: boolean;
   isAdmin?: boolean;
@@ -30,6 +33,7 @@ export default function ProjetProfessionnelForm({
   apprenantAdresse = "",
   apprenantDateNaissance = "",
   apprenantType = "",
+  apprenantId = "",
   onComplete,
   completed,
   isAdmin = false,
@@ -440,7 +444,29 @@ export default function ProjetProfessionnelForm({
       {/* Submit */}
       <div className="flex justify-center">
         <Button
-          onClick={onComplete}
+          onClick={async () => {
+            if (apprenantId) {
+              const saved = await saveFormDocument({
+                apprenantId,
+                typeDocument: "projet-professionnel",
+                titre: `Questionnaire Projet Professionnel ${formType}`,
+                donnees: {
+                  formType, dateEntretien, conseiller, lieuNaissance,
+                  statutActuel, metierActuel, anciennete, niveauFormation,
+                  motivations, dejaTransport, detailTransport, permis3ans, datePermis,
+                  modeExercice, plateformes, diffTaxiVtc, modeExerciceTaxi,
+                  demandeADS, zoneExercice, zoneAutre, activitesCompl,
+                  demarchesEntreprise, craintes, commentConnu, consulteProgram,
+                  saitExamen, connaitZone, conduiteUrbaine, connaitSites,
+                  modeFinancement, soldeCPF, disponibilite, delaiExamen, contraintes,
+                  besoinsAdaptation, accesOrdinateur, precisionsBesoins,
+                  coherenceProjet, niveauMotivation, observations, signatureAdmin,
+                },
+              });
+              if (saved) toast.success("Questionnaire projet professionnel enregistré !");
+            }
+            onComplete();
+          }}
           className="px-8"
           size="lg"
         >

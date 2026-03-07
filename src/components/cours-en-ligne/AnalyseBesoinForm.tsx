@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2 } from "lucide-react";
+import { saveFormDocument } from "@/lib/saveFormDocument";
+import { toast } from "sonner";
 
 interface Props {
   apprenantNom?: string;
@@ -16,6 +18,7 @@ interface Props {
   apprenantCodePostal?: string;
   apprenantVille?: string;
   apprenantType?: string;
+  apprenantId?: string;
   onComplete: () => void;
   completed?: boolean;
 }
@@ -32,6 +35,7 @@ export default function AnalyseBesoinForm({
   apprenantAdresse = "",
   apprenantCodePostal = "",
   apprenantVille = "",
+  apprenantId = "",
   onComplete,
   completed,
   apprenantType = "",
@@ -333,7 +337,24 @@ export default function AnalyseBesoinForm({
       {/* Submit */}
       <Card className="border-primary/30 bg-primary/5">
         <CardContent className="p-4">
-          <Button className="w-full" disabled={!canSubmit} onClick={onComplete}>
+          <Button className="w-full" disabled={!canSubmit} onClick={async () => {
+            if (apprenantId) {
+              const signatureData = canvasRef.current?.toDataURL("image/png") || "";
+              const saved = await saveFormDocument({
+                apprenantId,
+                typeDocument: "analyse-besoin",
+                titre: "Analyse du besoin – Fiche client",
+                donnees: {
+                  nom, prenom, email, telephone, adresse, codePostal, ville,
+                  formationVTC, formationTAXI,
+                  eligibility, complementary, centreFormation, typeHandicap,
+                  engagementAccepted, signature: signatureData,
+                },
+              });
+              if (saved) toast.success("Analyse du besoin enregistrée !");
+            }
+            onComplete();
+          }}>
             {canSubmit ? "✅ Valider l'analyse du besoin" : "Complétez tous les champs et signez pour valider"}
           </Button>
         </CardContent>
