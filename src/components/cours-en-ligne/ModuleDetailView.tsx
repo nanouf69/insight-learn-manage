@@ -1427,6 +1427,42 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     });
   };
 
+  const handleFileUploaded = (type: "cours" | "exercices", itemId: number, fichier: { nom: string; url: string }) => {
+    setModuleData((prev) => ({
+      ...prev,
+      [type]: prev[type].map((item) =>
+        item.id === itemId
+          ? { ...item, fichiers: [...(item.fichiers ?? []), fichier] }
+          : item,
+      ),
+    }));
+  };
+
+  const handleFileDeleted = async (type: "cours" | "exercices", itemId: number, fichierIndex: number, url: string) => {
+    setModuleData((prev) => ({
+      ...prev,
+      [type]: prev[type].map((item) => {
+        if (item.id !== itemId) return item;
+        const nextFiles = (item.fichiers ?? []).filter((_, index) => index !== fichierIndex);
+        return { ...item, fichiers: nextFiles };
+      }),
+    }));
+
+    // Nettoyage du bucket si le fichier vient du stockage cours-fichiers
+    if (url.includes("/storage/v1/object/public/cours-fichiers/")) {
+      try {
+        const objectPath = decodeURIComponent(url.split("/storage/v1/object/public/cours-fichiers/")[1] ?? "");
+        if (objectPath) {
+          await supabase.storage.from("cours-fichiers").remove([objectPath]);
+        }
+      } catch (error) {
+        console.warn("Impossible de supprimer le fichier du bucket:", error);
+      }
+    }
+
+    toast.success("Fichier supprimé");
+  };
+
   // === Aperçu apprenant ===
   const LearnerPreview = ({ secureMode = true }: { secureMode?: boolean }) => {
     const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
@@ -3013,6 +3049,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   onToggle={(id) => toggleItem("cours", id)}
                   onEdit={(id) => setEditingCoursId(id)}
                   borderColor="border-primary/30"
+                  onFileUploaded={(itemId, fichier) => handleFileUploaded("cours", itemId, fichier)}
+                  onFileDeleted={(itemId, fichierIndex, url) => handleFileDeleted("cours", itemId, fichierIndex, url)}
                 />
               )
             )}
@@ -3051,6 +3089,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   onToggle={(id) => toggleItem("exercices", id)}
                   onEdit={() => {}}
                   borderColor="border-muted"
+                  onFileUploaded={(itemId, fichier) => handleFileUploaded("exercices", itemId, fichier)}
+                  onFileDeleted={(itemId, fichierIndex, url) => handleFileDeleted("exercices", itemId, fichierIndex, url)}
                 />
               ))
             )}
