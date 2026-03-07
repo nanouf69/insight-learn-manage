@@ -1078,21 +1078,29 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
                     value={activeFormationType || undefined}
                     onValueChange={async (formationId) => {
                       setSelectedFormationForModules(formationId);
+
                       const newModules = DEFAULT_MODULES_BY_TYPE[formationId] || [];
-                      if (newModules.length === 0) return;
+                      const nextFormationKey = TYPE_TO_FORMATION_KEY[formationId] || formationId;
+                      const updatePayload = {
+                        modules_autorises: newModules,
+                        type_apprenant: formationId,
+                        formation_choisie: nextFormationKey,
+                      };
+
                       try {
                         const { error } = await supabase
                           .from('apprenants')
-                          .update({ modules_autorises: newModules } as any)
+                          .update(updatePayload as any)
                           .eq('id', apprenantId);
 
                         if (error) throw error;
 
                         queryClient.setQueryData(['apprenant-detail', apprenantId], (prev: any) => (
-                          prev ? { ...prev, modules_autorises: newModules } : prev
+                          prev ? { ...prev, ...updatePayload } : prev
                         ));
                         queryClient.invalidateQueries({ queryKey: ['apprenant-detail', apprenantId] });
-                        toast.success("Modules mis à jour pour la formation sélectionnée");
+                        queryClient.invalidateQueries({ queryKey: ['apprenants'] });
+                        toast.success("Formation et modules mis à jour");
                       } catch {
                         toast.error("Erreur lors de la mise à jour");
                       }
