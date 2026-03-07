@@ -290,6 +290,17 @@ const inferSubjectNumberFromExerciseTitle = (title: string): number | null => {
   return null;
 };
 
+// Short label for each bilan quiz number
+const BILAN_QUIZ_LABELS: Record<number, string> = {
+  1: "T3P",
+  2: "Gestion",
+  3: "Sécurité Routière",
+  4: "Réglem. Nationale",
+  5: "Réglem. Locale",
+  6: "Dév. Commercial",
+  7: "Réglem. Spécifique",
+};
+
 // Infer sequential quiz number for bilan modules from exercise title
 const inferBilanQuizNumber = (title: string): number | null => {
   const normalizedTitle = normalizeLabelText(title);
@@ -319,10 +330,13 @@ const BILAN_EXERCISE_MODULE_IDS = new Set([4, 5, 9, 11, 27, 28, 29, 30]);
 const getPointLabelFromExerciseTitle = (title: string, moduleId?: number): string | null => {
   if (!title) return null;
 
-  // For bilan modules, use bilan-specific numbering (clean 1, 2, 3…)
+  // For bilan modules, use bilan-specific numbering with label (e.g. "1. T3P")
   if (moduleId != null && BILAN_EXERCISE_MODULE_IDS.has(moduleId)) {
     const bilanNum = inferBilanQuizNumber(title);
-    if (bilanNum) return `${bilanNum}`;
+    if (bilanNum) {
+      const label = BILAN_QUIZ_LABELS[bilanNum] || "";
+      return label ? `${bilanNum}. ${label}` : `${bilanNum}`;
+    }
     return null;
   }
 
@@ -358,10 +372,12 @@ const getCompletionPointLabels = (completion: any, moduleId?: number): string[] 
   });
 
   return Array.from(pointLabels).sort((a, b) => {
-    const [aSubject = 0, aPart = 0] = a.split(".").map(Number);
-    const [bSubject = 0, bPart = 0] = b.split(".").map(Number);
-    if (aSubject !== bSubject) return aSubject - bSubject;
-    return aPart - bPart;
+    const aNum = parseInt(a, 10) || 0;
+    const bNum = parseInt(b, 10) || 0;
+    if (aNum !== bNum) return aNum - bNum;
+    const aPartMatch = a.match(/\.(\d+)/);
+    const bPartMatch = b.match(/\.(\d+)/);
+    return (aPartMatch ? Number(aPartMatch[1]) : 0) - (bPartMatch ? Number(bPartMatch[1]) : 0);
   });
 };
 
@@ -829,10 +845,12 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     });
 
     acc[module.id] = Array.from(pointLabels).sort((a, b) => {
-      const [aSubject = 0, aPart = 0] = a.split(".").map(Number);
-      const [bSubject = 0, bPart = 0] = b.split(".").map(Number);
-      if (aSubject !== bSubject) return aSubject - bSubject;
-      return aPart - bPart;
+      const aNum = parseInt(a, 10) || 0;
+      const bNum = parseInt(b, 10) || 0;
+      if (aNum !== bNum) return aNum - bNum;
+      const aPartMatch = a.match(/\.(\d+)/);
+      const bPartMatch = b.match(/\.(\d+)/);
+      return (aPartMatch ? Number(aPartMatch[1]) : 0) - (bPartMatch ? Number(bPartMatch[1]) : 0);
     });
 
     return acc;
