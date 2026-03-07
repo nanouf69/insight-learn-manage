@@ -617,23 +617,6 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const normalizedTypeApprenant = normalizeFormationKey(apprenant?.type_apprenant);
   const normalizedFormationChoisie = normalizeFormationKey(apprenant?.formation_choisie);
 
-  const isTaxiProfile =
-    normalizedTypeApprenant === "taxi" ||
-    normalizedTypeApprenant.startsWith("taxi-") ||
-    normalizedTypeApprenant === "ta" ||
-    normalizedTypeApprenant.startsWith("ta-") ||
-    normalizedTypeApprenant.startsWith("passerelle-taxi") ||
-    normalizedFormationChoisie === "taxi" ||
-    normalizedFormationChoisie.startsWith("taxi-") ||
-    normalizedFormationChoisie === "ta" ||
-    normalizedFormationChoisie.startsWith("ta-") ||
-    normalizedFormationChoisie.startsWith("passerelle-taxi");
-
-  const quizCategory: "taxi" | "vtc" =
-    isTaxiProfile || ["taxi", "taxi-elearning", "taxi-pour-vtc", "taxi-pour-vtc-elearning"].includes(selectedFormation)
-      ? "taxi"
-      : "vtc";
-
   // Build a set of unlocked module IDs for e-learning
   const unlockedModuleIds = new Set<number>();
   if (isElearning) {
