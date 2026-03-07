@@ -269,14 +269,26 @@ export const MODULES_DATA: ModuleInfo[] = [
   // === Modules cours groupés TA et VA ===
   {
     id: 40,
-    nom: "2.COURS ET EXERCICES TA",
-    description: "Cours et exercices Réglementation Nationale et Locale — passerelle TA",
+    nom: "F. Réglementation Nationale",
+    description: "Cours et exercices Réglementation Nationale — passerelle TA",
+    formations: ["taxi-pour-vtc", "taxi-pour-vtc-elearning"],
+  },
+  {
+    id: 42,
+    nom: "F. Réglementation Locale",
+    description: "Cours et exercices Réglementation Locale — passerelle TA",
     formations: ["taxi-pour-vtc", "taxi-pour-vtc-elearning"],
   },
   {
     id: 41,
-    nom: "2.COURS ET EXERCICES VA",
-    description: "Cours et exercices Développement Commercial et Réglementation Spécifique VTC — passerelle VA",
+    nom: "F. Développement Commercial",
+    description: "Cours et exercices Développement Commercial — passerelle VA",
+    formations: ["vtc-pour-taxi"],
+  },
+  {
+    id: 43,
+    nom: "G. Réglementation Spécifique VTC",
+    description: "Cours et exercices Réglementation Spécifique VTC — passerelle VA",
     formations: ["vtc-pour-taxi"],
   },
   // === Sources Juridiques ===
@@ -341,7 +353,10 @@ export function expandModulesAutorises(ids: number[] | null | undefined): number
   if (expanded.has(10)) { [20, 21, 22, 23, 24].forEach(id => expanded.add(id)); }
   // Reverse: if any child is present, add parent too
   if ([20, 21, 22, 23, 24].some(id => expanded.has(id))) { expanded.add(10); }
-  if (expanded.has(40)) { [24].forEach(id => expanded.add(id)); }
-  if (expanded.has(41)) { [18, 19].forEach(id => expanded.add(id)); }
+  if (expanded.has(40)) { [42].forEach(id => expanded.add(id)); }
+  if (expanded.has(41)) { [43].forEach(id => expanded.add(id)); }
+  // Reverse for TA/VA
+  if (expanded.has(42)) { expanded.add(40); }
+  if (expanded.has(43)) { expanded.add(41); }
   return Array.from(expanded);
 }
