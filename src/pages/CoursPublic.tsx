@@ -227,46 +227,44 @@ const FORMATION_DEFAULT_MODULES: Record<FormationId, number[]> = {
 };
 
 const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 50, 51, 52, 53, 60, 61, 62, 63]);
-const GROUPED_PARENT_MODULES: Partial<Record<number, number[]>> = {
-  2: [25, 14, 15, 16, 17, 18, 19],
-  10: [39, 20, 21, 22, 23, 24],
-  40: [42],
-  41: [43],
+const DASHBOARD_PARENT_MODULE_IDS: Partial<Record<number, number>> = {
+  25: 2,
+  14: 2,
+  15: 2,
+  16: 2,
+  17: 2,
+  18: 2,
+  19: 2,
+  39: 10,
+  20: 10,
+  21: 10,
+  22: 10,
+  23: 10,
+  24: 10,
 };
 
-const getModuleDisplayName = (formationId: FormationId, moduleId: number, fallback: string) =>
-  FORMATION_DISPLAY_LABELS[formationId]?.[moduleId] || fallback;
+const normalizeModuleIdForDashboard = (moduleId: number) => DASHBOARD_PARENT_MODULE_IDS[moduleId] ?? moduleId;
 
-// Module IDs that should open ExamensBlancsPage (bilans)
-const BILAN_MODULE_IDS: Record<number, string> = {
-  28: "bilan-ta",
-  30: "bilan-va",
+const getCompletionAnsweredCount = (completion: any): number => {
+  const details = Array.isArray(completion?.details) ? completion.details : null;
+  if (!details || details.length === 0) return completion ? 1 : 0;
+
+  return details.filter((detail: any) => {
+    const answer = detail?.reponseEleve;
+    return answer !== null && answer !== undefined && `${answer}`.trim() !== "";
+  }).length;
 };
 
-interface ApprenantInfo {
-  id?: string;
-  nom: string;
-  prenom: string;
-  type_apprenant: string | null;
-  formation_choisie: string | null;
-  date_debut_cours_en_ligne: string | null;
-  date_fin_cours_en_ligne: string | null;
-  modules_autorises: number[] | null;
-  email?: string | null;
-  telephone?: string | null;
-  adresse?: string | null;
-  code_postal?: string | null;
-  ville?: string | null;
-}
-
-interface CoursPublicProps {
-  embedded?: boolean;
-  apprenantOverride?: ApprenantInfo | null;
-}
+const hasModuleCompletionProgress = (completion: any) => {
+  if (!completion) return false;
+  return getCompletionAnsweredCount(completion) > 0;
+};
 
 const isModuleCompletionFullyDone = (completion: any) => {
-  // Une ligne de complétion en base = le module a été validé par l'élève
-  return !!completion;
+  if (!completion) return false;
+  const details = Array.isArray(completion?.details) ? completion.details : null;
+  if (!details || details.length === 0) return true;
+  return getCompletionAnsweredCount(completion) === details.length;
 };
 
 const ChangePasswordDialog = () => {
