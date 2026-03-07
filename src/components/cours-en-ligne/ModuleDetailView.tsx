@@ -1379,44 +1379,47 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const isPratique = module.id === 6 || module.id === 8;
 
   const moveItem = (type: "cours" | "exercices", index: number, direction: "up" | "down") => {
-    const items = [...moduleData[type]];
-    const swapIndex = direction === "up" ? index - 1 : index + 1;
-    if (swapIndex < 0 || swapIndex >= items.length) return;
-    [items[index], items[swapIndex]] = [items[swapIndex], items[index]];
-    setModuleData({ ...moduleData, [type]: items });
+    setModuleData((prev) => {
+      const items = [...prev[type]];
+      const swapIndex = direction === "up" ? index - 1 : index + 1;
+      if (swapIndex < 0 || swapIndex >= items.length) return prev;
+      [items[index], items[swapIndex]] = [items[swapIndex], items[index]];
+      return { ...prev, [type]: items };
+    });
   };
 
   const deleteItem = (type: "cours" | "exercices", id: number) => {
-    setModuleData({
-      ...moduleData,
-      [type]: moduleData[type].filter((i) => i.id !== id),
-    });
+    setModuleData((prev) => ({
+      ...prev,
+      [type]: prev[type].filter((i) => i.id !== id),
+    }));
     toast.success(`${type === "cours" ? "Cours" : "Exercice"} supprimé`);
   };
 
   const toggleItem = (type: "cours" | "exercices", id: number) => {
-    setModuleData({
-      ...moduleData,
-      [type]: moduleData[type].map((i) => i.id === id ? { ...i, actif: !i.actif } : i),
-    });
+    setModuleData((prev) => ({
+      ...prev,
+      [type]: prev[type].map((i) => i.id === id ? { ...i, actif: !i.actif } : i),
+    }));
   };
 
   const addItem = (type: "cours" | "exercices") => {
     const newId = Date.now();
-    if (type === "exercices" && isPratique) {
-      const newExo: ExerciceItem = {
-        id: newId,
-        titre: "Nouvel exercice",
-        actif: true,
-        questions: [
-          { id: 1, enonce: "Nouvelle question", choix: [{ lettre: "A", texte: "Choix A", correct: true }, { lettre: "B", texte: "Choix B" }, { lettre: "C", texte: "Choix C" }] },
-        ],
-      };
-      setModuleData({ ...moduleData, exercices: [...moduleData.exercices, newExo] });
-    } else {
+    setModuleData((prev) => {
+      if (type === "exercices" && isPratique) {
+        const newExo: ExerciceItem = {
+          id: newId,
+          titre: "Nouvel exercice",
+          actif: true,
+          questions: [
+            { id: 1, enonce: "Nouvelle question", choix: [{ lettre: "A", texte: "Choix A", correct: true }, { lettre: "B", texte: "Choix B" }, { lettre: "C", texte: "Choix C" }] },
+          ],
+        };
+        return { ...prev, exercices: [...prev.exercices, newExo] };
+      }
       const newItem: ContentItem = { id: newId, titre: type === "cours" ? "Nouveau cours" : "Nouvel exercice", actif: true };
-      setModuleData({ ...moduleData, [type]: [...moduleData[type], newItem] });
-    }
+      return { ...prev, [type]: [...prev[type], newItem] };
+    });
     toast.success(`${type === "cours" ? "Cours" : "Exercice"} ajouté`);
   };
 
