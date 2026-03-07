@@ -415,6 +415,7 @@ interface ApprenantInfo {
   adresse?: string | null;
   code_postal?: string | null;
   ville?: string | null;
+  date_naissance?: string | null;
 }
 
 interface CoursPublicProps {
@@ -541,7 +542,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const fetchApprenant = async () => {
       const { data } = await supabase
         .from("apprenants")
-        .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, modules_autorises, email, telephone, adresse, code_postal, ville")
+        .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, modules_autorises, email, telephone, adresse, code_postal, ville, date_naissance")
         .eq("auth_user_id", user.id)
         .maybeSingle();
 
@@ -578,7 +579,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const refreshApprenant = async () => {
       const { data, error } = await supabase
         .from("apprenants")
-        .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, modules_autorises, email, telephone, adresse, code_postal, ville")
+        .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, modules_autorises, email, telephone, adresse, code_postal, ville, date_naissance")
         .eq("id", apprenantOverride.id)
         .maybeSingle();
 
@@ -745,6 +746,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             adresse: apprenant.adresse || undefined,
             code_postal: apprenant.code_postal || undefined,
             ville: apprenant.ville || undefined,
+            date_naissance: apprenant.date_naissance || undefined,
           } : null}
         />
       </div>

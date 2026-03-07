@@ -56,6 +56,7 @@ import { BILAN_EXAMEN_VTC } from "./bilan-examen-vtc-data";
 import { BILAN_EXAMEN_TAXI } from "./bilan-examen-taxi-data";
 import CompetencesChecklist from "./CompetencesChecklist";
 import AnalyseBesoinForm from "./AnalyseBesoinForm";
+import ProjetProfessionnelForm from "./ProjetProfessionnelForm";
 import EvaluationAcquisForm from "./EvaluationAcquisForm";
 import SatisfactionForm from "./SatisfactionForm";
 import { getCompetencesForFormation } from "./competences-checklist-data";
@@ -77,7 +78,7 @@ interface ContentItem {
   fichiers?: { nom: string; url: string }[];
   slidesKey?: string;
   quiz?: InlineQuizQuestion[];
-  checklistType?: "competences" | "analyse-besoin" | "evaluation-acquis" | "satisfaction";
+  checklistType?: "competences" | "analyse-besoin" | "evaluation-acquis" | "satisfaction" | "projet-professionnel";
   formationType?: string;
 }
 
@@ -125,6 +126,7 @@ interface ModuleDetailViewProps {
     adresse?: string;
     code_postal?: string;
     ville?: string;
+    date_naissance?: string;
   } | null;
 }
 
@@ -147,6 +149,13 @@ const INTRODUCTION_PRESENTIEL_DATA: ModuleData = {
       description: "Complétez cette fiche pour nous permettre de mieux cerner votre profil et vos besoins.",
       actif: true,
       checklistType: "analyse-besoin",
+    },
+    {
+      id: 101,
+      titre: "Questionnaire Projet Professionnel",
+      description: "Évaluation de votre motivation et de votre projet professionnel (adapté TAXI ou VTC).",
+      actif: true,
+      checklistType: "projet-professionnel",
     },
     {
       id: 1,
@@ -301,6 +310,7 @@ const INTRODUCTION_ELEARNING_DATA: ModuleData = {
   cours: [
     { id: 0, titre: "Test de compétences avant formation", description: "Répondez aux questions en cochant Oui ou Non.", actif: true, checklistType: "competences" },
     { id: 100, titre: "Analyse du besoin – Fiche client", description: "Complétez cette fiche.", actif: true, checklistType: "analyse-besoin" },
+    { id: 101, titre: "Questionnaire Projet Professionnel", description: "Évaluation de votre motivation et de votre projet professionnel.", actif: true, checklistType: "projet-professionnel" },
     { id: 1, titre: "Bienvenue sur la plateforme", description: "Cette plateforme est dédiée aux futurs chauffeurs VTC et TAXIS. Vous devez réussir deux épreuves :\n• L'épreuve d'admissibilité (théorie avec 7 matières) — minimum 10/20\n• L'épreuve d'admission (pratique) — minimum 12/20\nLe tout sans note éliminatoire.", actif: true },
     { id: 2, titre: "Informations importantes", description: "💰 Frais d'examen en cas d'échec (à votre charge) :\n• Examen théorique : environ 240€\n• Examen pratique : environ 120€\n\n📋 Les examens sont organisés par la CMA.\n📞 Contactez-nous le jour des résultats de l'examen théorique.", actif: true },
     { id: 3, titre: "Contenu de l'examen", description: "📝 ÉPREUVES COMMUNES :\nA — Réglementation T3P (45 min, coeff. 3)\nB — Gestion (45 min, coeff. 2)\nC — Sécurité routière (30 min, coeff. 3)\nD — Français (30 min, coeff. 2)\nE — Anglais (30 min, coeff. 1)", actif: true },
@@ -331,6 +341,7 @@ const INTRODUCTION_TA_PRESENTIEL_DATA: ModuleData = {
   cours: [
     { id: 0, titre: "Test de compétences avant formation", description: "Répondez aux questions.", actif: true, checklistType: "competences" },
     { id: 100, titre: "Analyse du besoin – Fiche client", description: "Complétez cette fiche.", actif: true, checklistType: "analyse-besoin" },
+    { id: 101, titre: "Questionnaire Projet Professionnel", description: "Évaluation de votre motivation et de votre projet professionnel.", actif: true, checklistType: "projet-professionnel" },
     { id: 1, titre: "Bienvenue — Passerelle TA", description: "Cette formation passerelle vous permet d'obtenir votre carte TAXI.\n\n2 matières : Réglementation nationale TAXI + Réglementation locale", actif: true },
     { id: 2, titre: "Programme", description: "📝 Réglementation nationale TAXI + Réglementation locale", actif: true },
     { id: 3, titre: "Planning et contact", description: "🏢 FTRANSPORT — 86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91\n⏰ 9h-12h / 13h-17h", actif: true },
@@ -351,6 +362,7 @@ const INTRODUCTION_TA_ELEARNING_DATA: ModuleData = {
   cours: [
     { id: 0, titre: "Test de compétences avant formation", description: "Répondez aux questions.", actif: true, checklistType: "competences" },
     { id: 100, titre: "Analyse du besoin – Fiche client", description: "Complétez cette fiche.", actif: true, checklistType: "analyse-besoin" },
+    { id: 101, titre: "Questionnaire Projet Professionnel", description: "Évaluation de votre motivation et de votre projet professionnel.", actif: true, checklistType: "projet-professionnel" },
     { id: 1, titre: "Bienvenue — Passerelle TA (E-learning)", description: "Formation passerelle TAXI en e-learning.\n\n2 matières : Réglementation nationale TAXI + Réglementation locale", actif: true },
     { id: 2, titre: "Contact", description: "🏢 FTRANSPORT — 86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91\n📧 contact@ftransport.fr", actif: true },
   ],
@@ -369,6 +381,7 @@ const INTRODUCTION_VA_PRESENTIEL_DATA: ModuleData = {
   cours: [
     { id: 0, titre: "Test de compétences avant formation", description: "Répondez aux questions.", actif: true, checklistType: "competences" },
     { id: 100, titre: "Analyse du besoin – Fiche client", description: "Complétez cette fiche.", actif: true, checklistType: "analyse-besoin" },
+    { id: 101, titre: "Questionnaire Projet Professionnel", description: "Évaluation de votre motivation et de votre projet professionnel.", actif: true, checklistType: "projet-professionnel" },
     { id: 1, titre: "Bienvenue — Passerelle VA", description: "Cette formation passerelle vous permet d'obtenir votre carte VTC.\n\n2 matières : Développement Commercial + Réglementation spécifique VTC", actif: true },
     { id: 2, titre: "Programme", description: "📝 Développement Commercial + Réglementation spécifique VTC", actif: true },
     { id: 3, titre: "Planning et contact", description: "🏢 FTRANSPORT — 86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91\n⏰ 9h-12h / 13h-17h", actif: true },
@@ -388,6 +401,7 @@ const INTRODUCTION_VA_ELEARNING_DATA: ModuleData = {
   cours: [
     { id: 0, titre: "Test de compétences avant formation", description: "Répondez aux questions.", actif: true, checklistType: "competences" },
     { id: 100, titre: "Analyse du besoin – Fiche client", description: "Complétez cette fiche.", actif: true, checklistType: "analyse-besoin" },
+    { id: 101, titre: "Questionnaire Projet Professionnel", description: "Évaluation de votre motivation et de votre projet professionnel.", actif: true, checklistType: "projet-professionnel" },
     { id: 1, titre: "Bienvenue — Passerelle VA (E-learning)", description: "Formation passerelle VTC en e-learning.\n\n2 matières : Développement Commercial + Réglementation spécifique VTC", actif: true },
     { id: 2, titre: "Contact", description: "🏢 FTRANSPORT — 86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91\n📧 contact@ftransport.fr", actif: true },
   ],
@@ -2014,6 +2028,26 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             apprenantCodePostal={apprenantInfo?.code_postal}
             apprenantVille={apprenantInfo?.ville}
             apprenantType={apprenantType || ""}
+            completed={completedPages.has(currentPage)}
+            onComplete={() => {
+              markPageCompleted(currentPage);
+              if (currentPage < totalPages - 1) goToPage(currentPage + 1);
+            }}
+          />
+        );
+      }
+
+      if (cours.checklistType === "projet-professionnel") {
+        return (
+          <ProjetProfessionnelForm
+            apprenantNom={apprenantInfo?.nom}
+            apprenantPrenom={apprenantInfo?.prenom}
+            apprenantEmail={apprenantInfo?.email}
+            apprenantTelephone={apprenantInfo?.telephone}
+            apprenantAdresse={apprenantInfo?.adresse}
+            apprenantDateNaissance={apprenantInfo?.date_naissance || ""}
+            apprenantType={apprenantType || ""}
+            isAdmin={!studentOnly}
             completed={completedPages.has(currentPage)}
             onComplete={() => {
               markPageCompleted(currentPage);
