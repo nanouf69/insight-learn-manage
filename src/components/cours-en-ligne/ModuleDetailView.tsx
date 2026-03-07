@@ -54,6 +54,8 @@ import { BILAN_EXAMEN_VTC } from "./bilan-examen-vtc-data";
 import { BILAN_EXAMEN_TAXI } from "./bilan-examen-taxi-data";
 import CompetencesChecklist from "./CompetencesChecklist";
 import AnalyseBesoinForm from "./AnalyseBesoinForm";
+import EvaluationAcquisForm from "./EvaluationAcquisForm";
+import SatisfactionForm from "./SatisfactionForm";
 import { getCompetencesForFormation } from "./competences-checklist-data";
 
 interface InlineQuizQuestion {
