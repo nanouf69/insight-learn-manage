@@ -191,6 +191,12 @@ serve(async (req) => {
                   </a>
                 </div>
                 
+                <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0; border-radius: 4px;">
+                  <h3 style="color: #991b1b; margin-top: 0;">💰 En cas d'échec à l'examen pratique :</h3>
+                  <p style="margin: 5px 0;"><strong>Frais d'examen CMA à votre charge :</strong> environ 120 €</p>
+                  <p style="margin: 5px 0;"><strong>Frais de location du véhicule à votre charge :</strong> environ 80 € TTC</p>
+                </div>
+
                 <p style="color: #6b7280; font-size: 14px;">⚠️ Nous vous recommandons de ne pas partager vos identifiants.</p>
               </div>
               
