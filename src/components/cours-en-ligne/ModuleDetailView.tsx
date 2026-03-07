@@ -2468,7 +2468,38 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               setShowResultsFor(prev => { const next = new Set(prev); next.delete(exo.id); return next; });
                               setPendingResultRestore((prev) => (prev?.exoId === exo.id ? null : prev));
                             }}>
-                              🔄 Recommencer
+                              🔄 Recommencer tout
+                            </Button>
+                            <Button variant="outline" size="sm" className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50" onClick={() => {
+                              // Only clear wrong answers, keep correct ones
+                              const wrongKeys: string[] = [];
+                              (exo.questions || []).forEach((q: any) => {
+                                const key = `${exo.id}-${q.id}`;
+                                const selected = selectedAnswers[key];
+                                const correct = q.choix.find((c: any) => c.correct);
+                                const isCorrect = selected && correct && selected === correct.lettre;
+                                if (!isCorrect) wrongKeys.push(key);
+                              });
+                              setSelectedAnswers(prev => {
+                                const next = { ...prev };
+                                wrongKeys.forEach(k => delete next[k]);
+                                return next;
+                              });
+                              setShowResultsFor(prev => { const next = new Set(prev); next.delete(exo.id); return next; });
+                              setPendingResultRestore((prev) => (prev?.exoId === exo.id ? null : prev));
+                              const nbWrong = wrongKeys.length;
+                              toast.info(`🎯 ${nbWrong} question${nbWrong > 1 ? "s" : ""} à refaire`);
+                            }}>
+                              🎯 Refaire les fausses ({(() => {
+                                let count = 0;
+                                (exo.questions || []).forEach((q: any) => {
+                                  const key = `${exo.id}-${q.id}`;
+                                  const selected = selectedAnswers[key];
+                                  const correct = q.choix.find((c: any) => c.correct);
+                                  if (!(selected && correct && selected === correct.lettre)) count++;
+                                });
+                                return count;
+                              })()})
                             </Button>
                             {currentPage < totalPages - 1 && completedPages.has(currentPage) && (
                               <Button size="sm" className="gap-2" onClick={() => {
