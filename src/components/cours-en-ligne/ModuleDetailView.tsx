@@ -151,6 +151,13 @@ const INTRODUCTION_PRESENTIEL_DATA: ModuleData = {
       checklistType: "analyse-besoin",
     },
     {
+      id: 101,
+      titre: "Questionnaire Projet Professionnel",
+      description: "Évaluation de votre motivation et de votre projet professionnel (adapté TAXI ou VTC).",
+      actif: true,
+      checklistType: "projet-professionnel",
+    },
+    {
       id: 1,
       titre: "Bienvenue sur la plateforme",
       description: `Cette plateforme est dédiée aux futurs chauffeurs VTC et TAXIS. Vous devez réussir deux épreuves pour obtenir votre carte de chauffeur VTC ou de chauffeur TAXI :

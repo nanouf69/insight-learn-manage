@@ -745,6 +745,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             adresse: apprenant.adresse || undefined,
             code_postal: apprenant.code_postal || undefined,
             ville: apprenant.ville || undefined,
+            date_naissance: apprenant.date_naissance || undefined,
           } : null}
         />
       </div>
