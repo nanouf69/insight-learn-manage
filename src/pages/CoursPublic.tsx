@@ -483,13 +483,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           new Set(
             completionRows
               .filter(isModuleCompletionFullyDone)
-              .map((d) => d.module_id),
+              .map((d) => normalizeModuleIdForDashboard(Number(d.module_id))),
           ),
         );
 
         const scores: Record<number, { score_obtenu: number | null; score_max: number | null }> = {};
         completionRows.forEach((d) => {
-          scores[d.module_id] = { score_obtenu: d.score_obtenu, score_max: d.score_max };
+          const normalizedId = normalizeModuleIdForDashboard(Number(d.module_id));
+          scores[normalizedId] = { score_obtenu: d.score_obtenu, score_max: d.score_max };
         });
         setModuleScores(scores);
         setModuleCompletionsForNotes(completionRows);
@@ -516,13 +517,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           new Set(
             completionRows
               .filter(isModuleCompletionFullyDone)
-              .map((d) => d.module_id),
+              .map((d) => normalizeModuleIdForDashboard(Number(d.module_id))),
           ),
         );
 
         const scores: Record<number, { score_obtenu: number | null; score_max: number | null }> = {};
         completionRows.forEach((d) => {
-          scores[d.module_id] = { score_obtenu: d.score_obtenu, score_max: d.score_max };
+          const normalizedId = normalizeModuleIdForDashboard(Number(d.module_id));
+          scores[normalizedId] = { score_obtenu: d.score_obtenu, score_max: d.score_max };
         });
         setModuleScores(scores);
         setModuleCompletionsForNotes(completionRows);
