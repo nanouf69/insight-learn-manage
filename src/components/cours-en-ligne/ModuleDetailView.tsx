@@ -1795,7 +1795,36 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         );
       }
 
-      return (
+      if (cours.checklistType === "evaluation-acquis") {
+        return (
+          <EvaluationAcquisForm
+            formationType={cours.formationType || "vtc"}
+            onComplete={() => {
+              markPageCompleted(currentPage);
+              if (currentPage < totalPages - 1) goToPage(currentPage + 1);
+            }}
+          />
+        );
+      }
+
+      if (cours.checklistType === "satisfaction") {
+        return (
+          <SatisfactionForm
+            formationType={cours.formationType || "vtc"}
+            onComplete={() => {
+              markPageCompleted(currentPage);
+              if (currentPage < totalPages - 1) {
+                goToPage(currentPage + 1);
+              } else {
+                persistModuleCompletion();
+                onBack();
+                toast.success("🎉 Formation terminée ! Merci pour vos retours.");
+              }
+            }}
+          />
+        );
+      }
+
         <div className="space-y-4">
         <Card key={cours.id} className="overflow-hidden">
           {cours.image && (
