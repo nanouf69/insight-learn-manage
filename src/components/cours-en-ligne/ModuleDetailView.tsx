@@ -273,6 +273,22 @@ L'épreuve pratique comprend une phase de conduite en circulation d'une durée m
         { id: 10, enonce: "Quelle est la durée minimale de la phase de conduite lors de l'épreuve pratique ?", choix: [{ lettre: "A", texte: "10 minutes" }, { lettre: "B", texte: "15 minutes" }, { lettre: "C", texte: "20 minutes", correct: true }, { lettre: "D", texte: "30 minutes" }] },
       ],
     },
+    {
+      id: 2,
+      titre: "Quiz Coefficients",
+      sousTitre: "Connaissez-vous les coefficients de chaque épreuve ?",
+      actif: true,
+      questions: [
+        { id: 1, enonce: "Quel est le coefficient de l'épreuve A — Réglementation T3P ?", choix: [{ lettre: "A", texte: "1" }, { lettre: "B", texte: "2" }, { lettre: "C", texte: "3", correct: true }, { lettre: "D", texte: "4" }] },
+        { id: 2, enonce: "Quel est le coefficient de l'épreuve B — Gestion ?", choix: [{ lettre: "A", texte: "1" }, { lettre: "B", texte: "2", correct: true }, { lettre: "C", texte: "3" }, { lettre: "D", texte: "4" }] },
+        { id: 3, enonce: "Quel est le coefficient de l'épreuve C — Sécurité routière ?", choix: [{ lettre: "A", texte: "1" }, { lettre: "B", texte: "2" }, { lettre: "C", texte: "3", correct: true }, { lettre: "D", texte: "4" }] },
+        { id: 4, enonce: "Quel est le coefficient de l'épreuve D — Français ?", choix: [{ lettre: "A", texte: "1" }, { lettre: "B", texte: "2", correct: true }, { lettre: "C", texte: "3" }, { lettre: "D", texte: "4" }] },
+        { id: 5, enonce: "Quel est le coefficient de l'épreuve E — Anglais ?", choix: [{ lettre: "A", texte: "1", correct: true }, { lettre: "B", texte: "2" }, { lettre: "C", texte: "3" }, { lettre: "D", texte: "4" }] },
+        { id: 6, enonce: "Quelle est la somme totale des coefficients des 7 épreuves théoriques ?", choix: [{ lettre: "A", texte: "14" }, { lettre: "B", texte: "15" }, { lettre: "C", texte: "17", correct: true }, { lettre: "D", texte: "20" }] },
+        { id: 7, enonce: "Quelles épreuves ont le coefficient le plus élevé (coeff. 3) ?", choix: [{ lettre: "A", texte: "T3P, Gestion, Français" }, { lettre: "B", texte: "T3P, Sécurité, et les 2 épreuves spécifiques", correct: true }, { lettre: "C", texte: "Français, Anglais, Gestion" }, { lettre: "D", texte: "Toutes les épreuves" }] },
+        { id: 8, enonce: "Quelle épreuve a le coefficient le plus faible ?", choix: [{ lettre: "A", texte: "Français" }, { lettre: "B", texte: "Gestion" }, { lettre: "C", texte: "Anglais", correct: true }, { lettre: "D", texte: "Sécurité routière" }] },
+      ],
+    },
   ],
 };
 
