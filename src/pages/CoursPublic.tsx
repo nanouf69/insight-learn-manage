@@ -356,7 +356,8 @@ const getPointLabelFromExerciseTitle = (title: string, moduleId?: number): strin
     const partMatch = title.match(/partie\s*(\d+)/i);
     const partNum = partMatch ? Number(partMatch[1]) : 1;
     const safePartNum = Number.isFinite(partNum) && partNum > 0 ? partNum : 1;
-    return `${subjectNum}.${safePartNum}`;
+    const subjectName = SUBJECT_QUIZ_LABELS[subjectNum] || "";
+    return subjectName ? `${subjectNum}.${safePartNum} ${subjectName}` : `${subjectNum}.${safePartNum}`;
   }
 
   // Fallback: try bilan quiz number
