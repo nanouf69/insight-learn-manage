@@ -781,6 +781,24 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return acc;
   }, {});
 
+  const moduleRealizedPointsById = modules.reduce<Record<number, string[]>>((acc, module) => {
+    const rows = completionsByModuleId[module.id] || [];
+    const pointLabels = new Set<string>();
+
+    rows.forEach((row) => {
+      getCompletionPointLabels(row).forEach((label) => pointLabels.add(label));
+    });
+
+    acc[module.id] = Array.from(pointLabels).sort((a, b) => {
+      const [aSubject = 0, aPart = 0] = a.split(".").map(Number);
+      const [bSubject = 0, bPart = 0] = b.split(".").map(Number);
+      if (aSubject !== bSubject) return aSubject - bSubject;
+      return aPart - bPart;
+    });
+
+    return acc;
+  }, {});
+
   const completedCount = modules.filter((m) => moduleProgressById[m.id]?.isDone).length;
   const globalProgress = modules.length > 0 ? Math.round((completedCount / modules.length) * 100) : 0;
   const remainingModules = modules.filter((m) => !moduleProgressById[m.id]?.isDone);
