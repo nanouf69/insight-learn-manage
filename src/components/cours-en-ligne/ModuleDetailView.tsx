@@ -273,6 +273,22 @@ L'épreuve pratique comprend une phase de conduite en circulation d'une durée m
         { id: 10, enonce: "Quelle est la durée minimale de la phase de conduite lors de l'épreuve pratique ?", choix: [{ lettre: "A", texte: "10 minutes" }, { lettre: "B", texte: "15 minutes" }, { lettre: "C", texte: "20 minutes", correct: true }, { lettre: "D", texte: "30 minutes" }] },
       ],
     },
+    {
+      id: 2,
+      titre: "Quiz Coefficients",
+      sousTitre: "Connaissez-vous les coefficients de chaque épreuve ?",
+      actif: true,
+      questions: [
+        { id: 1, enonce: "Quel est le coefficient de l'épreuve A — Réglementation T3P ?", choix: [{ lettre: "A", texte: "1" }, { lettre: "B", texte: "2" }, { lettre: "C", texte: "3", correct: true }, { lettre: "D", texte: "4" }] },
+        { id: 2, enonce: "Quel est le coefficient de l'épreuve B — Gestion ?", choix: [{ lettre: "A", texte: "1" }, { lettre: "B", texte: "2", correct: true }, { lettre: "C", texte: "3" }, { lettre: "D", texte: "4" }] },
+        { id: 3, enonce: "Quel est le coefficient de l'épreuve C — Sécurité routière ?", choix: [{ lettre: "A", texte: "1" }, { lettre: "B", texte: "2" }, { lettre: "C", texte: "3", correct: true }, { lettre: "D", texte: "4" }] },
+        { id: 4, enonce: "Quel est le coefficient de l'épreuve D — Français ?", choix: [{ lettre: "A", texte: "1" }, { lettre: "B", texte: "2", correct: true }, { lettre: "C", texte: "3" }, { lettre: "D", texte: "4" }] },
+        { id: 5, enonce: "Quel est le coefficient de l'épreuve E — Anglais ?", choix: [{ lettre: "A", texte: "1", correct: true }, { lettre: "B", texte: "2" }, { lettre: "C", texte: "3" }, { lettre: "D", texte: "4" }] },
+        { id: 6, enonce: "Quelle est la somme totale des coefficients des 7 épreuves théoriques ?", choix: [{ lettre: "A", texte: "14" }, { lettre: "B", texte: "15" }, { lettre: "C", texte: "17", correct: true }, { lettre: "D", texte: "20" }] },
+        { id: 7, enonce: "Quelles épreuves ont le coefficient le plus élevé (coeff. 3) ?", choix: [{ lettre: "A", texte: "T3P, Gestion, Français" }, { lettre: "B", texte: "T3P, Sécurité, et les 2 épreuves spécifiques", correct: true }, { lettre: "C", texte: "Français, Anglais, Gestion" }, { lettre: "D", texte: "Toutes les épreuves" }] },
+        { id: 8, enonce: "Quelle épreuve a le coefficient le plus faible ?", choix: [{ lettre: "A", texte: "Français" }, { lettre: "B", texte: "Gestion" }, { lettre: "C", texte: "Anglais", correct: true }, { lettre: "D", texte: "Sécurité routière" }] },
+      ],
+    },
   ],
 };
 
@@ -296,6 +312,15 @@ const INTRODUCTION_ELEARNING_DATA: ModuleData = {
       { id: 2, enonce: "Note minimale épreuve pratique ?", choix: [{ lettre: "A", texte: "10/20" }, { lettre: "B", texte: "12/20", correct: true }, { lettre: "C", texte: "14/20" }] },
       { id: 3, enonce: "Nombre de matières ?", choix: [{ lettre: "A", texte: "5" }, { lettre: "B", texte: "7", correct: true }, { lettre: "C", texte: "8" }] },
     ] },
+    { id: 2, titre: "Quiz Coefficients", sousTitre: "Connaissez-vous les coefficients ?", actif: true, questions: [
+      { id: 1, enonce: "Quel est le coefficient de l'épreuve A — Réglementation T3P ?", choix: [{ lettre: "A", texte: "1" }, { lettre: "B", texte: "2" }, { lettre: "C", texte: "3", correct: true }, { lettre: "D", texte: "4" }] },
+      { id: 2, enonce: "Quel est le coefficient de l'épreuve B — Gestion ?", choix: [{ lettre: "A", texte: "1" }, { lettre: "B", texte: "2", correct: true }, { lettre: "C", texte: "3" }, { lettre: "D", texte: "4" }] },
+      { id: 3, enonce: "Quel est le coefficient de l'épreuve C — Sécurité routière ?", choix: [{ lettre: "A", texte: "1" }, { lettre: "B", texte: "2" }, { lettre: "C", texte: "3", correct: true }, { lettre: "D", texte: "4" }] },
+      { id: 4, enonce: "Quel est le coefficient de l'épreuve D — Français ?", choix: [{ lettre: "A", texte: "1" }, { lettre: "B", texte: "2", correct: true }, { lettre: "C", texte: "3" }, { lettre: "D", texte: "4" }] },
+      { id: 5, enonce: "Quel est le coefficient de l'épreuve E — Anglais ?", choix: [{ lettre: "A", texte: "1", correct: true }, { lettre: "B", texte: "2" }, { lettre: "C", texte: "3" }, { lettre: "D", texte: "4" }] },
+      { id: 6, enonce: "Quelle est la somme totale des coefficients des 7 épreuves ?", choix: [{ lettre: "A", texte: "14" }, { lettre: "B", texte: "15" }, { lettre: "C", texte: "17", correct: true }, { lettre: "D", texte: "20" }] },
+      { id: 7, enonce: "Quelle épreuve a le coefficient le plus faible ?", choix: [{ lettre: "A", texte: "Français" }, { lettre: "B", texte: "Gestion" }, { lettre: "C", texte: "Anglais", correct: true }, { lettre: "D", texte: "Sécurité routière" }] },
+    ] },
   ],
 };
 // ===== Introduction TA Présentiel (ID 31) =====
@@ -308,7 +333,15 @@ const INTRODUCTION_TA_PRESENTIEL_DATA: ModuleData = {
     { id: 2, titre: "Programme", description: "📝 Réglementation nationale TAXI + Réglementation locale", actif: true },
     { id: 3, titre: "Planning et contact", description: "🏢 FTRANSPORT — 86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91\n⏰ 9h-12h / 13h-17h", actif: true },
   ],
-  exercices: [],
+  exercices: [
+    { id: 1, titre: "Quiz Coefficients TA", sousTitre: "Connaissez-vous les coefficients de vos épreuves passerelle ?", actif: true, questions: [
+      { id: 1, enonce: "Combien de matières comporte l'examen passerelle TA ?", choix: [{ lettre: "A", texte: "2 matières", correct: true }, { lettre: "B", texte: "5 matières" }, { lettre: "C", texte: "7 matières" }] },
+      { id: 2, enonce: "Quel est le coefficient de l'épreuve F(T) — Réglementation nationale TAXI ?", choix: [{ lettre: "A", texte: "1" }, { lettre: "B", texte: "2" }, { lettre: "C", texte: "3", correct: true }, { lettre: "D", texte: "4" }] },
+      { id: 3, enonce: "Quel est le coefficient de l'épreuve G(T) — Réglementation locale ?", choix: [{ lettre: "A", texte: "1" }, { lettre: "B", texte: "2" }, { lettre: "C", texte: "3", correct: true }, { lettre: "D", texte: "4" }] },
+      { id: 4, enonce: "Quelle est la somme des coefficients des épreuves passerelle TA ?", choix: [{ lettre: "A", texte: "4" }, { lettre: "B", texte: "5" }, { lettre: "C", texte: "6", correct: true }, { lettre: "D", texte: "7" }] },
+      { id: 5, enonce: "Quelle note minimale faut-il obtenir à l'épreuve théorique ?", choix: [{ lettre: "A", texte: "8/20" }, { lettre: "B", texte: "10/20", correct: true }, { lettre: "C", texte: "12/20" }] },
+    ] },
+  ],
 };
 // ===== Introduction TA E-Learning (ID 32) =====
 const INTRODUCTION_TA_ELEARNING_DATA: ModuleData = {
@@ -319,7 +352,14 @@ const INTRODUCTION_TA_ELEARNING_DATA: ModuleData = {
     { id: 1, titre: "Bienvenue — Passerelle TA (E-learning)", description: "Formation passerelle TAXI en e-learning.\n\n2 matières : Réglementation nationale TAXI + Réglementation locale", actif: true },
     { id: 2, titre: "Contact", description: "🏢 FTRANSPORT — 86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91\n📧 contact@ftransport.fr", actif: true },
   ],
-  exercices: [],
+  exercices: [
+    { id: 1, titre: "Quiz Coefficients TA", sousTitre: "Connaissez-vous les coefficients de vos épreuves passerelle ?", actif: true, questions: [
+      { id: 1, enonce: "Combien de matières comporte l'examen passerelle TA ?", choix: [{ lettre: "A", texte: "2 matières", correct: true }, { lettre: "B", texte: "5 matières" }, { lettre: "C", texte: "7 matières" }] },
+      { id: 2, enonce: "Quel est le coefficient de l'épreuve F(T) — Réglementation nationale TAXI ?", choix: [{ lettre: "A", texte: "1" }, { lettre: "B", texte: "2" }, { lettre: "C", texte: "3", correct: true }, { lettre: "D", texte: "4" }] },
+      { id: 3, enonce: "Quel est le coefficient de l'épreuve G(T) — Réglementation locale ?", choix: [{ lettre: "A", texte: "1" }, { lettre: "B", texte: "2" }, { lettre: "C", texte: "3", correct: true }, { lettre: "D", texte: "4" }] },
+      { id: 4, enonce: "Quelle note minimale faut-il obtenir à l'épreuve théorique ?", choix: [{ lettre: "A", texte: "8/20" }, { lettre: "B", texte: "10/20", correct: true }, { lettre: "C", texte: "12/20" }] },
+    ] },
+  ],
 };
 // ===== Introduction VA Présentiel (ID 33) =====
 const INTRODUCTION_VA_PRESENTIEL_DATA: ModuleData = {
@@ -331,7 +371,14 @@ const INTRODUCTION_VA_PRESENTIEL_DATA: ModuleData = {
     { id: 2, titre: "Programme", description: "📝 Développement Commercial + Réglementation spécifique VTC", actif: true },
     { id: 3, titre: "Planning et contact", description: "🏢 FTRANSPORT — 86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91\n⏰ 9h-12h / 13h-17h", actif: true },
   ],
-  exercices: [],
+  exercices: [
+    { id: 1, titre: "Quiz Coefficients VA", sousTitre: "Connaissez-vous les coefficients de vos épreuves passerelle ?", actif: true, questions: [
+      { id: 1, enonce: "Combien de matières comporte l'examen passerelle VA ?", choix: [{ lettre: "A", texte: "2 matières", correct: true }, { lettre: "B", texte: "5 matières" }, { lettre: "C", texte: "7 matières" }] },
+      { id: 2, enonce: "Quel est le coefficient de l'épreuve F(V) — Développement commercial ?", choix: [{ lettre: "A", texte: "1" }, { lettre: "B", texte: "2" }, { lettre: "C", texte: "3", correct: true }, { lettre: "D", texte: "4" }] },
+      { id: 3, enonce: "Quel est le coefficient de l'épreuve G(V) — Réglementation spécifique VTC ?", choix: [{ lettre: "A", texte: "1" }, { lettre: "B", texte: "2" }, { lettre: "C", texte: "3", correct: true }, { lettre: "D", texte: "4" }] },
+      { id: 4, enonce: "Quelle note minimale faut-il obtenir à l'épreuve théorique ?", choix: [{ lettre: "A", texte: "8/20" }, { lettre: "B", texte: "10/20", correct: true }, { lettre: "C", texte: "12/20" }] },
+    ] },
+  ],
 };
 // ===== Introduction VA E-Learning (ID 34) =====
 const INTRODUCTION_VA_ELEARNING_DATA: ModuleData = {
@@ -342,7 +389,14 @@ const INTRODUCTION_VA_ELEARNING_DATA: ModuleData = {
     { id: 1, titre: "Bienvenue — Passerelle VA (E-learning)", description: "Formation passerelle VTC en e-learning.\n\n2 matières : Développement Commercial + Réglementation spécifique VTC", actif: true },
     { id: 2, titre: "Contact", description: "🏢 FTRANSPORT — 86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91\n📧 contact@ftransport.fr", actif: true },
   ],
-  exercices: [],
+  exercices: [
+    { id: 1, titre: "Quiz Coefficients VA", sousTitre: "Connaissez-vous les coefficients de vos épreuves passerelle ?", actif: true, questions: [
+      { id: 1, enonce: "Combien de matières comporte l'examen passerelle VA ?", choix: [{ lettre: "A", texte: "2 matières", correct: true }, { lettre: "B", texte: "5 matières" }, { lettre: "C", texte: "7 matières" }] },
+      { id: 2, enonce: "Quel est le coefficient de l'épreuve F(V) — Développement commercial ?", choix: [{ lettre: "A", texte: "1" }, { lettre: "B", texte: "2" }, { lettre: "C", texte: "3", correct: true }, { lettre: "D", texte: "4" }] },
+      { id: 3, enonce: "Quel est le coefficient de l'épreuve G(V) — Réglementation spécifique VTC ?", choix: [{ lettre: "A", texte: "1" }, { lettre: "B", texte: "2" }, { lettre: "C", texte: "3", correct: true }, { lettre: "D", texte: "4" }] },
+      { id: 4, enonce: "Quelle note minimale faut-il obtenir à l'épreuve théorique ?", choix: [{ lettre: "A", texte: "8/20" }, { lettre: "B", texte: "10/20", correct: true }, { lettre: "C", texte: "12/20" }] },
+    ] },
+  ],
 };
 
 // ===== Données initiales des modules PRATIQUE =====
