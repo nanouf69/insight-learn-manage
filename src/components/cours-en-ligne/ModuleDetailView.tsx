@@ -1531,9 +1531,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const [introAcknowledged, setIntroAcknowledged] = useState<Set<number>>(new Set());
     const [savedAnswersLoaded, setSavedAnswersLoaded] = useState(false);
     const [uiStateHydrated, setUiStateHydrated] = useState(false);
-    const [pendingResultRestore, setPendingResultRestore] = useState<{ exoId: number; page: number } | null>(null);
+    type PendingResultRestore = { exoId: number; page: number; validatedAt: number };
+    const [pendingResultRestore, setPendingResultRestore] = useState<PendingResultRestore | null>(null);
     const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const learnerUiStateKey = `module-ui-state:${apprenantId ?? "anonymous"}:${module.id}`;
+    const learnerUiStateAnonymousFallbackKey = `module-ui-state:anonymous:${module.id}`;
 
     const activeCours = moduleData.cours.filter(c => c.actif);
     const activeExercices = moduleData.exercices.filter(e => e.actif) as ExerciceItem[];
@@ -1570,7 +1572,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       if (uiStateHydrated) return;
 
       try {
-        const rawState = window.sessionStorage.getItem(learnerUiStateKey);
+        let rawState = window.sessionStorage.getItem(learnerUiStateKey);
+        if (!rawState && apprenantId) {
+          rawState = window.sessionStorage.getItem(learnerUiStateAnonymousFallbackKey);
+        }
+
         if (!rawState) {
           setUiStateHydrated(true);
           return;
@@ -1581,7 +1587,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           selectedAnswers?: Record<string, string>;
           showResultsFor?: number[];
           completedPages?: number[];
-          pendingResultRestore?: { exoId?: number; page?: number } | null;
+          pendingResultRestore?: { exoId?: number; page?: number; validatedAt?: number } | null;
         };
 
         if (parsed.selectedAnswers && typeof parsed.selectedAnswers === "object") {
@@ -1598,7 +1604,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           typeof parsed.pendingResultRestore.exoId === "number" &&
           typeof parsed.pendingResultRestore.page === "number"
         ) {
-          setPendingResultRestore({ exoId: parsed.pendingResultRestore.exoId, page: parsed.pendingResultRestore.page });
+          setPendingResultRestore({
+            exoId: parsed.pendingResultRestore.exoId,
+            page: parsed.pendingResultRestore.page,
+            validatedAt: typeof parsed.pendingResultRestore.validatedAt === "number"
+              ? parsed.pendingResultRestore.validatedAt
+              : Date.now(),
+          });
         }
         if (typeof parsed.currentPage === "number" && totalPages > 0) {
           const clampedPage = Math.max(0, Math.min(parsed.currentPage, totalPages - 1));
@@ -1609,7 +1621,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       } finally {
         setUiStateHydrated(true);
       }
-    }, [learnerUiStateKey, totalPages, uiStateHydrated]);
+    }, [learnerUiStateKey, learnerUiStateAnonymousFallbackKey, apprenantId, totalPages, uiStateHydrated]);
 
     // --- Persist learner UI state while progressing in module ---
     useEffect(() => {
@@ -1631,9 +1643,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }
     }, [learnerUiStateKey, uiStateHydrated, currentPage, selectedAnswers, showResultsFor, completedPages, pendingResultRestore]);
 
-    // --- If a quiz was just validated, force-restore the exact result screen once ---
+    // --- If a quiz was just validated, force-restore the exact result screen ---
     useEffect(() => {
       if (!uiStateHydrated || !pendingResultRestore) return;
+
+      // Expire stale pending restore after 30 minutes
+      if (Date.now() - pendingResultRestore.validatedAt > 30 * 60 * 1000) {
+        setPendingResultRestore(null);
+        return;
+      }
 
       const targetPageFromPages = pages.findIndex(
         (p) => p.type === "exercice-single" && p.exercice.id === pendingResultRestore.exoId,
@@ -1648,6 +1666,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       });
 
       setCompletedPages((prev) => {
+        const hasCurrent = prev.has(resolvedPage);
+        const hasPrevious = resolvedPage <= 0 || prev.has(resolvedPage - 1);
+        if (hasCurrent && hasPrevious) return prev;
+
         const next = new Set(prev);
         next.add(resolvedPage);
         if (resolvedPage > 0) next.add(resolvedPage - 1);
@@ -1657,8 +1679,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       if (currentPage !== resolvedPage) {
         setCurrentPage(resolvedPage);
       }
-
-      setPendingResultRestore(null);
     }, [uiStateHydrated, pendingResultRestore, pages, currentPage]);
 
     // --- Load saved partial answers from DB on mount ---
