@@ -1280,7 +1280,7 @@ const ContentCard = ({
   );
 };
 
-const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, onModuleCompleted, apprenantType }: ModuleDetailViewProps) => {
+const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, onModuleCompleted, apprenantType, apprenantInfo }: ModuleDetailViewProps) => {
   const createInitialSlidesByKey = (): Record<string, Slide[]> => ({
     "t3p-partie1": [...T3P_PARTIE1_SLIDES],
     "t3p-partie2": [...T3P_PARTIE2_SLIDES],
@@ -1795,6 +1795,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       if (cours.checklistType === "analyse-besoin") {
         return (
           <AnalyseBesoinForm
+            apprenantNom={apprenantInfo?.nom}
+            apprenantPrenom={apprenantInfo?.prenom}
+            apprenantEmail={apprenantInfo?.email}
+            apprenantTelephone={apprenantInfo?.telephone}
+            apprenantAdresse={apprenantInfo?.adresse}
+            apprenantCodePostal={apprenantInfo?.code_postal}
+            apprenantVille={apprenantInfo?.ville}
+            apprenantType={apprenantType || ""}
             completed={completedPages.has(currentPage)}
             onComplete={() => {
               markPageCompleted(currentPage);
