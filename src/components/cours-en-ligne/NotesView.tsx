@@ -19,6 +19,7 @@ interface QuizResult {
   reussi: boolean;
   duree_secondes: number | null;
   completed_at: string;
+  details: any;
 }
 
 interface ModuleCompletion {
