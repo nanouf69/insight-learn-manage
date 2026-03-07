@@ -1351,7 +1351,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     "gestion-partie3": [...GESTION_PARTIE3_SLIDES],
   });
 
-  const [moduleData, setModuleData] = useState<ModuleData>(() => getInitialModuleData(module, apprenantType));
+  const [moduleData, setModuleData] = useState<ModuleData>(() => getInitialModuleData(module, apprenantType, studentOnly));
   const [editingCoursId, setEditingCoursId] = useState<number | null>(null);
   const [slidesByKey, setSlidesByKey] = useState<Record<string, Slide[]>>(() => createInitialSlidesByKey());
 
