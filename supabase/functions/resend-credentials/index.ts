@@ -138,7 +138,21 @@ serve(async (req) => {
         const accessToken = tokenData.access_token;
 
         if (accessToken) {
-          const formation = apprenant.formation_choisie || "Non spécifiée";
+          const formationLabels: Record<string, string> = {
+            "vtc": "Formation VTC Présentiel",
+            "vtc-exam": "Formation VTC Présentiel (avec examen)",
+            "taxi": "Formation TAXI Présentiel",
+            "taxi-exam": "Formation TAXI Présentiel (avec examen)",
+            "passerelle-taxi": "Passerelle TAXI → VTC (TA)",
+            "vtc-elearning-1099": "Formation VTC E-learning",
+            "vtc-elearning": "Formation VTC E-learning (avec examen)",
+            "taxi-elearning": "Formation TAXI E-learning",
+            "passerelle-taxi-elearning": "Passerelle TAXI → VTC E-learning (TA)",
+            "passerelle-vtc-elearning": "Passerelle VTC → TAXI E-learning (VA)",
+            "vtc-cours-du-soir": "Formation VTC Cours du soir",
+          };
+          const rawFormation = apprenant.formation_choisie || "";
+          const formation = formationLabels[rawFormation] || rawFormation || "Non spécifiée";
           const dateDebut = apprenant.date_debut_cours_en_ligne || "Non définie";
           const dateFin = apprenant.date_fin_cours_en_ligne || "Non définie";
           const prenom = apprenant.prenom || "";
