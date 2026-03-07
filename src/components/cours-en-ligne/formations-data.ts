@@ -339,6 +339,8 @@ export function expandModulesAutorises(ids: number[] | null | undefined): number
   const expanded = new Set(ids);
   if (expanded.has(2)) { [25, 14, 15, 16, 17, 18, 19].forEach(id => expanded.add(id)); }
   if (expanded.has(10)) { [20, 21, 22, 23, 24].forEach(id => expanded.add(id)); }
+  // Reverse: if any child is present, add parent too
+  if ([20, 21, 22, 23, 24].some(id => expanded.has(id))) { expanded.add(10); }
   if (expanded.has(40)) { [24].forEach(id => expanded.add(id)); }
   if (expanded.has(41)) { [18, 19].forEach(id => expanded.add(id)); }
   return Array.from(expanded);
