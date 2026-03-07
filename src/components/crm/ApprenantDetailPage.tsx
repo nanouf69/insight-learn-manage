@@ -1058,6 +1058,69 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
         <TabsContent value="reset-cours">
           <ResetCoursTab apprenant={apprenant} queryClient={queryClient} />
         </TabsContent>
+
+        {/* Supprimer compte cours Tab */}
+        <TabsContent value="delete-account">
+          <Card className="border-destructive/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="w-5 h-5" />
+                Supprimer le compte cours
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {!(apprenant as any).auth_user_id ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <XCircle className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p className="font-medium">Aucun compte cours actif</p>
+                  <p className="text-sm">Cet apprenant n'a pas de compte cours à supprimer.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 space-y-2">
+                    <p className="font-medium text-destructive">⚠️ Action irréversible</p>
+                    <p className="text-sm text-muted-foreground">
+                      La suppression du compte cours va :
+                    </p>
+                    <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
+                      <li>Supprimer le compte de connexion de l'apprenant</li>
+                      <li>Supprimer toutes les données de progression (connexions, activités, quiz)</li>
+                      <li>Supprimer tous les résultats de modules et examens</li>
+                      <li>L'apprenant ne pourra plus se connecter à la plateforme</li>
+                    </ul>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      La fiche apprenant et les documents seront conservés. Vous pourrez recréer un compte ultérieurement.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-2">
+                    <Button
+                      variant="destructive"
+                      onClick={async () => {
+                        if (!confirm(`Êtes-vous sûr de vouloir supprimer le compte cours de ${apprenant.prenom} ${apprenant.nom} ? Cette action est irréversible.`)) return;
+                        try {
+                          const { data, error } = await supabase.functions.invoke("delete-apprenant-account", {
+                            body: { apprenant_id: apprenantId },
+                          });
+                          if (error) throw error;
+                          if (data?.error) throw new Error(data.error);
+                          toast.success(data.message || "Compte cours supprimé avec succès");
+                          setGeneratedPassword("");
+                          queryClient.invalidateQueries({ queryKey: ['apprenant-detail', apprenantId] });
+                        } catch (err: any) {
+                          toast.error(err.message || "Erreur lors de la suppression");
+                        }
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Supprimer le compte cours
+                    </Button>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   );
