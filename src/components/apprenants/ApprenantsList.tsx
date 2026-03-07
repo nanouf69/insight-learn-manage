@@ -65,7 +65,9 @@ const typeApprenantLabels: Record<string, { label: string; class: string }> = {
   ta: { label: "TA", class: "bg-green-100 text-green-700" },
   "ta-e": { label: "TA E", class: "bg-green-50 text-green-600" },
   "ta-e-presentiel": { label: "TA E Présentiel", class: "bg-green-200 text-green-800" },
+  va: { label: "VA", class: "bg-purple-100 text-purple-700" },
   "va-e": { label: "VA E", class: "bg-purple-50 text-purple-600" },
+  "va-e-presentiel": { label: "VA E Présentiel", class: "bg-purple-200 text-purple-800" },
 };
 
 const modesFinancementLabels: Record<string, { label: string; class: string }> = {

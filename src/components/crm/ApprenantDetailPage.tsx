@@ -41,6 +41,7 @@ const typeLabels: Record<string, string> = {
   'taxi-e': 'TAXI E',
   'ta': 'TA',
   'ta-e': 'TA E',
+  'va': 'VA',
   'va-e': 'VA E',
 };
 
