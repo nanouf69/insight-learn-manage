@@ -68,7 +68,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"matiere" | "module" | "examens">("matiere");
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-
+  const [selectedDetail, setSelectedDetail] = useState<{ title: string; date: string; score: number; max: number; details: any[] } | null>(null);
   useEffect(() => {
     setModuleCompletions(moduleCompletionsSeed);
   }, [apprenantId, moduleCompletionsSeed]);
