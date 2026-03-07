@@ -239,7 +239,7 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
         .from('emails')
         .select('*')
         .eq('apprenant_id', apprenant.id)
-        .order('received_at', { ascending: false, nullsFirst: false });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       return (data || []) as EmailRecord[];
@@ -656,7 +656,7 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
                     </div>
                     <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
                       <Clock className="w-3 h-3" />
-                      {format(getEmailDate(email), 'dd MMM yyyy', { locale: fr })}
+                      {format(getEmailDate(email), 'dd MMM yyyy HH:mm', { locale: fr })}
                     </div>
                   </div>
                 ))}

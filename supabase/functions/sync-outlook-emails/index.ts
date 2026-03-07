@@ -61,9 +61,20 @@ async function getAccessToken(): Promise<string> {
 async function fetchEmails(
   accessToken: string,
   userEmail: string,
-  folder: "inbox" | "sentItems"
+  folder: "inbox" | "sentItems",
+  filter?: string
 ): Promise<EmailMessage[]> {
-  const url = `https://graph.microsoft.com/v1.0/users/${userEmail}/mailFolders/${folder}/messages?$top=50&$orderby=receivedDateTime desc&$select=id,subject,bodyPreview,body,from,toRecipients,hasAttachments,isRead,receivedDateTime,sentDateTime`;
+  const orderBy = folder === "sentItems" ? "sentDateTime desc" : "receivedDateTime desc";
+
+  const params = new URLSearchParams({
+    "$top": "200",
+    "$orderby": orderBy,
+    "$select": "id,subject,bodyPreview,body,from,toRecipients,hasAttachments,isRead,receivedDateTime,sentDateTime",
+  });
+
+  if (filter) params.set("$filter", filter);
+
+  const url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(userEmail)}/mailFolders/${folder}/messages?${params.toString()}`;
 
   const response = await fetch(url, {
     headers: {
@@ -264,23 +275,22 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Fetch inbox (received from apprenant)
-      const inboxEmails = await fetchEmails(accessToken, userEmail, "inbox");
-      const sentEmails = await fetchEmails(accessToken, userEmail, "sentItems");
+      // Fetch only emails related to the apprenant directly from Outlook
+      const normalizedApprenantEmail = apprenantEmail.trim().toLowerCase();
+      const escapedEmail = normalizedApprenantEmail.replace(/'/g, "''");
 
-      // Filter emails related to the apprenant
-      const relevantInbox = inboxEmails.filter(
-        (email) =>
-          email.from?.emailAddress?.address?.toLowerCase() ===
-          apprenantEmail.toLowerCase()
+      const relevantInbox = await fetchEmails(
+        accessToken,
+        userEmail,
+        "inbox",
+        `from/emailAddress/address eq '${escapedEmail}'`
       );
 
-      const relevantSent = sentEmails.filter((email) =>
-        email.toRecipients?.some(
-          (r) =>
-            r.emailAddress?.address?.toLowerCase() ===
-            apprenantEmail.toLowerCase()
-        )
+      const relevantSent = await fetchEmails(
+        accessToken,
+        userEmail,
+        "sentItems",
+        `toRecipients/any(r:r/emailAddress/address eq '${escapedEmail}')`
       );
 
       // Prepare emails for insertion
