@@ -27,10 +27,10 @@ const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {
   // Formation VTC E-learning — Intro e-learning
   "vtc-e":             [26, 2, 3, 4, 35, 5, 8],
   // Formation TAXI — module parent 10 (l'expansion en sous-matières se fait côté portail)
-  "taxi":              [1, 10, 7, 3, 9, 13, 11, 36, 6, 12],
-  "taxi-e-presentiel": [1, 10, 7, 3, 9, 13, 11, 36, 6, 12],
+  "taxi":              [1, 10, 39, 7, 3, 9, 13, 11, 36, 6, 12],
+  "taxi-e-presentiel": [1, 10, 39, 7, 3, 9, 13, 11, 36, 6, 12],
   // Formation TAXI E-learning — Intro e-learning
-  "taxi-e":            [26, 10, 7, 3, 9, 13, 11, 36, 6, 12],
+  "taxi-e":            [26, 10, 39, 7, 3, 9, 13, 11, 36, 6, 12],
   // Formation TA présentiel
   "ta":                [31, 40, 7, 3, 27, 28, 37, 6],
   "ta-e-presentiel":   [31, 40, 7, 3, 27, 28, 37, 6],
@@ -43,7 +43,7 @@ const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {
   "va-e":              [34, 41, 7, 3, 29, 30, 38, 8],
 };
 
-const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 41, 42, 43, 50, 51, 52, 53, 60, 61, 62, 63]);
+const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 50, 51, 52, 53, 60, 61, 62, 63]);
 
 const normalizeTypeApprenant = (rawType: string | null | undefined): string => {
   if (!rawType) return "";

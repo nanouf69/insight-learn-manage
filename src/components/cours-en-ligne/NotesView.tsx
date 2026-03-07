@@ -42,6 +42,7 @@ const MODULE_TO_MATIERE: Record<number, string> = {
   2: "A. Réglementation T3P",
   25: "A. Réglementation T3P",
   10: "A. Réglementation T3P",
+  39: "A. Réglementation T3P",
   14: "B. Gestion",
   20: "B. Gestion",
   15: "C. Sécurité Routière",
