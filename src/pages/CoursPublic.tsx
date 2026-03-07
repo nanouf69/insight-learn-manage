@@ -542,7 +542,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const fetchApprenant = async () => {
       const { data } = await supabase
         .from("apprenants")
-        .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, modules_autorises, email, telephone, adresse, code_postal, ville")
+        .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, modules_autorises, email, telephone, adresse, code_postal, ville, date_naissance")
         .eq("auth_user_id", user.id)
         .maybeSingle();
 
@@ -579,7 +579,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const refreshApprenant = async () => {
       const { data, error } = await supabase
         .from("apprenants")
-        .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, modules_autorises, email, telephone, adresse, code_postal, ville")
+        .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, modules_autorises, email, telephone, adresse, code_postal, ville, date_naissance")
         .eq("id", apprenantOverride.id)
         .maybeSingle();
 
