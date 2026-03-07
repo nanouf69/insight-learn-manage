@@ -381,6 +381,7 @@ const INTRODUCTION_VA_PRESENTIEL_DATA: ModuleData = {
   cours: [
     { id: 0, titre: "Test de compétences avant formation", description: "Répondez aux questions.", actif: true, checklistType: "competences" },
     { id: 100, titre: "Analyse du besoin – Fiche client", description: "Complétez cette fiche.", actif: true, checklistType: "analyse-besoin" },
+    { id: 101, titre: "Questionnaire Projet Professionnel", description: "Évaluation de votre motivation et de votre projet professionnel.", actif: true, checklistType: "projet-professionnel" },
     { id: 1, titre: "Bienvenue — Passerelle VA", description: "Cette formation passerelle vous permet d'obtenir votre carte VTC.\n\n2 matières : Développement Commercial + Réglementation spécifique VTC", actif: true },
     { id: 2, titre: "Programme", description: "📝 Développement Commercial + Réglementation spécifique VTC", actif: true },
     { id: 3, titre: "Planning et contact", description: "🏢 FTRANSPORT — 86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91\n⏰ 9h-12h / 13h-17h", actif: true },
