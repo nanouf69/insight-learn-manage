@@ -267,6 +267,36 @@ const isModuleCompletionFullyDone = (completion: any) => {
   return getCompletionAnsweredCount(completion) === details.length;
 };
 
+const getModuleDisplayName = (formationId: FormationId, moduleId: number, fallback: string) =>
+  FORMATION_DISPLAY_LABELS[formationId]?.[moduleId] || fallback;
+
+// Module IDs that should open ExamensBlancsPage (bilans)
+const BILAN_MODULE_IDS: Record<number, string> = {
+  28: "bilan-ta",
+  30: "bilan-va",
+};
+
+interface ApprenantInfo {
+  id?: string;
+  nom: string;
+  prenom: string;
+  type_apprenant: string | null;
+  formation_choisie: string | null;
+  date_debut_cours_en_ligne: string | null;
+  date_fin_cours_en_ligne: string | null;
+  modules_autorises: number[] | null;
+  email?: string | null;
+  telephone?: string | null;
+  adresse?: string | null;
+  code_postal?: string | null;
+  ville?: string | null;
+}
+
+interface CoursPublicProps {
+  embedded?: boolean;
+  apprenantOverride?: ApprenantInfo | null;
+}
+
 const ChangePasswordDialog = () => {
   const [open, setOpen] = useState(false);
   const [currentPw, setCurrentPw] = useState("");
