@@ -155,6 +155,12 @@ function ApprenantTable({
                     TA E (Passerelle TAXI E-learning)
                   </DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem
+                    checked={typeFilter.includes("va")}
+                    onCheckedChange={() => toggleFilter("va")}
+                  >
+                    VA (Passerelle VTC)
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
                     checked={typeFilter.includes("va-e")}
                     onCheckedChange={() => toggleFilter("va-e")}
                   >
