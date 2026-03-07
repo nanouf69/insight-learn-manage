@@ -38,6 +38,8 @@ const CoursEnLignePage = () => {
     // 2. COURS ET EXERCICES
     { id: 2, nom: "2.COURS ET EXERCICES VTC", eleves: 2, progression: "6%", statut: "Actif" },
     { id: 10, nom: "2.COURS ET EXERCICES TAXI", eleves: 0, progression: "0%", statut: "Actif" },
+    { id: 40, nom: "2.COURS ET EXERCICES TA", eleves: 0, progression: "0%", statut: "Actif" },
+    { id: 41, nom: "2.COURS ET EXERCICES VA", eleves: 0, progression: "0%", statut: "Actif" },
     // 3. FORMULES
     { id: 3, nom: "3.FORMULES", eleves: 2, progression: "0%", statut: "Actif" },
     // 4. BILAN EXERCICES
