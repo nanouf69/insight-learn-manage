@@ -275,14 +275,8 @@ export const MODULES_DATA: ModuleInfo[] = [
   // === Modules cours groupés TA et VA ===
   {
     id: 40,
-    nom: "F. Réglementation Nationale",
-    description: "Cours et exercices Réglementation Nationale — passerelle TA",
-    formations: ["taxi-pour-vtc", "taxi-pour-vtc-elearning"],
-  },
-  {
-    id: 42,
-    nom: "F. Réglementation Locale",
-    description: "Cours et exercices Réglementation Locale — passerelle TA",
+    nom: "COURS ET EXERCICES TA",
+    description: "Cours et exercices Passerelle TA : Réglementation Nationale et Réglementation Locale",
     formations: ["taxi-pour-vtc", "taxi-pour-vtc-elearning"],
   },
   {
