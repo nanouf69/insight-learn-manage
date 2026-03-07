@@ -797,6 +797,237 @@ export const QUIZ_DIVERS: ExerciceItem = {
 };
 
 // =============================================
+// QUIZ 6 — PONTS
+// =============================================
+export const QUIZ_PONTS: ExerciceItem = {
+  id: 7006, actif: true,
+  titre: "Quiz Ponts de Lyon",
+  sousTitre: "10 questions sur les ponts du Rhône et de la Saône",
+  questions: [
+    {
+      id: 1, enonce: "Lequel de ces ponts est un pont sur le Rhône ?",
+      choix: [
+        { lettre: "A", texte: "Pont Morand", correct: true },
+        { lettre: "B", texte: "Pont Bonaparte" },
+        { lettre: "C", texte: "Pont la Feuillée" },
+        { lettre: "D", texte: "Passerelle du Palais-de-Justice" },
+      ],
+    },
+    {
+      id: 2, enonce: "Lequel de ces ponts est un pont sur la Saône ?",
+      choix: [
+        { lettre: "A", texte: "Pont Lafayette" },
+        { lettre: "B", texte: "Pont Wilson" },
+        { lettre: "C", texte: "Pont Bonaparte", correct: true },
+        { lettre: "D", texte: "Pont de la Guillotière" },
+      ],
+    },
+    {
+      id: 3, enonce: "Le Pont Raymond Barre traverse quel cours d'eau ?",
+      choix: [
+        { lettre: "A", texte: "Le Rhône", correct: true },
+        { lettre: "B", texte: "La Saône" },
+        { lettre: "C", texte: "Le Beaujolais" },
+        { lettre: "D", texte: "La Loire" },
+      ],
+    },
+    {
+      id: 4, enonce: "Lequel de ces ponts est sur le Rhône ?",
+      choix: [
+        { lettre: "A", texte: "Pont la Feuillée" },
+        { lettre: "B", texte: "Pont de la Guillotière", correct: true },
+        { lettre: "C", texte: "Passerelle du Palais-de-Justice" },
+        { lettre: "D", texte: "Pont Bonaparte" },
+      ],
+    },
+    {
+      id: 5, enonce: "Le Pont Winston Churchill est un pont sur :",
+      choix: [
+        { lettre: "A", texte: "Le Rhône", correct: true },
+        { lettre: "B", texte: "La Saône" },
+        { lettre: "C", texte: "Le canal de Jonage" },
+        { lettre: "D", texte: "La Deûle" },
+      ],
+    },
+    {
+      id: 6, enonce: "Le Pont Clemenceau traverse :",
+      choix: [
+        { lettre: "A", texte: "La Saône" },
+        { lettre: "B", texte: "Le Rhône", correct: true },
+        { lettre: "C", texte: "Le ruisseau d'Yzeron" },
+        { lettre: "D", texte: "La Loire" },
+      ],
+    },
+    {
+      id: 7, enonce: "Lequel de ces ponts est sur la Saône ?",
+      choix: [
+        { lettre: "A", texte: "Pont Gallieni" },
+        { lettre: "B", texte: "Pont Robert Schuman" },
+        { lettre: "C", texte: "Pont la Feuillée", correct: true },
+        { lettre: "D", texte: "Pont de Lattre-de-Tassigny" },
+      ],
+    },
+    {
+      id: 8, enonce: "Le Pont Pasteur est un pont sur :",
+      choix: [
+        { lettre: "A", texte: "Le Rhône", correct: true },
+        { lettre: "B", texte: "La Saône" },
+        { lettre: "C", texte: "Le Beaujolais" },
+        { lettre: "D", texte: "L'Azergues" },
+      ],
+    },
+    {
+      id: 9, enonce: "La Passerelle du Palais-de-Justice traverse :",
+      choix: [
+        { lettre: "A", texte: "Le Rhône" },
+        { lettre: "B", texte: "La Saône", correct: true },
+        { lettre: "C", texte: "Le canal de Jonage" },
+        { lettre: "D", texte: "La Deûle" },
+      ],
+    },
+    {
+      id: 10, enonce: "Combien de ponts traversent le Rhône à Lyon (environ) ?",
+      choix: [
+        { lettre: "A", texte: "7" },
+        { lettre: "B", texte: "10" },
+        { lettre: "C", texte: "13", correct: true },
+        { lettre: "D", texte: "20" },
+      ],
+    },
+  ],
+};
+
+// =============================================
+// QUIZ 7 — STATUES
+// =============================================
+export const QUIZ_STATUES: ExerciceItem = {
+  id: 7007, actif: true,
+  titre: "Quiz Statues de Lyon",
+  sousTitre: "2 questions sur les statues de Lyon",
+  questions: [
+    {
+      id: 1, enonce: "Quelle personnalité représente la statue se trouvant sur la Place Bellecour ?",
+      choix: [
+        { lettre: "A", texte: "Charlemagne" },
+        { lettre: "B", texte: "Louis XIV", correct: true },
+        { lettre: "C", texte: "Bonaparte" },
+        { lettre: "D", texte: "Louis XVI" },
+      ],
+    },
+    {
+      id: 2, enonce: "Comment se nomme la statue sur la Place des Terreaux ?",
+      choix: [
+        { lettre: "A", texte: "Liberté du Pont de Grenelle" },
+        { lettre: "B", texte: "Le Chant des Canuts" },
+        { lettre: "C", texte: "Fontaine Bartholdi", correct: true },
+        { lettre: "D", texte: "Michel Debré" },
+      ],
+    },
+  ],
+};
+
+// =============================================
+// QUIZ 8 — STATIONS DE TAXIS
+// =============================================
+export const QUIZ_STATIONS_TAXIS: ExerciceItem = {
+  id: 7008, actif: true,
+  titre: "Quiz Stations de Taxis",
+  sousTitre: "10 questions sur les stations de taxis de Lyon",
+  questions: [
+    {
+      id: 1, enonce: "Quelle est la station de taxi du 1er arrondissement de Lyon ?",
+      choix: [
+        { lettre: "A", texte: "36 Rue Sœur Janin, Lyon" },
+        { lettre: "B", texte: "1 Rue du Président Édouard Herriot, Lyon", correct: true },
+        { lettre: "C", texte: "22 Quai Romain Rolland, Lyon" },
+        { lettre: "D", texte: "37 Cours Vitton, Lyon" },
+      ],
+    },
+    {
+      id: 2, enonce: "Laquelle de ces adresses est une station de taxi du 2ème arrondissement ?",
+      choix: [
+        { lettre: "A", texte: "26 Place Bellecour, Lyon", correct: true },
+        { lettre: "B", texte: "37 Cours Vitton, Lyon" },
+        { lettre: "C", texte: "105 Cours Albert Thomas, Lyon" },
+        { lettre: "D", texte: "Boulevard de la Croix-Rousse, Lyon" },
+      ],
+    },
+    {
+      id: 3, enonce: "Laquelle de ces adresses est une station de taxi du 2ème arrondissement ?",
+      choix: [
+        { lettre: "A", texte: "Boulevard Vivier Merle, Lyon" },
+        { lettre: "B", texte: "1 Place Carnot, Lyon", correct: true },
+        { lettre: "C", texte: "Place d'Arsonval, Lyon" },
+        { lettre: "D", texte: "Rue Philibert Roussy, Lyon" },
+      ],
+    },
+    {
+      id: 4, enonce: "Laquelle de ces adresses est une station de taxi du 3ème arrondissement ?",
+      choix: [
+        { lettre: "A", texte: "Place d'Arsonval, Lyon", correct: true },
+        { lettre: "B", texte: "26 Place Bellecour, Lyon" },
+        { lettre: "C", texte: "Place du Général Leclerc, Lyon" },
+        { lettre: "D", texte: "36 Rue Sœur Janin, Lyon" },
+      ],
+    },
+    {
+      id: 5, enonce: "Laquelle de ces adresses est une station de taxi du 3ème arrondissement ?",
+      choix: [
+        { lettre: "A", texte: "1 Place des Cordeliers, Lyon" },
+        { lettre: "B", texte: "Boulevard Vivier Merle, Lyon", correct: true },
+        { lettre: "C", texte: "37 Cours Vitton, Lyon" },
+        { lettre: "D", texte: "Place du Maréchal Lyautey, Lyon" },
+      ],
+    },
+    {
+      id: 6, enonce: "Laquelle de ces adresses est une station de taxi du 4ème arrondissement ?",
+      choix: [
+        { lettre: "A", texte: "Boulevard de la Croix-Rousse, Lyon", correct: true },
+        { lettre: "B", texte: "Place d'Arsonval, Lyon" },
+        { lettre: "C", texte: "37 Cours Vitton, Lyon" },
+        { lettre: "D", texte: "1 Place Carnot, Lyon" },
+      ],
+    },
+    {
+      id: 7, enonce: "Laquelle de ces adresses est une station de taxi du 5ème arrondissement ?",
+      choix: [
+        { lettre: "A", texte: "37 Cours Vitton, Lyon" },
+        { lettre: "B", texte: "Place Saint-Paul, Lyon", correct: true },
+        { lettre: "C", texte: "Boulevard Vivier Merle, Lyon" },
+        { lettre: "D", texte: "26 Place Bellecour, Lyon" },
+      ],
+    },
+    {
+      id: 8, enonce: "Laquelle de ces adresses est une station de taxi du 6ème arrondissement ?",
+      choix: [
+        { lettre: "A", texte: "Place d'Arsonval, Lyon" },
+        { lettre: "B", texte: "Place du Maréchal Lyautey, Lyon", correct: true },
+        { lettre: "C", texte: "1 Place Carnot, Lyon" },
+        { lettre: "D", texte: "Boulevard de la Croix-Rousse, Lyon" },
+      ],
+    },
+    {
+      id: 9, enonce: "Laquelle de ces adresses est une station de taxi du 6ème arrondissement ?",
+      choix: [
+        { lettre: "A", texte: "Place du Général Leclerc, Lyon", correct: true },
+        { lettre: "B", texte: "Place Saint-Paul, Lyon" },
+        { lettre: "C", texte: "Place de Trion, Lyon" },
+        { lettre: "D", texte: "1 Place des Cordeliers, Lyon" },
+      ],
+    },
+    {
+      id: 10, enonce: "Laquelle de ces adresses est une station de taxi du 8ème arrondissement ?",
+      choix: [
+        { lettre: "A", texte: "37 Cours Vitton, Lyon" },
+        { lettre: "B", texte: "Place du 11 Novembre 1918, Lyon", correct: true },
+        { lettre: "C", texte: "Boulevard de la Croix-Rousse, Lyon" },
+        { lettre: "D", texte: "Place d'Arsonval, Lyon" },
+      ],
+    },
+  ],
+};
+
+// =============================================
 // Liste complète des quiz pour le module Connaissance de la ville
 // =============================================
 export const CONNAISSANCES_VILLE_QUIZZES: ExerciceItem[] = [
@@ -805,4 +1036,7 @@ export const CONNAISSANCES_VILLE_QUIZZES: ExerciceItem[] = [
   QUIZ_HOPITAUX,
   QUIZ_MUSEES,
   QUIZ_DIVERS,
+  QUIZ_PONTS,
+  QUIZ_STATUES,
+  QUIZ_STATIONS_TAXIS,
 ];
