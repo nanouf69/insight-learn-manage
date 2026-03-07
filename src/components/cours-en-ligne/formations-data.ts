@@ -279,6 +279,31 @@ export const MODULES_DATA: ModuleInfo[] = [
     description: "Cours et exercices Développement Commercial et Réglementation Spécifique VTC — passerelle VA",
     formations: ["vtc-pour-taxi"],
   },
+  // === Sources Juridiques ===
+  {
+    id: 60,
+    nom: "📖 SOURCES JURIDIQUES VTC",
+    description: "Sources légales et textes réglementaires de la formation VTC (arrêtés, décrets, ordonnances)",
+    formations: ["vtc", "vtc-elearning", "vtc-cours-du-soir"],
+  },
+  {
+    id: 61,
+    nom: "📖 SOURCES JURIDIQUES TAXI",
+    description: "Sources légales et textes réglementaires de la formation TAXI (arrêtés, décrets, ordonnances)",
+    formations: ["taxi", "taxi-elearning"],
+  },
+  {
+    id: 62,
+    nom: "📖 SOURCES JURIDIQUES TA",
+    description: "Sources légales et textes réglementaires de la passerelle TA (arrêtés, décrets, ordonnances)",
+    formations: ["taxi-pour-vtc", "taxi-pour-vtc-elearning"],
+  },
+  {
+    id: 63,
+    nom: "📖 SOURCES JURIDIQUES VA",
+    description: "Sources légales et textes réglementaires de la passerelle VA (arrêtés, décrets, ordonnances)",
+    formations: ["vtc-pour-taxi"],
+  },
   // === Modules Fin de Formation (Évaluation + Satisfaction) ===
   {
     id: 50,

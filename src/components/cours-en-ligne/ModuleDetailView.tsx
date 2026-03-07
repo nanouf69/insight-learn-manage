@@ -1081,6 +1081,129 @@ function getInitialModuleData(module: { id: number; nom: string }, apprenantType
     };
   }
 
+  // === Sources Juridiques ===
+  const SOURCES_JURIDIQUES_INTRO: ContentItem[] = [
+    {
+      id: 0,
+      titre: "Qu'est-ce qu'un texte juridique ?",
+      description: `📚 HIÉRARCHIE DES TEXTES JURIDIQUES
+
+Avant d'étudier les sources juridiques de votre formation, il est important de comprendre les différents types de textes de loi :
+
+🔴 LA CONSTITUTION
+C'est la loi suprême. Tous les autres textes doivent la respecter.
+
+🟠 LA LOI
+Texte voté par le Parlement (Assemblée nationale + Sénat). Elle fixe les règles générales dans un domaine.
+Exemple : La loi n°2014-1104 relative aux taxis et VTC.
+
+🟡 L'ORDONNANCE
+Texte pris par le Gouvernement dans un domaine normalement réservé à la loi, avec l'autorisation du Parlement. Elle a la même valeur qu'une loi une fois ratifiée.
+Exemple : L'ordonnance n°2021-487 relative aux conditions d'exercice des T3P.
+
+🟢 LE DÉCRET
+Texte pris par le Président de la République ou le Premier ministre. Il précise les modalités d'application d'une loi.
+Exemple : Le décret n°2017-483 relatif aux obligations des VTC.
+
+🔵 L'ARRÊTÉ
+Texte pris par un ministre, un préfet ou un maire. C'est le texte le plus précis et le plus technique. Il fixe les détails pratiques.
+Exemple : L'arrêté du 6 avril 2017 relatif au programme des examens.
+
+⚠️ Ordre hiérarchique : Constitution > Loi > Ordonnance > Décret > Arrêté
+Un texte inférieur ne peut jamais contredire un texte supérieur.`,
+      actif: true,
+    },
+  ];
+
+  const SOURCES_JURIDIQUES_QUIZ: ExerciceItem[] = [
+    {
+      id: 1,
+      titre: "Quiz — Types de textes juridiques",
+      sousTitre: "Testez vos connaissances sur la hiérarchie des normes",
+      actif: true,
+      questions: [
+        { id: 1, enonce: "Quel texte est au sommet de la hiérarchie des normes en France ?", choix: [{ lettre: "A", texte: "La loi" }, { lettre: "B", texte: "La Constitution", correct: true }, { lettre: "C", texte: "Le décret" }, { lettre: "D", texte: "L'ordonnance" }] },
+        { id: 2, enonce: "Qui vote la loi en France ?", choix: [{ lettre: "A", texte: "Le Président de la République" }, { lettre: "B", texte: "Le Premier ministre" }, { lettre: "C", texte: "Le Parlement (Assemblée nationale + Sénat)", correct: true }, { lettre: "D", texte: "Le Préfet" }] },
+        { id: 3, enonce: "Qu'est-ce qu'une ordonnance ?", choix: [{ lettre: "A", texte: "Un texte voté par le Parlement" }, { lettre: "B", texte: "Un texte pris par le Gouvernement avec autorisation du Parlement", correct: true }, { lettre: "C", texte: "Un texte pris par un maire" }, { lettre: "D", texte: "Un jugement de tribunal" }] },
+        { id: 4, enonce: "Qui peut prendre un décret ?", choix: [{ lettre: "A", texte: "Un maire uniquement" }, { lettre: "B", texte: "Le Président de la République ou le Premier ministre", correct: true }, { lettre: "C", texte: "Le Parlement" }, { lettre: "D", texte: "Un préfet" }] },
+        { id: 5, enonce: "Qu'est-ce qu'un arrêté ?", choix: [{ lettre: "A", texte: "Un texte voté par l'Assemblée nationale" }, { lettre: "B", texte: "Un texte pris par un ministre, un préfet ou un maire", correct: true }, { lettre: "C", texte: "Un texte pris par le Président" }, { lettre: "D", texte: "Une décision de justice" }] },
+        { id: 6, enonce: "Dans l'ordre hiérarchique, quel texte est supérieur au décret ?", choix: [{ lettre: "A", texte: "L'arrêté" }, { lettre: "B", texte: "La loi", correct: true }, { lettre: "C", texte: "Le règlement intérieur" }, { lettre: "D", texte: "La circulaire" }] },
+        { id: 7, enonce: "Un arrêté peut-il contredire une loi ?", choix: [{ lettre: "A", texte: "Oui, s'il est plus récent" }, { lettre: "B", texte: "Non, jamais — un texte inférieur ne peut contredire un texte supérieur", correct: true }, { lettre: "C", texte: "Oui, si le préfet l'autorise" }, { lettre: "D", texte: "Oui, dans certains départements" }] },
+        { id: 8, enonce: "Quel type de texte fixe les détails pratiques et techniques d'application ?", choix: [{ lettre: "A", texte: "La Constitution" }, { lettre: "B", texte: "La loi" }, { lettre: "C", texte: "L'arrêté", correct: true }, { lettre: "D", texte: "L'ordonnance" }] },
+        { id: 9, enonce: "Un décret sert principalement à :", choix: [{ lettre: "A", texte: "Créer de nouvelles lois" }, { lettre: "B", texte: "Préciser les modalités d'application d'une loi", correct: true }, { lettre: "C", texte: "Juger les infractions" }, { lettre: "D", texte: "Modifier la Constitution" }] },
+        { id: 10, enonce: "Quelle est la bonne hiérarchie (du plus fort au moins fort) ?", choix: [{ lettre: "A", texte: "Loi > Décret > Constitution > Arrêté" }, { lettre: "B", texte: "Constitution > Loi > Ordonnance > Décret > Arrêté", correct: true }, { lettre: "C", texte: "Arrêté > Décret > Loi > Constitution" }, { lettre: "D", texte: "Décret > Loi > Arrêté > Constitution" }] },
+      ],
+    },
+    {
+      id: 2,
+      titre: "Quiz — Sanctions et réglementation T3P",
+      sousTitre: "Sanctions encourues par les conducteurs VTC et TAXI",
+      actif: true,
+      questions: [
+        { id: 1, enonce: "Quelle sanction encourt un conducteur VTC exerçant sans carte professionnelle ?", choix: [{ lettre: "A", texte: "Amende de 135€" }, { lettre: "B", texte: "1 an d'emprisonnement et 15 000€ d'amende", correct: true }, { lettre: "C", texte: "Simple avertissement" }, { lettre: "D", texte: "Retrait du permis" }] },
+        { id: 2, enonce: "Un taxi qui stationne hors de sa zone d'autorisation risque :", choix: [{ lettre: "A", texte: "Rien" }, { lettre: "B", texte: "Une amende de 4ème classe" }, { lettre: "C", texte: "Le retrait de son autorisation de stationnement", correct: true }, { lettre: "D", texte: "La prison" }] },
+        { id: 3, enonce: "La maraude électronique est autorisée pour :", choix: [{ lettre: "A", texte: "Les taxis uniquement" }, { lettre: "B", texte: "Les VTC uniquement", correct: true }, { lettre: "C", texte: "Les taxis et les VTC" }, { lettre: "D", texte: "Personne" }] },
+        { id: 4, enonce: "Quel texte de loi encadre principalement l'activité des T3P ?", choix: [{ lettre: "A", texte: "Le Code de la route" }, { lettre: "B", texte: "La loi Grandguillaume (2016) et le Code des transports", correct: true }, { lettre: "C", texte: "Le Code civil" }, { lettre: "D", texte: "Le Code du travail" }] },
+        { id: 5, enonce: "Le refus de prise en charge par un taxi est sanctionné par :", choix: [{ lettre: "A", texte: "Un simple rappel à l'ordre" }, { lettre: "B", texte: "Une contravention de 4ème classe (135€)" }, { lettre: "C", texte: "Une amende de 5ème classe (1 500€)", correct: true }, { lettre: "D", texte: "Le retrait immédiat de la licence" }] },
+        { id: 6, enonce: "Un VTC peut-il prendre un client dans la rue sans réservation préalable ?", choix: [{ lettre: "A", texte: "Oui, à tout moment" }, { lettre: "B", texte: "Non, c'est interdit — il faut obligatoirement une réservation préalable", correct: true }, { lettre: "C", texte: "Oui, si le client le demande" }, { lettre: "D", texte: "Oui, la nuit uniquement" }] },
+        { id: 7, enonce: "La discrimination envers un client (refus basé sur l'origine, le handicap...) est punie de :", choix: [{ lettre: "A", texte: "135€ d'amende" }, { lettre: "B", texte: "3 ans d'emprisonnement et 45 000€ d'amende", correct: true }, { lettre: "C", texte: "1 500€ d'amende" }, { lettre: "D", texte: "Avertissement" }] },
+        { id: 8, enonce: "Quelle est la durée de validité de la carte professionnelle VTC/TAXI ?", choix: [{ lettre: "A", texte: "3 ans" }, { lettre: "B", texte: "5 ans", correct: true }, { lettre: "C", texte: "10 ans" }, { lettre: "D", texte: "Illimitée" }] },
+      ],
+    },
+  ];
+
+  if (module.id === 60) {
+    return {
+      id: 60,
+      nom: "📖 SOURCES JURIDIQUES VTC",
+      description: "Sources légales et textes réglementaires de la formation VTC. Consultez le document PDF en mode HD puis testez vos connaissances.",
+      cours: [
+        ...SOURCES_JURIDIQUES_INTRO,
+        { id: 1, titre: "Sources légales VTC (PDF HD)", description: "Consultez l'intégralité des sources juridiques de la formation VTC.", actif: true, fichiers: [{ nom: "Sources_Legales_VTC.pdf", url: "/cours/vtc/Sources_Legales_VTC.pdf" }] },
+      ],
+      exercices: SOURCES_JURIDIQUES_QUIZ,
+    };
+  }
+
+  if (module.id === 61) {
+    return {
+      id: 61,
+      nom: "📖 SOURCES JURIDIQUES TAXI",
+      description: "Sources légales et textes réglementaires de la formation TAXI. Consultez le document PDF en mode HD puis testez vos connaissances.",
+      cours: [
+        ...SOURCES_JURIDIQUES_INTRO,
+        { id: 1, titre: "Sources légales TAXI (PDF HD)", description: "Consultez l'intégralité des sources juridiques de la formation TAXI.", actif: true, fichiers: [{ nom: "Sources_Legales_TAXI.pdf", url: "/cours/vtc/Sources_Legales_TAXI.pdf" }] },
+      ],
+      exercices: SOURCES_JURIDIQUES_QUIZ,
+    };
+  }
+
+  if (module.id === 62) {
+    return {
+      id: 62,
+      nom: "📖 SOURCES JURIDIQUES TA",
+      description: "Sources légales et textes réglementaires de la passerelle TA. Consultez le document PDF en mode HD puis testez vos connaissances.",
+      cours: [
+        ...SOURCES_JURIDIQUES_INTRO,
+        { id: 1, titre: "Sources légales TA (PDF HD)", description: "Consultez l'intégralité des sources juridiques de la passerelle TA.", actif: true, fichiers: [{ nom: "Sources_Legales_TA.pdf", url: "/cours/vtc/Sources_Legales_TA.pdf" }] },
+      ],
+      exercices: SOURCES_JURIDIQUES_QUIZ,
+    };
+  }
+
+  if (module.id === 63) {
+    return {
+      id: 63,
+      nom: "📖 SOURCES JURIDIQUES VA",
+      description: "Sources légales et textes réglementaires de la passerelle VA. Consultez le document PDF en mode HD puis testez vos connaissances.",
+      cours: [
+        ...SOURCES_JURIDIQUES_INTRO,
+        { id: 1, titre: "Sources légales VA (PDF HD)", description: "Consultez l'intégralité des sources juridiques de la passerelle VA.", actif: true, fichiers: [{ nom: "Sources_Legales_VA.pdf", url: "/cours/vtc/Sources_Legales_VA.pdf" }] },
+      ],
+      exercices: SOURCES_JURIDIQUES_QUIZ,
+    };
+  }
+
   // === Fin de formation VTC ===
   if (module.id === 50) {
     return {
