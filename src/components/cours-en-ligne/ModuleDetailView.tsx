@@ -115,6 +115,15 @@ interface ModuleDetailViewProps {
   apprenantId?: string | null;
   onModuleCompleted?: (moduleId: number) => void;
   apprenantType?: string | null;
+  apprenantInfo?: {
+    nom?: string;
+    prenom?: string;
+    email?: string;
+    telephone?: string;
+    adresse?: string;
+    code_postal?: string;
+    ville?: string;
+  } | null;
 }
 
 // ===== Données initiales du module INTRODUCTION PRÉSENTIEL =====

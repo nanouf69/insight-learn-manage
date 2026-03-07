@@ -33,10 +33,22 @@ export default function AnalyseBesoinForm({
   apprenantVille = "",
   onComplete,
   completed,
+  apprenantType = "",
 }: Props) {
-  const [formationVTC, setFormationVTC] = useState(false);
-  const [formationTAXI, setFormationTAXI] = useState(false);
-  const [datePermis, setDatePermis] = useState("");
+  // Editable fields pre-filled from apprenant data
+  const [nom, setNom] = useState(apprenantNom);
+  const [prenom, setPrenom] = useState(apprenantPrenom);
+  const [email, setEmail] = useState(apprenantEmail);
+  const [telephone, setTelephone] = useState(apprenantTelephone);
+  const [adresse, setAdresse] = useState(apprenantAdresse);
+  const [codePostal, setCodePostal] = useState(apprenantCodePostal);
+  const [ville, setVille] = useState(apprenantVille);
+
+  // Pre-select formation based on apprenantType
+  const initVTC = apprenantType.toUpperCase().includes("VTC") || apprenantType.toUpperCase() === "VA";
+  const initTAXI = apprenantType.toUpperCase().includes("TAXI") || apprenantType.toUpperCase() === "TA";
+  const [formationVTC, setFormationVTC] = useState(initVTC);
+  const [formationTAXI, setFormationTAXI] = useState(initTAXI);
 
   // Eligibility questions
   const eligibilityQuestions = [
