@@ -249,5 +249,35 @@ export const CONNAISSANCES_VILLE_TAXI_DATA: ModuleData = {
       sousTitre: "QCM sur les quartiers de Lyon",
       fichiers: [{ nom: "Les Quartiers (Word)", url: "/cours/vtc/LES_QUARTIERS.docx" }],
     },
+    {
+      id: 17, actif: true,
+      titre: "🎮 Jeu de la Légende de Lyon",
+      sousTitre: "Jeu interactif sur les lieux emblématiques de Lyon",
+      fichiers: [{ nom: "Ouvrir le jeu ↗", url: "https://lyon-explorer-map.lovable.app" }],
+    },
+    {
+      id: 18, actif: true,
+      titre: "🗺️ Jeu des Quartiers",
+      sousTitre: "Exercice interactif pour apprendre les quartiers de Lyon",
+      fichiers: [{ nom: "Ouvrir le jeu Quartiers ↗", url: "https://lyon-explorer-map.lovable.app" }],
+    },
+    {
+      id: 19, actif: true,
+      titre: "🏘️ Les Communes",
+      sousTitre: "Exercice interactif sur les communes de la métropole lyonnaise",
+      fichiers: [{ nom: "Ouvrir l'exercice Communes ↗", url: "https://lyon-explorer-map.lovable.app" }],
+    },
+    {
+      id: 20, actif: true,
+      titre: "❓ Quiz Lyon",
+      sousTitre: "Quiz interactif sur les connaissances de la ville de Lyon",
+      fichiers: [{ nom: "Ouvrir le Quiz ↗", url: "https://lyon-explorer-map.lovable.app" }],
+    },
+    {
+      id: 21, actif: true,
+      titre: "📍 Carte Interactive de Lyon",
+      sousTitre: "Explorer les lieux importants de Lyon sur une carte interactive",
+      fichiers: [{ nom: "Ouvrir la Carte ↗", url: "https://lyon-explorer-map.lovable.app" }],
+    },
   ],
 };
