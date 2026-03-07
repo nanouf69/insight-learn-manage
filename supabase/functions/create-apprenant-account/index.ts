@@ -216,7 +216,7 @@ serve(async (req) => {
                 <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0; border-radius: 4px;">
                   <h3 style="color: #991b1b; margin-top: 0;">💰 Frais d'examen en cas d'échec (à votre charge) :</h3>
                   <p style="margin: 5px 0;">• <strong>Examen théorique :</strong> environ 240 €</p>
-                  <p style="margin: 5px 0;">• <strong>Examen pratique :</strong> environ 120 €</p>
+                  <p style="margin: 5px 0;">• <strong>Examen pratique :</strong> environ 200 €</p>
                 </div>
 
                 <p style="color: #6b7280; font-size: 14px;">⚠️ Nous vous recommandons de conserver ce mail et de ne pas partager vos identifiants.</p>
