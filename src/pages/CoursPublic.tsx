@@ -290,6 +290,17 @@ const inferSubjectNumberFromExerciseTitle = (title: string): number | null => {
   return null;
 };
 
+// Short label for each bilan quiz number
+const BILAN_QUIZ_LABELS: Record<number, string> = {
+  1: "T3P",
+  2: "Gestion",
+  3: "Sécurité Routière",
+  4: "Réglem. Nationale",
+  5: "Réglem. Locale",
+  6: "Dév. Commercial",
+  7: "Réglem. Spécifique",
+};
+
 // Infer sequential quiz number for bilan modules from exercise title
 const inferBilanQuizNumber = (title: string): number | null => {
   const normalizedTitle = normalizeLabelText(title);
