@@ -415,6 +415,7 @@ interface ApprenantInfo {
   adresse?: string | null;
   code_postal?: string | null;
   ville?: string | null;
+  date_naissance?: string | null;
 }
 
 interface CoursPublicProps {
