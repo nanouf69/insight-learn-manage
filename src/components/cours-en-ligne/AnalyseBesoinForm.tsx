@@ -153,27 +153,31 @@ export default function AnalyseBesoinForm({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-medium text-muted-foreground">Nom</label>
-              <Input value={apprenantNom} readOnly className="bg-muted/50" />
+              <Input value={nom} onChange={e => setNom(e.target.value)} />
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground">Prénom</label>
-              <Input value={apprenantPrenom} readOnly className="bg-muted/50" />
+              <Input value={prenom} onChange={e => setPrenom(e.target.value)} />
             </div>
             <div className="sm:col-span-2">
               <label className="text-xs font-medium text-muted-foreground">Adresse</label>
-              <Input value={apprenantAdresse} readOnly className="bg-muted/50" />
+              <Input value={adresse} onChange={e => setAdresse(e.target.value)} />
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Code postal / Ville</label>
-              <Input value={`${apprenantCodePostal} ${apprenantVille}`.trim()} readOnly className="bg-muted/50" />
+              <label className="text-xs font-medium text-muted-foreground">Code postal</label>
+              <Input value={codePostal} onChange={e => setCodePostal(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Ville</label>
+              <Input value={ville} onChange={e => setVille(e.target.value)} />
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground">N° téléphone</label>
-              <Input value={apprenantTelephone} readOnly className="bg-muted/50" />
+              <Input value={telephone} onChange={e => setTelephone(e.target.value)} />
             </div>
-            <div className="sm:col-span-2">
+            <div>
               <label className="text-xs font-medium text-muted-foreground">E-mail</label>
-              <Input value={apprenantEmail} readOnly className="bg-muted/50" />
+              <Input value={email} onChange={e => setEmail(e.target.value)} />
             </div>
           </div>
         </CardContent>
@@ -196,11 +200,6 @@ export default function AnalyseBesoinForm({
               </label>
             </div>
             {!hasFormation && <p className="text-xs text-destructive">⚠️ Veuillez cocher au moins une formation.</p>}
-          </div>
-          <div>
-            <label className="text-sm font-medium">Date du permis de conduire :</label>
-            <Input type="date" value={datePermis} onChange={e => setDatePermis(e.target.value)} className="mt-1 max-w-xs" />
-            <p className="text-xs text-muted-foreground mt-1">⚠️ Le permis doit avoir plus de 3 ans (ou 2 ans si conduite accompagnée)</p>
           </div>
         </CardContent>
       </Card>
@@ -282,7 +281,7 @@ export default function AnalyseBesoinForm({
           <h4 className="font-bold text-sm text-amber-800 border-b border-amber-200 pb-2">ENGAGEMENT DU STAGIAIRE</h4>
           <div className="text-sm leading-relaxed space-y-2 text-amber-900">
             <p>
-              Je soussigné(e) <strong>{apprenantPrenom} {apprenantNom}</strong>, reconnais avoir été informé(e) par FTRANSPORT de mon obligation de m'inscrire à l'examen de certification et de m'y présenter.
+              Je soussigné(e) <strong>{prenom} {nom}</strong>, reconnais avoir été informé(e) par FTRANSPORT de mon obligation de m'inscrire à l'examen de certification et de m'y présenter.
             </p>
             <p>
               Je m'engage à participer à la certification <strong>RS5637 (VTC) / RS5635 (TAXI)</strong> dans les délais convenus avec mon organisme de formation.
