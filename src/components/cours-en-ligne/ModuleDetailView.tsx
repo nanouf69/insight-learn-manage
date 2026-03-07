@@ -2461,6 +2461,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                                 <CheckCircle2 className="w-4 h-4" /> Terminé
                               </Button>
                             )}
+                            <Button size="sm" variant="outline" className="gap-2 border-primary/30 text-primary hover:bg-primary/5" onClick={async () => {
+                              await persistModuleCompletion();
+                              onBack();
+                            }}>
+                              🏠 Retour à l'accueil
+                            </Button>
                           </div>
                         </div>
                       </div>
