@@ -15,6 +15,7 @@ interface Props {
   apprenantAdresse?: string;
   apprenantCodePostal?: string;
   apprenantVille?: string;
+  apprenantType?: string;
   onComplete: () => void;
   completed?: boolean;
 }
