@@ -2024,6 +2024,26 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         );
       }
 
+      if (cours.checklistType === "projet-professionnel") {
+        return (
+          <ProjetProfessionnelForm
+            apprenantNom={apprenantInfo?.nom}
+            apprenantPrenom={apprenantInfo?.prenom}
+            apprenantEmail={apprenantInfo?.email}
+            apprenantTelephone={apprenantInfo?.telephone}
+            apprenantAdresse={apprenantInfo?.adresse}
+            apprenantDateNaissance={apprenantInfo?.date_naissance || ""}
+            apprenantType={apprenantType || ""}
+            isAdmin={!studentOnly}
+            completed={completedPages.has(currentPage)}
+            onComplete={() => {
+              markPageCompleted(currentPage);
+              if (currentPage < totalPages - 1) goToPage(currentPage + 1);
+            }}
+          />
+        );
+      }
+
       if (cours.checklistType === "evaluation-acquis") {
         return (
           <EvaluationAcquisForm
