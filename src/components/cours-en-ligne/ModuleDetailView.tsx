@@ -762,7 +762,16 @@ function getInitialModuleData(
   // TAXI sub-modules (matières A-F, anciennement module 10)
   if (module.id === 10) {
     if (!studentOnly) return JSON.parse(JSON.stringify(TAXI_COURS_DATA));
-    return createSectionModuleData(10, "A. Réglementation T3P", "Cours et exercices T3P (TAXI)", TAXI_SECTIONS[0]);
+    return createSectionModuleData(10, "A. Réglementation T3P — Partie 1", "Cours et exercices T3P — Partie 1 (TAXI)", {
+      cours: TAXI_SECTIONS[0].cours.slice(0, 1),
+      exercices: TAXI_SECTIONS[0].exercices.slice(0, 1),
+    });
+  }
+  if (module.id === 39) {
+    return createSectionModuleData(39, "A. Réglementation T3P — Partie 2", "Cours et exercices T3P — Partie 2 (TAXI)", {
+      cours: TAXI_SECTIONS[0].cours.slice(1, 2),
+      exercices: TAXI_SECTIONS[0].exercices.slice(1, 2),
+    });
   }
   if (module.id === 20) return createSectionModuleData(20, "B. Gestion", "Cours et exercices de gestion (TAXI)", TAXI_SECTIONS[1]);
   if (module.id === 21) return createSectionModuleData(21, "C. Sécurité Routière", "Cours sur la sécurité routière (TAXI)", TAXI_SECTIONS[2]);
