@@ -34,13 +34,13 @@ export const MODULES_DATA: ModuleInfo[] = [
   {
     id: 1,
     nom: "1.INTRODUCTION PRÉSENTIEL",
-    description: "Livret d'accueil pour les formations en présentiel : organisation de l'examen, programme, coefficients, CGV, règlement intérieur...",
+    description: "Introduction pour les formations en présentiel : test de compétences, analyse du besoin, organisation de l'examen, programme, coefficients, règlement intérieur.",
     formations: PRESENTIEL_FORMATIONS,
   },
   {
     id: 26,
     nom: "1.INTRODUCTION E-LEARNING",
-    description: "Livret d'accueil pour les formations en e-learning : organisation de l'examen, programme, coefficients, CGV...",
+    description: "Introduction pour les formations en e-learning : test de compétences, analyse du besoin, organisation de l'examen, programme, coefficients.",
     formations: ELEARNING_FORMATIONS,
   },
   // === VTC Matières (anciennement module 2) ===
