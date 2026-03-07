@@ -150,9 +150,18 @@ serve(async (req) => {
             "passerelle-taxi-elearning": "Passerelle TAXI → VTC E-learning (TA)",
             "passerelle-vtc-elearning": "Passerelle VTC → TAXI E-learning (VA)",
             "vtc-cours-du-soir": "Formation VTC Cours du soir",
+            "vtc-e-presentiel": "Formation VTC E (Présentiel)",
+            "taxi-e-presentiel": "Formation TAXI E (Présentiel)",
+            "ta-e-presentiel": "Formation TA E (Présentiel)",
+            "continue-vtc": "Formation Continue VTC",
+            "continue-taxi": "Formation Continue TAXI",
+            "repassage-theorique": "Repassage examen théorique",
+            "repassage-pratique": "Repassage examen pratique",
+            "passage-pratique": "Passage examen pratique",
           };
           const rawFormation = apprenant.formation_choisie || "";
-          const formation = formationLabels[rawFormation] || rawFormation || "Non spécifiée";
+          const formationParts = rawFormation.split(" + ").map((p: string) => formationLabels[p.trim()] || p.trim()).filter(Boolean);
+          const formation = formationParts.length > 0 ? formationParts.join(" + ") : "Non spécifiée";
           const dateDebut = apprenant.date_debut_cours_en_ligne || "Non définie";
           const dateFin = apprenant.date_fin_cours_en_ligne || "Non définie";
           const prenom = apprenant.prenom || "";
