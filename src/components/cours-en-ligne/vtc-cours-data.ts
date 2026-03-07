@@ -5,7 +5,7 @@ import { ANGLAIS_EXERCICES } from "./exercices/anglais-exercices-data";
 import { DEV_COMMERCIAL_EXERCICES } from "./exercices/dev-commercial-exercices-data";
 import { FRANCAIS_EXERCICES } from "./exercices/francais-exercices-data";
 import { GESTION_EXERCICES } from "./exercices/gestion-exercices-data";
-import { REGLEMENTATION_NATIONALE_EXERCICES, REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES, REGLEMENTATION_LOCALE_EXERCICES } from "./exercices/reglementation-exercices-data";
+import { REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES } from "./exercices/reglementation-exercices-data";
 import { SECURITE_ROUTIERE_EXERCICES } from "./exercices/securite-routiere-exercices-data";
 interface ContentItem {
   id: number;
@@ -192,51 +192,11 @@ const MATIERE_E: ContentItem[] = [
 
 const MATIERE_F: ContentItem[] = [
   {
-    id: 6001, actif: true,
-    titre: "F. RÉGLEMENTATION NATIONALE — Partie 1",
-    sousTitre: "Réglementation nationale spécifique aux VTC",
-    fichiers: [
-      { nom: "PDF HD Partie 1", url: "/cours/vtc/F_Nationale_1.pdf" },
-    ],
-  },
-  {
-    id: 6002, actif: true,
-    titre: "F. RÉGLEMENTATION NATIONALE — Partie 2",
-    sousTitre: "Réglementation nationale (suite)",
-    fichiers: [
-      { nom: "PDF HD Partie 2", url: "/cours/vtc/F_Nationale_2.pdf" },
-    ],
-  },
-  {
     id: 6003, actif: true,
     titre: "F. RÉGLEMENTATION SPÉCIFIQUE VTC",
     sousTitre: "Réglementation spécifique aux VTC",
     fichiers: [
       { nom: "PDF HD", url: "/cours/vtc/F_Reglementation_Specifique_1.pdf" },
-    ],
-  },
-  {
-    id: 6004, actif: true,
-    titre: "F. RÉGLEMENTATION LOCALE — Partie 1",
-    sousTitre: "Réglementation locale",
-    fichiers: [
-      { nom: "PDF HD Partie 1", url: "/cours/vtc/F_Locale_1.pdf" },
-    ],
-  },
-  {
-    id: 6005, actif: true,
-    titre: "F. RÉGLEMENTATION LOCALE — Partie 2",
-    sousTitre: "Réglementation locale (suite)",
-    fichiers: [
-      { nom: "PDF HD Partie 2", url: "/cours/vtc/F_Locale_2.pdf" },
-    ],
-  },
-  {
-    id: 6006, actif: true,
-    titre: "F. RÉGLEMENTATION LOCALE — Partie 3",
-    sousTitre: "Réglementation locale (fin)",
-    fichiers: [
-      { nom: "PDF HD Partie 3", url: "/cours/vtc/F_Locale_3.pdf" },
     ],
   },
 ];
@@ -272,7 +232,7 @@ export const VTC_SECTIONS: MatiereSection[] = [
   { cours: MATIERE_C, exercices: SECURITE_ROUTIERE_EXERCICES },
   { cours: MATIERE_D, exercices: FRANCAIS_EXERCICES },
   { cours: MATIERE_E, exercices: ANGLAIS_EXERCICES },
-  { cours: MATIERE_F, exercices: [...REGLEMENTATION_NATIONALE_EXERCICES, ...REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES, ...REGLEMENTATION_LOCALE_EXERCICES] },
+  { cours: MATIERE_F, exercices: REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES },
   { cours: MATIERE_G, exercices: DEV_COMMERCIAL_EXERCICES },
 ];
 
