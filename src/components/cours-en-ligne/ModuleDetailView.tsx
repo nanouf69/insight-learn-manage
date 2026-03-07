@@ -115,17 +115,21 @@ interface ModuleDetailViewProps {
 const INTRODUCTION_PRESENTIEL_DATA: ModuleData = {
   id: 1,
   nom: "1.INTRODUCTION PRÉSENTIEL",
-  description: "Livret d'accueil pour les formations en présentiel : organisation de l'examen, programme, coefficients, CGV, règlement intérieur.",
+  description: "Introduction pour les formations en présentiel : organisation de l'examen, programme, coefficients, CGV, règlement intérieur.",
   cours: [
     {
       id: 0,
-      titre: "Test de competences avant formation",
-      description: "Avant le debut de la formation, merci de telecharger et remplir le test de competences correspondant a votre formation (VTC ou TAXI). Ce document permet d'evaluer votre niveau initial.",
+      titre: "Test de compétences avant formation",
+      description: "Avant le début de la formation, merci de bien vouloir répondre à ces questions en cochant Oui ou Non pour chaque compétence.",
       actif: true,
-      fichiers: [
-        { nom: "Test de competences VTC", url: "/cours/vtc/Test_Competences_VTC.docx" },
-        { nom: "Test de competences TAXI", url: "/cours/vtc/Test_Competences_TAXI.docx" },
-      ],
+      checklistType: "competences",
+    },
+    {
+      id: 100,
+      titre: "Analyse du besoin – Fiche client",
+      description: "Complétez cette fiche pour nous permettre de mieux cerner votre profil et vos besoins.",
+      actif: true,
+      checklistType: "analyse-besoin",
     },
     {
       id: 1,
@@ -144,8 +148,8 @@ Vous avez à disposition : des cours, des exercices, des examens blancs et des b
       description: `⚠️ Délai : Vous devez réussir votre examen théorique sous 6 mois à compter de l'envoi de vos identifiants. Passé ce délai, l'entraînement pratique et le véhicule seront facturés.
 
 💰 Frais d'examen en cas d'échec (à votre charge) :
-• Examen théorique : environ 237€
-• Examen pratique : environ 180€
+• Examen théorique : environ 240€
+• Examen pratique : environ 200€
 
 📋 Les examens sont organisés par la Chambre des Métiers et de l'Artisanat. Vérifiez bien votre inscription.
 
@@ -234,15 +238,6 @@ L'épreuve pratique comprend une phase de conduite en circulation d'une durée m
 • Formateur Anglais : Albert Akono`,
       actif: true,
     },
-    {
-      id: 7,
-      titre: "Livret d'accueil complet (PDF)",
-      description: "Téléchargez le livret d'accueil complet au format PDF pour la formation en présentiel.",
-      actif: true,
-      fichiers: [
-        { nom: "Livret d'accueil Présentiel", url: "/cours/vtc/INTRODUCTION_presentiel.docx" },
-      ],
-    },
   ],
   exercices: [
     {
@@ -255,7 +250,7 @@ L'épreuve pratique comprend une phase de conduite en circulation d'une durée m
         { id: 2, enonce: "Quelle note minimale faut-il obtenir à l'épreuve pratique (admission) ?", choix: [{ lettre: "A", texte: "10/20" }, { lettre: "B", texte: "11/20" }, { lettre: "C", texte: "12/20", correct: true }, { lettre: "D", texte: "14/20" }] },
         { id: 3, enonce: "Combien de matières comporte l'épreuve théorique ?", choix: [{ lettre: "A", texte: "5 matières" }, { lettre: "B", texte: "6 matières" }, { lettre: "C", texte: "7 matières", correct: true }, { lettre: "D", texte: "8 matières" }] },
         { id: 4, enonce: "Quelle est la durée de l'épreuve A (Réglementation T3P) ?", choix: [{ lettre: "A", texte: "20 minutes" }, { lettre: "B", texte: "30 minutes" }, { lettre: "C", texte: "45 minutes", correct: true }, { lettre: "D", texte: "60 minutes" }] },
-        { id: 5, enonce: "En cas d'échec à l'examen théorique, quel est le coût approximatif des frais d'examen ?", choix: [{ lettre: "A", texte: "150€" }, { lettre: "B", texte: "237€", correct: true }, { lettre: "C", texte: "300€" }, { lettre: "D", texte: "180€" }] },
+        { id: 5, enonce: "En cas d'échec à l'examen théorique, quel est le coût approximatif des frais d'examen ?", choix: [{ lettre: "A", texte: "150€" }, { lettre: "B", texte: "240€", correct: true }, { lettre: "C", texte: "300€" }, { lettre: "D", texte: "180€" }] },
         { id: 6, enonce: "Pour l'épreuve de Français (D), combien de fautes d'orthographe entraînent une pénalité de -1 point ?", choix: [{ lettre: "A", texte: "3 fautes" }, { lettre: "B", texte: "5 fautes", correct: true }, { lettre: "C", texte: "10 fautes" }, { lettre: "D", texte: "Aucune pénalité" }] },
         { id: 7, enonce: "Combien de fois un candidat admissible peut-il se présenter à l'épreuve pratique ?", choix: [{ lettre: "A", texte: "1 fois" }, { lettre: "B", texte: "2 fois" }, { lettre: "C", texte: "3 fois", correct: true }, { lettre: "D", texte: "Illimité" }] },
         { id: 8, enonce: "Quel est le délai pour réussir l'examen théorique après réception des identifiants ?", choix: [{ lettre: "A", texte: "3 mois" }, { lettre: "B", texte: "6 mois", correct: true }, { lettre: "C", texte: "12 mois" }, { lettre: "D", texte: "Pas de délai" }] },
