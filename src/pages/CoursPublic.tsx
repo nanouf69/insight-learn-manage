@@ -214,6 +214,11 @@ interface ApprenantInfo {
   date_debut_cours_en_ligne: string | null;
   date_fin_cours_en_ligne: string | null;
   modules_autorises: number[] | null;
+  email?: string | null;
+  telephone?: string | null;
+  adresse?: string | null;
+  code_postal?: string | null;
+  ville?: string | null;
 }
 
 interface CoursPublicProps {
