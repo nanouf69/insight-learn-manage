@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -740,11 +740,7 @@ function getInitialModuleData(
 
   // VTC sub-modules (matières A-G, anciennement module 2)
   if (module.id === 2) {
-    if (!studentOnly) return JSON.parse(JSON.stringify(VTC_COURS_DATA));
-    return createSectionModuleData(2, "A. Réglementation T3P — Partie 1", "Cours et exercices T3P — Partie 1", {
-      cours: VTC_SECTIONS[0].cours.slice(0, 1),
-      exercices: VTC_SECTIONS[0].exercices.slice(0, 1),
-    });
+    return JSON.parse(JSON.stringify(VTC_COURS_DATA));
   }
   if (module.id === 25) {
     return createSectionModuleData(25, "A. Réglementation T3P — Partie 2", "Cours et exercices T3P — Partie 2", {
@@ -761,11 +757,7 @@ function getInitialModuleData(
 
   // TAXI sub-modules (matières A-F, anciennement module 10)
   if (module.id === 10) {
-    if (!studentOnly) return JSON.parse(JSON.stringify(TAXI_COURS_DATA));
-    return createSectionModuleData(10, "A. Réglementation T3P — Partie 1", "Cours et exercices T3P — Partie 1 (TAXI)", {
-      cours: TAXI_SECTIONS[0].cours.slice(0, 1),
-      exercices: TAXI_SECTIONS[0].exercices.slice(0, 1),
-    });
+    return JSON.parse(JSON.stringify(TAXI_COURS_DATA));
   }
   if (module.id === 39) {
     return createSectionModuleData(39, "A. Réglementation T3P — Partie 2", "Cours et exercices T3P — Partie 2 (TAXI)", {
@@ -1585,6 +1577,34 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         ...activeExercices.map(e => ({ type: "exercice-single" as const, exercice: e })),
       ];
     })();
+
+    const shouldUseHierarchicalStepper = Number(moduleData.id) === 2 || Number(moduleData.id) === 10;
+    const hierarchicalLabelsByPage = useMemo<Record<number, string>>(() => {
+      if (!shouldUseHierarchicalStepper) return {};
+
+      const subjectNums: Record<string, number> = { A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7 };
+      const partBySubject: Record<number, number> = {};
+      const labels: Record<number, string> = {};
+      let currentMeta: { subjectNum: number; partNum: number } | null = null;
+
+      pages.forEach((page, index) => {
+        if (page.type === "cours") {
+          const subjectLetter = page.cours.titre.match(/^\s*([A-G])\./i)?.[1]?.toUpperCase() || "A";
+          const subjectNum = subjectNums[subjectLetter] || 1;
+          const nextPart = (partBySubject[subjectNum] || 0) + 1;
+          partBySubject[subjectNum] = nextPart;
+          currentMeta = { subjectNum, partNum: nextPart };
+          labels[index] = `${subjectNum}.${nextPart} ${page.cours.titre}`;
+          return;
+        }
+
+        if (page.type === "exercice-single" && currentMeta) {
+          labels[index] = `${currentMeta.subjectNum}.${currentMeta.partNum} 📝 ${page.exercice.titre}`;
+        }
+      });
+
+      return labels;
+    }, [pages, shouldUseHierarchicalStepper]);
 
     const totalPages = pages.length;
     const currentPageData = pages[currentPage];
@@ -2648,10 +2668,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   : p.type === "exercice-single"
                     ? `📝 ${p.exercice.titre}`
                     : "📝 Exercices";
-                // Add numbered prefix (e.g. "1.1", "1.2") for cours/exercices sub-modules
-                const label = subjectInfo
-                  ? `${subjectInfo.subjectNum}.${i + 1} ${rawLabel}`
-                  : rawLabel;
+                const label = hierarchicalLabelsByPage[i]
+                  || (subjectInfo
+                    ? `${subjectInfo.subjectNum}.${i + 1} ${rawLabel}`
+                    : rawLabel);
 
                 return (
                   <div key={i} className="flex items-start gap-2">

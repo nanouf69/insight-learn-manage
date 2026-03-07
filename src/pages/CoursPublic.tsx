@@ -96,14 +96,14 @@ const resolveFormationId = (
 const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, string>>> = {
   "vtc": {
     1: "1.INTRODUCTION PRÉSENTIEL",
-    2: "A. Réglementation T3P — Partie 1",
-    25: "A. Réglementation T3P — Partie 2",
-    14: "B. Gestion",
-    15: "C. Sécurité Routière",
-    16: "D. Français",
-    17: "E. Anglais",
-    18: "F. Réglementation Spécifique",
-    19: "G. Développement Commercial",
+    2: "2.COURS ET EXERCICES VTC",
+    25: "2.COURS ET EXERCICES VTC",
+    14: "2.COURS ET EXERCICES VTC",
+    15: "2.COURS ET EXERCICES VTC",
+    16: "2.COURS ET EXERCICES VTC",
+    17: "2.COURS ET EXERCICES VTC",
+    18: "2.COURS ET EXERCICES VTC",
+    19: "2.COURS ET EXERCICES VTC",
     3: "3.FORMULES",
     4: "4.BILAN EXERCICES VTC",
     35: "5.EXAMENS BLANCS VTC",
@@ -112,14 +112,14 @@ const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, strin
   },
   "vtc-cours-du-soir": {
     1: "1.INTRODUCTION PRÉSENTIEL",
-    2: "A. Réglementation T3P — Partie 1",
-    25: "A. Réglementation T3P — Partie 2",
-    14: "B. Gestion",
-    15: "C. Sécurité Routière",
-    16: "D. Français",
-    17: "E. Anglais",
-    18: "F. Réglementation Spécifique",
-    19: "G. Développement Commercial",
+    2: "2.COURS ET EXERCICES VTC",
+    25: "2.COURS ET EXERCICES VTC",
+    14: "2.COURS ET EXERCICES VTC",
+    15: "2.COURS ET EXERCICES VTC",
+    16: "2.COURS ET EXERCICES VTC",
+    17: "2.COURS ET EXERCICES VTC",
+    18: "2.COURS ET EXERCICES VTC",
+    19: "2.COURS ET EXERCICES VTC",
     3: "3.FORMULES",
     4: "4.BILAN EXERCICES VTC",
     35: "5.EXAMENS BLANCS VTC",
@@ -128,14 +128,14 @@ const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, strin
   },
   "vtc-elearning": {
     26: "1.INTRODUCTION E-LEARNING",
-    2: "A. Réglementation T3P — Partie 1",
-    25: "A. Réglementation T3P — Partie 2",
-    14: "B. Gestion",
-    15: "C. Sécurité Routière",
-    16: "D. Français",
-    17: "E. Anglais",
-    18: "F. Réglementation Spécifique",
-    19: "G. Développement Commercial",
+    2: "2.COURS ET EXERCICES VTC",
+    25: "2.COURS ET EXERCICES VTC",
+    14: "2.COURS ET EXERCICES VTC",
+    15: "2.COURS ET EXERCICES VTC",
+    16: "2.COURS ET EXERCICES VTC",
+    17: "2.COURS ET EXERCICES VTC",
+    18: "2.COURS ET EXERCICES VTC",
+    19: "2.COURS ET EXERCICES VTC",
     3: "3.FORMULES",
     4: "4.BILAN EXERCICES VTC",
     35: "5.EXAMENS BLANCS VTC",
@@ -144,13 +144,13 @@ const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, strin
   },
   "taxi": {
     1: "1.INTRODUCTION PRÉSENTIEL",
-    10: "A. Réglementation T3P — Partie 1",
-    39: "A. Réglementation T3P — Partie 2",
-    20: "B. Gestion",
-    21: "C. Sécurité Routière",
-    22: "D. Français",
-    23: "E. Anglais",
-    24: "F. Réglementation Locale",
+    10: "2.COURS ET EXERCICES TAXI",
+    39: "2.COURS ET EXERCICES TAXI",
+    20: "2.COURS ET EXERCICES TAXI",
+    21: "2.COURS ET EXERCICES TAXI",
+    22: "2.COURS ET EXERCICES TAXI",
+    23: "2.COURS ET EXERCICES TAXI",
+    24: "2.COURS ET EXERCICES TAXI",
     7: "3.CONNAISSANCES DE LA VILLE TAXI",
     3: "4.FORMULES",
     9: "5.BILAN EXERCICES TAXI",
@@ -162,13 +162,13 @@ const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, strin
   },
   "taxi-elearning": {
     26: "1.INTRODUCTION E-LEARNING",
-    10: "A. Réglementation T3P — Partie 1",
-    39: "A. Réglementation T3P — Partie 2",
-    20: "B. Gestion",
-    21: "C. Sécurité Routière",
-    22: "D. Français",
-    23: "E. Anglais",
-    24: "F. Réglementation Locale",
+    10: "2.COURS ET EXERCICES TAXI",
+    39: "2.COURS ET EXERCICES TAXI",
+    20: "2.COURS ET EXERCICES TAXI",
+    21: "2.COURS ET EXERCICES TAXI",
+    22: "2.COURS ET EXERCICES TAXI",
+    23: "2.COURS ET EXERCICES TAXI",
+    24: "2.COURS ET EXERCICES TAXI",
     7: "3.CONNAISSANCES DE LA VILLE TAXI",
     3: "4.FORMULES",
     9: "5.BILAN EXERCICES TAXI",
@@ -216,22 +216,55 @@ const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, strin
 };
 
 const FORMATION_DEFAULT_MODULES: Record<FormationId, number[]> = {
-  "vtc": [1, 2, 25, 14, 15, 16, 17, 18, 19, 3, 4, 35, 5, 8, 60, 50],
-  "vtc-cours-du-soir": [1, 2, 25, 14, 15, 16, 17, 18, 19, 3, 4, 35, 5, 8, 60, 50],
-  "vtc-elearning": [26, 2, 25, 14, 15, 16, 17, 18, 19, 3, 4, 35, 5, 8, 60, 50],
-  "taxi": [1, 10, 39, 20, 21, 22, 23, 24, 7, 3, 9, 13, 11, 36, 6, 12, 61, 51],
-  "taxi-elearning": [26, 10, 39, 20, 21, 22, 23, 24, 7, 3, 9, 13, 11, 36, 6, 12, 61, 51],
+  "vtc": [1, 2, 3, 4, 35, 5, 8, 60, 50],
+  "vtc-cours-du-soir": [1, 2, 3, 4, 35, 5, 8, 60, 50],
+  "vtc-elearning": [26, 2, 3, 4, 35, 5, 8, 60, 50],
+  "taxi": [1, 10, 7, 3, 9, 13, 11, 36, 6, 12, 61, 51],
+  "taxi-elearning": [26, 10, 7, 3, 9, 13, 11, 36, 6, 12, 61, 51],
   "taxi-pour-vtc": [31, 40, 42, 7, 3, 27, 28, 37, 6, 62, 52],
   "taxi-pour-vtc-elearning": [32, 40, 42, 7, 3, 27, 13, 28, 37, 6, 62, 52],
   "vtc-pour-taxi": [33, 41, 43, 7, 3, 29, 30, 38, 8, 63, 53],
 };
 
 const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 50, 51, 52, 53, 60, 61, 62, 63]);
-const GROUPED_PARENT_MODULES: Partial<Record<number, number[]>> = {
-  2: [25, 14, 15, 16, 17, 18, 19],
-  10: [39, 20, 21, 22, 23, 24],
-  40: [42],
-  41: [43],
+const DASHBOARD_PARENT_MODULE_IDS: Partial<Record<number, number>> = {
+  25: 2,
+  14: 2,
+  15: 2,
+  16: 2,
+  17: 2,
+  18: 2,
+  19: 2,
+  39: 10,
+  20: 10,
+  21: 10,
+  22: 10,
+  23: 10,
+  24: 10,
+};
+
+const normalizeModuleIdForDashboard = (moduleId: number) => DASHBOARD_PARENT_MODULE_IDS[moduleId] ?? moduleId;
+
+const getCompletionAnsweredCount = (completion: any): number => {
+  const details = Array.isArray(completion?.details) ? completion.details : null;
+  if (!details || details.length === 0) return completion ? 1 : 0;
+
+  return details.filter((detail: any) => {
+    const answer = detail?.reponseEleve;
+    return answer !== null && answer !== undefined && `${answer}`.trim() !== "";
+  }).length;
+};
+
+const hasModuleCompletionProgress = (completion: any) => {
+  if (!completion) return false;
+  return getCompletionAnsweredCount(completion) > 0;
+};
+
+const isModuleCompletionFullyDone = (completion: any) => {
+  if (!completion) return false;
+  const details = Array.isArray(completion?.details) ? completion.details : null;
+  if (!details || details.length === 0) return true;
+  return getCompletionAnsweredCount(completion) === details.length;
 };
 
 const getModuleDisplayName = (formationId: FormationId, moduleId: number, fallback: string) =>
@@ -263,11 +296,6 @@ interface CoursPublicProps {
   embedded?: boolean;
   apprenantOverride?: ApprenantInfo | null;
 }
-
-const isModuleCompletionFullyDone = (completion: any) => {
-  // Une ligne de complétion en base = le module a été validé par l'élève
-  return !!completion;
-};
 
 const ChangePasswordDialog = () => {
   const [open, setOpen] = useState(false);
@@ -455,13 +483,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           new Set(
             completionRows
               .filter(isModuleCompletionFullyDone)
-              .map((d) => d.module_id),
+              .map((d) => normalizeModuleIdForDashboard(Number(d.module_id))),
           ),
         );
 
         const scores: Record<number, { score_obtenu: number | null; score_max: number | null }> = {};
         completionRows.forEach((d) => {
-          scores[d.module_id] = { score_obtenu: d.score_obtenu, score_max: d.score_max };
+          const normalizedId = normalizeModuleIdForDashboard(Number(d.module_id));
+          scores[normalizedId] = { score_obtenu: d.score_obtenu, score_max: d.score_max };
         });
         setModuleScores(scores);
         setModuleCompletionsForNotes(completionRows);
@@ -488,13 +517,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           new Set(
             completionRows
               .filter(isModuleCompletionFullyDone)
-              .map((d) => d.module_id),
+              .map((d) => normalizeModuleIdForDashboard(Number(d.module_id))),
           ),
         );
 
         const scores: Record<number, { score_obtenu: number | null; score_max: number | null }> = {};
         completionRows.forEach((d) => {
-          scores[d.module_id] = { score_obtenu: d.score_obtenu, score_max: d.score_max };
+          const normalizedId = normalizeModuleIdForDashboard(Number(d.module_id));
+          scores[normalizedId] = { score_obtenu: d.score_obtenu, score_max: d.score_max };
         });
         setModuleScores(scores);
         setModuleCompletionsForNotes(completionRows);
@@ -636,38 +666,34 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const formation = FORMATIONS.find((f) => f.id === selectedFormation)!;
   const allModules = MODULES_DATA.filter((m) => m.formations.includes(selectedFormation));
 
-  // Aligner strictement la vue apprenant avec le bloc CRM: modules gérés uniquement + ordre de la formation
+  // Aligner la vue apprenant avec les modules gérés + fusionner les sous-modules sous le parent (2/10)
   const rawAuthorizedIds = Array.from(
     new Set(
       (expandModulesAutorises(apprenant?.modules_autorises) || apprenant?.modules_autorises || [])
         .map((id) => Number(id))
         .filter((id) => Number.isFinite(id)),
     ),
-  );
+  ) as number[];
+
+  const normalizedAuthorizedIds = Array.from(
+    new Set(rawAuthorizedIds.map((id) => normalizeModuleIdForDashboard(id))),
+  ).filter((id) => MANAGED_MODULE_IDS.has(id));
 
   const formationDefaultIds = FORMATION_DEFAULT_MODULES[selectedFormation] || [];
-  const normalizedAuthorizedSet = new Set(rawAuthorizedIds.filter((id) => MANAGED_MODULE_IDS.has(id)));
+  const normalizedFormationDefaultIds = Array.from(
+    new Set(formationDefaultIds.map((id) => normalizeModuleIdForDashboard(id))),
+  ).filter((id) => MANAGED_MODULE_IDS.has(id));
 
-  // Compat legacy: si seules les sous-matières existent en base, réactiver le module parent géré
-  [2, 10, 40, 41].forEach((parentId) => {
-    if (!formationDefaultIds.includes(parentId)) return;
-    const children = GROUPED_PARENT_MODULES[parentId] || [];
-    if (children.some((childId) => rawAuthorizedIds.includes(childId))) {
-      normalizedAuthorizedSet.add(parentId);
-    }
-  });
-
-  const orderedPrimaryIds = formationDefaultIds.filter((id) => normalizedAuthorizedSet.has(id));
-  const orderedExtraIds = rawAuthorizedIds.filter(
-    (id) => normalizedAuthorizedSet.has(id) && MANAGED_MODULE_IDS.has(id) && !formationDefaultIds.includes(id)
-  );
+  const normalizedAuthorizedSet = new Set(normalizedAuthorizedIds);
+  const orderedPrimaryIds = normalizedFormationDefaultIds.filter((id) => normalizedAuthorizedSet.has(id));
+  const orderedExtraIds = normalizedAuthorizedIds.filter((id) => !normalizedFormationDefaultIds.includes(id));
   const orderedAuthorizedIds = [...orderedPrimaryIds, ...orderedExtraIds];
 
   const orderedAuthorizedModules = orderedAuthorizedIds
     .map((id) => MODULES_DATA.find((module) => module.id === id))
     .filter((module): module is (typeof MODULES_DATA)[number] => !!module);
 
-  const fallbackModules = formationDefaultIds
+  const fallbackModules = normalizedFormationDefaultIds
     .map((id) => MODULES_DATA.find((module) => module.id === id))
     .filter((module): module is (typeof MODULES_DATA)[number] => !!module);
 
@@ -680,11 +706,27 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     nom: getModuleDisplayName(selectedFormation, module.id, module.nom),
   }));
 
-  const completedCount = modules.filter((m) => completedModuleIds.has(m.id)).length;
+  const completionsByModuleId = moduleCompletionsForNotes.reduce<Record<number, any[]>>((acc, completion) => {
+    const normalizedId = normalizeModuleIdForDashboard(Number(completion.module_id));
+    if (!acc[normalizedId]) acc[normalizedId] = [];
+    acc[normalizedId].push(completion);
+    return acc;
+  }, {});
+
+  const moduleProgressById = modules.reduce<Record<number, { isDone: boolean; hasProgress: boolean }>>((acc, module) => {
+    const rows = completionsByModuleId[module.id] || [];
+    acc[module.id] = {
+      isDone: rows.some(isModuleCompletionFullyDone),
+      hasProgress: rows.some(hasModuleCompletionProgress),
+    };
+    return acc;
+  }, {});
+
+  const completedCount = modules.filter((m) => moduleProgressById[m.id]?.isDone).length;
   const globalProgress = modules.length > 0 ? Math.round((completedCount / modules.length) * 100) : 0;
-  const remainingModules = modules.filter((m) => !completedModuleIds.has(m.id));
-  const doneModules = modules.filter((m) => completedModuleIds.has(m.id));
-  const lowModules = remainingModules.slice(0, 3);
+  const remainingModules = modules.filter((m) => !moduleProgressById[m.id]?.isDone);
+  const doneModules = modules.filter((m) => moduleProgressById[m.id]?.hasProgress);
+  const lowModules = remainingModules.filter((m) => !moduleProgressById[m.id]?.hasProgress).slice(0, 3);
   const studentName = apprenant ? `${apprenant.prenom} ${apprenant.nom}` : "Apprenant";
 
   // E-learning sequential order enforcement
