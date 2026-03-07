@@ -422,13 +422,21 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         .eq("apprenant_id", apprenant.id!);
 
       if (data) {
-        setCompletedModuleIds(new Set((data as any[]).map((d: any) => d.module_id)));
+        const completionRows = data as any[];
+        setCompletedModuleIds(
+          new Set(
+            completionRows
+              .filter(isModuleCompletionFullyDone)
+              .map((d) => d.module_id),
+          ),
+        );
+
         const scores: Record<number, { score_obtenu: number | null; score_max: number | null }> = {};
-        (data as any[]).forEach((d: any) => {
+        completionRows.forEach((d) => {
           scores[d.module_id] = { score_obtenu: d.score_obtenu, score_max: d.score_max };
         });
         setModuleScores(scores);
-        setModuleCompletionsForNotes(data as any);
+        setModuleCompletionsForNotes(completionRows);
       }
     };
     fetchCompletions();
@@ -447,13 +455,21 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         .select("id, module_id, score_obtenu, score_max, completed_at, details")
         .eq("apprenant_id", apprenant.id);
       if (data) {
-        setCompletedModuleIds(new Set((data as any[]).map((d: any) => d.module_id)));
+        const completionRows = data as any[];
+        setCompletedModuleIds(
+          new Set(
+            completionRows
+              .filter(isModuleCompletionFullyDone)
+              .map((d) => d.module_id),
+          ),
+        );
+
         const scores: Record<number, { score_obtenu: number | null; score_max: number | null }> = {};
-        (data as any[]).forEach((d: any) => {
+        completionRows.forEach((d) => {
           scores[d.module_id] = { score_obtenu: d.score_obtenu, score_max: d.score_max };
         });
         setModuleScores(scores);
-        setModuleCompletionsForNotes(data as any);
+        setModuleCompletionsForNotes(completionRows);
       }
     }
   }, [apprenant?.id]);
