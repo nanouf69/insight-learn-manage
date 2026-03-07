@@ -845,10 +845,12 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     });
 
     acc[module.id] = Array.from(pointLabels).sort((a, b) => {
-      const [aSubject = 0, aPart = 0] = a.split(".").map(Number);
-      const [bSubject = 0, bPart = 0] = b.split(".").map(Number);
-      if (aSubject !== bSubject) return aSubject - bSubject;
-      return aPart - bPart;
+      const aNum = parseInt(a, 10) || 0;
+      const bNum = parseInt(b, 10) || 0;
+      if (aNum !== bNum) return aNum - bNum;
+      const aPartMatch = a.match(/\.(\d+)/);
+      const bPartMatch = b.match(/\.(\d+)/);
+      return (aPartMatch ? Number(aPartMatch[1]) : 0) - (bPartMatch ? Number(bPartMatch[1]) : 0);
     });
 
     return acc;
