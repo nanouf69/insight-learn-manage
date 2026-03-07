@@ -347,9 +347,7 @@ export function expandModulesAutorises(ids: number[] | null | undefined): number
   if (expanded.has(10)) { [39, 20, 21, 22, 23, 24].forEach(id => expanded.add(id)); }
   // Reverse: if any child is present, add parent too
   if ([39, 20, 21, 22, 23, 24].some(id => expanded.has(id))) { expanded.add(10); }
-  if (expanded.has(40)) { [42].forEach(id => expanded.add(id)); }
-  if (expanded.has(41)) { [43].forEach(id => expanded.add(id)); }
-  // Reverse for TA/VA
+  // Reverse for TA/VA (compatibilité anciens modules)
   if (expanded.has(42)) { expanded.add(40); }
   if (expanded.has(43)) { expanded.add(41); }
   return Array.from(expanded);

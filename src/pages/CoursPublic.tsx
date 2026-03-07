@@ -180,8 +180,8 @@ const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, strin
   },
   "taxi-pour-vtc": {
     31: "1.INTRODUCTION TA",
-    40: "F. Réglementation Nationale",
-    42: "F. Réglementation Locale",
+    40: "2.COURS ET EXERCICES TA",
+    42: "2.COURS ET EXERCICES TA",
     7: "3.CONNAISSANCES DE LA VILLE TAXI",
     3: "4.FORMULES",
     27: "5.BILAN EXERCICES TA",
@@ -191,8 +191,8 @@ const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, strin
   },
   "taxi-pour-vtc-elearning": {
     32: "1.INTRODUCTION TA E-LEARNING",
-    40: "F. Réglementation Nationale",
-    42: "F. Réglementation Locale",
+    40: "2.COURS ET EXERCICES TA",
+    42: "2.COURS ET EXERCICES TA",
     7: "3.CONNAISSANCES DE LA VILLE TAXI",
     3: "4.FORMULES",
     27: "5.BILAN EXERCICES TA",
@@ -204,14 +204,13 @@ const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, strin
   "vtc-pour-taxi": {
     33: "1.INTRODUCTION VA",
     34: "1.INTRODUCTION VA E-LEARNING",
-    41: "F. Développement Commercial",
-    43: "G. Réglementation Spécifique VTC",
-    7: "3.CONNAISSANCES DE LA VILLE TAXI",
-    3: "4.FORMULES",
-    29: "5.BILAN EXERCICES VA",
-    30: "6.BILAN EXAMEN VA",
-    38: "7.EXAMENS BLANCS VA",
-    8: "8.PRATIQUE VTC",
+    41: "2.COURS ET EXERCICES VA",
+    43: "2.COURS ET EXERCICES VA",
+    3: "3.FORMULES",
+    29: "4.BILAN EXERCICES VA",
+    30: "5.BILAN EXAMEN VA",
+    38: "6.EXAMENS BLANCS VA",
+    8: "7.PRATIQUE VTC",
   },
 };
 
@@ -223,7 +222,7 @@ const FORMATION_DEFAULT_MODULES: Record<FormationId, number[]> = {
   "taxi-elearning": [26, 10, 7, 3, 9, 13, 11, 36, 6, 12, 61, 51],
   "taxi-pour-vtc": [31, 40, 42, 7, 3, 27, 28, 37, 6, 62, 52],
   "taxi-pour-vtc-elearning": [32, 40, 42, 7, 3, 27, 13, 28, 37, 6, 62, 52],
-  "vtc-pour-taxi": [33, 41, 43, 7, 3, 29, 30, 38, 8, 63, 53],
+  "vtc-pour-taxi": [33, 41, 3, 29, 30, 38, 8, 63, 53],
 };
 
 const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 50, 51, 52, 53, 60, 61, 62, 63]);
@@ -805,7 +804,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
   const orderedAuthorizedModules = orderedAuthorizedIds
     .map((id) => MODULES_DATA.find((module) => module.id === id))
-    .filter((module): module is (typeof MODULES_DATA)[number] => !!module);
+    .filter((module): module is (typeof MODULES_DATA)[number] => !!module && module.formations.includes(selectedFormation));
 
   const fallbackModules = normalizedFormationDefaultIds
     .map((id) => MODULES_DATA.find((module) => module.id === id))
