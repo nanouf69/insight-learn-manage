@@ -2300,6 +2300,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                     <Button
                       size="lg"
                       onClick={async () => {
+                        const validatedResultState = { exoId: exo.id, page: currentPage };
+
                         const nextShowResults = new Set(showResultsFor);
                         nextShowResults.add(exo.id);
                         setShowResultsFor(nextShowResults);
@@ -2307,6 +2309,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         const nextCompletedPages = new Set(completedPages);
                         nextCompletedPages.add(currentPage);
                         setCompletedPages(nextCompletedPages);
+                        setPendingResultRestore(validatedResultState);
 
                         try {
                           window.sessionStorage.setItem(
@@ -2316,6 +2319,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               selectedAnswers,
                               showResultsFor: Array.from(nextShowResults),
                               completedPages: Array.from(nextCompletedPages),
+                              pendingResultRestore: validatedResultState,
                             })
                           );
                         } catch (error) {
@@ -2443,6 +2447,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                                 return next;
                               });
                               setShowResultsFor(prev => { const next = new Set(prev); next.delete(exo.id); return next; });
+                              setPendingResultRestore((prev) => (prev?.exoId === exo.id ? null : prev));
                             }}>
                               🔄 Recommencer
                             </Button>
