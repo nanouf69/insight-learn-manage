@@ -88,7 +88,9 @@ serve(async (req) => {
     }
 
     // Create auth user with auto-confirm
-    const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
+    let authUser: { user: { id: string } } | null = null;
+
+    const { data: createData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
@@ -99,10 +101,27 @@ serve(async (req) => {
     });
 
     if (authError) {
-      return new Response(
-        JSON.stringify({ error: authError.message }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      // If user already exists, find them and reset their password instead
+      if (authError.message.includes("already been registered")) {
+        const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
+        const existingUser = listData?.users?.find((u: any) => u.email === email);
+        if (!existingUser) {
+          return new Response(
+            JSON.stringify({ error: "Utilisateur existant introuvable" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        // Reset password for existing user
+        await supabaseAdmin.auth.admin.updateUser(existingUser.id, { password });
+        authUser = { user: { id: existingUser.id } };
+      } else {
+        return new Response(
+          JSON.stringify({ error: authError.message }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    } else {
+      authUser = createData;
     }
 
     // Link auth user to apprenant
