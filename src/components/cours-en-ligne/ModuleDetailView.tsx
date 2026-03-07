@@ -2735,6 +2735,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             </Button>
           )}
         </div>
+        </div>
       </div>
     );
   };
