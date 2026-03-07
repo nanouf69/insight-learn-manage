@@ -26,19 +26,20 @@ const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {
   "vtc-e-presentiel":  [1, 2, 3, 4, 35, 5, 8],
   // Formation VTC E-learning — Intro e-learning
   "vtc-e":             [26, 2, 3, 4, 35, 5, 8],
-  // Formation TAXI — matières séparées (10=T3P, 20=Gestion, 21=Sécurité, 22=Français, 23=Anglais, 24=Réglementation)
-  "taxi":              [1, 10, 20, 21, 22, 23, 24, 7, 3, 9, 13, 11, 36, 6],
-  "taxi-e-presentiel": [1, 10, 20, 21, 22, 23, 24, 7, 3, 9, 13, 11, 36, 6],
+  // Formation TAXI — module parent 10 (l'expansion en sous-matières se fait côté portail)
+  "taxi":              [1, 10, 7, 3, 9, 13, 11, 36, 6, 12],
+  "taxi-e-presentiel": [1, 10, 7, 3, 9, 13, 11, 36, 6, 12],
   // Formation TAXI E-learning — Intro e-learning
-  "taxi-e":            [26, 10, 20, 21, 22, 23, 24, 7, 3, 9, 13, 11, 36, 6],
+  "taxi-e":            [26, 10, 7, 3, 9, 13, 11, 36, 6, 12],
   // Formation TA présentiel
   "ta":                [31, 40, 7, 3, 27, 28, 37, 6],
   "ta-e-presentiel":   [31, 40, 7, 3, 27, 28, 37, 6],
   // Formation TA E-learning
   "ta-e":              [32, 40, 7, 3, 27, 13, 28, 37, 6],
-  // Formation VA
-  "va":                [34, 41, 7, 3, 29, 30, 38, 8],
-  "va-e-presentiel":   [34, 41, 7, 3, 29, 30, 38, 8],
+  // Formation VA présentiel
+  "va":                [33, 41, 7, 3, 29, 30, 38, 8],
+  "va-e-presentiel":   [33, 41, 7, 3, 29, 30, 38, 8],
+  // Formation VA E-learning
   "va-e":              [34, 41, 7, 3, 29, 30, 38, 8],
 };
 
