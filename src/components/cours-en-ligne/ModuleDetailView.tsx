@@ -77,7 +77,7 @@ interface ContentItem {
   fichiers?: { nom: string; url: string }[];
   slidesKey?: string;
   quiz?: InlineQuizQuestion[];
-  checklistType?: "competences" | "analyse-besoin" | "evaluation-acquis" | "satisfaction";
+  checklistType?: "competences" | "analyse-besoin" | "evaluation-acquis" | "satisfaction" | "projet-professionnel";
   formationType?: string;
 }
 
