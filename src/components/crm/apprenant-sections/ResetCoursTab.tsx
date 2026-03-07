@@ -14,15 +14,15 @@ interface ResetCoursTabProps {
   queryClient: QueryClient;
 }
 
-const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 41, 50, 51, 52, 53, 60, 61, 62, 63]);
+const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 20, 21, 22, 23, 24, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 41, 50, 51, 52, 53, 60, 61, 62, 63]);
 
 const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {
   "vtc": [1, 2, 3, 4, 35, 5, 8, 60, 50],
   "vtc-e-presentiel": [1, 2, 3, 4, 35, 5, 8, 60, 50],
   "vtc-e": [26, 2, 3, 4, 35, 5, 8, 60, 50],
-  "taxi": [1, 10, 7, 3, 9, 13, 11, 36, 6, 61, 51],
-  "taxi-e-presentiel": [1, 10, 7, 3, 9, 13, 11, 36, 6, 61, 51],
-  "taxi-e": [26, 10, 7, 3, 9, 13, 11, 36, 6, 61, 51],
+  "taxi": [1, 10, 20, 21, 22, 23, 24, 7, 3, 9, 13, 11, 36, 6, 61, 51],
+  "taxi-e-presentiel": [1, 10, 20, 21, 22, 23, 24, 7, 3, 9, 13, 11, 36, 6, 61, 51],
+  "taxi-e": [26, 10, 20, 21, 22, 23, 24, 7, 3, 9, 13, 11, 36, 6, 61, 51],
   "ta": [31, 40, 7, 3, 27, 28, 37, 6, 62, 52],
   "ta-e-presentiel": [31, 40, 7, 3, 27, 28, 37, 6, 62, 52],
   "ta-e": [32, 40, 7, 3, 27, 13, 28, 37, 6, 62, 52],
@@ -72,8 +72,8 @@ const normalizeTypeApprenant = (rawType: string | null | undefined): string => {
 const FORMATION_LABELS: Record<string, Record<number, string>> = {
   "vtc": { 1: "1.INTRODUCTION PRÉSENTIEL", 2: "2.COURS ET EXERCICES VTC", 3: "3.FORMULES", 4: "4.BILAN EXERCICES VTC", 35: "5.EXAMENS BLANCS VTC", 5: "6.BILAN EXAMEN VTC", 8: "7.PRATIQUE VTC" },
   "vtc-e": { 26: "1.INTRODUCTION E-LEARNING", 2: "2.COURS ET EXERCICES VTC", 3: "3.FORMULES", 4: "4.BILAN EXERCICES VTC", 35: "5.EXAMENS BLANCS VTC", 5: "6.BILAN EXAMEN VTC", 8: "7.PRATIQUE VTC" },
-  "taxi": { 1: "1.INTRODUCTION PRÉSENTIEL", 10: "2.COURS ET EXERCICES TAXI", 7: "3.CONNAISSANCES DE LA VILLE TAXI", 3: "4.FORMULES", 9: "5.BILAN EXERCICES TAXI", 13: "6.CONTRÔLE DE CONNAISSANCES TAXI", 11: "7.BILAN EXAMEN TAXI", 36: "8.EXAMENS BLANCS TAXI", 6: "9.PRATIQUE TAXI" },
-  "taxi-e": { 26: "1.INTRODUCTION E-LEARNING", 10: "2.COURS ET EXERCICES TAXI", 7: "3.CONNAISSANCES DE LA VILLE TAXI", 3: "4.FORMULES", 9: "5.BILAN EXERCICES TAXI", 13: "6.CONTRÔLE DE CONNAISSANCES TAXI", 11: "7.BILAN EXAMEN TAXI", 36: "8.EXAMENS BLANCS TAXI", 6: "9.PRATIQUE TAXI" },
+  "taxi": { 1: "1.INTRODUCTION PRÉSENTIEL", 10: "2a.A. Réglementation T3P", 20: "2b.B. Gestion", 21: "2c.C. Sécurité Routière", 22: "2d.D. Français", 23: "2e.E. Anglais", 24: "2f.F. Réglementation", 7: "3.CONNAISSANCES DE LA VILLE TAXI", 3: "4.FORMULES", 9: "5.BILAN EXERCICES TAXI", 13: "6.CONTRÔLE DE CONNAISSANCES TAXI", 11: "7.BILAN EXAMEN TAXI", 36: "8.EXAMENS BLANCS TAXI", 6: "9.PRATIQUE TAXI" },
+  "taxi-e": { 26: "1.INTRODUCTION E-LEARNING", 10: "2a.A. Réglementation T3P", 20: "2b.B. Gestion", 21: "2c.C. Sécurité Routière", 22: "2d.D. Français", 23: "2e.E. Anglais", 24: "2f.F. Réglementation", 7: "3.CONNAISSANCES DE LA VILLE TAXI", 3: "4.FORMULES", 9: "5.BILAN EXERCICES TAXI", 13: "6.CONTRÔLE DE CONNAISSANCES TAXI", 11: "7.BILAN EXAMEN TAXI", 36: "8.EXAMENS BLANCS TAXI", 6: "9.PRATIQUE TAXI" },
   "ta": { 31: "1.INTRODUCTION TA", 40: "2.COURS ET EXERCICES TA", 7: "3.CONNAISSANCES DE LA VILLE TAXI", 3: "4.FORMULES", 27: "5.BILAN EXERCICES TA", 28: "6.BILAN EXAMEN TA", 37: "7.EXAMENS BLANCS TA", 6: "8.PRATIQUE TAXI" },
   "ta-e": { 32: "1.INTRODUCTION TA E-LEARNING", 40: "2.COURS ET EXERCICES TA", 7: "3.CONNAISSANCES DE LA VILLE TAXI", 3: "4.FORMULES", 27: "5.BILAN EXERCICES TA", 13: "6.CONTRÔLE DE CONNAISSANCES TAXI", 28: "7.BILAN EXAMEN TA", 37: "8.EXAMENS BLANCS TA", 6: "9.PRATIQUE TAXI" },
   "va": { 34: "1.INTRODUCTION VA", 41: "2.COURS ET EXERCICES VA", 7: "3.CONNAISSANCES DE LA VILLE TAXI", 3: "4.FORMULES", 29: "5.BILAN EXERCICES VA", 30: "6.BILAN EXAMEN VA", 38: "7.EXAMENS BLANCS VA", 8: "8.PRATIQUE VTC" },
