@@ -70,6 +70,7 @@ interface ContentItem {
   fichiers?: { nom: string; url: string }[];
   slidesKey?: string;
   quiz?: InlineQuizQuestion[];
+  checklistType?: "competences" | "analyse-besoin";
 }
 
 interface ExerciceChoix {
