@@ -501,6 +501,7 @@ const ApprenantSearchPreview = () => {
                 { id: 11, label: "7.BILAN EXAMEN TAXI" },
                 { id: 36, label: "8.EXAMENS BLANCS TAXI" },
                 { id: 6, label: "9.PRATIQUE TAXI" },
+                { id: 12, label: "10.CAS PRATIQUE TAXI" },
               ]},
               "taxi-e": { label: "TAXI E-learning", color: "bg-orange-50 text-orange-700 border-orange-200", modules: [
                 { id: 26, label: "1.INTRODUCTION E-LEARNING" },
@@ -512,6 +513,7 @@ const ApprenantSearchPreview = () => {
                 { id: 11, label: "7.BILAN EXAMEN TAXI" },
                 { id: 36, label: "8.EXAMENS BLANCS TAXI" },
                 { id: 6, label: "9.PRATIQUE TAXI" },
+                { id: 12, label: "10.CAS PRATIQUE TAXI" },
               ]},
               "ta": { label: "TA (Présentiel)", color: "bg-amber-100 text-amber-800 border-amber-300", modules: [
                 { id: 31, label: "1.INTRODUCTION TA" },
