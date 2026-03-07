@@ -741,17 +741,13 @@ function getInitialModuleData(
   // VTC sub-modules (matières A-G, anciennement module 2)
   if (module.id === 2) {
     if (!studentOnly) return JSON.parse(JSON.stringify(VTC_COURS_DATA));
-    // Student mode: load ALL sections combined
-    return {
-      id: 2,
-      nom: "2.COURS ET EXERCICES VTC",
-      description: "Cours et exercices VTC — 7 matières (A à G).",
-      cours: VTC_SECTIONS.flatMap(s => s.cours),
-      exercices: VTC_SECTIONS.flatMap(s => s.exercices),
-    };
+    return createSectionModuleData(2, "A. Réglementation T3P — Partie 1", "Cours et exercices T3P — Partie 1", {
+      cours: VTC_SECTIONS[0].cours.slice(0, 1),
+      exercices: VTC_SECTIONS[0].exercices.slice(0, 1),
+    });
   }
   if (module.id === 25) {
-    return createSectionModuleData(25, "A. Réglementation T3P — Partie 2/2", "Cours et exercices T3P — Partie 2", {
+    return createSectionModuleData(25, "A. Réglementation T3P — Partie 2", "Cours et exercices T3P — Partie 2", {
       cours: VTC_SECTIONS[0].cours.slice(1, 2),
       exercices: VTC_SECTIONS[0].exercices.slice(1, 2),
     });
@@ -766,14 +762,7 @@ function getInitialModuleData(
   // TAXI sub-modules (matières A-F, anciennement module 10)
   if (module.id === 10) {
     if (!studentOnly) return JSON.parse(JSON.stringify(TAXI_COURS_DATA));
-    // Student mode: load ALL sections combined
-    return {
-      id: 10,
-      nom: "2.COURS ET EXERCICES TAXI",
-      description: "Cours et exercices TAXI — 6 matières (A à F).",
-      cours: TAXI_SECTIONS.flatMap(s => s.cours),
-      exercices: TAXI_SECTIONS.flatMap(s => s.exercices),
-    };
+    return createSectionModuleData(10, "A. Réglementation T3P", "Cours et exercices T3P (TAXI)", TAXI_SECTIONS[0]);
   }
   if (module.id === 20) return createSectionModuleData(20, "B. Gestion", "Cours et exercices de gestion (TAXI)", TAXI_SECTIONS[1]);
   if (module.id === 21) return createSectionModuleData(21, "C. Sécurité Routière", "Cours sur la sécurité routière (TAXI)", TAXI_SECTIONS[2]);
@@ -784,30 +773,16 @@ function getInitialModuleData(
   // TA sub-modules (Passerelle Taxi : Nationale + Locale)
   if (module.id === 40) {
     if (!studentOnly) return JSON.parse(JSON.stringify(TA_COURS_DATA));
-    // Student mode: load ALL sections combined
-    return {
-      id: 40,
-      nom: "2.COURS ET EXERCICES TA",
-      description: "Cours et exercices Passerelle TA — Réglementation Nationale et Locale.",
-      cours: TA_SECTIONS.flatMap(s => s.cours),
-      exercices: TA_SECTIONS.flatMap(s => s.exercices),
-    };
+    return createSectionModuleData(40, "F. Réglementation Nationale", "Réglementation nationale (TA)", TA_SECTIONS[0]);
   }
   if (module.id === 42) return createSectionModuleData(42, "F. Réglementation Locale", "Réglementation locale (TA)", TA_SECTIONS[1]);
 
   // VA sub-modules (Passerelle VTC : Marketing + Spécifique VTC)
   if (module.id === 41) {
     if (!studentOnly) return JSON.parse(JSON.stringify(VA_COURS_DATA));
-    // Student mode: load ALL sections combined
-    return {
-      id: 41,
-      nom: "2.COURS ET EXERCICES VA",
-      description: "Cours et exercices Passerelle VA — Développement Commercial et Réglementation Spécifique.",
-      cours: VA_SECTIONS.flatMap(s => s.cours),
-      exercices: VA_SECTIONS.flatMap(s => s.exercices),
-    };
+    return createSectionModuleData(41, "F. Développement Commercial", "Marketing et développement commercial (VA)", VA_SECTIONS[0]);
   }
-  if (module.id === 43) return createSectionModuleData(43, "F. Réglementation Spécifique VTC", "Réglementation spécifique VTC (VA)", VA_SECTIONS[1]);
+  if (module.id === 43) return createSectionModuleData(43, "G. Réglementation Spécifique VTC", "Réglementation spécifique VTC (VA)", VA_SECTIONS[1]);
 
   if (module.id === 5) {
     return {
