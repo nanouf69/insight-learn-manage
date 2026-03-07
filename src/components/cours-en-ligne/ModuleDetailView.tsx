@@ -1526,6 +1526,33 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const activeCours = moduleData.cours.filter(c => c.actif);
     const activeExercices = moduleData.exercices.filter(e => e.actif) as ExerciceItem[];
 
+    // === Subject number mapping for stepper numbering (e.g. 1.1, 1.2, 2.1…) ===
+    const SUBJECT_NUMBER_MAP: Record<number, { parentTitle: string; subjectNum: number }> = {
+      // VTC sub-modules
+      2: { parentTitle: "2. COURS ET EXERCICES VTC", subjectNum: 1 },
+      25: { parentTitle: "2. COURS ET EXERCICES VTC", subjectNum: 1 },
+      14: { parentTitle: "2. COURS ET EXERCICES VTC", subjectNum: 2 },
+      15: { parentTitle: "2. COURS ET EXERCICES VTC", subjectNum: 3 },
+      16: { parentTitle: "2. COURS ET EXERCICES VTC", subjectNum: 4 },
+      17: { parentTitle: "2. COURS ET EXERCICES VTC", subjectNum: 5 },
+      18: { parentTitle: "2. COURS ET EXERCICES VTC", subjectNum: 6 },
+      19: { parentTitle: "2. COURS ET EXERCICES VTC", subjectNum: 7 },
+      // TAXI sub-modules
+      10: { parentTitle: "2. COURS ET EXERCICES TAXI", subjectNum: 1 },
+      20: { parentTitle: "2. COURS ET EXERCICES TAXI", subjectNum: 2 },
+      21: { parentTitle: "2. COURS ET EXERCICES TAXI", subjectNum: 3 },
+      22: { parentTitle: "2. COURS ET EXERCICES TAXI", subjectNum: 4 },
+      23: { parentTitle: "2. COURS ET EXERCICES TAXI", subjectNum: 5 },
+      24: { parentTitle: "2. COURS ET EXERCICES TAXI", subjectNum: 6 },
+      // TA sub-modules
+      40: { parentTitle: "2. COURS ET EXERCICES TA", subjectNum: 1 },
+      42: { parentTitle: "2. COURS ET EXERCICES TA", subjectNum: 2 },
+      // VA sub-modules
+      41: { parentTitle: "2. COURS ET EXERCICES VA", subjectNum: 1 },
+      43: { parentTitle: "2. COURS ET EXERCICES VA", subjectNum: 2 },
+    };
+    const subjectInfo = SUBJECT_NUMBER_MAP[Number(moduleData.id)];
+
     // Build pages: interleave cours and exercises for matière sub-modules
     type PageType = { type: "cours"; cours: ContentItem } | { type: "exercices" } | { type: "exercice-single"; exercice: ExerciceItem };
     const INTERLEAVED_IDS = new Set([2, 10, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 40, 41, 42, 43]);
@@ -2606,11 +2633,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 const unlocked = isPageUnlocked(i);
                 const isCurrent = i === currentPage;
                 const isCompleted = completedPages.has(i);
-                const label = p.type === "cours"
+                const rawLabel = p.type === "cours"
                   ? p.cours.titre
                   : p.type === "exercice-single"
                     ? `📝 ${p.exercice.titre}`
                     : "📝 Exercices";
+                // Add numbered prefix (e.g. "1.1", "1.2") for cours/exercices sub-modules
+                const label = subjectInfo
+                  ? `${subjectInfo.subjectNum}.${i + 1} ${rawLabel}`
+                  : rawLabel;
 
                 return (
                   <div key={i} className="flex items-start gap-2">
@@ -2684,7 +2715,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         {/* Header */}
         <div className="space-y-3">
           <div className="text-center space-y-1">
-            <h2 className="text-2xl font-bold">{moduleData.nom}</h2>
+            <h2 className="text-2xl font-bold">{subjectInfo ? subjectInfo.parentTitle : moduleData.nom}</h2>
             <p className="text-muted-foreground text-sm">{moduleData.description}</p>
           </div>
 
@@ -2831,7 +2862,20 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           <Button variant="outline" size="icon" onClick={onBack}>
             <ArrowLeft className="w-4 h-4" />
           </Button>
-          <h2 className="text-2xl font-bold">{moduleData.nom}</h2>
+          <h2 className="text-2xl font-bold">{(() => {
+            const parentMap: Record<number, string> = {
+              2: "2. COURS ET EXERCICES VTC", 25: "2. COURS ET EXERCICES VTC",
+              14: "2. COURS ET EXERCICES VTC", 15: "2. COURS ET EXERCICES VTC",
+              16: "2. COURS ET EXERCICES VTC", 17: "2. COURS ET EXERCICES VTC",
+              18: "2. COURS ET EXERCICES VTC", 19: "2. COURS ET EXERCICES VTC",
+              10: "2. COURS ET EXERCICES TAXI", 20: "2. COURS ET EXERCICES TAXI",
+              21: "2. COURS ET EXERCICES TAXI", 22: "2. COURS ET EXERCICES TAXI",
+              23: "2. COURS ET EXERCICES TAXI", 24: "2. COURS ET EXERCICES TAXI",
+              40: "2. COURS ET EXERCICES TA", 42: "2. COURS ET EXERCICES TA",
+              41: "2. COURS ET EXERCICES VA", 43: "2. COURS ET EXERCICES VA",
+            };
+            return parentMap[module.id] || moduleData.nom;
+          })()}</h2>
         </div>
         <LearnerPreview secureMode />
       </div>
