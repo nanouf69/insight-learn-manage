@@ -61,9 +61,20 @@ async function getAccessToken(): Promise<string> {
 async function fetchEmails(
   accessToken: string,
   userEmail: string,
-  folder: "inbox" | "sentItems"
+  folder: "inbox" | "sentItems",
+  filter?: string
 ): Promise<EmailMessage[]> {
-  const url = `https://graph.microsoft.com/v1.0/users/${userEmail}/mailFolders/${folder}/messages?$top=50&$orderby=receivedDateTime desc&$select=id,subject,bodyPreview,body,from,toRecipients,hasAttachments,isRead,receivedDateTime,sentDateTime`;
+  const orderBy = folder === "sentItems" ? "sentDateTime desc" : "receivedDateTime desc";
+
+  const params = new URLSearchParams({
+    "$top": "200",
+    "$orderby": orderBy,
+    "$select": "id,subject,bodyPreview,body,from,toRecipients,hasAttachments,isRead,receivedDateTime,sentDateTime",
+  });
+
+  if (filter) params.set("$filter", filter);
+
+  const url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(userEmail)}/mailFolders/${folder}/messages?${params.toString()}`;
 
   const response = await fetch(url, {
     headers: {
