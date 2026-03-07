@@ -1531,6 +1531,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const [introAcknowledged, setIntroAcknowledged] = useState<Set<number>>(new Set());
     const [savedAnswersLoaded, setSavedAnswersLoaded] = useState(false);
     const [uiStateHydrated, setUiStateHydrated] = useState(false);
+    const [pendingResultRestore, setPendingResultRestore] = useState<{ exoId: number; page: number } | null>(null);
     const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const learnerUiStateKey = `module-ui-state:${apprenantId ?? "anonymous"}:${module.id}`;
 
@@ -1580,6 +1581,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           selectedAnswers?: Record<string, string>;
           showResultsFor?: number[];
           completedPages?: number[];
+          pendingResultRestore?: { exoId?: number; page?: number } | null;
         };
 
         if (parsed.selectedAnswers && typeof parsed.selectedAnswers === "object") {
@@ -1590,6 +1592,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         }
         if (Array.isArray(parsed.completedPages)) {
           setCompletedPages(new Set(parsed.completedPages));
+        }
+        if (
+          parsed.pendingResultRestore &&
+          typeof parsed.pendingResultRestore.exoId === "number" &&
+          typeof parsed.pendingResultRestore.page === "number"
+        ) {
+          setPendingResultRestore({ exoId: parsed.pendingResultRestore.exoId, page: parsed.pendingResultRestore.page });
         }
         if (typeof parsed.currentPage === "number" && totalPages > 0) {
           const clampedPage = Math.max(0, Math.min(parsed.currentPage, totalPages - 1));
@@ -1614,12 +1623,43 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             selectedAnswers,
             showResultsFor: Array.from(showResultsFor),
             completedPages: Array.from(completedPages),
+            pendingResultRestore,
           })
         );
       } catch (error) {
         console.error("Erreur sauvegarde état module:", error);
       }
-    }, [learnerUiStateKey, uiStateHydrated, currentPage, selectedAnswers, showResultsFor, completedPages]);
+    }, [learnerUiStateKey, uiStateHydrated, currentPage, selectedAnswers, showResultsFor, completedPages, pendingResultRestore]);
+
+    // --- If a quiz was just validated, force-restore the exact result screen once ---
+    useEffect(() => {
+      if (!uiStateHydrated || !pendingResultRestore) return;
+
+      const targetPageFromPages = pages.findIndex(
+        (p) => p.type === "exercice-single" && p.exercice.id === pendingResultRestore.exoId,
+      );
+      const resolvedPage = targetPageFromPages >= 0 ? targetPageFromPages : pendingResultRestore.page;
+
+      setShowResultsFor((prev) => {
+        if (prev.has(pendingResultRestore.exoId) && currentPage === resolvedPage) return prev;
+        const next = new Set(prev);
+        next.add(pendingResultRestore.exoId);
+        return next;
+      });
+
+      setCompletedPages((prev) => {
+        const next = new Set(prev);
+        next.add(resolvedPage);
+        if (resolvedPage > 0) next.add(resolvedPage - 1);
+        return next;
+      });
+
+      if (currentPage !== resolvedPage) {
+        setCurrentPage(resolvedPage);
+      }
+
+      setPendingResultRestore(null);
+    }, [uiStateHydrated, pendingResultRestore, pages, currentPage]);
 
     // --- Load saved partial answers from DB on mount ---
     useEffect(() => {
@@ -1632,15 +1672,53 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             .eq("apprenant_id", apprenantId)
             .eq("module_id", module.id)
             .maybeSingle();
+
           if (data?.details && Array.isArray(data.details)) {
             const restored: Record<string, string> = {};
+            const answeredByExercice = new Map<number, number>();
+
             (data.details as any[]).forEach((d: any) => {
               if (d.reponseEleve) {
                 restored[`${d.exerciceId}-${d.questionId}`] = d.reponseEleve;
+                const exoId = Number(d.exerciceId);
+                if (Number.isFinite(exoId)) {
+                  answeredByExercice.set(exoId, (answeredByExercice.get(exoId) || 0) + 1);
+                }
               }
             });
+
             if (Object.keys(restored).length > 0) {
               setSelectedAnswers((prev) => (Object.keys(prev).length > 0 ? prev : restored));
+            }
+
+            if (data.score_obtenu !== null) {
+              const validatedExoIds = activeExercices
+                .filter((exo) => {
+                  const totalExoQuestions = exo.questions?.length || 0;
+                  if (totalExoQuestions === 0) return false;
+                  return (answeredByExercice.get(Number(exo.id)) || 0) >= totalExoQuestions;
+                })
+                .map((exo) => Number(exo.id));
+
+              if (validatedExoIds.length > 0) {
+                setShowResultsFor((prev) => {
+                  const next = new Set(prev);
+                  validatedExoIds.forEach((exoId) => next.add(exoId));
+                  return next;
+                });
+
+                setCompletedPages((prev) => {
+                  const next = new Set(prev);
+                  validatedExoIds.forEach((exoId) => {
+                    const exoPage = pages.findIndex((p) => p.type === "exercice-single" && p.exercice.id === exoId);
+                    if (exoPage >= 0) {
+                      next.add(exoPage);
+                      if (exoPage > 0) next.add(exoPage - 1);
+                    }
+                  });
+                  return next;
+                });
+              }
             }
           }
         } catch (e) {
@@ -1648,7 +1726,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         }
         setSavedAnswersLoaded(true);
       })();
-    }, [apprenantId, module.id, savedAnswersLoaded]);
+    }, [apprenantId, module.id, savedAnswersLoaded, activeExercices, pages]);
 
     // --- Auto-save partial answers to DB (debounced 3s) ---
     const autoSaveAnswers = (answers: Record<string, string>) => {
