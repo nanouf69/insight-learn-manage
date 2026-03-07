@@ -2668,10 +2668,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   : p.type === "exercice-single"
                     ? `📝 ${p.exercice.titre}`
                     : "📝 Exercices";
-                // Add numbered prefix (e.g. "1.1", "1.2") for cours/exercices sub-modules
-                const label = subjectInfo
-                  ? `${subjectInfo.subjectNum}.${i + 1} ${rawLabel}`
-                  : rawLabel;
+                const label = hierarchicalLabelsByPage[i]
+                  || (subjectInfo
+                    ? `${subjectInfo.subjectNum}.${i + 1} ${rawLabel}`
+                    : rawLabel);
 
                 return (
                   <div key={i} className="flex items-start gap-2">
