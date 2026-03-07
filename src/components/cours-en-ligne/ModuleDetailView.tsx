@@ -77,6 +77,7 @@ interface ContentItem {
   quiz?: InlineQuizQuestion[];
   checklistType?: "competences" | "analyse-besoin" | "evaluation-acquis" | "satisfaction";
   formationType?: string;
+}
 
 interface ExerciceChoix {
   lettre: string;
