@@ -804,7 +804,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
   const orderedAuthorizedModules = orderedAuthorizedIds
     .map((id) => MODULES_DATA.find((module) => module.id === id))
-    .filter((module): module is (typeof MODULES_DATA)[number] => !!module);
+    .filter((module): module is (typeof MODULES_DATA)[number] => !!module && module.formations.includes(selectedFormation));
 
   const fallbackModules = normalizedFormationDefaultIds
     .map((id) => MODULES_DATA.find((module) => module.id === id))
