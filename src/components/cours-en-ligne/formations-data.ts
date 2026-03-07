@@ -281,14 +281,8 @@ export const MODULES_DATA: ModuleInfo[] = [
   },
   {
     id: 41,
-    nom: "F. Développement Commercial",
-    description: "Cours et exercices Développement Commercial — passerelle VA",
-    formations: ["vtc-pour-taxi"],
-  },
-  {
-    id: 43,
-    nom: "G. Réglementation Spécifique VTC",
-    description: "Cours et exercices Réglementation Spécifique VTC — passerelle VA",
+    nom: "COURS ET EXERCICES VA",
+    description: "Cours et exercices Passerelle VA : Développement Commercial et Réglementation Spécifique VTC",
     formations: ["vtc-pour-taxi"],
   },
   // === Sources Juridiques ===
