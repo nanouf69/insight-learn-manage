@@ -762,7 +762,16 @@ function getInitialModuleData(
   // TAXI sub-modules (matières A-F, anciennement module 10)
   if (module.id === 10) {
     if (!studentOnly) return JSON.parse(JSON.stringify(TAXI_COURS_DATA));
-    return createSectionModuleData(10, "A. Réglementation T3P", "Cours et exercices T3P (TAXI)", TAXI_SECTIONS[0]);
+    return createSectionModuleData(10, "A. Réglementation T3P — Partie 1", "Cours et exercices T3P — Partie 1 (TAXI)", {
+      cours: TAXI_SECTIONS[0].cours.slice(0, 1),
+      exercices: TAXI_SECTIONS[0].exercices.slice(0, 1),
+    });
+  }
+  if (module.id === 39) {
+    return createSectionModuleData(39, "A. Réglementation T3P — Partie 2", "Cours et exercices T3P — Partie 2 (TAXI)", {
+      cours: TAXI_SECTIONS[0].cours.slice(1, 2),
+      exercices: TAXI_SECTIONS[0].exercices.slice(1, 2),
+    });
   }
   if (module.id === 20) return createSectionModuleData(20, "B. Gestion", "Cours et exercices de gestion (TAXI)", TAXI_SECTIONS[1]);
   if (module.id === 21) return createSectionModuleData(21, "C. Sécurité Routière", "Cours sur la sécurité routière (TAXI)", TAXI_SECTIONS[2]);
@@ -1539,6 +1548,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       19: { parentTitle: "2. COURS ET EXERCICES VTC", subjectNum: 7 },
       // TAXI sub-modules
       10: { parentTitle: "2. COURS ET EXERCICES TAXI", subjectNum: 1 },
+      39: { parentTitle: "2. COURS ET EXERCICES TAXI", subjectNum: 1 },
       20: { parentTitle: "2. COURS ET EXERCICES TAXI", subjectNum: 2 },
       21: { parentTitle: "2. COURS ET EXERCICES TAXI", subjectNum: 3 },
       22: { parentTitle: "2. COURS ET EXERCICES TAXI", subjectNum: 4 },
@@ -1555,7 +1565,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     // Build pages: interleave cours and exercises for matière sub-modules
     type PageType = { type: "cours"; cours: ContentItem } | { type: "exercices" } | { type: "exercice-single"; exercice: ExerciceItem };
-    const INTERLEAVED_IDS = new Set([2, 10, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 40, 41, 42, 43]);
+    const INTERLEAVED_IDS = new Set([2, 10, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 39, 40, 41, 42, 43]);
     const pages: PageType[] = (() => {
       if (INTERLEAVED_IDS.has(Number(moduleData.id))) {
         // Simple zip: cours[0] → exo[0] → cours[1] → exo[1] → ...
@@ -2868,9 +2878,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               14: "2. COURS ET EXERCICES VTC", 15: "2. COURS ET EXERCICES VTC",
               16: "2. COURS ET EXERCICES VTC", 17: "2. COURS ET EXERCICES VTC",
               18: "2. COURS ET EXERCICES VTC", 19: "2. COURS ET EXERCICES VTC",
-              10: "2. COURS ET EXERCICES TAXI", 20: "2. COURS ET EXERCICES TAXI",
-              21: "2. COURS ET EXERCICES TAXI", 22: "2. COURS ET EXERCICES TAXI",
-              23: "2. COURS ET EXERCICES TAXI", 24: "2. COURS ET EXERCICES TAXI",
+              10: "2. COURS ET EXERCICES TAXI", 39: "2. COURS ET EXERCICES TAXI",
+              20: "2. COURS ET EXERCICES TAXI", 21: "2. COURS ET EXERCICES TAXI",
+              22: "2. COURS ET EXERCICES TAXI", 23: "2. COURS ET EXERCICES TAXI", 24: "2. COURS ET EXERCICES TAXI",
               40: "2. COURS ET EXERCICES TA", 42: "2. COURS ET EXERCICES TA",
               41: "2. COURS ET EXERCICES VA", 43: "2. COURS ET EXERCICES VA",
             };

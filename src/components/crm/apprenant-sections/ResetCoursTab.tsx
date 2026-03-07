@@ -14,15 +14,15 @@ interface ResetCoursTabProps {
   queryClient: QueryClient;
 }
 
-const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 41, 42, 43, 50, 51, 52, 53, 60, 61, 62, 63]);
+const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 50, 51, 52, 53, 60, 61, 62, 63]);
 
 const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {
   "vtc": [1, 2, 3, 4, 35, 5, 8, 60, 50],
   "vtc-e-presentiel": [1, 2, 3, 4, 35, 5, 8, 60, 50],
   "vtc-e": [26, 2, 3, 4, 35, 5, 8, 60, 50],
-  "taxi": [1, 10, 7, 3, 9, 13, 11, 36, 6, 12, 61, 51],
-  "taxi-e-presentiel": [1, 10, 7, 3, 9, 13, 11, 36, 6, 12, 61, 51],
-  "taxi-e": [26, 10, 7, 3, 9, 13, 11, 36, 6, 12, 61, 51],
+  "taxi": [1, 10, 39, 7, 3, 9, 13, 11, 36, 6, 12, 61, 51],
+  "taxi-e-presentiel": [1, 10, 39, 7, 3, 9, 13, 11, 36, 6, 12, 61, 51],
+  "taxi-e": [26, 10, 39, 7, 3, 9, 13, 11, 36, 6, 12, 61, 51],
   "ta": [31, 40, 7, 3, 27, 28, 37, 6, 62, 52],
   "ta-e-presentiel": [31, 40, 7, 3, 27, 28, 37, 6, 62, 52],
   "ta-e": [32, 40, 7, 3, 27, 13, 28, 37, 6, 62, 52],
@@ -104,12 +104,13 @@ const FORMATION_LABELS: Record<string, Record<number, string>> = {
   },
   "taxi": {
     1: "1.INTRODUCTION PRÉSENTIEL",
-    10: "2.COURS ET EXERCICES TAXI",
-    20: "2a.COURS ET EXERCICES TAXI",
-    21: "2b.COURS ET EXERCICES TAXI",
-    22: "2c.COURS ET EXERCICES TAXI",
-    23: "2d.COURS ET EXERCICES TAXI",
-    24: "2e.COURS ET EXERCICES TAXI",
+    10: "2.COURS ET EXERCICES TAXI — A Partie 1",
+    39: "2a.COURS ET EXERCICES TAXI — A Partie 2",
+    20: "2b.COURS ET EXERCICES TAXI",
+    21: "2c.COURS ET EXERCICES TAXI",
+    22: "2d.COURS ET EXERCICES TAXI",
+    23: "2e.COURS ET EXERCICES TAXI",
+    24: "2f.COURS ET EXERCICES TAXI",
     7: "3.CONNAISSANCES DE LA VILLE TAXI",
     3: "4.FORMULES",
     9: "5.BILAN EXERCICES TAXI",
@@ -121,12 +122,13 @@ const FORMATION_LABELS: Record<string, Record<number, string>> = {
   },
   "taxi-e": {
     26: "1.INTRODUCTION E-LEARNING",
-    10: "2.COURS ET EXERCICES TAXI",
-    20: "2a.COURS ET EXERCICES TAXI",
-    21: "2b.COURS ET EXERCICES TAXI",
-    22: "2c.COURS ET EXERCICES TAXI",
-    23: "2d.COURS ET EXERCICES TAXI",
-    24: "2e.COURS ET EXERCICES TAXI",
+    10: "2.COURS ET EXERCICES TAXI — A Partie 1",
+    39: "2a.COURS ET EXERCICES TAXI — A Partie 2",
+    20: "2b.COURS ET EXERCICES TAXI",
+    21: "2c.COURS ET EXERCICES TAXI",
+    22: "2d.COURS ET EXERCICES TAXI",
+    23: "2e.COURS ET EXERCICES TAXI",
+    24: "2f.COURS ET EXERCICES TAXI",
     7: "3.CONNAISSANCES DE LA VILLE TAXI",
     3: "4.FORMULES",
     9: "5.BILAN EXERCICES TAXI",
