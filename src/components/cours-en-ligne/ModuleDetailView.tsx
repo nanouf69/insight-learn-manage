@@ -117,6 +117,16 @@ const INTRODUCTION_PRESENTIEL_DATA: ModuleData = {
   description: "Livret d'accueil pour les formations en présentiel : organisation de l'examen, programme, coefficients, CGV, règlement intérieur.",
   cours: [
     {
+      id: 0,
+      titre: "Test de competences avant formation",
+      description: "Avant le debut de la formation, merci de telecharger et remplir le test de competences correspondant a votre formation (VTC ou TAXI). Ce document permet d'evaluer votre niveau initial.",
+      actif: true,
+      fichiers: [
+        { nom: "Test de competences VTC", url: "/cours/vtc/Test_Competences_VTC.docx" },
+        { nom: "Test de competences TAXI", url: "/cours/vtc/Test_Competences_TAXI.docx" },
+      ],
+    },
+    {
       id: 1,
       titre: "Bienvenue sur la plateforme",
       description: `Cette plateforme est dédiée aux futurs chauffeurs VTC et TAXIS. Vous devez réussir deux épreuves pour obtenir votre carte de chauffeur VTC ou de chauffeur TAXI :
@@ -262,6 +272,16 @@ const INTRODUCTION_ELEARNING_DATA: ModuleData = {
   description: "Livret d'accueil pour les formations en e-learning : organisation de l'examen, programme, coefficients, CGV.",
   cours: [
     {
+      id: 0,
+      titre: "Test de competences avant formation",
+      description: "Avant le debut de la formation, merci de telecharger et remplir le test de competences correspondant a votre formation (VTC ou TAXI). Ce document permet d'evaluer votre niveau initial.",
+      actif: true,
+      fichiers: [
+        { nom: "Test de competences VTC", url: "/cours/vtc/Test_Competences_VTC.docx" },
+        { nom: "Test de competences TAXI", url: "/cours/vtc/Test_Competences_TAXI.docx" },
+      ],
+    },
+    {
       id: 1,
       titre: "Bienvenue sur la plateforme",
       description: `Cette plateforme est dédiée aux futurs chauffeurs VTC et TAXIS. Vous devez réussir deux épreuves pour obtenir votre carte de chauffeur VTC ou de chauffeur TAXI :
@@ -393,6 +413,15 @@ const INTRODUCTION_TA_PRESENTIEL_DATA: ModuleData = {
   description: "Livret d'accueil pour la formation passerelle TA (présentiel) : programme, planning, règlement intérieur.",
   cours: [
     {
+      id: 0,
+      titre: "Test de competences avant formation",
+      description: "Avant le debut de la formation passerelle TA, merci de telecharger et remplir le test de competences. Ce document permet d'evaluer votre niveau initial.",
+      actif: true,
+      fichiers: [
+        { nom: "Test de competences TA", url: "/cours/vtc/Test_Competences_TA.docx" },
+      ],
+    },
+    {
       id: 1,
       titre: "Bienvenue — Formation TAXI pour chauffeurs VTC",
       description: `Cette formation passerelle vous permet d'obtenir votre carte de chauffeur TAXI si vous êtes déjà titulaire de la carte VTC.
@@ -469,6 +498,15 @@ const INTRODUCTION_TA_ELEARNING_DATA: ModuleData = {
   description: "Livret d'accueil pour la formation passerelle TA (e-learning) : programme des 2 matières.",
   cours: [
     {
+      id: 0,
+      titre: "Test de competences avant formation",
+      description: "Avant le debut de la formation passerelle TA en e-learning, merci de telecharger et remplir le test de competences. Ce document permet d'evaluer votre niveau initial.",
+      actif: true,
+      fichiers: [
+        { nom: "Test de competences TA", url: "/cours/vtc/Test_Competences_TA.docx" },
+      ],
+    },
+    {
       id: 1,
       titre: "Bienvenue — Formation TAXI pour chauffeurs VTC (E-learning)",
       description: `Cette formation passerelle en e-learning vous permet d'obtenir votre carte de chauffeur TAXI si vous êtes déjà titulaire de la carte VTC.
@@ -525,6 +563,15 @@ const INTRODUCTION_VA_PRESENTIEL_DATA: ModuleData = {
   nom: "1.INTRODUCTION VA",
   description: "Livret d'accueil pour la formation passerelle VA (présentiel) : programme, planning, règlement intérieur.",
   cours: [
+    {
+      id: 0,
+      titre: "Test de competences avant formation",
+      description: "Avant le debut de la formation passerelle VA, merci de telecharger et remplir le test de competences. Ce document permet d'evaluer votre niveau initial.",
+      actif: true,
+      fichiers: [
+        { nom: "Test de competences VA", url: "/cours/vtc/Test_Competences_VA.docx" },
+      ],
+    },
     {
       id: 1,
       titre: "Bienvenue — Formation VTC pour chauffeurs TAXI",
@@ -596,6 +643,15 @@ const INTRODUCTION_VA_ELEARNING_DATA: ModuleData = {
   nom: "1.INTRODUCTION VA E-LEARNING",
   description: "Livret d'accueil pour la formation passerelle VA (e-learning) : programme des 2 matières.",
   cours: [
+    {
+      id: 0,
+      titre: "Test de competences avant formation",
+      description: "Avant le debut de la formation passerelle VA en e-learning, merci de telecharger et remplir le test de competences. Ce document permet d'evaluer votre niveau initial.",
+      actif: true,
+      fichiers: [
+        { nom: "Test de competences VA", url: "/cours/vtc/Test_Competences_VA.docx" },
+      ],
+    },
     {
       id: 1,
       titre: "Bienvenue — Formation VTC pour chauffeurs TAXI (E-learning)",
