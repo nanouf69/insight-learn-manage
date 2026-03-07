@@ -263,433 +263,69 @@ L'épreuve pratique comprend une phase de conduite en circulation d'une durée m
 
 // ===== Données initiales du module INTRODUCTION E-LEARNING =====
 const INTRODUCTION_ELEARNING_DATA: ModuleData = {
-  id: 26,
-  nom: "1.INTRODUCTION E-LEARNING",
-  description: "Livret d'accueil pour les formations en e-learning : organisation de l'examen, programme, coefficients, CGV.",
+  id: 26, nom: "1.INTRODUCTION E-LEARNING",
+  description: "Introduction pour les formations en e-learning.",
   cours: [
-    {
-      id: 0,
-      titre: "Test de competences avant formation",
-      description: "Avant le debut de la formation, merci de telecharger et remplir le test de competences correspondant a votre formation (VTC ou TAXI). Ce document permet d'evaluer votre niveau initial.",
-      actif: true,
-      fichiers: [
-        { nom: "Test de competences VTC", url: "/cours/vtc/Test_Competences_VTC.docx" },
-        { nom: "Test de competences TAXI", url: "/cours/vtc/Test_Competences_TAXI.docx" },
-      ],
-    },
-    {
-      id: 1,
-      titre: "Bienvenue sur la plateforme",
-      description: `Cette plateforme est dédiée aux futurs chauffeurs VTC et TAXIS. Vous devez réussir deux épreuves pour obtenir votre carte de chauffeur VTC ou de chauffeur TAXI :
-• L'épreuve d'admissibilité (théorie avec 7 matières) — minimum 10/20
-• L'épreuve d'admission (pratique) — minimum 12/20
-Le tout sans note éliminatoire.
-
-Vous avez à disposition : des cours, des exercices, des examens blancs et des bilans. L'accès à cette plateforme est limité. Réalisez bien le Bilan QCM examen et révisez bien les QRC examen : ce sont des questions type examen.`,
-      actif: true,
-    },
-    {
-      id: 2,
-      titre: "Informations importantes",
-      description: `💰 Frais d'examen en cas d'échec (toujours à votre charge) :
-• Examen théorique : environ 240€
-• Examen pratique : environ 200€
-
-📋 Les examens sont organisés par la Chambre des Métiers et de l'Artisanat. Vérifiez bien que vous êtes inscrit aux examens ; vous pouvez toujours nous contacter pour cela.
-
-📞 Merci de nous contacter le jour des résultats de l'examen théorique (épreuve d'admissibilité) et non le jour de réception de la convocation de l'épreuve d'admission.
-
-En nous contactant plus tard, le centre ne peut vous garantir un entraînement pratique Taxi/VTC et un véhicule pour l'épreuve d'admission (pratique).`,
-      actif: true,
-    },
-    {
-      id: 3,
-      titre: "Contenu de l'examen — Épreuves communes",
-      description: `L'examen se compose d'épreuves théoriques d'admissibilité (QCM + QRC) et d'une épreuve pratique d'admission.
-
-📝 ÉPREUVES COMMUNES TAXI & VTC :
-
-A — Réglementation T3P et prévention des discriminations
-   Durée : 45 min | Note sur 20 | Coeff. 3 | Éliminatoire : 6/20
-
-B — Gestion et développement commercial
-   Durée : 45 min | Note sur 20 | Coeff. 2 | Éliminatoire : 6/20
-
-C — Sécurité routière
-   Durée : 30 min | Note sur 20 | Coeff. 3 | Éliminatoire : 6/20
-
-D — Français (expression et compréhension)
-   Durée : 30 min | Note sur 20 | Coeff. 2 | Éliminatoire : 6/20
-   ⚠️ -1 point toutes les 5 fautes d'orthographe sur les QRC
-
-E — Anglais (expression et compréhension)
-   Durée : 30 min | Note sur 20 | Coeff. 1 | Éliminatoire : 4/20`,
-      actif: true,
-    },
-    {
-      id: 4,
-      titre: "Épreuves spécifiques VTC & TAXI",
-      description: `📝 ÉPREUVES SPÉCIFIQUES VTC :
-F(V) — Développement commercial et gestion VTC
-   Durée : 30 min | Note sur 20 | Coeff. 3 | Éliminatoire : 6/20
-G(V) — Réglementation nationale spécifique VTC
-   Durée : 20 min | Note sur 20 | Coeff. 3 | Éliminatoire : 6/20
-
-📝 ÉPREUVES SPÉCIFIQUES TAXI :
-F(T) — Connaissance du territoire et réglementation locale
-   Durée : 30 min | Note sur 20 | Coeff. 3 | Éliminatoire : 6/20
-G(T) — Réglementation nationale TAXI et gestion
-   Durée : 20 min | Note sur 20 | Coeff. 3 | Éliminatoire : 6/20
-
-✅ CONDITIONS D'ADMISSIBILITÉ :
-• Moyenne ≥ 10/20 (pondérée des coefficients)
-• Aucune note éliminatoire
-
-Un candidat admissible peut se présenter 3 fois à l'épreuve pratique dans un délai d'1 an.`,
-      actif: true,
-    },
-    {
-      id: 5,
-      titre: "L'épreuve d'admission (pratique)",
-      description: `Après chaque session d'admissibilité, une session d'admission est organisée dans un délai maximum de 2 mois.
-
-L'épreuve pratique comprend une phase de conduite en circulation d'une durée minimum de 20 minutes, notée sur 20 points.
-
-📌 Note minimale requise : 12/20`,
-      actif: true,
-    },
-    {
-      id: 6,
-      titre: "Contact et informations pratiques",
-      description: `🏢 FTRANSPORT — Centre de formation
-86 Route de Genas, 69003 Lyon
-
-📞 Tel : 04 28 29 60 91
-📧 Email : contact@ftransport.fr
-
-📌 Prérequis : savoir lire et écrire, casier B2 vierge.`,
-      actif: true,
-    },
-    {
-      id: 7,
-      titre: "Livret d'accueil complet (PDF)",
-      description: "Téléchargez le livret d'accueil complet au format PDF pour la formation en e-learning.",
-      actif: true,
-      fichiers: [
-        { nom: "Livret d'accueil E-learning", url: "/cours/vtc/INTRODUCTION_elearning.docx" },
-      ],
-    },
+    { id: 0, titre: "Test de compétences avant formation", description: "Répondez aux questions en cochant Oui ou Non.", actif: true, checklistType: "competences" },
+    { id: 100, titre: "Analyse du besoin – Fiche client", description: "Complétez cette fiche.", actif: true, checklistType: "analyse-besoin" },
+    { id: 1, titre: "Bienvenue sur la plateforme", description: "Cette plateforme est dédiée aux futurs chauffeurs VTC et TAXIS. Vous devez réussir deux épreuves :\n• L'épreuve d'admissibilité (théorie avec 7 matières) — minimum 10/20\n• L'épreuve d'admission (pratique) — minimum 12/20\nLe tout sans note éliminatoire.", actif: true },
+    { id: 2, titre: "Informations importantes", description: "💰 Frais d'examen en cas d'échec (à votre charge) :\n• Examen théorique : environ 240€\n• Examen pratique : environ 200€\n\n📋 Les examens sont organisés par la CMA.\n📞 Contactez-nous le jour des résultats de l'examen théorique.", actif: true },
+    { id: 3, titre: "Contenu de l'examen", description: "📝 ÉPREUVES COMMUNES :\nA — Réglementation T3P (45 min, coeff. 3)\nB — Gestion (45 min, coeff. 2)\nC — Sécurité routière (30 min, coeff. 3)\nD — Français (30 min, coeff. 2)\nE — Anglais (30 min, coeff. 1)", actif: true },
+    { id: 4, titre: "Épreuves spécifiques", description: "📝 VTC : F(V) Développement commercial (coeff. 3) + G(V) Réglementation VTC (coeff. 3)\n📝 TAXI : F(T) Territoire et réglementation locale (coeff. 3) + G(T) Réglementation TAXI (coeff. 3)\n\n✅ Moyenne ≥ 10/20, aucune note éliminatoire.", actif: true },
+    { id: 5, titre: "L'épreuve pratique", description: "Conduite en circulation, durée minimum 20 minutes.\n📌 Note minimale requise : 12/20", actif: true },
+    { id: 6, titre: "Contact", description: "🏢 FTRANSPORT — 86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91\n📧 contact@ftransport.fr", actif: true },
   ],
   exercices: [
-    {
-      id: 1,
-      titre: "Quiz Introduction",
-      sousTitre: "Vérifiez vos connaissances sur l'examen",
-      actif: true,
-      questions: [
-        { id: 1, enonce: "Quelle note minimale faut-il obtenir à l'épreuve théorique (admissibilité) ?", choix: [{ lettre: "A", texte: "8/20" }, { lettre: "B", texte: "10/20", correct: true }, { lettre: "C", texte: "12/20" }, { lettre: "D", texte: "14/20" }] },
-        { id: 2, enonce: "Quelle note minimale faut-il obtenir à l'épreuve pratique (admission) ?", choix: [{ lettre: "A", texte: "10/20" }, { lettre: "B", texte: "11/20" }, { lettre: "C", texte: "12/20", correct: true }, { lettre: "D", texte: "14/20" }] },
-        { id: 3, enonce: "Combien de matières comporte l'épreuve théorique ?", choix: [{ lettre: "A", texte: "5 matières" }, { lettre: "B", texte: "6 matières" }, { lettre: "C", texte: "7 matières", correct: true }, { lettre: "D", texte: "8 matières" }] },
-        { id: 4, enonce: "Quelle est la durée de l'épreuve A (Réglementation T3P) ?", choix: [{ lettre: "A", texte: "20 minutes" }, { lettre: "B", texte: "30 minutes" }, { lettre: "C", texte: "45 minutes", correct: true }, { lettre: "D", texte: "60 minutes" }] },
-        { id: 5, enonce: "En cas d'échec à l'examen théorique, quel est le coût approximatif des frais d'examen ?", choix: [{ lettre: "A", texte: "150€" }, { lettre: "B", texte: "240€", correct: true }, { lettre: "C", texte: "300€" }, { lettre: "D", texte: "180€" }] },
-        { id: 6, enonce: "Pour l'épreuve de Français (D), combien de fautes d'orthographe entraînent une pénalité de -1 point ?", choix: [{ lettre: "A", texte: "3 fautes" }, { lettre: "B", texte: "5 fautes", correct: true }, { lettre: "C", texte: "10 fautes" }, { lettre: "D", texte: "Aucune pénalité" }] },
-        { id: 7, enonce: "Combien de fois un candidat admissible peut-il se présenter à l'épreuve pratique ?", choix: [{ lettre: "A", texte: "1 fois" }, { lettre: "B", texte: "2 fois" }, { lettre: "C", texte: "3 fois", correct: true }, { lettre: "D", texte: "Illimité" }] },
-        { id: 8, enonce: "Quelle est la note éliminatoire pour l'épreuve d'Anglais (E) ?", choix: [{ lettre: "A", texte: "4/20", correct: true }, { lettre: "B", texte: "6/20" }, { lettre: "C", texte: "8/20" }, { lettre: "D", texte: "10/20" }] },
-        { id: 9, enonce: "Quelle est la durée minimale de la phase de conduite lors de l'épreuve pratique ?", choix: [{ lettre: "A", texte: "10 minutes" }, { lettre: "B", texte: "15 minutes" }, { lettre: "C", texte: "20 minutes", correct: true }, { lettre: "D", texte: "30 minutes" }] },
-        { id: 10, enonce: "Quel est le coefficient de l'épreuve C (Sécurité routière) ?", choix: [{ lettre: "A", texte: "1" }, { lettre: "B", texte: "2" }, { lettre: "C", texte: "3", correct: true }, { lettre: "D", texte: "4" }] },
-      ],
-    },
+    { id: 1, titre: "Quiz Introduction", sousTitre: "Vérifiez vos connaissances", actif: true, questions: [
+      { id: 1, enonce: "Note minimale épreuve théorique ?", choix: [{ lettre: "A", texte: "8/20" }, { lettre: "B", texte: "10/20", correct: true }, { lettre: "C", texte: "12/20" }] },
+      { id: 2, enonce: "Note minimale épreuve pratique ?", choix: [{ lettre: "A", texte: "10/20" }, { lettre: "B", texte: "12/20", correct: true }, { lettre: "C", texte: "14/20" }] },
+      { id: 3, enonce: "Nombre de matières ?", choix: [{ lettre: "A", texte: "5" }, { lettre: "B", texte: "7", correct: true }, { lettre: "C", texte: "8" }] },
+    ] },
   ],
 };
-
 // ===== Introduction TA Présentiel (ID 31) =====
 const INTRODUCTION_TA_PRESENTIEL_DATA: ModuleData = {
-  id: 31,
-  nom: "1.INTRODUCTION TA",
-  description: "Livret d'accueil pour la formation passerelle TA (présentiel) : programme, planning, règlement intérieur.",
+  id: 31, nom: "1.INTRODUCTION TA", description: "Introduction passerelle TA (présentiel).",
   cours: [
-    {
-      id: 0,
-      titre: "Test de competences avant formation",
-      description: "Avant le debut de la formation passerelle TA, merci de telecharger et remplir le test de competences. Ce document permet d'evaluer votre niveau initial.",
-      actif: true,
-      fichiers: [
-        { nom: "Test de competences TA", url: "/cours/vtc/Test_Competences_TA.docx" },
-      ],
-    },
-    {
-      id: 1,
-      titre: "Bienvenue — Formation TAXI pour chauffeurs VTC",
-      description: `Cette formation passerelle vous permet d'obtenir votre carte de chauffeur TAXI si vous êtes déjà titulaire de la carte VTC.
-
-L'examen comporte 2 matières spécifiques :
-• Réglementation nationale TAXI
-• Réglementation locale`,
-      actif: true,
-    },
-    {
-      id: 2,
-      titre: "Programme — Réglementation nationale",
-      description: `📝 RÉGLEMENTATION NATIONALE TAXI :
-
-• Connaître le fonctionnement des équipements spéciaux obligatoires et du terminal de paiement électronique
-• Connaître l'articulation entre les réglementations nationales et locales
-• Connaître les régimes d'autorisation de stationnement
-• Connaître les règles de tarification d'une course de Taxi
-• Connaître les activités complémentaires ouvertes aux taxis : services réguliers de transport, transport assis professionnalisé
-• Connaître les règles de détaxation partielle de la TICPE
-• Connaître la réglementation relative à la taxe de stationnement
-• Connaître le territoire d'exercice de l'activité
-• Connaître le règlement local en vigueur`,
-      actif: true,
-    },
-    {
-      id: 3,
-      titre: "Programme — Réglementation locale",
-      description: `📝 RÉGLEMENTATION LOCALE (spécifique TAXI) :
-
-Connaître le territoire d'exercice de l'activité :
-• Les principaux lieux, sites, bâtiments publics
-• Les principaux axes routiers
-• Connaître le règlement local en vigueur`,
-      actif: true,
-    },
-    {
-      id: 4,
-      titre: "Planning de formation",
-      description: `🏢 FTRANSPORT — Centre de formation
-86 Route de Genas, 69003 Lyon
-
-📞 Tel : 04 28 29 60 91
-📧 Email : contact@ftransport.fr
-
-⏰ Horaires de formation : 9h-12h et 13h-17h
-
-Le planning détaillé vous sera communiqué en début de formation.`,
-      actif: true,
-    },
-    {
-      id: 5,
-      titre: "Règlement intérieur",
-      description: `📋 RÈGLEMENT INTÉRIEUR :
-
-• Ponctualité obligatoire — toute absence doit être signalée
-• Tenue correcte exigée
-• Interdiction d'utiliser le téléphone pendant les cours
-• Respect des locaux et du matériel
-• Respect mutuel entre stagiaires et formateurs
-• Toute forme de discrimination est interdite
-
-Le règlement intérieur complet est disponible en téléchargement.`,
-      actif: true,
-    },
+    { id: 0, titre: "Test de compétences avant formation", description: "Répondez aux questions.", actif: true, checklistType: "competences" },
+    { id: 100, titre: "Analyse du besoin – Fiche client", description: "Complétez cette fiche.", actif: true, checklistType: "analyse-besoin" },
+    { id: 1, titre: "Bienvenue — Passerelle TA", description: "Cette formation passerelle vous permet d'obtenir votre carte TAXI.\n\n2 matières : Réglementation nationale TAXI + Réglementation locale", actif: true },
+    { id: 2, titre: "Programme", description: "📝 Réglementation nationale TAXI + Réglementation locale", actif: true },
+    { id: 3, titre: "Planning et contact", description: "🏢 FTRANSPORT — 86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91\n⏰ 9h-12h / 13h-17h", actif: true },
   ],
   exercices: [],
 };
-
 // ===== Introduction TA E-Learning (ID 32) =====
 const INTRODUCTION_TA_ELEARNING_DATA: ModuleData = {
-  id: 32,
-  nom: "1.INTRODUCTION TA E-LEARNING",
-  description: "Livret d'accueil pour la formation passerelle TA (e-learning) : programme des 2 matières.",
+  id: 32, nom: "1.INTRODUCTION TA E-LEARNING", description: "Introduction passerelle TA (e-learning).",
   cours: [
-    {
-      id: 0,
-      titre: "Test de competences avant formation",
-      description: "Avant le debut de la formation passerelle TA en e-learning, merci de telecharger et remplir le test de competences. Ce document permet d'evaluer votre niveau initial.",
-      actif: true,
-      fichiers: [
-        { nom: "Test de competences TA", url: "/cours/vtc/Test_Competences_TA.docx" },
-      ],
-    },
-    {
-      id: 1,
-      titre: "Bienvenue — Formation TAXI pour chauffeurs VTC (E-learning)",
-      description: `Cette formation passerelle en e-learning vous permet d'obtenir votre carte de chauffeur TAXI si vous êtes déjà titulaire de la carte VTC.
-
-L'examen comporte 2 matières spécifiques :
-• Réglementation nationale TAXI
-• Réglementation locale`,
-      actif: true,
-    },
-    {
-      id: 2,
-      titre: "Programme — Réglementation nationale",
-      description: `📝 RÉGLEMENTATION NATIONALE TAXI :
-
-• Connaître le fonctionnement des équipements spéciaux obligatoires et du terminal de paiement électronique
-• Connaître l'articulation entre les réglementations nationales et locales
-• Connaître les régimes d'autorisation de stationnement
-• Connaître les règles de tarification d'une course de Taxi
-• Connaître les activités complémentaires ouvertes aux taxis : services réguliers de transport, transport assis professionnalisé
-• Connaître les règles de détaxation partielle de la TICPE
-• Connaître la réglementation relative à la taxe de stationnement
-• Connaître le territoire d'exercice de l'activité
-• Connaître le règlement local en vigueur`,
-      actif: true,
-    },
-    {
-      id: 3,
-      titre: "Programme — Réglementation locale",
-      description: `📝 RÉGLEMENTATION LOCALE (spécifique TAXI) :
-
-Connaître le territoire d'exercice de l'activité :
-• Les principaux lieux, sites, bâtiments publics
-• Les principaux axes routiers
-• Connaître le règlement local en vigueur`,
-      actif: true,
-    },
-    {
-      id: 4,
-      titre: "Contact",
-      description: `🏢 FTRANSPORT — Centre de formation
-86 Route de Genas, 69003 Lyon
-
-📞 Tel : 04 28 29 60 91
-📧 Email : contact@ftransport.fr`,
-      actif: true,
-    },
+    { id: 0, titre: "Test de compétences avant formation", description: "Répondez aux questions.", actif: true, checklistType: "competences" },
+    { id: 100, titre: "Analyse du besoin – Fiche client", description: "Complétez cette fiche.", actif: true, checklistType: "analyse-besoin" },
+    { id: 1, titre: "Bienvenue — Passerelle TA (E-learning)", description: "Formation passerelle TAXI en e-learning.\n\n2 matières : Réglementation nationale TAXI + Réglementation locale", actif: true },
+    { id: 2, titre: "Contact", description: "🏢 FTRANSPORT — 86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91\n📧 contact@ftransport.fr", actif: true },
   ],
   exercices: [],
 };
-
 // ===== Introduction VA Présentiel (ID 33) =====
 const INTRODUCTION_VA_PRESENTIEL_DATA: ModuleData = {
-  id: 33,
-  nom: "1.INTRODUCTION VA",
-  description: "Livret d'accueil pour la formation passerelle VA (présentiel) : programme, planning, règlement intérieur.",
+  id: 33, nom: "1.INTRODUCTION VA", description: "Introduction passerelle VA (présentiel).",
   cours: [
-    {
-      id: 0,
-      titre: "Test de competences avant formation",
-      description: "Avant le debut de la formation passerelle VA, merci de telecharger et remplir le test de competences. Ce document permet d'evaluer votre niveau initial.",
-      actif: true,
-      fichiers: [
-        { nom: "Test de competences VA", url: "/cours/vtc/Test_Competences_VA.docx" },
-      ],
-    },
-    {
-      id: 1,
-      titre: "Bienvenue — Formation VTC pour chauffeurs TAXI",
-      description: `Cette formation passerelle vous permet d'obtenir votre carte de chauffeur VTC si vous êtes déjà titulaire de la carte TAXI.
-
-L'examen comporte 2 matières spécifiques :
-• Développement Commercial
-• Réglementation spécifique VTC`,
-      actif: true,
-    },
-    {
-      id: 2,
-      titre: "Programme — Développement Commercial",
-      description: `📝 DÉVELOPPEMENT COMMERCIAL :
-
-• Connaître et comprendre les principes généraux du marketing (analyse de marché, ciblage de l'offre, compétitivité, détermination du prix...)
-• Savoir valoriser les qualités de la prestation commerciale VTC
-• Savoir fidéliser ses clients et prospecter pour en obtenir d'autres
-• Savoir mener des actions de communication pour faire connaître son entreprise, notamment par internet et les moyens numériques
-• Savoir développer un réseau de partenaires favorisant l'accès à la clientèle (hôtels, entreprises...)`,
-      actif: true,
-    },
-    {
-      id: 3,
-      titre: "Programme — Réglementation spécifique VTC",
-      description: `📝 RÉGLEMENTATION SPÉCIFIQUE VTC :
-
-• Connaître les dispositions relatives aux exploitants : les modalités d'inscription au registre des VTC, les règles relatives à la capacité financière…
-• Connaître les obligations spécifiques relatives aux véhicules d'exploitation (dimensions, puissance, âge...) et connaître leur signalisation
-• Savoir établir les documents relatifs à l'exécution de la prestation de transport qui doivent être présentés en cas de contrôle`,
-      actif: true,
-    },
-    {
-      id: 4,
-      titre: "Planning de formation",
-      description: `🏢 FTRANSPORT — Centre de formation
-86 Route de Genas, 69003 Lyon
-
-📞 Tel : 04 28 29 60 91
-📧 Email : contact@ftransport.fr
-
-⏰ Horaires de formation : 9h-12h et 13h-17h
-
-Le planning détaillé vous sera communiqué en début de formation.`,
-      actif: true,
-    },
-    {
-      id: 5,
-      titre: "Règlement intérieur",
-      description: `📋 RÈGLEMENT INTÉRIEUR :
-
-• Ponctualité obligatoire — toute absence doit être signalée
-• Tenue correcte exigée
-• Interdiction d'utiliser le téléphone pendant les cours
-• Respect des locaux et du matériel
-• Respect mutuel entre stagiaires et formateurs
-• Toute forme de discrimination est interdite
-
-Le règlement intérieur complet est disponible en téléchargement.`,
-      actif: true,
-    },
+    { id: 0, titre: "Test de compétences avant formation", description: "Répondez aux questions.", actif: true, checklistType: "competences" },
+    { id: 100, titre: "Analyse du besoin – Fiche client", description: "Complétez cette fiche.", actif: true, checklistType: "analyse-besoin" },
+    { id: 1, titre: "Bienvenue — Passerelle VA", description: "Cette formation passerelle vous permet d'obtenir votre carte VTC.\n\n2 matières : Développement Commercial + Réglementation spécifique VTC", actif: true },
+    { id: 2, titre: "Programme", description: "📝 Développement Commercial + Réglementation spécifique VTC", actif: true },
+    { id: 3, titre: "Planning et contact", description: "🏢 FTRANSPORT — 86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91\n⏰ 9h-12h / 13h-17h", actif: true },
   ],
   exercices: [],
 };
-
 // ===== Introduction VA E-Learning (ID 34) =====
 const INTRODUCTION_VA_ELEARNING_DATA: ModuleData = {
-  id: 34,
-  nom: "1.INTRODUCTION VA E-LEARNING",
-  description: "Livret d'accueil pour la formation passerelle VA (e-learning) : programme des 2 matières.",
+  id: 34, nom: "1.INTRODUCTION VA E-LEARNING", description: "Introduction passerelle VA (e-learning).",
   cours: [
-    {
-      id: 0,
-      titre: "Test de competences avant formation",
-      description: "Avant le debut de la formation passerelle VA en e-learning, merci de telecharger et remplir le test de competences. Ce document permet d'evaluer votre niveau initial.",
-      actif: true,
-      fichiers: [
-        { nom: "Test de competences VA", url: "/cours/vtc/Test_Competences_VA.docx" },
-      ],
-    },
-    {
-      id: 1,
-      titre: "Bienvenue — Formation VTC pour chauffeurs TAXI (E-learning)",
-      description: `Cette formation passerelle en e-learning vous permet d'obtenir votre carte de chauffeur VTC si vous êtes déjà titulaire de la carte TAXI.
-
-L'examen comporte 2 matières spécifiques :
-• Développement Commercial
-• Réglementation spécifique VTC`,
-      actif: true,
-    },
-    {
-      id: 2,
-      titre: "Programme — Développement Commercial",
-      description: `📝 DÉVELOPPEMENT COMMERCIAL :
-
-• Connaître et comprendre les principes généraux du marketing (analyse de marché, ciblage de l'offre, compétitivité, détermination du prix...)
-• Savoir valoriser les qualités de la prestation commerciale VTC
-• Savoir fidéliser ses clients et prospecter pour en obtenir d'autres
-• Savoir mener des actions de communication pour faire connaître son entreprise, notamment par internet et les moyens numériques
-• Savoir développer un réseau de partenaires favorisant l'accès à la clientèle (hôtels, entreprises...)`,
-      actif: true,
-    },
-    {
-      id: 3,
-      titre: "Programme — Réglementation spécifique VTC",
-      description: `📝 RÉGLEMENTATION SPÉCIFIQUE VTC :
-
-• Connaître les dispositions relatives aux exploitants : les modalités d'inscription au registre des VTC, les règles relatives à la capacité financière…
-• Connaître les obligations spécifiques relatives aux véhicules d'exploitation (dimensions, puissance, âge...) et connaître leur signalisation
-• Savoir établir les documents relatifs à l'exécution de la prestation de transport qui doivent être présentés en cas de contrôle`,
-      actif: true,
-    },
-    {
-      id: 4,
-      titre: "Contact",
-      description: `🏢 FTRANSPORT — Centre de formation
-86 Route de Genas, 69003 Lyon
-
-📞 Tel : 04 28 29 60 91
-📧 Email : contact@ftransport.fr`,
-      actif: true,
-    },
+    { id: 0, titre: "Test de compétences avant formation", description: "Répondez aux questions.", actif: true, checklistType: "competences" },
+    { id: 100, titre: "Analyse du besoin – Fiche client", description: "Complétez cette fiche.", actif: true, checklistType: "analyse-besoin" },
+    { id: 1, titre: "Bienvenue — Passerelle VA (E-learning)", description: "Formation passerelle VTC en e-learning.\n\n2 matières : Développement Commercial + Réglementation spécifique VTC", actif: true },
+    { id: 2, titre: "Contact", description: "🏢 FTRANSPORT — 86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91\n📧 contact@ftransport.fr", actif: true },
   ],
   exercices: [],
 };
