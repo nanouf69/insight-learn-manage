@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings, Download, FileText, Upload, Loader2, ZoomIn, ZoomOut, RotateCcw, Maximize, Users, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings, Download, FileText, Upload, Loader2, ZoomIn, ZoomOut, RotateCcw, Maximize, Users, ChevronDown, ChevronUp, Lock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
@@ -2512,16 +2512,100 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     }
 
     return (
-      <div className="space-y-6 max-w-3xl mx-auto">
-        {/* Header with progress */}
+      <div className="flex gap-6 max-w-5xl mx-auto">
+        {/* Vertical progress sidebar */}
+        <div className="hidden md:block shrink-0 w-56 sticky top-4 self-start">
+          <div className="rounded-xl border bg-card shadow-sm p-4 space-y-1">
+            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Progression</h3>
+            <div className="space-y-0.5">
+              {pages.map((p, i) => {
+                const unlocked = isPageUnlocked(i);
+                const isCurrent = i === currentPage;
+                const isCompleted = completedPages.has(i);
+                const label = p.type === "cours"
+                  ? p.cours.titre
+                  : p.type === "exercice-single"
+                    ? `📝 ${p.exercice.titre}`
+                    : "📝 Exercices";
+
+                return (
+                  <div key={i} className="flex items-start gap-2">
+                    {/* Vertical line + dot */}
+                    <div className="flex flex-col items-center shrink-0">
+                      <button
+                        onClick={() => unlocked && goToPage(i)}
+                        disabled={!unlocked}
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${
+                          isCurrent
+                            ? "border-primary bg-primary text-primary-foreground scale-110"
+                            : isCompleted
+                              ? "border-emerald-500 bg-emerald-500 text-white"
+                              : unlocked
+                                ? "border-muted-foreground/30 bg-background hover:border-primary/50"
+                                : "border-muted/50 bg-muted/30 cursor-not-allowed"
+                        }`}
+                      >
+                        {isCompleted && !isCurrent && (
+                          <CheckCircle2 className="w-3 h-3" />
+                        )}
+                        {isCurrent && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-current" />
+                        )}
+                        {!unlocked && !isCompleted && !isCurrent && (
+                          <Lock className="w-2.5 h-2.5 text-muted-foreground/50" />
+                        )}
+                      </button>
+                      {i < pages.length - 1 && (
+                        <div className={`w-0.5 h-6 ${isCompleted ? "bg-emerald-400" : "bg-muted"}`} />
+                      )}
+                    </div>
+                    {/* Label */}
+                    <button
+                      onClick={() => unlocked && goToPage(i)}
+                      disabled={!unlocked}
+                      className={`text-left text-xs leading-tight pt-0.5 transition-colors ${
+                        isCurrent
+                          ? "font-bold text-primary"
+                          : isCompleted
+                            ? "text-emerald-600 font-medium"
+                            : unlocked
+                              ? "text-muted-foreground hover:text-foreground"
+                              : "text-muted-foreground/40 cursor-not-allowed"
+                      }`}
+                    >
+                      <span className="line-clamp-2">{label}</span>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Progress percentage */}
+            <div className="pt-3 mt-2 border-t">
+              <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                <span>Avancement</span>
+                <span className="font-bold text-primary">{progressPercent}%</span>
+              </div>
+              <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500 ease-out"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main content */}
+        <div className="flex-1 min-w-0 space-y-6">
+        {/* Header */}
         <div className="space-y-3">
           <div className="text-center space-y-1">
             <h2 className="text-2xl font-bold">{moduleData.nom}</h2>
             <p className="text-muted-foreground text-sm">{moduleData.description}</p>
           </div>
 
-          {/* Progress bar */}
-          <div className="space-y-2">
+          {/* Mobile progress bar (hidden on desktop where sidebar shows) */}
+          <div className="md:hidden space-y-2">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>
                 {currentPageData?.type === "cours" ? "📚 Cours" : "📝 Exercices"} — {currentPage + 1} / {totalPages}
@@ -2534,7 +2618,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
-            {/* Page dots */}
             <div className="flex items-center justify-center gap-1.5 pt-1 flex-wrap">
               {pages.map((p, i) => {
                 const unlocked = isPageUnlocked(i);
@@ -2651,6 +2734,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               <CheckCircle2 className="w-4 h-4" /> Terminé
             </Button>
           )}
+        </div>
         </div>
       </div>
     );
