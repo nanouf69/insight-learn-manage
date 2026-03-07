@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -740,11 +740,7 @@ function getInitialModuleData(
 
   // VTC sub-modules (matières A-G, anciennement module 2)
   if (module.id === 2) {
-    if (!studentOnly) return JSON.parse(JSON.stringify(VTC_COURS_DATA));
-    return createSectionModuleData(2, "A. Réglementation T3P — Partie 1", "Cours et exercices T3P — Partie 1", {
-      cours: VTC_SECTIONS[0].cours.slice(0, 1),
-      exercices: VTC_SECTIONS[0].exercices.slice(0, 1),
-    });
+    return JSON.parse(JSON.stringify(VTC_COURS_DATA));
   }
   if (module.id === 25) {
     return createSectionModuleData(25, "A. Réglementation T3P — Partie 2", "Cours et exercices T3P — Partie 2", {
@@ -761,11 +757,7 @@ function getInitialModuleData(
 
   // TAXI sub-modules (matières A-F, anciennement module 10)
   if (module.id === 10) {
-    if (!studentOnly) return JSON.parse(JSON.stringify(TAXI_COURS_DATA));
-    return createSectionModuleData(10, "A. Réglementation T3P — Partie 1", "Cours et exercices T3P — Partie 1 (TAXI)", {
-      cours: TAXI_SECTIONS[0].cours.slice(0, 1),
-      exercices: TAXI_SECTIONS[0].exercices.slice(0, 1),
-    });
+    return JSON.parse(JSON.stringify(TAXI_COURS_DATA));
   }
   if (module.id === 39) {
     return createSectionModuleData(39, "A. Réglementation T3P — Partie 2", "Cours et exercices T3P — Partie 2 (TAXI)", {
