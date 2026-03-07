@@ -1790,6 +1790,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }
     };
 
+  // VA (Passerelle VTC) — module 41 = Développement Commercial + Réglementation Spécifique VTC
+  if (module.id === 41) return createSectionModuleData(41, "Cours et Exercices VA", "Développement Commercial et Réglementation Spécifique VTC — passerelle VA", {
+    cours: [...VTC_SECTIONS[6].cours, ...VTC_SECTIONS[5].cours.filter(c => c.id === 6003)],
+    exercices: [...VTC_SECTIONS[6].exercices, ...(VTC_SECTIONS[5].exercices.filter(e => 'titre' in e && (e as any).titre?.includes("Spécifique")))],
+  });
+
 
     // Introduction module IDs that require acknowledgment before quiz
     const INTRO_MODULE_IDS = new Set([1, 26, 31, 32, 33, 34]);
