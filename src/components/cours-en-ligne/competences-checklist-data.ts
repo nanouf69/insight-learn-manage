@@ -248,9 +248,9 @@ export const COMPETENCES_VA: CompetencesData = {
 // Helper: get competences data by formation type
 export function getCompetencesForFormation(formationType: string | null | undefined): CompetencesData {
   if (!formationType) return COMPETENCES_VTC;
-  const ft = formationType.toLowerCase();
-  if (ft.includes("taxi-pour-vtc") || ft.includes("ta")) return COMPETENCES_TA;
-  if (ft.includes("vtc-pour-taxi") || ft.includes("va")) return COMPETENCES_VA;
-  if (ft.includes("taxi")) return COMPETENCES_TAXI;
+  const ft = formationType.replace(/-E$/i, "").trim().toUpperCase();
+  if (ft === "TA" || ft.includes("TAXI-POUR-VTC")) return COMPETENCES_TA;
+  if (ft === "VA" || ft.includes("VTC-POUR-TAXI")) return COMPETENCES_VA;
+  if (ft === "TAXI" || ft.includes("TAXI")) return COMPETENCES_TAXI;
   return COMPETENCES_VTC;
 }
