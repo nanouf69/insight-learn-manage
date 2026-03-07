@@ -660,20 +660,26 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         </DialogContent>
       </Dialog>
 
-      {/* Top navbar */}
-      <nav className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-lg">
-        <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-1">
-            {(["accueil", "examens", "notes"] as const).map((tab) => (
-              <button
-                key={tab}
-                className={`px-4 py-2 text-sm rounded-lg transition-all ${activeTab === tab ? "font-bold text-white bg-white/15 shadow-inner" : "hover:bg-white/10 text-slate-400 hover:text-white"}`}
-                onClick={() => setActiveTab(tab)}
-              >
-                {tab === "accueil" ? "🏠 Accueil" : tab === "examens" ? "📝 Examens" : "📊 Notes"}
-              </button>
-            ))}
-          </div>
+       {/* Top navbar */}
+       <nav className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-lg">
+         <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
+           <div className="flex items-center gap-1">
+             {(["accueil", "examens", "notes"] as const).map((tab) => (
+               <button
+                 key={tab}
+                 className={`px-4 py-2 text-sm rounded-lg transition-all ${activeTab === tab ? "font-bold text-white bg-white/15 shadow-inner" : "hover:bg-white/10 text-slate-400 hover:text-white"}`}
+                 onClick={() => setActiveTab(tab)}
+               >
+                 {tab === "accueil" ? "🏠 Accueil" : tab === "examens" ? "📝 Examens" : "📊 Notes"}
+               </button>
+             ))}
+             <a
+               href="/"
+               className="px-4 py-2 text-sm rounded-lg transition-all hover:bg-white/10 text-slate-400 hover:text-white flex items-center gap-1"
+             >
+               ← Retour
+             </a>
+           </div>
           {!embedded && (
             <div className="flex items-center gap-2">
               <ChangePasswordDialog />
