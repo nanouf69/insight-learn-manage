@@ -54,6 +54,8 @@ import { BILAN_EXAMEN_VTC } from "./bilan-examen-vtc-data";
 import { BILAN_EXAMEN_TAXI } from "./bilan-examen-taxi-data";
 import CompetencesChecklist from "./CompetencesChecklist";
 import AnalyseBesoinForm from "./AnalyseBesoinForm";
+import EvaluationAcquisForm from "./EvaluationAcquisForm";
+import SatisfactionForm from "./SatisfactionForm";
 import { getCompetencesForFormation } from "./competences-checklist-data";
 
 interface InlineQuizQuestion {
@@ -73,7 +75,8 @@ interface ContentItem {
   fichiers?: { nom: string; url: string }[];
   slidesKey?: string;
   quiz?: InlineQuizQuestion[];
-  checklistType?: "competences" | "analyse-besoin";
+  checklistType?: "competences" | "analyse-besoin" | "evaluation-acquis" | "satisfaction";
+  formationType?: string;
 }
 
 interface ExerciceChoix {
@@ -839,105 +842,23 @@ Un texte inférieur ne peut jamais contredire un texte supérieur.`,
     };
   }
 
-  // === Fin de formation VTC ===
-  if (module.id === 50) {
-    return {
-      id: 50,
-      nom: "📋 FIN DE FORMATION VTC",
-      description: "Félicitations ! Vous avez terminé l'ensemble des modules de la formation VTC. Merci de télécharger, remplir et renvoyer les deux documents ci-dessous.",
-      cours: [
-        {
-          id: 1,
-          titre: "Évaluation des acquis",
-          description: "Ce document permet d'évaluer les compétences acquises au cours de la formation VTC. Merci de le remplir et de le renvoyer à votre formateur.",
-          actif: true,
-          fichiers: [{ nom: "Fiche d'évaluation des acquis VTC", url: "/cours/vtc/Evaluation_Acquis_VTC.docx" }],
-        },
-        {
-          id: 2,
-          titre: "Enquête de satisfaction",
-          description: "Votre avis compte ! Merci de remplir ce questionnaire de satisfaction afin de nous aider à améliorer nos formations.",
-          actif: true,
-          fichiers: [{ nom: "Questionnaire de satisfaction VTC", url: "/cours/vtc/Satisfaction_VTC.docx" }],
-        },
-      ],
-      exercices: [],
-    };
-  }
+  // === Fin de formation (formulaires interactifs) ===
+  const FIN_FORMATION_MAP: Record<number, { label: string; formationType: string }> = {
+    50: { label: "VTC", formationType: "vtc" },
+    51: { label: "TAXI", formationType: "taxi" },
+    52: { label: "TA", formationType: "ta" },
+    53: { label: "VA", formationType: "va" },
+  };
 
-  // === Fin de formation TAXI ===
-  if (module.id === 51) {
+  if (FIN_FORMATION_MAP[module.id]) {
+    const { label, formationType } = FIN_FORMATION_MAP[module.id];
     return {
-      id: 51,
-      nom: "📋 FIN DE FORMATION TAXI",
-      description: "Félicitations ! Vous avez terminé l'ensemble des modules de la formation TAXI. Merci de télécharger, remplir et renvoyer les deux documents ci-dessous.",
+      id: module.id,
+      nom: `📋 FIN DE FORMATION ${label}`,
+      description: `Félicitations ! Vous avez terminé l'ensemble des modules de la formation ${label}. Merci de remplir les formulaires ci-dessous.`,
       cours: [
-        {
-          id: 1,
-          titre: "Évaluation des acquis",
-          description: "Ce document permet d'évaluer les compétences acquises au cours de la formation TAXI. Merci de le remplir et de le renvoyer à votre formateur.",
-          actif: true,
-          fichiers: [{ nom: "Fiche d'évaluation des acquis TAXI", url: "/cours/vtc/Evaluation_Acquis_TAXI.docx" }],
-        },
-        {
-          id: 2,
-          titre: "Enquête de satisfaction",
-          description: "Votre avis compte ! Merci de remplir ce questionnaire de satisfaction afin de nous aider à améliorer nos formations.",
-          actif: true,
-          fichiers: [{ nom: "Questionnaire de satisfaction TAXI", url: "/cours/vtc/Satisfaction_TAXI.docx" }],
-        },
-      ],
-      exercices: [],
-    };
-  }
-
-  // === Fin de formation TA ===
-  if (module.id === 52) {
-    return {
-      id: 52,
-      nom: "📋 FIN DE FORMATION TA",
-      description: "Félicitations ! Vous avez terminé l'ensemble des modules de la passerelle TA. Merci de télécharger, remplir et renvoyer les deux documents ci-dessous.",
-      cours: [
-        {
-          id: 1,
-          titre: "Évaluation des acquis",
-          description: "Ce document permet d'évaluer les compétences acquises au cours de la formation passerelle TA. Merci de le remplir et de le renvoyer à votre formateur.",
-          actif: true,
-          fichiers: [{ nom: "Fiche d'évaluation des acquis TA", url: "/cours/vtc/Evaluation_Acquis_TA.docx" }],
-        },
-        {
-          id: 2,
-          titre: "Enquête de satisfaction",
-          description: "Votre avis compte ! Merci de remplir ce questionnaire de satisfaction afin de nous aider à améliorer nos formations.",
-          actif: true,
-          fichiers: [{ nom: "Questionnaire de satisfaction TA", url: "/cours/vtc/Satisfaction_TA.docx" }],
-        },
-      ],
-      exercices: [],
-    };
-  }
-
-  // === Fin de formation VA ===
-  if (module.id === 53) {
-    return {
-      id: 53,
-      nom: "📋 FIN DE FORMATION VA",
-      description: "Félicitations ! Vous avez terminé l'ensemble des modules de la passerelle VA. Merci de télécharger, remplir et renvoyer les deux documents ci-dessous.",
-      cours: [
-        {
-          id: 1,
-          titre: "Évaluation des acquis",
-          description: "Ce document permet d'évaluer les compétences acquises au cours de la formation passerelle VA. Merci de le remplir et de le renvoyer à votre formateur.",
-          actif: true,
-          fichiers: [{ nom: "Fiche d'évaluation des acquis VA", url: "/cours/vtc/Evaluation_Acquis_VA.docx" }],
-        },
-        {
-          id: 2,
-          titre: "Enquête de satisfaction",
-          description: "Votre avis compte ! Merci de remplir ce questionnaire de satisfaction afin de nous aider à améliorer nos formations.",
-          actif: true,
-          fichiers: [{ nom: "Questionnaire de satisfaction VA", url: "/cours/vtc/Satisfaction_VA.docx" }],
-        },
+        { id: 1, titre: "Évaluation des acquis", description: `Évaluez vos compétences acquises au cours de la formation ${label}.`, actif: true, checklistType: "evaluation-acquis" as any, formationType },
+        { id: 2, titre: "Enquête de satisfaction", description: "Votre avis compte ! Merci de remplir ce questionnaire.", actif: true, checklistType: "satisfaction" as any, formationType },
       ],
       exercices: [],
     };
@@ -1869,6 +1790,36 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             onComplete={() => {
               markPageCompleted(currentPage);
               if (currentPage < totalPages - 1) goToPage(currentPage + 1);
+            }}
+          />
+        );
+      }
+
+      if (cours.checklistType === "evaluation-acquis") {
+        return (
+          <EvaluationAcquisForm
+            formationType={cours.formationType || "vtc"}
+            onComplete={() => {
+              markPageCompleted(currentPage);
+              if (currentPage < totalPages - 1) goToPage(currentPage + 1);
+            }}
+          />
+        );
+      }
+
+      if (cours.checklistType === "satisfaction") {
+        return (
+          <SatisfactionForm
+            formationType={cours.formationType || "vtc"}
+            onComplete={() => {
+              markPageCompleted(currentPage);
+              if (currentPage < totalPages - 1) {
+                goToPage(currentPage + 1);
+              } else {
+                persistModuleCompletion();
+                onBack();
+                toast.success("🎉 Formation terminée ! Merci pour vos retours.");
+              }
             }}
           />
         );
