@@ -424,16 +424,27 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
                   {isExpanded && (
                     <div className="border-t px-5 pb-3">
                       {items.map((item, i) => (
-                        <div key={i} className="flex items-center justify-between py-2.5 border-b last:border-b-0 text-sm">
-                          <div>
-                            <p className="text-slate-700">{item.moduleName}</p>
-                            <p className="text-xs text-slate-400">{format(new Date(item.date), "dd/MM/yyyy HH:mm", { locale: fr })}</p>
+                        <div
+                          key={i}
+                          className={`flex items-center justify-between py-2.5 border-b last:border-b-0 text-sm ${item.details.length > 0 ? "cursor-pointer hover:bg-blue-50/50 transition-colors" : ""}`}
+                          onClick={() => {
+                            if (item.details.length > 0) {
+                              setSelectedDetail({ title: item.moduleName, date: item.date, score: item.score, max: item.max, details: item.details });
+                            }
+                          }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div>
+                              <p className="text-slate-700">{item.moduleName}</p>
+                              <p className="text-xs text-slate-400">{format(new Date(item.date), "dd/MM/yyyy HH:mm", { locale: fr })}</p>
+                            </div>
                           </div>
-                          <div className="text-right">
+                          <div className="flex items-center gap-2">
                             <span className={`font-bold ${pctColor(item.pct)}`}>{item.score}/{item.max}</span>
-                            <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${pctBg(item.pct)} ${pctColor(item.pct)}`}>
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${pctBg(item.pct)} ${pctColor(item.pct)}`}>
                               {item.pct}%
                             </span>
+                            {item.details.length > 0 && <Eye className="w-3.5 h-3.5 text-slate-400" />}
                           </div>
                         </div>
                       ))}
