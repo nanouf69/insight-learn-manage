@@ -1050,8 +1050,8 @@ export default function FournisseurPortal() {
                 <div className="flex items-center gap-3 pb-2 border-b">
                   <BookOpen className="w-5 h-5 text-primary" />
                   <div>
-                    <h2 className="text-xl font-semibold">Cours — Réglementation Nationale & Locale</h2>
-                    <p className="text-sm text-muted-foreground">Supports de cours et exercices pour vos matières</p>
+                    <h2 className="text-xl font-semibold">Cours — Formation TA (Passerelle Taxi)</h2>
+                    <p className="text-sm text-muted-foreground">Tous les supports de cours et exercices de la formation TA</p>
                   </div>
                 </div>
 
@@ -1084,6 +1084,9 @@ export default function FournisseurPortal() {
                         </div>
                       </a>
                     </div>
+                    <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
+                      <span className="text-amber-500">📝</span> Exercices disponibles dans le module en ligne
+                    </p>
                   </CardContent>
                 </Card>
 
@@ -1108,6 +1111,211 @@ export default function FournisseurPortal() {
                           </div>
                         </a>
                       ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
+                      <span className="text-amber-500">📝</span> Exercices disponibles dans le module en ligne
+                    </p>
+                  </CardContent>
+                </Card>
+
+                {/* Connaissance de la ville TAXI */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <span className="text-lg">🏙️</span> Connaissance de la ville TAXI
+                    </CardTitle>
+                    <CardDescription>Géographie, monuments, adresses et lieux importants de Lyon</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {[
+                        { nom: "Lyon et ses arrondissements", fichier: "LYON_ET_SES_ARRONDISSEMENTS.pdf" },
+                        { nom: "Les gares", fichier: "LES_GARES.pdf" },
+                        { nom: "Les hôpitaux", fichier: "LES_HOPITAUX.pdf" },
+                        { nom: "Les musées", fichier: "LES_MUSEES.pdf" },
+                        { nom: "Les mairies", fichier: "LES_MAIRIES.pdf" },
+                        { nom: "Les hôtels", fichier: "LES_HOTELS.pdf" },
+                        { nom: "Les parcs", fichier: "LES_PARCS.pdf" },
+                        { nom: "Les salles de spectacles", fichier: "LES_SALLES_DE_SPECTACLES.pdf" },
+                        { nom: "Les églises", fichier: "LES_EGLISES.pdf" },
+                        { nom: "Les châteaux", fichier: "LES_CHATEAUX.pdf" },
+                        { nom: "Les fresques", fichier: "LES_FRESQUES.pdf" },
+                        { nom: "Les commissariats", fichier: "LES_COMMISSARIATS.pdf" },
+                        { nom: "Les consulats", fichier: "LES_CONSULATS.pdf" },
+                        { nom: "Les stations de taxi", fichier: "STATIONS_DE_TAXI.pdf" },
+                        { nom: "Personnalités lyonnaises", fichier: "LES_PERSONNALITES_PUBLIQUES_LYONNAISES.pdf" },
+                        { nom: "Les vins", fichier: "LES_VINS.pdf" },
+                        { nom: "Divers", fichier: "LES_DIVERS.pdf" },
+                      ].map(item => (
+                        <a key={item.fichier} href={`/cours/vtc/${item.fichier}`} target="_blank" rel="noopener noreferrer">
+                          <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+                            <FileText className="w-5 h-5 text-orange-500" />
+                            <div>
+                              <p className="font-medium text-sm">{item.nom}</p>
+                              <p className="text-xs text-muted-foreground">PDF</p>
+                            </div>
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
+                      <span className="text-amber-500">📝</span> Quiz interactifs disponibles dans le module en ligne
+                    </p>
+                  </CardContent>
+                </Card>
+
+                {/* Équipements TAXI */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <span className="text-lg">🚕</span> Équipements TAXI
+                    </CardTitle>
+                    <CardDescription>Documents et équipements obligatoires pour un taxi</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <a href="/cours/vtc/Equipements_et_documents_TAXI.pdf" target="_blank" rel="noopener noreferrer">
+                        <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+                          <FileText className="w-5 h-5 text-orange-500" />
+                          <div>
+                            <p className="font-medium text-sm">Équipements et documents TAXI</p>
+                            <p className="text-xs text-muted-foreground">PDF complet</p>
+                          </div>
+                        </div>
+                      </a>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
+                      <span className="text-amber-500">📝</span> Quiz 10 questions disponible dans le module
+                    </p>
+                  </CardContent>
+                </Card>
+
+                {/* Cas Pratique TAXI */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <span className="text-lg">📋</span> Cas Pratique TAXI
+                    </CardTitle>
+                    <CardDescription>Exercices de mise en situation professionnelle</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <a href="/cours/vtc/CAS_PRATIQUE.docx" target="_blank" rel="noopener noreferrer">
+                        <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+                          <FileText className="w-5 h-5 text-blue-500" />
+                          <div>
+                            <p className="font-medium text-sm">Cas Pratique — Exercices</p>
+                            <p className="text-xs text-muted-foreground">Document Word</p>
+                          </div>
+                        </div>
+                      </a>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Formules */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <span className="text-lg">🧮</span> Formules
+                    </CardTitle>
+                    <CardDescription>Calculs tarifaires et exercices de facturation</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <a href="/cours/vtc/FORMULE_exercice.docx" target="_blank" rel="noopener noreferrer">
+                        <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+                          <FileText className="w-5 h-5 text-purple-500" />
+                          <div>
+                            <p className="font-medium text-sm">Exercices sur les formules</p>
+                            <p className="text-xs text-muted-foreground">Document Word</p>
+                          </div>
+                        </div>
+                      </a>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
+                      <span className="text-amber-500">📝</span> Module interactif avec exercices en ligne
+                    </p>
+                  </CardContent>
+                </Card>
+
+                {/* Contrôle de connaissances */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <span className="text-lg">✅</span> Contrôle de connaissances TAXI
+                    </CardTitle>
+                    <CardDescription>Évaluation des acquis avant l'examen</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <a href="/cours/vtc/controle_de_connaissances_taxi.docx" target="_blank" rel="noopener noreferrer">
+                        <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+                          <FileText className="w-5 h-5 text-green-500" />
+                          <div>
+                            <p className="font-medium text-sm">Contrôle de connaissances TAXI</p>
+                            <p className="text-xs text-muted-foreground">Document Word</p>
+                          </div>
+                        </div>
+                      </a>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Bilan & Examens blancs */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <span className="text-lg">📊</span> Bilan Exercices & Examens Blancs TA
+                    </CardTitle>
+                    <CardDescription>Exercices de révision et simulations d'examen</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <a href="/cours/vtc/Reglementation_Nationale_Bilan.docx" target="_blank" rel="noopener noreferrer">
+                        <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+                          <FileText className="w-5 h-5 text-amber-500" />
+                          <div>
+                            <p className="font-medium text-sm">Bilan Réglementation Nationale</p>
+                            <p className="text-xs text-muted-foreground">Document Word</p>
+                          </div>
+                        </div>
+                      </a>
+                      <a href="/cours/vtc/Reglementation_Locale_Bilan.docx" target="_blank" rel="noopener noreferrer">
+                        <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+                          <FileText className="w-5 h-5 text-amber-500" />
+                          <div>
+                            <p className="font-medium text-sm">Bilan Réglementation Locale</p>
+                            <p className="text-xs text-muted-foreground">Document Word</p>
+                          </div>
+                        </div>
+                      </a>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
+                      <span className="text-amber-500">📝</span> Examens blancs chronométrés disponibles dans le module en ligne
+                    </p>
+                  </CardContent>
+                </Card>
+
+                {/* Sources Juridiques */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <span className="text-lg">📖</span> Sources Juridiques TA
+                    </CardTitle>
+                    <CardDescription>Références légales et textes officiels</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <a href="/cours/vtc/Sources_Legales_TA.pdf" target="_blank" rel="noopener noreferrer">
+                        <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+                          <FileText className="w-5 h-5 text-indigo-500" />
+                          <div>
+                            <p className="font-medium text-sm">Sources Légales TA</p>
+                            <p className="text-xs text-muted-foreground">PDF complet</p>
+                          </div>
+                        </div>
+                      </a>
                     </div>
                   </CardContent>
                 </Card>
