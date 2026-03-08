@@ -103,7 +103,7 @@ const FORMATION_LABELS: Record<string, Record<number, string>> = {
     8: "7.PRATIQUE VTC",
   },
   "taxi": {
-    1: "1.INTRODUCTION PRÉSENTIEL",
+    1: "1.INTRODUCTION FORMATION EN PRÉSENTIEL",
     10: "2.COURS ET EXERCICES TAXI",
     7: "3.CONNAISSANCES DE LA VILLE TAXI",
     3: "4.FORMULES",
