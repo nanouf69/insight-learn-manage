@@ -167,7 +167,7 @@ export const COMPETENCES_TAXI: CompetencesData = {
 
 // ===== TA (Passerelle TAXI pour VTC) =====
 export const COMPETENCES_TA: CompetencesData = {
-  formationLabel: "Complément TAXI pour chauffeur VTC",
+  formationLabel: "Formation TA – Complément TAXI (titulaire RS5637 VTC)",
   formationCode: "Formation TA",
   sections: [
     {
@@ -193,13 +193,6 @@ export const COMPETENCES_TA: CompetencesData = {
       items: [
         "Je connais le territoire d'exercice de l'activité : les principaux lieux, sites, bâtiments publics et les principaux axes routiers.",
         "Je connais le règlement local en vigueur.",
-      ],
-    },
-    {
-      titre: "SÉCURITÉ ROUTIÈRE – Rappel et mise à niveau",
-      items: [
-        "Je sais appliquer les règles du code de la route (signalisation, règles de circulation, comportement du conducteur, usage de sécurité, utilisation des voies dédiées...).",
-        "Je connais et évite les risques liés à l'alcoolémie, l'usage de stupéfiants, la prise de médicaments, le stress, la fatigue.",
       ],
     },
   ],
