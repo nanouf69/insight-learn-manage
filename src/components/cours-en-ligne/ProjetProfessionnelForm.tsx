@@ -306,7 +306,7 @@ export default function ProjetProfessionnelForm({
             )}
 
             <div>
-              <Label className="text-xs text-muted-foreground mb-1 block">Démarches pour créer votre entreprise ?</Label>
+              <Label className="text-xs text-muted-foreground mb-1 block">Démarches pour créer votre entreprise ? <span className="text-destructive">*</span></Label>
               <RadioGroup options={["Oui – en cours", "Oui – déjà créée", "Non – besoin d'infos", "Non – pas encore"]} value={demarchesEntreprise} onChange={setDemarchesEntreprise} />
             </div>
             <div>
