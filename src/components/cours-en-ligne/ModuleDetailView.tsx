@@ -2954,6 +2954,31 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                     <Button
                       size="lg"
                       onClick={async () => {
+                        // Check all QCM questions are answered (skip QRC)
+                        const unansweredQcmKeys: string[] = [];
+                        (exo.questions || []).forEach((q: any, qi: number) => {
+                          const k = `${exo.id}-${q.id}`;
+                          const isQrc = q.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
+                          if (!isQrc && !selectedAnswers[k]) {
+                            unansweredQcmKeys.push(k);
+                          }
+                        });
+                        if (unansweredQcmKeys.length > 0) {
+                          setUnansweredKeys(new Set(unansweredQcmKeys));
+                          // Scroll to first unanswered
+                          const firstIdx = (exo.questions || []).findIndex((q: any) => {
+                            const k = `${exo.id}-${q.id}`;
+                            const isQrc = q.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
+                            return !isQrc && !selectedAnswers[k];
+                          });
+                          if (firstIdx >= 0) {
+                            const el = document.getElementById(`exo-q-${exo.id}-${firstIdx}`);
+                            el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                          }
+                          toast.error("Répondez à toutes les questions QCM avant de valider");
+                          return;
+                        }
+                        setUnansweredKeys(new Set());
                         const validatedResultState = { exoId: exo.id, page: currentPage, validatedAt: Date.now() };
 
                         const nextShowResults = new Set(showResultsFor);
