@@ -1415,7 +1415,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
   const buildSourceFingerprint = (data: ModuleData) =>
     JSON.stringify({
-      v: 2,
+      v: 3,
       coursCount: data.cours.length,
       exercicesCount: data.exercices.length,
       totalQuestions: data.exercices.reduce((acc, e) => acc + (e.questions?.length || 0), 0),
