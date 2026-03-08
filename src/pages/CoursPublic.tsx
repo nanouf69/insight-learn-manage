@@ -932,23 +932,40 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const normalizedTypeApprenant = normalizeFormationKey(apprenant?.type_apprenant);
   const normalizedFormationChoisie = normalizeFormationKey(apprenant?.formation_choisie);
 
-  // Build a set of unlocked module IDs for e-learning
+  // Introduction module IDs (first module of each formation)
+  const INTRO_MODULE_IDS = new Set([1, 26, 31, 32, 33, 34]);
+
+  // Build a set of unlocked module IDs
   const unlockedModuleIds = new Set<number>();
+
+  // The first module (Introduction) is always unlocked
+  if (modules.length > 0) {
+    unlockedModuleIds.add(modules[0].id);
+  }
+
+  // Check if the Introduction (first module) is completed
+  const introCompleted = modules.length > 0 && completedModuleIds.has(modules[0].id);
+
   if (isElearning) {
+    // E-learning: strict sequential unlock
     for (let i = 0; i < modules.length; i++) {
       if (i === 0) {
-        // First module is always unlocked
         unlockedModuleIds.add(modules[i].id);
       } else if (completedModuleIds.has(modules[i - 1].id)) {
-        // Unlock if previous module is completed
         unlockedModuleIds.add(modules[i].id);
       }
     }
-    // Completed modules are always accessible (for review)
-    modules.forEach(m => { if (completedModuleIds.has(m.id)) unlockedModuleIds.add(m.id); });
+  } else {
+    // Présentiel / E-Présentiel: only require Introduction first, then all unlocked
+    if (introCompleted) {
+      modules.forEach(m => unlockedModuleIds.add(m.id));
+    }
   }
 
-  const isModuleLocked = (modId: number) => isElearning && !unlockedModuleIds.has(modId) && !completedModuleIds.has(modId);
+  // Completed modules are always accessible (for review)
+  modules.forEach(m => { if (completedModuleIds.has(m.id)) unlockedModuleIds.add(m.id); });
+
+  const isModuleLocked = (modId: number) => !unlockedModuleIds.has(modId) && !completedModuleIds.has(modId);
 
   return (
     <div className={embedded ? "" : "min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50"}>
@@ -1075,7 +1092,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                         <div>
                           <p className="font-medium text-sm text-foreground">{mod.nom}</p>
                           <p className="text-xs text-muted-foreground">
-                            {locked ? "🔒 Terminez le module précédent" : "Progression : 0%"}
+                            {locked ? (INTRO_MODULE_IDS.has(modules[0]?.id) && !introCompleted ? "🔒 Terminez l'Introduction d'abord" : "🔒 Terminez le module précédent") : "Progression : 0%"}
                           </p>
                         </div>
                       </div>
@@ -1132,7 +1149,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                               {mod.nom}
                             </h3>
                             <p className="text-xs text-muted-foreground line-clamp-1">
-                              {locked ? "🔒 Terminez le module précédent pour débloquer" : mod.description}
+                              {locked ? (INTRO_MODULE_IDS.has(modules[0]?.id) && !introCompleted ? "🔒 Terminez l'Introduction pour débloquer" : "🔒 Terminez le module précédent pour débloquer") : mod.description}
                             </p>
                           </div>
                           <div className="shrink-0">
