@@ -279,7 +279,7 @@ export default function ProjetProfessionnelForm({
                   )}
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground mb-1 block">Activités complémentaires au taxi ?</Label>
+                  <Label className="text-xs text-muted-foreground mb-1 block">Activités complémentaires au taxi ? <span className="text-destructive">*</span></Label>
                   <RadioGroup options={["Oui – TAP", "Oui – services réguliers", "Non", "Je ne sais pas"]} value={activitesCompl} onChange={setActivitesCompl} />
                 </div>
               </>
