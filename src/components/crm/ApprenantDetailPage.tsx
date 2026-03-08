@@ -780,29 +780,47 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-destructive">
                   <Trash2 className="w-5 h-5" />
-                  Supprimer l'apprenant
+                  Supprimer le compte cours
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Cette action est irréversible. Toutes les données de cet apprenant seront définitivement supprimées.
-                </p>
-                <Button
-                  variant="destructive"
-                  onClick={async () => {
-                    if (!confirm("Êtes-vous sûr de vouloir supprimer cet apprenant ? Cette action est irréversible.")) return;
-                    const { error } = await supabase.from("apprenants").delete().eq("id", apprenantId);
-                    if (error) {
-                      toast.error("Erreur lors de la suppression");
-                    } else {
-                      toast.success("Apprenant supprimé");
-                      onBack();
-                    }
-                  }}
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Supprimer définitivement
-                </Button>
+                {apprenant.auth_user_id ? (
+                  <>
+                    <p className="text-sm text-muted-foreground">
+                      Cette action supprime le <strong>compte cours en ligne</strong> de l'apprenant (identifiants de connexion, progression, quiz, activités).
+                      Le dossier administratif (fiche apprenant, documents, factures) sera conservé.
+                    </p>
+                    <Button
+                      variant="destructive"
+                      onClick={async () => {
+                        if (!confirm("Êtes-vous sûr de vouloir supprimer le compte cours de cet apprenant ? Sa progression sera définitivement perdue.")) return;
+                        try {
+                          const { data: sessionData } = await supabase.auth.getSession();
+                          const token = sessionData?.session?.access_token;
+                          const res = await supabase.functions.invoke("delete-apprenant-account", {
+                            body: { apprenant_id: apprenantId },
+                            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+                          });
+                          if (res.error || res.data?.error) {
+                            toast.error(res.data?.error || res.error?.message || "Erreur lors de la suppression");
+                          } else {
+                            toast.success(res.data?.message || "Compte cours supprimé");
+                            queryClient.invalidateQueries({ queryKey: ["apprenant", apprenantId] });
+                          }
+                        } catch (err: any) {
+                          toast.error(err.message || "Erreur inattendue");
+                        }
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Supprimer le compte cours
+                    </Button>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Cet apprenant n'a pas de compte cours actif.
+                  </p>
+                )}
               </CardContent>
             </Card>
           )}
