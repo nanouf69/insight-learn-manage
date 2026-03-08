@@ -1,3 +1,5 @@
+// Bilan Développement Commercial — 33 questions (version 4-2)
+
 import type { Question } from "./examens-blancs-data";
 
 export const BILAN_DEV_COMMERCIAL_QUESTIONS: Question[] = [
