@@ -165,6 +165,13 @@ const INTRODUCTION_PRESENTIEL_DATA: ModuleData = {
       checklistType: "projet-professionnel",
     },
     {
+      id: 102,
+      titre: "Conditions Generales de Vente et Reglement Interieur",
+      description: "Veuillez lire et signer les CGV et le reglement interieur avant de continuer.",
+      actif: true,
+      checklistType: "cgv-reglement" as const,
+    },
+    {
       id: 1,
       titre: "Bienvenue sur la plateforme",
       description: `Cette plateforme est dédiée aux futurs chauffeurs VTC et TAXIS. Vous devez réussir deux épreuves pour obtenir votre carte de chauffeur VTC ou de chauffeur TAXI :
