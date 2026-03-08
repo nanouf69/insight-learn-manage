@@ -1427,6 +1427,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       })),
     });
 
+  useEffect(() => {
+    const initialData = getInitialModuleData(module, apprenantType, studentOnly);
+    const sourceFingerprint = buildSourceFingerprint(initialData);
+
     if (studentOnly || typeof window === "undefined") {
       setModuleData(initialData);
       setDeletedCours([]);
