@@ -440,7 +440,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
         )}
 
         {/* Éditeur de l'examen sélectionné */}
-        <div className="lg:col-span-3">
+        <div className={singleExamenMode ? "" : "lg:col-span-3"}>
           {!examenSel ? (
             <div className="flex flex-col items-center justify-center h-64 text-muted-foreground border-2 border-dashed rounded-lg">
               <Layers className="w-10 h-10 mb-3 opacity-30" />
