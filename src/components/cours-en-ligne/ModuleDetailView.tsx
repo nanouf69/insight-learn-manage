@@ -1415,6 +1415,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   useEffect(() => {
     const initialData = getInitialModuleData(module, apprenantType, studentOnly);
 
+    // Build a fingerprint from source data to detect when content changes
+    const sourceFingerprint = JSON.stringify({
+      coursCount: initialData.cours.length,
+      exercicesCount: initialData.exercices.length,
+      totalQuestions: initialData.exercices.reduce((acc, e) => acc + (e.questions?.length || 0), 0),
+      exerciceIds: initialData.exercices.map(e => e.id).sort(),
+    });
+
     if (studentOnly || typeof window === "undefined") {
       setModuleData(initialData);
       setDeletedCours([]);
@@ -1438,7 +1446,19 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         moduleData?: ModuleData;
         deletedCours?: ContentItem[];
         deletedExercices?: ExerciceItem[];
+        sourceFingerprint?: string;
       };
+
+      // If source data changed (new questions, new exercises), invalidate cache
+      if (parsed.sourceFingerprint && parsed.sourceFingerprint !== sourceFingerprint) {
+        console.log("Source data changed, invalidating editor cache for module", module.id);
+        window.localStorage.removeItem(moduleEditorStorageKey);
+        setModuleData(initialData);
+        setDeletedCours([]);
+        setDeletedExercices([]);
+        setEditorStateHydrated(true);
+        return;
+      }
 
       const hasValidModuleData =
         parsed?.moduleData &&
@@ -1468,6 +1488,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     if (!editorStateHydrated || studentOnly || typeof window === "undefined") return;
     if (Number(moduleData.id) !== Number(module.id)) return;
 
+    const initialData = getInitialModuleData(module, apprenantType, studentOnly);
+    const sourceFingerprint = JSON.stringify({
+      coursCount: initialData.cours.length,
+      exercicesCount: initialData.exercices.length,
+      totalQuestions: initialData.exercices.reduce((acc, e) => acc + (e.questions?.length || 0), 0),
+      exerciceIds: initialData.exercices.map(e => e.id).sort(),
+    });
+
     try {
       window.localStorage.setItem(
         moduleEditorStorageKey,
@@ -1475,6 +1503,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           moduleData,
           deletedCours,
           deletedExercices,
+          sourceFingerprint,
         }),
       );
     } catch (error) {

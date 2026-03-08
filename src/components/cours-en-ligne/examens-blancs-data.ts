@@ -4390,24 +4390,24 @@ export const bilanExamenTaxi: ExamenBlanc = {
 
 // ===== BILAN EXAMEN VTC =====
 
-const bilan_reglementation_vtc_specifique: Matiere = {
-  id: "bilan_reglementation_vtc",
-  nom: "F - Réglementation Spécifique VTC",
-  duree: 40,
-  coefficient: 3,
-  noteEliminatoire: 0,
-  noteSur: BILAN_REGLEMENTATION_VTC_QUESTIONS.length,
-  questions: BILAN_REGLEMENTATION_VTC_QUESTIONS,
-};
-
-const bilan_reglementation_vtc_locale: Matiere = {
-  id: "bilan_reglementation_vtc2",
-  nom: "G(V) - Développement Commercial (Marketing)",
+const bilan_dev_commercial_vtc: Matiere = {
+  id: "bilan_dev_commercial_vtc",
+  nom: "F(V) — Développement commercial et gestion propre à l'activité de VTC",
   duree: 30,
   coefficient: 3,
   noteEliminatoire: 0,
   noteSur: BILAN_DEV_COMMERCIAL_QUESTIONS.length,
   questions: BILAN_DEV_COMMERCIAL_QUESTIONS,
+};
+
+const bilan_reglementation_vtc_specifique: Matiere = {
+  id: "bilan_reglementation_vtc",
+  nom: "G(V) — Réglementation nationale spécifique à l'activité de VTC",
+  duree: 40,
+  coefficient: 3,
+  noteEliminatoire: 0,
+  noteSur: BILAN_REGLEMENTATION_VTC_QUESTIONS.length,
+  questions: BILAN_REGLEMENTATION_VTC_QUESTIONS,
 };
 
 export const bilanExamenVTC: ExamenBlanc = {
@@ -4421,8 +4421,8 @@ export const bilanExamenVTC: ExamenBlanc = {
     bilan_securite_taxi,
     bilan_francais_taxi,
     bilan_anglais_taxi,
+    bilan_dev_commercial_vtc,
     bilan_reglementation_vtc_specifique,
-    bilan_reglementation_vtc_locale,
   ]
 };
 
@@ -4441,7 +4441,7 @@ export const bilanExamenTA: ExamenBlanc = {
 // ===== BILAN EXAMEN VA (passerelle VTC pour TAXI) =====
 const bilan_dev_commercial_va: Matiere = {
   id: "bilan_dev_commercial",
-  nom: "G - Développement Commercial (Marketing)",
+  nom: "F(V) — Développement commercial et gestion propre à l'activité de VTC",
   duree: 30,
   coefficient: 3,
   noteEliminatoire: 0,
