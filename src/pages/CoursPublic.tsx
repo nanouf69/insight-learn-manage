@@ -266,8 +266,9 @@ const DASHBOARD_PARENT_MODULE_IDS: Partial<Record<number, number>> = {
 const normalizeModuleIdForDashboard = (moduleId: number) => DASHBOARD_PARENT_MODULE_IDS[moduleId] ?? moduleId;
 
 const getCompletionAnsweredCount = (completion: any): number => {
+  if (!completion) return 0;
   const details = Array.isArray(completion?.details) ? completion.details : null;
-  if (!details || details.length === 0) return completion ? 1 : 0;
+  if (!details || details.length === 0) return 1;
 
   return details.filter((detail: any) => {
     const answer = detail?.reponseEleve;
