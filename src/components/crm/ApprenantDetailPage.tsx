@@ -797,6 +797,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
 
           {/* Autres onglets */}
           {activeTab === "docs-completes" && <DocumentsCompletes apprenant={apprenant} />}
+          {activeTab === "controle" && <ControleQualiteTab apprenant={apprenant} />}
           {activeTab === "docs-formation" && <DocumentsFormation apprenant={apprenant} />}
           {activeTab === "dossier" && <DocumentsDossier apprenant={apprenant} />}
           {activeTab === "docs-inscription" && <DocumentsInscription apprenant={apprenant} />}
