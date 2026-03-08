@@ -846,6 +846,11 @@ function getInitialModuleData(
     };
   }
 
+  // === Équipements TAXI (module 64) ===
+  if (module.id === 64) {
+    return JSON.parse(JSON.stringify(EQUIPEMENTS_TAXI_DATA));
+  }
+
   // === Sources Juridiques ===
   const SOURCES_JURIDIQUES_INTRO: ContentItem[] = [
     {
