@@ -184,6 +184,8 @@ export function ResetCoursTab({ apprenant, queryClient }: ResetCoursTabProps) {
   const [resettingModule, setResettingModule] = useState<number | null>(null);
   const [resettingAll, setResettingAll] = useState(false);
 
+  const hasAccount = !!apprenant.auth_user_id;
+
   const authorizedModuleIds: number[] = Array.isArray(apprenant.modules_autorises)
     ? apprenant.modules_autorises
         .map((id: any) => Number(id))
@@ -218,6 +220,7 @@ export function ResetCoursTab({ apprenant, queryClient }: ResetCoursTabProps) {
         .eq("apprenant_id", apprenant.id);
       return data || [];
     },
+    enabled: hasAccount,
   });
 
   // Fetch quiz results count per module
@@ -230,7 +233,27 @@ export function ResetCoursTab({ apprenant, queryClient }: ResetCoursTabProps) {
         .eq("apprenant_id", apprenant.id);
       return data || [];
     },
+    enabled: hasAccount,
   });
+
+  // If no course account exists, show empty state
+  if (!hasAccount) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <RotateCcw className="w-5 h-5" />
+            Remise à zéro des modules
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground text-sm text-center py-8">
+            Aucun compte cours actif. Créez un compte cours pour accéder à la remise à zéro des modules.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const formationModuleIds = DEFAULT_MODULES_BY_TYPE[resolvedType] || [];
   const orderedVisibleModuleIds = [
