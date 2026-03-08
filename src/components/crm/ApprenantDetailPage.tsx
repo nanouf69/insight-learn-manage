@@ -432,7 +432,6 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           {activeTab === "reset-cours" && <ResetCoursTab apprenant={apprenant} queryClient={queryClient} />}
         </div>
       </Tabs>
-      </Tabs>
     </div>
   );
 }
