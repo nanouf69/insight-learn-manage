@@ -2799,7 +2799,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                       }
                     }}
                     className="gap-2"
-                    disabled={!allAnswered}
+                    
                   >
                     <CheckCircle2 className="w-4 h-4" /> Valider mes réponses
                   </Button>
