@@ -497,9 +497,35 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
      enabled: !!session?.id && open && apprenantsInSession.length > 0,
    });
 
-   const hasConvocation = (apprenantId: string) => {
-     return convocationsSent.some((c: any) => c.apprenant_id === apprenantId);
-   };
+    const hasConvocation = (apprenantId: string) => {
+      return convocationsSent.some((c: any) => c.apprenant_id === apprenantId);
+    };
+
+   // Charger les identifiants envoyés pour les apprenants de cette session
+    const { data: identifiantsSent = [] } = useQuery({
+      queryKey: ['identifiants-sent', session?.id, apprenantsInSession.map((sa: any) => sa.apprenant?.id).join(',')],
+      queryFn: async () => {
+        const apprenantIds = apprenantsInSession
+          .map((sa: any) => sa.apprenant?.id)
+          .filter(Boolean);
+        if (apprenantIds.length === 0) return [];
+        
+        const { data, error } = await supabase
+          .from('emails')
+          .select('apprenant_id, subject, sent_at')
+           .in('apprenant_id', apprenantIds)
+           .ilike('subject', '%identifiant%')
+           .eq('type', 'sent');
+        
+        if (error) throw error;
+        return data || [];
+      },
+      enabled: !!session?.id && open && apprenantsInSession.length > 0,
+    });
+
+    const hasIdentifiants = (apprenantId: string) => {
+      return identifiantsSent.some((c: any) => c.apprenant_id === apprenantId);
+    };
 
   // --- Account creation helpers ---
   const inferAccountFormationId = (apprenant: any): string => {
