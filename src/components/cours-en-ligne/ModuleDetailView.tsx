@@ -731,14 +731,14 @@ function getInitialModuleData(
     };
   }
 
-  // Bilan Exercices TA (module 27) — toutes les matières
+  // Bilan Exercices TA (module 27) — Réglementation Nationale + Locale
   if (module.id === 27) {
     return {
       id: 27,
       nom: "4.BILAN EXERCICES TA",
       description: "Tous les exercices regroupés par matière. Refaites-les autant de fois que nécessaire pour maîtriser chaque sujet.",
       cours: [],
-      exercices: BILAN_EXERCICES_TAXI,
+      exercices: BILAN_EXERCICES_TA,
     };
   }
 
