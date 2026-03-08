@@ -521,12 +521,14 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <KeyRound className="w-5 h-5" />
-                Créer un compte apprenant
+                {hasExistingAccount ? "Configurer l'accès cours" : "Créer un compte apprenant"}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-2">
               <p className="text-sm text-muted-foreground">
-                Un compte sera créé pour <strong>{apprenant.prenom} {apprenant.nom}</strong> ({apprenant.email || "email manquant"}).
+                {hasExistingAccount
+                  ? <>Mettez à jour la formation, les dates et les modules de <strong>{apprenant.prenom} {apprenant.nom}</strong>.</>
+                  : <>Un compte sera créé pour <strong>{apprenant.prenom} {apprenant.nom}</strong> ({apprenant.email || "email manquant"}).</>}
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -570,7 +572,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                 </div>
               </div>
 
-              {generatedPassword && (
+              {!hasExistingAccount && generatedPassword && (
                 <div className="bg-muted p-3 rounded-md space-y-1">
                   <p className="text-sm font-medium">Mot de passe généré :</p>
                   <div className="flex items-center gap-2">
@@ -585,7 +587,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Annuler</Button>
               <Button
-                disabled={creatingAccount || !selectedFormationForAccount || !apprenant.email}
+                disabled={creatingAccount || !selectedFormationForAccount || (!hasExistingAccount && !apprenant.email)}
                 onClick={async () => {
                   setCreatingAccount(true);
                   try {
@@ -606,6 +608,13 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
 
                     if (updateError) throw updateError;
 
+                    if (hasExistingAccount) {
+                      toast.success("Accès cours mis à jour");
+                      queryClient.invalidateQueries({ queryKey: ["apprenant-detail", apprenantId] });
+                      setShowCreateDialog(false);
+                      return;
+                    }
+
                     const { data, error } = await supabase.functions.invoke("create-apprenant-account", {
                       body: {
                         apprenant_id: apprenantId,
@@ -618,14 +627,14 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                     toast.success("Compte créé avec succès !");
                     queryClient.invalidateQueries({ queryKey: ["apprenant-detail", apprenantId] });
                   } catch (err: any) {
-                    toast.error(err?.message || "Erreur lors de la création du compte");
+                    toast.error(err?.message || "Erreur lors de l'opération");
                   } finally {
                     setCreatingAccount(false);
                   }
                 }}
               >
                 {creatingAccount ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <KeyRound className="w-4 h-4 mr-2" />}
-                Créer le compte
+                {hasExistingAccount ? "Enregistrer" : "Créer le compte"}
               </Button>
             </DialogFooter>
           </DialogContent>
