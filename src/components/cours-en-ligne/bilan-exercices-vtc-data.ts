@@ -5,9 +5,7 @@ import { T3P_EXERCICE_PARTIE_1, T3P_EXERCICE_PARTIE_2 } from "./exercices/t3p-ex
 import { GESTION_EXERCICES } from "./exercices/gestion-exercices-data";
 import { SECURITE_ROUTIERE_EXERCICES } from "./exercices/securite-routiere-exercices-data";
 import {
-  REGLEMENTATION_NATIONALE_EXERCICES,
   REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES,
-  REGLEMENTATION_LOCALE_EXERCICES,
 } from "./exercices/reglementation-exercices-data";
 import { DEV_COMMERCIAL_EXERCICE } from "./exercices/dev-commercial-exercices-data";
 
@@ -45,22 +43,19 @@ export const BILAN_EXERCICES_VTC = [
     ),
   },
   {
-    id: 103,
-    titre: "📕 Bilan Réglementation Nationale + Spécifique VTC",
-    sousTitre: `${[...REGLEMENTATION_NATIONALE_EXERCICES, ...REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES].reduce((acc, e) => acc + (e.questions?.length || 0), 0)} questions — ADS, Carte pro, Registre VTC, Tarification, Sanctions`,
+    id: 104,
+    titre: "📓 Bilan Développement Commercial",
+    sousTitre: `${DEV_COMMERCIAL_EXERCICE.questions?.length || 0} questions — Marketing, SWOT, PESTEL, Fidélisation, Devis & Facture`,
     actif: true,
-    questions: renumberQuestions(
-      [...REGLEMENTATION_NATIONALE_EXERCICES, ...REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES]
-        .flatMap(e => e.questions || [])
-    ),
+    questions: renumberQuestions(DEV_COMMERCIAL_EXERCICE.questions || []),
   },
   {
-    id: 105,
-    titre: "📕 Bilan Réglementation Locale",
-    sousTitre: `${REGLEMENTATION_LOCALE_EXERCICES.reduce((acc, e) => acc + (e.questions?.length || 0), 0)} questions — Réglementation Locale Lyon`,
+    id: 106,
+    titre: "📕 Bilan Réglementation Spécifique VTC",
+    sousTitre: `${REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES.reduce((acc, e) => acc + (e.questions?.length || 0), 0)} questions — Registre VTC, Garantie financière, Vignettes, Véhicule, Sanctions`,
     actif: true,
     questions: renumberQuestions(
-      REGLEMENTATION_LOCALE_EXERCICES.flatMap(e => e.questions || [])
+      REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES.flatMap(e => e.questions || [])
     ),
   },
   {
