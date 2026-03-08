@@ -52,6 +52,7 @@ import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "./controle-connaissances-taxi-
 import { CONNAISSANCES_VILLE_TAXI_DATA } from "./connaissances-ville-taxi-data";
 import { BILAN_EXERCICES_VTC } from "./bilan-exercices-vtc-data";
 import { BILAN_EXERCICES_TAXI } from "./bilan-exercices-taxi-data";
+import { BILAN_EXERCICES_TA } from "./bilan-exercices-ta-data";
 import { BILAN_EXAMEN_VTC } from "./bilan-examen-vtc-data";
 import { BILAN_EXAMEN_TAXI } from "./bilan-examen-taxi-data";
 import CompetencesChecklist from "./CompetencesChecklist";
