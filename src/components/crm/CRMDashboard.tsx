@@ -14,7 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
-import { ApprenantDetailPage } from "./ApprenantDetailPage";
+import ApprenantDetailPage from "./ApprenantDetailPage";
 import { ApprenantForm } from "@/components/apprenants/ApprenantForm";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getAvatarUrl } from "@/lib/avatarUrl";
