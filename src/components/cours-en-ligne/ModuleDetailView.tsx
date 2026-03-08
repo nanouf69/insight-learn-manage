@@ -84,7 +84,7 @@ interface ContentItem {
   fichiers?: { nom: string; url: string }[];
   slidesKey?: string;
   quiz?: InlineQuizQuestion[];
-  checklistType?: "competences" | "analyse-besoin" | "evaluation-acquis" | "satisfaction" | "projet-professionnel" | "cgv";
+  checklistType?: "competences" | "analyse-besoin" | "evaluation-acquis" | "satisfaction" | "projet-professionnel" | "cgv" | "cgv-reglement";
   formationType?: string;
 }
 
