@@ -121,7 +121,7 @@ const ACCOUNT_FORMATION_TO_DB_FORMATION: Record<string, string> = {
   va: "passerelle-vtc-elearning", "va-e": "passerelle-vtc-elearning",
 };
 
-
+const getTypeBadgeColor = (type: string | null) => {
   if (!type) return "bg-gray-100 text-gray-700";
   const t = type.toLowerCase();
   if (t.includes("taxi")) return "bg-yellow-100 text-yellow-700";
