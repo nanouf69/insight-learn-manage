@@ -702,12 +702,9 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
         </DialogContent>
       </Dialog>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col min-h-[60vh]">
-        {/* Contenu des onglets - affichage d'abord */}
-        <div className="flex-1 overflow-y-auto">
-          {/* Infos Tab */}
-          <TabsContent value="infos" className="space-y-6 p-6 m-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6 [&>[role=tablist]]:fixed [&>[role=tablist]]:bottom-0 [&>[role=tablist]]:left-0 [&>[role=tablist]]:right-0 [&>[role=tablist]]:bg-background [&>[role=tablist]]:border-t [&>[role=tablist]]:z-50 [&>[role=tablist]]:w-full">
+        <div className="pb-24">
+        <TabsList className="flex w-full gap-1 bg-transparent border-none rounded-none p-3 h-auto overflow-x-auto [&>button]:rounded-none [&>button]:border-b-2 [&>button]:border-transparent [&>button]:data-[state=active]:border-primary">
             {/* Informations personnelles */}
             <Card>
               <CardHeader>
