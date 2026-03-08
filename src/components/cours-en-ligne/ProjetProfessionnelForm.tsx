@@ -107,6 +107,7 @@ export default function ProjetProfessionnelForm({
   // Refs for scrolling to first invalid field
   const fieldRefs: Record<string, React.RefObject<HTMLDivElement>> = {
     motivations: useRef<HTMLDivElement>(null!),
+    statutActuel: useRef<HTMLDivElement>(null!),
     dejaTransport: useRef<HTMLDivElement>(null!),
     permis3ans: useRef<HTMLDivElement>(null!),
     demarchesEntreprise: useRef<HTMLDivElement>(null!),
@@ -118,6 +119,12 @@ export default function ProjetProfessionnelForm({
     zoneExercice: useRef<HTMLDivElement>(null!),
     activitesCompl: useRef<HTMLDivElement>(null!),
     modeExercice: useRef<HTMLDivElement>(null!),
+    commentConnu: useRef<HTMLDivElement>(null!),
+    consulteProgram: useRef<HTMLDivElement>(null!),
+    saitExamen: useRef<HTMLDivElement>(null!),
+    connaitZone: useRef<HTMLDivElement>(null!),
+    conduiteUrbaine: useRef<HTMLDivElement>(null!),
+    connaitSites: useRef<HTMLDivElement>(null!),
   };
 
   if (completed) {
