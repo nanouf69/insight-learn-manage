@@ -2627,7 +2627,23 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         );
       }
 
-      if (cours.checklistType === "evaluation-acquis") {
+      if (cours.checklistType === "cgv-reglement") {
+        return (
+          <CGVReglementForm
+            apprenantId={apprenantId || undefined}
+            apprenantNom={apprenantInfo?.nom}
+            apprenantPrenom={apprenantInfo?.prenom}
+            apprenantAdresse={apprenantInfo?.adresse}
+            completed={completedPages.has(currentPage)}
+            onComplete={() => {
+              markPageCompleted(currentPage);
+              if (currentPage < totalPages - 1) goToPage(currentPage + 1);
+            }}
+          />
+        );
+      }
+
+
         return (
           <EvaluationAcquisForm
             formationType={cours.formationType || "vtc"}
