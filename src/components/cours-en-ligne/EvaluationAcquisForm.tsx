@@ -279,8 +279,8 @@ const EvaluationAcquisForm = ({ formationType, apprenantId, onComplete }: Evalua
                 ))}
               </div>
             </div>
-          ))}
-
+                  );
+                })}
           <div className="space-y-3">
             <h3 className="font-bold text-foreground border-b pb-2">Commentaires</h3>
             <Textarea
