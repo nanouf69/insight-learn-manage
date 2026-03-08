@@ -309,7 +309,7 @@ export default function AnalyseBesoinForm({
               const isInvalid = invalidFields.has(key);
               return (
                 <div key={i} className="space-y-2">
-                  <div ref={compRefs[i]} className={`flex items-start gap-3 py-2 border-b border-border/50 rounded-lg px-2 ${isInvalid ? "ring-2 ring-destructive/60 bg-destructive/5" : ""}`}>
+                  <div ref={el => { compRefs.current[i] = el; }} className={`flex items-start gap-3 py-2 border-b border-border/50 rounded-lg px-2 ${isInvalid ? "ring-2 ring-destructive/60 bg-destructive/5" : ""}`}>
                     <p className={`flex-1 text-sm leading-relaxed font-medium ${isInvalid ? "text-destructive" : ""}`}>{q} <span className="text-destructive">*</span></p>
                     <div className="flex items-center gap-3 shrink-0 pt-0.5">
                       <label className="flex items-center gap-1.5 cursor-pointer">
