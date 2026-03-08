@@ -1409,6 +1409,78 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const [slidesByKey, setSlidesByKey] = useState<Record<string, Slide[]>>(() => createInitialSlidesByKey());
   const [deletedCours, setDeletedCours] = useState<ContentItem[]>([]);
   const [deletedExercices, setDeletedExercices] = useState<ExerciceItem[]>([]);
+  const [editorStateHydrated, setEditorStateHydrated] = useState(false);
+  const moduleEditorStorageKey = `module-editor-state:${module.id}`;
+
+  useEffect(() => {
+    const initialData = getInitialModuleData(module, apprenantType, studentOnly);
+
+    if (studentOnly || typeof window === "undefined") {
+      setModuleData(initialData);
+      setDeletedCours([]);
+      setDeletedExercices([]);
+      setEditorStateHydrated(true);
+      return;
+    }
+
+    try {
+      const raw = window.localStorage.getItem(moduleEditorStorageKey);
+
+      if (!raw) {
+        setModuleData(initialData);
+        setDeletedCours([]);
+        setDeletedExercices([]);
+        setEditorStateHydrated(true);
+        return;
+      }
+
+      const parsed = JSON.parse(raw) as {
+        moduleData?: ModuleData;
+        deletedCours?: ContentItem[];
+        deletedExercices?: ExerciceItem[];
+      };
+
+      const hasValidModuleData =
+        parsed?.moduleData &&
+        Array.isArray(parsed.moduleData.cours) &&
+        Array.isArray(parsed.moduleData.exercices);
+
+      if (hasValidModuleData) {
+        setModuleData(parsed.moduleData as ModuleData);
+        setDeletedCours(Array.isArray(parsed.deletedCours) ? parsed.deletedCours : []);
+        setDeletedExercices(Array.isArray(parsed.deletedExercices) ? parsed.deletedExercices : []);
+      } else {
+        setModuleData(initialData);
+        setDeletedCours([]);
+        setDeletedExercices([]);
+      }
+    } catch (error) {
+      console.error("Erreur chargement état édition module:", error);
+      setModuleData(initialData);
+      setDeletedCours([]);
+      setDeletedExercices([]);
+    } finally {
+      setEditorStateHydrated(true);
+    }
+  }, [module.id, apprenantType, studentOnly, moduleEditorStorageKey]);
+
+  useEffect(() => {
+    if (!editorStateHydrated || studentOnly || typeof window === "undefined") return;
+    if (Number(moduleData.id) !== Number(module.id)) return;
+
+    try {
+      window.localStorage.setItem(
+        moduleEditorStorageKey,
+        JSON.stringify({
+          moduleData,
+          deletedCours,
+          deletedExercices,
+        }),
+      );
+    } catch (error) {
+      console.error("Erreur sauvegarde état édition module:", error);
+    }
+  }, [editorStateHydrated, studentOnly, moduleEditorStorageKey, moduleData, deletedCours, deletedExercices]);
 
   useEffect(() => {
     setSlidesByKey((current) => {
