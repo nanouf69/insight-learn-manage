@@ -316,7 +316,24 @@ function CoursAttribution({ apprenant, apprenantId, effectiveModules, activeForm
   );
 }
 
-  const { data: photoDoc } = useQuery({
+export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPageProps) {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  const { data: apprenant, isLoading, error: fetchError } = useQuery({
+    queryKey: ["apprenant-detail", apprenantId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("apprenants")
+        .select("*")
+        .eq("id", apprenantId)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
     queryKey: ['apprenant-photo', apprenantId],
     queryFn: async () => {
       const { data, error } = await supabase
