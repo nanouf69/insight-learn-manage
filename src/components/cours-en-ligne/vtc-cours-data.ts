@@ -187,31 +187,31 @@ const MATIERE_E: ContentItem[] = [
 ];
 
 // =============================================
-// MATIÈRE F — RÉGLEMENTATION SPÉCIFIQUE VTC
+// MATIÈRE F — DÉVELOPPEMENT COMMERCIAL
 // =============================================
 
 const MATIERE_F: ContentItem[] = [
   {
-    id: 6003, actif: true,
-    titre: "F. RÉGLEMENTATION SPÉCIFIQUE VTC",
-    sousTitre: "Réglementation spécifique aux VTC",
+    id: 7001, actif: true,
+    titre: "F. DÉVELOPPEMENT COMMERCIAL",
+    sousTitre: "Marketing et développement commercial VTC",
     fichiers: [
-      { nom: "PDF HD", url: "/cours/vtc/F_Reglementation_Specifique_1.pdf" },
+      { nom: "PDF HD Marketing", url: "/cours/vtc/G_Marketing_1.pdf" },
     ],
   },
 ];
 
 // =============================================
-// MATIÈRE G — DÉVELOPPEMENT COMMERCIAL
+// MATIÈRE G — RÉGLEMENTATION SPÉCIFIQUE VTC
 // =============================================
 
 const MATIERE_G: ContentItem[] = [
   {
-    id: 7001, actif: true,
-    titre: "G. DÉVELOPPEMENT COMMERCIAL",
-    sousTitre: "Marketing et développement commercial VTC",
+    id: 6003, actif: true,
+    titre: "G. RÉGLEMENTATION SPÉCIFIQUE VTC",
+    sousTitre: "Réglementation spécifique aux VTC",
     fichiers: [
-      { nom: "PDF HD Marketing", url: "/cours/vtc/G_Marketing_1.pdf" },
+      { nom: "PDF HD", url: "/cours/vtc/F_Reglementation_Specifique_1.pdf" },
     ],
   },
 ];
@@ -232,8 +232,8 @@ export const VTC_SECTIONS: MatiereSection[] = [
   { cours: MATIERE_C, exercices: SECURITE_ROUTIERE_EXERCICES },
   { cours: MATIERE_D, exercices: FRANCAIS_EXERCICES },
   { cours: MATIERE_E, exercices: ANGLAIS_EXERCICES },
-  { cours: MATIERE_F, exercices: REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES },
-  { cours: MATIERE_G, exercices: DEV_COMMERCIAL_EXERCICES },
+  { cours: MATIERE_F, exercices: DEV_COMMERCIAL_EXERCICES },
+  { cours: MATIERE_G, exercices: REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES },
 ];
 
 export const VTC_COURS_DATA: ModuleData = {
