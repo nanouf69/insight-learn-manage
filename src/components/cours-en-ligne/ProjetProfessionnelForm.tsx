@@ -245,7 +245,7 @@ export default function ProjetProfessionnelForm({
               )}
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground mb-1 block">Permis de conduire depuis plus de 3 ans ?</Label>
+              <Label className="text-xs text-muted-foreground mb-1 block">Permis de conduire depuis plus de 3 ans ? <span className="text-destructive">*</span></Label>
               <RadioGroup options={["Oui", "Non"]} value={permis3ans} onChange={setPermis3ans} />
               {permis3ans === "Non" && (
                 <div className="mt-2">
