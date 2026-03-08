@@ -2119,10 +2119,29 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       });
     }, [pages.length]);
 
+    // Module IDs where Réglementation Nationale/Locale content exists for TAXI
+    const TAXI_REGLEMENTATION_MODULE_IDS = new Set([10, 9, 11]);
+    const isTaxiPresentiel = apprenantType === "taxi";
+
+    const isReglementationPage = (pageIdx: number): boolean => {
+      if (!isTaxiPresentiel || !TAXI_REGLEMENTATION_MODULE_IDS.has(Number(moduleData.id))) return false;
+      const page = pages[pageIdx];
+      if (!page) return false;
+      const title = page.type === "cours"
+        ? page.cours.titre
+        : page.type === "exercice-single"
+          ? page.exercice.titre
+          : "";
+      return /réglementation\s+(nationale|locale)/i.test(title);
+    };
+
     const isPageUnlocked = (pageIndex: number): boolean => {
       if (pageIndex === 0) return true;
-      // All previous pages must be completed
+      // For TAXI présentiel: Réglementation Nationale/Locale pages are freely accessible
+      if (isReglementationPage(pageIndex)) return true;
+      // All previous pages must be completed (skip réglementation pages in the chain)
       for (let i = 0; i < pageIndex; i++) {
+        if (isReglementationPage(i)) continue;
         if (!completedPages.has(i)) return false;
       }
       return true;
