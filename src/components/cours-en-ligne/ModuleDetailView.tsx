@@ -2296,9 +2296,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     const handleAnswer = (exoId: number, qId: number, lettre: string) => {
       if (showResultsFor.has(exoId)) return;
+      const ansKey = `${exoId}-${qId}`;
       setSelectedAnswers(prev => {
-        const next = { ...prev, [`${exoId}-${qId}`]: lettre };
+        const next = { ...prev, [ansKey]: lettre };
         autoSaveAnswers(next);
+        return next;
+      });
+      setUnansweredKeys(prev => {
+        if (!prev.has(ansKey)) return prev;
+        const next = new Set(prev);
+        next.delete(ansKey);
         return next;
       });
     };
