@@ -225,9 +225,11 @@ export default function ProjetProfessionnelForm({
         <CardContent className="p-4 space-y-3">
           <SectionTitle num={2} title="SITUATION PROFESSIONNELLE ACTUELLE" />
           <div className="space-y-3">
-            <div>
-              <Label className="text-xs text-muted-foreground mb-1 block">Statut actuel</Label>
-              <RadioGroup options={["Salarié(e)", "Indépendant(e)", "Demandeur d'emploi", "Étudiant(e)"]} value={statutActuel} onChange={setStatutActuel} />
+            <div ref={fieldRefs.statutActuel}>
+              <Label className={`text-xs mb-1 block ${invalidFields.has("statutActuel") ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
+                Statut actuel <span className="text-destructive">*</span>
+              </Label>
+              <RadioGroup options={["Salarié(e)", "Indépendant(e)", "Demandeur d'emploi", "Étudiant(e)"]} value={statutActuel} onChange={setStatutActuel} fieldKey="statutActuel" />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
