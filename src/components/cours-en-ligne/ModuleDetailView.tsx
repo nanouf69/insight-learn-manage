@@ -3198,6 +3198,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       <Tabs defaultValue="edition" className="w-full">
          <TabsList className="mb-4">
           <TabsTrigger value="edition" className="gap-2"><Settings className="w-4 h-4" /> Édition</TabsTrigger>
+          <TabsTrigger value="corbeille" className="gap-2"><Trash2 className="w-4 h-4" /> Corbeille {(deletedCours.length + deletedExercices.length) > 0 && <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">{deletedCours.length + deletedExercices.length}</Badge>}</TabsTrigger>
           <TabsTrigger value="apercu" className="gap-2"><Eye className="w-4 h-4" /> Aperçu apprenant</TabsTrigger>
           <TabsTrigger value="resultats" className="gap-2"><Users className="w-4 h-4" /> Résultats élèves</TabsTrigger>
         </TabsList>
