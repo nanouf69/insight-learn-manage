@@ -1406,6 +1406,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const [moduleData, setModuleData] = useState<ModuleData>(() => getInitialModuleData(module, apprenantType, studentOnly));
   const [editingCoursId, setEditingCoursId] = useState<number | null>(null);
   const [slidesByKey, setSlidesByKey] = useState<Record<string, Slide[]>>(() => createInitialSlidesByKey());
+  const [deletedCours, setDeletedCours] = useState<ContentItem[]>([]);
+  const [deletedExercices, setDeletedExercices] = useState<ExerciceItem[]>([]);
 
   useEffect(() => {
     setSlidesByKey((current) => {
@@ -1441,11 +1443,34 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   };
 
   const deleteItem = (type: "cours" | "exercices", id: number) => {
-    setModuleData((prev) => ({
-      ...prev,
-      [type]: prev[type].filter((i) => i.id !== id),
-    }));
-    toast.success(`${type === "cours" ? "Cours" : "Exercice"} supprimé`);
+    setModuleData((prev) => {
+      if (type === "cours") {
+        const item = prev.cours.find((i) => i.id === id);
+        if (item) setDeletedCours((d) => [...d, item]);
+      } else {
+        const item = prev.exercices.find((i) => i.id === id);
+        if (item) setDeletedExercices((d) => [...d, item as ExerciceItem]);
+      }
+      return { ...prev, [type]: prev[type].filter((i) => i.id !== id) };
+    });
+    toast.success(`${type === "cours" ? "Cours" : "Exercice"} supprimé — retrouvez-le dans la Corbeille`);
+  };
+
+  const restoreItem = (type: "cours" | "exercices", id: number) => {
+    if (type === "cours") {
+      const item = deletedCours.find((i) => i.id === id);
+      if (item) {
+        setModuleData((prev) => ({ ...prev, cours: [...prev.cours, item] }));
+        setDeletedCours((d) => d.filter((i) => i.id !== id));
+      }
+    } else {
+      const item = deletedExercices.find((i) => i.id === id);
+      if (item) {
+        setModuleData((prev) => ({ ...prev, exercices: [...prev.exercices, item] }));
+        setDeletedExercices((d) => d.filter((i) => i.id !== id));
+      }
+    }
+    toast.success(`${type === "cours" ? "Cours" : "Exercice"} restauré`);
   };
 
   const toggleItem = (type: "cours" | "exercices", id: number) => {
@@ -3173,6 +3198,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       <Tabs defaultValue="edition" className="w-full">
          <TabsList className="mb-4">
           <TabsTrigger value="edition" className="gap-2"><Settings className="w-4 h-4" /> Édition</TabsTrigger>
+          <TabsTrigger value="corbeille" className="gap-2"><Trash2 className="w-4 h-4" /> Corbeille {(deletedCours.length + deletedExercices.length) > 0 && <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">{deletedCours.length + deletedExercices.length}</Badge>}</TabsTrigger>
           <TabsTrigger value="apercu" className="gap-2"><Eye className="w-4 h-4" /> Aperçu apprenant</TabsTrigger>
           <TabsTrigger value="resultats" className="gap-2"><Users className="w-4 h-4" /> Résultats élèves</TabsTrigger>
         </TabsList>
@@ -3265,6 +3291,57 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               ))
             )}
           </div>
+        </TabsContent>
+
+        <TabsContent value="corbeille" className="space-y-6">
+          {deletedCours.length === 0 && deletedExercices.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center text-muted-foreground">
+                <Trash2 className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                <p className="font-medium">La corbeille est vide</p>
+                <p className="text-sm mt-1">Les cours et exercices supprimés apparaîtront ici pour être restaurés.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              {deletedCours.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-lg font-bold flex items-center gap-2">📚 Cours supprimés ({deletedCours.length})</h3>
+                  {deletedCours.map((cours) => (
+                    <Card key={cours.id} className="border-dashed border-destructive/30">
+                      <CardContent className="p-4 flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-muted-foreground line-through">{cours.titre}</p>
+                          {cours.sousTitre && <p className="text-xs text-muted-foreground">{cours.sousTitre}</p>}
+                        </div>
+                        <Button size="sm" variant="outline" className="gap-1" onClick={() => restoreItem("cours", cours.id)}>
+                          <RotateCcw className="w-3 h-3" /> Restaurer
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+              {deletedExercices.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-lg font-bold flex items-center gap-2">📝 Exercices supprimés ({deletedExercices.length})</h3>
+                  {deletedExercices.map((exo) => (
+                    <Card key={exo.id} className="border-dashed border-destructive/30">
+                      <CardContent className="p-4 flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-muted-foreground line-through">{exo.titre}</p>
+                          {exo.sousTitre && <p className="text-xs text-muted-foreground">{exo.sousTitre}</p>}
+                        </div>
+                        <Button size="sm" variant="outline" className="gap-1" onClick={() => restoreItem("exercices", exo.id)}>
+                          <RotateCcw className="w-3 h-3" /> Restaurer
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </TabsContent>
 
         <TabsContent value="apercu">
