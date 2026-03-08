@@ -2643,7 +2643,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         );
       }
 
-
+      if (cours.checklistType === "evaluation-acquis") {
         return (
           <EvaluationAcquisForm
             formationType={cours.formationType || "vtc"}
