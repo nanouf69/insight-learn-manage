@@ -718,8 +718,23 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                 </div>
               </div>
 
+              {/* Modules de la formation — ordered */}
+              {selectedFormationForAccount && ORDERED_FORMATION_MODULES[selectedFormationForAccount] && (
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Modules de la formation</p>
+                  <div className="max-h-44 overflow-y-auto border rounded-md p-3 space-y-1 bg-muted/30">
+                    {ORDERED_FORMATION_MODULES[selectedFormationForAccount].map((mod) => (
+                      <div key={mod.id} className="flex items-center gap-2 text-sm px-2 py-1">
+                        <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                        <span className="font-medium">{mod.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-2">
-                <p className="text-sm font-medium">Modules supplémentaires</p>
+                <p className="text-sm font-medium text-muted-foreground">Modules supplémentaires</p>
                 <div className="max-h-44 overflow-y-auto border rounded-md p-3 space-y-2">
                   {accountAdditionalModuleChoices.map((mod) => (
                     <label key={mod.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 rounded px-2 py-1">
