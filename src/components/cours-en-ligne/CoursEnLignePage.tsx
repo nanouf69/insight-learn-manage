@@ -543,9 +543,9 @@ const ApprenantSearchPreview = () => {
                 { id: 27, label: "5.BILAN EXERCICES TA" },
                 { id: 28, label: "6.BILAN EXAMEN TA" },
                 { id: 37, label: "7.EXAMENS BLANCS TA" },
-                { id: 6, label: "8.PRATIQUE TAXI" },
-                { id: 64, label: "9.ÉQUIPEMENTS TAXI" },
-                { id: 62, label: "10.SOURCES JURIDIQUES TA" },
+                { id: 64, label: "8.ÉQUIPEMENTS TAXI" },
+                { id: 62, label: "9.SOURCES JURIDIQUES TA" },
+                { id: 6, label: "10.PRATIQUE TAXI" },
                 { id: 52, label: "11.FIN DE FORMATION TA" },
               ]},
               "ta-e": { label: "TA E-learning", color: "bg-amber-50 text-amber-700 border-amber-200", modules: [
