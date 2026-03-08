@@ -1952,6 +1952,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const [inlineQuizAnswers, setInlineQuizAnswers] = useState<Record<string, string>>({});
     const [inlineQuizValidated, setInlineQuizValidated] = useState<Set<number>>(new Set());
     const [qrcAnswers, setQrcAnswers] = useState<Record<string, string>>({});
+    const [unansweredKeys, setUnansweredKeys] = useState<Set<string>>(new Set());
     const [qrcResults, setQrcResults] = useState<Record<string, { estCorrect: boolean; pointsObtenus: number; explication: string } | "loading">>({});
 
     const [introAcknowledged, setIntroAcknowledged] = useState<Set<number>>(new Set());
