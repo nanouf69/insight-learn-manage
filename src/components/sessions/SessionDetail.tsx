@@ -2076,6 +2076,16 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                         body: { apprenant_id: accountDialogApprenant.id },
                       });
                       if (error) throw error;
+                      // Log email for identifiants badge
+                      await supabase.from("emails").insert({
+                        apprenant_id: accountDialogApprenant.id,
+                        subject: "Identifiants de connexion - Cours en ligne",
+                        type: "sent",
+                        sent_at: new Date().toISOString(),
+                        recipients: [accountDialogApprenant.email],
+                        sender_email: "noreply@ftransport.fr",
+                      });
+                      queryClient.invalidateQueries({ queryKey: ['identifiants-sent'] });
                       toast({ title: "Identifiants renvoyés par email" });
                     } catch {
                       toast({ title: "Erreur", description: "Erreur lors de l'envoi", variant: "destructive" });
