@@ -592,15 +592,38 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                 </div>
               </div>
 
-              {!hasExistingAccount && generatedPassword && (
-                <div className="bg-muted p-3 rounded-md space-y-1">
-                  <p className="text-sm font-medium">Mot de passe généré :</p>
+              {generatedPassword && (
+                <div className="bg-muted p-3 rounded-md space-y-2">
+                  <p className="text-sm font-medium">✅ Compte créé — Mot de passe généré :</p>
                   <div className="flex items-center gap-2">
                     <code className="text-sm bg-background px-2 py-1 rounded border">{generatedPassword}</code>
                     <Button variant="ghost" size="sm" onClick={() => { navigator.clipboard.writeText(generatedPassword); toast.success("Copié !"); }}>
                       <Copy className="w-4 h-4" />
                     </Button>
                   </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full mt-1"
+                    disabled={resendingCredentials}
+                    onClick={async () => {
+                      setResendingCredentials(true);
+                      try {
+                        const { error } = await supabase.functions.invoke("resend-credentials", {
+                          body: { apprenant_id: apprenantId },
+                        });
+                        if (error) throw error;
+                        toast.success("Identifiants renvoyés par email");
+                      } catch {
+                        toast.error("Erreur lors de l'envoi");
+                      } finally {
+                        setResendingCredentials(false);
+                      }
+                    }}
+                  >
+                    {resendingCredentials ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                    Renvoyer identifiants par email
+                  </Button>
                 </div>
               )}
             </div>
