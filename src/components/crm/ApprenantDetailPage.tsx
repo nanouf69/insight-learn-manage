@@ -547,6 +547,37 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           {activeTab === "emails" && <EmailsSection apprenant={apprenant} />}
           {activeTab === "devis" && <DevisSection apprenant={apprenant} />}
           {activeTab === "reset-cours" && <ResetCoursTab apprenant={apprenant} queryClient={queryClient} />}
+          {activeTab === "delete-account" && (
+            <Card className="border-destructive">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-destructive">
+                  <Trash2 className="w-5 h-5" />
+                  Supprimer l'apprenant
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Cette action est irréversible. Toutes les données de cet apprenant seront définitivement supprimées.
+                </p>
+                <Button
+                  variant="destructive"
+                  onClick={async () => {
+                    if (!confirm("Êtes-vous sûr de vouloir supprimer cet apprenant ? Cette action est irréversible.")) return;
+                    const { error } = await supabase.from("apprenants").delete().eq("id", apprenantId);
+                    if (error) {
+                      toast.error("Erreur lors de la suppression");
+                    } else {
+                      toast.success("Apprenant supprimé");
+                      onBack();
+                    }
+                  }}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Supprimer définitivement
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </Tabs>
     </div>
