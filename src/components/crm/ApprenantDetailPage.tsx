@@ -275,7 +275,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
   const solde = (apprenant.montant_ttc || 0) - (apprenant.montant_paye || 0);
 
   return (
-    <div className="space-y-6 animate-fade-in pb-32">
+    <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={onBack}>
