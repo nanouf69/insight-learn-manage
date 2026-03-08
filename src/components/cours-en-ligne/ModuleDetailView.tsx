@@ -2732,6 +2732,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               onClick={() => {
                                 if (isValidated) return;
                                 setInlineQuizAnswers(prev => ({ ...prev, [key]: c.lettre }));
+                                setUnansweredKeys(prev => { if (!prev.has(key)) return prev; const n = new Set(prev); n.delete(key); return n; });
                               }}
                               className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-all ${bg}`}
                             >
