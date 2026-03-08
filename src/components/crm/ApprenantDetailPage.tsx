@@ -703,20 +703,22 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
       </Dialog>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-12 lg:w-auto lg:inline-grid">
-          <TabsTrigger value="infos">Infos</TabsTrigger>
-          <TabsTrigger value="cours">Attribuer les cours</TabsTrigger>
-          <TabsTrigger value="resultats">Résultats</TabsTrigger>
-          <TabsTrigger value="docs-completes">Formulaires</TabsTrigger>
-          <TabsTrigger value="docs-formation">Documents Formation</TabsTrigger>
-          <TabsTrigger value="dossier">Dossier</TabsTrigger>
-          <TabsTrigger value="docs-inscription">Inscription</TabsTrigger>
-          <TabsTrigger value="examens">Examens</TabsTrigger>
-          <TabsTrigger value="emails">Emails</TabsTrigger>
-          <TabsTrigger value="devis">Devis</TabsTrigger>
-          <TabsTrigger value="reset-cours" className="text-destructive">Remise à zéro</TabsTrigger>
-          <TabsTrigger value="delete-account" className="text-destructive">Supprimer compte</TabsTrigger>
-        </TabsList>
+        <div className="bg-background border-t border-border sticky bottom-0 z-50">
+          <TabsList className="flex w-full gap-1 bg-transparent border-none rounded-none p-0 h-auto overflow-x-auto [&>button]:rounded-none [&>button]:border-b-2 [&>button]:border-transparent [&>button]:data-[state=active]:border-primary [&>button]:data-[state=active]:bg-transparent">
+            <TabsTrigger value="infos">Infos</TabsTrigger>
+            <TabsTrigger value="cours">Attribuer les cours</TabsTrigger>
+            <TabsTrigger value="resultats">Résultats</TabsTrigger>
+            <TabsTrigger value="docs-completes">Formulaires</TabsTrigger>
+            <TabsTrigger value="docs-formation">Documents Formation</TabsTrigger>
+            <TabsTrigger value="dossier">Dossier</TabsTrigger>
+            <TabsTrigger value="docs-inscription">Inscription</TabsTrigger>
+            <TabsTrigger value="examens">Examens</TabsTrigger>
+            <TabsTrigger value="emails">Emails</TabsTrigger>
+            <TabsTrigger value="devis">Devis</TabsTrigger>
+            <TabsTrigger value="reset-cours" className="text-destructive">Remise à zéro</TabsTrigger>
+            <TabsTrigger value="delete-account" className="text-destructive">Supprimer compte</TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* Infos Tab */}
         <TabsContent value="infos" className="space-y-6">
