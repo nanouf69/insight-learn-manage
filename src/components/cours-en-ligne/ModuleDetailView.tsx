@@ -2767,9 +2767,23 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   <Button
                     onClick={async () => {
                       if (!allAnswered) {
+                        // Find unanswered inline questions and highlight them
+                        const missing = new Set<string>();
+                        cours.quiz!.forEach(qq => {
+                          const k = `inline-${cours.id}-${qq.id}`;
+                          if (!inlineQuizAnswers[k]) missing.add(k);
+                        });
+                        setUnansweredKeys(missing);
+                        // Scroll to first unanswered
+                        const firstMissing = cours.quiz!.find(qq => !inlineQuizAnswers[`inline-${cours.id}-${qq.id}`]);
+                        if (firstMissing) {
+                          const el = document.getElementById(`inline-q-${cours.id}-${firstMissing.id}`);
+                          el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                        }
                         toast.error("Répondez à toutes les questions avant de valider");
                         return;
                       }
+                      setUnansweredKeys(new Set());
                       setInlineQuizValidated(prev => {
                         const next = new Set(prev);
                         next.add(cours.id);
