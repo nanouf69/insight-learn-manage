@@ -324,12 +324,18 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
   const [typeFiltre, setTypeFiltre] = useState<"tous" | "TAXI" | "VTC">("tous");
   const [saved, setSaved] = useState(false);
 
-  const examensFiltres = examens.filter(e => typeFiltre === "tous" || e.type === typeFiltre);
-  const examenSel = examens.find(e => e.id === examenSelId) || null;
+  const singleExamenMode = !!defaultExamenId;
+  const examenIdActif = singleExamenMode ? defaultExamenId : examenSelId;
+
+  const examensFiltres = singleExamenMode
+    ? examens.filter(e => e.id === defaultExamenId)
+    : examens.filter(e => typeFiltre === "tous" || e.type === typeFiltre);
+
+  const examenSel = examens.find(e => e.id === examenIdActif) || null;
 
   const handleMatiereChange = (matiereId: string, updated: Matiere) => {
     setExamens(prev => prev.map(ex => {
-      if (ex.id !== examenSelId) return ex;
+      if (ex.id !== examenIdActif) return ex;
       return {
         ...ex,
         matieres: ex.matieres.map(m => m.id === matiereId ? updated : m),
