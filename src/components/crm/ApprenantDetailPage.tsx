@@ -159,12 +159,10 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
         if (dateStr) {
           const range = parseDateRange(dateStr);
           if (range) {
-            const dateDebut = format(range.start, "dd/MM/yyyy");
-            const dateFin = format(range.end, "dd/MM/yyyy");
             return {
               ...data,
-              date_debut_formation: data.date_debut_formation || dateDebut,
-              date_fin_formation: data.date_fin_formation || dateFin
+              date_debut_formation: data.date_debut_formation || range.dateDebut,
+              date_fin_formation: data.date_fin_formation || range.dateFin
             };
           }
         }
