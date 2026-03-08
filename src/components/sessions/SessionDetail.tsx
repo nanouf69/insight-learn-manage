@@ -597,7 +597,17 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
       if (error) throw error;
       setGeneratedPassword(data?.password || "");
+      // Log email for identifiants badge
+      await supabase.from("emails").insert({
+        apprenant_id: appId,
+        subject: "Identifiants de connexion - Cours en ligne",
+        type: "sent",
+        sent_at: new Date().toISOString(),
+        recipients: [accountDialogApprenant.email],
+        sender_email: "noreply@ftransport.fr",
+      });
       toast({ title: "Compte créé avec succès !", description: `Un email a été envoyé à ${accountDialogApprenant.email}.` });
+      queryClient.invalidateQueries({ queryKey: ['identifiants-sent'] });
       refetchApprenants();
     } catch (err: any) {
       toast({ title: "Erreur", description: err?.message || "Erreur lors de l'opération", variant: "destructive" });
