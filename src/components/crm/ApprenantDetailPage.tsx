@@ -238,6 +238,9 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedFormationForModules, setSelectedFormationForModules] = useState("");
   const [selectedFormationForAccount, setSelectedFormationForAccount] = useState("");
+  const [accountStartDate, setAccountStartDate] = useState("");
+  const [accountEndDate, setAccountEndDate] = useState("");
+  const [accountExtraModules, setAccountExtraModules] = useState<number[]>([]);
   const [generatedPassword, setGeneratedPassword] = useState("");
   const [creatingAccount, setCreatingAccount] = useState(false);
   const [resendingCredentials, setResendingCredentials] = useState(false);
