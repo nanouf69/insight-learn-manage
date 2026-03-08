@@ -966,7 +966,7 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
         </TabsContent>
 
         {/* Attribuer les cours Tab */}
-        <TabsContent value="cours" className="space-y-6">
+        <TabsContent value="cours" className="space-y-6 pb-24">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
