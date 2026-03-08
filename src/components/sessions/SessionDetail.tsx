@@ -95,7 +95,33 @@ const modesFinancement = [
   { value: "autre", label: "Autre", color: "bg-slate-100 text-slate-700" },
 ];
 
-const getTypeBadgeColor = (type: string | null) => {
+const ORDERED_FORMATION_MODULES = Object.fromEntries(
+  Object.entries(FORMATION_MODULES).map(([k, v]) => [k, v.modules])
+);
+
+const COMPTE_FORMATIONS = [
+  { id: "vtc", label: "VTC (Présentiel)" },
+  { id: "vtc-e", label: "VTC E-learning" },
+  { id: "taxi", label: "TAXI (Présentiel)" },
+  { id: "taxi-e", label: "TAXI E-learning" },
+  { id: "ta", label: "TA (Présentiel)" },
+  { id: "ta-e", label: "TA E-learning" },
+  { id: "va", label: "VA (Présentiel)" },
+  { id: "va-e", label: "VA E-learning" },
+] as const;
+
+const ACCOUNT_FORMATION_TO_TYPE: Record<string, string> = {
+  vtc: "vtc", "vtc-e": "vtc-e", taxi: "taxi", "taxi-e": "taxi-e",
+  ta: "ta", "ta-e": "ta-e", va: "va", "va-e": "va-e",
+};
+
+const ACCOUNT_FORMATION_TO_DB_FORMATION: Record<string, string> = {
+  vtc: "vtc", "vtc-e": "vtc-elearning", taxi: "taxi", "taxi-e": "taxi-elearning",
+  ta: "passerelle-taxi", "ta-e": "passerelle-taxi-elearning",
+  va: "passerelle-vtc-elearning", "va-e": "passerelle-vtc-elearning",
+};
+
+
   if (!type) return "bg-gray-100 text-gray-700";
   const t = type.toLowerCase();
   if (t.includes("taxi")) return "bg-yellow-100 text-yellow-700";
