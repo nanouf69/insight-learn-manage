@@ -393,17 +393,44 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {(apprenant as any).auth_user_id && (
+          {(apprenant as any).auth_user_id ? (
             <>
               <Badge variant="secondary" className="gap-1">
                 <CheckCircle2 className="w-3 h-3" />
                 Compte actif
               </Badge>
-              <Button variant="outline" size="sm">
-                <Send className="w-4 h-4 mr-2" />
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={resendingCredentials}
+                onClick={async () => {
+                  setResendingCredentials(true);
+                  try {
+                    const { error } = await supabase.functions.invoke("resend-credentials", {
+                      body: { apprenant_id: apprenantId },
+                    });
+                    if (error) throw error;
+                    toast.success("Identifiants renvoyés par email");
+                  } catch {
+                    toast.error("Erreur lors de l'envoi");
+                  } finally {
+                    setResendingCredentials(false);
+                  }
+                }}
+              >
+                {resendingCredentials ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
                 Renvoyer identifiants
               </Button>
             </>
+          ) : (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => setShowCreateDialog(true)}
+            >
+              <KeyRound className="w-4 h-4 mr-2" />
+              Créer un compte
+            </Button>
           )}
           <Button variant="outline" size="sm" onClick={() => setShowEditDialog(true)}>
             <Pencil className="w-4 h-4 mr-2" />
