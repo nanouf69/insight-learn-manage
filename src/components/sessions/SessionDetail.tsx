@@ -1929,6 +1929,127 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         )}
       </DialogContent>
     </Dialog>
+
+    {/* Account creation/configuration dialog */}
+    {accountDialogApprenant && (
+      <Dialog open={!!accountDialogApprenant} onOpenChange={(o) => { if (!o) setAccountDialogApprenant(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="w-5 h-5" />
+              {accountDialogApprenant.auth_user_id ? "Configurer l'accès cours" : "Créer un compte apprenant"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              {accountDialogApprenant.auth_user_id
+                ? <>Mettez à jour la formation, les dates et les modules de <strong>{accountDialogApprenant.prenom} {accountDialogApprenant.nom}</strong>.</>
+                : <>Un compte sera créé pour <strong>{accountDialogApprenant.prenom} {accountDialogApprenant.nom}</strong> ({accountDialogApprenant.email || "email manquant"}).</>}
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Formation</label>
+                <Select value={selectedFormationForAccount} onValueChange={setSelectedFormationForAccount}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir la formation" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COMPTE_FORMATIONS.map((f) => (
+                      <SelectItem key={f.id} value={f.id}>{f.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Date début cours en ligne</label>
+                <Input type="date" value={accountStartDate} onChange={(e) => setAccountStartDate(e.target.value)} />
+              </div>
+
+              <div className="space-y-1 md:col-start-2">
+                <label className="text-sm font-medium">Date fin cours en ligne</label>
+                <Input type="date" value={accountEndDate} onChange={(e) => setAccountEndDate(e.target.value)} />
+              </div>
+            </div>
+
+            {selectedFormationForAccount && ORDERED_FORMATION_MODULES[selectedFormationForAccount] && (
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Modules de la formation</p>
+                <div className="max-h-44 overflow-y-auto border rounded-md p-3 space-y-1 bg-muted/30">
+                  {ORDERED_FORMATION_MODULES[selectedFormationForAccount].map((mod: any) => (
+                    <div key={mod.id} className="flex items-center gap-2 text-sm px-2 py-1">
+                      <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                      <span className="font-medium">{mod.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-muted-foreground">Modules supplémentaires</p>
+              <div className="max-h-44 overflow-y-auto border rounded-md p-3 space-y-2">
+                {accountAdditionalModuleChoices.map((mod: any) => (
+                  <label key={mod.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 rounded px-2 py-1">
+                    <Checkbox
+                      checked={accountExtraModules.includes(mod.id)}
+                      onCheckedChange={() => toggleAccountExtraModule(mod.id)}
+                    />
+                    <span className={cn(!accountExtraModules.includes(mod.id) && "text-muted-foreground")}>{mod.nom}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {generatedPassword && (
+              <div className="bg-muted p-3 rounded-md space-y-2">
+                <p className="text-sm font-medium">✅ Compte créé — Mot de passe généré :</p>
+                <div className="flex items-center gap-2">
+                  <code className="text-sm bg-background px-2 py-1 rounded border">{generatedPassword}</code>
+                  <Button variant="ghost" size="sm" onClick={() => { navigator.clipboard.writeText(generatedPassword); toast({ title: "Copié !" }); }}>
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full mt-1"
+                  disabled={resendingCredentials}
+                  onClick={async () => {
+                    setResendingCredentials(true);
+                    try {
+                      const { error } = await supabase.functions.invoke("resend-credentials", {
+                        body: { apprenant_id: accountDialogApprenant.id },
+                      });
+                      if (error) throw error;
+                      toast({ title: "Identifiants renvoyés par email" });
+                    } catch {
+                      toast({ title: "Erreur", description: "Erreur lors de l'envoi", variant: "destructive" });
+                    } finally {
+                      setResendingCredentials(false);
+                    }
+                  }}
+                >
+                  {resendingCredentials ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                  Renvoyer identifiants par email
+                </Button>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAccountDialogApprenant(null)}>Annuler</Button>
+            <Button
+              disabled={creatingAccount || !selectedFormationForAccount || (!accountDialogApprenant.auth_user_id && !accountDialogApprenant.email)}
+              onClick={handleCreateAccount}
+            >
+              {creatingAccount ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <KeyRound className="w-4 h-4 mr-2" />}
+              {accountDialogApprenant.auth_user_id ? "Enregistrer" : "Créer le compte"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    )}
     </>
   );
 }
