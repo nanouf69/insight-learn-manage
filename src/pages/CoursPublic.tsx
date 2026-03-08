@@ -93,6 +93,7 @@ const resolveFormationId = (
   return null;
 };
 
+// ===== LABELS & ORDER synchronized with modules-config.ts =====
 const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, string>>> = {
   "vtc": {
     1: "1.INTRODUCTION PRÉSENTIEL",
@@ -108,7 +109,9 @@ const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, strin
     4: "4.BILAN EXERCICES VTC",
     35: "5.EXAMENS BLANCS VTC",
     5: "6.BILAN EXAMEN VTC",
-    8: "7.PRATIQUE VTC",
+    60: "7.SOURCES JURIDIQUES VTC",
+    8: "8.PRATIQUE VTC",
+    50: "9.FIN DE FORMATION VTC",
   },
   "vtc-cours-du-soir": {
     1: "1.INTRODUCTION PRÉSENTIEL",
@@ -124,7 +127,9 @@ const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, strin
     4: "4.BILAN EXERCICES VTC",
     35: "5.EXAMENS BLANCS VTC",
     5: "6.BILAN EXAMEN VTC",
-    8: "7.PRATIQUE VTC",
+    60: "7.SOURCES JURIDIQUES VTC",
+    8: "8.PRATIQUE VTC",
+    50: "9.FIN DE FORMATION VTC",
   },
   "vtc-elearning": {
     26: "1.INTRODUCTION E-LEARNING",
@@ -140,7 +145,9 @@ const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, strin
     4: "4.BILAN EXERCICES VTC",
     35: "5.EXAMENS BLANCS VTC",
     5: "6.BILAN EXAMEN VTC",
-    8: "7.PRATIQUE VTC",
+    60: "7.SOURCES JURIDIQUES VTC",
+    8: "8.PRATIQUE VTC",
+    50: "9.FIN DE FORMATION VTC",
   },
   "taxi": {
     1: "1.INTRODUCTION PRÉSENTIEL",
@@ -152,13 +159,16 @@ const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, strin
     23: "2.COURS ET EXERCICES TAXI",
     24: "2.COURS ET EXERCICES TAXI",
     7: "3.CONNAISSANCES DE LA VILLE TAXI",
-    3: "4.FORMULES",
-    9: "5.BILAN EXERCICES TAXI",
-    13: "6.CONTRÔLE DE CONNAISSANCES TAXI",
-    11: "7.BILAN EXAMEN TAXI",
-    36: "8.EXAMENS BLANCS TAXI",
-    6: "9.PRATIQUE TAXI",
-    12: "10.CAS PRATIQUE TAXI",
+    64: "4.ÉQUIPEMENTS TAXI",
+    12: "5.CAS PRATIQUE TAXI",
+    3: "🔓 FORMULES (libre accès)",
+    9: "6.BILAN EXERCICES TAXI",
+    13: "7.CONTRÔLE DE CONNAISSANCES TAXI",
+    11: "8.BILAN EXAMEN TAXI",
+    36: "9.EXAMENS BLANCS TAXI",
+    61: "10.SOURCES JURIDIQUES TAXI",
+    6: "11.PRATIQUE TAXI",
+    51: "12.FIN DE FORMATION TAXI",
   },
   "taxi-elearning": {
     26: "1.INTRODUCTION E-LEARNING",
@@ -170,59 +180,70 @@ const FORMATION_DISPLAY_LABELS: Partial<Record<FormationId, Record<number, strin
     23: "2.COURS ET EXERCICES TAXI",
     24: "2.COURS ET EXERCICES TAXI",
     7: "3.CONNAISSANCES DE LA VILLE TAXI",
-    3: "4.FORMULES",
-    9: "5.BILAN EXERCICES TAXI",
-    13: "6.CONTRÔLE DE CONNAISSANCES TAXI",
-    11: "7.BILAN EXAMEN TAXI",
-    36: "8.EXAMENS BLANCS TAXI",
-    6: "9.PRATIQUE TAXI",
-    12: "10.CAS PRATIQUE TAXI",
+    64: "4.ÉQUIPEMENTS TAXI",
+    12: "5.CAS PRATIQUE TAXI",
+    3: "6.FORMULES",
+    9: "7.BILAN EXERCICES TAXI",
+    13: "8.CONTRÔLE DE CONNAISSANCES TAXI",
+    11: "9.BILAN EXAMEN TAXI",
+    36: "10.EXAMENS BLANCS TAXI",
+    61: "11.SOURCES JURIDIQUES TAXI",
+    6: "12.PRATIQUE TAXI",
+    51: "13.FIN DE FORMATION TAXI",
   },
   "taxi-pour-vtc": {
     31: "1.INTRODUCTION TA",
     40: "2.COURS ET EXERCICES TA",
-    42: "2.COURS ET EXERCICES TA",
     7: "3.CONNAISSANCES DE LA VILLE TAXI",
-    3: "4.FORMULES",
-    27: "5.BILAN EXERCICES TA",
-    28: "6.BILAN EXAMEN TA",
-    37: "7.EXAMENS BLANCS TA",
-    6: "8.PRATIQUE TAXI",
+    64: "4.ÉQUIPEMENTS TAXI",
+    12: "5.CAS PRATIQUE TAXI",
+    3: "🔓 FORMULES (libre accès)",
+    27: "6.BILAN EXERCICES TA",
+    13: "7.CONTRÔLE DE CONNAISSANCES TAXI",
+    28: "8.BILAN EXAMEN TA",
+    37: "9.EXAMENS BLANCS TA",
+    62: "10.SOURCES JURIDIQUES TA",
+    6: "11.PRATIQUE TAXI",
+    52: "12.FIN DE FORMATION TA",
   },
   "taxi-pour-vtc-elearning": {
     32: "1.INTRODUCTION TA E-LEARNING",
     40: "2.COURS ET EXERCICES TA",
-    42: "2.COURS ET EXERCICES TA",
     7: "3.CONNAISSANCES DE LA VILLE TAXI",
-    3: "4.FORMULES",
-    27: "5.BILAN EXERCICES TA",
-    13: "6.CONTRÔLE DE CONNAISSANCES TAXI",
-    28: "7.BILAN EXAMEN TA",
-    37: "8.EXAMENS BLANCS TA",
-    6: "9.PRATIQUE TAXI",
+    64: "4.ÉQUIPEMENTS TAXI",
+    12: "5.CAS PRATIQUE TAXI",
+    3: "6.FORMULES",
+    27: "7.BILAN EXERCICES TA",
+    13: "8.CONTRÔLE DE CONNAISSANCES TAXI",
+    28: "9.BILAN EXAMEN TA",
+    37: "10.EXAMENS BLANCS TA",
+    62: "11.SOURCES JURIDIQUES TA",
+    6: "12.PRATIQUE TAXI",
+    52: "13.FIN DE FORMATION TA",
   },
   "vtc-pour-taxi": {
     33: "1.INTRODUCTION VA",
     34: "1.INTRODUCTION VA E-LEARNING",
     41: "2.COURS ET EXERCICES VA",
-    43: "2.COURS ET EXERCICES VA",
     3: "3.FORMULES",
     29: "4.BILAN EXERCICES VA",
     30: "5.BILAN EXAMEN VA",
     38: "6.EXAMENS BLANCS VA",
-    8: "7.PRATIQUE VTC",
+    63: "7.SOURCES JURIDIQUES VA",
+    8: "8.PRATIQUE VTC",
+    53: "9.FIN DE FORMATION VA",
   },
 };
 
 const FORMATION_DEFAULT_MODULES: Record<FormationId, number[]> = {
-  "vtc": [1, 2, 3, 4, 35, 5, 8, 60, 50],
-  "vtc-cours-du-soir": [1, 2, 3, 4, 35, 5, 8, 60, 50],
-  "vtc-elearning": [26, 2, 3, 4, 35, 5, 8, 60, 50],
-  "taxi": [1, 10, 7, 3, 9, 13, 11, 36, 6, 12, 64, 61, 51],
-  "taxi-elearning": [26, 10, 7, 3, 9, 13, 11, 36, 6, 12, 64, 61, 51],
-  "taxi-pour-vtc": [31, 40, 42, 7, 3, 27, 28, 37, 6, 64, 62, 52],
-  "taxi-pour-vtc-elearning": [32, 40, 42, 7, 3, 27, 13, 28, 37, 6, 64, 62, 52],
-  "vtc-pour-taxi": [33, 41, 3, 29, 30, 38, 8, 63, 53],
+  "vtc": [1, 2, 3, 4, 35, 5, 60, 8, 50],
+  "vtc-cours-du-soir": [1, 2, 3, 4, 35, 5, 60, 8, 50],
+  "vtc-elearning": [26, 2, 3, 4, 35, 5, 60, 8, 50],
+  "taxi": [1, 10, 7, 64, 12, 3, 9, 13, 11, 36, 61, 6, 51],
+  "taxi-elearning": [26, 10, 7, 64, 12, 3, 9, 13, 11, 36, 61, 6, 51],
+  "taxi-pour-vtc": [31, 40, 7, 64, 12, 3, 27, 13, 28, 37, 62, 6, 52],
+  "taxi-pour-vtc-elearning": [32, 40, 7, 64, 12, 3, 27, 13, 28, 37, 62, 6, 52],
+  "vtc-pour-taxi": [33, 41, 3, 29, 30, 38, 63, 8, 53],
 };
 
 const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 50, 51, 52, 53, 60, 61, 62, 63, 64]);
@@ -399,6 +420,14 @@ const getModuleDisplayName = (formationId: FormationId, moduleId: number, fallba
 const BILAN_MODULE_IDS: Record<number, string> = {
   28: "bilan-ta",
   30: "bilan-va",
+};
+
+// Examens blancs module IDs → forced type filter
+const EXAMEN_BLANC_MODULE_IDS: Record<number, "TAXI" | "VTC" | "TA" | "VA"> = {
+  35: "VTC",
+  36: "TAXI",
+  37: "TA",
+  38: "VA",
 };
 
 interface ApprenantInfo {
@@ -713,6 +742,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // Module detail view
   if (selectedModule) {
     const bilanId = BILAN_MODULE_IDS[selectedModule.id];
+    const examenBlancType = EXAMEN_BLANC_MODULE_IDS[selectedModule.id];
     if (bilanId) {
       // Bilan modules open ExamensBlancsPage directly
       return (
@@ -725,6 +755,21 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             apprenantId={apprenant?.id || null}
             userId={user?.id || null}
             apprenantType={apprenant?.type_apprenant || null}
+          />
+        </div>
+      );
+    }
+    if (examenBlancType) {
+      // Examens blancs modules open ExamensBlancsPage filtered by type
+      return (
+        <div className="min-h-screen bg-background p-4">
+          <Button variant="ghost" size="sm" className="mb-4" onClick={() => setSelectedModule(null)}>
+            <ChevronRight className="w-4 h-4 mr-1 rotate-180" /> Retour
+          </Button>
+          <ExamensBlancsPage
+            apprenantId={apprenant?.id || null}
+            userId={user?.id || null}
+            apprenantType={examenBlancType}
           />
         </div>
       );
