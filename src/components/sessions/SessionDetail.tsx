@@ -1243,14 +1243,25 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                               </div>
                             </div>
                           </div>
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
-                            onClick={() => removeApprenant(sessionApprenant.id)}
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="sm"
+                              variant={apprenant.auth_user_id ? "outline" : "default"}
+                              className="h-8 gap-1 text-xs"
+                              onClick={(e) => { e.stopPropagation(); openAccountDialog(apprenant); }}
+                            >
+                              <KeyRound className="w-3.5 h-3.5" />
+                              {apprenant.auth_user_id ? "Configurer l'accès" : "Créer un compte"}
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
+                              onClick={() => removeApprenant(sessionApprenant.id)}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
                         
                         {/* Ligne 2: Dates de formation */}
