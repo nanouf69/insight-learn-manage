@@ -417,9 +417,8 @@ const getModuleDisplayName = (formationId: FormationId, moduleId: number, fallba
   FORMATION_DISPLAY_LABELS[formationId]?.[moduleId] || fallback;
 
 // Module IDs that should open ExamensBlancsPage (bilans)
-const BILAN_MODULE_IDS: Record<number, string> = {
-  30: "bilan-va",
-};
+// All bilan examen modules (5, 11, 28, 30) now use ModuleDetailView directly
+const BILAN_MODULE_IDS: Record<number, string> = {};
 
 // Examens blancs module IDs → forced type filter
 const EXAMEN_BLANC_MODULE_IDS: Record<number, "TAXI" | "VTC" | "TA" | "VA"> = {
