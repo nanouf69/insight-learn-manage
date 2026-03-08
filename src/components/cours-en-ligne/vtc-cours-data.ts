@@ -239,7 +239,7 @@ export const VTC_SECTIONS: MatiereSection[] = [
 export const VTC_COURS_DATA: ModuleData = {
   id: 2,
   nom: "2.COURS ET EXERCICES VTC",
-  description: "Cours complets pour les 7 matières de l'examen VTC : A. Réglementation T3P, B. Gestion, C. Sécurité Routière, D. Français, E. Anglais, F. Réglementation Spécifique VTC, G. Développement Commercial.",
+  description: "Cours complets pour les 7 matières de l'examen VTC : A. Réglementation T3P, B. Gestion, C. Sécurité Routière, D. Français, E. Anglais, F. Développement Commercial, G. Réglementation Spécifique VTC.",
   cours: VTC_SECTIONS.flatMap(s => s.cours),
   exercices: VTC_SECTIONS.flatMap(s => s.exercices),
 };
