@@ -1149,7 +1149,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                               {mod.nom}
                             </h3>
                             <p className="text-xs text-muted-foreground line-clamp-1">
-                              {locked ? "🔒 Terminez le module précédent pour débloquer" : mod.description}
+                              {locked ? (INTRO_MODULE_IDS.has(modules[0]?.id) && !introCompleted ? "🔒 Terminez l'Introduction pour débloquer" : "🔒 Terminez le module précédent pour débloquer") : mod.description}
                             </p>
                           </div>
                           <div className="shrink-0">
