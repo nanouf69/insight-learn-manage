@@ -359,48 +359,17 @@ export default function ProjetProfessionnelForm({
         </CardContent>
       </Card>
 
-      {/* 5. Financement et disponibilité */}
+      {/* 5. Besoins spécifiques */}
       <Card>
         <CardContent className="p-4 space-y-3">
-          <SectionTitle num={5} title="FINANCEMENT ET DISPONIBILITÉ" />
+          <SectionTitle num={5} title="BESOINS SPÉCIFIQUES ET ACCESSIBILITÉ" />
           <div className="space-y-3">
             <div>
-              <Label className="text-xs text-muted-foreground mb-1 block">Mode de financement</Label>
-              <RadioGroup options={["CPF", "France Travail", "Financement personnel", "Autre"]} value={modeFinancement} onChange={setModeFinancement} />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs text-muted-foreground">Solde CPF estimatif (€)</Label>
-                <Input value={soldeCPF} onChange={e => setSoldeCPF(e.target.value)} placeholder="Ex: 2500" />
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Disponibilité</Label>
-                <Input value={disponibilite} onChange={e => setDisponibilite(e.target.value)} placeholder="Jours / horaires" />
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Délai souhaité pour passer l'examen</Label>
-                <Input value={delaiExamen} onChange={e => setDelaiExamen(e.target.value)} />
-              </div>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">Contraintes particulières</Label>
-              <Textarea value={contraintes} onChange={e => setContraintes(e.target.value)} rows={2} placeholder="Emploi actuel, famille..." />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* 6. Besoins spécifiques */}
-      <Card>
-        <CardContent className="p-4 space-y-3">
-          <SectionTitle num={6} title="BESOINS SPÉCIFIQUES ET ACCESSIBILITÉ" />
-          <div className="space-y-3">
-            <div>
-              <Label className="text-xs text-muted-foreground mb-1 block">Besoins d'adaptation pédagogique ?</Label>
+              <Label className="text-xs text-muted-foreground mb-1 block">Besoins d'adaptation pédagogique ? <span className="text-destructive">*</span></Label>
               <RadioGroup options={["Dyslexie / Troubles DYS", "Handicap (RQTH)", "Soutien renforcé", "Aucun"]} value={besoinsAdaptation} onChange={setBesoinsAdaptation} />
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground mb-1 block">Accès à un ordinateur ou tablette pour le e-learning ?</Label>
+              <Label className="text-xs text-muted-foreground mb-1 block">Accès à un ordinateur ou tablette pour le e-learning ? <span className="text-destructive">*</span></Label>
               <RadioGroup options={["Oui – ordinateur", "Oui – tablette/smartphone", "Non – besoin d'équipement"]} value={accesOrdinateur} onChange={setAccesOrdinateur} />
             </div>
             <div>
@@ -411,10 +380,10 @@ export default function ProjetProfessionnelForm({
         </CardContent>
       </Card>
 
-      {/* 7. Avis conseiller (admin only) */}
+      {/* 6. Avis conseiller (admin only) */}
       <Card className={!isAdmin ? "opacity-60" : ""}>
         <CardContent className="p-4 space-y-3">
-          <SectionTitle num={7} title="AVIS DU CONSEILLER / FORMATEUR" />
+          <SectionTitle num={6} title="AVIS DU CONSEILLER / FORMATEUR" />
           {!isAdmin && (
             <p className="text-xs text-amber-600 font-medium">🔒 Cette section sera complétée par le formateur lors de l'entretien.</p>
           )}
@@ -445,6 +414,28 @@ export default function ProjetProfessionnelForm({
       <div className="flex justify-center">
         <Button
           onClick={async () => {
+            // Validation des champs obligatoires
+            const missingFields: string[] = [];
+            if (!motivations.trim()) missingFields.push("Motivations");
+            if (!dejaTransport) missingFields.push("Activité de transport");
+            if (!permis3ans) missingFields.push("Permis de conduire");
+            if (!demarchesEntreprise) missingFields.push("Démarches entreprise");
+            if (!besoinsAdaptation) missingFields.push("Besoins d'adaptation");
+            if (!accesOrdinateur) missingFields.push("Accès ordinateur");
+            if (isTaxi) {
+              if (!diffTaxiVtc) missingFields.push("Différence taxi/VTC");
+              if (!modeExerciceTaxi) missingFields.push("Mode d'exercice taxi");
+              if (!demandeADS) missingFields.push("Demande ADS");
+              if (!zoneExercice) missingFields.push("Zone d'exercice");
+              if (!activitesCompl) missingFields.push("Activités complémentaires");
+            } else {
+              if (!modeExercice) missingFields.push("Mode d'exercice VTC");
+            }
+            if (missingFields.length > 0) {
+              toast.error(`Veuillez remplir les champs obligatoires : ${missingFields.join(", ")}`);
+              return;
+            }
+
             if (apprenantId) {
               const saved = await saveFormDocument({
                 apprenantId,
@@ -458,7 +449,6 @@ export default function ProjetProfessionnelForm({
                   demandeADS, zoneExercice, zoneAutre, activitesCompl,
                   demarchesEntreprise, craintes, commentConnu, consulteProgram,
                   saitExamen, connaitZone, conduiteUrbaine, connaitSites,
-                  modeFinancement, soldeCPF, disponibilite, delaiExamen, contraintes,
                   besoinsAdaptation, accesOrdinateur, precisionsBesoins,
                   coherenceProjet, niveauMotivation, observations, signatureAdmin,
                 },
