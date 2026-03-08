@@ -344,7 +344,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
       {/* Tabs avec onglets en bas (sticky) */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         {/* Onglets en haut */}
-        <TabsList className="flex w-full gap-0 bg-transparent border-b border-border rounded-none p-0 h-auto overflow-x-auto justify-start [&>button]:rounded-none [&>button]:border-b-2 [&>button]:border-transparent [&>button]:data-[state=active]:border-primary [&>button]:flex-shrink-0">
+        <TabsList className="flex flex-wrap w-full gap-0 bg-transparent border-b border-border rounded-none p-0 h-auto justify-start [&>button]:rounded-none [&>button]:border-b-2 [&>button]:border-transparent [&>button]:data-[state=active]:border-primary">
           <TabsTrigger value="infos" className="text-sm">Infos</TabsTrigger>
           <TabsTrigger value="cours" className="text-sm">Attribuer les cours</TabsTrigger>
           <TabsTrigger value="resultats" className="text-sm">Résultats</TabsTrigger>
