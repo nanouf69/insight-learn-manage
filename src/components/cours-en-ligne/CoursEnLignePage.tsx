@@ -25,55 +25,9 @@ const CoursEnLignePage = () => {
   const [selectedFormation, setSelectedFormation] = useState("vtc");
   const [editingModule, setEditingModule] = useState<{ id: number; nom: string } | null>(null);
   const [bilanActif, setBilanActif] = useState<string | null>(null);
-  const [modules, setModules] = useState([
-    // 1. INTRODUCTIONS
-    { id: 1, nom: "1.INTRODUCTION PRÉSENTIEL", eleves: 2, progression: "0%", statut: "Actif" },
-    { id: 26, nom: "1.INTRODUCTION E-LEARNING", eleves: 2, progression: "0%", statut: "Actif" },
-    { id: 31, nom: "1.INTRODUCTION TA", eleves: 0, progression: "0%", statut: "Actif" },
-    { id: 32, nom: "1.INTRODUCTION TA E-LEARNING", eleves: 0, progression: "0%", statut: "Actif" },
-    { id: 33, nom: "1.INTRODUCTION VA", eleves: 0, progression: "0%", statut: "Actif" },
-    { id: 34, nom: "1.INTRODUCTION VA E-LEARNING", eleves: 0, progression: "0%", statut: "Actif" },
-    // 2. COURS ET EXERCICES
-    { id: 2, nom: "2.COURS ET EXERCICES VTC", eleves: 2, progression: "6%", statut: "Actif" },
-    { id: 10, nom: "2.COURS ET EXERCICES TAXI", eleves: 0, progression: "0%", statut: "Actif" },
-    { id: 40, nom: "2.COURS ET EXERCICES TA", eleves: 0, progression: "0%", statut: "Actif" },
-    { id: 41, nom: "2.COURS ET EXERCICES VA", eleves: 0, progression: "0%", statut: "Actif" },
-    // 3. FORMULES
-    { id: 3, nom: "3.FORMULES", eleves: 2, progression: "0%", statut: "Actif" },
-    // 4. BILAN EXERCICES
-    { id: 4, nom: "4.BILAN EXERCICES VTC", eleves: 2, progression: "4%", statut: "Actif" },
-    { id: 9, nom: "4.BILAN EXERCICES TAXI", eleves: 0, progression: "0%", statut: "Actif" },
-    { id: 27, nom: "4.BILAN EXERCICES TA", eleves: 0, progression: "0%", statut: "Actif" },
-    { id: 29, nom: "4.BILAN EXERCICES VA", eleves: 0, progression: "0%", statut: "Actif" },
-    // 5. EXAMENS BLANCS
-    { id: 35, nom: "5.EXAMENS BLANCS VTC", eleves: 0, progression: "0%", statut: "Actif" },
-    { id: 36, nom: "5.EXAMENS BLANCS TAXI", eleves: 0, progression: "0%", statut: "Actif" },
-    { id: 37, nom: "5.EXAMENS BLANCS TA", eleves: 0, progression: "0%", statut: "Actif" },
-    { id: 38, nom: "5.EXAMENS BLANCS VA", eleves: 0, progression: "0%", statut: "Actif" },
-    // 6. BILAN EXAMEN
-    { id: 5, nom: "6.BILAN EXAMEN VTC", eleves: 2, progression: "8%", statut: "Actif" },
-    { id: 11, nom: "6.BILAN EXAMEN TAXI", eleves: 0, progression: "0%", statut: "Actif" },
-    { id: 28, nom: "6.BILAN EXAMEN TA", eleves: 0, progression: "0%", statut: "Actif" },
-    { id: 30, nom: "6.BILAN EXAMEN VA", eleves: 0, progression: "0%", statut: "Actif" },
-    // 7. PRATIQUE / CONNAISSANCES / CAS PRATIQUE / CONTRÔLE
-    { id: 7, nom: "7.CONNAISSANCES DE LA VILLE TAXI", eleves: 0, progression: "0%", statut: "Actif" },
-    { id: 8, nom: "7.PRATIQUE VTC", eleves: 2, progression: "0%", statut: "Actif" },
-    { id: 6, nom: "8.PRATIQUE TAXI", eleves: 0, progression: "0%", statut: "Actif" },
-    { id: 12, nom: "9.CAS PRATIQUE TAXI", eleves: 0, progression: "0%", statut: "Actif" },
-    { id: 13, nom: "CONTRÔLE DE CONNAISSANCES TAXI", eleves: 0, progression: "0%", statut: "Actif" },
-    // ÉQUIPEMENTS TAXI
-    { id: 64, nom: "🚕 ÉQUIPEMENTS TAXI", eleves: 0, progression: "0%", statut: "Actif" },
-    // SOURCES JURIDIQUES
-    { id: 60, nom: "📖 SOURCES JURIDIQUES VTC", eleves: 0, progression: "0%", statut: "Actif" },
-    { id: 61, nom: "📖 SOURCES JURIDIQUES TAXI", eleves: 0, progression: "0%", statut: "Actif" },
-    { id: 62, nom: "📖 SOURCES JURIDIQUES TA", eleves: 0, progression: "0%", statut: "Actif" },
-    { id: 63, nom: "📖 SOURCES JURIDIQUES VA", eleves: 0, progression: "0%", statut: "Actif" },
-    // FIN DE FORMATION
-    { id: 50, nom: "📋 FIN DE FORMATION VTC", eleves: 0, progression: "0%", statut: "Actif" },
-    { id: 51, nom: "📋 FIN DE FORMATION TAXI", eleves: 0, progression: "0%", statut: "Actif" },
-    { id: 52, nom: "📋 FIN DE FORMATION TA", eleves: 0, progression: "0%", statut: "Actif" },
-    { id: 53, nom: "📋 FIN DE FORMATION VA", eleves: 0, progression: "0%", statut: "Actif" },
-  ]);
+  const [modules, setModules] = useState(
+    ALL_MODULES.map(m => ({ ...m, eleves: 0, progression: "0%", statut: "Actif" }))
+  );
 
   const moveModule = (index: number, direction: "up" | "down") => {
     const newModules = [...modules];
