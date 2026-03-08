@@ -57,6 +57,7 @@ import { BILAN_EXERCICES_VA } from "./bilan-exercices-va-data";
 import { BILAN_EXAMEN_VTC } from "./bilan-examen-vtc-data";
 import { BILAN_EXAMEN_TAXI } from "./bilan-examen-taxi-data";
 import { BILAN_EXAMEN_VA } from "./bilan-examen-va-data";
+import { BILAN_EXAMEN_TA } from "./bilan-examen-ta-data";
 import CompetencesChecklist from "./CompetencesChecklist";
 import AnalyseBesoinForm from "./AnalyseBesoinForm";
 import ProjetProfessionnelForm from "./ProjetProfessionnelForm";
@@ -827,9 +828,9 @@ function getInitialModuleData(
     return {
       id: 28,
       nom: "6.BILAN EXAMEN TA",
-      description: "Bilan examen TA — toutes les matières. Questions type examen, sans chronomètre.",
+      description: "Bilan examen TA — Réglementation Nationale TAXI & Réglementation Locale. Questions type examen, sans chronomètre.",
       cours: [],
-      exercices: BILAN_EXAMEN_TAXI,
+      exercices: BILAN_EXAMEN_TA,
     };
   }
 
@@ -1415,7 +1416,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
   const buildSourceFingerprint = (data: ModuleData) =>
     JSON.stringify({
-      v: 3,
+      v: 4,
       coursCount: data.cours.length,
       exercicesCount: data.exercices.length,
       totalQuestions: data.exercices.reduce((acc, e) => acc + (e.questions?.length || 0), 0),
