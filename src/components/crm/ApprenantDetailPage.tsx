@@ -330,13 +330,13 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
             <DialogHeader>
               <DialogTitle>Modifier l'apprenant</DialogTitle>
             </DialogHeader>
-            <ApprenantEditForm
-              initialData={apprenant}
-              onSuccess={() => {
-                setShowEditDialog(false);
-                queryClient.invalidateQueries({ queryKey: ["apprenant-detail", apprenantId] });
-              }}
-            />
+            {apprenant && (
+              <ApprenantEditForm
+                apprenant={apprenant}
+                open={showEditDialog}
+                onOpenChange={setShowEditDialog}
+              />
+            )}
           </DialogContent>
         </Dialog>
       )}
