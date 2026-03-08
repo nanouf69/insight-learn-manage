@@ -383,59 +383,61 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className={`grid gap-6 ${singleExamenMode ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-4"}`}>
         {/* Sidebar - liste des examens */}
-        <div className="lg:col-span-1 space-y-3">
-          <div className="flex gap-1">
-            {(["tous", "TAXI", "VTC"] as const).map(t => (
-              <Button
-                key={t}
-                size="sm"
-                variant={typeFiltre === t ? "default" : "outline"}
-                onClick={() => setTypeFiltre(t)}
-                className="text-xs flex-1"
-              >
-                {t === "tous" ? "Tous" : t}
-              </Button>
-            ))}
-          </div>
-
-          <div className="space-y-1.5">
-            {examensFiltres.map(ex => {
-              const isBilan = ex.id.startsWith("bilan-");
-              return (
-                <button
-                  key={ex.id}
-                  onClick={() => setExamenSelId(ex.id)}
-                  className={`w-full text-left p-3 rounded-lg border transition-all ${
-                    examenSelId === ex.id
-                      ? "border-primary bg-primary/10 font-semibold"
-                      : "border-border hover:bg-muted/50"
-                  }`}
+        {!singleExamenMode && (
+          <div className="lg:col-span-1 space-y-3">
+            <div className="flex gap-1">
+              {(["tous", "TAXI", "VTC"] as const).map(t => (
+                <Button
+                  key={t}
+                  size="sm"
+                  variant={typeFiltre === t ? "default" : "outline"}
+                  onClick={() => setTypeFiltre(t)}
+                  className="text-xs flex-1"
                 >
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-1">
-                      <Badge
-                        variant={ex.type === "TAXI" ? "default" : "secondary"}
-                        className="text-xs"
-                      >
-                        {ex.type}
-                      </Badge>
-                      {isBilan && (
-                        <Badge className="text-xs bg-primary text-primary-foreground">BILAN</Badge>
-                      )}
+                  {t === "tous" ? "Tous" : t}
+                </Button>
+              ))}
+            </div>
+
+            <div className="space-y-1.5">
+              {examensFiltres.map(ex => {
+                const isBilan = ex.id.startsWith("bilan-");
+                return (
+                  <button
+                    key={ex.id}
+                    onClick={() => setExamenSelId(ex.id)}
+                    className={`w-full text-left p-3 rounded-lg border transition-all ${
+                      examenIdActif === ex.id
+                        ? "border-primary bg-primary/10 font-semibold"
+                        : "border-border hover:bg-muted/50"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-1">
+                        <Badge
+                          variant={ex.type === "TAXI" ? "default" : "secondary"}
+                          className="text-xs"
+                        >
+                          {ex.type}
+                        </Badge>
+                        {isBilan && (
+                          <Badge className="text-xs bg-primary text-primary-foreground">BILAN</Badge>
+                        )}
+                      </div>
+                      {!isBilan && <span className="text-xs text-muted-foreground">N°{ex.numero}</span>}
                     </div>
-                    {!isBilan && <span className="text-xs text-muted-foreground">N°{ex.numero}</span>}
-                  </div>
-                  <p className="text-xs text-muted-foreground line-clamp-1">{ex.titre}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {ex.matieres.reduce((acc, m) => acc + m.questions.length, 0)} questions · {isBilan ? "sans chrono" : `${ex.matieres.reduce((acc, m) => acc + m.duree, 0)}min`}
-                  </p>
-                </button>
-              );
-            })}
+                    <p className="text-xs text-muted-foreground line-clamp-1">{ex.titre}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {ex.matieres.reduce((acc, m) => acc + m.questions.length, 0)} questions · {isBilan ? "sans chrono" : `${ex.matieres.reduce((acc, m) => acc + m.duree, 0)}min`}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Éditeur de l'examen sélectionné */}
         <div className="lg:col-span-3">
