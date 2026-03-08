@@ -1443,11 +1443,34 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   };
 
   const deleteItem = (type: "cours" | "exercices", id: number) => {
-    setModuleData((prev) => ({
-      ...prev,
-      [type]: prev[type].filter((i) => i.id !== id),
-    }));
-    toast.success(`${type === "cours" ? "Cours" : "Exercice"} supprimé`);
+    setModuleData((prev) => {
+      if (type === "cours") {
+        const item = prev.cours.find((i) => i.id === id);
+        if (item) setDeletedCours((d) => [...d, item]);
+      } else {
+        const item = prev.exercices.find((i) => i.id === id);
+        if (item) setDeletedExercices((d) => [...d, item as ExerciceItem]);
+      }
+      return { ...prev, [type]: prev[type].filter((i) => i.id !== id) };
+    });
+    toast.success(`${type === "cours" ? "Cours" : "Exercice"} supprimé — retrouvez-le dans la Corbeille`);
+  };
+
+  const restoreItem = (type: "cours" | "exercices", id: number) => {
+    if (type === "cours") {
+      const item = deletedCours.find((i) => i.id === id);
+      if (item) {
+        setModuleData((prev) => ({ ...prev, cours: [...prev.cours, item] }));
+        setDeletedCours((d) => d.filter((i) => i.id !== id));
+      }
+    } else {
+      const item = deletedExercices.find((i) => i.id === id);
+      if (item) {
+        setModuleData((prev) => ({ ...prev, exercices: [...prev.exercices, item] }));
+        setDeletedExercices((d) => d.filter((i) => i.id !== id));
+      }
+    }
+    toast.success(`${type === "cours" ? "Cours" : "Exercice"} restauré`);
   };
 
   const toggleItem = (type: "cours" | "exercices", id: number) => {
