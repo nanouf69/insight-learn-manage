@@ -28,6 +28,7 @@ import {
   Download,
   Loader2,
   CheckCircle,
+  CheckCircle2,
   XCircle,
   GraduationCap,
   StickyNote,
@@ -36,8 +37,13 @@ import {
   Save,
   Send,
   UserPlus,
-  Pencil
+  Pencil,
+  KeyRound,
+  Copy
 } from "lucide-react";
+import { MODULES_DATA } from "@/components/cours-en-ligne/formations-data";
+import { ALL_MODULES, FORMATION_MODULES, MANAGED_MODULE_IDS, DEFAULT_MODULES_BY_TYPE } from "@/components/cours-en-ligne/modules-config";
+import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { generateEmargementPDF } from "./EmargementGenerator";
 import { supabase } from "@/integrations/supabase/client";
