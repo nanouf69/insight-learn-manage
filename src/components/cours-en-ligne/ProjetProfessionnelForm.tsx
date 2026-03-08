@@ -374,34 +374,46 @@ export default function ProjetProfessionnelForm({
           <div className="space-y-3">
             {!isTaxi && (
               <>
-                <div>
-                  <Label className="text-xs text-muted-foreground mb-1 block">Comment avez-vous connu FTRANSPORT ?</Label>
-                  <RadioGroup options={["Internet / Site web", "Bouche à oreille", "France Travail", "Réseaux sociaux"]} value={commentConnu} onChange={setCommentConnu} />
+                <div ref={fieldRefs.commentConnu}>
+                  <Label className={`text-xs mb-1 block ${invalidFields.has("commentConnu") ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
+                    Comment avez-vous connu FTRANSPORT ? <span className="text-destructive">*</span>
+                  </Label>
+                  <RadioGroup options={["Internet / Site web", "Bouche à oreille", "France Travail", "Réseaux sociaux"]} value={commentConnu} onChange={setCommentConnu} fieldKey="commentConnu" />
                 </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground mb-1 block">Avez-vous consulté le programme de formation ?</Label>
-                  <RadioGroup options={["Oui – en détail", "Oui – rapidement", "Non"]} value={consulteProgram} onChange={setConsulteProgram} />
+                <div ref={fieldRefs.consulteProgram}>
+                  <Label className={`text-xs mb-1 block ${invalidFields.has("consulteProgram") ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
+                    Avez-vous consulté le programme de formation ? <span className="text-destructive">*</span>
+                  </Label>
+                  <RadioGroup options={["Oui – en détail", "Oui – rapidement", "Non"]} value={consulteProgram} onChange={setConsulteProgram} fieldKey="consulteProgram" />
                 </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground mb-1 block">Savez-vous ce qu'implique l'examen {rsCode} ?</Label>
-                  <RadioGroup options={["Oui – bien informé(e)", "Partiellement", "Non – besoin d'explications"]} value={saitExamen} onChange={setSaitExamen} />
+                <div ref={fieldRefs.saitExamen}>
+                  <Label className={`text-xs mb-1 block ${invalidFields.has("saitExamen") ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
+                    Savez-vous ce qu'implique l'examen {rsCode} ? <span className="text-destructive">*</span>
+                  </Label>
+                  <RadioGroup options={["Oui – bien informé(e)", "Partiellement", "Non – besoin d'explications"]} value={saitExamen} onChange={setSaitExamen} fieldKey="saitExamen" />
                 </div>
               </>
             )}
             {isTaxi && (
               <>
                 <p className="text-xs text-muted-foreground italic">La connaissance du territoire est une épreuve spécifique à l'examen taxi.</p>
-                <div>
-                  <Label className="text-xs text-muted-foreground mb-1 block">Connaissez-vous bien la zone d'exercice ?</Label>
-                  <RadioGroup options={["Très bien", "Correctement", "Peu", "Pas du tout"]} value={connaitZone} onChange={setConnaitZone} />
+                <div ref={fieldRefs.connaitZone}>
+                  <Label className={`text-xs mb-1 block ${invalidFields.has("connaitZone") ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
+                    Connaissez-vous bien la zone d'exercice ? <span className="text-destructive">*</span>
+                  </Label>
+                  <RadioGroup options={["Très bien", "Correctement", "Peu", "Pas du tout"]} value={connaitZone} onChange={setConnaitZone} fieldKey="connaitZone" />
                 </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground mb-1 block">Expérience de conduite en milieu urbain dense ?</Label>
-                  <RadioGroup options={["Oui – régulière", "Oui – occasionnelle", "Non"]} value={conduiteUrbaine} onChange={setConduiteUrbaine} />
+                <div ref={fieldRefs.conduiteUrbaine}>
+                  <Label className={`text-xs mb-1 block ${invalidFields.has("conduiteUrbaine") ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
+                    Expérience de conduite en milieu urbain dense ? <span className="text-destructive">*</span>
+                  </Label>
+                  <RadioGroup options={["Oui – régulière", "Oui – occasionnelle", "Non"]} value={conduiteUrbaine} onChange={setConduiteUrbaine} fieldKey="conduiteUrbaine" />
                 </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground mb-1 block">Connaissance des sites et bâtiments publics de Lyon ?</Label>
-                  <RadioGroup options={["Bonne connaissance", "Partiellement", "Non – à apprendre"]} value={connaitSites} onChange={setConnaitSites} />
+                <div ref={fieldRefs.connaitSites}>
+                  <Label className={`text-xs mb-1 block ${invalidFields.has("connaitSites") ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
+                    Connaissance des sites et bâtiments publics de Lyon ? <span className="text-destructive">*</span>
+                  </Label>
+                  <RadioGroup options={["Bonne connaissance", "Partiellement", "Non – à apprendre"]} value={connaitSites} onChange={setConnaitSites} fieldKey="connaitSites" />
                 </div>
               </>
             )}
