@@ -190,7 +190,21 @@ const COMPTE_FORMATIONS = [
   { id: "taxi", label: "TAXI", types: ["taxi", "taxi-e"] },
   { id: "ta", label: "TA", types: ["ta", "ta-e"] },
   { id: "va", label: "VA", types: ["va", "va-e"] },
-];
+] as const;
+
+const ACCOUNT_FORMATION_TO_TYPE: Record<string, string> = {
+  vtc: "vtc",
+  taxi: "taxi",
+  ta: "ta",
+  va: "va",
+};
+
+const ACCOUNT_FORMATION_TO_DB_FORMATION: Record<string, string> = {
+  vtc: "vtc",
+  taxi: "taxi",
+  ta: "passerelle-taxi",
+  va: "passerelle-vtc-elearning",
+};
 
 const FORMATION_TO_TYPE: Record<string, string> = {
   "vtc": "vtc", "vtc-exam": "vtc",
@@ -224,6 +238,9 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedFormationForModules, setSelectedFormationForModules] = useState("");
   const [selectedFormationForAccount, setSelectedFormationForAccount] = useState("");
+  const [accountStartDate, setAccountStartDate] = useState("");
+  const [accountEndDate, setAccountEndDate] = useState("");
+  const [accountExtraModules, setAccountExtraModules] = useState<number[]>([]);
   const [generatedPassword, setGeneratedPassword] = useState("");
   const [creatingAccount, setCreatingAccount] = useState(false);
   const [resendingCredentials, setResendingCredentials] = useState(false);
@@ -311,6 +328,37 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
   const effectiveModules = currentModules.length > 0 ? currentModules : fallbackDefaultModules;
   const fallbackSignature = fallbackDefaultModules.join(",");
 
+  const inferredAccountFormationId = useMemo(() => {
+    if (resolvedTypeFromApprenant.startsWith("taxi")) return "taxi";
+    if (resolvedTypeFromApprenant.startsWith("ta")) return "ta";
+    if (resolvedTypeFromApprenant.startsWith("va")) return "va";
+    return "vtc";
+  }, [resolvedTypeFromApprenant]);
+
+  const accountBaseModules = useMemo(() => {
+    const selected = selectedFormationForAccount || inferredAccountFormationId;
+    const formationPreset = COMPTE_FORMATIONS.find((f) => f.id === selected);
+    if (!formationPreset) return [] as number[];
+
+    const merged = new Set<number>();
+    formationPreset.types.forEach((type) => {
+      (DEFAULT_MODULES_BY_TYPE[type] || []).forEach((id) => merged.add(id));
+    });
+
+    return Array.from(merged);
+  }, [inferredAccountFormationId, selectedFormationForAccount]);
+
+  const accountAdditionalModuleChoices = useMemo(
+    () => MODULES_DATA.filter((m) => MANAGED_MODULE_IDS.has(m.id) && !accountBaseModules.includes(m.id)),
+    [accountBaseModules]
+  );
+
+  const toggleAccountExtraModule = (id: number) => {
+    setAccountExtraModules((prev) =>
+      prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]
+    );
+  };
+
   useEffect(() => {
     setSelectedFormationForModules("");
   }, [apprenantId]);
@@ -320,6 +368,15 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
       setSelectedFormationForModules(resolvedTypeFromApprenant);
     }
   }, [resolvedTypeFromApprenant, selectedFormationForModules]);
+
+  useEffect(() => {
+    if (!showCreateDialog) return;
+    setSelectedFormationForAccount(inferredAccountFormationId);
+    setAccountStartDate(((apprenant as any)?.date_debut_cours_en_ligne as string) || "");
+    setAccountEndDate(((apprenant as any)?.date_fin_cours_en_ligne as string) || "");
+    setAccountExtraModules([]);
+    setGeneratedPassword("");
+  }, [apprenant, inferredAccountFormationId, showCreateDialog]);
 
   useEffect(() => {
     if (!apprenant?.id) return;
@@ -469,21 +526,50 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
             </DialogHeader>
             <div className="space-y-4 py-2">
               <p className="text-sm text-muted-foreground">
-                Un compte sera créé pour <strong>{apprenant.prenom} {apprenant.nom}</strong> ({apprenant.email}).
+                Un compte sera créé pour <strong>{apprenant.prenom} {apprenant.nom}</strong> ({apprenant.email || "email manquant"}).
               </p>
-              <div>
-                <label className="text-sm font-medium">Formation pour le compte :</label>
-                <Select value={selectedFormationForAccount} onValueChange={setSelectedFormationForAccount}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Choisir la formation" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {COMPTE_FORMATIONS.map((f) => (
-                      <SelectItem key={f.id} value={f.id}>{f.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium">Formation</label>
+                  <Select value={selectedFormationForAccount} onValueChange={setSelectedFormationForAccount}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choisir la formation" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {COMPTE_FORMATIONS.map((f) => (
+                        <SelectItem key={f.id} value={f.id}>{f.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-sm font-medium">Date début cours en ligne</label>
+                  <Input type="date" value={accountStartDate} onChange={(e) => setAccountStartDate(e.target.value)} />
+                </div>
+
+                <div className="space-y-1 md:col-start-2">
+                  <label className="text-sm font-medium">Date fin cours en ligne</label>
+                  <Input type="date" value={accountEndDate} onChange={(e) => setAccountEndDate(e.target.value)} />
+                </div>
               </div>
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Modules supplémentaires</p>
+                <div className="max-h-44 overflow-y-auto border rounded-md p-3 space-y-2">
+                  {accountAdditionalModuleChoices.map((mod) => (
+                    <label key={mod.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 rounded px-2 py-1">
+                      <Checkbox
+                        checked={accountExtraModules.includes(mod.id)}
+                        onCheckedChange={() => toggleAccountExtraModule(mod.id)}
+                      />
+                      <span className={cn(!accountExtraModules.includes(mod.id) && "text-muted-foreground")}>{mod.nom}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               {generatedPassword && (
                 <div className="bg-muted p-3 rounded-md space-y-1">
                   <p className="text-sm font-medium">Mot de passe généré :</p>
@@ -503,12 +589,30 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                 onClick={async () => {
                   setCreatingAccount(true);
                   try {
+                    const mergedModules = Array.from(new Set([...accountBaseModules, ...accountExtraModules]));
+                    const mappedType = ACCOUNT_FORMATION_TO_TYPE[selectedFormationForAccount] || null;
+                    const mappedFormation = ACCOUNT_FORMATION_TO_DB_FORMATION[selectedFormationForAccount] || null;
+
+                    const { error: updateError } = await supabase
+                      .from("apprenants")
+                      .update({
+                        type_apprenant: mappedType,
+                        formation_choisie: mappedFormation,
+                        date_debut_cours_en_ligne: accountStartDate || null,
+                        date_fin_cours_en_ligne: accountEndDate || null,
+                        modules_autorises: mergedModules.length > 0 ? mergedModules : null,
+                      } as any)
+                      .eq("id", apprenantId);
+
+                    if (updateError) throw updateError;
+
                     const { data, error } = await supabase.functions.invoke("create-apprenant-account", {
                       body: {
                         apprenant_id: apprenantId,
-                        formation: selectedFormationForAccount,
+                        email: apprenant.email,
                       },
                     });
+
                     if (error) throw error;
                     setGeneratedPassword(data?.password || "");
                     toast.success("Compte créé avec succès !");
