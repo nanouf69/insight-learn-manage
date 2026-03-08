@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useState, useMemo, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -28,6 +28,7 @@ import {
   Download,
   Loader2,
   CheckCircle,
+  CheckCircle2,
   XCircle,
   GraduationCap,
   StickyNote,
@@ -36,8 +37,13 @@ import {
   Save,
   Send,
   UserPlus,
-  Pencil
+  Pencil,
+  KeyRound,
+  Copy
 } from "lucide-react";
+import { MODULES_DATA } from "@/components/cours-en-ligne/formations-data";
+import { ALL_MODULES, FORMATION_MODULES, MANAGED_MODULE_IDS, DEFAULT_MODULES_BY_TYPE } from "@/components/cours-en-ligne/modules-config";
+import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { generateEmargementPDF } from "./EmargementGenerator";
 import { supabase } from "@/integrations/supabase/client";
@@ -88,6 +94,32 @@ const modesFinancement = [
   { value: "france_travail", label: "France Travail", color: "bg-orange-100 text-orange-700" },
   { value: "autre", label: "Autre", color: "bg-slate-100 text-slate-700" },
 ];
+
+const ORDERED_FORMATION_MODULES = Object.fromEntries(
+  Object.entries(FORMATION_MODULES).map(([k, v]) => [k, v.modules])
+);
+
+const COMPTE_FORMATIONS = [
+  { id: "vtc", label: "VTC (Présentiel)" },
+  { id: "vtc-e", label: "VTC E-learning" },
+  { id: "taxi", label: "TAXI (Présentiel)" },
+  { id: "taxi-e", label: "TAXI E-learning" },
+  { id: "ta", label: "TA (Présentiel)" },
+  { id: "ta-e", label: "TA E-learning" },
+  { id: "va", label: "VA (Présentiel)" },
+  { id: "va-e", label: "VA E-learning" },
+] as const;
+
+const ACCOUNT_FORMATION_TO_TYPE: Record<string, string> = {
+  vtc: "vtc", "vtc-e": "vtc-e", taxi: "taxi", "taxi-e": "taxi-e",
+  ta: "ta", "ta-e": "ta-e", va: "va", "va-e": "va-e",
+};
+
+const ACCOUNT_FORMATION_TO_DB_FORMATION: Record<string, string> = {
+  vtc: "vtc", "vtc-e": "vtc-elearning", taxi: "taxi", "taxi-e": "taxi-elearning",
+  ta: "passerelle-taxi", "ta-e": "passerelle-taxi-elearning",
+  va: "passerelle-vtc-elearning", "va-e": "passerelle-vtc-elearning",
+};
 
 const getTypeBadgeColor = (type: string | null) => {
   if (!type) return "bg-gray-100 text-gray-700";
@@ -301,6 +333,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [editLabel, setEditLabel] = useState("");
   const [editSubject, setEditSubject] = useState("");
   const [editBody, setEditBody] = useState("");
+  // --- Account creation state ---
+  const [accountDialogApprenant, setAccountDialogApprenant] = useState<any | null>(null);
+  const [selectedFormationForAccount, setSelectedFormationForAccount] = useState("");
+  const [accountStartDate, setAccountStartDate] = useState("");
+  const [accountEndDate, setAccountEndDate] = useState("");
+  const [accountExtraModules, setAccountExtraModules] = useState<number[]>([]);
+  const [generatedPassword, setGeneratedPassword] = useState("");
+  const [creatingAccount, setCreatingAccount] = useState(false);
+  const [resendingCredentials, setResendingCredentials] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -345,7 +386,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             civilite,
             adresse,
             code_postal,
-            ville
+            ville,
+            auth_user_id,
+            date_debut_cours_en_ligne,
+            date_fin_cours_en_ligne
           )
         `)
         .eq('session_id', session.id);
@@ -456,6 +500,85 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
    const hasConvocation = (apprenantId: string) => {
      return convocationsSent.some((c: any) => c.apprenant_id === apprenantId);
    };
+
+  // --- Account creation helpers ---
+  const inferAccountFormationId = (apprenant: any): string => {
+    const type = (apprenant?.type_apprenant || "").toLowerCase();
+    if (type.startsWith("taxi")) return "taxi";
+    if (type.startsWith("ta")) return "ta";
+    if (type.startsWith("va")) return "va";
+    return "vtc";
+  };
+
+  const accountBaseModules = useMemo(() => {
+    return DEFAULT_MODULES_BY_TYPE[selectedFormationForAccount] || [] as number[];
+  }, [selectedFormationForAccount]);
+
+  const accountAdditionalModuleChoices = useMemo(
+    () => MODULES_DATA.filter((m) => MANAGED_MODULE_IDS.has(m.id) && !accountBaseModules.includes(m.id)),
+    [accountBaseModules]
+  );
+
+  const toggleAccountExtraModule = (id: number) => {
+    setAccountExtraModules((prev) =>
+      prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]
+    );
+  };
+
+  const openAccountDialog = (apprenant: any) => {
+    setAccountDialogApprenant(apprenant);
+    const inferredId = inferAccountFormationId(apprenant);
+    setSelectedFormationForAccount(inferredId);
+    setAccountStartDate(apprenant.date_debut_cours_en_ligne || "");
+    setAccountEndDate(apprenant.date_fin_cours_en_ligne || "");
+    setAccountExtraModules([]);
+    setGeneratedPassword("");
+  };
+
+  const handleCreateAccount = async () => {
+    if (!accountDialogApprenant) return;
+    setCreatingAccount(true);
+    try {
+      const mergedModules = Array.from(new Set([...accountBaseModules, ...accountExtraModules]));
+      const mappedType = ACCOUNT_FORMATION_TO_TYPE[selectedFormationForAccount] || null;
+      const mappedFormation = ACCOUNT_FORMATION_TO_DB_FORMATION[selectedFormationForAccount] || null;
+      const appId = accountDialogApprenant.id;
+
+      const { error: updateError } = await supabase
+        .from("apprenants")
+        .update({
+          type_apprenant: mappedType,
+          formation_choisie: mappedFormation,
+          date_debut_cours_en_ligne: accountStartDate || null,
+          date_fin_cours_en_ligne: accountEndDate || null,
+          modules_autorises: mergedModules.length > 0 ? mergedModules : null,
+        } as any)
+        .eq("id", appId);
+
+      if (updateError) throw updateError;
+
+      const hasExisting = Boolean(accountDialogApprenant.auth_user_id);
+      if (hasExisting) {
+        toast({ title: "Accès cours mis à jour", description: "Les paramètres ont été enregistrés." });
+        refetchApprenants();
+        setAccountDialogApprenant(null);
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke("create-apprenant-account", {
+        body: { apprenant_id: appId, email: accountDialogApprenant.email },
+      });
+
+      if (error) throw error;
+      setGeneratedPassword(data?.password || "");
+      toast({ title: "Compte créé avec succès !", description: `Un email a été envoyé à ${accountDialogApprenant.email}.` });
+      refetchApprenants();
+    } catch (err: any) {
+      toast({ title: "Erreur", description: err?.message || "Erreur lors de l'opération", variant: "destructive" });
+    } finally {
+      setCreatingAccount(false);
+    }
+  };
 
   if (!session) return null;
 
@@ -1123,14 +1246,25 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                               </div>
                             </div>
                           </div>
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
-                            onClick={() => removeApprenant(sessionApprenant.id)}
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="sm"
+                              variant={apprenant.auth_user_id ? "outline" : "default"}
+                              className="h-8 gap-1 text-xs"
+                              onClick={(e) => { e.stopPropagation(); openAccountDialog(apprenant); }}
+                            >
+                              <KeyRound className="w-3.5 h-3.5" />
+                              {apprenant.auth_user_id ? "Configurer l'accès" : "Créer un compte"}
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
+                              onClick={() => removeApprenant(sessionApprenant.id)}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
                         
                         {/* Ligne 2: Dates de formation */}
@@ -1798,6 +1932,127 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         )}
       </DialogContent>
     </Dialog>
+
+    {/* Account creation/configuration dialog */}
+    {accountDialogApprenant && (
+      <Dialog open={!!accountDialogApprenant} onOpenChange={(o) => { if (!o) setAccountDialogApprenant(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="w-5 h-5" />
+              {accountDialogApprenant.auth_user_id ? "Configurer l'accès cours" : "Créer un compte apprenant"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              {accountDialogApprenant.auth_user_id
+                ? <>Mettez à jour la formation, les dates et les modules de <strong>{accountDialogApprenant.prenom} {accountDialogApprenant.nom}</strong>.</>
+                : <>Un compte sera créé pour <strong>{accountDialogApprenant.prenom} {accountDialogApprenant.nom}</strong> ({accountDialogApprenant.email || "email manquant"}).</>}
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Formation</label>
+                <Select value={selectedFormationForAccount} onValueChange={setSelectedFormationForAccount}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir la formation" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COMPTE_FORMATIONS.map((f) => (
+                      <SelectItem key={f.id} value={f.id}>{f.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Date début cours en ligne</label>
+                <Input type="date" value={accountStartDate} onChange={(e) => setAccountStartDate(e.target.value)} />
+              </div>
+
+              <div className="space-y-1 md:col-start-2">
+                <label className="text-sm font-medium">Date fin cours en ligne</label>
+                <Input type="date" value={accountEndDate} onChange={(e) => setAccountEndDate(e.target.value)} />
+              </div>
+            </div>
+
+            {selectedFormationForAccount && ORDERED_FORMATION_MODULES[selectedFormationForAccount] && (
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Modules de la formation</p>
+                <div className="max-h-44 overflow-y-auto border rounded-md p-3 space-y-1 bg-muted/30">
+                  {ORDERED_FORMATION_MODULES[selectedFormationForAccount].map((mod: any) => (
+                    <div key={mod.id} className="flex items-center gap-2 text-sm px-2 py-1">
+                      <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                      <span className="font-medium">{mod.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-muted-foreground">Modules supplémentaires</p>
+              <div className="max-h-44 overflow-y-auto border rounded-md p-3 space-y-2">
+                {accountAdditionalModuleChoices.map((mod: any) => (
+                  <label key={mod.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 rounded px-2 py-1">
+                    <Checkbox
+                      checked={accountExtraModules.includes(mod.id)}
+                      onCheckedChange={() => toggleAccountExtraModule(mod.id)}
+                    />
+                    <span className={cn(!accountExtraModules.includes(mod.id) && "text-muted-foreground")}>{mod.nom}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {generatedPassword && (
+              <div className="bg-muted p-3 rounded-md space-y-2">
+                <p className="text-sm font-medium">✅ Compte créé — Mot de passe généré :</p>
+                <div className="flex items-center gap-2">
+                  <code className="text-sm bg-background px-2 py-1 rounded border">{generatedPassword}</code>
+                  <Button variant="ghost" size="sm" onClick={() => { navigator.clipboard.writeText(generatedPassword); toast({ title: "Copié !" }); }}>
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full mt-1"
+                  disabled={resendingCredentials}
+                  onClick={async () => {
+                    setResendingCredentials(true);
+                    try {
+                      const { error } = await supabase.functions.invoke("resend-credentials", {
+                        body: { apprenant_id: accountDialogApprenant.id },
+                      });
+                      if (error) throw error;
+                      toast({ title: "Identifiants renvoyés par email" });
+                    } catch {
+                      toast({ title: "Erreur", description: "Erreur lors de l'envoi", variant: "destructive" });
+                    } finally {
+                      setResendingCredentials(false);
+                    }
+                  }}
+                >
+                  {resendingCredentials ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                  Renvoyer identifiants par email
+                </Button>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAccountDialogApprenant(null)}>Annuler</Button>
+            <Button
+              disabled={creatingAccount || !selectedFormationForAccount || (!accountDialogApprenant.auth_user_id && !accountDialogApprenant.email)}
+              onClick={handleCreateAccount}
+            >
+              {creatingAccount ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <KeyRound className="w-4 h-4 mr-2" />}
+              {accountDialogApprenant.auth_user_id ? "Enregistrer" : "Créer le compte"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    )}
     </>
   );
 }
