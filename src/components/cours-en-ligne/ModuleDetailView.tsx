@@ -56,6 +56,7 @@ import { BILAN_EXERCICES_TA } from "./bilan-exercices-ta-data";
 import { BILAN_EXERCICES_VA } from "./bilan-exercices-va-data";
 import { BILAN_EXAMEN_VTC } from "./bilan-examen-vtc-data";
 import { BILAN_EXAMEN_TAXI } from "./bilan-examen-taxi-data";
+import { BILAN_EXAMEN_VA } from "./bilan-examen-va-data";
 import CompetencesChecklist from "./CompetencesChecklist";
 import AnalyseBesoinForm from "./AnalyseBesoinForm";
 import ProjetProfessionnelForm from "./ProjetProfessionnelForm";
