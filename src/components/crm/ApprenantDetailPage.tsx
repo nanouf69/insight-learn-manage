@@ -80,18 +80,20 @@ function CoursAttribution({ apprenant, apprenantId, effectiveModules, activeForm
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Attribution rapide :</span>
-          {Object.keys(DEFAULT_MODULES_BY_TYPE).map((type) => (
-            <Button
-              key={type}
-              variant={activeFormationType === type ? "default" : "outline"}
-              size="sm"
-              onClick={() => applyPreset(type)}
-            >
-              {type.toUpperCase()}
-            </Button>
-          ))}
+          <Select value={selectedFormationForModules || ""} onValueChange={(val) => applyPreset(val)}>
+            <SelectTrigger className="w-[220px]">
+              <SelectValue placeholder="Choisir une formation" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.keys(DEFAULT_MODULES_BY_TYPE).map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type.toUpperCase()}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-[400px] overflow-y-auto border rounded-md p-3">
           {MODULES_DATA.filter((m) => MANAGED_MODULE_IDS.has(m.id)).map((mod) => (
