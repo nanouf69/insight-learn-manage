@@ -316,6 +316,93 @@ function CoursAttribution({ apprenant, apprenantId, effectiveModules, activeForm
   );
 }
 
+import { getAvatarUrl } from "@/lib/avatarUrl";
+
+interface ApprenantDetailPageProps {
+  apprenantId: string;
+  onBack: () => void;
+}
+
+const typeLabels: Record<string, string> = {
+  'vtc': 'VTC',
+  'vtc-e': 'VTC E',
+  'taxi': 'TAXI',
+  'taxi-e': 'TAXI E',
+  'ta': 'TA',
+  'ta-e': 'TA E',
+  'va': 'VA',
+  'va-e': 'VA E',
+};
+
+const financementLabels: Record<string, string> = {
+  'personnel': 'Personnel',
+  'cpf': 'CPF',
+  'cpf-a': 'CPF A',
+  'opco': 'OPCO',
+  'france-travail': 'France Travail',
+  'entreprise': 'Entreprise',
+};
+
+const formationLabels: Record<string, string> = {
+  'vtc': 'Formation VTC (sans examen) - 1 099 €',
+  'vtc-exam': 'Formation VTC avec frais d\'examen - 1 599 €',
+  'taxi': 'Formation TAXI (sans examen) - 1 299 €',
+  'taxi-exam': 'Formation TAXI avec frais d\'examen - 1 799 €',
+  'passerelle-taxi': 'Formation TAXI pour chauffeur VTC (TA) - 999 €',
+  'vtc-elearning-1099': 'Formation VTC (E-learning) - 1 099 €',
+  'vtc-elearning': 'Formation VTC avec examen (E-learning) - 1 599 €',
+  'taxi-elearning': 'Formation TAXI (E-learning) - 1 299 €',
+  'passerelle-taxi-elearning': 'Formation TA (E-learning) - 999 €',
+  'passerelle-vtc-elearning': 'Formation VA (E-learning) - 499 €',
+  'vtc-e-presentiel': 'Formation VTC E-learning + Présentiel - 1 599 €',
+  'taxi-e-presentiel': 'Formation TAXI E-learning + Présentiel - 1 799 €',
+  'ta-e-presentiel': 'Formation TA E-learning + Présentiel - 999 €',
+};
+
+const creneauLabels: Record<string, string> = {
+  'matin': 'Formation en matinée (8h - 12h)',
+  'apres-midi': 'Formation en après-midi (13h - 17h)',
+  'soiree': 'Formation en soirée (17h - 21h)',
+  'journee': 'Formation en journée (8h - 17h)',
+  'elearning': 'Formation en ligne',
+  'repassage': 'Repassage',
+  'pas-encore-choisi': 'Pas encore choisi',
+};
+
+const COMPTE_FORMATIONS = [
+  { id: "vtc", label: "VTC", types: ["vtc", "vtc-e"] },
+  { id: "taxi", label: "TAXI", types: ["taxi", "taxi-e"] },
+  { id: "ta", label: "TA", types: ["ta", "ta-e"] },
+  { id: "va", label: "VA", types: ["va", "va-e"] },
+] as const;
+
+const ACCOUNT_FORMATION_TO_TYPE: Record<string, string> = {
+  vtc: "vtc",
+  taxi: "taxi",
+  ta: "ta",
+  va: "va",
+};
+
+const ACCOUNT_FORMATION_TO_DB_FORMATION: Record<string, string> = {
+  vtc: "vtc",
+  taxi: "taxi",
+  ta: "passerelle-taxi",
+  va: "passerelle-vtc-elearning",
+};
+
+const FORMATION_TO_TYPE: Record<string, string> = {
+  "vtc": "vtc", "vtc-exam": "vtc",
+  "taxi": "taxi", "taxi-exam": "taxi",
+  "passerelle-taxi": "ta",
+  "vtc-elearning-1099": "vtc-e", "vtc-elearning": "vtc-e",
+  "taxi-elearning": "taxi-e",
+  "passerelle-taxi-elearning": "ta-e",
+  "passerelle-vtc-elearning": "va-e",
+  "vtc-e-presentiel": "vtc-e-presentiel",
+  "taxi-e-presentiel": "taxi-e-presentiel",
+  "ta-e-presentiel": "ta-e-presentiel",
+};
+
 export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPageProps) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
