@@ -362,6 +362,93 @@ D — FACTURATION ET PAIEMENT
 • Formateur Anglais : Albert Akono`,
       actif: true,
     },
+    {
+      id: 10,
+      titre: "Plannings de formation (indicatifs)",
+      description: `Les plannings ci-dessous sont donnes a titre indicatif. Ils peuvent etre modifies en fonction des necessites pedagogiques.
+
+PLANNING TA — Formation Taxi pour chauffeurs VTC
+Duree : 3 semaines | Horaires : 9h00-12h00 / 13h00-16h00
+
+Semaine 1 :
+LUNDI 9h-12h : Reglementation locale | 13h-16h : Reglementation locale
+MARDI 9h-12h : Reglementation locale | 13h-16h : Reglementation locale
+MERCREDI 9h-12h : Topographie | 13h-16h : Topographie
+JEUDI 9h-12h : Bilan examen | 13h-16h : 13h-15h Correction
+VENDREDI 9h-12h : Controle continu | 13h-16h : Correction 15h-16h
+
+Semaine 2 : Revisions individuelles et examens blancs complementaires.
+
+Semaine 3 :
+LUNDI 15h-17h : Revision
+
+---
+
+PLANNING TAXI — Formation complete
+Duree : 3 semaines | Horaires : 9h00-12h00 / 13h00-16h00
+
+Semaine 1 :
+LUNDI 9h-12h : Reglementation locale | 13h-16h : Reglementation locale
+MARDI 9h-12h : Reglementation locale | 13h-16h : Reglementation locale
+MERCREDI 9h-12h : Topographie | 13h-16h : Topographie
+JEUDI 9h-12h : Bilan examen | 13h-16h : 13h-15h + Correction
+VENDREDI 9h-12h : Controle continu | 13h-16h : 15h-16h
+
+Semaine 2 :
+LUNDI : T3P 1/2 + Securite routiere 13h-15h + Anglais
+MARDI : Gestion + Securite routiere 13h-15h + Anglais
+MERCREDI : Gestion + Securite routiere 13h-15h + Anglais
+JEUDI : Reglementation VTC 9h-10h30 + Gestion 13h-14h30 + Examen blanc
+VENDREDI : 10h30-12h + Anglais 14h-15h + Revision
+
+Semaine 3 :
+LUNDI : Bilan QCM + Bilan QRC
+MARDI : Bilan QRC + Examen blanc 13h-16h
+MERCREDI : Bilan QCM 9h-10h30 + Examen blanc 13h-14h
+JEUDI : 10h30-12h + Examen blanc 13h-14h
+VENDREDI : Examen blanc 9h-10h30 + Anglais 14h-15h + Revision
+
+---
+
+PLANNING VTC — Formation complete
+Duree : 3 semaines | Horaires : 9h00-12h00 / 13h00-16h00
+
+Semaine 1 :
+LUNDI : T3P 1/2 + Securite routiere 13h-15h + Anglais 15h-16h
+MARDI : Gestion + Securite routiere 13h-15h + Anglais 15h-16h
+MERCREDI : Gestion + Securite routiere 13h-15h + Anglais 15h-16h
+JEUDI : Reglementation VTC 9h-10h30 + Gestion 13h-14h30 + Examen blanc 14h-16h
+VENDREDI : Examen blanc 10h30-12h + Anglais 14h-15h + 15h-16h
+
+Semaine 2 :
+LUNDI : Bilan QCM + Bilan QRC
+MARDI : Bilan QRC + Examen blanc 13h-16h
+MERCREDI : Bilan QCM 9h-10h30 + Examen blanc 13h-14h + 14h-16h
+JEUDI : Bilan QCM 9h-10h30 + Examen blanc 13h-14h + 14h-16h
+VENDREDI : Examen blanc 9h-10h30 + Anglais 14h-15h + Revision 15h-16h
+
+---
+
+PLANNING VTC COURS DU SOIR
+Duree : 2 semaines | Horaires : 17h00-21h00
+
+Semaine 1 :
+LUNDI : T3P 17h-18h30 + Securite routiere 18h-21h
+MARDI : Gestion 17h-18h30 + Securite routiere 18h30-21h
+MERCREDI : Gestion 17h-18h30 + Securite routiere 18h30-21h
+JEUDI : Gestion 17h-18h30 + Reglementation 18h30-20h
+VENDREDI : Anglais 17h-18h + Revision VTC 20h-21h + Examen blanc 19h30-21h
+
+Semaine 2 :
+LUNDI : Examen blanc 17h-18h + Bilan QRC 18h-18h30 + Correction 18h30-20h30
+MARDI : Bilan QRC + Bilan QCM 18h30-19h30 + Examen blanc 19h30-21h
+MERCREDI : Examen blanc 17h-18h + Bilan QCM 18h-19h30 + Examen blanc 19h30-21h
+JEUDI : Examen blanc 17h-18h + Bilan QCM 18h-19h30 + Examen blanc 19h30-21h
+VENDREDI : Anglais 17h-18h + Revision 19h-21h
+
+Certaines heures peuvent etre rajoutees et le planning est susceptible d'etre modifie.`,
+      actif: true,
+    },
   ],
   exercices: [
     {
