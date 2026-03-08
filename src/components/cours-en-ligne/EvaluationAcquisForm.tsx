@@ -260,7 +260,7 @@ const EvaluationAcquisForm = ({ formationType, apprenantId, onComplete }: Evalua
                   const isInvalid = invalidKeys.has(key);
                   return (
                   <div key={compIdx} ref={el => { itemRefs.current[key] = el; }} className={`rounded-lg border p-4 space-y-3 ${isInvalid ? "ring-2 ring-destructive/60 bg-destructive/5 border-destructive" : ""}`}>
-                    <p className="text-sm font-medium text-foreground">{comp.label}</p>
+                    <p className={`text-sm font-medium ${isInvalid ? "text-destructive" : "text-foreground"}`}>{comp.label}</p>
                     <RadioGroup
                       value={comp.value || ""}
                       onValueChange={(v) => updateCompetence(partieIdx, compIdx, v as NiveauAcquis)}
