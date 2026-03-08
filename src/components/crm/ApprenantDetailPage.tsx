@@ -28,6 +28,93 @@ import { ResetCoursTab } from "./apprenant-sections/ResetCoursTab";
 import { DocumentsCompletes } from "./apprenant-sections/DocumentsCompletes";
 import { ApprenantEditForm } from "@/components/apprenants/ApprenantEditForm";
 import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+
+const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 41, 50, 51, 52, 53, 60, 61, 62, 63, 64]);
+
+function CoursAttribution({ apprenant, apprenantId, effectiveModules, activeFormationType, selectedFormationForModules, setSelectedFormationForModules, queryClient }: any) {
+  const [localModules, setLocalModules] = useState<number[]>(effectiveModules);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setLocalModules(effectiveModules);
+  }, [effectiveModules.join(",")]);
+
+  const toggleModule = (id: number) => {
+    setLocalModules((prev: number[]) =>
+      prev.includes(id) ? prev.filter((m: number) => m !== id) : [...prev, id]
+    );
+  };
+
+  const saveModules = async () => {
+    setSaving(true);
+    const { error } = await supabase
+      .from("apprenants")
+      .update({ modules_autorises: localModules } as any)
+      .eq("id", apprenantId);
+    setSaving(false);
+    if (error) {
+      toast.error("Erreur lors de la sauvegarde");
+    } else {
+      toast.success("Modules sauvegardés");
+      queryClient.invalidateQueries({ queryKey: ["apprenant-detail", apprenantId] });
+    }
+  };
+
+  const applyPreset = (type: string) => {
+    const preset = DEFAULT_MODULES_BY_TYPE[type];
+    if (preset) {
+      setLocalModules(preset);
+      setSelectedFormationForModules(type);
+    }
+  };
+
+  const hasChanges = JSON.stringify([...localModules].sort()) !== JSON.stringify([...effectiveModules].sort());
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <BookOpen className="w-5 h-5" />
+          Attribuer les cours
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm text-muted-foreground">Attribution rapide :</span>
+          {Object.keys(DEFAULT_MODULES_BY_TYPE).map((type) => (
+            <Button
+              key={type}
+              variant={activeFormationType === type ? "default" : "outline"}
+              size="sm"
+              onClick={() => applyPreset(type)}
+            >
+              {type.toUpperCase()}
+            </Button>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-[400px] overflow-y-auto border rounded-md p-3">
+          {MODULES_DATA.filter((m) => MANAGED_MODULE_IDS.has(m.id)).map((mod) => (
+            <label key={mod.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 rounded px-2 py-1">
+              <Checkbox
+                checked={localModules.includes(mod.id)}
+                onCheckedChange={() => toggleModule(mod.id)}
+              />
+              <span className={cn(!localModules.includes(mod.id) && "text-muted-foreground")}>
+                {mod.nom}
+              </span>
+            </label>
+          ))}
+        </div>
+        {hasChanges && (
+          <Button onClick={saveModules} disabled={saving}>
+            {saving ? "Sauvegarde..." : "Sauvegarder les modules"}
+          </Button>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 import { getAvatarUrl } from "@/lib/avatarUrl";
 
 interface ApprenantDetailPageProps {
@@ -421,6 +508,36 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
             </div>
           )}
 
+          {/* Attribuer les cours */}
+          {activeTab === "cours" && (
+            <CoursAttribution
+              apprenant={apprenant}
+              apprenantId={apprenantId}
+              effectiveModules={effectiveModules}
+              activeFormationType={activeFormationType}
+              selectedFormationForModules={selectedFormationForModules}
+              setSelectedFormationForModules={setSelectedFormationForModules}
+              queryClient={queryClient}
+            />
+          )}
+
+          {/* Résultats */}
+          {activeTab === "resultats" && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5" />
+                  Résultats de l'apprenant
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground text-sm">
+                  Consultez les résultats dans l'onglet "Cours en ligne" → "Rapport d'activité" pour un suivi détaillé des quiz et exercices complétés par cet apprenant.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Autres onglets */}
           {activeTab === "docs-completes" && <DocumentsCompletes apprenant={apprenant} />}
           {activeTab === "docs-formation" && <DocumentsFormation apprenant={apprenant} />}
@@ -430,6 +547,37 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           {activeTab === "emails" && <EmailsSection apprenant={apprenant} />}
           {activeTab === "devis" && <DevisSection apprenant={apprenant} />}
           {activeTab === "reset-cours" && <ResetCoursTab apprenant={apprenant} queryClient={queryClient} />}
+          {activeTab === "delete-account" && (
+            <Card className="border-destructive">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-destructive">
+                  <Trash2 className="w-5 h-5" />
+                  Supprimer l'apprenant
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Cette action est irréversible. Toutes les données de cet apprenant seront définitivement supprimées.
+                </p>
+                <Button
+                  variant="destructive"
+                  onClick={async () => {
+                    if (!confirm("Êtes-vous sûr de vouloir supprimer cet apprenant ? Cette action est irréversible.")) return;
+                    const { error } = await supabase.from("apprenants").delete().eq("id", apprenantId);
+                    if (error) {
+                      toast.error("Erreur lors de la suppression");
+                    } else {
+                      toast.success("Apprenant supprimé");
+                      onBack();
+                    }
+                  }}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Supprimer définitivement
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </Tabs>
     </div>
