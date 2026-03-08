@@ -86,16 +86,17 @@ export function RecentActivity({ onNavigateToApprenant }: RecentActivityProps) {
 
         // Add system alerts first (priority)
         alertes?.forEach((a) => {
+          const isConnexion = a.type === 'connexion_apprenant';
           activityList.push({
             apprenantId: '',
             id: `alert-${a.id}`,
-            type: "alert",
+            type: isConnexion ? "connexion" : "alert",
             message: a.titre,
             target: a.message,
             time: formatDistanceToNow(new Date(a.created_at), { addSuffix: true, locale: fr }),
-            icon: AlertTriangle,
-            iconBg: "bg-destructive/10",
-            iconColor: "text-destructive",
+            icon: isConnexion ? LogIn : AlertTriangle,
+            iconBg: isConnexion ? "bg-green-500/10" : "bg-destructive/10",
+            iconColor: isConnexion ? "text-green-600" : "text-destructive",
           });
         });
 
