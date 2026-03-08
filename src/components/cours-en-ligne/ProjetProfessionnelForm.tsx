@@ -235,7 +235,7 @@ export default function ProjetProfessionnelForm({
               <Textarea value={motivations} onChange={e => setMotivations(e.target.value)} rows={3} placeholder="J'aime le contact avec la clientèle, j'aime conduire, j'aime me rendre utile, je souhaite travailler avec des malades..." />
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground mb-1 block">Avez-vous déjà exercé une activité de transport de personnes ?</Label>
+              <Label className="text-xs text-muted-foreground mb-1 block">Avez-vous déjà exercé une activité de transport de personnes ? <span className="text-destructive">*</span></Label>
               <RadioGroup options={["Oui", "Non"]} value={dejaTransport} onChange={setDejaTransport} />
               {dejaTransport === "Oui" && (
                 <div className="mt-2">
