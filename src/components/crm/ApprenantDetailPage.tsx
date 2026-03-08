@@ -1191,37 +1191,37 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
           </Card>
         </TabsContent>
         {/* Formulaires complétés Tab */}
-        <TabsContent value="docs-completes">
+        <TabsContent value="docs-completes" className="pb-24">
           <DocumentsCompletes apprenant={apprenant} />
         </TabsContent>
 
         {/* Documents Formation Tab */}
-        <TabsContent value="docs-formation">
+        <TabsContent value="docs-formation" className="pb-24">
           <DocumentsFormation apprenant={apprenant} />
         </TabsContent>
 
         {/* Dossier Tab */}
-        <TabsContent value="dossier">
+        <TabsContent value="dossier" className="pb-24">
           <DocumentsDossier apprenant={apprenant} />
         </TabsContent>
 
         {/* Documents Inscription Tab */}
-        <TabsContent value="docs-inscription">
+        <TabsContent value="docs-inscription" className="pb-24">
           <DocumentsInscription apprenant={apprenant} />
         </TabsContent>
 
         {/* Examens Tab */}
-        <TabsContent value="examens">
+        <TabsContent value="examens" className="pb-24">
           <ExamensSection apprenant={apprenant} />
         </TabsContent>
 
         {/* Emails Tab */}
-        <TabsContent value="emails">
+        <TabsContent value="emails" className="pb-24">
           <EmailsSection apprenant={apprenant} />
         </TabsContent>
 
         {/* Devis Tab */}
-        <TabsContent value="devis">
+        <TabsContent value="devis" className="pb-24">
           <DevisSection apprenant={apprenant} />
         </TabsContent>
 
