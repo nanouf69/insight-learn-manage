@@ -282,6 +282,11 @@ const hasModuleCompletionProgress = (completion: any) => {
 
 const isModuleCompletionFullyDone = (completion: any) => {
   if (!completion) return false;
+  // A module is fully done if it has a recorded score (validation was clicked)
+  // OR if all question details have been answered
+  if (completion.score_max != null && completion.score_max > 0 && completion.score_obtenu != null) {
+    return true;
+  }
   const details = Array.isArray(completion?.details) ? completion.details : null;
   if (!details || details.length === 0) return true;
   return getCompletionAnsweredCount(completion) === details.length;
