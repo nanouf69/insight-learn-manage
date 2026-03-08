@@ -253,7 +253,7 @@ export default function ProjetProfessionnelForm({
                 value={motivations}
                 onChange={e => { setMotivations(e.target.value); setInvalidFields(prev => { const n = new Set(prev); n.delete("motivations"); return n; }); }}
                 rows={3}
-                placeholder="J'aime le contact avec la clientèle, j'aime conduire, j'aime me rendre utile, je souhaite travailler avec des malades..."
+                placeholder="J'aime le contact avec la clientèle, j'aime conduire, j'aime me rendre utile, je souhaite travailler avec des applications..."
                 className={errorBorder("motivations")}
               />
             </div>
