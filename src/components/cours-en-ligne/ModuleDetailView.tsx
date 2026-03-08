@@ -402,9 +402,51 @@ const INTRODUCTION_ELEARNING_DATA: ModuleData = {
     { id: 101, titre: "Questionnaire Projet Professionnel", description: "Évaluation de votre motivation et de votre projet professionnel.", actif: true, checklistType: "projet-professionnel" },
     { id: 1, titre: "Bienvenue sur la plateforme", description: "Cette plateforme est dédiée aux futurs chauffeurs VTC et TAXIS. Vous devez réussir deux épreuves :\n• L'épreuve d'admissibilité (théorie avec 7 matières) — minimum 10/20\n• L'épreuve d'admission (pratique) — minimum 12/20\nLe tout sans note éliminatoire.", actif: true },
     { id: 2, titre: "Informations importantes", description: "💰 Frais d'examen en cas d'échec (à votre charge) :\n• Examen théorique : environ 240€\n• Examen pratique : environ 200€\n\n📋 Les examens sont organisés par la CMA.\n📞 Contactez-nous le jour des résultats de l'examen théorique.", actif: true },
-    { id: 3, titre: "Contenu de l'examen", description: "📝 ÉPREUVES COMMUNES :\nA — Réglementation T3P (45 min, coeff. 3)\nB — Gestion (45 min, coeff. 2)\nC — Sécurité routière (30 min, coeff. 3)\nD — Français (30 min, coeff. 2)\nE — Anglais (30 min, coeff. 1)", actif: true },
-    { id: 4, titre: "Épreuves spécifiques", description: "📝 VTC : F(V) Développement commercial (coeff. 3) + G(V) Réglementation VTC (coeff. 3)\n📝 TAXI : F(T) Territoire et réglementation locale (coeff. 3) + G(T) Réglementation TAXI (coeff. 3)\n\n✅ Moyenne ≥ 10/20, aucune note éliminatoire.", actif: true },
-    { id: 5, titre: "L'épreuve pratique", description: "Conduite en circulation, durée minimum 20 minutes.\n📌 Note minimale requise : 12/20\n\n💰 En cas d'échec : frais d'examen ~200€ + location véhicule ~80€", actif: true },
+    { id: 3, titre: "Contenu de l'examen — Épreuves communes", description: `L'examen se compose d'épreuves théoriques d'admissibilité (QCM + QRC) et d'une épreuve pratique d'admission.
+
+📝 ÉPREUVES COMMUNES TAXI & VTC :
+
+A — Réglementation T3P et prévention des discriminations
+   Durée : 45 min | Note sur 20 | Coeff. 3 | Éliminatoire : 6/20
+
+B — Gestion
+   Durée : 45 min | Note sur 20 | Coeff. 2 | Éliminatoire : 6/20
+
+C — Sécurité routière
+   Durée : 30 min | Note sur 20 | Coeff. 3 | Éliminatoire : 6/20
+
+D — Français (expression et compréhension)
+   Durée : 30 min | Note sur 20 | Coeff. 2 | Éliminatoire : 6/20
+   ⚠️ -1 point toutes les 5 fautes d'orthographe sur les QRC
+
+E — Anglais (expression et compréhension)
+   Durée : 30 min | Note sur 20 | Coeff. 1 | Éliminatoire : 4/20`, actif: true },
+    { id: 4, titre: "Épreuves spécifiques VTC & TAXI", description: `📝 ÉPREUVES SPÉCIFIQUES VTC :
+F(V) — Développement commercial et gestion VTC
+   Durée : 30 min | Note sur 20 | Coeff. 3 | Éliminatoire : 6/20
+G(V) — Réglementation nationale spécifique VTC
+   Durée : 20 min | Note sur 20 | Coeff. 3 | Éliminatoire : 6/20
+
+📝 ÉPREUVES SPÉCIFIQUES TAXI :
+F(T) — Connaissance du territoire et réglementation locale
+   Durée : 20 min | Note sur 20 | Coeff. 3 | Éliminatoire : 6/20
+G(T) — Réglementation nationale TAXI et gestion
+   Durée : 30 min | Note sur 20 | Coeff. 3 | Éliminatoire : 6/20
+
+✅ CONDITIONS D'ADMISSIBILITÉ :
+• Moyenne ≥ 10/20 (pondérée des coefficients)
+• Aucune note éliminatoire
+
+Un candidat admissible peut se présenter 3 fois à l'épreuve pratique dans un délai d'1 an.`, actif: true },
+    { id: 5, titre: "L'épreuve d'admission (pratique)", description: `Après chaque session d'admissibilité, une session d'admission est organisée dans un délai maximum de 2 mois.
+
+L'épreuve pratique comprend une phase de conduite en circulation d'une durée minimum de 20 minutes, notée sur 20 points.
+
+📌 Note minimale requise : 12/20
+
+💰 En cas d'échec à l'examen pratique :
+• Frais d'examen CMA à la charge de l'élève : environ 200€
+• Frais de location de voiture à la charge de l'élève : environ 80€`, actif: true },
     { id: 7, titre: "Programme — Épreuves théoriques", description: `📋 PROGRAMME DE FORMATION
 
 📘 A — RÉGLEMENTATION T3P
@@ -458,7 +500,22 @@ const INTRODUCTION_TA_PRESENTIEL_DATA: ModuleData = {
     { id: 100, titre: "Analyse du besoin – Fiche client", description: "Complétez cette fiche.", actif: true, checklistType: "analyse-besoin" },
     { id: 101, titre: "Questionnaire Projet Professionnel", description: "Évaluation de votre motivation et de votre projet professionnel.", actif: true, checklistType: "projet-professionnel" },
     { id: 1, titre: "Bienvenue — Passerelle TA", description: "Cette formation passerelle vous permet d'obtenir votre carte TAXI en complétant vos compétences VTC.\n\nVous devez réussir l'examen théorique sur 2 matières spécifiques TAXI, puis l'épreuve pratique.\n\n💰 Frais d'examen en cas d'échec :\n• Examen théorique : environ 240€\n• Examen pratique : environ 200€", actif: true },
-    { id: 2, titre: "Programme de formation TA", description: `📋 PROGRAMME — Passerelle TAXI pour VTC
+    { id: 2, titre: "Contenu de l'examen — Épreuves spécifiques TAXI", description: `L'examen passerelle TA se compose de 2 épreuves théoriques d'admissibilité (QCM + QRC) et d'une épreuve pratique d'admission.
+
+📝 ÉPREUVES SPÉCIFIQUES TAXI :
+
+F(T) — Connaissance du territoire et réglementation locale
+   Durée : 20 min | Note sur 20 | Coeff. 3 | Éliminatoire : 6/20
+
+G(T) — Réglementation nationale de l'activité taxi et gestion propre à cette activité
+   Durée : 30 min | Note sur 20 | Coeff. 3 | Éliminatoire : 6/20
+
+✅ CONDITIONS D'ADMISSIBILITÉ :
+• Moyenne ≥ 10/20 (pondérée des coefficients)
+• Aucune note éliminatoire
+
+Un candidat admissible peut se présenter 3 fois à l'épreuve pratique dans un délai d'1 an.`, actif: true },
+    { id: 6, titre: "Programme de formation TA", description: `📋 PROGRAMME — Passerelle TAXI pour VTC
 
 📕 F(T) — RÉGLEMENTATION NATIONALE TAXI
 • Fonctionnement des équipements spéciaux et du TPE
@@ -470,10 +527,14 @@ const INTRODUCTION_TA_PRESENTIEL_DATA: ModuleData = {
 
 📕 G(T) — RÉGLEMENTATION LOCALE
 • Territoire d'exercice : principaux lieux, sites, bâtiments publics, axes routiers
-• Règlement local en vigueur
+• Règlement local en vigueur`, actif: true },
+    { id: 5, titre: "L'épreuve d'admission (pratique)", description: `L'épreuve pratique comprend une phase de conduite en circulation d'une durée minimum de 20 minutes, notée sur 20 points.
 
-✅ Moyenne ≥ 10/20, aucune note éliminatoire.
-Un candidat admissible peut se présenter 3 fois à l'épreuve pratique.`, actif: true },
+📌 Note minimale requise : 12/20
+
+💰 En cas d'échec à l'examen pratique :
+• Frais d'examen CMA à la charge de l'élève : environ 200€
+• Frais de location de voiture à la charge de l'élève : environ 80€`, actif: true },
     { id: 3, titre: "Planning et contact", description: "🏢 FTRANSPORT — 86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91\n⏰ 9h-12h / 13h-17h", actif: true },
   ],
   exercices: [
@@ -494,7 +555,22 @@ const INTRODUCTION_TA_ELEARNING_DATA: ModuleData = {
     { id: 100, titre: "Analyse du besoin – Fiche client", description: "Complétez cette fiche.", actif: true, checklistType: "analyse-besoin" },
     { id: 101, titre: "Questionnaire Projet Professionnel", description: "Évaluation de votre motivation et de votre projet professionnel.", actif: true, checklistType: "projet-professionnel" },
     { id: 1, titre: "Bienvenue — Passerelle TA (E-learning)", description: "Formation passerelle TAXI en e-learning.\n\n2 matières : Réglementation nationale TAXI + Réglementation locale\n\n💰 Frais d'examen en cas d'échec :\n• Examen théorique : environ 240€\n• Examen pratique : environ 200€", actif: true },
-    { id: 2, titre: "Programme de formation TA", description: `📋 PROGRAMME — Passerelle TAXI pour VTC (E-learning)
+    { id: 2, titre: "Contenu de l'examen — Épreuves spécifiques TAXI", description: `L'examen passerelle TA se compose de 2 épreuves théoriques d'admissibilité (QCM + QRC) et d'une épreuve pratique d'admission.
+
+📝 ÉPREUVES SPÉCIFIQUES TAXI :
+
+F(T) — Connaissance du territoire et réglementation locale
+   Durée : 20 min | Note sur 20 | Coeff. 3 | Éliminatoire : 6/20
+
+G(T) — Réglementation nationale de l'activité taxi et gestion propre à cette activité
+   Durée : 30 min | Note sur 20 | Coeff. 3 | Éliminatoire : 6/20
+
+✅ CONDITIONS D'ADMISSIBILITÉ :
+• Moyenne ≥ 10/20 (pondérée des coefficients)
+• Aucune note éliminatoire
+
+Un candidat admissible peut se présenter 3 fois à l'épreuve pratique dans un délai d'1 an.`, actif: true },
+    { id: 6, titre: "Programme de formation TA", description: `📋 PROGRAMME — Passerelle TAXI pour VTC (E-learning)
 
 📕 F(T) — RÉGLEMENTATION NATIONALE TAXI
 • Fonctionnement des équipements spéciaux et du TPE
@@ -505,9 +581,14 @@ const INTRODUCTION_TA_ELEARNING_DATA: ModuleData = {
 
 📕 G(T) — RÉGLEMENTATION LOCALE
 • Territoire d'exercice : lieux, sites, bâtiments publics, axes routiers
-• Règlement local en vigueur
+• Règlement local en vigueur`, actif: true },
+    { id: 5, titre: "L'épreuve d'admission (pratique)", description: `L'épreuve pratique comprend une phase de conduite en circulation d'une durée minimum de 20 minutes, notée sur 20 points.
 
-✅ Moyenne ≥ 10/20, aucune note éliminatoire.`, actif: true },
+📌 Note minimale requise : 12/20
+
+💰 En cas d'échec à l'examen pratique :
+• Frais d'examen CMA à la charge de l'élève : environ 200€
+• Frais de location de voiture à la charge de l'élève : environ 80€`, actif: true },
     { id: 3, titre: "Contact", description: "🏢 FTRANSPORT — 86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91\n📧 contact@ftransport.fr", actif: true },
   ],
   exercices: [
@@ -527,7 +608,22 @@ const INTRODUCTION_VA_PRESENTIEL_DATA: ModuleData = {
     { id: 100, titre: "Analyse du besoin – Fiche client", description: "Complétez cette fiche.", actif: true, checklistType: "analyse-besoin" },
     { id: 101, titre: "Questionnaire Projet Professionnel", description: "Évaluation de votre motivation et de votre projet professionnel.", actif: true, checklistType: "projet-professionnel" },
     { id: 1, titre: "Bienvenue — Passerelle VA", description: "Cette formation passerelle vous permet d'obtenir votre carte VTC en complétant vos compétences TAXI.\n\nVous devez réussir l'examen théorique sur 2 matières spécifiques VTC, puis l'épreuve pratique.\n\n💰 Frais d'examen en cas d'échec :\n• Examen théorique : environ 240€\n• Examen pratique : environ 200€", actif: true },
-    { id: 2, titre: "Programme de formation VA", description: `📋 PROGRAMME — Passerelle VTC pour TAXI
+    { id: 2, titre: "Contenu de l'examen — Épreuves spécifiques VTC", description: `L'examen passerelle VA se compose de 2 épreuves théoriques d'admissibilité (QCM + QRC) et d'une épreuve pratique d'admission.
+
+📝 ÉPREUVES SPÉCIFIQUES VTC :
+
+F(V) — Développement commercial et gestion propre à l'activité de VTC
+   Durée : 30 min | Note sur 20 | Coeff. 3 | Éliminatoire : 6/20
+
+G(V) — Réglementation nationale spécifique à l'activité de VTC
+   Durée : 20 min | Note sur 20 | Coeff. 3 | Éliminatoire : 6/20
+
+✅ CONDITIONS D'ADMISSIBILITÉ :
+• Moyenne ≥ 10/20 (pondérée des coefficients)
+• Aucune note éliminatoire
+
+Un candidat admissible peut se présenter 3 fois à l'épreuve pratique dans un délai d'1 an.`, actif: true },
+    { id: 6, titre: "Programme de formation VA", description: `📋 PROGRAMME — Passerelle VTC pour TAXI
 
 📗 F(V) — DÉVELOPPEMENT COMMERCIAL
 • Principes généraux du marketing (analyse de marché, ciblage, compétitivité, prix)
@@ -539,10 +635,14 @@ const INTRODUCTION_VA_PRESENTIEL_DATA: ModuleData = {
 📗 G(V) — RÉGLEMENTATION SPÉCIFIQUE VTC
 • Modalités d'inscription au registre des VTC, capacité financière
 • Obligations véhicules d'exploitation (dimensions, puissance, âge, signalisation)
-• Documents de prestation pour les contrôles
+• Documents de prestation pour les contrôles`, actif: true },
+    { id: 5, titre: "L'épreuve d'admission (pratique)", description: `L'épreuve pratique comprend une phase de conduite en circulation d'une durée minimum de 20 minutes, notée sur 20 points.
 
-✅ Moyenne ≥ 10/20, aucune note éliminatoire.
-Un candidat admissible peut se présenter 3 fois à l'épreuve pratique.`, actif: true },
+📌 Note minimale requise : 12/20
+
+💰 En cas d'échec à l'examen pratique :
+• Frais d'examen CMA à la charge de l'élève : environ 200€
+• Frais de location de voiture à la charge de l'élève : environ 80€`, actif: true },
     { id: 3, titre: "Planning et contact", description: "🏢 FTRANSPORT — 86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91\n⏰ 9h-12h / 13h-17h", actif: true },
   ],
   exercices: [
@@ -562,7 +662,22 @@ const INTRODUCTION_VA_ELEARNING_DATA: ModuleData = {
     { id: 100, titre: "Analyse du besoin – Fiche client", description: "Complétez cette fiche.", actif: true, checklistType: "analyse-besoin" },
     { id: 101, titre: "Questionnaire Projet Professionnel", description: "Évaluation de votre motivation et de votre projet professionnel.", actif: true, checklistType: "projet-professionnel" },
     { id: 1, titre: "Bienvenue — Passerelle VA (E-learning)", description: "Formation passerelle VTC en e-learning.\n\n2 matières : Développement Commercial + Réglementation spécifique VTC\n\n💰 Frais d'examen en cas d'échec :\n• Examen théorique : environ 240€\n• Examen pratique : environ 200€", actif: true },
-    { id: 2, titre: "Programme de formation VA", description: `📋 PROGRAMME — Passerelle VTC pour TAXI (E-learning)
+    { id: 2, titre: "Contenu de l'examen — Épreuves spécifiques VTC", description: `L'examen passerelle VA se compose de 2 épreuves théoriques d'admissibilité (QCM + QRC) et d'une épreuve pratique d'admission.
+
+📝 ÉPREUVES SPÉCIFIQUES VTC :
+
+F(V) — Développement commercial et gestion propre à l'activité de VTC
+   Durée : 30 min | Note sur 20 | Coeff. 3 | Éliminatoire : 6/20
+
+G(V) — Réglementation nationale spécifique à l'activité de VTC
+   Durée : 20 min | Note sur 20 | Coeff. 3 | Éliminatoire : 6/20
+
+✅ CONDITIONS D'ADMISSIBILITÉ :
+• Moyenne ≥ 10/20 (pondérée des coefficients)
+• Aucune note éliminatoire
+
+Un candidat admissible peut se présenter 3 fois à l'épreuve pratique dans un délai d'1 an.`, actif: true },
+    { id: 6, titre: "Programme de formation VA", description: `📋 PROGRAMME — Passerelle VTC pour TAXI (E-learning)
 
 📗 F(V) — DÉVELOPPEMENT COMMERCIAL
 • Marketing : analyse de marché, ciblage, compétitivité, prix
@@ -572,9 +687,14 @@ const INTRODUCTION_VA_ELEARNING_DATA: ModuleData = {
 📗 G(V) — RÉGLEMENTATION SPÉCIFIQUE VTC
 • Inscription registre VTC, capacité financière
 • Obligations véhicules (dimensions, puissance, âge, signalisation)
-• Documents de prestation pour les contrôles
+• Documents de prestation pour les contrôles`, actif: true },
+    { id: 5, titre: "L'épreuve d'admission (pratique)", description: `L'épreuve pratique comprend une phase de conduite en circulation d'une durée minimum de 20 minutes, notée sur 20 points.
 
-✅ Moyenne ≥ 10/20, aucune note éliminatoire.`, actif: true },
+📌 Note minimale requise : 12/20
+
+💰 En cas d'échec à l'examen pratique :
+• Frais d'examen CMA à la charge de l'élève : environ 200€
+• Frais de location de voiture à la charge de l'élève : environ 80€`, actif: true },
     { id: 3, titre: "Contact", description: "🏢 FTRANSPORT — 86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91\n📧 contact@ftransport.fr", actif: true },
   ],
   exercices: [
