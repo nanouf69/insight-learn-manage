@@ -702,9 +702,21 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
         </DialogContent>
       </Dialog>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6 [&>[role=tablist]]:fixed [&>[role=tablist]]:bottom-0 [&>[role=tablist]]:left-0 [&>[role=tablist]]:right-0 [&>[role=tablist]]:bg-background [&>[role=tablist]]:border-t [&>[role=tablist]]:z-50 [&>[role=tablist]]:w-full">
-        <div className="pb-24">
-        <TabsList className="flex w-full gap-1 bg-transparent border-none rounded-none p-3 h-auto overflow-x-auto [&>button]:rounded-none [&>button]:border-b-2 [&>button]:border-transparent [&>button]:data-[state=active]:border-primary">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="flex w-full gap-1 bg-background border-b border-border rounded-none p-0 h-auto overflow-x-auto [&>button]:rounded-none [&>button]:border-b-2 [&>button]:border-transparent [&>button]:data-[state=active]:border-primary [&>button]:flex-shrink-0">
+          <TabsTrigger value="infos" className="text-sm">Infos</TabsTrigger>
+          <TabsTrigger value="cours" className="text-sm">Attribuer les cours</TabsTrigger>
+          <TabsTrigger value="resultats" className="text-sm">Résultats</TabsTrigger>
+          <TabsTrigger value="docs-completes" className="text-sm">Formulaires</TabsTrigger>
+          <TabsTrigger value="docs-formation" className="text-sm">Documents Formation</TabsTrigger>
+          <TabsTrigger value="dossier" className="text-sm">Dossier</TabsTrigger>
+          <TabsTrigger value="docs-inscription" className="text-sm">Inscription</TabsTrigger>
+          <TabsTrigger value="examens" className="text-sm">Examens</TabsTrigger>
+          <TabsTrigger value="emails" className="text-sm">Emails</TabsTrigger>
+          <TabsTrigger value="devis" className="text-sm">Devis</TabsTrigger>
+          <TabsTrigger value="reset-cours" className="text-sm text-destructive">Remise à zéro</TabsTrigger>
+          <TabsTrigger value="delete-account" className="text-sm text-destructive">Supprimer compte</TabsTrigger>
+        </TabsList>
             {/* Informations personnelles */}
             <Card>
               <CardHeader>
