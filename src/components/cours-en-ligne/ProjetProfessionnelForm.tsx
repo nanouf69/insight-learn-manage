@@ -270,7 +270,7 @@ export default function ProjetProfessionnelForm({
                   <RadioGroup options={["Oui – liste d'attente", "Oui – déjà contactée", "Oui – à faire", "Non – location prévue", "Je ne sais pas"]} value={demandeADS} onChange={setDemandeADS} />
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground mb-1 block">Zone d'exercice envisagée ?</Label>
+                  <Label className="text-xs text-muted-foreground mb-1 block">Zone d'exercice envisagée ? <span className="text-destructive">*</span></Label>
                   <RadioGroup options={["Métropole de Lyon", "Autre", "Pas encore décidé"]} value={zoneExercice} onChange={setZoneExercice} />
                   {zoneExercice === "Autre" && (
                     <div className="mt-2">
