@@ -556,6 +556,7 @@ const INTRODUCTION_TA_ELEARNING_DATA: ModuleData = {
     { id: 0, titre: "Test de compétences avant formation", description: "Répondez aux questions.", actif: true, checklistType: "competences" },
     { id: 100, titre: "Analyse du besoin – Fiche client", description: "Complétez cette fiche.", actif: true, checklistType: "analyse-besoin" },
     { id: 101, titre: "Questionnaire Projet Professionnel", description: "Évaluation de votre motivation et de votre projet professionnel.", actif: true, checklistType: "projet-professionnel" },
+    { id: 102, titre: "Conditions Générales de Vente", description: "Veuillez lire et accepter les CGV avant de continuer.", actif: true, checklistType: "cgv" },
     { id: 1, titre: "Bienvenue — Passerelle TA (E-learning)", description: "Formation passerelle TAXI en e-learning.\n\n2 matières : Réglementation nationale TAXI + Réglementation locale\n\n💰 Frais d'examen en cas d'échec :\n• Examen théorique : environ 240€\n• Examen pratique : environ 200€", actif: true },
     { id: 2, titre: "Contenu de l'examen — Épreuves spécifiques TAXI", description: `L'examen passerelle TA se compose de 2 épreuves théoriques d'admissibilité (QCM + QRC) et d'une épreuve pratique d'admission.
 
