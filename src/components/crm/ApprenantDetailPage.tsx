@@ -451,7 +451,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {(apprenant as any).auth_user_id ? (
+          {hasExistingAccount && (
             <>
               <Badge variant="secondary" className="gap-1">
                 <CheckCircle2 className="w-3 h-3" />
@@ -480,16 +480,15 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                 Renvoyer identifiants
               </Button>
             </>
-          ) : (
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => setShowCreateDialog(true)}
-            >
-              <KeyRound className="w-4 h-4 mr-2" />
-              Créer un compte
-            </Button>
           )}
+          <Button
+            variant={hasExistingAccount ? "outline" : "default"}
+            size="sm"
+            onClick={() => setShowCreateDialog(true)}
+          >
+            <KeyRound className="w-4 h-4 mr-2" />
+            {hasExistingAccount ? "Configurer l'accès" : "Créer un compte"}
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setShowEditDialog(true)}>
             <Pencil className="w-4 h-4 mr-2" />
             Modifier
