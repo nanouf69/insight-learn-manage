@@ -65,6 +65,7 @@ import ProjetProfessionnelForm from "./ProjetProfessionnelForm";
 import EvaluationAcquisForm from "./EvaluationAcquisForm";
 import SatisfactionForm from "./SatisfactionForm";
 import CGVAcceptanceForm from "./CGVAcceptanceForm";
+import CGVReglementForm from "./CGVReglementForm";
 import { getCompetencesForFormation } from "./competences-checklist-data";
 
 interface InlineQuizQuestion {
