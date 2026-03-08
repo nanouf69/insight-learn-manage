@@ -258,7 +258,7 @@ export default function ProjetProfessionnelForm({
             {isTaxi && (
               <>
                 <div>
-                  <Label className="text-xs text-muted-foreground mb-1 block">Connaissez-vous la différence entre le taxi et le VTC ?</Label>
+                  <Label className="text-xs text-muted-foreground mb-1 block">Connaissez-vous la différence entre le taxi et le VTC ? <span className="text-destructive">*</span></Label>
                   <RadioGroup options={["Oui – je connais bien", "Partiellement", "Non – besoin d'explications"]} value={diffTaxiVtc} onChange={setDiffTaxiVtc} />
                 </div>
                 <div>
