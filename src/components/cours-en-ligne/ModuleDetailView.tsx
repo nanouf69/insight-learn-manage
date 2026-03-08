@@ -135,10 +135,10 @@ interface ModuleDetailViewProps {
   } | null;
 }
 
-// ===== Données initiales du module INTRODUCTION PRÉSENTIEL =====
+// ===== Données initiales du module INTRODUCTION FORMATION EN PRÉSENTIEL =====
 const INTRODUCTION_PRESENTIEL_DATA: ModuleData = {
   id: 1,
-  nom: "1.INTRODUCTION PRÉSENTIEL",
+  nom: "1.INTRODUCTION FORMATION EN PRÉSENTIEL",
   description: "Introduction pour les formations en présentiel : organisation de l'examen, programme, coefficients, CGV, règlement intérieur.",
   cours: [
     {

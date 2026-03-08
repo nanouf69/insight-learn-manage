@@ -71,7 +71,7 @@ const normalizeTypeApprenant = (rawType: string | null | undefined): string => {
 
 const FORMATION_LABELS: Record<string, Record<number, string>> = {
   "vtc": {
-    1: "1.INTRODUCTION PRÉSENTIEL",
+    1: "1.INTRODUCTION FORMATION EN PRÉSENTIEL",
     2: "2.COURS ET EXERCICES VTC",
     25: "2a.COURS ET EXERCICES VTC",
     14: "2b.COURS ET EXERCICES VTC",
@@ -103,7 +103,7 @@ const FORMATION_LABELS: Record<string, Record<number, string>> = {
     8: "7.PRATIQUE VTC",
   },
   "taxi": {
-    1: "1.INTRODUCTION PRÉSENTIEL",
+    1: "1.INTRODUCTION FORMATION EN PRÉSENTIEL",
     10: "2.COURS ET EXERCICES TAXI",
     7: "3.CONNAISSANCES DE LA VILLE TAXI",
     3: "4.FORMULES",
