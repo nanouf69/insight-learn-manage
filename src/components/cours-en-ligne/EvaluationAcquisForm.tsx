@@ -255,8 +255,11 @@ const EvaluationAcquisForm = ({ formationType, apprenantId, onComplete }: Evalua
             <div key={partieIdx} className="space-y-4">
               <h3 className="font-bold text-foreground border-b pb-2">{partie.titre}</h3>
               <div className="space-y-3">
-                {partie.competences.map((comp, compIdx) => (
-                  <div key={compIdx} className="rounded-lg border p-4 space-y-3">
+                 {partie.competences.map((comp, compIdx) => {
+                  const key = `${partieIdx}-${compIdx}`;
+                  const isInvalid = invalidKeys.has(key);
+                  return (
+                  <div key={compIdx} ref={el => { itemRefs.current[key] = el; }} className={`rounded-lg border p-4 space-y-3 ${isInvalid ? "ring-2 ring-destructive/60 bg-destructive/5 border-destructive" : ""}`}>
                     <p className="text-sm font-medium text-foreground">{comp.label}</p>
                     <RadioGroup
                       value={comp.value || ""}
