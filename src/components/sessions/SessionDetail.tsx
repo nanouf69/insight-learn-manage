@@ -1381,7 +1381,21 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                               )}
                             </div>
 
-                            {/* Examen théorique - 31 mars Clermont-Ferrand */}
+                            {/* Identifiants status */}
+                            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full" style={hasIdentifiants(apprenant.id) ? { backgroundColor: 'hsl(221.2, 83.2%, 53.3%)', color: 'white' } : { backgroundColor: 'hsl(0, 0%, 90%)', color: 'hsl(0, 0%, 45.1%)' }}>
+                              {hasIdentifiants(apprenant.id) ? (
+                                <>
+                                  <CheckCircle className="w-4 h-4" />
+                                  <span className="font-medium text-sm">Identifiants envoyés ✅</span>
+                                </>
+                              ) : (
+                                <>
+                                  <XCircle className="w-4 h-4" />
+                                  <span className="font-medium text-sm">Identifiants non envoyés ❌</span>
+                                </>
+                              )}
+                            </div>
+
                             <div className="flex items-center gap-1.5 text-muted-foreground">
                               <GraduationCap className="w-3.5 h-3.5" />
                               <span>Examen: 31 mars 2026 - Clermont-Ferrand</span>
