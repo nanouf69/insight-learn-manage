@@ -200,7 +200,7 @@ export const COMPETENCES_TA: CompetencesData = {
 
 // ===== VA (Passerelle VTC pour TAXI) =====
 export const COMPETENCES_VA: CompetencesData = {
-  formationLabel: "Complément VTC pour chauffeur TAXI",
+  formationLabel: "Formation VA – Complément VTC (titulaire RS5635 TAXI)",
   formationCode: "Formation VA",
   sections: [
     {
@@ -227,12 +227,6 @@ export const COMPETENCES_VA: CompetencesData = {
         "Je sais fidéliser mes clients et prospecter pour en obtenir d'autres.",
         "Je sais mener des actions de communication pour faire connaître mon entreprise, notamment par internet et les moyens numériques.",
         "Je sais développer un réseau de partenaires favorisant l'accès à la clientèle (hôtels, entreprises...).",
-      ],
-    },
-    {
-      titre: "SÉCURITÉ ROUTIÈRE – Rappel et mise à niveau",
-      items: [
-        "Je sais appliquer les règles du code de la route (signalisation, règles de circulation, comportement du conducteur, usage de sécurité, utilisation des voies dédiées...).",
       ],
     },
   ],
