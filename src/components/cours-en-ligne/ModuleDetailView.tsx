@@ -2846,91 +2846,100 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       );
     }
 
-    return (
-      <div className="flex gap-6 max-w-5xl mx-auto">
-        {/* Vertical progress sidebar */}
-        <div className="hidden md:block shrink-0 w-56 sticky top-4 self-start">
-          <div className="rounded-xl border bg-card shadow-sm p-4 space-y-1">
-            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Progression</h3>
-            <div className="space-y-0.5">
-              {pages.map((p, i) => {
-                const unlocked = isPageUnlocked(i);
-                const isCurrent = i === currentPage;
-                const isCompleted = completedPages.has(i);
-                const rawLabel = p.type === "cours"
-                  ? p.cours.titre
-                  : p.type === "exercice-single"
-                    ? `📝 ${p.exercice.titre}`
-                    : "📝 Exercices";
-                const label = hierarchicalLabelsByPage[i]
-                  || (subjectInfo
-                    ? `${subjectInfo.subjectNum}.${i + 1} ${rawLabel}`
-                    : rawLabel);
+    const [mobileProgressOpen, setMobileProgressOpen] = useState(false);
 
-                return (
-                  <div key={i} className="flex items-start gap-2">
-                    {/* Vertical line + dot */}
-                    <div className="flex flex-col items-center shrink-0">
-                      <button
-                        onClick={() => unlocked && goToPage(i)}
-                        disabled={!unlocked}
-                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${
-                          isCurrent
-                            ? "border-primary bg-primary text-primary-foreground scale-110"
-                            : isCompleted
-                              ? "border-emerald-500 bg-emerald-500 text-white"
-                              : unlocked
-                                ? "border-muted-foreground/30 bg-background hover:border-primary/50"
-                                : "border-muted/50 bg-muted/30 cursor-not-allowed"
-                        }`}
-                      >
-                        {isCompleted && !isCurrent && (
-                          <CheckCircle2 className="w-3 h-3" />
-                        )}
-                        {isCurrent && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-current" />
-                        )}
-                        {!unlocked && !isCompleted && !isCurrent && (
-                          <Lock className="w-2.5 h-2.5 text-muted-foreground/50" />
-                        )}
-                      </button>
-                      {i < pages.length - 1 && (
-                        <div className={`w-0.5 h-6 ${isCompleted ? "bg-emerald-400" : "bg-muted"}`} />
-                      )}
-                    </div>
-                    {/* Label */}
-                    <button
-                      onClick={() => unlocked && goToPage(i)}
-                      disabled={!unlocked}
-                      className={`text-left text-xs leading-tight pt-0.5 transition-colors ${
-                        isCurrent
-                          ? "font-bold text-primary"
-                          : isCompleted
-                            ? "text-emerald-600 font-medium"
-                            : unlocked
-                              ? "text-muted-foreground hover:text-foreground"
-                              : "text-muted-foreground/40 cursor-not-allowed"
-                      }`}
-                    >
-                      <span className="line-clamp-2">{label}</span>
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-            {/* Progress percentage */}
-            <div className="pt-3 mt-2 border-t">
-              <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-                <span>Avancement</span>
-                <span className="font-bold text-primary">{progressPercent}%</span>
+    const renderProgressionSteps = (isMobileView = false) => (
+      <div className={isMobileView ? "space-y-1" : "space-y-1.5"}>
+        {pages.map((p, i) => {
+          const unlocked = isPageUnlocked(i);
+          const isCurrent = i === currentPage;
+          const isCompleted = completedPages.has(i);
+          const rawLabel = p.type === "cours"
+            ? p.cours.titre
+            : p.type === "exercice-single"
+              ? `📝 ${p.exercice.titre}`
+              : "📝 Exercices";
+          const label = hierarchicalLabelsByPage[i]
+            || (subjectInfo
+              ? `${subjectInfo.subjectNum}.${i + 1} ${rawLabel}`
+              : rawLabel);
+
+          return (
+            <div key={i} className="flex items-start gap-3">
+              {/* Vertical line + dot */}
+              <div className="flex flex-col items-center shrink-0">
+                <button
+                  onClick={() => { if (unlocked) { goToPage(i); if (isMobileView) setMobileProgressOpen(false); } }}
+                  disabled={!unlocked}
+                  className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${
+                    isCurrent
+                      ? "border-primary bg-primary text-primary-foreground scale-110 shadow-md shadow-primary/30"
+                      : isCompleted
+                        ? "border-emerald-500 bg-emerald-500 text-white"
+                        : unlocked
+                          ? "border-muted-foreground/30 bg-background hover:border-primary/50"
+                          : "border-muted/50 bg-muted/30 cursor-not-allowed"
+                  }`}
+                >
+                  {isCompleted && !isCurrent && (
+                    <CheckCircle2 className="w-4 h-4" />
+                  )}
+                  {isCurrent && (
+                    <div className="w-2 h-2 rounded-full bg-current" />
+                  )}
+                  {!unlocked && !isCompleted && !isCurrent && (
+                    <Lock className="w-3 h-3 text-muted-foreground/50" />
+                  )}
+                </button>
+                {i < pages.length - 1 && (
+                  <div className={`w-0.5 h-8 ${isCompleted ? "bg-emerald-400" : "bg-muted"}`} />
+                )}
               </div>
-              <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500 ease-out"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
+              {/* Label */}
+              <button
+                onClick={() => { if (unlocked) { goToPage(i); if (isMobileView) setMobileProgressOpen(false); } }}
+                disabled={!unlocked}
+                className={`text-left text-sm leading-snug pt-1 transition-colors ${
+                  isCurrent
+                    ? "font-bold text-primary"
+                    : isCompleted
+                      ? "text-emerald-600 font-medium"
+                      : unlocked
+                        ? "text-muted-foreground hover:text-foreground"
+                        : "text-muted-foreground/40 cursor-not-allowed"
+                }`}
+              >
+                <span className="line-clamp-2">{label}</span>
+              </button>
             </div>
+          );
+        })}
+      </div>
+    );
+
+    const renderProgressBar = () => (
+      <div className="pt-4 mt-3 border-t">
+        <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
+          <span className="font-medium">Avancement</span>
+          <span className="font-bold text-primary text-base">{progressPercent}%</span>
+        </div>
+        <div className="relative h-3 w-full overflow-hidden rounded-full bg-secondary">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500 ease-out"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+      </div>
+    );
+
+    return (
+      <div className="flex gap-6 max-w-6xl mx-auto">
+        {/* Vertical progress sidebar — desktop */}
+        <div className="hidden lg:block shrink-0 w-72 sticky top-4 self-start max-h-[calc(100vh-2rem)] overflow-y-auto">
+          <div className="rounded-xl border bg-card shadow-sm p-5 space-y-2">
+            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">Progression</h3>
+            {renderProgressionSteps()}
+            {renderProgressBar()}
           </div>
         </div>
 
@@ -2943,41 +2952,41 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             <p className="text-muted-foreground text-sm">{moduleData.description}</p>
           </div>
 
-          {/* Mobile progress bar (hidden on desktop where sidebar shows) */}
-          <div className="md:hidden space-y-2">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>
-                {currentPageData?.type === "cours" ? "📚 Cours" : "📝 Exercices"} — {currentPage + 1} / {totalPages}
-              </span>
-              <span className="font-semibold text-primary">{progressPercent}%</span>
-            </div>
-            <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-secondary">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500 ease-out"
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
-            <div className="flex items-center justify-center gap-1.5 pt-1 flex-wrap">
-              {pages.map((p, i) => {
-                const unlocked = isPageUnlocked(i);
-                return (
-                  <button
-                    key={i}
-                    onClick={() => unlocked && goToPage(i)}
-                    className={`h-2 rounded-full transition-all duration-300 ${
-                      i === currentPage
-                        ? "w-6 bg-primary"
-                        : completedPages.has(i)
-                          ? "w-2 bg-primary/40"
-                          : unlocked
-                            ? "w-2 bg-muted-foreground/30"
-                            : "w-2 bg-muted-foreground/10 cursor-not-allowed"
-                    }`}
-                    title={!unlocked ? "🔒 Terminez la partie précédente" : p.type === "cours" ? p.cours.titre : p.type === "exercice-single" ? `📝 ${p.exercice.titre}` : "Exercices"}
+          {/* Mobile/tablet collapsible progression */}
+          <div className="lg:hidden">
+            <button
+              onClick={() => setMobileProgressOpen(!mobileProgressOpen)}
+              className="w-full flex items-center justify-between rounded-xl border bg-card shadow-sm px-4 py-3"
+            >
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-primary font-bold text-sm">{progressPercent}%</span>
+                  </div>
+                  <div className="text-left">
+                    <span className="text-sm font-semibold text-foreground">Progression</span>
+                    <span className="text-xs text-muted-foreground block">
+                      {currentPageData?.type === "cours" ? "📚 Cours" : "📝 Exercices"} — {currentPage + 1}/{totalPages}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-24 h-2.5 overflow-hidden rounded-full bg-secondary">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500"
+                    style={{ width: `${progressPercent}%` }}
                   />
-                );
-              })}
-            </div>
+                </div>
+                {mobileProgressOpen ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
+              </div>
+            </button>
+            {mobileProgressOpen && (
+              <div className="mt-2 rounded-xl border bg-card shadow-sm p-4 animate-fade-in max-h-[60vh] overflow-y-auto">
+                {renderProgressionSteps(true)}
+                {renderProgressBar()}
+              </div>
+            )}
           </div>
         </div>
 
