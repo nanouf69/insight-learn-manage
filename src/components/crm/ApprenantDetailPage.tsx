@@ -190,7 +190,21 @@ const COMPTE_FORMATIONS = [
   { id: "taxi", label: "TAXI", types: ["taxi", "taxi-e"] },
   { id: "ta", label: "TA", types: ["ta", "ta-e"] },
   { id: "va", label: "VA", types: ["va", "va-e"] },
-];
+] as const;
+
+const ACCOUNT_FORMATION_TO_TYPE: Record<string, string> = {
+  vtc: "vtc",
+  taxi: "taxi",
+  ta: "ta",
+  va: "va",
+};
+
+const ACCOUNT_FORMATION_TO_DB_FORMATION: Record<string, string> = {
+  vtc: "vtc",
+  taxi: "taxi",
+  ta: "passerelle-taxi",
+  va: "passerelle-vtc-elearning",
+};
 
 const FORMATION_TO_TYPE: Record<string, string> = {
   "vtc": "vtc", "vtc-exam": "vtc",
