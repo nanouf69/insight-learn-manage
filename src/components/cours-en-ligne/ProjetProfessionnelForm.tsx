@@ -262,7 +262,7 @@ export default function ProjetProfessionnelForm({
                   <RadioGroup options={["Oui – je connais bien", "Partiellement", "Non – besoin d'explications"]} value={diffTaxiVtc} onChange={setDiffTaxiVtc} />
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground mb-1 block">Mode d'exercice envisagé après l'obtention de la carte taxi ?</Label>
+                  <Label className="text-xs text-muted-foreground mb-1 block">Mode d'exercice envisagé après l'obtention de la carte taxi ? <span className="text-destructive">*</span></Label>
                   <RadioGroup options={["Exploitant indépendant", "Locataire d'ADS", "Salarié(e) d'une compagnie", "Pas encore décidé"]} value={modeExerciceTaxi} onChange={setModeExerciceTaxi} />
                 </div>
                 <div>
