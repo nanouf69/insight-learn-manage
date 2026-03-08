@@ -1406,6 +1406,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const [moduleData, setModuleData] = useState<ModuleData>(() => getInitialModuleData(module, apprenantType, studentOnly));
   const [editingCoursId, setEditingCoursId] = useState<number | null>(null);
   const [slidesByKey, setSlidesByKey] = useState<Record<string, Slide[]>>(() => createInitialSlidesByKey());
+  const [deletedCours, setDeletedCours] = useState<ContentItem[]>([]);
+  const [deletedExercices, setDeletedExercices] = useState<ExerciceItem[]>([]);
 
   useEffect(() => {
     setSlidesByKey((current) => {
