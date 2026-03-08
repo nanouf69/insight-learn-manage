@@ -176,6 +176,8 @@ const EvaluationAcquisForm = ({ formationType, apprenantId, onComplete }: Evalua
   const [parties, setParties] = useState<PartieData[]>(getFormationData(formationType));
   const [commentaires, setCommentaires] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [invalidKeys, setInvalidKeys] = useState<Set<string>>(new Set());
+  const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const updateCompetence = (partieIdx: number, compIdx: number, value: NiveauAcquis) => {
     setParties(prev => {
@@ -185,15 +187,30 @@ const EvaluationAcquisForm = ({ formationType, apprenantId, onComplete }: Evalua
       } : p);
       return next;
     });
+    const key = `${partieIdx}-${compIdx}`;
+    setInvalidKeys(prev => { const n = new Set(prev); n.delete(key); return n; });
   };
 
   const allFilled = parties.every(p => p.competences.every(c => c.value !== null));
 
   const handleSubmit = async () => {
-    if (!allFilled) {
-      toast.error("Veuillez évaluer toutes les compétences avant de valider");
+    // Find unanswered
+    const missing: string[] = [];
+    parties.forEach((p, pi) => {
+      p.competences.forEach((c, ci) => {
+        if (c.value === null) missing.push(`${pi}-${ci}`);
+      });
+    });
+
+    if (missing.length > 0) {
+      setInvalidKeys(new Set(missing));
+      toast.error(`Veuillez évaluer toutes les compétences (${missing.length} manquante(s))`);
+      const firstRef = itemRefs.current[missing[0]];
+      if (firstRef) firstRef.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
+
+    setInvalidKeys(new Set());
     if (apprenantId) {
       const saved = await saveFormDocument({
         apprenantId,
