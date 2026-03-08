@@ -288,7 +288,7 @@ export default function ProjetProfessionnelForm({
             {!isTaxi && (
               <>
                 <div>
-                  <Label className="text-xs text-muted-foreground mb-1 block">Mode d'exercice envisagé après la certification ?</Label>
+                  <Label className="text-xs text-muted-foreground mb-1 block">Mode d'exercice envisagé après la certification ? <span className="text-destructive">*</span></Label>
                   <RadioGroup options={["Salarié VTC", "Indépendant (SASU/EI)", "Les deux", "Pas encore décidé"]} value={modeExercice} onChange={setModeExercice} />
                 </div>
                 <div>
