@@ -61,6 +61,18 @@ const CoursEnLignePage = () => {
     { id: 6, nom: "8.PRATIQUE TAXI", eleves: 0, progression: "0%", statut: "Actif" },
     { id: 12, nom: "9.CAS PRATIQUE TAXI", eleves: 0, progression: "0%", statut: "Actif" },
     { id: 13, nom: "CONTRÔLE DE CONNAISSANCES TAXI", eleves: 0, progression: "0%", statut: "Actif" },
+    // ÉQUIPEMENTS TAXI
+    { id: 64, nom: "🚕 ÉQUIPEMENTS TAXI", eleves: 0, progression: "0%", statut: "Actif" },
+    // SOURCES JURIDIQUES
+    { id: 60, nom: "📖 SOURCES JURIDIQUES VTC", eleves: 0, progression: "0%", statut: "Actif" },
+    { id: 61, nom: "📖 SOURCES JURIDIQUES TAXI", eleves: 0, progression: "0%", statut: "Actif" },
+    { id: 62, nom: "📖 SOURCES JURIDIQUES TA", eleves: 0, progression: "0%", statut: "Actif" },
+    { id: 63, nom: "📖 SOURCES JURIDIQUES VA", eleves: 0, progression: "0%", statut: "Actif" },
+    // FIN DE FORMATION
+    { id: 50, nom: "📋 FIN DE FORMATION VTC", eleves: 0, progression: "0%", statut: "Actif" },
+    { id: 51, nom: "📋 FIN DE FORMATION TAXI", eleves: 0, progression: "0%", statut: "Actif" },
+    { id: 52, nom: "📋 FIN DE FORMATION TA", eleves: 0, progression: "0%", statut: "Actif" },
+    { id: 53, nom: "📋 FIN DE FORMATION VA", eleves: 0, progression: "0%", statut: "Actif" },
   ]);
 
   const moveModule = (index: number, direction: "up" | "down") => {
