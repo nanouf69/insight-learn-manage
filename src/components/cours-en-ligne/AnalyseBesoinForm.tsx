@@ -76,8 +76,8 @@ export default function AnalyseBesoinForm({
   const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
 
   // Refs for scrolling
-  const eligRefs = eligibilityQuestions.map(() => useRef<HTMLDivElement>(null!));
-  const compRefs = complementaryQuestions.map(() => useRef<HTMLDivElement>(null!));
+  const eligRefs = useRef<(HTMLDivElement | null)[]>(Array(eligibilityQuestions.length).fill(null));
+  const compRefs = useRef<(HTMLDivElement | null)[]>(Array(complementaryQuestions.length).fill(null));
   const formationRef = useRef<HTMLDivElement>(null!);
   const engagementRef = useRef<HTMLDivElement>(null!);
 
