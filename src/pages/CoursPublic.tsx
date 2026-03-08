@@ -1092,7 +1092,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                         <div>
                           <p className="font-medium text-sm text-foreground">{mod.nom}</p>
                           <p className="text-xs text-muted-foreground">
-                            {locked ? "🔒 Terminez le module précédent" : "Progression : 0%"}
+                            {locked ? (INTRO_MODULE_IDS.has(modules[0]?.id) && !introCompleted ? "🔒 Terminez l'Introduction d'abord" : "🔒 Terminez le module précédent") : "Progression : 0%"}
                           </p>
                         </div>
                       </div>
