@@ -828,9 +828,9 @@ function getInitialModuleData(
     return {
       id: 28,
       nom: "6.BILAN EXAMEN TA",
-      description: "Bilan examen TA — toutes les matières. Questions type examen, sans chronomètre.",
+      description: "Bilan examen TA — Réglementation Nationale TAXI & Réglementation Locale. Questions type examen, sans chronomètre.",
       cours: [],
-      exercices: BILAN_EXAMEN_TAXI,
+      exercices: BILAN_EXAMEN_TA,
     };
   }
 
