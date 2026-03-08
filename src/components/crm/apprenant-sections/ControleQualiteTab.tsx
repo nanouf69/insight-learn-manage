@@ -50,6 +50,20 @@ const CONTROLE_DOCUMENTS: ControleDocument[] = [
     docType: "analyse-besoin",
   },
   {
+    id: "cgv-acceptation",
+    label: "Conditions Generales de Vente",
+    description: "CGV acceptees par le stagiaire (e-learning ou presentiel)",
+    category: "formulaire",
+    docType: "cgv-acceptation",
+  },
+  {
+    id: "cgv-ri-acceptation",
+    label: "CGV et Reglement Interieur",
+    description: "CGV et reglement interieur signes (presentiel)",
+    category: "formulaire",
+    docType: "cgv-ri-acceptation",
+  },
+  {
     id: "suivi-progression",
     label: "Suivi de progression e-learning",
     description: "Progression des modules et scores obtenus",
