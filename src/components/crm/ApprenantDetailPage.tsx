@@ -315,11 +315,6 @@ function CoursAttribution({ apprenant, apprenantId, effectiveModules, activeForm
     </Card>
   );
 }
-      }
-
-      return data;
-    },
-  });
 
   const { data: photoDoc } = useQuery({
     queryKey: ['apprenant-photo', apprenantId],
