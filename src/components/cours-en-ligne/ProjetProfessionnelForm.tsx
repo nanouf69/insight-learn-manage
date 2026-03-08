@@ -266,7 +266,7 @@ export default function ProjetProfessionnelForm({
                   <RadioGroup options={["Exploitant indépendant", "Locataire d'ADS", "Salarié(e) d'une compagnie", "Pas encore décidé"]} value={modeExerciceTaxi} onChange={setModeExerciceTaxi} />
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground mb-1 block">Avez-vous envisagé de demander une ADS ?</Label>
+                  <Label className="text-xs text-muted-foreground mb-1 block">Avez-vous envisagé de demander une ADS ? <span className="text-destructive">*</span></Label>
                   <RadioGroup options={["Oui – liste d'attente", "Oui – déjà contactée", "Oui – à faire", "Non – location prévue", "Je ne sais pas"]} value={demandeADS} onChange={setDemandeADS} />
                 </div>
                 <div>
