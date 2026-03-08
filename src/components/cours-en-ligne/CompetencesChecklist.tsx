@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,8 @@ interface Props {
 
 export default function CompetencesChecklist({ data, apprenantNom, apprenantId, onComplete, completed }: Props) {
   const [answers, setAnswers] = useState<Record<string, "oui" | "non">>({});
+  const [invalidKeys, setInvalidKeys] = useState<Set<string>>(new Set());
+  const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const totalItems = data.sections.reduce((acc, s) => acc + s.items.length, 0);
   const answeredCount = Object.keys(answers).length;
@@ -34,6 +36,7 @@ export default function CompetencesChecklist({ data, apprenantNom, apprenantId, 
       }
       return next;
     });
+    setInvalidKeys(prev => { const n = new Set(prev); n.delete(key); return n; });
   };
 
   const setAll = (value: "oui" | "non") => {
@@ -44,6 +47,38 @@ export default function CompetencesChecklist({ data, apprenantNom, apprenantId, 
       });
     });
     setAnswers(allAnswers);
+    setInvalidKeys(new Set());
+  };
+
+  const handleSubmit = async () => {
+    // Find unanswered
+    const missing: string[] = [];
+    data.sections.forEach((section, sIdx) => {
+      section.items.forEach((_, iIdx) => {
+        const key = `${sIdx}-${iIdx}`;
+        if (!answers[key]) missing.push(key);
+      });
+    });
+
+    if (missing.length > 0) {
+      setInvalidKeys(new Set(missing));
+      toast.error(`Veuillez répondre à toutes les questions (${missing.length} manquante(s))`);
+      const firstRef = itemRefs.current[missing[0]];
+      if (firstRef) firstRef.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
+    setInvalidKeys(new Set());
+    if (apprenantId) {
+      const saved = await saveFormDocument({
+        apprenantId,
+        typeDocument: "test-competences",
+        titre: `Test de compétences - ${data.formationLabel || "Formation"}`,
+        donnees: { answers, sections: data.sections.map(s => s.titre), formationLabel: data.formationLabel },
+      });
+      if (saved) toast.success("Test de compétences enregistré !");
+    }
+    onComplete();
   };
 
   if (completed) {
@@ -95,9 +130,14 @@ export default function CompetencesChecklist({ data, apprenantNom, apprenantId, 
               {section.items.map((item, iIdx) => {
                 const key = `${sIdx}-${iIdx}`;
                 const val = answers[key];
+                const isInvalid = invalidKeys.has(key);
                 return (
-                  <div key={key} className="flex items-start gap-3 py-2 border-b border-border/50 last:border-b-0">
-                    <p className="flex-1 text-sm leading-relaxed">❖ {item}</p>
+                  <div
+                    key={key}
+                    ref={el => { itemRefs.current[key] = el; }}
+                    className={`flex items-start gap-3 py-2 border-b border-border/50 last:border-b-0 rounded-lg px-2 ${isInvalid ? "ring-2 ring-destructive/60 bg-destructive/5" : ""}`}
+                  >
+                    <p className={`flex-1 text-sm leading-relaxed ${isInvalid ? "text-destructive font-semibold" : ""}`}>❖ {item}</p>
                     <div className="flex items-center gap-3 shrink-0 pt-0.5">
                       <label className="flex items-center gap-1.5 cursor-pointer">
                         <Checkbox
@@ -126,19 +166,7 @@ export default function CompetencesChecklist({ data, apprenantNom, apprenantId, 
         <CardContent className="p-4">
           <Button
             className="w-full"
-            disabled={!allAnswered}
-            onClick={async () => {
-              if (apprenantId) {
-                const saved = await saveFormDocument({
-                  apprenantId,
-                  typeDocument: "test-competences",
-                  titre: `Test de compétences - ${data.formationLabel || "Formation"}`,
-                  donnees: { answers, sections: data.sections.map(s => s.titre), formationLabel: data.formationLabel },
-                });
-                if (saved) toast.success("Test de compétences enregistré !");
-              }
-              onComplete();
-            }}
+            onClick={handleSubmit}
           >
             {allAnswered ? "✅ Valider le test de compétences" : `Répondez à toutes les questions (${answeredCount}/${totalItems})`}
           </Button>

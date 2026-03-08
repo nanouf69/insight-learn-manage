@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -176,6 +176,8 @@ const EvaluationAcquisForm = ({ formationType, apprenantId, onComplete }: Evalua
   const [parties, setParties] = useState<PartieData[]>(getFormationData(formationType));
   const [commentaires, setCommentaires] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [invalidKeys, setInvalidKeys] = useState<Set<string>>(new Set());
+  const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const updateCompetence = (partieIdx: number, compIdx: number, value: NiveauAcquis) => {
     setParties(prev => {
@@ -185,15 +187,30 @@ const EvaluationAcquisForm = ({ formationType, apprenantId, onComplete }: Evalua
       } : p);
       return next;
     });
+    const key = `${partieIdx}-${compIdx}`;
+    setInvalidKeys(prev => { const n = new Set(prev); n.delete(key); return n; });
   };
 
   const allFilled = parties.every(p => p.competences.every(c => c.value !== null));
 
   const handleSubmit = async () => {
-    if (!allFilled) {
-      toast.error("Veuillez évaluer toutes les compétences avant de valider");
+    // Find unanswered
+    const missing: string[] = [];
+    parties.forEach((p, pi) => {
+      p.competences.forEach((c, ci) => {
+        if (c.value === null) missing.push(`${pi}-${ci}`);
+      });
+    });
+
+    if (missing.length > 0) {
+      setInvalidKeys(new Set(missing));
+      toast.error(`Veuillez évaluer toutes les compétences (${missing.length} manquante(s))`);
+      const firstRef = itemRefs.current[missing[0]];
+      if (firstRef) firstRef.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
+
+    setInvalidKeys(new Set());
     if (apprenantId) {
       const saved = await saveFormDocument({
         apprenantId,
@@ -238,9 +255,12 @@ const EvaluationAcquisForm = ({ formationType, apprenantId, onComplete }: Evalua
             <div key={partieIdx} className="space-y-4">
               <h3 className="font-bold text-foreground border-b pb-2">{partie.titre}</h3>
               <div className="space-y-3">
-                {partie.competences.map((comp, compIdx) => (
-                  <div key={compIdx} className="rounded-lg border p-4 space-y-3">
-                    <p className="text-sm font-medium text-foreground">{comp.label}</p>
+                 {partie.competences.map((comp, compIdx) => {
+                  const key = `${partieIdx}-${compIdx}`;
+                  const isInvalid = invalidKeys.has(key);
+                  return (
+                  <div key={compIdx} ref={el => { itemRefs.current[key] = el; }} className={`rounded-lg border p-4 space-y-3 ${isInvalid ? "ring-2 ring-destructive/60 bg-destructive/5 border-destructive" : ""}`}>
+                    <p className={`text-sm font-medium ${isInvalid ? "text-destructive" : "text-foreground"}`}>{comp.label}</p>
                     <RadioGroup
                       value={comp.value || ""}
                       onValueChange={(v) => updateCompetence(partieIdx, compIdx, v as NiveauAcquis)}
@@ -256,11 +276,11 @@ const EvaluationAcquisForm = ({ formationType, apprenantId, onComplete }: Evalua
                       ))}
                     </RadioGroup>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))}
-
           <div className="space-y-3">
             <h3 className="font-bold text-foreground border-b pb-2">Commentaires</h3>
             <Textarea

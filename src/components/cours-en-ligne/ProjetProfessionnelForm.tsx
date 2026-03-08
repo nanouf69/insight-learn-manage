@@ -107,6 +107,7 @@ export default function ProjetProfessionnelForm({
   // Refs for scrolling to first invalid field
   const fieldRefs: Record<string, React.RefObject<HTMLDivElement>> = {
     motivations: useRef<HTMLDivElement>(null!),
+    statutActuel: useRef<HTMLDivElement>(null!),
     dejaTransport: useRef<HTMLDivElement>(null!),
     permis3ans: useRef<HTMLDivElement>(null!),
     demarchesEntreprise: useRef<HTMLDivElement>(null!),
@@ -118,6 +119,12 @@ export default function ProjetProfessionnelForm({
     zoneExercice: useRef<HTMLDivElement>(null!),
     activitesCompl: useRef<HTMLDivElement>(null!),
     modeExercice: useRef<HTMLDivElement>(null!),
+    commentConnu: useRef<HTMLDivElement>(null!),
+    consulteProgram: useRef<HTMLDivElement>(null!),
+    saitExamen: useRef<HTMLDivElement>(null!),
+    connaitZone: useRef<HTMLDivElement>(null!),
+    conduiteUrbaine: useRef<HTMLDivElement>(null!),
+    connaitSites: useRef<HTMLDivElement>(null!),
   };
 
   if (completed) {
@@ -218,9 +225,11 @@ export default function ProjetProfessionnelForm({
         <CardContent className="p-4 space-y-3">
           <SectionTitle num={2} title="SITUATION PROFESSIONNELLE ACTUELLE" />
           <div className="space-y-3">
-            <div>
-              <Label className="text-xs text-muted-foreground mb-1 block">Statut actuel</Label>
-              <RadioGroup options={["Salarié(e)", "Indépendant(e)", "Demandeur d'emploi", "Étudiant(e)"]} value={statutActuel} onChange={setStatutActuel} />
+            <div ref={fieldRefs.statutActuel}>
+              <Label className={`text-xs mb-1 block ${invalidFields.has("statutActuel") ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
+                Statut actuel <span className="text-destructive">*</span>
+              </Label>
+              <RadioGroup options={["Salarié(e)", "Indépendant(e)", "Demandeur d'emploi", "Étudiant(e)"]} value={statutActuel} onChange={setStatutActuel} fieldKey="statutActuel" />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
@@ -365,34 +374,46 @@ export default function ProjetProfessionnelForm({
           <div className="space-y-3">
             {!isTaxi && (
               <>
-                <div>
-                  <Label className="text-xs text-muted-foreground mb-1 block">Comment avez-vous connu FTRANSPORT ?</Label>
-                  <RadioGroup options={["Internet / Site web", "Bouche à oreille", "France Travail", "Réseaux sociaux"]} value={commentConnu} onChange={setCommentConnu} />
+                <div ref={fieldRefs.commentConnu}>
+                  <Label className={`text-xs mb-1 block ${invalidFields.has("commentConnu") ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
+                    Comment avez-vous connu FTRANSPORT ? <span className="text-destructive">*</span>
+                  </Label>
+                  <RadioGroup options={["Internet / Site web", "Bouche à oreille", "France Travail", "Réseaux sociaux"]} value={commentConnu} onChange={setCommentConnu} fieldKey="commentConnu" />
                 </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground mb-1 block">Avez-vous consulté le programme de formation ?</Label>
-                  <RadioGroup options={["Oui – en détail", "Oui – rapidement", "Non"]} value={consulteProgram} onChange={setConsulteProgram} />
+                <div ref={fieldRefs.consulteProgram}>
+                  <Label className={`text-xs mb-1 block ${invalidFields.has("consulteProgram") ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
+                    Avez-vous consulté le programme de formation ? <span className="text-destructive">*</span>
+                  </Label>
+                  <RadioGroup options={["Oui – en détail", "Oui – rapidement", "Non"]} value={consulteProgram} onChange={setConsulteProgram} fieldKey="consulteProgram" />
                 </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground mb-1 block">Savez-vous ce qu'implique l'examen {rsCode} ?</Label>
-                  <RadioGroup options={["Oui – bien informé(e)", "Partiellement", "Non – besoin d'explications"]} value={saitExamen} onChange={setSaitExamen} />
+                <div ref={fieldRefs.saitExamen}>
+                  <Label className={`text-xs mb-1 block ${invalidFields.has("saitExamen") ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
+                    Savez-vous ce qu'implique l'examen {rsCode} ? <span className="text-destructive">*</span>
+                  </Label>
+                  <RadioGroup options={["Oui – bien informé(e)", "Partiellement", "Non – besoin d'explications"]} value={saitExamen} onChange={setSaitExamen} fieldKey="saitExamen" />
                 </div>
               </>
             )}
             {isTaxi && (
               <>
                 <p className="text-xs text-muted-foreground italic">La connaissance du territoire est une épreuve spécifique à l'examen taxi.</p>
-                <div>
-                  <Label className="text-xs text-muted-foreground mb-1 block">Connaissez-vous bien la zone d'exercice ?</Label>
-                  <RadioGroup options={["Très bien", "Correctement", "Peu", "Pas du tout"]} value={connaitZone} onChange={setConnaitZone} />
+                <div ref={fieldRefs.connaitZone}>
+                  <Label className={`text-xs mb-1 block ${invalidFields.has("connaitZone") ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
+                    Connaissez-vous bien la zone d'exercice ? <span className="text-destructive">*</span>
+                  </Label>
+                  <RadioGroup options={["Très bien", "Correctement", "Peu", "Pas du tout"]} value={connaitZone} onChange={setConnaitZone} fieldKey="connaitZone" />
                 </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground mb-1 block">Expérience de conduite en milieu urbain dense ?</Label>
-                  <RadioGroup options={["Oui – régulière", "Oui – occasionnelle", "Non"]} value={conduiteUrbaine} onChange={setConduiteUrbaine} />
+                <div ref={fieldRefs.conduiteUrbaine}>
+                  <Label className={`text-xs mb-1 block ${invalidFields.has("conduiteUrbaine") ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
+                    Expérience de conduite en milieu urbain dense ? <span className="text-destructive">*</span>
+                  </Label>
+                  <RadioGroup options={["Oui – régulière", "Oui – occasionnelle", "Non"]} value={conduiteUrbaine} onChange={setConduiteUrbaine} fieldKey="conduiteUrbaine" />
                 </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground mb-1 block">Connaissance des sites et bâtiments publics de Lyon ?</Label>
-                  <RadioGroup options={["Bonne connaissance", "Partiellement", "Non – à apprendre"]} value={connaitSites} onChange={setConnaitSites} />
+                <div ref={fieldRefs.connaitSites}>
+                  <Label className={`text-xs mb-1 block ${invalidFields.has("connaitSites") ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
+                    Connaissance des sites et bâtiments publics de Lyon ? <span className="text-destructive">*</span>
+                  </Label>
+                  <RadioGroup options={["Bonne connaissance", "Partiellement", "Non – à apprendre"]} value={connaitSites} onChange={setConnaitSites} fieldKey="connaitSites" />
                 </div>
               </>
             )}
@@ -461,6 +482,7 @@ export default function ProjetProfessionnelForm({
           onClick={async () => {
             // Validation des champs obligatoires
             const missing: { key: string; label: string }[] = [];
+            if (!statutActuel) missing.push({ key: "statutActuel", label: "Statut actuel" });
             if (!motivations.trim()) missing.push({ key: "motivations", label: "Motivations" });
             if (!dejaTransport) missing.push({ key: "dejaTransport", label: "Activité de transport" });
             if (!permis3ans) missing.push({ key: "permis3ans", label: "Permis de conduire" });
@@ -473,8 +495,14 @@ export default function ProjetProfessionnelForm({
               if (!demandeADS) missing.push({ key: "demandeADS", label: "Demande ADS" });
               if (!zoneExercice) missing.push({ key: "zoneExercice", label: "Zone d'exercice" });
               if (!activitesCompl) missing.push({ key: "activitesCompl", label: "Activités complémentaires" });
+              if (!connaitZone) missing.push({ key: "connaitZone", label: "Connaissance zone" });
+              if (!conduiteUrbaine) missing.push({ key: "conduiteUrbaine", label: "Conduite urbaine" });
+              if (!connaitSites) missing.push({ key: "connaitSites", label: "Connaissance sites" });
             } else {
               if (!modeExercice) missing.push({ key: "modeExercice", label: "Mode d'exercice VTC" });
+              if (!commentConnu) missing.push({ key: "commentConnu", label: "Comment connu FTRANSPORT" });
+              if (!consulteProgram) missing.push({ key: "consulteProgram", label: "Programme consulté" });
+              if (!saitExamen) missing.push({ key: "saitExamen", label: "Connaissance examen" });
             }
 
             if (missing.length > 0) {

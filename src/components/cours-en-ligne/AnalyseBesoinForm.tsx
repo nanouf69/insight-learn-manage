@@ -40,7 +40,6 @@ export default function AnalyseBesoinForm({
   completed,
   apprenantType = "",
 }: Props) {
-  // Editable fields pre-filled from apprenant data
   const [nom, setNom] = useState(apprenantNom);
   const [prenom, setPrenom] = useState(apprenantPrenom);
   const [email, setEmail] = useState(apprenantEmail);
@@ -49,13 +48,11 @@ export default function AnalyseBesoinForm({
   const [codePostal, setCodePostal] = useState(apprenantCodePostal);
   const [ville, setVille] = useState(apprenantVille);
 
-  // Pre-select formation based on apprenantType
   const initVTC = apprenantType.toUpperCase().includes("VTC") || apprenantType.toUpperCase() === "VA";
   const initTAXI = apprenantType.toUpperCase().includes("TAXI") || apprenantType.toUpperCase() === "TA";
   const [formationVTC, setFormationVTC] = useState(initVTC);
   const [formationTAXI, setFormationTAXI] = useState(initTAXI);
 
-  // Eligibility questions
   const eligibilityQuestions = [
     "Avez-vous déjà perdu 6 points d'un coup sur votre permis de conduire ?",
     "Avez-vous déjà été condamné pour conduite d'un véhicule sans permis ?",
@@ -73,9 +70,16 @@ export default function AnalyseBesoinForm({
   const [complementary, setComplementary] = useState<EligibilityAnswer>({});
   const [centreFormation, setCentreFormation] = useState("");
   const [typeHandicap, setTypeHandicap] = useState("");
-
-  // Engagement
   const [engagementAccepted, setEngagementAccepted] = useState(false);
+
+  // Validation
+  const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
+
+  // Refs for scrolling
+  const eligRefs = useRef<(HTMLDivElement | null)[]>(Array(eligibilityQuestions.length).fill(null));
+  const compRefs = useRef<(HTMLDivElement | null)[]>(Array(complementaryQuestions.length).fill(null));
+  const formationRef = useRef<HTMLDivElement>(null!);
+  const engagementRef = useRef<HTMLDivElement>(null!);
 
   // Signature
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -123,11 +127,66 @@ export default function AnalyseBesoinForm({
     setHasSigned(false);
   };
 
-  // Validation
-  const allEligibilityAnswered = eligibilityQuestions.every((_, i) => eligibility[`e${i}`] !== undefined && eligibility[`e${i}`] !== null);
-  const allComplementaryAnswered = complementaryQuestions.every((_, i) => complementary[`c${i}`] !== undefined && complementary[`c${i}`] !== null);
   const hasFormation = formationVTC || formationTAXI;
-  const canSubmit = hasFormation && allEligibilityAnswered && allComplementaryAnswered && engagementAccepted && hasSigned;
+
+  const handleSubmit = async () => {
+    const missing: string[] = [];
+    let firstEl: HTMLDivElement | null = null;
+
+    if (!hasFormation) {
+      missing.push("formation");
+      if (!firstEl) firstEl = formationRef.current;
+    }
+    eligibilityQuestions.forEach((_, i) => {
+      const key = `e${i}`;
+      if (eligibility[key] === undefined || eligibility[key] === null) {
+        missing.push(key);
+        if (!firstEl) firstEl = eligRefs.current[i];
+      }
+    });
+    complementaryQuestions.forEach((_, i) => {
+      const key = `c${i}`;
+      if (complementary[key] === undefined || complementary[key] === null) {
+        missing.push(key);
+        if (!firstEl) firstEl = compRefs.current[i];
+      }
+    });
+    if (!engagementAccepted) {
+      missing.push("engagement");
+      if (!firstEl) firstEl = engagementRef.current;
+    }
+    if (!hasSigned) {
+      missing.push("signature");
+    }
+
+    if (missing.length > 0) {
+      setInvalidFields(new Set(missing));
+      toast.error("Veuillez répondre à toutes les questions obligatoires");
+      if (firstEl) {
+        firstEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      return;
+    }
+
+    setInvalidFields(new Set());
+
+    if (apprenantId) {
+      const signatureData = canvasRef.current?.toDataURL("image/png") || "";
+      const saved = await saveFormDocument({
+        apprenantId,
+        typeDocument: "analyse-besoin",
+        titre: "Analyse du besoin – Fiche client",
+        donnees: {
+          nom, prenom, email, telephone, adresse, codePostal, ville,
+          formationVTC, formationTAXI,
+          eligibility, complementary, centreFormation, typeHandicap,
+          engagementAccepted, signature: signatureData,
+        },
+      });
+      if (saved) toast.success("Analyse du besoin enregistrée !");
+    }
+    onComplete();
+  };
 
   if (completed) {
     return (
@@ -191,19 +250,21 @@ export default function AnalyseBesoinForm({
       <Card>
         <CardContent className="p-4 space-y-3">
           <h4 className="font-bold text-sm text-primary border-b pb-2">2. INFORMATIONS FORMATION</h4>
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Formation souhaitée :</p>
-            <div className="flex flex-wrap gap-4">
+          <div className="space-y-2" ref={formationRef}>
+            <p className={`text-sm font-medium ${invalidFields.has("formation") ? "text-destructive" : ""}`}>
+              Formation souhaitée : <span className="text-destructive">*</span>
+            </p>
+            <div className={`flex flex-wrap gap-4 rounded-lg p-1 ${invalidFields.has("formation") ? "ring-2 ring-destructive/60 bg-destructive/5" : ""}`}>
               <label className="flex items-center gap-2 cursor-pointer">
-                <Checkbox checked={formationVTC} onCheckedChange={(c) => setFormationVTC(!!c)} />
+                <Checkbox checked={formationVTC} onCheckedChange={(c) => { setFormationVTC(!!c); setInvalidFields(prev => { const n = new Set(prev); n.delete("formation"); return n; }); }} />
                 <span className="text-sm">Habilitation VTC (RS5637)</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
-                <Checkbox checked={formationTAXI} onCheckedChange={(c) => setFormationTAXI(!!c)} />
+                <Checkbox checked={formationTAXI} onCheckedChange={(c) => { setFormationTAXI(!!c); setInvalidFields(prev => { const n = new Set(prev); n.delete("formation"); return n; }); }} />
                 <span className="text-sm">Habilitation TAXI (RS5635)</span>
               </label>
             </div>
-            {!hasFormation && <p className="text-xs text-destructive">⚠️ Veuillez cocher au moins une formation.</p>}
+            {!hasFormation && !invalidFields.has("formation") && <p className="text-xs text-destructive">⚠️ Veuillez cocher au moins une formation.</p>}
           </div>
         </CardContent>
       </Card>
@@ -216,16 +277,17 @@ export default function AnalyseBesoinForm({
             {eligibilityQuestions.map((q, i) => {
               const key = `e${i}`;
               const val = eligibility[key];
+              const isInvalid = invalidFields.has(key);
               return (
-                <div key={i} className="flex items-start gap-3 py-2 border-b border-border/50 last:border-b-0">
-                  <p className="flex-1 text-sm leading-relaxed font-medium">{q}</p>
+                <div key={i} ref={el => { eligRefs.current[i] = el; }} className={`flex items-start gap-3 py-2 border-b border-border/50 last:border-b-0 rounded-lg px-2 ${isInvalid ? "ring-2 ring-destructive/60 bg-destructive/5" : ""}`}>
+                  <p className={`flex-1 text-sm leading-relaxed font-medium ${isInvalid ? "text-destructive" : ""}`}>{q} <span className="text-destructive">*</span></p>
                   <div className="flex items-center gap-3 shrink-0 pt-0.5">
                     <label className="flex items-center gap-1.5 cursor-pointer">
-                      <Checkbox checked={val === true} onCheckedChange={() => setEligibility(prev => ({ ...prev, [key]: prev[key] === true ? null : true }))} />
+                      <Checkbox checked={val === true} onCheckedChange={() => { setEligibility(prev => ({ ...prev, [key]: prev[key] === true ? null : true })); setInvalidFields(prev => { const n = new Set(prev); n.delete(key); return n; }); }} />
                       <span className="text-xs font-medium">Oui</span>
                     </label>
                     <label className="flex items-center gap-1.5 cursor-pointer">
-                      <Checkbox checked={val === false} onCheckedChange={() => setEligibility(prev => ({ ...prev, [key]: prev[key] === false ? null : false }))} />
+                      <Checkbox checked={val === false} onCheckedChange={() => { setEligibility(prev => ({ ...prev, [key]: prev[key] === false ? null : false })); setInvalidFields(prev => { const n = new Set(prev); n.delete(key); return n; }); }} />
                       <span className="text-xs font-medium">Non</span>
                     </label>
                   </div>
@@ -244,17 +306,18 @@ export default function AnalyseBesoinForm({
             {complementaryQuestions.map((q, i) => {
               const key = `c${i}`;
               const val = complementary[key];
+              const isInvalid = invalidFields.has(key);
               return (
                 <div key={i} className="space-y-2">
-                  <div className="flex items-start gap-3 py-2 border-b border-border/50">
-                    <p className="flex-1 text-sm leading-relaxed font-medium">{q}</p>
+                  <div ref={el => { compRefs.current[i] = el; }} className={`flex items-start gap-3 py-2 border-b border-border/50 rounded-lg px-2 ${isInvalid ? "ring-2 ring-destructive/60 bg-destructive/5" : ""}`}>
+                    <p className={`flex-1 text-sm leading-relaxed font-medium ${isInvalid ? "text-destructive" : ""}`}>{q} <span className="text-destructive">*</span></p>
                     <div className="flex items-center gap-3 shrink-0 pt-0.5">
                       <label className="flex items-center gap-1.5 cursor-pointer">
-                        <Checkbox checked={val === true} onCheckedChange={() => setComplementary(prev => ({ ...prev, [key]: prev[key] === true ? null : true }))} />
+                        <Checkbox checked={val === true} onCheckedChange={() => { setComplementary(prev => ({ ...prev, [key]: prev[key] === true ? null : true })); setInvalidFields(prev => { const n = new Set(prev); n.delete(key); return n; }); }} />
                         <span className="text-xs font-medium">Oui</span>
                       </label>
                       <label className="flex items-center gap-1.5 cursor-pointer">
-                        <Checkbox checked={val === false} onCheckedChange={() => setComplementary(prev => ({ ...prev, [key]: prev[key] === false ? null : false }))} />
+                        <Checkbox checked={val === false} onCheckedChange={() => { setComplementary(prev => ({ ...prev, [key]: prev[key] === false ? null : false })); setInvalidFields(prev => { const n = new Set(prev); n.delete(key); return n; }); }} />
                         <span className="text-xs font-medium">Non</span>
                       </label>
                     </div>
@@ -280,9 +343,9 @@ export default function AnalyseBesoinForm({
       </Card>
 
       {/* Engagement */}
-      <Card className="border-amber-300 bg-amber-50/50">
-        <CardContent className="p-4 space-y-3">
-          <h4 className="font-bold text-sm text-amber-800 border-b border-amber-200 pb-2">ENGAGEMENT DU STAGIAIRE</h4>
+      <Card className={`border-amber-300 bg-amber-50/50 ${invalidFields.has("engagement") ? "ring-2 ring-destructive/60" : ""}`}>
+        <CardContent className="p-4 space-y-3" ref={engagementRef}>
+          <h4 className="font-bold text-sm text-amber-800 border-b border-amber-200 pb-2">ENGAGEMENT DU STAGIAIRE <span className="text-destructive">*</span></h4>
           <div className="text-sm leading-relaxed space-y-2 text-amber-900">
             <p>
               Je soussigné(e) <strong>{prenom} {nom}</strong>, reconnais avoir été informé(e) par FTRANSPORT de mon obligation de m'inscrire à l'examen de certification et de m'y présenter.
@@ -298,8 +361,8 @@ export default function AnalyseBesoinForm({
             </p>
           </div>
           <div className="flex items-start gap-3 pt-2">
-            <Checkbox checked={engagementAccepted} onCheckedChange={(c) => setEngagementAccepted(!!c)} />
-            <label className="text-sm cursor-pointer select-none font-medium" onClick={() => setEngagementAccepted(!engagementAccepted)}>
+            <Checkbox checked={engagementAccepted} onCheckedChange={(c) => { setEngagementAccepted(!!c); if (c) setInvalidFields(prev => { const n = new Set(prev); n.delete("engagement"); return n; }); }} />
+            <label className={`text-sm cursor-pointer select-none font-medium ${invalidFields.has("engagement") ? "text-destructive" : ""}`} onClick={() => { setEngagementAccepted(!engagementAccepted); if (!engagementAccepted) setInvalidFields(prev => { const n = new Set(prev); n.delete("engagement"); return n; }); }}>
               Lu et approuvé
             </label>
           </div>
@@ -307,9 +370,9 @@ export default function AnalyseBesoinForm({
       </Card>
 
       {/* Signature */}
-      <Card>
+      <Card className={invalidFields.has("signature") ? "ring-2 ring-destructive/60" : ""}>
         <CardContent className="p-4 space-y-3">
-          <h4 className="font-bold text-sm text-primary border-b pb-2">SIGNATURE</h4>
+          <h4 className="font-bold text-sm text-primary border-b pb-2">SIGNATURE <span className="text-destructive">*</span></h4>
           <p className="text-xs text-muted-foreground">Fait à Lyon, le {new Date().toLocaleDateString("fr-FR")}</p>
           <p className="text-sm font-medium">Signature du stagiaire (précédée de la mention « Lu et approuvé ») :</p>
           <div className="border-2 border-dashed border-border rounded-lg p-1 bg-white">
@@ -337,25 +400,8 @@ export default function AnalyseBesoinForm({
       {/* Submit */}
       <Card className="border-primary/30 bg-primary/5">
         <CardContent className="p-4">
-          <Button className="w-full" disabled={!canSubmit} onClick={async () => {
-            if (apprenantId) {
-              const signatureData = canvasRef.current?.toDataURL("image/png") || "";
-              const saved = await saveFormDocument({
-                apprenantId,
-                typeDocument: "analyse-besoin",
-                titre: "Analyse du besoin – Fiche client",
-                donnees: {
-                  nom, prenom, email, telephone, adresse, codePostal, ville,
-                  formationVTC, formationTAXI,
-                  eligibility, complementary, centreFormation, typeHandicap,
-                  engagementAccepted, signature: signatureData,
-                },
-              });
-              if (saved) toast.success("Analyse du besoin enregistrée !");
-            }
-            onComplete();
-          }}>
-            {canSubmit ? "✅ Valider l'analyse du besoin" : "Complétez tous les champs et signez pour valider"}
+          <Button className="w-full" onClick={handleSubmit}>
+            ✅ Valider l'analyse du besoin
           </Button>
         </CardContent>
       </Card>
