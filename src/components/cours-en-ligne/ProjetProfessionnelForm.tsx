@@ -482,6 +482,7 @@ export default function ProjetProfessionnelForm({
           onClick={async () => {
             // Validation des champs obligatoires
             const missing: { key: string; label: string }[] = [];
+            if (!statutActuel) missing.push({ key: "statutActuel", label: "Statut actuel" });
             if (!motivations.trim()) missing.push({ key: "motivations", label: "Motivations" });
             if (!dejaTransport) missing.push({ key: "dejaTransport", label: "Activité de transport" });
             if (!permis3ans) missing.push({ key: "permis3ans", label: "Permis de conduire" });
@@ -494,8 +495,14 @@ export default function ProjetProfessionnelForm({
               if (!demandeADS) missing.push({ key: "demandeADS", label: "Demande ADS" });
               if (!zoneExercice) missing.push({ key: "zoneExercice", label: "Zone d'exercice" });
               if (!activitesCompl) missing.push({ key: "activitesCompl", label: "Activités complémentaires" });
+              if (!connaitZone) missing.push({ key: "connaitZone", label: "Connaissance zone" });
+              if (!conduiteUrbaine) missing.push({ key: "conduiteUrbaine", label: "Conduite urbaine" });
+              if (!connaitSites) missing.push({ key: "connaitSites", label: "Connaissance sites" });
             } else {
               if (!modeExercice) missing.push({ key: "modeExercice", label: "Mode d'exercice VTC" });
+              if (!commentConnu) missing.push({ key: "commentConnu", label: "Comment connu FTRANSPORT" });
+              if (!consulteProgram) missing.push({ key: "consulteProgram", label: "Programme consulté" });
+              if (!saitExamen) missing.push({ key: "saitExamen", label: "Connaissance examen" });
             }
 
             if (missing.length > 0) {
