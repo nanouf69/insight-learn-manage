@@ -545,6 +545,7 @@ Un candidat admissible peut se présenter 3 fois à l'épreuve pratique dans un 
 💰 En cas d'échec à l'examen pratique :
 • Frais d'examen CMA à la charge de l'élève : environ 200€
 • Frais de location de voiture à la charge de l'élève : environ 80€`, actif: true },
+    { id: 102, titre: "CGV et Reglement Interieur", description: "Veuillez lire et signer les CGV et le reglement interieur.", actif: true, checklistType: "cgv-reglement" as const },
     { id: 3, titre: "Planning et contact", description: "🏢 FTRANSPORT — 86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91\n⏰ 9h-12h / 13h-17h", actif: true },
   ],
   exercices: [
