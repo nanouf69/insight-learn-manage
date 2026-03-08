@@ -275,7 +275,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
   const solde = (apprenant.montant_ttc || 0) - (apprenant.montant_paye || 0);
 
   return (
-    <div className="space-y-6 animate-fade-in pb-32">
+    <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={onBack}>
@@ -343,9 +343,24 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
 
       {/* Tabs avec onglets en bas (sticky) */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        {/* Onglets en haut */}
+        <TabsList className="flex w-full gap-0 bg-transparent border-b border-border rounded-none p-0 h-auto overflow-x-auto justify-start [&>button]:rounded-none [&>button]:border-b-2 [&>button]:border-transparent [&>button]:data-[state=active]:border-primary [&>button]:flex-shrink-0">
+          <TabsTrigger value="infos" className="text-sm">Infos</TabsTrigger>
+          <TabsTrigger value="cours" className="text-sm">Attribuer les cours</TabsTrigger>
+          <TabsTrigger value="resultats" className="text-sm">Résultats</TabsTrigger>
+          <TabsTrigger value="docs-completes" className="text-sm">Formulaires</TabsTrigger>
+          <TabsTrigger value="docs-formation" className="text-sm">Documents Formation</TabsTrigger>
+          <TabsTrigger value="dossier" className="text-sm">Dossier</TabsTrigger>
+          <TabsTrigger value="docs-inscription" className="text-sm">Inscription</TabsTrigger>
+          <TabsTrigger value="examens" className="text-sm">Examens</TabsTrigger>
+          <TabsTrigger value="emails" className="text-sm">Emails</TabsTrigger>
+          <TabsTrigger value="devis" className="text-sm">Devis</TabsTrigger>
+          <TabsTrigger value="reset-cours" className="text-sm text-destructive">Remise à zéro</TabsTrigger>
+          <TabsTrigger value="delete-account" className="text-sm text-destructive">Supprimer</TabsTrigger>
+        </TabsList>
+
         {/* Contenu principal des onglets */}
         <div className="space-y-4">
-          {/* Infos Tab */}
           {activeTab === "infos" && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -415,24 +430,6 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           {activeTab === "emails" && <EmailsSection apprenant={apprenant} />}
           {activeTab === "devis" && <DevisSection apprenant={apprenant} />}
           {activeTab === "reset-cours" && <ResetCoursTab apprenant={apprenant} queryClient={queryClient} />}
-        </div>
-
-        {/* Onglets fixes en bas */}
-        <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50">
-          <TabsList className="flex w-full gap-0 bg-transparent border-none rounded-none p-0 h-auto overflow-x-auto justify-start [&>button]:rounded-none [&>button]:border-b-2 [&>button]:border-transparent [&>button]:data-[state=active]:border-primary [&>button]:flex-shrink-0">
-            <TabsTrigger value="infos" className="text-sm">Infos</TabsTrigger>
-            <TabsTrigger value="cours" className="text-sm">Attribuer les cours</TabsTrigger>
-            <TabsTrigger value="resultats" className="text-sm">Résultats</TabsTrigger>
-            <TabsTrigger value="docs-completes" className="text-sm">Formulaires</TabsTrigger>
-            <TabsTrigger value="docs-formation" className="text-sm">Documents Formation</TabsTrigger>
-            <TabsTrigger value="dossier" className="text-sm">Dossier</TabsTrigger>
-            <TabsTrigger value="docs-inscription" className="text-sm">Inscription</TabsTrigger>
-            <TabsTrigger value="examens" className="text-sm">Examens</TabsTrigger>
-            <TabsTrigger value="emails" className="text-sm">Emails</TabsTrigger>
-            <TabsTrigger value="devis" className="text-sm">Devis</TabsTrigger>
-            <TabsTrigger value="reset-cours" className="text-sm text-destructive">Remise à zéro</TabsTrigger>
-            <TabsTrigger value="delete-account" className="text-sm text-destructive">Supprimer</TabsTrigger>
-          </TabsList>
         </div>
       </Tabs>
     </div>
