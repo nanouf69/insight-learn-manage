@@ -211,24 +211,36 @@ const creneauLabels: Record<string, string> = {
 };
 
 const COMPTE_FORMATIONS = [
-  { id: "vtc", label: "VTC", types: ["vtc", "vtc-e"] },
-  { id: "taxi", label: "TAXI", types: ["taxi", "taxi-e"] },
-  { id: "ta", label: "TA", types: ["ta", "ta-e"] },
-  { id: "va", label: "VA", types: ["va", "va-e"] },
+  { id: "vtc", label: "VTC (Présentiel)" },
+  { id: "vtc-e", label: "VTC E-learning" },
+  { id: "taxi", label: "TAXI (Présentiel)" },
+  { id: "taxi-e", label: "TAXI E-learning" },
+  { id: "ta", label: "TA (Présentiel)" },
+  { id: "ta-e", label: "TA E-learning" },
+  { id: "va", label: "VA (Présentiel)" },
+  { id: "va-e", label: "VA E-learning" },
 ] as const;
 
 const ACCOUNT_FORMATION_TO_TYPE: Record<string, string> = {
   vtc: "vtc",
+  "vtc-e": "vtc-e",
   taxi: "taxi",
+  "taxi-e": "taxi-e",
   ta: "ta",
+  "ta-e": "ta-e",
   va: "va",
+  "va-e": "va-e",
 };
 
 const ACCOUNT_FORMATION_TO_DB_FORMATION: Record<string, string> = {
   vtc: "vtc",
+  "vtc-e": "vtc-elearning",
   taxi: "taxi",
+  "taxi-e": "taxi-elearning",
   ta: "passerelle-taxi",
+  "ta-e": "passerelle-taxi-elearning",
   va: "passerelle-vtc-elearning",
+  "va-e": "passerelle-vtc-elearning",
 };
 
 const FORMATION_TO_TYPE: Record<string, string> = {
