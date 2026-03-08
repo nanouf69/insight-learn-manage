@@ -4441,7 +4441,7 @@ export const bilanExamenTA: ExamenBlanc = {
 // ===== BILAN EXAMEN VA (passerelle VTC pour TAXI) =====
 const bilan_dev_commercial_va: Matiere = {
   id: "bilan_dev_commercial",
-  nom: "G - Développement Commercial (Marketing)",
+  nom: "F(V) — Développement commercial et gestion propre à l'activité de VTC",
   duree: 30,
   coefficient: 3,
   noteEliminatoire: 0,
