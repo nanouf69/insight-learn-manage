@@ -419,6 +419,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
 
   const initials = `${apprenant.prenom?.[0] || ''}${apprenant.nom?.[0] || ''}`.toUpperCase();
   const solde = (apprenant.montant_ttc || 0) - (apprenant.montant_paye || 0);
+  const hasExistingAccount = Boolean((apprenant as any).auth_user_id);
 
   return (
     <div className="space-y-6 animate-fade-in">
