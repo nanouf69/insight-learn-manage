@@ -1226,12 +1226,12 @@ export function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPage
         </TabsContent>
 
         {/* Remise à zéro Tab */}
-        <TabsContent value="reset-cours">
+        <TabsContent value="reset-cours" className="pb-24">
           <ResetCoursTab apprenant={apprenant} queryClient={queryClient} />
         </TabsContent>
 
         {/* Supprimer compte cours Tab */}
-        <TabsContent value="delete-account">
+        <TabsContent value="delete-account" className="pb-24">
           <Card className="border-destructive/30">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-destructive">
