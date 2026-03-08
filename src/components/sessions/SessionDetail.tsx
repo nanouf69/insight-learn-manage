@@ -497,9 +497,35 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
      enabled: !!session?.id && open && apprenantsInSession.length > 0,
    });
 
-   const hasConvocation = (apprenantId: string) => {
-     return convocationsSent.some((c: any) => c.apprenant_id === apprenantId);
-   };
+    const hasConvocation = (apprenantId: string) => {
+      return convocationsSent.some((c: any) => c.apprenant_id === apprenantId);
+    };
+
+   // Charger les identifiants envoyés pour les apprenants de cette session
+    const { data: identifiantsSent = [] } = useQuery({
+      queryKey: ['identifiants-sent', session?.id, apprenantsInSession.map((sa: any) => sa.apprenant?.id).join(',')],
+      queryFn: async () => {
+        const apprenantIds = apprenantsInSession
+          .map((sa: any) => sa.apprenant?.id)
+          .filter(Boolean);
+        if (apprenantIds.length === 0) return [];
+        
+        const { data, error } = await supabase
+          .from('emails')
+          .select('apprenant_id, subject, sent_at')
+           .in('apprenant_id', apprenantIds)
+           .ilike('subject', '%identifiant%')
+           .eq('type', 'sent');
+        
+        if (error) throw error;
+        return data || [];
+      },
+      enabled: !!session?.id && open && apprenantsInSession.length > 0,
+    });
+
+    const hasIdentifiants = (apprenantId: string) => {
+      return identifiantsSent.some((c: any) => c.apprenant_id === apprenantId);
+    };
 
   // --- Account creation helpers ---
   const inferAccountFormationId = (apprenant: any): string => {
@@ -571,7 +597,17 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
       if (error) throw error;
       setGeneratedPassword(data?.password || "");
+      // Log email for identifiants badge
+      await supabase.from("emails").insert({
+        apprenant_id: appId,
+        subject: "Identifiants de connexion - Cours en ligne",
+        type: "sent",
+        sent_at: new Date().toISOString(),
+        recipients: [accountDialogApprenant.email],
+        sender_email: "noreply@ftransport.fr",
+      });
       toast({ title: "Compte créé avec succès !", description: `Un email a été envoyé à ${accountDialogApprenant.email}.` });
+      queryClient.invalidateQueries({ queryKey: ['identifiants-sent'] });
       refetchApprenants();
     } catch (err: any) {
       toast({ title: "Erreur", description: err?.message || "Erreur lors de l'opération", variant: "destructive" });
@@ -1336,7 +1372,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                 <SelectItem value="deplace">📅 Déplacé à la prochaine session</SelectItem>
                               </SelectContent>
                             </Select>
-                          </div>
+                           </div>
                         )}
                         <div className="flex items-center justify-between gap-4 pt-2 border-t text-sm">
                           <div className="flex items-center gap-4 flex-wrap">
@@ -1355,7 +1391,21 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                               )}
                             </div>
 
-                            {/* Examen théorique - 31 mars Clermont-Ferrand */}
+                            {/* Identifiants status */}
+                            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full" style={hasIdentifiants(apprenant.id) ? { backgroundColor: 'hsl(221.2, 83.2%, 53.3%)', color: 'white' } : { backgroundColor: 'hsl(0, 0%, 90%)', color: 'hsl(0, 0%, 45.1%)' }}>
+                              {hasIdentifiants(apprenant.id) ? (
+                                <>
+                                  <CheckCircle className="w-4 h-4" />
+                                  <span className="font-medium text-sm">Identifiants envoyés ✅</span>
+                                </>
+                              ) : (
+                                <>
+                                  <XCircle className="w-4 h-4" />
+                                  <span className="font-medium text-sm">Identifiants non envoyés ❌</span>
+                                </>
+                              )}
+                            </div>
+
                             <div className="flex items-center gap-1.5 text-muted-foreground">
                               <GraduationCap className="w-3.5 h-3.5" />
                               <span>Examen: 31 mars 2026 - Clermont-Ferrand</span>
@@ -2026,6 +2076,16 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                         body: { apprenant_id: accountDialogApprenant.id },
                       });
                       if (error) throw error;
+                      // Log email for identifiants badge
+                      await supabase.from("emails").insert({
+                        apprenant_id: accountDialogApprenant.id,
+                        subject: "Identifiants de connexion - Cours en ligne",
+                        type: "sent",
+                        sent_at: new Date().toISOString(),
+                        recipients: [accountDialogApprenant.email],
+                        sender_email: "noreply@ftransport.fr",
+                      });
+                      queryClient.invalidateQueries({ queryKey: ['identifiants-sent'] });
                       toast({ title: "Identifiants renvoyés par email" });
                     } catch {
                       toast({ title: "Erreur", description: "Erreur lors de l'envoi", variant: "destructive" });
