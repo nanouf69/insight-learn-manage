@@ -1449,8 +1449,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         sourceFingerprint?: string;
       };
 
-      // If source data changed (new questions, new exercises), invalidate cache
-      if (parsed.sourceFingerprint && parsed.sourceFingerprint !== sourceFingerprint) {
+      // If source data changed OR legacy cache has no fingerprint, invalidate cache
+      if (parsed.sourceFingerprint !== sourceFingerprint) {
         console.log("Source data changed, invalidating editor cache for module", module.id);
         window.localStorage.removeItem(moduleEditorStorageKey);
         setModuleData(initialData);
