@@ -58,6 +58,7 @@ import { BILAN_EXAMEN_VTC } from "./bilan-examen-vtc-data";
 import { BILAN_EXAMEN_TAXI } from "./bilan-examen-taxi-data";
 import { BILAN_EXAMEN_VA } from "./bilan-examen-va-data";
 import { BILAN_EXAMEN_TA } from "./bilan-examen-ta-data";
+import { EQUIPEMENTS_TAXI_DATA } from "./equipements-taxi-data";
 import CompetencesChecklist from "./CompetencesChecklist";
 import AnalyseBesoinForm from "./AnalyseBesoinForm";
 import ProjetProfessionnelForm from "./ProjetProfessionnelForm";
