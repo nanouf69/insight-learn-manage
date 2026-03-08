@@ -32,6 +32,171 @@ import { Input } from "@/components/ui/input";
 
 const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 41, 50, 51, 52, 53, 60, 61, 62, 63, 64]);
 
+// Ordered modules per formation — single source of truth matching the Formations tab
+const ORDERED_FORMATION_MODULES: Record<string, { id: number; label: string }[]> = {
+  "vtc": [
+    { id: 1, label: "1.INTRODUCTION PRÉSENTIEL" },
+    { id: 2, label: "2.COURS ET EXERCICES VTC" },
+    { id: 3, label: "3.FORMULES" },
+    { id: 4, label: "4.BILAN EXERCICES VTC" },
+    { id: 35, label: "5.EXAMENS BLANCS VTC" },
+    { id: 5, label: "6.BILAN EXAMEN VTC" },
+    { id: 60, label: "7.SOURCES JURIDIQUES VTC" },
+    { id: 8, label: "8.PRATIQUE VTC" },
+    { id: 50, label: "9.FIN DE FORMATION VTC" },
+  ],
+  "vtc-e-presentiel": [
+    { id: 1, label: "1.INTRODUCTION PRÉSENTIEL" },
+    { id: 2, label: "2.COURS ET EXERCICES VTC" },
+    { id: 3, label: "3.FORMULES" },
+    { id: 4, label: "4.BILAN EXERCICES VTC" },
+    { id: 35, label: "5.EXAMENS BLANCS VTC" },
+    { id: 5, label: "6.BILAN EXAMEN VTC" },
+    { id: 60, label: "7.SOURCES JURIDIQUES VTC" },
+    { id: 8, label: "8.PRATIQUE VTC" },
+    { id: 50, label: "9.FIN DE FORMATION VTC" },
+  ],
+  "vtc-e": [
+    { id: 26, label: "1.INTRODUCTION E-LEARNING" },
+    { id: 2, label: "2.COURS ET EXERCICES VTC" },
+    { id: 3, label: "3.FORMULES" },
+    { id: 4, label: "4.BILAN EXERCICES VTC" },
+    { id: 35, label: "5.EXAMENS BLANCS VTC" },
+    { id: 5, label: "6.BILAN EXAMEN VTC" },
+    { id: 60, label: "7.SOURCES JURIDIQUES VTC" },
+    { id: 8, label: "8.PRATIQUE VTC" },
+    { id: 50, label: "9.FIN DE FORMATION VTC" },
+  ],
+  "taxi": [
+    { id: 1, label: "1.INTRODUCTION PRÉSENTIEL" },
+    { id: 10, label: "2.COURS ET EXERCICES TAXI" },
+    { id: 7, label: "3.CONNAISSANCES DE LA VILLE TAXI" },
+    { id: 64, label: "4.ÉQUIPEMENTS TAXI" },
+    { id: 12, label: "5.CAS PRATIQUE TAXI" },
+    { id: 3, label: "🔓 FORMULES (libre accès)" },
+    { id: 9, label: "6.BILAN EXERCICES TAXI" },
+    { id: 13, label: "7.CONTRÔLE DE CONNAISSANCES TAXI" },
+    { id: 11, label: "8.BILAN EXAMEN TAXI" },
+    { id: 36, label: "9.EXAMENS BLANCS TAXI" },
+    { id: 61, label: "10.SOURCES JURIDIQUES TAXI" },
+    { id: 6, label: "11.PRATIQUE TAXI" },
+    { id: 51, label: "12.FIN DE FORMATION TAXI" },
+  ],
+  "taxi-e-presentiel": [
+    { id: 1, label: "1.INTRODUCTION PRÉSENTIEL" },
+    { id: 10, label: "2.COURS ET EXERCICES TAXI" },
+    { id: 7, label: "3.CONNAISSANCES DE LA VILLE TAXI" },
+    { id: 64, label: "4.ÉQUIPEMENTS TAXI" },
+    { id: 12, label: "5.CAS PRATIQUE TAXI" },
+    { id: 3, label: "🔓 FORMULES (libre accès)" },
+    { id: 9, label: "6.BILAN EXERCICES TAXI" },
+    { id: 13, label: "7.CONTRÔLE DE CONNAISSANCES TAXI" },
+    { id: 11, label: "8.BILAN EXAMEN TAXI" },
+    { id: 36, label: "9.EXAMENS BLANCS TAXI" },
+    { id: 61, label: "10.SOURCES JURIDIQUES TAXI" },
+    { id: 6, label: "11.PRATIQUE TAXI" },
+    { id: 51, label: "12.FIN DE FORMATION TAXI" },
+  ],
+  "taxi-e": [
+    { id: 26, label: "1.INTRODUCTION E-LEARNING" },
+    { id: 10, label: "2.COURS ET EXERCICES TAXI" },
+    { id: 7, label: "3.CONNAISSANCES DE LA VILLE TAXI" },
+    { id: 64, label: "4.ÉQUIPEMENTS TAXI" },
+    { id: 12, label: "5.CAS PRATIQUE TAXI" },
+    { id: 3, label: "6.FORMULES" },
+    { id: 9, label: "7.BILAN EXERCICES TAXI" },
+    { id: 13, label: "8.CONTRÔLE DE CONNAISSANCES TAXI" },
+    { id: 11, label: "9.BILAN EXAMEN TAXI" },
+    { id: 36, label: "10.EXAMENS BLANCS TAXI" },
+    { id: 61, label: "11.SOURCES JURIDIQUES TAXI" },
+    { id: 6, label: "12.PRATIQUE TAXI" },
+    { id: 51, label: "13.FIN DE FORMATION TAXI" },
+  ],
+  "ta": [
+    { id: 31, label: "1.INTRODUCTION TA" },
+    { id: 40, label: "2.COURS ET EXERCICES TA" },
+    { id: 7, label: "3.CONNAISSANCES DE LA VILLE TAXI" },
+    { id: 64, label: "4.ÉQUIPEMENTS TAXI" },
+    { id: 12, label: "5.CAS PRATIQUE TAXI" },
+    { id: 3, label: "🔓 FORMULES (libre accès)" },
+    { id: 27, label: "6.BILAN EXERCICES TA" },
+    { id: 13, label: "7.CONTRÔLE DE CONNAISSANCES TAXI" },
+    { id: 28, label: "8.BILAN EXAMEN TA" },
+    { id: 37, label: "9.EXAMENS BLANCS TA" },
+    { id: 62, label: "10.SOURCES JURIDIQUES TA" },
+    { id: 6, label: "11.PRATIQUE TAXI" },
+    { id: 52, label: "12.FIN DE FORMATION TA" },
+  ],
+  "ta-e-presentiel": [
+    { id: 31, label: "1.INTRODUCTION TA" },
+    { id: 40, label: "2.COURS ET EXERCICES TA" },
+    { id: 7, label: "3.CONNAISSANCES DE LA VILLE TAXI" },
+    { id: 64, label: "4.ÉQUIPEMENTS TAXI" },
+    { id: 12, label: "5.CAS PRATIQUE TAXI" },
+    { id: 3, label: "🔓 FORMULES (libre accès)" },
+    { id: 27, label: "6.BILAN EXERCICES TA" },
+    { id: 13, label: "7.CONTRÔLE DE CONNAISSANCES TAXI" },
+    { id: 28, label: "8.BILAN EXAMEN TA" },
+    { id: 37, label: "9.EXAMENS BLANCS TA" },
+    { id: 62, label: "10.SOURCES JURIDIQUES TA" },
+    { id: 6, label: "11.PRATIQUE TAXI" },
+    { id: 52, label: "12.FIN DE FORMATION TA" },
+  ],
+  "ta-e": [
+    { id: 32, label: "1.INTRODUCTION TA E-LEARNING" },
+    { id: 40, label: "2.COURS ET EXERCICES TA" },
+    { id: 7, label: "3.CONNAISSANCES DE LA VILLE TAXI" },
+    { id: 64, label: "4.ÉQUIPEMENTS TAXI" },
+    { id: 12, label: "5.CAS PRATIQUE TAXI" },
+    { id: 3, label: "6.FORMULES" },
+    { id: 27, label: "7.BILAN EXERCICES TA" },
+    { id: 13, label: "8.CONTRÔLE DE CONNAISSANCES TAXI" },
+    { id: 28, label: "9.BILAN EXAMEN TA" },
+    { id: 37, label: "10.EXAMENS BLANCS TA" },
+    { id: 62, label: "11.SOURCES JURIDIQUES TA" },
+    { id: 6, label: "12.PRATIQUE TAXI" },
+    { id: 52, label: "13.FIN DE FORMATION TA" },
+  ],
+  "va": [
+    { id: 34, label: "1.INTRODUCTION VA" },
+    { id: 41, label: "2.COURS ET EXERCICES VA" },
+    { id: 3, label: "3.FORMULES" },
+    { id: 29, label: "4.BILAN EXERCICES VA" },
+    { id: 30, label: "5.BILAN EXAMEN VA" },
+    { id: 38, label: "6.EXAMENS BLANCS VA" },
+    { id: 63, label: "7.SOURCES JURIDIQUES VA" },
+    { id: 8, label: "8.PRATIQUE VTC" },
+    { id: 53, label: "9.FIN DE FORMATION VA" },
+  ],
+  "va-e-presentiel": [
+    { id: 34, label: "1.INTRODUCTION VA" },
+    { id: 41, label: "2.COURS ET EXERCICES VA" },
+    { id: 3, label: "3.FORMULES" },
+    { id: 29, label: "4.BILAN EXERCICES VA" },
+    { id: 30, label: "5.BILAN EXAMEN VA" },
+    { id: 38, label: "6.EXAMENS BLANCS VA" },
+    { id: 63, label: "7.SOURCES JURIDIQUES VA" },
+    { id: 8, label: "8.PRATIQUE VTC" },
+    { id: 53, label: "9.FIN DE FORMATION VA" },
+  ],
+  "va-e": [
+    { id: 34, label: "1.INTRODUCTION VA E-LEARNING" },
+    { id: 41, label: "2.COURS ET EXERCICES VA" },
+    { id: 3, label: "3.FORMULES" },
+    { id: 29, label: "4.BILAN EXERCICES VA" },
+    { id: 30, label: "5.BILAN EXAMEN VA" },
+    { id: 38, label: "6.EXAMENS BLANCS VA" },
+    { id: 63, label: "7.SOURCES JURIDIQUES VA" },
+    { id: 8, label: "8.PRATIQUE VTC" },
+    { id: 53, label: "9.FIN DE FORMATION VA" },
+  ],
+};
+
+// Derive DEFAULT_MODULES_BY_TYPE from the ordered list
+const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = Object.fromEntries(
+  Object.entries(ORDERED_FORMATION_MODULES).map(([k, v]) => [k, v.map(m => m.id)])
+);
+
 function CoursAttribution({ apprenant, apprenantId, effectiveModules, activeFormationType, selectedFormationForModules, setSelectedFormationForModules, queryClient }: any) {
   const [localModules, setLocalModules] = useState<number[]>(effectiveModules);
   const [saving, setSaving] = useState(false);
@@ -71,6 +236,13 @@ function CoursAttribution({ apprenant, apprenantId, effectiveModules, activeForm
 
   const hasChanges = JSON.stringify([...localModules].sort()) !== JSON.stringify([...effectiveModules].sort());
 
+  // Get ordered formation modules for the selected formation
+  const formationModules = selectedFormationForModules ? ORDERED_FORMATION_MODULES[selectedFormationForModules] || [] : [];
+  const formationModuleIds = new Set(formationModules.map(m => m.id));
+
+  // Extra modules = managed modules NOT in the formation
+  const extraModules = MODULES_DATA.filter(m => MANAGED_MODULE_IDS.has(m.id) && !formationModuleIds.has(m.id));
+
   return (
     <Card>
       <CardHeader>
@@ -95,19 +267,45 @@ function CoursAttribution({ apprenant, apprenantId, effectiveModules, activeForm
             </SelectContent>
           </Select>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-[400px] overflow-y-auto border rounded-md p-3">
-          {MODULES_DATA.filter((m) => MANAGED_MODULE_IDS.has(m.id)).map((mod) => (
-            <label key={mod.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 rounded px-2 py-1">
-              <Checkbox
-                checked={localModules.includes(mod.id)}
-                onCheckedChange={() => toggleModule(mod.id)}
-              />
-              <span className={cn(!localModules.includes(mod.id) && "text-muted-foreground")}>
-                {mod.nom}
-              </span>
-            </label>
-          ))}
+
+        {/* Formation modules — ordered as in Formations tab */}
+        {selectedFormationForModules && formationModules.length > 0 && (
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-foreground">Modules de la formation</p>
+            <div className="border rounded-md p-3 space-y-1 bg-muted/30">
+              {formationModules.map((mod) => (
+                <label key={mod.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 rounded px-2 py-1">
+                  <Checkbox
+                    checked={localModules.includes(mod.id)}
+                    onCheckedChange={() => toggleModule(mod.id)}
+                  />
+                  <span className={cn("font-medium", !localModules.includes(mod.id) && "text-muted-foreground")}>
+                    {mod.label}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Extra modules */}
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-muted-foreground">Modules supplémentaires à ajouter</p>
+          <div className="max-h-[250px] overflow-y-auto border rounded-md p-3 space-y-1">
+            {extraModules.map((mod) => (
+              <label key={mod.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 rounded px-2 py-1">
+                <Checkbox
+                  checked={localModules.includes(mod.id)}
+                  onCheckedChange={() => toggleModule(mod.id)}
+                />
+                <span className={cn(!localModules.includes(mod.id) && "text-muted-foreground")}>
+                  {mod.nom}
+                </span>
+              </label>
+            ))}
+          </div>
         </div>
+
         {hasChanges && (
           <Button onClick={saveModules} disabled={saving}>
             {saving ? "Sauvegarde..." : "Sauvegarder les modules"}
@@ -117,161 +315,6 @@ function CoursAttribution({ apprenant, apprenantId, effectiveModules, activeForm
     </Card>
   );
 }
-import { getAvatarUrl } from "@/lib/avatarUrl";
-
-interface ApprenantDetailPageProps {
-  apprenantId: string;
-  onBack: () => void;
-}
-
-const typeLabels: Record<string, string> = {
-  'vtc': 'VTC',
-  'vtc-e': 'VTC E',
-  'taxi': 'TAXI',
-  'taxi-e': 'TAXI E',
-  'ta': 'TA',
-  'ta-e': 'TA E',
-  'va': 'VA',
-  'va-e': 'VA E',
-};
-
-const financementLabels: Record<string, string> = {
-  'personnel': 'Personnel',
-  'cpf': 'CPF',
-  'cpf-a': 'CPF A',
-  'opco': 'OPCO',
-  'france-travail': 'France Travail',
-  'entreprise': 'Entreprise',
-};
-
-const formationLabels: Record<string, string> = {
-  'vtc': 'Formation VTC (sans examen) - 1 099 €',
-  'vtc-exam': 'Formation VTC avec frais d\'examen - 1 599 €',
-  'taxi': 'Formation TAXI (sans examen) - 1 299 €',
-  'taxi-exam': 'Formation TAXI avec frais d\'examen - 1 799 €',
-  'passerelle-taxi': 'Formation TAXI pour chauffeur VTC (TA) - 999 €',
-  'vtc-elearning-1099': 'Formation VTC (E-learning) - 1 099 €',
-  'vtc-elearning': 'Formation VTC avec examen (E-learning) - 1 599 €',
-  'taxi-elearning': 'Formation TAXI (E-learning) - 1 299 €',
-  'passerelle-taxi-elearning': 'Formation TA (E-learning) - 999 €',
-  'passerelle-vtc-elearning': 'Formation VA (E-learning) - 499 €',
-  'vtc-e-presentiel': 'Formation VTC E-learning + Présentiel - 1 599 €',
-  'taxi-e-presentiel': 'Formation TAXI E-learning + Présentiel - 1 799 €',
-  'ta-e-presentiel': 'Formation TA E-learning + Présentiel - 999 €',
-};
-
-const creneauLabels: Record<string, string> = {
-  'matin': 'Formation en matinée (8h - 12h)',
-  'apres-midi': 'Formation en après-midi (13h - 17h)',
-  'soiree': 'Formation en soirée (17h - 21h)',
-  'journee': 'Formation en journée (8h - 17h)',
-  'elearning': 'Formation en ligne',
-  'repassage': 'Repassage',
-  'pas-encore-choisi': 'Pas encore choisi',
-};
-
-const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {
-  "vtc":               [1, 2, 3, 4, 35, 5, 8, 60, 50],
-  "vtc-e-presentiel":  [1, 2, 3, 4, 35, 5, 8, 60, 50],
-  "vtc-e":             [26, 2, 3, 4, 35, 5, 8, 60, 50],
-  "taxi":              [1, 10, 7, 3, 9, 13, 11, 36, 6, 12, 64, 61, 51],
-  "taxi-e-presentiel": [1, 10, 7, 3, 9, 13, 11, 36, 6, 12, 64, 61, 51],
-  "taxi-e":            [26, 10, 7, 3, 9, 13, 11, 36, 6, 12, 64, 61, 51],
-  "ta":                [31, 40, 7, 3, 27, 28, 37, 6, 64, 62, 52],
-  "ta-e-presentiel":   [31, 40, 7, 3, 27, 28, 37, 6, 64, 62, 52],
-  "ta-e":              [32, 40, 7, 3, 27, 13, 28, 37, 6, 64, 62, 52],
-  "va":                [34, 41, 3, 29, 30, 38, 8, 63, 53],
-  "va-e-presentiel":   [34, 41, 3, 29, 30, 38, 8, 63, 53],
-  "va-e":              [34, 41, 3, 29, 30, 38, 8, 63, 53],
-};
-
-const COMPTE_FORMATIONS = [
-  { id: "vtc", label: "VTC", types: ["vtc", "vtc-e"] },
-  { id: "taxi", label: "TAXI", types: ["taxi", "taxi-e"] },
-  { id: "ta", label: "TA", types: ["ta", "ta-e"] },
-  { id: "va", label: "VA", types: ["va", "va-e"] },
-] as const;
-
-const ACCOUNT_FORMATION_TO_TYPE: Record<string, string> = {
-  vtc: "vtc",
-  taxi: "taxi",
-  ta: "ta",
-  va: "va",
-};
-
-const ACCOUNT_FORMATION_TO_DB_FORMATION: Record<string, string> = {
-  vtc: "vtc",
-  taxi: "taxi",
-  ta: "passerelle-taxi",
-  va: "passerelle-vtc-elearning",
-};
-
-const FORMATION_TO_TYPE: Record<string, string> = {
-  "vtc": "vtc", "vtc-exam": "vtc",
-  "taxi": "taxi", "taxi-exam": "taxi",
-  "passerelle-taxi": "ta",
-  "vtc-elearning-1099": "vtc-e", "vtc-elearning": "vtc-e",
-  "taxi-elearning": "taxi-e",
-  "passerelle-taxi-elearning": "ta-e",
-  "passerelle-vtc-elearning": "va-e",
-  "vtc-e-presentiel": "vtc-e-presentiel",
-  "taxi-e-presentiel": "taxi-e-presentiel",
-  "ta-e-presentiel": "ta-e-presentiel",
-};
-
-function normalizeTypeApprenant(type: string): string {
-  if (!type) return "";
-  const lower = type.toLowerCase().trim();
-  if (lower.includes("taxi") && !lower.includes("vtc")) return lower.includes("elearning") || lower.includes("e-learning") ? "taxi-e" : "taxi";
-  if (lower.includes("vtc")) {
-    if (lower.includes("presentiel")) return "vtc-e-presentiel";
-    return lower.includes("elearning") || lower.includes("e-learning") ? "vtc-e" : "vtc";
-  }
-  if (lower.includes("ta")) return lower.includes("elearning") || lower.includes("e-learning") ? "ta-e" : lower.includes("presentiel") ? "ta-e-presentiel" : "ta";
-  if (lower.includes("va")) return "va-e";
-  return lower;
-}
-
-export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPageProps) {
-  const [activeTab, setActiveTab] = useState("infos");
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [selectedFormationForModules, setSelectedFormationForModules] = useState("");
-  const [selectedFormationForAccount, setSelectedFormationForAccount] = useState("");
-  const [accountStartDate, setAccountStartDate] = useState("");
-  const [accountEndDate, setAccountEndDate] = useState("");
-  const [accountExtraModules, setAccountExtraModules] = useState<number[]>([]);
-  const [generatedPassword, setGeneratedPassword] = useState("");
-  const [creatingAccount, setCreatingAccount] = useState(false);
-  const [resendingCredentials, setResendingCredentials] = useState(false);
-  const queryClient = useQueryClient();
-
-  const { data: apprenant, isLoading } = useQuery({
-    queryKey: ["apprenant-detail", apprenantId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("apprenants")
-        .select("*")
-        .eq("id", apprenantId)
-        .maybeSingle();
-
-      if (error) {
-        console.error("Erreur:", error);
-        return null;
-      }
-
-      if (data && data.formation_choisie) {
-        const dateStr = data.date_formation_catalogue;
-        if (dateStr) {
-          const range = parseDateRange(dateStr);
-          if (range) {
-            return {
-              ...data,
-              date_debut_formation: data.date_debut_formation || range.dateDebut,
-              date_fin_formation: data.date_fin_formation || range.dateFin
-            };
-          }
-        }
       }
 
       return data;
