@@ -3293,6 +3293,57 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           </div>
         </TabsContent>
 
+        <TabsContent value="corbeille" className="space-y-6">
+          {deletedCours.length === 0 && deletedExercices.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center text-muted-foreground">
+                <Trash2 className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                <p className="font-medium">La corbeille est vide</p>
+                <p className="text-sm mt-1">Les cours et exercices supprimés apparaîtront ici pour être restaurés.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              {deletedCours.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-lg font-bold flex items-center gap-2">📚 Cours supprimés ({deletedCours.length})</h3>
+                  {deletedCours.map((cours) => (
+                    <Card key={cours.id} className="border-dashed border-destructive/30">
+                      <CardContent className="p-4 flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-muted-foreground line-through">{cours.titre}</p>
+                          {cours.sousTitre && <p className="text-xs text-muted-foreground">{cours.sousTitre}</p>}
+                        </div>
+                        <Button size="sm" variant="outline" className="gap-1" onClick={() => restoreItem("cours", cours.id)}>
+                          <RotateCcw className="w-3 h-3" /> Restaurer
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+              {deletedExercices.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-lg font-bold flex items-center gap-2">📝 Exercices supprimés ({deletedExercices.length})</h3>
+                  {deletedExercices.map((exo) => (
+                    <Card key={exo.id} className="border-dashed border-destructive/30">
+                      <CardContent className="p-4 flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-muted-foreground line-through">{exo.titre}</p>
+                          {exo.sousTitre && <p className="text-xs text-muted-foreground">{exo.sousTitre}</p>}
+                        </div>
+                        <Button size="sm" variant="outline" className="gap-1" onClick={() => restoreItem("exercices", exo.id)}>
+                          <RotateCcw className="w-3 h-3" /> Restaurer
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </TabsContent>
+
         <TabsContent value="apercu">
           <LearnerPreview secureMode />
         </TabsContent>
