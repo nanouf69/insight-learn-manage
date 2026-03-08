@@ -692,6 +692,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           <TabsTrigger value="cours" className="text-sm">Attribuer les cours</TabsTrigger>
           <TabsTrigger value="resultats" className="text-sm">Résultats</TabsTrigger>
           <TabsTrigger value="docs-completes" className="text-sm">Formulaires</TabsTrigger>
+          <TabsTrigger value="controle" className="text-sm">Contrôle</TabsTrigger>
           <TabsTrigger value="docs-formation" className="text-sm">Documents Formation</TabsTrigger>
           <TabsTrigger value="dossier" className="text-sm">Dossier</TabsTrigger>
           <TabsTrigger value="docs-inscription" className="text-sm">Inscription</TabsTrigger>
