@@ -180,7 +180,7 @@ Vous avez à disposition : des cours, des exercices, des examens blancs et des b
 
 💰 Frais d'examen en cas d'échec (à votre charge) :
 • Examen théorique : environ 240€
-• Examen pratique : environ 120€
+• Examen pratique : environ 200€
 
 📋 Les examens sont organisés par la Chambre des Métiers et de l'Artisanat. Vérifiez bien votre inscription.
 
@@ -243,8 +243,92 @@ L'épreuve pratique comprend une phase de conduite en circulation d'une durée m
 📌 Note minimale requise : 12/20
 
 💰 En cas d'échec à l'examen pratique :
-• Frais d'examen CMA à la charge de l'élève : environ 120€
+• Frais d'examen CMA à la charge de l'élève : environ 200€
 • Frais de location de voiture à la charge de l'élève : environ 80€`,
+      actif: true,
+    },
+    {
+      id: 7,
+      titre: "Programme de formation — Épreuves théoriques",
+      description: `📋 PROGRAMME DE FORMATION
+
+📘 A — RÉGLEMENTATION T3P
+• Réglementation des taxis, VTC, VMDTR
+• Utilisation de la voie publique, obligations véhicules et conducteurs
+• Organismes administratifs, assurances, contrôles, sanctions
+• Prise en charge des PMR, covoiturage, intermédiaires
+• Prévention des discriminations et violences sexuelles/sexistes
+
+📘 B — GESTION
+• Principes de comptabilité, charges fixes/variables, amortissement
+• Formes juridiques (EI, EIRL, EURL, SARL, SASU…)
+• Régimes d'imposition, formalités déclaratives
+• Chambres des métiers, régimes sociaux
+
+📘 C — SÉCURITÉ ROUTIÈRE
+• Code de la route, alcoolémie, stupéfiants, fatigue
+• Éco-conduite, entretien véhicule, constat amiable
+• Permis de conduire (points, probatoire, suspension)
+
+📘 D — FRANÇAIS
+• Compréhension de texte lié au transport
+• Expression : accueil, demandes, conversation, prise de congé
+
+📘 E — ANGLAIS (niveau A2)
+• Accueil clientèle, demandes simples, conversation, prise de congé`,
+      actif: true,
+    },
+    {
+      id: 8,
+      titre: "Programme — Épreuves spécifiques",
+      description: `📗 PROGRAMME SPÉCIFIQUE VTC :
+
+F(V) — DÉVELOPPEMENT COMMERCIAL
+• Marketing : analyse de marché, ciblage, compétitivité, prix
+• Valorisation de la prestation VTC, fidélisation
+• Communication (internet, numérique), réseau de partenaires
+
+G(V) — RÉGLEMENTATION SPÉCIFIQUE VTC
+• Inscription au registre VTC, capacité financière
+• Obligations véhicules (dimensions, puissance, âge, signalisation)
+• Documents de prestation pour les contrôles
+
+📕 PROGRAMME SPÉCIFIQUE TAXI :
+
+F(T) — RÉGLEMENTATION NATIONALE TAXI
+• Équipements spéciaux, terminal de paiement électronique
+• Articulation réglementations nationales et locales
+• Autorisations de stationnement, tarification
+• Activités complémentaires, TICPE, taxe de stationnement
+
+G(T) — CONNAISSANCE DU TERRITOIRE ET RÉGLEMENTATION LOCALE
+• Principaux lieux, sites, bâtiments publics, axes routiers
+• Règlement local en vigueur`,
+      actif: true,
+    },
+    {
+      id: 9,
+      titre: "Programme — Épreuve pratique",
+      description: `📙 ÉPREUVE PRATIQUE D'ADMISSION
+
+A — CONDUITE ET SÉCURITÉ
+• A1 : Conduite en sécurité, code de la route, éco-conduite
+• A2 : Souplesse de conduite pour le confort des passagers
+• A3 : Prise en charge et dépose des clients et bagages
+
+B — RELATION CLIENT
+• B1 : Présentation, attitudes, courtoisie
+• B2 : Accueil, comportement, prise de congé
+• B3 : Vérification de l'état du véhicule
+
+C — PARCOURS ET ACCOMPAGNEMENT
+• C1 : Construction du parcours, utilisation GPS
+• C2 : Informations touristiques et pratiques
+
+D — FACTURATION ET PAIEMENT
+• D1 : Calcul du prix, facturation, encaissement (TPE)
+
+🎯 Moyens pédagogiques : tablettes, plateforme numérique, cours magistraux, contrôles continus et examens blancs.`,
       actif: true,
     },
     {
@@ -317,10 +401,36 @@ const INTRODUCTION_ELEARNING_DATA: ModuleData = {
     { id: 100, titre: "Analyse du besoin – Fiche client", description: "Complétez cette fiche.", actif: true, checklistType: "analyse-besoin" },
     { id: 101, titre: "Questionnaire Projet Professionnel", description: "Évaluation de votre motivation et de votre projet professionnel.", actif: true, checklistType: "projet-professionnel" },
     { id: 1, titre: "Bienvenue sur la plateforme", description: "Cette plateforme est dédiée aux futurs chauffeurs VTC et TAXIS. Vous devez réussir deux épreuves :\n• L'épreuve d'admissibilité (théorie avec 7 matières) — minimum 10/20\n• L'épreuve d'admission (pratique) — minimum 12/20\nLe tout sans note éliminatoire.", actif: true },
-    { id: 2, titre: "Informations importantes", description: "💰 Frais d'examen en cas d'échec (à votre charge) :\n• Examen théorique : environ 240€\n• Examen pratique : environ 120€\n\n📋 Les examens sont organisés par la CMA.\n📞 Contactez-nous le jour des résultats de l'examen théorique.", actif: true },
+    { id: 2, titre: "Informations importantes", description: "💰 Frais d'examen en cas d'échec (à votre charge) :\n• Examen théorique : environ 240€\n• Examen pratique : environ 200€\n\n📋 Les examens sont organisés par la CMA.\n📞 Contactez-nous le jour des résultats de l'examen théorique.", actif: true },
     { id: 3, titre: "Contenu de l'examen", description: "📝 ÉPREUVES COMMUNES :\nA — Réglementation T3P (45 min, coeff. 3)\nB — Gestion (45 min, coeff. 2)\nC — Sécurité routière (30 min, coeff. 3)\nD — Français (30 min, coeff. 2)\nE — Anglais (30 min, coeff. 1)", actif: true },
     { id: 4, titre: "Épreuves spécifiques", description: "📝 VTC : F(V) Développement commercial (coeff. 3) + G(V) Réglementation VTC (coeff. 3)\n📝 TAXI : F(T) Territoire et réglementation locale (coeff. 3) + G(T) Réglementation TAXI (coeff. 3)\n\n✅ Moyenne ≥ 10/20, aucune note éliminatoire.", actif: true },
-    { id: 5, titre: "L'épreuve pratique", description: "Conduite en circulation, durée minimum 20 minutes.\n📌 Note minimale requise : 12/20", actif: true },
+    { id: 5, titre: "L'épreuve pratique", description: "Conduite en circulation, durée minimum 20 minutes.\n📌 Note minimale requise : 12/20\n\n💰 En cas d'échec : frais d'examen ~200€ + location véhicule ~80€", actif: true },
+    { id: 7, titre: "Programme — Épreuves théoriques", description: `📋 PROGRAMME DE FORMATION
+
+📘 A — RÉGLEMENTATION T3P
+• Réglementation taxis, VTC, VMDTR, voie publique
+• Obligations véhicules/conducteurs, organismes, assurances, sanctions
+• PMR, covoiturage, prévention discriminations
+
+📘 B — GESTION
+• Comptabilité, charges, amortissement, formes juridiques
+• Régimes d'imposition, chambres des métiers, régimes sociaux
+
+📘 C — SÉCURITÉ ROUTIÈRE
+• Code de la route, risques, éco-conduite, permis de conduire
+
+📘 D — FRANÇAIS
+• Compréhension de texte, expression (accueil, conversation)
+
+📘 E — ANGLAIS (niveau A2)
+• Accueil clientèle, demandes simples, conversation`, actif: true },
+    { id: 8, titre: "Programme — Épreuves spécifiques", description: `📗 SPÉCIFIQUE VTC :
+F(V) — Développement commercial : marketing, fidélisation, communication
+G(V) — Réglementation VTC : registre, véhicules, documents
+
+📕 SPÉCIFIQUE TAXI :
+F(T) — Réglementation nationale : équipements, ADS, tarification
+G(T) — Territoire et réglementation locale : lieux, règlement local`, actif: true },
     { id: 6, titre: "Contact", description: "🏢 FTRANSPORT — 86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91\n📧 contact@ftransport.fr", actif: true },
   ],
   exercices: [
@@ -347,8 +457,23 @@ const INTRODUCTION_TA_PRESENTIEL_DATA: ModuleData = {
     { id: 0, titre: "Test de compétences avant formation", description: "Répondez aux questions.", actif: true, checklistType: "competences" },
     { id: 100, titre: "Analyse du besoin – Fiche client", description: "Complétez cette fiche.", actif: true, checklistType: "analyse-besoin" },
     { id: 101, titre: "Questionnaire Projet Professionnel", description: "Évaluation de votre motivation et de votre projet professionnel.", actif: true, checklistType: "projet-professionnel" },
-    { id: 1, titre: "Bienvenue — Passerelle TA", description: "Cette formation passerelle vous permet d'obtenir votre carte TAXI.\n\n2 matières : Réglementation nationale TAXI + Réglementation locale", actif: true },
-    { id: 2, titre: "Programme", description: "📝 Réglementation nationale TAXI + Réglementation locale", actif: true },
+    { id: 1, titre: "Bienvenue — Passerelle TA", description: "Cette formation passerelle vous permet d'obtenir votre carte TAXI en complétant vos compétences VTC.\n\nVous devez réussir l'examen théorique sur 2 matières spécifiques TAXI, puis l'épreuve pratique.\n\n💰 Frais d'examen en cas d'échec :\n• Examen théorique : environ 240€\n• Examen pratique : environ 200€", actif: true },
+    { id: 2, titre: "Programme de formation TA", description: `📋 PROGRAMME — Passerelle TAXI pour VTC
+
+📕 F(T) — RÉGLEMENTATION NATIONALE TAXI
+• Fonctionnement des équipements spéciaux et du TPE
+• Articulation réglementations nationales et locales
+• Régimes d'autorisation de stationnement
+• Règles de tarification d'une course de Taxi
+• Activités complémentaires : services réguliers, transport assis professionnalisé
+• Détaxation TICPE, taxe de stationnement
+
+📕 G(T) — RÉGLEMENTATION LOCALE
+• Territoire d'exercice : principaux lieux, sites, bâtiments publics, axes routiers
+• Règlement local en vigueur
+
+✅ Moyenne ≥ 10/20, aucune note éliminatoire.
+Un candidat admissible peut se présenter 3 fois à l'épreuve pratique.`, actif: true },
     { id: 3, titre: "Planning et contact", description: "🏢 FTRANSPORT — 86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91\n⏰ 9h-12h / 13h-17h", actif: true },
   ],
   exercices: [
@@ -368,8 +493,22 @@ const INTRODUCTION_TA_ELEARNING_DATA: ModuleData = {
     { id: 0, titre: "Test de compétences avant formation", description: "Répondez aux questions.", actif: true, checklistType: "competences" },
     { id: 100, titre: "Analyse du besoin – Fiche client", description: "Complétez cette fiche.", actif: true, checklistType: "analyse-besoin" },
     { id: 101, titre: "Questionnaire Projet Professionnel", description: "Évaluation de votre motivation et de votre projet professionnel.", actif: true, checklistType: "projet-professionnel" },
-    { id: 1, titre: "Bienvenue — Passerelle TA (E-learning)", description: "Formation passerelle TAXI en e-learning.\n\n2 matières : Réglementation nationale TAXI + Réglementation locale", actif: true },
-    { id: 2, titre: "Contact", description: "🏢 FTRANSPORT — 86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91\n📧 contact@ftransport.fr", actif: true },
+    { id: 1, titre: "Bienvenue — Passerelle TA (E-learning)", description: "Formation passerelle TAXI en e-learning.\n\n2 matières : Réglementation nationale TAXI + Réglementation locale\n\n💰 Frais d'examen en cas d'échec :\n• Examen théorique : environ 240€\n• Examen pratique : environ 200€", actif: true },
+    { id: 2, titre: "Programme de formation TA", description: `📋 PROGRAMME — Passerelle TAXI pour VTC (E-learning)
+
+📕 F(T) — RÉGLEMENTATION NATIONALE TAXI
+• Fonctionnement des équipements spéciaux et du TPE
+• Articulation réglementations nationales et locales
+• Régimes d'autorisation de stationnement
+• Règles de tarification d'une course de Taxi
+• Activités complémentaires, TICPE, taxe de stationnement
+
+📕 G(T) — RÉGLEMENTATION LOCALE
+• Territoire d'exercice : lieux, sites, bâtiments publics, axes routiers
+• Règlement local en vigueur
+
+✅ Moyenne ≥ 10/20, aucune note éliminatoire.`, actif: true },
+    { id: 3, titre: "Contact", description: "🏢 FTRANSPORT — 86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91\n📧 contact@ftransport.fr", actif: true },
   ],
   exercices: [
     { id: 1, titre: "Quiz Coefficients TA", sousTitre: "Connaissez-vous les coefficients de vos épreuves passerelle ?", actif: true, questions: [
@@ -387,8 +526,23 @@ const INTRODUCTION_VA_PRESENTIEL_DATA: ModuleData = {
     { id: 0, titre: "Test de compétences avant formation", description: "Répondez aux questions.", actif: true, checklistType: "competences" },
     { id: 100, titre: "Analyse du besoin – Fiche client", description: "Complétez cette fiche.", actif: true, checklistType: "analyse-besoin" },
     { id: 101, titre: "Questionnaire Projet Professionnel", description: "Évaluation de votre motivation et de votre projet professionnel.", actif: true, checklistType: "projet-professionnel" },
-    { id: 1, titre: "Bienvenue — Passerelle VA", description: "Cette formation passerelle vous permet d'obtenir votre carte VTC.\n\n2 matières : Développement Commercial + Réglementation spécifique VTC", actif: true },
-    { id: 2, titre: "Programme", description: "📝 Développement Commercial + Réglementation spécifique VTC", actif: true },
+    { id: 1, titre: "Bienvenue — Passerelle VA", description: "Cette formation passerelle vous permet d'obtenir votre carte VTC en complétant vos compétences TAXI.\n\nVous devez réussir l'examen théorique sur 2 matières spécifiques VTC, puis l'épreuve pratique.\n\n💰 Frais d'examen en cas d'échec :\n• Examen théorique : environ 240€\n• Examen pratique : environ 200€", actif: true },
+    { id: 2, titre: "Programme de formation VA", description: `📋 PROGRAMME — Passerelle VTC pour TAXI
+
+📗 F(V) — DÉVELOPPEMENT COMMERCIAL
+• Principes généraux du marketing (analyse de marché, ciblage, compétitivité, prix)
+• Valorisation de la prestation commerciale VTC
+• Fidélisation des clients, prospection
+• Communication (internet, moyens numériques)
+• Développement d'un réseau de partenaires (hôtels, entreprises)
+
+📗 G(V) — RÉGLEMENTATION SPÉCIFIQUE VTC
+• Modalités d'inscription au registre des VTC, capacité financière
+• Obligations véhicules d'exploitation (dimensions, puissance, âge, signalisation)
+• Documents de prestation pour les contrôles
+
+✅ Moyenne ≥ 10/20, aucune note éliminatoire.
+Un candidat admissible peut se présenter 3 fois à l'épreuve pratique.`, actif: true },
     { id: 3, titre: "Planning et contact", description: "🏢 FTRANSPORT — 86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91\n⏰ 9h-12h / 13h-17h", actif: true },
   ],
   exercices: [
@@ -407,8 +561,21 @@ const INTRODUCTION_VA_ELEARNING_DATA: ModuleData = {
     { id: 0, titre: "Test de compétences avant formation", description: "Répondez aux questions.", actif: true, checklistType: "competences" },
     { id: 100, titre: "Analyse du besoin – Fiche client", description: "Complétez cette fiche.", actif: true, checklistType: "analyse-besoin" },
     { id: 101, titre: "Questionnaire Projet Professionnel", description: "Évaluation de votre motivation et de votre projet professionnel.", actif: true, checklistType: "projet-professionnel" },
-    { id: 1, titre: "Bienvenue — Passerelle VA (E-learning)", description: "Formation passerelle VTC en e-learning.\n\n2 matières : Développement Commercial + Réglementation spécifique VTC", actif: true },
-    { id: 2, titre: "Contact", description: "🏢 FTRANSPORT — 86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91\n📧 contact@ftransport.fr", actif: true },
+    { id: 1, titre: "Bienvenue — Passerelle VA (E-learning)", description: "Formation passerelle VTC en e-learning.\n\n2 matières : Développement Commercial + Réglementation spécifique VTC\n\n💰 Frais d'examen en cas d'échec :\n• Examen théorique : environ 240€\n• Examen pratique : environ 200€", actif: true },
+    { id: 2, titre: "Programme de formation VA", description: `📋 PROGRAMME — Passerelle VTC pour TAXI (E-learning)
+
+📗 F(V) — DÉVELOPPEMENT COMMERCIAL
+• Marketing : analyse de marché, ciblage, compétitivité, prix
+• Valorisation prestation VTC, fidélisation, prospection
+• Communication (internet, numérique), réseau de partenaires
+
+📗 G(V) — RÉGLEMENTATION SPÉCIFIQUE VTC
+• Inscription registre VTC, capacité financière
+• Obligations véhicules (dimensions, puissance, âge, signalisation)
+• Documents de prestation pour les contrôles
+
+✅ Moyenne ≥ 10/20, aucune note éliminatoire.`, actif: true },
+    { id: 3, titre: "Contact", description: "🏢 FTRANSPORT — 86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91\n📧 contact@ftransport.fr", actif: true },
   ],
   exercices: [
     { id: 1, titre: "Quiz Coefficients VA", sousTitre: "Connaissez-vous les coefficients de vos épreuves passerelle ?", actif: true, questions: [
