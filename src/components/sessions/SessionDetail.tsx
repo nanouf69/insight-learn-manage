@@ -333,6 +333,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [editLabel, setEditLabel] = useState("");
   const [editSubject, setEditSubject] = useState("");
   const [editBody, setEditBody] = useState("");
+  // --- Account creation state ---
+  const [accountDialogApprenant, setAccountDialogApprenant] = useState<any | null>(null);
+  const [selectedFormationForAccount, setSelectedFormationForAccount] = useState("");
+  const [accountStartDate, setAccountStartDate] = useState("");
+  const [accountEndDate, setAccountEndDate] = useState("");
+  const [accountExtraModules, setAccountExtraModules] = useState<number[]>([]);
+  const [generatedPassword, setGeneratedPassword] = useState("");
+  const [creatingAccount, setCreatingAccount] = useState(false);
+  const [resendingCredentials, setResendingCredentials] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
