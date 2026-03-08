@@ -56,6 +56,7 @@ import { BILAN_EXERCICES_TA } from "./bilan-exercices-ta-data";
 import { BILAN_EXERCICES_VA } from "./bilan-exercices-va-data";
 import { BILAN_EXAMEN_VTC } from "./bilan-examen-vtc-data";
 import { BILAN_EXAMEN_TAXI } from "./bilan-examen-taxi-data";
+import { BILAN_EXAMEN_VA } from "./bilan-examen-va-data";
 import CompetencesChecklist from "./CompetencesChecklist";
 import AnalyseBesoinForm from "./AnalyseBesoinForm";
 import ProjetProfessionnelForm from "./ProjetProfessionnelForm";
@@ -832,14 +833,14 @@ function getInitialModuleData(
     };
   }
 
-  // Bilan Examen VA (module 30) — toutes les matières
+  // Bilan Examen VA (module 30) — F(V) + G(V) uniquement
   if (module.id === 30) {
     return {
       id: 30,
       nom: "6.BILAN EXAMEN VA",
-      description: "Bilan examen VA — toutes les matières. Questions type examen, sans chronomètre.",
+      description: "Bilan examen VA — Développement Commercial & Réglementation Spécifique VTC. Questions type examen, sans chronomètre.",
       cours: [],
-      exercices: BILAN_EXAMEN_VTC,
+      exercices: BILAN_EXAMEN_VA,
     };
   }
 
