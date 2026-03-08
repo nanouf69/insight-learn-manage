@@ -498,6 +498,85 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
      return convocationsSent.some((c: any) => c.apprenant_id === apprenantId);
    };
 
+  // --- Account creation helpers ---
+  const inferAccountFormationId = (apprenant: any): string => {
+    const type = (apprenant?.type_apprenant || "").toLowerCase();
+    if (type.startsWith("taxi")) return "taxi";
+    if (type.startsWith("ta")) return "ta";
+    if (type.startsWith("va")) return "va";
+    return "vtc";
+  };
+
+  const accountBaseModules = useMemo(() => {
+    return DEFAULT_MODULES_BY_TYPE[selectedFormationForAccount] || [] as number[];
+  }, [selectedFormationForAccount]);
+
+  const accountAdditionalModuleChoices = useMemo(
+    () => MODULES_DATA.filter((m) => MANAGED_MODULE_IDS.has(m.id) && !accountBaseModules.includes(m.id)),
+    [accountBaseModules]
+  );
+
+  const toggleAccountExtraModule = (id: number) => {
+    setAccountExtraModules((prev) =>
+      prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]
+    );
+  };
+
+  const openAccountDialog = (apprenant: any) => {
+    setAccountDialogApprenant(apprenant);
+    const inferredId = inferAccountFormationId(apprenant);
+    setSelectedFormationForAccount(inferredId);
+    setAccountStartDate(apprenant.date_debut_cours_en_ligne || "");
+    setAccountEndDate(apprenant.date_fin_cours_en_ligne || "");
+    setAccountExtraModules([]);
+    setGeneratedPassword("");
+  };
+
+  const handleCreateAccount = async () => {
+    if (!accountDialogApprenant) return;
+    setCreatingAccount(true);
+    try {
+      const mergedModules = Array.from(new Set([...accountBaseModules, ...accountExtraModules]));
+      const mappedType = ACCOUNT_FORMATION_TO_TYPE[selectedFormationForAccount] || null;
+      const mappedFormation = ACCOUNT_FORMATION_TO_DB_FORMATION[selectedFormationForAccount] || null;
+      const appId = accountDialogApprenant.id;
+
+      const { error: updateError } = await supabase
+        .from("apprenants")
+        .update({
+          type_apprenant: mappedType,
+          formation_choisie: mappedFormation,
+          date_debut_cours_en_ligne: accountStartDate || null,
+          date_fin_cours_en_ligne: accountEndDate || null,
+          modules_autorises: mergedModules.length > 0 ? mergedModules : null,
+        } as any)
+        .eq("id", appId);
+
+      if (updateError) throw updateError;
+
+      const hasExisting = Boolean(accountDialogApprenant.auth_user_id);
+      if (hasExisting) {
+        toast({ title: "Accès cours mis à jour", description: "Les paramètres ont été enregistrés." });
+        refetchApprenants();
+        setAccountDialogApprenant(null);
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke("create-apprenant-account", {
+        body: { apprenant_id: appId, email: accountDialogApprenant.email },
+      });
+
+      if (error) throw error;
+      setGeneratedPassword(data?.password || "");
+      toast({ title: "Compte créé avec succès !", description: `Un email a été envoyé à ${accountDialogApprenant.email}.` });
+      refetchApprenants();
+    } catch (err: any) {
+      toast({ title: "Erreur", description: err?.message || "Erreur lors de l'opération", variant: "destructive" });
+    } finally {
+      setCreatingAccount(false);
+    }
+  };
+
   if (!session) return null;
 
   const sessionApprenantIds = apprenantsInSession.map((sa: any) => sa.apprenant?.id);
