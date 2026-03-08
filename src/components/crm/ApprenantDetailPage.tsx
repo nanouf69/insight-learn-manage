@@ -26,6 +26,7 @@ import { EmailsSection } from "./apprenant-sections/EmailsSection";
 import { DevisSection } from "./apprenant-sections/DevisSection";
 import { ResetCoursTab } from "./apprenant-sections/ResetCoursTab";
 import { DocumentsCompletes } from "./apprenant-sections/DocumentsCompletes";
+import { ControleQualiteTab } from "./apprenant-sections/ControleQualiteTab";
 import { ApprenantEditForm } from "@/components/apprenants/ApprenantEditForm";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -691,6 +692,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           <TabsTrigger value="cours" className="text-sm">Attribuer les cours</TabsTrigger>
           <TabsTrigger value="resultats" className="text-sm">Résultats</TabsTrigger>
           <TabsTrigger value="docs-completes" className="text-sm">Formulaires</TabsTrigger>
+          <TabsTrigger value="controle" className="text-sm">Contrôle</TabsTrigger>
           <TabsTrigger value="docs-formation" className="text-sm">Documents Formation</TabsTrigger>
           <TabsTrigger value="dossier" className="text-sm">Dossier</TabsTrigger>
           <TabsTrigger value="docs-inscription" className="text-sm">Inscription</TabsTrigger>
@@ -795,6 +797,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
 
           {/* Autres onglets */}
           {activeTab === "docs-completes" && <DocumentsCompletes apprenant={apprenant} />}
+          {activeTab === "controle" && <ControleQualiteTab apprenant={apprenant} />}
           {activeTab === "docs-formation" && <DocumentsFormation apprenant={apprenant} />}
           {activeTab === "dossier" && <DocumentsDossier apprenant={apprenant} />}
           {activeTab === "docs-inscription" && <DocumentsInscription apprenant={apprenant} />}
