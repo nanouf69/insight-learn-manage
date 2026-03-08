@@ -5,9 +5,7 @@ import { T3P_EXERCICE_PARTIE_1, T3P_EXERCICE_PARTIE_2 } from "./exercices/t3p-ex
 import { GESTION_EXERCICES } from "./exercices/gestion-exercices-data";
 import { SECURITE_ROUTIERE_EXERCICES } from "./exercices/securite-routiere-exercices-data";
 import {
-  REGLEMENTATION_NATIONALE_EXERCICES,
   REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES,
-  REGLEMENTATION_LOCALE_EXERCICES,
 } from "./exercices/reglementation-exercices-data";
 import { DEV_COMMERCIAL_EXERCICE } from "./exercices/dev-commercial-exercices-data";
 
