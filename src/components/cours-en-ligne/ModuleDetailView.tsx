@@ -1466,6 +1466,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
   useEffect(() => {
     if (!editorStateHydrated || studentOnly || typeof window === "undefined") return;
+    if (Number(moduleData.id) !== Number(module.id)) return;
 
     try {
       window.localStorage.setItem(
