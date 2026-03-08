@@ -1952,6 +1952,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const [inlineQuizAnswers, setInlineQuizAnswers] = useState<Record<string, string>>({});
     const [inlineQuizValidated, setInlineQuizValidated] = useState<Set<number>>(new Set());
     const [qrcAnswers, setQrcAnswers] = useState<Record<string, string>>({});
+    const [unansweredKeys, setUnansweredKeys] = useState<Set<string>>(new Set());
     const [qrcResults, setQrcResults] = useState<Record<string, { estCorrect: boolean; pointsObtenus: number; explication: string } | "loading">>({});
 
     const [introAcknowledged, setIntroAcknowledged] = useState<Set<number>>(new Set());
@@ -2295,9 +2296,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     const handleAnswer = (exoId: number, qId: number, lettre: string) => {
       if (showResultsFor.has(exoId)) return;
+      const ansKey = `${exoId}-${qId}`;
       setSelectedAnswers(prev => {
-        const next = { ...prev, [`${exoId}-${qId}`]: lettre };
+        const next = { ...prev, [ansKey]: lettre };
         autoSaveAnswers(next);
+        return next;
+      });
+      setUnansweredKeys(prev => {
+        if (!prev.has(ansKey)) return prev;
+        const next = new Set(prev);
+        next.delete(ansKey);
         return next;
       });
     };
@@ -2710,7 +2718,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   const key = `inline-${cours.id}-${q.id}`;
                   const selected = inlineQuizAnswers[key];
                   return (
-                    <div key={q.id} className="space-y-2 p-4 border rounded-lg bg-background">
+                    <div key={q.id} id={`inline-q-${cours.id}-${q.id}`} className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : 'bg-background'}`}>
                       <p className="font-medium">{qi + 1}. {q.enonce}</p>
                       <div className="space-y-1.5 ml-2">
                         {q.choix.map(c => {
@@ -2724,6 +2732,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               onClick={() => {
                                 if (isValidated) return;
                                 setInlineQuizAnswers(prev => ({ ...prev, [key]: c.lettre }));
+                                setUnansweredKeys(prev => { if (!prev.has(key)) return prev; const n = new Set(prev); n.delete(key); return n; });
                               }}
                               className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-all ${bg}`}
                             >
@@ -2759,9 +2768,23 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   <Button
                     onClick={async () => {
                       if (!allAnswered) {
+                        // Find unanswered inline questions and highlight them
+                        const missing = new Set<string>();
+                        cours.quiz!.forEach(qq => {
+                          const k = `inline-${cours.id}-${qq.id}`;
+                          if (!inlineQuizAnswers[k]) missing.add(k);
+                        });
+                        setUnansweredKeys(missing);
+                        // Scroll to first unanswered
+                        const firstMissing = cours.quiz!.find(qq => !inlineQuizAnswers[`inline-${cours.id}-${qq.id}`]);
+                        if (firstMissing) {
+                          const el = document.getElementById(`inline-q-${cours.id}-${firstMissing.id}`);
+                          el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                        }
                         toast.error("Répondez à toutes les questions avant de valider");
                         return;
                       }
+                      setUnansweredKeys(new Set());
                       setInlineQuizValidated(prev => {
                         const next = new Set(prev);
                         next.add(cours.id);
@@ -2776,7 +2799,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                       }
                     }}
                     className="gap-2"
-                    disabled={!allAnswered}
+                    
                   >
                     <CheckCircle2 className="w-4 h-4" /> Valider mes réponses
                   </Button>
@@ -2897,7 +2920,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 }
 
                 return (
-                  <div key={q.id} id={`exo-q-${exo.id}-${qi}`} className="space-y-2 p-4 border rounded-lg scroll-mt-20">
+                  <div key={q.id} id={`exo-q-${exo.id}-${qi}`} className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : ''}`}>
                     <p className="font-medium">{qi + 1}. {q.enonce}</p>
                     <div className="space-y-1.5 ml-2">
                       {q.choix.map((c: any) => {
@@ -2931,6 +2954,31 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                     <Button
                       size="lg"
                       onClick={async () => {
+                        // Check all QCM questions are answered (skip QRC)
+                        const unansweredQcmKeys: string[] = [];
+                        (exo.questions || []).forEach((q: any, qi: number) => {
+                          const k = `${exo.id}-${q.id}`;
+                          const isQrc = q.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
+                          if (!isQrc && !selectedAnswers[k]) {
+                            unansweredQcmKeys.push(k);
+                          }
+                        });
+                        if (unansweredQcmKeys.length > 0) {
+                          setUnansweredKeys(new Set(unansweredQcmKeys));
+                          // Scroll to first unanswered
+                          const firstIdx = (exo.questions || []).findIndex((q: any) => {
+                            const k = `${exo.id}-${q.id}`;
+                            const isQrc = q.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
+                            return !isQrc && !selectedAnswers[k];
+                          });
+                          if (firstIdx >= 0) {
+                            const el = document.getElementById(`exo-q-${exo.id}-${firstIdx}`);
+                            el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                          }
+                          toast.error("Répondez à toutes les questions QCM avant de valider");
+                          return;
+                        }
+                        setUnansweredKeys(new Set());
                         const validatedResultState = { exoId: exo.id, page: currentPage, validatedAt: Date.now() };
 
                         const nextShowResults = new Set(showResultsFor);
