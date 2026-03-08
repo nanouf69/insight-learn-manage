@@ -131,29 +131,29 @@ export default function AnalyseBesoinForm({
 
   const handleSubmit = async () => {
     const missing: string[] = [];
-    let firstRef: React.RefObject<HTMLDivElement> | null = null;
+    let firstEl: HTMLDivElement | null = null;
 
     if (!hasFormation) {
       missing.push("formation");
-      if (!firstRef) firstRef = formationRef;
+      if (!firstEl) firstEl = formationRef.current;
     }
     eligibilityQuestions.forEach((_, i) => {
       const key = `e${i}`;
       if (eligibility[key] === undefined || eligibility[key] === null) {
         missing.push(key);
-        if (!firstRef) firstRef = eligRefs[i];
+        if (!firstEl) firstEl = eligRefs.current[i];
       }
     });
     complementaryQuestions.forEach((_, i) => {
       const key = `c${i}`;
       if (complementary[key] === undefined || complementary[key] === null) {
         missing.push(key);
-        if (!firstRef) firstRef = compRefs[i];
+        if (!firstEl) firstEl = compRefs.current[i];
       }
     });
     if (!engagementAccepted) {
       missing.push("engagement");
-      if (!firstRef) firstRef = engagementRef;
+      if (!firstEl) firstEl = engagementRef.current;
     }
     if (!hasSigned) {
       missing.push("signature");
@@ -162,8 +162,8 @@ export default function AnalyseBesoinForm({
     if (missing.length > 0) {
       setInvalidFields(new Set(missing));
       toast.error("Veuillez répondre à toutes les questions obligatoires");
-      if (firstRef?.current) {
-        firstRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (firstEl) {
+        firstEl.scrollIntoView({ behavior: "smooth", block: "center" });
       }
       return;
     }
