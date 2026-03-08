@@ -328,6 +328,37 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
   const effectiveModules = currentModules.length > 0 ? currentModules : fallbackDefaultModules;
   const fallbackSignature = fallbackDefaultModules.join(",");
 
+  const inferredAccountFormationId = useMemo(() => {
+    if (resolvedTypeFromApprenant.startsWith("taxi")) return "taxi";
+    if (resolvedTypeFromApprenant.startsWith("ta")) return "ta";
+    if (resolvedTypeFromApprenant.startsWith("va")) return "va";
+    return "vtc";
+  }, [resolvedTypeFromApprenant]);
+
+  const accountBaseModules = useMemo(() => {
+    const selected = selectedFormationForAccount || inferredAccountFormationId;
+    const formationPreset = COMPTE_FORMATIONS.find((f) => f.id === selected);
+    if (!formationPreset) return [] as number[];
+
+    const merged = new Set<number>();
+    formationPreset.types.forEach((type) => {
+      (DEFAULT_MODULES_BY_TYPE[type] || []).forEach((id) => merged.add(id));
+    });
+
+    return Array.from(merged);
+  }, [inferredAccountFormationId, selectedFormationForAccount]);
+
+  const accountAdditionalModuleChoices = useMemo(
+    () => MODULES_DATA.filter((m) => MANAGED_MODULE_IDS.has(m.id) && !accountBaseModules.includes(m.id)),
+    [accountBaseModules]
+  );
+
+  const toggleAccountExtraModule = (id: number) => {
+    setAccountExtraModules((prev) =>
+      prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]
+    );
+  };
+
   useEffect(() => {
     setSelectedFormationForModules("");
   }, [apprenantId]);
@@ -337,6 +368,15 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
       setSelectedFormationForModules(resolvedTypeFromApprenant);
     }
   }, [resolvedTypeFromApprenant, selectedFormationForModules]);
+
+  useEffect(() => {
+    if (!showCreateDialog) return;
+    setSelectedFormationForAccount(inferredAccountFormationId);
+    setAccountStartDate(((apprenant as any)?.date_debut_cours_en_ligne as string) || "");
+    setAccountEndDate(((apprenant as any)?.date_fin_cours_en_ligne as string) || "");
+    setAccountExtraModules([]);
+    setGeneratedPassword("");
+  }, [apprenant, inferredAccountFormationId, showCreateDialog]);
 
   useEffect(() => {
     if (!apprenant?.id) return;
