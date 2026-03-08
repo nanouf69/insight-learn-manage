@@ -231,11 +231,11 @@ export default function ProjetProfessionnelForm({
           <SectionTitle num={3} title={`PROJET PROFESSIONNEL ${formType}`} />
           <div className="space-y-3">
             <div>
-              <Label className="text-xs text-muted-foreground">Pourquoi souhaitez-vous devenir conducteur {formType.toLowerCase()} ?</Label>
-              <Textarea value={motivations} onChange={e => setMotivations(e.target.value)} rows={3} />
+              <Label className="text-xs text-muted-foreground">Pourquoi souhaitez-vous devenir conducteur {formType.toLowerCase()} ? <span className="text-destructive">*</span></Label>
+              <Textarea value={motivations} onChange={e => setMotivations(e.target.value)} rows={3} placeholder="J'aime le contact avec la clientèle, j'aime conduire, j'aime me rendre utile, je souhaite travailler avec des malades..." />
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground mb-1 block">Avez-vous déjà exercé une activité de transport de personnes ?</Label>
+              <Label className="text-xs text-muted-foreground mb-1 block">Avez-vous déjà exercé une activité de transport de personnes ? <span className="text-destructive">*</span></Label>
               <RadioGroup options={["Oui", "Non"]} value={dejaTransport} onChange={setDejaTransport} />
               {dejaTransport === "Oui" && (
                 <div className="mt-2">
@@ -245,7 +245,7 @@ export default function ProjetProfessionnelForm({
               )}
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground mb-1 block">Permis de conduire depuis plus de 3 ans ?</Label>
+              <Label className="text-xs text-muted-foreground mb-1 block">Permis de conduire depuis plus de 3 ans ? <span className="text-destructive">*</span></Label>
               <RadioGroup options={["Oui", "Non"]} value={permis3ans} onChange={setPermis3ans} />
               {permis3ans === "Non" && (
                 <div className="mt-2">
@@ -258,19 +258,19 @@ export default function ProjetProfessionnelForm({
             {isTaxi && (
               <>
                 <div>
-                  <Label className="text-xs text-muted-foreground mb-1 block">Connaissez-vous la différence entre le taxi et le VTC ?</Label>
+                  <Label className="text-xs text-muted-foreground mb-1 block">Connaissez-vous la différence entre le taxi et le VTC ? <span className="text-destructive">*</span></Label>
                   <RadioGroup options={["Oui – je connais bien", "Partiellement", "Non – besoin d'explications"]} value={diffTaxiVtc} onChange={setDiffTaxiVtc} />
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground mb-1 block">Mode d'exercice envisagé après l'obtention de la carte taxi ?</Label>
+                  <Label className="text-xs text-muted-foreground mb-1 block">Mode d'exercice envisagé après l'obtention de la carte taxi ? <span className="text-destructive">*</span></Label>
                   <RadioGroup options={["Exploitant indépendant", "Locataire d'ADS", "Salarié(e) d'une compagnie", "Pas encore décidé"]} value={modeExerciceTaxi} onChange={setModeExerciceTaxi} />
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground mb-1 block">Avez-vous envisagé de demander une ADS ?</Label>
+                  <Label className="text-xs text-muted-foreground mb-1 block">Avez-vous envisagé de demander une ADS ? <span className="text-destructive">*</span></Label>
                   <RadioGroup options={["Oui – liste d'attente", "Oui – déjà contactée", "Oui – à faire", "Non – location prévue", "Je ne sais pas"]} value={demandeADS} onChange={setDemandeADS} />
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground mb-1 block">Zone d'exercice envisagée ?</Label>
+                  <Label className="text-xs text-muted-foreground mb-1 block">Zone d'exercice envisagée ? <span className="text-destructive">*</span></Label>
                   <RadioGroup options={["Métropole de Lyon", "Autre", "Pas encore décidé"]} value={zoneExercice} onChange={setZoneExercice} />
                   {zoneExercice === "Autre" && (
                     <div className="mt-2">
@@ -279,7 +279,7 @@ export default function ProjetProfessionnelForm({
                   )}
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground mb-1 block">Activités complémentaires au taxi ?</Label>
+                  <Label className="text-xs text-muted-foreground mb-1 block">Activités complémentaires au taxi ? <span className="text-destructive">*</span></Label>
                   <RadioGroup options={["Oui – TAP", "Oui – services réguliers", "Non", "Je ne sais pas"]} value={activitesCompl} onChange={setActivitesCompl} />
                 </div>
               </>
@@ -288,7 +288,7 @@ export default function ProjetProfessionnelForm({
             {!isTaxi && (
               <>
                 <div>
-                  <Label className="text-xs text-muted-foreground mb-1 block">Mode d'exercice envisagé après la certification ?</Label>
+                  <Label className="text-xs text-muted-foreground mb-1 block">Mode d'exercice envisagé après la certification ? <span className="text-destructive">*</span></Label>
                   <RadioGroup options={["Salarié VTC", "Indépendant (SASU/EI)", "Les deux", "Pas encore décidé"]} value={modeExercice} onChange={setModeExercice} />
                 </div>
                 <div>
@@ -306,7 +306,7 @@ export default function ProjetProfessionnelForm({
             )}
 
             <div>
-              <Label className="text-xs text-muted-foreground mb-1 block">Démarches pour créer votre entreprise ?</Label>
+              <Label className="text-xs text-muted-foreground mb-1 block">Démarches pour créer votre entreprise ? <span className="text-destructive">*</span></Label>
               <RadioGroup options={["Oui – en cours", "Oui – déjà créée", "Non – besoin d'infos", "Non – pas encore"]} value={demarchesEntreprise} onChange={setDemarchesEntreprise} />
             </div>
             <div>
@@ -359,48 +359,17 @@ export default function ProjetProfessionnelForm({
         </CardContent>
       </Card>
 
-      {/* 5. Financement et disponibilité */}
+      {/* 5. Besoins spécifiques */}
       <Card>
         <CardContent className="p-4 space-y-3">
-          <SectionTitle num={5} title="FINANCEMENT ET DISPONIBILITÉ" />
+          <SectionTitle num={5} title="BESOINS SPÉCIFIQUES ET ACCESSIBILITÉ" />
           <div className="space-y-3">
             <div>
-              <Label className="text-xs text-muted-foreground mb-1 block">Mode de financement</Label>
-              <RadioGroup options={["CPF", "France Travail", "Financement personnel", "Autre"]} value={modeFinancement} onChange={setModeFinancement} />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs text-muted-foreground">Solde CPF estimatif (€)</Label>
-                <Input value={soldeCPF} onChange={e => setSoldeCPF(e.target.value)} placeholder="Ex: 2500" />
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Disponibilité</Label>
-                <Input value={disponibilite} onChange={e => setDisponibilite(e.target.value)} placeholder="Jours / horaires" />
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Délai souhaité pour passer l'examen</Label>
-                <Input value={delaiExamen} onChange={e => setDelaiExamen(e.target.value)} />
-              </div>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">Contraintes particulières</Label>
-              <Textarea value={contraintes} onChange={e => setContraintes(e.target.value)} rows={2} placeholder="Emploi actuel, famille..." />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* 6. Besoins spécifiques */}
-      <Card>
-        <CardContent className="p-4 space-y-3">
-          <SectionTitle num={6} title="BESOINS SPÉCIFIQUES ET ACCESSIBILITÉ" />
-          <div className="space-y-3">
-            <div>
-              <Label className="text-xs text-muted-foreground mb-1 block">Besoins d'adaptation pédagogique ?</Label>
+              <Label className="text-xs text-muted-foreground mb-1 block">Besoins d'adaptation pédagogique ? <span className="text-destructive">*</span></Label>
               <RadioGroup options={["Dyslexie / Troubles DYS", "Handicap (RQTH)", "Soutien renforcé", "Aucun"]} value={besoinsAdaptation} onChange={setBesoinsAdaptation} />
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground mb-1 block">Accès à un ordinateur ou tablette pour le e-learning ?</Label>
+              <Label className="text-xs text-muted-foreground mb-1 block">Accès à un ordinateur ou tablette pour le e-learning ? <span className="text-destructive">*</span></Label>
               <RadioGroup options={["Oui – ordinateur", "Oui – tablette/smartphone", "Non – besoin d'équipement"]} value={accesOrdinateur} onChange={setAccesOrdinateur} />
             </div>
             <div>
@@ -411,10 +380,10 @@ export default function ProjetProfessionnelForm({
         </CardContent>
       </Card>
 
-      {/* 7. Avis conseiller (admin only) */}
+      {/* 6. Avis conseiller (admin only) */}
       <Card className={!isAdmin ? "opacity-60" : ""}>
         <CardContent className="p-4 space-y-3">
-          <SectionTitle num={7} title="AVIS DU CONSEILLER / FORMATEUR" />
+          <SectionTitle num={6} title="AVIS DU CONSEILLER / FORMATEUR" />
           {!isAdmin && (
             <p className="text-xs text-amber-600 font-medium">🔒 Cette section sera complétée par le formateur lors de l'entretien.</p>
           )}
@@ -445,6 +414,28 @@ export default function ProjetProfessionnelForm({
       <div className="flex justify-center">
         <Button
           onClick={async () => {
+            // Validation des champs obligatoires
+            const missingFields: string[] = [];
+            if (!motivations.trim()) missingFields.push("Motivations");
+            if (!dejaTransport) missingFields.push("Activité de transport");
+            if (!permis3ans) missingFields.push("Permis de conduire");
+            if (!demarchesEntreprise) missingFields.push("Démarches entreprise");
+            if (!besoinsAdaptation) missingFields.push("Besoins d'adaptation");
+            if (!accesOrdinateur) missingFields.push("Accès ordinateur");
+            if (isTaxi) {
+              if (!diffTaxiVtc) missingFields.push("Différence taxi/VTC");
+              if (!modeExerciceTaxi) missingFields.push("Mode d'exercice taxi");
+              if (!demandeADS) missingFields.push("Demande ADS");
+              if (!zoneExercice) missingFields.push("Zone d'exercice");
+              if (!activitesCompl) missingFields.push("Activités complémentaires");
+            } else {
+              if (!modeExercice) missingFields.push("Mode d'exercice VTC");
+            }
+            if (missingFields.length > 0) {
+              toast.error(`Veuillez remplir les champs obligatoires : ${missingFields.join(", ")}`);
+              return;
+            }
+
             if (apprenantId) {
               const saved = await saveFormDocument({
                 apprenantId,
@@ -458,7 +449,6 @@ export default function ProjetProfessionnelForm({
                   demandeADS, zoneExercice, zoneAutre, activitesCompl,
                   demarchesEntreprise, craintes, commentConnu, consulteProgram,
                   saitExamen, connaitZone, conduiteUrbaine, connaitSites,
-                  modeFinancement, soldeCPF, disponibilite, delaiExamen, contraintes,
                   besoinsAdaptation, accesOrdinateur, precisionsBesoins,
                   coherenceProjet, niveauMotivation, observations, signatureAdmin,
                 },
