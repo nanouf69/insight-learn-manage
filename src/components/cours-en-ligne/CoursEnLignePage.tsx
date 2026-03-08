@@ -557,9 +557,9 @@ const ApprenantSearchPreview = () => {
                 { id: 13, label: "6.CONTRÔLE DE CONNAISSANCES TAXI" },
                 { id: 28, label: "7.BILAN EXAMEN TA" },
                 { id: 37, label: "8.EXAMENS BLANCS TA" },
-                { id: 6, label: "9.PRATIQUE TAXI" },
-                { id: 64, label: "10.ÉQUIPEMENTS TAXI" },
-                { id: 62, label: "11.SOURCES JURIDIQUES TA" },
+                { id: 64, label: "9.ÉQUIPEMENTS TAXI" },
+                { id: 62, label: "10.SOURCES JURIDIQUES TA" },
+                { id: 6, label: "11.PRATIQUE TAXI" },
                 { id: 52, label: "12.FIN DE FORMATION TA" },
               ]},
               "va": { label: "VA (Présentiel)", color: "bg-teal-100 text-teal-800 border-teal-300", modules: [
