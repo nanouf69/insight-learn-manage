@@ -457,7 +457,77 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
         </Dialog>
       )}
 
-      {/* Tabs avec onglets en bas (sticky) */}
+      {/* Create Account Dialog */}
+      {showCreateDialog && (
+        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <KeyRound className="w-5 h-5" />
+                Créer un compte apprenant
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <p className="text-sm text-muted-foreground">
+                Un compte sera créé pour <strong>{apprenant.prenom} {apprenant.nom}</strong> ({apprenant.email}).
+              </p>
+              <div>
+                <label className="text-sm font-medium">Formation pour le compte :</label>
+                <Select value={selectedFormationForAccount} onValueChange={setSelectedFormationForAccount}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Choisir la formation" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COMPTE_FORMATIONS.map((f) => (
+                      <SelectItem key={f.id} value={f.id}>{f.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {generatedPassword && (
+                <div className="bg-muted p-3 rounded-md space-y-1">
+                  <p className="text-sm font-medium">Mot de passe généré :</p>
+                  <div className="flex items-center gap-2">
+                    <code className="text-sm bg-background px-2 py-1 rounded border">{generatedPassword}</code>
+                    <Button variant="ghost" size="sm" onClick={() => { navigator.clipboard.writeText(generatedPassword); toast.success("Copié !"); }}>
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Annuler</Button>
+              <Button
+                disabled={creatingAccount || !selectedFormationForAccount || !apprenant.email}
+                onClick={async () => {
+                  setCreatingAccount(true);
+                  try {
+                    const { data, error } = await supabase.functions.invoke("create-apprenant-account", {
+                      body: {
+                        apprenant_id: apprenantId,
+                        formation: selectedFormationForAccount,
+                      },
+                    });
+                    if (error) throw error;
+                    setGeneratedPassword(data?.password || "");
+                    toast.success("Compte créé avec succès !");
+                    queryClient.invalidateQueries({ queryKey: ["apprenant-detail", apprenantId] });
+                  } catch (err: any) {
+                    toast.error(err?.message || "Erreur lors de la création du compte");
+                  } finally {
+                    setCreatingAccount(false);
+                  }
+                }}
+              >
+                {creatingAccount ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <KeyRound className="w-4 h-4 mr-2" />}
+                Créer le compte
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         {/* Onglets en haut */}
         <TabsList className="flex flex-wrap w-full gap-0 bg-transparent border-b border-border rounded-none p-0 h-auto justify-start [&>button]:rounded-none [&>button]:border-b-2 [&>button]:border-transparent [&>button]:data-[state=active]:border-primary">
