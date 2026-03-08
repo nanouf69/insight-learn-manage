@@ -401,6 +401,7 @@ const INTRODUCTION_ELEARNING_DATA: ModuleData = {
     { id: 0, titre: "Test de compétences avant formation", description: "Répondez aux questions en cochant Oui ou Non.", actif: true, checklistType: "competences" },
     { id: 100, titre: "Analyse du besoin – Fiche client", description: "Complétez cette fiche.", actif: true, checklistType: "analyse-besoin" },
     { id: 101, titre: "Questionnaire Projet Professionnel", description: "Évaluation de votre motivation et de votre projet professionnel.", actif: true, checklistType: "projet-professionnel" },
+    { id: 102, titre: "Conditions Générales de Vente", description: "Veuillez lire et accepter les CGV avant de continuer.", actif: true, checklistType: "cgv" },
     { id: 1, titre: "Bienvenue sur la plateforme", description: "Cette plateforme est dédiée aux futurs chauffeurs VTC et TAXIS. Vous devez réussir deux épreuves :\n• L'épreuve d'admissibilité (théorie avec 7 matières) — minimum 10/20\n• L'épreuve d'admission (pratique) — minimum 12/20\nLe tout sans note éliminatoire.", actif: true },
     { id: 2, titre: "Informations importantes", description: "💰 Frais d'examen en cas d'échec (à votre charge) :\n• Examen théorique : environ 240€\n• Examen pratique : environ 200€\n\n📋 Les examens sont organisés par la CMA.\n📞 Contactez-nous le jour des résultats de l'examen théorique.", actif: true },
     { id: 3, titre: "Contenu de l'examen — Épreuves communes", description: `L'examen se compose d'épreuves théoriques d'admissibilité (QCM + QRC) et d'une épreuve pratique d'admission.
