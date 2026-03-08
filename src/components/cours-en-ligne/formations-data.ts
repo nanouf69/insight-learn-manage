@@ -285,6 +285,13 @@ export const MODULES_DATA: ModuleInfo[] = [
     description: "Cours et exercices Passerelle VA : Développement Commercial et Réglementation Spécifique VTC",
     formations: ["vtc-pour-taxi"],
   },
+  // === Équipements TAXI ===
+  {
+    id: 64,
+    nom: "🚕 ÉQUIPEMENTS TAXI",
+    description: "Équipements et documents obligatoires du taxi : taximètre, lumineux, imprimante, TPE, carte professionnelle, carnet métrologique.",
+    formations: ["taxi", "taxi-pour-vtc", "taxi-elearning", "taxi-pour-vtc-elearning"],
+  },
   // === Sources Juridiques ===
   {
     id: 60,
