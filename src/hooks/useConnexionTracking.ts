@@ -31,6 +31,26 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
       if (!error && data) {
         connexionIdRef.current = (data as any).id;
       }
+
+      // Fetch apprenant name for the alert
+      const { data: apprenantData } = await supabase
+        .from("apprenants")
+        .select("nom, prenom, formation_choisie, type_apprenant")
+        .eq("id", apprenantId)
+        .maybeSingle();
+
+      if (apprenantData) {
+        const nom = `${apprenantData.prenom} ${apprenantData.nom}`;
+        const formation = apprenantData.type_apprenant || apprenantData.formation_choisie || "";
+        await supabase
+          .from("alertes_systeme")
+          .insert({
+            type: "connexion_apprenant",
+            titre: `🟢 ${nom} vient de se connecter`,
+            message: `L'apprenant ${nom} s'est connecté à son espace de cours${formation ? ` (${formation.toUpperCase()})` : ""}.`,
+            details: `Connexion le ${new Date().toLocaleString("fr-FR")}`,
+          });
+      }
     };
 
     const heartbeat = async () => {
