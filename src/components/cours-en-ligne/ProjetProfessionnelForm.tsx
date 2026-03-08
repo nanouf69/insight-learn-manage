@@ -231,8 +231,8 @@ export default function ProjetProfessionnelForm({
           <SectionTitle num={3} title={`PROJET PROFESSIONNEL ${formType}`} />
           <div className="space-y-3">
             <div>
-              <Label className="text-xs text-muted-foreground">Pourquoi souhaitez-vous devenir conducteur {formType.toLowerCase()} ?</Label>
-              <Textarea value={motivations} onChange={e => setMotivations(e.target.value)} rows={3} />
+              <Label className="text-xs text-muted-foreground">Pourquoi souhaitez-vous devenir conducteur {formType.toLowerCase()} ? <span className="text-destructive">*</span></Label>
+              <Textarea value={motivations} onChange={e => setMotivations(e.target.value)} rows={3} placeholder="J'aime le contact avec la clientèle, j'aime conduire, j'aime me rendre utile, je souhaite travailler avec des malades..." />
             </div>
             <div>
               <Label className="text-xs text-muted-foreground mb-1 block">Avez-vous déjà exercé une activité de transport de personnes ?</Label>
