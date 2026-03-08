@@ -1497,12 +1497,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     if (Number(moduleData.id) !== Number(module.id)) return;
 
     const initialData = getInitialModuleData(module, apprenantType, studentOnly);
-    const sourceFingerprint = JSON.stringify({
-      coursCount: initialData.cours.length,
-      exercicesCount: initialData.exercices.length,
-      totalQuestions: initialData.exercices.reduce((acc, e) => acc + (e.questions?.length || 0), 0),
-      exerciceIds: initialData.exercices.map(e => e.id).sort(),
-    });
+    const sourceFingerprint = buildSourceFingerprint(initialData);
 
     try {
       window.localStorage.setItem(
