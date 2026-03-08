@@ -2718,7 +2718,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   const key = `inline-${cours.id}-${q.id}`;
                   const selected = inlineQuizAnswers[key];
                   return (
-                    <div key={q.id} className="space-y-2 p-4 border rounded-lg bg-background">
+                    <div key={q.id} id={`inline-q-${cours.id}-${q.id}`} className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : 'bg-background'}`}>
                       <p className="font-medium">{qi + 1}. {q.enonce}</p>
                       <div className="space-y-1.5 ml-2">
                         {q.choix.map(c => {
