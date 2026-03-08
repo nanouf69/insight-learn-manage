@@ -418,7 +418,6 @@ const getModuleDisplayName = (formationId: FormationId, moduleId: number, fallba
 
 // Module IDs that should open ExamensBlancsPage (bilans)
 const BILAN_MODULE_IDS: Record<number, string> = {
-  28: "bilan-ta",
   30: "bilan-va",
 };
 
