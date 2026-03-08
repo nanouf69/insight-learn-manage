@@ -422,6 +422,14 @@ const BILAN_MODULE_IDS: Record<number, string> = {
   30: "bilan-va",
 };
 
+// Examens blancs module IDs → forced type filter
+const EXAMEN_BLANC_MODULE_IDS: Record<number, "TAXI" | "VTC" | "TA" | "VA"> = {
+  35: "VTC",
+  36: "TAXI",
+  37: "TA",
+  38: "VA",
+};
+
 interface ApprenantInfo {
   id?: string;
   nom: string;
