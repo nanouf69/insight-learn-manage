@@ -1412,16 +1412,24 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const [editorStateHydrated, setEditorStateHydrated] = useState(false);
   const moduleEditorStorageKey = `module-editor-state:${module.id}`;
 
+  const buildSourceFingerprint = (data: ModuleData) =>
+    JSON.stringify({
+      v: 2,
+      coursCount: data.cours.length,
+      exercicesCount: data.exercices.length,
+      totalQuestions: data.exercices.reduce((acc, e) => acc + (e.questions?.length || 0), 0),
+      exercices: data.exercices.map((e, index) => ({
+        index,
+        id: e.id,
+        titre: e.titre,
+        sousTitre: e.sousTitre ?? "",
+        questionCount: e.questions?.length || 0,
+      })),
+    });
+
   useEffect(() => {
     const initialData = getInitialModuleData(module, apprenantType, studentOnly);
-
-    // Build a fingerprint from source data to detect when content changes
-    const sourceFingerprint = JSON.stringify({
-      coursCount: initialData.cours.length,
-      exercicesCount: initialData.exercices.length,
-      totalQuestions: initialData.exercices.reduce((acc, e) => acc + (e.questions?.length || 0), 0),
-      exerciceIds: initialData.exercices.map(e => e.id).sort(),
-    });
+    const sourceFingerprint = buildSourceFingerprint(initialData);
 
     if (studentOnly || typeof window === "undefined") {
       setModuleData(initialData);
@@ -1489,12 +1497,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     if (Number(moduleData.id) !== Number(module.id)) return;
 
     const initialData = getInitialModuleData(module, apprenantType, studentOnly);
-    const sourceFingerprint = JSON.stringify({
-      coursCount: initialData.cours.length,
-      exercicesCount: initialData.exercices.length,
-      totalQuestions: initialData.exercices.reduce((acc, e) => acc + (e.questions?.length || 0), 0),
-      exerciceIds: initialData.exercices.map(e => e.id).sort(),
-    });
+    const sourceFingerprint = buildSourceFingerprint(initialData);
 
     try {
       window.localStorage.setItem(

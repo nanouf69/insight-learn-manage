@@ -58,20 +58,4 @@ export const BILAN_EXERCICES_VTC = [
       REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES.flatMap(e => e.questions || [])
     ),
   },
-  {
-    id: 104,
-    titre: "📓 Bilan Développement Commercial",
-    sousTitre: `${DEV_COMMERCIAL_EXERCICE.questions?.length || 0} questions — Marketing, SWOT, PESTEL, Fidélisation, Devis & Facture`,
-    actif: true,
-    questions: renumberQuestions(DEV_COMMERCIAL_EXERCICE.questions || []),
-  },
-  {
-    id: 106,
-    titre: "📕 Bilan Réglementation Spécifique VTC",
-    sousTitre: `${REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES.reduce((acc, e) => acc + (e.questions?.length || 0), 0)} questions — Registre VTC, Garantie financière, Vignettes, Véhicule, Sanctions`,
-    actif: true,
-    questions: renumberQuestions(
-      REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES.flatMap(e => e.questions || [])
-    ),
-  },
 ];
