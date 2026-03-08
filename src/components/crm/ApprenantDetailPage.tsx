@@ -350,15 +350,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
 
   const accountBaseModules = useMemo(() => {
     const selected = selectedFormationForAccount || inferredAccountFormationId;
-    const formationPreset = COMPTE_FORMATIONS.find((f) => f.id === selected);
-    if (!formationPreset) return [] as number[];
-
-    const merged = new Set<number>();
-    formationPreset.types.forEach((type) => {
-      (DEFAULT_MODULES_BY_TYPE[type] || []).forEach((id) => merged.add(id));
-    });
-
-    return Array.from(merged);
+    return DEFAULT_MODULES_BY_TYPE[selected] || [] as number[];
   }, [inferredAccountFormationId, selectedFormationForAccount]);
 
   const accountAdditionalModuleChoices = useMemo(
