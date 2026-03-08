@@ -316,7 +316,7 @@ function CoursAttribution({ apprenant, apprenantId, effectiveModules, activeForm
   );
 }
 
-import { getAvatarUrl } from "@/lib/avatarUrl";
+
 
 interface ApprenantDetailPageProps {
   apprenantId: string;
