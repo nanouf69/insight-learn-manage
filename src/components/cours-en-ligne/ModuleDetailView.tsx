@@ -743,14 +743,14 @@ function getInitialModuleData(
     };
   }
 
-  // Bilan Exercices VA (module 29) — toutes les matières
+  // Bilan Exercices VA (module 29) — sans T3P, Gestion, Sécurité routière
   if (module.id === 29) {
     return {
       id: 29,
       nom: "4.BILAN EXERCICES VA",
       description: "Tous les exercices regroupés par matière. Refaites-les autant de fois que nécessaire pour maîtriser chaque sujet.",
       cours: [],
-      exercices: BILAN_EXERCICES_VTC,
+      exercices: BILAN_EXERCICES_VA,
     };
   }
 
