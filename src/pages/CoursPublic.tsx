@@ -742,6 +742,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // Module detail view
   if (selectedModule) {
     const bilanId = BILAN_MODULE_IDS[selectedModule.id];
+    const examenBlancType = EXAMEN_BLANC_MODULE_IDS[selectedModule.id];
     if (bilanId) {
       // Bilan modules open ExamensBlancsPage directly
       return (
@@ -754,6 +755,21 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             apprenantId={apprenant?.id || null}
             userId={user?.id || null}
             apprenantType={apprenant?.type_apprenant || null}
+          />
+        </div>
+      );
+    }
+    if (examenBlancType) {
+      // Examens blancs modules open ExamensBlancsPage filtered by type
+      return (
+        <div className="min-h-screen bg-background p-4">
+          <Button variant="ghost" size="sm" className="mb-4" onClick={() => setSelectedModule(null)}>
+            <ChevronRight className="w-4 h-4 mr-1 rotate-180" /> Retour
+          </Button>
+          <ExamensBlancsPage
+            apprenantId={apprenant?.id || null}
+            userId={user?.id || null}
+            apprenantType={examenBlancType}
           />
         </div>
       );
