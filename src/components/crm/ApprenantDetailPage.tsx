@@ -334,6 +334,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
     },
   });
 
+  const { data: photoDoc } = useQuery({
     queryKey: ['apprenant-photo', apprenantId],
     queryFn: async () => {
       const { data, error } = await supabase
