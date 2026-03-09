@@ -71,11 +71,9 @@ export default function Step5() {
   // Auto-select first available if none selected
   useState(() => {
     if (!selectedExamId && availableExams.length > 0) {
-      setSelectedExamId(availableExams[0].id);
+      handleSelectExam(availableExams[0].id);
     }
   });
-
-  const canProceed = selectedExamId && confirmed;
 
   return (
     <OnboardingLayout currentStep={5} totalSteps={11} title="Choisissez la date d'examen">

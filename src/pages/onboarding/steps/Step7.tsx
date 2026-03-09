@@ -4,9 +4,14 @@ import { ArrowRight, ArrowLeft, AlertTriangle, Eye, EyeOff } from "lucide-react"
 import { OnboardingLayout } from "../OnboardingLayout";
 
 export default function Step7() {
-  const [password, setPassword] = useState("");
+  const [password, setPassword] = useState(() => localStorage.getItem('onboarding_mot_de_passe_cma') || '');
   const [showPassword, setShowPassword] = useState(false);
-  const [confirmed, setConfirmed] = useState(false);
+  const [confirmed, setConfirmed] = useState(() => localStorage.getItem('onboarding_step7_confirmed') === 'true');
+
+  const handleConfirm = (val: boolean) => {
+    setConfirmed(val);
+    localStorage.setItem('onboarding_step7_confirmed', String(val));
+  };
 
   // Save password to localStorage whenever it changes
   const handlePasswordChange = (value: string) => {
