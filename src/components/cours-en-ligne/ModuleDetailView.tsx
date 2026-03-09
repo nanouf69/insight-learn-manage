@@ -125,6 +125,7 @@ interface ModuleDetailViewProps {
   apprenantId?: string | null;
   onModuleCompleted?: (moduleId: number) => void;
   apprenantType?: string | null;
+  isPresentiel?: boolean;
   apprenantInfo?: {
     nom?: string;
     prenom?: string;
@@ -1791,8 +1792,8 @@ const ContentCard = ({
   );
 };
 
-const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, onModuleCompleted, apprenantType, apprenantInfo }: ModuleDetailViewProps) => {
-  console.log("[ModuleDetailView] Rendering module:", module.id, module.nom, "studentOnly:", studentOnly, "apprenantType:", apprenantType);
+const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, onModuleCompleted, apprenantType, apprenantInfo, isPresentiel = false }: ModuleDetailViewProps) => {
+  console.log("[ModuleDetailView] Rendering module:", module.id, module.nom, "studentOnly:", studentOnly, "apprenantType:", apprenantType, "isPresentiel:", isPresentiel);
 
   const createInitialSlidesByKey = (): Record<string, Slide[]> => ({
     "t3p-partie1": [...T3P_PARTIE1_SLIDES],
@@ -2546,6 +2547,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     const isPageUnlocked = (pageIndex: number): boolean => {
       if (pageIndex === 0) return true;
+      // Présentiel formations: all pages freely accessible (no slide gate)
+      if (isPresentiel) return true;
       // For TAXI présentiel: Réglementation Nationale/Locale pages are freely accessible
       if (isReglementationPage(pageIndex)) return true;
       // All previous pages must be completed (skip réglementation pages in the chain)

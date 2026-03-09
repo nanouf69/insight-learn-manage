@@ -886,6 +886,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           apprenantId={apprenant?.id || null}
           onModuleCompleted={handleModuleCompleted}
           apprenantType={apprenant?.type_apprenant || null}
+          isPresentiel={!["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"].includes(selectedFormation)}
           apprenantInfo={apprenant ? {
             nom: apprenant.nom,
             prenom: apprenant.prenom,
