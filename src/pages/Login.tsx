@@ -25,25 +25,15 @@ export default function Login() {
       // Sécurité: on vide toute session locale existante avant une nouvelle connexion
       await supabase.auth.signOut({ scope: 'local' });
 
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
 
-      const userId = data.user?.id;
-      let isAdmin = false;
-
-      if (userId) {
-        const { data: isAdminData } = await supabase.rpc('has_role', {
-          _user_id: userId,
-          _role: 'admin',
-        });
-        isAdmin = isAdminData === true;
-      }
-
-      navigate(isAdmin ? '/' : '/cours', { replace: true });
+      // Le contrôle d'accès est centralisé sur les routes protégées
+      navigate('/', { replace: true });
     } catch (error: any) {
       // Sécurité: si la connexion échoue, on s'assure qu'aucune session précédente ne reste active
       await supabase.auth.signOut({ scope: 'local' });
