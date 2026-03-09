@@ -27,6 +27,26 @@ export default function CompetencesChecklist({ data, apprenantNom, apprenantId, 
   const allAnswered = answeredCount === totalItems;
   const progress = totalItems > 0 ? Math.round((answeredCount / totalItems) * 100) : 0;
 
+  const { queueSave, triggerSave: autoTrigger, StatusIndicator } = useAutoSave({
+    apprenantId: apprenantId || "",
+    typeDocument: "test-competences",
+    titre: `Test de compétences - ${data.formationLabel || "Formation"}`,
+    enabled: !!apprenantId && !completed,
+  });
+
+  const collectData = () => ({
+    answers,
+    sections: data.sections.map(s => s.titre),
+    sectionItems: data.sections.map(s => s.items),
+    formationLabel: data.formationLabel,
+  });
+
+  useEffect(() => {
+    if (Object.keys(answers).length > 0) {
+      queueSave(collectData());
+    }
+  }, [answers]);
+
   const toggle = (key: string, value: "oui" | "non") => {
     setAnswers(prev => {
       const next = { ...prev };
@@ -52,7 +72,6 @@ export default function CompetencesChecklist({ data, apprenantNom, apprenantId, 
   };
 
   const handleSubmit = async () => {
-    // Find unanswered
     const missing: string[] = [];
     data.sections.forEach((section, sIdx) => {
       section.items.forEach((_, iIdx) => {
@@ -71,13 +90,9 @@ export default function CompetencesChecklist({ data, apprenantNom, apprenantId, 
 
     setInvalidKeys(new Set());
     if (apprenantId) {
-      const saved = await saveFormDocument({
-        apprenantId,
-        typeDocument: "test-competences",
-        titre: `Test de compétences - ${data.formationLabel || "Formation"}`,
-        donnees: { answers, sections: data.sections.map(s => s.titre), sectionItems: data.sections.map(s => s.items), formationLabel: data.formationLabel },
-      });
+      const saved = await autoTrigger({ ...collectData(), _status: "completed" });
       if (saved) toast.success("Test de compétences enregistré !");
+      else toast.error("Erreur lors de la sauvegarde");
     }
     onComplete();
   };
