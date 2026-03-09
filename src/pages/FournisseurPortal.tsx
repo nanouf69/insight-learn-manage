@@ -1117,9 +1117,11 @@ export default function FournisseurPortal() {
                         </a>
                       ))}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
-                      <span className="text-amber-500">📝</span> Exercices disponibles dans le module en ligne
-                    </p>
+                    <FormateurQuizViewer
+                      sections={REGLEMENTATION_LOCALE_EXERCICES}
+                      title="Quiz — Réglementation Locale"
+                      icon="📝"
+                    />
                   </CardContent>
                 </Card>
 
