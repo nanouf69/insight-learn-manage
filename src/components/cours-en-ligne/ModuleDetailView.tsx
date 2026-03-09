@@ -3513,7 +3513,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           const isCompleted = completedPages.has(i);
           const isQuizPage = p.type === "exercice-single" && p.exercice.questions && p.exercice.questions.length > 0;
           const rawLabel = p.type === "cours"
-            ? p.cours.titre
+            ? `📖 ${p.cours.titre}`
             : p.type === "exercice-single"
               ? isQuizPage ? `📝 Quiz — ${p.exercice.titre}` : `📝 ${p.exercice.titre}`
               : "📝 Exercices";
