@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Loader2, ArrowLeft, KeyRound } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -16,7 +15,6 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'login' | 'forgot'>('login');
   const [forgotEmail, setForgotEmail] = useState('');
-  const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -35,7 +33,7 @@ export default function Login() {
       });
       if (roleError) throw roleError;
 
-      navigate(isAdmin ? "/" : "/cours", { replace: true });
+      window.location.replace(isAdmin ? "/" : "/cours");
     } catch (error: any) {
       toast({ title: "Erreur", description: error.message || "Une erreur est survenue", variant: "destructive" });
     } finally {
