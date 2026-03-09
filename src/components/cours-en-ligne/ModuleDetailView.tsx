@@ -2130,6 +2130,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       ];
     })();
 
+    console.log("[LearnerPreview] Module:", moduleData.id, "activeCours:", activeCours.length, "activeExercices:", activeExercices.length, "pages:", pages.length);
+
     const BILAN_MODULE_IDS_SET = new Set([4, 5, 9, 11, 27, 28, 29, 30]);
     const isBilanModule = BILAN_MODULE_IDS_SET.has(Number(moduleData.id));
     const shouldUseHierarchicalStepper = Number(moduleData.id) === 2 || Number(moduleData.id) === 10 || isBilanModule;
