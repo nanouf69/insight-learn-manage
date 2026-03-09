@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Loader2, ArrowLeft, KeyRound } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,7 +19,7 @@ export default function Login() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const redirectByRole = async (userId: string) => {
+  const redirectByRole = useCallback(async (userId: string) => {
     const { data: isAdmin, error } = await supabase.rpc('has_role', {
       _user_id: userId,
       _role: 'admin',
@@ -27,7 +27,7 @@ export default function Login() {
 
     if (error) throw error;
     navigate(isAdmin ? '/' : '/cours', { replace: true });
-  };
+  }, [navigate]);
 
   useEffect(() => {
     let isActive = true;
