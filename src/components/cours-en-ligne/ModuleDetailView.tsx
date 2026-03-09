@@ -1181,8 +1181,7 @@ function getInitialModuleData(
 
   // TA sub-modules (Passerelle Taxi : Nationale + Locale)
   if (module.id === 40) {
-    if (!studentOnly) return JSON.parse(JSON.stringify(TA_COURS_DATA));
-    return createSectionModuleData(40, "F. Réglementation Nationale", "Réglementation nationale (TA)", TA_SECTIONS[0]);
+    return JSON.parse(JSON.stringify(TA_COURS_DATA));
   }
   if (module.id === 42) return createSectionModuleData(42, "F. Réglementation Locale", "Réglementation locale (TA)", TA_SECTIONS[1]);
 
