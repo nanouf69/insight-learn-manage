@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Loader2, ArrowLeft, KeyRound } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -15,52 +16,33 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'login' | 'forgot'>('login');
   const [forgotEmail, setForgotEmail] = useState('');
-  const redirectingRef = useRef(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const redirectByRole = async (userId: string) => {
-    if (redirectingRef.current) return;
-    redirectingRef.current = true;
-
     const { data: isAdmin, error } = await supabase.rpc('has_role', {
       _user_id: userId,
       _role: 'admin',
     });
 
-    if (error) {
-      redirectingRef.current = false;
-      throw error;
-    }
-
-    window.location.replace(isAdmin ? '/' : '/cours');
+    if (error) throw error;
+    navigate(isAdmin ? '/' : '/cours', { replace: true });
   };
 
   useEffect(() => {
     let isActive = true;
 
-    const tryRedirectFromSession = async (session: any) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!isActive || !session?.user?.id) return;
-
       try {
         await redirectByRole(session.user.id);
       } catch {
-        redirectingRef.current = false;
+        // On reste sur /login en cas d'erreur réseau temporaire
       }
-    };
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      void tryRedirectFromSession(session);
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      void tryRedirectFromSession(session);
     });
 
     return () => {
       isActive = false;
-      subscription.unsubscribe();
     };
   }, []);
 
@@ -80,7 +62,6 @@ export default function Login() {
 
       await redirectByRole(userId);
     } catch (error: any) {
-      redirectingRef.current = false;
       setLoading(false);
       toast({
         title: 'Erreur de connexion',
@@ -162,14 +143,14 @@ export default function Login() {
             <div className="space-y-2">
               <Label htmlFor="password">Mot de passe</Label>
               <div className="relative">
-                <Input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+                <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Chargement..." : "Se connecter"}
+              {loading ? 'Chargement...' : 'Se connecter'}
             </Button>
             <button type="button" className="w-full text-sm text-primary hover:underline transition-colors font-medium" onClick={() => setMode('forgot')}>
               Mot de passe oublié ?
