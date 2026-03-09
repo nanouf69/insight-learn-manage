@@ -19,268 +19,460 @@ interface ControleItem {
   donnees?: any;
 }
 
-// Human-readable labels for common JSON keys
-const KEY_LABELS: Record<string, string> = {
-  nom: 'Nom',
-  prenom: 'Prenom',
-  email: 'Email',
-  telephone: 'Telephone',
-  adresse: 'Adresse',
-  code_postal: 'Code postal',
-  ville: 'Ville',
-  date_naissance: 'Date de naissance',
-  date: 'Date',
-  signature: 'Signature',
-  signature_apprenant: 'Signature apprenant',
-  signature_formateur: 'Signature formateur',
-  commentaire: 'Commentaire',
-  commentaires: 'Commentaires',
-  reponse: 'Reponse',
-  reponses: 'Reponses',
-  note: 'Note',
-  formation: 'Formation',
-  type_formation: 'Type de formation',
-  civilite: 'Civilite',
-  statut: 'Statut',
-  experience: 'Experience',
-  motivation: 'Motivation',
-  objectifs: 'Objectifs',
-  points_forts: 'Points forts',
-  points_amelioration: 'Points a ameliorer',
-  satisfaction_globale: 'Satisfaction globale',
-  recommandation: 'Recommandation',
-  qualite_contenu: 'Qualite du contenu',
-  qualite_formateur: 'Qualite du formateur',
-  organisation: 'Organisation',
-  supports: 'Supports pedagogiques',
+// Human-readable labels for projet professionnel & analyse besoin fields
+const FIELD_LABELS: Record<string, string> = {
+  formType: 'Type de formation',
+  dateEntretien: "Date d'entretien",
+  conseiller: 'Conseiller',
+  lieuNaissance: 'Lieu de naissance',
+  statutActuel: 'Statut actuel',
+  metierActuel: 'Metier actuel',
+  anciennete: 'Anciennete',
+  niveauFormation: 'Niveau de formation',
+  motivations: 'Motivations',
+  dejaTransport: 'Experience transport',
+  detailTransport: 'Detail transport',
+  permis3ans: 'Permis > 3 ans',
+  datePermis: 'Date du permis',
+  modeExercice: "Mode d'exercice",
+  plateformes: 'Plateformes envisagees',
+  diffTaxiVtc: 'Difference Taxi/VTC',
+  modeExerciceTaxi: "Mode d'exercice Taxi",
+  demandeADS: 'Demande ADS',
+  zoneExercice: "Zone d'exercice",
+  zoneAutre: 'Zone (autre)',
+  activitesCompl: 'Activites complementaires',
+  demarchesEntreprise: 'Demarches entreprise',
+  craintes: 'Craintes',
+  commentConnu: 'Comment connu',
+  consulteProgram: 'Programme consulte',
+  saitExamen: "Connaissance de l'examen",
+  connaitZone: 'Connaissance de la zone',
+  conduiteUrbaine: 'Conduite urbaine',
+  connaitSites: 'Connaissance des sites',
+  besoinsAdaptation: 'Besoins adaptation',
+  accesOrdinateur: 'Acces ordinateur',
+  precisionsBesoins: 'Precisions besoins',
+  coherenceProjet: 'Coherence du projet',
+  niveauMotivation: 'Niveau de motivation',
+  observations: 'Observations',
+  // Analyse besoin
+  nom: 'Nom', prenom: 'Prenom', email: 'Email', telephone: 'Telephone',
+  adresse: 'Adresse', codePostal: 'Code postal', ville: 'Ville',
+  formationVTC: 'Formation VTC', formationTAXI: 'Formation TAXI',
+  eligibility: 'Eligibilite', complementary: 'Complementaire',
+  centreFormation: 'Centre de formation', typeHandicap: 'Type handicap',
+  engagementAccepted: 'Engagement accepte', dateDocument: 'Date du document',
+  // Satisfaction
+  noteGlobale: 'Note globale', pointsForts: 'Points forts',
+  pointsAmeliorer: 'Points a ameliorer', suggestions: 'Suggestions',
+  formationType: 'Type de formation', commentaires: 'Commentaires',
+  // CGV
+  cgv_accepted: 'CGV acceptees', ri_accepted: 'Reglement interieur accepte',
+  accepted: 'Accepte', accepted_at: 'Date acceptation',
+  signed_at: 'Date de signature',
+  formationLabel: 'Formation',
 };
 
-function formatKey(key: string): string {
-  if (KEY_LABELS[key]) return KEY_LABELS[key];
-  return key
-    .replace(/_/g, ' ')
-    .replace(/([a-z])([A-Z])/g, '$1 $2')
-    .replace(/^./, s => s.toUpperCase());
+function getLabel(key: string): string {
+  if (FIELD_LABELS[key]) return FIELD_LABELS[key];
+  return key.replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, s => s.toUpperCase());
 }
 
-function isBase64Image(value: string): boolean {
-  return typeof value === 'string' && (value.startsWith('data:image/') || (value.length > 500 && /^[A-Za-z0-9+/=]+$/.test(value.slice(0, 100))));
+function isBase64(val: string): boolean {
+  return typeof val === 'string' && (val.startsWith('data:image/') || (val.length > 300 && /^[A-Za-z0-9+/=\n]+$/.test(val.slice(0, 100))));
 }
 
 function ensureSpace(doc: jsPDF, y: number, needed: number): number {
-  if (y + needed > 280) {
-    doc.addPage();
-    return 20;
+  if (y + needed > 278) { doc.addPage(); return 20; }
+  return y;
+}
+
+// ---- Specialized renderers per document type ----
+
+function renderSatisfaction(doc: jsPDF, donnees: any, y: number, margin: number, pw: number): number {
+  const NOTES_LABELS: Record<number, string> = { 1: 'Tres insatisfait', 2: 'Insatisfait', 3: 'Neutre', 4: 'Satisfait', 5: 'Tres satisfait' };
+
+  if (donnees.parties && Array.isArray(donnees.parties)) {
+    for (const partie of donnees.parties) {
+      y = ensureSpace(doc, y, 14);
+      doc.setFillColor(230, 240, 250);
+      doc.rect(margin + 3, y - 3, pw - margin * 2 - 6, 8, 'F');
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(13, 37, 64);
+      doc.text(partie.titre, margin + 6, y + 2);
+      y += 10;
+
+      if (partie.criteres && Array.isArray(partie.criteres)) {
+        for (const c of partie.criteres) {
+          y = ensureSpace(doc, y, 8);
+          doc.setFontSize(7.5);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(50, 50, 50);
+          const lines = doc.splitTextToSize(`${c.label}`, pw - margin * 2 - 50);
+          doc.text(lines, margin + 6, y);
+
+          // Note
+          const noteLabel = c.value != null ? `${c.value}/5 - ${NOTES_LABELS[c.value] || ''}` : 'Non repondu';
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(c.value && c.value >= 4 ? 34 : c.value && c.value >= 3 ? 180 : 200, c.value && c.value >= 4 ? 150 : c.value && c.value >= 3 ? 130 : 60, c.value && c.value >= 4 ? 60 : c.value && c.value >= 3 ? 0 : 60);
+          doc.text(noteLabel, pw - margin - 2, y, { align: 'right' });
+          y += lines.length * 4 + 3;
+        }
+      }
+      y += 3;
+    }
+  }
+
+  // Free text fields
+  for (const key of ['noteGlobale', 'pointsForts', 'pointsAmeliorer', 'suggestions']) {
+    if (donnees[key]) {
+      y = ensureSpace(doc, y, 12);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(13, 37, 64);
+      doc.text(`${getLabel(key)} :`, margin + 6, y);
+      y += 5;
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(30, 30, 30);
+      const lines = doc.splitTextToSize(String(donnees[key]), pw - margin * 2 - 12);
+      for (const l of lines) { y = ensureSpace(doc, y, 5); doc.text(l, margin + 8, y); y += 4; }
+      y += 3;
+    }
   }
   return y;
 }
 
-/**
- * Render donnees content into the PDF, handling nested objects/arrays
- */
-function renderDonnees(doc: jsPDF, donnees: any, startY: number, margin: number, pageWidth: number): number {
-  let y = startY;
-  const maxTextWidth = pageWidth - margin * 2 - 15;
+function renderEvaluationAcquis(doc: jsPDF, donnees: any, y: number, margin: number, pw: number): number {
+  const NIVEAUX_LABELS: Record<string, string> = { A: 'Acquis', B: 'En cours', C: 'Non acquis', D: 'Non evalue' };
+  const NIVEAUX_COLORS: Record<string, number[]> = { A: [34, 197, 94], B: [245, 158, 11], C: [239, 68, 68], D: [150, 150, 150] };
 
-  if (!donnees || typeof donnees !== 'object') return y;
-
-  const entries = Array.isArray(donnees)
-    ? donnees.map((item, i) => [`${i + 1}`, item] as [string, any])
-    : Object.entries(donnees);
-
-  for (const [key, value] of entries) {
-    // Skip internal/technical fields
-    if (key === 'id' || key === 'apprenant_id' || key === 'user_id' || key === 'module_id') continue;
-
-    // Skip base64 signatures (too long for PDF text)
-    if (typeof value === 'string' && isBase64Image(value)) {
-      y = ensureSpace(doc, y, 10);
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(60, 60, 60);
-      doc.text(`${formatKey(key)} :`, margin + 5, y);
-      doc.setFont('helvetica', 'italic');
-      doc.setTextColor(120, 120, 120);
-      doc.text('[Signature numerique presente]', margin + 55, y);
-      y += 6;
-      continue;
-    }
-
-    // Nested object
-    if (value && typeof value === 'object' && !Array.isArray(value)) {
-      y = ensureSpace(doc, y, 12);
+  if (donnees.parties && Array.isArray(donnees.parties)) {
+    for (const partie of donnees.parties) {
+      y = ensureSpace(doc, y, 14);
+      doc.setFillColor(230, 240, 250);
+      doc.rect(margin + 3, y - 3, pw - margin * 2 - 6, 8, 'F');
       doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(13, 37, 64);
-      doc.text(`${formatKey(key)} :`, margin + 5, y);
-      y += 6;
-      y = renderDonnees(doc, value, y, margin + 5, pageWidth);
-      y += 2;
-      continue;
-    }
+      doc.text(partie.titre, margin + 6, y + 2);
+      y += 10;
 
-    // Array of primitives or objects
-    if (Array.isArray(value)) {
-      y = ensureSpace(doc, y, 12);
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(13, 37, 64);
-      doc.text(`${formatKey(key)} :`, margin + 5, y);
-      y += 6;
-
-      for (let i = 0; i < value.length; i++) {
-        const item = value[i];
-        if (typeof item === 'object' && item !== null) {
-          y = ensureSpace(doc, y, 8);
-          doc.setFontSize(7);
-          doc.setFont('helvetica', 'bold');
-          doc.setTextColor(80, 80, 80);
-          doc.text(`#${i + 1}`, margin + 8, y);
-          y += 5;
-          y = renderDonnees(doc, item, y, margin + 8, pageWidth);
-          y += 2;
-        } else {
-          y = ensureSpace(doc, y, 6);
-          doc.setFontSize(8);
+      if (partie.competences && Array.isArray(partie.competences)) {
+        for (const comp of partie.competences) {
+          y = ensureSpace(doc, y, 10);
+          doc.setFontSize(7.5);
           doc.setFont('helvetica', 'normal');
-          doc.setTextColor(30, 30, 30);
-          const text = `- ${String(item)}`;
-          const lines = doc.splitTextToSize(text, maxTextWidth - 10);
-          doc.text(lines, margin + 8, y);
-          y += lines.length * 4 + 1;
+          doc.setTextColor(50, 50, 50);
+          const lines = doc.splitTextToSize(comp.label, pw - margin * 2 - 55);
+          doc.text(lines, margin + 6, y);
+
+          const val = comp.value || 'D';
+          const color = NIVEAUX_COLORS[val] || [150, 150, 150];
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(color[0], color[1], color[2]);
+          doc.text(NIVEAUX_LABELS[val] || val, pw - margin - 2, y, { align: 'right' });
+
+          y += lines.length * 4 + 2;
+
+          if (comp.observation) {
+            y = ensureSpace(doc, y, 6);
+            doc.setFontSize(7);
+            doc.setFont('helvetica', 'italic');
+            doc.setTextColor(120, 120, 120);
+            const obsLines = doc.splitTextToSize(`Obs: ${comp.observation}`, pw - margin * 2 - 20);
+            doc.text(obsLines, margin + 10, y);
+            y += obsLines.length * 3.5 + 1;
+          }
         }
       }
-      y += 2;
-      continue;
+      y += 3;
     }
+  }
 
-    // Simple key-value
+  if (donnees.commentaires) {
+    y = ensureSpace(doc, y, 12);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(13, 37, 64);
+    doc.text('Commentaires :', margin + 6, y);
+    y += 5;
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(30, 30, 30);
+    const lines = doc.splitTextToSize(String(donnees.commentaires), pw - margin * 2 - 12);
+    for (const l of lines) { y = ensureSpace(doc, y, 5); doc.text(l, margin + 8, y); y += 4; }
+    y += 3;
+  }
+  return y;
+}
+
+function renderProjetProfessionnel(doc: jsPDF, donnees: any, y: number, margin: number, pw: number): number {
+  const SECTIONS: { title: string; keys: string[] }[] = [
+    { title: 'INFORMATIONS GENERALES', keys: ['formType', 'dateEntretien', 'conseiller', 'lieuNaissance'] },
+    { title: 'SITUATION ACTUELLE', keys: ['statutActuel', 'metierActuel', 'anciennete', 'niveauFormation'] },
+    { title: 'PROJET PROFESSIONNEL', keys: ['motivations', 'dejaTransport', 'detailTransport', 'permis3ans', 'datePermis', 'modeExercice', 'plateformes', 'diffTaxiVtc', 'modeExerciceTaxi', 'demandeADS', 'zoneExercice', 'zoneAutre', 'activitesCompl', 'demarchesEntreprise', 'craintes'] },
+    { title: 'CONNAISSANCES PREALABLES', keys: ['commentConnu', 'consulteProgram', 'saitExamen', 'connaitZone', 'conduiteUrbaine', 'connaitSites'] },
+    { title: 'BESOINS SPECIFIQUES', keys: ['besoinsAdaptation', 'accesOrdinateur', 'precisionsBesoins'] },
+    { title: 'AVIS CONSEILLER', keys: ['coherenceProjet', 'niveauMotivation', 'observations'] },
+  ];
+
+  for (const section of SECTIONS) {
+    const filled = section.keys.filter(k => donnees[k] !== undefined && donnees[k] !== null && donnees[k] !== '');
+    if (filled.length === 0) continue;
+
+    y = ensureSpace(doc, y, 14);
+    doc.setFillColor(230, 240, 250);
+    doc.rect(margin + 3, y - 3, pw - margin * 2 - 6, 8, 'F');
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(13, 37, 64);
+    doc.text(section.title, margin + 6, y + 2);
+    y += 10;
+
+    for (const key of filled) {
+      y = renderField(doc, key, donnees[key], y, margin, pw);
+    }
+    y += 3;
+  }
+  return y;
+}
+
+function renderAnalyseBesoin(doc: jsPDF, donnees: any, y: number, margin: number, pw: number): number {
+  const SECTIONS: { title: string; keys: string[] }[] = [
+    { title: 'IDENTITE', keys: ['nom', 'prenom', 'email', 'telephone', 'adresse', 'codePostal', 'ville'] },
+    { title: 'FORMATION SOUHAITEE', keys: ['formationVTC', 'formationTAXI', 'centreFormation'] },
+    { title: 'ELIGIBILITE & ACCESSIBILITE', keys: ['eligibility', 'complementary', 'typeHandicap'] },
+    { title: 'ENGAGEMENT', keys: ['engagementAccepted', 'dateDocument'] },
+  ];
+
+  for (const section of SECTIONS) {
+    const filled = section.keys.filter(k => donnees[k] !== undefined && donnees[k] !== null && donnees[k] !== '');
+    if (filled.length === 0) continue;
+
+    y = ensureSpace(doc, y, 14);
+    doc.setFillColor(230, 240, 250);
+    doc.rect(margin + 3, y - 3, pw - margin * 2 - 6, 8, 'F');
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(13, 37, 64);
+    doc.text(section.title, margin + 6, y + 2);
+    y += 10;
+
+    for (const key of filled) {
+      y = renderField(doc, key, donnees[key], y, margin, pw);
+    }
+    y += 3;
+  }
+
+  // Signature mention
+  if (donnees.signature && isBase64(donnees.signature)) {
+    y = ensureSpace(doc, y, 8);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(34, 150, 60);
+    doc.text('Signature numerique du stagiaire : presente', margin + 6, y);
+    y += 6;
+  }
+  return y;
+}
+
+function renderTestCompetences(doc: jsPDF, donnees: any, y: number, margin: number, pw: number): number {
+  if (donnees.formationLabel) {
     y = ensureSpace(doc, y, 8);
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(60, 60, 60);
-    const label = `${formatKey(key)} : `;
-    doc.text(label, margin + 5, y);
-
-    const labelWidth = doc.getTextWidth(label);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(30, 30, 30);
-
-    const strValue = value === null || value === undefined ? '-' : String(value);
-    const remainingWidth = maxTextWidth - labelWidth - 5;
-
-    if (remainingWidth > 20 && doc.getTextWidth(strValue) <= remainingWidth) {
-      doc.text(strValue, margin + 5 + labelWidth, y);
-      y += 5;
-    } else {
-      y += 5;
-      const wrappedLines = doc.splitTextToSize(strValue, maxTextWidth - 5);
-      for (const line of wrappedLines) {
-        y = ensureSpace(doc, y, 5);
-        doc.text(line, margin + 8, y);
-        y += 4;
-      }
-      y += 1;
-    }
+    doc.setTextColor(13, 37, 64);
+    doc.text(`Formation : ${donnees.formationLabel}`, margin + 6, y);
+    y += 7;
   }
 
+  if (donnees.sections && Array.isArray(donnees.sections) && donnees.answers) {
+    for (let si = 0; si < donnees.sections.length; si++) {
+      y = ensureSpace(doc, y, 12);
+      doc.setFillColor(230, 240, 250);
+      doc.rect(margin + 3, y - 3, pw - margin * 2 - 6, 8, 'F');
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(13, 37, 64);
+      doc.text(donnees.sections[si], margin + 6, y + 2);
+      y += 10;
+
+      // Find answers for this section
+      const sectionAnswers = Object.entries(donnees.answers as Record<string, string>)
+        .filter(([key]) => key.startsWith(`${si}-`));
+
+      for (const [key, value] of sectionAnswers) {
+        y = ensureSpace(doc, y, 7);
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(50, 50, 50);
+        const qNum = key.split('-')[1];
+        doc.text(`Q${parseInt(qNum) + 1} :`, margin + 6, y);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(30, 30, 30);
+        doc.text(String(value), margin + 22, y);
+        y += 5;
+      }
+      y += 3;
+    }
+  }
   return y;
 }
 
-export function generateControleQualitePdf(
-  apprenant: any,
-  items: ControleItem[],
-) {
+function renderGenericDonnees(doc: jsPDF, donnees: any, y: number, margin: number, pw: number): number {
+  if (!donnees || typeof donnees !== 'object') return y;
+  const entries = Object.entries(donnees);
+  for (const [key, value] of entries) {
+    if (key === 'id' || key === 'apprenant_id' || key === 'user_id' || key === 'module_id') continue;
+    y = renderField(doc, key, value, y, margin, pw);
+  }
+  return y;
+}
+
+function renderField(doc: jsPDF, key: string, value: any, y: number, margin: number, pw: number): number {
+  if (typeof value === 'string' && isBase64(value)) {
+    y = ensureSpace(doc, y, 7);
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(80, 80, 80);
+    doc.text(`${getLabel(key)} :`, margin + 6, y);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(34, 150, 60);
+    doc.text('[Signature presente]', margin + 60, y);
+    y += 5;
+    return y;
+  }
+
+  if (typeof value === 'boolean') {
+    y = ensureSpace(doc, y, 7);
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(80, 80, 80);
+    doc.text(`${getLabel(key)} :`, margin + 6, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(value ? 34 : 200, value ? 150 : 60, value ? 60 : 60);
+    doc.text(value ? 'Oui' : 'Non', margin + 60, y);
+    y += 5;
+    return y;
+  }
+
+  if (value === null || value === undefined || value === '') return y;
+
+  y = ensureSpace(doc, y, 7);
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(80, 80, 80);
+  const label = `${getLabel(key)} : `;
+  doc.text(label, margin + 6, y);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(30, 30, 30);
+  const strVal = String(value);
+  const labelW = doc.getTextWidth(label);
+  const remaining = pw - margin * 2 - labelW - 12;
+
+  if (remaining > 25 && doc.getTextWidth(strVal) <= remaining) {
+    doc.text(strVal, margin + 6 + labelW, y);
+    y += 5;
+  } else {
+    y += 5;
+    const wrapped = doc.splitTextToSize(strVal, pw - margin * 2 - 14);
+    for (const line of wrapped) { y = ensureSpace(doc, y, 4.5); doc.text(line, margin + 10, y); y += 4; }
+    y += 1;
+  }
+  return y;
+}
+
+// ---- Dispatch to the right renderer based on document type ----
+function renderDocContent(doc: jsPDF, docLabel: string, donnees: any, y: number, margin: number, pw: number): number {
+  const labelLower = docLabel.toLowerCase();
+
+  if (labelLower.includes('satisfaction'))
+    return renderSatisfaction(doc, donnees, y, margin, pw);
+  if (labelLower.includes('evaluation') || labelLower.includes('acquis'))
+    return renderEvaluationAcquis(doc, donnees, y, margin, pw);
+  if (labelLower.includes('projet professionnel'))
+    return renderProjetProfessionnel(doc, donnees, y, margin, pw);
+  if (labelLower.includes('prerequis') || labelLower.includes('analyse'))
+    return renderAnalyseBesoin(doc, donnees, y, margin, pw);
+  if (labelLower.includes('positionnement') || labelLower.includes('competences'))
+    return renderTestCompetences(doc, donnees, y, margin, pw);
+
+  return renderGenericDonnees(doc, donnees, y, margin, pw);
+}
+
+// ===== Main export =====
+export function generateControleQualitePdf(apprenant: any, items: ControleItem[]) {
   const doc = new jsPDF();
-  const pageWidth = doc.internal.pageSize.getWidth();
+  const pw = doc.internal.pageSize.getWidth();
   const margin = 15;
-  const contentWidth = pageWidth - margin * 2;
+  const contentWidth = pw - margin * 2;
 
   // Logo
-  try {
-    doc.addImage(logoImage, 'PNG', margin, 8, 45, 16);
-  } catch (_) {}
+  try { doc.addImage(logoImage, 'PNG', margin, 8, 45, 16); } catch (_) {}
 
-  // Company info top-right
+  // Company info
   doc.setFontSize(7);
   doc.setTextColor(120, 120, 120);
-  doc.text(COMPANY_INFO.name, pageWidth - margin, 12, { align: 'right' });
-  doc.text(COMPANY_INFO.address, pageWidth - margin, 16, { align: 'right' });
-  doc.text(`SIRET : ${COMPANY_INFO.siret}`, pageWidth - margin, 20, { align: 'right' });
+  doc.text(COMPANY_INFO.name, pw - margin, 12, { align: 'right' });
+  doc.text(COMPANY_INFO.address, pw - margin, 16, { align: 'right' });
+  doc.text(`SIRET : ${COMPANY_INFO.siret}`, pw - margin, 20, { align: 'right' });
 
-  // Header bar
+  // Header
   doc.setFillColor(13, 37, 64);
-  doc.rect(0, 28, pageWidth, 20, 'F');
+  doc.rect(0, 28, pw, 20, 'F');
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text('CONTROLE QUALITE - DOSSIER APPRENANT', pageWidth / 2, 40, { align: 'center' });
+  doc.text('CONTROLE QUALITE - DOSSIER APPRENANT', pw / 2, 40, { align: 'center' });
 
-  // Apprenant info
+  // Apprenant
   doc.setTextColor(0, 0, 0);
   let y = 58;
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
   const fullName = `${apprenant.civilite || ''} ${apprenant.prenom} ${apprenant.nom}`.trim();
   doc.text(`Stagiaire : ${fullName}`, margin, y);
-
   doc.setFont('helvetica', 'normal');
-  const formation = (apprenant.type_apprenant || apprenant.formation_choisie || '-').toUpperCase();
-  doc.text(`Formation : ${formation}`, pageWidth / 2, y);
+  doc.text(`Formation : ${(apprenant.type_apprenant || apprenant.formation_choisie || '-').toUpperCase()}`, pw / 2, y);
   y += 7;
-
-  if (apprenant.date_debut_formation) {
-    doc.text(`Debut : ${apprenant.date_debut_formation}`, margin, y);
-  }
-  if (apprenant.date_fin_formation) {
-    doc.text(`Fin : ${apprenant.date_fin_formation}`, pageWidth / 2, y);
-  }
+  if (apprenant.date_debut_formation) doc.text(`Debut : ${apprenant.date_debut_formation}`, margin, y);
+  if (apprenant.date_fin_formation) doc.text(`Fin : ${apprenant.date_fin_formation}`, pw / 2, y);
   y += 5;
 
   // Summary bar
   const totalDocs = items.length;
   const completedCount = items.filter(i => i.found).length;
   const pct = Math.round((completedCount / totalDocs) * 100);
-
   y += 5;
   doc.setFillColor(240, 240, 240);
   doc.roundedRect(margin, y, contentWidth, 14, 3, 3, 'F');
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(50, 50, 50);
-  doc.text(`Completude du dossier : ${completedCount} / ${totalDocs} documents (${pct}%)`, margin + 5, y + 9);
+  doc.text(`Completude : ${completedCount} / ${totalDocs} documents (${pct}%)`, margin + 5, y + 9);
 
-  // Progress bar
-  const barX = pageWidth - margin - 65;
-  const barW = 60;
-  const barH = 6;
-  const barY = y + 4;
+  const barX = pw - margin - 65, barW = 60, barH = 6, barY = y + 4;
   doc.setFillColor(220, 220, 220);
   doc.roundedRect(barX, barY, barW, barH, 2, 2, 'F');
-  const fillColor = pct === 100 ? [34, 197, 94] : pct >= 50 ? [245, 158, 11] : [239, 68, 68];
-  doc.setFillColor(fillColor[0], fillColor[1], fillColor[2]);
-  if (pct > 0) {
-    doc.roundedRect(barX, barY, Math.max(4, (barW * pct) / 100), barH, 2, 2, 'F');
-  }
-
+  const fc = pct === 100 ? [34, 197, 94] : pct >= 50 ? [245, 158, 11] : [239, 68, 68];
+  doc.setFillColor(fc[0], fc[1], fc[2]);
+  if (pct > 0) doc.roundedRect(barX, barY, Math.max(4, (barW * pct) / 100), barH, 2, 2, 'F');
   y += 22;
 
-  // Categories
+  // ---- Categories + documents ----
   const categoryLabels: Record<string, string> = {
     formulaire: 'FORMULAIRES STAGIAIRE',
     suivi: 'SUIVI PEDAGOGIQUE',
     administratif: 'DOCUMENTS ADMINISTRATIFS',
   };
 
-  const categories = ['formulaire', 'suivi', 'administratif'];
-
-  for (const cat of categories) {
+  for (const cat of ['formulaire', 'suivi', 'administratif']) {
     const catItems = items.filter(i => i.category === cat);
     if (catItems.length === 0) continue;
-
     y = ensureSpace(doc, y, 15);
 
-    // Category header
     doc.setFillColor(13, 37, 64);
     doc.rect(margin, y, contentWidth, 8, 'F');
     doc.setTextColor(255, 255, 255);
@@ -292,71 +484,54 @@ export function generateControleQualitePdf(
     for (const item of catItems) {
       y = ensureSpace(doc, y, 12);
 
-      // Status dot
-      if (item.found) {
-        doc.setFillColor(34, 197, 94);
-      } else {
-        doc.setFillColor(239, 68, 68);
-      }
+      // Status dot + label
+      doc.setFillColor(item.found ? 34 : 239, item.found ? 197 : 68, item.found ? 94 : 68);
       doc.circle(margin + 4, y + 1.5, 2, 'F');
-
-      // Label
       doc.setTextColor(30, 30, 30);
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
       doc.text(item.label, margin + 10, y + 3);
 
-      // Status + date
       const statusText = item.found ? 'Present' : 'Manquant';
       doc.setFontSize(8);
       doc.setTextColor(item.found ? 34 : 239, item.found ? 197 : 68, item.found ? 94 : 68);
-      doc.text(statusText, pageWidth - margin - 30, y + 3);
+      doc.text(statusText, pw - margin - 30, y + 3);
 
       if (item.completedAt) {
         doc.setTextColor(150, 150, 150);
         doc.setFontSize(7);
         try {
-          const dateStr = format(new Date(item.completedAt), 'dd/MM/yyyy', { locale: fr });
-          doc.text(dateStr, pageWidth - margin, y + 3, { align: 'right' });
+          doc.text(format(new Date(item.completedAt), 'dd/MM/yyyy', { locale: fr }), pw - margin, y + 3, { align: 'right' });
         } catch (_) {}
       }
+      y += 9;
 
-      y += 8;
-
-      // === Render detailed content (donnees) ===
+      // ---- Detailed content ----
       if (item.donnees && item.found) {
-        // Light background box
-        const boxStartY = y;
-        y += 2;
-
         doc.setDrawColor(200, 200, 200);
         doc.setLineWidth(0.3);
-        doc.line(margin + 8, y - 1, pageWidth - margin, y - 1);
-        y += 2;
-
-        y = renderDonnees(doc, item.donnees, y, margin + 2, pageWidth);
-
+        doc.line(margin + 8, y - 1, pw - margin, y - 1);
         y += 3;
+
+        y = renderDocContent(doc, item.label, item.donnees, y, margin, pw);
+
+        y += 2;
         doc.setDrawColor(200, 200, 200);
-        doc.line(margin + 8, y, pageWidth - margin, y);
-        y += 4;
+        doc.line(margin + 8, y, pw - margin, y);
+        y += 5;
       }
     }
-
     y += 4;
   }
 
   // Footer
-  y += 10;
   y = ensureSpace(doc, y, 15);
-
+  y += 8;
   doc.setTextColor(120, 120, 120);
   doc.setFontSize(7);
-  const today = format(new Date(), 'dd MMMM yyyy', { locale: fr });
-  doc.text(`Document genere le ${today}`, margin, y);
-  doc.text(`${COMPANY_INFO.name} - ${COMPANY_INFO.address}`, pageWidth / 2, y, { align: 'center' });
+  doc.text(`Document genere le ${format(new Date(), 'dd MMMM yyyy', { locale: fr })}`, margin, y);
+  doc.text(`${COMPANY_INFO.name} - ${COMPANY_INFO.address}`, pw / 2, y, { align: 'center' });
 
-  // Save
   const fileName = `controle-qualite-${apprenant.prenom}-${apprenant.nom}.pdf`.replace(/\s+/g, '-').toLowerCase();
   doc.save(fileName);
 }
