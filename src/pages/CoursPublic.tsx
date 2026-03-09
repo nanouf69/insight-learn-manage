@@ -886,6 +886,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           apprenantId={apprenant?.id || null}
           onModuleCompleted={handleModuleCompleted}
           apprenantType={apprenant?.type_apprenant || null}
+          isPresentiel={!isElearning}
           apprenantInfo={apprenant ? {
             nom: apprenant.nom,
             prenom: apprenant.prenom,
