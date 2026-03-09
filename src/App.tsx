@@ -13,6 +13,7 @@ import ReservationPratique from "./pages/ReservationPratique";
 import InscriptionFormationContinue from "./pages/InscriptionFormationContinue";
 import FournisseurPortal from "./pages/FournisseurPortal";
 import CoursPublic from "./pages/CoursPublic";
+import ResetPassword from "./pages/ResetPassword";
 
 // Onboarding pages
 import OnboardingWelcome from "./pages/onboarding/OnboardingWelcome";
