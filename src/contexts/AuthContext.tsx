@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -23,64 +23,103 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const lastProfileUserIdRef = useRef<string | null>(null);
+  const manualSignOutRef = useRef(false);
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = useCallback(async (userId: string) => {
     const { data } = await supabase
       .from('profiles')
       .select('full_name, email, role')
       .eq('user_id', userId)
       .maybeSingle();
     setProfile(data);
-  };
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        // Only update state if user actually changed to prevent render storms
-        setSession(prev => {
-          if (prev?.access_token === session?.access_token) return prev;
-          return session;
-        });
-        setUser(prev => {
-          const newId = session?.user?.id ?? null;
-          const prevId = prev?.id ?? null;
-          if (newId === prevId) return prev;
-          return session?.user ?? null;
-        });
-        setLoading(false);
-        if (session?.user) {
-          setTimeout(() => fetchProfile(session.user.id), 0);
-        } else {
-          setProfile(null);
-        }
-      }
-    );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(prev => {
-        if (prev?.access_token === session?.access_token) return prev;
-        return session;
-      });
-      setUser(prev => {
-        const newId = session?.user?.id ?? null;
-        const prevId = prev?.id ?? null;
-        if (newId === prevId && prev) return prev;
-        return session?.user ?? null;
-      });
-      setLoading(false);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      }
-    });
-
-    return () => subscription.unsubscribe();
   }, []);
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
+  const clearAuthState = useCallback(() => {
     setUser(null);
     setSession(null);
     setProfile(null);
+    lastProfileUserIdRef.current = null;
+  }, []);
+
+  const applySession = useCallback((nextSession: Session | null) => {
+    setSession(prev => {
+      if (prev?.access_token === nextSession?.access_token) return prev;
+      return nextSession;
+    });
+
+    setUser(prev => {
+      const newId = nextSession?.user?.id ?? null;
+      const prevId = prev?.id ?? null;
+      if (newId === prevId) return prev;
+      return nextSession?.user ?? null;
+    });
+
+    const currentUserId = nextSession?.user?.id ?? null;
+    if (!currentUserId) {
+      setProfile(null);
+      lastProfileUserIdRef.current = null;
+      return;
+    }
+
+    if (lastProfileUserIdRef.current !== currentUserId) {
+      lastProfileUserIdRef.current = currentUserId;
+      setTimeout(() => {
+        void fetchProfile(currentUserId);
+      }, 0);
+    }
+  }, [fetchProfile]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (!isActive) return;
+
+      if (nextSession?.user) {
+        manualSignOutRef.current = false;
+        applySession(nextSession);
+        setLoading(false);
+        return;
+      }
+
+      if (event === 'SIGNED_OUT' && !manualSignOutRef.current) {
+        setTimeout(async () => {
+          if (!isActive) return;
+          const { data: { session: recoveredSession } } = await supabase.auth.getSession();
+          if (!isActive) return;
+
+          if (recoveredSession?.user) {
+            applySession(recoveredSession);
+          } else {
+            clearAuthState();
+          }
+          setLoading(false);
+        }, 350);
+        return;
+      }
+
+      manualSignOutRef.current = false;
+      clearAuthState();
+      setLoading(false);
+    });
+
+    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
+      if (!isActive) return;
+      applySession(initialSession);
+      setLoading(false);
+    });
+
+    return () => {
+      isActive = false;
+      subscription.unsubscribe();
+    };
+  }, [applySession, clearAuthState]);
+
+  const signOut = async () => {
+    manualSignOutRef.current = true;
+    await supabase.auth.signOut();
+    clearAuthState();
   };
 
   return (
