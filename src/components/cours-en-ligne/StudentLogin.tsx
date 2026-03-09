@@ -228,6 +228,7 @@ const StudentLogin = ({ onLogin }: StudentLoginProps) => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="email"
               />
             </div>
             <div className="space-y-2">
@@ -239,6 +240,7 @@ const StudentLogin = ({ onLogin }: StudentLoginProps) => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                autoComplete="current-password"
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
