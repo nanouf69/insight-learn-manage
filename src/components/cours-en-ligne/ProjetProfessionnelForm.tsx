@@ -580,6 +580,7 @@ export default function ProjetProfessionnelForm({
           Valider le questionnaire
         </Button>
       </div>
+      </div>
     </div>
   );
 }
