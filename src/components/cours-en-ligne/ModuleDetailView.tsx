@@ -2528,12 +2528,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       });
     }, [pages.length]);
 
-    // Module IDs where Réglementation Nationale/Locale content exists for TAXI
-    const TAXI_REGLEMENTATION_MODULE_IDS = new Set([10, 9, 11]);
-    const isTaxiPresentiel = apprenantType === "taxi";
+    // Module IDs where Réglementation Nationale/Locale content exists for TAXI and TA
+    const TAXI_REGLEMENTATION_MODULE_IDS = new Set([10, 9, 11, 40, 27, 28]);
+    const isTaxiOrTA = apprenantType === "taxi" || (apprenantType || "").toLowerCase().startsWith("ta");
 
     const isReglementationPage = (pageIdx: number): boolean => {
-      if (!isTaxiPresentiel || !TAXI_REGLEMENTATION_MODULE_IDS.has(Number(moduleData.id))) return false;
+      if (!isTaxiOrTA || !TAXI_REGLEMENTATION_MODULE_IDS.has(Number(moduleData.id))) return false;
       const page = pages[pageIdx];
       if (!page) return false;
       const title = page.type === "cours"
