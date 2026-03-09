@@ -180,6 +180,23 @@ const EvaluationAcquisForm = ({ formationType, apprenantId, onComplete }: Evalua
   const [invalidKeys, setInvalidKeys] = useState<Set<string>>(new Set());
   const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
+  const { queueSave, triggerSave: autoTrigger, StatusIndicator } = useAutoSave({
+    apprenantId: apprenantId || "",
+    typeDocument: "evaluation-acquis",
+    titre: `Évaluation des acquis - ${getFormationLabel(formationType)}`,
+    enabled: !!apprenantId && !submitted,
+  });
+
+  const collectData = () => ({
+    formationType,
+    parties: parties.map(p => ({ titre: p.titre, competences: p.competences })),
+    commentaires,
+  });
+
+  useEffect(() => {
+    queueSave(collectData());
+  }, [parties, commentaires]);
+
   const updateCompetence = (partieIdx: number, compIdx: number, value: NiveauAcquis) => {
     setParties(prev => {
       const next = prev.map((p, pi) => pi === partieIdx ? {
@@ -195,7 +212,6 @@ const EvaluationAcquisForm = ({ formationType, apprenantId, onComplete }: Evalua
   const allFilled = parties.every(p => p.competences.every(c => c.value !== null));
 
   const handleSubmit = async () => {
-    // Find unanswered
     const missing: string[] = [];
     parties.forEach((p, pi) => {
       p.competences.forEach((c, ci) => {
@@ -213,17 +229,9 @@ const EvaluationAcquisForm = ({ formationType, apprenantId, onComplete }: Evalua
 
     setInvalidKeys(new Set());
     if (apprenantId) {
-      const saved = await saveFormDocument({
-        apprenantId,
-        typeDocument: "evaluation-acquis",
-        titre: `Évaluation des acquis - ${getFormationLabel(formationType)}`,
-        donnees: {
-          formationType,
-          parties: parties.map(p => ({ titre: p.titre, competences: p.competences })),
-          commentaires,
-        },
-      });
+      const saved = await autoTrigger({ ...collectData(), _status: "completed" });
       if (saved) toast.success("Évaluation des acquis enregistrée !");
+      else toast.error("Erreur lors de la sauvegarde");
     }
     setSubmitted(true);
     toast.success("✅ Évaluation des acquis envoyée avec succès !");
@@ -246,6 +254,7 @@ const EvaluationAcquisForm = ({ formationType, apprenantId, onComplete }: Evalua
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      <div className="flex justify-end sticky top-0 z-10"><StatusIndicator /></div>
       <Card className="border-0 shadow-lg overflow-hidden">
         <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-6 border-b">
           <h2 className="text-xl font-bold text-foreground">📋 Fiche d'Évaluation des Acquis</h2>

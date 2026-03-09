@@ -88,6 +88,27 @@ export default function AnalyseBesoinForm({
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasSigned, setHasSigned] = useState(false);
 
+  // Auto-save
+  const { queueSave, triggerSave: autoTrigger, StatusIndicator } = useAutoSave({
+    apprenantId: apprenantId || "",
+    typeDocument: "analyse-besoin",
+    titre: "Analyse du besoin – Fiche client",
+    enabled: !!apprenantId && !completed,
+  });
+
+  const collectData = () => ({
+    nom, prenom, email, telephone, adresse, codePostal, ville,
+    formationVTC, formationTAXI,
+    eligibility, complementary, centreFormation, typeHandicap,
+    engagementAccepted, dateDocument,
+  });
+
+  useEffect(() => {
+    queueSave(collectData());
+  }, [nom, prenom, email, telephone, adresse, codePostal, ville,
+    formationVTC, formationTAXI, eligibility, complementary,
+    centreFormation, typeHandicap, engagementAccepted, dateDocument]);
+
   const startDraw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -174,18 +195,13 @@ export default function AnalyseBesoinForm({
 
     if (apprenantId) {
       const signatureData = canvasRef.current?.toDataURL("image/png") || "";
-      const saved = await saveFormDocument({
-        apprenantId,
-        typeDocument: "analyse-besoin",
-        titre: "Analyse du besoin – Fiche client",
-        donnees: {
-          nom, prenom, email, telephone, adresse, codePostal, ville,
-          formationVTC, formationTAXI,
-          eligibility, complementary, centreFormation, typeHandicap,
-          engagementAccepted, signature: signatureData, dateDocument,
-        },
+      const saved = await autoTrigger({
+        ...collectData(),
+        signature: signatureData,
+        _status: "completed",
       });
       if (saved) toast.success("Analyse du besoin enregistrée !");
+      else toast.error("Erreur lors de la sauvegarde");
     }
     onComplete();
   };
@@ -203,6 +219,7 @@ export default function AnalyseBesoinForm({
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end sticky top-0 z-10"><StatusIndicator /></div>
       {/* Header */}
       <Card>
         <CardContent className="p-5 text-center space-y-1">
