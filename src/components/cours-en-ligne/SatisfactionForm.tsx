@@ -90,6 +90,23 @@ const SatisfactionForm = ({ formationType, apprenantId, onComplete }: Satisfacti
   const [suggestions, setSuggestions] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
+  const { queueSave, triggerSave: autoTrigger, StatusIndicator } = useAutoSave({
+    apprenantId: apprenantId || "",
+    typeDocument: "satisfaction",
+    titre: `Questionnaire de satisfaction - ${label}`,
+    enabled: !!apprenantId && !submitted,
+  });
+
+  const collectData = () => ({
+    formationType,
+    parties: parties.map(p => ({ titre: p.titre, criteres: p.criteres })),
+    noteGlobale, pointsForts, pointsAmeliorer, suggestions,
+  });
+
+  useEffect(() => {
+    queueSave(collectData());
+  }, [parties, noteGlobale, pointsForts, pointsAmeliorer, suggestions]);
+
   const updateCritere = (partieIdx: number, critereIdx: number, value: number) => {
     setParties(prev => prev.map((p, pi) => pi === partieIdx ? {
       ...p,
@@ -105,17 +122,9 @@ const SatisfactionForm = ({ formationType, apprenantId, onComplete }: Satisfacti
       return;
     }
     if (apprenantId) {
-      const saved = await saveFormDocument({
-        apprenantId,
-        typeDocument: "satisfaction",
-        titre: `Questionnaire de satisfaction - ${getFormationLabel(formationType)}`,
-        donnees: {
-          formationType,
-          parties: parties.map(p => ({ titre: p.titre, criteres: p.criteres })),
-          noteGlobale, pointsForts, pointsAmeliorer, suggestions,
-        },
-      });
+      const saved = await autoTrigger({ ...collectData(), _status: "completed" });
       if (saved) toast.success("Questionnaire de satisfaction enregistré !");
+      else toast.error("Erreur lors de la sauvegarde");
     }
     setSubmitted(true);
     toast.success("✅ Questionnaire de satisfaction envoyé avec succès !");
