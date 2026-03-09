@@ -67,6 +67,11 @@ import SatisfactionForm from "./SatisfactionForm";
 import CGVAcceptanceForm from "./CGVAcceptanceForm";
 import CGVReglementForm from "./CGVReglementForm";
 import { getCompetencesForFormation } from "./competences-checklist-data";
+import {
+  applyOverridesToModuleExercices,
+  detectAndSaveOverrides,
+  getOverridesFingerprint,
+} from "./shared-exercise-overrides";
 
 interface InlineQuizQuestion {
   id: number;
