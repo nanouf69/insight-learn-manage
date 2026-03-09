@@ -165,9 +165,13 @@ export function DocumentsCompletes({ apprenant }: Props) {
                   {expandedId === doc.id ? <ChevronUp className="w-4 h-4 mr-1" /> : <Eye className="w-4 h-4 mr-1" />}
                   {expandedId === doc.id ? "Masquer" : "Voir"}
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => downloadJSON(doc)}>
-                  <Download className="w-4 h-4 mr-1" />
-                  Télécharger
+                <Button variant="default" size="sm" onClick={() => downloadPDF(doc)} className="gap-1">
+                  <FileDown className="w-4 h-4" />
+                  PDF
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => downloadJSON(doc)} className="gap-1">
+                  <Download className="w-4 h-4" />
+                  JSON
                 </Button>
               </div>
             </div>
