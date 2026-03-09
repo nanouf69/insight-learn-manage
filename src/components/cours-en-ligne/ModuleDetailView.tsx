@@ -3553,11 +3553,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   <div className={`w-0.5 h-8 ${isCompleted ? "bg-emerald-400" : "bg-muted"}`} />
                 )}
               </div>
-              {/* Label */}
+              {/* Label + Badge */}
               <button
                 onClick={() => { if (unlocked) { goToPage(i); if (isMobileView) setMobileProgressOpen(false); } }}
                 disabled={!unlocked}
-                className={`text-left text-sm leading-snug pt-1 transition-colors ${
+                className={`text-left text-sm leading-snug pt-1 transition-colors flex items-start gap-1.5 ${
                   isCurrent
                     ? "font-bold text-primary"
                     : isCompleted
@@ -3567,7 +3567,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         : "text-muted-foreground/40 cursor-not-allowed"
                 }`}
               >
-                <span className="line-clamp-2">{label}</span>
+                <span className="line-clamp-2 flex-1">{label}</span>
+                {isQuizPage ? (
+                  <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-700 border border-amber-300">Quiz</span>
+                ) : p.type === "cours" ? (
+                  <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-sky-100 text-sky-700 border border-sky-300">Cours</span>
+                ) : null}
               </button>
             </div>
           );
