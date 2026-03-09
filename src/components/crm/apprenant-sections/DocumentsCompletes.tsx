@@ -18,6 +18,8 @@ const TYPE_LABELS: Record<string, string> = {
   "projet-professionnel": "Projet professionnel",
   "evaluation-acquis": "Évaluation des acquis",
   "satisfaction": "Questionnaire de satisfaction",
+  "cgv-ri-acceptation": "CGV et Règlement intérieur",
+  "cgv-acceptation": "Conditions Générales de Vente",
 };
 
 const TYPE_COLORS: Record<string, string> = {
@@ -26,6 +28,8 @@ const TYPE_COLORS: Record<string, string> = {
   "projet-professionnel": "bg-purple-100 text-purple-800",
   "evaluation-acquis": "bg-emerald-100 text-emerald-800",
   "satisfaction": "bg-pink-100 text-pink-800",
+  "cgv-ri-acceptation": "bg-orange-100 text-orange-800",
+  "cgv-acceptation": "bg-teal-100 text-teal-800",
 };
 
 export function DocumentsCompletes({ apprenant }: Props) {
