@@ -3,11 +3,11 @@ import { createPortal } from "react-dom";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Maximize, Minimize } from "lucide-react";
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Maximize, Minimize, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// Use CDN worker for maximum tablet/mobile browser compatibility
-pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+// Prefer legacy worker build for better tablet/browser compatibility
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.mjs`;
 
 interface PdfSlideViewerProps {
   url: string;
@@ -23,7 +23,9 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
   const [isPseudoFullscreen, setIsPseudoFullscreen] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [renderMode, setRenderMode] = useState<"react-pdf" | "native">("react-pdf");
   const containerRef = useRef<HTMLDivElement>(null);
+  const touchStartXRef = useRef<number | null>(null);
   const [containerWidth, setContainerWidth] = useState(960);
 
   const isExpanded = isNativeFullscreen || isPseudoFullscreen;
@@ -37,6 +39,12 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
 
   useEffect(() => {
     updateWidth();
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", updateWidth);
+      return () => window.removeEventListener("resize", updateWidth);
+    }
+
     const observer = new ResizeObserver(updateWidth);
     if (containerRef.current) observer.observe(containerRef.current);
     return () => observer.disconnect();
@@ -92,6 +100,8 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
 
   const onDocumentLoadSuccess = useCallback(({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
+    setLoadError(false);
+    setRenderMode("react-pdf");
     updateWidth();
   }, [updateWidth]);
 
@@ -142,6 +152,23 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
     if (e.key === "Escape" && isNativeFullscreen) document.exitFullscreen();
   };
 
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    touchStartXRef.current = e.changedTouches[0]?.clientX ?? null;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    const startX = touchStartXRef.current;
+    const endX = e.changedTouches[0]?.clientX;
+    touchStartXRef.current = null;
+    if (startX == null || endX == null) return;
+
+    const deltaX = endX - startX;
+    if (Math.abs(deltaX) < 48) return;
+
+    if (deltaX > 0) prev();
+    if (deltaX < 0) next();
+  };
+
   // Detect portrait mobile for CSS rotation fallback
   const [isPortraitMobile, setIsPortraitMobile] = useState(false);
   useEffect(() => {
@@ -186,7 +213,7 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
         <span className="text-xs font-medium text-muted-foreground min-w-[4rem] text-center">
           {page} / {numPages || "…"}
         </span>
-        <Button variant="ghost" size="sm" onClick={next} disabled={page >= numPages}>
+        <Button variant="ghost" size="sm" onClick={next} disabled={page >= numPages && numPages > 0}>
           <ChevronRight className="w-4 h-4" />
         </Button>
         <div className="w-px h-5 bg-border mx-1" />
@@ -197,6 +224,11 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
         <Button variant="ghost" size="sm" onClick={zoomIn}><ZoomIn className="w-4 h-4" /></Button>
         <Button variant="ghost" size="sm" onClick={resetZoom}><RotateCcw className="w-4 h-4" /></Button>
         <div className="flex-1" />
+        <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex">
+          <Button variant="ghost" size="sm">
+            <ExternalLink className="w-4 h-4" />
+          </Button>
+        </a>
         <Button variant="ghost" size="sm" onClick={toggleFullscreen}>
           {isExpanded ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
         </Button>
@@ -210,27 +242,26 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
           height: isExpanded ? "100%" : "auto",
           touchAction: "pan-x pan-y",
         }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
-        {loadError ? (
-          <div className="flex flex-col items-center justify-center p-12 gap-4">
-            <p className="text-muted-foreground text-sm text-center">
-              Le PDF ne s'affiche pas ? Essayez de le télécharger ou de l'ouvrir dans un nouvel onglet.
-            </p>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => { setLoadError(false); setRetryCount(r => r + 1); }}>
-                Réessayer
-              </Button>
-              <a href={url} target="_blank" rel="noopener noreferrer">
-                <Button variant="default" size="sm">Ouvrir dans un nouvel onglet</Button>
-              </a>
-            </div>
+        {renderMode === "native" || loadError ? (
+          <div className="w-full h-full min-h-[420px] bg-background">
+            <iframe
+              src={url}
+              className="w-full h-full border-0"
+              title={`PDF natif — ${nom}`}
+            />
           </div>
         ) : (
           <Document
             key={retryCount}
             file={url}
-            onLoadSuccess={(data) => { setLoadError(false); onDocumentLoadSuccess(data); }}
-            onLoadError={() => setLoadError(true)}
+            onLoadSuccess={onDocumentLoadSuccess}
+            onLoadError={() => {
+              setLoadError(true);
+              setRenderMode("native");
+            }}
             loading={<div className="flex items-center justify-center p-12 text-muted-foreground">Chargement du PDF…</div>}
             error={<div className="flex items-center justify-center p-12 text-destructive">Impossible de charger le PDF.</div>}
           >
@@ -243,6 +274,22 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
           </Document>
         )}
       </div>
+
+      {renderMode === "native" && (
+        <div className="p-2 border-t bg-muted/40 flex justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setLoadError(false);
+              setRenderMode("react-pdf");
+              setRetryCount((r) => r + 1);
+            }}
+          >
+            Revenir au mode HD
+          </Button>
+        </div>
+      )}
 
       {/* Bottom nav for mobile — with zoom controls */}
       <div className="flex items-center justify-between gap-2 p-2 border-t bg-muted/50 sm:hidden">
@@ -258,8 +305,8 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
             <ZoomIn className="w-5 h-5" />
           </Button>
         </div>
-        <span className="text-xs text-muted-foreground">{page}/{numPages}</span>
-        <Button variant="outline" size="icon" className="h-10 w-10" onClick={next} disabled={page >= numPages}>
+        <span className="text-xs text-muted-foreground">{page}/{numPages || "…"}</span>
+        <Button variant="outline" size="icon" className="h-10 w-10" onClick={next} disabled={page >= numPages && numPages > 0}>
           <ChevronRight className="w-5 h-5" />
         </Button>
       </div>
@@ -272,3 +319,4 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
 
   return viewerContent;
 }
+
