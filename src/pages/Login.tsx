@@ -23,12 +23,20 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     try {
-      await supabase.auth.signOut({ scope: 'local' });
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
       if (error) throw error;
-      navigate('/', { replace: true });
+
+      const userId = data.user?.id;
+      if (!userId) throw new Error("Session utilisateur introuvable");
+
+      const { data: isAdmin, error: roleError } = await supabase.rpc("has_role", {
+        _user_id: userId,
+        _role: "admin",
+      });
+      if (roleError) throw roleError;
+
+      navigate(isAdmin ? "/" : "/cours", { replace: true });
     } catch (error: any) {
-      await supabase.auth.signOut({ scope: 'local' });
       toast({ title: "Erreur", description: error.message || "Une erreur est survenue", variant: "destructive" });
     } finally {
       setLoading(false);
