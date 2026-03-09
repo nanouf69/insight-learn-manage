@@ -254,6 +254,8 @@ const Index = () => {
   if (!user || isAdmin === false) {
     return null;
   }
+
+  return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
       <Sidebar 
