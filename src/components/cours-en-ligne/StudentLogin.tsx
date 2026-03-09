@@ -234,6 +234,7 @@ const StudentLogin = ({ onLogin }: StudentLoginProps) => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="current-password"
+                  className="pr-10"
                 />
                 <button
                   type="button"
