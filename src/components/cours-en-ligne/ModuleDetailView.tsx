@@ -1792,6 +1792,8 @@ const ContentCard = ({
 };
 
 const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, onModuleCompleted, apprenantType, apprenantInfo }: ModuleDetailViewProps) => {
+  console.log("[ModuleDetailView] Rendering module:", module.id, module.nom, "studentOnly:", studentOnly, "apprenantType:", apprenantType);
+
   const createInitialSlidesByKey = (): Record<string, Slide[]> => ({
     "t3p-partie1": [...T3P_PARTIE1_SLIDES],
     "t3p-partie2": [...T3P_PARTIE2_SLIDES],
@@ -1800,7 +1802,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     "gestion-partie3": [...GESTION_PARTIE3_SLIDES],
   });
 
-  const [moduleData, setModuleData] = useState<ModuleData>(() => getInitialModuleData(module, apprenantType, studentOnly));
+  let initialModuleData: ModuleData;
+  try {
+    initialModuleData = getInitialModuleData(module, apprenantType, studentOnly);
+    console.log("[ModuleDetailView] Module data loaded:", { id: initialModuleData.id, coursCount: initialModuleData.cours.length, exercicesCount: initialModuleData.exercices.length });
+  } catch (err) {
+    console.error("[ModuleDetailView] CRASH in getInitialModuleData:", err);
+    initialModuleData = { id: module.id, nom: module.nom, description: "", cours: [], exercices: [] };
+  }
+
+  const [moduleData, setModuleData] = useState<ModuleData>(() => initialModuleData);
   const [editingCoursId, setEditingCoursId] = useState<number | null>(null);
   const [slidesByKey, setSlidesByKey] = useState<Record<string, Slide[]>>(() => createInitialSlidesByKey());
   const [deletedCours, setDeletedCours] = useState<ContentItem[]>([]);
