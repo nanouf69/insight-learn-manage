@@ -90,13 +90,13 @@ export function Sidebar({ currentPage, onNavigate, collapsed = false, onToggleCo
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {menuItems.map((item) => (
           <button
             key={item.id}
             onClick={() => onNavigate(item.id)}
             className={cn(
-              "nav-item w-full",
+              "nav-item w-full min-h-[44px]",
               currentPage === item.id && "nav-item-active"
             )}
           >
