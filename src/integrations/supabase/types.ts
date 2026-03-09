@@ -1563,6 +1563,50 @@ export type Database = {
         }
         Relationships: []
       }
+      quiz_questions_overrides: {
+        Row: {
+          choix: Json
+          created_at: string
+          enonce: string
+          fournisseur_id: string
+          id: string
+          question_id: number
+          quiz_id: string
+          section_id: number
+          updated_at: string
+        }
+        Insert: {
+          choix?: Json
+          created_at?: string
+          enonce: string
+          fournisseur_id: string
+          id?: string
+          question_id: number
+          quiz_id: string
+          section_id: number
+          updated_at?: string
+        }
+        Update: {
+          choix?: Json
+          created_at?: string
+          enonce?: string
+          fournisseur_id?: string
+          id?: string
+          question_id?: number
+          quiz_id?: string
+          section_id?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_questions_overrides_fournisseur_id_fkey"
+            columns: ["fournisseur_id"]
+            isOneToOne: false
+            referencedRelation: "fournisseurs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       releves_bancaires: {
         Row: {
           banque: string
