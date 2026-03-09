@@ -25,7 +25,7 @@ export default function Login() {
       // Sécurité: on vide toute session locale existante avant une nouvelle connexion
       await supabase.auth.signOut({ scope: 'local' });
 
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
