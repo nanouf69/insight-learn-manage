@@ -1193,9 +1193,11 @@ export default function FournisseurPortal() {
                         </div>
                       </a>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
-                      <span className="text-amber-500">📝</span> Quiz 10 questions disponible dans le module
-                    </p>
+                    <FormateurQuizViewer
+                      sections={EQUIPEMENTS_TAXI_DATA.exercices}
+                      title="Quiz — Équipements TAXI"
+                      icon="🚕"
+                    />
                   </CardContent>
                 </Card>
 
