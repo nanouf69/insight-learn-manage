@@ -1295,10 +1295,12 @@ export default function FournisseurPortal() {
                         </div>
                       </a>
                     </div>
-                    <FormateurQuizViewer
+                    <EditableQuizViewer
                       sections={CAS_PRATIQUE_TAXI_EXERCICES}
                       title="Quiz — Cas Pratique TAXI"
                       icon="📋"
+                      quizId="cas-pratique-taxi"
+                      fournisseurId={fournisseur?.id || ""}
                     />
                   </CardContent>
                 </Card>
