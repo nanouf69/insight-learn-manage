@@ -3580,19 +3580,43 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       </div>
     );
 
-    const renderProgressBar = () => (
-      <div className="pt-4 mt-3 border-t">
-        <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
-          <span className="font-medium">Avancement</span>
-          <span className="font-bold text-primary text-base">{progressPercent}%</span>
+    const renderProgressBar = () => {
+      const coursPages = pages.map((p, i) => ({ p, i })).filter(({ p }) => p.type === "cours");
+      const quizPages = pages.map((p, i) => ({ p, i })).filter(({ p }) => p.type === "exercice-single" && p.exercice?.questions?.length > 0);
+      const coursCompleted = coursPages.filter(({ i }) => completedPages.has(i)).length;
+      const quizCompleted = quizPages.filter(({ i }) => completedPages.has(i)).length;
+
+      return (
+        <div className="pt-4 mt-3 border-t space-y-2">
+          <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
+            <span className="font-medium">Avancement</span>
+            <span className="font-bold text-primary text-base">{progressPercent}%</span>
+          </div>
+          <div className="relative h-3 w-full overflow-hidden rounded-full bg-secondary">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500 ease-out"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+          {(coursPages.length > 0 || quizPages.length > 0) && (
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mt-1">
+              {coursPages.length > 0 && (
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2 h-2 rounded-full bg-sky-500" />
+                  {coursCompleted}/{coursPages.length} cours
+                </span>
+              )}
+              {quizPages.length > 0 && (
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2 h-2 rounded-full bg-amber-500" />
+                  {quizCompleted}/{quizPages.length} quiz
+                </span>
+              )}
+            </div>
+          )}
         </div>
-        <div className="relative h-3 w-full overflow-hidden rounded-full bg-secondary">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500 ease-out"
-            style={{ width: `${progressPercent}%` }}
-          />
-        </div>
-      </div>
+      );
+    };
     );
 
     return (
