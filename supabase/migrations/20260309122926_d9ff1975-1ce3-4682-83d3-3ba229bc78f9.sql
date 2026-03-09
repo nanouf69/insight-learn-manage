@@ -1,0 +1,1 @@
+ALTER TABLE public.apprenants ADD COLUMN mot_de_passe_cma text;
