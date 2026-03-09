@@ -25,24 +25,49 @@ export default function PptxViewerComparison({
   onLastPageReached,
 }: PptxViewerComparisonProps) {
   const [mode, setMode] = useState<"google" | "google-zoom" | "ms-office" | "images" | "pdf">(
-    pdfUrl ? "pdf" : "google-zoom"
+    pdfUrl ? "pdf" : "google"
   );
-  const [zoomLevel, setZoomLevel] = useState(1.25);
+  const [zoomLevel, setZoomLevel] = useState(1.2);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isCompactViewport, setIsCompactViewport] = useState(false);
 
   const hasImages = imageUrls && imageUrls.length > 0;
 
   // Students are restricted to non-downloadable viewers
   const isStudentRestricted = studentOnly;
   const effectiveMode: "google" | "google-zoom" | "ms-office" | "images" | "pdf" | "blocked" = isStudentRestricted
-    ? (pdfUrl ? "pdf" : hasImages ? "images" : "blocked")
+    ? (pdfUrl ? "pdf" : hasImages ? "images" : "google")
     : mode;
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia("(max-width: 1024px)");
+    const update = (event: MediaQueryListEvent | MediaQueryList) => setIsCompactViewport(event.matches);
+    update(mql);
+    mql.addEventListener("change", update as any);
+    return () => mql.removeEventListener("change", update as any);
+  }, []);
 
   useEffect(() => {
     if (isStudentRestricted && pdfUrl) {
       setMode("pdf");
+      return;
     }
-  }, [isStudentRestricted, pdfUrl]);
+
+    if (isStudentRestricted && hasImages) {
+      setMode("images");
+      return;
+    }
+
+    if (isStudentRestricted) {
+      setMode("google");
+      return;
+    }
+
+    if (isCompactViewport && mode === "google-zoom") {
+      setMode("google");
+    }
+  }, [isStudentRestricted, pdfUrl, hasImages, isCompactViewport, mode]);
 
   useEffect(() => {
     if (!onLastPageReached || effectiveMode !== "images" || !hasImages) return;
@@ -64,6 +89,10 @@ export default function PptxViewerComparison({
       return googleViewerUrl;
     }
   }, [googleViewerUrl]);
+
+  const viewerHeightClass = isCompactViewport
+    ? "h-[72svh] min-h-[360px] max-h-[84svh]"
+    : "h-[68vh] min-h-[560px] max-h-[680px]";
 
   return (
     <div className="space-y-2">
@@ -122,7 +151,7 @@ export default function PptxViewerComparison({
             )}
           </div>
 
-          {mode === "google-zoom" && (
+          {mode === "google-zoom" && !isCompactViewport && (
             <div className="flex items-center gap-2 ml-2">
               <ZoomOut className="w-3.5 h-3.5 text-muted-foreground" />
               <Slider
@@ -147,7 +176,7 @@ export default function PptxViewerComparison({
 
         {effectiveMode === "google" && (
           <div className="border rounded-lg overflow-hidden">
-            <div className="w-full h-[68vh] min-h-[560px] max-h-[680px] max-w-[1210px] mx-auto">
+            <div className={`w-full ${viewerHeightClass} max-w-[1210px] mx-auto`}>
               <iframe
                 src={googleSingleSlideUrl}
                 className="w-full h-full border-0"
@@ -158,11 +187,10 @@ export default function PptxViewerComparison({
           </div>
         )}
 
-        {effectiveMode === "google-zoom" && (
+        {effectiveMode === "google-zoom" && !isCompactViewport && (
           <div className="border rounded-lg overflow-hidden">
             <div
-              className="w-full h-[68vh] min-h-[560px] max-h-[680px] max-w-[1210px] mx-auto relative"
-              style={{ overflow: "hidden" }}
+              className={`w-full ${viewerHeightClass} max-w-[1210px] mx-auto relative overflow-hidden`}
             >
               <iframe
                 src={googleSingleSlideUrl}
@@ -182,7 +210,7 @@ export default function PptxViewerComparison({
 
         {effectiveMode === "ms-office" && (
           <div className="border rounded-lg overflow-hidden">
-            <div className="w-full h-[68vh] min-h-[560px] max-h-[680px] max-w-[1210px] mx-auto">
+            <div className={`w-full ${viewerHeightClass} max-w-[1210px] mx-auto`}>
               <iframe
                 src={msViewerUrl}
                 className="w-full h-full border-0"
@@ -195,10 +223,7 @@ export default function PptxViewerComparison({
 
         {effectiveMode === "images" && hasImages && (
           <div className="border rounded-lg overflow-hidden bg-black/95">
-            <div
-              className="w-full flex flex-col items-center justify-center"
-              style={{ height: "68vh", minHeight: "560px", maxHeight: "680px" }}
-            >
+            <div className={`w-full ${viewerHeightClass} flex flex-col items-center justify-center`}>
               <img
                 src={imageUrls[currentSlide]}
                 alt={`Slide ${currentSlide + 1}`}
