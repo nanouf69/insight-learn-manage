@@ -551,6 +551,35 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
           </p>
         </div>
 
+        {/* Bouton télécharger le document de bienvenue */}
+        <div className="mb-4 p-4 border border-blue-200 rounded-lg bg-blue-50 flex items-center justify-between">
+          <div>
+            <h4 className="font-medium text-sm">Document de bienvenue</h4>
+            <p className="text-xs text-muted-foreground">Récapitulatif d'inscription généré depuis les données de l'apprenant</p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              generateRecapitulatifPDF({
+                nom: apprenant.nom || '',
+                prenom: apprenant.prenom || '',
+                email: apprenant.email || '',
+                telephone: apprenant.telephone || '',
+                numeroDossier: apprenant.numero_dossier_cma || '',
+                typeExamen: apprenant.type_examen || '',
+                dateExamen: apprenant.date_examen_theorique || '',
+                lieuExamen: apprenant.lieu_examen || '',
+                b2Vierge: apprenant.b2_vierge || false,
+              });
+              toast.success("Document de bienvenue téléchargé");
+            }}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Télécharger le PDF
+          </Button>
+        </div>
+
         {/* Documents list */}
         <div className="space-y-3">
           {documents.map((doc) => (
