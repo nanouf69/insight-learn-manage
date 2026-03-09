@@ -105,6 +105,35 @@ export default function ProjetProfessionnelForm({
   // Validation state: set of field keys that are invalid
   const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
 
+  // Auto-save
+  const { queueSave, triggerSave: autoTrigger, StatusIndicator } = useAutoSave({
+    apprenantId,
+    typeDocument: "projet-professionnel",
+    titre: `Questionnaire Projet Professionnel ${formType}`,
+    enabled: !!apprenantId && !completed,
+  });
+
+  const collectData = () => ({
+    formType, dateEntretien, conseiller, lieuNaissance,
+    statutActuel, metierActuel, anciennete, niveauFormation,
+    motivations, dejaTransport, detailTransport, permis3ans, datePermis,
+    modeExercice, plateformes, diffTaxiVtc, modeExerciceTaxi,
+    demandeADS, zoneExercice, zoneAutre, activitesCompl,
+    demarchesEntreprise, craintes, commentConnu, consulteProgram,
+    saitExamen, connaitZone, conduiteUrbaine, connaitSites,
+    besoinsAdaptation, accesOrdinateur, precisionsBesoins,
+    coherenceProjet, niveauMotivation, observations, signatureAdmin,
+  });
+
+  useEffect(() => {
+    queueSave(collectData());
+  }, [dateEntretien, conseiller, lieuNaissance, statutActuel, metierActuel, anciennete,
+    niveauFormation, motivations, dejaTransport, detailTransport, permis3ans, datePermis,
+    modeExercice, diffTaxiVtc, modeExerciceTaxi, demandeADS, zoneExercice, zoneAutre,
+    activitesCompl, demarchesEntreprise, craintes, commentConnu, consulteProgram,
+    saitExamen, connaitZone, conduiteUrbaine, connaitSites, besoinsAdaptation,
+    accesOrdinateur, precisionsBesoins, coherenceProjet, niveauMotivation, observations, signatureAdmin]);
+
   // Refs for scrolling to first invalid field
   const fieldRefs: Record<string, React.RefObject<HTMLDivElement>> = {
     motivations: useRef<HTMLDivElement>(null!),
