@@ -27,6 +27,11 @@ import { REGLEMENTATION_NATIONALE_EXERCICES, REGLEMENTATION_LOCALE_EXERCICES } f
 import { CONNAISSANCES_VILLE_QUIZZES } from "@/components/cours-en-ligne/exercices/connaissances-ville-quiz-data";
 import { EQUIPEMENTS_TAXI_DATA } from "@/components/cours-en-ligne/equipements-taxi-data";
 import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "@/components/cours-en-ligne/controle-connaissances-taxi-data";
+import { T3P_EXERCICES } from "@/components/cours-en-ligne/exercices/t3p-exercices-data";
+import { GESTION_EXERCICES } from "@/components/cours-en-ligne/exercices/gestion-exercices-data";
+import { SECURITE_ROUTIERE_EXERCICES } from "@/components/cours-en-ligne/exercices/securite-routiere-exercices-data";
+import { FRANCAIS_EXERCICES } from "@/components/cours-en-ligne/exercices/francais-exercices-data";
+import { ANGLAIS_EXERCICES } from "@/components/cours-en-ligne/exercices/anglais-exercices-data";
 import { NotesFraisTab } from "@/components/comptabilite/NotesFraisTab";
 
 // Dates formations (same as ApprenantForm)
@@ -1121,6 +1126,154 @@ export default function FournisseurPortal() {
                       sections={REGLEMENTATION_LOCALE_EXERCICES}
                       title="Quiz — Réglementation Locale"
                       icon="📝"
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* T3P */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <span className="text-lg">🚗</span> T3P — Transport Public Particulier de Personnes
+                    </CardTitle>
+                    <CardDescription>Réglementation générale T3P (128 questions)</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                      {[1, 2].map(i => (
+                        <a key={i} href={`/cours/vtc/A_T3P_${i}.pdf`} target="_blank" rel="noopener noreferrer">
+                          <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+                            <FileText className="w-5 h-5 text-primary" />
+                            <div>
+                              <p className="font-medium text-sm">T3P — Partie {i}</p>
+                              <p className="text-xs text-muted-foreground">PDF HD</p>
+                            </div>
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                    <FormateurQuizViewer
+                      sections={T3P_EXERCICES}
+                      title="Quiz — T3P"
+                      icon="🚗"
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Gestion */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <span className="text-lg">💼</span> Gestion
+                    </CardTitle>
+                    <CardDescription>Comptabilité, formes juridiques, fiscalité</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                      {[1, 2, 3].map(i => (
+                        <a key={i} href={`/cours/vtc/B_Gestion_${i}.pdf`} target="_blank" rel="noopener noreferrer">
+                          <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+                            <FileText className="w-5 h-5 text-primary" />
+                            <div>
+                              <p className="font-medium text-sm">Gestion — Partie {i}</p>
+                              <p className="text-xs text-muted-foreground">PDF HD</p>
+                            </div>
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                    <FormateurQuizViewer
+                      sections={GESTION_EXERCICES}
+                      title="Quiz — Gestion"
+                      icon="💼"
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Sécurité Routière */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <span className="text-lg">🛡️</span> Sécurité Routière
+                    </CardTitle>
+                    <CardDescription>Signalisation, conduite, sécurité</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                      {[1, 2, 3].map(i => (
+                        <a key={i} href={`/cours/vtc/C_Securite_Routiere_${i}.pdf`} target="_blank" rel="noopener noreferrer">
+                          <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+                            <FileText className="w-5 h-5 text-primary" />
+                            <div>
+                              <p className="font-medium text-sm">Sécurité Routière — Partie {i}</p>
+                              <p className="text-xs text-muted-foreground">PDF HD</p>
+                            </div>
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                    <FormateurQuizViewer
+                      sections={SECURITE_ROUTIERE_EXERCICES}
+                      title="Quiz — Sécurité Routière"
+                      icon="🛡️"
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Français */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <span className="text-lg">🇫🇷</span> Français
+                    </CardTitle>
+                    <CardDescription>Compréhension, expression, conjugaison</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                      <a href="/cours/vtc/D_Francais_1.pdf" target="_blank" rel="noopener noreferrer">
+                        <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+                          <FileText className="w-5 h-5 text-primary" />
+                          <div>
+                            <p className="font-medium text-sm">Français — Cours</p>
+                            <p className="text-xs text-muted-foreground">PDF HD</p>
+                          </div>
+                        </div>
+                      </a>
+                    </div>
+                    <FormateurQuizViewer
+                      sections={FRANCAIS_EXERCICES}
+                      title="Quiz — Français"
+                      icon="🇫🇷"
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Anglais */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <span className="text-lg">🇬🇧</span> Anglais
+                    </CardTitle>
+                    <CardDescription>Vocabulaire professionnel, dialogues, situations</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+                      {[1, 2, 3, 4].map(i => (
+                        <a key={i} href={`/cours/vtc/E_Anglais_${i}.pdf`} target="_blank" rel="noopener noreferrer">
+                          <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+                            <FileText className="w-5 h-5 text-primary" />
+                            <div>
+                              <p className="font-medium text-sm">Anglais — Part {i}</p>
+                              <p className="text-xs text-muted-foreground">PDF HD</p>
+                            </div>
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                    <FormateurQuizViewer
+                      sections={ANGLAIS_EXERCICES}
+                      title="Quiz — Anglais"
+                      icon="🇬🇧"
                     />
                   </CardContent>
                 </Card>
