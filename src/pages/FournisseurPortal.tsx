@@ -1348,10 +1348,12 @@ export default function FournisseurPortal() {
                         </div>
                       </a>
                     </div>
-                    <FormateurQuizViewer
+                    <EditableQuizViewer
                       sections={CONTROLE_CONNAISSANCES_TAXI_DATA.exercices}
                       title="Quiz — Contrôle de connaissances"
                       icon="✅"
+                      quizId="controle-connaissances-taxi"
+                      fournisseurId={fournisseur?.id || ""}
                     />
                   </CardContent>
                 </Card>
