@@ -44,9 +44,19 @@ const EXAM_DATES = [
 ];
 
 export default function Step5() {
-  const [selectedExamId, setSelectedExamId] = useState<string>('');
+  const [selectedExamId, setSelectedExamId] = useState<string>(() => localStorage.getItem('onboarding_step5_examId') || '');
   const [isOpen, setIsOpen] = useState(false);
-  const [confirmed, setConfirmed] = useState(false);
+  const [confirmed, setConfirmed] = useState(() => localStorage.getItem('onboarding_step5_confirmed') === 'true');
+
+  const handleSelectExam = (id: string) => {
+    setSelectedExamId(id);
+    localStorage.setItem('onboarding_step5_examId', id);
+  };
+
+  const handleConfirm = (val: boolean) => {
+    setConfirmed(val);
+    localStorage.setItem('onboarding_step5_confirmed', String(val));
+  };
 
   // Filtrer les 2 premières dates non dépassées
   const availableExams = useMemo(() => {
