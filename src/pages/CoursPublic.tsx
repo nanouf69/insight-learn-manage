@@ -524,6 +524,7 @@ const ChangePasswordDialog = () => {
 };
 
 const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
+  const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(!embedded);
   const [apprenantLoading, setApprenantLoading] = useState(false);
@@ -574,6 +575,17 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
     setApprenantLoading(true);
     const fetchApprenant = async () => {
+      const { data: isAdmin, error: roleError } = await supabase.rpc("has_role", {
+        _user_id: user.id,
+        _role: "admin",
+      });
+
+      if (!roleError && isAdmin === true) {
+        navigate("/", { replace: true });
+        setApprenantLoading(false);
+        return;
+      }
+
       const { data } = await supabase
         .from("apprenants")
         .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, modules_autorises, email, telephone, adresse, code_postal, ville, date_naissance")
@@ -593,7 +605,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       setApprenantLoading(false);
     };
     fetchApprenant();
-  }, [user, embedded]);
+  }, [user, embedded, navigate]);
 
   // Use apprenantOverride when provided (admin preview of specific student)
   useEffect(() => {
