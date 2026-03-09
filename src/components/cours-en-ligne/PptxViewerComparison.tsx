@@ -91,7 +91,7 @@ export default function PptxViewerComparison({
   }, [googleViewerUrl]);
 
   const viewerHeightClass = isCompactViewport
-    ? "h-[72svh] min-h-[360px] max-h-[84svh]"
+    ? "h-[72vh] min-h-[360px] max-h-[84vh]"
     : "h-[68vh] min-h-[560px] max-h-[680px]";
 
   return (
