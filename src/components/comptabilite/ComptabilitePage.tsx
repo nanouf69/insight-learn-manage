@@ -1105,6 +1105,7 @@ export function ComptabilitePage() {
                   <Select value={releveForm.banque} onValueChange={v => setReleveForm(f => ({ ...f, banque: v }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="Revolut Bank UAB">Revolut Bank UAB</SelectItem>
                       <SelectItem value="BNP Paribas">BNP Paribas</SelectItem>
                       <SelectItem value="Société Générale">Société Générale</SelectItem>
                       <SelectItem value="Crédit Agricole">Crédit Agricole</SelectItem>
