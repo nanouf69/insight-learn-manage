@@ -317,11 +317,11 @@ const inferSubjectNumberFromExerciseTitle = (title: string): number | null => {
   return null;
 };
 
-const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number, timeoutMessage: string): Promise<T> => {
+const withTimeout = <T,>(promiseLike: PromiseLike<T>, timeoutMs: number, timeoutMessage: string): Promise<T> => {
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
 
-    promise
+    Promise.resolve(promiseLike)
       .then((value) => {
         clearTimeout(timer);
         resolve(value);
