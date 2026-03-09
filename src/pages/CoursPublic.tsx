@@ -537,6 +537,22 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [moduleScores, setModuleScores] = useState<Record<number, { score_obtenu: number | null; score_max: number | null }>>({});
   const [moduleCompletionsForNotes, setModuleCompletionsForNotes] = useState<Array<{ id: string; module_id: number; score_obtenu: number | null; score_max: number | null; completed_at: string; details: any }>>([]);
 
+  // Tracking connexion élève (only for real student sessions, not admin preview)
+  const { trackModuleActivity } = useConnexionTracking({
+    apprenantId: !embedded && apprenant?.id ? apprenant.id : null,
+    userId: user?.id || null,
+    enabled: !embedded && !!user && !!apprenant?.id,
+  });
+
+  // Inactivity alert after 2h
+  const [showInactivityModal, setShowInactivityModal] = useState(false);
+  const handleInactive = useCallback(() => {
+    setShowInactivityModal(true);
+  }, []);
+  useInactivityAlert({
+    enabled: !embedded && !!user && !!apprenant?.id,
+    onInactive: handleInactive,
+  });
 
   // Fetch apprenant info when user is logged in
   const fetchAttemptRef = useRef(0);
