@@ -53,14 +53,11 @@ const entrepriseEmettrice = {
   rcs: "823461561",
   tvaIntra: "FR44823461561",
   prefectures: "69-18-001 et 69-16-15",
-  banque: "BNP PARIBAS",
-  iban: "FR76 3000 4014 1800 0101 2475 357",
-  bic: "BNPAFRPPXXX",
-  codeBanque: "30004",
-  codeGuichet: "01418",
-  numeroCompte: "0001024753",
-  cleRib: "57",
-  agence: "LYON-MONTCHAT"
+  banque: "Revolut Bank UAB",
+  iban: "FR76 2823 3000 0185 7527 9099 426",
+  bic: "REVOFRP2",
+  adresseBanque: "10 avenue Kléber, 75116, Paris, France",
+  bicIntermediaire: "CHASDEFX"
 };
 
 interface ApprenantItem {
