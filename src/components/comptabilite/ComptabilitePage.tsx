@@ -131,7 +131,7 @@ export function ComptabilitePage() {
   const [relevesLoading, setRelevesLoading] = useState(false);
   const [uploadingReleve, setUploadingReleve] = useState(false);
   const [dragOver, setDragOver] = useState(false);
-  const [releveForm, setReleveForm] = useState({ mois_annee: format(new Date(), "yyyy-MM"), banque: "BNP Paribas", notes: "" });
+  const [releveForm, setReleveForm] = useState({ mois_annee: format(new Date(), "yyyy-MM"), banque: "Revolut Bank UAB", notes: "" });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchFournisseurFactures = async () => {
