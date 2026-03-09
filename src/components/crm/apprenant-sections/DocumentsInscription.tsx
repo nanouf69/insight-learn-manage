@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { FileCheck, Upload, CheckCircle2, XCircle, AlertCircle, Loader2, Trash2, Eye, Ban, Plus, ScanSearch, CalendarDays, AlertTriangle, Check } from "lucide-react";
+import { FileCheck, Upload, CheckCircle2, XCircle, AlertCircle, Loader2, Trash2, Eye, Ban, Plus, ScanSearch, CalendarDays, AlertTriangle, Check, Download } from "lucide-react";
+import { generateRecapitulatifPDF } from "@/lib/pdf/recapitulatif-inscription";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -548,6 +549,35 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
           <p className="text-xs text-muted-foreground mt-3">
             📎 Formats acceptés : {ACCEPTED_FORMATS_DISPLAY} • Max {MAX_FILE_SIZE_MB}Mo par fichier
           </p>
+        </div>
+
+        {/* Bouton télécharger le document de bienvenue */}
+        <div className="mb-4 p-4 border border-blue-200 rounded-lg bg-blue-50 flex items-center justify-between">
+          <div>
+            <h4 className="font-medium text-sm">Document de bienvenue</h4>
+            <p className="text-xs text-muted-foreground">Récapitulatif d'inscription généré depuis les données de l'apprenant</p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              generateRecapitulatifPDF({
+                nom: apprenant.nom || '',
+                prenom: apprenant.prenom || '',
+                email: apprenant.email || '',
+                telephone: apprenant.telephone || '',
+                numeroDossier: apprenant.numero_dossier_cma || '',
+                typeExamen: apprenant.type_examen || '',
+                dateExamen: apprenant.date_examen_theorique || '',
+                lieuExamen: apprenant.lieu_examen || '',
+                b2Vierge: apprenant.b2_vierge || false,
+              });
+              toast.success("Document de bienvenue téléchargé");
+            }}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Télécharger le PDF
+          </Button>
         </div>
 
         {/* Documents list */}
