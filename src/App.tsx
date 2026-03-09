@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
@@ -40,44 +41,46 @@ function App() {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <Index />
-                  </ProtectedRoute>
-                }
-              />
-              
-              {/* Onboarding routes - public */}
-              <Route path="/bienvenue" element={<OnboardingWelcome />} />
-              <Route path="/bienvenue/etape-1" element={<Step1 />} />
-              <Route path="/bienvenue/etape-2" element={<Step2 />} />
-              <Route path="/bienvenue/etape-3" element={<Step3 />} />
-              <Route path="/bienvenue/etape-4" element={<Step4 />} />
-              <Route path="/bienvenue/etape-5" element={<Step5 />} />
-              <Route path="/bienvenue/etape-6" element={<Step6 />} />
-              <Route path="/bienvenue/etape-7" element={<Step7 />} />
-              <Route path="/bienvenue/etape-8" element={<Step8 />} />
-              <Route path="/bienvenue/etape-9" element={<Step9 />} />
-              <Route path="/bienvenue/etape-10" element={<Step10 />} />
-              <Route path="/bienvenue/etape-11" element={<Step11 />} />
-              <Route path="/bienvenue/etape-12" element={<Step12 />} />
-              
-              {/* Reservation pratique - public */}
-              <Route path="/reservation-pratique" element={<ReservationPratique />} />
-              <Route path="/inscription-formation-continue" element={<InscriptionFormationContinue />} />
-              <Route path="/cours" element={<CoursPublic />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              
-              {/* Fournisseur portal - public */}
-              <Route path="/fournisseur/:token" element={<FournisseurPortal />} />
-              
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <ErrorBoundary>
+              <Routes>
+                <Route path="/login" element={<ErrorBoundary><Login /></ErrorBoundary>} />
+                <Route
+                  path="/"
+                  element={
+                    <ProtectedRoute>
+                      <ErrorBoundary><Index /></ErrorBoundary>
+                    </ProtectedRoute>
+                  }
+                />
+                
+                {/* Onboarding routes - public */}
+                <Route path="/bienvenue" element={<ErrorBoundary><OnboardingWelcome /></ErrorBoundary>} />
+                <Route path="/bienvenue/etape-1" element={<ErrorBoundary><Step1 /></ErrorBoundary>} />
+                <Route path="/bienvenue/etape-2" element={<ErrorBoundary><Step2 /></ErrorBoundary>} />
+                <Route path="/bienvenue/etape-3" element={<ErrorBoundary><Step3 /></ErrorBoundary>} />
+                <Route path="/bienvenue/etape-4" element={<ErrorBoundary><Step4 /></ErrorBoundary>} />
+                <Route path="/bienvenue/etape-5" element={<ErrorBoundary><Step5 /></ErrorBoundary>} />
+                <Route path="/bienvenue/etape-6" element={<ErrorBoundary><Step6 /></ErrorBoundary>} />
+                <Route path="/bienvenue/etape-7" element={<ErrorBoundary><Step7 /></ErrorBoundary>} />
+                <Route path="/bienvenue/etape-8" element={<ErrorBoundary><Step8 /></ErrorBoundary>} />
+                <Route path="/bienvenue/etape-9" element={<ErrorBoundary><Step9 /></ErrorBoundary>} />
+                <Route path="/bienvenue/etape-10" element={<ErrorBoundary><Step10 /></ErrorBoundary>} />
+                <Route path="/bienvenue/etape-11" element={<ErrorBoundary><Step11 /></ErrorBoundary>} />
+                <Route path="/bienvenue/etape-12" element={<ErrorBoundary><Step12 /></ErrorBoundary>} />
+                
+                {/* Reservation pratique - public */}
+                <Route path="/reservation-pratique" element={<ErrorBoundary><ReservationPratique /></ErrorBoundary>} />
+                <Route path="/inscription-formation-continue" element={<ErrorBoundary><InscriptionFormationContinue /></ErrorBoundary>} />
+                <Route path="/cours" element={<ErrorBoundary><CoursPublic /></ErrorBoundary>} />
+                <Route path="/reset-password" element={<ErrorBoundary><ResetPassword /></ErrorBoundary>} />
+                
+                {/* Fournisseur portal - public */}
+                <Route path="/fournisseur/:token" element={<ErrorBoundary><FournisseurPortal /></ErrorBoundary>} />
+                
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </ErrorBoundary>
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>

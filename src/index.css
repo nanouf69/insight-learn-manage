@@ -111,12 +111,22 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Ensure touch targets are at least 44px on mobile */
+  @media (max-width: 767px) {
+    button, a, [role="button"], input[type="submit"], input[type="button"] {
+      min-height: 44px;
+    }
   }
 }
 
 @layer components {
   .stat-card {
-    @apply bg-card rounded-xl p-6 shadow-[var(--shadow-card)] border border-border/50 transition-all duration-200 hover:shadow-[var(--shadow-md)];
+    @apply bg-card rounded-xl p-4 sm:p-6 shadow-[var(--shadow-card)] border border-border/50 transition-all duration-200 hover:shadow-[var(--shadow-md)];
   }
 
   .nav-item {
@@ -130,6 +140,13 @@
   .table-row-hover {
     @apply hover:bg-muted/50 transition-colors duration-150;
   }
+
+  /* Responsive table wrapper */
+  .table-responsive {
+    @apply w-full overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .badge-success {
     @apply px-2.5 py-1 rounded-full text-xs font-medium;
     background-color: hsl(var(--success) / 0.1);
@@ -151,6 +168,7 @@
   .gradient-text {
     @apply bg-clip-text text-transparent;
     background-image: var(--gradient-primary);
+    -webkit-background-clip: text;
   }
 }
 
