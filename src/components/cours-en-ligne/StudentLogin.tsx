@@ -64,16 +64,12 @@ const StudentLogin = ({ onLogin }: StudentLoginProps) => {
     }
     setLoading(true);
     try {
-      // Sécurité: purge session locale avant de vérifier les identifiants
-      await supabase.auth.signOut({ scope: "local" });
-
       // First sign in with current credentials
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
       if (signInError) {
-        await supabase.auth.signOut({ scope: "local" });
         toast({ title: "Erreur", description: "Email ou mot de passe actuel incorrect", variant: "destructive" });
         setLoading(false);
         return;
