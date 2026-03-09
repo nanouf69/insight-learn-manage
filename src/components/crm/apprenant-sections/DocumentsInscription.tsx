@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { FileCheck, Upload, CheckCircle2, XCircle, AlertCircle, Loader2, Trash2, Eye, Ban, Plus, ScanSearch, CalendarDays, AlertTriangle, Check } from "lucide-react";
+import { FileCheck, Upload, CheckCircle2, XCircle, AlertCircle, Loader2, Trash2, Eye, Ban, Plus, ScanSearch, CalendarDays, AlertTriangle, Check, Download } from "lucide-react";
+import { generateRecapitulatifPDF } from "@/lib/pdf/recapitulatif-inscription";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
