@@ -60,6 +60,7 @@ const Index = () => {
   const [currentPage, setCurrentPage] = useState("dashboard");
   const [pageHistory, setPageHistory] = useState<string[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [initialApprenantId, setInitialApprenantId] = useState<string | null>(null);
   const [totalEntrees, setTotalEntrees] = useState<number>(0);
   const [totalSorties, setTotalSorties] = useState<number>(0);
