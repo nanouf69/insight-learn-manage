@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Loader2, ArrowLeft, KeyRound } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,59 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'login' | 'forgot'>('login');
   const [forgotEmail, setForgotEmail] = useState('');
+  const redirectingRef = useRef(false);
+  const navigate = useNavigate();
   const { toast } = useToast();
+
+  const redirectByRole = useCallback(async (userId: string) => {
+    if (redirectingRef.current) return;
+
+    redirectingRef.current = true;
+    setLoading(true);
+
+    const { data: isAdmin, error: roleError } = await supabase.rpc('has_role', {
+      _user_id: userId,
+      _role: 'admin',
+    });
+
+    if (roleError) {
+      redirectingRef.current = false;
+      setLoading(false);
+      throw roleError;
+    }
+
+    navigate(isAdmin ? '/' : '/cours', { replace: true });
+  }, [navigate]);
+
+  useEffect(() => {
+    let active = true;
+
+    const checkExistingSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!active || !session?.user) return;
+      try {
+        await redirectByRole(session.user.id);
+      } catch (error: any) {
+        if (!active) return;
+        toast({ title: 'Erreur', description: error.message || 'Impossible de rediriger après connexion', variant: 'destructive' });
+      }
+    };
+
+    checkExistingSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!active || !session?.user) return;
+      redirectByRole(session.user.id).catch((error: any) => {
+        if (!active) return;
+        toast({ title: 'Erreur', description: error.message || 'Impossible de rediriger après connexion', variant: 'destructive' });
+      });
+    });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, [redirectByRole, toast]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,19 +78,13 @@ export default function Login() {
       if (error) throw error;
 
       const userId = data.user?.id;
-      if (!userId) throw new Error("Session utilisateur introuvable");
+      if (!userId) throw new Error('Session utilisateur introuvable');
 
-      const { data: isAdmin, error: roleError } = await supabase.rpc("has_role", {
-        _user_id: userId,
-        _role: "admin",
-      });
-      if (roleError) throw roleError;
-
-      window.location.replace(isAdmin ? "/" : "/cours");
+      await redirectByRole(userId);
     } catch (error: any) {
-      toast({ title: "Erreur", description: error.message || "Une erreur est survenue", variant: "destructive" });
-    } finally {
+      redirectingRef.current = false;
       setLoading(false);
+      toast({ title: 'Erreur', description: error.message || 'Une erreur est survenue', variant: 'destructive' });
     }
   };
 
