@@ -1153,10 +1153,12 @@ export default function FournisseurPortal() {
                         </div>
                       </a>
                     </div>
-                    <FormateurQuizViewer
+                    <EditableQuizViewer
                       sections={FRANCAIS_EXERCICES}
                       title="Quiz — Français"
                       icon="🇫🇷"
+                      quizId="francais"
+                      fournisseurId={fournisseur?.id || ""}
                     />
                   </CardContent>
                 </Card>
