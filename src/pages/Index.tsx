@@ -260,15 +260,42 @@ const Index = () => {
     return null;
   }
 
+  const handleMobileNavigate = (page: string) => {
+    handleNavigate(page);
+    setMobileMenuOpen(false);
+  };
+
   return (
     <div className="flex h-screen bg-background">
-      {/* Sidebar */}
-      <Sidebar 
-        currentPage={currentPage}
-        onNavigate={handleNavigate}
-        collapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-      />
+      {/* Mobile hamburger button */}
+      <button
+        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        className="fixed top-3 left-3 z-50 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-primary text-primary-foreground md:hidden shadow-lg"
+        aria-label="Menu"
+      >
+        {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+      </button>
+
+      {/* Mobile overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar - desktop always visible, mobile as overlay */}
+      <div className={`
+        fixed inset-y-0 left-0 z-40 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0
+        ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        <Sidebar 
+          currentPage={currentPage}
+          onNavigate={handleMobileNavigate}
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        />
+      </div>
 
       {/* Main Content */}
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
@@ -281,8 +308,10 @@ const Index = () => {
           onGoBack={handleGoBack}
         />
         
-        <main className="flex-1 overflow-auto p-6">
-          {renderContent()}
+        <main className="flex-1 overflow-auto p-3 sm:p-6">
+          <ErrorBoundary>
+            {renderContent()}
+          </ErrorBoundary>
         </main>
       </div>
     </div>
