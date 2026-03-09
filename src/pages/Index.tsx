@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -52,7 +53,9 @@ const fmt = (n: number) =>
   new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 
 const Index = () => {
-  const { profile } = useAuth();
+  const { profile, user, loading } = useAuth();
+  const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [currentPage, setCurrentPage] = useState("dashboard");
   const [pageHistory, setPageHistory] = useState<string[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -62,6 +65,39 @@ const Index = () => {
   const [fluxPeriode, setFluxPeriode] = useState<string>("");
 
   useEffect(() => {
+    let isMounted = true;
+
+    const checkAdminAccess = async () => {
+      if (!user) {
+        if (isMounted) setIsAdmin(false);
+        return;
+      }
+
+      const { data, error } = await supabase.rpc("has_role", {
+        _user_id: user.id,
+        _role: "admin",
+      });
+
+      if (!isMounted) return;
+      setIsAdmin(!error && data === true);
+    };
+
+    checkAdminAccess();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!loading && isAdmin === false) {
+      navigate("/cours", { replace: true });
+    }
+  }, [isAdmin, loading, navigate]);
+
+  useEffect(() => {
+    if (isAdmin !== true) return;
+
     const fetchFlux = async () => {
       const { data } = await supabase
         .from("transactions_bancaires")
@@ -90,8 +126,9 @@ const Index = () => {
         setFluxPeriode(min === max ? min : `${min} – ${max}`);
       }
     };
+
     fetchFlux();
-  }, []);
+  }, [isAdmin]);
 
   const handleNavigate = (page: string) => {
     if (page !== currentPage) {
@@ -208,6 +245,18 @@ const Index = () => {
   };
 
   const config = pageConfig[currentPage as keyof typeof pageConfig];
+
+  if (loading || isAdmin === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  if (!user || isAdmin === false) {
+    return null;
+  }
 
   return (
     <div className="flex h-screen bg-background">
