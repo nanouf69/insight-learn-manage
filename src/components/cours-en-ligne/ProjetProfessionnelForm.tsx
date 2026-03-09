@@ -188,6 +188,9 @@ export default function ProjetProfessionnelForm({
 
   return (
     <div className="space-y-4">
+      {/* Auto-save indicator */}
+      <div className="flex justify-end sticky top-0 z-10">
+        <StatusIndicator />
       {/* Header */}
       <Card>
         <CardContent className="p-5 text-center space-y-1">
