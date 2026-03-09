@@ -260,6 +260,14 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
       type: 'france-travail' as const,
       icon: FileText,
     },
+    {
+      id: 'progression',
+      title: "Fiche de progression e-learning",
+      description: "Suivi detaille module par module avec quiz, dates, durees et scores",
+      status: 'disponible',
+      type: 'progression' as const,
+      icon: BarChart3,
+    },
   ];
 
   return (
