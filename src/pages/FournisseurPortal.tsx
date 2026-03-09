@@ -509,10 +509,11 @@ export default function FournisseurPortal() {
             </TabsList>
           ) : fournisseur?.formateur_id ? (
   // Formateur : planning + cours + résultats + factures + documents
-            <TabsList className="grid w-full grid-cols-5 mb-6">
+            <TabsList className="grid w-full grid-cols-6 mb-6">
               <TabsTrigger value="planning" className="gap-2"><CalendarDays className="w-4 h-4" />Mon planning</TabsTrigger>
               <TabsTrigger value="cours-formateur" className="gap-2"><BookOpen className="w-4 h-4" />Cours</TabsTrigger>
               <TabsTrigger value="resultats-formateur" className="gap-2"><GraduationCap className="w-4 h-4" />Résultats</TabsTrigger>
+              <TabsTrigger value="vue-apprenant" className="gap-2"><Eye className="w-4 h-4" />Vue apprenant</TabsTrigger>
               <TabsTrigger value="factures" className="gap-2"><Receipt className="w-4 h-4" />Mes factures</TabsTrigger>
               <TabsTrigger value="shared-docs" className="gap-2"><FileText className="w-4 h-4" />Documents</TabsTrigger>
             </TabsList>
