@@ -1385,13 +1385,15 @@ export default function FournisseurPortal() {
                         </div>
                       </a>
                     </div>
-                    <FormateurQuizViewer
+                    <EditableQuizViewer
                       sections={[
                         ...REGLEMENTATION_NATIONALE_EXERCICES.map(e => ({ ...e, titre: `Bilan ${e.titre}` })),
                         ...REGLEMENTATION_LOCALE_EXERCICES.map(e => ({ ...e, titre: `Bilan ${e.titre}` })),
                       ]}
                       title="Quiz — Bilan Exercices TA"
                       icon="📊"
+                      quizId="bilan-exercices-ta"
+                      fournisseurId={fournisseur?.id || ""}
                     />
                   </CardContent>
                 </Card>
