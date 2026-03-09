@@ -190,6 +190,13 @@ export function DocumentUploadCard({
       
       // Save record in documents_inscription table
       if (apprenantId) {
+        // Delete any existing record for this doc type first
+        await supabase
+          .from('documents_inscription')
+          .delete()
+          .eq('apprenant_id', apprenantId)
+          .eq('type_document', docId);
+
         const { error: dbError } = await supabase
           .from('documents_inscription')
           .insert({
@@ -203,11 +210,18 @@ export function DocumentUploadCard({
 
         if (dbError) {
           console.error('DB insert error:', dbError);
-          // Don't block the flow, file is already uploaded
         }
       }
 
-      // Mark as valid immediately (no AI analysis)
+      // Persist to localStorage as fallback
+      localStorage.setItem(`onboarding_doc_${docId}`, JSON.stringify({
+        status: 'valid',
+        fileName: file.name,
+        fileUrl: publicUrl,
+        filePath,
+      }));
+
+      // Mark as valid immediately
       setStatus('valid');
       onStatusChange?.(docId, 'valid');
     } catch (error: any) {
