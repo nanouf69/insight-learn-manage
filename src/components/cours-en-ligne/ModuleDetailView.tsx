@@ -3097,12 +3097,86 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         return selected && correct && selected === correct.lettre;
       }).length;
 
+      // File-only exercise (no questions) — show links and auto-complete
+      if (exoTotalQ === 0 && exo.fichiers && exo.fichiers.length > 0) {
+        return (
+          <div className="space-y-4">
+            <Card>
+              <CardContent className="p-6 space-y-4">
+                <h3 className="text-lg font-bold">📝 {exo.titre}</h3>
+                {exo.sousTitre && <p className="text-sm text-muted-foreground">{exo.sousTitre}</p>}
+                <div className="flex flex-col gap-3 mt-4">
+                  {exo.fichiers.map((f, i) => {
+                    const isExternal = f.url.startsWith("http");
+                    const resolvedUrl = isExternal ? f.url : resolvePublicFileUrl(f.url);
+                    return (
+                      <a
+                        key={i}
+                        href={resolvedUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-3 rounded-lg border-2 border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary font-medium transition-all"
+                      >
+                        {isExternal ? <Maximize className="w-4 h-4" /> : <Download className="w-4 h-4" />}
+                        {f.nom}
+                      </a>
+                    );
+                  })}
+                </div>
+                <div className="flex justify-center gap-4 pt-4">
+                  {!completedPages.has(currentPage) && (
+                    <Button
+                      size="lg"
+                      onClick={() => {
+                        markPageCompleted(currentPage);
+                        toast.success("✅ Contenu consulté !");
+                      }}
+                      className="gap-2"
+                    >
+                      <CheckCircle2 className="w-5 h-5" /> J'ai consulté ce contenu
+                    </Button>
+                  )}
+                  {completedPages.has(currentPage) && currentPage < totalPages - 1 && (
+                    <Button size="lg" className="gap-2" onClick={() => goToPage(currentPage + 1)}>
+                      Suivant ➡️
+                    </Button>
+                  )}
+                  {completedPages.has(currentPage) && currentPage === totalPages - 1 && (
+                    <Button size="lg" variant="secondary" className="gap-2" onClick={async () => {
+                      const ok = await persistModuleCompletion();
+                      if (ok) { onBack(); toast.success("🎉 Module terminé !"); }
+                    }}>
+                      <CheckCircle2 className="w-4 h-4" /> Terminé
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+      }
+
       return (
       <div className="space-y-4">
           <Card key={exo.id}>
             <CardContent className="p-6 space-y-4">
               <h3 className="text-lg font-bold">📝 {exo.titre}</h3>
               {exo.sousTitre && <p className="text-sm text-muted-foreground">{exo.sousTitre}</p>}
+              {/* Show file links if present alongside questions */}
+              {exo.fichiers && exo.fichiers.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {exo.fichiers.map((f, i) => {
+                    const isExternal = f.url.startsWith("http");
+                    const resolvedUrl = isExternal ? f.url : resolvePublicFileUrl(f.url);
+                    return (
+                      <a key={i} href={resolvedUrl} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                        {isExternal ? <Maximize className="w-3 h-3" /> : <FileText className="w-3 h-3" />} {f.nom}
+                      </a>
+                    );
+                  })}
+                </div>
+              )}
               {exo.questions && exo.questions.map((q: any, qi: number) => {
                 const key = `${exo.id}-${q.id}`;
                 const isQrc = q.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
