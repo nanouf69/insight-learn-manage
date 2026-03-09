@@ -467,7 +467,7 @@ export function FormateurResultsTab({ token }: Props) {
                                   const isAttemptExpanded = expandedAttempt === detailsId;
 
                                   return (
-                                    <>
+                                    <Fragment key={attempt.id}>
                                       <tr key={attempt.id} className="border-b">
                                         <td className="py-2 pr-3 text-xs">{attempt.sessionLabel}</td>
                                         <td className="py-2 pr-3 text-xs max-w-[260px] truncate font-medium">
