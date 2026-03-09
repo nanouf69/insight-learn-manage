@@ -245,10 +245,21 @@ export function DocumentUploadCard({
           .remove([filePath]);
       }
 
+      // Also delete from DB if apprenant exists
+      if (apprenantId) {
+        await supabase
+          .from('documents_inscription')
+          .delete()
+          .eq('apprenant_id', apprenantId)
+          .eq('type_document', docId);
+      }
+
       setStatus('empty');
       setFileName('');
       setFileUrl('');
       setRejectionReason('');
+      localStorage.removeItem(`onboarding_doc_${docId}`);
+      onStatusChange?.(docId, 'pending');
       toast.success("Document supprimé");
     } catch (error: any) {
       toast.error("Erreur lors de la suppression");
