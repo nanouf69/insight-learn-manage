@@ -530,7 +530,7 @@ export function FormateurResultsTab({ token }: Props) {
                                           </td>
                                         </tr>
                                       )}
-                                    </>
+                                    </Fragment>
                                   );
                                 })}
                             </tbody>
