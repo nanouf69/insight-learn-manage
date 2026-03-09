@@ -320,26 +320,66 @@ function renderTestCompetences(doc: jsPDF, donnees: any, y: number, margin: numb
   return y;
 }
 
-function renderGenericDonnees(doc: jsPDF, donnees: any, y: number, margin: number, pw: number): number {
+function renderGenericDonnees(doc: jsPDF, donnees: any, y: number, margin: number, pw: number, depth: number = 0): number {
   if (!donnees || typeof donnees !== 'object') return y;
+  const SKIP_KEYS = new Set(['id', 'apprenant_id', 'user_id', 'module_id', 'apprenant', 'created_at', 'updated_at']);
+  const indent = depth * 4;
+
+  if (Array.isArray(donnees)) {
+    for (let i = 0; i < donnees.length; i++) {
+      const item = donnees[i];
+      if (item && typeof item === 'object') {
+        // If item has a 'titre' or 'label' key, use it as section header
+        const header = item.titre || item.label || item.name || null;
+        if (header) {
+          y = ensureSpace(doc, y, 12);
+          doc.setFillColor(230, 240, 250);
+          doc.rect(margin + 3 + indent, y - 3, pw - margin * 2 - 6 - indent, 8, 'F');
+          doc.setFontSize(8);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(13, 37, 64);
+          doc.text(String(header), margin + 6 + indent, y + 2);
+          y += 10;
+        }
+        // Render sub-content
+        const subEntries = Object.entries(item).filter(([k]) => !SKIP_KEYS.has(k) && k !== 'titre' && k !== 'label' && k !== 'name');
+        for (const [subKey, subVal] of subEntries) {
+          y = renderFieldDeep(doc, subKey, subVal, y, margin, pw, depth + 1);
+        }
+        y += 2;
+      } else {
+        y = ensureSpace(doc, y, 5);
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(30, 30, 30);
+        doc.text(`• ${String(item)}`, margin + 6 + indent, y);
+        y += 5;
+      }
+    }
+    return y;
+  }
+
   const entries = Object.entries(donnees);
   for (const [key, value] of entries) {
-    if (key === 'id' || key === 'apprenant_id' || key === 'user_id' || key === 'module_id') continue;
-    y = renderField(doc, key, value, y, margin, pw);
+    if (SKIP_KEYS.has(key)) continue;
+    y = renderFieldDeep(doc, key, value, y, margin, pw, depth);
   }
   return y;
 }
 
-function renderField(doc: jsPDF, key: string, value: any, y: number, margin: number, pw: number): number {
+function renderFieldDeep(doc: jsPDF, key: string, value: any, y: number, margin: number, pw: number, depth: number = 0): number {
+  const indent = depth * 4;
+
+  // Skip base64 images - just mention them
   if (typeof value === 'string' && isBase64(value)) {
     y = ensureSpace(doc, y, 7);
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(80, 80, 80);
-    doc.text(`${getLabel(key)} :`, margin + 6, y);
+    doc.text(`${getLabel(key)} :`, margin + 6 + indent, y);
     doc.setFont('helvetica', 'italic');
     doc.setTextColor(34, 150, 60);
-    doc.text('[Signature presente]', margin + 60, y);
+    doc.text('[Signature presente]', margin + 60 + indent, y);
     y += 5;
     return y;
   }
@@ -349,38 +389,122 @@ function renderField(doc: jsPDF, key: string, value: any, y: number, margin: num
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(80, 80, 80);
-    doc.text(`${getLabel(key)} :`, margin + 6, y);
+    doc.text(`${getLabel(key)} :`, margin + 6 + indent, y);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(value ? 34 : 200, value ? 150 : 60, value ? 60 : 60);
-    doc.text(value ? 'Oui' : 'Non', margin + 60, y);
+    doc.text(value ? 'Oui' : 'Non', margin + 60 + indent, y);
     y += 5;
     return y;
   }
 
   if (value === null || value === undefined || value === '') return y;
 
+  // Handle nested arrays
+  if (Array.isArray(value)) {
+    y = ensureSpace(doc, y, 10);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(13, 37, 64);
+    doc.text(`${getLabel(key)} :`, margin + 6 + indent, y);
+    y += 6;
+    y = renderGenericDonnees(doc, value, y, margin, pw, depth + 1);
+    return y;
+  }
+
+  // Handle nested objects
+  if (typeof value === 'object') {
+    y = ensureSpace(doc, y, 10);
+    doc.setFillColor(240, 245, 250);
+    doc.rect(margin + 3 + indent, y - 3, pw - margin * 2 - 6 - indent, 8, 'F');
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(13, 37, 64);
+    doc.text(getLabel(key), margin + 6 + indent, y + 2);
+    y += 10;
+    y = renderGenericDonnees(doc, value, y, margin, pw, depth + 1);
+    return y;
+  }
+
+  // Simple scalar value
   y = ensureSpace(doc, y, 7);
   doc.setFontSize(7.5);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(80, 80, 80);
   const label = `${getLabel(key)} : `;
-  doc.text(label, margin + 6, y);
+  doc.text(label, margin + 6 + indent, y);
 
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(30, 30, 30);
   const strVal = String(value);
   const labelW = doc.getTextWidth(label);
-  const remaining = pw - margin * 2 - labelW - 12;
+  const remaining = pw - margin * 2 - labelW - 12 - indent;
 
   if (remaining > 25 && doc.getTextWidth(strVal) <= remaining) {
-    doc.text(strVal, margin + 6 + labelW, y);
+    doc.text(strVal, margin + 6 + indent + labelW, y);
     y += 5;
   } else {
     y += 5;
-    const wrapped = doc.splitTextToSize(strVal, pw - margin * 2 - 14);
-    for (const line of wrapped) { y = ensureSpace(doc, y, 4.5); doc.text(line, margin + 10, y); y += 4; }
+    const wrapped = doc.splitTextToSize(strVal, pw - margin * 2 - 14 - indent);
+    for (const line of wrapped) { y = ensureSpace(doc, y, 4.5); doc.text(line, margin + 10 + indent, y); y += 4; }
     y += 1;
   }
+  return y;
+}
+
+// Keep backward-compatible renderField
+function renderField(doc: jsPDF, key: string, value: any, y: number, margin: number, pw: number): number {
+  return renderFieldDeep(doc, key, value, y, margin, pw, 0);
+}
+
+function renderCGV(doc: jsPDF, donnees: any, y: number, margin: number, pw: number): number {
+  // CGV acceptance info
+  const infoKeys = ['formationLabel', 'accepted', 'accepted_at', 'cgv_accepted', 'ri_accepted', 'signed_at'];
+  for (const key of infoKeys) {
+    if (donnees[key] !== undefined && donnees[key] !== null) {
+      y = renderFieldDeep(doc, key, donnees[key], y, margin, pw, 0);
+    }
+  }
+
+  // If there are sections content
+  if (donnees.sections && Array.isArray(donnees.sections)) {
+    for (const section of donnees.sections) {
+      y = ensureSpace(doc, y, 14);
+      doc.setFillColor(230, 240, 250);
+      doc.rect(margin + 3, y - 3, pw - margin * 2 - 6, 8, 'F');
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(13, 37, 64);
+      doc.text(section.titre || section.title || '', margin + 6, y + 2);
+      y += 10;
+
+      if (section.contenu || section.content) {
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(50, 50, 50);
+        const lines = doc.splitTextToSize(section.contenu || section.content, pw - margin * 2 - 12);
+        for (const l of lines) { y = ensureSpace(doc, y, 4.5); doc.text(l, margin + 6, y); y += 4; }
+        y += 3;
+      }
+    }
+  }
+
+  // Signature
+  if (donnees.signature && isBase64(donnees.signature)) {
+    y = ensureSpace(doc, y, 8);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(34, 150, 60);
+    doc.text('Signature numerique du stagiaire : presente', margin + 6, y);
+    y += 6;
+  }
+
+  // Render remaining keys not already handled
+  const handledKeys = new Set([...infoKeys, 'sections', 'signature', 'id', 'apprenant_id', 'user_id', 'module_id']);
+  const remaining = Object.entries(donnees).filter(([k]) => !handledKeys.has(k));
+  for (const [key, value] of remaining) {
+    y = renderFieldDeep(doc, key, value, y, margin, pw, 0);
+  }
+
   return y;
 }
 
@@ -398,6 +522,8 @@ function renderDocContent(doc: jsPDF, docLabel: string, donnees: any, y: number,
     return renderAnalyseBesoin(doc, donnees, y, margin, pw);
   if (labelLower.includes('positionnement') || labelLower.includes('competences'))
     return renderTestCompetences(doc, donnees, y, margin, pw);
+  if (labelLower.includes('cgv') || labelLower.includes('conditions') || labelLower.includes('reglement'))
+    return renderCGV(doc, donnees, y, margin, pw);
 
   return renderGenericDonnees(doc, donnees, y, margin, pw);
 }
