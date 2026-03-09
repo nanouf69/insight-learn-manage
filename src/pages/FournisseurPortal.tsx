@@ -109,6 +109,117 @@ interface FournisseurFacture {
   created_at: string;
 }
 
+interface SearchedApprenant {
+  id: string;
+  nom: string;
+  prenom: string;
+  type_apprenant: string | null;
+  formation_choisie: string | null;
+  date_debut_cours_en_ligne: string | null;
+  date_fin_cours_en_ligne: string | null;
+  modules_autorises: number[] | null;
+}
+
+const FormateurApprenantSearchPreview = () => {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<SearchedApprenant[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [selectedApprenant, setSelectedApprenant] = useState<SearchedApprenant | null>(null);
+
+  useEffect(() => {
+    if (query.trim().length < 2) { setResults([]); return; }
+    const timeout = setTimeout(async () => {
+      setSearching(true);
+      const q = query.trim();
+      const { data } = await supabase
+        .from("apprenants")
+        .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, modules_autorises")
+        .or(`nom.ilike.%${q}%,prenom.ilike.%${q}%`)
+        .order("nom")
+        .limit(10);
+      setResults((data as SearchedApprenant[]) || []);
+      setSearching(false);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [query]);
+
+  if (selectedApprenant) {
+    return (
+      <div className="border rounded-xl overflow-hidden bg-background">
+        <div className="p-3 bg-muted/50 border-b flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Eye className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-muted-foreground">
+              Vue de {selectedApprenant.prenom} {selectedApprenant.nom}
+            </span>
+            {selectedApprenant.type_apprenant && (
+              <Badge variant="secondary" className="text-xs">{selectedApprenant.type_apprenant}</Badge>
+            )}
+          </div>
+          <Button variant="ghost" size="sm" onClick={() => setSelectedApprenant(null)}>
+            <X className="w-4 h-4 mr-1" /> Fermer
+          </Button>
+        </div>
+        <CoursPublic embedded apprenantOverride={selectedApprenant} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="border rounded-xl overflow-hidden bg-background">
+        <div className="p-3 bg-muted/50 border-b flex items-center gap-2">
+          <Eye className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm font-medium text-muted-foreground">Aperçu de l'interface apprenant</span>
+        </div>
+        <div className="p-6">
+          <div className="max-w-md mx-auto space-y-4">
+            <h2 className="text-xl font-bold text-center">Rechercher un apprenant</h2>
+            <p className="text-sm text-muted-foreground text-center">Tapez le nom ou prénom pour accéder à la vue de l'apprenant</p>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher par nom ou prénom..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="pl-9"
+              />
+              {query && (
+                <button onClick={() => { setQuery(""); setResults([]); }} className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <X className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                </button>
+              )}
+            </div>
+            {searching && <p className="text-sm text-muted-foreground text-center">Recherche...</p>}
+            {results.length > 0 && (
+              <div className="border rounded-lg divide-y max-h-64 overflow-y-auto">
+                {results.map((a) => (
+                  <button
+                    key={a.id}
+                    onClick={() => setSelectedApprenant(a)}
+                    className="w-full text-left px-4 py-3 hover:bg-muted/50 transition-colors flex items-center justify-between"
+                  >
+                    <div>
+                      <span className="font-medium">{a.prenom} {a.nom}</span>
+                      {a.type_apprenant && (
+                        <Badge variant="outline" className="ml-2 text-xs">{a.type_apprenant}</Badge>
+                      )}
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                ))}
+              </div>
+            )}
+            {query.trim().length >= 2 && !searching && results.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center">Aucun apprenant trouvé</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function FournisseurPortal() {
   const { token } = useParams<{ token: string }>();
   const { toast } = useToast();
