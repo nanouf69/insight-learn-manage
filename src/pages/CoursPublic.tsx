@@ -18,10 +18,10 @@ import NotesView from "@/components/cours-en-ligne/NotesView";
 import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
 import { FORMATIONS, MODULES_DATA, expandModulesAutorises, type FormationId } from "@/components/cours-en-ligne/formations-data";
 import { supabase } from "@/integrations/supabase/client";
-import type { User } from "@supabase/supabase-js";
 import { safeDateParse } from "@/lib/safeDateParse";
 import { useConnexionTracking } from "@/hooks/useConnexionTracking";
 import { useInactivityAlert } from "@/hooks/useInactivityAlert";
+import { useAuth } from "@/contexts/AuthContext";
 
 const StableModuleDetailView = memo(ModuleDetailView);
 
@@ -525,8 +525,7 @@ const ChangePasswordDialog = () => {
 
 const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(!embedded);
+  const { user, loading: authLoading, signOut } = useAuth();
   const [apprenantLoading, setApprenantLoading] = useState(false);
   const [apprenant, setApprenant] = useState<ApprenantInfo | null>(null);
   const [apprenantFetchError, setApprenantFetchError] = useState<string | null>(null);
@@ -554,32 +553,6 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     enabled: !embedded && !!user && !!apprenant?.id,
     onInactive: handleInactive,
   });
-
-  useEffect(() => {
-    if (embedded) return; // skip auth in admin preview
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(prev => {
-        const newId = session?.user?.id ?? null;
-        const prevId = prev?.id ?? null;
-        if (newId === prevId) return prev;
-        return session?.user ?? null;
-      });
-      setLoading(false);
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(prev => {
-        const newId = session?.user?.id ?? null;
-        const prevId = prev?.id ?? null;
-        if (newId === prevId && prev) return prev;
-        return session?.user ?? null;
-      });
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [embedded]);
 
   // Fetch apprenant info when user is logged in
   const fetchAttemptRef = useRef(0);
@@ -758,8 +731,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   }, [apprenant?.id]);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
+    await signOut();
     setApprenant(null);
     setSelectedFormation(null);
     setApprenantFetchError(null);
@@ -768,7 +740,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   };
 
   // Loading state
-  if (loading || apprenantLoading) {
+  if ((!embedded && authLoading) || apprenantLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
