@@ -781,7 +781,34 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return <StudentLogin onLogin={() => {}} />;
   }
 
-  // Check course access dates
+  // Authenticated but apprenant profile not yet loaded (avoid white screen / forced logout)
+  if (!embedded && user && !apprenant) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md rounded-xl border bg-background p-6 shadow-sm text-center space-y-3">
+          <AlertTriangle className="w-10 h-10 text-amber-500 mx-auto" />
+          <h1 className="text-lg font-semibold">Accès modules indisponible</h1>
+          <p className="text-sm text-muted-foreground">
+            {apprenantFetchError || "Nous n’arrivons pas à charger votre dossier apprenant pour le moment."}
+          </p>
+          <div className="flex items-center justify-center gap-2 pt-1">
+            <Button
+              size="sm"
+              onClick={() => {
+                fetchAttemptRef.current = 0;
+                setFetchNonce((value) => value + 1);
+              }}
+            >
+              Réessayer
+            </Button>
+            <Button size="sm" variant="outline" onClick={handleLogout}>
+              Se déconnecter
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (!embedded && user && apprenant) {
     const now = new Date();
     now.setHours(12, 0, 0, 0);
