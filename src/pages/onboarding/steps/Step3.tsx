@@ -5,7 +5,12 @@ import { OnboardingLayout } from "../OnboardingLayout";
 import step3Departement from "@/assets/onboarding/step3-departement.png";
 
 export default function Step3() {
-  const [confirmed, setConfirmed] = useState(false);
+  const [confirmed, setConfirmed] = useState(() => localStorage.getItem('onboarding_step3_confirmed') === 'true');
+
+  const handleConfirm = (val: boolean) => {
+    setConfirmed(val);
+    localStorage.setItem('onboarding_step3_confirmed', String(val));
+  };
 
   return (
     <OnboardingLayout currentStep={3} totalSteps={11} title="Choix du département d'exercice">
@@ -40,7 +45,7 @@ export default function Step3() {
             <input
               type="checkbox"
               checked={confirmed}
-              onChange={(e) => setConfirmed(e.target.checked)}
+              onChange={(e) => handleConfirm(e.target.checked)}
               className="w-5 h-5 mt-0.5 rounded border-gray-300 text-green-600 focus:ring-green-500"
             />
             <span className="text-gray-700">

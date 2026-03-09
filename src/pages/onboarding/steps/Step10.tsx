@@ -6,7 +6,12 @@ import step10Docs from "@/assets/onboarding/step10-docs.png";
 import step10Mydocs from "@/assets/onboarding/step10-mydocs.png";
 
 export default function Step10() {
-  const [confirmed, setConfirmed] = useState(false);
+  const [confirmed, setConfirmed] = useState(() => localStorage.getItem('onboarding_step10_confirmed') === 'true');
+
+  const handleConfirm = (val: boolean) => {
+    setConfirmed(val);
+    localStorage.setItem('onboarding_step10_confirmed', String(val));
+  };
 
   return (
     <OnboardingLayout currentStep={10} totalSteps={11} title="Insérez vos documents">
@@ -81,7 +86,7 @@ export default function Step10() {
             <input
               type="checkbox"
               checked={confirmed}
-              onChange={(e) => setConfirmed(e.target.checked)}
+              onChange={(e) => handleConfirm(e.target.checked)}
               className="w-5 h-5 mt-0.5 rounded border-gray-300 text-green-600 focus:ring-green-500"
             />
             <span className="text-gray-700">

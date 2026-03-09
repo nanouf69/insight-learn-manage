@@ -44,9 +44,19 @@ const EXAM_DATES = [
 ];
 
 export default function Step5() {
-  const [selectedExamId, setSelectedExamId] = useState<string>('');
+  const [selectedExamId, setSelectedExamId] = useState<string>(() => localStorage.getItem('onboarding_step5_examId') || '');
   const [isOpen, setIsOpen] = useState(false);
-  const [confirmed, setConfirmed] = useState(false);
+  const [confirmed, setConfirmed] = useState(() => localStorage.getItem('onboarding_step5_confirmed') === 'true');
+
+  const handleSelectExam = (id: string) => {
+    setSelectedExamId(id);
+    localStorage.setItem('onboarding_step5_examId', id);
+  };
+
+  const handleConfirm = (val: boolean) => {
+    setConfirmed(val);
+    localStorage.setItem('onboarding_step5_confirmed', String(val));
+  };
 
   // Filtrer les 2 premières dates non dépassées
   const availableExams = useMemo(() => {
@@ -61,7 +71,7 @@ export default function Step5() {
   // Auto-select first available if none selected
   useState(() => {
     if (!selectedExamId && availableExams.length > 0) {
-      setSelectedExamId(availableExams[0].id);
+      handleSelectExam(availableExams[0].id);
     }
   });
 
@@ -118,7 +128,7 @@ export default function Step5() {
                       key={exam.id}
                       type="button"
                       onClick={() => {
-                        setSelectedExamId(exam.id);
+                        handleSelectExam(exam.id);
                         setIsOpen(false);
                       }}
                       className={`w-full p-4 text-left hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0 ${
@@ -170,7 +180,7 @@ export default function Step5() {
             <input
               type="checkbox"
               checked={confirmed}
-              onChange={(e) => setConfirmed(e.target.checked)}
+              onChange={(e) => handleConfirm(e.target.checked)}
               className="w-5 h-5 mt-0.5 rounded border-gray-300 text-green-600 focus:ring-green-500"
             />
             <span className="text-gray-700">

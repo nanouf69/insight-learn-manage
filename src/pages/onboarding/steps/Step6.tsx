@@ -5,7 +5,12 @@ import { OnboardingLayout } from "../OnboardingLayout";
 import step6Form from "@/assets/onboarding/step6-form.png";
 
 export default function Step6() {
-  const [confirmed, setConfirmed] = useState(false);
+  const [confirmed, setConfirmed] = useState(() => localStorage.getItem('onboarding_step6_confirmed') === 'true');
+
+  const handleConfirm = (val: boolean) => {
+    setConfirmed(val);
+    localStorage.setItem('onboarding_step6_confirmed', String(val));
+  };
 
   return (
     <OnboardingLayout currentStep={6} totalSteps={11} title="Remplissez le formulaire">
@@ -51,7 +56,7 @@ export default function Step6() {
             <input
               type="checkbox"
               checked={confirmed}
-              onChange={(e) => setConfirmed(e.target.checked)}
+              onChange={(e) => handleConfirm(e.target.checked)}
               className="w-5 h-5 mt-0.5 rounded border-gray-300 text-green-600 focus:ring-green-500"
             />
             <span className="text-gray-700">

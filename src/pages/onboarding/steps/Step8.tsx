@@ -6,7 +6,12 @@ import step8Email from "@/assets/onboarding/step8-email.jpg";
 import step8Modal from "@/assets/onboarding/step8-modal.png";
 
 export default function Step8() {
-  const [confirmed, setConfirmed] = useState(false);
+  const [confirmed, setConfirmed] = useState(() => localStorage.getItem('onboarding_step8_confirmed') === 'true');
+
+  const handleConfirm = (val: boolean) => {
+    setConfirmed(val);
+    localStorage.setItem('onboarding_step8_confirmed', String(val));
+  };
 
   return (
     <OnboardingLayout currentStep={8} totalSteps={11} title="Validation de votre email">
@@ -59,7 +64,7 @@ export default function Step8() {
             <input
               type="checkbox"
               checked={confirmed}
-              onChange={(e) => setConfirmed(e.target.checked)}
+              onChange={(e) => handleConfirm(e.target.checked)}
               className="w-5 h-5 mt-0.5 rounded border-gray-300 text-green-600 focus:ring-green-500"
             />
             <span className="text-gray-700">
