@@ -2,11 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle, FileText, Eye, ChevronDown, ChevronUp, ClipboardCheck } from "lucide-react";
+import { CheckCircle2, XCircle, FileText, Eye, ChevronDown, ChevronUp, ClipboardCheck, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { generateControleQualitePdf } from "@/lib/pdf/controle-qualite";
 
 interface Props {
   apprenant: any;
@@ -181,15 +182,35 @@ export function ControleQualiteTab({ apprenant }: Props) {
   const completedCount = CONTROLE_DOCUMENTS.filter(d => getDocStatus(d).found).length;
   const pct = Math.round((completedCount / totalDocs) * 100);
 
-  return (
+    const handleDownloadPdf = () => {
+      const pdfItems = CONTROLE_DOCUMENTS.map(doc => {
+        const status = getDocStatus(doc);
+        const catLabel = doc.category;
+        return {
+          label: doc.label,
+          category: catLabel,
+          found: status.found,
+          completedAt: status.details?.completed_at,
+        };
+      });
+      generateControleQualitePdf(apprenant, pdfItems);
+    };
+
+    return (
     <div className="space-y-6">
       {/* Summary header */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ClipboardCheck className="w-5 h-5" />
-            Contrôle qualité — Dossier apprenant
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <ClipboardCheck className="w-5 h-5" />
+              Contrôle qualité — Dossier apprenant
+            </CardTitle>
+            <Button variant="outline" size="sm" className="gap-2" onClick={handleDownloadPdf}>
+              <Download className="w-4 h-4" />
+              Télécharger PDF
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4">
