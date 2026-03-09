@@ -6,7 +6,12 @@ import step2Cma from "@/assets/onboarding/step2-cma.png";
 import step2Cards from "@/assets/onboarding/step2-cma-cards.png";
 
 export default function Step2() {
-  const [confirmed, setConfirmed] = useState(false);
+  const [confirmed, setConfirmed] = useState(() => localStorage.getItem('onboarding_step2_confirmed') === 'true');
+
+  const handleConfirm = (val: boolean) => {
+    setConfirmed(val);
+    localStorage.setItem('onboarding_step2_confirmed', String(val));
+  };
 
   return (
     <OnboardingLayout currentStep={2} totalSteps={11} title="Inscription sur la plateforme CMA">

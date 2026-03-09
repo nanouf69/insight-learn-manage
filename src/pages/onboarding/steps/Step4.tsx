@@ -5,7 +5,12 @@ import { OnboardingLayout } from "../OnboardingLayout";
 import step4Taxi from "@/assets/onboarding/step4-taxi.png";
 
 export default function Step4() {
-  const [confirmed, setConfirmed] = useState(false);
+  const [confirmed, setConfirmed] = useState(() => localStorage.getItem('onboarding_step4_confirmed') === 'true');
+
+  const handleConfirm = (val: boolean) => {
+    setConfirmed(val);
+    localStorage.setItem('onboarding_step4_confirmed', String(val));
+  };
 
   return (
     <OnboardingLayout currentStep={4} totalSteps={11} title="Type d'épreuve">

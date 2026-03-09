@@ -6,7 +6,12 @@ import step10Docs from "@/assets/onboarding/step10-docs.png";
 import step10Mydocs from "@/assets/onboarding/step10-mydocs.png";
 
 export default function Step10() {
-  const [confirmed, setConfirmed] = useState(false);
+  const [confirmed, setConfirmed] = useState(() => localStorage.getItem('onboarding_step10_confirmed') === 'true');
+
+  const handleConfirm = (val: boolean) => {
+    setConfirmed(val);
+    localStorage.setItem('onboarding_step10_confirmed', String(val));
+  };
 
   return (
     <OnboardingLayout currentStep={10} totalSteps={11} title="Insérez vos documents">

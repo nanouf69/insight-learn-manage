@@ -6,7 +6,12 @@ import step8Email from "@/assets/onboarding/step8-email.jpg";
 import step8Modal from "@/assets/onboarding/step8-modal.png";
 
 export default function Step8() {
-  const [confirmed, setConfirmed] = useState(false);
+  const [confirmed, setConfirmed] = useState(() => localStorage.getItem('onboarding_step8_confirmed') === 'true');
+
+  const handleConfirm = (val: boolean) => {
+    setConfirmed(val);
+    localStorage.setItem('onboarding_step8_confirmed', String(val));
+  };
 
   return (
     <OnboardingLayout currentStep={8} totalSteps={11} title="Validation de votre email">
