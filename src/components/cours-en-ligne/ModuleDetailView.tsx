@@ -3617,7 +3617,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         </div>
       );
     };
-    );
 
     return (
       <div className="flex gap-6 max-w-6xl mx-auto">
