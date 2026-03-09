@@ -1186,11 +1186,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                       <p className="text-muted-foreground text-sm">Aucun module terminé pour l'instant</p>
                     </Card>
                   )}
-                  {doneModules.map((mod) => (
+                  {doneModules.map((mod) => {
+                    const introLockedDone = isIntroLocked(mod.id);
+                    return (
                     <Card
                       key={mod.id}
-                      className="border-0 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer group overflow-hidden border-l-4 border-l-emerald-400"
-                      onClick={() => { trackModuleActivity(mod.id, mod.nom); setSelectedModule(mod); }}
+                      className={`border-0 shadow-sm transition-all duration-300 overflow-hidden border-l-4 border-l-emerald-400 ${introLockedDone ? "opacity-70 cursor-not-allowed" : "hover:shadow-md cursor-pointer group"}`}
+                      onClick={() => { if (!introLockedDone) { trackModuleActivity(mod.id, mod.nom); setSelectedModule(mod); } }}
                     >
                       <CardContent className="p-0">
                         <div className="flex items-center gap-4 p-4">
@@ -1198,17 +1200,17 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                             <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-bold text-foreground text-sm group-hover:text-emerald-600 transition-colors">
+                            <h3 className={`font-bold text-sm transition-colors ${introLockedDone ? "text-muted-foreground" : "text-foreground group-hover:text-emerald-600"}`}>
                               {mod.nom}
                             </h3>
                             <p className="text-xs text-emerald-600">
-                              ✅ Terminé
-                              {moduleRealizedPointsById[mod.id]?.length > 0 && (
+                              {introLockedDone ? "✅ Terminé — Accès verrouillé" : "✅ Terminé"}
+                              {!introLockedDone && moduleRealizedPointsById[mod.id]?.length > 0 && (
                                 <span className="ml-2 font-semibold">
                                   — Point{moduleRealizedPointsById[mod.id].length > 1 ? "s" : ""} réalisé{moduleRealizedPointsById[mod.id].length > 1 ? "s" : ""} : {moduleRealizedPointsById[mod.id].join(", ")}
                                 </span>
                               )}
-                              {moduleScores[mod.id]?.score_obtenu != null && moduleScores[mod.id]?.score_max != null && (
+                              {!introLockedDone && moduleScores[mod.id]?.score_obtenu != null && moduleScores[mod.id]?.score_max != null && (
                                 <span className="ml-2 font-semibold">
                                   — Score : {moduleScores[mod.id].score_obtenu}/{moduleScores[mod.id].score_max} ({Math.round((moduleScores[mod.id].score_obtenu! / moduleScores[mod.id].score_max!) * 100)}%)
                                 </span>
@@ -1216,14 +1218,21 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                             </p>
                           </div>
                           <div className="shrink-0">
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-emerald-600 border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30">
-                              Revoir
-                            </Badge>
+                            {introLockedDone ? (
+                              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                                <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+                              </div>
+                            ) : (
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-emerald-600 border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30">
+                                Revoir
+                              </Badge>
+                            )}
                           </div>
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
