@@ -456,6 +456,58 @@ function renderField(doc: jsPDF, key: string, value: any, y: number, margin: num
   return renderFieldDeep(doc, key, value, y, margin, pw, 0);
 }
 
+function renderCGV(doc: jsPDF, donnees: any, y: number, margin: number, pw: number): number {
+  // CGV acceptance info
+  const infoKeys = ['formationLabel', 'accepted', 'accepted_at', 'cgv_accepted', 'ri_accepted', 'signed_at'];
+  for (const key of infoKeys) {
+    if (donnees[key] !== undefined && donnees[key] !== null) {
+      y = renderFieldDeep(doc, key, donnees[key], y, margin, pw, 0);
+    }
+  }
+
+  // If there are sections content
+  if (donnees.sections && Array.isArray(donnees.sections)) {
+    for (const section of donnees.sections) {
+      y = ensureSpace(doc, y, 14);
+      doc.setFillColor(230, 240, 250);
+      doc.rect(margin + 3, y - 3, pw - margin * 2 - 6, 8, 'F');
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(13, 37, 64);
+      doc.text(section.titre || section.title || '', margin + 6, y + 2);
+      y += 10;
+
+      if (section.contenu || section.content) {
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(50, 50, 50);
+        const lines = doc.splitTextToSize(section.contenu || section.content, pw - margin * 2 - 12);
+        for (const l of lines) { y = ensureSpace(doc, y, 4.5); doc.text(l, margin + 6, y); y += 4; }
+        y += 3;
+      }
+    }
+  }
+
+  // Signature
+  if (donnees.signature && isBase64(donnees.signature)) {
+    y = ensureSpace(doc, y, 8);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(34, 150, 60);
+    doc.text('Signature numerique du stagiaire : presente', margin + 6, y);
+    y += 6;
+  }
+
+  // Render remaining keys not already handled
+  const handledKeys = new Set([...infoKeys, 'sections', 'signature', 'id', 'apprenant_id', 'user_id', 'module_id']);
+  const remaining = Object.entries(donnees).filter(([k]) => !handledKeys.has(k));
+  for (const [key, value] of remaining) {
+    y = renderFieldDeep(doc, key, value, y, margin, pw, 0);
+  }
+
+  return y;
+}
+
 // ---- Dispatch to the right renderer based on document type ----
 function renderDocContent(doc: jsPDF, docLabel: string, donnees: any, y: number, margin: number, pw: number): number {
   const labelLower = docLabel.toLowerCase();
@@ -470,6 +522,8 @@ function renderDocContent(doc: jsPDF, docLabel: string, donnees: any, y: number,
     return renderAnalyseBesoin(doc, donnees, y, margin, pw);
   if (labelLower.includes('positionnement') || labelLower.includes('competences'))
     return renderTestCompetences(doc, donnees, y, margin, pw);
+  if (labelLower.includes('cgv') || labelLower.includes('conditions') || labelLower.includes('reglement'))
+    return renderCGV(doc, donnees, y, margin, pw);
 
   return renderGenericDonnees(doc, donnees, y, margin, pw);
 }
