@@ -1792,8 +1792,8 @@ const ContentCard = ({
   );
 };
 
-const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, onModuleCompleted, apprenantType, apprenantInfo }: ModuleDetailViewProps) => {
-  console.log("[ModuleDetailView] Rendering module:", module.id, module.nom, "studentOnly:", studentOnly, "apprenantType:", apprenantType);
+const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, onModuleCompleted, apprenantType, apprenantInfo, isPresentiel = false }: ModuleDetailViewProps) => {
+  console.log("[ModuleDetailView] Rendering module:", module.id, module.nom, "studentOnly:", studentOnly, "apprenantType:", apprenantType, "isPresentiel:", isPresentiel);
 
   const createInitialSlidesByKey = (): Record<string, Slide[]> => ({
     "t3p-partie1": [...T3P_PARTIE1_SLIDES],
