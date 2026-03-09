@@ -88,6 +88,27 @@ export default function AnalyseBesoinForm({
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasSigned, setHasSigned] = useState(false);
 
+  // Auto-save
+  const { queueSave, triggerSave: autoTrigger, StatusIndicator } = useAutoSave({
+    apprenantId: apprenantId || "",
+    typeDocument: "analyse-besoin",
+    titre: "Analyse du besoin – Fiche client",
+    enabled: !!apprenantId && !completed,
+  });
+
+  const collectData = () => ({
+    nom, prenom, email, telephone, adresse, codePostal, ville,
+    formationVTC, formationTAXI,
+    eligibility, complementary, centreFormation, typeHandicap,
+    engagementAccepted, dateDocument,
+  });
+
+  useEffect(() => {
+    queueSave(collectData());
+  }, [nom, prenom, email, telephone, adresse, codePostal, ville,
+    formationVTC, formationTAXI, eligibility, complementary,
+    centreFormation, typeHandicap, engagementAccepted, dateDocument]);
+
   const startDraw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
