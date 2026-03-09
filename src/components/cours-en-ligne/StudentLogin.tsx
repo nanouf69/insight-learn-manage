@@ -103,6 +103,63 @@ const StudentLogin = ({ onLogin }: StudentLoginProps) => {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast({
+        title: "📧 Email envoyé",
+        description: "Vérifiez votre boîte mail pour réinitialiser votre mot de passe",
+      });
+      setMode("login");
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error.message || "Impossible d'envoyer l'email",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (mode === "forgot-password") {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-3 p-3 rounded-full bg-primary/10 w-fit">
+              <KeyRound className="w-8 h-8 text-primary" />
+            </div>
+            <CardTitle className="text-2xl">Mot de passe oublié</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Entrez votre email, vous recevrez un lien pour réinitialiser votre mot de passe
+            </p>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="forgot-email">Email</Label>
+                <Input id="forgot-email" type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} required placeholder="votre@email.com" />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                Envoyer le lien
+              </Button>
+              <Button type="button" variant="ghost" className="w-full" onClick={() => setMode("login")}>
+                <ArrowLeft className="w-4 h-4 mr-2" /> Retour à la connexion
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (mode === "change-password") {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
