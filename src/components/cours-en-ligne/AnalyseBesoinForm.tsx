@@ -71,6 +71,7 @@ export default function AnalyseBesoinForm({
   const [centreFormation, setCentreFormation] = useState("");
   const [typeHandicap, setTypeHandicap] = useState("");
   const [engagementAccepted, setEngagementAccepted] = useState(false);
+  const [dateDocument, setDateDocument] = useState(new Date().toISOString().slice(0, 10));
 
   // Validation
   const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
