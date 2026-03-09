@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Upload, CheckCircle2, XCircle, Loader2, AlertCircle, Eye, Trash2, ScanSearch, Ban } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -40,6 +40,62 @@ export function DocumentUploadCard({
   const [cropperOpen, setCropperOpen] = useState(false);
   const [cropperImageSrc, setCropperImageSrc] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const restoredRef = useRef(false);
+
+  // Restore document status from DB or localStorage on mount
+  useEffect(() => {
+    if (restoredRef.current) return;
+    restoredRef.current = true;
+
+    const restoreFromLocalStorage = () => {
+      const saved = localStorage.getItem(`onboarding_doc_${docId}`);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed.status === 'valid' || parsed.status === 'pending') {
+            setStatus(parsed.status);
+            setFileName(parsed.fileName || '');
+            setFileUrl(parsed.fileUrl || '');
+            onStatusChange?.(docId, parsed.status);
+          }
+        } catch {}
+      }
+    };
+
+    const restoreFromDB = async () => {
+      if (!apprenantId) {
+        restoreFromLocalStorage();
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('documents_inscription')
+        .select('statut, nom_fichier, url')
+        .eq('apprenant_id', apprenantId)
+        .eq('type_document', docId)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (!error && data && data.length > 0) {
+        const doc = data[0];
+        const docStatus = doc.statut === 'valid' ? 'valid' : doc.statut === 'rejected' ? 'rejected' : 'pending';
+        setStatus(docStatus as any);
+        setFileName(doc.nom_fichier || '');
+        // Build public URL from storage path
+        if (doc.url) {
+          const { data: urlData } = supabase.storage
+            .from('documents-inscription')
+            .getPublicUrl(doc.url);
+          setFileUrl(urlData?.publicUrl || '');
+        }
+        onStatusChange?.(docId, docStatus as any);
+      } else {
+        restoreFromLocalStorage();
+      }
+    };
+
+    restoreFromDB();
+  }, [apprenantId, docId]);
 
   const handleFileSelect = () => {
     fileInputRef.current?.click();
@@ -134,6 +190,13 @@ export function DocumentUploadCard({
       
       // Save record in documents_inscription table
       if (apprenantId) {
+        // Delete any existing record for this doc type first
+        await supabase
+          .from('documents_inscription')
+          .delete()
+          .eq('apprenant_id', apprenantId)
+          .eq('type_document', docId);
+
         const { error: dbError } = await supabase
           .from('documents_inscription')
           .insert({
@@ -147,11 +210,18 @@ export function DocumentUploadCard({
 
         if (dbError) {
           console.error('DB insert error:', dbError);
-          // Don't block the flow, file is already uploaded
         }
       }
 
-      // Mark as valid immediately (no AI analysis)
+      // Persist to localStorage as fallback
+      localStorage.setItem(`onboarding_doc_${docId}`, JSON.stringify({
+        status: 'valid',
+        fileName: file.name,
+        fileUrl: publicUrl,
+        filePath,
+      }));
+
+      // Mark as valid immediately
       setStatus('valid');
       onStatusChange?.(docId, 'valid');
     } catch (error: any) {
@@ -175,10 +245,21 @@ export function DocumentUploadCard({
           .remove([filePath]);
       }
 
+      // Also delete from DB if apprenant exists
+      if (apprenantId) {
+        await supabase
+          .from('documents_inscription')
+          .delete()
+          .eq('apprenant_id', apprenantId)
+          .eq('type_document', docId);
+      }
+
       setStatus('empty');
       setFileName('');
       setFileUrl('');
       setRejectionReason('');
+      localStorage.removeItem(`onboarding_doc_${docId}`);
+      onStatusChange?.(docId, 'pending');
       toast.success("Document supprimé");
     } catch (error: any) {
       toast.error("Erreur lors de la suppression");

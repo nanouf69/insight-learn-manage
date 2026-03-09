@@ -20,11 +20,11 @@ export default function Step1() {
   const [ville, setVille] = useState(() => localStorage.getItem('onboarding_ville') || '');
   
   // État de confirmation d'identité
-  const [identityConfirmed, setIdentityConfirmed] = useState(false);
+  const [identityConfirmed, setIdentityConfirmed] = useState(() => localStorage.getItem('onboarding_step1_identity') === 'true');
   const [isEditing, setIsEditing] = useState(false);
   const [apprenantId, setApprenantId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [attempted, setAttempted] = useState(false); // Pour afficher les erreurs de validation
+  const [attempted, setAttempted] = useState(false);
 
   // Generate a unique session ID for this onboarding session
   const [sessionId] = useState(() => {
@@ -38,13 +38,15 @@ export default function Step1() {
   const [documentStatuses, setDocumentStatuses] = useState<Record<string, 'pending' | 'valid' | 'rejected'>>({});
   
   // Justificatif de domicile month selection
-  const [moisJustificatif, setMoisJustificatif] = useState('');
+  const [moisJustificatif, setMoisJustificatif] = useState(() => localStorage.getItem('onboarding_step1_mois_justificatif') || '');
 
   // Questions obligatoires state
-  const [answers, setAnswers] = useState<Record<string, boolean | null>>({
-    question1: null,
-    question2: null,
-    question3: null,
+  const [answers, setAnswers] = useState<Record<string, boolean | null>>(() => {
+    const saved = localStorage.getItem('onboarding_step1_answers');
+    if (saved) {
+      try { return JSON.parse(saved); } catch {}
+    }
+    return { question1: null, question2: null, question3: null };
   });
 
   // Charger l'ID de l'apprenant depuis localStorage (déjà chargé depuis la page de bienvenue)
@@ -89,7 +91,11 @@ export default function Step1() {
   };
 
   const handleAnswerChange = (questionId: string, value: boolean) => {
-    setAnswers(prev => ({ ...prev, [questionId]: value }));
+    setAnswers(prev => {
+      const updated = { ...prev, [questionId]: value };
+      localStorage.setItem('onboarding_step1_answers', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   // Sauvegarder les modifications dans le CRM
@@ -392,7 +398,10 @@ export default function Step1() {
                   <input
                     type="checkbox"
                     checked={identityConfirmed}
-                    onChange={(e) => setIdentityConfirmed(e.target.checked)}
+                    onChange={(e) => {
+                      setIdentityConfirmed(e.target.checked);
+                      localStorage.setItem('onboarding_step1_identity', String(e.target.checked));
+                    }}
                     className={`w-5 h-5 border-2 rounded focus:ring-green-500 mt-0.5 ${
                       attempted && !identityConfirmed 
                         ? 'border-red-500 text-red-600' 
@@ -457,7 +466,10 @@ export default function Step1() {
                     </label>
                     <select
                       value={moisJustificatif}
-                      onChange={(e) => setMoisJustificatif(e.target.value)}
+                      onChange={(e) => {
+                        setMoisJustificatif(e.target.value);
+                        localStorage.setItem('onboarding_step1_mois_justificatif', e.target.value);
+                      }}
                       className={`w-full px-3 py-2 border rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                         attempted && !moisJustificatif ? 'border-red-500' : 'border-gray-300'
                       }`}
