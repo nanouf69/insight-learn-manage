@@ -529,6 +529,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [loading, setLoading] = useState(!embedded);
   const [apprenantLoading, setApprenantLoading] = useState(false);
   const [apprenant, setApprenant] = useState<ApprenantInfo | null>(null);
+  const [apprenantFetchError, setApprenantFetchError] = useState<string | null>(null);
+  const [fetchNonce, setFetchNonce] = useState(0);
   const [selectedModule, setSelectedModule] = useState<{ id: number; nom: string } | null>(null);
   const [selectedFormation, setSelectedFormation] = useState<FormationId | null>(null);
   const [activeTab, setActiveTab] = useState<"accueil" | "examens" | "notes">("accueil");
@@ -581,8 +583,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
   // Fetch apprenant info when user is logged in
   const fetchAttemptRef = useRef(0);
+  const lastFetchedUserIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (!user || embedded) return;
+
+    if (lastFetchedUserIdRef.current !== user.id) {
+      lastFetchedUserIdRef.current = user.id;
+      fetchAttemptRef.current = 0;
+    }
 
     // Guard against infinite fetch loops (e.g. token rate-limiting causing repeated failures)
     fetchAttemptRef.current += 1;
@@ -590,10 +598,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     if (currentAttempt > 3) {
       console.warn("CoursPublic: too many fetch attempts, stopping");
       setApprenantLoading(false);
+      setApprenantFetchError("Connexion instable détectée. Cliquez sur Réessayer.");
       return;
     }
 
+    let cancelled = false;
     setApprenantLoading(true);
+    setApprenantFetchError(null);
+
     const fetchApprenant = async () => {
       try {
         const { data: isAdmin, error: roleError } = await supabase.rpc("has_role", {
@@ -601,9 +613,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           _role: "admin",
         });
 
-        if (!roleError && isAdmin === true) {
+        if (!cancelled && !roleError && isAdmin === true) {
           navigate("/", { replace: true });
-          setApprenantLoading(false);
           return;
         }
 
@@ -613,9 +624,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           .eq("auth_user_id", user.id)
           .maybeSingle();
 
+        if (cancelled) return;
+
         if (fetchError) {
           console.error("CoursPublic: fetch apprenant error", fetchError.message);
-          setApprenantLoading(false);
+          setApprenantFetchError("Impossible de charger vos modules pour le moment.");
           return;
         }
 
@@ -623,21 +636,28 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           setApprenant(data as any);
           const formationId = resolveFormationId(data.type_apprenant, data.formation_choisie, data.modules_autorises);
           setSelectedFormation(formationId);
+          setApprenantFetchError(null);
+          fetchAttemptRef.current = 0;
         } else {
-          // No apprenant record found for this user — sign out cleanly
           setApprenant(null);
           setSelectedFormation(null);
-          await supabase.auth.signOut({ scope: "local" });
-          setUser(null);
+          setApprenantFetchError("Compte apprenant introuvable. Réessayez ou contactez le centre.");
         }
       } catch (err) {
+        if (cancelled) return;
         console.error("CoursPublic: unexpected error", err);
+        setApprenantFetchError("Une erreur inattendue est survenue.");
       } finally {
-        setApprenantLoading(false);
+        if (!cancelled) setApprenantLoading(false);
       }
     };
-    fetchApprenant();
-  }, [user, embedded, navigate]);
+
+    void fetchApprenant();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, embedded, navigate, fetchNonce]);
 
   // Use apprenantOverride when provided (admin preview of specific student)
   useEffect(() => {
@@ -742,6 +762,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     setUser(null);
     setApprenant(null);
     setSelectedFormation(null);
+    setApprenantFetchError(null);
+    fetchAttemptRef.current = 0;
+    lastFetchedUserIdRef.current = null;
   };
 
   // Loading state
@@ -758,7 +781,34 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return <StudentLogin onLogin={() => {}} />;
   }
 
-  // Check course access dates
+  // Authenticated but apprenant profile not yet loaded (avoid white screen / forced logout)
+  if (!embedded && user && !apprenant) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md rounded-xl border bg-background p-6 shadow-sm text-center space-y-3">
+          <AlertTriangle className="w-10 h-10 text-amber-500 mx-auto" />
+          <h1 className="text-lg font-semibold">Accès modules indisponible</h1>
+          <p className="text-sm text-muted-foreground">
+            {apprenantFetchError || "Nous n’arrivons pas à charger votre dossier apprenant pour le moment."}
+          </p>
+          <div className="flex items-center justify-center gap-2 pt-1">
+            <Button
+              size="sm"
+              onClick={() => {
+                fetchAttemptRef.current = 0;
+                setFetchNonce((value) => value + 1);
+              }}
+            >
+              Réessayer
+            </Button>
+            <Button size="sm" variant="outline" onClick={handleLogout}>
+              Se déconnecter
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (!embedded && user && apprenant) {
     const now = new Date();
     now.setHours(12, 0, 0, 0);
