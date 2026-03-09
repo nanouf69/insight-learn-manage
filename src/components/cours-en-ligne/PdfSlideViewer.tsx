@@ -6,8 +6,8 @@ import "react-pdf/dist/Page/TextLayer.css";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Maximize, Minimize, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// Prefer legacy worker build for better tablet/browser compatibility
-pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.mjs`;
+// Prefer legacy worker build for better tablet/browser compatibility (use .js for Samsung Internet)
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.js`;
 
 interface PdfSlideViewerProps {
   url: string;
