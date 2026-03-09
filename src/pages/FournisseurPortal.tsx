@@ -22,6 +22,11 @@ import { Textarea } from "@/components/ui/textarea";
 import logoFtransport from "@/assets/logo-ftransport.png";
 import { RapprochementBancaire } from "@/components/comptabilite/RapprochementBancaire";
 import { FormateurResultsTab } from "@/components/fournisseurs/FormateurResultsTab";
+import { FormateurQuizViewer } from "@/components/fournisseurs/FormateurQuizViewer";
+import { REGLEMENTATION_NATIONALE_EXERCICES, REGLEMENTATION_LOCALE_EXERCICES } from "@/components/cours-en-ligne/exercices/reglementation-exercices-data";
+import { CONNAISSANCES_VILLE_QUIZZES } from "@/components/cours-en-ligne/exercices/connaissances-ville-quiz-data";
+import { EQUIPEMENTS_TAXI_DATA } from "@/components/cours-en-ligne/equipements-taxi-data";
+import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "@/components/cours-en-ligne/controle-connaissances-taxi-data";
 import { NotesFraisTab } from "@/components/comptabilite/NotesFraisTab";
 
 // Dates formations (same as ApprenantForm)
