@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { CheckCircle2, Star } from "lucide-react";
 import { toast } from "sonner";
 import { saveFormDocument } from "@/lib/saveFormDocument";
+import { useAutoSave, loadSavedDraft } from "@/hooks/useAutoSave";
 
 interface CritereRow {
   label: string;
@@ -89,6 +90,23 @@ const SatisfactionForm = ({ formationType, apprenantId, onComplete }: Satisfacti
   const [suggestions, setSuggestions] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
+  const { queueSave, triggerSave: autoTrigger, StatusIndicator } = useAutoSave({
+    apprenantId: apprenantId || "",
+    typeDocument: "satisfaction",
+    titre: `Questionnaire de satisfaction - ${label}`,
+    enabled: !!apprenantId && !submitted,
+  });
+
+  const collectData = () => ({
+    formationType,
+    parties: parties.map(p => ({ titre: p.titre, criteres: p.criteres })),
+    noteGlobale, pointsForts, pointsAmeliorer, suggestions,
+  });
+
+  useEffect(() => {
+    queueSave(collectData());
+  }, [parties, noteGlobale, pointsForts, pointsAmeliorer, suggestions]);
+
   const updateCritere = (partieIdx: number, critereIdx: number, value: number) => {
     setParties(prev => prev.map((p, pi) => pi === partieIdx ? {
       ...p,
@@ -104,17 +122,9 @@ const SatisfactionForm = ({ formationType, apprenantId, onComplete }: Satisfacti
       return;
     }
     if (apprenantId) {
-      const saved = await saveFormDocument({
-        apprenantId,
-        typeDocument: "satisfaction",
-        titre: `Questionnaire de satisfaction - ${getFormationLabel(formationType)}`,
-        donnees: {
-          formationType,
-          parties: parties.map(p => ({ titre: p.titre, criteres: p.criteres })),
-          noteGlobale, pointsForts, pointsAmeliorer, suggestions,
-        },
-      });
+      const saved = await autoTrigger({ ...collectData(), _status: "completed" });
       if (saved) toast.success("Questionnaire de satisfaction enregistré !");
+      else toast.error("Erreur lors de la sauvegarde");
     }
     setSubmitted(true);
     toast.success("✅ Questionnaire de satisfaction envoyé avec succès !");
@@ -137,6 +147,7 @@ const SatisfactionForm = ({ formationType, apprenantId, onComplete }: Satisfacti
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      <div className="flex justify-end sticky top-0 z-10"><StatusIndicator /></div>
       <Card className="border-0 shadow-lg overflow-hidden">
         <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 p-6 border-b">
           <h2 className="text-xl font-bold text-foreground">⭐ Questionnaire de Satisfaction</h2>

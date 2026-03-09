@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { CheckCircle2, Download } from "lucide-react";
 import { saveFormDocument } from "@/lib/saveFormDocument";
 import { toast } from "sonner";
+import { useAutoSave, loadSavedDraft } from "@/hooks/useAutoSave";
 
 interface Props {
   apprenantNom?: string;
@@ -104,6 +105,35 @@ export default function ProjetProfessionnelForm({
   // Validation state: set of field keys that are invalid
   const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
 
+  // Auto-save
+  const { queueSave, triggerSave: autoTrigger, StatusIndicator } = useAutoSave({
+    apprenantId,
+    typeDocument: "projet-professionnel",
+    titre: `Questionnaire Projet Professionnel ${formType}`,
+    enabled: !!apprenantId && !completed,
+  });
+
+  const collectData = () => ({
+    formType, dateEntretien, conseiller, lieuNaissance,
+    statutActuel, metierActuel, anciennete, niveauFormation,
+    motivations, dejaTransport, detailTransport, permis3ans, datePermis,
+    modeExercice, plateformes, diffTaxiVtc, modeExerciceTaxi,
+    demandeADS, zoneExercice, zoneAutre, activitesCompl,
+    demarchesEntreprise, craintes, commentConnu, consulteProgram,
+    saitExamen, connaitZone, conduiteUrbaine, connaitSites,
+    besoinsAdaptation, accesOrdinateur, precisionsBesoins,
+    coherenceProjet, niveauMotivation, observations, signatureAdmin,
+  });
+
+  useEffect(() => {
+    queueSave(collectData());
+  }, [dateEntretien, conseiller, lieuNaissance, statutActuel, metierActuel, anciennete,
+    niveauFormation, motivations, dejaTransport, detailTransport, permis3ans, datePermis,
+    modeExercice, diffTaxiVtc, modeExerciceTaxi, demandeADS, zoneExercice, zoneAutre,
+    activitesCompl, demarchesEntreprise, craintes, commentConnu, consulteProgram,
+    saitExamen, connaitZone, conduiteUrbaine, connaitSites, besoinsAdaptation,
+    accesOrdinateur, precisionsBesoins, coherenceProjet, niveauMotivation, observations, signatureAdmin]);
+
   // Refs for scrolling to first invalid field
   const fieldRefs: Record<string, React.RefObject<HTMLDivElement>> = {
     motivations: useRef<HTMLDivElement>(null!),
@@ -158,6 +188,9 @@ export default function ProjetProfessionnelForm({
 
   return (
     <div className="space-y-4">
+      {/* Auto-save indicator */}
+      <div className="flex justify-end sticky top-0 z-10">
+        <StatusIndicator />
       {/* Header */}
       <Card>
         <CardContent className="p-5 text-center space-y-1">
@@ -519,24 +552,12 @@ export default function ProjetProfessionnelForm({
 
             setInvalidFields(new Set());
 
+            const formData = collectData();
             if (apprenantId) {
-              const saved = await saveFormDocument({
-                apprenantId,
-                typeDocument: "projet-professionnel",
-                titre: `Questionnaire Projet Professionnel ${formType}`,
-                donnees: {
-                  formType, dateEntretien, conseiller, lieuNaissance,
-                  statutActuel, metierActuel, anciennete, niveauFormation,
-                  motivations, dejaTransport, detailTransport, permis3ans, datePermis,
-                  modeExercice, plateformes, diffTaxiVtc, modeExerciceTaxi,
-                  demandeADS, zoneExercice, zoneAutre, activitesCompl,
-                  demarchesEntreprise, craintes, commentConnu, consulteProgram,
-                  saitExamen, connaitZone, conduiteUrbaine, connaitSites,
-                  besoinsAdaptation, accesOrdinateur, precisionsBesoins,
-                  coherenceProjet, niveauMotivation, observations, signatureAdmin,
-                },
-              });
+              // Final save via auto-save (with retry)
+              const saved = await autoTrigger({ ...formData, _status: "completed" });
               if (saved) toast.success("Questionnaire projet professionnel enregistré !");
+              else toast.error("Erreur lors de la sauvegarde finale");
             }
             onComplete();
           }}
@@ -546,6 +567,7 @@ export default function ProjetProfessionnelForm({
           <CheckCircle2 className="w-5 h-5 mr-2" />
           Valider le questionnaire
         </Button>
+      </div>
       </div>
     </div>
   );
