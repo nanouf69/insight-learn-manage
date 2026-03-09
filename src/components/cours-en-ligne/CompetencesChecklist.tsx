@@ -110,6 +110,7 @@ export default function CompetencesChecklist({ data, apprenantNom, apprenantId, 
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end sticky top-0 z-10"><StatusIndicator /></div>
       <Card>
         <CardContent className="p-5 space-y-3">
           <div className="text-center space-y-1">

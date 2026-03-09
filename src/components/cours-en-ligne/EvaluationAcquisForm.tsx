@@ -254,6 +254,7 @@ const EvaluationAcquisForm = ({ formationType, apprenantId, onComplete }: Evalua
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      <div className="flex justify-end sticky top-0 z-10"><StatusIndicator /></div>
       <Card className="border-0 shadow-lg overflow-hidden">
         <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-6 border-b">
           <h2 className="text-xl font-bold text-foreground">📋 Fiche d'Évaluation des Acquis</h2>
