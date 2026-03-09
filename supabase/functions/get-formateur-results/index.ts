@@ -28,26 +28,19 @@ Deno.serve(async (req) => {
       throw new Error("Accès refusé");
     }
 
-    // Module IDs for réglementation nationale et locale
-    // 18 = F. Réglementation Spécifique (VTC - nationale + spécifique VTC + locale)
-    // 24 = F. Réglementation (TAXI - nationale + locale)
-    // 27 = Bilan Exercices TA (réglementation nationale + locale)
-    // 28 = Bilan Examen TA (réglementation nationale + locale)
-    const moduleIds = [18, 24, 27, 28];
-
-    // Get module completion results for all apprenants
+    // Get ALL module completion results
     const { data: completions } = await supabase
       .from("apprenant_module_completion")
       .select("apprenant_id, module_id, score_obtenu, score_max, completed_at, details")
-      .in("module_id", moduleIds)
-      .order("completed_at", { ascending: false });
+      .order("completed_at", { ascending: false })
+      .limit(1000);
 
-    // Get quiz results for réglementation
+    // Get ALL quiz results (not just réglementation)
     const { data: quizResults } = await supabase
       .from("apprenant_quiz_results")
-      .select("apprenant_id, quiz_id, quiz_titre, quiz_type, score_obtenu, score_max, note_sur_20, reussi, completed_at, matiere_nom, matiere_id")
-      .or("matiere_nom.ilike.%réglementation%,matiere_nom.ilike.%nationale%,matiere_nom.ilike.%locale%,quiz_titre.ilike.%réglementation%,quiz_titre.ilike.%nationale%,quiz_titre.ilike.%locale%")
-      .order("completed_at", { ascending: false });
+      .select("apprenant_id, quiz_id, quiz_titre, quiz_type, score_obtenu, score_max, note_sur_20, reussi, completed_at, matiere_nom, matiere_id, details")
+      .order("completed_at", { ascending: false })
+      .limit(2000);
 
     // Get apprenant names
     const apprenantIds = new Set<string>();
