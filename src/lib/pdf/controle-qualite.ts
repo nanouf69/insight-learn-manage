@@ -298,21 +298,66 @@ function renderTestCompetences(doc: jsPDF, donnees: any, y: number, margin: numb
       doc.text(donnees.sections[si], margin + 6, y + 2);
       y += 10;
 
+      // Get items for this section (question labels)
+      const sectionItems: string[] | undefined = donnees.sectionItems?.[si];
+
       // Find answers for this section
       const sectionAnswers = Object.entries(donnees.answers as Record<string, string>)
-        .filter(([key]) => key.startsWith(`${si}-`));
+        .filter(([key]) => key.startsWith(`${si}-`))
+        .sort(([a], [b]) => {
+          const numA = parseInt(a.split('-')[1]);
+          const numB = parseInt(b.split('-')[1]);
+          return numA - numB;
+        });
 
       for (const [key, value] of sectionAnswers) {
-        y = ensureSpace(doc, y, 7);
-        doc.setFontSize(7.5);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(50, 50, 50);
-        const qNum = key.split('-')[1];
-        doc.text(`Q${parseInt(qNum) + 1} :`, margin + 6, y);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(30, 30, 30);
-        doc.text(String(value), margin + 22, y);
-        y += 5;
+        const qIdx = parseInt(key.split('-')[1]);
+        const questionText = sectionItems?.[qIdx];
+
+        if (questionText) {
+          // Render full question text + answer
+          y = ensureSpace(doc, y, 12);
+          doc.setFontSize(7);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(50, 50, 50);
+          const qLabel = `Q${qIdx + 1} : `;
+          const maxWidth = pw - margin * 2 - 30;
+          const wrappedText = doc.splitTextToSize(questionText, maxWidth);
+          
+          // First line with Q number
+          doc.setFont('helvetica', 'bold');
+          doc.text(qLabel, margin + 6, y);
+          doc.setFont('helvetica', 'normal');
+          doc.text(wrappedText[0] || '', margin + 18, y);
+          
+          // Additional wrapped lines
+          for (let li = 1; li < wrappedText.length; li++) {
+            y += 4;
+            y = ensureSpace(doc, y, 5);
+            doc.text(wrappedText[li], margin + 18, y);
+          }
+          
+          // Answer on next line, indented
+          y += 5;
+          y = ensureSpace(doc, y, 5);
+          doc.setFont('helvetica', 'bold');
+          const answerColor = String(value).toLowerCase() === 'oui' ? [34, 139, 34] : [200, 50, 50];
+          doc.setTextColor(answerColor[0], answerColor[1], answerColor[2]);
+          doc.text(`→ ${String(value)}`, margin + 18, y);
+          doc.setTextColor(50, 50, 50);
+          y += 6;
+        } else {
+          // Fallback: no question text available (legacy data)
+          y = ensureSpace(doc, y, 7);
+          doc.setFontSize(7.5);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(50, 50, 50);
+          doc.text(`Q${qIdx + 1} :`, margin + 6, y);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(30, 30, 30);
+          doc.text(String(value), margin + 22, y);
+          y += 5;
+        }
       }
       y += 3;
     }
