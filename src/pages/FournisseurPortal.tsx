@@ -32,6 +32,8 @@ import { FRANCAIS_EXERCICES } from "@/components/cours-en-ligne/exercices/franca
 import { ANGLAIS_EXERCICES } from "@/components/cours-en-ligne/exercices/anglais-exercices-data";
 import { CAS_PRATIQUE_TAXI_EXERCICES } from "@/components/cours-en-ligne/cas-pratique-taxi-exercices-data";
 import { NotesFraisTab } from "@/components/comptabilite/NotesFraisTab";
+import { Badge } from "@/components/ui/badge";
+import CoursPublic from "@/pages/CoursPublic";
 
 // Dates formations (same as ApprenantForm)
 const datesFormations = {
