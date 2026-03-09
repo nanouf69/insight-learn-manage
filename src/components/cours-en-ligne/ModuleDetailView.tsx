@@ -1088,7 +1088,25 @@ const CAS_PRATIQUE_TAXI_DATA: ModuleData = {
   ],
 };
 
+function applyOverridesToResult(data: ModuleData): ModuleData {
+  if (data.exercices.length === 0) return data;
+  return {
+    ...data,
+    exercices: applyOverridesToModuleExercices(data.exercices),
+  };
+}
+
 function getInitialModuleData(
+  module: { id: number; nom: string },
+  apprenantType?: string | null,
+  studentOnly = false,
+): ModuleData {
+  const result = getInitialModuleDataRaw(module, apprenantType, studentOnly);
+  // Apply shared overrides so that admin/trainer question edits propagate to all modules
+  return applyOverridesToResult(result);
+}
+
+function getInitialModuleDataRaw(
   module: { id: number; nom: string },
   apprenantType?: string | null,
   studentOnly = false,
