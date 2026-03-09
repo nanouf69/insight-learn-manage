@@ -185,12 +185,12 @@ export function ControleQualiteTab({ apprenant }: Props) {
     const handleDownloadPdf = () => {
       const pdfItems = CONTROLE_DOCUMENTS.map(doc => {
         const status = getDocStatus(doc);
-        const catLabel = doc.category;
         return {
           label: doc.label,
-          category: catLabel,
+          category: doc.category,
           found: status.found,
           completedAt: status.details?.completed_at,
+          donnees: status.details?.donnees || null,
         };
       });
       generateControleQualitePdf(apprenant, pdfItems);
