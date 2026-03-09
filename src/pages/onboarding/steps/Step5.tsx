@@ -128,7 +128,7 @@ export default function Step5() {
                       key={exam.id}
                       type="button"
                       onClick={() => {
-                        setSelectedExamId(exam.id);
+                        handleSelectExam(exam.id);
                         setIsOpen(false);
                       }}
                       className={`w-full p-4 text-left hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0 ${
