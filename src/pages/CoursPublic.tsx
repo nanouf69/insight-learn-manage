@@ -947,7 +947,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const introCompleted = modules.length > 0 && completedModuleIds.has(modules[0].id);
 
   if (isElearning) {
-    // E-learning: strict sequential unlock
+    // E-learning: strict sequential unlock + intro lock
     for (let i = 0; i < modules.length; i++) {
       if (i === 0) {
         unlockedModuleIds.add(modules[i].id);
@@ -956,19 +956,25 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       }
     }
   } else {
-    // Présentiel / E-Présentiel: only require Introduction first, then all unlocked
-    if (introCompleted) {
-      modules.forEach(m => unlockedModuleIds.add(m.id));
-    }
+    // Présentiel / E-Présentiel: all modules unlocked, no intro requirement
+    modules.forEach(m => unlockedModuleIds.add(m.id));
   }
 
-  // Completed modules are always accessible (for review) EXCEPT Introduction modules
-  modules.forEach(m => { if (completedModuleIds.has(m.id) && !INTRO_MODULE_IDS.has(m.id)) unlockedModuleIds.add(m.id); });
+  // Completed modules are always accessible (for review)
+  // For e-learning: EXCEPT Introduction modules (locked once done)
+  // For présentiel: all completed modules remain accessible including intro
+  modules.forEach(m => {
+    if (completedModuleIds.has(m.id)) {
+      if (!isElearning || !INTRO_MODULE_IDS.has(m.id)) {
+        unlockedModuleIds.add(m.id);
+      }
+    }
+  });
 
   const isModuleLocked = (modId: number) => !unlockedModuleIds.has(modId) && !completedModuleIds.has(modId);
 
-  // Introduction modules: once completed, they cannot be re-opened
-  const isIntroLocked = (modId: number) => INTRO_MODULE_IDS.has(modId) && completedModuleIds.has(modId);
+  // Introduction modules: once completed, they cannot be re-opened (E-LEARNING ONLY)
+  const isIntroLocked = (modId: number) => isElearning && INTRO_MODULE_IDS.has(modId) && completedModuleIds.has(modId);
 
   return (
     <div className={embedded ? "" : "min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50"}>
