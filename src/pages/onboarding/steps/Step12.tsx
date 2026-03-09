@@ -145,6 +145,7 @@ export default function Step12() {
 
   const buildRecapData = () => {
     const selectedExam = datesExamenTheorique.find(e => e.value === dateExamen);
+    const motDePasseCma = localStorage.getItem('onboarding_mot_de_passe_cma') || '';
 
     return {
       nom,
@@ -156,6 +157,7 @@ export default function Step12() {
       dateExamen,
       lieuExamen: selectedExam?.lieu,
       b2Vierge,
+      motDePasseCma,
     };
   };
 
