@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { CheckCircle2, CheckSquare, XSquare } from "lucide-react";
 import { type CompetencesData } from "./competences-checklist-data";
 import { saveFormDocument } from "@/lib/saveFormDocument";
 import { toast } from "sonner";
+import { useAutoSave, loadSavedDraft } from "@/hooks/useAutoSave";
 
 interface Props {
   data: CompetencesData;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { CheckCircle2, Star } from "lucide-react";
 import { toast } from "sonner";
 import { saveFormDocument } from "@/lib/saveFormDocument";
+import { useAutoSave, loadSavedDraft } from "@/hooks/useAutoSave";
 
 interface CritereRow {
   label: string;

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { CheckCircle2, Download } from "lucide-react";
 import { saveFormDocument } from "@/lib/saveFormDocument";
 import { toast } from "sonner";
+import { useAutoSave, loadSavedDraft } from "@/hooks/useAutoSave";
 
 interface Props {
   apprenantNom?: string;
