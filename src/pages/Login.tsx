@@ -22,6 +22,9 @@ export default function Login() {
     setLoading(true);
 
     try {
+      // Sécurité: on vide toute session locale existante avant une nouvelle connexion
+      await supabase.auth.signOut({ scope: 'local' });
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -40,8 +43,11 @@ export default function Login() {
         isAdmin = isAdminData === true;
       }
 
-      navigate(isAdmin ? '/' : '/cours');
+      navigate(isAdmin ? '/' : '/cours', { replace: true });
     } catch (error: any) {
+      // Sécurité: si la connexion échoue, on s'assure qu'aucune session précédente ne reste active
+      await supabase.auth.signOut({ scope: 'local' });
+
       toast({
         title: "Erreur",
         description: error.message || "Une erreur est survenue",
