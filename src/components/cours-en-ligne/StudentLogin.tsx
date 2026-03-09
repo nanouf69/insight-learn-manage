@@ -15,7 +15,8 @@ const StudentLogin = ({ onLogin }: StudentLoginProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<"login" | "change-password">("login");
+  const [mode, setMode] = useState<"login" | "change-password" | "forgot-password">("login");
+  const [forgotEmail, setForgotEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const { toast } = useToast();
