@@ -552,24 +552,12 @@ export default function ProjetProfessionnelForm({
 
             setInvalidFields(new Set());
 
+            const formData = collectData();
             if (apprenantId) {
-              const saved = await saveFormDocument({
-                apprenantId,
-                typeDocument: "projet-professionnel",
-                titre: `Questionnaire Projet Professionnel ${formType}`,
-                donnees: {
-                  formType, dateEntretien, conseiller, lieuNaissance,
-                  statutActuel, metierActuel, anciennete, niveauFormation,
-                  motivations, dejaTransport, detailTransport, permis3ans, datePermis,
-                  modeExercice, plateformes, diffTaxiVtc, modeExerciceTaxi,
-                  demandeADS, zoneExercice, zoneAutre, activitesCompl,
-                  demarchesEntreprise, craintes, commentConnu, consulteProgram,
-                  saitExamen, connaitZone, conduiteUrbaine, connaitSites,
-                  besoinsAdaptation, accesOrdinateur, precisionsBesoins,
-                  coherenceProjet, niveauMotivation, observations, signatureAdmin,
-                },
-              });
+              // Final save via auto-save (with retry)
+              const saved = await autoTrigger({ ...formData, _status: "completed" });
               if (saved) toast.success("Questionnaire projet professionnel enregistré !");
+              else toast.error("Erreur lors de la sauvegarde finale");
             }
             onComplete();
           }}
