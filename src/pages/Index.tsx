@@ -65,6 +65,37 @@ const Index = () => {
   const [fluxPeriode, setFluxPeriode] = useState<string>("");
 
   useEffect(() => {
+    let isMounted = true;
+
+    const checkAdminAccess = async () => {
+      if (!user) {
+        if (isMounted) setIsAdmin(false);
+        return;
+      }
+
+      const { data, error } = await supabase.rpc("has_role", {
+        _user_id: user.id,
+        _role: "admin",
+      });
+
+      if (!isMounted) return;
+      setIsAdmin(!error && data === true);
+    };
+
+    checkAdminAccess();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!loading && isAdmin === false) {
+      navigate("/cours", { replace: true });
+    }
+  }, [isAdmin, loading, navigate]);
+
+  useEffect(() => {
     const fetchFlux = async () => {
       const { data } = await supabase
         .from("transactions_bancaires")
