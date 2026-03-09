@@ -1165,9 +1165,11 @@ export default function FournisseurPortal() {
                         </a>
                       ))}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
-                      <span className="text-amber-500">📝</span> Quiz interactifs disponibles dans le module en ligne
-                    </p>
+                    <FormateurQuizViewer
+                      sections={CONNAISSANCES_VILLE_QUIZZES}
+                      title="Quiz — Connaissance de la ville"
+                      icon="🏙️"
+                    />
                   </CardContent>
                 </Card>
 
