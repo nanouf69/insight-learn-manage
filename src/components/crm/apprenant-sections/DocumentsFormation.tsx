@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { FileText, Download, CheckCircle2, Mail, ClipboardList, Upload, Eye, CalendarDays } from "lucide-react";
+import { FileText, Download, CheckCircle2, Mail, ClipboardList, Upload, Eye, CalendarDays, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { generateAttestationFinFormation } from "@/lib/pdf/attestation-fin-forma
 import { generateAttestationFranceTravail } from "@/lib/pdf/attestation-france-travail";
 import { generateBienvenueFtransport } from "@/lib/pdf/bienvenue-ftransport";
 import { generateEmargementPDF } from "@/components/sessions/EmargementGenerator";
+import { generateFicheProgressionGuenichi } from "@/lib/pdf/fiche-progression";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -18,7 +19,7 @@ interface DocumentsFormationProps {
   apprenant: any;
 }
 
-type DocType = 'inscription' | 'fin-formation' | 'france-travail' | 'bienvenue' | 'emargement';
+type DocType = 'inscription' | 'fin-formation' | 'france-travail' | 'bienvenue' | 'emargement' | 'progression';
 
 export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
   const [generatingDoc, setGeneratingDoc] = useState<string | null>(null);
