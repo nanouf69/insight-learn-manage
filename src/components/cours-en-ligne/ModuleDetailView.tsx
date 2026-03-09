@@ -2044,6 +2044,19 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   };
 
   const updateExerciceQuestions = (exerciceId: number, questions: ExerciceQuestion[]) => {
+    // Detect changes vs original source and save to shared overrides store
+    if (!studentOnly) {
+      const sourceData = getInitialModuleDataRaw(module, apprenantType, studentOnly);
+      const sourceExo = sourceData.exercices.find(e => e.id === exerciceId);
+      if (sourceExo?.questions) {
+        detectAndSaveOverrides(
+          sourceExo.questions as { enonce: string; choix: { lettre: string; texte: string; correct?: boolean }[] }[],
+          questions,
+          module.id,
+        );
+      }
+    }
+
     setModuleData({
       ...moduleData,
       exercices: moduleData.exercices.map(e => e.id === exerciceId ? { ...e, questions } : e),
