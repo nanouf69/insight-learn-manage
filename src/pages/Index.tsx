@@ -53,7 +53,9 @@ const fmt = (n: number) =>
   new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 
 const Index = () => {
-  const { profile } = useAuth();
+  const { profile, user, loading } = useAuth();
+  const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [currentPage, setCurrentPage] = useState("dashboard");
   const [pageHistory, setPageHistory] = useState<string[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
