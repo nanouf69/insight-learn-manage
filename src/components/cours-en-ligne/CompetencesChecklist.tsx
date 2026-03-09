@@ -74,7 +74,7 @@ export default function CompetencesChecklist({ data, apprenantNom, apprenantId, 
         apprenantId,
         typeDocument: "test-competences",
         titre: `Test de compétences - ${data.formationLabel || "Formation"}`,
-        donnees: { answers, sections: data.sections.map(s => s.titre), formationLabel: data.formationLabel },
+        donnees: { answers, sections: data.sections.map(s => s.titre), sectionItems: data.sections.map(s => s.items), formationLabel: data.formationLabel },
       });
       if (saved) toast.success("Test de compétences enregistré !");
     }
