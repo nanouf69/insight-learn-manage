@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Eye, EyeOff, Loader2, ArrowLeft, KeyRound } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -15,11 +15,59 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'login' | 'forgot'>('login');
   const [forgotEmail, setForgotEmail] = useState('');
+  const redirectingRef = useRef(false);
   const { toast } = useToast();
+
+  const redirectByRole = async (userId: string) => {
+    if (redirectingRef.current) return;
+    redirectingRef.current = true;
+
+    const { data: isAdmin, error } = await supabase.rpc('has_role', {
+      _user_id: userId,
+      _role: 'admin',
+    });
+
+    if (error) {
+      redirectingRef.current = false;
+      throw error;
+    }
+
+    window.location.replace(isAdmin ? '/' : '/cours');
+  };
+
+  useEffect(() => {
+    let isActive = true;
+
+    const tryRedirectFromSession = async (session: any) => {
+      if (!isActive || !session?.user?.id) return;
+
+      try {
+        await redirectByRole(session.user.id);
+      } catch {
+        redirectingRef.current = false;
+      }
+    };
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      void tryRedirectFromSession(session);
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      void tryRedirectFromSession(session);
+    });
+
+    return () => {
+      isActive = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
@@ -30,14 +78,9 @@ export default function Login() {
       const userId = data.user?.id;
       if (!userId) throw new Error('Session utilisateur introuvable');
 
-      const { data: isAdmin } = await supabase.rpc('has_role', {
-        _user_id: userId,
-        _role: 'admin',
-      });
-
-      // Full page reload to ensure auth state is fully initialized
-      window.location.href = isAdmin ? '/' : '/cours';
+      await redirectByRole(userId);
     } catch (error: any) {
+      redirectingRef.current = false;
       setLoading(false);
       toast({
         title: 'Erreur de connexion',
@@ -137,3 +180,4 @@ export default function Login() {
     </div>
   );
 }
+
