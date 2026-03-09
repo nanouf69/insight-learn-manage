@@ -53,14 +53,11 @@ const entrepriseEmettrice = {
   rcs: "823461561",
   tvaIntra: "FR44823461561",
   prefectures: "69-18-001 et 69-16-15",
-  banque: "BNP PARIBAS",
-  iban: "FR76 3000 4014 1800 0101 2475 357",
-  bic: "BNPAFRPPXXX",
-  codeBanque: "30004",
-  codeGuichet: "01418",
-  numeroCompte: "0001024753",
-  cleRib: "57",
-  agence: "LYON-MONTCHAT"
+  banque: "Revolut Bank UAB",
+  iban: "FR76 2823 3000 0185 7527 9099 426",
+  bic: "REVOFRP2",
+  adresseBanque: "10 avenue Kléber, 75116, Paris, France",
+  bicIntermediaire: "CHASDEFX"
 };
 
 interface ApprenantItem {
@@ -791,13 +788,12 @@ export function FactureForm() {
             <CardHeader><CardTitle className="text-base">Règlement par virement, coordonnées bancaires</CardTitle></CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div><span className="text-muted-foreground">Titulaire :</span><p className="font-medium">SERVICES PRO</p></div>
                 <div><span className="text-muted-foreground">Banque :</span><p className="font-medium">{entrepriseEmettrice.banque}</p></div>
-                <div><span className="text-muted-foreground">Code banque :</span><p className="font-medium">{entrepriseEmettrice.codeBanque}</p></div>
-                <div><span className="text-muted-foreground">Code guichet :</span><p className="font-medium">{entrepriseEmettrice.codeGuichet}</p></div>
-                <div><span className="text-muted-foreground">N° compte :</span><p className="font-medium">{entrepriseEmettrice.numeroCompte}</p></div>
-                <div><span className="text-muted-foreground">Clé RIB :</span><p className="font-medium">{entrepriseEmettrice.cleRib}</p></div>
                 <div className="col-span-2"><span className="text-muted-foreground">IBAN :</span><p className="font-medium font-mono">{entrepriseEmettrice.iban}</p></div>
                 <div><span className="text-muted-foreground">BIC/SWIFT :</span><p className="font-medium font-mono">{entrepriseEmettrice.bic}</p></div>
+                <div><span className="text-muted-foreground">Adresse banque :</span><p className="font-medium">{entrepriseEmettrice.adresseBanque}</p></div>
+                <div className="col-span-2"><span className="text-muted-foreground">BIC Intermédiaire (hors EEA) :</span><p className="font-medium font-mono">{entrepriseEmettrice.bicIntermediaire}</p></div>
               </div>
             </CardContent>
           </Card>

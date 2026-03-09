@@ -131,7 +131,7 @@ export function ComptabilitePage() {
   const [relevesLoading, setRelevesLoading] = useState(false);
   const [uploadingReleve, setUploadingReleve] = useState(false);
   const [dragOver, setDragOver] = useState(false);
-  const [releveForm, setReleveForm] = useState({ mois_annee: format(new Date(), "yyyy-MM"), banque: "BNP Paribas", notes: "" });
+  const [releveForm, setReleveForm] = useState({ mois_annee: format(new Date(), "yyyy-MM"), banque: "Revolut Bank UAB", notes: "" });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchFournisseurFactures = async () => {
@@ -204,7 +204,7 @@ export function ComptabilitePage() {
       if (dbError) throw dbError;
 
       toast.success("Relevé déposé avec succès !");
-      setReleveForm({ mois_annee: format(new Date(), "yyyy-MM"), banque: "BNP Paribas", notes: "" });
+      setReleveForm({ mois_annee: format(new Date(), "yyyy-MM"), banque: "Revolut Bank UAB", notes: "" });
       await fetchReleves();
     } catch (err) {
       toast.error("Erreur lors du dépôt : " + (err instanceof Error ? err.message : "Erreur inconnue"));
@@ -1105,6 +1105,7 @@ export function ComptabilitePage() {
                   <Select value={releveForm.banque} onValueChange={v => setReleveForm(f => ({ ...f, banque: v }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="Revolut Bank UAB">Revolut Bank UAB</SelectItem>
                       <SelectItem value="BNP Paribas">BNP Paribas</SelectItem>
                       <SelectItem value="Société Générale">Société Générale</SelectItem>
                       <SelectItem value="Crédit Agricole">Crédit Agricole</SelectItem>
