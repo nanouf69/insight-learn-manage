@@ -125,6 +125,7 @@ interface ModuleDetailViewProps {
   apprenantId?: string | null;
   onModuleCompleted?: (moduleId: number) => void;
   apprenantType?: string | null;
+  isPresentiel?: boolean;
   apprenantInfo?: {
     nom?: string;
     prenom?: string;
