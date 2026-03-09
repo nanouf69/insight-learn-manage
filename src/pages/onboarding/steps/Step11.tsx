@@ -78,6 +78,7 @@ export default function Step11() {
     const apprenantId = localStorage.getItem('onboarding_apprenant_id');
     if (apprenantId) {
       const selectedExamData = datesExamenTheorique.find(e => e.value === dateExamen);
+      const motDePasseCma = localStorage.getItem('onboarding_mot_de_passe_cma');
       const { error } = await supabase
         .from('apprenants')
         .update({
@@ -85,6 +86,7 @@ export default function Step11() {
           date_examen_theorique: dateExamen,
           type_examen: typeExamen,
           lieu_examen: selectedExamData?.lieu || '',
+          ...(motDePasseCma ? { mot_de_passe_cma: motDePasseCma } : {}),
         })
         .eq('id', apprenantId);
       
