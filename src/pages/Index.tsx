@@ -96,6 +96,8 @@ const Index = () => {
   }, [isAdmin, loading, navigate]);
 
   useEffect(() => {
+    if (isAdmin !== true) return;
+
     const fetchFlux = async () => {
       const { data } = await supabase
         .from("transactions_bancaires")
@@ -124,8 +126,9 @@ const Index = () => {
         setFluxPeriode(min === max ? min : `${min} – ${max}`);
       }
     };
+
     fetchFlux();
-  }, []);
+  }, [isAdmin]);
 
   const handleNavigate = (page: string) => {
     if (page !== currentPage) {
