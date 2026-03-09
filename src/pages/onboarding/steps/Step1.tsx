@@ -398,7 +398,10 @@ export default function Step1() {
                   <input
                     type="checkbox"
                     checked={identityConfirmed}
-                    onChange={(e) => setIdentityConfirmed(e.target.checked)}
+                    onChange={(e) => {
+                      setIdentityConfirmed(e.target.checked);
+                      localStorage.setItem('onboarding_step1_identity', String(e.target.checked));
+                    }}
                     className={`w-5 h-5 border-2 rounded focus:ring-green-500 mt-0.5 ${
                       attempted && !identityConfirmed 
                         ? 'border-red-500 text-red-600' 
