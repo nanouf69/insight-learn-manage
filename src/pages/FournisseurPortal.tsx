@@ -1270,10 +1270,13 @@ export default function FournisseurPortal() {
                         </div>
                       </a>
                     </div>
+                    <FormateurQuizViewer
+                      sections={CONTROLE_CONNAISSANCES_TAXI_DATA.exercices}
+                      title="Quiz — Contrôle de connaissances"
+                      icon="✅"
+                    />
                   </CardContent>
                 </Card>
-
-                {/* Bilan & Examens blancs */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
