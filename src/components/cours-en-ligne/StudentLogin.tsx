@@ -25,12 +25,16 @@ const StudentLogin = ({ onLogin }: StudentLoginProps) => {
     setLoading(true);
 
     try {
+      // Sécurité: purge toute session locale existante avant une nouvelle connexion élève
+      await supabase.auth.signOut({ scope: "local" });
+
       const { error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
 
       if (error) {
+        await supabase.auth.signOut({ scope: "local" });
         toast({
           title: "Erreur de connexion",
           description: "Email ou mot de passe incorrect",
@@ -40,6 +44,7 @@ const StudentLogin = ({ onLogin }: StudentLoginProps) => {
         onLogin();
       }
     } catch {
+      await supabase.auth.signOut({ scope: "local" });
       toast({
         title: "Erreur",
         description: "Une erreur est survenue",
@@ -62,12 +67,16 @@ const StudentLogin = ({ onLogin }: StudentLoginProps) => {
     }
     setLoading(true);
     try {
+      // Sécurité: purge session locale avant de vérifier les identifiants
+      await supabase.auth.signOut({ scope: "local" });
+
       // First sign in with current credentials
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
       if (signInError) {
+        await supabase.auth.signOut({ scope: "local" });
         toast({ title: "Erreur", description: "Email ou mot de passe actuel incorrect", variant: "destructive" });
         setLoading(false);
         return;
@@ -83,9 +92,10 @@ const StudentLogin = ({ onLogin }: StudentLoginProps) => {
         setNewPassword("");
         setConfirmPassword("");
         // Sign out so user logs in fresh
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: "local" });
       }
     } catch {
+      await supabase.auth.signOut({ scope: "local" });
       toast({ title: "Erreur", description: "Une erreur est survenue", variant: "destructive" });
     } finally {
       setLoading(false);
