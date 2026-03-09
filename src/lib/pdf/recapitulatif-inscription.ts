@@ -90,6 +90,9 @@ export function generateRecapitulatifPDF(data: RecapitulatifData, options?: { re
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(11);
   addField('N° Dossier', data.numeroDossier);
+  if (data.motDePasseCma) {
+    addField('Mot de passe CMA', data.motDePasseCma);
+  }
 
   yPos += 10;
 
