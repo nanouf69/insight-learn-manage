@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText, Download, Eye, ChevronDown, ChevronUp } from "lucide-react";
+import { FileText, Download, Eye, ChevronDown, ChevronUp, FileDown } from "lucide-react";
+import { generateDocumentIndividuelPdf } from "@/lib/pdf/document-individuel";
 import { useState } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -56,6 +57,15 @@ export function DocumentsCompletes({ apprenant }: Props) {
     a.download = `${doc.type_document}_${apprenant.nom}_${apprenant.prenom}_${format(new Date(doc.completed_at), "yyyy-MM-dd")}.json`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const downloadPDF = (doc: any) => {
+    generateDocumentIndividuelPdf(apprenant, {
+      type_document: doc.type_document,
+      titre: doc.titre,
+      donnees: doc.donnees,
+      completed_at: doc.completed_at,
+    });
   };
 
   const renderFormData = (donnees: any, typeDocument: string) => {
@@ -155,9 +165,13 @@ export function DocumentsCompletes({ apprenant }: Props) {
                   {expandedId === doc.id ? <ChevronUp className="w-4 h-4 mr-1" /> : <Eye className="w-4 h-4 mr-1" />}
                   {expandedId === doc.id ? "Masquer" : "Voir"}
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => downloadJSON(doc)}>
-                  <Download className="w-4 h-4 mr-1" />
-                  Télécharger
+                <Button variant="default" size="sm" onClick={() => downloadPDF(doc)} className="gap-1">
+                  <FileDown className="w-4 h-4" />
+                  PDF
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => downloadJSON(doc)} className="gap-1">
+                  <Download className="w-4 h-4" />
+                  JSON
                 </Button>
               </div>
             </div>
