@@ -1305,9 +1305,14 @@ export default function FournisseurPortal() {
                         </div>
                       </a>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
-                      <span className="text-amber-500">📝</span> Examens blancs chronométrés disponibles dans le module en ligne
-                    </p>
+                    <FormateurQuizViewer
+                      sections={[
+                        ...REGLEMENTATION_NATIONALE_EXERCICES.map(e => ({ ...e, titre: `Bilan ${e.titre}` })),
+                        ...REGLEMENTATION_LOCALE_EXERCICES.map(e => ({ ...e, titre: `Bilan ${e.titre}` })),
+                      ]}
+                      title="Quiz — Bilan Exercices TA"
+                      icon="📊"
+                    />
                   </CardContent>
                 </Card>
 
