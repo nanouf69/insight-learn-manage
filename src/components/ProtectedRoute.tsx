@@ -9,22 +9,37 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    if (!user) {
-      setChecking(false);
-      return;
-    }
+    let isActive = true;
 
     const checkRole = async () => {
-      const { data } = await supabase.rpc('has_role', {
+      if (!user) {
+        if (isActive) {
+          setIsAdmin(null);
+          setChecking(false);
+        }
+        return;
+      }
+
+      setChecking(true);
+      setIsAdmin(null);
+
+      const { data, error } = await supabase.rpc('has_role', {
         _user_id: user.id,
         _role: 'admin',
       });
-      setIsAdmin(!!data);
+
+      if (!isActive) return;
+
+      setIsAdmin(!error && data === true);
       setChecking(false);
     };
 
     checkRole();
-  }, [user]);
+
+    return () => {
+      isActive = false;
+    };
+  }, [user?.id]);
 
   if (loading || checking) {
     return (
@@ -38,7 +53,6 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  // Non-admin users (apprenants) must go to /cours
   if (!isAdmin) {
     return <Navigate to="/cours" replace />;
   }
