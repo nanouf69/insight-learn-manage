@@ -249,13 +249,22 @@ const StudentLogin = ({ onLogin }: StudentLoginProps) => {
               )}
               Se connecter
             </Button>
-            <button
-              type="button"
-              className="w-full text-sm text-muted-foreground hover:text-primary transition-colors"
-              onClick={() => setMode("change-password")}
-            >
-              Modifier mon mot de passe
-            </button>
+            <div className="flex flex-col gap-1">
+              <button
+                type="button"
+                className="w-full text-sm text-primary hover:underline transition-colors font-medium"
+                onClick={() => setMode("forgot-password")}
+              >
+                Mot de passe oublié ?
+              </button>
+              <button
+                type="button"
+                className="w-full text-sm text-muted-foreground hover:text-primary transition-colors"
+                onClick={() => setMode("change-password")}
+              >
+                Modifier mon mot de passe
+              </button>
+            </div>
           </form>
         </CardContent>
       </Card>
