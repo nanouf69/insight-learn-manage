@@ -8,6 +8,14 @@ export default function Step7() {
   const [showPassword, setShowPassword] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
 
+  // Save password to localStorage whenever it changes
+  const handlePasswordChange = (value: string) => {
+    setPassword(value);
+    if (value.trim()) {
+      localStorage.setItem('onboarding_mot_de_passe_cma', value.trim());
+    }
+  };
+
   const canProceed = password.trim().length > 0 && confirmed;
 
   return (
