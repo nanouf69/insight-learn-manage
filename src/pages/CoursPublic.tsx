@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, memo } from "react";
+import { useState, useEffect, useCallback, memo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -580,39 +580,61 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   }, [embedded]);
 
   // Fetch apprenant info when user is logged in
+  const fetchAttemptRef = useRef(0);
   useEffect(() => {
     if (!user || embedded) return;
 
+    // Guard against infinite fetch loops (e.g. token rate-limiting causing repeated failures)
+    fetchAttemptRef.current += 1;
+    const currentAttempt = fetchAttemptRef.current;
+    if (currentAttempt > 3) {
+      console.warn("CoursPublic: too many fetch attempts, stopping");
+      setApprenantLoading(false);
+      return;
+    }
+
     setApprenantLoading(true);
     const fetchApprenant = async () => {
-      const { data: isAdmin, error: roleError } = await supabase.rpc("has_role", {
-        _user_id: user.id,
-        _role: "admin",
-      });
+      try {
+        const { data: isAdmin, error: roleError } = await supabase.rpc("has_role", {
+          _user_id: user.id,
+          _role: "admin",
+        });
 
-      if (!roleError && isAdmin === true) {
-        navigate("/", { replace: true });
+        if (!roleError && isAdmin === true) {
+          navigate("/", { replace: true });
+          setApprenantLoading(false);
+          return;
+        }
+
+        const { data, error: fetchError } = await supabase
+          .from("apprenants")
+          .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, modules_autorises, email, telephone, adresse, code_postal, ville, date_naissance")
+          .eq("auth_user_id", user.id)
+          .maybeSingle();
+
+        if (fetchError) {
+          console.error("CoursPublic: fetch apprenant error", fetchError.message);
+          setApprenantLoading(false);
+          return;
+        }
+
+        if (data) {
+          setApprenant(data as any);
+          const formationId = resolveFormationId(data.type_apprenant, data.formation_choisie, data.modules_autorises);
+          setSelectedFormation(formationId);
+        } else {
+          // No apprenant record found for this user — sign out cleanly
+          setApprenant(null);
+          setSelectedFormation(null);
+          await supabase.auth.signOut({ scope: "local" });
+          setUser(null);
+        }
+      } catch (err) {
+        console.error("CoursPublic: unexpected error", err);
+      } finally {
         setApprenantLoading(false);
-        return;
       }
-
-      const { data } = await supabase
-        .from("apprenants")
-        .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, modules_autorises, email, telephone, adresse, code_postal, ville, date_naissance")
-        .eq("auth_user_id", user.id)
-        .maybeSingle();
-
-      if (data) {
-        setApprenant(data as any);
-        const formationId = resolveFormationId(data.type_apprenant, data.formation_choisie, data.modules_autorises);
-        setSelectedFormation(formationId);
-      } else {
-        // Ne pas fermer la session globale ici: sinon un admin peut être déconnecté par erreur.
-        setApprenant(null);
-        setSelectedFormation(null);
-        setUser(null);
-      }
-      setApprenantLoading(false);
     };
     fetchApprenant();
   }, [user, embedded, navigate]);
