@@ -22,6 +22,11 @@ import { Textarea } from "@/components/ui/textarea";
 import logoFtransport from "@/assets/logo-ftransport.png";
 import { RapprochementBancaire } from "@/components/comptabilite/RapprochementBancaire";
 import { FormateurResultsTab } from "@/components/fournisseurs/FormateurResultsTab";
+import { FormateurQuizViewer } from "@/components/fournisseurs/FormateurQuizViewer";
+import { REGLEMENTATION_NATIONALE_EXERCICES, REGLEMENTATION_LOCALE_EXERCICES } from "@/components/cours-en-ligne/exercices/reglementation-exercices-data";
+import { CONNAISSANCES_VILLE_QUIZZES } from "@/components/cours-en-ligne/exercices/connaissances-ville-quiz-data";
+import { EQUIPEMENTS_TAXI_DATA } from "@/components/cours-en-ligne/equipements-taxi-data";
+import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "@/components/cours-en-ligne/controle-connaissances-taxi-data";
 import { NotesFraisTab } from "@/components/comptabilite/NotesFraisTab";
 
 // Dates formations (same as ApprenantForm)
@@ -1084,13 +1089,13 @@ export default function FournisseurPortal() {
                         </div>
                       </a>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
-                      <span className="text-amber-500">📝</span> Exercices disponibles dans le module en ligne
-                    </p>
+                    <FormateurQuizViewer
+                      sections={REGLEMENTATION_NATIONALE_EXERCICES}
+                      title="Quiz — Réglementation Nationale"
+                      icon="📝"
+                    />
                   </CardContent>
                 </Card>
-
-                {/* Réglementation Locale */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -1112,9 +1117,11 @@ export default function FournisseurPortal() {
                         </a>
                       ))}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
-                      <span className="text-amber-500">📝</span> Exercices disponibles dans le module en ligne
-                    </p>
+                    <FormateurQuizViewer
+                      sections={REGLEMENTATION_LOCALE_EXERCICES}
+                      title="Quiz — Réglementation Locale"
+                      icon="📝"
+                    />
                   </CardContent>
                 </Card>
 
@@ -1158,9 +1165,11 @@ export default function FournisseurPortal() {
                         </a>
                       ))}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
-                      <span className="text-amber-500">📝</span> Quiz interactifs disponibles dans le module en ligne
-                    </p>
+                    <FormateurQuizViewer
+                      sections={CONNAISSANCES_VILLE_QUIZZES}
+                      title="Quiz — Connaissance de la ville"
+                      icon="🏙️"
+                    />
                   </CardContent>
                 </Card>
 
@@ -1184,9 +1193,11 @@ export default function FournisseurPortal() {
                         </div>
                       </a>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
-                      <span className="text-amber-500">📝</span> Quiz 10 questions disponible dans le module
-                    </p>
+                    <FormateurQuizViewer
+                      sections={EQUIPEMENTS_TAXI_DATA.exercices}
+                      title="Quiz — Équipements TAXI"
+                      icon="🚕"
+                    />
                   </CardContent>
                 </Card>
 
@@ -1233,9 +1244,6 @@ export default function FournisseurPortal() {
                         </div>
                       </a>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
-                      <span className="text-amber-500">📝</span> Module interactif avec exercices en ligne
-                    </p>
                   </CardContent>
                 </Card>
 
@@ -1259,10 +1267,13 @@ export default function FournisseurPortal() {
                         </div>
                       </a>
                     </div>
+                    <FormateurQuizViewer
+                      sections={CONTROLE_CONNAISSANCES_TAXI_DATA.exercices}
+                      title="Quiz — Contrôle de connaissances"
+                      icon="✅"
+                    />
                   </CardContent>
                 </Card>
-
-                {/* Bilan & Examens blancs */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -1291,9 +1302,14 @@ export default function FournisseurPortal() {
                         </div>
                       </a>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
-                      <span className="text-amber-500">📝</span> Examens blancs chronométrés disponibles dans le module en ligne
-                    </p>
+                    <FormateurQuizViewer
+                      sections={[
+                        ...REGLEMENTATION_NATIONALE_EXERCICES.map(e => ({ ...e, titre: `Bilan ${e.titre}` })),
+                        ...REGLEMENTATION_LOCALE_EXERCICES.map(e => ({ ...e, titre: `Bilan ${e.titre}` })),
+                      ]}
+                      title="Quiz — Bilan Exercices TA"
+                      icon="📊"
+                    />
                   </CardContent>
                 </Card>
 
