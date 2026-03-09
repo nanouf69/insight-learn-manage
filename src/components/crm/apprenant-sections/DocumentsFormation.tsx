@@ -94,6 +94,9 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
       } else if (type === 'france-travail') {
         await generateAttestationFranceTravail(apprenant);
         toast.success("Attestation France Travail générée");
+      } else if (type === 'progression') {
+        generateFicheProgressionGuenichi();
+        toast.success("Fiche de progression generee");
       } else if (type === 'bienvenue') {
         await generateBienvenueFtransport(apprenant);
         toast.success("Document de bienvenue généré");
