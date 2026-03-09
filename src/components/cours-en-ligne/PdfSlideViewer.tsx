@@ -6,14 +6,11 @@ import "react-pdf/dist/Page/TextLayer.css";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Maximize, Minimize } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// Use CDN worker — try .mjs first (modern), fallback to .js (legacy browsers)
-const pdfjsVersion = pdfjs.version;
-try {
-  // Modern browsers (Chrome 61+, Firefox 60+, Safari 14.1+, Edge 79+)
-  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsVersion}/pdf.worker.min.mjs`;
-} catch {
-  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsVersion}/pdf.worker.min.js`;
-}
+// Use bundled worker import for maximum browser compatibility (avoids CORS/CDN issues)
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.min.mjs",
+  import.meta.url,
+).toString();
 
 interface PdfSlideViewerProps {
   url: string;
