@@ -15,7 +15,8 @@ const StudentLogin = ({ onLogin }: StudentLoginProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<"login" | "change-password">("login");
+  const [mode, setMode] = useState<"login" | "change-password" | "forgot-password">("login");
+  const [forgotEmail, setForgotEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const { toast } = useToast();
@@ -101,6 +102,63 @@ const StudentLogin = ({ onLogin }: StudentLoginProps) => {
       setLoading(false);
     }
   };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast({
+        title: "📧 Email envoyé",
+        description: "Vérifiez votre boîte mail pour réinitialiser votre mot de passe",
+      });
+      setMode("login");
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error.message || "Impossible d'envoyer l'email",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (mode === "forgot-password") {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-3 p-3 rounded-full bg-primary/10 w-fit">
+              <KeyRound className="w-8 h-8 text-primary" />
+            </div>
+            <CardTitle className="text-2xl">Mot de passe oublié</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Entrez votre email, vous recevrez un lien pour réinitialiser votre mot de passe
+            </p>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="forgot-email">Email</Label>
+                <Input id="forgot-email" type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} required placeholder="votre@email.com" />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                Envoyer le lien
+              </Button>
+              <Button type="button" variant="ghost" className="w-full" onClick={() => setMode("login")}>
+                <ArrowLeft className="w-4 h-4 mr-2" /> Retour à la connexion
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (mode === "change-password") {
     return (
@@ -191,13 +249,22 @@ const StudentLogin = ({ onLogin }: StudentLoginProps) => {
               )}
               Se connecter
             </Button>
-            <button
-              type="button"
-              className="w-full text-sm text-muted-foreground hover:text-primary transition-colors"
-              onClick={() => setMode("change-password")}
-            >
-              Modifier mon mot de passe
-            </button>
+            <div className="flex flex-col gap-1">
+              <button
+                type="button"
+                className="w-full text-sm text-primary hover:underline transition-colors font-medium"
+                onClick={() => setMode("forgot-password")}
+              >
+                Mot de passe oublié ?
+              </button>
+              <button
+                type="button"
+                className="w-full text-sm text-muted-foreground hover:text-primary transition-colors"
+                onClick={() => setMode("change-password")}
+              >
+                Modifier mon mot de passe
+              </button>
+            </div>
           </form>
         </CardContent>
       </Card>

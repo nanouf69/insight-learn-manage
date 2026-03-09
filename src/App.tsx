@@ -13,6 +13,7 @@ import ReservationPratique from "./pages/ReservationPratique";
 import InscriptionFormationContinue from "./pages/InscriptionFormationContinue";
 import FournisseurPortal from "./pages/FournisseurPortal";
 import CoursPublic from "./pages/CoursPublic";
+import ResetPassword from "./pages/ResetPassword";
 
 // Onboarding pages
 import OnboardingWelcome from "./pages/onboarding/OnboardingWelcome";
@@ -69,6 +70,7 @@ function App() {
               <Route path="/reservation-pratique" element={<ReservationPratique />} />
               <Route path="/inscription-formation-continue" element={<InscriptionFormationContinue />} />
               <Route path="/cours" element={<CoursPublic />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               
               {/* Fournisseur portal - public */}
               <Route path="/fournisseur/:token" element={<FournisseurPortal />} />
