@@ -29,6 +29,7 @@ import { EQUIPEMENTS_TAXI_DATA } from "@/components/cours-en-ligne/equipements-t
 import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "@/components/cours-en-ligne/controle-connaissances-taxi-data";
 import { FRANCAIS_EXERCICES } from "@/components/cours-en-ligne/exercices/francais-exercices-data";
 import { ANGLAIS_EXERCICES } from "@/components/cours-en-ligne/exercices/anglais-exercices-data";
+import { CAS_PRATIQUE_TAXI_EXERCICES } from "@/components/cours-en-ligne/cas-pratique-taxi-exercices-data";
 import { NotesFraisTab } from "@/components/comptabilite/NotesFraisTab";
 
 // Dates formations (same as ApprenantForm)
@@ -1270,10 +1271,10 @@ export default function FournisseurPortal() {
                     <CardDescription>Exercices de mise en situation professionnelle</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                       <a href="/cours/vtc/CAS_PRATIQUE.docx" target="_blank" rel="noopener noreferrer">
                         <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
-                          <FileText className="w-5 h-5 text-blue-500" />
+                          <FileText className="w-5 h-5 text-primary" />
                           <div>
                             <p className="font-medium text-sm">Cas Pratique — Exercices</p>
                             <p className="text-xs text-muted-foreground">Document Word</p>
@@ -1281,6 +1282,11 @@ export default function FournisseurPortal() {
                         </div>
                       </a>
                     </div>
+                    <FormateurQuizViewer
+                      sections={CAS_PRATIQUE_TAXI_EXERCICES}
+                      title="Quiz — Cas Pratique TAXI"
+                      icon="📋"
+                    />
                   </CardContent>
                 </Card>
 
