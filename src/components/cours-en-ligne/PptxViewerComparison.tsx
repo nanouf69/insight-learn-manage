@@ -35,7 +35,7 @@ export default function PptxViewerComparison({
 
   // Students are restricted to non-downloadable viewers
   const isStudentRestricted = studentOnly;
-  const effectiveMode: "google" | "google-zoom" | "ms-office" | "images" | "pdf" | "blocked" = isStudentRestricted
+  const effectiveMode: "google" | "google-zoom" | "ms-office" | "images" | "pdf" = isStudentRestricted
     ? (pdfUrl ? "pdf" : hasImages ? "images" : "google")
     : mode;
 
