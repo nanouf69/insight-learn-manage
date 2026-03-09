@@ -529,6 +529,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [loading, setLoading] = useState(!embedded);
   const [apprenantLoading, setApprenantLoading] = useState(false);
   const [apprenant, setApprenant] = useState<ApprenantInfo | null>(null);
+  const [apprenantFetchError, setApprenantFetchError] = useState<string | null>(null);
+  const [fetchNonce, setFetchNonce] = useState(0);
   const [selectedModule, setSelectedModule] = useState<{ id: number; nom: string } | null>(null);
   const [selectedFormation, setSelectedFormation] = useState<FormationId | null>(null);
   const [activeTab, setActiveTab] = useState<"accueil" | "examens" | "notes">("accueil");
