@@ -91,7 +91,11 @@ export default function Step1() {
   };
 
   const handleAnswerChange = (questionId: string, value: boolean) => {
-    setAnswers(prev => ({ ...prev, [questionId]: value }));
+    setAnswers(prev => {
+      const updated = { ...prev, [questionId]: value };
+      localStorage.setItem('onboarding_step1_answers', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   // Sauvegarder les modifications dans le CRM
