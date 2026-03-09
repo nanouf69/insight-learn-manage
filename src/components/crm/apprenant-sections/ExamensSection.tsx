@@ -115,6 +115,17 @@ export function ExamensSection({ apprenant }: ExamensSectionProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {/* Mot de passe CMA */}
+        {apprenant.mot_de_passe_cma && (
+          <div className="mb-6 p-4 border rounded-xl bg-amber-50 border-amber-200">
+            <div className="flex items-center gap-2 mb-1">
+              <KeyRound className="w-4 h-4 text-amber-600" />
+              <span className="text-sm font-medium text-amber-800">Mot de passe CMA (défini par l'élève)</span>
+            </div>
+            <p className="font-mono text-lg font-semibold text-amber-900 ml-6">{apprenant.mot_de_passe_cma}</p>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Examen Théorique */}
           <div className="p-6 border rounded-xl bg-gradient-to-br from-blue-50 to-transparent">
