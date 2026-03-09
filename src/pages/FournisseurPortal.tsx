@@ -1270,10 +1270,10 @@ export default function FournisseurPortal() {
                     <CardDescription>Exercices de mise en situation professionnelle</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                       <a href="/cours/vtc/CAS_PRATIQUE.docx" target="_blank" rel="noopener noreferrer">
                         <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
-                          <FileText className="w-5 h-5 text-blue-500" />
+                          <FileText className="w-5 h-5 text-primary" />
                           <div>
                             <p className="font-medium text-sm">Cas Pratique — Exercices</p>
                             <p className="text-xs text-muted-foreground">Document Word</p>
@@ -1281,6 +1281,11 @@ export default function FournisseurPortal() {
                         </div>
                       </a>
                     </div>
+                    <FormateurQuizViewer
+                      sections={CAS_PRATIQUE_TAXI_EXERCICES}
+                      title="Quiz — Cas Pratique TAXI"
+                      icon="📋"
+                    />
                   </CardContent>
                 </Card>
 
