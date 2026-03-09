@@ -557,12 +557,22 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     if (embedded) return; // skip auth in admin preview
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      setUser(prev => {
+        const newId = session?.user?.id ?? null;
+        const prevId = prev?.id ?? null;
+        if (newId === prevId) return prev;
+        return session?.user ?? null;
+      });
       setLoading(false);
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+      setUser(prev => {
+        const newId = session?.user?.id ?? null;
+        const prevId = prev?.id ?? null;
+        if (newId === prevId && prev) return prev;
+        return session?.user ?? null;
+      });
       setLoading(false);
     });
 
