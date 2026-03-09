@@ -317,6 +317,22 @@ const inferSubjectNumberFromExerciseTitle = (title: string): number | null => {
   return null;
 };
 
+const withTimeout = <T,>(promiseLike: PromiseLike<T>, timeoutMs: number, timeoutMessage: string): Promise<T> => {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
+
+    Promise.resolve(promiseLike)
+      .then((value) => {
+        clearTimeout(timer);
+        resolve(value);
+      })
+      .catch((error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+  });
+};
+
 // Short label for each standard subject number (cours/exercices modules)
 const SUBJECT_QUIZ_LABELS: Record<number, string> = {
   1: "T3P",
@@ -581,21 +597,29 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
     const fetchApprenant = async () => {
       try {
-        const { data: isAdmin, error: roleError } = await supabase.rpc("has_role", {
-          _user_id: user.id,
-          _role: "admin",
-        });
+        const { data: isAdmin, error: roleError } = await withTimeout(
+          supabase.rpc("has_role", {
+            _user_id: user.id,
+            _role: "admin",
+          }),
+          12000,
+          "Temps d'attente dépassé pendant la vérification du profil.",
+        );
 
         if (!cancelled && !roleError && isAdmin === true) {
           navigate("/", { replace: true });
           return;
         }
 
-        const { data, error: fetchError } = await supabase
-          .from("apprenants")
-          .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, modules_autorises, email, telephone, adresse, code_postal, ville, date_naissance")
-          .eq("auth_user_id", user.id)
-          .maybeSingle();
+        const { data, error: fetchError } = await withTimeout(
+          supabase
+            .from("apprenants")
+            .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, modules_autorises, email, telephone, adresse, code_postal, ville, date_naissance")
+            .eq("auth_user_id", user.id)
+            .maybeSingle(),
+          12000,
+          "Temps d'attente dépassé pendant le chargement du dossier apprenant.",
+        );
 
         if (cancelled) return;
 
@@ -616,10 +640,16 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           setSelectedFormation(null);
           setApprenantFetchError("Compte apprenant introuvable. Réessayez ou contactez le centre.");
         }
-      } catch (err) {
+      } catch (err: any) {
         if (cancelled) return;
         console.error("CoursPublic: unexpected error", err);
-        setApprenantFetchError("Une erreur inattendue est survenue.");
+
+        const errorMessage = typeof err?.message === "string" ? err.message : "";
+        if (errorMessage.includes("Temps d'attente dépassé")) {
+          setApprenantFetchError("Connexion lente détectée sur cet appareil. Cliquez sur Réessayer.");
+        } else {
+          setApprenantFetchError("Une erreur inattendue est survenue.");
+        }
       } finally {
         if (!cancelled) setApprenantLoading(false);
       }
@@ -742,8 +772,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // Loading state
   if ((!embedded && authLoading) || apprenantLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-3">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        <p className="text-sm text-muted-foreground">Chargement de votre espace apprenant…</p>
       </div>
     );
   }
