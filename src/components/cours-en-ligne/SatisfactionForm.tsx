@@ -147,6 +147,7 @@ const SatisfactionForm = ({ formationType, apprenantId, onComplete }: Satisfacti
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      <div className="flex justify-end sticky top-0 z-10"><StatusIndicator /></div>
       <Card className="border-0 shadow-lg overflow-hidden">
         <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 p-6 border-b">
           <h2 className="text-xl font-bold text-foreground">⭐ Questionnaire de Satisfaction</h2>
