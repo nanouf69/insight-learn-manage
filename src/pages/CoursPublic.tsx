@@ -731,8 +731,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   }, [apprenant?.id]);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
+    await signOut();
     setApprenant(null);
     setSelectedFormation(null);
     setApprenantFetchError(null);
@@ -741,7 +740,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   };
 
   // Loading state
-  if (loading || apprenantLoading) {
+  if ((!embedded && authLoading) || apprenantLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
