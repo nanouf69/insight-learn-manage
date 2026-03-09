@@ -788,13 +788,12 @@ export function FactureForm() {
             <CardHeader><CardTitle className="text-base">Règlement par virement, coordonnées bancaires</CardTitle></CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div><span className="text-muted-foreground">Titulaire :</span><p className="font-medium">SERVICES PRO</p></div>
                 <div><span className="text-muted-foreground">Banque :</span><p className="font-medium">{entrepriseEmettrice.banque}</p></div>
-                <div><span className="text-muted-foreground">Code banque :</span><p className="font-medium">{entrepriseEmettrice.codeBanque}</p></div>
-                <div><span className="text-muted-foreground">Code guichet :</span><p className="font-medium">{entrepriseEmettrice.codeGuichet}</p></div>
-                <div><span className="text-muted-foreground">N° compte :</span><p className="font-medium">{entrepriseEmettrice.numeroCompte}</p></div>
-                <div><span className="text-muted-foreground">Clé RIB :</span><p className="font-medium">{entrepriseEmettrice.cleRib}</p></div>
                 <div className="col-span-2"><span className="text-muted-foreground">IBAN :</span><p className="font-medium font-mono">{entrepriseEmettrice.iban}</p></div>
                 <div><span className="text-muted-foreground">BIC/SWIFT :</span><p className="font-medium font-mono">{entrepriseEmettrice.bic}</p></div>
+                <div><span className="text-muted-foreground">Adresse banque :</span><p className="font-medium">{entrepriseEmettrice.adresseBanque}</p></div>
+                <div className="col-span-2"><span className="text-muted-foreground">BIC Intermédiaire (hors EEA) :</span><p className="font-medium font-mono">{entrepriseEmettrice.bicIntermediaire}</p></div>
               </div>
             </CardContent>
           </Card>
