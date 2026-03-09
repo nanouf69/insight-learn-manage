@@ -195,18 +195,13 @@ export default function AnalyseBesoinForm({
 
     if (apprenantId) {
       const signatureData = canvasRef.current?.toDataURL("image/png") || "";
-      const saved = await saveFormDocument({
-        apprenantId,
-        typeDocument: "analyse-besoin",
-        titre: "Analyse du besoin – Fiche client",
-        donnees: {
-          nom, prenom, email, telephone, adresse, codePostal, ville,
-          formationVTC, formationTAXI,
-          eligibility, complementary, centreFormation, typeHandicap,
-          engagementAccepted, signature: signatureData, dateDocument,
-        },
+      const saved = await autoTrigger({
+        ...collectData(),
+        signature: signatureData,
+        _status: "completed",
       });
       if (saved) toast.success("Analyse du besoin enregistrée !");
+      else toast.error("Erreur lors de la sauvegarde");
     }
     onComplete();
   };
