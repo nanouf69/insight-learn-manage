@@ -33,7 +33,7 @@ export default function Login() {
       });
       if (roleError) throw roleError;
 
-      navigate(isAdmin ? "/" : "/cours", { replace: true });
+      window.location.replace(isAdmin ? "/" : "/cours");
     } catch (error: any) {
       toast({ title: "Erreur", description: error.message || "Une erreur est survenue", variant: "destructive" });
     } finally {
