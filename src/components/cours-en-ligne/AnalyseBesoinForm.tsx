@@ -71,6 +71,7 @@ export default function AnalyseBesoinForm({
   const [centreFormation, setCentreFormation] = useState("");
   const [typeHandicap, setTypeHandicap] = useState("");
   const [engagementAccepted, setEngagementAccepted] = useState(false);
+  const [dateDocument, setDateDocument] = useState(new Date().toISOString().slice(0, 10));
 
   // Validation
   const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
@@ -180,7 +181,7 @@ export default function AnalyseBesoinForm({
           nom, prenom, email, telephone, adresse, codePostal, ville,
           formationVTC, formationTAXI,
           eligibility, complementary, centreFormation, typeHandicap,
-          engagementAccepted, signature: signatureData,
+          engagementAccepted, signature: signatureData, dateDocument,
         },
       });
       if (saved) toast.success("Analyse du besoin enregistrée !");
@@ -373,7 +374,10 @@ export default function AnalyseBesoinForm({
       <Card className={invalidFields.has("signature") ? "ring-2 ring-destructive/60" : ""}>
         <CardContent className="p-4 space-y-3">
           <h4 className="font-bold text-sm text-primary border-b pb-2">SIGNATURE <span className="text-destructive">*</span></h4>
-          <p className="text-xs text-muted-foreground">Fait à Lyon, le {new Date().toLocaleDateString("fr-FR")}</p>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>Fait à Lyon, le</span>
+            <Input type="date" value={dateDocument} onChange={e => setDateDocument(e.target.value)} className="w-44 h-7 text-xs" />
+          </div>
           <p className="text-sm font-medium">Signature du stagiaire (précédée de la mention « Lu et approuvé ») :</p>
           <div className="border-2 border-dashed border-border rounded-lg p-1 bg-white">
             <canvas
