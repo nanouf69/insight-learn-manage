@@ -762,6 +762,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     setUser(null);
     setApprenant(null);
     setSelectedFormation(null);
+    setApprenantFetchError(null);
+    fetchAttemptRef.current = 0;
+    lastFetchedUserIdRef.current = null;
   };
 
   // Loading state
