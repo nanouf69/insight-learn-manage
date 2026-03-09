@@ -6,8 +6,11 @@ import "react-pdf/dist/Page/TextLayer.css";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Maximize, Minimize } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// Use CDN worker with .min.js fallback for maximum browser compatibility
-pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+// Use bundled worker import for maximum browser compatibility (avoids CORS/CDN issues)
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.min.mjs",
+  import.meta.url,
+).toString();
 
 interface PdfSlideViewerProps {
   url: string;
@@ -21,6 +24,8 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
   const [zoom, setZoom] = useState(1);
   const [isNativeFullscreen, setIsNativeFullscreen] = useState(false);
   const [isPseudoFullscreen, setIsPseudoFullscreen] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(960);
 
@@ -209,19 +214,37 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
           touchAction: "pan-x pan-y",
         }}
       >
-        <Document
-          file={url}
-          onLoadSuccess={onDocumentLoadSuccess}
-          loading={<div className="flex items-center justify-center p-12 text-muted-foreground">Chargement du PDF…</div>}
-          error={<div className="flex items-center justify-center p-12 text-destructive">Impossible de charger le PDF.</div>}
-        >
-          <Page
-            pageNumber={page}
-            width={containerWidth * zoom}
-            renderTextLayer={false}
-            renderAnnotationLayer={false}
-          />
-        </Document>
+        {loadError ? (
+          <div className="flex flex-col items-center justify-center p-12 gap-4">
+            <p className="text-muted-foreground text-sm text-center">
+              Le PDF ne s'affiche pas ? Essayez de le télécharger ou de l'ouvrir dans un nouvel onglet.
+            </p>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => { setLoadError(false); setRetryCount(r => r + 1); }}>
+                Réessayer
+              </Button>
+              <a href={url} target="_blank" rel="noopener noreferrer">
+                <Button variant="default" size="sm">Ouvrir dans un nouvel onglet</Button>
+              </a>
+            </div>
+          </div>
+        ) : (
+          <Document
+            key={retryCount}
+            file={url}
+            onLoadSuccess={(data) => { setLoadError(false); onDocumentLoadSuccess(data); }}
+            onLoadError={() => setLoadError(true)}
+            loading={<div className="flex items-center justify-center p-12 text-muted-foreground">Chargement du PDF…</div>}
+            error={<div className="flex items-center justify-center p-12 text-destructive">Impossible de charger le PDF.</div>}
+          >
+            <Page
+              pageNumber={page}
+              width={containerWidth * zoom}
+              renderTextLayer={false}
+              renderAnnotationLayer={false}
+            />
+          </Document>
+        )}
       </div>
 
       {/* Bottom nav for mobile — with zoom controls */}
