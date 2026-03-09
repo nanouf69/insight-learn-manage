@@ -3351,10 +3351,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           const unlocked = isPageUnlocked(i);
           const isCurrent = i === currentPage;
           const isCompleted = completedPages.has(i);
+          const isQuizPage = p.type === "exercice-single" && p.exercice.questions && p.exercice.questions.length > 0;
           const rawLabel = p.type === "cours"
             ? p.cours.titre
             : p.type === "exercice-single"
-              ? `📝 ${p.exercice.titre}`
+              ? isQuizPage ? `📝 Quiz — ${p.exercice.titre}` : `📝 ${p.exercice.titre}`
               : "📝 Exercices";
           const label = hierarchicalLabelsByPage[i]
             || (subjectInfo
