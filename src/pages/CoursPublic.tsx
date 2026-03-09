@@ -962,10 +962,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     }
   }
 
-  // Completed modules are always accessible (for review)
-  modules.forEach(m => { if (completedModuleIds.has(m.id)) unlockedModuleIds.add(m.id); });
+  // Completed modules are always accessible (for review) EXCEPT Introduction modules
+  modules.forEach(m => { if (completedModuleIds.has(m.id) && !INTRO_MODULE_IDS.has(m.id)) unlockedModuleIds.add(m.id); });
 
   const isModuleLocked = (modId: number) => !unlockedModuleIds.has(modId) && !completedModuleIds.has(modId);
+
+  // Introduction modules: once completed, they cannot be re-opened
+  const isIntroLocked = (modId: number) => INTRO_MODULE_IDS.has(modId) && completedModuleIds.has(modId);
 
   return (
     <div className={embedded ? "" : "min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50"}>
