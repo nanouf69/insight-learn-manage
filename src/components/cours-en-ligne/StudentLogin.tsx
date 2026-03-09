@@ -88,7 +88,6 @@ const StudentLogin = ({ onLogin }: StudentLoginProps) => {
         await supabase.auth.signOut({ scope: "local" });
       }
     } catch {
-      await supabase.auth.signOut({ scope: "local" });
       toast({ title: "Erreur", description: "Une erreur est survenue", variant: "destructive" });
     } finally {
       setLoading(false);
