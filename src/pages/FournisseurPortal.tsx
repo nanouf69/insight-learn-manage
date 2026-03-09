@@ -23,6 +23,7 @@ import logoFtransport from "@/assets/logo-ftransport.png";
 import { RapprochementBancaire } from "@/components/comptabilite/RapprochementBancaire";
 import { FormateurResultsTab } from "@/components/fournisseurs/FormateurResultsTab";
 import { FormateurQuizViewer } from "@/components/fournisseurs/FormateurQuizViewer";
+import { EditableQuizViewer } from "@/components/fournisseurs/EditableQuizViewer";
 import { REGLEMENTATION_NATIONALE_EXERCICES, REGLEMENTATION_LOCALE_EXERCICES } from "@/components/cours-en-ligne/exercices/reglementation-exercices-data";
 import { CONNAISSANCES_VILLE_QUIZZES } from "@/components/cours-en-ligne/exercices/connaissances-ville-quiz-data";
 import { EQUIPEMENTS_TAXI_DATA } from "@/components/cours-en-ligne/equipements-taxi-data";
@@ -1092,10 +1093,12 @@ export default function FournisseurPortal() {
                         </div>
                       </a>
                     </div>
-                    <FormateurQuizViewer
+                    <EditableQuizViewer
                       sections={REGLEMENTATION_NATIONALE_EXERCICES}
                       title="Quiz — Réglementation Nationale"
                       icon="📝"
+                      quizId="reglementation-nationale"
+                      fournisseurId={fournisseur?.id || ""}
                     />
                   </CardContent>
                 </Card>
@@ -1120,10 +1123,12 @@ export default function FournisseurPortal() {
                         </a>
                       ))}
                     </div>
-                    <FormateurQuizViewer
+                    <EditableQuizViewer
                       sections={REGLEMENTATION_LOCALE_EXERCICES}
                       title="Quiz — Réglementation Locale"
                       icon="📝"
+                      quizId="reglementation-locale"
+                      fournisseurId={fournisseur?.id || ""}
                     />
                   </CardContent>
                 </Card>
@@ -1148,10 +1153,12 @@ export default function FournisseurPortal() {
                         </div>
                       </a>
                     </div>
-                    <FormateurQuizViewer
+                    <EditableQuizViewer
                       sections={FRANCAIS_EXERCICES}
                       title="Quiz — Français"
                       icon="🇫🇷"
+                      quizId="francais"
+                      fournisseurId={fournisseur?.id || ""}
                     />
                   </CardContent>
                 </Card>
@@ -1178,10 +1185,12 @@ export default function FournisseurPortal() {
                         </a>
                       ))}
                     </div>
-                    <FormateurQuizViewer
+                    <EditableQuizViewer
                       sections={ANGLAIS_EXERCICES}
                       title="Quiz — Anglais"
                       icon="🇬🇧"
+                      quizId="anglais"
+                      fournisseurId={fournisseur?.id || ""}
                     />
                   </CardContent>
                 </Card>
@@ -1226,10 +1235,12 @@ export default function FournisseurPortal() {
                         </a>
                       ))}
                     </div>
-                    <FormateurQuizViewer
+                    <EditableQuizViewer
                       sections={CONNAISSANCES_VILLE_QUIZZES}
                       title="Quiz — Connaissance de la ville"
                       icon="🏙️"
+                      quizId="connaissance-ville"
+                      fournisseurId={fournisseur?.id || ""}
                     />
                   </CardContent>
                 </Card>
@@ -1254,10 +1265,12 @@ export default function FournisseurPortal() {
                         </div>
                       </a>
                     </div>
-                    <FormateurQuizViewer
+                    <EditableQuizViewer
                       sections={EQUIPEMENTS_TAXI_DATA.exercices}
                       title="Quiz — Équipements TAXI"
                       icon="🚕"
+                      quizId="equipements-taxi"
+                      fournisseurId={fournisseur?.id || ""}
                     />
                   </CardContent>
                 </Card>
@@ -1282,10 +1295,12 @@ export default function FournisseurPortal() {
                         </div>
                       </a>
                     </div>
-                    <FormateurQuizViewer
+                    <EditableQuizViewer
                       sections={CAS_PRATIQUE_TAXI_EXERCICES}
                       title="Quiz — Cas Pratique TAXI"
                       icon="📋"
+                      quizId="cas-pratique-taxi"
+                      fournisseurId={fournisseur?.id || ""}
                     />
                   </CardContent>
                 </Card>
@@ -1333,10 +1348,12 @@ export default function FournisseurPortal() {
                         </div>
                       </a>
                     </div>
-                    <FormateurQuizViewer
+                    <EditableQuizViewer
                       sections={CONTROLE_CONNAISSANCES_TAXI_DATA.exercices}
                       title="Quiz — Contrôle de connaissances"
                       icon="✅"
+                      quizId="controle-connaissances-taxi"
+                      fournisseurId={fournisseur?.id || ""}
                     />
                   </CardContent>
                 </Card>
@@ -1368,13 +1385,15 @@ export default function FournisseurPortal() {
                         </div>
                       </a>
                     </div>
-                    <FormateurQuizViewer
+                    <EditableQuizViewer
                       sections={[
                         ...REGLEMENTATION_NATIONALE_EXERCICES.map(e => ({ ...e, titre: `Bilan ${e.titre}` })),
                         ...REGLEMENTATION_LOCALE_EXERCICES.map(e => ({ ...e, titre: `Bilan ${e.titre}` })),
                       ]}
                       title="Quiz — Bilan Exercices TA"
                       icon="📊"
+                      quizId="bilan-exercices-ta"
+                      fournisseurId={fournisseur?.id || ""}
                     />
                   </CardContent>
                 </Card>
