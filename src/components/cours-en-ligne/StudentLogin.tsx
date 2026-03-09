@@ -26,26 +26,22 @@ const StudentLogin = ({ onLogin }: StudentLoginProps) => {
     setLoading(true);
 
     try {
-      // Sécurité: purge toute session locale existante avant une nouvelle connexion élève
-      await supabase.auth.signOut({ scope: "local" });
-
       const { error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
 
       if (error) {
-        await supabase.auth.signOut({ scope: "local" });
         toast({
           title: "Erreur de connexion",
           description: "Email ou mot de passe incorrect",
           variant: "destructive",
         });
-      } else {
-        onLogin();
+        return;
       }
+
+      onLogin();
     } catch {
-      await supabase.auth.signOut({ scope: "local" });
       toast({
         title: "Erreur",
         description: "Une erreur est survenue",
