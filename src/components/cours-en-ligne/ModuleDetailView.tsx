@@ -67,6 +67,11 @@ import SatisfactionForm from "./SatisfactionForm";
 import CGVAcceptanceForm from "./CGVAcceptanceForm";
 import CGVReglementForm from "./CGVReglementForm";
 import { getCompetencesForFormation } from "./competences-checklist-data";
+import {
+  applyOverridesToModuleExercices,
+  detectAndSaveOverrides,
+  getOverridesFingerprint,
+} from "./shared-exercise-overrides";
 
 interface InlineQuizQuestion {
   id: number;
@@ -1083,7 +1088,25 @@ const CAS_PRATIQUE_TAXI_DATA: ModuleData = {
   ],
 };
 
+function applyOverridesToResult(data: ModuleData): ModuleData {
+  if (data.exercices.length === 0) return data;
+  return {
+    ...data,
+    exercices: applyOverridesToModuleExercices(data.exercices),
+  };
+}
+
 function getInitialModuleData(
+  module: { id: number; nom: string },
+  apprenantType?: string | null,
+  studentOnly = false,
+): ModuleData {
+  const result = getInitialModuleDataRaw(module, apprenantType, studentOnly);
+  // Apply shared overrides so that admin/trainer question edits propagate to all modules
+  return applyOverridesToResult(result);
+}
+
+function getInitialModuleDataRaw(
   module: { id: number; nom: string },
   apprenantType?: string | null,
   studentOnly = false,
@@ -1821,7 +1844,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
   const buildSourceFingerprint = (data: ModuleData) =>
     JSON.stringify({
-      v: 6,
+      v: 7,
+      overrides: getOverridesFingerprint(),
       coursCount: data.cours.length,
       exercicesCount: data.exercices.length,
       totalQuestions: data.exercices.reduce((acc, e) => acc + (e.questions?.length || 0), 0),
@@ -1840,6 +1864,46 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         questionCount: e.questions?.length || 0,
       })),
     });
+
+  // Load trainer DB overrides and apply to student view
+  useEffect(() => {
+    if (!studentOnly) return;
+
+    async function loadTrainerOverrides() {
+      try {
+        const { data } = await supabase
+          .from("quiz_questions_overrides")
+          .select("section_id, question_id, enonce, choix");
+
+        if (!data || data.length === 0) return;
+
+        // Build a map of normalized original enonce → override
+        // We apply these by matching question enonces since section/question IDs
+        // may differ across modules
+        setModuleData((prev) => {
+          const updatedExercices = prev.exercices.map((exo) => {
+            if (!exo.questions || exo.questions.length === 0) return exo;
+            const updatedQuestions = exo.questions.map((q) => {
+              // Try to find a matching DB override by section_id + question_id
+              for (const ov of data) {
+                if (ov.section_id === exo.id && ov.question_id === q.id) {
+                  const choix = ov.choix as { lettre: string; texte: string; correct?: boolean }[];
+                  return { ...q, enonce: ov.enonce, choix };
+                }
+              }
+              return q;
+            });
+            return { ...exo, questions: updatedQuestions };
+          });
+          return { ...prev, exercices: updatedExercices };
+        });
+      } catch (err) {
+        console.error("[ModuleDetailView] Error loading trainer overrides:", err);
+      }
+    }
+
+    loadTrainerOverrides();
+  }, [studentOnly, module.id]);
 
   useEffect(() => {
     const initialData = getInitialModuleData(module, apprenantType, studentOnly);
@@ -2020,6 +2084,19 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   };
 
   const updateExerciceQuestions = (exerciceId: number, questions: ExerciceQuestion[]) => {
+    // Detect changes vs original source and save to shared overrides store
+    if (!studentOnly) {
+      const sourceData = getInitialModuleDataRaw(module, apprenantType, studentOnly);
+      const sourceExo = sourceData.exercices.find(e => e.id === exerciceId);
+      if (sourceExo?.questions) {
+        detectAndSaveOverrides(
+          sourceExo.questions as { enonce: string; choix: { lettre: string; texte: string; correct?: boolean }[] }[],
+          questions,
+          module.id,
+        );
+      }
+    }
+
     setModuleData({
       ...moduleData,
       exercices: moduleData.exercices.map(e => e.id === exerciceId ? { ...e, questions } : e),
