@@ -181,7 +181,7 @@ export default function AnalyseBesoinForm({
           nom, prenom, email, telephone, adresse, codePostal, ville,
           formationVTC, formationTAXI,
           eligibility, complementary, centreFormation, typeHandicap,
-          engagementAccepted, signature: signatureData,
+          engagementAccepted, signature: signatureData, dateDocument,
         },
       });
       if (saved) toast.success("Analyse du besoin enregistrée !");
