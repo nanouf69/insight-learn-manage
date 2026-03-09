@@ -377,6 +377,7 @@ export type Database = {
           modules_autorises: number[] | null
           montant_paye: number | null
           montant_ttc: number | null
+          mot_de_passe_cma: string | null
           moyen_paiement: string | null
           nom: string
           notes: string | null
@@ -420,6 +421,7 @@ export type Database = {
           modules_autorises?: number[] | null
           montant_paye?: number | null
           montant_ttc?: number | null
+          mot_de_passe_cma?: string | null
           moyen_paiement?: string | null
           nom: string
           notes?: string | null
@@ -463,6 +465,7 @@ export type Database = {
           modules_autorises?: number[] | null
           montant_paye?: number | null
           montant_ttc?: number | null
+          mot_de_passe_cma?: string | null
           moyen_paiement?: string | null
           nom?: string
           notes?: string | null
