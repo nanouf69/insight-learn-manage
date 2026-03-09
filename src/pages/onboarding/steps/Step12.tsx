@@ -143,6 +143,105 @@ export default function Step12() {
     return type ? type.label : value;
   };
 
+  const buildRecapData = () => {
+    const selectedExam = datesExamenTheorique.find(e => e.value === dateExamen);
+
+    return {
+      nom,
+      prenom,
+      email,
+      telephone,
+      numeroDossier,
+      typeExamen: getTypeExamenLabel(typeExamen),
+      dateExamen,
+      lieuExamen: selectedExam?.lieu,
+      b2Vierge,
+    };
+  };
+
+  const persistRecapDocument = async (
+    apprenantId: string,
+    pdfData: ReturnType<typeof buildRecapData>
+  ) => {
+    const blob = generateRecapitulatifPDF(pdfData, { returnBlob: true });
+
+    if (!(blob instanceof Blob)) {
+      throw new Error("Impossible de générer le PDF de récapitulatif");
+    }
+
+    const fileName = `recapitulatif_inscription_${Date.now()}.pdf`;
+    const filePath = `${apprenantId}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('documents-inscription')
+      .upload(filePath, blob, { cacheControl: '3600', upsert: true });
+
+    if (uploadError) {
+      throw uploadError;
+    }
+
+    const { data: urlData } = supabase.storage
+      .from('documents-inscription')
+      .getPublicUrl(filePath);
+
+    const { data: existingRows, error: existingRowsError } = await supabase
+      .from('documents_inscription')
+      .select('id, nom_fichier')
+      .eq('apprenant_id', apprenantId)
+      .eq('type_document', 'recapitulatif_inscription');
+
+    if (existingRowsError) {
+      throw existingRowsError;
+    }
+
+    const payload = {
+      titre: "Document de bienvenue - Récapitulatif d'inscription",
+      description: "PDF généré automatiquement à la fin de l'onboarding",
+      url: urlData?.publicUrl || '',
+      nom_fichier: fileName,
+      statut: 'valid',
+    };
+
+    if ((existingRows?.length ?? 0) > 0) {
+      const { error: updateError } = await supabase
+        .from('documents_inscription')
+        .update(payload)
+        .eq('apprenant_id', apprenantId)
+        .eq('type_document', 'recapitulatif_inscription');
+
+      if (updateError) {
+        throw updateError;
+      }
+    } else {
+      const { error: insertError } = await supabase
+        .from('documents_inscription')
+        .insert({
+          apprenant_id: apprenantId,
+          type_document: 'recapitulatif_inscription',
+          ...payload,
+        });
+
+      if (insertError) {
+        throw insertError;
+      }
+    }
+
+    const filesToDelete = (existingRows ?? [])
+      .map((row) => row.nom_fichier)
+      .filter((name): name is string => Boolean(name) && name !== fileName)
+      .map((name) => `${apprenantId}/${name}`);
+
+    if (filesToDelete.length > 0) {
+      const { error: removeError } = await supabase.storage
+        .from('documents-inscription')
+        .remove(filesToDelete);
+
+      if (removeError) {
+        console.error('Erreur nettoyage anciens récapitulatifs:', removeError);
+      }
+    }
+  };
+
   const handleSubmit = async () => {
     if (!b2Vierge) {
       toast.error("Veuillez confirmer que votre B2 est vierge");
@@ -150,11 +249,11 @@ export default function Step12() {
     }
 
     setIsSubmitting(true);
-    
+
     try {
       // Get the apprenant ID from localStorage
       const apprenantId = localStorage.getItem('onboarding_apprenant_id');
-      
+
       if (!apprenantId) {
         toast.error("Erreur: Impossible de trouver votre dossier. Veuillez recommencer depuis le début.");
         setIsSubmitting(false);
@@ -189,9 +288,22 @@ export default function Step12() {
         return;
       }
 
+      let recapSaved = true;
+      try {
+        await persistRecapDocument(apprenantId, buildRecapData());
+      } catch (recapError) {
+        recapSaved = false;
+        console.error('Erreur sauvegarde auto du récapitulatif:', recapError);
+      }
+
       setIsSubmitting(false);
       setIsSubmitted(true);
-      toast.success("Votre dossier a été envoyé avec succès !");
+
+      if (recapSaved) {
+        toast.success("Votre dossier a été envoyé et le document de bienvenue est sauvegardé dans le CRM.");
+      } else {
+        toast.warning("Dossier envoyé, mais sauvegarde auto du document échouée. Cliquez sur « Télécharger le récapitulatif ».");
+      }
     } catch (err) {
       console.error('Unexpected error:', err);
       toast.error("Une erreur inattendue s'est produite.");
@@ -258,69 +370,22 @@ export default function Step12() {
   };
 
   const handleDownloadRecap = async () => {
-    const selectedExam = datesExamenTheorique.find(e => e.value === dateExamen);
-    const pdfData = {
-      nom,
-      prenom,
-      email,
-      telephone,
-      numeroDossier,
-      typeExamen: getTypeExamenLabel(typeExamen),
-      dateExamen,
-      lieuExamen: selectedExam?.lieu,
-      b2Vierge,
-    };
-    
-    // Generate and download the PDF
+    const pdfData = buildRecapData();
     generateRecapitulatifPDF(pdfData);
-    
-    // Also generate a blob to upload to storage
-    const blob = generateRecapitulatifPDF(pdfData, { returnBlob: true }) as Blob;
+
     const apprenantId = localStorage.getItem('onboarding_apprenant_id');
-    
-    if (blob && apprenantId) {
-      try {
-        const fileName = `recapitulatif_inscription_${Date.now()}.pdf`;
-        const filePath = `${apprenantId}/${fileName}`;
-        
-        // Upload to storage
-        const { error: uploadError } = await supabase.storage
-          .from('documents-inscription')
-          .upload(filePath, blob, { cacheControl: '3600', upsert: true });
-
-        if (uploadError) {
-          console.error('Upload recap error:', uploadError);
-        } else {
-          const { data: urlData } = supabase.storage
-            .from('documents-inscription')
-            .getPublicUrl(filePath);
-
-          // Delete any existing recap record
-          await supabase
-            .from('documents_inscription')
-            .delete()
-            .eq('apprenant_id', apprenantId)
-            .eq('type_document', 'recapitulatif_inscription');
-
-          // Save record in database
-          await supabase
-            .from('documents_inscription')
-            .insert({
-              apprenant_id: apprenantId,
-              type_document: 'recapitulatif_inscription',
-              titre: 'Récapitulatif d\'inscription',
-              description: 'PDF généré automatiquement à la fin de l\'onboarding',
-              url: urlData?.publicUrl || '',
-              nom_fichier: fileName,
-              statut: 'valid',
-            });
-        }
-      } catch (err) {
-        console.error('Error saving recap PDF:', err);
-      }
+    if (!apprenantId) {
+      toast.success("Récapitulatif téléchargé.");
+      return;
     }
-    
-    toast.success("Récapitulatif téléchargé !");
+
+    try {
+      await persistRecapDocument(apprenantId, pdfData);
+      toast.success("Récapitulatif téléchargé et sauvegardé dans le CRM.");
+    } catch (err) {
+      console.error('Erreur sauvegarde du récapitulatif après téléchargement:', err);
+      toast.warning("Récapitulatif téléchargé, mais la sauvegarde CRM a échoué.");
+    }
   };
 
   return (
