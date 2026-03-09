@@ -204,7 +204,7 @@ export function ComptabilitePage() {
       if (dbError) throw dbError;
 
       toast.success("Relevé déposé avec succès !");
-      setReleveForm({ mois_annee: format(new Date(), "yyyy-MM"), banque: "BNP Paribas", notes: "" });
+      setReleveForm({ mois_annee: format(new Date(), "yyyy-MM"), banque: "Revolut Bank UAB", notes: "" });
       await fetchReleves();
     } catch (err) {
       toast.error("Erreur lors du dépôt : " + (err instanceof Error ? err.message : "Erreur inconnue"));
