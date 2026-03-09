@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { UpcomingSessions } from "@/components/dashboard/UpcomingSessions";
@@ -25,7 +26,7 @@ import CoursEnLignePage from "@/components/cours-en-ligne/CoursEnLignePage";
 import { FournisseursPage } from "@/components/fournisseurs/FournisseursPage";
 import { FournisseurInvoiceAlerts } from "@/components/dashboard/FournisseurInvoiceAlerts";
 import { SmallTransfersTable } from "@/components/dashboard/SmallTransfersTable";
-import { GraduationCap, Users, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
+import { GraduationCap, Users, ArrowDownCircle, ArrowUpCircle, Menu, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
