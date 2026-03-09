@@ -29,6 +29,7 @@ import { EQUIPEMENTS_TAXI_DATA } from "@/components/cours-en-ligne/equipements-t
 import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "@/components/cours-en-ligne/controle-connaissances-taxi-data";
 import { FRANCAIS_EXERCICES } from "@/components/cours-en-ligne/exercices/francais-exercices-data";
 import { ANGLAIS_EXERCICES } from "@/components/cours-en-ligne/exercices/anglais-exercices-data";
+import { CAS_PRATIQUE_TAXI_EXERCICES } from "@/components/cours-en-ligne/cas-pratique-taxi-exercices-data";
 import { NotesFraisTab } from "@/components/comptabilite/NotesFraisTab";
 
 // Dates formations (same as ApprenantForm)
