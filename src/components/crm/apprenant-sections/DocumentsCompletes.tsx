@@ -59,6 +59,15 @@ export function DocumentsCompletes({ apprenant }: Props) {
     URL.revokeObjectURL(url);
   };
 
+  const downloadPDF = (doc: any) => {
+    generateDocumentIndividuelPdf(apprenant, {
+      type_document: doc.type_document,
+      titre: doc.titre,
+      donnees: doc.donnees,
+      completed_at: doc.completed_at,
+    });
+  };
+
   const renderFormData = (donnees: any, typeDocument: string) => {
     if (!donnees) return null;
 
