@@ -75,6 +75,8 @@ export default function Step5() {
     }
   });
 
+  const canProceed = selectedExamId && confirmed;
+
   return (
     <OnboardingLayout currentStep={5} totalSteps={11} title="Choisissez la date d'examen">
       <div className="space-y-8">
