@@ -7,7 +7,11 @@ import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Maximize, Minimi
 import { Button } from "@/components/ui/button";
 
 // Prefer legacy worker build for better tablet/browser compatibility (use .js for Samsung Internet)
-pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.js`;
+try {
+  pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.js`;
+} catch {
+  // Silently fallback — native iframe mode will be used
+}
 
 interface PdfSlideViewerProps {
   url: string;
