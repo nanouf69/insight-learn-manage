@@ -1244,9 +1244,6 @@ export default function FournisseurPortal() {
                         </div>
                       </a>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
-                      <span className="text-amber-500">📝</span> Module interactif avec exercices en ligne
-                    </p>
                   </CardContent>
                 </Card>
 
