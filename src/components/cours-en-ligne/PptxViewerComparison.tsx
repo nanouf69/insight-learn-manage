@@ -43,9 +43,21 @@ export default function PptxViewerComparison({
     if (typeof window === "undefined") return;
     const mql = window.matchMedia("(max-width: 1024px)");
     const update = (event: MediaQueryListEvent | MediaQueryList) => setIsCompactViewport(event.matches);
+
     update(mql);
-    mql.addEventListener("change", update as any);
-    return () => mql.removeEventListener("change", update as any);
+
+    if (typeof mql.addEventListener === "function") {
+      mql.addEventListener("change", update as (event: MediaQueryListEvent) => void);
+      return () => mql.removeEventListener("change", update as (event: MediaQueryListEvent) => void);
+    }
+
+    const legacyMql = mql as MediaQueryList & {
+      addListener?: (listener: (event: MediaQueryListEvent) => void) => void;
+      removeListener?: (listener: (event: MediaQueryListEvent) => void) => void;
+    };
+
+    legacyMql.addListener?.(update as (event: MediaQueryListEvent) => void);
+    return () => legacyMql.removeListener?.(update as (event: MediaQueryListEvent) => void);
   }, []);
 
   useEffect(() => {

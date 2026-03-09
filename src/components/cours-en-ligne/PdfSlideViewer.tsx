@@ -179,9 +179,21 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
     if (typeof window === "undefined") return;
     const mql = window.matchMedia("(max-width: 768px) and (orientation: portrait)");
     const handler = (e: MediaQueryListEvent | MediaQueryList) => setIsPortraitMobile(e.matches);
+
     handler(mql);
-    mql.addEventListener("change", handler as any);
-    return () => mql.removeEventListener("change", handler as any);
+
+    if (typeof mql.addEventListener === "function") {
+      mql.addEventListener("change", handler as (event: MediaQueryListEvent) => void);
+      return () => mql.removeEventListener("change", handler as (event: MediaQueryListEvent) => void);
+    }
+
+    const legacyMql = mql as MediaQueryList & {
+      addListener?: (listener: (event: MediaQueryListEvent) => void) => void;
+      removeListener?: (listener: (event: MediaQueryListEvent) => void) => void;
+    };
+
+    legacyMql.addListener?.(handler as (event: MediaQueryListEvent) => void);
+    return () => legacyMql.removeListener?.(handler as (event: MediaQueryListEvent) => void);
   }, []);
 
   const rotateLandscape = isPseudoFullscreen && isPortraitMobile;
