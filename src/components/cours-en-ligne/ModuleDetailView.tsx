@@ -1821,10 +1821,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
   const buildSourceFingerprint = (data: ModuleData) =>
     JSON.stringify({
-      v: 5,
+      v: 6,
       coursCount: data.cours.length,
       exercicesCount: data.exercices.length,
       totalQuestions: data.exercices.reduce((acc, e) => acc + (e.questions?.length || 0), 0),
+      cours: data.cours.map((c, index) => ({
+        index,
+        id: c.id,
+        titre: c.titre,
+        fichiersCount: c.fichiers?.length || 0,
+        fichiers: c.fichiers?.map(f => f.url) || [],
+      })),
       exercices: data.exercices.map((e, index) => ({
         index,
         id: e.id,
