@@ -253,12 +253,6 @@ export default function PptxViewerComparison({
             </div>
           </div>
         )}
-
-        {effectiveMode === "blocked" && (
-          <div className="border rounded-lg p-6 text-center text-muted-foreground">
-            Ce format n'est pas disponible en mode apprenant sécurisé.
-          </div>
-        )}
       </div>
     </div>
   );
