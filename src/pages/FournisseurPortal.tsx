@@ -27,6 +27,11 @@ import { REGLEMENTATION_NATIONALE_EXERCICES, REGLEMENTATION_LOCALE_EXERCICES } f
 import { CONNAISSANCES_VILLE_QUIZZES } from "@/components/cours-en-ligne/exercices/connaissances-ville-quiz-data";
 import { EQUIPEMENTS_TAXI_DATA } from "@/components/cours-en-ligne/equipements-taxi-data";
 import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "@/components/cours-en-ligne/controle-connaissances-taxi-data";
+import { T3P_EXERCICES } from "@/components/cours-en-ligne/exercices/t3p-exercices-data";
+import { GESTION_EXERCICES } from "@/components/cours-en-ligne/exercices/gestion-exercices-data";
+import { SECURITE_ROUTIERE_EXERCICES } from "@/components/cours-en-ligne/exercices/securite-routiere-exercices-data";
+import { FRANCAIS_EXERCICES } from "@/components/cours-en-ligne/exercices/francais-exercices-data";
+import { ANGLAIS_EXERCICES } from "@/components/cours-en-ligne/exercices/anglais-exercices-data";
 import { NotesFraisTab } from "@/components/comptabilite/NotesFraisTab";
 
 // Dates formations (same as ApprenantForm)
