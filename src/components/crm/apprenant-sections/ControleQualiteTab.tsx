@@ -182,15 +182,35 @@ export function ControleQualiteTab({ apprenant }: Props) {
   const completedCount = CONTROLE_DOCUMENTS.filter(d => getDocStatus(d).found).length;
   const pct = Math.round((completedCount / totalDocs) * 100);
 
-  return (
+    const handleDownloadPdf = () => {
+      const pdfItems = CONTROLE_DOCUMENTS.map(doc => {
+        const status = getDocStatus(doc);
+        const catLabel = doc.category;
+        return {
+          label: doc.label,
+          category: catLabel,
+          found: status.found,
+          completedAt: status.details?.completed_at,
+        };
+      });
+      generateControleQualitePdf(apprenant, pdfItems);
+    };
+
+    return (
     <div className="space-y-6">
       {/* Summary header */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ClipboardCheck className="w-5 h-5" />
-            Contrôle qualité — Dossier apprenant
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <ClipboardCheck className="w-5 h-5" />
+              Contrôle qualité — Dossier apprenant
+            </CardTitle>
+            <Button variant="outline" size="sm" className="gap-2" onClick={handleDownloadPdf}>
+              <Download className="w-4 h-4" />
+              Télécharger PDF
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4">
