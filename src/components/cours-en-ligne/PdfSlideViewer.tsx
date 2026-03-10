@@ -281,9 +281,9 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
         onTouchEnd={renderMode === "react-pdf" ? handleTouchEnd : undefined}
       >
         {renderMode === "native" || loadError ? (
-          <div className="w-full h-full min-h-[420px] bg-background">
+          <div className="w-full h-full min-h-[420px] bg-background" onContextMenu={e => e.preventDefault()}>
             <iframe
-              src={`${absoluteUrl}#toolbar=0&navpanes=0`}
+              src={`${absoluteUrl}#toolbar=0&navpanes=0&scrollbar=0&statusbar=0&messages=0&download=0`}
               className="w-full h-full border-0"
               style={{ minHeight: isExpanded ? "100%" : "70vh" }}
               title={`PDF — ${nom}`}

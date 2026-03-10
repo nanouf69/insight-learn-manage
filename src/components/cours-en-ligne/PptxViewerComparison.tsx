@@ -88,14 +88,13 @@ export default function PptxViewerComparison({
     }
   }, [currentSlide, effectiveMode, hasImages, imageUrls, onLastPageReached]);
 
+  // Google Docs viewer — use gview for horizontal slide rendering with no download
   const googleSingleSlideUrl = useMemo(() => {
     try {
       const url = new URL(googleViewerUrl);
       url.searchParams.set("embedded", "true");
-      url.searchParams.set("pid", "explorer");
       url.searchParams.set("chrome", "false");
-      url.searchParams.set("efh", "false");
-      url.searchParams.set("a", "v");
+      url.searchParams.set("rm", "minimal");
       return url.toString();
     } catch {
       return googleViewerUrl;
@@ -187,13 +186,14 @@ export default function PptxViewerComparison({
         )}
 
         {effectiveMode === "google" && (
-          <div className="border rounded-lg overflow-hidden">
+          <div className="border rounded-lg overflow-hidden" onContextMenu={e => e.preventDefault()}>
             <div className={`w-full ${viewerHeightClass} max-w-[1210px] mx-auto`}>
               <iframe
                 src={googleSingleSlideUrl}
                 className="w-full h-full border-0"
                 allowFullScreen
                 title={`Google Slides — ${nom}`}
+                sandbox="allow-scripts allow-same-origin allow-popups"
               />
             </div>
           </div>
