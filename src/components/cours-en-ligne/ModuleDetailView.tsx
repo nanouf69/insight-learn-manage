@@ -2902,13 +2902,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   })()}
 
                   {hasInteractiveSlides && cours.slidesKey && (
-                    <div className="mt-4">
+                    <div className="mt-4" style={{ height: "min(70vh, 600px)" }}>
                       <SlideViewer
                         slides={slidesByKey[cours.slidesKey] ?? []}
                         titre={cours.titre}
                         brand="FTRANSPORT"
                         onBack={() => {}}
-                        editable
+                        editable={!secureMode}
                         onLastSlideReached={() => markPageCompleted(currentPage)}
                         onSlidesChange={(slides) => updateSlidesForKey(cours.slidesKey!, slides)}
                       />
