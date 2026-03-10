@@ -337,8 +337,7 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
             key={retryCount}
             file={url}
             onLoadSuccess={onDocumentLoadSuccess}
-            onLoadError={(err) => {
-              console.error("[PdfSlideViewer] Document load FAILED, switching to native mode. Error:", err);
+            onLoadError={() => {
               setLoadError(true);
               setRenderMode("native");
             }}
