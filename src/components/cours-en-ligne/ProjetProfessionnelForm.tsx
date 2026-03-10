@@ -191,6 +191,7 @@ export default function ProjetProfessionnelForm({
       {/* Auto-save indicator */}
       <div className="flex justify-end sticky top-0 z-10">
         <StatusIndicator />
+      </div>
       {/* Header */}
       <Card>
         <CardContent className="p-5 text-center space-y-1">
