@@ -2215,52 +2215,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     })();
 
 
-    // --- Restore completedPages from Supabase for interactive form pages ---
-    useEffect(() => {
-      if (!uiStateHydrated || !apprenantId || pages.length === 0) return;
-
-      const CHECKLIST_TO_DOC_TYPE: Record<string, string> = {
-        "analyse-besoin": "analyse-besoin",
-        "projet-professionnel": "projet-professionnel",
-        "cgv": "cgv-acceptation",
-        "cgv-reglement": "cgv-reglement",
-        "competences": "competences-checklist",
-        "evaluation-acquis": "evaluation-acquis",
-        "satisfaction": "satisfaction",
-      };
-
-      const formPages: { pageIndex: number; docType: string }[] = [];
-      pages.forEach((p, idx) => {
-        if (p.type === "cours" && p.cours.checklistType) {
-          const docType = CHECKLIST_TO_DOC_TYPE[p.cours.checklistType];
-          if (docType) formPages.push({ pageIndex: idx, docType });
-        }
-      });
-
-      if (formPages.length === 0) return;
-
-      supabase
-        .from("apprenant_documents_completes" as any)
-        .select("type_document")
-        .eq("apprenant_id", apprenantId)
-        .in("type_document", formPages.map(fp => fp.docType))
-        .then(({ data }) => {
-          if (!data || data.length === 0) return;
-          const completedDocTypes = new Set((data as any[]).map((d: any) => d.type_document));
-          setCompletedPages(prev => {
-            const next = new Set(prev);
-            let changed = false;
-            formPages.forEach(fp => {
-              if (completedDocTypes.has(fp.docType) && !next.has(fp.pageIndex)) {
-                next.add(fp.pageIndex);
-                changed = true;
-              }
-            });
-            return changed ? next : prev;
-          });
-        });
-    }, [uiStateHydrated, apprenantId, pages.length]);
-
 
     const BILAN_MODULE_IDS_SET = new Set([4, 5, 9, 11, 27, 28, 29, 30]);
     const isBilanModule = BILAN_MODULE_IDS_SET.has(Number(moduleData.id));
