@@ -16,11 +16,20 @@ if (typeof (Promise as any).withResolvers === 'undefined') {
   };
 }
 
-// Set up pdf.js worker — try multiple paths for compatibility
+// Set up pdf.js worker with maximum mobile compatibility
+// Use Vite's import.meta.url to bundle the worker locally (avoids CORS / CDN issues on mobile)
 try {
-  pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    'pdfjs-dist/build/pdf.worker.min.mjs',
+    import.meta.url,
+  ).toString();
 } catch {
-  // Silently fallback — native iframe mode will be used
+  // Fallback to CDN
+  try {
+    pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+  } catch {
+    // Native iframe mode will be used
+  }
 }
 
 interface PdfSlideViewerProps {
