@@ -140,6 +140,7 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
   }, []);
 
   const onDocumentLoadSuccess = useCallback(({ numPages }: { numPages: number }) => {
+    console.log("[PdfSlideViewer] Document loaded OK, numPages =", numPages, "renderMode =", "react-pdf");
     setNumPages(numPages);
     setLoadError(false);
     setRenderMode("react-pdf");
