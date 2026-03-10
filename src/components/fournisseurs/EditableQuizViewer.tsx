@@ -346,6 +346,9 @@ export function EditableQuizViewer({ sections, title, icon = "📝", quizId, fou
                               <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => startEdit(section.id, q)}>
                                 <Edit2 className="w-3.5 h-3.5" />
                               </Button>
+                              <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteQuestion(section.id, q.id)} title="Supprimer la question">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
                               {isOverridden && (
                                 <Button size="icon" variant="ghost" className="h-7 w-7 text-amber-600" onClick={() => resetToOriginal(section.id, q.id)} title="Restaurer l'original">
                                   <X className="w-3.5 h-3.5" />
