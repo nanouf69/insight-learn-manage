@@ -523,14 +523,14 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
       {/* Create Account Dialog */}
       {showCreateDialog && (
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] flex flex-col">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <KeyRound className="w-5 h-5" />
                 {hasExistingAccount ? "Configurer l'accès cours" : "Créer un compte apprenant"}
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-2">
+            <div className="space-y-4 py-2 overflow-y-auto flex-1 min-h-0">
               <p className="text-sm text-muted-foreground">
                 {hasExistingAccount
                   ? <>Mettez à jour la formation, les dates et les modules de <strong>{apprenant.prenom} {apprenant.nom}</strong>.</>
