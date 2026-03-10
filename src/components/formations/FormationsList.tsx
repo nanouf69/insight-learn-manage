@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Search, Filter, MoreVertical, Clock, Users, Euro, Calendar, Download, Send, ChevronDown, ChevronUp, FileText, CheckCircle, MapPin, GraduationCap } from "lucide-react";
+import { generateFicheContenuFormation } from "@/lib/pdf/fiche-contenu-formation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
