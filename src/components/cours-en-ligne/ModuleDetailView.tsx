@@ -2580,9 +2580,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       if (!e.questions) return sum;
       return sum + e.questions.filter(q => {
         const key = `${e.id}-${q.id}`;
-        const selected = selectedAnswers[key];
-        const correct = q.choix.find(c => c.correct);
-        return selected && correct && selected === correct.lettre;
+        return isAnswerCorrect(selectedAnswers[key], q);
       }).length;
     }, 0);
 
