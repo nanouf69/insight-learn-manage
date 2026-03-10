@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { saveFormDocument } from "@/lib/saveFormDocument";
-import { useAutoSave, loadSavedDraft } from "@/hooks/useAutoSave";
+import { useAutoSave, useLoadDraft } from "@/hooks/useAutoSave";
 
 type NiveauAcquis = "A" | "B" | "C" | "D";
 
