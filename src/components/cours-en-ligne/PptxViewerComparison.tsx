@@ -229,6 +229,13 @@ export default function PptxViewerComparison({
                 title={`Google Slides Zoomé — ${nom}`}
               />
             </div>
+            {onLastPageReached && (
+              <div className="p-2 border-t bg-muted/40 flex justify-center">
+                <Button variant="default" size="sm" onClick={() => onLastPageReached()} className="gap-2">
+                  ✅ J'ai parcouru toutes les slides
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
@@ -242,6 +249,13 @@ export default function PptxViewerComparison({
                 title={`MS Office — ${nom}`}
               />
             </div>
+            {onLastPageReached && (
+              <div className="p-2 border-t bg-muted/40 flex justify-center">
+                <Button variant="default" size="sm" onClick={() => onLastPageReached()} className="gap-2">
+                  ✅ J'ai parcouru toutes les slides
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
