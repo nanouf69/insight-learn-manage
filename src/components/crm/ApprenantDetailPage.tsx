@@ -523,7 +523,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
       {/* Create Account Dialog */}
       {showCreateDialog && (
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] flex flex-col">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <KeyRound className="w-5 h-5" />
