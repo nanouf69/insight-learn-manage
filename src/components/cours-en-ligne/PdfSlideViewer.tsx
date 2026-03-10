@@ -45,6 +45,13 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
   const [containerWidth, setContainerWidth] = useState(960);
   const [nativeScrolledToBottom, setNativeScrolledToBottom] = useState(false);
 
+  const handleNativeBottomCheck = useCallback((el: HTMLElement) => {
+    const remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (remaining <= 48) {
+      setNativeScrolledToBottom(true);
+    }
+  }, []);
+
   const isExpanded = isNativeFullscreen || isPseudoFullscreen;
 
   // Build absolute URL for fallback iframe
@@ -80,6 +87,11 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
     document.addEventListener("fullscreenchange", handleFsChange);
     return () => document.removeEventListener("fullscreenchange", handleFsChange);
   }, []);
+
+  // Reset native completion gate when changing source/mode
+  useEffect(() => {
+    setNativeScrolledToBottom(false);
+  }, [url, renderMode]);
 
   // Lock page scroll in pseudo fullscreen mode & try to lock orientation
   useEffect(() => {
@@ -273,7 +285,7 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
 
       {/* PDF Page — scrollable when zoomed, touch-action for mobile */}
       <div
-        className={`flex justify-center overflow-auto ${isExpanded ? "flex-1" : ""}`}
+        className={`flex justify-center ${renderMode === "react-pdf" ? "overflow-auto" : "overflow-hidden"} ${isExpanded ? "flex-1" : ""}`}
         style={{
           maxHeight: isExpanded ? "none" : "80vh",
           height: isExpanded ? "100%" : "auto",
@@ -281,17 +293,14 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
         }}
         onTouchStart={renderMode === "react-pdf" ? handleTouchStart : undefined}
         onTouchEnd={renderMode === "react-pdf" ? handleTouchEnd : undefined}
+        onScroll={renderMode === "native" ? (e) => handleNativeBottomCheck(e.currentTarget) : undefined}
       >
         {renderMode === "native" || loadError ? (
           <div
             ref={nativeScrollRef}
             className="w-full h-full min-h-[420px] bg-background overflow-auto"
             onContextMenu={e => e.preventDefault()}
-            onScroll={(e) => {
-              const el = e.currentTarget;
-              const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
-              if (atBottom && !nativeScrolledToBottom) setNativeScrolledToBottom(true);
-            }}
+            onScroll={(e) => handleNativeBottomCheck(e.currentTarget)}
           >
             <iframe
               src={`${absoluteUrl}#toolbar=0&navpanes=0&scrollbar=0&statusbar=0&messages=0&download=0`}
