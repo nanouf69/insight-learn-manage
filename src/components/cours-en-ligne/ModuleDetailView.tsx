@@ -2616,15 +2616,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           (e.questions || []).map(q => {
             const key = `${e.id}-${q.id}`;
             const selected = selectedAnswers[key];
-            const correct = q.choix.find(c => c.correct);
+            const correctLetters = q.choix.filter(c => c.correct).map(c => c.lettre);
             return {
               exerciceId: e.id,
               exerciceTitre: e.titre,
               questionId: q.id,
               enonce: q.enonce,
               reponseEleve: selected || null,
-              reponseCorrecte: correct?.lettre || null,
-              correct: selected != null && correct != null && selected === correct.lettre,
+              reponseCorrecte: correctLetters.length === 1 ? correctLetters[0] : correctLetters,
+              correct: isAnswerCorrect(selected, q),
             };
           })
         );
