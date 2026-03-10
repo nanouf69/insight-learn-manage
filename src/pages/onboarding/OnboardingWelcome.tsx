@@ -73,12 +73,7 @@ export default function OnboardingWelcome() {
 
       const found = results && results.length > 0 ? results[0] : null;
 
-      // Si pas trouvé, essayer avec tolérance aux fautes d'orthographe
-      if (!found) {
-        found = apprenants?.find(a => 
-          isSimilar(nom, a.nom) && isSimilar(prenom, a.prenom)
-        );
-      }
+      // La recherche fuzzy est faite côté serveur (Levenshtein)
 
       // Sauvegarder les infos dans localStorage
       localStorage.setItem('onboarding_nom', nom.trim());
