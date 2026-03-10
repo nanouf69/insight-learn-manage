@@ -224,8 +224,9 @@ export const FORMATION_MODULES: Record<string, FormationDefinition> = {
     { id: 30, label: "5.BILAN EXAMEN VA" },
     { id: 38, label: "6.EXAMENS BLANCS VA" },
     { id: 63, label: "7.SOURCES JURIDIQUES VA" },
-    { id: 8, label: "8.PRATIQUE VTC" },
-    { id: 53, label: "9.FIN DE FORMATION VA" },
+    { id: 73, label: "8.FICHES RÉVISIONS VA" },
+    { id: 8, label: "9.PRATIQUE VTC" },
+    { id: 53, label: "10.FIN DE FORMATION VA" },
   ]},
   "va-e-presentiel": { label: "VA E-Présentiel", color: "bg-teal-100 text-teal-800 border-teal-300", modules: [
     { id: 34, label: "1.INTRODUCTION VA" },
@@ -235,8 +236,9 @@ export const FORMATION_MODULES: Record<string, FormationDefinition> = {
     { id: 30, label: "5.BILAN EXAMEN VA" },
     { id: 38, label: "6.EXAMENS BLANCS VA" },
     { id: 63, label: "7.SOURCES JURIDIQUES VA" },
-    { id: 8, label: "8.PRATIQUE VTC" },
-    { id: 53, label: "9.FIN DE FORMATION VA" },
+    { id: 73, label: "8.FICHES RÉVISIONS VA" },
+    { id: 8, label: "9.PRATIQUE VTC" },
+    { id: 53, label: "10.FIN DE FORMATION VA" },
   ]},
   "va-e": { label: "VA E-learning", color: "bg-teal-50 text-teal-700 border-teal-200", modules: [
     { id: 34, label: "1.INTRODUCTION VA E-LEARNING" },
@@ -246,8 +248,9 @@ export const FORMATION_MODULES: Record<string, FormationDefinition> = {
     { id: 30, label: "5.BILAN EXAMEN VA" },
     { id: 38, label: "6.EXAMENS BLANCS VA" },
     { id: 63, label: "7.SOURCES JURIDIQUES VA" },
-    { id: 8, label: "8.PRATIQUE VTC" },
-    { id: 53, label: "9.FIN DE FORMATION VA" },
+    { id: 73, label: "8.FICHES RÉVISIONS VA" },
+    { id: 8, label: "9.PRATIQUE VTC" },
+    { id: 53, label: "10.FIN DE FORMATION VA" },
   ]},
 };
 
