@@ -631,7 +631,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Annuler</Button>
               <Button
-                disabled={creatingAccount || !selectedFormationForAccount || (!hasExistingAccount && !apprenant.email)}
+                disabled={creatingAccount || !!generatedPassword || !selectedFormationForAccount || (!hasExistingAccount && !apprenant.email)}
                 onClick={async () => {
                   setCreatingAccount(true);
                   try {
