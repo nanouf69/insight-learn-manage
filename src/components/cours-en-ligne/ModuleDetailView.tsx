@@ -2962,18 +2962,19 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         {cours.fichiers!.map((f, i) => {
                           const isPptx = f.nom.endsWith(".pptx") || f.nom.endsWith(".ppt") || f.url.endsWith(".pptx") || f.url.endsWith(".ppt");
                           const isPdf = f.nom.endsWith(".pdf") || f.url.endsWith(".pdf");
+                          const isDocx = f.nom.endsWith(".docx") || f.nom.endsWith(".doc") || f.url.endsWith(".docx") || f.url.endsWith(".doc");
                           const absoluteFileUrl = resolvePublicFileUrl(f.url);
-                          const googleViewerUrl = isPptx
+                          const googleViewerUrl = (isPptx || isDocx)
                             ? `https://docs.google.com/viewer?url=${encodeURIComponent(absoluteFileUrl)}&embedded=true`
                             : null;
-                          const msViewerUrl = isPptx
+                          const msViewerUrl = (isPptx || isDocx)
                             ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(absoluteFileUrl)}`
                             : null;
-                          const shouldShowViewers = Boolean(isPptx && !hasInteractiveSlides);
+                          const shouldShowViewers = Boolean((isPptx || isDocx) && !hasInteractiveSlides);
 
                           return (
                             <div key={i} className="space-y-3">
-                              {!secureMode && (
+                              {!secureMode && !isDocx && (
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <a
                                     href={f.url}
