@@ -3157,9 +3157,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       const exoTotalQ = exoQuestions.length;
       const exoCorrect = exoQuestions.filter(q => {
         const key = `${exo.id}-${q.id}`;
-        const selected = selectedAnswers[key];
-        const correct = (q as any).choix?.find((c: any) => c.correct);
-        return selected && correct && selected === correct.lettre;
+        return isAnswerCorrect(selectedAnswers[key], q as any);
       }).length;
 
       // File-only exercise (no questions) — show links and auto-complete
