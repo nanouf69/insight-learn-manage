@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { saveFormDocument } from "@/lib/saveFormDocument";
-import { useAutoSave, loadSavedDraft } from "@/hooks/useAutoSave";
+import { useAutoSave, useLoadDraft } from "@/hooks/useAutoSave";
 
 type NiveauAcquis = "A" | "B" | "C" | "D";
 
@@ -186,6 +186,14 @@ const EvaluationAcquisForm = ({ formationType, apprenantId, onComplete }: Evalua
     titre: `Évaluation des acquis - ${getFormationLabel(formationType)}`,
     enabled: !!apprenantId && !submitted,
   });
+
+  // Restore saved draft from Supabase on mount
+  useLoadDraft(apprenantId || "", "evaluation-acquis", (draft) => {
+    if (draft.parties && Array.isArray(draft.parties)) {
+      setParties(draft.parties);
+    }
+    if (draft.commentaires) setCommentaires(draft.commentaires);
+  }, !!apprenantId && !submitted);
 
   const collectData = () => ({
     formationType,

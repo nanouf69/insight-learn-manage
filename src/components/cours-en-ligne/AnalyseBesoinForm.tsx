@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2 } from "lucide-react";
 import { saveFormDocument } from "@/lib/saveFormDocument";
 import { toast } from "sonner";
-import { useAutoSave, loadSavedDraft } from "@/hooks/useAutoSave";
+import { useAutoSave, useLoadDraft } from "@/hooks/useAutoSave";
 
 interface Props {
   apprenantNom?: string;
@@ -95,6 +95,25 @@ export default function AnalyseBesoinForm({
     titre: "Analyse du besoin – Fiche client",
     enabled: !!apprenantId && !completed,
   });
+
+  // Restore saved draft from Supabase on mount
+  useLoadDraft(apprenantId || "", "analyse-besoin", (draft) => {
+    if (draft.nom) setNom(draft.nom);
+    if (draft.prenom) setPrenom(draft.prenom);
+    if (draft.email) setEmail(draft.email);
+    if (draft.telephone) setTelephone(draft.telephone);
+    if (draft.adresse) setAdresse(draft.adresse);
+    if (draft.codePostal) setCodePostal(draft.codePostal);
+    if (draft.ville) setVille(draft.ville);
+    if (draft.formationVTC !== undefined) setFormationVTC(draft.formationVTC);
+    if (draft.formationTAXI !== undefined) setFormationTAXI(draft.formationTAXI);
+    if (draft.eligibility) setEligibility(draft.eligibility);
+    if (draft.complementary) setComplementary(draft.complementary);
+    if (draft.centreFormation) setCentreFormation(draft.centreFormation);
+    if (draft.typeHandicap) setTypeHandicap(draft.typeHandicap);
+    if (draft.engagementAccepted !== undefined) setEngagementAccepted(draft.engagementAccepted);
+    if (draft.dateDocument) setDateDocument(draft.dateDocument);
+  }, !!apprenantId && !completed);
 
   const collectData = () => ({
     nom, prenom, email, telephone, adresse, codePostal, ville,

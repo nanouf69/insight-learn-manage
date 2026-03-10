@@ -7,7 +7,7 @@ import { CheckCircle2, CheckSquare, XSquare } from "lucide-react";
 import { type CompetencesData } from "./competences-checklist-data";
 import { saveFormDocument } from "@/lib/saveFormDocument";
 import { toast } from "sonner";
-import { useAutoSave, loadSavedDraft } from "@/hooks/useAutoSave";
+import { useAutoSave, useLoadDraft } from "@/hooks/useAutoSave";
 
 interface Props {
   data: CompetencesData;
@@ -33,6 +33,13 @@ export default function CompetencesChecklist({ data, apprenantNom, apprenantId, 
     titre: `Test de compétences - ${data.formationLabel || "Formation"}`,
     enabled: !!apprenantId && !completed,
   });
+
+  // Restore saved draft from Supabase on mount
+  useLoadDraft(apprenantId || "", "test-competences", (draft) => {
+    if (draft.answers && typeof draft.answers === "object") {
+      setAnswers(draft.answers);
+    }
+  }, !!apprenantId && !completed);
 
   const collectData = () => ({
     answers,

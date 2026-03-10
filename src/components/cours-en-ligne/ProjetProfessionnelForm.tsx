@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { CheckCircle2, Download } from "lucide-react";
 import { saveFormDocument } from "@/lib/saveFormDocument";
 import { toast } from "sonner";
-import { useAutoSave, loadSavedDraft } from "@/hooks/useAutoSave";
+import { useAutoSave, useLoadDraft } from "@/hooks/useAutoSave";
 
 interface Props {
   apprenantNom?: string;
@@ -112,6 +112,45 @@ export default function ProjetProfessionnelForm({
     titre: `Questionnaire Projet Professionnel ${formType}`,
     enabled: !!apprenantId && !completed,
   });
+
+  // Restore saved draft from Supabase on mount
+  useLoadDraft(apprenantId || "", "projet-professionnel", (draft) => {
+    if (draft.dateEntretien) setDateEntretien(draft.dateEntretien);
+    if (draft.conseiller) setConseiller(draft.conseiller);
+    if (draft.lieuNaissance) setLieuNaissance(draft.lieuNaissance);
+    if (draft.statutActuel) setStatutActuel(draft.statutActuel);
+    if (draft.metierActuel) setMetierActuel(draft.metierActuel);
+    if (draft.anciennete) setAnciennete(draft.anciennete);
+    if (draft.niveauFormation) setNiveauFormation(draft.niveauFormation);
+    if (draft.motivations) setMotivations(draft.motivations);
+    if (draft.dejaTransport) setDejaTransport(draft.dejaTransport);
+    if (draft.detailTransport) setDetailTransport(draft.detailTransport);
+    if (draft.permis3ans) setPermis3ans(draft.permis3ans);
+    if (draft.datePermis) setDatePermis(draft.datePermis);
+    if (draft.modeExercice) setModeExercice(draft.modeExercice);
+    if (draft.plateformes) setPlateformes(draft.plateformes);
+    if (draft.diffTaxiVtc) setDiffTaxiVtc(draft.diffTaxiVtc);
+    if (draft.modeExerciceTaxi) setModeExerciceTaxi(draft.modeExerciceTaxi);
+    if (draft.demandeADS) setDemandeADS(draft.demandeADS);
+    if (draft.zoneExercice) setZoneExercice(draft.zoneExercice);
+    if (draft.zoneAutre) setZoneAutre(draft.zoneAutre);
+    if (draft.activitesCompl) setActivitesCompl(draft.activitesCompl);
+    if (draft.demarchesEntreprise) setDemarchesEntreprise(draft.demarchesEntreprise);
+    if (draft.craintes) setCraintes(draft.craintes);
+    if (draft.commentConnu) setCommentConnu(draft.commentConnu);
+    if (draft.consulteProgram) setConsulteProgram(draft.consulteProgram);
+    if (draft.saitExamen) setSaitExamen(draft.saitExamen);
+    if (draft.connaitZone) setConnaitZone(draft.connaitZone);
+    if (draft.conduiteUrbaine) setConduiteUrbaine(draft.conduiteUrbaine);
+    if (draft.connaitSites) setConnaitSites(draft.connaitSites);
+    if (draft.besoinsAdaptation) setBesoinsAdaptation(draft.besoinsAdaptation);
+    if (draft.accesOrdinateur) setAccesOrdinateur(draft.accesOrdinateur);
+    if (draft.precisionsBesoins) setPrecisionsBesoins(draft.precisionsBesoins);
+    if (draft.coherenceProjet) setCoherenceProjet(draft.coherenceProjet);
+    if (draft.niveauMotivation) setNiveauMotivation(draft.niveauMotivation);
+    if (draft.observations) setObservations(draft.observations);
+    if (draft.signatureAdmin !== undefined) setSignatureAdmin(draft.signatureAdmin);
+  }, !!apprenantId && !completed);
 
   const collectData = () => ({
     formType, dateEntretien, conseiller, lieuNaissance,

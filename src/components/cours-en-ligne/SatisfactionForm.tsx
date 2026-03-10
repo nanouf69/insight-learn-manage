@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { CheckCircle2, Star } from "lucide-react";
 import { toast } from "sonner";
 import { saveFormDocument } from "@/lib/saveFormDocument";
-import { useAutoSave, loadSavedDraft } from "@/hooks/useAutoSave";
+import { useAutoSave, useLoadDraft } from "@/hooks/useAutoSave";
 
 interface CritereRow {
   label: string;
@@ -96,6 +96,15 @@ const SatisfactionForm = ({ formationType, apprenantId, onComplete }: Satisfacti
     titre: `Questionnaire de satisfaction - ${label}`,
     enabled: !!apprenantId && !submitted,
   });
+
+  // Restore saved draft from Supabase on mount
+  useLoadDraft(apprenantId || "", "satisfaction", (draft) => {
+    if (draft.parties && Array.isArray(draft.parties)) setParties(draft.parties);
+    if (draft.noteGlobale !== undefined) setNoteGlobale(draft.noteGlobale);
+    if (draft.pointsForts) setPointsForts(draft.pointsForts);
+    if (draft.pointsAmeliorer) setPointsAmeliorer(draft.pointsAmeliorer);
+    if (draft.suggestions) setSuggestions(draft.suggestions);
+  }, !!apprenantId && !submitted);
 
   const collectData = () => ({
     formationType,
