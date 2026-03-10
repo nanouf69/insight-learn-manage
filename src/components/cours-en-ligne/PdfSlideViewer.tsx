@@ -324,7 +324,7 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
 
       {renderMode === "native" && (
         <div className="p-2 border-t bg-muted/40 flex items-center justify-between">
-          {onLastPageReached && (
+          {onLastPageReached && nativeScrolledToBottom && (
             <Button
               variant="default"
               size="sm"
