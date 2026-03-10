@@ -272,7 +272,6 @@ export function EditableQuizViewer({ sections, title, icon = "📝", quizId, fou
                     }
 
                     const isEditing = editingKey === key;
-                    const isEditing = editingKey === key;
                     const actual = getQuestion(section.id, q);
                     const isOverridden = overrides.has(key);
 
