@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Search, Filter, MoreVertical, Clock, Users, Euro, Calendar, Download, Send, ChevronDown, ChevronUp, FileText, CheckCircle, MapPin, GraduationCap } from "lucide-react";
+import { generateFicheContenuFormation } from "@/lib/pdf/fiche-contenu-formation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -967,6 +969,32 @@ export function FormationsList() {
                     <DropdownMenuItem>Modifier</DropdownMenuItem>
                     <DropdownMenuItem>Dupliquer</DropdownMenuItem>
                     <DropdownMenuItem>Planifier session</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => {
+                      // Map formation title to formation key
+                      const titleLower = formation.title.toLowerCase();
+                      const isElearning = formation.category === "E-learning";
+                      let key = '';
+                      if (titleLower.includes('taxi pour chauffeur vtc') || titleLower.includes('passerelle taxi')) {
+                        key = isElearning ? 'ta-e' : 'ta';
+                      } else if (titleLower.includes('vtc pour chauffeur taxi') || titleLower.includes('passerelle vtc')) {
+                        key = isElearning ? 'va-e' : 'va';
+                      } else if (titleLower.includes('taxi')) {
+                        key = isElearning ? 'taxi-e' : 'taxi';
+                      } else if (titleLower.includes('vtc')) {
+                        key = isElearning ? 'vtc-e' : 'vtc';
+                      }
+                      if (key) {
+                        try {
+                          generateFicheContenuFormation(key);
+                          toast.success('Fiche contenu PDF generee');
+                        } catch (e) {
+                          toast.error('Erreur lors de la generation du PDF');
+                        }
+                      }
+                    }}>
+                      <FileText className="w-4 h-4 mr-2" />
+                      Fiche contenu PDF
+                    </DropdownMenuItem>
                     <DropdownMenuItem className="text-destructive">Supprimer</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
