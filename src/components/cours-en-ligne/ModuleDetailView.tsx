@@ -3674,11 +3674,24 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 }`}
               >
                 <span className="line-clamp-2 flex-1">{label}</span>
-                {isQuizPage ? (
-                  <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-700 border border-amber-300">Quiz</span>
-                ) : p.type === "cours" ? (
-                  <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-sky-100 text-sky-700 border border-sky-300">Cours</span>
-                ) : null}
+                {(() => {
+                  // Extract part number from hierarchical label (e.g. "1.2 ..." → "Partie 2", "3 📖 Cours — ..." → "Partie 3")
+                  const hLabel = hierarchicalLabelsByPage[i] || "";
+                  const partMatch = hLabel.match(/^(\d+)\.(\d+)\s/) || hLabel.match(/^(\d+)\s/);
+                  const partNum = partMatch ? (partMatch[2] || partMatch[1]) : null;
+                  
+                  return isQuizPage ? (
+                    <span className="shrink-0 inline-flex flex-col items-center gap-0.5">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-700 border border-amber-300">Quiz</span>
+                      {partNum && <span className="text-[9px] text-muted-foreground font-medium">Partie {partNum}</span>}
+                    </span>
+                  ) : p.type === "cours" ? (
+                    <span className="shrink-0 inline-flex flex-col items-center gap-0.5">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-sky-100 text-sky-700 border border-sky-300">Cours</span>
+                      {partNum && <span className="text-[9px] text-muted-foreground font-medium">Partie {partNum}</span>}
+                    </span>
+                  ) : null;
+                })()}
               </button>
             </div>
           );
