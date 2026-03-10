@@ -85,13 +85,48 @@ export function EditableQuizViewer({ sections, title, icon = "📝", quizId, fou
     });
   };
 
+  const isDeleted = (sectionId: number, questionId: number): boolean => {
+    const key = `${sectionId}-${questionId}`;
+    const override = overrides.get(key);
+    return override?.enonce === "__DELETED__";
+  };
+
   const getQuestion = (sectionId: number, q: QuizQuestion): QuizQuestion => {
     const key = `${sectionId}-${q.id}`;
     const override = overrides.get(key);
-    if (override) {
+    if (override && override.enonce !== "__DELETED__") {
       return { id: q.id, enonce: override.enonce, choix: override.choix };
     }
     return q;
+  };
+
+  const deleteQuestion = async (sectionId: number, questionId: number) => {
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("quiz_questions_overrides")
+        .upsert({
+          fournisseur_id: fournisseurId,
+          quiz_id: quizId,
+          section_id: sectionId,
+          question_id: questionId,
+          enonce: "__DELETED__",
+          choix: [] as any,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "fournisseur_id,quiz_id,section_id,question_id" });
+      if (error) throw error;
+      const key = `${sectionId}-${questionId}`;
+      setOverrides(prev => {
+        const next = new Map(prev);
+        next.set(key, { quiz_id: quizId, section_id: sectionId, question_id: questionId, enonce: "__DELETED__", choix: [] });
+        return next;
+      });
+      toast.success("Question supprimée");
+    } catch {
+      toast.error("Erreur lors de la suppression");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const startEdit = (sectionId: number, q: QuizQuestion) => {
