@@ -312,7 +312,18 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
       </div>
 
       {renderMode === "native" && (
-        <div className="p-2 border-t bg-muted/40 flex justify-end">
+        <div className="p-2 border-t bg-muted/40 flex items-center justify-between">
+          {onLastPageReached && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => onLastPageReached()}
+              className="gap-2"
+            >
+              ✅ J'ai parcouru toutes les slides
+            </Button>
+          )}
+          <div className="flex-1" />
           <Button
             variant="outline"
             size="sm"
