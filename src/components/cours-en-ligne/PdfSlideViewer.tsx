@@ -6,9 +6,20 @@ import "react-pdf/dist/Page/TextLayer.css";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Maximize, Minimize, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// Prefer legacy worker build for better tablet/browser compatibility (use .js for Samsung Internet)
+// Inject Promise.withResolvers polyfill inside the worker for Samsung Internet / Safari < 17
 try {
-  pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.js`;
+  const workerCode = `
+    if (typeof Promise.withResolvers === 'undefined') {
+      Promise.withResolvers = function() {
+        let resolve, reject;
+        const promise = new Promise(function(res, rej) { resolve = res; reject = rej; });
+        return { promise: promise, resolve: resolve, reject: reject };
+      };
+    }
+    importScripts('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js');
+  `;
+  const blob = new Blob([workerCode], { type: 'application/javascript' });
+  pdfjs.GlobalWorkerOptions.workerSrc = URL.createObjectURL(blob);
 } catch {
   // Silently fallback — native iframe mode will be used
 }
