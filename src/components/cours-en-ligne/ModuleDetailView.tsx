@@ -2232,9 +2232,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     const BILAN_MODULE_IDS_SET = new Set([4, 5, 9, 11, 27, 28, 29, 30]);
     const isBilanModule = BILAN_MODULE_IDS_SET.has(Number(moduleData.id));
-    const shouldUseHierarchicalStepper = Number(moduleData.id) === 2 || Number(moduleData.id) === 10 || isBilanModule;
     const hierarchicalLabelsByPage = useMemo<Record<number, string>>(() => {
-      if (!shouldUseHierarchicalStepper) return {};
 
       // For bilan modules (exercices-only), number each quiz sequentially: 1, 2, 3…
       if (isBilanModule) {
@@ -2243,7 +2241,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         pages.forEach((page, index) => {
           if (page.type === "exercice-single") {
             quizIndex++;
-            // Strip emoji prefix for cleaner label
             const cleanTitle = page.exercice.titre.replace(/^📝\s*|^📘\s*|^📗\s*|^📙\s*|^📕\s*|^📓\s*/, "");
             labels[index] = `${quizIndex}. 📝 Quiz — ${cleanTitle}`;
           }
@@ -2251,29 +2248,60 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         return labels;
       }
 
+      // For modules with subject letters (A-G), group by subject
       const subjectNums: Record<string, number> = { A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7 };
-      const partBySubject: Record<number, number> = {};
+      const hasSubjectLetters = pages.some(p =>
+        p.type === "cours" && /^\s*[A-G]\./i.test(p.cours.titre)
+      );
+
+      if (hasSubjectLetters) {
+        const partBySubject: Record<number, number> = {};
+        const labels: Record<number, string> = {};
+        let currentMeta: { subjectNum: number; partNum: number } | null = null;
+
+        pages.forEach((page, index) => {
+          if (page.type === "cours") {
+            const subjectLetter = page.cours.titre.match(/^\s*([A-G])\./i)?.[1]?.toUpperCase() || "A";
+            const subjectNum = subjectNums[subjectLetter] || 1;
+            const nextPart = (partBySubject[subjectNum] || 0) + 1;
+            partBySubject[subjectNum] = nextPart;
+            currentMeta = { subjectNum, partNum: nextPart };
+            labels[index] = `${subjectNum}.${nextPart} ${page.cours.titre}`;
+            return;
+          }
+
+          if (page.type === "exercice-single" && currentMeta) {
+            labels[index] = `${currentMeta.subjectNum}.${currentMeta.partNum} 📝 Quiz — ${page.exercice.titre}`;
+          }
+        });
+        return labels;
+      }
+
+      // Fallback for all other modules: sequential numbering with cours/quiz pairs
       const labels: Record<number, string> = {};
-      let currentMeta: { subjectNum: number; partNum: number } | null = null;
+      let pairNum = 0;
+      let lastCoursIndex = -1;
 
       pages.forEach((page, index) => {
         if (page.type === "cours") {
-          const subjectLetter = page.cours.titre.match(/^\s*([A-G])\./i)?.[1]?.toUpperCase() || "A";
-          const subjectNum = subjectNums[subjectLetter] || 1;
-          const nextPart = (partBySubject[subjectNum] || 0) + 1;
-          partBySubject[subjectNum] = nextPart;
-          currentMeta = { subjectNum, partNum: nextPart };
-          labels[index] = `${subjectNum}.${nextPart} ${page.cours.titre}`;
-          return;
-        }
-
-        if (page.type === "exercice-single" && currentMeta) {
-          labels[index] = `${currentMeta.subjectNum}.${currentMeta.partNum} 📝 Quiz — ${page.exercice.titre}`;
+          pairNum++;
+          lastCoursIndex = index;
+          labels[index] = `${pairNum} 📖 Cours — ${page.cours.titre}`;
+        } else if (page.type === "exercice-single") {
+          const isQuiz = page.exercice.questions && page.exercice.questions.length > 0;
+          if (isQuiz) {
+            // Use same pairNum as the preceding cours if this quiz directly follows it
+            const quizNum = lastCoursIndex === index - 1 ? pairNum : ++pairNum;
+            labels[index] = `${quizNum} 📝 Quiz — ${page.exercice.titre}`;
+          } else {
+            pairNum++;
+            labels[index] = `${pairNum} 📝 ${page.exercice.titre}`;
+          }
         }
       });
 
       return labels;
-    }, [pages, shouldUseHierarchicalStepper, isBilanModule]);
+    }, [pages, isBilanModule]);
 
     const totalPages = pages.length;
     const currentPageData = pages[currentPage];
