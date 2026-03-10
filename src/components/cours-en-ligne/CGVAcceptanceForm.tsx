@@ -125,7 +125,10 @@ export default function CGVAcceptanceForm({ apprenantId, completed, onComplete }
       .eq("type_document", "cgv-acceptation")
       .limit(1)
       .then(({ data }) => {
-        if (data && data.length > 0) setAlreadyCompleted(true);
+        if (data && data.length > 0) {
+          setAlreadyCompleted(true);
+          onComplete();
+        }
       });
   }, [apprenantId]);
 
