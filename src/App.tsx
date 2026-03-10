@@ -72,6 +72,7 @@ function App() {
                 <Route path="/reservation-pratique" element={<ErrorBoundary><ReservationPratique /></ErrorBoundary>} />
                 <Route path="/inscription-formation-continue" element={<ErrorBoundary><InscriptionFormationContinue /></ErrorBoundary>} />
                 <Route path="/cours" element={<ErrorBoundary><CoursPublic /></ErrorBoundary>} />
+                <Route path="/cours-public" element={<ErrorBoundary><CoursPublic /></ErrorBoundary>} />
                 <Route path="/reset-password" element={<ErrorBoundary><ResetPassword /></ErrorBoundary>} />
                 
                 {/* Fournisseur portal - public */}
