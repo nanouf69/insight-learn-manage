@@ -756,6 +756,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
               .map((d) => normalizeModuleIdForDashboard(Number(d.module_id))),
           ),
         );
+        setCompletedModuleIds(computeFullyCompletedModuleIds(completionRows));
 
         const scores: Record<number, { score_obtenu: number | null; score_max: number | null }> = {};
         completionRows.forEach((d) => {
