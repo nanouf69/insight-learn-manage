@@ -451,9 +451,27 @@ function renderSlide(slide: Slide, editing: boolean, onChange?: (s: Slide) => vo
 export default function SlideViewer({ slides, titre, brand, onBack, editable, onSlidesChange, onLastSlideReached }: SlideViewerProps) {
   const [idx, setIdx] = useState(0);
   const [editing, setEditing] = useState(false);
+  const [containerSize, setContainerSize] = useState({ w: 960, h: 540 });
+  const containerRef = useRef<HTMLDivElement>(null);
   const total = slides.length;
   const prev = () => setIdx(i => Math.max(0, i - 1));
   const next = () => setIdx(i => Math.min(total - 1, i + 1));
+
+  // Swipe support for mobile
+  const touchStartRef = useRef<number | null>(null);
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartRef.current = e.changedTouches[0]?.clientX ?? null;
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const startX = touchStartRef.current;
+    const endX = e.changedTouches[0]?.clientX;
+    touchStartRef.current = null;
+    if (startX == null || endX == null) return;
+    const delta = endX - startX;
+    if (Math.abs(delta) < 50) return;
+    if (delta > 0) prev();
+    else next();
+  };
 
   const handleSlideChange = (updatedSlide: Slide) => {
     const newSlides = [...slides];
@@ -461,24 +479,55 @@ export default function SlideViewer({ slides, titre, brand, onBack, editable, on
     onSlidesChange?.(newSlides);
   };
 
-
   useEffect(() => {
     if (total > 0 && idx === total - 1) {
       onLastSlideReached?.();
     }
   }, [idx, total, onLastSlideReached]);
 
+  // Measure container and compute scale
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const update = () => {
+      setContainerSize({ w: el.clientWidth, h: el.clientHeight });
+    };
+    update();
+    if (typeof ResizeObserver !== "undefined") {
+      const ro = new ResizeObserver(update);
+      ro.observe(el);
+      return () => ro.disconnect();
+    }
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  // Scale slide (1920x1080) to fit container
+  const SLIDE_W = 1920;
+  const SLIDE_H = 1080;
+  const scale = Math.min(containerSize.w / SLIDE_W, containerSize.h / SLIDE_H);
+
   const brandText = brand || "FTRANSPORT - SERVICES PRO • Qualiopi • CPF • Lyon";
 
+  // Keyboard navigation
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") prev();
+      if (e.key === "ArrowRight") next();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
   return (
-    <div className="flex flex-col h-full min-h-[600px]">
+    <div className="flex flex-col h-full" style={{ minHeight: 320 }}>
       {/* Header */}
-      <div className="bg-[#081224] text-white px-4 py-2.5 flex items-center justify-between rounded-t-xl border-b border-white/10">
+      <div className="bg-[#081224] text-white px-4 py-2 flex items-center justify-between rounded-t-xl border-b border-white/10 flex-shrink-0">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/10" onClick={onBack}>
             <ArrowLeft className="w-4 h-4" />
           </Button>
-          <span className="font-bold text-white text-sm">{titre}</span>
+          <span className="font-bold text-white text-sm truncate">{titre}</span>
         </div>
         <div className="flex items-center gap-2">
           {editable && (
@@ -495,15 +544,36 @@ export default function SlideViewer({ slides, titre, brand, onBack, editable, on
         </div>
       </div>
 
-      {/* Slide content */}
-      <div className="flex-1 bg-[#0a1628] overflow-y-auto" style={{ minHeight: 420 }}>
-        {renderSlide(slides[idx], editing, handleSlideChange)}
+      {/* Slide content — scaled 16:9 */}
+      <div
+        ref={containerRef}
+        className="flex-1 bg-[#0a1628] overflow-hidden relative"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div
+          className="absolute"
+          style={{
+            width: SLIDE_W,
+            height: SLIDE_H,
+            left: "50%",
+            top: "50%",
+            marginLeft: -(SLIDE_W / 2),
+            marginTop: -(SLIDE_H / 2),
+            transform: `scale(${scale})`,
+            transformOrigin: "center center",
+          }}
+        >
+          <div className="w-full h-full overflow-y-auto slide-content">
+            {renderSlide(slides[idx], editing, handleSlideChange)}
+          </div>
+        </div>
       </div>
 
-      {/* Navigation */}
-      <div className="bg-[#060e1c] px-4 py-3 flex items-center justify-between rounded-b-xl border-t border-white/10">
+      {/* Navigation — always visible */}
+      <div className="bg-[#060e1c] px-4 py-2.5 flex items-center justify-between rounded-b-xl border-t border-white/10 flex-shrink-0">
         <Button variant="outline" size="sm" onClick={prev} disabled={idx === 0} className="gap-1 border-white/20 text-white hover:bg-white/10">
-          <ChevronLeft className="w-4 h-4" /> Précédent
+          <ChevronLeft className="w-4 h-4" /> <span className="hidden sm:inline">Précédent</span>
         </Button>
         <div className="flex items-center gap-3">
           <span className="text-sm font-bold text-white">{idx + 1}</span>
@@ -514,7 +584,7 @@ export default function SlideViewer({ slides, titre, brand, onBack, editable, on
             max={total - 1}
             value={idx}
             onChange={e => setIdx(+e.target.value)}
-            className="w-24 sm:w-32 accent-white"
+            className="w-20 sm:w-32 accent-white"
           />
         </div>
         <Button size="sm" onClick={next} disabled={idx === total - 1} className="gap-1 bg-white text-[#0a1628] hover:bg-blue-100">
