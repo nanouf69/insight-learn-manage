@@ -750,7 +750,6 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       if (data) {
         const completionRows = data as any[];
         setCompletedModuleIds(computeFullyCompletedModuleIds(completionRows));
-        setCompletedModuleIds(computeFullyCompletedModuleIds(completionRows));
 
         const scores: Record<number, { score_obtenu: number | null; score_max: number | null }> = {};
         completionRows.forEach((d) => {
