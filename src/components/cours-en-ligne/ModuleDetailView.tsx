@@ -1643,6 +1643,7 @@ function ExerciceCard({
 function CoursEditor({ item, onSave, onCancel }: { item: ContentItem; onSave: (updated: ContentItem) => void; onCancel: () => void }) {
   const [titre, setTitre] = useState(item.titre);
   const [sousTitre, setSousTitre] = useState(item.sousTitre || "");
+  const [description, setDescription] = useState(item.description || "");
   return (
     <Card className="border-2 border-primary/30 transition-all">
       <CardContent className="p-4 space-y-3">
@@ -1650,7 +1651,7 @@ function CoursEditor({ item, onSave, onCancel }: { item: ContentItem; onSave: (u
           <Badge>Modifier le cours</Badge>
           <div className="flex gap-2">
             <Button size="sm" variant="ghost" onClick={onCancel}><X className="w-4 h-4" /></Button>
-            <Button size="sm" onClick={() => { onSave({ ...item, titre, sousTitre: sousTitre || undefined }); toast.success("Cours modifié"); }} className="gap-1">
+            <Button size="sm" onClick={() => { onSave({ ...item, titre, sousTitre: sousTitre || undefined, description: description || undefined }); toast.success("Cours modifié"); }} className="gap-1">
               <Save className="w-3 h-3" /> Enregistrer
             </Button>
           </div>
@@ -1660,8 +1661,12 @@ function CoursEditor({ item, onSave, onCancel }: { item: ContentItem; onSave: (u
           <Input value={titre} onChange={e => setTitre(e.target.value)} className="text-sm" />
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-semibold">Sous-titre / Contenu</label>
-          <Textarea value={sousTitre} onChange={e => setSousTitre(e.target.value)} rows={3} className="text-sm" />
+          <label className="text-xs font-semibold">Sous-titre</label>
+          <Input value={sousTitre} onChange={e => setSousTitre(e.target.value)} className="text-sm" />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-semibold">Description / Contenu détaillé</label>
+          <Textarea value={description} onChange={e => setDescription(e.target.value)} rows={8} className="text-sm font-mono" />
         </div>
       </CardContent>
     </Card>
