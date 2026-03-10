@@ -18,6 +18,13 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
     let heartbeatTimer: ReturnType<typeof setInterval>;
 
     const startConnexion = async () => {
+      // Close any existing active sessions for this student (single-session enforcement)
+      await supabase
+        .from("apprenant_connexions" as any)
+        .update({ ended_at: new Date().toISOString(), last_seen_at: new Date().toISOString() })
+        .eq("apprenant_id", apprenantId)
+        .is("ended_at", null);
+
       const { data, error } = await supabase
         .from("apprenant_connexions" as any)
         .insert({
