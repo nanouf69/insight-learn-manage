@@ -92,8 +92,9 @@ export const FORMATION_MODULES: Record<string, FormationDefinition> = {
     { id: 35, label: "5.EXAMENS BLANCS VTC" },
     { id: 5, label: "6.BILAN EXAMEN VTC" },
     { id: 60, label: "7.SOURCES JURIDIQUES VTC" },
-    { id: 8, label: "8.PRATIQUE VTC" },
-    { id: 50, label: "9.FIN DE FORMATION VTC" },
+    { id: 70, label: "8.FICHES RÉVISIONS VTC" },
+    { id: 8, label: "9.PRATIQUE VTC" },
+    { id: 50, label: "10.FIN DE FORMATION VTC" },
   ]},
   "vtc-e-presentiel": { label: "VTC E-Présentiel", color: "bg-emerald-100 text-emerald-800 border-emerald-300", modules: [
     { id: 1, label: "1.INTRODUCTION PRÉSENTIEL" },
