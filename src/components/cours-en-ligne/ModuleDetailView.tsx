@@ -1385,6 +1385,63 @@ Un texte inférieur ne peut jamais contredire un texte supérieur.`,
     };
   }
 
+  // === Fiches Révisions (modules 70-73) ===
+  if (module.id === 70) {
+    return {
+      id: 70,
+      nom: "📝 FICHES RÉVISIONS VTC",
+      description: "Fiches de révision pour la formation VTC : synthèse matières communes, spécialités VTC et définitions.",
+      cours: [
+        { id: 1, titre: "Fiche Synthèse — Matières Communes", description: "Fiche de révision regroupant les matières communes à toutes les formations.", actif: true, fichiers: [{ nom: "Fiches_Revision_Matiere_Commune.pdf", url: "/cours/vtc/Fiches_Revision_Matiere_Commune.pdf" }] },
+        { id: 2, titre: "Fiche Synthèse — Spécialités VTC", description: "Fiche de synthèse des spécialités propres à la formation VTC.", actif: true, fichiers: [{ nom: "Fiche_Synthese_Specialites_VTC.pdf", url: "/cours/vtc/Fiche_Synthese_Specialites_VTC.pdf" }] },
+        { id: 3, titre: "Définitions VTC", description: "Glossaire et définitions clés de la formation VTC.", actif: true, fichiers: [{ nom: "Definitions_VTC.docx", url: "/cours/vtc/Definitions_VTC.docx" }] },
+      ],
+      exercices: [],
+    };
+  }
+
+  if (module.id === 71) {
+    return {
+      id: 71,
+      nom: "📝 FICHES RÉVISIONS TAXI",
+      description: "Fiches de révision pour la formation TAXI : synthèse matières communes, spécialités TAXI et définitions.",
+      cours: [
+        { id: 1, titre: "Fiche Synthèse — Matières Communes", description: "Fiche de révision regroupant les matières communes à toutes les formations.", actif: true, fichiers: [{ nom: "Fiches_Revision_Matiere_Commune.pdf", url: "/cours/vtc/Fiches_Revision_Matiere_Commune.pdf" }] },
+        { id: 2, titre: "Fiche Synthèse — Spécialités TAXI", description: "Fiche de révision des spécialités propres à la formation TAXI.", actif: true, fichiers: [{ nom: "Fiche_Revision_Specialites_TAXI.pdf", url: "/cours/vtc/Fiche_Revision_Specialites_TAXI.pdf" }] },
+        { id: 3, titre: "Définitions TAXI", description: "Glossaire et définitions clés de la formation TAXI.", actif: true, fichiers: [{ nom: "Definitions_Taxi.docx", url: "/cours/vtc/Definitions_Taxi.docx" }] },
+      ],
+      exercices: [],
+    };
+  }
+
+  if (module.id === 72) {
+    return {
+      id: 72,
+      nom: "📝 FICHES RÉVISIONS TA",
+      description: "Fiches de révision pour la passerelle TA : synthèse spécialités TAXI, définitions TA et bilan QRC.",
+      cours: [
+        { id: 1, titre: "Fiche Synthèse — Spécialités TAXI", description: "Fiche de révision des spécialités TAXI pour la passerelle TA.", actif: true, fichiers: [{ nom: "Fiche_Revision_Specialites_TAXI.pdf", url: "/cours/vtc/Fiche_Revision_Specialites_TAXI.pdf" }] },
+        { id: 2, titre: "Définitions TA", description: "Glossaire et définitions clés de la passerelle TA.", actif: true, fichiers: [{ nom: "Definitions_TA.docx", url: "/cours/vtc/Definitions_TA.docx" }] },
+        { id: 3, titre: "Bilan QRC TA", description: "Bilan des Questions à Réponse Courte pour la passerelle TA.", actif: true, fichiers: [{ nom: "Bilan_QRC_TA.docx", url: "/cours/vtc/Bilan_QRC_TA.docx" }] },
+      ],
+      exercices: [],
+    };
+  }
+
+  if (module.id === 73) {
+    return {
+      id: 73,
+      nom: "📝 FICHES RÉVISIONS VA",
+      description: "Fiches de révision pour la passerelle VA : synthèse spécialités VTC, définitions VA et bilan QRC.",
+      cours: [
+        { id: 1, titre: "Fiche Synthèse — Spécialités VTC", description: "Fiche de synthèse des spécialités VTC pour la passerelle VA.", actif: true, fichiers: [{ nom: "Fiche_Synthese_Specialites_VTC.pdf", url: "/cours/vtc/Fiche_Synthese_Specialites_VTC.pdf" }] },
+        { id: 2, titre: "Définitions VA", description: "Glossaire et définitions clés de la passerelle VA.", actif: true, fichiers: [{ nom: "Definitions_VA.docx", url: "/cours/vtc/Definitions_VA.docx" }] },
+        { id: 3, titre: "Bilan QRC VA", description: "Bilan des Questions à Réponse Courte pour la passerelle VA.", actif: true, fichiers: [{ nom: "Bilan_QRC_VA.docx", url: "/cours/vtc/Bilan_QRC_VA.docx" }] },
+      ],
+      exercices: [],
+    };
+  }
+
   // === Fin de formation (formulaires interactifs) ===
   const FIN_FORMATION_MAP: Record<number, { label: string; formationType: string }> = {
     50: { label: "VTC", formationType: "vtc" },
