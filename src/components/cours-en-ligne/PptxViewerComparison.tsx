@@ -186,13 +186,14 @@ export default function PptxViewerComparison({
         )}
 
         {effectiveMode === "google" && (
-          <div className="border rounded-lg overflow-hidden">
+          <div className="border rounded-lg overflow-hidden" onContextMenu={e => e.preventDefault()}>
             <div className={`w-full ${viewerHeightClass} max-w-[1210px] mx-auto`}>
               <iframe
                 src={googleSingleSlideUrl}
                 className="w-full h-full border-0"
                 allowFullScreen
                 title={`Google Slides — ${nom}`}
+                sandbox="allow-scripts allow-same-origin allow-popups"
               />
             </div>
           </div>
