@@ -4,11 +4,29 @@ import logoImage from '@/assets/logo-ftransport.png';
 
 import { FORMATION_MODULES, type FormationDefinition } from '@/components/cours-en-ligne/modules-config';
 
-// Data imports
+// Data imports — cours/exercices par section
 import { VTC_SECTIONS } from '@/components/cours-en-ligne/vtc-cours-data';
 import { TAXI_SECTIONS } from '@/components/cours-en-ligne/taxi-cours-data';
 import { TA_SECTIONS } from '@/components/cours-en-ligne/ta-cours-data';
 import { VA_SECTIONS } from '@/components/cours-en-ligne/va-cours-data';
+
+// Data imports — bilans exercices (détail par matière)
+import { BILAN_EXERCICES_VTC } from '@/components/cours-en-ligne/bilan-exercices-vtc-data';
+import { BILAN_EXERCICES_TAXI } from '@/components/cours-en-ligne/bilan-exercices-taxi-data';
+import { BILAN_EXERCICES_TA } from '@/components/cours-en-ligne/bilan-exercices-ta-data';
+import { BILAN_EXERCICES_VA } from '@/components/cours-en-ligne/bilan-exercices-va-data';
+
+// Data imports — bilans examen (détail par matière)
+import { BILAN_EXAMEN_VTC } from '@/components/cours-en-ligne/bilan-examen-vtc-data';
+import { BILAN_EXAMEN_TAXI } from '@/components/cours-en-ligne/bilan-examen-taxi-data';
+import { BILAN_EXAMEN_TA } from '@/components/cours-en-ligne/bilan-examen-ta-data';
+import { BILAN_EXAMEN_VA } from '@/components/cours-en-ligne/bilan-examen-va-data';
+
+// Data imports — examens blancs
+import {
+  bilanExamenVTC, bilanExamenTaxi, bilanExamenTA, bilanExamenVA,
+  tousLesExamens,
+} from '@/components/cours-en-ligne/examens-blancs-data';
 
 const COMPANY = {
   name: 'Ftransport',
@@ -30,7 +48,31 @@ const SECTIONS_BY_MODULE_ID: Record<number, SectionData[]> = {
   41: VA_SECTIONS as SectionData[],
 };
 
-// Modules with known static content (no detailed breakdown needed)
+// Bilan Exercices — détail par matière
+const BILAN_EXERCICES_BY_MODULE: Record<number, { titre: string; questions?: any[] }[]> = {
+  4: BILAN_EXERCICES_VTC,
+  9: BILAN_EXERCICES_TAXI,
+  27: BILAN_EXERCICES_TA,
+  29: BILAN_EXERCICES_VA,
+};
+
+// Bilan Examen — détail par matière
+const BILAN_EXAMEN_BY_MODULE: Record<number, { titre: string; questions?: any[] }[]> = {
+  5: BILAN_EXAMEN_VTC,
+  11: BILAN_EXAMEN_TAXI,
+  28: BILAN_EXAMEN_TA,
+  30: BILAN_EXAMEN_VA,
+};
+
+// Examens Blancs — nombre d'examens et matières
+const EXAMENS_BLANCS_BY_MODULE: Record<number, { type: string }> = {
+  35: { type: 'VTC' },
+  36: { type: 'TAXI' },
+  37: { type: 'TA' },
+  38: { type: 'VA' },
+};
+
+// Modules with known static content
 const STATIC_MODULE_LABELS: Record<number, string[]> = {
   1: ['Introduction Presentiel'],
   26: ['Introduction E-learning'],
@@ -55,28 +97,6 @@ const STATIC_MODULE_LABELS: Record<number, string[]> = {
   53: ['Evaluation des acquis', 'Questionnaire de satisfaction', 'CGV & Reglement'],
 };
 
-// Bilan modules
-const BILAN_EXERCICES_LABELS: Record<number, string> = {
-  4: 'Bilan Exercices VTC — Quiz recapitulatif toutes matieres',
-  9: 'Bilan Exercices TAXI — Quiz recapitulatif toutes matieres',
-  27: 'Bilan Exercices TA — Quiz Regl. Nationale + Locale',
-  29: 'Bilan Exercices VA — Quiz Dev. Commercial + Regl. Specifique',
-};
-
-const BILAN_EXAMEN_LABELS: Record<number, string> = {
-  5: 'Bilan Examen VTC — Dev. Commercial + Regl. Specifique VTC',
-  11: 'Bilan Examen TAXI — Regl. Nationale + Regl. Locale',
-  28: 'Bilan Examen TA — Regl. Nationale + Regl. Locale',
-  30: 'Bilan Examen VA — Dev. Commercial + Regl. Specifique VTC',
-};
-
-const EXAMENS_BLANCS_LABELS: Record<number, string> = {
-  35: 'Examens Blancs VTC — Simulations chrono avec coefficients',
-  36: 'Examens Blancs TAXI — Simulations chrono avec coefficients',
-  37: 'Examens Blancs TA — Simulations chrono avec coefficients',
-  38: 'Examens Blancs VA — Simulations chrono avec coefficients',
-};
-
 function sanitize(text: string): string {
   return text
     .replace(/[\u{1F600}-\u{1F9FF}]/gu, '')
@@ -91,7 +111,6 @@ function sanitize(text: string): string {
 
 function buildModuleRows(moduleId: number, moduleLabel: string): string[][] {
   const rows: string[][] = [];
-  const cleanLabel = sanitize(moduleLabel);
 
   // Check for cours+exercices modules with sections
   const sections = SECTIONS_BY_MODULE_ID[moduleId];
@@ -111,31 +130,45 @@ function buildModuleRows(moduleId: number, moduleLabel: string): string[][] {
       section.exercices.forEach((exo) => {
         const qCount = exo.questions?.length || 0;
         const qLabel = qCount > 0 ? ` (${qCount} questions)` : '';
-        // Use the last subject number
-        const lastSubject = Object.keys(partBySubject).length > 0
-          ? Math.max(...Object.values(partBySubject).map((_, i) => Number(Object.keys(partBySubject)[i])))
-          : 1;
         rows.push(['', 'Quiz', sanitize(exo.titre) + qLabel]);
       });
     });
     return rows;
   }
 
-  // Bilan Exercices
-  if (BILAN_EXERCICES_LABELS[moduleId]) {
-    rows.push(['', 'Quiz', sanitize(BILAN_EXERCICES_LABELS[moduleId])]);
+  // Bilan Exercices — list each matière
+  const bilanExo = BILAN_EXERCICES_BY_MODULE[moduleId];
+  if (bilanExo) {
+    bilanExo.forEach((matiere, i) => {
+      const qCount = matiere.questions?.length || 0;
+      rows.push([`${i + 1}`, 'Quiz', `${sanitize(matiere.titre)} (${qCount} questions)`]);
+    });
     return rows;
   }
 
-  // Bilan Examen
-  if (BILAN_EXAMEN_LABELS[moduleId]) {
-    rows.push(['', 'Quiz', sanitize(BILAN_EXAMEN_LABELS[moduleId])]);
+  // Bilan Examen — list each matière
+  const bilanExam = BILAN_EXAMEN_BY_MODULE[moduleId];
+  if (bilanExam) {
+    bilanExam.forEach((matiere, i) => {
+      const qCount = matiere.questions?.length || 0;
+      rows.push([`${i + 1}`, 'Quiz', `${sanitize(matiere.titre)} (${qCount} questions)`]);
+    });
     return rows;
   }
 
-  // Examens Blancs
-  if (EXAMENS_BLANCS_LABELS[moduleId]) {
-    rows.push(['', 'Examen', sanitize(EXAMENS_BLANCS_LABELS[moduleId])]);
+  // Examens Blancs — list matières from first exam + count
+  const ebConfig = EXAMENS_BLANCS_BY_MODULE[moduleId];
+  if (ebConfig) {
+    const examens = tousLesExamens.filter(
+      e => e.type === ebConfig.type && !e.id.startsWith('bilan')
+    );
+    const nbExamens = examens.length;
+    rows.push(['', 'Examen', `${nbExamens} examens blancs avec chronometre et coefficients`]);
+    if (examens.length > 0) {
+      examens[0].matieres.forEach((m, i) => {
+        rows.push([`${i + 1}`, '', `${sanitize(m.nom)} — ${m.duree} min, coeff. ${m.coefficient}`]);
+      });
+    }
     return rows;
   }
 
@@ -147,7 +180,7 @@ function buildModuleRows(moduleId: number, moduleLabel: string): string[][] {
   }
 
   // Fallback
-  rows.push(['', '', cleanLabel]);
+  rows.push(['', '', sanitize(moduleLabel)]);
   return rows;
 }
 
@@ -190,7 +223,7 @@ export function generateFicheContenuFormation(formationKey: string) {
   let y = 62;
 
   // --- FOR EACH MODULE ---
-  formation.modules.forEach((mod, modIndex) => {
+  formation.modules.forEach((mod) => {
     const moduleTitle = `${sanitize(mod.label)}`;
     const detailRows = buildModuleRows(mod.id, mod.label);
 
@@ -235,11 +268,11 @@ export function generateFicheContenuFormation(formationKey: string) {
           if (data.section === 'body' && data.column.index === 1) {
             const val = String(data.cell.raw);
             if (val === 'Cours') {
-              data.cell.styles.textColor = [14, 165, 233]; // sky
+              data.cell.styles.textColor = [14, 165, 233];
             } else if (val === 'Quiz') {
-              data.cell.styles.textColor = [245, 158, 11]; // amber
+              data.cell.styles.textColor = [245, 158, 11];
             } else if (val === 'Examen') {
-              data.cell.styles.textColor = [239, 68, 68]; // red
+              data.cell.styles.textColor = [239, 68, 68];
             }
           }
         },
