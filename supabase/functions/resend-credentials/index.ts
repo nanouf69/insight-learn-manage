@@ -166,7 +166,7 @@ serve(async (req) => {
           const dateFin = apprenant.date_fin_cours_en_ligne || "Non définie";
           const prenom = apprenant.prenom || "";
           const nom = apprenant.nom || "";
-          const coursUrl = "https://insight-learn-manage.lovable.app/cours";
+          const coursUrl = "https://insight-learn-manage.lovable.app/cours-public";
 
           const emailBody = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
