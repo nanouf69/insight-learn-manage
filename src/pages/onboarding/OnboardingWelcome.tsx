@@ -62,29 +62,18 @@ export default function OnboardingWelcome() {
     setIsSearching(true);
 
     try {
-      // Récupérer tous les apprenants pour faire une recherche normalisée côté client
-      const { data: apprenants, error } = await supabase
-        .from('apprenants')
-        .select('*');
+      // Utiliser la fonction sécurisée côté serveur (ignore accents et casse)
+      const { data: results, error } = await supabase
+        .rpc('search_apprenant_onboarding', {
+          p_nom: nom.trim(),
+          p_prenom: prenom.trim(),
+        });
 
       if (error) throw error;
 
-      // Normaliser les termes de recherche
-      const nomNormalized = normalizeText(nom);
-      const prenomNormalized = normalizeText(prenom);
+      const found = results && results.length > 0 ? results[0] : null;
 
-      // Chercher l'apprenant avec correspondance exacte normalisée d'abord
-      let found = apprenants?.find(a => 
-        normalizeText(a.nom) === nomNormalized && 
-        normalizeText(a.prenom) === prenomNormalized
-      );
-
-      // Si pas trouvé, essayer avec tolérance aux fautes d'orthographe
-      if (!found) {
-        found = apprenants?.find(a => 
-          isSimilar(nom, a.nom) && isSimilar(prenom, a.prenom)
-        );
-      }
+      // La recherche fuzzy est faite côté serveur (Levenshtein)
 
       // Sauvegarder les infos dans localStorage
       localStorage.setItem('onboarding_nom', nom.trim());

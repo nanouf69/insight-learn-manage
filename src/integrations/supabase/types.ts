@@ -1934,6 +1934,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      daitch_mokotoff: { Args: { "": string }; Returns: string[] }
+      dmetaphone: { Args: { "": string }; Returns: string }
+      dmetaphone_alt: { Args: { "": string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1941,6 +1944,22 @@ export type Database = {
         }
         Returns: boolean
       }
+      search_apprenant_onboarding: {
+        Args: { p_nom: string; p_prenom: string }
+        Returns: {
+          adresse: string
+          code_postal: string
+          email: string
+          id: string
+          nom: string
+          prenom: string
+          telephone: string
+          ville: string
+        }[]
+      }
+      soundex: { Args: { "": string }; Returns: string }
+      text_soundex: { Args: { "": string }; Returns: string }
+      unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
