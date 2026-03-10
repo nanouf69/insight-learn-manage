@@ -2231,7 +2231,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             quizIndex++;
             // Strip emoji prefix for cleaner label
             const cleanTitle = page.exercice.titre.replace(/^📝\s*|^📘\s*|^📗\s*|^📙\s*|^📕\s*|^📓\s*/, "");
-            labels[index] = `${quizIndex}. ${cleanTitle}`;
+            labels[index] = `${quizIndex}. 📝 Quiz — ${cleanTitle}`;
           }
         });
         return labels;
