@@ -2141,7 +2141,21 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
   // === Aperçu apprenant ===
   const LearnerPreview = ({ secureMode = true }: { secureMode?: boolean }) => {
-    const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
+    const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string | string[]>>({});
+
+    // Helper: does a question have multiple correct answers?
+    const isMultiAnswer = (q: { choix: { correct?: boolean }[] }) =>
+      (q.choix?.filter(c => c.correct).length || 0) > 1;
+
+    // Helper: check if answer is correct (works for single and multi)
+    const isAnswerCorrect = (selected: string | string[] | undefined, q: { choix: { lettre: string; correct?: boolean }[] }) => {
+      if (!selected) return false;
+      const correctLetters = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
+      if (Array.isArray(selected)) {
+        return JSON.stringify([...selected].sort()) === JSON.stringify(correctLetters);
+      }
+      return correctLetters.length === 1 && selected === correctLetters[0];
+    };
     const [showResultsFor, setShowResultsFor] = useState<Set<number>>(new Set());
     const [currentPage, setCurrentPage] = useState(0);
     const [completedPages, setCompletedPages] = useState<Set<number>>(new Set());
