@@ -54,7 +54,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAdmin) {
-    return <Navigate to="/cours" replace />;
+    return <Navigate to="/cours-public" replace />;
   }
 
   return <>{children}</>;
