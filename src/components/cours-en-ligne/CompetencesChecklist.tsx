@@ -7,7 +7,7 @@ import { CheckCircle2, CheckSquare, XSquare } from "lucide-react";
 import { type CompetencesData } from "./competences-checklist-data";
 import { saveFormDocument } from "@/lib/saveFormDocument";
 import { toast } from "sonner";
-import { useAutoSave, loadSavedDraft } from "@/hooks/useAutoSave";
+import { useAutoSave, useLoadDraft } from "@/hooks/useAutoSave";
 
 interface Props {
   data: CompetencesData;
