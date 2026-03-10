@@ -315,12 +315,14 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
             onContextMenu={e => e.preventDefault()}
             onScroll={(e) => handleNativeBottomCheck(e.currentTarget)}
           >
-            <iframe
-              src={`${absoluteUrl}#toolbar=0&navpanes=0&scrollbar=0&statusbar=0&messages=0&download=0`}
-              className="w-full border-0"
-              style={{ minHeight: isExpanded ? "300%" : "200vh", height: "200vh" }}
-              title={`PDF — ${nom}`}
-            />
+            <div style={{ transform: `scale(${zoom})`, transformOrigin: "top left", width: `${100 / zoom}%` }}>
+              <iframe
+                src={`${absoluteUrl}#toolbar=0&navpanes=0&scrollbar=0&statusbar=0&messages=0&download=0`}
+                className="w-full border-0"
+                style={{ minHeight: isExpanded ? "300%" : "200vh", height: "200vh" }}
+                title={`PDF — ${nom}`}
+              />
+            </div>
           </div>
         ) : (
           <Document
