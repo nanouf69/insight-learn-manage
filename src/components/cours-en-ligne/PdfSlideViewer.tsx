@@ -40,8 +40,10 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
   const [retryCount, setRetryCount] = useState(0);
   const [renderMode, setRenderMode] = useState<"react-pdf" | "native">("react-pdf");
   const containerRef = useRef<HTMLDivElement>(null);
+  const nativeScrollRef = useRef<HTMLDivElement>(null);
   const touchStartXRef = useRef<number | null>(null);
   const [containerWidth, setContainerWidth] = useState(960);
+  const [nativeScrolledToBottom, setNativeScrolledToBottom] = useState(false);
 
   const isExpanded = isNativeFullscreen || isPseudoFullscreen;
 
