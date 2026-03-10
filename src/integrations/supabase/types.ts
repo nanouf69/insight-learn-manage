@@ -1941,6 +1941,19 @@ export type Database = {
         }
         Returns: boolean
       }
+      search_apprenant_onboarding: {
+        Args: { p_nom: string; p_prenom: string }
+        Returns: {
+          adresse: string
+          code_postal: string
+          email: string
+          id: string
+          nom: string
+          prenom: string
+          telephone: string
+          ville: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
