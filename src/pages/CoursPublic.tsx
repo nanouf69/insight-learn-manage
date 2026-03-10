@@ -1027,8 +1027,19 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
   const moduleProgressById = modules.reduce<Record<number, { isDone: boolean; hasProgress: boolean }>>((acc, module) => {
     const rows = completionsByModuleId[module.id] || [];
+    const children = PARENT_TO_CHILDREN[module.id];
+    let isDone: boolean;
+    if (children && children.length > 0) {
+      // Parent module: ALL children must have at least one fully-done row
+      const doneRawIds = new Set(
+        rows.filter(isModuleCompletionFullyDone).map((r) => Number(r.module_id)),
+      );
+      isDone = children.every((childId) => doneRawIds.has(childId));
+    } else {
+      isDone = rows.some(isModuleCompletionFullyDone);
+    }
     acc[module.id] = {
-      isDone: rows.some(isModuleCompletionFullyDone),
+      isDone,
       hasProgress: rows.some(hasModuleCompletionProgress),
     };
     return acc;
