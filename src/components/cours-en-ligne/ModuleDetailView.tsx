@@ -2552,10 +2552,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       };
     }, []);
 
-    const handleAnswer = (exoId: number, qId: number, lettre: string) => {
+    const handleAnswer = (exoId: number, qId: number, lettre: string, multi?: boolean) => {
       if (showResultsFor.has(exoId)) return;
       const ansKey = `${exoId}-${qId}`;
       setSelectedAnswers(prev => {
+        if (multi) {
+          const current = Array.isArray(prev[ansKey]) ? (prev[ansKey] as string[]) : prev[ansKey] ? [prev[ansKey] as string] : [];
+          const next = current.includes(lettre) ? current.filter(l => l !== lettre) : [...current, lettre];
+          const updated = { ...prev, [ansKey]: next };
+          autoSaveAnswers(updated);
+          return updated;
+        }
         const next = { ...prev, [ansKey]: lettre };
         autoSaveAnswers(next);
         return next;
