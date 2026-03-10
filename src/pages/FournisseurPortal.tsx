@@ -120,7 +120,7 @@ interface SearchedApprenant {
   modules_autorises: number[] | null;
 }
 
-const FormateurApprenantSearchPreview = () => {
+const FormateurApprenantSearchPreview = ({ token }: { token: string }) => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchedApprenant[]>([]);
   const [searching, setSearching] = useState(false);
@@ -130,18 +130,18 @@ const FormateurApprenantSearchPreview = () => {
     if (query.trim().length < 2) { setResults([]); return; }
     const timeout = setTimeout(async () => {
       setSearching(true);
-      const q = query.trim();
-      const { data } = await supabase
-        .from("apprenants")
-        .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, modules_autorises")
-        .or(`nom.ilike.%${q}%,prenom.ilike.%${q}%`)
-        .order("nom")
-        .limit(10);
-      setResults((data as SearchedApprenant[]) || []);
+      try {
+        const { data: respData } = await supabase.functions.invoke("search-apprenants-formateur", {
+          body: { token, query: query.trim() },
+        });
+        setResults((respData?.data as SearchedApprenant[]) || []);
+      } catch {
+        setResults([]);
+      }
       setSearching(false);
     }, 300);
     return () => clearTimeout(timeout);
-  }, [query]);
+  }, [query, token]);
 
   if (selectedApprenant) {
     return (
