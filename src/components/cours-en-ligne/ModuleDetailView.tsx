@@ -2254,7 +2254,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         }
 
         if (page.type === "exercice-single" && currentMeta) {
-          labels[index] = `${currentMeta.subjectNum}.${currentMeta.partNum} 📝 ${page.exercice.titre}`;
+          labels[index] = `${currentMeta.subjectNum}.${currentMeta.partNum} 📝 Quiz — ${page.exercice.titre}`;
         }
       });
 
