@@ -2141,7 +2141,21 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
   // === Aperçu apprenant ===
   const LearnerPreview = ({ secureMode = true }: { secureMode?: boolean }) => {
-    const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
+    const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string | string[]>>({});
+
+    // Helper: does a question have multiple correct answers?
+    const isMultiAnswer = (q: { choix: { correct?: boolean }[] }) =>
+      (q.choix?.filter(c => c.correct).length || 0) > 1;
+
+    // Helper: check if answer is correct (works for single and multi)
+    const isAnswerCorrect = (selected: string | string[] | undefined, q: { choix: { lettre: string; correct?: boolean }[] }) => {
+      if (!selected) return false;
+      const correctLetters = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
+      if (Array.isArray(selected)) {
+        return JSON.stringify([...selected].sort()) === JSON.stringify(correctLetters);
+      }
+      return correctLetters.length === 1 && selected === correctLetters[0];
+    };
     const [showResultsFor, setShowResultsFor] = useState<Set<number>>(new Set());
     const [currentPage, setCurrentPage] = useState(0);
     const [completedPages, setCompletedPages] = useState<Set<number>>(new Set());
@@ -2438,7 +2452,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             .maybeSingle();
 
           if (data?.details && Array.isArray(data.details)) {
-            const restored: Record<string, string> = {};
+            const restored: Record<string, string | string[]> = {};
             const answeredByExercice = new Map<number, number>();
 
             (data.details as any[]).forEach((d: any) => {
@@ -2493,7 +2507,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     }, [apprenantId, module.id, savedAnswersLoaded, activeExercices, pages]);
 
     // --- Auto-save partial answers to DB (debounced 3s) ---
-    const autoSaveAnswers = (answers: Record<string, string>) => {
+    const autoSaveAnswers = (answers: Record<string, string | string[]>) => {
       if (!apprenantId || completionPersistedRef.current) return;
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
       autoSaveTimerRef.current = setTimeout(async () => {
@@ -2502,15 +2516,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             (e.questions || []).map(q => {
               const key = `${e.id}-${q.id}`;
               const selected = answers[key];
-              const correct = q.choix.find(c => c.correct);
+              const correctLetters = q.choix.filter(c => c.correct).map(c => c.lettre);
               return {
                 exerciceId: e.id,
                 exerciceTitre: e.titre,
                 questionId: q.id,
                 enonce: q.enonce,
                 reponseEleve: selected || null,
-                reponseCorrecte: correct?.lettre || null,
-                correct: selected != null && correct != null && selected === correct.lettre,
+                reponseCorrecte: correctLetters.length === 1 ? correctLetters[0] : correctLetters,
+                correct: isAnswerCorrect(selected, q),
               };
             })
           );
@@ -2538,10 +2552,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       };
     }, []);
 
-    const handleAnswer = (exoId: number, qId: number, lettre: string) => {
+    const handleAnswer = (exoId: number, qId: number, lettre: string, multi?: boolean) => {
       if (showResultsFor.has(exoId)) return;
       const ansKey = `${exoId}-${qId}`;
       setSelectedAnswers(prev => {
+        if (multi) {
+          const current = Array.isArray(prev[ansKey]) ? (prev[ansKey] as string[]) : prev[ansKey] ? [prev[ansKey] as string] : [];
+          const next = current.includes(lettre) ? current.filter(l => l !== lettre) : [...current, lettre];
+          const updated = { ...prev, [ansKey]: next };
+          autoSaveAnswers(updated);
+          return updated;
+        }
         const next = { ...prev, [ansKey]: lettre };
         autoSaveAnswers(next);
         return next;
@@ -2559,9 +2580,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       if (!e.questions) return sum;
       return sum + e.questions.filter(q => {
         const key = `${e.id}-${q.id}`;
-        const selected = selectedAnswers[key];
-        const correct = q.choix.find(c => c.correct);
-        return selected && correct && selected === correct.lettre;
+        return isAnswerCorrect(selectedAnswers[key], q);
       }).length;
     }, 0);
 
@@ -2597,15 +2616,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           (e.questions || []).map(q => {
             const key = `${e.id}-${q.id}`;
             const selected = selectedAnswers[key];
-            const correct = q.choix.find(c => c.correct);
+            const correctLetters = q.choix.filter(c => c.correct).map(c => c.lettre);
             return {
               exerciceId: e.id,
               exerciceTitre: e.titre,
               questionId: q.id,
               enonce: q.enonce,
               reponseEleve: selected || null,
-              reponseCorrecte: correct?.lettre || null,
-              correct: selected != null && correct != null && selected === correct.lettre,
+              reponseCorrecte: correctLetters.length === 1 ? correctLetters[0] : correctLetters,
+              correct: isAnswerCorrect(selected, q),
             };
           })
         );
@@ -3138,9 +3157,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       const exoTotalQ = exoQuestions.length;
       const exoCorrect = exoQuestions.filter(q => {
         const key = `${exo.id}-${q.id}`;
-        const selected = selectedAnswers[key];
-        const correct = (q as any).choix?.find((c: any) => c.correct);
-        return selected && correct && selected === correct.lettre;
+        return isAnswerCorrect(selectedAnswers[key], q as any);
       }).length;
 
       // File-only exercise (no questions) — show links and auto-complete
@@ -3268,25 +3285,38 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   );
                 }
 
+                const multi = isMultiAnswer(q);
+                const selectedArr = Array.isArray(selected) ? selected : selected ? [selected] : [];
+
                 return (
                   <div key={q.id} id={`exo-q-${exo.id}-${qi}`} className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : ''}`}>
                     <p className="font-medium">{qi + 1}. {q.enonce}</p>
+                    {multi && (
+                      <p className="text-xs text-muted-foreground italic ml-2">⚠️ Plusieurs réponses possibles</p>
+                    )}
                     <div className="space-y-1.5 ml-2">
                       {q.choix.map((c: any) => {
                         const exoShowResults = showResultsFor.has(exo.id);
+                        const isSelected = selectedArr.includes(c.lettre);
                         let bg = "bg-background hover:bg-muted/50 border";
-                        if (selected === c.lettre && !exoShowResults) bg = "bg-primary/10 border-primary border-2";
+                        if (isSelected && !exoShowResults) bg = "bg-primary/10 border-primary border-2";
                         if (exoShowResults && c.correct) bg = "bg-emerald-50 border-emerald-500 border-2 dark:bg-emerald-950";
-                        if (exoShowResults && selected === c.lettre && !c.correct) bg = "bg-destructive/10 border-destructive border-2";
+                        if (exoShowResults && isSelected && !c.correct) bg = "bg-destructive/10 border-destructive border-2";
                         return (
                           <button
                             key={c.lettre}
-                            onClick={() => handleAnswer(exo.id, q.id, c.lettre)}
+                            onClick={() => handleAnswer(exo.id, q.id, c.lettre, multi)}
                             className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-all ${bg}`}
                           >
-                            <span className="w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0">
-                              {c.lettre}
-                            </span>
+                            {multi ? (
+                              <span className={`w-5 h-5 rounded border-2 flex items-center justify-center text-xs font-bold shrink-0 ${isSelected ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground/40'}`}>
+                                {isSelected ? '✓' : ''}
+                              </span>
+                            ) : (
+                              <span className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 ${isSelected ? 'border-primary bg-primary text-primary-foreground' : ''}`}>
+                                {c.lettre}
+                              </span>
+                            )}
                             <span className="text-sm">{c.texte}</span>
                             {exoShowResults && c.correct && <CheckCircle2 className="w-4 h-4 text-emerald-600 ml-auto shrink-0" />}
                           </button>
@@ -3308,7 +3338,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         (exo.questions || []).forEach((q: any, qi: number) => {
                           const k = `${exo.id}-${q.id}`;
                           const isQrc = q.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
-                          if (!isQrc && !selectedAnswers[k]) {
+                          const ans = selectedAnswers[k];
+                          const hasAnswer = Array.isArray(ans) ? ans.length > 0 : !!ans;
+                          if (!isQrc && !hasAnswer) {
                             unansweredQcmKeys.push(k);
                           }
                         });
