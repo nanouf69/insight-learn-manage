@@ -6,20 +6,19 @@ import "react-pdf/dist/Page/TextLayer.css";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Maximize, Minimize } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// Inject Promise.withResolvers polyfill inside the worker for Samsung Internet / Safari < 17
+// Promise.withResolvers polyfill for Safari < 17 / Samsung Internet
+if (typeof Promise.withResolvers === 'undefined') {
+  (Promise as any).withResolvers = function <T>() {
+    let resolve!: (value: T | PromiseLike<T>) => void;
+    let reject!: (reason?: any) => void;
+    const promise = new Promise<T>((res, rej) => { resolve = res; reject = rej; });
+    return { promise, resolve, reject };
+  };
+}
+
+// Set up pdf.js worker — try multiple paths for compatibility
 try {
-  const workerCode = `
-    if (typeof Promise.withResolvers === 'undefined') {
-      Promise.withResolvers = function() {
-        let resolve, reject;
-        const promise = new Promise(function(res, rej) { resolve = res; reject = rej; });
-        return { promise: promise, resolve: resolve, reject: reject };
-      };
-    }
-    importScripts('https://unpkg.com/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.js');
-  `;
-  const blob = new Blob([workerCode], { type: 'application/javascript' });
-  pdfjs.GlobalWorkerOptions.workerSrc = URL.createObjectURL(blob);
+  pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 } catch {
   // Silently fallback — native iframe mode will be used
 }
