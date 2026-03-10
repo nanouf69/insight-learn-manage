@@ -45,6 +45,13 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
   const [containerWidth, setContainerWidth] = useState(960);
   const [nativeScrolledToBottom, setNativeScrolledToBottom] = useState(false);
 
+  const handleNativeBottomCheck = useCallback((el: HTMLElement) => {
+    const remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (remaining <= 48) {
+      setNativeScrolledToBottom(true);
+    }
+  }, []);
+
   const isExpanded = isNativeFullscreen || isPseudoFullscreen;
 
   // Build absolute URL for fallback iframe
