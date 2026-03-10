@@ -40,8 +40,10 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
   const [retryCount, setRetryCount] = useState(0);
   const [renderMode, setRenderMode] = useState<"react-pdf" | "native">("react-pdf");
   const containerRef = useRef<HTMLDivElement>(null);
+  const nativeScrollRef = useRef<HTMLDivElement>(null);
   const touchStartXRef = useRef<number | null>(null);
   const [containerWidth, setContainerWidth] = useState(960);
+  const [nativeScrolledToBottom, setNativeScrolledToBottom] = useState(false);
 
   const isExpanded = isNativeFullscreen || isPseudoFullscreen;
 
@@ -281,11 +283,20 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
         onTouchEnd={renderMode === "react-pdf" ? handleTouchEnd : undefined}
       >
         {renderMode === "native" || loadError ? (
-          <div className="w-full h-full min-h-[420px] bg-background" onContextMenu={e => e.preventDefault()}>
+          <div
+            ref={nativeScrollRef}
+            className="w-full h-full min-h-[420px] bg-background overflow-auto"
+            onContextMenu={e => e.preventDefault()}
+            onScroll={(e) => {
+              const el = e.currentTarget;
+              const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+              if (atBottom && !nativeScrolledToBottom) setNativeScrolledToBottom(true);
+            }}
+          >
             <iframe
               src={`${absoluteUrl}#toolbar=0&navpanes=0&scrollbar=0&statusbar=0&messages=0&download=0`}
-              className="w-full h-full border-0"
-              style={{ minHeight: isExpanded ? "100%" : "70vh" }}
+              className="w-full border-0"
+              style={{ minHeight: isExpanded ? "300%" : "200vh", height: "200vh" }}
               title={`PDF — ${nom}`}
             />
           </div>
@@ -313,7 +324,7 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
 
       {renderMode === "native" && (
         <div className="p-2 border-t bg-muted/40 flex items-center justify-between">
-          {onLastPageReached && (
+          {onLastPageReached && nativeScrolledToBottom && (
             <Button
               variant="default"
               size="sm"
