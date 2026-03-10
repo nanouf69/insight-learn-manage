@@ -68,6 +68,11 @@ export const ALL_MODULES: ModuleDefinition[] = [
   { id: 61, nom: "📖 SOURCES JURIDIQUES TAXI" },
   { id: 62, nom: "📖 SOURCES JURIDIQUES TA" },
   { id: 63, nom: "📖 SOURCES JURIDIQUES VA" },
+  // FICHES RÉVISIONS
+  { id: 70, nom: "📝 FICHES RÉVISIONS VTC" },
+  { id: 71, nom: "📝 FICHES RÉVISIONS TAXI" },
+  { id: 72, nom: "📝 FICHES RÉVISIONS TA" },
+  { id: 73, nom: "📝 FICHES RÉVISIONS VA" },
   // FIN DE FORMATION
   { id: 50, nom: "📋 FIN DE FORMATION VTC" },
   { id: 51, nom: "📋 FIN DE FORMATION TAXI" },
