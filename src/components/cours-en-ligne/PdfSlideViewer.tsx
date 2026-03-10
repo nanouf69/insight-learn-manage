@@ -7,7 +7,7 @@ import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Maximize, Minimi
 import { Button } from "@/components/ui/button";
 
 // Promise.withResolvers polyfill for Safari < 17 / Samsung Internet
-if (typeof Promise.withResolvers === 'undefined') {
+if (typeof (Promise as any).withResolvers === 'undefined') {
   (Promise as any).withResolvers = function <T>() {
     let resolve!: (value: T | PromiseLike<T>) => void;
     let reject!: (reason?: any) => void;
