@@ -1067,6 +1067,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // Introduction module IDs (first module of each formation)
   const INTRO_MODULE_IDS = new Set([1, 26, 31, 32, 33, 34]);
 
+  // Modules always unlocked even in e-learning (no sequential gate)
+  const ALWAYS_UNLOCKED_IDS = new Set([70, 71, 72, 73]);
+
   // Build a set of unlocked module IDs
   const unlockedModuleIds = new Set<number>();
 
@@ -1081,7 +1084,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   if (isElearning) {
     // E-learning: strict sequential unlock + intro lock
     for (let i = 0; i < modules.length; i++) {
-      if (i === 0) {
+      if (i === 0 || ALWAYS_UNLOCKED_IDS.has(modules[i].id)) {
         unlockedModuleIds.add(modules[i].id);
       } else if (completedModuleIds.has(modules[i - 1].id)) {
         unlockedModuleIds.add(modules[i].id);
