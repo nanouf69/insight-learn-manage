@@ -530,7 +530,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
                 {hasExistingAccount ? "Configurer l'accès cours" : "Créer un compte apprenant"}
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-2">
+            <div className="space-y-4 py-2 overflow-y-auto flex-1 min-h-0">
               <p className="text-sm text-muted-foreground">
                 {hasExistingAccount
                   ? <>Mettez à jour la formation, les dates et les modules de <strong>{apprenant.prenom} {apprenant.nom}</strong>.</>
