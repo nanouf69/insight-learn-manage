@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { CheckCircle2, Download } from "lucide-react";
 import { saveFormDocument } from "@/lib/saveFormDocument";
 import { toast } from "sonner";
-import { useAutoSave, loadSavedDraft } from "@/hooks/useAutoSave";
+import { useAutoSave, useLoadDraft } from "@/hooks/useAutoSave";
 
 interface Props {
   apprenantNom?: string;
