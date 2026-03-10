@@ -272,7 +272,16 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
           </>
         )}
         {renderMode === "native" && (
-          <span className="text-xs font-medium text-muted-foreground px-2">📄 {nom}</span>
+          <>
+            <Button variant="ghost" size="sm" onClick={zoomOut}><ZoomOut className="w-4 h-4" /></Button>
+            <span className="text-xs font-medium text-muted-foreground min-w-[3rem] text-center">
+              {Math.round(zoom * 100)}%
+            </span>
+            <Button variant="ghost" size="sm" onClick={zoomIn}><ZoomIn className="w-4 h-4" /></Button>
+            <Button variant="ghost" size="sm" onClick={resetZoom}><RotateCcw className="w-4 h-4" /></Button>
+            <div className="w-px h-5 bg-border mx-1" />
+            <span className="text-xs font-medium text-muted-foreground px-1">📄 {nom}</span>
+          </>
         )}
         <div className="flex-1" />
         {!isExpanded && (
