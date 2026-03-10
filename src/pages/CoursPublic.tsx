@@ -1084,7 +1084,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   if (isElearning) {
     // E-learning: strict sequential unlock + intro lock
     for (let i = 0; i < modules.length; i++) {
-      if (i === 0) {
+      if (i === 0 || ALWAYS_UNLOCKED_IDS.has(modules[i].id)) {
         unlockedModuleIds.add(modules[i].id);
       } else if (completedModuleIds.has(modules[i - 1].id)) {
         unlockedModuleIds.add(modules[i].id);
