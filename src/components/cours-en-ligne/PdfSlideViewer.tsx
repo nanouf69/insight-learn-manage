@@ -272,7 +272,16 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
           </>
         )}
         {renderMode === "native" && (
-          <span className="text-xs font-medium text-muted-foreground px-2">📄 {nom}</span>
+          <>
+            <Button variant="ghost" size="sm" onClick={zoomOut}><ZoomOut className="w-4 h-4" /></Button>
+            <span className="text-xs font-medium text-muted-foreground min-w-[3rem] text-center">
+              {Math.round(zoom * 100)}%
+            </span>
+            <Button variant="ghost" size="sm" onClick={zoomIn}><ZoomIn className="w-4 h-4" /></Button>
+            <Button variant="ghost" size="sm" onClick={resetZoom}><RotateCcw className="w-4 h-4" /></Button>
+            <div className="w-px h-5 bg-border mx-1" />
+            <span className="text-xs font-medium text-muted-foreground px-1">📄 {nom}</span>
+          </>
         )}
         <div className="flex-1" />
         {!isExpanded && (
@@ -306,12 +315,14 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
             onContextMenu={e => e.preventDefault()}
             onScroll={(e) => handleNativeBottomCheck(e.currentTarget)}
           >
-            <iframe
-              src={`${absoluteUrl}#toolbar=0&navpanes=0&scrollbar=0&statusbar=0&messages=0&download=0`}
-              className="w-full border-0"
-              style={{ minHeight: isExpanded ? "300%" : "200vh", height: "200vh" }}
-              title={`PDF — ${nom}`}
-            />
+            <div style={{ transform: `scale(${zoom})`, transformOrigin: "top left", width: `${100 / zoom}%` }}>
+              <iframe
+                src={`${absoluteUrl}#toolbar=0&navpanes=0&scrollbar=0&statusbar=0&messages=0&download=0`}
+                className="w-full border-0"
+                style={{ minHeight: isExpanded ? "300%" : "200vh", height: "200vh" }}
+                title={`PDF — ${nom}`}
+              />
+            </div>
           </div>
         ) : (
           <Document
