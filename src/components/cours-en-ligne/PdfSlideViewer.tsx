@@ -283,7 +283,7 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
         {renderMode === "native" || loadError ? (
           <div className="w-full h-full min-h-[420px] bg-background">
             <iframe
-              src={`${absoluteUrl}#toolbar=1&navpanes=0`}
+              src={`${absoluteUrl}#toolbar=0&navpanes=0`}
               className="w-full h-full border-0"
               style={{ minHeight: isExpanded ? "100%" : "70vh" }}
               title={`PDF — ${nom}`}
