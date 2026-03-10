@@ -264,9 +264,11 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
         {renderMode === "native" || loadError ? (
           <div className="w-full h-full min-h-[420px] bg-background">
             <iframe
-              src={url}
+              src={`https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`}
               className="w-full h-full border-0"
-              title={`PDF natif — ${nom}`}
+              style={{ minHeight: isExpanded ? "100%" : "70vh" }}
+              title={`PDF — ${nom}`}
+              sandbox="allow-scripts allow-same-origin"
             />
           </div>
         ) : (
