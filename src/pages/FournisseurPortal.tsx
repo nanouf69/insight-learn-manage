@@ -1549,7 +1549,7 @@ export default function FournisseurPortal() {
           {/* ============ TAB VUE APPRENANT ============ */}
           {fournisseur?.formateur_id && (
             <TabsContent value="vue-apprenant">
-              <FormateurApprenantSearchPreview />
+              <FormateurApprenantSearchPreview token={token!} />
             </TabsContent>
           )}
           {/* ============ TAB RAPPROCHEMENT (comptable uniquement) ============ */}
