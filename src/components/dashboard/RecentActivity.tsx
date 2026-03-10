@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { GraduationCap, UserPlus, FileCheck, CreditCard, CheckCircle, AlertTriangle, CalendarCheck, Receipt, Mail, Send, LogIn } from "lucide-react";
+import { GraduationCap, UserPlus, FileCheck, CreditCard, CheckCircle, AlertTriangle, CalendarCheck, Receipt, Mail, Send, LogIn, FileUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -87,16 +87,17 @@ export function RecentActivity({ onNavigateToApprenant }: RecentActivityProps) {
         // Add system alerts first (priority)
         alertes?.forEach((a) => {
           const isConnexion = a.type === 'connexion_apprenant';
+          const isDocUpload = a.type === 'document_upload';
           activityList.push({
             apprenantId: '',
             id: `alert-${a.id}`,
-            type: isConnexion ? "connexion" : "alert",
+            type: isConnexion ? "connexion" : isDocUpload ? "document" : "alert",
             message: a.titre,
             target: a.message,
             time: formatDistanceToNow(new Date(a.created_at), { addSuffix: true, locale: fr }),
-            icon: isConnexion ? LogIn : AlertTriangle,
-            iconBg: isConnexion ? "bg-green-500/10" : "bg-destructive/10",
-            iconColor: isConnexion ? "text-green-600" : "text-destructive",
+            icon: isConnexion ? LogIn : isDocUpload ? FileUp : AlertTriangle,
+            iconBg: isConnexion ? "bg-green-500/10" : isDocUpload ? "bg-blue-500/10" : "bg-destructive/10",
+            iconColor: isConnexion ? "text-green-600" : isDocUpload ? "text-blue-600" : "text-destructive",
           });
         });
 

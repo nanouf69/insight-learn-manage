@@ -211,6 +211,16 @@ export function DocumentUploadCard({
         if (dbError) {
           console.error('DB insert error:', dbError);
         }
+
+        // Create notification alert for admin
+        const apprenantName = localStorage.getItem('onboarding_prenom') || '';
+        const apprenantLastName = localStorage.getItem('onboarding_nom') || '';
+        await supabase.from('alertes_systeme' as any).insert({
+          type: 'document_upload',
+          titre: 'Nouveau document recu',
+          message: `${apprenantName} ${apprenantLastName} a uploade "${title}"`,
+          details: `Type: ${docId} | Fichier: ${file.name}`,
+        } as any);
       }
 
       // Persist to localStorage as fallback

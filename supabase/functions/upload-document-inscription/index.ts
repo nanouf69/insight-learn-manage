@@ -99,6 +99,14 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Create notification alert for admin
+    await supabase.from("alertes_systeme").insert({
+      type: "document_upload",
+      titre: "Nouveau document recu",
+      message: `${apprenant.prenom} ${apprenant.nom} a uploade "${titre}"`,
+      details: `Type: ${typeDocument} | Fichier: ${file.name}`,
+    });
+
     return new Response(
       JSON.stringify({
         success: true,
