@@ -261,12 +261,10 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
           <span className="text-xs font-medium text-muted-foreground px-2">📄 {nom}</span>
         )}
         <div className="flex-1" />
-        <a href={absoluteUrl} target="_blank" rel="noopener noreferrer" className="inline-flex">
-          <Button variant="ghost" size="sm">
-            <ExternalLink className="w-4 h-4" />
-          </Button>
-        </a>
-        <Button variant="ghost" size="sm" onClick={toggleFullscreen}>
+        {!isExpanded && (
+          <span className="text-xs text-muted-foreground mr-1 hidden sm:inline">Pour agrandir, cliquer ici →</span>
+        )}
+        <Button variant="ghost" size="sm" onClick={toggleFullscreen} title="Pour agrandir, cliquer ici">
           {isExpanded ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
         </Button>
       </div>
