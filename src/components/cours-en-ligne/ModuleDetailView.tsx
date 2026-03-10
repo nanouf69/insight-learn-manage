@@ -3338,7 +3338,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         (exo.questions || []).forEach((q: any, qi: number) => {
                           const k = `${exo.id}-${q.id}`;
                           const isQrc = q.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
-                          if (!isQrc && !selectedAnswers[k]) {
+                          const ans = selectedAnswers[k];
+                          const hasAnswer = Array.isArray(ans) ? ans.length > 0 : !!ans;
+                          if (!isQrc && !hasAnswer) {
                             unansweredQcmKeys.push(k);
                           }
                         });
