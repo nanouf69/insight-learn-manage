@@ -480,6 +480,166 @@ export const REGLEMENTATION_LOCALE_EXERCICES: {
     ],
   },
   {
+    id: 76, actif: true,
+    titre: "Réglementation Locale — Partie 1 Série 2 : Tarifs 2026, suppléments, note, affichage",
+    sousTitre: "Tarification 2026, taximètre, suppléments, réservations, note de course, affichage, frais de route — Arrêté préf. n°69-2026-02-19-00002",
+    questions: [
+      { id: 1, enonce: "Selon l'arrêté préfectoral n°69-2026-02-19-00002 du 19 février 2026, quel est le montant maximal de la prise en charge dans le département du Rhône ?", choix: [
+        { lettre: "A", texte: "2,80 €" },{ lettre: "B", texte: "3,00 €" },
+        { lettre: "C", texte: "3,10 €", correct: true },{ lettre: "D", texte: "3,50 €" },
+      ]},
+      { id: 2, enonce: "Quel est le montant maximal de l'heure d'attente selon l'arrêté tarifaire 2026 du Rhône ?", choix: [
+        { lettre: "A", texte: "40,40 €/h" },{ lettre: "B", texte: "41,00 €/h" },
+        { lettre: "C", texte: "41,30 €/h", correct: true },{ lettre: "D", texte: "42,00 €/h" },
+      ]},
+      { id: 3, enonce: "Quel est le prix maximum du kilomètre parcouru pour le tarif A en 2026 ?", choix: [
+        { lettre: "A", texte: "0,80 €/km" },{ lettre: "B", texte: "1,00 €/km", correct: true },
+        { lettre: "C", texte: "1,50 €/km" },{ lettre: "D", texte: "2,00 €/km" },
+      ]},
+      { id: 4, enonce: "Pour le tarif D (nuit/dimanche/fériés + retour à vide), quel est le prix maximum du kilomètre en 2026 ?", choix: [
+        { lettre: "A", texte: "1,50 €/km" },{ lettre: "B", texte: "2,00 €/km" },
+        { lettre: "C", texte: "2,50 €/km" },{ lettre: "D", texte: "3,00 €/km", correct: true },
+      ]},
+      { id: 5, enonce: "À quelle distance la chute de 0,10 € s'applique-t-elle pour le tarif B (1,50 €/km) ?", choix: [
+        { lettre: "A", texte: "Tous les 100 mètres" },{ lettre: "B", texte: "Tous les 50 mètres" },
+        { lettre: "C", texte: "Tous les 66,67 mètres", correct: true },{ lettre: "D", texte: "Tous les 80 mètres" },
+      ]},
+      { id: 6, enonce: "Quelle est la valeur de l'attente marche (chute de 0,10 €) en secondes pour TOUS les tarifs A, B, C et D ?", choix: [
+        { lettre: "A", texte: "5 secondes" },{ lettre: "B", texte: "8 secondes" },
+        { lettre: "C", texte: "8,72 secondes", correct: true },{ lettre: "D", texte: "10 secondes" },
+      ]},
+      { id: 7, enonce: "La majoration pour course de nuit est plafonnée à quel pourcentage du prix du kilomètre ?", choix: [
+        { lettre: "A", texte: "25 %" },{ lettre: "B", texte: "50 %", correct: true },
+        { lettre: "C", texte: "75 %" },{ lettre: "D", texte: "100 %" },
+      ]},
+      { id: 8, enonce: "La majoration pour retour à vide est plafonnée à quel pourcentage du prix du kilomètre ?", choix: [
+        { lettre: "A", texte: "50 %" },{ lettre: "B", texte: "75 %" },
+        { lettre: "C", texte: "100 %", correct: true },{ lettre: "D", texte: "150 %" },
+      ]},
+      { id: 9, enonce: "La majoration pour route enneigée ou verglacée peut-elle être cumulée avec la majoration de nuit ?", choix: [
+        { lettre: "A", texte: "Oui, les deux majorations se cumulent" },
+        { lettre: "B", texte: "Non, elles ne peuvent pas être cumulées", correct: true },
+        { lettre: "C", texte: "Oui, mais seulement si le client l'accepte" },
+        { lettre: "D", texte: "Oui, uniquement entre 22h et 5h" },
+      ]},
+      { id: 10, enonce: "Quelles sont les deux conditions CUMULATIVES pour appliquer la majoration « route enneigée ou verglacée » ?", choix: [
+        { lettre: "A", texte: "Routes effectivement enneigées/verglacées ET équipements spéciaux (pneus hiver)", correct: true },
+        { lettre: "B", texte: "Prévision météo de neige ET accord du client" },
+        { lettre: "C", texte: "Température négative ET chaussée humide" },
+        { lettre: "D", texte: "Arrêté préfectoral spécial ET déclaration en mairie" },
+      ]},
+      { id: 11, enonce: "Selon l'arrêté 2026, quel est le montant du supplément pour un passager supplémentaire à partir du 5ème passager ?", choix: [
+        { lettre: "A", texte: "2 € par passager" },{ lettre: "B", texte: "3 € par passager" },
+        { lettre: "C", texte: "4 € par passager", correct: true },{ lettre: "D", texte: "5 € par passager" },
+      ]},
+      { id: 12, enonce: "Le supplément bagages de 2 € s'applique dans quels cas ?", choix: [
+        { lettre: "A", texte: "Bagages nécessitant un équipement extérieur (coffre insuffisant)", correct: true },
+        { lettre: "B", texte: "Valises au-delà de 3 par passager", correct: true },
+        { lettre: "C", texte: "Tout bagage quelle que soit sa taille" },
+        { lettre: "D", texte: "Uniquement pour les valises cabine" },
+      ]},
+      { id: 13, enonce: "Le supplément de réservation immédiate (2 €) s'applique dans quel périmètre géographique ?", choix: [
+        { lettre: "A", texte: "Sur tout le département du Rhône" },
+        { lettre: "B", texte: "Uniquement dans la ZUPC", correct: true },
+        { lettre: "C", texte: "Uniquement dans Lyon intra-muros" },
+        { lettre: "D", texte: "Dans la ZUPC et les communes limitrophes" },
+      ]},
+      { id: 14, enonce: "Pour une réservation à l'avance dans la ZUPC, à quel moment le taximètre est-il enclenché ?", choix: [
+        { lettre: "A", texte: "Au départ du garage du chauffeur" },
+        { lettre: "B", texte: "Quand le client monte dans le taxi" },
+        { lettre: "C", texte: "À l'heure de la réservation et à l'adresse du client", correct: true },
+        { lettre: "D", texte: "Dès que le chauffeur accepte la course" },
+      ]},
+      { id: 15, enonce: "Le chauffeur peut-il facturer les frais de péage au client pour le trajet en charge ?", choix: [
+        { lettre: "A", texte: "Oui, automatiquement et sans condition" },
+        { lettre: "B", texte: "Non, jamais" },
+        { lettre: "C", texte: "Oui, uniquement sur demande expresse du client et avec le ticket joint à la note", correct: true },
+        { lettre: "D", texte: "Oui, mais seulement sur autoroute" },
+      ]},
+      { id: 16, enonce: "Les frais de retour à vide (péage ou carburant du trajet retour) peuvent-ils être réclamés au client ?", choix: [
+        { lettre: "A", texte: "Oui, si le trajet retour est long" },
+        { lettre: "B", texte: "Oui, si le client a refusé le retour en charge" },
+        { lettre: "C", texte: "Non, en aucun cas", correct: true },
+        { lettre: "D", texte: "Oui, avec l'accord préalable du client" },
+      ]},
+      { id: 17, enonce: "Lorsque le client prend un taxi en station ou le hèle dans la rue, quand le taximètre est-il mis en route ?", choix: [
+        { lettre: "A", texte: "Dès que le client monte dans le taxi" },
+        { lettre: "B", texte: "Dès le début de la course, en appliquant les tarifs réglementaires", correct: true },
+        { lettre: "C", texte: "Après 500 mètres de trajet" },
+        { lettre: "D", texte: "Quand le taxi quitte la station" },
+      ]},
+      { id: 18, enonce: "Pour une prise en charge HORS de la ZUPC (suite à réservation), où peut être mis en route le taximètre ?", choix: [
+        { lettre: "A", texte: "Au domicile du chauffeur" },
+        { lettre: "B", texte: "À la dernière station ZUPC ou commune de rattachement du taxi (ou à équidistance)", correct: true },
+        { lettre: "C", texte: "À la limite du département du Rhône" },
+        { lettre: "D", texte: "À l'adresse du client uniquement" },
+      ]},
+      { id: 19, enonce: "Quel tarif doit être utilisé pendant la course d'approche pour une prise en charge hors ZUPC ?", choix: [
+        { lettre: "A", texte: "Tarif C ou D" },
+        { lettre: "B", texte: "Tarif A ou B (selon jour/nuit)", correct: true },
+        { lettre: "C", texte: "Tarif B uniquement" },
+        { lettre: "D", texte: "Aucun tarif — approche gratuite" },
+      ]},
+      { id: 20, enonce: "À partir de quel montant la remise d'une note est-elle OBLIGATOIRE ?", choix: [
+        { lettre: "A", texte: "10 € TTC" },{ lettre: "B", texte: "15 € TTC" },
+        { lettre: "C", texte: "20 € TTC" },{ lettre: "D", texte: "25 € TTC", correct: true },
+      ]},
+      { id: 21, enonce: "Combien d'exemplaires comprend la note remise au client ?", choix: [
+        { lettre: "A", texte: "Un seul exemplaire" },
+        { lettre: "B", texte: "Deux exemplaires (double)", correct: true },
+        { lettre: "C", texte: "Trois exemplaires" },
+        { lettre: "D", texte: "Autant que le client le souhaite" },
+      ]},
+      { id: 22, enonce: "Combien de temps le double de note doit-il être conservé par le prestataire ?", choix: [
+        { lettre: "A", texte: "6 mois" },{ lettre: "B", texte: "1 an" },
+        { lettre: "C", texte: "2 ans", correct: true },{ lettre: "D", texte: "5 ans" },
+      ]},
+      { id: 23, enonce: "Parmi les éléments suivants, lesquels sont OBLIGATOIREMENT imprimés sur la note via l'imprimante connectée au taximètre ?", choix: [
+        { lettre: "A", texte: "La date de rédaction de la note", correct: true },
+        { lettre: "B", texte: "Le numéro d'immatriculation du véhicule", correct: true },
+        { lettre: "C", texte: "Le prénom du client" },
+        { lettre: "D", texte: "Le montant de la course minimum", correct: true },
+      ]},
+      { id: 24, enonce: "Quels éléments sont inscrits MANUELLEMENT (ou imprimés) sur la note, dont la somme totale TTC ?", choix: [
+        { lettre: "A", texte: "La somme totale TTC incluant les suppléments", correct: true },
+        { lettre: "B", texte: "Le détail de chacun des suppléments", correct: true },
+        { lettre: "C", texte: "Le nom du client (si demandé)", correct: true },
+        { lettre: "D", texte: "Le trajet GPS détaillé" },
+      ]},
+      { id: 25, enonce: "Quelles informations doivent être affichées de manière visible et lisible dans le véhicule taxi (art. 9) ?", choix: [
+        { lettre: "A", texte: "Les taux horaires et kilométriques en vigueur", correct: true },
+        { lettre: "B", texte: "Les montants et conditions des suppléments", correct: true },
+        { lettre: "C", texte: "L'adresse à laquelle une réclamation peut être adressée", correct: true },
+        { lettre: "D", texte: "Le numéro de téléphone personnel du chauffeur" },
+      ]},
+      { id: 26, enonce: "Quelle lettre de couleur verte doit être apposée sur le taximètre après adaptation aux tarifs 2026 ?", choix: [
+        { lettre: "A", texte: "La lettre T" },{ lettre: "B", texte: "La lettre R" },
+        { lettre: "C", texte: "La lettre L", correct: true },{ lettre: "D", texte: "La lettre V" },
+      ]},
+      { id: 27, enonce: "Dans quel délai le taxi doit-il faire modifier la table tarifaire de son taximètre après l'entrée en vigueur de l'arrêté 2026 ?", choix: [
+        { lettre: "A", texte: "1 mois" },{ lettre: "B", texte: "2 mois", correct: true },
+        { lettre: "C", texte: "3 mois" },{ lettre: "D", texte: "6 mois" },
+      ]},
+      { id: 28, enonce: "Quel arrêté préfectoral l'arrêté du 19 février 2026 abroge-t-il ?", choix: [
+        { lettre: "A", texte: "L'arrêté préfectoral n°69-2024-01-01-00001" },
+        { lettre: "B", texte: "L'arrêté préfectoral n°69-2025-03-04-0002 du 4 mars 2025", correct: true },
+        { lettre: "C", texte: "L'arrêté métropolitain du 27 novembre 2024" },
+        { lettre: "D", texte: "L'arrêté préfectoral de 2018" },
+      ]},
+      { id: 29, enonce: "Quel équipement doit porter la mention « TAXI » et s'illumine en vert quand le taxi est libre ?", choix: [
+        { lettre: "A", texte: "La sous-plaque ADS" },{ lettre: "B", texte: "Le taximètre" },
+        { lettre: "C", texte: "Le dispositif lumineux extérieur (lumineux)", correct: true },
+        { lettre: "D", texte: "La plaque d'immatriculation spéciale" },
+      ]},
+      { id: 30, enonce: "Quelle affirmation est vraie concernant le supplément « réservation » hors ZUPC ?", choix: [
+        { lettre: "A", texte: "Il s'applique normalement comme dans la ZUPC" },
+        { lettre: "B", texte: "Il est réduit de moitié" },
+        { lettre: "C", texte: "Il ne s'applique pas", correct: true },
+        { lettre: "D", texte: "Il est remplacé par un forfait distance" },
+      ]},
+    ],
+  },
+  {
     id: 74, actif: true,
     titre: "Réglementation Locale — Partie 2 : Taximètre, affichette, ADS, véhicule",
     sousTitre: "Taximètre hors ZUPC, affichette, notes de course, IMC, ADS, permis de circuler, véhicule, remplacement, listes d'attente",
