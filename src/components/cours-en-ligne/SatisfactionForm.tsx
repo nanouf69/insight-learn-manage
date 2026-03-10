@@ -97,6 +97,15 @@ const SatisfactionForm = ({ formationType, apprenantId, onComplete }: Satisfacti
     enabled: !!apprenantId && !submitted,
   });
 
+  // Restore saved draft from Supabase on mount
+  useLoadDraft(apprenantId || "", "satisfaction", (draft) => {
+    if (draft.parties && Array.isArray(draft.parties)) setParties(draft.parties);
+    if (draft.noteGlobale !== undefined) setNoteGlobale(draft.noteGlobale);
+    if (draft.pointsForts) setPointsForts(draft.pointsForts);
+    if (draft.pointsAmeliorer) setPointsAmeliorer(draft.pointsAmeliorer);
+    if (draft.suggestions) setSuggestions(draft.suggestions);
+  }, !!apprenantId && !submitted);
+
   const collectData = () => ({
     formationType,
     parties: parties.map(p => ({ titre: p.titre, criteres: p.criteres })),

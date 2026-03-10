@@ -34,6 +34,13 @@ export default function CompetencesChecklist({ data, apprenantNom, apprenantId, 
     enabled: !!apprenantId && !completed,
   });
 
+  // Restore saved draft from Supabase on mount
+  useLoadDraft(apprenantId || "", "test-competences", (draft) => {
+    if (draft.answers && typeof draft.answers === "object") {
+      setAnswers(draft.answers);
+    }
+  }, !!apprenantId && !completed);
+
   const collectData = () => ({
     answers,
     sections: data.sections.map(s => s.titre),
