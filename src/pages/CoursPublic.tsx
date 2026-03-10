@@ -777,13 +777,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         .eq("apprenant_id", apprenant.id);
       if (data) {
         const completionRows = data as any[];
-        setCompletedModuleIds(
-          new Set(
-            completionRows
-              .filter(isModuleCompletionFullyDone)
-              .map((d) => normalizeModuleIdForDashboard(Number(d.module_id))),
-          ),
-        );
+        setCompletedModuleIds(computeFullyCompletedModuleIds(completionRows));
 
         const scores: Record<number, { score_obtenu: number | null; score_max: number | null }> = {};
         completionRows.forEach((d) => {
