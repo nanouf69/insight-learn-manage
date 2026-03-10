@@ -512,7 +512,14 @@ function EcranResultats({
 
   const totalCoef = resultatsAvecIA.reduce((acc, r) => acc + r.coefficient, 0);
   const noteGlobale = resultatsAvecIA.reduce((acc, r) => acc + (r.noteObtenue / r.maxPoints * 20) * r.coefficient, 0) / totalCoef;
-  const admisGlobal = noteGlobale >= 10 && resultatsAvecIA.every(r => r.admis);
+  const hasNoteEliminatoire = resultatsAvecIA.some(r => !r.admis);
+  const moyenneSuffisante = noteGlobale >= 10;
+  const admisGlobal = moyenneSuffisante && !hasNoteEliminatoire;
+
+  // Matières avec note éliminatoire
+  const matieresEliminatoires = resultatsAvecIA
+    .filter(r => !r.admis)
+    .map(r => r.nomMatiere.split(" - ")[0]);
 
   return (
     <div className="space-y-6">
@@ -533,12 +540,38 @@ function EcranResultats({
           <XCircle className="w-12 h-12 text-red-500 mx-auto mb-2" />
         )}
         <h3 className="text-2xl font-bold mb-1">
-          {correctionEnCours ? "Correction en cours..." : admisGlobal ? "Admis(e) ✅" : "Non admis(e) ❌"}
+          {correctionEnCours
+            ? "Correction en cours..."
+            : admisGlobal
+              ? "Examen blanc réussi ✅"
+              : "Examen blanc échoué ❌"
+          }
         </h3>
         {correctionEnCours ? (
           <div className="flex justify-center mt-2"><Loader2 className="w-8 h-8 animate-spin" /></div>
         ) : (
-          <p className="text-4xl font-black mt-2">{noteGlobale.toFixed(1)} / 20</p>
+          <>
+            <p className="text-4xl font-black mt-2">Moyenne générale : {noteGlobale.toFixed(1)} / 20</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              (moyenne pondérée par coefficients sur {resultatsAvecIA.length} matières)
+            </p>
+            {!admisGlobal && !correctionEnCours && (
+              <div className="mt-3 space-y-1">
+                {!moyenneSuffisante && (
+                  <p className="text-sm text-red-600 font-medium">
+                    <AlertTriangle className="w-4 h-4 inline mr-1" />
+                    Moyenne inférieure à 10/20
+                  </p>
+                )}
+                {hasNoteEliminatoire && (
+                  <p className="text-sm text-red-600 font-medium">
+                    <AlertTriangle className="w-4 h-4 inline mr-1" />
+                    Note éliminatoire en : {matieresEliminatoires.join(", ")}
+                  </p>
+                )}
+              </div>
+            )}
+          </>
         )}
         <p className="text-sm text-muted-foreground mt-1">{examen.titre}</p>
       </div>
