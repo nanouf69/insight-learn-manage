@@ -141,14 +141,20 @@ export function applyDbOverridesByKey<T extends { id: number; enonce: string; ch
 ): T[] {
   if (!dbOverrideMap || dbOverrideMap.size === 0) return questions;
 
-  return questions.map((q) => {
-    const key = `${sectionId}-${q.id}`;
-    const override = dbOverrideMap.get(key);
-    if (override) {
-      return { ...q, enonce: override.enonce, choix: override.choix };
-    }
-    return q;
-  });
+  return questions
+    .filter((q) => {
+      const key = `${sectionId}-${q.id}`;
+      const override = dbOverrideMap.get(key);
+      return !override || override.enonce !== "__DELETED__";
+    })
+    .map((q) => {
+      const key = `${sectionId}-${q.id}`;
+      const override = dbOverrideMap.get(key);
+      if (override) {
+        return { ...q, enonce: override.enonce, choix: override.choix };
+      }
+      return q;
+    });
 }
 
 /**

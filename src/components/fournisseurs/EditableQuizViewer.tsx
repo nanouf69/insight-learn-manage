@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronDown, ChevronUp, CheckCircle2, Edit2, Save, X, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, CheckCircle2, Edit2, Save, X, Plus, Trash2, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -85,13 +85,48 @@ export function EditableQuizViewer({ sections, title, icon = "📝", quizId, fou
     });
   };
 
+  const isDeleted = (sectionId: number, questionId: number): boolean => {
+    const key = `${sectionId}-${questionId}`;
+    const override = overrides.get(key);
+    return override?.enonce === "__DELETED__";
+  };
+
   const getQuestion = (sectionId: number, q: QuizQuestion): QuizQuestion => {
     const key = `${sectionId}-${q.id}`;
     const override = overrides.get(key);
-    if (override) {
+    if (override && override.enonce !== "__DELETED__") {
       return { id: q.id, enonce: override.enonce, choix: override.choix };
     }
     return q;
+  };
+
+  const deleteQuestion = async (sectionId: number, questionId: number) => {
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("quiz_questions_overrides")
+        .upsert({
+          fournisseur_id: fournisseurId,
+          quiz_id: quizId,
+          section_id: sectionId,
+          question_id: questionId,
+          enonce: "__DELETED__",
+          choix: [] as any,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "fournisseur_id,quiz_id,section_id,question_id" });
+      if (error) throw error;
+      const key = `${sectionId}-${questionId}`;
+      setOverrides(prev => {
+        const next = new Map(prev);
+        next.set(key, { quiz_id: quizId, section_id: sectionId, question_id: questionId, enonce: "__DELETED__", choix: [] });
+        return next;
+      });
+      toast.success("Question supprimée");
+    } catch {
+      toast.error("Erreur lors de la suppression");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const startEdit = (sectionId: number, q: QuizQuestion) => {
@@ -219,6 +254,23 @@ export function EditableQuizViewer({ sections, title, icon = "📝", quizId, fou
                 <div className="border-t px-4 py-3 space-y-4 bg-muted/10">
                   {section.questions.map((q, qi) => {
                     const key = `${section.id}-${q.id}`;
+                    const deleted = isDeleted(section.id, q.id);
+
+                    if (deleted) {
+                      return (
+                        <div key={q.id} className="flex items-center justify-between px-3 py-2 rounded bg-destructive/10 border border-destructive/20">
+                          <p className="text-sm text-muted-foreground line-through">
+                            <span className="mr-1">{qi + 1}.</span>{q.enonce}
+                          </p>
+                          {editable && (
+                            <Button size="sm" variant="ghost" className="text-xs shrink-0 ml-2" onClick={() => resetToOriginal(section.id, q.id)}>
+                              <RotateCcw className="w-3 h-3 mr-1" /> Restaurer
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    }
+
                     const isEditing = editingKey === key;
                     const actual = getQuestion(section.id, q);
                     const isOverridden = overrides.has(key);
@@ -293,6 +345,9 @@ export function EditableQuizViewer({ sections, title, icon = "📝", quizId, fou
                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-2">
                               <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => startEdit(section.id, q)}>
                                 <Edit2 className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteQuestion(section.id, q.id)} title="Supprimer la question">
+                                <Trash2 className="w-3.5 h-3.5" />
                               </Button>
                               {isOverridden && (
                                 <Button size="icon" variant="ghost" className="h-7 w-7 text-amber-600" onClick={() => resetToOriginal(section.id, q.id)} title="Restaurer l'original">
