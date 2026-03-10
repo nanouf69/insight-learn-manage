@@ -285,7 +285,7 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
 
       {/* PDF Page — scrollable when zoomed, touch-action for mobile */}
       <div
-        className={`flex justify-center ${renderMode === "react-pdf" ? "overflow-auto" : "overflow-hidden"} ${isExpanded ? "flex-1" : ""}`}
+        className={`flex justify-center overflow-auto ${isExpanded ? "flex-1" : ""}`}
         style={{
           maxHeight: isExpanded ? "none" : "80vh",
           height: isExpanded ? "100%" : "auto",
@@ -293,7 +293,11 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
         }}
         onTouchStart={renderMode === "react-pdf" ? handleTouchStart : undefined}
         onTouchEnd={renderMode === "react-pdf" ? handleTouchEnd : undefined}
-        onScroll={renderMode === "native" ? (e) => handleNativeBottomCheck(e.currentTarget) : undefined}
+        onScroll={(e) => {
+          if (renderMode === "native" || loadError) {
+            handleNativeBottomCheck(e.currentTarget);
+          }
+        }}
       >
         {renderMode === "native" || loadError ? (
           <div
