@@ -266,6 +266,48 @@ const DASHBOARD_PARENT_MODULE_IDS: Partial<Record<number, number>> = {
 
 const normalizeModuleIdForDashboard = (moduleId: number) => DASHBOARD_PARENT_MODULE_IDS[moduleId] ?? moduleId;
 
+// Reverse map: parent module → list of child module IDs
+const PARENT_TO_CHILDREN: Record<number, number[]> = {};
+for (const [child, parent] of Object.entries(DASHBOARD_PARENT_MODULE_IDS)) {
+  if (!PARENT_TO_CHILDREN[parent]) PARENT_TO_CHILDREN[parent] = [];
+  PARENT_TO_CHILDREN[parent].push(Number(child));
+}
+
+/**
+ * Compute the set of truly fully-completed module IDs.
+ * For parent modules (2, 10): ALL child sub-modules must have at least one fully-done row.
+ * For simple modules: at least one fully-done row suffices.
+ */
+const computeFullyCompletedModuleIds = (completionRows: any[]): Set<number> => {
+  // Group done rows by their RAW module_id
+  const doneRawIds = new Set(
+    completionRows
+      .filter(isModuleCompletionFullyDone)
+      .map((d) => Number(d.module_id)),
+  );
+
+  // All normalized IDs that have at least one done row
+  const candidateIds = new Set(
+    completionRows
+      .filter(isModuleCompletionFullyDone)
+      .map((d) => normalizeModuleIdForDashboard(Number(d.module_id))),
+  );
+
+  const result = new Set<number>();
+  for (const id of candidateIds) {
+    const children = PARENT_TO_CHILDREN[id];
+    if (children && children.length > 0) {
+      // Parent module: only fully done if ALL children have done rows
+      if (children.every((childId) => doneRawIds.has(childId))) {
+        result.add(id);
+      }
+    } else {
+      result.add(id);
+    }
+  }
+  return result;
+};
+
 const getCompletionAnsweredCount = (completion: any): number => {
   if (!completion) return 0;
   const details = Array.isArray(completion?.details) ? completion.details : null;
@@ -707,13 +749,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
       if (data) {
         const completionRows = data as any[];
-        setCompletedModuleIds(
-          new Set(
-            completionRows
-              .filter(isModuleCompletionFullyDone)
-              .map((d) => normalizeModuleIdForDashboard(Number(d.module_id))),
-          ),
-        );
+        setCompletedModuleIds(computeFullyCompletedModuleIds(completionRows));
 
         const scores: Record<number, { score_obtenu: number | null; score_max: number | null }> = {};
         completionRows.forEach((d) => {
@@ -741,13 +777,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         .eq("apprenant_id", apprenant.id);
       if (data) {
         const completionRows = data as any[];
-        setCompletedModuleIds(
-          new Set(
-            completionRows
-              .filter(isModuleCompletionFullyDone)
-              .map((d) => normalizeModuleIdForDashboard(Number(d.module_id))),
-          ),
-        );
+        setCompletedModuleIds(computeFullyCompletedModuleIds(completionRows));
 
         const scores: Record<number, { score_obtenu: number | null; score_max: number | null }> = {};
         completionRows.forEach((d) => {
@@ -991,8 +1021,19 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
   const moduleProgressById = modules.reduce<Record<number, { isDone: boolean; hasProgress: boolean }>>((acc, module) => {
     const rows = completionsByModuleId[module.id] || [];
+    const children = PARENT_TO_CHILDREN[module.id];
+    let isDone: boolean;
+    if (children && children.length > 0) {
+      // Parent module: ALL children must have at least one fully-done row
+      const doneRawIds = new Set(
+        rows.filter(isModuleCompletionFullyDone).map((r) => Number(r.module_id)),
+      );
+      isDone = children.every((childId) => doneRawIds.has(childId));
+    } else {
+      isDone = rows.some(isModuleCompletionFullyDone);
+    }
     acc[module.id] = {
-      isDone: rows.some(isModuleCompletionFullyDone),
+      isDone,
       hasProgress: rows.some(hasModuleCompletionProgress),
     };
     return acc;
