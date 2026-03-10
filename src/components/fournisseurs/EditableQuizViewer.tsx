@@ -254,6 +254,24 @@ export function EditableQuizViewer({ sections, title, icon = "📝", quizId, fou
                 <div className="border-t px-4 py-3 space-y-4 bg-muted/10">
                   {section.questions.map((q, qi) => {
                     const key = `${section.id}-${q.id}`;
+                    const deleted = isDeleted(section.id, q.id);
+
+                    if (deleted) {
+                      return (
+                        <div key={q.id} className="flex items-center justify-between px-3 py-2 rounded bg-destructive/10 border border-destructive/20">
+                          <p className="text-sm text-muted-foreground line-through">
+                            <span className="mr-1">{qi + 1}.</span>{q.enonce}
+                          </p>
+                          {editable && (
+                            <Button size="sm" variant="ghost" className="text-xs shrink-0 ml-2" onClick={() => resetToOriginal(section.id, q.id)}>
+                              <RotateCcw className="w-3 h-3 mr-1" /> Restaurer
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    const isEditing = editingKey === key;
                     const isEditing = editingKey === key;
                     const actual = getQuestion(section.id, q);
                     const isOverridden = overrides.has(key);
