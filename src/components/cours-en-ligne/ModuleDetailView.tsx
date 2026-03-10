@@ -2452,7 +2452,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             .maybeSingle();
 
           if (data?.details && Array.isArray(data.details)) {
-            const restored: Record<string, string> = {};
+            const restored: Record<string, string | string[]> = {};
             const answeredByExercice = new Map<number, number>();
 
             (data.details as any[]).forEach((d: any) => {
