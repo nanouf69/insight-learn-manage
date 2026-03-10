@@ -88,6 +88,11 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
     return () => document.removeEventListener("fullscreenchange", handleFsChange);
   }, []);
 
+  // Reset native completion gate when changing source/mode
+  useEffect(() => {
+    setNativeScrolledToBottom(false);
+  }, [url, renderMode]);
+
   // Lock page scroll in pseudo fullscreen mode & try to lock orientation
   useEffect(() => {
     if (!isPseudoFullscreen) return;
