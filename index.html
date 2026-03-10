@@ -21,6 +21,16 @@
 
   <body>
     <div id="root"></div>
+    <script>
+      // Polyfill Promise.withResolvers for Samsung Internet, Safari < 17, etc.
+      if (typeof Promise.withResolvers === "undefined") {
+        Promise.withResolvers = function () {
+          var resolve, reject;
+          var promise = new Promise(function (res, rej) { resolve = res; reject = rej; });
+          return { promise: promise, resolve: resolve, reject: reject };
+        };
+      }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
