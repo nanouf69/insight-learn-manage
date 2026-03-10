@@ -4187,36 +4187,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 <Plus className="w-4 h-4" /> Ajouter un exercice
               </Button>
             </div>
-            {isPratique ? (
-              moduleData.exercices.map((exo, index) => (
-                <ExerciceCard
-                  key={exo.id}
-                  item={exo as ExerciceItem}
-                  index={index}
-                  total={moduleData.exercices.length}
-                  onMove={(i, d) => moveItem("exercices", i, d)}
-                  onDelete={(id) => deleteItem("exercices", id)}
-                  onToggle={(id) => toggleItem("exercices", id)}
-                  onUpdateQuestions={(id, questions) => updateExerciceQuestions(id, questions)}
-                />
-              ))
-            ) : (
-              moduleData.exercices.map((exo, index) => (
-                <ContentCard
-                  key={exo.id}
-                  item={exo as ContentItem}
-                  index={index}
-                  total={moduleData.exercices.length}
-                  onMove={(i, d) => moveItem("exercices", i, d)}
-                  onDelete={(id) => deleteItem("exercices", id)}
-                  onToggle={(id) => toggleItem("exercices", id)}
-                  onEdit={() => {}}
-                  borderColor="border-muted"
-                  onFileUploaded={(itemId, fichier) => handleFileUploaded("exercices", itemId, fichier)}
-                  onFileDeleted={(itemId, fichierIndex, url) => handleFileDeleted("exercices", itemId, fichierIndex, url)}
-                />
-              ))
-            )}
+            {moduleData.exercices.map((exo, index) => (
+              <ExerciceCard
+                key={exo.id}
+                item={exo as ExerciceItem}
+                index={index}
+                total={moduleData.exercices.length}
+                onMove={(i, d) => moveItem("exercices", i, d)}
+                onDelete={(id) => deleteItem("exercices", id)}
+                onToggle={(id) => toggleItem("exercices", id)}
+                onUpdateQuestions={(id, questions) => updateExerciceQuestions(id, questions)}
+              />
+            ))}
           </div>
         </TabsContent>
 
