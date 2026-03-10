@@ -133,6 +133,69 @@ export function loadSavedDraft(apprenantId: string, typeDocument: string): Recor
   return null;
 }
 
+/** Load draft from Supabase first, fallback to localStorage */
+export async function loadDraftFromSupabase(
+  apprenantId: string,
+  typeDocument: string
+): Promise<Record<string, any> | null> {
+  if (!apprenantId) return null;
+
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data, error } = await supabase
+        .from("apprenant_documents_completes" as any)
+        .select("donnees")
+        .eq("apprenant_id", apprenantId)
+        .eq("type_document", typeDocument)
+        .order("updated_at", { ascending: false })
+        .limit(1);
+
+      if (!error && data && (data as any[]).length > 0) {
+        const donnees = (data as any[])[0].donnees;
+        if (donnees && typeof donnees === "object") {
+          console.log(`[AutoSave] ✅ Loaded draft from Supabase: ${typeDocument}`);
+          // Also update localStorage as cache
+          try {
+            localStorage.setItem(
+              `autosave_${apprenantId}_${typeDocument}`,
+              JSON.stringify({ ...donnees, _savedAt: new Date().toISOString() })
+            );
+          } catch {}
+          return donnees as Record<string, any>;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn(`[AutoSave] Supabase load failed for ${typeDocument}:`, err);
+  }
+
+  // Fallback to localStorage
+  return loadSavedDraft(apprenantId, typeDocument);
+}
+
+/** React hook to load a draft on mount from Supabase, then localStorage */
+export function useLoadDraft(
+  apprenantId: string,
+  typeDocument: string,
+  onLoaded: (data: Record<string, any>) => void,
+  enabled = true
+) {
+  const loadedRef = useRef(false);
+
+  useEffect(() => {
+    if (!enabled || !apprenantId || loadedRef.current) return;
+    loadedRef.current = true;
+
+    loadDraftFromSupabase(apprenantId, typeDocument).then((draft) => {
+      if (draft) {
+        console.log(`[AutoSave] Restoring draft for ${typeDocument}:`, Object.keys(draft).length, "keys");
+        onLoaded(draft);
+      }
+    });
+  }, [apprenantId, typeDocument, enabled]);
+}
+
 export function useAutoSave({
   apprenantId,
   typeDocument,
