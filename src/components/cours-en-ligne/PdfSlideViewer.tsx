@@ -16,7 +16,7 @@ try {
         return { promise: promise, resolve: resolve, reject: reject };
       };
     }
-    importScripts('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js');
+    importScripts('https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs');
   `;
   const blob = new Blob([workerCode], { type: 'application/javascript' });
   pdfjs.GlobalWorkerOptions.workerSrc = URL.createObjectURL(blob);
