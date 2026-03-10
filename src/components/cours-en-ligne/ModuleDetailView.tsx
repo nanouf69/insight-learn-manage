@@ -1747,6 +1747,9 @@ const ContentCard = ({
           {item.sousTitre && (
             <p className="text-sm text-muted-foreground">{item.sousTitre}</p>
           )}
+          {item.description && (
+            <pre className="text-xs text-muted-foreground mt-2 whitespace-pre-wrap font-sans max-h-32 overflow-y-auto">{item.description}</pre>
+          )}
         </div>
         {/* Fichiers PowerPoint */}
         {item.fichiers && item.fichiers.length > 0 && (
