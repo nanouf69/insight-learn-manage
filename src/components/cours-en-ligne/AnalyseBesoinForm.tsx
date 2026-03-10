@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2 } from "lucide-react";
 import { saveFormDocument } from "@/lib/saveFormDocument";
 import { toast } from "sonner";
-import { useAutoSave, loadSavedDraft } from "@/hooks/useAutoSave";
+import { useAutoSave, useLoadDraft } from "@/hooks/useAutoSave";
 
 interface Props {
   apprenantNom?: string;
