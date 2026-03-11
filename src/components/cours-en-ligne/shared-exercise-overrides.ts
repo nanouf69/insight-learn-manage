@@ -225,6 +225,69 @@ export function applyOverridesToModuleExercices<T extends { questions?: { enonce
   });
 }
 
+/**
+ * Load cross-module overrides from ALL module_editor_state records in DB.
+ * Builds a map of normalized enonce → updated question data from all stored modules.
+ * This ensures that when a module has no record, edits made in other modules still apply.
+ */
+export async function loadCrossModuleOverridesFromDb(): Promise<OverridesStore> {
+  try {
+    const { data, error } = await supabase
+      .from("module_editor_state")
+      .select("module_id, module_data");
+
+    if (error || !data || data.length === 0) return {};
+
+    const overrides: OverridesStore = {};
+
+    for (const row of data) {
+      const md = row.module_data as any;
+      if (!md?.exercices || !Array.isArray(md.exercices)) continue;
+
+      for (const exo of md.exercices) {
+        if (!exo.questions || !Array.isArray(exo.questions)) continue;
+        for (const q of exo.questions) {
+          if (q.enonce && q.choix) {
+            const key = normalizeEnonce(q.enonce);
+            overrides[key] = { enonce: q.enonce, choix: q.choix };
+          }
+        }
+      }
+    }
+
+    return overrides;
+  } catch (err) {
+    console.error("[shared-overrides] Error loading cross-module overrides from DB:", err);
+    return {};
+  }
+}
+
+/**
+ * Apply cross-module DB overrides to exercises.
+ * Used when a module has no module_editor_state record but other modules have edited shared questions.
+ */
+export function applyCrossModuleOverrides<T extends { questions?: { enonce: string; choix: any[] }[] }>(
+  exercices: T[],
+  dbOverrides: OverridesStore,
+): T[] {
+  if (Object.keys(dbOverrides).length === 0) return exercices;
+
+  return exercices.map((exo) => {
+    if (!exo.questions || exo.questions.length === 0) return exo;
+    let changed = false;
+    const updatedQuestions = exo.questions.map((q) => {
+      const key = normalizeEnonce(q.enonce);
+      const override = dbOverrides[key];
+      if (override && (override.enonce !== q.enonce || JSON.stringify(override.choix) !== JSON.stringify(q.choix))) {
+        changed = true;
+        return { ...q, enonce: override.enonce, choix: override.choix };
+      }
+      return q;
+    });
+    return changed ? { ...exo, questions: updatedQuestions } : exo;
+  });
+}
+
 /** Invalidate localStorage caches for all modules except the current one */
 function invalidateOtherModuleCaches(currentModuleId: number): void {
   const keys = Object.keys(localStorage);

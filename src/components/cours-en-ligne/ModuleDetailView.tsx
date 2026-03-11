@@ -88,6 +88,8 @@ import {
   applyOverridesToModuleExercices,
   detectAndSaveOverrides,
   getOverridesFingerprint,
+  loadCrossModuleOverridesFromDb,
+  applyCrossModuleOverrides,
 } from "./shared-exercise-overrides";
 
 interface InlineQuizQuestion {
@@ -2122,6 +2124,24 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         if (!studentOnly && loadLocalState()) return;
 
+        // No record for this module — apply cross-module overrides from other modules' records
+        // This ensures that question edits made in sibling modules (e.g., module 11 → module 28) are visible
+        if (studentOnly && initialData.exercices.length > 0) {
+          const crossOverrides = await loadCrossModuleOverridesFromDb();
+          if (Object.keys(crossOverrides).length > 0) {
+            const updatedExercices = applyCrossModuleOverrides(initialData.exercices, crossOverrides);
+            const hasChanges = JSON.stringify(updatedExercices) !== JSON.stringify(initialData.exercices);
+            if (hasChanges) {
+              console.log("[CrossModule] Applied cross-module overrides to module", module.id);
+              setModuleData({ ...initialData, exercices: updatedExercices });
+              setDeletedCours([]);
+              setDeletedExercices([]);
+              setLoadedModuleEditorState(false);
+              return;
+            }
+          }
+        }
+
         setModuleData(initialData);
         setDeletedCours([]);
         setDeletedExercices([]);
@@ -2145,6 +2165,37 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   useEffect(() => {
     if (!studentOnly) return; // Only students need realtime updates
 
+    const handleRealtimeChange = async (payload: any) => {
+      const newData = payload.new as any;
+      if (!newData?.module_data) return;
+
+      const md = newData.module_data as unknown as ModuleData;
+      const isDirectMatch = Array.isArray(md.cours) && Array.isArray(md.exercices) && Number(md.id) === Number(module.id);
+
+      if (isDirectMatch) {
+        // Direct module match — apply directly
+        console.log("[Realtime] Module data updated live for module", module.id);
+        setModuleData(md);
+        setDeletedCours(Array.isArray(newData.deleted_cours) ? (newData.deleted_cours as unknown as ContentItem[]) : []);
+        setDeletedExercices(Array.isArray(newData.deleted_exercices) ? (newData.deleted_exercices as unknown as ExerciceItem[]) : []);
+        setLoadedModuleEditorState(true);
+      } else if (Number(newData.module_id) !== Number(module.id)) {
+        // Another module was updated — check for shared questions (cross-module propagation)
+        const crossOverrides = await loadCrossModuleOverridesFromDb();
+        if (Object.keys(crossOverrides).length > 0) {
+          setModuleData((prev) => {
+            const updatedExercices = applyCrossModuleOverrides(prev.exercices, crossOverrides);
+            const hasChanges = JSON.stringify(updatedExercices) !== JSON.stringify(prev.exercices);
+            if (hasChanges) {
+              console.log("[Realtime/CrossModule] Applied cross-module overrides to module", module.id);
+              return { ...prev, exercices: updatedExercices };
+            }
+            return prev;
+          });
+        }
+      }
+    };
+
     const channel = supabase
       .channel(`module-editor-live-${module.id}`)
       .on(
@@ -2153,21 +2204,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           event: 'UPDATE',
           schema: 'public',
           table: 'module_editor_state',
-          filter: `module_id=eq.${module.id}`,
         },
-        (payload) => {
-          const newData = payload.new as any;
-          if (newData?.module_data) {
-            const md = newData.module_data as unknown as ModuleData;
-            if (Array.isArray(md.cours) && Array.isArray(md.exercices) && Number(md.id) === Number(module.id)) {
-              console.log("[Realtime] Module data updated live for module", module.id);
-              setModuleData(md);
-              setDeletedCours(Array.isArray(newData.deleted_cours) ? (newData.deleted_cours as unknown as ContentItem[]) : []);
-              setDeletedExercices(Array.isArray(newData.deleted_exercices) ? (newData.deleted_exercices as unknown as ExerciceItem[]) : []);
-              setLoadedModuleEditorState(true);
-            }
-          }
-        }
+        handleRealtimeChange
       )
       .on(
         'postgres_changes',
@@ -2175,21 +2213,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           event: 'INSERT',
           schema: 'public',
           table: 'module_editor_state',
-          filter: `module_id=eq.${module.id}`,
         },
-        (payload) => {
-          const newData = payload.new as any;
-          if (newData?.module_data) {
-            const md = newData.module_data as unknown as ModuleData;
-            if (Array.isArray(md.cours) && Array.isArray(md.exercices) && Number(md.id) === Number(module.id)) {
-              console.log("[Realtime] Module data inserted live for module", module.id);
-              setModuleData(md);
-              setDeletedCours(Array.isArray(newData.deleted_cours) ? (newData.deleted_cours as unknown as ContentItem[]) : []);
-              setDeletedExercices(Array.isArray(newData.deleted_exercices) ? (newData.deleted_exercices as unknown as ExerciceItem[]) : []);
-              setLoadedModuleEditorState(true);
-            }
-          }
-        }
+        handleRealtimeChange
       )
       .subscribe();
 
