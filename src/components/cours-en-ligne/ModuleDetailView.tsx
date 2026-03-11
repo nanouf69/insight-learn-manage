@@ -90,6 +90,7 @@ import {
   getOverridesFingerprint,
   loadCrossModuleOverridesFromDb,
   applyCrossModuleOverrides,
+  type ModuleInitialData,
 } from "./shared-exercise-overrides";
 
 interface InlineQuizQuestion {
