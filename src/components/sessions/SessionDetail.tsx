@@ -39,7 +39,8 @@ import {
   UserPlus,
   Pencil,
   KeyRound,
-  Copy
+  Copy,
+  Printer
 } from "lucide-react";
 import { MODULES_DATA } from "@/components/cours-en-ligne/formations-data";
 import { ALL_MODULES, FORMATION_MODULES, MANAGED_MODULE_IDS, DEFAULT_MODULES_BY_TYPE } from "@/components/cours-en-ligne/modules-config";
@@ -1284,95 +1285,98 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             </div>
                           </div>
                           <div className="flex items-center gap-1">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                               className="h-8 w-8 p-0 text-muted-foreground hover:text-primary"
-                               title="Feuille d'émargement individuelle"
-                               onClick={async (e) => {
-                                 e.stopPropagation();
-                                 const type = (apprenant.type_apprenant || '').toLowerCase();
-                                 const isTA = type === 'ta' || type === 'ta-e';
-                                 const isVA = type === 'va' || type === 'va-e';
-                                 const isTaxi = type.includes('taxi') || isTA;
-                                 const formationLabel = isTaxi ? 'Formation TAXI' : 'Formation VTC';
-                                 const formateurNames = (isTA || isVA)
-                                   ? ["Rim TOUIL"]
-                                   : ["Naoufal GUENICHI", "Rim TOUIL"];
+                            {[
+                              { icon: FileText, title: "Télécharger émargement", print: false },
+                              { icon: Printer, title: "Imprimer émargement", print: true },
+                            ].map(({ icon: Icon, title, print: isPrint }) => (
+                             <Button
+                               key={title}
+                               size="sm"
+                               variant="ghost"
+                                className="h-8 w-8 p-0 text-muted-foreground hover:text-primary"
+                                title={title}
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  const type = (apprenant.type_apprenant || '').toLowerCase();
+                                  const isTA = type === 'ta' || type === 'ta-e';
+                                  const isVA = type === 'va' || type === 'va-e';
+                                  const isTaxi = type.includes('taxi') || isTA;
+                                  const formationLabel = isTaxi ? 'Formation TAXI' : 'Formation VTC';
+                                  const formateurNames = (isTA || isVA)
+                                    ? ["Rim TOUIL"]
+                                    : ["Naoufal GUENICHI", "Rim TOUIL"];
 
-                                 // Fetch agenda blocs for the session date range
-                                 const dateDebut = new Date(session.dateDebut);
-                                 const dateFin = new Date(session.dateFin);
-                                 const { data: blocs } = await supabase
-                                   .from('agenda_blocs')
-                                   .select('*')
-                                   .gte('semaine_debut', session.dateDebut)
-                                   .lte('semaine_debut', session.dateFin);
+                                  const dateDebut = new Date(session.dateDebut);
+                                  const dateFin = new Date(session.dateFin);
+                                  const { data: blocs } = await supabase
+                                    .from('agenda_blocs')
+                                    .select('*')
+                                    .gte('semaine_debut', session.dateDebut)
+                                    .lte('semaine_debut', session.dateFin);
 
-                                 // Determine which formations apply to this student
-                                 const matchFormation = (f: string) => {
-                                   const fl = f.toLowerCase();
-                                   if (fl.includes('taxi et vtc') || fl.includes('taxi & vtc')) return true;
-                                   if (isTaxi && fl.includes('taxi')) return true;
-                                   if (!isTaxi && fl.includes('vtc')) return true;
-                                   return false;
-                                 };
+                                  const matchFormation = (f: string) => {
+                                    const fl = f.toLowerCase();
+                                    if (fl.includes('taxi et vtc') || fl.includes('taxi & vtc')) return true;
+                                    if (isTaxi && fl.includes('taxi')) return true;
+                                    if (!isTaxi && fl.includes('vtc')) return true;
+                                    return false;
+                                  };
 
-                                 const relevantBlocs = (blocs || []).filter(b => matchFormation(b.formation));
+                                  const relevantBlocs = (blocs || []).filter(b => matchFormation(b.formation));
 
-                                 // Group by actual date
-                                 const dayMap = new Map<string, { date: Date; slots: { debut: string; fin: string }[] }>();
-                                 for (const bloc of relevantBlocs) {
-                                   const weekStart = new Date(bloc.semaine_debut);
-                                   const actualDate = new Date(weekStart);
-                                   actualDate.setDate(weekStart.getDate() + bloc.jour);
-                                   if (actualDate < dateDebut || actualDate > dateFin) continue;
-                                   const key = actualDate.toISOString().slice(0, 10);
-                                   if (!dayMap.has(key)) {
-                                     dayMap.set(key, { date: actualDate, slots: [] });
-                                   }
-                                   dayMap.get(key)!.slots.push({ debut: bloc.heure_debut, fin: bloc.heure_fin });
-                                 }
+                                  const dayMap = new Map<string, { date: Date; slots: { debut: string; fin: string }[] }>();
+                                  for (const bloc of relevantBlocs) {
+                                    const weekStart = new Date(bloc.semaine_debut);
+                                    const actualDate = new Date(weekStart);
+                                    actualDate.setDate(weekStart.getDate() + bloc.jour);
+                                    if (actualDate < dateDebut || actualDate > dateFin) continue;
+                                    const key = actualDate.toISOString().slice(0, 10);
+                                    if (!dayMap.has(key)) {
+                                      dayMap.set(key, { date: actualDate, slots: [] });
+                                    }
+                                    dayMap.get(key)!.slots.push({ debut: bloc.heure_debut, fin: bloc.heure_fin });
+                                  }
 
-                                 // Convert to AgendaDaySlot array sorted by date
-                                 const agendaDays: AgendaDaySlot[] = Array.from(dayMap.entries())
-                                   .sort(([a], [b]) => a.localeCompare(b))
-                                   .map(([, val]) => {
-                                     const morningSlots = val.slots.filter(s => s.debut < '12:30');
-                                     const afternoonSlots = val.slots.filter(s => s.debut >= '12:30');
-                                     const result: AgendaDaySlot = { date: val.date };
-                                     if (morningSlots.length > 0) {
-                                       result.matinDebut = morningSlots.reduce((min, s) => s.debut < min ? s.debut : min, morningSlots[0].debut);
-                                       result.matinFin = morningSlots.reduce((max, s) => s.fin > max ? s.fin : max, morningSlots[0].fin);
-                                     }
-                                     if (afternoonSlots.length > 0) {
-                                       result.apremDebut = afternoonSlots.reduce((min, s) => s.debut < min ? s.debut : min, afternoonSlots[0].debut);
-                                       result.apremFin = afternoonSlots.reduce((max, s) => s.fin > max ? s.fin : max, afternoonSlots[0].fin);
-                                     }
-                                     return result;
-                                   });
+                                  const agendaDays: AgendaDaySlot[] = Array.from(dayMap.entries())
+                                    .sort(([a], [b]) => a.localeCompare(b))
+                                    .map(([, val]) => {
+                                      const morningSlots = val.slots.filter(s => s.debut < '12:30');
+                                      const afternoonSlots = val.slots.filter(s => s.debut >= '12:30');
+                                      const result: AgendaDaySlot = { date: val.date };
+                                      if (morningSlots.length > 0) {
+                                        result.matinDebut = morningSlots.reduce((min, s) => s.debut < min ? s.debut : min, morningSlots[0].debut);
+                                        result.matinFin = morningSlots.reduce((max, s) => s.fin > max ? s.fin : max, morningSlots[0].fin);
+                                      }
+                                      if (afternoonSlots.length > 0) {
+                                        result.apremDebut = afternoonSlots.reduce((min, s) => s.debut < min ? s.debut : min, afternoonSlots[0].debut);
+                                        result.apremFin = afternoonSlots.reduce((max, s) => s.fin > max ? s.fin : max, afternoonSlots[0].fin);
+                                      }
+                                      return result;
+                                    });
 
-                                 if (agendaDays.length === 0) {
-                                   toast({ title: "Aucun cours trouvé", description: "Aucun bloc agenda trouvé pour cette session.", variant: "destructive" });
-                                   return;
-                                 }
+                                  if (agendaDays.length === 0) {
+                                    toast({ title: "Aucun cours trouvé", description: "Aucun bloc agenda trouvé pour cette session.", variant: "destructive" });
+                                    return;
+                                  }
 
-                                 generateEmargementIndividuelPDF(
-                                   {
-                                     formation: formationLabel,
-                                     dateDebut: session.dateDebut,
-                                     dateFin: session.dateFin,
-                                     lieu: session.lieu,
-                                     formateurs: formateurNames,
-                                   },
-                                   { nom: apprenant.nom, prenom: apprenant.prenom, type_apprenant: apprenant.type_apprenant || '' },
-                                   agendaDays
-                                 );
-                                 toast({ title: "Emargement individuel genere", description: `Feuille pour ${apprenant.prenom} ${apprenant.nom} telechargee.` });
-                               }}
-                             >
-                               <FileText className="w-4 h-4" />
-                             </Button>
+                                  generateEmargementIndividuelPDF(
+                                    {
+                                      formation: formationLabel,
+                                      dateDebut: session.dateDebut,
+                                      dateFin: session.dateFin,
+                                      lieu: session.lieu,
+                                      formateurs: formateurNames,
+                                    },
+                                    { nom: apprenant.nom, prenom: apprenant.prenom, type_apprenant: apprenant.type_apprenant || '' },
+                                    agendaDays,
+                                    { print: isPrint }
+                                  );
+                                  toast({ title: isPrint ? "Impression lancée" : "Emargement individuel genere", description: `Feuille pour ${apprenant.prenom} ${apprenant.nom} ${isPrint ? 'ouverte pour impression.' : 'telechargee.'}` });
+                                }}
+                              >
+                                <Icon className="w-4 h-4" />
+                              </Button>
+                            ))}
                             <Button
                               size="sm"
                               variant={apprenant.auth_user_id ? "outline" : "default"}

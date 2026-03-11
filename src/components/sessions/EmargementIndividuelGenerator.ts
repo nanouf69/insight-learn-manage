@@ -41,7 +41,8 @@ const LIEU_FORMATION = "86 route de genas 69003 Lyon";
 export function generateEmargementIndividuelPDF(
   session: SessionData,
   apprenant: Apprenant,
-  agendaDays: AgendaDaySlot[]
+  agendaDays: AgendaDaySlot[],
+  options?: { print?: boolean }
 ) {
   const doc = new jsPDF({
     orientation: "landscape",
@@ -67,7 +68,19 @@ export function generateEmargementIndividuelPDF(
 
   const dateDebut = parseISO(session.dateDebut);
   const fileName = `emargement_${apprenant.nom.toUpperCase()}_${apprenant.prenom}_${format(dateDebut, "yyyy-MM-dd")}.pdf`;
-  doc.save(fileName);
+
+  if (options?.print) {
+    const pdfBlob = doc.output('blob');
+    const url = URL.createObjectURL(pdfBlob);
+    const printWindow = window.open(url);
+    if (printWindow) {
+      printWindow.addEventListener('load', () => {
+        printWindow.print();
+      });
+    }
+  } else {
+    doc.save(fileName);
+  }
 }
 
 function generateIndividualPage(
