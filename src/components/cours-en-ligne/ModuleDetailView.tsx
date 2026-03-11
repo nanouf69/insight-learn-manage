@@ -2104,14 +2104,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const saveToDb = async () => {
       try {
         await supabase.from("module_editor_state").upsert(
-          {
+          [{
             module_id: module.id,
-            module_data: moduleData as unknown as Record<string, unknown>,
-            deleted_cours: deletedCours as unknown as Record<string, unknown>[],
-            deleted_exercices: deletedExercices as unknown as Record<string, unknown>[],
+            module_data: moduleData as any,
+            deleted_cours: deletedCours as any,
+            deleted_exercices: deletedExercices as any,
             source_fingerprint: sourceFingerprint,
             updated_at: new Date().toISOString(),
-          },
+          }],
           { onConflict: "module_id" }
         );
       } catch (err) {
