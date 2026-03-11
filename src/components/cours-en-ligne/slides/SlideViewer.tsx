@@ -56,13 +56,21 @@ function EditableMultiline({ value, onChange, className, placeholder }: {
 
 function SlideTitle({ slide, editing, onChange }: { slide: Slide & { type: "title" }; editing: boolean; onChange?: (s: Slide) => void }) {
   if (!editing) {
+    const hasImage = !!slide.image;
     return (
-      <div className={`flex flex-col items-center justify-center min-h-full ${SLIDE_BG} text-white p-8 rounded-xl`}>
-        <h1 className="text-2xl md:text-3xl font-bold text-white text-center leading-tight mb-4">{slide.title}</h1>
-        {slide.subtitle && <p className="text-base md:text-lg text-blue-200 text-center mb-6">{slide.subtitle}</p>}
-        <div className="w-20 h-1 bg-white rounded mb-6" />
-        {slide.footer && <p className="text-sm text-slate-400 text-center">{slide.footer}</p>}
-        {slide.brand && <p className="text-xs text-slate-500 mt-4">{slide.brand}</p>}
+      <div className={`flex ${hasImage ? 'flex-row' : 'flex-col'} items-center justify-center min-h-full ${SLIDE_BG} text-white p-8 rounded-xl`}>
+        <div className={`flex flex-col items-center ${hasImage ? 'flex-1' : ''}`}>
+          <h1 className="text-2xl md:text-3xl font-bold text-white text-center leading-tight mb-4">{slide.title}</h1>
+          {slide.subtitle && <p className="text-base md:text-lg text-blue-200 text-center mb-6">{slide.subtitle}</p>}
+          <div className="w-20 h-1 bg-white rounded mb-6" />
+          {slide.footer && <p className="text-sm text-slate-400 text-center">{slide.footer}</p>}
+          {slide.brand && <p className="text-xs text-slate-500 mt-4">{slide.brand}</p>}
+        </div>
+        {hasImage && (
+          <div className="w-[40%] flex-shrink-0 ml-6">
+            <img src={slide.image} alt={slide.title} className="w-full h-auto rounded-xl object-cover shadow-2xl" />
+          </div>
+        )}
       </div>
     );
   }
