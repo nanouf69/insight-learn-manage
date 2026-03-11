@@ -18,12 +18,13 @@ interface SlideViewerProps {
 }
 
 // ---- Editable text helpers ----
-function EditableText({ value, onChange, className, tag, placeholder }: {
+function EditableText({ value, onChange, className, tag, placeholder, style }: {
   value: string;
   onChange: (v: string) => void;
   className?: string;
   tag?: "h1" | "h2" | "h3" | "p" | "span";
   placeholder?: string;
+  style?: React.CSSProperties;
 }) {
   return (
     <input
@@ -31,15 +32,17 @@ function EditableText({ value, onChange, className, tag, placeholder }: {
       onChange={e => onChange(e.target.value)}
       className={`bg-transparent border-b border-dashed border-primary/40 focus:border-primary outline-none w-full ${className || ""}`}
       placeholder={placeholder || "..."}
+      style={style}
     />
   );
 }
 
-function EditableMultiline({ value, onChange, className, placeholder }: {
+function EditableMultiline({ value, onChange, className, placeholder, style }: {
   value: string;
   onChange: (v: string) => void;
   className?: string;
   placeholder?: string;
+  style?: React.CSSProperties;
 }) {
   return (
     <textarea
@@ -48,6 +51,7 @@ function EditableMultiline({ value, onChange, className, placeholder }: {
       className={`bg-transparent border border-dashed border-primary/40 focus:border-primary outline-none w-full rounded p-2 resize-y min-h-[60px] ${className || ""}`}
       placeholder={placeholder || "..."}
       rows={2}
+      style={style}
     />
   );
 }
