@@ -50,7 +50,7 @@ export function generateEmargementIndividuelPDF(
 
   if (agendaDays.length === 0) return;
 
-  const daysPerPage = 5;
+  const daysPerPage = 4;
   const totalPages = Math.ceil(agendaDays.length / daysPerPage);
 
   for (let pageIndex = 0; pageIndex < totalPages; pageIndex++) {
@@ -165,6 +165,10 @@ function generateIndividualPage(
   // ===== TABLEAU D'ÉMARGEMENT =====
   yPos = 62;
 
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const footerZoneHeight = 45; // signature (30) + footer (15)
+  const maxTableBottom = pageHeight - footerZoneHeight;
+
   const headRow1: any[] = [
     { content: "Jour", rowSpan: 2, styles: { halign: "center", valign: "middle" } },
     { content: "Matin", colSpan: 2, styles: { halign: "center" } },
@@ -229,38 +233,40 @@ function generateIndividualPage(
   yPos = finalY + 10;
 
   // ===== ZONE DE SIGNATURE =====
+  const pgH = doc.internal.pageSize.getHeight();
+  const sigY = Math.min(yPos, pgH - 42);
   const colWidth = (pageWidth - margin * 2 - 10) / 2;
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
-  doc.text("Signature du stagiaire", margin, yPos);
+  doc.text("Signature du stagiaire", margin, sigY);
   doc.setDrawColor(180, 180, 180);
   doc.setLineWidth(0.3);
-  doc.roundedRect(margin, yPos + 2, colWidth, 25, 2, 2);
+  doc.roundedRect(margin, sigY + 2, colWidth, 22, 2, 2);
 
-  doc.text("Cachet et signature du centre", margin + colWidth + 10, yPos);
+  doc.text("Cachet et signature du centre", margin + colWidth + 10, sigY);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
-  doc.text(`Fait a Lyon, le _______________`, margin + colWidth + 10, yPos + 8);
-  doc.roundedRect(margin + colWidth + 10, yPos + 2, colWidth, 25, 2, 2);
+  doc.text(`Fait a Lyon, le _______________`, margin + colWidth + 12, sigY + 8);
+  doc.roundedRect(margin + colWidth + 10, sigY + 2, colWidth, 22, 2, 2);
 
   // ===== PIED DE PAGE =====
-  const footerY = doc.internal.pageSize.getHeight() - 10;
+  const footerY = pgH - 8;
   doc.setDrawColor(41, 128, 185);
   doc.setLineWidth(0.5);
-  doc.line(margin, footerY - 4, pageWidth - margin, footerY - 4);
+  doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5);
 
   doc.setFontSize(7);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(41, 128, 185);
-  doc.text(organisme.nom, pageWidth / 2, footerY, { align: "center" });
+  doc.text(organisme.nom, pageWidth / 2, footerY - 1, { align: "center" });
 
   doc.setTextColor(80, 80, 80);
   doc.setFont("helvetica", "normal");
   doc.text(
     `${organisme.adresse} | Tel. ${organisme.telephone} | ${organisme.email} | SIRET ${organisme.siret} | NAF ${organisme.codeNaf}`,
     pageWidth / 2,
-    footerY + 4,
+    footerY + 3,
     { align: "center" }
   );
 }
