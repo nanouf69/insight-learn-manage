@@ -1951,16 +1951,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         const targetQuizId = trainerQuizIdByModuleId[module.id];
 
-        let query = supabase
+        // Only apply trainer overrides for modules that have a known quiz mapping
+        // Otherwise we'd pull in unrelated overrides
+        if (!targetQuizId) return;
+
+        const { data } = await supabase
           .from("quiz_questions_overrides")
           .select("quiz_id, section_id, question_id, enonce, choix, updated_at")
+          .eq("quiz_id", targetQuizId)
           .order("updated_at", { ascending: false });
-
-        if (targetQuizId) {
-          query = query.eq("quiz_id", targetQuizId);
-        }
-
-        const { data } = await query;
 
         if (!data || data.length === 0) return;
 
@@ -2014,6 +2013,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     if (studentOnly || typeof window === "undefined") {
       // Student mode: load admin state from database
+      // Accept DB state if structurally valid — don't require exact fingerprint match
+      // because admin fingerprint includes localStorage overrides that students don't have
       (async () => {
         try {
           const { data } = await supabase
@@ -2022,9 +2023,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             .eq("module_id", module.id)
             .maybeSingle();
 
-          if (data && data.module_data && data.source_fingerprint === sourceFingerprint) {
+          if (data && data.module_data) {
             const md = data.module_data as unknown as ModuleData;
-            if (Array.isArray(md.cours) && Array.isArray(md.exercices)) {
+            if (Array.isArray(md.cours) && Array.isArray(md.exercices) && Number(md.id) === Number(module.id)) {
               setModuleData(md);
             } else {
               setModuleData(initialData);
