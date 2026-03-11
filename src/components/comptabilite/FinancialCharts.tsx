@@ -37,10 +37,10 @@ interface MonthData {
 const fmt = (n: number) =>
   new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = forwardRef<HTMLDivElement, any>(({ active, payload, label }: any, ref) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-background border rounded-lg shadow-lg p-3 text-sm min-w-[200px]">
+    <div ref={ref} className="bg-background border rounded-lg shadow-lg p-3 text-sm min-w-[200px]">
       <p className="font-semibold mb-2 text-foreground">{label}</p>
       {payload.map((p: any) => (
         <div key={p.dataKey} className="flex justify-between gap-4">
