@@ -16,6 +16,7 @@ interface ContentItem {
   image?: string;
   actif: boolean;
   fichiers?: { nom: string; url: string }[];
+  slidesKey?: string;
 }
 
 interface ExerciceItem {
@@ -45,154 +46,137 @@ export const CONNAISSANCES_VILLE_TAXI_DATA: ModuleData = {
       titre: "Les Châteaux",
       sousTitre: "Château de la Motte, Fort Saint Jean, Domaine de la Bachasse, Château Lacroix Laval...",
       description: "Découvrez les châteaux et forts historiques de Lyon et sa région.",
-      fichiers: [{ nom: "PDF HD Les Châteaux", url: "/cours/vtc/LES_CHATEAUX.pdf" }],
+      slidesKey: "ville-chateaux",
     },
     {
       id: 2, actif: true,
       titre: "Les Gares",
       sousTitre: "Perrache, Saint-Paul, Vaise, Part-Dieu, Jean Macé...",
       description: "Les principales gares SNCF de Lyon et leur localisation.",
-      fichiers: [{ nom: "PDF HD Les Gares", url: "/cours/vtc/LES_GARES.pdf" }],
+      slidesKey: "ville-gares",
     },
     {
       id: 3, actif: true,
       titre: "Les Hôpitaux",
       sousTitre: "Hôpitaux et cliniques de Lyon et sa métropole",
       description: "Localisation des principaux établissements de santé lyonnais.",
-      fichiers: [{ nom: "PDF HD Les Hôpitaux", url: "/cours/vtc/LES_HOPITAUX.pdf" }],
+      slidesKey: "ville-hopitaux",
     },
     {
       id: 4, actif: true,
       titre: "Les Mairies",
       sousTitre: "Mairies d'arrondissement et mairies de communes",
       description: "Adresses des mairies de Lyon et des communes environnantes.",
-      fichiers: [{ nom: "PDF HD Les Mairies", url: "/cours/vtc/LES_MAIRIES.pdf" }],
+      slidesKey: "ville-mairies",
     },
     {
       id: 5, actif: true,
       titre: "Les Églises",
       sousTitre: "Cathédrales, basiliques et églises remarquables",
       description: "Les lieux de culte historiques et remarquables de Lyon.",
-      fichiers: [{ nom: "PDF HD Les Églises", url: "/cours/vtc/LES_EGLISES.pdf" }],
+      slidesKey: "ville-eglises",
     },
     {
       id: 6, actif: true,
       titre: "Les Fresques",
       sousTitre: "Fresques murales et art urbain lyonnais",
       description: "Les fresques monumentales de Lyon : Fresque des Lyonnais, Mur des Canuts...",
-      fichiers: [{ nom: "PDF HD Les Fresques", url: "/cours/vtc/LES_FRESQUES.pdf" }],
+      slidesKey: "ville-fresques",
     },
     {
       id: 7, actif: true,
       titre: "Les Consulats",
       sousTitre: "Consulats et représentations diplomatiques à Lyon",
       description: "Liste des consulats et représentations étrangères présents à Lyon.",
-      fichiers: [{ nom: "PDF HD Les Consulats", url: "/cours/vtc/LES_CONSULATS.pdf" }],
+      slidesKey: "ville-consulats",
     },
     {
       id: 8, actif: true,
       titre: "Les Commissariats",
       sousTitre: "Commissariats de police de Lyon et environs",
       description: "Localisation des commissariats de police dans la métropole lyonnaise.",
-      fichiers: [{ nom: "PDF HD Les Commissariats", url: "/cours/vtc/LES_COMMISSARIATS.pdf" }],
+      slidesKey: "ville-commissariats",
     },
     {
       id: 9, actif: true,
       titre: "Les Hôtels",
       sousTitre: "Hôtels et hébergements de Lyon",
       description: "Les principaux hôtels de Lyon à connaître pour le transport de passagers.",
-      fichiers: [{ nom: "PDF HD Les Hôtels", url: "/cours/vtc/LES_HOTELS.pdf" }],
+      slidesKey: "ville-hotels",
     },
     {
       id: 10, actif: true,
       titre: "Les Divers",
       sousTitre: "Autres lieux importants à connaître",
       description: "Lieux divers importants pour un chauffeur de taxi à Lyon.",
-      fichiers: [{ nom: "PDF HD Les Divers", url: "/cours/vtc/LES_DIVERS.pdf" }],
+      slidesKey: "ville-divers",
     },
     {
       id: 11, actif: true,
       titre: "Les Musées",
       sousTitre: "Musées et lieux culturels de Lyon",
       description: "Les principaux musées lyonnais à connaître.",
-      fichiers: [{ nom: "PDF HD Les Musées", url: "/cours/vtc/LES_MUSEES.pdf" }],
+      slidesKey: "ville-musees",
     },
     {
       id: 12, actif: true,
       titre: "Les Parcs",
       sousTitre: "Parcs et espaces verts de Lyon et sa métropole",
       description: "Les parcs et jardins incontournables de la région lyonnaise.",
-      fichiers: [{ nom: "PDF HD Les Parcs", url: "/cours/vtc/LES_PARCS.pdf" }],
+      slidesKey: "ville-parcs",
     },
     {
       id: 13, actif: true,
       titre: "Les Personnalités Publiques Lyonnaises",
       sousTitre: "Personnalités historiques et contemporaines de Lyon",
       description: "Les grandes figures lyonnaises à connaître.",
-      fichiers: [{ nom: "PDF HD Les Personnalités", url: "/cours/vtc/LES_PERSONNALITES_PUBLIQUES_LYONNAISES.pdf" }],
+      slidesKey: "ville-personnalites",
     },
     {
       id: 14, actif: true,
       titre: "Les Salles de Spectacles",
       sousTitre: "Théâtres, salles de concert et lieux de spectacle",
       description: "Les principales salles de spectacles lyonnaises.",
-      fichiers: [{ nom: "PDF HD Les Salles de Spectacles", url: "/cours/vtc/LES_SALLES_DE_SPECTACLES.pdf" }],
+      slidesKey: "ville-salles-spectacles",
     },
     {
       id: 15, actif: true,
       titre: "Les Vins",
       sousTitre: "Vignobles et appellations de la région lyonnaise",
       description: "Les vins et vignobles à connaître autour de Lyon.",
-      fichiers: [{ nom: "PDF HD Les Vins", url: "/cours/vtc/LES_VINS.pdf" }],
+      slidesKey: "ville-vins",
     },
     {
       id: 16, actif: true,
       titre: "Lyon et ses Arrondissements",
       sousTitre: "Les 9 arrondissements de Lyon et leurs caractéristiques",
       description: "Présentation géographique et administrative des arrondissements lyonnais.",
-      fichiers: [{ nom: "PDF HD Lyon et ses Arrondissements", url: "/cours/vtc/LYON_ET_SES_ARRONDISSEMENTS.pdf" }],
+      slidesKey: "ville-arrondissements",
     },
     {
       id: 17, actif: true,
       titre: "Stations de Taxi",
       sousTitre: "Emplacements des stations de taxi à Lyon",
       description: "Localisation de toutes les stations de taxi dans Lyon et sa métropole.",
-      fichiers: [{ nom: "PDF HD Stations de Taxi", url: "/cours/vtc/STATIONS_DE_TAXI.pdf" }],
+      slidesKey: "ville-stations-taxi",
     },
   ],
   exercices: [
-    // ===== Quiz interactifs — Tous intégrés directement =====
-    // Administrations
     ...CONNAISSANCES_VILLE_QUIZZES.filter(q => q.id === 7001),
-    // Autoroutes
     QUIZ_AUTOROUTES,
-    // Avenues
     QUIZ_AVENUES,
-    // Boulevards
     QUIZ_BOULEVARDS,
-    // Consulats
     ...CONNAISSANCES_VILLE_QUIZZES.filter(q => q.id === 7002),
-    // Cours
     QUIZ_COURS,
-    // Divers
     ...CONNAISSANCES_VILLE_QUIZZES.filter(q => q.id === 7005),
-    // Hôpitaux et Cliniques
     ...CONNAISSANCES_VILLE_QUIZZES.filter(q => q.id === 7003),
-    // Musées
     ...CONNAISSANCES_VILLE_QUIZZES.filter(q => q.id === 7004),
-    // Places
     QUIZ_PLACES,
-    // Ponts
     ...CONNAISSANCES_VILLE_QUIZZES.filter(q => q.id === 7006),
-    // Quais
     QUIZ_QUAIS,
-    // Rues
     QUIZ_RUES,
-    // Stations de Taxis
     ...CONNAISSANCES_VILLE_QUIZZES.filter(q => q.id === 7008),
-    // Statues
     ...CONNAISSANCES_VILLE_QUIZZES.filter(q => q.id === 7007),
-    // Jeux interactifs
     {
       id: 17, actif: true,
       titre: "🎮 Jeu de la Légende de Lyon",
