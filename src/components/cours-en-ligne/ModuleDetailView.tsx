@@ -2086,19 +2086,39 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const initialData = getInitialModuleData(module, apprenantType, studentOnly);
     const sourceFingerprint = buildSourceFingerprint(initialData);
 
+    const payload = {
+      moduleData,
+      deletedCours,
+      deletedExercices,
+      sourceFingerprint,
+    };
+
+    // Save to localStorage
     try {
-      window.localStorage.setItem(
-        moduleEditorStorageKey,
-        JSON.stringify({
-          moduleData,
-          deletedCours,
-          deletedExercices,
-          sourceFingerprint,
-        }),
-      );
+      window.localStorage.setItem(moduleEditorStorageKey, JSON.stringify(payload));
     } catch (error) {
       console.error("Erreur sauvegarde état édition module:", error);
     }
+
+    // Save to database so students see admin changes
+    const saveToDb = async () => {
+      try {
+        await supabase.from("module_editor_state").upsert(
+          {
+            module_id: module.id,
+            module_data: moduleData as unknown as Record<string, unknown>,
+            deleted_cours: deletedCours as unknown as Record<string, unknown>[],
+            deleted_exercices: deletedExercices as unknown as Record<string, unknown>[],
+            source_fingerprint: sourceFingerprint,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "module_id" }
+        );
+      } catch (err) {
+        console.error("Erreur sauvegarde DB module_editor_state:", err);
+      }
+    };
+    saveToDb();
   }, [editorStateHydrated, studentOnly, moduleEditorStorageKey, moduleData, deletedCours, deletedExercices]);
 
   useEffect(() => {
