@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, ArrowLeft, AlertTriangle, Eye, EyeOff } from "lucide-react";
 import { OnboardingLayout } from "../OnboardingLayout";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Step7() {
   const [password, setPassword] = useState(() => localStorage.getItem('onboarding_mot_de_passe_cma') || '');
@@ -18,6 +19,16 @@ export default function Step7() {
     setPassword(value);
     if (value.trim()) {
       localStorage.setItem('onboarding_mot_de_passe_cma', value.trim());
+    }
+  };
+  // Save password to DB when it exists
+  const savePasswordToDB = async () => {
+    const apprenantId = localStorage.getItem('onboarding_apprenant_id');
+    if (apprenantId && password.trim()) {
+      await supabase
+        .from('apprenants')
+        .update({ mot_de_passe_cma: password.trim() })
+        .eq('id', apprenantId);
     }
   };
 
@@ -91,6 +102,7 @@ export default function Step7() {
           {canProceed ? (
             <Link
               to="/bienvenue/etape-8"
+              onClick={() => { savePasswordToDB(); }}
               className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-xl transition-colors"
             >
               Étape suivante
