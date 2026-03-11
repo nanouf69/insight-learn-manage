@@ -46,7 +46,7 @@ import { ALL_MODULES, FORMATION_MODULES, MANAGED_MODULE_IDS, DEFAULT_MODULES_BY_
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { generateEmargementPDF } from "./EmargementGenerator";
-import { generateEmargementIndividuelPDF } from "./EmargementIndividuelGenerator";
+import { generateEmargementIndividuelPDF, AgendaDaySlot } from "./EmargementIndividuelGenerator";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
