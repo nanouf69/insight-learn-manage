@@ -109,7 +109,7 @@ export const VILLE_CONSULATS_SLIDES: Slide[] = [
       ["Canada", "3 Pl. de la Bourse, 69002"],
       ["Côte d'Ivoire", "58 Av. M. Foch, 69006"],
       ["Malte", "15 Pl. Jules Ferry, 69006"],
-      ["Russie", "55 Rue S.M. Berthet, 69009"],
+      ["Russie (fermé)", "55 Rue S.M. Berthet, 69009"],
       ["Suède", "107 Rue Servient, 69003"],
       ["Danemark", "136 Cours Lafayette, 69003"],
       ["Italie", "5 Rue Cdt Faurax, 69006"],
