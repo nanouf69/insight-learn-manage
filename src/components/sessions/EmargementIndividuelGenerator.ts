@@ -50,7 +50,7 @@ export function generateEmargementIndividuelPDF(
 
   if (agendaDays.length === 0) return;
 
-  const daysPerPage = 5;
+  const daysPerPage = 4;
   const totalPages = Math.ceil(agendaDays.length / daysPerPage);
 
   for (let pageIndex = 0; pageIndex < totalPages; pageIndex++) {
