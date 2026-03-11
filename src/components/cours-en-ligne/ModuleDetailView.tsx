@@ -1995,10 +1995,34 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const sourceFingerprint = buildSourceFingerprint(initialData);
 
     if (studentOnly || typeof window === "undefined") {
-      setModuleData(initialData);
-      setDeletedCours([]);
-      setDeletedExercices([]);
-      setEditorStateHydrated(true);
+      // Student mode: load admin state from database
+      (async () => {
+        try {
+          const { data } = await supabase
+            .from("module_editor_state")
+            .select("module_data, deleted_cours, deleted_exercices, source_fingerprint")
+            .eq("module_id", module.id)
+            .maybeSingle();
+
+          if (data && data.module_data && data.source_fingerprint === sourceFingerprint) {
+            const md = data.module_data as unknown as ModuleData;
+            if (Array.isArray(md.cours) && Array.isArray(md.exercices)) {
+              setModuleData(md);
+            } else {
+              setModuleData(initialData);
+            }
+          } else {
+            setModuleData(initialData);
+          }
+        } catch (err) {
+          console.error("Error loading admin module state for student:", err);
+          setModuleData(initialData);
+        } finally {
+          setDeletedCours([]);
+          setDeletedExercices([]);
+          setEditorStateHydrated(true);
+        }
+      })();
       return;
     }
 
