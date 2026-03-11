@@ -2124,6 +2124,24 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         if (!studentOnly && loadLocalState()) return;
 
+        // No record for this module — apply cross-module overrides from other modules' records
+        // This ensures that question edits made in sibling modules (e.g., module 11 → module 28) are visible
+        if (studentOnly && initialData.exercices.length > 0) {
+          const crossOverrides = await loadCrossModuleOverridesFromDb();
+          if (Object.keys(crossOverrides).length > 0) {
+            const updatedExercices = applyCrossModuleOverrides(initialData.exercices, crossOverrides);
+            const hasChanges = JSON.stringify(updatedExercices) !== JSON.stringify(initialData.exercices);
+            if (hasChanges) {
+              console.log("[CrossModule] Applied cross-module overrides to module", module.id);
+              setModuleData({ ...initialData, exercices: updatedExercices });
+              setDeletedCours([]);
+              setDeletedExercices([]);
+              setLoadedModuleEditorState(false);
+              return;
+            }
+          }
+        }
+
         setModuleData(initialData);
         setDeletedCours([]);
         setDeletedExercices([]);
