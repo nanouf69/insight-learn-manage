@@ -16,7 +16,7 @@ export const VILLE_COMMISSARIATS_SLIDES: Slide[] = [
     blocks: [
       { heading: "1. Commissariat Lyon 1er", color: "#ef4444", points: ["📍 19 Place Louis Pradel, 69001 Lyon", "Devant l'Opéra et l'Hôtel de Ville"] },
       { heading: "2. Commissariat Lyon 2ème", color: "#f59e0b", points: ["📍 47 Rue de la Charité, 69002 Lyon"] },
-      { heading: "3. Commissariat Lyon 3ème et 6ème", color: "#10b981", points: ["📍 11 Rue Saint-Jacques, 69003 Lyon", "Commissariat commun aux deux arrondissements"] },
+      { heading: "3. Commissariat Lyon 3ème et 6ème", color: "#10b981", points: ["📍 11 Rue Denfert-Rochereau, 69003 Lyon", "Commissariat commun aux deux arrondissements"] },
     ],
   },
   {
@@ -36,7 +36,7 @@ export const VILLE_COMMISSARIATS_SLIDES: Slide[] = [
     rows: [
       ["1er", "19 Place Louis Pradel, 69001"],
       ["2ème", "47 Rue de la Charité, 69002"],
-      ["3ème / 6ème", "11 Rue Saint-Jacques, 69003"],
+      ["3ème / 6ème", "11 Rue Denfert-Rochereau, 69003"],
       ["4ème", "3 Rue de la Terrasse, 69004"],
       ["5ème", "15 Rue des Anges, 69005"],
       ["7ème / 8ème", "40 Rue Marius Berliet, 69008"],

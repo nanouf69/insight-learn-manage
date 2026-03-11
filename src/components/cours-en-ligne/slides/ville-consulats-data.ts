@@ -67,7 +67,7 @@ export const VILLE_CONSULATS_SLIDES: Slide[] = [
       { heading: "21. Consulat du Canada", color: "#10b981", points: ["📍 3 Place de la Bourse, 69002 Lyon"] },
       { heading: "22. Consulat de Côte d'Ivoire", color: "#06b6d4", points: ["📍 58 Avenue Maréchal Foch, 69006 Lyon"] },
       { heading: "23. Consulat de Malte", color: "#8b5cf6", points: ["📍 15 Place Jules Ferry, 69006 Lyon"] },
-      { heading: "24. Consulat de Russie", color: "#ec4899", points: ["📍 55 Rue du Sergent Michel Berthet, 69009 Lyon"] },
+      { heading: "24. Consulat de Russie (fermé)", color: "#ec4899", points: ["📍 55 Rue du Sergent Michel Berthet, 69009 Lyon", "⚠️ Ce consulat n'est plus en activité à Lyon"] },
     ],
   },
   {
@@ -109,7 +109,7 @@ export const VILLE_CONSULATS_SLIDES: Slide[] = [
       ["Canada", "3 Pl. de la Bourse, 69002"],
       ["Côte d'Ivoire", "58 Av. M. Foch, 69006"],
       ["Malte", "15 Pl. Jules Ferry, 69006"],
-      ["Russie", "55 Rue S.M. Berthet, 69009"],
+      ["Russie (fermé)", "55 Rue S.M. Berthet, 69009"],
       ["Suède", "107 Rue Servient, 69003"],
       ["Danemark", "136 Cours Lafayette, 69003"],
       ["Italie", "5 Rue Cdt Faurax, 69006"],
