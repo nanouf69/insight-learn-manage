@@ -1933,7 +1933,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     });
 
   // Load trainer DB overrides and apply to student view
-  // Runs AFTER editorStateHydrated so initial data is already set
+  // Runs AFTER editorStateHydrated so initial data is already set.
+  // Also reruns when apprenantType arrives/changes to avoid losing trainer edits
+  // after student data hydration resets moduleData.
   useEffect(() => {
     if (!studentOnly || !editorStateHydrated) return;
 
@@ -2004,7 +2006,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     }
 
     loadTrainerOverrides();
-  }, [studentOnly, module.id, editorStateHydrated]);
+  }, [studentOnly, module.id, apprenantType, editorStateHydrated]);
 
   useEffect(() => {
     const initialData = getInitialModuleData(module, apprenantType, studentOnly);
