@@ -41,6 +41,12 @@ const LIEU_FORMATION = "86 route de genas 69003 Lyon";
 export function generateEmargementIndividuelPDF(
   session: SessionData,
   apprenant: Apprenant,
+  agendaDays: AgendaDaySlot[],
+  options?: { print?: boolean }
+): void;
+export function generateEmargementIndividuelPDF(
+  session: SessionData,
+  apprenant: Apprenant,
   agendaDays: AgendaDaySlot[]
 ) {
   const doc = new jsPDF({
