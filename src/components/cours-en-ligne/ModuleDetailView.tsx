@@ -2014,6 +2014,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const initialData = getInitialModuleData(module, apprenantType, studentOnly);
     const sourceFingerprint = buildSourceFingerprint(initialData);
     skipInitialAutosaveRef.current = true;
+    setLoadedModuleEditorState(false);
 
     const loadLocalState = () => {
       if (typeof window === "undefined") return false;
@@ -2045,6 +2046,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         setModuleData(parsed.moduleData as ModuleData);
         setDeletedCours(Array.isArray(parsed.deletedCours) ? parsed.deletedCours : []);
         setDeletedExercices(Array.isArray(parsed.deletedExercices) ? parsed.deletedExercices : []);
+        setLoadedModuleEditorState(false);
 
         return true;
       } catch (error) {
@@ -2055,16 +2057,21 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     (async () => {
       try {
+        const requestTimestamp = new Date().toISOString();
         const { data, error } = await supabase
           .from("module_editor_state")
-          .select("module_data, deleted_cours, deleted_exercices")
+          .select("module_data, deleted_cours, deleted_exercices, updated_at")
           .eq("module_id", module.id)
-          .maybeSingle();
+          .lte("updated_at", requestTimestamp)
+          .order("updated_at", { ascending: false })
+          .limit(1);
 
         if (error) throw error;
 
-        if (data?.module_data) {
-          const md = data.module_data as unknown as ModuleData;
+        const latestState = Array.isArray(data) ? data[0] : null;
+
+        if (latestState?.module_data) {
+          const md = latestState.module_data as unknown as ModuleData;
           const hasValidModuleData =
             Array.isArray(md.cours) &&
             Array.isArray(md.exercices) &&
@@ -2072,8 +2079,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
           if (hasValidModuleData) {
             setModuleData(md);
-            setDeletedCours(Array.isArray(data.deleted_cours) ? (data.deleted_cours as unknown as ContentItem[]) : []);
-            setDeletedExercices(Array.isArray(data.deleted_exercices) ? (data.deleted_exercices as unknown as ExerciceItem[]) : []);
+            setDeletedCours(Array.isArray(latestState.deleted_cours) ? (latestState.deleted_cours as unknown as ContentItem[]) : []);
+            setDeletedExercices(Array.isArray(latestState.deleted_exercices) ? (latestState.deleted_exercices as unknown as ExerciceItem[]) : []);
+            setLoadedModuleEditorState(true);
             return;
           }
         }
@@ -2083,6 +2091,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         setModuleData(initialData);
         setDeletedCours([]);
         setDeletedExercices([]);
+        setLoadedModuleEditorState(false);
       } catch (err) {
         console.error("Error loading module editor state:", err);
 
@@ -2091,6 +2100,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         setModuleData(initialData);
         setDeletedCours([]);
         setDeletedExercices([]);
+        setLoadedModuleEditorState(false);
       } finally {
         setEditorStateHydrated(true);
       }
