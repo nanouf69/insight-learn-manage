@@ -1908,6 +1908,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const [deletedExercices, setDeletedExercices] = useState<ExerciceItem[]>([]);
   const [editorStateHydrated, setEditorStateHydrated] = useState(false);
   const moduleEditorStorageKey = `module-editor-state:${module.id}`;
+  const skipInitialAutosaveRef = useRef(true);
+  const saveErrorShownRef = useRef(false);
 
   const buildSourceFingerprint = (data: ModuleData) =>
     JSON.stringify({
