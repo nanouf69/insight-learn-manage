@@ -1907,6 +1907,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const [deletedCours, setDeletedCours] = useState<ContentItem[]>([]);
   const [deletedExercices, setDeletedExercices] = useState<ExerciceItem[]>([]);
   const [editorStateHydrated, setEditorStateHydrated] = useState(false);
+  const [loadedModuleEditorState, setLoadedModuleEditorState] = useState(false);
   const moduleEditorStorageKey = `module-editor-state:${module.id}`;
   const skipInitialAutosaveRef = useRef(true);
   const saveErrorShownRef = useRef(false);
