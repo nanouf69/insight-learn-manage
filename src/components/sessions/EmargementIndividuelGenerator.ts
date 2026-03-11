@@ -159,7 +159,7 @@ function generateIndividualPage(
   yPos = 62;
 
   const headRow1: any[] = [
-    { content: "Jour", rowSpan: 2, styles: { halign: "center", valign: "middle", cellWidth: 45 } },
+    { content: "Jour", rowSpan: 2, styles: { halign: "center", valign: "middle" } },
     { content: "Matin (09h00 - 12h00)", colSpan: 2, styles: { halign: "center" } },
     { content: "Apres-midi (13h00 - 16h00)", colSpan: 2, styles: { halign: "center" } },
   ];
@@ -178,6 +178,9 @@ function generateIndividualPage(
   });
 
   const availableWidth = pageWidth - margin * 2;
+  const jourWidth = 55;
+  const horaireWidth = 30;
+  const sigWidth = (availableWidth - jourWidth - horaireWidth * 2) / 2;
 
   autoTable(doc, {
     startY: yPos,
@@ -202,11 +205,11 @@ function generateIndividualPage(
       minCellHeight: 18,
     },
     columnStyles: {
-      0: { cellWidth: 60, fontStyle: "bold", fontSize: 9 },
-      1: { cellWidth: 30, halign: "center", fontSize: 8 },
-      2: { halign: "center" },
-      3: { cellWidth: 30, halign: "center", fontSize: 8 },
-      4: { halign: "center" },
+      0: { cellWidth: jourWidth, fontStyle: "bold", fontSize: 9 },
+      1: { cellWidth: horaireWidth, halign: "center", fontSize: 8 },
+      2: { cellWidth: sigWidth, halign: "center" },
+      3: { cellWidth: horaireWidth, halign: "center", fontSize: 8 },
+      4: { cellWidth: sigWidth, halign: "center" },
     },
     margin: { left: margin, right: margin },
     tableLineColor: [41, 128, 185],
