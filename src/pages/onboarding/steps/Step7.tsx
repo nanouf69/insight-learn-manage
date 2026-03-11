@@ -102,6 +102,7 @@ export default function Step7() {
           {canProceed ? (
             <Link
               to="/bienvenue/etape-8"
+              onClick={() => { savePasswordToDB(); }}
               className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-xl transition-colors"
             >
               Étape suivante
