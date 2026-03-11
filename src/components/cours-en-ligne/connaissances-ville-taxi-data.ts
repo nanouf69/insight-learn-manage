@@ -1,5 +1,13 @@
 // ===== Données du module "7. CONNAISSANCES DE LA VILLE TAXI" =====
 import { CONNAISSANCES_VILLE_QUIZZES } from "./exercices/connaissances-ville-quiz-data";
+import { QUIZ_AUTOROUTES } from "./exercices/adresses-autoroutes-quiz-data";
+import { QUIZ_AVENUES } from "./exercices/adresses-avenues-quiz-data";
+import { QUIZ_BOULEVARDS } from "./exercices/adresses-boulevards-quiz-data";
+import { QUIZ_COURS } from "./exercices/adresses-cours-quiz-data";
+import { QUIZ_PLACES } from "./exercices/adresses-places-quiz-data";
+import { QUIZ_QUAIS } from "./exercices/adresses-quais-quiz-data";
+import { QUIZ_RUES } from "./exercices/adresses-rues-quiz-data";
+
 interface ContentItem {
   id: number;
   titre: string;
@@ -153,118 +161,38 @@ export const CONNAISSANCES_VILLE_TAXI_DATA: ModuleData = {
     },
   ],
   exercices: [
-    {
-      id: 1, actif: true,
-      titre: "Adresses Administrations",
-      sousTitre: "QCM sur les adresses des administrations lyonnaises",
-      fichiers: [{ nom: "Adresses Administrations (Word)", url: "/cours/vtc/ADRESSES_ADMINISTRATIONS.docx" }],
-    },
-    // Quiz interactif Administrations
+    // ===== Quiz interactifs — Tous intégrés directement =====
+    // Administrations
     ...CONNAISSANCES_VILLE_QUIZZES.filter(q => q.id === 7001),
-    {
-      id: 2, actif: true,
-      titre: "Adresses Autoroutes",
-      sousTitre: "QCM sur les autoroutes traversant le Rhône",
-      fichiers: [{ nom: "Adresses Autoroutes (Word)", url: "/cours/vtc/ADRESSES_AUTOROUTES.docx" }],
-    },
-    {
-      id: 3, actif: true,
-      titre: "Adresses Avenues",
-      sousTitre: "QCM sur les avenues de Lyon",
-      fichiers: [{ nom: "Adresses Avenues (Word)", url: "/cours/vtc/ADRESSES_AVENUES.docx" }],
-    },
-    {
-      id: 4, actif: true,
-      titre: "Adresses Boulevards",
-      sousTitre: "QCM sur les boulevards de Lyon",
-      fichiers: [{ nom: "Adresses Boulevards (Word)", url: "/cours/vtc/ADRESSES_BOULEVARDS.docx" }],
-    },
-    {
-      id: 5, actif: true,
-      titre: "Adresses Consulats",
-      sousTitre: "QCM sur les consulats de Lyon",
-      fichiers: [{ nom: "Adresses Consulats (Word)", url: "/cours/vtc/ADRESSES_CONSULATS.docx" }],
-    },
-    // Quiz interactif Consulats
+    // Autoroutes
+    QUIZ_AUTOROUTES,
+    // Avenues
+    QUIZ_AVENUES,
+    // Boulevards
+    QUIZ_BOULEVARDS,
+    // Consulats
     ...CONNAISSANCES_VILLE_QUIZZES.filter(q => q.id === 7002),
-    {
-      id: 6, actif: true,
-      titre: "Adresses Cours",
-      sousTitre: "QCM sur les cours de Lyon",
-      fichiers: [{ nom: "Adresses Cours (Word)", url: "/cours/vtc/ADRESSES_COURS.docx" }],
-    },
-    {
-      id: 7, actif: true,
-      titre: "Adresses Divers",
-      sousTitre: "QCM sur des adresses diverses de Lyon",
-      fichiers: [{ nom: "Adresses Divers (Word)", url: "/cours/vtc/ADRESSES_DIVERS.docx" }],
-    },
-    // Quiz interactif Divers
+    // Cours
+    QUIZ_COURS,
+    // Divers
     ...CONNAISSANCES_VILLE_QUIZZES.filter(q => q.id === 7005),
-    {
-      id: 8, actif: true,
-      titre: "Adresses Hôpitaux et Cliniques",
-      sousTitre: "QCM sur les hôpitaux et cliniques de Lyon",
-      fichiers: [{ nom: "Adresses Hôpitaux (Word)", url: "/cours/vtc/ADRESSES_HOPITAUX_ET_CLINIQUES.docx" }],
-    },
-    // Quiz interactif Hôpitaux
+    // Hôpitaux et Cliniques
     ...CONNAISSANCES_VILLE_QUIZZES.filter(q => q.id === 7003),
-    {
-      id: 9, actif: true,
-      titre: "Adresses Musées",
-      sousTitre: "QCM sur les musées de Lyon",
-      fichiers: [{ nom: "Adresses Musées (Word)", url: "/cours/vtc/ADRESSES_MUSEE.docx" }],
-    },
-    // Quiz interactif Musées
+    // Musées
     ...CONNAISSANCES_VILLE_QUIZZES.filter(q => q.id === 7004),
-    {
-      id: 10, actif: true,
-      titre: "Adresses Places",
-      sousTitre: "QCM sur les places de Lyon par arrondissement",
-      fichiers: [{ nom: "Adresses Places (Word)", url: "/cours/vtc/ADRESSES_PLACES.docx" }],
-    },
-    {
-      id: 11, actif: true,
-      titre: "Adresses Ponts",
-      sousTitre: "QCM sur les ponts de Lyon",
-      fichiers: [{ nom: "Adresses Ponts (Word)", url: "/cours/vtc/ADRESSES_PONTS.docx" }],
-    },
-    // Quiz interactif Ponts
+    // Places
+    QUIZ_PLACES,
+    // Ponts
     ...CONNAISSANCES_VILLE_QUIZZES.filter(q => q.id === 7006),
-    {
-      id: 12, actif: true,
-      titre: "Adresses Quais",
-      sousTitre: "QCM sur les quais de Lyon",
-      fichiers: [{ nom: "Adresses Quais (Word)", url: "/cours/vtc/ADRESSES_QUAIS.docx" }],
-    },
-    {
-      id: 13, actif: true,
-      titre: "Adresses Rues",
-      sousTitre: "QCM sur les rues de Lyon",
-      fichiers: [{ nom: "Adresses Rues (Word)", url: "/cours/vtc/ADRESSES_RUES.docx" }],
-    },
-    {
-      id: 14, actif: true,
-      titre: "Adresses Stations de Taxis",
-      sousTitre: "QCM sur les stations de taxis de Lyon",
-      fichiers: [{ nom: "Adresses Stations de Taxis (Word)", url: "/cours/vtc/ADRESSES_STATIONS_DE_TAXIS.docx" }],
-    },
-    // Quiz interactif Stations de Taxis
+    // Quais
+    QUIZ_QUAIS,
+    // Rues
+    QUIZ_RUES,
+    // Stations de Taxis
     ...CONNAISSANCES_VILLE_QUIZZES.filter(q => q.id === 7008),
-    {
-      id: 15, actif: true,
-      titre: "Adresses Statues",
-      sousTitre: "QCM sur les statues de Lyon",
-      fichiers: [{ nom: "Adresses Statues (Word)", url: "/cours/vtc/ADRESSES_STATUES.docx" }],
-    },
-    // Quiz interactif Statues
+    // Statues
     ...CONNAISSANCES_VILLE_QUIZZES.filter(q => q.id === 7007),
-    {
-      id: 16, actif: true,
-      titre: "Les Quartiers",
-      sousTitre: "QCM sur les quartiers de Lyon",
-      fichiers: [{ nom: "Les Quartiers (Word)", url: "/cours/vtc/LES_QUARTIERS.docx" }],
-    },
+    // Jeux interactifs
     {
       id: 17, actif: true,
       titre: "🎮 Jeu de la Légende de Lyon",
