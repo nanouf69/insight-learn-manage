@@ -1,0 +1,2 @@
+ALTER PUBLICATION supabase_realtime ADD TABLE public.module_editor_state;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.quiz_questions_overrides;

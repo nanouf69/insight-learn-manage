@@ -2141,6 +2141,63 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     })();
   }, [module.id, apprenantType, studentOnly, moduleEditorStorageKey]);
 
+  // === REALTIME: live sync when admin changes questions ===
+  useEffect(() => {
+    if (!studentOnly) return; // Only students need realtime updates
+
+    const channel = supabase
+      .channel(`module-editor-live-${module.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'module_editor_state',
+          filter: `module_id=eq.${module.id}`,
+        },
+        (payload) => {
+          const newData = payload.new as any;
+          if (newData?.module_data) {
+            const md = newData.module_data as unknown as ModuleData;
+            if (Array.isArray(md.cours) && Array.isArray(md.exercices) && Number(md.id) === Number(module.id)) {
+              console.log("[Realtime] Module data updated live for module", module.id);
+              setModuleData(md);
+              setDeletedCours(Array.isArray(newData.deleted_cours) ? (newData.deleted_cours as unknown as ContentItem[]) : []);
+              setDeletedExercices(Array.isArray(newData.deleted_exercices) ? (newData.deleted_exercices as unknown as ExerciceItem[]) : []);
+              setLoadedModuleEditorState(true);
+            }
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'module_editor_state',
+          filter: `module_id=eq.${module.id}`,
+        },
+        (payload) => {
+          const newData = payload.new as any;
+          if (newData?.module_data) {
+            const md = newData.module_data as unknown as ModuleData;
+            if (Array.isArray(md.cours) && Array.isArray(md.exercices) && Number(md.id) === Number(module.id)) {
+              console.log("[Realtime] Module data inserted live for module", module.id);
+              setModuleData(md);
+              setDeletedCours(Array.isArray(newData.deleted_cours) ? (newData.deleted_cours as unknown as ContentItem[]) : []);
+              setDeletedExercices(Array.isArray(newData.deleted_exercices) ? (newData.deleted_exercices as unknown as ExerciceItem[]) : []);
+              setLoadedModuleEditorState(true);
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [module.id, studentOnly]);
+
   useEffect(() => {
     if (!editorStateHydrated || studentOnly || typeof window === "undefined") return;
     if (Number(moduleData.id) !== Number(module.id)) return;
