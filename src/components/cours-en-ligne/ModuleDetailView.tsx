@@ -1995,10 +1995,34 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const sourceFingerprint = buildSourceFingerprint(initialData);
 
     if (studentOnly || typeof window === "undefined") {
-      setModuleData(initialData);
-      setDeletedCours([]);
-      setDeletedExercices([]);
-      setEditorStateHydrated(true);
+      // Student mode: load admin state from database
+      (async () => {
+        try {
+          const { data } = await supabase
+            .from("module_editor_state")
+            .select("module_data, deleted_cours, deleted_exercices, source_fingerprint")
+            .eq("module_id", module.id)
+            .maybeSingle();
+
+          if (data && data.module_data && data.source_fingerprint === sourceFingerprint) {
+            const md = data.module_data as unknown as ModuleData;
+            if (Array.isArray(md.cours) && Array.isArray(md.exercices)) {
+              setModuleData(md);
+            } else {
+              setModuleData(initialData);
+            }
+          } else {
+            setModuleData(initialData);
+          }
+        } catch (err) {
+          console.error("Error loading admin module state for student:", err);
+          setModuleData(initialData);
+        } finally {
+          setDeletedCours([]);
+          setDeletedExercices([]);
+          setEditorStateHydrated(true);
+        }
+      })();
       return;
     }
 
@@ -2062,19 +2086,39 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const initialData = getInitialModuleData(module, apprenantType, studentOnly);
     const sourceFingerprint = buildSourceFingerprint(initialData);
 
+    const payload = {
+      moduleData,
+      deletedCours,
+      deletedExercices,
+      sourceFingerprint,
+    };
+
+    // Save to localStorage
     try {
-      window.localStorage.setItem(
-        moduleEditorStorageKey,
-        JSON.stringify({
-          moduleData,
-          deletedCours,
-          deletedExercices,
-          sourceFingerprint,
-        }),
-      );
+      window.localStorage.setItem(moduleEditorStorageKey, JSON.stringify(payload));
     } catch (error) {
       console.error("Erreur sauvegarde état édition module:", error);
     }
+
+    // Save to database so students see admin changes
+    const saveToDb = async () => {
+      try {
+        await supabase.from("module_editor_state").upsert(
+          [{
+            module_id: module.id,
+            module_data: moduleData as any,
+            deleted_cours: deletedCours as any,
+            deleted_exercices: deletedExercices as any,
+            source_fingerprint: sourceFingerprint,
+            updated_at: new Date().toISOString(),
+          }],
+          { onConflict: "module_id" }
+        );
+      } catch (err) {
+        console.error("Erreur sauvegarde DB module_editor_state:", err);
+      }
+    };
+    saveToDb();
   }, [editorStateHydrated, studentOnly, moduleEditorStorageKey, moduleData, deletedCours, deletedExercices]);
 
   useEffect(() => {
