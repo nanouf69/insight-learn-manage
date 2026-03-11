@@ -43,12 +43,6 @@ export function generateEmargementIndividuelPDF(
   apprenant: Apprenant,
   agendaDays: AgendaDaySlot[],
   options?: { print?: boolean }
-): void;
-export function generateEmargementIndividuelPDF(
-  session: SessionData,
-  apprenant: Apprenant,
-  agendaDays: AgendaDaySlot[],
-  options?: { print?: boolean }
 ) {
   const doc = new jsPDF({
     orientation: "landscape",
