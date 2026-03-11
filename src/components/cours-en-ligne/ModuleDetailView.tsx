@@ -21,6 +21,23 @@ import { T3P_PARTIE2_SLIDES } from "./slides/t3p-partie2-data";
 import { GESTION_PARTIE1_SLIDES } from "./slides/gestion-partie1-data";
 import { GESTION_PARTIE2_SLIDES } from "./slides/gestion-partie2-data";
 import { GESTION_PARTIE3_SLIDES } from "./slides/gestion-partie3-data";
+import { VILLE_CHATEAUX_SLIDES } from "./slides/ville-chateaux-data";
+import { VILLE_GARES_SLIDES } from "./slides/ville-gares-data";
+import { VILLE_HOPITAUX_SLIDES } from "./slides/ville-hopitaux-data";
+import { VILLE_MAIRIES_SLIDES } from "./slides/ville-mairies-data";
+import { VILLE_EGLISES_SLIDES } from "./slides/ville-eglises-data";
+import { VILLE_FRESQUES_SLIDES } from "./slides/ville-fresques-data";
+import { VILLE_CONSULATS_SLIDES } from "./slides/ville-consulats-data";
+import { VILLE_COMMISSARIATS_SLIDES } from "./slides/ville-commissariats-data";
+import { VILLE_HOTELS_SLIDES } from "./slides/ville-hotels-data";
+import { VILLE_DIVERS_SLIDES } from "./slides/ville-divers-data";
+import { VILLE_MUSEES_SLIDES } from "./slides/ville-musees-data";
+import { VILLE_PARCS_SLIDES } from "./slides/ville-parcs-data";
+import { VILLE_PERSONNALITES_SLIDES } from "./slides/ville-personnalites-data";
+import { VILLE_SALLES_SPECTACLES_SLIDES } from "./slides/ville-salles-spectacles-data";
+import { VILLE_VINS_SLIDES } from "./slides/ville-vins-data";
+import { VILLE_ARRONDISSEMENTS_SLIDES } from "./slides/ville-arrondissements-data";
+import { VILLE_STATIONS_TAXI_SLIDES } from "./slides/ville-stations-taxi-data";
 
 // Images des monuments et lieux de Lyon
 import imgCathedraleStJean from "@/assets/pratique/cathedrale-st-jean.jpg";
@@ -1890,6 +1907,23 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     "gestion-partie1": [...GESTION_PARTIE1_SLIDES],
     "gestion-partie2": [...GESTION_PARTIE2_SLIDES],
     "gestion-partie3": [...GESTION_PARTIE3_SLIDES],
+    "ville-chateaux": [...VILLE_CHATEAUX_SLIDES],
+    "ville-gares": [...VILLE_GARES_SLIDES],
+    "ville-hopitaux": [...VILLE_HOPITAUX_SLIDES],
+    "ville-mairies": [...VILLE_MAIRIES_SLIDES],
+    "ville-eglises": [...VILLE_EGLISES_SLIDES],
+    "ville-fresques": [...VILLE_FRESQUES_SLIDES],
+    "ville-consulats": [...VILLE_CONSULATS_SLIDES],
+    "ville-commissariats": [...VILLE_COMMISSARIATS_SLIDES],
+    "ville-hotels": [...VILLE_HOTELS_SLIDES],
+    "ville-divers": [...VILLE_DIVERS_SLIDES],
+    "ville-musees": [...VILLE_MUSEES_SLIDES],
+    "ville-parcs": [...VILLE_PARCS_SLIDES],
+    "ville-personnalites": [...VILLE_PERSONNALITES_SLIDES],
+    "ville-salles-spectacles": [...VILLE_SALLES_SPECTACLES_SLIDES],
+    "ville-vins": [...VILLE_VINS_SLIDES],
+    "ville-arrondissements": [...VILLE_ARRONDISSEMENTS_SLIDES],
+    "ville-stations-taxi": [...VILLE_STATIONS_TAXI_SLIDES],
   });
 
   let initialModuleData: ModuleData;
