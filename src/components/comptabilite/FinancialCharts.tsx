@@ -50,7 +50,7 @@ const CustomTooltip = forwardRef<HTMLDivElement, any>(({ active, payload, label 
       ))}
     </div>
   );
-};
+});
 
 interface Props {
   transactions?: { montant: number; date_operation: string }[];
