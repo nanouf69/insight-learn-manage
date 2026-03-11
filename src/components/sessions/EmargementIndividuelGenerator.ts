@@ -120,14 +120,10 @@ function generateIndividualPage(
   doc.text("Stagiaire :", margin + 4, yPos);
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(12);
+  doc.text(`${apprenant.nom.toUpperCase()} ${apprenant.prenom}`, margin + 28, yPos);
+
   const typeLabel = (apprenant.type_apprenant || '').toUpperCase().replace(/-E$/, '');
-  const nameText = `${apprenant.nom.toUpperCase()} ${apprenant.prenom}`;
-  const typeText = typeLabel ? ` (${typeLabel})` : '';
-  doc.text(nameText, margin + 28, yPos);
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(100, 100, 100);
-  doc.text(typeText, margin + 28 + doc.getTextWidth(nameText) + 2, yPos);
+  const formationWithType = typeLabel ? `${session.formation} (${typeLabel})` : session.formation;
 
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
@@ -135,7 +131,7 @@ function generateIndividualPage(
   doc.text("Formation :", pageWidth / 2, yPos);
   doc.setTextColor(0, 0, 0);
   doc.setFont("helvetica", "normal");
-  doc.text(session.formation, pageWidth / 2 + 28, yPos);
+  doc.text(formationWithType, pageWidth / 2 + 28, yPos);
 
   yPos += 8;
   doc.setFont("helvetica", "bold");
