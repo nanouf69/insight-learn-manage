@@ -320,10 +320,10 @@ export const QUIZ_CONSULATS: ExerciceItem = {
       ],
     },
     {
-      id: 18, enonce: "Où se trouve le Consulat de Russie ?",
+      id: 18, enonce: "Où se trouvait le Consulat de Russie (aujourd'hui fermé) ?",
       choix: [
-        { lettre: "A", texte: "2 Place de la Bourse, Lyon", correct: true },
-        { lettre: "B", texte: "Rue Yvonne Chanu, Lyon" },
+        { lettre: "A", texte: "55 Rue du Sergent Michel Berthet, 69009 Lyon", correct: true },
+        { lettre: "B", texte: "2 Place de la Bourse, Lyon" },
         { lettre: "C", texte: "Rue du Lac, Lyon" },
         { lettre: "D", texte: "87 Place George Sand, Lyon" },
       ],
