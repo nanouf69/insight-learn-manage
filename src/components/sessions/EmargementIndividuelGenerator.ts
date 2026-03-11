@@ -239,16 +239,13 @@ function generateIndividualPage(
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
-  doc.text("Signature du stagiaire", margin, sigY);
+  doc.text("Cachet et signature du centre", margin, sigY);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.text(`Fait a Lyon, le _______________`, margin + 2, sigY + 8);
   doc.setDrawColor(180, 180, 180);
   doc.setLineWidth(0.3);
   doc.roundedRect(margin, sigY + 2, colWidth, 22, 2, 2);
-
-  doc.text("Cachet et signature du centre", margin + colWidth + 10, sigY);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
-  doc.text(`Fait a Lyon, le _______________`, margin + colWidth + 12, sigY + 8);
-  doc.roundedRect(margin + colWidth + 10, sigY + 2, colWidth, 22, 2, 2);
 
   // ===== PIED DE PAGE =====
   const footerY = pgH - 8;
