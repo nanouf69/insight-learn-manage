@@ -90,6 +90,7 @@ import {
   getOverridesFingerprint,
   loadCrossModuleOverridesFromDb,
   applyCrossModuleOverrides,
+  type ModuleInitialData,
 } from "./shared-exercise-overrides";
 
 interface InlineQuizQuestion {
@@ -1113,6 +1114,30 @@ function applyOverridesToResult(data: ModuleData): ModuleData {
     ...data,
     exercices: applyOverridesToModuleExercices(data.exercices),
   };
+}
+
+// All module IDs that contain exercises and could share questions
+const ALL_EXERCISE_MODULE_IDS = [
+  2, 4, 5, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 27, 28, 29, 30, 39, 40, 41, 42, 43, 64,
+];
+
+/**
+ * Build initial data for ALL known modules that have exercises.
+ * Used for cross-module propagation when creating records for unrecorded modules.
+ */
+function getAllModulesInitialData(apprenantType?: string | null): ModuleInitialData[] {
+  const results: ModuleInitialData[] = [];
+  for (const id of ALL_EXERCISE_MODULE_IDS) {
+    try {
+      const data = getInitialModuleDataRaw({ id, nom: `Module ${id}` }, apprenantType, false);
+      if (data.exercices && data.exercices.length > 0) {
+        results.push(data as ModuleInitialData);
+      }
+    } catch {
+      // Module may not exist for this apprenant type
+    }
+  }
+  return results;
 }
 
 function getInitialModuleData(
@@ -2375,10 +2400,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       const sourceData = getInitialModuleDataRaw(module, apprenantType, studentOnly);
       const sourceExo = sourceData.exercices.find(e => e.id === exerciceId);
       if (sourceExo?.questions) {
+        // Pass ALL modules' initial data so propagation can create records for unrecorded modules
+        const allModulesData = getAllModulesInitialData(apprenantType);
         detectAndSaveOverrides(
           sourceExo.questions as { enonce: string; choix: { lettre: string; texte: string; correct?: boolean }[] }[],
           questions,
           module.id,
+          allModulesData,
         );
       }
     }

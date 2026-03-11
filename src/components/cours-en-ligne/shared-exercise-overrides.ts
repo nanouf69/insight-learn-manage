@@ -16,6 +16,15 @@ interface QuestionOverride {
 // Map: normalized original enonce → updated question data
 type OverridesStore = Record<string, QuestionOverride>;
 
+/** Type for a module's initial data used for cross-module propagation */
+export interface ModuleInitialData {
+  id: number;
+  nom: string;
+  description?: string;
+  cours: any[];
+  exercices: { id: number; titre?: string; sousTitre?: string; actif?: boolean; questions?: { id?: number; enonce: string; choix: any[] }[] }[];
+}
+
 /** Normalize enonce for stable matching across modules */
 function normalizeEnonce(text: string): string {
   return text.trim().replace(/\s+/g, " ");
@@ -51,11 +60,15 @@ export function getOverridesFingerprint(): string {
 /**
  * Detect question changes between original (source) and edited questions,
  * save them to the shared overrides store, and propagate to other modules in DB.
+ * 
+ * @param allModulesInitialData - initial data for ALL known modules, used to create
+ *   records for modules that don't have a module_editor_state row yet.
  */
 export function detectAndSaveOverrides(
   originalQuestions: { enonce: string; choix: { lettre: string; texte: string; correct?: boolean }[] }[],
   editedQuestions: { enonce: string; choix: { lettre: string; texte: string; correct?: boolean }[] }[],
   currentModuleId: number,
+  allModulesInitialData?: ModuleInitialData[],
 ): void {
   const overrides = loadSharedOverrides();
   let changed = false;
@@ -82,72 +95,129 @@ export function detectAndSaveOverrides(
   if (changed) {
     saveSharedOverrides(overrides);
     invalidateOtherModuleCaches(currentModuleId);
-    // Propagate to other modules in the database
-    propagateOverridesToOtherModules(changedOverrides, currentModuleId);
+    // Propagate to ALL modules — existing records AND unrecorded modules
+    propagateOverridesToAllModules(changedOverrides, currentModuleId, allModulesInitialData || []);
   }
 }
 
 /**
- * Propagate question overrides to all other modules stored in module_editor_state.
- * This ensures students see updated questions across ALL modules, not just the one being edited.
+ * Propagate question overrides to ALL modules that share modified questions.
+ * - UPDATE existing module_editor_state records
+ * - INSERT new records for modules that don't have one yet but contain matching questions
  */
-async function propagateOverridesToOtherModules(
+async function propagateOverridesToAllModules(
   changedOverrides: OverridesStore,
   currentModuleId: number,
+  allModulesInitialData: ModuleInitialData[],
 ): Promise<void> {
   try {
     const overrideKeys = Object.keys(changedOverrides);
     if (overrideKeys.length === 0) return;
 
-    // Fetch all other modules from DB
-    const { data: otherModules, error } = await supabase
+    // 1. Fetch all existing module_editor_state records (except current)
+    const { data: existingRecords, error } = await supabase
       .from("module_editor_state")
       .select("module_id, module_data, deleted_cours, deleted_exercices, source_fingerprint")
       .neq("module_id", currentModuleId);
 
-    if (error || !otherModules || otherModules.length === 0) return;
+    if (error) {
+      console.error("[shared-overrides] Error fetching module records:", error);
+    }
 
-    for (const row of otherModules) {
-      const md = row.module_data as any;
-      if (!md?.exercices || !Array.isArray(md.exercices)) continue;
+    const recordedModuleIds = new Set<number>();
+    recordedModuleIds.add(currentModuleId); // Don't re-process the current module
 
-      let moduleChanged = false;
+    // 2. Update existing records
+    if (existingRecords && existingRecords.length > 0) {
+      for (const row of existingRecords) {
+        recordedModuleIds.add(row.module_id);
+        const md = row.module_data as any;
+        if (!md?.exercices || !Array.isArray(md.exercices)) continue;
 
-      const updatedExercices = md.exercices.map((exo: any) => {
-        if (!exo.questions || !Array.isArray(exo.questions)) return exo;
+        const { updatedExercices, hasChanges } = applyOverridesToExercicesArray(md.exercices, changedOverrides);
 
-        const updatedQuestions = exo.questions.map((q: any) => {
-          const key = normalizeEnonce(q.enonce);
-          const override = changedOverrides[key];
-          if (override) {
-            moduleChanged = true;
-            return { ...q, enonce: override.enonce, choix: override.choix };
-          }
-          return q;
-        });
+        if (hasChanges) {
+          const updatedModuleData = { ...md, exercices: updatedExercices };
+          await supabase.from("module_editor_state").upsert(
+            [{
+              module_id: row.module_id,
+              module_data: updatedModuleData,
+              deleted_cours: row.deleted_cours,
+              deleted_exercices: row.deleted_exercices,
+              source_fingerprint: row.source_fingerprint,
+              updated_at: new Date().toISOString(),
+            }],
+            { onConflict: "module_id" }
+          );
+          console.log(`[shared-overrides] Updated module ${row.module_id} with ${overrideKeys.length} override(s)`);
+        }
+      }
+    }
 
-        return moduleChanged ? { ...exo, questions: updatedQuestions } : exo;
-      });
+    // 3. Create records for unrecorded modules that contain matching questions
+    for (const moduleData of allModulesInitialData) {
+      if (recordedModuleIds.has(moduleData.id)) continue; // Already processed
+      if (!moduleData.exercices || moduleData.exercices.length === 0) continue;
 
-      if (moduleChanged) {
-        const updatedModuleData = { ...md, exercices: updatedExercices };
-        await supabase.from("module_editor_state").upsert(
+      const { updatedExercices, hasChanges } = applyOverridesToExercicesArray(moduleData.exercices, changedOverrides);
+
+      if (hasChanges) {
+        const newModuleData = { ...moduleData, exercices: updatedExercices };
+        const { error: insertError } = await supabase.from("module_editor_state").upsert(
           [{
-            module_id: row.module_id,
-            module_data: updatedModuleData,
-            deleted_cours: row.deleted_cours,
-            deleted_exercices: row.deleted_exercices,
-            source_fingerprint: row.source_fingerprint,
+            module_id: moduleData.id,
+            module_data: newModuleData as any,
+            deleted_cours: [] as any,
+            deleted_exercices: [] as any,
+            source_fingerprint: null,
             updated_at: new Date().toISOString(),
           }],
           { onConflict: "module_id" }
         );
-        console.log(`[shared-overrides] Propagated ${overrideKeys.length} override(s) to module ${row.module_id}`);
+
+        if (insertError) {
+          console.error(`[shared-overrides] Error creating record for module ${moduleData.id}:`, insertError);
+        } else {
+          console.log(`[shared-overrides] CREATED record for module ${moduleData.id} with ${overrideKeys.length} override(s)`);
+        }
       }
     }
   } catch (err) {
-    console.error("[shared-overrides] Error propagating to other modules:", err);
+    console.error("[shared-overrides] Error propagating to modules:", err);
   }
+}
+
+/**
+ * Apply overrides to an array of exercices, returning updated exercices and a change flag.
+ */
+function applyOverridesToExercicesArray(
+  exercices: any[],
+  changedOverrides: OverridesStore,
+): { updatedExercices: any[]; hasChanges: boolean } {
+  let hasChanges = false;
+
+  const updatedExercices = exercices.map((exo: any) => {
+    if (!exo.questions || !Array.isArray(exo.questions)) return exo;
+
+    let exoChanged = false;
+    const updatedQuestions = exo.questions.map((q: any) => {
+      const key = normalizeEnonce(q.enonce);
+      const override = changedOverrides[key];
+      if (override) {
+        exoChanged = true;
+        return { ...q, enonce: override.enonce, choix: override.choix };
+      }
+      return q;
+    });
+
+    if (exoChanged) {
+      hasChanges = true;
+      return { ...exo, questions: updatedQuestions };
+    }
+    return exo;
+  });
+
+  return { updatedExercices, hasChanges };
 }
 
 /**
