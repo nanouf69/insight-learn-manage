@@ -233,8 +233,8 @@ function generateIndividualPage(
   yPos = finalY + 10;
 
   // ===== ZONE DE SIGNATURE =====
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const sigY = Math.min(yPos, pageHeight - 42);
+  const pgH = doc.internal.pageSize.getHeight();
+  const sigY = Math.min(yPos, pgH - 42);
   const colWidth = (pageWidth - margin * 2 - 10) / 2;
 
   doc.setFont("helvetica", "bold");
