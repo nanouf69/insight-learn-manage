@@ -7,6 +7,7 @@ import logoImage from "@/assets/logo-ftransport.png";
 interface Apprenant {
   nom: string;
   prenom: string;
+  type_apprenant?: string;
 }
 
 export interface AgendaDaySlot {
@@ -119,7 +120,14 @@ function generateIndividualPage(
   doc.text("Stagiaire :", margin + 4, yPos);
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(12);
-  doc.text(`${apprenant.nom.toUpperCase()} ${apprenant.prenom}`, margin + 28, yPos);
+  const typeLabel = (apprenant.type_apprenant || '').toUpperCase().replace(/-E$/, '');
+  const nameText = `${apprenant.nom.toUpperCase()} ${apprenant.prenom}`;
+  const typeText = typeLabel ? ` (${typeLabel})` : '';
+  doc.text(nameText, margin + 28, yPos);
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(100, 100, 100);
+  doc.text(typeText, margin + 28 + doc.getTextWidth(nameText) + 2, yPos);
 
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");

@@ -1365,7 +1365,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                      lieu: session.lieu,
                                      formateurs: formateurNames,
                                    },
-                                   { nom: apprenant.nom, prenom: apprenant.prenom },
+                                   { nom: apprenant.nom, prenom: apprenant.prenom, type_apprenant: apprenant.type_apprenant || '' },
                                    agendaDays
                                  );
                                  toast({ title: "Emargement individuel genere", description: `Feuille pour ${apprenant.prenom} ${apprenant.nom} telechargee.` });
