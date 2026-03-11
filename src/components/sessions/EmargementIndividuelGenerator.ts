@@ -1,12 +1,20 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { format, eachDayOfInterval, parseISO, isWeekend } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import logoImage from "@/assets/logo-ftransport.png";
 
 interface Apprenant {
   nom: string;
   prenom: string;
+}
+
+export interface AgendaDaySlot {
+  date: Date;
+  matinDebut?: string;
+  matinFin?: string;
+  apremDebut?: string;
+  apremFin?: string;
 }
 
 interface SessionData {
@@ -31,7 +39,8 @@ const LIEU_FORMATION = "86 route de genas 69003 Lyon";
 
 export function generateEmargementIndividuelPDF(
   session: SessionData,
-  apprenant: Apprenant
+  apprenant: Apprenant,
+  agendaDays: AgendaDaySlot[]
 ) {
   const doc = new jsPDF({
     orientation: "landscape",
@@ -39,18 +48,15 @@ export function generateEmargementIndividuelPDF(
     format: "a4",
   });
 
-  const dateDebut = parseISO(session.dateDebut);
-  const dateFin = parseISO(session.dateFin);
-  const allDays = eachDayOfInterval({ start: dateDebut, end: dateFin });
-  const workingDays = allDays.filter((day) => !isWeekend(day));
+  if (agendaDays.length === 0) return;
 
   const daysPerPage = 5;
-  const totalPages = Math.ceil(workingDays.length / daysPerPage);
+  const totalPages = Math.ceil(agendaDays.length / daysPerPage);
 
   for (let pageIndex = 0; pageIndex < totalPages; pageIndex++) {
     if (pageIndex > 0) doc.addPage();
 
-    const pageDays = workingDays.slice(
+    const pageDays = agendaDays.slice(
       pageIndex * daysPerPage,
       (pageIndex + 1) * daysPerPage
     );
@@ -58,6 +64,7 @@ export function generateEmargementIndividuelPDF(
     generateIndividualPage(doc, session, apprenant, pageDays, pageIndex + 1, totalPages);
   }
 
+  const dateDebut = parseISO(session.dateDebut);
   const fileName = `emargement_${apprenant.nom.toUpperCase()}_${apprenant.prenom}_${format(dateDebut, "yyyy-MM-dd")}.pdf`;
   doc.save(fileName);
 }
@@ -66,7 +73,7 @@ function generateIndividualPage(
   doc: jsPDF,
   session: SessionData,
   apprenant: Apprenant,
-  days: Date[],
+  days: AgendaDaySlot[],
   pageNum: number,
   totalPages: number
 ) {
@@ -160,8 +167,8 @@ function generateIndividualPage(
 
   const headRow1: any[] = [
     { content: "Jour", rowSpan: 2, styles: { halign: "center", valign: "middle" } },
-    { content: "Matin (09h00 - 12h00)", colSpan: 2, styles: { halign: "center" } },
-    { content: "Apres-midi (13h00 - 16h00)", colSpan: 2, styles: { halign: "center" } },
+    { content: "Matin", colSpan: 2, styles: { halign: "center" } },
+    { content: "Apres-midi", colSpan: 2, styles: { halign: "center" } },
   ];
 
   const headRow2: any[] = [
@@ -172,9 +179,11 @@ function generateIndividualPage(
   ];
 
   const tableData = days.map((day) => {
-    const dateStr = format(day, "EEEE dd MMMM yyyy", { locale: fr });
+    const dateStr = format(day.date, "EEEE dd MMMM yyyy", { locale: fr });
     const dateCapitalized = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
-    return [dateCapitalized, "09h00 - 12h00", "", "13h00 - 16h00", ""];
+    const matinLabel = day.matinDebut && day.matinFin ? `${day.matinDebut} - ${day.matinFin}` : "";
+    const apremLabel = day.apremDebut && day.apremFin ? `${day.apremDebut} - ${day.apremFin}` : "";
+    return [dateCapitalized, matinLabel, "", apremLabel, ""];
   });
 
   const availableWidth = pageWidth - margin * 2;
