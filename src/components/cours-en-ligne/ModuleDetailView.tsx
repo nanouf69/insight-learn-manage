@@ -2400,10 +2400,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       const sourceData = getInitialModuleDataRaw(module, apprenantType, studentOnly);
       const sourceExo = sourceData.exercices.find(e => e.id === exerciceId);
       if (sourceExo?.questions) {
+        // Pass ALL modules' initial data so propagation can create records for unrecorded modules
+        const allModulesData = getAllModulesInitialData(apprenantType);
         detectAndSaveOverrides(
           sourceExo.questions as { enonce: string; choix: { lettre: string; texte: string; correct?: boolean }[] }[],
           questions,
           module.id,
+          allModulesData,
         );
       }
     }
