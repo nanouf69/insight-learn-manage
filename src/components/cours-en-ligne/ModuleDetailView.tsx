@@ -2014,6 +2014,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     if (studentOnly || typeof window === "undefined") {
       // Student mode: load admin state from database
+      // Accept DB state if structurally valid — don't require exact fingerprint match
+      // because admin fingerprint includes localStorage overrides that students don't have
       (async () => {
         try {
           const { data } = await supabase
@@ -2022,9 +2024,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             .eq("module_id", module.id)
             .maybeSingle();
 
-          if (data && data.module_data && data.source_fingerprint === sourceFingerprint) {
+          if (data && data.module_data) {
             const md = data.module_data as unknown as ModuleData;
-            if (Array.isArray(md.cours) && Array.isArray(md.exercices)) {
+            if (Array.isArray(md.cours) && Array.isArray(md.exercices) && Number(md.id) === Number(module.id)) {
               setModuleData(md);
             } else {
               setModuleData(initialData);
