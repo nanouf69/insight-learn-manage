@@ -1951,16 +1951,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         const targetQuizId = trainerQuizIdByModuleId[module.id];
 
-        let query = supabase
+        // Only apply trainer overrides for modules that have a known quiz mapping
+        // Otherwise we'd pull in unrelated overrides
+        if (!targetQuizId) return;
+
+        const { data } = await supabase
           .from("quiz_questions_overrides")
           .select("quiz_id, section_id, question_id, enonce, choix, updated_at")
+          .eq("quiz_id", targetQuizId)
           .order("updated_at", { ascending: false });
-
-        if (targetQuizId) {
-          query = query.eq("quiz_id", targetQuizId);
-        }
-
-        const { data } = await query;
 
         if (!data || data.length === 0) return;
 
