@@ -2008,7 +2008,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     }
 
     loadTrainerOverrides();
-  }, [studentOnly, module.id, apprenantType, editorStateHydrated]);
+  }, [studentOnly, module.id, apprenantType, editorStateHydrated, loadedModuleEditorState]);
 
   useEffect(() => {
     const initialData = getInitialModuleData(module, apprenantType, studentOnly);
