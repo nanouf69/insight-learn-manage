@@ -1933,8 +1933,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     });
 
   // Load trainer DB overrides and apply to student view
+  // Runs AFTER editorStateHydrated so initial data is already set
   useEffect(() => {
-    if (!studentOnly) return;
+    if (!studentOnly || !editorStateHydrated) return;
 
     async function loadTrainerOverrides() {
       try {
@@ -1944,22 +1945,21 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         if (!data || data.length === 0) return;
 
-        // Build a map of normalized original enonce → override
-        // We apply these by matching question enonces since section/question IDs
-        // may differ across modules
         setModuleData((prev) => {
           const updatedExercices = prev.exercices.map((exo) => {
             if (!exo.questions || exo.questions.length === 0) return exo;
-            const updatedQuestions = exo.questions.map((q) => {
-              // Try to find a matching DB override by section_id + question_id
-              for (const ov of data) {
-                if (ov.section_id === exo.id && ov.question_id === q.id) {
-                  const choix = ov.choix as { lettre: string; texte: string; correct?: boolean }[];
-                  return { ...q, enonce: ov.enonce, choix };
+            const updatedQuestions = exo.questions
+              .map((q) => {
+                for (const ov of data) {
+                  if (ov.section_id === exo.id && ov.question_id === q.id) {
+                    const choix = ov.choix as { lettre: string; texte: string; correct?: boolean }[];
+                    return { ...q, enonce: ov.enonce, choix };
+                  }
                 }
-              }
-              return q;
-            });
+                return q;
+              })
+              // Filter out questions marked as deleted by the trainer
+              .filter((q) => q.enonce !== "__DELETED__");
             return { ...exo, questions: updatedQuestions };
           });
           return { ...prev, exercices: updatedExercices };
@@ -1970,7 +1970,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     }
 
     loadTrainerOverrides();
-  }, [studentOnly, module.id]);
+  }, [studentOnly, module.id, editorStateHydrated]);
 
   useEffect(() => {
     const initialData = getInitialModuleData(module, apprenantType, studentOnly);
