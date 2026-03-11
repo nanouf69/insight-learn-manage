@@ -1287,31 +1287,33 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-8 w-8 p-0 text-muted-foreground hover:text-primary"
-                              title="Feuille d'émargement individuelle"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const formateurNames = formateursInSession.length > 0 
-                                  ? formateursInSession.map((sf: any) => {
-                                      const f = sf.formateur;
-                                      return f ? `${f.prenom} ${f.nom}` : "Non défini";
-                                    })
-                                  : [session.formateur || "GUENICHI Naoufal"];
-                                generateEmargementIndividuelPDF(
-                                  {
-                                    formation: session.formation,
-                                    dateDebut: session.dateDebut,
-                                    dateFin: session.dateFin,
-                                    lieu: session.lieu,
-                                    formateurs: formateurNames,
-                                  },
-                                  { nom: apprenant.nom, prenom: apprenant.prenom }
-                                );
-                                toast({ title: "Émargement individuel généré", description: `Feuille pour ${apprenant.prenom} ${apprenant.nom} téléchargée.` });
-                              }}
-                            >
-                              <FileText className="w-4 h-4" />
-                            </Button>
+                               className="h-8 w-8 p-0 text-muted-foreground hover:text-primary"
+                               title="Feuille d'émargement individuelle"
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 const type = (apprenant.type_apprenant || '').toLowerCase();
+                                 const isTA = type === 'ta' || type === 'ta-e';
+                                 const isVA = type === 'va' || type === 'va-e';
+                                 const isTaxi = type.includes('taxi') || isTA;
+                                 const formationLabel = isTaxi ? 'Formation TAXI' : 'Formation VTC';
+                                 const formateurNames = (isTA || isVA)
+                                   ? ["Rim TOUIL"]
+                                   : ["Naoufal GUENICHI", "Rim TOUIL"];
+                                 generateEmargementIndividuelPDF(
+                                   {
+                                     formation: formationLabel,
+                                     dateDebut: session.dateDebut,
+                                     dateFin: session.dateFin,
+                                     lieu: session.lieu,
+                                     formateurs: formateurNames,
+                                   },
+                                   { nom: apprenant.nom, prenom: apprenant.prenom }
+                                 );
+                                 toast({ title: "Emargement individuel genere", description: `Feuille pour ${apprenant.prenom} ${apprenant.nom} telechargee.` });
+                               }}
+                             >
+                               <FileText className="w-4 h-4" />
+                             </Button>
                             <Button
                               size="sm"
                               variant={apprenant.auth_user_id ? "outline" : "default"}
