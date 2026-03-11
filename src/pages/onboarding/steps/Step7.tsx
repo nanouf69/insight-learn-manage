@@ -21,6 +21,16 @@ export default function Step7() {
       localStorage.setItem('onboarding_mot_de_passe_cma', value.trim());
     }
   };
+  // Save password to DB when it exists
+  const savePasswordToDB = async () => {
+    const apprenantId = localStorage.getItem('onboarding_apprenant_id');
+    if (apprenantId && password.trim()) {
+      await supabase
+        .from('apprenants')
+        .update({ mot_de_passe_cma: password.trim() })
+        .eq('id', apprenantId);
+    }
+  };
 
   const canProceed = password.trim().length > 0 && confirmed;
 
