@@ -1907,6 +1907,23 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     "gestion-partie1": [...GESTION_PARTIE1_SLIDES],
     "gestion-partie2": [...GESTION_PARTIE2_SLIDES],
     "gestion-partie3": [...GESTION_PARTIE3_SLIDES],
+    "ville-chateaux": [...VILLE_CHATEAUX_SLIDES],
+    "ville-gares": [...VILLE_GARES_SLIDES],
+    "ville-hopitaux": [...VILLE_HOPITAUX_SLIDES],
+    "ville-mairies": [...VILLE_MAIRIES_SLIDES],
+    "ville-eglises": [...VILLE_EGLISES_SLIDES],
+    "ville-fresques": [...VILLE_FRESQUES_SLIDES],
+    "ville-consulats": [...VILLE_CONSULATS_SLIDES],
+    "ville-commissariats": [...VILLE_COMMISSARIATS_SLIDES],
+    "ville-hotels": [...VILLE_HOTELS_SLIDES],
+    "ville-divers": [...VILLE_DIVERS_SLIDES],
+    "ville-musees": [...VILLE_MUSEES_SLIDES],
+    "ville-parcs": [...VILLE_PARCS_SLIDES],
+    "ville-personnalites": [...VILLE_PERSONNALITES_SLIDES],
+    "ville-salles-spectacles": [...VILLE_SALLES_SPECTACLES_SLIDES],
+    "ville-vins": [...VILLE_VINS_SLIDES],
+    "ville-arrondissements": [...VILLE_ARRONDISSEMENTS_SLIDES],
+    "ville-stations-taxi": [...VILLE_STATIONS_TAXI_SLIDES],
   });
 
   let initialModuleData: ModuleData;
