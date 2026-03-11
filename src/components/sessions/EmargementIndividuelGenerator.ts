@@ -7,6 +7,7 @@ import logoImage from "@/assets/logo-ftransport.png";
 interface Apprenant {
   nom: string;
   prenom: string;
+  type_apprenant?: string;
 }
 
 export interface AgendaDaySlot {
