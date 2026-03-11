@@ -251,7 +251,7 @@ function generateIndividualPage(
   doc.roundedRect(margin + colWidth + 10, sigY + 2, colWidth, 22, 2, 2);
 
   // ===== PIED DE PAGE =====
-  const footerY = pageHeight - 8;
+  const footerY = pgH - 8;
   doc.setDrawColor(41, 128, 185);
   doc.setLineWidth(0.5);
   doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5);
