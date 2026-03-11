@@ -88,6 +88,8 @@ import {
   applyOverridesToModuleExercices,
   detectAndSaveOverrides,
   getOverridesFingerprint,
+  loadCrossModuleOverridesFromDb,
+  applyCrossModuleOverrides,
 } from "./shared-exercise-overrides";
 
 interface InlineQuizQuestion {
