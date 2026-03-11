@@ -1443,6 +1443,39 @@ export type Database = {
           },
         ]
       }
+      module_editor_state: {
+        Row: {
+          created_at: string
+          deleted_cours: Json
+          deleted_exercices: Json
+          id: string
+          module_data: Json
+          module_id: number
+          source_fingerprint: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_cours?: Json
+          deleted_exercices?: Json
+          id?: string
+          module_data?: Json
+          module_id: number
+          source_fingerprint?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_cours?: Json
+          deleted_exercices?: Json
+          id?: string
+          module_data?: Json
+          module_id?: number
+          source_fingerprint?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notes_frais: {
         Row: {
           categorie: string | null
