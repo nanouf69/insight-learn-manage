@@ -1,4 +1,5 @@
 import type { Slide } from "./t3p-partie1-data";
+import museesImg from "@/assets/ville/musees.jpg";
 
 export const VILLE_MUSEES_SLIDES: Slide[] = [
   {
@@ -7,6 +8,7 @@ export const VILLE_MUSEES_SLIDES: Slide[] = [
     subtitle: "Musées et lieux culturels de Lyon",
     footer: "Connaissances de la ville — Module 7",
     brand: "FTRANSPORT",
+    image: museesImg,
   },
   {
     type: "content",

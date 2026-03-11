@@ -1,4 +1,5 @@
 import type { Slide } from "./t3p-partie1-data";
+import arrondissementsImg from "@/assets/ville/arrondissements.jpg";
 
 export const VILLE_ARRONDISSEMENTS_SLIDES: Slide[] = [
   {
@@ -7,6 +8,7 @@ export const VILLE_ARRONDISSEMENTS_SLIDES: Slide[] = [
     subtitle: "Les 9 arrondissements de Lyon et leurs caractéristiques",
     footer: "Connaissances de la ville — Module 7",
     brand: "FTRANSPORT",
+    image: arrondissementsImg,
   },
   {
     type: "content",

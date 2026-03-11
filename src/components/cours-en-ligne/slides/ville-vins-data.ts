@@ -1,4 +1,5 @@
 import type { Slide } from "./t3p-partie1-data";
+import vinsImg from "@/assets/ville/vins.jpg";
 
 export const VILLE_VINS_SLIDES: Slide[] = [
   {
@@ -7,6 +8,7 @@ export const VILLE_VINS_SLIDES: Slide[] = [
     subtitle: "Vignobles et appellations de la région lyonnaise",
     footer: "Connaissances de la ville — Module 7",
     brand: "FTRANSPORT",
+    image: vinsImg,
   },
   {
     type: "content",

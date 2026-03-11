@@ -56,13 +56,21 @@ function EditableMultiline({ value, onChange, className, placeholder }: {
 
 function SlideTitle({ slide, editing, onChange }: { slide: Slide & { type: "title" }; editing: boolean; onChange?: (s: Slide) => void }) {
   if (!editing) {
+    const hasImage = !!slide.image;
     return (
-      <div className={`flex flex-col items-center justify-center min-h-full ${SLIDE_BG} text-white p-8 rounded-xl`}>
-        <h1 className="text-2xl md:text-3xl font-bold text-white text-center leading-tight mb-4">{slide.title}</h1>
-        {slide.subtitle && <p className="text-base md:text-lg text-blue-200 text-center mb-6">{slide.subtitle}</p>}
-        <div className="w-20 h-1 bg-white rounded mb-6" />
-        {slide.footer && <p className="text-sm text-slate-400 text-center">{slide.footer}</p>}
-        {slide.brand && <p className="text-xs text-slate-500 mt-4">{slide.brand}</p>}
+      <div className={`flex ${hasImage ? 'flex-row' : 'flex-col'} items-center justify-center min-h-full ${SLIDE_BG} text-white p-8 rounded-xl`}>
+        <div className={`flex flex-col items-center ${hasImage ? 'flex-1' : ''}`}>
+          <h1 className="text-2xl md:text-3xl font-bold text-white text-center leading-tight mb-4">{slide.title}</h1>
+          {slide.subtitle && <p className="text-base md:text-lg text-blue-200 text-center mb-6">{slide.subtitle}</p>}
+          <div className="w-20 h-1 bg-white rounded mb-6" />
+          {slide.footer && <p className="text-sm text-slate-400 text-center">{slide.footer}</p>}
+          {slide.brand && <p className="text-xs text-slate-500 mt-4">{slide.brand}</p>}
+        </div>
+        {hasImage && (
+          <div className="w-[40%] flex-shrink-0 ml-6">
+            <img src={slide.image} alt={slide.title} className="w-full h-auto rounded-xl object-cover shadow-2xl" />
+          </div>
+        )}
       </div>
     );
   }
@@ -169,29 +177,37 @@ function SlideContent({ slide, editing, onChange }: { slide: Slide & { type: "co
   const removeBlock = (idx: number) => onChange?.({ ...slide, blocks: (slide.blocks || []).filter((_, i) => i !== idx) });
 
   if (!editing) {
+    const hasImage = !!(slide as any).image;
     return (
-      <div className={`p-5 space-y-4 ${SLIDE_BG} min-h-full text-white`}>
-        <div>
-          <h2 className="text-xl font-bold text-white">{slide.title}</h2>
-          {slide.ref && <p className="text-xs text-blue-300 italic mt-1">{slide.ref}</p>}
+      <div className={`p-5 ${SLIDE_BG} min-h-full text-white ${hasImage ? 'flex gap-4' : 'space-y-4'}`}>
+        <div className={`${hasImage ? 'flex-1 space-y-3' : 'space-y-4'}`}>
+          <div>
+            <h2 className="text-xl font-bold text-white">{slide.title}</h2>
+            {slide.ref && <p className="text-xs text-blue-300 italic mt-1">{slide.ref}</p>}
+          </div>
+          {slide.intro && <p className="text-sm text-blue-200 leading-relaxed">{slide.intro}</p>}
+          <div className="space-y-3">
+            {slide.blocks?.map((b, i) => (
+              <div key={i} className="rounded-lg border-l-4 bg-white/8 p-3" style={{ borderColor: b.color }}>
+                <h3 className="font-bold text-sm mb-2" style={{ color: b.color }}>{b.heading}</h3>
+                <ul className="space-y-1">
+                  {b.points.map((p, j) => (
+                     <li key={j} className="text-xs text-blue-200 leading-relaxed pl-3 relative before:content-['▸'] before:absolute before:left-0 before:text-blue-400">{p}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+           {slide.keyRule && (
+             <div className="bg-white/8 border border-white/15 rounded-lg p-3">
+                <p className="text-xs font-semibold text-white">✔ {slide.keyRule}</p>
+             </div>
+          )}
         </div>
-        {slide.intro && <p className="text-sm text-blue-200 leading-relaxed">{slide.intro}</p>}
-        <div className="space-y-3">
-          {slide.blocks?.map((b, i) => (
-            <div key={i} className="rounded-lg border-l-4 bg-white/8 p-3" style={{ borderColor: b.color }}>
-              <h3 className="font-bold text-sm mb-2" style={{ color: b.color }}>{b.heading}</h3>
-              <ul className="space-y-1">
-                {b.points.map((p, j) => (
-                   <li key={j} className="text-xs text-blue-200 leading-relaxed pl-3 relative before:content-['▸'] before:absolute before:left-0 before:text-blue-400">{p}</li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-         {slide.keyRule && (
-           <div className="bg-white/8 border border-white/15 rounded-lg p-3">
-              <p className="text-xs font-semibold text-white">✔ {slide.keyRule}</p>
-           </div>
+        {hasImage && (
+          <div className="w-[35%] flex-shrink-0 flex items-center">
+            <img src={(slide as any).image} alt={slide.title} className="w-full h-auto rounded-xl object-cover shadow-lg max-h-[80%]" />
+          </div>
         )}
       </div>
     );

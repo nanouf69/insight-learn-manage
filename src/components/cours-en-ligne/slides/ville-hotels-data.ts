@@ -1,4 +1,5 @@
 import type { Slide } from "./t3p-partie1-data";
+import hotelsImg from "@/assets/ville/hotels.jpg";
 
 export const VILLE_HOTELS_SLIDES: Slide[] = [
   {
@@ -7,6 +8,7 @@ export const VILLE_HOTELS_SLIDES: Slide[] = [
     subtitle: "Principaux hôtels de Lyon à connaître",
     footer: "Connaissances de la ville — Module 7",
     brand: "FTRANSPORT",
+    image: hotelsImg,
   },
   {
     type: "content",

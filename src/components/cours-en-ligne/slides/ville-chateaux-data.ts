@@ -1,4 +1,5 @@
 import type { Slide } from "./t3p-partie1-data";
+import chateauxImg from "@/assets/ville/chateaux.jpg";
 
 export const VILLE_CHATEAUX_SLIDES: Slide[] = [
   {
@@ -7,6 +8,7 @@ export const VILLE_CHATEAUX_SLIDES: Slide[] = [
     subtitle: "Châteaux et forts historiques de Lyon et sa région",
     footer: "Connaissances de la ville — Module 7",
     brand: "FTRANSPORT",
+    image: chateauxImg,
   },
   {
     type: "content",

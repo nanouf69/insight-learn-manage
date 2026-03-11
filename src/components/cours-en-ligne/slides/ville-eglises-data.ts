@@ -1,4 +1,5 @@
 import type { Slide } from "./t3p-partie1-data";
+import eglisesImg from "@/assets/ville/eglises.jpg";
 
 export const VILLE_EGLISES_SLIDES: Slide[] = [
   {
@@ -7,6 +8,7 @@ export const VILLE_EGLISES_SLIDES: Slide[] = [
     subtitle: "Cathédrales, basiliques et églises remarquables de Lyon",
     footer: "Connaissances de la ville — Module 7",
     brand: "FTRANSPORT",
+    image: eglisesImg,
   },
   {
     type: "content",

@@ -1,4 +1,5 @@
 import type { Slide } from "./t3p-partie1-data";
+import garesImg from "@/assets/ville/gares.jpg";
 
 export const VILLE_GARES_SLIDES: Slide[] = [
   {
@@ -7,6 +8,7 @@ export const VILLE_GARES_SLIDES: Slide[] = [
     subtitle: "Les principales gares SNCF de Lyon et leur localisation",
     footer: "Connaissances de la ville — Module 7",
     brand: "FTRANSPORT",
+    image: garesImg,
   },
   {
     type: "content",

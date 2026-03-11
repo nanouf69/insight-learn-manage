@@ -13,6 +13,7 @@ export interface SlideBlock {
 export interface SlideBase {
   type: string;
   title: string;
+  image?: string;
 }
 
 export interface SlideTitleType extends SlideBase {

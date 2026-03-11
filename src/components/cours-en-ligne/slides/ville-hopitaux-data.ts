@@ -1,4 +1,5 @@
 import type { Slide } from "./t3p-partie1-data";
+import hopitauxImg from "@/assets/ville/hopitaux.jpg";
 
 export const VILLE_HOPITAUX_SLIDES: Slide[] = [
   {
@@ -7,6 +8,7 @@ export const VILLE_HOPITAUX_SLIDES: Slide[] = [
     subtitle: "Hôpitaux et cliniques de Lyon et sa métropole",
     footer: "Connaissances de la ville — Module 7",
     brand: "FTRANSPORT",
+    image: hopitauxImg,
   },
   {
     type: "content",
