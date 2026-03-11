@@ -1,4 +1,5 @@
 import type { Slide } from "./t3p-partie1-data";
+import commissariatsImg from "@/assets/ville/commissariats.jpg";
 
 export const VILLE_COMMISSARIATS_SLIDES: Slide[] = [
   {
@@ -7,6 +8,7 @@ export const VILLE_COMMISSARIATS_SLIDES: Slide[] = [
     subtitle: "Commissariats de police de Lyon et environs",
     footer: "Connaissances de la ville — Module 7",
     brand: "FTRANSPORT",
+    image: commissariatsImg,
   },
   {
     type: "content",

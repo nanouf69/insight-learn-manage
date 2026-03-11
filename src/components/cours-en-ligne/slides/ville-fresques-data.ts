@@ -1,4 +1,5 @@
 import type { Slide } from "./t3p-partie1-data";
+import fresquesImg from "@/assets/ville/fresques.jpg";
 
 export const VILLE_FRESQUES_SLIDES: Slide[] = [
   {
@@ -7,6 +8,7 @@ export const VILLE_FRESQUES_SLIDES: Slide[] = [
     subtitle: "Fresques murales et art urbain lyonnais",
     footer: "Connaissances de la ville — Module 7",
     brand: "FTRANSPORT",
+    image: fresquesImg,
   },
   {
     type: "content",

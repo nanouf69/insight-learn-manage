@@ -1,4 +1,5 @@
 import type { Slide } from "./t3p-partie1-data";
+import sallesImg from "@/assets/ville/salles-spectacles.jpg";
 
 export const VILLE_SALLES_SPECTACLES_SLIDES: Slide[] = [
   {
@@ -7,6 +8,7 @@ export const VILLE_SALLES_SPECTACLES_SLIDES: Slide[] = [
     subtitle: "Théâtres, salles de concert et lieux de spectacle",
     footer: "Connaissances de la ville — Module 7",
     brand: "FTRANSPORT",
+    image: sallesImg,
   },
   {
     type: "content",

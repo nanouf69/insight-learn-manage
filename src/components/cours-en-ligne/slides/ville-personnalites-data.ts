@@ -1,4 +1,5 @@
 import type { Slide } from "./t3p-partie1-data";
+import personnalitesImg from "@/assets/ville/personnalites.jpg";
 
 export const VILLE_PERSONNALITES_SLIDES: Slide[] = [
   {
@@ -7,6 +8,7 @@ export const VILLE_PERSONNALITES_SLIDES: Slide[] = [
     subtitle: "Les grandes figures historiques et contemporaines de Lyon",
     footer: "Connaissances de la ville — Module 7",
     brand: "FTRANSPORT",
+    image: personnalitesImg,
   },
   {
     type: "content",

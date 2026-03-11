@@ -1,4 +1,5 @@
 import type { Slide } from "./t3p-partie1-data";
+import diversImg from "@/assets/ville/divers.jpg";
 
 export const VILLE_DIVERS_SLIDES: Slide[] = [
   {
@@ -7,6 +8,7 @@ export const VILLE_DIVERS_SLIDES: Slide[] = [
     subtitle: "Autres lieux importants à connaître pour un chauffeur",
     footer: "Connaissances de la ville — Module 7",
     brand: "FTRANSPORT",
+    image: diversImg,
   },
   {
     type: "content",

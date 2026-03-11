@@ -1,4 +1,5 @@
 import type { Slide } from "./t3p-partie1-data";
+import stationsTaxiImg from "@/assets/ville/stations-taxi.jpg";
 
 export const VILLE_STATIONS_TAXI_SLIDES: Slide[] = [
   {
@@ -7,6 +8,7 @@ export const VILLE_STATIONS_TAXI_SLIDES: Slide[] = [
     subtitle: "Emplacements des stations de taxi à Lyon",
     footer: "Connaissances de la ville — Module 7",
     brand: "FTRANSPORT",
+    image: stationsTaxiImg,
   },
   {
     type: "content",

@@ -1,4 +1,5 @@
 import type { Slide } from "./t3p-partie1-data";
+import consulatsImg from "@/assets/ville/consulats.jpg";
 
 export const VILLE_CONSULATS_SLIDES: Slide[] = [
   {
@@ -7,6 +8,7 @@ export const VILLE_CONSULATS_SLIDES: Slide[] = [
     subtitle: "Consulats et représentations diplomatiques à Lyon",
     footer: "Connaissances de la ville — Module 7",
     brand: "FTRANSPORT",
+    image: consulatsImg,
   },
   {
     type: "content",

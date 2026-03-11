@@ -1,4 +1,5 @@
 import type { Slide } from "./t3p-partie1-data";
+import mairiesImg from "@/assets/ville/mairies.jpg";
 
 export const VILLE_MAIRIES_SLIDES: Slide[] = [
   {
@@ -7,6 +8,7 @@ export const VILLE_MAIRIES_SLIDES: Slide[] = [
     subtitle: "Mairies d'arrondissement et mairies de communes",
     footer: "Connaissances de la ville — Module 7",
     brand: "FTRANSPORT",
+    image: mairiesImg,
   },
   {
     type: "content",
