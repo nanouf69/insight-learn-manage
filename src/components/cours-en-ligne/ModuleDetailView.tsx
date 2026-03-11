@@ -2198,6 +2198,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     };
   }, [module.id, studentOnly]);
 
+  useEffect(() => {
     if (!editorStateHydrated || studentOnly || typeof window === "undefined") return;
     if (Number(moduleData.id) !== Number(module.id)) return;
 
