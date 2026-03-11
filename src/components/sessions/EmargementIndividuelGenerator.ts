@@ -165,6 +165,10 @@ function generateIndividualPage(
   // ===== TABLEAU D'ÉMARGEMENT =====
   yPos = 62;
 
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const footerZoneHeight = 45; // signature (30) + footer (15)
+  const maxTableBottom = pageHeight - footerZoneHeight;
+
   const headRow1: any[] = [
     { content: "Jour", rowSpan: 2, styles: { halign: "center", valign: "middle" } },
     { content: "Matin", colSpan: 2, styles: { halign: "center" } },
