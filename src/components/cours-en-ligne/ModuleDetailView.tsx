@@ -2012,97 +2012,98 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   useEffect(() => {
     const initialData = getInitialModuleData(module, apprenantType, studentOnly);
     const sourceFingerprint = buildSourceFingerprint(initialData);
+    skipInitialAutosaveRef.current = true;
 
-    if (studentOnly || typeof window === "undefined") {
-      // Student mode: load admin state from database
-      // Accept DB state if structurally valid — don't require exact fingerprint match
-      // because admin fingerprint includes localStorage overrides that students don't have
-      (async () => {
-        try {
-          const { data } = await supabase
-            .from("module_editor_state")
-            .select("module_data, deleted_cours, deleted_exercices, source_fingerprint")
-            .eq("module_id", module.id)
-            .maybeSingle();
+    const loadLocalState = () => {
+      if (typeof window === "undefined") return false;
 
-          if (data && data.module_data) {
-            const md = data.module_data as unknown as ModuleData;
-            if (Array.isArray(md.cours) && Array.isArray(md.exercices) && Number(md.id) === Number(module.id)) {
-              setModuleData(md);
-            } else {
-              setModuleData(initialData);
-            }
-          } else {
-            setModuleData(initialData);
-          }
-        } catch (err) {
-          console.error("Error loading admin module state for student:", err);
-          setModuleData(initialData);
-        } finally {
-          setDeletedCours([]);
-          setDeletedExercices([]);
-          setEditorStateHydrated(true);
+      try {
+        const raw = window.localStorage.getItem(moduleEditorStorageKey);
+        if (!raw) return false;
+
+        const parsed = JSON.parse(raw) as {
+          moduleData?: ModuleData;
+          deletedCours?: ContentItem[];
+          deletedExercices?: ExerciceItem[];
+          sourceFingerprint?: string;
+        };
+
+        if (parsed.sourceFingerprint !== sourceFingerprint) {
+          window.localStorage.removeItem(moduleEditorStorageKey);
+          return false;
         }
-      })();
-      return;
-    }
 
-    try {
-      const raw = window.localStorage.getItem(moduleEditorStorageKey);
+        const hasValidModuleData =
+          parsed?.moduleData &&
+          Array.isArray(parsed.moduleData.cours) &&
+          Array.isArray(parsed.moduleData.exercices) &&
+          Number(parsed.moduleData.id) === Number(module.id);
 
-      if (!raw) {
-        setModuleData(initialData);
-        setDeletedCours([]);
-        setDeletedExercices([]);
-        setEditorStateHydrated(true);
-        return;
-      }
+        if (!hasValidModuleData) return false;
 
-      const parsed = JSON.parse(raw) as {
-        moduleData?: ModuleData;
-        deletedCours?: ContentItem[];
-        deletedExercices?: ExerciceItem[];
-        sourceFingerprint?: string;
-      };
-
-      // If source data changed OR legacy cache has no fingerprint, invalidate cache
-      if (parsed.sourceFingerprint !== sourceFingerprint) {
-        console.log("Source data changed, invalidating editor cache for module", module.id);
-        window.localStorage.removeItem(moduleEditorStorageKey);
-        setModuleData(initialData);
-        setDeletedCours([]);
-        setDeletedExercices([]);
-        setEditorStateHydrated(true);
-        return;
-      }
-
-      const hasValidModuleData =
-        parsed?.moduleData &&
-        Array.isArray(parsed.moduleData.cours) &&
-        Array.isArray(parsed.moduleData.exercices);
-
-      if (hasValidModuleData) {
         setModuleData(parsed.moduleData as ModuleData);
         setDeletedCours(Array.isArray(parsed.deletedCours) ? parsed.deletedCours : []);
         setDeletedExercices(Array.isArray(parsed.deletedExercices) ? parsed.deletedExercices : []);
-      } else {
+
+        return true;
+      } catch (error) {
+        console.error("Erreur chargement état local module:", error);
+        return false;
+      }
+    };
+
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from("module_editor_state")
+          .select("module_data, deleted_cours, deleted_exercices")
+          .eq("module_id", module.id)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (data?.module_data) {
+          const md = data.module_data as unknown as ModuleData;
+          const hasValidModuleData =
+            Array.isArray(md.cours) &&
+            Array.isArray(md.exercices) &&
+            Number(md.id) === Number(module.id);
+
+          if (hasValidModuleData) {
+            setModuleData(md);
+            setDeletedCours(Array.isArray(data.deleted_cours) ? (data.deleted_cours as unknown as ContentItem[]) : []);
+            setDeletedExercices(Array.isArray(data.deleted_exercices) ? (data.deleted_exercices as unknown as ExerciceItem[]) : []);
+            return;
+          }
+        }
+
+        if (!studentOnly && loadLocalState()) return;
+
         setModuleData(initialData);
         setDeletedCours([]);
         setDeletedExercices([]);
+      } catch (err) {
+        console.error("Error loading module editor state:", err);
+
+        if (!studentOnly && loadLocalState()) return;
+
+        setModuleData(initialData);
+        setDeletedCours([]);
+        setDeletedExercices([]);
+      } finally {
+        setEditorStateHydrated(true);
       }
-    } catch (error) {
-      console.error("Erreur chargement état édition module:", error);
-      setModuleData(initialData);
-      setDeletedCours([]);
-      setDeletedExercices([]);
-    } finally {
-      setEditorStateHydrated(true);
-    }
+    })();
   }, [module.id, apprenantType, studentOnly, moduleEditorStorageKey]);
 
   useEffect(() => {
     if (!editorStateHydrated || studentOnly || typeof window === "undefined") return;
     if (Number(moduleData.id) !== Number(module.id)) return;
+
+    if (skipInitialAutosaveRef.current) {
+      skipInitialAutosaveRef.current = false;
+      return;
+    }
 
     const initialData = getInitialModuleData(module, apprenantType, studentOnly);
     const sourceFingerprint = buildSourceFingerprint(initialData);
@@ -2124,7 +2125,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     // Save to database so students see admin changes
     const saveToDb = async () => {
       try {
-        await supabase.from("module_editor_state").upsert(
+        const { error } = await supabase.from("module_editor_state").upsert(
           [{
             module_id: module.id,
             module_data: moduleData as any,
@@ -2135,10 +2136,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           }],
           { onConflict: "module_id" }
         );
+
+        if (error) throw error;
+        saveErrorShownRef.current = false;
       } catch (err) {
         console.error("Erreur sauvegarde DB module_editor_state:", err);
+        if (!saveErrorShownRef.current) {
+          toast.error("Sauvegarde impossible pour ce module. Réessayez ou contactez l'admin.");
+          saveErrorShownRef.current = true;
+        }
       }
     };
+
     saveToDb();
   }, [editorStateHydrated, studentOnly, moduleEditorStorageKey, moduleData, deletedCours, deletedExercices]);
 
