@@ -1940,7 +1940,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   // Also reruns when apprenantType arrives/changes to avoid losing trainer edits
   // after student data hydration resets moduleData.
   useEffect(() => {
-    if (!studentOnly || !editorStateHydrated) return;
+    if (!studentOnly || !editorStateHydrated || loadedModuleEditorState) return;
 
     async function loadTrainerOverrides() {
       try {
