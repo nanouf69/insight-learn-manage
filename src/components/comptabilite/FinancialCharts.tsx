@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, forwardRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -37,10 +37,10 @@ interface MonthData {
 const fmt = (n: number) =>
   new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = forwardRef<HTMLDivElement, any>(({ active, payload, label }: any, ref) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-background border rounded-lg shadow-lg p-3 text-sm min-w-[200px]">
+    <div ref={ref} className="bg-background border rounded-lg shadow-lg p-3 text-sm min-w-[200px]">
       <p className="font-semibold mb-2 text-foreground">{label}</p>
       {payload.map((p: any) => (
         <div key={p.dataKey} className="flex justify-between gap-4">
@@ -50,7 +50,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
       ))}
     </div>
   );
-};
+});
 
 interface Props {
   transactions?: { montant: number; date_operation: string }[];
