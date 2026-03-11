@@ -1941,27 +1941,45 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       try {
         const { data } = await supabase
           .from("quiz_questions_overrides")
-          .select("section_id, question_id, enonce, choix");
+          .select("quiz_id, section_id, question_id, enonce, choix, updated_at")
+          .order("updated_at", { ascending: false });
 
         if (!data || data.length === 0) return;
 
+        const overrideMap = new Map<string, { enonce: string; choix: { lettre: string; texte: string; correct?: boolean }[] }>();
+        for (const ov of data) {
+          const key = `${ov.section_id}-${ov.question_id}`;
+          // Keep latest override only (query is ordered by updated_at desc)
+          if (!overrideMap.has(key)) {
+            overrideMap.set(key, {
+              enonce: ov.enonce,
+              choix: ov.choix as { lettre: string; texte: string; correct?: boolean }[],
+            });
+          }
+        }
+
         setModuleData((prev) => {
-          const updatedExercices = prev.exercices.map((exo) => {
-            if (!exo.questions || exo.questions.length === 0) return exo;
-            const updatedQuestions = exo.questions
-              .map((q) => {
-                for (const ov of data) {
-                  if (ov.section_id === exo.id && ov.question_id === q.id) {
-                    const choix = ov.choix as { lettre: string; texte: string; correct?: boolean }[];
-                    return { ...q, enonce: ov.enonce, choix };
-                  }
-                }
-                return q;
-              })
-              // Filter out questions marked as deleted by the trainer
-              .filter((q) => q.enonce !== "__DELETED__");
-            return { ...exo, questions: updatedQuestions };
-          });
+          const updatedExercices = prev.exercices
+            .map((exo) => {
+              if (!exo.questions || exo.questions.length === 0) return exo;
+
+              const updatedQuestions = exo.questions
+                .map((q) => {
+                  const override = overrideMap.get(`${exo.id}-${q.id}`);
+                  if (!override) return q;
+                  return { ...q, enonce: override.enonce, choix: override.choix };
+                })
+                .filter((q) => q.enonce !== "__DELETED__");
+
+              // If trainer deleted all questions of this quiz, hide the whole exercise for students
+              if (exo.questions.length > 0 && updatedQuestions.length === 0) {
+                return null;
+              }
+
+              return { ...exo, questions: updatedQuestions };
+            })
+            .filter((exo): exo is ExerciceItem => exo !== null);
+
           return { ...prev, exercices: updatedExercices };
         });
       } catch (err) {
