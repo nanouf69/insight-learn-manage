@@ -1939,10 +1939,26 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     async function loadTrainerOverrides() {
       try {
-        const { data } = await supabase
+        // Match each learner module with the quiz_id used by the trainer portal
+        const trainerQuizIdByModuleId: Record<number, string> = {
+          12: "cas-pratique-taxi",
+          7: "connaissance-ville",
+          64: "equipements-taxi",
+          13: "controle-connaissances-taxi",
+        };
+
+        const targetQuizId = trainerQuizIdByModuleId[module.id];
+
+        let query = supabase
           .from("quiz_questions_overrides")
           .select("quiz_id, section_id, question_id, enonce, choix, updated_at")
           .order("updated_at", { ascending: false });
+
+        if (targetQuizId) {
+          query = query.eq("quiz_id", targetQuizId);
+        }
+
+        const { data } = await query;
 
         if (!data || data.length === 0) return;
 
