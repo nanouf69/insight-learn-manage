@@ -173,75 +173,24 @@ export default function Step12() {
     }
 
     const fileName = `recapitulatif_inscription_${Date.now()}.pdf`;
-    const filePath = `${apprenantId}/${fileName}`;
+    const file = new File([blob], fileName, { type: "application/pdf" });
 
-    const { error: uploadError } = await supabase.storage
-      .from('documents-inscription')
-      .upload(filePath, blob, { cacheControl: '3600', upsert: true });
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('apprenant_id', apprenantId);
+    formData.append('titre', "Document de bienvenue - Récapitulatif d'inscription");
+    formData.append('type_document', 'recapitulatif_inscription');
 
-    if (uploadError) {
-      throw uploadError;
+    const { data, error } = await supabase.functions.invoke('upload-document-inscription', {
+      body: formData,
+    });
+
+    if (error) {
+      throw error;
     }
 
-    const { data: urlData } = supabase.storage
-      .from('documents-inscription')
-      .getPublicUrl(filePath);
-
-    const { data: existingRows, error: existingRowsError } = await supabase
-      .from('documents_inscription')
-      .select('id, nom_fichier')
-      .eq('apprenant_id', apprenantId)
-      .eq('type_document', 'recapitulatif_inscription');
-
-    if (existingRowsError) {
-      throw existingRowsError;
-    }
-
-    const payload = {
-      titre: "Document de bienvenue - Récapitulatif d'inscription",
-      description: "PDF généré automatiquement à la fin de l'onboarding",
-      url: urlData?.publicUrl || '',
-      nom_fichier: fileName,
-      statut: 'valid',
-    };
-
-    if ((existingRows?.length ?? 0) > 0) {
-      const { error: updateError } = await supabase
-        .from('documents_inscription')
-        .update(payload)
-        .eq('apprenant_id', apprenantId)
-        .eq('type_document', 'recapitulatif_inscription');
-
-      if (updateError) {
-        throw updateError;
-      }
-    } else {
-      const { error: insertError } = await supabase
-        .from('documents_inscription')
-        .insert({
-          apprenant_id: apprenantId,
-          type_document: 'recapitulatif_inscription',
-          ...payload,
-        });
-
-      if (insertError) {
-        throw insertError;
-      }
-    }
-
-    const filesToDelete = (existingRows ?? [])
-      .map((row) => row.nom_fichier)
-      .filter((name): name is string => Boolean(name) && name !== fileName)
-      .map((name) => `${apprenantId}/${name}`);
-
-    if (filesToDelete.length > 0) {
-      const { error: removeError } = await supabase.storage
-        .from('documents-inscription')
-        .remove(filesToDelete);
-
-      if (removeError) {
-        console.error('Erreur nettoyage anciens récapitulatifs:', removeError);
-      }
+    if (!data?.success) {
+      throw new Error(data?.error || "Échec de sauvegarde du récapitulatif");
     }
   };
 
