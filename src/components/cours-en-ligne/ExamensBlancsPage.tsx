@@ -818,9 +818,16 @@ export default function ExamensBlancsPage({
         const donnees = ((rep as string[]) || []).sort();
         correct = JSON.stringify(correctes) === JSON.stringify(donnees);
       } else if (q.type === "QRC") {
-        const repStr = ((rep as string) || "").toLowerCase();
+        const repStr = ((rep as string) || "").toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
         const motsCles = q.reponses_possibles || [];
-        correct = motsCles.some(mc => repStr.includes(mc.toLowerCase()));
+        let nbTrouvees = 0;
+        motsCles.forEach(mc => {
+          const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+          if (repStr.includes(mcN)) nbTrouvees++;
+        });
+        const ratio = motsCles.length > 0 ? nbTrouvees / motsCles.length : 0;
+        correct = nbTrouvees >= motsCles.length;
+        totalPoints += Math.round(ratio * pts * 10) / 10;
       }
       if (correct) totalPoints += pts;
     });
