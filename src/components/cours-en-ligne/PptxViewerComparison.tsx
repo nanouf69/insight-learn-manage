@@ -30,6 +30,16 @@ export default function PptxViewerComparison({
   const [zoomLevel, setZoomLevel] = useState(1.2);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isCompactViewport, setIsCompactViewport] = useState(false);
+  const [iframeLoading, setIframeLoading] = useState(true);
+
+  const handleIframeLoad = useCallback(() => setIframeLoading(false), []);
+
+  // Reset loading state when mode changes
+  useEffect(() => {
+    if (effectiveMode === "google" || effectiveMode === "google-zoom" || effectiveMode === "ms-office") {
+      setIframeLoading(true);
+    }
+  }, [effectiveMode]);
 
   const hasImages = imageUrls && imageUrls.length > 0;
 
