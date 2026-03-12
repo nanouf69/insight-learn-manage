@@ -241,7 +241,19 @@ function PassageMatiere({
     setReponses(prev => ({ ...prev, [qId]: val }));
   };
 
-  const handleTerminer = () => onTerminer(reponses);
+  const allAnswered = matiere.questions.every(q => {
+    const rep = reponses[q.id];
+    if (q.type === "QCM") return Array.isArray(rep) && rep.length > 0;
+    return typeof rep === "string" && rep.trim().length > 0;
+  });
+
+  const handleTerminer = () => {
+    if (!allAnswered) {
+      toast.error("Veuillez répondre à toutes les questions avant de terminer la matière.");
+      return;
+    }
+    onTerminer(reponses);
+  };
   const handleExpire = () => { setExpire(true); onTerminer(reponses); };
 
   const isMultiple = (q: Question) =>
