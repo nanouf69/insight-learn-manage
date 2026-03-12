@@ -282,6 +282,98 @@ const PROJET_QUESTIONS: QCMQuestion[] = [
   },
 ];
 
+// ========== SIGNATURE CANVAS ==========
+function SignatureCanvas({ onSignatureChange }: { onSignatureChange: (data: string | null) => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [hasSignature, setHasSignature] = useState(false);
+
+  const getPos = useCallback((e: React.TouchEvent | React.MouseEvent) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    if ("touches" in e) {
+      return { x: (e.touches[0].clientX - rect.left) * scaleX, y: (e.touches[0].clientY - rect.top) * scaleY };
+    }
+    return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+  }, []);
+
+  const startDrawing = useCallback((e: React.TouchEvent | React.MouseEvent) => {
+    e.preventDefault();
+    const ctx = canvasRef.current?.getContext("2d");
+    if (!ctx) return;
+    const { x, y } = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    setIsDrawing(true);
+  }, [getPos]);
+
+  const draw = useCallback((e: React.TouchEvent | React.MouseEvent) => {
+    if (!isDrawing) return;
+    e.preventDefault();
+    const ctx = canvasRef.current?.getContext("2d");
+    if (!ctx) return;
+    const { x, y } = getPos(e);
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "#1a1a2e";
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    setHasSignature(true);
+  }, [isDrawing, getPos]);
+
+  const stopDrawing = useCallback(() => {
+    if (isDrawing && canvasRef.current) {
+      setIsDrawing(false);
+      onSignatureChange(canvasRef.current.toDataURL("image/png"));
+    }
+  }, [isDrawing, onSignatureChange]);
+
+  const clearCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setHasSignature(false);
+    onSignatureChange(null);
+  }, [onSignatureChange]);
+
+  return (
+    <div className="space-y-2">
+      <div className="relative border-2 border-dashed border-muted-foreground/30 rounded-lg bg-background overflow-hidden">
+        <canvas
+          ref={canvasRef}
+          width={600}
+          height={200}
+          className="w-full cursor-crosshair touch-none"
+          style={{ height: "150px" }}
+          onMouseDown={startDrawing}
+          onMouseMove={draw}
+          onMouseUp={stopDrawing}
+          onMouseLeave={stopDrawing}
+          onTouchStart={startDrawing}
+          onTouchMove={draw}
+          onTouchEnd={stopDrawing}
+        />
+        {!hasSignature && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <p className="text-muted-foreground/40 text-sm">Dessinez votre signature ici</p>
+          </div>
+        )}
+      </div>
+      {hasSignature && (
+        <Button type="button" variant="outline" size="sm" onClick={clearCanvas} className="gap-1">
+          <Eraser className="w-3 h-3" /> Effacer
+        </Button>
+      )}
+    </div>
+  );
+}
+
 // ========== COMPOSANT QCM ==========
 function QCMField({
   q,
