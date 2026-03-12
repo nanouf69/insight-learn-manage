@@ -156,18 +156,35 @@ export default function Step1() {
       icon: CreditCard,
       title: "Pièce d'identité",
       description: "Carte d'identité ou passeport en cours de validité",
+      optional: false,
     },
     {
       id: 'justificatif_domicile',
       icon: MapPin,
       title: "Justificatif de domicile",
       description: "De moins de 3 mois (facture EDF, eau, téléphone...)",
+      optional: false,
+    },
+    {
+      id: 'attestation_hebergement',
+      icon: Home,
+      title: "Attestation d'hébergement",
+      description: "Si vous êtes hébergé(e) chez un tiers (facultatif)",
+      optional: true,
+    },
+    {
+      id: 'piece_identite_hebergeant',
+      icon: FileText,
+      title: "Pièce d'identité de l'hébergeant (recto verso)",
+      description: "Carte d'identité ou passeport de la personne qui vous héberge (facultatif)",
+      optional: true,
     },
     {
       id: 'photo_identite',
       icon: Camera,
       title: "Photo d'identité",
       description: "Fond clair obligatoire (blanc, beige ou bleu)",
+      optional: false,
     },
   ];
 
