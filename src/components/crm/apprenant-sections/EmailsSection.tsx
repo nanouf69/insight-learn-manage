@@ -740,13 +740,18 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
                 </div>
                 {selectedEmail.body_html ? (
                   <div 
-                    className="prose prose-sm max-w-none"
-                    dangerouslySetInnerHTML={{ __html: selectedEmail.body_html }} 
+                    className="prose prose-sm max-w-none [&_a]:text-primary [&_a]:underline [&_a]:cursor-pointer"
+                    dangerouslySetInnerHTML={{ __html: selectedEmail.body_html.replace(/<a /g, '<a target="_blank" rel="noopener noreferrer" ') }} 
                   />
                 ) : (
-                  <pre className="whitespace-pre-wrap text-sm font-sans">
-                    {selectedEmail.body_preview}
-                  </pre>
+                  <div className="whitespace-pre-wrap text-sm font-sans"
+                    dangerouslySetInnerHTML={{ 
+                      __html: (selectedEmail.body_preview || '').replace(
+                        /(https?:\/\/[^\s<]+)/g, 
+                        '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-primary underline cursor-pointer">$1</a>'
+                      )
+                    }} 
+                  />
                 )}
                 <div className="flex justify-end pt-2 border-t">
                   <Button size="sm" variant="outline" onClick={() => handleForwardEmail(selectedEmail)} className="gap-2">
