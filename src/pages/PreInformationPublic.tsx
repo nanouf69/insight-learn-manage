@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, FileText, ClipboardList, Target, Loader2 } from "lucide-react";
+import { CheckCircle2, FileText, ClipboardList, Target, Loader2, Eraser } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -282,6 +282,98 @@ const PROJET_QUESTIONS: QCMQuestion[] = [
   },
 ];
 
+// ========== SIGNATURE CANVAS ==========
+function SignatureCanvas({ onSignatureChange }: { onSignatureChange: (data: string | null) => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [hasSignature, setHasSignature] = useState(false);
+
+  const getPos = useCallback((e: React.TouchEvent | React.MouseEvent) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    if ("touches" in e) {
+      return { x: (e.touches[0].clientX - rect.left) * scaleX, y: (e.touches[0].clientY - rect.top) * scaleY };
+    }
+    return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+  }, []);
+
+  const startDrawing = useCallback((e: React.TouchEvent | React.MouseEvent) => {
+    e.preventDefault();
+    const ctx = canvasRef.current?.getContext("2d");
+    if (!ctx) return;
+    const { x, y } = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    setIsDrawing(true);
+  }, [getPos]);
+
+  const draw = useCallback((e: React.TouchEvent | React.MouseEvent) => {
+    if (!isDrawing) return;
+    e.preventDefault();
+    const ctx = canvasRef.current?.getContext("2d");
+    if (!ctx) return;
+    const { x, y } = getPos(e);
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "#1a1a2e";
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    setHasSignature(true);
+  }, [isDrawing, getPos]);
+
+  const stopDrawing = useCallback(() => {
+    if (isDrawing && canvasRef.current) {
+      setIsDrawing(false);
+      onSignatureChange(canvasRef.current.toDataURL("image/png"));
+    }
+  }, [isDrawing, onSignatureChange]);
+
+  const clearCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setHasSignature(false);
+    onSignatureChange(null);
+  }, [onSignatureChange]);
+
+  return (
+    <div className="space-y-2">
+      <div className="relative border-2 border-dashed border-muted-foreground/30 rounded-lg bg-background overflow-hidden">
+        <canvas
+          ref={canvasRef}
+          width={600}
+          height={200}
+          className="w-full cursor-crosshair touch-none"
+          style={{ height: "150px" }}
+          onMouseDown={startDrawing}
+          onMouseMove={draw}
+          onMouseUp={stopDrawing}
+          onMouseLeave={stopDrawing}
+          onTouchStart={startDrawing}
+          onTouchMove={draw}
+          onTouchEnd={stopDrawing}
+        />
+        {!hasSignature && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <p className="text-muted-foreground/40 text-sm">Dessinez votre signature ici</p>
+          </div>
+        )}
+      </div>
+      {hasSignature && (
+        <Button type="button" variant="outline" size="sm" onClick={clearCanvas} className="gap-1">
+          <Eraser className="w-3 h-3" /> Effacer
+        </Button>
+      )}
+    </div>
+  );
+}
+
 // ========== COMPOSANT QCM ==========
 function QCMField({
   q,
@@ -391,6 +483,10 @@ export default function PreInformationPublic() {
   const [signature, setSignature] = useState("");
   const [signatureDate] = useState(new Date().toLocaleDateString("fr-FR"));
 
+  // Canvas signature for first two documents
+  const [analyseSignatureData, setAnalyseSignatureData] = useState<string | null>(null);
+  const [projetSignatureData, setProjetSignatureData] = useState<string | null>(null);
+
   useEffect(() => {
     if (!apprenantId) {
       setError("Lien invalide — identifiant manquant");
@@ -495,36 +591,36 @@ export default function PreInformationPublic() {
 
   const handleSubmitAnalyse = async () => {
     if (!validateRequired(ANALYSE_QUESTIONS, analyseAnswers)) return;
-    if (!signature.trim()) { toast.error("Veuillez signer le document"); return; }
+    if (!analyseSignatureData) { toast.error("Veuillez signer le document (dessinez votre signature)"); return; }
     const saved = await saveForm("analyse-besoin", `Analyse du besoin – ${formationLabel}`, {
       reponses: formatAnswers(analyseAnswers, analyseOther),
       apprenant_nom: apprenant?.nom,
       apprenant_prenom: apprenant?.prenom,
       formation: formationLabel,
+      _signature_image: analyseSignatureData,
     });
     if (saved) {
       toast.success("Analyse du besoin enregistrée !");
       setCompletedSteps((prev) => new Set([...prev, "analyse"]));
       setCurrentStep("projet");
-      setSignature("");
       setMissingFields(new Set());
     }
   };
 
   const handleSubmitProjet = async () => {
     if (!validateRequired(PROJET_QUESTIONS, projetAnswers)) return;
-    if (!signature.trim()) { toast.error("Veuillez signer le document"); return; }
+    if (!projetSignatureData) { toast.error("Veuillez signer le document (dessinez votre signature)"); return; }
     const saved = await saveForm("projet-professionnel", `Projet professionnel – ${formationLabel}`, {
       reponses: formatAnswers(projetAnswers, projetOther),
       apprenant_nom: apprenant?.nom,
       apprenant_prenom: apprenant?.prenom,
       formation: formationLabel,
+      _signature_image: projetSignatureData,
     });
     if (saved) {
       toast.success("Projet professionnel enregistré !");
       setCompletedSteps((prev) => new Set([...prev, "projet"]));
       setCurrentStep("competences");
-      setSignature("");
       setMissingFields(new Set());
     }
   };
@@ -666,8 +762,8 @@ export default function PreInformationPublic() {
               </div>
 
               <div className="border-t pt-4 space-y-2">
-                <label className="text-sm font-medium">Signature (Nom et Prénom) *</label>
-                <Input value={signature} onChange={(e) => setSignature(e.target.value)} placeholder="Votre nom et prénom pour valider" />
+                <label className="text-sm font-medium">Signature manuscrite *</label>
+                <SignatureCanvas onSignatureChange={setAnalyseSignatureData} />
                 <p className="text-xs text-muted-foreground">Fait le {signatureDate}</p>
               </div>
 
@@ -704,8 +800,8 @@ export default function PreInformationPublic() {
               </div>
 
               <div className="border-t pt-4 space-y-2">
-                <label className="text-sm font-medium">Signature (Nom et Prénom) *</label>
-                <Input value={signature} onChange={(e) => setSignature(e.target.value)} placeholder="Votre nom et prénom pour valider" />
+                <label className="text-sm font-medium">Signature manuscrite *</label>
+                <SignatureCanvas onSignatureChange={setProjetSignatureData} />
                 <p className="text-xs text-muted-foreground">Fait le {signatureDate}</p>
               </div>
 
