@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { savePublicFormDocument } from "@/lib/savePublicFormDocument";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -38,14 +39,25 @@ async function saveWithRetry(
 ): Promise<boolean> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    console.warn("[AutoSave] No authenticated user, skipping DB save");
-    // Fallback to localStorage
+    console.warn("[AutoSave] No authenticated user, fallback to backend save-public-form");
+    const backendSaved = await savePublicFormDocument({
+      apprenantId: params.apprenantId,
+      typeDocument: params.typeDocument,
+      titre: params.titre,
+      donnees: { ...params.donnees, module_id: params.moduleId || null },
+    });
+
+    if (backendSaved) {
+      return true;
+    }
+
+    // Last-resort fallback to localStorage
     try {
       localStorage.setItem(
         `autosave_${params.apprenantId}_${params.typeDocument}`,
         JSON.stringify({ ...params.donnees, _savedAt: new Date().toISOString() })
       );
-      console.log(`[AutoSave] Saved to localStorage: ${params.typeDocument}`);
+      console.log(`[AutoSave] Saved to localStorage fallback: ${params.typeDocument}`);
       return true;
     } catch {
       return false;
@@ -98,7 +110,15 @@ async function saveWithRetry(
           await new Promise(r => setTimeout(r, RETRY_DELAY));
           continue;
         }
-        return false;
+
+        const fallbackSaved = await savePublicFormDocument({
+          apprenantId: params.apprenantId,
+          typeDocument: params.typeDocument,
+          titre: params.titre,
+          donnees: { ...params.donnees, module_id: params.moduleId || null },
+        });
+
+        return fallbackSaved;
       }
 
       // Also save to localStorage as backup

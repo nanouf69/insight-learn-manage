@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { savePublicFormDocument } from "@/lib/savePublicFormDocument";
 
 export async function saveFormDocument(params: {
   apprenantId: string;
@@ -8,9 +9,18 @@ export async function saveFormDocument(params: {
   moduleId?: number;
 }) {
   const { data: { user } } = await supabase.auth.getUser();
+
   if (!user) {
-    console.error("No authenticated user for saving form document");
-    return false;
+    console.warn("No authenticated user, fallback to backend save-public-form");
+    return savePublicFormDocument({
+      apprenantId: params.apprenantId,
+      typeDocument: params.typeDocument,
+      titre: params.titre,
+      donnees: {
+        ...params.donnees,
+        module_id: params.moduleId || null,
+      },
+    });
   }
 
   const { error } = await supabase
@@ -25,8 +35,25 @@ export async function saveFormDocument(params: {
     } as any);
 
   if (error) {
-    console.error("Error saving form document:", error);
+    console.error("Error saving form document (direct insert):", error);
+    const fallbackOk = await savePublicFormDocument({
+      apprenantId: params.apprenantId,
+      typeDocument: params.typeDocument,
+      titre: params.titre,
+      donnees: {
+        ...params.donnees,
+        module_id: params.moduleId || null,
+      },
+    });
+
+    if (fallbackOk) {
+      console.warn("Fallback save-public-form succeeded after direct insert failure");
+      return true;
+    }
+
     return false;
   }
+
   return true;
 }
+
