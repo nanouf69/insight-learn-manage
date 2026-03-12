@@ -241,7 +241,19 @@ function PassageMatiere({
     setReponses(prev => ({ ...prev, [qId]: val }));
   };
 
-  const handleTerminer = () => onTerminer(reponses);
+  const allAnswered = matiere.questions.every(q => {
+    const rep = reponses[q.id];
+    if (q.type === "QCM") return Array.isArray(rep) && rep.length > 0;
+    return typeof rep === "string" && rep.trim().length > 0;
+  });
+
+  const handleTerminer = () => {
+    if (!allAnswered) {
+      toast.error("Veuillez répondre à toutes les questions avant de terminer la matière.");
+      return;
+    }
+    onTerminer(reponses);
+  };
   const handleExpire = () => { setExpire(true); onTerminer(reponses); };
 
   const isMultiple = (q: Question) =>
@@ -375,9 +387,10 @@ function PassageMatiere({
             <ArrowRight className="w-4 h-4" />
           </Button>
         ) : (
-          <Button onClick={handleTerminer} className="gap-2 bg-green-600 hover:bg-green-700">
+          <Button onClick={handleTerminer} disabled={!allAnswered} className="gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-50">
             <CheckCircle2 className="w-4 h-4" />
             Terminer la matière
+            {!allAnswered && <span className="text-xs">({matiere.questions.filter(q => { const r = reponses[q.id]; return q.type === "QCM" ? Array.isArray(r) && r.length > 0 : typeof r === "string" && r.trim().length > 0; }).length}/{matiere.questions.length})</span>}
           </Button>
         )}
       </div>
