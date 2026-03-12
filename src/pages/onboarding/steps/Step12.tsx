@@ -166,11 +166,16 @@ export default function Step12() {
     apprenantId: string,
     pdfData: ReturnType<typeof buildRecapData>
   ) => {
+    console.log('[persistRecapDocument] Début - apprenantId:', apprenantId);
+    
     const blob = generateRecapitulatifPDF(pdfData, { returnBlob: true });
 
     if (!(blob instanceof Blob)) {
+      console.error('[persistRecapDocument] Échec génération PDF - blob:', typeof blob);
       throw new Error("Impossible de générer le PDF de récapitulatif");
     }
+
+    console.log('[persistRecapDocument] PDF généré - taille:', blob.size, 'bytes');
 
     const fileName = `recapitulatif_inscription_${Date.now()}.pdf`;
     const file = new File([blob], fileName, { type: "application/pdf" });
@@ -181,17 +186,27 @@ export default function Step12() {
     formData.append('titre', "Document de bienvenue - Récapitulatif d'inscription");
     formData.append('type_document', 'recapitulatif_inscription');
 
+    console.log('[persistRecapDocument] Appel edge function upload-document-inscription...');
     const { data, error } = await supabase.functions.invoke('upload-document-inscription', {
       body: formData,
     });
 
+    console.log('[persistRecapDocument] Réponse - data:', JSON.stringify(data), 'error:', error);
+
     if (error) {
+      console.error('[persistRecapDocument] Erreur fonction:', error);
       throw error;
     }
 
-    if (!data?.success) {
-      throw new Error(data?.error || "Échec de sauvegarde du récapitulatif");
+    // supabase.functions.invoke peut retourner data comme string
+    const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+
+    if (!parsed?.success) {
+      console.error('[persistRecapDocument] Échec:', parsed);
+      throw new Error(parsed?.error || "Échec de sauvegarde du récapitulatif");
     }
+
+    console.log('[persistRecapDocument] Succès:', parsed.message);
   };
 
   const handleSubmit = async () => {
