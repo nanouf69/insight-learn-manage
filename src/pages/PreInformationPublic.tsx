@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, FileText, ClipboardList, Target, Loader2 } from "lucide-react";
+import { CheckCircle2, FileText, ClipboardList, Target, Loader2, Eraser } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Toaster as Sonner } from "@/components/ui/sonner";
