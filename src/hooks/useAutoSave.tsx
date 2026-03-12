@@ -110,7 +110,15 @@ async function saveWithRetry(
           await new Promise(r => setTimeout(r, RETRY_DELAY));
           continue;
         }
-        return false;
+
+        const fallbackSaved = await savePublicFormDocument({
+          apprenantId: params.apprenantId,
+          typeDocument: params.typeDocument,
+          titre: params.titre,
+          donnees: { ...params.donnees, module_id: params.moduleId || null },
+        });
+
+        return fallbackSaved;
       }
 
       // Also save to localStorage as backup
