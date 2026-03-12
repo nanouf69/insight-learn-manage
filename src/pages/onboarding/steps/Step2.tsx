@@ -1,6 +1,16 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, ArrowLeft, ExternalLink, AlertCircle, CheckSquare } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { OnboardingLayout } from "../OnboardingLayout";
 import step2Cma from "@/assets/onboarding/step2-cma.png";
 import step2Cards from "@/assets/onboarding/step2-cma-cards.png";
