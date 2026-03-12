@@ -693,7 +693,7 @@ function EcranResultats({
                                   ? / {pts} pt{pts > 1 ? "s" : ""}
                                 </span>
                               ) : (
-                                <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${isCorrect ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"}`}>
+                                <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${isCorrect ? "bg-green-200 text-green-800" : pointsObtenus > 0 ? "bg-amber-200 text-amber-800" : "bg-red-200 text-red-800"}`}>
                                   +{pointsObtenus} / {pts} pt{pts > 1 ? "s" : ""}
                                 </span>
                               )}
