@@ -391,6 +391,10 @@ export default function PreInformationPublic() {
   const [signature, setSignature] = useState("");
   const [signatureDate] = useState(new Date().toLocaleDateString("fr-FR"));
 
+  // Canvas signature for first two documents
+  const [analyseSignatureData, setAnalyseSignatureData] = useState<string | null>(null);
+  const [projetSignatureData, setProjetSignatureData] = useState<string | null>(null);
+
   useEffect(() => {
     if (!apprenantId) {
       setError("Lien invalide — identifiant manquant");
