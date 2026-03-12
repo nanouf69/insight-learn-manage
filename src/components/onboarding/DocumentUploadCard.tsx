@@ -27,7 +27,7 @@ export function DocumentUploadCard({
   title,
   description,
   icon: Icon,
-  sessionId,
+  sessionId: _sessionId,
   apprenantId,
   expectedNom,
   expectedPrenom,
