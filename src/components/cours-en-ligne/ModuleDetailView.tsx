@@ -2921,6 +2921,21 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       });
     };
 
+    const handleQrcAnswerChange = (key: string, value: string) => {
+      setQrcAnswers(prev => ({ ...prev, [key]: value }));
+      setSelectedAnswers(prev => {
+        const next = { ...prev, [key]: value };
+        autoSaveAnswers(next);
+        return next;
+      });
+      setUnansweredKeys(prev => {
+        if (!prev.has(key)) return prev;
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
+    };
+
     const totalQuestions = activeExercices.reduce((sum, e) => sum + (e.questions?.length || 0), 0);
     const correctCount = activeExercices.reduce((sum, e) => {
       if (!e.questions) return sum;
