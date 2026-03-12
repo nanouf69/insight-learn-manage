@@ -209,6 +209,19 @@ const Index = () => {
               />
             </div>
 
+            {/* Actions rapides */}
+            <div className="flex flex-wrap gap-3">
+              <Button 
+                onClick={handleRelanceDossierBienvenue} 
+                disabled={sendingRelance}
+                variant="outline"
+                className="gap-2 border-orange-300 text-orange-700 hover:bg-orange-50"
+              >
+                {sendingRelance ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                {sendingRelance ? "Envoi en cours..." : "📋 Relancer dossiers bienvenue incomplets"}
+              </Button>
+            </div>
+
             {/* Two Column Layout */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
               <UpcomingSessions />
