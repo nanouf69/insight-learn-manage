@@ -517,18 +517,18 @@ export default function PreInformationPublic() {
 
   const handleSubmitProjet = async () => {
     if (!validateRequired(PROJET_QUESTIONS, projetAnswers)) return;
-    if (!signature.trim()) { toast.error("Veuillez signer le document"); return; }
+    if (!projetSignatureData) { toast.error("Veuillez signer le document (dessinez votre signature)"); return; }
     const saved = await saveForm("projet-professionnel", `Projet professionnel – ${formationLabel}`, {
       reponses: formatAnswers(projetAnswers, projetOther),
       apprenant_nom: apprenant?.nom,
       apprenant_prenom: apprenant?.prenom,
       formation: formationLabel,
+      _signature_image: projetSignatureData,
     });
     if (saved) {
       toast.success("Projet professionnel enregistré !");
       setCompletedSteps((prev) => new Set([...prev, "projet"]));
       setCurrentStep("competences");
-      setSignature("");
       setMissingFields(new Set());
     }
   };
