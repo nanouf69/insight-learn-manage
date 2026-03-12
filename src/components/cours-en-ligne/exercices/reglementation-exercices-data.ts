@@ -677,8 +677,8 @@ export const REGLEMENTATION_LOCALE_EXERCICES: {
         { lettre: "D", texte: "Les réponses A et B", correct: true },
       ]},
       { id: 7, enonce: "Quelles sont les caractéristiques de la lettre apposée sur le cadran du taximètre après adaptation tarifaire ?", choix: [
-        { lettre: "A", texte: "Lettre majuscule E de couleur bleue", correct: true },
-        { lettre: "B", texte: "Lettre majuscule U de couleur verte" },
+        { lettre: "A", texte: "Lettre majuscule E de couleur bleue" },
+        { lettre: "B", texte: "Lettre majuscule U de couleur verte", correct: true },
         { lettre: "C", texte: "Lettre majuscule T de couleur rouge" },
         { lettre: "D", texte: "Lettre majuscule A de couleur noire" },
       ]},
