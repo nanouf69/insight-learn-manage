@@ -35,6 +35,7 @@ export default function Step2() {
   };
 
   return (
+    <OnboardingLayout currentStep={2} totalSteps={11} title="Inscription sur la plateforme CMA">
       <div className="space-y-8">
         <div className="bg-white border border-gray-200 rounded-2xl p-6 lg:p-8">
           <p className="text-gray-700 mb-6">
@@ -48,15 +49,33 @@ export default function Step2() {
             </p>
           </div>
 
-          <a 
-            href="https://www.exament3p.fr" 
-            target="_blank" 
-            rel="noopener noreferrer"
+          <button
+            onClick={handleOpenSite}
             className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-xl transition-colors mb-8"
           >
             Accéder à exament3p.fr
             <ExternalLink className="w-4 h-4" />
-          </a>
+          </button>
+
+          <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 text-amber-500" />
+                  Rappel important
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-base leading-relaxed">
+                  N'oubliez pas : après avoir créé un compte sur le site qui va apparaître, <strong className="text-foreground">merci de revenir dans les étapes de la procédure pour terminer votre inscription</strong>.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmOpen}>
+                  J'ai compris, ouvrir le site
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           <div className="space-y-6">
             <div>
