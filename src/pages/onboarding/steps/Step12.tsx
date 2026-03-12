@@ -4,6 +4,7 @@ import { ArrowLeft, Phone, CheckCircle, Clock, AlertTriangle, User, FileText, Ca
 import { OnboardingLayout } from "../OnboardingLayout";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
+import { savePublicFormDocument } from "@/lib/savePublicFormDocument";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
@@ -298,6 +299,45 @@ export default function Step12() {
       } catch (recapError) {
         recapSaved = false;
         console.error('Erreur sauvegarde auto du récapitulatif:', recapError);
+      }
+
+      // Force save all onboarding data as a document in apprenant_documents_completes
+      // so it appears in the CRM "Formulaires" tab
+      const motDePasseCmaFinal = localStorage.getItem('onboarding_mot_de_passe_cma') || '';
+      const selectedExamFinal = datesExamenTheorique.find(e => e.value === dateExamen);
+      
+      try {
+        await savePublicFormDocument({
+          apprenantId,
+          typeDocument: "dossier-bienvenue",
+          titre: "Dossier de bienvenue - Inscription CMA",
+          donnees: {
+            nom,
+            prenom,
+            email,
+            telephone,
+            numero_dossier_cma: numeroDossier,
+            mot_de_passe_cma: motDePasseCmaFinal,
+            type_examen: getTypeExamenLabel(typeExamen),
+            date_examen_theorique: dateExamen,
+            lieu_examen: selectedExamFinal?.lieu || '',
+            b2_vierge: b2Vierge,
+            etapes_confirmees: {
+              etape_3_departement: localStorage.getItem('onboarding_step3_confirmed') === 'true',
+              etape_4_type_epreuve: localStorage.getItem('onboarding_step4_confirmed') === 'true',
+              etape_5_date_examen: localStorage.getItem('onboarding_step5_confirmed') === 'true',
+              etape_6_formulaire: localStorage.getItem('onboarding_step6_confirmed') === 'true',
+              etape_7_mot_de_passe: localStorage.getItem('onboarding_step7_confirmed') === 'true',
+              etape_8_email_validation: localStorage.getItem('onboarding_step8_confirmed') === 'true',
+              etape_9_activation_compte: localStorage.getItem('onboarding_step9_confirmed') === 'true',
+              etape_10_documents: localStorage.getItem('onboarding_step10_confirmed') === 'true',
+            },
+            date_completion: new Date().toISOString(),
+          },
+        });
+        console.log("Dossier bienvenue sauvegardé dans apprenant_documents_completes");
+      } catch (docErr) {
+        console.error("Erreur sauvegarde dossier bienvenue:", docErr);
       }
 
       setIsSubmitting(false);

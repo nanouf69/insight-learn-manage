@@ -41,3 +41,24 @@ verify_jwt = false
 
 [functions.upload-fournisseur-document]
 verify_jwt = false
+
+[functions.save-public-form]
+verify_jwt = false
+
+[functions.search-apprenants-formateur]
+verify_jwt = false
+
+[functions.create-apprenant-account]
+verify_jwt = false
+
+[functions.delete-apprenant-account]
+verify_jwt = false
+
+[functions.resend-credentials]
+verify_jwt = false
+
+[functions.get-formateur-results]
+verify_jwt = false
+
+[functions.relance-dossier-bienvenue]
+verify_jwt = false
