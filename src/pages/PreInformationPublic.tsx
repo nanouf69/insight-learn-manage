@@ -708,8 +708,8 @@ export default function PreInformationPublic() {
               </div>
 
               <div className="border-t pt-4 space-y-2">
-                <label className="text-sm font-medium">Signature (Nom et Prénom) *</label>
-                <Input value={signature} onChange={(e) => setSignature(e.target.value)} placeholder="Votre nom et prénom pour valider" />
+                <label className="text-sm font-medium">Signature manuscrite *</label>
+                <SignatureCanvas onSignatureChange={setProjetSignatureData} />
                 <p className="text-xs text-muted-foreground">Fait le {signatureDate}</p>
               </div>
 
