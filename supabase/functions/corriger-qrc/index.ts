@@ -15,6 +15,7 @@ serve(async (req) => {
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY non configurée");
 
     const isFrancais = matiereId === "francais";
+    const nbReponsesAttendues = reponsesAttendues.length;
 
     const systemPrompt = isFrancais
       ? `Tu es un correcteur d'examen de Français pour le permis de taxi/VTC. 
@@ -31,6 +32,9 @@ Règles STRICTES :
 - IGNORE TOTALEMENT : les fautes d'orthographe, les accents, les majuscules/minuscules, la ponctuation, les abréviations, les raccourcis d'écriture
 - Une réponse est correcte si elle contient l'idée principale, même mal écrite
 - Exemples acceptés : "pdc" pour "permis de conduire", "carte pro" pour "carte professionnelle", "cgt" pour "code général des transports", sans accents, etc.
+- NOTATION AU PRORATA : compte combien de réponses attendues l'étudiant a mentionnées parmi les ${nbReponsesAttendues} réponses possibles
+- Si l'étudiant donne N bonnes réponses sur ${nbReponsesAttendues} attendues, il obtient (N / ${nbReponsesAttendues}) × ${pointsQuestion} points, arrondi au dixième
+- Si l'étudiant donne au moins ${nbReponsesAttendues} bonnes réponses (même s'il en écrit plus), il obtient le maximum de points
 - Réponds UNIQUEMENT avec un objet JSON valide, rien d'autre`;
 
     const userPrompt = isFrancais
@@ -47,17 +51,23 @@ Points pour cette question : ${pointsQuestion}
   "explication": "courte explication en une phrase"
 }`
       : `Question : "${question}"
-Réponse(s) attendue(s) : ${reponsesAttendues.join(" / ")}
+Réponse(s) attendue(s) (${nbReponsesAttendues} éléments) : ${reponsesAttendues.join(" / ")}
 Réponse de l'étudiant : "${reponseEtudiant}"
 Points pour cette question : ${pointsQuestion}
 
-L'étudiant a-t-il répondu correctement (même avec fautes/abréviations/sans accents) ?
+Compte combien de réponses attendues l'étudiant a mentionnées (ignore orthographe, accents, majuscules, abréviations).
+Si l'étudiant mentionne N éléments corrects sur ${nbReponsesAttendues} attendus :
+- pointsObtenus = arrondi de (N / ${nbReponsesAttendues}) × ${pointsQuestion}
+- estCorrect = true si N >= ${nbReponsesAttendues}, sinon false (mais il peut quand même avoir des points partiels)
+
 Retourne ce JSON EXACT :
 {
-  "estCorrect": true ou false,
-  "pointsObtenus": ${pointsQuestion} si correct, sinon 0,
+  "estCorrect": true ou false (true seulement si toutes les réponses attendues sont couvertes),
+  "pointsObtenus": nombre de points au prorata (entre 0 et ${pointsQuestion}),
   "nombrefautes": 0,
-  "explication": "courte explication en une phrase"
+  "nbReponsesCorrectes": nombre de réponses attendues trouvées dans la réponse de l'étudiant,
+  "nbReponsesAttendues": ${nbReponsesAttendues},
+  "explication": "courte explication mentionnant les éléments trouvés et manquants"
 }`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -98,22 +108,26 @@ Retourne ce JSON EXACT :
     // Parse le JSON retourné par l'IA
     let result;
     try {
-      // Extraire le JSON même si l'IA ajoute du texte autour
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error("Pas de JSON trouvé");
       result = JSON.parse(jsonMatch[0]);
     } catch {
-      // Fallback : correction par mots-clés si l'IA échoue
-      const repNormalisee = reponseEtudiant.toLowerCase().replace(/[^a-z0-9 ]/g, "");
-      const estCorrect = reponsesAttendues.some(mc => {
-        const mcNormalise = mc.toLowerCase().replace(/[^a-z0-9 ]/g, "");
-        return repNormalisee.includes(mcNormalise);
+      // Fallback : correction par mots-clés avec prorata
+      const repNormalisee = reponseEtudiant.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+      let nbTrouvees = 0;
+      reponsesAttendues.forEach((mc: string) => {
+        const mcNormalise = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+        if (repNormalisee.includes(mcNormalise)) nbTrouvees++;
       });
+      const ratio = nbReponsesAttendues > 0 ? nbTrouvees / nbReponsesAttendues : 0;
+      const pts = Math.round(ratio * pointsQuestion * 10) / 10;
       result = {
-        estCorrect,
-        pointsObtenus: estCorrect ? pointsQuestion : 0,
+        estCorrect: nbTrouvees >= nbReponsesAttendues,
+        pointsObtenus: Math.min(pts, pointsQuestion),
         nombrefautes: 0,
-        explication: "Correction automatique par mots-clés (fallback)",
+        nbReponsesCorrectes: nbTrouvees,
+        nbReponsesAttendues: nbReponsesAttendues,
+        explication: `Correction automatique par mots-clés : ${nbTrouvees}/${nbReponsesAttendues} éléments trouvés`,
       };
     }
 
