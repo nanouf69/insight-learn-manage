@@ -3478,8 +3478,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     const renderSingleExercicePage = (exo: ExerciceItem) => {
       const handleQrcCorrection = async (exoId: number, q: any, key: string) => {
-        const reponse = qrcAnswers[key]?.trim();
-        if (!reponse) { toast.error("Écrivez une réponse avant de valider"); return; }
+        const existingAnswer = selectedAnswers[key];
+        const reponse = (qrcAnswers[key] ?? (typeof existingAnswer === "string" ? existingAnswer : "")).trim();
         setQrcResults(prev => ({ ...prev, [key]: "loading" }));
         try {
           const { data, error } = await supabase.functions.invoke("corriger-qrc", {
