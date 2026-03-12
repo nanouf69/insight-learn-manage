@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Eye, FileImage, ZoomIn, ZoomOut, Images, FileText } from "lucide-react";
+import { useEffect, useMemo, useState, useCallback } from "react";
+import { Eye, FileImage, ZoomIn, ZoomOut, Images, FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import PdfSlideViewer from "./PdfSlideViewer";
