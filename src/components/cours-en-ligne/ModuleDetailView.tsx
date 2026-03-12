@@ -3632,9 +3632,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         </div>
                       )}
                       {qrcResult && qrcResult !== "loading" && (
-                        <div className={`p-3 rounded-lg border-2 mt-2 ${qrcResult.estCorrect ? "bg-emerald-50 border-emerald-500 dark:bg-emerald-950" : "bg-destructive/10 border-destructive"}`}>
+                        <div className={`p-3 rounded-lg border-2 mt-2 ${qrcResult.estCorrect ? "bg-emerald-50 border-emerald-500 dark:bg-emerald-950" : qrcResult.pointsObtenus > 0 ? "bg-amber-50 border-amber-500 dark:bg-amber-950" : "bg-destructive/10 border-destructive"}`}>
                           <p className="font-semibold text-sm">
-                            🤖 {qrcResult.estCorrect ? "✅ Correct" : "❌ Incorrect"} — {qrcResult.pointsObtenus}/2 pts
+                            🤖 {qrcResult.estCorrect ? "✅ Correct" : qrcResult.pointsObtenus > 0 ? "⚠️ Partiellement correct" : "❌ Incorrect"} — {qrcResult.pointsObtenus}/2 pts
                           </p>
                           <p className="text-sm mt-1">{qrcResult.explication}</p>
                           {q.reponsesAttendues && (
