@@ -4,13 +4,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, FileText, ClipboardList, Target, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { getCompetencesForFormation, type CompetencesData } from "@/components/cours-en-ligne/competences-checklist-data";
+import { getCompetencesForFormation } from "@/components/cours-en-ligne/competences-checklist-data";
 
 interface ApprenantInfo {
   id: string;
@@ -28,6 +27,15 @@ interface ApprenantInfo {
 
 type FormStep = "analyse" | "projet" | "competences";
 
+interface QCMQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  multiple?: boolean;
+  required?: boolean;
+  hasOther?: boolean;
+}
+
 function getFormationLabel(type: string | null): string {
   if (!type) return "Formation";
   const t = type.toUpperCase();
@@ -38,49 +46,346 @@ function getFormationLabel(type: string | null): string {
   return "Formation";
 }
 
-function isTaxiType(type: string | null): boolean {
-  if (!type) return false;
-  const t = type.toUpperCase();
-  return t.includes("TAXI") || t === "TA";
+// ========== ANALYSE DU BESOIN — QCM ==========
+const ANALYSE_QUESTIONS: QCMQuestion[] = [
+  {
+    id: "situation_actuelle",
+    question: "Quelle est votre situation actuelle ?",
+    options: ["Salarié(e)", "Demandeur d'emploi", "Indépendant(e) / Auto-entrepreneur", "Étudiant(e)", "En reconversion professionnelle", "Intérimaire", "Sans activité"],
+    required: true,
+    hasOther: true,
+  },
+  {
+    id: "niveau_etude",
+    question: "Quel est votre niveau d'études ?",
+    options: ["Sans diplôme", "CAP / BEP", "Baccalauréat", "Bac+2 (BTS, DUT)", "Bac+3 et plus", "Diplôme étranger"],
+    required: true,
+  },
+  {
+    id: "experience_transport",
+    question: "Avez-vous une expérience dans le transport de personnes ?",
+    options: ["Aucune expérience", "Moins d'1 an", "1 à 3 ans", "3 à 5 ans", "Plus de 5 ans"],
+    required: true,
+  },
+  {
+    id: "type_experience",
+    question: "Si oui, dans quel secteur ?",
+    options: ["Taxi", "VTC", "Ambulance / VSL", "Transport scolaire", "Livraison / Coursier", "Aucun"],
+    multiple: true,
+  },
+  {
+    id: "permis_conduire",
+    question: "Depuis combien de temps avez-vous le permis B ?",
+    options: ["Moins de 3 ans", "3 à 5 ans", "5 à 10 ans", "Plus de 10 ans"],
+    required: true,
+  },
+  {
+    id: "motivation",
+    question: "Quelle est votre principale motivation pour cette formation ?",
+    options: [
+      "Obtenir la carte professionnelle",
+      "Reconversion professionnelle",
+      "Compléter une activité existante",
+      "Créer mon entreprise de transport",
+      "Travailler comme salarié dans le transport",
+      "Être indépendant / liberté professionnelle",
+    ],
+    required: true,
+    multiple: true,
+  },
+  {
+    id: "disponibilite",
+    question: "Quelles sont vos disponibilités pour suivre la formation ?",
+    options: ["Temps plein (du lundi au vendredi)", "En soirée uniquement", "Le week-end uniquement", "Formation en e-learning à mon rythme", "Mixte présentiel + e-learning"],
+    required: true,
+  },
+  {
+    id: "financement",
+    question: "Quel mode de financement envisagez-vous ?",
+    options: ["CPF (Compte Personnel de Formation)", "France Travail (ex Pôle Emploi)", "OPCO / Employeur", "Financement personnel", "Région / Collectivité", "Je ne sais pas encore"],
+    required: true,
+    hasOther: true,
+  },
+  {
+    id: "besoins_specifiques",
+    question: "Avez-vous des besoins spécifiques ?",
+    options: ["Aucun besoin spécifique", "Situation de handicap (aménagement nécessaire)", "Difficultés avec le français", "Besoin d'accompagnement renforcé", "Contraintes médicales"],
+    multiple: true,
+  },
+  {
+    id: "comment_connu",
+    question: "Comment avez-vous connu FTRANSPORT ?",
+    options: ["Recherche internet / Google", "Réseaux sociaux (Facebook, Instagram...)", "Bouche-à-oreille / Ancien élève", "France Travail / Pôle Emploi", "Salon / Forum", "Publicité"],
+    required: true,
+    hasOther: true,
+  },
+  {
+    id: "attentes",
+    question: "Quelles sont vos principales attentes vis-à-vis de la formation ?",
+    options: [
+      "Réussir l'examen du premier coup",
+      "Acquérir les compétences métier",
+      "Être accompagné(e) dans mes démarches",
+      "Avoir un suivi personnalisé",
+      "Accéder à des outils e-learning performants",
+      "Être opérationnel(le) rapidement",
+    ],
+    multiple: true,
+    required: true,
+  },
+  {
+    id: "delai_formation",
+    question: "Quand souhaitez-vous commencer la formation ?",
+    options: ["Dès que possible", "Dans le mois", "Dans les 3 prochains mois", "Dans les 6 prochains mois", "Je n'ai pas encore décidé"],
+    required: true,
+  },
+];
+
+// ========== PROJET PROFESSIONNEL — QCM ==========
+const PROJET_QUESTIONS: QCMQuestion[] = [
+  {
+    id: "objectif_court_terme",
+    question: "Quel est votre objectif à court terme (6 mois) ?",
+    options: [
+      "Obtenir la carte professionnelle TAXI",
+      "Obtenir la carte professionnelle VTC",
+      "Démarrer une activité de transport",
+      "Trouver un emploi salarié dans le transport",
+      "Compléter une carte existante (passerelle)",
+    ],
+    required: true,
+  },
+  {
+    id: "objectif_moyen_terme",
+    question: "Quel est votre objectif à moyen terme (1 à 3 ans) ?",
+    options: [
+      "Développer ma clientèle",
+      "Créer ma propre société de transport",
+      "Acquérir un ou plusieurs véhicules",
+      "Devenir locataire ou propriétaire d'une licence TAXI",
+      "Travailler pour une plateforme (Uber, Bolt, Marcel...)",
+      "Évoluer vers un poste de responsable / gestionnaire",
+    ],
+    required: true,
+    multiple: true,
+  },
+  {
+    id: "type_activite",
+    question: "Quel type d'activité envisagez-vous ?",
+    options: [
+      "Salarié(e) d'une société de transport",
+      "Indépendant(e) / Auto-entrepreneur",
+      "Locataire d'une licence TAXI",
+      "Gérant(e) d'une société (SASU, SARL...)",
+      "Capacitaire (exploitant)",
+      "Je ne sais pas encore",
+    ],
+    required: true,
+  },
+  {
+    id: "zone_geographique",
+    question: "Dans quelle zone géographique souhaitez-vous exercer ?",
+    options: [
+      "Lyon et agglomération",
+      "Département du Rhône",
+      "Région Auvergne-Rhône-Alpes",
+      "Île-de-France / Paris",
+      "Autre grande ville de France",
+      "Je ne sais pas encore",
+    ],
+    required: true,
+    hasOther: true,
+  },
+  {
+    id: "statut_juridique",
+    question: "Quel statut juridique envisagez-vous ?",
+    options: [
+      "Auto-entrepreneur / Micro-entreprise",
+      "SASU (Société par Actions Simplifiée Unipersonnelle)",
+      "SARL / EURL",
+      "Salarié (pas de société à créer)",
+      "Je ne sais pas encore",
+    ],
+    required: true,
+  },
+  {
+    id: "vehicule_prevu",
+    question: "Avez-vous déjà prévu un véhicule pour votre activité ?",
+    options: [
+      "Oui, j'ai déjà un véhicule adapté",
+      "Oui, je prévois d'acheter un véhicule",
+      "Je prévois de louer un véhicule (LOA / LLD)",
+      "Mon employeur fournira le véhicule",
+      "Non, pas encore",
+    ],
+    required: true,
+  },
+  {
+    id: "budget_investissement",
+    question: "Quel est votre budget d'investissement estimé pour démarrer ?",
+    options: [
+      "Moins de 5 000 €",
+      "5 000 € à 15 000 €",
+      "15 000 € à 30 000 €",
+      "30 000 € à 50 000 €",
+      "Plus de 50 000 €",
+      "Je ne sais pas encore",
+    ],
+  },
+  {
+    id: "date_debut_activite",
+    question: "Quand souhaitez-vous démarrer votre activité professionnelle ?",
+    options: [
+      "Immédiatement après l'obtention de la carte",
+      "Dans les 3 mois après la formation",
+      "Dans les 6 mois",
+      "Dans l'année",
+      "Je n'ai pas de date précise",
+    ],
+    required: true,
+  },
+  {
+    id: "connaissance_reglementation",
+    question: "Connaissez-vous la réglementation du secteur ?",
+    options: [
+      "Oui, très bien",
+      "Oui, les grandes lignes",
+      "Un peu, mais j'ai besoin de formation",
+      "Non, pas du tout",
+    ],
+    required: true,
+  },
+  {
+    id: "plateforme_envisagee",
+    question: "Envisagez-vous de travailler avec une plateforme de mise en relation ?",
+    options: [
+      "Oui, Uber",
+      "Oui, Bolt",
+      "Oui, Marcel / Free Now",
+      "Oui, plusieurs plateformes",
+      "Non, clientèle directe uniquement",
+      "Je ne sais pas encore",
+    ],
+    multiple: true,
+  },
+  {
+    id: "accompagnement_souhaite",
+    question: "Souhaitez-vous un accompagnement après la formation ?",
+    options: [
+      "Oui, pour les démarches administratives (carte pro, inscription...)",
+      "Oui, pour la création d'entreprise",
+      "Oui, pour trouver un emploi salarié",
+      "Non, je me débrouillerai seul(e)",
+    ],
+    multiple: true,
+    required: true,
+  },
+];
+
+// ========== COMPOSANT QCM ==========
+function QCMField({
+  q,
+  answers,
+  otherValues,
+  onAnswer,
+  onOtherChange,
+  missing,
+}: {
+  q: QCMQuestion;
+  answers: Record<string, string[]>;
+  otherValues: Record<string, string>;
+  onAnswer: (id: string, value: string, multiple?: boolean) => void;
+  onOtherChange: (id: string, value: string) => void;
+  missing: boolean;
+}) {
+  const selected = answers[q.id] || [];
+
+  return (
+    <div className={`p-3 rounded-lg border space-y-2 ${missing ? "border-red-400 bg-red-50/50" : "border-border"}`}>
+      <p className="text-sm font-medium">
+        {q.question} {q.required && <span className="text-red-500">*</span>}
+        {q.multiple && <span className="text-xs text-muted-foreground ml-1">(plusieurs réponses possibles)</span>}
+      </p>
+      <div className="grid gap-1.5">
+        {q.options.map((opt) => {
+          const isSelected = selected.includes(opt);
+          return (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => onAnswer(q.id, opt, q.multiple)}
+              className={`text-left text-sm px-3 py-2 rounded border transition-colors ${
+                isSelected
+                  ? "bg-primary/10 border-primary text-primary font-medium"
+                  : "bg-background border-border text-foreground hover:bg-muted/50"
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <span className={`w-4 h-4 rounded-${q.multiple ? "sm" : "full"} border-2 flex items-center justify-center shrink-0 ${
+                  isSelected ? "border-primary bg-primary" : "border-muted-foreground"
+                }`}>
+                  {isSelected && <span className="text-white text-[10px]">✓</span>}
+                </span>
+                {opt}
+              </span>
+            </button>
+          );
+        })}
+        {q.hasOther && (
+          <div className="flex items-center gap-2 mt-1">
+            <button
+              type="button"
+              onClick={() => onAnswer(q.id, "__other__", q.multiple)}
+              className={`text-left text-sm px-3 py-2 rounded border transition-colors flex-1 ${
+                selected.includes("__other__")
+                  ? "bg-primary/10 border-primary text-primary font-medium"
+                  : "bg-background border-border text-foreground hover:bg-muted/50"
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                  selected.includes("__other__") ? "border-primary bg-primary" : "border-muted-foreground"
+                }`}>
+                  {selected.includes("__other__") && <span className="text-white text-[10px]">✓</span>}
+                </span>
+                Autre :
+              </span>
+            </button>
+            {selected.includes("__other__") && (
+              <Input
+                className="flex-1"
+                placeholder="Précisez..."
+                value={otherValues[q.id] || ""}
+                onChange={(e) => onOtherChange(q.id, e.target.value)}
+              />
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function PreInformationPublic() {
   const [searchParams] = useSearchParams();
   const apprenantId = searchParams.get("id");
-  const formationType = searchParams.get("type"); // taxi, vtc, ta, va
-  
+  const formationType = searchParams.get("type");
+
   const [apprenant, setApprenant] = useState<ApprenantInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<FormStep>("analyse");
   const [completedSteps, setCompletedSteps] = useState<Set<FormStep>>(new Set());
   const [saving, setSaving] = useState(false);
+  const [missingFields, setMissingFields] = useState<Set<string>>(new Set());
 
-  // Analyse du besoin state
-  const [analyseData, setAnalyseData] = useState({
-    situation_actuelle: "",
-    experience_transport: "",
-    motivation: "",
-    disponibilite: "",
-    financement: "",
-    besoins_specifiques: "",
-    comment_connu: "",
-    attentes: "",
-  });
+  // QCM answers: { questionId: ["selected option 1", ...] }
+  const [analyseAnswers, setAnalyseAnswers] = useState<Record<string, string[]>>({});
+  const [analyseOther, setAnalyseOther] = useState<Record<string, string>>({});
+  const [projetAnswers, setProjetAnswers] = useState<Record<string, string[]>>({});
+  const [projetOther, setProjetOther] = useState<Record<string, string>>({});
 
-  // Projet professionnel state
-  const [projetData, setProjetData] = useState({
-    objectif_court_terme: "",
-    objectif_moyen_terme: "",
-    type_activite: "",
-    zone_geographique: "",
-    statut_juridique: "",
-    vehicule_prevu: "",
-    budget_investissement: "",
-    date_debut_souhaitee: "",
-  });
-
-  // Test de compétences state
+  // Compétences
   const [competencesAnswers, setCompetencesAnswers] = useState<Record<string, "oui" | "non">>({});
 
   const [signature, setSignature] = useState("");
@@ -97,38 +402,41 @@ export default function PreInformationPublic() {
 
   const loadApprenant = async () => {
     try {
-      const { data, error: fnError } = await supabase.functions.invoke("save-public-form", {
-        method: "GET",
-        body: undefined,
-        headers: { "Content-Type": "application/json" },
-      });
-      
-      // Use fetch directly for GET with query params
       const baseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const res = await fetch(
-        `${baseUrl}/functions/v1/save-public-form?id=${apprenantId}`,
-        {
-          method: "GET",
-          headers: {
-            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      
+      const res = await fetch(`${baseUrl}/functions/v1/save-public-form?id=${apprenantId}`, {
+        method: "GET",
+        headers: {
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          "Content-Type": "application/json",
+        },
+      });
       if (!res.ok) {
         setError("Apprenant non trouvé. Vérifiez votre lien.");
         setLoading(false);
         return;
       }
-      
-      const appData = await res.json();
-      setApprenant(appData);
-    } catch (err) {
+      setApprenant(await res.json());
+    } catch {
       setError("Erreur de chargement. Veuillez réessayer.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAnswer = (
+    setter: React.Dispatch<React.SetStateAction<Record<string, string[]>>>,
+    id: string,
+    value: string,
+    multiple?: boolean
+  ) => {
+    setMissingFields((prev) => { const n = new Set(prev); n.delete(id); return n; });
+    setter((prev) => {
+      const current = prev[id] || [];
+      if (multiple) {
+        return { ...prev, [id]: current.includes(value) ? current.filter((v) => v !== value) : [...current, value] };
+      }
+      return { ...prev, [id]: current.includes(value) ? [] : [value] };
+    });
   };
 
   const saveForm = async (typeDocument: string, titre: string, donnees: Record<string, any>) => {
@@ -137,10 +445,7 @@ export default function PreInformationPublic() {
       const baseUrl = import.meta.env.VITE_SUPABASE_URL;
       const res = await fetch(`${baseUrl}/functions/v1/save-public-form`, {
         method: "POST",
-        headers: {
-          "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          "Content-Type": "application/json",
-        },
+        headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, "Content-Type": "application/json" },
         body: JSON.stringify({
           apprenantId,
           typeDocument,
@@ -148,8 +453,7 @@ export default function PreInformationPublic() {
           donnees: { ...donnees, _status: "completed", _signed_by: signature, _signed_at: new Date().toISOString() },
         }),
       });
-
-      if (!res.ok) throw new Error("Erreur de sauvegarde");
+      if (!res.ok) throw new Error("Erreur");
       return true;
     } catch {
       toast.error("Erreur lors de la sauvegarde");
@@ -159,6 +463,30 @@ export default function PreInformationPublic() {
     }
   };
 
+  const validateRequired = (questions: QCMQuestion[], answers: Record<string, string[]>) => {
+    const missing = new Set<string>();
+    questions.forEach((q) => {
+      if (q.required && (!answers[q.id] || answers[q.id].length === 0)) missing.add(q.id);
+    });
+    setMissingFields(missing);
+    if (missing.size > 0) {
+      toast.error(`Veuillez répondre aux ${missing.size} question(s) obligatoire(s)`);
+      const el = document.getElementById(`q-${[...missing][0]}`);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return false;
+    }
+    return true;
+  };
+
+  const formatAnswers = (answers: Record<string, string[]>, otherValues: Record<string, string>) => {
+    const result: Record<string, string | string[]> = {};
+    for (const [k, v] of Object.entries(answers)) {
+      const mapped = v.map((val) => (val === "__other__" ? `Autre : ${otherValues[k] || ""}` : val));
+      result[k] = mapped.length === 1 ? mapped[0] : mapped;
+    }
+    return result;
+  };
+
   const effectiveType = formationType || apprenant?.type_apprenant || "vtc";
   const formationLabel = getFormationLabel(effectiveType);
   const competencesData = getCompetencesForFormation(effectiveType);
@@ -166,40 +494,38 @@ export default function PreInformationPublic() {
   const answeredCompetences = Object.keys(competencesAnswers).length;
 
   const handleSubmitAnalyse = async () => {
-    if (!signature.trim()) {
-      toast.error("Veuillez signer le document (nom et prénom)");
-      return;
-    }
+    if (!validateRequired(ANALYSE_QUESTIONS, analyseAnswers)) return;
+    if (!signature.trim()) { toast.error("Veuillez signer le document"); return; }
     const saved = await saveForm("analyse-besoin", `Analyse du besoin – ${formationLabel}`, {
-      ...analyseData,
+      reponses: formatAnswers(analyseAnswers, analyseOther),
       apprenant_nom: apprenant?.nom,
       apprenant_prenom: apprenant?.prenom,
       formation: formationLabel,
     });
     if (saved) {
       toast.success("Analyse du besoin enregistrée !");
-      setCompletedSteps(prev => new Set([...prev, "analyse"]));
+      setCompletedSteps((prev) => new Set([...prev, "analyse"]));
       setCurrentStep("projet");
       setSignature("");
+      setMissingFields(new Set());
     }
   };
 
   const handleSubmitProjet = async () => {
-    if (!signature.trim()) {
-      toast.error("Veuillez signer le document (nom et prénom)");
-      return;
-    }
+    if (!validateRequired(PROJET_QUESTIONS, projetAnswers)) return;
+    if (!signature.trim()) { toast.error("Veuillez signer le document"); return; }
     const saved = await saveForm("projet-professionnel", `Projet professionnel – ${formationLabel}`, {
-      ...projetData,
+      reponses: formatAnswers(projetAnswers, projetOther),
       apprenant_nom: apprenant?.nom,
       apprenant_prenom: apprenant?.prenom,
       formation: formationLabel,
     });
     if (saved) {
       toast.success("Projet professionnel enregistré !");
-      setCompletedSteps(prev => new Set([...prev, "projet"]));
+      setCompletedSteps((prev) => new Set([...prev, "projet"]));
       setCurrentStep("competences");
       setSignature("");
+      setMissingFields(new Set());
     }
   };
 
@@ -208,18 +534,15 @@ export default function PreInformationPublic() {
       toast.error(`Veuillez répondre à toutes les compétences (${answeredCompetences}/${totalCompetences})`);
       return;
     }
-    if (!signature.trim()) {
-      toast.error("Veuillez signer le document (nom et prénom)");
-      return;
-    }
+    if (!signature.trim()) { toast.error("Veuillez signer le document"); return; }
     const saved = await saveForm("test-competences", `Test de compétences – ${formationLabel}`, {
       answers: competencesAnswers,
-      sections: competencesData.sections.map(s => s.titre),
+      sections: competencesData.sections.map((s) => s.titre),
       formationLabel: competencesData.formationLabel,
     });
     if (saved) {
       toast.success("Test de compétences enregistré !");
-      setCompletedSteps(prev => new Set([...prev, "competences"]));
+      setCompletedSteps((prev) => new Set([...prev, "competences"]));
     }
   };
 
@@ -310,18 +633,14 @@ export default function PreInformationPublic() {
                   : "bg-background border-border text-muted-foreground"
               }`}
             >
-              {completedSteps.has(step.key) ? (
-                <CheckCircle2 className="w-4 h-4 text-green-600" />
-              ) : (
-                step.icon
-              )}
+              {completedSteps.has(step.key) ? <CheckCircle2 className="w-4 h-4 text-green-600" /> : step.icon}
               <span className="hidden sm:inline">{step.label}</span>
               <span className="sm:hidden">{i + 1}</span>
             </button>
           ))}
         </div>
 
-        {/* Step 1: Analyse du besoin */}
+        {/* Step 1: Analyse du besoin — QCM */}
         {currentStep === "analyse" && (
           <Card>
             <CardContent className="p-5 space-y-4">
@@ -329,57 +648,37 @@ export default function PreInformationPublic() {
                 <ClipboardList className="w-5 h-5" />
                 ANALYSE DU BESOIN — {formationLabel}
               </h2>
+              <p className="text-sm text-muted-foreground">Répondez aux questions suivantes en cochant la ou les réponses correspondantes.</p>
 
               <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium">Quelle est votre situation actuelle ? *</label>
-                  <Textarea value={analyseData.situation_actuelle} onChange={e => setAnalyseData(p => ({ ...p, situation_actuelle: e.target.value }))} placeholder="Salarié, demandeur d'emploi, indépendant..." />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Avez-vous une expérience dans le transport de personnes ?</label>
-                  <Textarea value={analyseData.experience_transport} onChange={e => setAnalyseData(p => ({ ...p, experience_transport: e.target.value }))} placeholder="Décrivez votre expérience..." />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Quelle est votre motivation pour cette formation ? *</label>
-                  <Textarea value={analyseData.motivation} onChange={e => setAnalyseData(p => ({ ...p, motivation: e.target.value }))} placeholder="Pourquoi souhaitez-vous suivre cette formation ?" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Quelles sont vos disponibilités ? *</label>
-                  <Textarea value={analyseData.disponibilite} onChange={e => setAnalyseData(p => ({ ...p, disponibilite: e.target.value }))} placeholder="Temps plein, temps partiel, contraintes horaires..." />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Quel mode de financement envisagez-vous ?</label>
-                  <Input value={analyseData.financement} onChange={e => setAnalyseData(p => ({ ...p, financement: e.target.value }))} placeholder="CPF, personnel, France Travail, OPCO..." />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Avez-vous des besoins spécifiques ? (handicap, aménagement...)</label>
-                  <Textarea value={analyseData.besoins_specifiques} onChange={e => setAnalyseData(p => ({ ...p, besoins_specifiques: e.target.value }))} placeholder="Précisez vos besoins..." />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Comment avez-vous connu Ftransport ?</label>
-                  <Input value={analyseData.comment_connu} onChange={e => setAnalyseData(p => ({ ...p, comment_connu: e.target.value }))} placeholder="Internet, bouche-à-oreille, ancien élève..." />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Quelles sont vos attentes principales ?</label>
-                  <Textarea value={analyseData.attentes} onChange={e => setAnalyseData(p => ({ ...p, attentes: e.target.value }))} placeholder="Ce que vous attendez de la formation..." />
-                </div>
+                {ANALYSE_QUESTIONS.map((q) => (
+                  <div key={q.id} id={`q-${q.id}`}>
+                    <QCMField
+                      q={q}
+                      answers={analyseAnswers}
+                      otherValues={analyseOther}
+                      onAnswer={(id, val, mult) => handleAnswer(setAnalyseAnswers, id, val, mult)}
+                      onOtherChange={(id, val) => setAnalyseOther((p) => ({ ...p, [id]: val }))}
+                      missing={missingFields.has(q.id)}
+                    />
+                  </div>
+                ))}
               </div>
 
-              {/* Signature */}
               <div className="border-t pt-4 space-y-2">
                 <label className="text-sm font-medium">Signature (Nom et Prénom) *</label>
-                <Input value={signature} onChange={e => setSignature(e.target.value)} placeholder="Votre nom et prénom pour valider" />
+                <Input value={signature} onChange={(e) => setSignature(e.target.value)} placeholder="Votre nom et prénom pour valider" />
                 <p className="text-xs text-muted-foreground">Fait le {signatureDate}</p>
               </div>
 
-              <Button className="w-full" onClick={handleSubmitAnalyse} disabled={saving || !analyseData.situation_actuelle || !analyseData.motivation || !analyseData.disponibilite}>
+              <Button className="w-full" onClick={handleSubmitAnalyse} disabled={saving}>
                 {saving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enregistrement...</> : "✅ Valider l'analyse du besoin"}
               </Button>
             </CardContent>
           </Card>
         )}
 
-        {/* Step 2: Projet professionnel */}
+        {/* Step 2: Projet professionnel — QCM */}
         {currentStep === "projet" && (
           <Card>
             <CardContent className="p-5 space-y-4">
@@ -387,50 +686,30 @@ export default function PreInformationPublic() {
                 <Target className="w-5 h-5" />
                 PROJET PROFESSIONNEL — {formationLabel}
               </h2>
+              <p className="text-sm text-muted-foreground">Répondez aux questions suivantes concernant votre projet professionnel.</p>
 
               <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium">Quel est votre objectif à court terme (6 mois) ? *</label>
-                  <Textarea value={projetData.objectif_court_terme} onChange={e => setProjetData(p => ({ ...p, objectif_court_terme: e.target.value }))} placeholder="Obtenir la carte professionnelle, démarrer l'activité..." />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Quel est votre objectif à moyen terme (1-3 ans) ? *</label>
-                  <Textarea value={projetData.objectif_moyen_terme} onChange={e => setProjetData(p => ({ ...p, objectif_moyen_terme: e.target.value }))} placeholder="Développer votre clientèle, créer votre société..." />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Quel type d'activité envisagez-vous ? *</label>
-                  <Input value={projetData.type_activite} onChange={e => setProjetData(p => ({ ...p, type_activite: e.target.value }))} placeholder="Salarié, indépendant, locataire de licence..." />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Dans quelle zone géographique souhaitez-vous exercer ?</label>
-                  <Input value={projetData.zone_geographique} onChange={e => setProjetData(p => ({ ...p, zone_geographique: e.target.value }))} placeholder="Lyon, Rhône, Île-de-France..." />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Quel statut juridique envisagez-vous ?</label>
-                  <Input value={projetData.statut_juridique} onChange={e => setProjetData(p => ({ ...p, statut_juridique: e.target.value }))} placeholder="Auto-entrepreneur, SASU, SARL..." />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Avez-vous prévu un véhicule ? Lequel ?</label>
-                  <Textarea value={projetData.vehicule_prevu} onChange={e => setProjetData(p => ({ ...p, vehicule_prevu: e.target.value }))} placeholder="Marque, modèle, achat ou location..." />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Quel est votre budget d'investissement estimé ?</label>
-                  <Input value={projetData.budget_investissement} onChange={e => setProjetData(p => ({ ...p, budget_investissement: e.target.value }))} placeholder="Budget approximatif..." />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Quand souhaitez-vous démarrer votre activité ?</label>
-                  <Input value={projetData.date_debut_souhaitee} onChange={e => setProjetData(p => ({ ...p, date_debut_souhaitee: e.target.value }))} placeholder="Dans 3 mois, après l'examen..." />
-                </div>
+                {PROJET_QUESTIONS.map((q) => (
+                  <div key={q.id} id={`q-${q.id}`}>
+                    <QCMField
+                      q={q}
+                      answers={projetAnswers}
+                      otherValues={projetOther}
+                      onAnswer={(id, val, mult) => handleAnswer(setProjetAnswers, id, val, mult)}
+                      onOtherChange={(id, val) => setProjetOther((p) => ({ ...p, [id]: val }))}
+                      missing={missingFields.has(q.id)}
+                    />
+                  </div>
+                ))}
               </div>
 
-              {/* Signature */}
               <div className="border-t pt-4 space-y-2">
                 <label className="text-sm font-medium">Signature (Nom et Prénom) *</label>
-                <Input value={signature} onChange={e => setSignature(e.target.value)} placeholder="Votre nom et prénom pour valider" />
+                <Input value={signature} onChange={(e) => setSignature(e.target.value)} placeholder="Votre nom et prénom pour valider" />
                 <p className="text-xs text-muted-foreground">Fait le {signatureDate}</p>
               </div>
 
-              <Button className="w-full" onClick={handleSubmitProjet} disabled={saving || !projetData.objectif_court_terme || !projetData.objectif_moyen_terme || !projetData.type_activite}>
+              <Button className="w-full" onClick={handleSubmitProjet} disabled={saving}>
                 {saving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enregistrement...</> : "✅ Valider le projet professionnel"}
               </Button>
             </CardContent>
@@ -461,7 +740,7 @@ export default function PreInformationPublic() {
                           <p className="text-xs flex-1">{item}</p>
                           <div className="flex gap-2 shrink-0">
                             <button
-                              onClick={() => setCompetencesAnswers(p => ({ ...p, [key]: "oui" }))}
+                              onClick={() => setCompetencesAnswers((p) => ({ ...p, [key]: "oui" }))}
                               className={`px-2 py-1 text-xs rounded border transition-colors ${
                                 competencesAnswers[key] === "oui"
                                   ? "bg-green-100 border-green-400 text-green-700"
@@ -471,7 +750,7 @@ export default function PreInformationPublic() {
                               Oui
                             </button>
                             <button
-                              onClick={() => setCompetencesAnswers(p => ({ ...p, [key]: "non" }))}
+                              onClick={() => setCompetencesAnswers((p) => ({ ...p, [key]: "non" }))}
                               className={`px-2 py-1 text-xs rounded border transition-colors ${
                                 competencesAnswers[key] === "non"
                                   ? "bg-red-100 border-red-400 text-red-700"
@@ -488,10 +767,9 @@ export default function PreInformationPublic() {
                 ))}
               </div>
 
-              {/* Signature */}
               <div className="border-t pt-4 space-y-2">
                 <label className="text-sm font-medium">Signature (Nom et Prénom) *</label>
-                <Input value={signature} onChange={e => setSignature(e.target.value)} placeholder="Votre nom et prénom pour valider" />
+                <Input value={signature} onChange={(e) => setSignature(e.target.value)} placeholder="Votre nom et prénom pour valider" />
                 <p className="text-xs text-muted-foreground">Fait le {signatureDate}</p>
               </div>
 
@@ -502,7 +780,6 @@ export default function PreInformationPublic() {
           </Card>
         )}
 
-        {/* Footer */}
         <div className="text-center text-xs text-muted-foreground pb-8">
           <p>FTRANSPORT — 86 Route de Genas, 69003 Lyon — 📞 04 28 29 60 91</p>
         </div>
