@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, CreditCard, MapPin, Info, Camera, AlertTriangle, Phone, User, Check, Pencil, Mail, CalendarDays } from "lucide-react";
+import { ArrowRight, CreditCard, MapPin, Info, Camera, AlertTriangle, Phone, User, Check, Pencil, Mail, CalendarDays, Home, FileText } from "lucide-react";
 import { OnboardingLayout } from "../OnboardingLayout";
 import { DocumentUploadCard } from "@/components/onboarding/DocumentUploadCard";
 import { Input } from "@/components/ui/input";
@@ -156,18 +156,35 @@ export default function Step1() {
       icon: CreditCard,
       title: "Pièce d'identité",
       description: "Carte d'identité ou passeport en cours de validité",
+      optional: false,
     },
     {
       id: 'justificatif_domicile',
       icon: MapPin,
       title: "Justificatif de domicile",
       description: "De moins de 3 mois (facture EDF, eau, téléphone...)",
+      optional: false,
+    },
+    {
+      id: 'attestation_hebergement',
+      icon: Home,
+      title: "Attestation d'hébergement",
+      description: "Si vous êtes hébergé(e) chez un tiers (facultatif)",
+      optional: true,
+    },
+    {
+      id: 'piece_identite_hebergeant',
+      icon: FileText,
+      title: "Pièce d'identité de l'hébergeant (recto verso)",
+      description: "Carte d'identité ou passeport de la personne qui vous héberge (facultatif)",
+      optional: true,
     },
     {
       id: 'photo_identite',
       icon: Camera,
       title: "Photo d'identité",
       description: "Fond clair obligatoire (blanc, beige ou bleu)",
+      optional: false,
     },
   ];
 
@@ -210,7 +227,7 @@ export default function Step1() {
   ];
 
   // Check if all required documents are valid
-  const allDocumentsValid = documents.every(doc => documentStatuses[doc.id] === 'valid');
+  const allDocumentsValid = documents.filter(doc => !doc.optional).every(doc => documentStatuses[doc.id] === 'valid');
   const hasRejected = Object.values(documentStatuses).some(s => s === 'rejected');
   
   // Check if any question has "Oui" answer
@@ -438,7 +455,7 @@ export default function Step1() {
         {/* Document upload cards */}
         <div className="space-y-4">
           {documents.map((doc) => {
-            const isNotValid = documentStatuses[doc.id] !== 'valid';
+            const isNotValid = !doc.optional && documentStatuses[doc.id] !== 'valid';
             return (
               <div key={doc.id}>
                 <div 
