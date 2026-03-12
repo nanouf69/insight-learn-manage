@@ -317,6 +317,31 @@ export const MODULES_DATA: ModuleInfo[] = [
     description: "Sources légales et textes réglementaires de la passerelle VA (arrêtés, décrets, ordonnances)",
     formations: ["vtc-pour-taxi"],
   },
+  // === Fiches Révisions ===
+  {
+    id: 70,
+    nom: "📝 FICHES RÉVISIONS VTC",
+    description: "Fiches de révision VTC : synthèse matières communes, spécialités VTC, définitions et bilan QRC.",
+    formations: ["vtc", "vtc-elearning", "vtc-cours-du-soir"],
+  },
+  {
+    id: 71,
+    nom: "📝 FICHES RÉVISIONS TAXI",
+    description: "Fiches de révision TAXI : synthèse matières communes, spécialités TAXI, définitions et bilan QRC.",
+    formations: ["taxi", "taxi-elearning"],
+  },
+  {
+    id: 72,
+    nom: "📝 FICHES RÉVISIONS TA",
+    description: "Fiches de révision Passerelle TA : synthèse spécialités TAXI, définitions TA et bilan QRC.",
+    formations: ["taxi-pour-vtc", "taxi-pour-vtc-elearning"],
+  },
+  {
+    id: 73,
+    nom: "📝 FICHES RÉVISIONS VA",
+    description: "Fiches de révision Passerelle VA : synthèse spécialités VTC, définitions VA et bilan QRC.",
+    formations: ["vtc-pour-taxi"],
+  },
   // === Modules Fin de Formation (Évaluation + Satisfaction) ===
   {
     id: 50,
