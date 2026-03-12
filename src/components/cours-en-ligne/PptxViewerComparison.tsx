@@ -34,13 +34,6 @@ export default function PptxViewerComparison({
 
   const handleIframeLoad = useCallback(() => setIframeLoading(false), []);
 
-  // Reset loading state when mode changes
-  useEffect(() => {
-    if (effectiveMode === "google" || effectiveMode === "google-zoom" || effectiveMode === "ms-office") {
-      setIframeLoading(true);
-    }
-  }, [effectiveMode]);
-
   const hasImages = imageUrls && imageUrls.length > 0;
 
   // Students are restricted to non-downloadable viewers
@@ -48,6 +41,13 @@ export default function PptxViewerComparison({
   const effectiveMode: "google" | "google-zoom" | "ms-office" | "images" | "pdf" = isStudentRestricted
     ? (pdfUrl ? "pdf" : hasImages ? "images" : "google")
     : mode;
+
+  // Reset loading state when mode changes
+  useEffect(() => {
+    if (effectiveMode === "google" || effectiveMode === "google-zoom" || effectiveMode === "ms-office") {
+      setIframeLoading(true);
+    }
+  }, [effectiveMode]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
