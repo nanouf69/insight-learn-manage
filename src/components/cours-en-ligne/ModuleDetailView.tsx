@@ -3615,8 +3615,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                       <Badge variant="outline" className="text-xs">QRC — Réponse libre</Badge>
                       <Textarea
                         placeholder="Écrivez votre réponse ici..."
-                        value={qrcAnswers[key] || ""}
-                        onChange={(e) => setQrcAnswers(prev => ({ ...prev, [key]: e.target.value }))}
+                        value={qrcAnswers[key] ?? (typeof selected === "string" ? selected : "")}
+                        onChange={(e) => handleQrcAnswerChange(key, e.target.value)}
                         disabled={qrcResult !== undefined && qrcResult !== "loading"}
                         className="mt-2"
                       />
