@@ -196,12 +196,22 @@ export default function PptxViewerComparison({
         )}
 
         {effectiveMode === "google" && (
-          <div className="border rounded-lg overflow-hidden" onContextMenu={e => e.preventDefault()}>
+          <div className="border rounded-lg overflow-hidden relative" onContextMenu={e => e.preventDefault()}>
+            {iframeLoading && (
+              <div className={`absolute inset-0 z-10 flex items-center justify-center bg-muted/80 backdrop-blur-sm ${viewerHeightClass}`}>
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  <span className="text-sm text-muted-foreground font-medium">Chargement du document…</span>
+                </div>
+              </div>
+            )}
             <div className={`w-full ${viewerHeightClass} max-w-[1210px] mx-auto`}>
               <iframe
                 src={googleSingleSlideUrl}
                 className="w-full h-full border-0"
                 allowFullScreen
+                loading="lazy"
+                onLoad={handleIframeLoad}
                 title={`Google Slides — ${nom}`}
                 sandbox="allow-scripts allow-same-origin allow-popups"
               />
