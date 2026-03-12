@@ -395,7 +395,7 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
 
   const handleTemplateSelect = (templateId: string) => {
     setSelectedTemplate(templateId);
-    const template = EMAIL_TEMPLATES.find(t => t.id === templateId);
+    const template = allTemplates.find(t => t.id === templateId);
     if (template) {
       setNewEmailSubject(template.getSubject(apprenant));
       setNewEmailBody(template.getBody(apprenant));
