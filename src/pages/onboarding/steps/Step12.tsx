@@ -4,6 +4,7 @@ import { ArrowLeft, Phone, CheckCircle, Clock, AlertTriangle, User, FileText, Ca
 import { OnboardingLayout } from "../OnboardingLayout";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
+import { savePublicFormDocument } from "@/lib/savePublicFormDocument";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
