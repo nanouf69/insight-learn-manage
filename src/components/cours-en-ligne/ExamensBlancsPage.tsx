@@ -862,22 +862,37 @@ export default function ExamensBlancsPage({
       if (apprenantId && userId) {
         const duree = Math.round((Date.now() - examStartTimeRef.current) / 1000);
         const allResults = [...newResultats];
-        // Save each matière result
-        const rows = allResults.map(r => ({
-          apprenant_id: apprenantId,
-          user_id: userId,
-          quiz_type: examenChoisi.id.startsWith("bilan-") ? "bilan" : "examen_blanc",
-          quiz_id: examenChoisi.id,
-          quiz_titre: examenChoisi.titre,
-          matiere_id: r.matiereId,
-          matiere_nom: r.nomMatiere,
-          score_obtenu: r.noteObtenue,
-          score_max: r.maxPoints,
-          note_sur_20: Number(((r.noteObtenue / r.maxPoints) * r.noteSur).toFixed(1)),
-          reussi: r.admis,
-          duree_secondes: Math.round(duree / allResults.length),
-          details: {},
-        }));
+        // Save each matière result with full question details
+        const rows = allResults.map(r => {
+          const matiere = examenChoisi.matieres.find(m => m.id === r.matiereId);
+          const questionDetails = matiere ? matiere.questions.map(q => {
+            const rep = r.reponses[q.id];
+            return {
+              questionId: q.id,
+              enonce: q.enonce,
+              type: q.type,
+              reponseEleve: rep ?? null,
+              reponseCorrecte: q.type === "QCM" && q.choix
+                ? q.choix.filter(c => c.correct).map(c => c.lettre)
+                : (q.reponseQRC || (q.reponses_possibles || []).join(" / ")),
+            };
+          }) : [];
+          return {
+            apprenant_id: apprenantId,
+            user_id: userId,
+            quiz_type: examenChoisi.id.startsWith("bilan-") ? "bilan" : "examen_blanc",
+            quiz_id: examenChoisi.id,
+            quiz_titre: examenChoisi.titre,
+            matiere_id: r.matiereId,
+            matiere_nom: r.nomMatiere,
+            score_obtenu: r.noteObtenue,
+            score_max: r.maxPoints,
+            note_sur_20: Number(((r.noteObtenue / r.maxPoints) * r.noteSur).toFixed(1)),
+            reussi: r.admis,
+            duree_secondes: Math.round(duree / allResults.length),
+            details: { questions: questionDetails, reponses: r.reponses },
+          };
+        });
         supabase
           .from("apprenant_quiz_results" as any)
           .insert(rows)
