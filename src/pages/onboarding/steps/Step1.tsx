@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, CreditCard, MapPin, Info, Camera, AlertTriangle, Phone, User, Check, Pencil, Mail, CalendarDays } from "lucide-react";
+import { ArrowRight, CreditCard, MapPin, Info, Camera, AlertTriangle, Phone, User, Check, Pencil, Mail, CalendarDays, Home, FileText } from "lucide-react";
 import { OnboardingLayout } from "../OnboardingLayout";
 import { DocumentUploadCard } from "@/components/onboarding/DocumentUploadCard";
 import { Input } from "@/components/ui/input";
