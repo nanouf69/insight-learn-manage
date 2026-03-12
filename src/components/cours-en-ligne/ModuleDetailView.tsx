@@ -1466,7 +1466,7 @@ Un texte inférieur ne peut jamais contredire un texte supérieur.`,
       nom: "📝 FICHES RÉVISIONS TA",
       description: "Fiches de révision pour la passerelle TA : synthèse spécialités TAXI, définitions TA et bilan QRC.",
       cours: [
-        { id: 1, titre: "Fiche Synthèse — Spécialités TAXI", description: "Fiche de révision des spécialités TAXI pour la passerelle TA.", actif: true, fichiers: [{ nom: "Fiche_Revision_Specialites_TAXI.pdf", url: "/cours/vtc/Fiche_Revision_Specialites_TAXI.pdf" }] },
+        { id: 1, titre: "Fiche Synthèse — Spécialités TAXI", description: "Fiche de révision des spécialités TAXI pour la passerelle TA.", actif: true, fichiers: [{ nom: "Fiche_de_Révision_Taxi.pdf", url: "/cours/vtc/Fiche_de_Révision_Taxi.pdf" }] },
         { id: 2, titre: "Définitions TA", description: "Glossaire et définitions clés de la passerelle TA.", actif: true, fichiers: [{ nom: "Definitions_TA.docx", url: "/cours/vtc/Definitions_TA.docx" }] },
         { id: 3, titre: "Bilan QRC TA", description: "Bilan des Questions à Réponse Courte pour la passerelle TA.", actif: true, fichiers: [{ nom: "Bilan_QRC_TA.docx", url: "/cours/vtc/Bilan_QRC_TA.docx" }] },
       ],
