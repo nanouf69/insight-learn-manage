@@ -261,6 +261,7 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
           .replace(/\{\{prenom\}\}/g, a.prenom || '')
           .replace(/\{\{nom\}\}/g, a.nom || '')
           .replace(/\{\{email\}\}/g, a.email || '')
+          .replace(/\{\{apprenant_id\}\}/g, a.id || '')
           .replace(/\{\{formation\}\}/g, getFormationType(a.type_apprenant))
           .replace(/\{\{date_debut\}\}/g, a.date_debut_formation || '[à compléter]'),
       })),
