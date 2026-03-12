@@ -826,8 +826,8 @@ export default function ExamensBlancsPage({
           if (repStr.includes(mcN)) nbTrouvees++;
         });
         const ratio = motsCles.length > 0 ? nbTrouvees / motsCles.length : 0;
-        correct = nbTrouvees >= motsCles.length;
         totalPoints += Math.round(ratio * pts * 10) / 10;
+        return; // prorata already added, skip the correct check below
       }
       if (correct) totalPoints += pts;
     });
