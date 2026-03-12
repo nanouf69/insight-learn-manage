@@ -63,7 +63,41 @@ export async function generateBienvenueFtransport(apprenant: {
   doc.text(welcomeLines, 20, y);
   y += welcomeLines.length * 6 + 12;
 
-  // --- Encadre important ---
+  // --- ENCADRE ROUGE TRES VISIBLE : obligation de valider toutes les etapes ---
+  doc.setFillColor(220, 38, 38);
+  const alertBoxW = pageWidth - 30;
+  const alertLines1 = doc.splitTextToSize(
+    'VOUS DEVEZ IMPERATIVEMENT VALIDER TOUTES LES ETAPES CI-DESSOUS ET OBTENIR VOTRE PDF RECAPITULATIF A LA FIN.',
+    alertBoxW - 20
+  );
+  const alertLines2 = doc.splitTextToSize(
+    'Si vous n\'obtenez pas le PDF final, le centre ne recevra rien et votre inscription ne sera pas prise en compte.',
+    alertBoxW - 20
+  );
+  const alertLines3 = doc.splitTextToSize(
+    'L\'inscription sur examenT3P.fr seule N\'EST PAS SUFFISANTE.',
+    alertBoxW - 20
+  );
+  const alertBoxH = (alertLines1.length + alertLines2.length + alertLines3.length) * 7 + 30;
+
+  doc.roundedRect(15, y, alertBoxW, alertBoxH, 4, 4, 'F');
+
+  y += 14;
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.text(alertLines1, 25, y);
+  y += alertLines1.length * 7 + 6;
+
+  doc.setFontSize(11);
+  doc.text(alertLines2, 25, y);
+  y += alertLines2.length * 7 + 6;
+
+  doc.setFontSize(12);
+  doc.text(alertLines3, 25, y);
+  y += alertLines3.length * 7 + 14;
+
+  // --- Encadre orange secondaire ---
   const warningLines = doc.splitTextToSize(
     'Afin de valider definitivement votre inscription a l\'examen, merci de cliquer sur le lien ci-dessous et de suivre les etapes. Sans cela, vous ne serez pas inscrit a l\'examen.',
     pageWidth - 50
