@@ -4092,6 +4092,44 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             <p className="text-muted-foreground text-sm">{moduleData.description}</p>
           </div>
 
+          {/* Print all revision sheets button for modules 70-73 */}
+          {[70, 71, 72, 73].includes(module.id) && moduleData.cours && moduleData.cours.length > 0 && (
+            <div className="flex justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 border-primary/30 text-primary hover:bg-primary/5"
+                onClick={() => {
+                  const allFiles = moduleData.cours.flatMap(c => c.fichiers || []);
+                  const printableFiles = allFiles.filter(f => 
+                    f.nom.endsWith(".pdf") || f.url.endsWith(".pdf")
+                  );
+                  const docxFiles = allFiles.filter(f =>
+                    f.nom.endsWith(".docx") || f.nom.endsWith(".doc") || f.url.endsWith(".docx") || f.url.endsWith(".doc")
+                  );
+                  // Open PDFs in new tabs for printing
+                  printableFiles.forEach(f => {
+                    const url = f.url.startsWith("http") ? f.url : f.url.startsWith("/") ? f.url : `/${f.url}`;
+                    window.open(url, "_blank");
+                  });
+                  // Open DOCX files via Google Docs viewer print-friendly mode
+                  docxFiles.forEach(f => {
+                    const absoluteUrl = f.url.startsWith("http") ? f.url : `${window.location.origin}${f.url.startsWith("/") ? f.url : `/${f.url}`}`;
+                    window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(absoluteUrl)}&embedded=false`, "_blank");
+                  });
+                  if (printableFiles.length + docxFiles.length === 0) {
+                    toast.info("Aucune fiche disponible à imprimer");
+                  } else {
+                    toast.success(`${printableFiles.length + docxFiles.length} fiche(s) ouvertes — utilisez Ctrl+P pour imprimer`);
+                  }
+                }}
+              >
+                <Printer className="w-4 h-4" />
+                🖨️ Imprimer toutes les fiches révisions
+              </Button>
+            </div>
+          )}
+
           {/* Mobile/tablet collapsible progression */}
           <div className="lg:hidden">
             <button
