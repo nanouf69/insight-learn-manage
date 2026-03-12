@@ -227,7 +227,7 @@ export default function Step1() {
   ];
 
   // Check if all required documents are valid
-  const allDocumentsValid = documents.every(doc => documentStatuses[doc.id] === 'valid');
+  const allDocumentsValid = documents.filter(doc => !doc.optional).every(doc => documentStatuses[doc.id] === 'valid');
   const hasRejected = Object.values(documentStatuses).some(s => s === 'rejected');
   
   // Check if any question has "Oui" answer
