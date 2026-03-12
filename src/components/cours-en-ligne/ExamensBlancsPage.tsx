@@ -651,11 +651,17 @@ function EcranResultats({
                     if (!corrIA || corrIA === "loading") {
                       isLoadingIA = true;
                     } else if (corrIA === "error") {
-                      // Fallback mots-clés
-                      const repStr = ((rep as string) || "").toLowerCase().replace(/[^a-z0-9 ]/g, "");
+                      // Fallback mots-clés avec prorata
+                      const repStr = ((rep as string) || "").toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
                       const motsCles = q.reponses_possibles || [];
-                      isCorrect = motsCles.some(mc => repStr.includes(mc.toLowerCase().replace(/[^a-z0-9 ]/g, "")));
-                      pointsObtenus = isCorrect ? pts : 0;
+                      let nbTrouvees = 0;
+                      motsCles.forEach(mc => {
+                        const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+                        if (repStr.includes(mcN)) nbTrouvees++;
+                      });
+                      const ratio = motsCles.length > 0 ? nbTrouvees / motsCles.length : 0;
+                      isCorrect = nbTrouvees >= motsCles.length;
+                      pointsObtenus = Math.round(ratio * pts * 10) / 10;
                       correctionDetail = "⚠️ Correction IA indisponible – correction par mots-clés";
                     } else {
                       isCorrect = corrIA.estCorrect;
