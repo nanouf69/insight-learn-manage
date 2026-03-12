@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, ArrowLeft, AlertTriangle, Eye, EyeOff } from "lucide-react";
 import { OnboardingLayout } from "../OnboardingLayout";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export default function Step7() {
   const [password, setPassword] = useState(() => localStorage.getItem('onboarding_mot_de_passe_cma') || '');
