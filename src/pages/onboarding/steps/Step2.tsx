@@ -23,8 +23,18 @@ export default function Step2() {
     localStorage.setItem('onboarding_step2_confirmed', String(val));
   };
 
+  const [showAlert, setShowAlert] = useState(false);
+
+  const handleOpenSite = () => {
+    setShowAlert(true);
+  };
+
+  const handleConfirmOpen = () => {
+    setShowAlert(false);
+    window.open("https://www.exament3p.fr", "_blank", "noopener,noreferrer");
+  };
+
   return (
-    <OnboardingLayout currentStep={2} totalSteps={11} title="Inscription sur la plateforme CMA">
       <div className="space-y-8">
         <div className="bg-white border border-gray-200 rounded-2xl p-6 lg:p-8">
           <p className="text-gray-700 mb-6">
