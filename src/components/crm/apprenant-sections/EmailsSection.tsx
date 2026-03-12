@@ -231,6 +231,41 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Load DB email templates
+  const { data: dbTemplates = [] } = useQuery({
+    queryKey: ['email_templates'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('email_templates')
+        .select('*')
+        .order('label');
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Merge hardcoded + DB templates
+  const allTemplates = [
+    ...EMAIL_TEMPLATES,
+    ...dbTemplates
+      .filter(t => !EMAIL_TEMPLATES.some(et => et.id === t.id))
+      .map(t => ({
+        id: t.id,
+        label: `${t.icon} ${t.label}`,
+        icon: t.icon,
+        getSubject: (a: any) => t.subject_template
+          .replace(/\{\{prenom\}\}/g, a.prenom || '')
+          .replace(/\{\{nom\}\}/g, a.nom || '')
+          .replace(/\{\{email\}\}/g, a.email || ''),
+        getBody: (a: any) => t.body_template
+          .replace(/\{\{prenom\}\}/g, a.prenom || '')
+          .replace(/\{\{nom\}\}/g, a.nom || '')
+          .replace(/\{\{email\}\}/g, a.email || '')
+          .replace(/\{\{formation\}\}/g, getFormationType(a.type_apprenant))
+          .replace(/\{\{date_debut\}\}/g, a.date_debut_formation || '[à compléter]'),
+      })),
+  ];
+
   // Fetch emails from database
   const { data: emails = [], isLoading, refetch } = useQuery({
     queryKey: ['emails', apprenant.id],
@@ -360,7 +395,7 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
 
   const handleTemplateSelect = (templateId: string) => {
     setSelectedTemplate(templateId);
-    const template = EMAIL_TEMPLATES.find(t => t.id === templateId);
+    const template = allTemplates.find(t => t.id === templateId);
     if (template) {
       setNewEmailSubject(template.getSubject(apprenant));
       setNewEmailBody(template.getBody(apprenant));
@@ -482,7 +517,7 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
                         <SelectValue placeholder="Choisir un modèle d'email..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {EMAIL_TEMPLATES.map((template) => (
+                        {allTemplates.map((template) => (
                           <SelectItem key={template.id} value={template.id}>
                             {template.label}
                           </SelectItem>
