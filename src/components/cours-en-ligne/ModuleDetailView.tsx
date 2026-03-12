@@ -2873,13 +2873,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           const answeredCount = Object.keys(answers).length;
           const totalQ = activeExercices.reduce((s, e) => s + (e.questions?.length || 0), 0);
           const correctC = questionDetails.filter(d => d.correct).length;
-          await supabase.from("apprenant_module_completion").upsert({
+          const { error: upsertError } = await supabase.from("apprenant_module_completion").upsert({
             apprenant_id: apprenantId,
             module_id: module.id,
             score_obtenu: correctC,
             score_max: totalQ,
             details: questionDetails,
           } as any, { onConflict: "apprenant_id,module_id" });
+          if (upsertError) {
+            console.error("[AutoSave] Erreur upsert:", upsertError);
+            return;
+          }
           console.log(`[AutoSave] ${answeredCount}/${totalQ} réponses sauvegardées pour module ${module.id}`);
         } catch (e) {
           console.error("Auto-save erreur:", e);
