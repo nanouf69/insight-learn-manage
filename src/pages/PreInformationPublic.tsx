@@ -499,18 +499,18 @@ export default function PreInformationPublic() {
 
   const handleSubmitAnalyse = async () => {
     if (!validateRequired(ANALYSE_QUESTIONS, analyseAnswers)) return;
-    if (!signature.trim()) { toast.error("Veuillez signer le document"); return; }
+    if (!analyseSignatureData) { toast.error("Veuillez signer le document (dessinez votre signature)"); return; }
     const saved = await saveForm("analyse-besoin", `Analyse du besoin – ${formationLabel}`, {
       reponses: formatAnswers(analyseAnswers, analyseOther),
       apprenant_nom: apprenant?.nom,
       apprenant_prenom: apprenant?.prenom,
       formation: formationLabel,
+      _signature_image: analyseSignatureData,
     });
     if (saved) {
       toast.success("Analyse du besoin enregistrée !");
       setCompletedSteps((prev) => new Set([...prev, "analyse"]));
       setCurrentStep("projet");
-      setSignature("");
       setMissingFields(new Set());
     }
   };
