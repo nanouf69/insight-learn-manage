@@ -56,6 +56,7 @@ export function DocumentUploadCard({
             setStatus(parsed.status);
             setFileName(parsed.fileName || '');
             setFileUrl(parsed.fileUrl || '');
+            setStoragePath(parsed.filePath || '');
             onStatusChange?.(docId, parsed.status);
           }
         } catch {}
@@ -81,8 +82,8 @@ export function DocumentUploadCard({
         const docStatus = doc.statut === 'valid' ? 'valid' : doc.statut === 'rejected' ? 'rejected' : 'pending';
         setStatus(docStatus as any);
         setFileName(doc.nom_fichier || '');
-        // Build public URL from storage path
         if (doc.url) {
+          setStoragePath(doc.url);
           const { data: urlData } = supabase.storage
             .from('documents-inscription')
             .getPublicUrl(doc.url);
