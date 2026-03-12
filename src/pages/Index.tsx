@@ -67,6 +67,24 @@ const Index = () => {
   const [totalEntrees, setTotalEntrees] = useState<number>(0);
   const [totalSorties, setTotalSorties] = useState<number>(0);
   const [fluxPeriode, setFluxPeriode] = useState<string>("");
+  const [sendingRelance, setSendingRelance] = useState(false);
+
+  const handleRelanceDossierBienvenue = async () => {
+    setSendingRelance(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('relance-dossier-bienvenue');
+      if (error) throw error;
+      if (data?.success) {
+        toast.success(`${data.sent} email(s) envoyé(s) sur ${data.sans_document} apprenant(s) sans document de bienvenue`);
+      } else {
+        toast.error(data?.error || "Erreur lors de l'envoi");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Erreur lors de l'envoi des relances");
+    } finally {
+      setSendingRelance(false);
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
