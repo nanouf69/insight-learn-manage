@@ -21,6 +21,7 @@ const TYPE_LABELS: Record<string, string> = {
   "satisfaction": "Questionnaire de satisfaction",
   "cgv-ri-acceptation": "CGV et Règlement intérieur",
   "cgv-acceptation": "Conditions Générales de Vente",
+  "dossier-bienvenue": "Dossier de bienvenue",
 };
 
 const TYPE_COLORS: Record<string, string> = {
@@ -31,6 +32,7 @@ const TYPE_COLORS: Record<string, string> = {
   "satisfaction": "bg-pink-100 text-pink-800",
   "cgv-ri-acceptation": "bg-orange-100 text-orange-800",
   "cgv-acceptation": "bg-teal-100 text-teal-800",
+  "dossier-bienvenue": "bg-green-100 text-green-800",
 };
 
 export function DocumentsCompletes({ apprenant }: Props) {
