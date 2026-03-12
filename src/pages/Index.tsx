@@ -26,7 +26,9 @@ import CoursEnLignePage from "@/components/cours-en-ligne/CoursEnLignePage";
 import { FournisseursPage } from "@/components/fournisseurs/FournisseursPage";
 import { FournisseurInvoiceAlerts } from "@/components/dashboard/FournisseurInvoiceAlerts";
 import { SmallTransfersTable } from "@/components/dashboard/SmallTransfersTable";
-import { GraduationCap, Users, ArrowDownCircle, ArrowUpCircle, Menu, X } from "lucide-react";
+import { GraduationCap, Users, ArrowDownCircle, ArrowUpCircle, Menu, X, Send, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -65,6 +67,24 @@ const Index = () => {
   const [totalEntrees, setTotalEntrees] = useState<number>(0);
   const [totalSorties, setTotalSorties] = useState<number>(0);
   const [fluxPeriode, setFluxPeriode] = useState<string>("");
+  const [sendingRelance, setSendingRelance] = useState(false);
+
+  const handleRelanceDossierBienvenue = async () => {
+    setSendingRelance(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('relance-dossier-bienvenue');
+      if (error) throw error;
+      if (data?.success) {
+        toast.success(`${data.sent} email(s) envoyé(s) sur ${data.sans_document} apprenant(s) sans document de bienvenue`);
+      } else {
+        toast.error(data?.error || "Erreur lors de l'envoi");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Erreur lors de l'envoi des relances");
+    } finally {
+      setSendingRelance(false);
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -187,6 +207,19 @@ const Index = () => {
                 iconColor="warning"
                 subtitle={fluxPeriode || undefined}
               />
+            </div>
+
+            {/* Actions rapides */}
+            <div className="flex flex-wrap gap-3">
+              <Button 
+                onClick={handleRelanceDossierBienvenue} 
+                disabled={sendingRelance}
+                variant="outline"
+                className="gap-2 border-orange-300 text-orange-700 hover:bg-orange-50"
+              >
+                {sendingRelance ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                {sendingRelance ? "Envoi en cours..." : "📋 Relancer dossiers bienvenue incomplets"}
+              </Button>
             </div>
 
             {/* Two Column Layout */}
