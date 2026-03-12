@@ -162,77 +162,51 @@ export function DocumentUploadCard({
     setFileName(file.name);
 
     try {
-      // Create a unique filename
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${docId}_${Date.now()}.${fileExt}`;
-      const filePath = `onboarding/${sessionId}/${fileName}`;
-
-      // Upload the file to storage
-      const { error: uploadError } = await supabase.storage
-        .from('documents-inscription')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
-
-      if (uploadError) {
-        throw uploadError;
+      if (!apprenantId) {
+        throw new Error("Dossier apprenant introuvable");
       }
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('documents-inscription')
-        .getPublicUrl(filePath);
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('apprenant_id', apprenantId);
+      formData.append('titre', title);
+      formData.append('type_document', docId);
 
-      const publicUrl = urlData?.publicUrl || '';
-      setFileUrl(publicUrl);
+      const { data, error } = await supabase.functions.invoke('upload-document-inscription', {
+        body: formData,
+      });
 
-      toast.success(`Document "${title}" uploadé avec succès`);
-      
-      // Save record in documents_inscription table
-      if (apprenantId) {
-        // Delete any existing record for this doc type first
-        await supabase
-          .from('documents_inscription')
-          .delete()
-          .eq('apprenant_id', apprenantId)
-          .eq('type_document', docId);
-
-        const { error: dbError } = await supabase
-          .from('documents_inscription')
-          .insert({
-            apprenant_id: apprenantId,
-            titre: title,
-            type_document: docId,
-            nom_fichier: file.name,
-            url: filePath,
-            statut: 'valid',
-          });
-
-        if (dbError) {
-          console.error('DB insert error:', dbError);
-        }
-
-        // Create notification alert for admin
-        const apprenantName = localStorage.getItem('onboarding_prenom') || '';
-        const apprenantLastName = localStorage.getItem('onboarding_nom') || '';
-        await supabase.from('alertes_systeme' as any).insert({
-          type: 'document_upload',
-          titre: 'Nouveau document recu',
-          message: `${apprenantName} ${apprenantLastName} a uploade "${title}"`,
-          details: `Type: ${docId} | Fichier: ${file.name}`,
-        } as any);
+      if (error) {
+        throw new Error(error.message || "Erreur lors de l'enregistrement du document");
       }
 
-      // Persist to localStorage as fallback
+      if (!data?.success) {
+        throw new Error(data?.error || "Le document n'a pas pu être enregistré");
+      }
+
+      const uploadedPath = data?.storagePath || '';
+      const uploadedFileName = data?.fileName || file.name;
+      let uploadedUrl = data?.publicUrl || '';
+
+      if (!uploadedUrl && uploadedPath) {
+        const { data: urlData } = supabase.storage
+          .from('documents-inscription')
+          .getPublicUrl(uploadedPath);
+        uploadedUrl = urlData?.publicUrl || '';
+      }
+
+      setStoragePath(uploadedPath);
+      setFileName(uploadedFileName);
+      setFileUrl(uploadedUrl);
+
       localStorage.setItem(`onboarding_doc_${docId}`, JSON.stringify({
         status: 'valid',
-        fileName: file.name,
-        fileUrl: publicUrl,
-        filePath,
+        fileName: uploadedFileName,
+        fileUrl: uploadedUrl,
+        filePath: uploadedPath,
       }));
 
-      // Mark as valid immediately
+      toast.success(`Document "${title}" uploadé avec succès`);
       setStatus('valid');
       onStatusChange?.(docId, 'valid');
     } catch (error: any) {
@@ -240,6 +214,8 @@ export function DocumentUploadCard({
       toast.error(error.message || "Erreur lors de l'upload du document");
       setStatus('empty');
       setFileName('');
+      setFileUrl('');
+      setStoragePath('');
     }
   };
 
