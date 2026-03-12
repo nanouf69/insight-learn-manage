@@ -517,7 +517,7 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
                         <SelectValue placeholder="Choisir un modèle d'email..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {EMAIL_TEMPLATES.map((template) => (
+                        {allTemplates.map((template) => (
                           <SelectItem key={template.id} value={template.id}>
                             {template.label}
                           </SelectItem>
