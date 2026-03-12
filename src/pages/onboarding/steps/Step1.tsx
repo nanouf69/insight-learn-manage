@@ -455,7 +455,7 @@ export default function Step1() {
         {/* Document upload cards */}
         <div className="space-y-4">
           {documents.map((doc) => {
-            const isNotValid = documentStatuses[doc.id] !== 'valid';
+            const isNotValid = !doc.optional && documentStatuses[doc.id] !== 'valid';
             return (
               <div key={doc.id}>
                 <div 
