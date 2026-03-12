@@ -2921,6 +2921,21 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       });
     };
 
+    const handleQrcAnswerChange = (key: string, value: string) => {
+      setQrcAnswers(prev => ({ ...prev, [key]: value }));
+      setSelectedAnswers(prev => {
+        const next = { ...prev, [key]: value };
+        autoSaveAnswers(next);
+        return next;
+      });
+      setUnansweredKeys(prev => {
+        if (!prev.has(key)) return prev;
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
+    };
+
     const totalQuestions = activeExercices.reduce((sum, e) => sum + (e.questions?.length || 0), 0);
     const correctCount = activeExercices.reduce((sum, e) => {
       if (!e.questions) return sum;
@@ -3478,7 +3493,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     const renderSingleExercicePage = (exo: ExerciceItem) => {
       const handleQrcCorrection = async (exoId: number, q: any, key: string) => {
-        const reponse = qrcAnswers[key]?.trim();
+        const existingAnswer = selectedAnswers[key];
+        const reponse = (qrcAnswers[key] ?? (typeof existingAnswer === "string" ? existingAnswer : "")).trim();
         if (!reponse) { toast.error("Écrivez une réponse avant de valider"); return; }
         setQrcResults(prev => ({ ...prev, [key]: "loading" }));
         try {
@@ -3600,8 +3616,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                       <Badge variant="outline" className="text-xs">QRC — Réponse libre</Badge>
                       <Textarea
                         placeholder="Écrivez votre réponse ici..."
-                        value={qrcAnswers[key] || ""}
-                        onChange={(e) => setQrcAnswers(prev => ({ ...prev, [key]: e.target.value }))}
+                        value={qrcAnswers[key] ?? (typeof selected === "string" ? selected : "")}
+                        onChange={(e) => handleQrcAnswerChange(key, e.target.value)}
                         disabled={qrcResult !== undefined && qrcResult !== "loading"}
                         className="mt-2"
                       />
