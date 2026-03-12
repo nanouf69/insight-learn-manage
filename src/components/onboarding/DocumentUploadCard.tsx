@@ -220,19 +220,20 @@ export function DocumentUploadCard({
   };
 
   const handleDelete = async () => {
-    if (!fileUrl) return;
+    if (!storagePath && !fileUrl) return;
 
     try {
-      // Extract file path from URL
-      const urlParts = fileUrl.split('/documents-inscription/');
-      if (urlParts.length > 1) {
-        const filePath = urlParts[1];
+      const pathFromUrl = fileUrl.includes('/documents-inscription/')
+        ? fileUrl.split('/documents-inscription/')[1]
+        : '';
+      const pathToDelete = storagePath || pathFromUrl;
+
+      if (pathToDelete) {
         await supabase.storage
           .from('documents-inscription')
-          .remove([filePath]);
+          .remove([pathToDelete]);
       }
 
-      // Also delete from DB if apprenant exists
       if (apprenantId) {
         await supabase
           .from('documents_inscription')
@@ -244,6 +245,7 @@ export function DocumentUploadCard({
       setStatus('empty');
       setFileName('');
       setFileUrl('');
+      setStoragePath('');
       setRejectionReason('');
       localStorage.removeItem(`onboarding_doc_${docId}`);
       onStatusChange?.(docId, 'pending');
