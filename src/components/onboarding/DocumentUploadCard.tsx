@@ -36,8 +36,8 @@ export function DocumentUploadCard({
   const [status, setStatus] = useState<'empty' | 'uploading' | 'analyzing' | 'valid' | 'rejected' | 'pending'>('empty');
   const [fileName, setFileName] = useState<string>('');
   const [fileUrl, setFileUrl] = useState<string>('');
+  const [storagePath, setStoragePath] = useState<string>('');
   const [rejectionReason, setRejectionReason] = useState<string>('');
-  const [cropperOpen, setCropperOpen] = useState(false);
   const [cropperImageSrc, setCropperImageSrc] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const restoredRef = useRef(false);
