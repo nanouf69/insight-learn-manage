@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Eye, FileImage, ZoomIn, ZoomOut, Images, FileText } from "lucide-react";
+import { useEffect, useMemo, useState, useCallback } from "react";
+import { Eye, FileImage, ZoomIn, ZoomOut, Images, FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import PdfSlideViewer from "./PdfSlideViewer";
@@ -30,6 +30,9 @@ export default function PptxViewerComparison({
   const [zoomLevel, setZoomLevel] = useState(1.2);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isCompactViewport, setIsCompactViewport] = useState(false);
+  const [iframeLoading, setIframeLoading] = useState(true);
+
+  const handleIframeLoad = useCallback(() => setIframeLoading(false), []);
 
   const hasImages = imageUrls && imageUrls.length > 0;
 
@@ -38,6 +41,13 @@ export default function PptxViewerComparison({
   const effectiveMode: "google" | "google-zoom" | "ms-office" | "images" | "pdf" = isStudentRestricted
     ? (pdfUrl ? "pdf" : hasImages ? "images" : "google")
     : mode;
+
+  // Reset loading state when mode changes
+  useEffect(() => {
+    if (effectiveMode === "google" || effectiveMode === "google-zoom" || effectiveMode === "ms-office") {
+      setIframeLoading(true);
+    }
+  }, [effectiveMode]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -186,12 +196,22 @@ export default function PptxViewerComparison({
         )}
 
         {effectiveMode === "google" && (
-          <div className="border rounded-lg overflow-hidden" onContextMenu={e => e.preventDefault()}>
+          <div className="border rounded-lg overflow-hidden relative" onContextMenu={e => e.preventDefault()}>
+            {iframeLoading && (
+              <div className={`absolute inset-0 z-10 flex items-center justify-center bg-muted/80 backdrop-blur-sm ${viewerHeightClass}`}>
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  <span className="text-sm text-muted-foreground font-medium">Chargement du document…</span>
+                </div>
+              </div>
+            )}
             <div className={`w-full ${viewerHeightClass} max-w-[1210px] mx-auto`}>
               <iframe
                 src={googleSingleSlideUrl}
                 className="w-full h-full border-0"
                 allowFullScreen
+                loading="lazy"
+                onLoad={handleIframeLoad}
                 title={`Google Slides — ${nom}`}
                 sandbox="allow-scripts allow-same-origin allow-popups"
               />
@@ -212,7 +232,15 @@ export default function PptxViewerComparison({
         )}
 
         {effectiveMode === "google-zoom" && !isCompactViewport && (
-          <div className="border rounded-lg overflow-hidden">
+          <div className="border rounded-lg overflow-hidden relative">
+            {iframeLoading && (
+              <div className={`absolute inset-0 z-10 flex items-center justify-center bg-muted/80 backdrop-blur-sm ${viewerHeightClass}`}>
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  <span className="text-sm text-muted-foreground font-medium">Chargement du document…</span>
+                </div>
+              </div>
+            )}
             <div
               className={`w-full ${viewerHeightClass} max-w-[1210px] mx-auto relative overflow-hidden`}
             >
@@ -226,6 +254,8 @@ export default function PptxViewerComparison({
                   transformOrigin: "center center",
                 }}
                 allowFullScreen
+                loading="lazy"
+                onLoad={handleIframeLoad}
                 title={`Google Slides Zoomé — ${nom}`}
               />
             </div>
@@ -240,12 +270,22 @@ export default function PptxViewerComparison({
         )}
 
         {effectiveMode === "ms-office" && (
-          <div className="border rounded-lg overflow-hidden">
+          <div className="border rounded-lg overflow-hidden relative">
+            {iframeLoading && (
+              <div className={`absolute inset-0 z-10 flex items-center justify-center bg-muted/80 backdrop-blur-sm ${viewerHeightClass}`}>
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  <span className="text-sm text-muted-foreground font-medium">Chargement du document…</span>
+                </div>
+              </div>
+            )}
             <div className={`w-full ${viewerHeightClass} max-w-[1210px] mx-auto`}>
               <iframe
                 src={msViewerUrl}
                 className="w-full h-full border-0"
                 allowFullScreen
+                loading="lazy"
+                onLoad={handleIframeLoad}
                 title={`MS Office — ${nom}`}
               />
             </div>

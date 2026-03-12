@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings, Download, FileText, Upload, Loader2, ZoomIn, ZoomOut, RotateCcw, Maximize, Users, ChevronDown, ChevronUp, Lock } from "lucide-react";
+import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings, Download, FileText, Upload, Loader2, ZoomIn, ZoomOut, RotateCcw, Maximize, Users, ChevronDown, ChevronUp, Lock, Printer } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
@@ -4091,6 +4091,44 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             <h2 className="text-2xl font-bold">{subjectInfo ? subjectInfo.parentTitle : moduleData.nom}</h2>
             <p className="text-muted-foreground text-sm">{moduleData.description}</p>
           </div>
+
+          {/* Print all revision sheets button for modules 70-73 */}
+          {[70, 71, 72, 73].includes(module.id) && moduleData.cours && moduleData.cours.length > 0 && (
+            <div className="flex justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 border-primary/30 text-primary hover:bg-primary/5"
+                onClick={() => {
+                  const allFiles = moduleData.cours.flatMap(c => c.fichiers || []);
+                  const printableFiles = allFiles.filter(f => 
+                    f.nom.endsWith(".pdf") || f.url.endsWith(".pdf")
+                  );
+                  const docxFiles = allFiles.filter(f =>
+                    f.nom.endsWith(".docx") || f.nom.endsWith(".doc") || f.url.endsWith(".docx") || f.url.endsWith(".doc")
+                  );
+                  // Open PDFs in new tabs for printing
+                  printableFiles.forEach(f => {
+                    const url = f.url.startsWith("http") ? f.url : f.url.startsWith("/") ? f.url : `/${f.url}`;
+                    window.open(url, "_blank");
+                  });
+                  // Open DOCX files via Google Docs viewer print-friendly mode
+                  docxFiles.forEach(f => {
+                    const absoluteUrl = f.url.startsWith("http") ? f.url : `${window.location.origin}${f.url.startsWith("/") ? f.url : `/${f.url}`}`;
+                    window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(absoluteUrl)}&embedded=false`, "_blank");
+                  });
+                  if (printableFiles.length + docxFiles.length === 0) {
+                    toast.info("Aucune fiche disponible à imprimer");
+                  } else {
+                    toast.success(`${printableFiles.length + docxFiles.length} fiche(s) ouvertes — utilisez Ctrl+P pour imprimer`);
+                  }
+                }}
+              >
+                <Printer className="w-4 h-4" />
+                🖨️ Imprimer toutes les fiches révisions
+              </Button>
+            </div>
+          )}
 
           {/* Mobile/tablet collapsible progression */}
           <div className="lg:hidden">
