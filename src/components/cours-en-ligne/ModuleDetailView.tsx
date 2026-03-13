@@ -2221,6 +2221,62 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }
     };
 
+    // Handle trainer quiz_questions_overrides changes in realtime
+    const handleTrainerOverrideChange = async (payload: any) => {
+      const trainerQuizIdByModuleId: Record<number, string> = {
+        12: "cas-pratique-taxi",
+        7: "connaissance-ville",
+        64: "equipements-taxi",
+        13: "controle-connaissances-taxi",
+      };
+      const targetQuizId = trainerQuizIdByModuleId[module.id];
+      if (!targetQuizId) return;
+
+      const newRow = payload.new as any;
+      // Only process if it's for the relevant quiz
+      if (newRow?.quiz_id && newRow.quiz_id !== targetQuizId) return;
+
+      console.log("[Realtime] Trainer override changed, reloading for module", module.id);
+
+      // Reload all overrides for this quiz
+      const { data } = await supabase
+        .from("quiz_questions_overrides")
+        .select("quiz_id, section_id, question_id, enonce, choix, updated_at")
+        .eq("quiz_id", targetQuizId)
+        .order("updated_at", { ascending: false });
+
+      if (!data || data.length === 0) return;
+
+      const overrideMap = new Map<string, { enonce: string; choix: { lettre: string; texte: string; correct?: boolean }[] }>();
+      for (const ov of data) {
+        const key = `${ov.section_id}-${ov.question_id}`;
+        if (!overrideMap.has(key)) {
+          overrideMap.set(key, {
+            enonce: ov.enonce,
+            choix: ov.choix as { lettre: string; texte: string; correct?: boolean }[],
+          });
+        }
+      }
+
+      setModuleData((prev) => {
+        const updatedExercices = prev.exercices
+          .map((exo) => {
+            if (!exo.questions || exo.questions.length === 0) return exo;
+            const updatedQuestions = exo.questions
+              .map((q) => {
+                const override = overrideMap.get(`${exo.id}-${q.id}`);
+                if (!override) return q;
+                return { ...q, enonce: override.enonce, choix: override.choix };
+              })
+              .filter((q) => q.enonce !== "__DELETED__");
+            if (exo.questions.length > 0 && updatedQuestions.length === 0) return null;
+            return { ...exo, questions: updatedQuestions };
+          })
+          .filter((exo): exo is ExerciceItem => exo !== null);
+        return { ...prev, exercices: updatedExercices };
+      });
+    };
+
     const channel = supabase
       .channel(`module-editor-live-${module.id}`)
       .on(
@@ -2240,6 +2296,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           table: 'module_editor_state',
         },
         handleRealtimeChange
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'quiz_questions_overrides',
+        },
+        handleTrainerOverrideChange
       )
       .subscribe();
 
