@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { getCompetencesForFormation } from "@/components/cours-en-ligne/competences-checklist-data";
+import { sendAdminNotification } from "@/lib/sendAdminNotification";
 
 interface ApprenantInfo {
   id: string;
