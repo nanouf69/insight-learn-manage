@@ -2217,7 +2217,19 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         if (!latest?.module_data) return;
 
         const md = latest.module_data as unknown as ModuleData;
-        if (Array.isArray(md.cours) && Array.isArray(md.exercices) && Number(md.id) === Number(module.id)) {
+        const hasValidModuleData =
+          Array.isArray(md.cours) &&
+          Array.isArray(md.exercices) &&
+          Number(md.id) === Number(module.id) &&
+          (
+            Number(module.id) !== 27 ||
+            (() => {
+              const exerciseIds = md.exercices.map((exo) => Number(exo.id)).sort((a, b) => a - b);
+              return exerciseIds.length === 2 && exerciseIds[0] === 250 && exerciseIds[1] === 251;
+            })()
+          );
+
+        if (hasValidModuleData) {
           console.log("[Realtime] Refetched module data from DB for module", module.id);
           setModuleData(md);
           setDeletedCours(Array.isArray(latest.deleted_cours) ? (latest.deleted_cours as unknown as ContentItem[]) : []);
