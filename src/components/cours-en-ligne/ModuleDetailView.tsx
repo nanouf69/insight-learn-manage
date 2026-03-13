@@ -2005,24 +2005,29 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     async function loadTrainerOverrides() {
       try {
-        // Match each learner module with the quiz_id used by the trainer portal
-        const trainerQuizIdByModuleId: Record<number, string> = {
-          12: "cas-pratique-taxi",
-          7: "connaissance-ville",
-          64: "equipements-taxi",
-          13: "controle-connaissances-taxi",
+        // Match each learner module with the quiz_id(s) used by the trainer portal
+        const trainerQuizIdsByModuleId: Record<number, string[]> = {
+          12: ["cas-pratique-taxi"],
+          7: ["connaissance-ville"],
+          64: ["equipements-taxi"],
+          13: ["controle-connaissances-taxi"],
+          40: ["reglementation-nationale", "reglementation-locale"],
+          10: ["reglementation-nationale", "reglementation-locale"],
+          27: ["bilan-exercices-ta"],
+          28: ["bilan-examen-ta"],
+          9: ["bilan-exercices-ta"],
+          11: ["bilan-examen-ta"],
         };
 
-        const targetQuizId = trainerQuizIdByModuleId[module.id];
+        const targetQuizIds = trainerQuizIdsByModuleId[module.id];
 
         // Only apply trainer overrides for modules that have a known quiz mapping
-        // Otherwise we'd pull in unrelated overrides
-        if (!targetQuizId) return;
+        if (!targetQuizIds || targetQuizIds.length === 0) return;
 
         const { data } = await supabase
           .from("quiz_questions_overrides")
           .select("quiz_id, section_id, question_id, enonce, choix, updated_at")
-          .eq("quiz_id", targetQuizId)
+          .in("quiz_id", targetQuizIds)
           .order("updated_at", { ascending: false });
 
         if (!data || data.length === 0) return;
