@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,16 +10,44 @@ import {
   Save, CheckCircle2, X, Clock, Layers
 } from "lucide-react";
 import { tousLesExamens, type ExamenBlanc, type Matiere, type Question, type Choix } from "./examens-blancs-data";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
-// ===== ÉTAT LOCAL (clone mutable des examens) =====
-let _examensEdites: ExamenBlanc[] = JSON.parse(JSON.stringify(tousLesExamens));
+// Virtual module_id range for examens blancs: 90000+
+// Each exam gets a unique module_id based on its index
+const EXAMEN_BLANC_MODULE_BASE = 90000;
 
-export function getExamensEdites(): ExamenBlanc[] {
-  return _examensEdites;
+export function getExamenModuleId(examIndex: number): number {
+  return EXAMEN_BLANC_MODULE_BASE + examIndex;
 }
 
-function resetExamens() {
-  _examensEdites = JSON.parse(JSON.stringify(tousLesExamens));
+// Load saved exam overrides from DB
+export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
+  const examens = JSON.parse(JSON.stringify(tousLesExamens)) as ExamenBlanc[];
+  
+  try {
+    const moduleIds = examens.map((_, i) => EXAMEN_BLANC_MODULE_BASE + i);
+    const { data, error } = await supabase
+      .from("module_editor_state")
+      .select("module_id, module_data")
+      .in("module_id", moduleIds);
+    
+    if (error || !data || data.length === 0) return examens;
+    
+    for (const row of data) {
+      const idx = row.module_id - EXAMEN_BLANC_MODULE_BASE;
+      if (idx >= 0 && idx < examens.length && row.module_data) {
+        const saved = row.module_data as unknown as ExamenBlanc;
+        if (saved.matieres && Array.isArray(saved.matieres)) {
+          examens[idx] = { ...examens[idx], matieres: saved.matieres };
+        }
+      }
+    }
+  } catch (err) {
+    console.error("[ExamensEditor] Error loading saved exams:", err);
+  }
+  
+  return examens;
 }
 
 // ===== ÉDITEUR D'UNE QUESTION =====
