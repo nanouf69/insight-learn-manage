@@ -1096,6 +1096,8 @@ export default function ExamensBlancsPage({
           total={examenChoisi.matieres.length}
           onTerminer={handleTerminerMatiere}
           isBilan={examenChoisi.id.startsWith("bilan-")}
+          apprenantId={apprenantId}
+          examenId={examenChoisi.id}
         />
       </div>
     );
