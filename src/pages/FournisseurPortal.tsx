@@ -31,11 +31,6 @@ import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "@/components/cours-en-ligne/co
 import { BILAN_EXAMEN_TA } from "@/components/cours-en-ligne/bilan-examen-ta-data";
 import { BILAN_EXERCICES_TA } from "@/components/cours-en-ligne/bilan-exercices-ta-data";
 import { CAS_PRATIQUE_TAXI_EXERCICES } from "@/components/cours-en-ligne/cas-pratique-taxi-exercices-data";
-import { T3P_EXERCICE_PARTIE_1, T3P_EXERCICE_PARTIE_2 } from "@/components/cours-en-ligne/exercices/t3p-exercices-data";
-import { GESTION_EXERCICES } from "@/components/cours-en-ligne/exercices/gestion-exercices-data";
-import { SECURITE_ROUTIERE_EXERCICES } from "@/components/cours-en-ligne/exercices/securite-routiere-exercices-data";
-import { BILAN_EXAMEN_TAXI } from "@/components/cours-en-ligne/bilan-examen-taxi-data";
-import { BILAN_EXERCICES_TAXI } from "@/components/cours-en-ligne/bilan-exercices-taxi-data";
 import { NotesFraisTab } from "@/components/comptabilite/NotesFraisTab";
 import { Badge } from "@/components/ui/badge";
 import CoursPublic from "@/pages/CoursPublic";
@@ -1254,109 +1249,6 @@ export default function FournisseurPortal() {
 
                 {/* ===== MODULES TAXI SPÉCIFIQUES ===== */}
 
-                {/* T3P — Réglementation Transport Public */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <span className="text-lg">📘</span> T3P — Transport Public Particulier de Personnes
-                    </CardTitle>
-                    <CardDescription>Réglementation du Transport Public Particulier de Personnes (Partie 1 & 2)</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                      <a href="/cours/vtc/A_T3P_1.pdf" target="_blank" rel="noopener noreferrer">
-                        <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
-                          <FileText className="w-5 h-5 text-primary" />
-                          <div>
-                            <p className="font-medium text-sm">T3P — Partie 1</p>
-                            <p className="text-xs text-muted-foreground">PDF HD</p>
-                          </div>
-                        </div>
-                      </a>
-                      <a href="/cours/vtc/A_T3P_2.pdf" target="_blank" rel="noopener noreferrer">
-                        <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
-                          <FileText className="w-5 h-5 text-primary" />
-                          <div>
-                            <p className="font-medium text-sm">T3P — Partie 2</p>
-                            <p className="text-xs text-muted-foreground">PDF HD</p>
-                          </div>
-                        </div>
-                      </a>
-                    </div>
-                    <EditableQuizViewer
-                      sections={[T3P_EXERCICE_PARTIE_1, T3P_EXERCICE_PARTIE_2]}
-                      title="Quiz — T3P"
-                      icon="📘"
-                      quizId="t3p"
-                      fournisseurId={fournisseur?.id || ""}
-                    />
-                  </CardContent>
-                </Card>
-
-                {/* Gestion */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <span className="text-lg">📗</span> Gestion
-                    </CardTitle>
-                    <CardDescription>Entrepreneurs, Fiscalité, Comptabilité, Organismes sociaux</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-                      {[1, 2, 3].map(i => (
-                        <a key={i} href={`/cours/vtc/B_Gestion_${i}.pdf`} target="_blank" rel="noopener noreferrer">
-                          <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
-                            <FileText className="w-5 h-5 text-primary" />
-                            <div>
-                              <p className="font-medium text-sm">Gestion — Partie {i}</p>
-                              <p className="text-xs text-muted-foreground">PDF HD</p>
-                            </div>
-                          </div>
-                        </a>
-                      ))}
-                    </div>
-                    <EditableQuizViewer
-                      sections={GESTION_EXERCICES}
-                      title="Quiz — Gestion"
-                      icon="📗"
-                      quizId="gestion"
-                      fournisseurId={fournisseur?.id || ""}
-                    />
-                  </CardContent>
-                </Card>
-
-                {/* Sécurité Routière */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <span className="text-lg">📙</span> Sécurité Routière
-                    </CardTitle>
-                    <CardDescription>Signalisation, Vitesses, Distances, Infractions</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-                      {[1, 2, 3].map(i => (
-                        <a key={i} href={`/cours/vtc/C_Securite_Routiere_${i}.pdf`} target="_blank" rel="noopener noreferrer">
-                          <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
-                            <FileText className="w-5 h-5 text-primary" />
-                            <div>
-                              <p className="font-medium text-sm">Sécurité Routière — Partie {i}</p>
-                              <p className="text-xs text-muted-foreground">PDF HD</p>
-                            </div>
-                          </div>
-                        </a>
-                      ))}
-                    </div>
-                    <EditableQuizViewer
-                      sections={SECURITE_ROUTIERE_EXERCICES}
-                      title="Quiz — Sécurité Routière"
-                      icon="📙"
-                      quizId="securite-routiere"
-                      fournisseurId={fournisseur?.id || ""}
-                    />
-                  </CardContent>
-                </Card>
-
 
                 {/* Connaissance de la ville TAXI */}
                 <Card>
@@ -1494,43 +1386,6 @@ export default function FournisseurPortal() {
                       title="Quiz — Contrôle de connaissances"
                       icon="✅"
                       quizId="controle-connaissances-taxi"
-                      fournisseurId={fournisseur?.id || ""}
-                    />
-                  </CardContent>
-                </Card>
-                {/* Bilan Exercices TAXI (complet) */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <span className="text-lg">📊</span> Bilan Exercices TAXI
-                    </CardTitle>
-                    <CardDescription>Tous les exercices TAXI regroupés : T3P, Gestion, Sécurité Routière, Régl. Nationale & Locale</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <EditableQuizViewer
-                      sections={BILAN_EXERCICES_TAXI}
-                      title="Quiz — Bilan Exercices TAXI"
-                      icon="📊"
-                      quizId="bilan-exercices-taxi"
-                      fournisseurId={fournisseur?.id || ""}
-                    />
-                  </CardContent>
-                </Card>
-
-                {/* Bilan Examen TAXI */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <span className="text-lg">🎯</span> Bilan Examen TAXI
-                    </CardTitle>
-                    <CardDescription>Questions type examen TAXI — Régl. Nationale & Locale</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <EditableQuizViewer
-                      sections={BILAN_EXAMEN_TAXI}
-                      title="Quiz — Bilan Examen TAXI"
-                      icon="🎯"
-                      quizId="bilan-examen-taxi"
                       fournisseurId={fournisseur?.id || ""}
                     />
                   </CardContent>
