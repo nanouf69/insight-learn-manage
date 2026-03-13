@@ -231,9 +231,13 @@ function PassageMatiere({
 
   // Auto-save: get userId once
   const userIdRef = useRef<string | null>(null);
+  const jwtTokenRef = useRef<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => { userIdRef.current = data.user?.id ?? null; });
+    supabase.auth.getSession().then(({ data }) => {
+      userIdRef.current = data.session?.user?.id ?? null;
+      jwtTokenRef.current = data.session?.access_token ?? null;
+    });
   }, []);
 
   // Load saved responses on mount
