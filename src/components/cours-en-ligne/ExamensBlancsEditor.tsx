@@ -351,6 +351,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
   const [examenSelId, setExamenSelId] = useState<string | null>(defaultExamenId || null);
   const [typeFiltre, setTypeFiltre] = useState<"tous" | "TAXI" | "VTC">("tous");
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const examensFiltres = examens.filter(e => typeFiltre === "tous" || e.type === typeFiltre);
   const examenSel = examens.find(e => e.id === examenSelId) || null;
