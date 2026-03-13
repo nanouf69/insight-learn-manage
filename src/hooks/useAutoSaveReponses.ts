@@ -22,13 +22,15 @@ export function useAutoSaveReponses<T = Record<string, any>>({
   const [loadedReponses, setLoadedReponses] = useState<T | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const userIdRef = useRef<string | null>(null);
+  const jwtTokenRef = useRef<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestReponsesRef = useRef<any>(null);
 
-  // Get user ID once
+  // Get user ID and JWT once
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      userIdRef.current = data.user?.id ?? null;
+    supabase.auth.getSession().then(({ data }) => {
+      userIdRef.current = data.session?.user?.id ?? null;
+      jwtTokenRef.current = data.session?.access_token ?? null;
     });
   }, []);
 
