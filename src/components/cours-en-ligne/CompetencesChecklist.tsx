@@ -8,6 +8,7 @@ import { type CompetencesData } from "./competences-checklist-data";
 import { saveFormDocument } from "@/lib/saveFormDocument";
 import { toast } from "sonner";
 import { useAutoSave, useLoadDraft } from "@/hooks/useAutoSave";
+import { sendAdminNotification } from "@/lib/sendAdminNotification";
 
 interface Props {
   data: CompetencesData;
@@ -98,7 +99,15 @@ export default function CompetencesChecklist({ data, apprenantNom, apprenantId, 
     setInvalidKeys(new Set());
     if (apprenantId) {
       const saved = await autoTrigger({ ...collectData(), _status: "completed" });
-      if (saved) toast.success("Test de compétences enregistré !");
+      if (saved) {
+        toast.success("Test de compétences enregistré !");
+        sendAdminNotification({
+          type_document: "test-competences",
+          nom: apprenantNom || "",
+          prenom: "",
+          donnees: collectData(),
+        });
+      }
       else toast.error("Erreur lors de la sauvegarde");
     }
     onComplete();

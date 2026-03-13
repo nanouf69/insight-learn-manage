@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { getCompetencesForFormation } from "@/components/cours-en-ligne/competences-checklist-data";
+import { sendAdminNotification } from "@/lib/sendAdminNotification";
 
 interface ApprenantInfo {
   id: string;
@@ -601,6 +602,14 @@ export default function PreInformationPublic() {
     });
     if (saved) {
       toast.success("Analyse du besoin enregistrée !");
+      sendAdminNotification({
+        type_document: "analyse-besoin",
+        nom: apprenant?.nom || "",
+        prenom: apprenant?.prenom || "",
+        email: apprenant?.email || "",
+        telephone: apprenant?.telephone || "",
+        donnees: { reponses: formatAnswers(analyseAnswers, analyseOther), formation: formationLabel },
+      });
       setCompletedSteps((prev) => new Set([...prev, "analyse"]));
       setCurrentStep("projet");
       setMissingFields(new Set());
@@ -619,6 +628,14 @@ export default function PreInformationPublic() {
     });
     if (saved) {
       toast.success("Projet professionnel enregistré !");
+      sendAdminNotification({
+        type_document: "projet-professionnel",
+        nom: apprenant?.nom || "",
+        prenom: apprenant?.prenom || "",
+        email: apprenant?.email || "",
+        telephone: apprenant?.telephone || "",
+        donnees: { reponses: formatAnswers(projetAnswers, projetOther), formation: formationLabel },
+      });
       setCompletedSteps((prev) => new Set([...prev, "projet"]));
       setCurrentStep("competences");
       setMissingFields(new Set());
@@ -638,6 +655,14 @@ export default function PreInformationPublic() {
     });
     if (saved) {
       toast.success("Test de compétences enregistré !");
+      sendAdminNotification({
+        type_document: "test-competences",
+        nom: apprenant?.nom || "",
+        prenom: apprenant?.prenom || "",
+        email: apprenant?.email || "",
+        telephone: apprenant?.telephone || "",
+        donnees: { answers: competencesAnswers, sections: competencesData.sections.map((s) => s.titre), formationLabel: competencesData.formationLabel },
+      });
       setCompletedSteps((prev) => new Set([...prev, "competences"]));
     }
   };

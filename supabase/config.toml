@@ -62,3 +62,6 @@ verify_jwt = false
 
 [functions.relance-dossier-bienvenue]
 verify_jwt = false
+
+[functions.send-notification-admin]
+verify_jwt = false

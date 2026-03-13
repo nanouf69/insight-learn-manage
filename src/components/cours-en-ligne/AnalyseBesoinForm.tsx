@@ -9,6 +9,7 @@ import { CheckCircle2 } from "lucide-react";
 import { saveFormDocument } from "@/lib/saveFormDocument";
 import { toast } from "sonner";
 import { useAutoSave, useLoadDraft } from "@/hooks/useAutoSave";
+import { sendAdminNotification } from "@/lib/sendAdminNotification";
 
 interface Props {
   apprenantNom?: string;
@@ -219,7 +220,17 @@ export default function AnalyseBesoinForm({
         signature: signatureData,
         _status: "completed",
       });
-      if (saved) toast.success("Analyse du besoin enregistrée !");
+      if (saved) {
+        toast.success("Analyse du besoin enregistrée !");
+        sendAdminNotification({
+          type_document: "analyse-besoin",
+          nom: apprenantNom,
+          prenom: apprenantPrenom,
+          email: apprenantEmail,
+          telephone: apprenantTelephone,
+          donnees: collectData(),
+        });
+      }
       else toast.error("Erreur lors de la sauvegarde");
     }
     onComplete();
