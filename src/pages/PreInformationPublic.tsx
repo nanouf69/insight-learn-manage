@@ -602,6 +602,14 @@ export default function PreInformationPublic() {
     });
     if (saved) {
       toast.success("Analyse du besoin enregistrée !");
+      sendAdminNotification({
+        type_document: "analyse-besoin",
+        nom: apprenant?.nom || "",
+        prenom: apprenant?.prenom || "",
+        email: apprenant?.email || "",
+        telephone: apprenant?.telephone || "",
+        donnees: { reponses: formatAnswers(analyseAnswers, analyseOther), formation: formationLabel },
+      });
       setCompletedSteps((prev) => new Set([...prev, "analyse"]));
       setCurrentStep("projet");
       setMissingFields(new Set());
