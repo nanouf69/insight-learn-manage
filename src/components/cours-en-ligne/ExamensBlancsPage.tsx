@@ -853,7 +853,35 @@ export default function ExamensBlancsPage({
   const [matiereIndex, setMatiereIndex] = useState(0);
   const [tousResultats, setTousResultats] = useState<ResultatMatiere[]>([]);
   const [bilanPrefiltre, setBilanPrefiltre] = useState<string | null>(null);
+  const [liveExamens, setLiveExamens] = useState<ExamenBlanc[]>(tousLesExamens);
   const examStartTimeRef = useRef<number>(Date.now());
+
+  // Load saved exam overrides from DB on mount
+  useEffect(() => {
+    loadSavedExamens().then(saved => setLiveExamens(saved));
+  }, []);
+
+  // Realtime: reload when admin saves exam changes
+  useEffect(() => {
+    const channel = supabase
+      .channel('examens-blancs-live')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'module_editor_state',
+          filter: `module_id=gte.${EXAMEN_BLANC_MODULE_BASE}`,
+        },
+        () => {
+          console.log("[Realtime] Exam blanc updated, reloading...");
+          loadSavedExamens().then(saved => setLiveExamens(saved));
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   // Quand un bilan est demandé depuis les modules, on le met en avant
   useEffect(() => {
