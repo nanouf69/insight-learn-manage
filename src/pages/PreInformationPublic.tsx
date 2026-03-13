@@ -628,6 +628,14 @@ export default function PreInformationPublic() {
     });
     if (saved) {
       toast.success("Projet professionnel enregistré !");
+      sendAdminNotification({
+        type_document: "projet-professionnel",
+        nom: apprenant?.nom || "",
+        prenom: apprenant?.prenom || "",
+        email: apprenant?.email || "",
+        telephone: apprenant?.telephone || "",
+        donnees: { reponses: formatAnswers(projetAnswers, projetOther), formation: formationLabel },
+      });
       setCompletedSteps((prev) => new Set([...prev, "projet"]));
       setCurrentStep("competences");
       setMissingFields(new Set());
