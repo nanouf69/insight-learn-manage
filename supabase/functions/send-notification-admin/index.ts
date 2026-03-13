@@ -28,6 +28,8 @@ function formatDocumentLabel(type: string): string {
     "test-competences": "Test de compétences avant formation",
     "cgv-acceptation": "Conditions Générales de Vente — Acceptation",
     "cgv-ri-acceptation": "CGV et Règlement Intérieur — Signature",
+    "evaluation-acquis": "Évaluation des acquis",
+    "satisfaction": "Questionnaire de satisfaction",
   };
   return labels[type] || type;
 }
