@@ -9,6 +9,7 @@ import { CheckCircle2, Download } from "lucide-react";
 import { saveFormDocument } from "@/lib/saveFormDocument";
 import { toast } from "sonner";
 import { useAutoSave, useLoadDraft } from "@/hooks/useAutoSave";
+import { sendAdminNotification } from "@/lib/sendAdminNotification";
 
 interface Props {
   apprenantNom?: string;
