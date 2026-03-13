@@ -101,6 +101,19 @@ async function saveWithRetry(
             donnees: params.donnees,
             module_id: params.moduleId || null,
           } as any);
+
+        if (result.error) {
+          console.error("[AutoSave] Supabase INSERT failed on apprenant_documents_completes", {
+            code: result.error.code,
+            message: result.error.message,
+            details: result.error.details,
+            hint: result.error.hint,
+            apprenantId: params.apprenantId,
+            typeDocument: params.typeDocument,
+            userId: user.id,
+          });
+        }
+
         error = result.error;
       }
 
