@@ -2907,11 +2907,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }
     }, [uiStateHydrated, pendingResultRestore, pages, currentPage]);
 
-    // --- Get user ID for reponses_apprenants ---
+    // --- Get user ID and JWT for reponses_apprenants ---
     const userIdForSaveRef = useRef<string | null>(null);
+    const jwtTokenRef = useRef<string | null>(null);
     const reponsesSaveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     useEffect(() => {
-      supabase.auth.getUser().then(({ data }) => { userIdForSaveRef.current = data.user?.id ?? null; });
+      supabase.auth.getSession().then(({ data }) => {
+        userIdForSaveRef.current = data.session?.user?.id ?? null;
+        jwtTokenRef.current = data.session?.access_token ?? null;
+      });
     }, []);
 
     // --- Load saved partial answers from DB on mount ---
@@ -3039,7 +3043,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         } catch (e) {
           console.error("[AutoSave reponses_apprenants] error:", e);
         }
-      }, 500);
+      }, 300);
 
       // Also save to apprenant_module_completion (existing behavior, debounced 3s)
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
@@ -3082,13 +3086,54 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }, 3000);
     };
 
-    // Cleanup timers on unmount
+    // Keep a ref to latest answers for beforeunload
+    const latestAnswersRef = useRef<Record<string, string | string[]>>({});
+    useEffect(() => { latestAnswersRef.current = selectedAnswers; }, [selectedAnswers]);
+
+    // beforeunload: flush pending saves immediately
     useEffect(() => {
+      const flushSave = () => {
+        if (!apprenantId || !userIdForSaveRef.current || completionPersistedRef.current) return;
+        const answers = latestAnswersRef.current;
+        if (Object.keys(answers).length === 0) return;
+        // Group answers by exercice
+        const byExo = new Map<number, Record<string, string | string[]>>();
+        for (const [key, val] of Object.entries(answers)) {
+          const exoId = parseInt(key.split("-")[0], 10);
+          if (!Number.isFinite(exoId)) continue;
+          if (!byExo.has(exoId)) byExo.set(exoId, {});
+          byExo.get(exoId)![key] = val;
+        }
+        const rows = Array.from(byExo.entries()).map(([exoId, exoAnswers]) => ({
+          apprenant_id: apprenantId,
+          user_id: userIdForSaveRef.current,
+          exercice_id: `module_${module.id}_exo_${exoId}`,
+          exercice_type: "quiz",
+          reponses: exoAnswers,
+          completed: false,
+          updated_at: new Date().toISOString(),
+        }));
+        if (rows.length > 0) {
+          const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/reponses_apprenants?on_conflict=apprenant_id,exercice_id`;
+          const token = jwtTokenRef.current || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+          try {
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", url, false); // synchronous
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.setRequestHeader("apikey", import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
+            xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+            xhr.setRequestHeader("Prefer", "resolution=merge-duplicates");
+            xhr.send(JSON.stringify(rows));
+          } catch (_) {}
+        }
+      };
+      window.addEventListener("beforeunload", flushSave);
       return () => {
+        window.removeEventListener("beforeunload", flushSave);
         if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
         if (reponsesSaveDebounceRef.current) clearTimeout(reponsesSaveDebounceRef.current);
       };
-    }, []);
+    }, [apprenantId, module.id]);
 
     const handleAnswer = (exoId: number, qId: number, lettre: string, multi?: boolean) => {
       if (showResultsFor.has(exoId)) return;

@@ -231,9 +231,13 @@ function PassageMatiere({
 
   // Auto-save: get userId once
   const userIdRef = useRef<string | null>(null);
+  const jwtTokenRef = useRef<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => { userIdRef.current = data.user?.id ?? null; });
+    supabase.auth.getSession().then(({ data }) => {
+      userIdRef.current = data.session?.user?.id ?? null;
+      jwtTokenRef.current = data.session?.access_token ?? null;
+    });
   }, []);
 
   // Load saved responses on mount
@@ -257,6 +261,9 @@ function PassageMatiere({
   }, [apprenantId, exerciceKey, initialLoaded]);
 
   // Silent auto-save on every change
+  const latestReponsesRef = useRef<Reponses>({});
+  useEffect(() => { latestReponsesRef.current = reponses; }, [reponses]);
+
   const persistReponses = (updated: Reponses) => {
     if (!apprenantId || !userIdRef.current) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -272,10 +279,42 @@ function PassageMatiere({
           updated_at: new Date().toISOString(),
         } as any, { onConflict: "apprenant_id,exercice_id" });
       } catch (e) { console.error("[AutoSave] Save error:", e); }
-    }, 500);
+    }, 300);
   };
 
-  useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
+  // beforeunload: flush pending save immediately
+  useEffect(() => {
+    const flushSave = () => {
+      if (!apprenantId || !userIdRef.current) return;
+      const current = latestReponsesRef.current;
+      if (Object.keys(current).length === 0) return;
+      const row = {
+        apprenant_id: apprenantId,
+        user_id: userIdRef.current,
+        exercice_id: exerciceKey,
+        exercice_type: isBilan ? "bilan" : "examen_blanc",
+        reponses: current,
+        completed: false,
+        updated_at: new Date().toISOString(),
+      };
+      try {
+        const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/reponses_apprenants?on_conflict=apprenant_id,exercice_id`;
+        const token = jwtTokenRef.current || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", url, false);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.setRequestHeader("apikey", import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
+        xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+        xhr.setRequestHeader("Prefer", "resolution=merge-duplicates");
+        xhr.send(JSON.stringify([row]));
+      } catch (_) {}
+    };
+    window.addEventListener("beforeunload", flushSave);
+    return () => {
+      window.removeEventListener("beforeunload", flushSave);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [apprenantId, exerciceKey, isBilan]);
 
   const handleQCMChange = (qId: number, lettre: string, checked: boolean, isMultiple: boolean) => {
     setReponses(prev => {
