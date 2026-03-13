@@ -2015,8 +2015,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           10: ["reglementation-nationale", "reglementation-locale"],
           27: ["bilan-exercices-ta"],
           28: ["bilan-examen-ta"],
-          9: ["bilan-exercices-ta"],
-          11: ["bilan-examen-ta"],
+          9: ["bilan-exercices-taxi"],
+          11: ["bilan-examen-taxi"],
         };
 
         const targetQuizIds = trainerQuizIdsByModuleId[module.id];
