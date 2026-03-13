@@ -8,6 +8,7 @@ import { type CompetencesData } from "./competences-checklist-data";
 import { saveFormDocument } from "@/lib/saveFormDocument";
 import { toast } from "sonner";
 import { useAutoSave, useLoadDraft } from "@/hooks/useAutoSave";
+import { sendAdminNotification } from "@/lib/sendAdminNotification";
 
 interface Props {
   data: CompetencesData;
