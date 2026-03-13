@@ -126,11 +126,12 @@ export function useAutoSaveReponses<T = Record<string, any>>({
       };
       try {
         const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/reponses_apprenants?on_conflict=apprenant_id,exercice_id`;
+        const token = jwtTokenRef.current || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
         const xhr = new XMLHttpRequest();
         xhr.open("POST", url, false);
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.setRequestHeader("apikey", import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
-        xhr.setRequestHeader("Authorization", `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`);
+        xhr.setRequestHeader("Authorization", `Bearer ${token}`);
         xhr.setRequestHeader("Prefer", "resolution=merge-duplicates");
         xhr.send(JSON.stringify([row]));
       } catch (_) {}
