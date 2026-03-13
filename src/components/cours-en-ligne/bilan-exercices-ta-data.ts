@@ -11,7 +11,7 @@ function renumberQuestions(questions: { id: number; enonce: string; choix: any[]
 
 export const BILAN_EXERCICES_TA = [
   {
-    id: 203,
+    id: 250,
     titre: "📕 Bilan Réglementation Nationale",
     sousTitre: `${REGLEMENTATION_NATIONALE_EXERCICES.reduce((acc, e) => acc + (e.questions?.length || 0), 0)} questions — ADS, Carte pro, Tarification, Sanctions`,
     actif: true,
@@ -20,7 +20,7 @@ export const BILAN_EXERCICES_TA = [
     ),
   },
   {
-    id: 204,
+    id: 251,
     titre: "📕 Bilan Réglementation Locale",
     sousTitre: `${REGLEMENTATION_LOCALE_EXERCICES.reduce((acc, e) => acc + (e.questions?.length || 0), 0)} questions — Réglementation Locale Lyon`,
     actif: true,
