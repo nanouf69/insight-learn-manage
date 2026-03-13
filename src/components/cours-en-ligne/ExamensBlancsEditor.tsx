@@ -15,7 +15,7 @@ import { toast } from "sonner";
 
 // Virtual module_id range for examens blancs: 90000+
 // Each exam gets a unique module_id based on its index
-const EXAMEN_BLANC_MODULE_BASE = 90000;
+export const EXAMEN_BLANC_MODULE_BASE = 90000;
 
 export function getExamenModuleId(examIndex: number): number {
   return EXAMEN_BLANC_MODULE_BASE + examIndex;
