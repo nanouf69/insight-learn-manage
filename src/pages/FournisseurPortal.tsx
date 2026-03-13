@@ -1508,14 +1508,7 @@ export default function FournisseurPortal() {
                   </CardHeader>
                   <CardContent>
                     <EditableQuizViewer
-                      sections={[
-                        { ...T3P_EXERCICE_PARTIE_1, titre: `Bilan ${T3P_EXERCICE_PARTIE_1.titre}` },
-                        { ...T3P_EXERCICE_PARTIE_2, titre: `Bilan ${T3P_EXERCICE_PARTIE_2.titre}` },
-                        ...GESTION_EXERCICES.map(e => ({ ...e, titre: `Bilan ${e.titre}` })),
-                        ...SECURITE_ROUTIERE_EXERCICES.map(e => ({ ...e, titre: `Bilan ${e.titre}` })),
-                        ...REGLEMENTATION_NATIONALE_EXERCICES.map(e => ({ ...e, titre: `Bilan ${e.titre}` })),
-                        ...REGLEMENTATION_LOCALE_EXERCICES.map(e => ({ ...e, titre: `Bilan ${e.titre}` })),
-                      ]}
+                      sections={BILAN_EXERCICES_TAXI}
                       title="Quiz — Bilan Exercices TAXI"
                       icon="📊"
                       quizId="bilan-exercices-taxi"
