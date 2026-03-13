@@ -6,6 +6,7 @@ import { CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { saveFormDocument } from "@/lib/saveFormDocument";
+import { sendAdminNotification } from "@/lib/sendAdminNotification";
 
 interface CGVAcceptanceFormProps {
   apprenantId?: string;
@@ -154,6 +155,12 @@ export default function CGVAcceptanceForm({ apprenantId, completed, onComplete }
     setSaving(false);
     setAlreadyCompleted(true);
     toast.success("✅ CGV acceptées avec succès !");
+    sendAdminNotification({
+      type_document: "cgv-acceptation",
+      nom: "",
+      prenom: "",
+      donnees: { accepted: true, accepted_at: new Date().toISOString() },
+    });
     onComplete();
   };
 

@@ -26,6 +26,8 @@ function formatDocumentLabel(type: string): string {
     "analyse-besoin": "Analyse du besoin – Fiche client",
     "projet-professionnel": "Questionnaire Projet Professionnel",
     "test-competences": "Test de compétences avant formation",
+    "cgv-acceptation": "Conditions Générales de Vente — Acceptation",
+    "cgv-ri-acceptation": "CGV et Règlement Intérieur — Signature",
   };
   return labels[type] || type;
 }
