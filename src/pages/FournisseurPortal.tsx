@@ -35,6 +35,7 @@ import { T3P_EXERCICE_PARTIE_1, T3P_EXERCICE_PARTIE_2 } from "@/components/cours
 import { GESTION_EXERCICES } from "@/components/cours-en-ligne/exercices/gestion-exercices-data";
 import { SECURITE_ROUTIERE_EXERCICES } from "@/components/cours-en-ligne/exercices/securite-routiere-exercices-data";
 import { BILAN_EXAMEN_TAXI } from "@/components/cours-en-ligne/bilan-examen-taxi-data";
+import { BILAN_EXERCICES_TAXI } from "@/components/cours-en-ligne/bilan-exercices-taxi-data";
 import { NotesFraisTab } from "@/components/comptabilite/NotesFraisTab";
 import { Badge } from "@/components/ui/badge";
 import CoursPublic from "@/pages/CoursPublic";
