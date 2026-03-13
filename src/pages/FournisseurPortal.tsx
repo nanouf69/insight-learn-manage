@@ -1496,6 +1496,51 @@ export default function FournisseurPortal() {
                     />
                   </CardContent>
                 </Card>
+                {/* Bilan Exercices TAXI (complet) */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <span className="text-lg">📊</span> Bilan Exercices TAXI
+                    </CardTitle>
+                    <CardDescription>Tous les exercices TAXI regroupés : T3P, Gestion, Sécurité Routière, Régl. Nationale & Locale</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <EditableQuizViewer
+                      sections={[
+                        { ...T3P_EXERCICE_PARTIE_1, titre: `Bilan ${T3P_EXERCICE_PARTIE_1.titre}` },
+                        { ...T3P_EXERCICE_PARTIE_2, titre: `Bilan ${T3P_EXERCICE_PARTIE_2.titre}` },
+                        ...GESTION_EXERCICES.map(e => ({ ...e, titre: `Bilan ${e.titre}` })),
+                        ...SECURITE_ROUTIERE_EXERCICES.map(e => ({ ...e, titre: `Bilan ${e.titre}` })),
+                        ...REGLEMENTATION_NATIONALE_EXERCICES.map(e => ({ ...e, titre: `Bilan ${e.titre}` })),
+                        ...REGLEMENTATION_LOCALE_EXERCICES.map(e => ({ ...e, titre: `Bilan ${e.titre}` })),
+                      ]}
+                      title="Quiz — Bilan Exercices TAXI"
+                      icon="📊"
+                      quizId="bilan-exercices-taxi"
+                      fournisseurId={fournisseur?.id || ""}
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Bilan Examen TAXI */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <span className="text-lg">🎯</span> Bilan Examen TAXI
+                    </CardTitle>
+                    <CardDescription>Questions type examen TAXI — Régl. Nationale & Locale</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <EditableQuizViewer
+                      sections={BILAN_EXAMEN_TAXI}
+                      title="Quiz — Bilan Examen TAXI"
+                      icon="🎯"
+                      quizId="bilan-examen-taxi"
+                      fournisseurId={fournisseur?.id || ""}
+                    />
+                  </CardContent>
+                </Card>
+
                 {/* Bilan Exercices TA */}
                 <Card>
                   <CardHeader>
