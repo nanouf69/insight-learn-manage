@@ -2228,18 +2228,24 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     // Handle trainer quiz_questions_overrides changes in realtime
     const handleTrainerOverrideChange = async (payload: any) => {
-      const trainerQuizIdByModuleId: Record<number, string> = {
-        12: "cas-pratique-taxi",
-        7: "connaissance-ville",
-        64: "equipements-taxi",
-        13: "controle-connaissances-taxi",
+      const trainerQuizIdsByModuleId: Record<number, string[]> = {
+        12: ["cas-pratique-taxi"],
+        7: ["connaissance-ville"],
+        64: ["equipements-taxi"],
+        13: ["controle-connaissances-taxi"],
+        40: ["reglementation-nationale", "reglementation-locale"],
+        10: ["reglementation-nationale", "reglementation-locale"],
+        27: ["bilan-exercices-ta"],
+        28: ["bilan-examen-ta"],
+        9: ["bilan-exercices-ta"],
+        11: ["bilan-examen-ta"],
       };
-      const targetQuizId = trainerQuizIdByModuleId[module.id];
-      if (!targetQuizId) return;
+      const targetQuizIds = trainerQuizIdsByModuleId[module.id];
+      if (!targetQuizIds || targetQuizIds.length === 0) return;
 
       const newRow = payload.new as any;
       // Only process if it's for the relevant quiz
-      if (newRow?.quiz_id && newRow.quiz_id !== targetQuizId) return;
+      if (newRow?.quiz_id && !targetQuizIds.includes(newRow.quiz_id)) return;
 
       console.log("[Realtime] Trainer override changed, reloading for module", module.id);
 
@@ -2247,7 +2253,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       const { data } = await supabase
         .from("quiz_questions_overrides")
         .select("quiz_id, section_id, question_id, enonce, choix, updated_at")
-        .eq("quiz_id", targetQuizId)
+        .in("quiz_id", targetQuizIds)
         .order("updated_at", { ascending: false });
 
       if (!data || data.length === 0) return;
