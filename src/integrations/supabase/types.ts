@@ -1670,6 +1670,53 @@ export type Database = {
         }
         Relationships: []
       }
+      reponses_apprenants: {
+        Row: {
+          apprenant_id: string
+          completed: boolean
+          created_at: string
+          exercice_id: string
+          exercice_type: string
+          id: string
+          reponses: Json
+          score: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          apprenant_id: string
+          completed?: boolean
+          created_at?: string
+          exercice_id: string
+          exercice_type?: string
+          id?: string
+          reponses?: Json
+          score?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          apprenant_id?: string
+          completed?: boolean
+          created_at?: string
+          exercice_id?: string
+          exercice_type?: string
+          id?: string
+          reponses?: Json
+          score?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reponses_apprenants_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: false
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reservations_pratique: {
         Row: {
           apprenant_id: string
