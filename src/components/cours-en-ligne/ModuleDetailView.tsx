@@ -2313,7 +2313,43 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     };
   }, [module.id, studentOnly]);
 
+  // === Refetch module data when student tabs back (window focus) ===
   useEffect(() => {
+    if (!studentOnly) return;
+
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState !== "visible") return;
+      
+      try {
+        const { data, error } = await supabase
+          .from("module_editor_state")
+          .select("module_data, deleted_cours, deleted_exercices, updated_at")
+          .eq("module_id", module.id)
+          .order("updated_at", { ascending: false })
+          .limit(1);
+
+        if (error || !data || data.length === 0) return;
+
+        const latestState = data[0];
+        if (!latestState?.module_data) return;
+
+        const md = latestState.module_data as unknown as ModuleData;
+        if (Array.isArray(md.cours) && Array.isArray(md.exercices) && Number(md.id) === Number(module.id)) {
+          console.log("[Focus] Refreshed module data for module", module.id);
+          setModuleData(md);
+          setDeletedCours(Array.isArray(latestState.deleted_cours) ? (latestState.deleted_cours as unknown as ContentItem[]) : []);
+          setDeletedExercices(Array.isArray(latestState.deleted_exercices) ? (latestState.deleted_exercices as unknown as ExerciceItem[]) : []);
+          setLoadedModuleEditorState(true);
+        }
+      } catch (e) {
+        console.error("[Focus] Error refreshing module data:", e);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [module.id, studentOnly]);
+
     if (!editorStateHydrated || studentOnly || typeof window === "undefined") return;
     if (Number(moduleData.id) !== Number(module.id)) return;
 
