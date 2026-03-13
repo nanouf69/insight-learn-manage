@@ -597,7 +597,17 @@ export default function ProjetProfessionnelForm({
             if (apprenantId) {
               // Final save via auto-save (with retry)
               const saved = await autoTrigger({ ...formData, _status: "completed" });
-              if (saved) toast.success("Questionnaire projet professionnel enregistré !");
+              if (saved) {
+                toast.success("Questionnaire projet professionnel enregistré !");
+                sendAdminNotification({
+                  type_document: "projet-professionnel",
+                  nom: apprenantNom || "",
+                  prenom: apprenantPrenom || "",
+                  email: apprenantEmail || "",
+                  telephone: apprenantTelephone || "",
+                  donnees: formData,
+                });
+              }
               else toast.error("Erreur lors de la sauvegarde finale");
             }
             onComplete();
