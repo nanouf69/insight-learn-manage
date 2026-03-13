@@ -87,7 +87,7 @@ interface ResultatMatiere {
 }
 
 // ===== ÉCRAN DE SÉLECTION =====
-function EcranSelection({ onStart, onEdit, defaultBilanId, apprenantType }: { onStart: (examen: ExamenBlanc) => void; onEdit: () => void; defaultBilanId?: string | null; apprenantType?: string | null }) {
+function EcranSelection({ onStart, onEdit, defaultBilanId, apprenantType, examensData }: { onStart: (examen: ExamenBlanc) => void; onEdit: () => void; defaultBilanId?: string | null; apprenantType?: string | null; examensData: ExamenBlanc[] }) {
   // Determine the forced exam type from the student's formation type
   const forcedType = (() => {
     if (!apprenantType) return null;
@@ -98,13 +98,13 @@ function EcranSelection({ onStart, onEdit, defaultBilanId, apprenantType }: { on
 
   const [typeFiltre, setTypeFiltre] = useState<"tous" | "TAXI" | "VTC" | "TA" | "VA">(forcedType || "tous");
 
-  const examens = tousLesExamens.filter(e => {
+  const examens = examensData.filter(e => {
     const typeOk = typeFiltre === "tous" || e.type === typeFiltre;
     const isBilan = e.id.startsWith("bilan-");
     return typeOk && !isBilan;
   });
 
-  const examensBlancs = tousLesExamens.filter(e => !e.id.startsWith("bilan-") && (typeFiltre === "tous" || e.type === typeFiltre));
+  const examensBlancs = examensData.filter(e => !e.id.startsWith("bilan-") && (typeFiltre === "tous" || e.type === typeFiltre));
 
   return (
     <div className="space-y-6">
