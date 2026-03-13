@@ -155,6 +155,12 @@ export default function CGVAcceptanceForm({ apprenantId, completed, onComplete }
     setSaving(false);
     setAlreadyCompleted(true);
     toast.success("✅ CGV acceptées avec succès !");
+    sendAdminNotification({
+      type_document: "cgv-acceptation",
+      nom: "",
+      prenom: "",
+      donnees: { accepted: true, accepted_at: new Date().toISOString() },
+    });
     onComplete();
   };
 

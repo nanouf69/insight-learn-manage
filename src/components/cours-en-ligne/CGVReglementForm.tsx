@@ -180,6 +180,17 @@ export default function CGVReglementForm({
     setSaving(false);
     setAlreadyCompleted(true);
     toast.success("CGV et Reglement interieur signes avec succes !");
+    sendAdminNotification({
+      type_document: "cgv-ri-acceptation",
+      nom,
+      prenom,
+      donnees: {
+        cgv_accepted: true,
+        ri_accepted: true,
+        adresse,
+        date_signature: dateSignature,
+      },
+    });
     onComplete();
   };
 
