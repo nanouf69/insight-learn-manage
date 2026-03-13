@@ -12,6 +12,7 @@ import {
   FileText, Timer, Trophy, RotateCcw, ChevronRight, BookOpen, Pencil, Loader2, Bot
 } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, type Question } from "./examens-blancs-data";
+import { loadSavedExamens, EXAMEN_BLANC_MODULE_BASE } from "./ExamensBlancsEditor";
 import ExamensBlancsEditor from "./ExamensBlancsEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -86,7 +87,7 @@ interface ResultatMatiere {
 }
 
 // ===== ÉCRAN DE SÉLECTION =====
-function EcranSelection({ onStart, onEdit, defaultBilanId, apprenantType }: { onStart: (examen: ExamenBlanc) => void; onEdit: () => void; defaultBilanId?: string | null; apprenantType?: string | null }) {
+function EcranSelection({ onStart, onEdit, defaultBilanId, apprenantType, examensData }: { onStart: (examen: ExamenBlanc) => void; onEdit: () => void; defaultBilanId?: string | null; apprenantType?: string | null; examensData: ExamenBlanc[] }) {
   // Determine the forced exam type from the student's formation type
   const forcedType = (() => {
     if (!apprenantType) return null;
@@ -97,13 +98,13 @@ function EcranSelection({ onStart, onEdit, defaultBilanId, apprenantType }: { on
 
   const [typeFiltre, setTypeFiltre] = useState<"tous" | "TAXI" | "VTC" | "TA" | "VA">(forcedType || "tous");
 
-  const examens = tousLesExamens.filter(e => {
+  const examens = examensData.filter(e => {
     const typeOk = typeFiltre === "tous" || e.type === typeFiltre;
     const isBilan = e.id.startsWith("bilan-");
     return typeOk && !isBilan;
   });
 
-  const examensBlancs = tousLesExamens.filter(e => !e.id.startsWith("bilan-") && (typeFiltre === "tous" || e.type === typeFiltre));
+  const examensBlancs = examensData.filter(e => !e.id.startsWith("bilan-") && (typeFiltre === "tous" || e.type === typeFiltre));
 
   return (
     <div className="space-y-6">
@@ -852,7 +853,35 @@ export default function ExamensBlancsPage({
   const [matiereIndex, setMatiereIndex] = useState(0);
   const [tousResultats, setTousResultats] = useState<ResultatMatiere[]>([]);
   const [bilanPrefiltre, setBilanPrefiltre] = useState<string | null>(null);
+  const [liveExamens, setLiveExamens] = useState<ExamenBlanc[]>(tousLesExamens);
   const examStartTimeRef = useRef<number>(Date.now());
+
+  // Load saved exam overrides from DB on mount
+  useEffect(() => {
+    loadSavedExamens().then(saved => setLiveExamens(saved));
+  }, []);
+
+  // Realtime: reload when admin saves exam changes
+  useEffect(() => {
+    const channel = supabase
+      .channel('examens-blancs-live')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'module_editor_state',
+          filter: `module_id=gte.${EXAMEN_BLANC_MODULE_BASE}`,
+        },
+        () => {
+          console.log("[Realtime] Exam blanc updated, reloading...");
+          loadSavedExamens().then(saved => setLiveExamens(saved));
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   // Quand un bilan est demandé depuis les modules, on le met en avant
   useEffect(() => {
@@ -980,7 +1009,7 @@ export default function ExamensBlancsPage({
   }
 
   if (phase === "selection") {
-    return <EcranSelection onStart={handleStart} onEdit={() => setPhase("edition")} defaultBilanId={bilanPrefiltre} apprenantType={apprenantType} />;
+    return <EcranSelection onStart={handleStart} onEdit={() => setPhase("edition")} defaultBilanId={bilanPrefiltre} apprenantType={apprenantType} examensData={liveExamens} />;
   }
 
   if (phase === "intro" && examenChoisi) {

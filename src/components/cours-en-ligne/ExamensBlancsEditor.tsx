@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,16 +10,44 @@ import {
   Save, CheckCircle2, X, Clock, Layers
 } from "lucide-react";
 import { tousLesExamens, type ExamenBlanc, type Matiere, type Question, type Choix } from "./examens-blancs-data";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
-// ===== ÉTAT LOCAL (clone mutable des examens) =====
-let _examensEdites: ExamenBlanc[] = JSON.parse(JSON.stringify(tousLesExamens));
+// Virtual module_id range for examens blancs: 90000+
+// Each exam gets a unique module_id based on its index
+export const EXAMEN_BLANC_MODULE_BASE = 90000;
 
-export function getExamensEdites(): ExamenBlanc[] {
-  return _examensEdites;
+export function getExamenModuleId(examIndex: number): number {
+  return EXAMEN_BLANC_MODULE_BASE + examIndex;
 }
 
-function resetExamens() {
-  _examensEdites = JSON.parse(JSON.stringify(tousLesExamens));
+// Load saved exam overrides from DB
+export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
+  const examens = JSON.parse(JSON.stringify(tousLesExamens)) as ExamenBlanc[];
+  
+  try {
+    const moduleIds = examens.map((_, i) => EXAMEN_BLANC_MODULE_BASE + i);
+    const { data, error } = await supabase
+      .from("module_editor_state")
+      .select("module_id, module_data")
+      .in("module_id", moduleIds);
+    
+    if (error || !data || data.length === 0) return examens;
+    
+    for (const row of data) {
+      const idx = row.module_id - EXAMEN_BLANC_MODULE_BASE;
+      if (idx >= 0 && idx < examens.length && row.module_data) {
+        const saved = row.module_data as unknown as ExamenBlanc;
+        if (saved.matieres && Array.isArray(saved.matieres)) {
+          examens[idx] = { ...examens[idx], matieres: saved.matieres };
+        }
+      }
+    }
+  } catch (err) {
+    console.error("[ExamensEditor] Error loading saved exams:", err);
+  }
+  
+  return examens;
 }
 
 // ===== ÉDITEUR D'UNE QUESTION =====
@@ -323,6 +351,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
   const [examenSelId, setExamenSelId] = useState<string | null>(defaultExamenId || null);
   const [typeFiltre, setTypeFiltre] = useState<"tous" | "TAXI" | "VTC">("tous");
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const examensFiltres = examens.filter(e => typeFiltre === "tous" || e.type === typeFiltre);
   const examenSel = examens.find(e => e.id === examenSelId) || null;
@@ -337,15 +366,51 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
     }));
   };
 
-  const handleSaveAll = () => {
-    // Mise à jour de l'état global
-    _examensEdites = JSON.parse(JSON.stringify(examens));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+  // Load saved data from DB on mount
+  useEffect(() => {
+    loadSavedExamens().then(saved => {
+      setExamens(saved);
+    });
+  }, []);
+
+  const handleSaveAll = async () => {
+    setSaving(true);
+    try {
+      // Save each modified exam to module_editor_state
+      const promises = examens.map((ex, i) => {
+        const moduleId = EXAMEN_BLANC_MODULE_BASE + i;
+        return supabase.from("module_editor_state").upsert(
+          [{
+            module_id: moduleId,
+            module_data: ex as any,
+            deleted_cours: [] as any,
+            deleted_exercices: [] as any,
+            updated_at: new Date().toISOString(),
+          }],
+          { onConflict: "module_id" }
+        );
+      });
+      
+      const results = await Promise.all(promises);
+      const errors = results.filter(r => r.error);
+      
+      if (errors.length > 0) {
+        console.error("[ExamensEditor] Save errors:", errors.map(e => e.error));
+        toast.error("Erreur lors de la sauvegarde de certains examens");
+      } else {
+        setSaved(true);
+        toast.success("Examens blancs sauvegardés ! Les élèves verront les modifications.");
+        setTimeout(() => setSaved(false), 2500);
+      }
+    } catch (err) {
+      console.error("[ExamensEditor] Save failed:", err);
+      toast.error("Erreur lors de la sauvegarde");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleReset = () => {
-    resetExamens();
     setExamens(JSON.parse(JSON.stringify(tousLesExamens)));
   };
 

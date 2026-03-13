@@ -2195,21 +2195,41 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   useEffect(() => {
     if (!studentOnly) return; // Only students need realtime updates
 
+    // Refetch from DB instead of trusting the payload (which can be truncated for large JSONB)
+    const refetchModuleFromDb = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("module_editor_state")
+          .select("module_data, deleted_cours, deleted_exercices, updated_at")
+          .eq("module_id", module.id)
+          .order("updated_at", { ascending: false })
+          .limit(1);
+
+        if (error) throw error;
+        const latest = Array.isArray(data) ? data[0] : null;
+        if (!latest?.module_data) return;
+
+        const md = latest.module_data as unknown as ModuleData;
+        if (Array.isArray(md.cours) && Array.isArray(md.exercices) && Number(md.id) === Number(module.id)) {
+          console.log("[Realtime] Refetched module data from DB for module", module.id);
+          setModuleData(md);
+          setDeletedCours(Array.isArray(latest.deleted_cours) ? (latest.deleted_cours as unknown as ContentItem[]) : []);
+          setDeletedExercices(Array.isArray(latest.deleted_exercices) ? (latest.deleted_exercices as unknown as ExerciceItem[]) : []);
+          setLoadedModuleEditorState(true);
+        }
+      } catch (err) {
+        console.error("[Realtime] Error refetching module data:", err);
+      }
+    };
+
     const handleRealtimeChange = async (payload: any) => {
       const newData = payload.new as any;
-      if (!newData?.module_data) return;
+      const eventModule = newData?.module_id != null ? Number(newData.module_id) : null;
 
-      const md = newData.module_data as unknown as ModuleData;
-      const isDirectMatch = Array.isArray(md.cours) && Array.isArray(md.exercices) && Number(md.id) === Number(module.id);
-
-      if (isDirectMatch) {
-        // Direct module match — apply directly
-        console.log("[Realtime] Module data updated live for module", module.id);
-        setModuleData(md);
-        setDeletedCours(Array.isArray(newData.deleted_cours) ? (newData.deleted_cours as unknown as ContentItem[]) : []);
-        setDeletedExercices(Array.isArray(newData.deleted_exercices) ? (newData.deleted_exercices as unknown as ExerciceItem[]) : []);
-        setLoadedModuleEditorState(true);
-      } else if (Number(newData.module_id) !== Number(module.id)) {
+      if (eventModule === Number(module.id)) {
+        // Direct module match — refetch full data from DB (payload may be truncated)
+        await refetchModuleFromDb();
+      } else {
         // Another module was updated — check for shared questions (cross-module propagation)
         const crossOverrides = await loadCrossModuleOverridesFromDb();
         if (Object.keys(crossOverrides).length > 0) {
@@ -2293,16 +2313,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       .on(
         'postgres_changes',
         {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'module_editor_state',
-        },
-        handleRealtimeChange
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
           table: 'module_editor_state',
         },
@@ -2317,7 +2328,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         },
         handleTrainerOverrideChange
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`[Realtime] Channel module-editor-live-${module.id} status:`, status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
