@@ -2907,11 +2907,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }
     }, [uiStateHydrated, pendingResultRestore, pages, currentPage]);
 
-    // --- Get user ID for reponses_apprenants ---
+    // --- Get user ID and JWT for reponses_apprenants ---
     const userIdForSaveRef = useRef<string | null>(null);
+    const jwtTokenRef = useRef<string | null>(null);
     const reponsesSaveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     useEffect(() => {
-      supabase.auth.getUser().then(({ data }) => { userIdForSaveRef.current = data.user?.id ?? null; });
+      supabase.auth.getSession().then(({ data }) => {
+        userIdForSaveRef.current = data.session?.user?.id ?? null;
+        jwtTokenRef.current = data.session?.access_token ?? null;
+      });
     }, []);
 
     // --- Load saved partial answers from DB on mount ---
