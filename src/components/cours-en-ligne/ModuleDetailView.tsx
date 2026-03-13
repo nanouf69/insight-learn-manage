@@ -3114,16 +3114,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           updated_at: new Date().toISOString(),
         }));
         if (rows.length > 0) {
-          const blob = new Blob([JSON.stringify({ table: "reponses_apprenants", rows })], { type: "application/json" });
           const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/reponses_apprenants?on_conflict=apprenant_id,exercice_id`;
-          navigator.sendBeacon(url, blob);
-          // Fallback: also try synchronous fetch
+          const token = jwtTokenRef.current || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
           try {
             const xhr = new XMLHttpRequest();
             xhr.open("POST", url, false); // synchronous
             xhr.setRequestHeader("Content-Type", "application/json");
             xhr.setRequestHeader("apikey", import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
-            xhr.setRequestHeader("Authorization", `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`);
+            xhr.setRequestHeader("Authorization", `Bearer ${token}`);
             xhr.setRequestHeader("Prefer", "resolution=merge-duplicates");
             xhr.send(JSON.stringify(rows));
           } catch (_) {}
