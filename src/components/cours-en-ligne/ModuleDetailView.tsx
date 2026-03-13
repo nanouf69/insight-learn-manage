@@ -3039,7 +3039,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         } catch (e) {
           console.error("[AutoSave reponses_apprenants] error:", e);
         }
-      }, 500);
+      }, 300);
 
       // Also save to apprenant_module_completion (existing behavior, debounced 3s)
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
