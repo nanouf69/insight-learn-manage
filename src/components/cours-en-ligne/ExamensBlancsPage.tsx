@@ -209,36 +209,95 @@ function PassageMatiere({
   total,
   onTerminer,
   isBilan = false,
+  apprenantId,
+  examenId,
 }: {
   matiere: Matiere;
   numero: number;
   total: number;
   onTerminer: (reponses: Reponses) => void;
   isBilan?: boolean;
+  apprenantId?: string | null;
+  examenId?: string;
 }) {
   const [reponses, setReponses] = useState<Reponses>({});
   const [questionIndex, setQuestionIndex] = useState(0);
   const [expire, setExpire] = useState(false);
+  const [initialLoaded, setInitialLoaded] = useState(false);
 
   const question = matiere.questions[questionIndex];
   const dureeSecondes = matiere.duree * 60;
 
+  // Auto-save: get userId once
+  const userIdRef = useRef<string | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => { userIdRef.current = data.user?.id ?? null; });
+  }, []);
+
+  // Load saved responses on mount
+  const exerciceKey = `${examenId || "exam"}_${matiere.id}`;
+  useEffect(() => {
+    if (!apprenantId || initialLoaded) return;
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("reponses_apprenants" as any)
+          .select("reponses, completed")
+          .eq("apprenant_id", apprenantId)
+          .eq("exercice_id", exerciceKey)
+          .maybeSingle();
+        if (data && !(data as any).completed && (data as any).reponses) {
+          setReponses((data as any).reponses as Reponses);
+        }
+      } catch (e) { console.error("[AutoSave] Load error:", e); }
+      setInitialLoaded(true);
+    })();
+  }, [apprenantId, exerciceKey, initialLoaded]);
+
+  // Silent auto-save on every change
+  const persistReponses = (updated: Reponses) => {
+    if (!apprenantId || !userIdRef.current) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        await supabase.from("reponses_apprenants" as any).upsert({
+          apprenant_id: apprenantId,
+          user_id: userIdRef.current,
+          exercice_id: exerciceKey,
+          exercice_type: isBilan ? "bilan" : "examen_blanc",
+          reponses: updated,
+          completed: false,
+          updated_at: new Date().toISOString(),
+        } as any, { onConflict: "apprenant_id,exercice_id" });
+      } catch (e) { console.error("[AutoSave] Save error:", e); }
+    }, 500);
+  };
+
+  useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
+
   const handleQCMChange = (qId: number, lettre: string, checked: boolean, isMultiple: boolean) => {
     setReponses(prev => {
       const current = (prev[qId] as string[]) || [];
+      let next: Reponses;
       if (!isMultiple) {
-        return { ...prev, [qId]: [lettre] };
-      }
-      if (checked) {
-        return { ...prev, [qId]: [...current, lettre] };
+        next = { ...prev, [qId]: [lettre] };
+      } else if (checked) {
+        next = { ...prev, [qId]: [...current, lettre] };
       } else {
-        return { ...prev, [qId]: current.filter(l => l !== lettre) };
+        next = { ...prev, [qId]: current.filter(l => l !== lettre) };
       }
+      persistReponses(next);
+      return next;
     });
   };
 
   const handleQRCChange = (qId: number, val: string) => {
-    setReponses(prev => ({ ...prev, [qId]: val }));
+    setReponses(prev => {
+      const next = { ...prev, [qId]: val };
+      persistReponses(next);
+      return next;
+    });
   };
 
   const allAnswered = matiere.questions.every(q => {
