@@ -2221,6 +2221,62 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }
     };
 
+    // Handle trainer quiz_questions_overrides changes in realtime
+    const handleTrainerOverrideChange = async (payload: any) => {
+      const trainerQuizIdByModuleId: Record<number, string> = {
+        12: "cas-pratique-taxi",
+        7: "connaissance-ville",
+        64: "equipements-taxi",
+        13: "controle-connaissances-taxi",
+      };
+      const targetQuizId = trainerQuizIdByModuleId[module.id];
+      if (!targetQuizId) return;
+
+      const newRow = payload.new as any;
+      // Only process if it's for the relevant quiz
+      if (newRow?.quiz_id && newRow.quiz_id !== targetQuizId) return;
+
+      console.log("[Realtime] Trainer override changed, reloading for module", module.id);
+
+      // Reload all overrides for this quiz
+      const { data } = await supabase
+        .from("quiz_questions_overrides")
+        .select("quiz_id, section_id, question_id, enonce, choix, updated_at")
+        .eq("quiz_id", targetQuizId)
+        .order("updated_at", { ascending: false });
+
+      if (!data || data.length === 0) return;
+
+      const overrideMap = new Map<string, { enonce: string; choix: { lettre: string; texte: string; correct?: boolean }[] }>();
+      for (const ov of data) {
+        const key = `${ov.section_id}-${ov.question_id}`;
+        if (!overrideMap.has(key)) {
+          overrideMap.set(key, {
+            enonce: ov.enonce,
+            choix: ov.choix as { lettre: string; texte: string; correct?: boolean }[],
+          });
+        }
+      }
+
+      setModuleData((prev) => {
+        const updatedExercices = prev.exercices
+          .map((exo) => {
+            if (!exo.questions || exo.questions.length === 0) return exo;
+            const updatedQuestions = exo.questions
+              .map((q) => {
+                const override = overrideMap.get(`${exo.id}-${q.id}`);
+                if (!override) return q;
+                return { ...q, enonce: override.enonce, choix: override.choix };
+              })
+              .filter((q) => q.enonce !== "__DELETED__");
+            if (exo.questions.length > 0 && updatedQuestions.length === 0) return null;
+            return { ...exo, questions: updatedQuestions };
+          })
+          .filter((exo): exo is ExerciceItem => exo !== null);
+        return { ...prev, exercices: updatedExercices };
+      });
+    };
+
     const channel = supabase
       .channel(`module-editor-live-${module.id}`)
       .on(
@@ -2241,11 +2297,57 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         },
         handleRealtimeChange
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'quiz_questions_overrides',
+        },
+        handleTrainerOverrideChange
+      )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
+  }, [module.id, studentOnly]);
+
+  // === Refetch module data when student tabs back (window focus) ===
+  useEffect(() => {
+    if (!studentOnly) return;
+
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState !== "visible") return;
+      
+      try {
+        const { data, error } = await supabase
+          .from("module_editor_state")
+          .select("module_data, deleted_cours, deleted_exercices, updated_at")
+          .eq("module_id", module.id)
+          .order("updated_at", { ascending: false })
+          .limit(1);
+
+        if (error || !data || data.length === 0) return;
+
+        const latestState = data[0];
+        if (!latestState?.module_data) return;
+
+        const md = latestState.module_data as unknown as ModuleData;
+        if (Array.isArray(md.cours) && Array.isArray(md.exercices) && Number(md.id) === Number(module.id)) {
+          console.log("[Focus] Refreshed module data for module", module.id);
+          setModuleData(md);
+          setDeletedCours(Array.isArray(latestState.deleted_cours) ? (latestState.deleted_cours as unknown as ContentItem[]) : []);
+          setDeletedExercices(Array.isArray(latestState.deleted_exercices) ? (latestState.deleted_exercices as unknown as ExerciceItem[]) : []);
+          setLoadedModuleEditorState(true);
+        }
+      } catch (e) {
+        console.error("[Focus] Error refreshing module data:", e);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, [module.id, studentOnly]);
 
   useEffect(() => {
