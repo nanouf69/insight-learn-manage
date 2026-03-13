@@ -31,11 +31,6 @@ import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "@/components/cours-en-ligne/co
 import { BILAN_EXAMEN_TA } from "@/components/cours-en-ligne/bilan-examen-ta-data";
 import { BILAN_EXERCICES_TA } from "@/components/cours-en-ligne/bilan-exercices-ta-data";
 import { CAS_PRATIQUE_TAXI_EXERCICES } from "@/components/cours-en-ligne/cas-pratique-taxi-exercices-data";
-import { T3P_EXERCICE_PARTIE_1, T3P_EXERCICE_PARTIE_2 } from "@/components/cours-en-ligne/exercices/t3p-exercices-data";
-import { GESTION_EXERCICES } from "@/components/cours-en-ligne/exercices/gestion-exercices-data";
-import { SECURITE_ROUTIERE_EXERCICES } from "@/components/cours-en-ligne/exercices/securite-routiere-exercices-data";
-import { BILAN_EXAMEN_TAXI } from "@/components/cours-en-ligne/bilan-examen-taxi-data";
-import { BILAN_EXERCICES_TAXI } from "@/components/cours-en-ligne/bilan-exercices-taxi-data";
 import { NotesFraisTab } from "@/components/comptabilite/NotesFraisTab";
 import { Badge } from "@/components/ui/badge";
 import CoursPublic from "@/pages/CoursPublic";
