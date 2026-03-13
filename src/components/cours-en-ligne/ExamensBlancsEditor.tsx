@@ -365,15 +365,51 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
     }));
   };
 
-  const handleSaveAll = () => {
-    // Mise à jour de l'état global
-    _examensEdites = JSON.parse(JSON.stringify(examens));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+  // Load saved data from DB on mount
+  useEffect(() => {
+    loadSavedExamens().then(saved => {
+      setExamens(saved);
+    });
+  }, []);
+
+  const handleSaveAll = async () => {
+    setSaving(true);
+    try {
+      // Save each modified exam to module_editor_state
+      const promises = examens.map((ex, i) => {
+        const moduleId = EXAMEN_BLANC_MODULE_BASE + i;
+        return supabase.from("module_editor_state").upsert(
+          [{
+            module_id: moduleId,
+            module_data: ex as any,
+            deleted_cours: [] as any,
+            deleted_exercices: [] as any,
+            updated_at: new Date().toISOString(),
+          }],
+          { onConflict: "module_id" }
+        );
+      });
+      
+      const results = await Promise.all(promises);
+      const errors = results.filter(r => r.error);
+      
+      if (errors.length > 0) {
+        console.error("[ExamensEditor] Save errors:", errors.map(e => e.error));
+        toast.error("Erreur lors de la sauvegarde de certains examens");
+      } else {
+        setSaved(true);
+        toast.success("Examens blancs sauvegardés ! Les élèves verront les modifications.");
+        setTimeout(() => setSaved(false), 2500);
+      }
+    } catch (err) {
+      console.error("[ExamensEditor] Save failed:", err);
+      toast.error("Erreur lors de la sauvegarde");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleReset = () => {
-    resetExamens();
     setExamens(JSON.parse(JSON.stringify(tousLesExamens)));
   };
 
