@@ -1009,7 +1009,7 @@ export default function ExamensBlancsPage({
   }
 
   if (phase === "selection") {
-    return <EcranSelection onStart={handleStart} onEdit={() => setPhase("edition")} defaultBilanId={bilanPrefiltre} apprenantType={apprenantType} />;
+    return <EcranSelection onStart={handleStart} onEdit={() => setPhase("edition")} defaultBilanId={bilanPrefiltre} apprenantType={apprenantType} examensData={liveExamens} />;
   }
 
   if (phase === "intro" && examenChoisi) {
