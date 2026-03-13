@@ -2024,6 +2024,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_current_user_apprenant: {
+        Args: { _apprenant_id: string }
+        Returns: boolean
+      }
       search_apprenant_onboarding: {
         Args: { p_nom: string; p_prenom: string }
         Returns: {
