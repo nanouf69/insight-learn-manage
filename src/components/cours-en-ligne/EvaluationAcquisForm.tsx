@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { saveFormDocument } from "@/lib/saveFormDocument";
+import { sendAdminNotification } from "@/lib/sendAdminNotification";
 import { useAutoSave, useLoadDraft } from "@/hooks/useAutoSave";
 
 type NiveauAcquis = "A" | "B" | "C" | "D";
@@ -238,8 +239,15 @@ const EvaluationAcquisForm = ({ formationType, apprenantId, onComplete }: Evalua
     setInvalidKeys(new Set());
     if (apprenantId) {
       const saved = await autoTrigger({ ...collectData(), _status: "completed" });
-      if (saved) toast.success("Évaluation des acquis enregistrée !");
-      else toast.error("Erreur lors de la sauvegarde");
+      if (saved) {
+        toast.success("Évaluation des acquis enregistrée !");
+        sendAdminNotification({
+          type_document: "evaluation-acquis",
+          nom: "",
+          prenom: "",
+          donnees: { ...collectData(), _status: "completed" },
+        });
+      } else toast.error("Erreur lors de la sauvegarde");
     }
     setSubmitted(true);
     toast.success("✅ Évaluation des acquis envoyée avec succès !");

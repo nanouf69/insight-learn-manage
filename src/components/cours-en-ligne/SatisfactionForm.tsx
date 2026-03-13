@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { CheckCircle2, Star } from "lucide-react";
 import { toast } from "sonner";
 import { saveFormDocument } from "@/lib/saveFormDocument";
+import { sendAdminNotification } from "@/lib/sendAdminNotification";
 import { useAutoSave, useLoadDraft } from "@/hooks/useAutoSave";
 
 interface CritereRow {
@@ -132,8 +133,15 @@ const SatisfactionForm = ({ formationType, apprenantId, onComplete }: Satisfacti
     }
     if (apprenantId) {
       const saved = await autoTrigger({ ...collectData(), _status: "completed" });
-      if (saved) toast.success("Questionnaire de satisfaction enregistré !");
-      else toast.error("Erreur lors de la sauvegarde");
+      if (saved) {
+        toast.success("Questionnaire de satisfaction enregistré !");
+        sendAdminNotification({
+          type_document: "satisfaction",
+          nom: "",
+          prenom: "",
+          donnees: { ...collectData(), _status: "completed" },
+        });
+      } else toast.error("Erreur lors de la sauvegarde");
     }
     setSubmitted(true);
     toast.success("✅ Questionnaire de satisfaction envoyé avec succès !");
