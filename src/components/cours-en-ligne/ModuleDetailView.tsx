@@ -2141,7 +2141,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           const hasValidModuleData =
             Array.isArray(md.cours) &&
             Array.isArray(md.exercices) &&
-            Number(md.id) === Number(module.id);
+            Number(md.id) === Number(module.id) &&
+            (
+              Number(module.id) !== 27 ||
+              (() => {
+                const exerciseIds = md.exercices.map((exo) => Number(exo.id)).sort((a, b) => a - b);
+                return exerciseIds.length === 2 && exerciseIds[0] === 250 && exerciseIds[1] === 251;
+              })()
+            );
 
           if (hasValidModuleData) {
             setModuleData(md);
