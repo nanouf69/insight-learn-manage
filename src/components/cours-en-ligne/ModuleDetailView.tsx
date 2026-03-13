@@ -2781,11 +2781,41 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }
     }, [uiStateHydrated, pendingResultRestore, pages, currentPage]);
 
+    // --- Get user ID for reponses_apprenants ---
+    const userIdForSaveRef = useRef<string | null>(null);
+    const reponsesSaveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    useEffect(() => {
+      supabase.auth.getUser().then(({ data }) => { userIdForSaveRef.current = data.user?.id ?? null; });
+    }, []);
+
     // --- Load saved partial answers from DB on mount ---
     useEffect(() => {
       if (!apprenantId || savedAnswersLoaded) return;
       (async () => {
         try {
+          // Try loading from reponses_apprenants first (per-exercice granularity)
+          const exerciceIds = activeExercices.map(e => `module_${module.id}_exo_${e.id}`);
+          if (exerciceIds.length > 0) {
+            const { data: repData } = await supabase
+              .from("reponses_apprenants" as any)
+              .select("exercice_id, reponses, completed")
+              .eq("apprenant_id", apprenantId)
+              .in("exercice_id", exerciceIds);
+            
+            if (repData && (repData as any[]).length > 0) {
+              const restored: Record<string, string | string[]> = {};
+              (repData as any[]).forEach((row: any) => {
+                if (!row.completed && row.reponses && typeof row.reponses === "object") {
+                  Object.assign(restored, row.reponses);
+                }
+              });
+              if (Object.keys(restored).length > 0) {
+                setSelectedAnswers((prev) => (Object.keys(prev).length > 0 ? prev : restored));
+              }
+            }
+          }
+
+          // Also check apprenant_module_completion for backward compatibility
           const { data } = await supabase
             .from("apprenant_module_completion")
             .select("details, score_obtenu")
@@ -2848,9 +2878,44 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       })();
     }, [apprenantId, module.id, savedAnswersLoaded, activeExercices, pages]);
 
-    // --- Auto-save partial answers to DB (debounced 3s) ---
+    // --- Auto-save partial answers to DB (debounced) ---
     const autoSaveAnswers = (answers: Record<string, string | string[]>) => {
       if (!apprenantId || completionPersistedRef.current) return;
+
+      // Save to reponses_apprenants per exercice (500ms debounce)
+      if (reponsesSaveDebounceRef.current) clearTimeout(reponsesSaveDebounceRef.current);
+      reponsesSaveDebounceRef.current = setTimeout(async () => {
+        if (!userIdForSaveRef.current) return;
+        try {
+          // Group answers by exercice
+          const byExo = new Map<number, Record<string, string | string[]>>();
+          for (const [key, val] of Object.entries(answers)) {
+            const exoId = parseInt(key.split("-")[0], 10);
+            if (!Number.isFinite(exoId)) continue;
+            if (!byExo.has(exoId)) byExo.set(exoId, {});
+            byExo.get(exoId)![key] = val;
+          }
+          
+          const rows = Array.from(byExo.entries()).map(([exoId, exoAnswers]) => ({
+            apprenant_id: apprenantId,
+            user_id: userIdForSaveRef.current,
+            exercice_id: `module_${module.id}_exo_${exoId}`,
+            exercice_type: "quiz",
+            reponses: exoAnswers,
+            completed: false,
+            updated_at: new Date().toISOString(),
+          }));
+
+          if (rows.length > 0) {
+            await supabase.from("reponses_apprenants" as any)
+              .upsert(rows as any, { onConflict: "apprenant_id,exercice_id" });
+          }
+        } catch (e) {
+          console.error("[AutoSave reponses_apprenants] error:", e);
+        }
+      }, 500);
+
+      // Also save to apprenant_module_completion (existing behavior, debounced 3s)
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
       autoSaveTimerRef.current = setTimeout(async () => {
         try {
@@ -2891,10 +2956,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }, 3000);
     };
 
-    // Cleanup timer on unmount
+    // Cleanup timers on unmount
     useEffect(() => {
       return () => {
         if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+        if (reponsesSaveDebounceRef.current) clearTimeout(reponsesSaveDebounceRef.current);
       };
     }, []);
 
