@@ -305,6 +305,22 @@ export default function Step12() {
         console.error("Erreur sauvegarde dossier bienvenue:", docErr);
       }
 
+      // Fire-and-forget admin notification email
+      const selectedExamNotif = datesExamenTheorique.find(e => e.value === dateExamen);
+      sendAdminNotification({
+        type_document: "dossier-bienvenue",
+        nom,
+        prenom,
+        email,
+        telephone,
+        numero_dossier_cma: numeroDossier,
+        mot_de_passe_cma: localStorage.getItem('onboarding_mot_de_passe_cma') || '',
+        type_examen: getTypeExamenLabel(typeExamen),
+        date_examen: dateExamen,
+        lieu_examen: selectedExamNotif?.lieu || '',
+        b2_vierge: b2Vierge,
+      });
+
       setIsSubmitting(false);
       setIsSubmitted(true);
 
