@@ -151,6 +151,7 @@ interface ModuleDetailViewProps {
   onModuleCompleted?: (moduleId: number) => void;
   apprenantType?: string | null;
   isPresentiel?: boolean;
+  hideFormulaires?: boolean;
   apprenantInfo?: {
     nom?: string;
     prenom?: string;
