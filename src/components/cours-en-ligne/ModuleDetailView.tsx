@@ -2634,7 +2634,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const learnerUiStateKey = `module-ui-state:${apprenantId ?? "anonymous"}:${module.id}`;
     const learnerUiStateAnonymousFallbackKey = `module-ui-state:anonymous:${module.id}`;
 
-    const activeCours = moduleData.cours.filter(c => c.actif);
+    const HIDDEN_CHECKLIST_TYPES = ["analyse-besoin", "projet-professionnel", "competences", "cgv", "cgv-reglement"];
+    const activeCours = moduleData.cours.filter(c => c.actif && !(hideFormulaires && c.checklistType && HIDDEN_CHECKLIST_TYPES.includes(c.checklistType)));
     const activeExercices = moduleData.exercices.filter(e => e.actif) as ExerciceItem[];
 
     // === Subject number mapping for stepper numbering (e.g. 1.1, 1.2, 2.1…) ===
