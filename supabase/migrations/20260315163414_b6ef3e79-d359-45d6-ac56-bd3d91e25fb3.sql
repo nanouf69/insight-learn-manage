@@ -1,0 +1,1 @@
+UPDATE apprenants SET modules_autorises = ARRAY[1, 2, 3, 4, 35, 5, 70, 8, 50] WHERE email = 'demo-vtc@ftransport.fr';
