@@ -925,6 +925,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           onModuleCompleted={handleModuleCompleted}
           apprenantType={apprenant?.type_apprenant || null}
           isPresentiel={!["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"].includes(selectedFormation)}
+          hideFormulaires={apprenant?.email === "demo-vtc@ftransport.fr"}
           apprenantInfo={apprenant ? {
             nom: apprenant.nom,
             prenom: apprenant.prenom,
