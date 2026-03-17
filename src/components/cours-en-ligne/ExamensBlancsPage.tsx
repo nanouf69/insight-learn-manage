@@ -994,7 +994,7 @@ export default function ExamensBlancsPage({
       noteSur: matiere.noteSur,
       noteEliminatoire: matiere.noteEliminatoire,
       coefficient: matiere.coefficient,
-      admis: note >= (matiere.noteEliminatoire / matiere.noteSur) * maxPoints,
+      admis: maxPoints > 0 ? note >= (matiere.noteEliminatoire / (matiere.noteSur || 20)) * maxPoints : false,
       reponses,
     };
 
