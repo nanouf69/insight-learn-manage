@@ -3461,54 +3461,8 @@ const matiere_reglementation_taxi2_examen5: Matiere = {
     { id: 8, type: "QCM", enonce: "Quel est le prix du TARIF C ?", choix: [{ lettre: "A", texte: "1€" }, { lettre: "B", texte: "2€", correct: true }, { lettre: "C", texte: "3€" }, { lettre: "D", texte: "4€" }] }
   ]
 };
-  duree: 30,
-  coefficient: 3,
-  noteEliminatoire: 6,
-  noteSur: 20,
-  questions: [
-    {
-      id: 1, type: "QCM", enonce: "Lorsque les charges d'exploitation d'une entreprise sont inférieures aux produits :",
-      choix: [
-        { lettre: "A", texte: "Il y a perte d'exploitation" },
-        { lettre: "B", texte: "L'entreprise doit poser le bilan" },
-        { lettre: "C", texte: "Il y a bénéfice", correct: true }
-      ]
-    },
-    {
-      id: 2, type: "QCM", enonce: "Dans un bilan :",
-      choix: [
-        { lettre: "A", texte: "si le total de l'actif est inférieur au passif il y a perte" },
-        { lettre: "B", texte: "le total de l'actif est toujours égal au total du passif", correct: true },
-        { lettre: "C", texte: "si le total de l'actif est supérieur au passif il y a bénéfice" }
-      ]
-    },
-    {
-      id: 3, type: "QCM", enonce: "Un artisan au régime réel rembourse 930€/mois dont 620€ de capital. Quel montant de charges déduire au 31 décembre ?",
-      choix: [
-        { lettre: "A", texte: "3 720 €", correct: true },
-        { lettre: "B", texte: "5 580 €" },
-        { lettre: "C", texte: "7 740 €" }
-      ]
-    },
-    {
-      id: 4, type: "QCM", enonce: "Mon voyant d'essence vient de s'allumer :",
-      choix: [
-        { lettre: "A", texte: "j'allume mes feux de détresse" },
-        { lettre: "B", texte: "je continue ma route jusqu'à une station" },
-        { lettre: "C", texte: "je réduis mon allure pour diminuer ma consommation", correct: true },
-        { lettre: "D", texte: "je m'arrête sur ma droite" }
-      ]
-    },
-    {
-      id: 5, type: "QCM", enonce: "Titulaire d'un permis probatoire, dans quel cas dois-je suivre un stage de sensibilisation :",
-      choix: [
-        { lettre: "A", texte: "en cas de perte en une seule fois de 3 points", correct: true },
-        { lettre: "B", texte: "en cas de perte en une seule fois de 4 points" },
-        { lettre: "C", texte: "en cas de perte en une seule fois de 2 points" }
-      ]
-    }
-  ]
-};
+
+
 
 const matiere_reglementation_taxi2_examen5: Matiere = {
   id: "reglementation_taxi2",
