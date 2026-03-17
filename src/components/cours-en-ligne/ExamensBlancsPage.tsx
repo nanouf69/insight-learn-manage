@@ -341,7 +341,8 @@ function PassageMatiere({
     });
   };
 
-  const allAnswered = matiere.questions.every(q => {
+  const allAnswered = questionsSafe.every(q => {
+    if (!q || q === undefined) return false;
     const rep = reponses[q.id];
     if (q?.type === "QCM") return Array.isArray(rep) && rep.length > 0;
     return typeof rep === "string" && rep.trim().length > 0;
@@ -359,7 +360,9 @@ function PassageMatiere({
   const isMultiple = (q: Question) =>
     q?.type === "QCM" && (q.choix?.filter(c => c.correct).length || 0) > 1;
 
-  const progress = ((questionIndex + 1) / matiere.questions.length) * 100;
+  const safeQuestionsCount = questionsSafe.length || 1;
+  const safeQuestionIndex = Math.min(questionIndex, safeQuestionsCount - 1);
+  const progress = ((safeQuestionIndex + 1) / safeQuestionsCount) * 100;
 
   return (
     <div className="space-y-4">
