@@ -3602,38 +3602,22 @@ const matiere_reglementation_vtc_examen5: Matiere = {
   noteEliminatoire: 6,
   noteSur: 20,
   questions: [
-    {
-      id: 1, type: "QCM", enonce: "Lorsque les charges d'exploitation sont inférieures aux produits :",
-      choix: [
-        { lettre: "A", texte: "Il y a perte" },
-        { lettre: "B", texte: "L'entreprise doit déposer le bilan" },
-        { lettre: "C", texte: "Il y a bénéfice", correct: true }
-      ]
-    },
-    {
-      id: 2, type: "QCM", enonce: "La CET (contribution économique territoriale) fait partie :",
-      choix: [
-        { lettre: "A", texte: "Des impôts locaux", correct: true },
-        { lettre: "B", texte: "Des impôts sur les sociétés" },
-        { lettre: "C", texte: "Des impôts sur le revenu" }
-      ]
-    },
-    {
-      id: 3, type: "QCM", enonce: "Un artisan au régime réel rembourse 930€/mois dont 620€ de capital. Charges déductibles au 31 décembre :",
-      choix: [
-        { lettre: "A", texte: "3 720 €", correct: true },
-        { lettre: "B", texte: "5 580 €" },
-        { lettre: "C", texte: "11 160 €" }
-      ]
-    },
-    {
-      id: 4, type: "QCM", enonce: "Titulaire d'un permis probatoire, dans quel cas dois-je suivre un stage de sensibilisation :",
-      choix: [
-        { lettre: "A", texte: "perte en une seule fois de 3 points", correct: true },
-        { lettre: "B", texte: "perte en une seule fois de 4 points" },
-        { lettre: "C", texte: "perte en une seule fois de 2 points" }
-      ]
-    }
+    { id: 1, type: "QRC", enonce: "En cas de retard très important du client, que faites-vous ?", reponseQRC: "Dans un premier temps je prends contact avec le client afin de lui demander son heure d'arrivée. En fonction de celle-ci je lui propose de lui réserver un autre VTC si j'ai une autre course de prévue. Dans le cas contraire, je l'attends.", reponses_possibles: ["contact", "heure d'arrivée", "réserver", "autre VTC", "attends"] },
+    { id: 2, type: "QRC", enonce: "Le montant d'une prestation s'élève à 75 € TTC. Calculez le montant de la TVA et le prix HT.", reponseQRC: "Prix HT : 75/1,10 = 68,18 €. Montant TVA : 75 - 68,18 = 6,82 €.", reponses_possibles: ["68,18", "6,82", "75/1,10"] },
+    { id: 3, type: "QRC", enonce: "Quelles sont les méthodes de prospection existantes ? Citez un exemple de chaque.", reponseQRC: "Prospection traditionnelle (porte à porte, téléphone) ou prospection numérique (site web, mailing, réseaux sociaux, centrales de réservations).", reponses_possibles: ["traditionnelle", "porte à porte", "téléphone", "numérique", "site web", "mailing", "réseaux sociaux"] },
+    { id: 4, type: "QRC", enonce: "Vous connaissez un VTC qui va démarrer son activité avec des prix très bas afin d'attirer un maximum de clients. Que pensez-vous de cette politique tarifaire ?", reponseQRC: "Politique tarifaire risquée : rentabilité diminuée, perception du client (prix bas = qualité mauvaise ?), dégradation de l'image de la profession.", reponses_possibles: ["risquée", "rentabilité", "qualité", "image", "profession"] },
+    { id: 5, type: "QCM", enonce: "A l'aéroport, le parking professionnel est saturé alors que vos clients ne vont pas tarder à sortir :", choix: [{ lettre: "A", texte: "vous vous garez sur des zébras" }, { lettre: "B", texte: "vous vous garez au niveau de la dépose taxi" }, { lettre: "C", texte: "vous vous garez au parking public", correct: true }, { lettre: "D", texte: "vous attendez qu'une place se libère" }] },
+    { id: 6, type: "QCM", enonce: "Le panier moyen est :", choix: [{ lettre: "A", texte: "La moyenne des achats par client", correct: true }, { lettre: "B", texte: "la taille des achats à charger dans le coffre" }, { lettre: "C", texte: "la taille moyenne des paniers de courses en France" }] },
+    { id: 7, type: "QCM", enonce: "En déposant une cliente de nuit à son domicile :", choix: [{ lettre: "A", texte: "vous proposez de la raccompagner jusqu'à la porte" }, { lettre: "B", texte: "vous la déposez devant l'immeuble et attendez qu'elle soit rentrée", correct: true }, { lettre: "C", texte: "vous la déposez et repartez" }] },
+    { id: 8, type: "QCM", enonce: "Que doit-on dire lorsqu'on décroche un appel téléphonique ?", choix: [{ lettre: "A", texte: "Allo" }, { lettre: "B", texte: "Le nom de la société" }, { lettre: "C", texte: "Le nom de la société et bonjour", correct: true }] },
+    { id: 9, type: "QCM", enonce: "La marge peut être exprimée en pourcentage du :", choix: [{ lettre: "A", texte: "chiffre d'affaires", correct: true }, { lettre: "B", texte: "coût fixe" }, { lettre: "C", texte: "coût des cotisations sociales" }, { lettre: "D", texte: "coût de revient", correct: true }] },
+    { id: 10, type: "QCM", enonce: "Dans le mix marketing, à quoi correspondent les 4P ?", choix: [{ lettre: "A", texte: "Prix produit parrainage personnalisation" }, { lettre: "B", texte: "Plateforme présentation place promotion" }, { lettre: "C", texte: "Prix produit promotion place", correct: true }] },
+    { id: 11, type: "QCM", enonce: "Le matériel informatique peut être amorti sur :", choix: [{ lettre: "A", texte: "3 ans", correct: true }, { lettre: "B", texte: "5 ans" }, { lettre: "C", texte: "1 an" }] },
+    { id: 12, type: "QCM", enonce: "Quelle est la première étape d'une stratégie commerciale ?", choix: [{ lettre: "A", texte: "Le plan d'action" }, { lettre: "B", texte: "Le marketing mix" }, { lettre: "C", texte: "L'analyse du marché", correct: true }] },
+    { id: 13, type: "QCM", enonce: "Trouver régulièrement de nouveaux clients c'est :", choix: [{ lettre: "A", texte: "Une nécessité pour la survie de l'entreprise", correct: true }, { lettre: "B", texte: "Une obligation de votre comptable" }, { lettre: "C", texte: "Un moyen de garder votre confort de vie" }] },
+    { id: 14, type: "QCM", enonce: "Un client vous demande si vous faites des prestations en B to B. De quoi parle-t-il ?", choix: [{ lettre: "A", texte: "de prestations d'un professionnel vers des professionnels", correct: true }, { lettre: "B", texte: "de prestations d'un particulier vers des particuliers" }, { lettre: "C", texte: "de prestations business to business", correct: true }] },
+    { id: 15, type: "QCM", enonce: "En tant qu'exploitant, je peux :", choix: [{ lettre: "A", texte: "fixer librement les prix en m'assurant de ne pas travailler à perte", correct: true }, { lettre: "B", texte: "fixer librement les prix, sous réserve d'être en dessous du prix de revient" }, { lettre: "C", texte: "fixer les prix en respectant la tarification imposée par l'État" }] },
+    { id: 16, type: "QCM", enonce: "Vous attendez un client à l'aéroport :", choix: [{ lettre: "A", texte: "Vous l'attendez dans le hall d'arrivée avec une pancarte", correct: true }, { lettre: "B", texte: "Vous téléphonez au client pour lui dire où il est" }, { lettre: "C", texte: "Vous attendez qu'il vous appelle" }] }
   ]
 };
 
@@ -3645,22 +3629,14 @@ const matiere_reglementation_vtc2_examen5: Matiere = {
   noteEliminatoire: 6,
   noteSur: 20,
   questions: [
-    {
-      id: 1, type: "QCM", enonce: "En cas de récidive conduite sous stupéfiants, vous encourez :",
-      choix: [
-        { lettre: "A", texte: "confiscation/immobilisation du véhicule", correct: true },
-        { lettre: "B", texte: "suspension du permis", correct: true },
-        { lettre: "C", texte: "annulation du permis", correct: true }
-      ]
-    },
-    {
-      id: 2, type: "QCM", enonce: "Vous prenez votre téléphone en main en conduisant, vous encourez :",
-      choix: [
-        { lettre: "A", texte: "un retrait de deux points" },
-        { lettre: "B", texte: "un retrait d'un point" },
-        { lettre: "C", texte: "un retrait de trois points", correct: true }
-      ]
-    }
+    { id: 1, type: "QRC", enonce: "Si vous utilisez votre véhicule VTC à des fins privées, que devez-vous faire ?", reponseQRC: "Retirer la carte professionnelle. Attention, la vignette doit toujours rester collée.", reponses_possibles: ["retirer", "carte professionnelle", "vignette", "collée"] },
+    { id: 2, type: "QRC", enonce: "Quelle démarche faut-il entreprendre pour exploiter un véhicule électrique dérogeant aux caractéristiques techniques imposées aux véhicules VTC ?", reponseQRC: "Il n'y a pas de démarche car un véhicule électrique n'a pas besoin de respecter des caractéristiques techniques pour être utilisé par un chauffeur VTC.", reponses_possibles: ["pas de démarche", "électrique", "pas besoin", "caractéristiques techniques"] },
+    { id: 3, type: "QCM", enonce: "La prise en charge d'un client sur la voie publique sans réservation préalable est :", choix: [{ lettre: "A", texte: "autorisée si consécutive à la dépose du client précédent sur le même lieu" }, { lettre: "B", texte: "un délit puni d'une peine de prison et d'une amende pouvant aller jusqu'à 15 000 €", correct: true }, { lettre: "C", texte: "passible d'une suspension du permis de conduire" }] },
+    { id: 4, type: "QCM", enonce: "Quelles sont les dimensions minimum d'une voiture pour être utilisée comme VTC ?", choix: [{ lettre: "A", texte: "4,5 m x 1,7 m", correct: true }, { lettre: "B", texte: "4,6 m x 1,8 m" }, { lettre: "C", texte: "4,3 m x 1,5 m" }, { lettre: "D", texte: "4,5 m x 1,6 m" }] },
+    { id: 5, type: "QCM", enonce: "L'inscription au registre des exploitants VTC donne lieu à :", choix: [{ lettre: "A", texte: "la publication au bulletin officiel" }, { lettre: "B", texte: "la publication du nom sur le site du Ministère" }, { lettre: "C", texte: "la délivrance d'une attestation d'inscription", correct: true }, { lettre: "D", texte: "la délivrance d'un diplôme" }] },
+    { id: 6, type: "QCM", enonce: "Comment reconnaît-on un VTC ?", choix: [{ lettre: "A", texte: "Par la couleur noire du véhicule" }, { lettre: "B", texte: "Par un macaron à l'avant et à l'arrière du véhicule", correct: true }, { lettre: "C", texte: "Par un macaron à l'avant" }, { lettre: "D", texte: "Par un macaron à l'arrière" }] },
+    { id: 7, type: "QCM", enonce: "La durée maximale de stationnement précédant la prise en charge à un aéroport ou gare pour un VTC est de :", choix: [{ lettre: "A", texte: "30 minutes" }, { lettre: "B", texte: "45 minutes" }, { lettre: "C", texte: "1 h 30" }, { lettre: "D", texte: "1 heure", correct: true }] },
+    { id: 8, type: "QCM", enonce: "Pour la réalisation d'une prestation de VTC :", choix: [{ lettre: "A", texte: "les CGV peuvent constituer un document valant contrat si le client a signé toutes les pages" }, { lettre: "B", texte: "il doit exister un contrat obligatoirement écrit sur support papier" }, { lettre: "C", texte: "il doit exister un contrat pouvant être écrit sur support papier ou électronique", correct: true }] }
   ]
 };
 
@@ -4254,45 +4230,20 @@ const matiere_reglementation_vtc_examen6: Matiere = {
   noteEliminatoire: 6,
   noteSur: 20,
   questions: [
-    {
-      id: 1, type: "QCM", enonce: "Dans quel cas le conducteur doit-il réduire sa vitesse ?",
-      choix: [
-        { lettre: "A", texte: "Lors du croisement ou dépassement de piétons", correct: true },
-        { lettre: "B", texte: "Lorsque la route est dégagée" },
-        { lettre: "C", texte: "Lors du croisement ou dépassement de cyclistes", correct: true }
-      ]
-    },
-    {
-      id: 2, type: "QCM", enonce: "Le fait de ne pas présenter immédiatement son permis est puni de :",
-      choix: [
-        { lettre: "A", texte: "Une amende de quatrième classe", correct: true },
-        { lettre: "B", texte: "Une amende de seconde classe" },
-        { lettre: "C", texte: "Une amende de troisième classe" }
-      ]
-    },
-    {
-      id: 3, type: "QCM", enonce: "Pour dépasser un cycliste en ville, espace latéral minimum :",
-      choix: [
-        { lettre: "A", texte: "1,00 m", correct: true },
-        { lettre: "B", texte: "2,00 m" }
-      ]
-    },
-    {
-      id: 4, type: "QCM", enonce: "Dans une entreprise individuelle :",
-      choix: [
-        { lettre: "A", texte: "L'entrepreneur individuel est responsable des dettes", correct: true },
-        { lettre: "B", texte: "Les biens de l'entreprise et du fondateur sont confondus", correct: true },
-        { lettre: "C", texte: "Responsabilité limitée au capital" }
-      ]
-    },
-    {
-      id: 5, type: "QCM", enonce: "Le dirigeant d'une micro-entreprise :",
-      choix: [
-        { lettre: "A", texte: "est soumis à l'impôt sur les sociétés" },
-        { lettre: "B", texte: "n'est pas soumis à l'impôt" },
-        { lettre: "C", texte: "est soumis à l'impôt sur le revenu", correct: true }
-      ]
-    }
+    { id: 1, type: "QRC", enonce: "Qu'appelle-t-on un marché de niche en mercatique ?", reponseQRC: "Un marché de niche est un marché très étroit correspondant à un produit/service très spécialisé.", reponses_possibles: ["marché", "étroit", "spécialisé", "niche"] },
+    { id: 2, type: "QRC", enonce: "Définissez la notion de marge en gestion.", reponseQRC: "Une marge correspond à la différence entre un prix de vente et un prix d'achat.", reponses_possibles: ["différence", "prix de vente", "prix d'achat"] },
+    { id: 3, type: "QRC", enonce: "Qu'est-ce qu'un apporteur d'affaires ?", reponseQRC: "Un apporteur d'affaires est une personne qui met en relation des personnes qui souhaitent réaliser entre elles des opérations commerciales.", reponses_possibles: ["met en relation", "personnes", "opérations commerciales"] },
+    { id: 4, type: "QRC", enonce: "Qu'est-ce qu'un coût de revient ?", reponseQRC: "Le coût de revient d'un produit ou d'une prestation est la somme des charges engagées pour la production d'un bien ou d'un service.", reponses_possibles: ["somme des charges", "production", "bien", "service"] },
+    { id: 5, type: "QCM", enonce: "Quelle affirmation est vraie ?", choix: [{ lettre: "A", texte: "lorsque la demande est supérieure à l'offre, les prix diminuent" }, { lettre: "B", texte: "lorsque la demande est inférieure à l'offre, les prix augmentent" }, { lettre: "C", texte: "lorsque la demande est supérieure à l'offre, les prix augmentent", correct: true }] },
+    { id: 6, type: "QCM", enonce: "En accueillant un client qui voyage seul, un chauffeur VTC l'invite à prendre place :", choix: [{ lettre: "A", texte: "sur le siège arrière droit", correct: true }, { lettre: "B", texte: "sur le siège arrière gauche" }, { lettre: "C", texte: "sur le siège avant" }] },
+    { id: 7, type: "QCM", enonce: "Diriez-vous que fidéliser vos clients VTC coûte :", choix: [{ lettre: "A", texte: "le même prix que d'en trouver de nouveaux" }, { lettre: "B", texte: "moins cher que d'en trouver de nouveaux", correct: true }, { lettre: "C", texte: "plus cher que d'en trouver de nouveaux" }] },
+    { id: 8, type: "QCM", enonce: "Qu'est-ce qu'une zone de chalandise ?", choix: [{ lettre: "A", texte: "c'est un bateau" }, { lettre: "B", texte: "c'est le nombre de conducteurs de VTC dans une zone" }, { lettre: "C", texte: "c'est la zone géographique d'où provient la majorité de la clientèle", correct: true }] },
+    { id: 9, type: "QCM", enonce: "Qu'est-ce que le marché en mercatique ?", choix: [{ lettre: "A", texte: "le lieu où des producteurs se rassemblent pour proposer leurs produits" }, { lettre: "B", texte: "le lieu de rencontre physique ou virtuel de l'offre et de la demande", correct: true }, { lettre: "C", texte: "l'ensemble des vendeurs et des acheteurs concernés par l'échange d'un bien ou d'un service", correct: true }] },
+    { id: 10, type: "QCM", enonce: "Qu'appelle-t-on un service premium ?", choix: [{ lettre: "A", texte: "un service de premier prix" }, { lettre: "B", texte: "un service gratuit" }, { lettre: "C", texte: "un service haut de gamme", correct: true }] },
+    { id: 11, type: "QCM", enonce: "Font partie des frais financiers à prendre en compte dans le calcul du coût de revient :", choix: [{ lettre: "A", texte: "la rémunération des capitaux propres investis" }, { lettre: "B", texte: "la TVA reversée aux services fiscaux" }, { lettre: "C", texte: "la rémunération du cabinet comptable" }, { lettre: "D", texte: "les intérêts bancaires des emprunts contractés", correct: true }] },
+    { id: 12, type: "QCM", enonce: "Que doit-on dire lorsqu'on décroche un appel téléphonique ?", choix: [{ lettre: "A", texte: "le nom de la société et bonjour", correct: true }, { lettre: "B", texte: "le nom de la société" }, { lettre: "C", texte: "allo" }] },
+    { id: 13, type: "QCM", enonce: "Le prix psychologique correspond :", choix: [{ lettre: "A", texte: "au prix de référence pour une catégorie de produits/prestations" }, { lettre: "B", texte: "au prix que le consommateur est prêt à payer", correct: true }, { lettre: "C", texte: "au prix perçu par le consommateur" }, { lettre: "D", texte: "au prix dont se souvient le consommateur" }] },
+    { id: 14, type: "QCM", enonce: "On appelle marketing direct :", choix: [{ lettre: "A", texte: "l'envoi d'un message personnalisé à un groupe de personnes qualifiées", correct: true }, { lettre: "B", texte: "l'achat d'espace publicitaire dans la presse locale" }, { lettre: "C", texte: "la mise en valeur d'offres promotionnelles dans le véhicule" }] }
   ]
 };
 
@@ -4304,27 +4255,14 @@ const matiere_reglementation_vtc2_examen6: Matiere = {
   noteEliminatoire: 6,
   noteSur: 20,
   questions: [
-    {
-      id: 1, type: "QRC", enonce: "Qu'est-ce que le renouvellement de la carte professionnelle VTC ?",
-      reponseQRC: "Le renouvellement de la carte professionnelle intervient lorsque le conducteur produit une attestation de visite médicale et une attestation de formation continue.",
-      reponses_possibles: ["visite médicale", "formation continue", "attestation"]
-    },
-    {
-      id: 2, type: "QCM", enonce: "Je m'installe en tant qu'artisan avec crédit-bail pour mon véhicule :",
-      choix: [
-        { lettre: "A", texte: "Je l'amortis sur 5 ans" },
-        { lettre: "B", texte: "Je ne peux pas l'amortir", correct: true },
-        { lettre: "C", texte: "Je l'amortis sur 10 ans" }
-      ]
-    },
-    {
-      id: 3, type: "QCM", enonce: "Le dirigeant d'une micro-entreprise VTC est soumis à :",
-      choix: [
-        { lettre: "A", texte: "l'impôt sur les sociétés" },
-        { lettre: "B", texte: "aucun impôt" },
-        { lettre: "C", texte: "l'impôt sur le revenu", correct: true }
-      ]
-    }
+    { id: 1, type: "QRC", enonce: "Je souhaite connaître les entreprises de chauffeurs VTC présentes sur la ville de Lyon. Comment obtenir ces informations ?", reponseQRC: "Consulter le registre des VTC.", reponses_possibles: ["registre", "VTC", "consulter"] },
+    { id: 2, type: "QRC", enonce: "Citez 4 caractéristiques d'un véhicule thermique que doit respecter un chauffeur VTC pour être en activité.", reponseQRC: "Entre 4 et 9 places. Dimensions 1m70 x 4m50 minimum. Moins de 7 ans. 4 portes. 84 kW minimum.", reponses_possibles: ["4 et 9 places", "1m70", "4m50", "7 ans", "4 portes", "84 kW"] },
+    { id: 3, type: "QCM", enonce: "Combien de temps est valide la carte VTC ?", choix: [{ lettre: "A", texte: "2 ans" }, { lettre: "B", texte: "3 ans" }, { lettre: "C", texte: "4 ans" }, { lettre: "D", texte: "5 ans", correct: true }] },
+    { id: 4, type: "QCM", enonce: "Où demander la carte professionnelle VTC ?", choix: [{ lettre: "A", texte: "La préfecture de son département de résidence", correct: true }, { lettre: "B", texte: "L'imprimerie nationale" }, { lettre: "C", texte: "La chambre des métiers et de l'artisanat" }] },
+    { id: 5, type: "QCM", enonce: "Définition de l'activité de VTC :", choix: [{ lettre: "A", texte: "Exploitants qui mettent à disposition une ou plusieurs voitures avec chauffeur dans des conditions fixées à l'avance" }, { lettre: "B", texte: "Exploitants qui mettent à disposition une voiture sans conditions fixées à l'avance" }, { lettre: "C", texte: "Exploitants qui mettent à disposition une ou plusieurs voitures avec chauffeur dans des conditions fixées à l'avance entre les deux parties" }, { lettre: "D", texte: "Exploitants qui mettent à disposition un ou plusieurs véhicules avec chauffeur dans des conditions fixées à l'avance entre les deux parties", correct: true }] },
+    { id: 6, type: "QCM", enonce: "Quels justificatifs vous dispensent de la garantie financière ?", choix: [{ lettre: "A", texte: "La copie de la carte grise lorsque l'exploitant est propriétaire du véhicule", correct: true }, { lettre: "B", texte: "La copie du contrat de location ou de crédit-bail" }, { lettre: "C", texte: "La copie du contrat de location ou crédit-bail d'au moins 6 mois", correct: true }] },
+    { id: 7, type: "QCM", enonce: "Quel est le délai maximum pour prévenir le registre des VTC en cas de modification des informations ?", choix: [{ lettre: "A", texte: "6 jours" }, { lettre: "B", texte: "12 jours" }, { lettre: "C", texte: "15 jours", correct: true }, { lettre: "D", texte: "30 jours" }] },
+    { id: 8, type: "QCM", enonce: "La procédure d'inscription au registre des VTC doit être renouvelée tous les :", choix: [{ lettre: "A", texte: "an" }, { lettre: "B", texte: "deux ans" }, { lettre: "C", texte: "trois ans" }, { lettre: "D", texte: "cinq ans", correct: true }] }
   ]
 };
 
