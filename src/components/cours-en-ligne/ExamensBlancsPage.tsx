@@ -585,7 +585,87 @@ function PassageMatiere({
   );
 }
 
-// ===== RÉSULTATS =====
+// ===== ÉCRAN DE TRANSITION ENTRE MATIÈRES =====
+function TransitionMatiere({
+  matiereTerminee,
+  scoreObtenu,
+  maxPoints,
+  noteSur,
+  matiereSuivante,
+  numeroSuivant,
+  total,
+  onContinuer,
+}: {
+  matiereTerminee: string;
+  scoreObtenu: number;
+  maxPoints: number;
+  noteSur: number;
+  matiereSuivante: string;
+  numeroSuivant: number;
+  total: number;
+  onContinuer: () => void;
+}) {
+  const noteSur20 = maxPoints > 0 ? (scoreObtenu / maxPoints) * (noteSur || 20) : 0;
+  return (
+    <div className="max-w-xl mx-auto space-y-6 py-8">
+      {/* Matière terminée */}
+      <Card className="border-2 overflow-hidden" style={{ borderColor: '#00B4D8' }}>
+        <div className="px-5 py-3 flex items-center gap-3" style={{ backgroundColor: '#0D2540' }}>
+          <CheckCircle2 className="w-5 h-5" style={{ color: '#00B4D8' }} />
+          <h3 className="font-semibold text-white text-sm">Matière terminée</h3>
+        </div>
+        <CardContent className="pt-4 pb-4 space-y-3">
+          <p className="font-semibold text-lg">{matiereTerminee}</p>
+          <div className="flex items-center gap-4">
+            <div className="text-center">
+              <p className="text-3xl font-black" style={{ color: '#00B4D8' }}>{scoreObtenu}</p>
+              <p className="text-xs text-muted-foreground">/ {maxPoints} pts</p>
+            </div>
+            <div className="h-12 w-px bg-border" />
+            <div className="text-center">
+              <p className="text-3xl font-black" style={{ color: '#00B4D8' }}>{isFinite(noteSur20) ? noteSur20.toFixed(1) : "0.0"}</p>
+              <p className="text-xs text-muted-foreground">/ {noteSur || 20}</p>
+            </div>
+            <div className="flex-1">
+              <Progress
+                value={maxPoints > 0 ? Math.min((scoreObtenu / maxPoints) * 100, 100) : 0}
+                className="h-2.5"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Flèche de transition */}
+      <div className="flex justify-center">
+        <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: '#0D2540' }}>
+          <ArrowRight className="w-5 h-5 text-white" />
+        </div>
+      </div>
+
+      {/* Matière suivante */}
+      <Card className="border-2 border-dashed" style={{ borderColor: '#F4A227' }}>
+        <CardContent className="pt-5 pb-5 text-center space-y-3">
+          <Badge className="text-xs font-semibold" style={{ backgroundColor: '#0D2540', color: '#00B4D8' }}>
+            Matière {numeroSuivant}/{total}
+          </Badge>
+          <h3 className="text-xl font-bold" style={{ color: '#0D2540' }}>{matiereSuivante}</h3>
+          <p className="text-sm text-muted-foreground">Préparez-vous, le chronomètre démarrera dès que vous cliquerez.</p>
+          <Button
+            className="gap-2 text-base px-8 py-5 font-semibold text-white"
+            style={{ backgroundColor: '#F4A227', borderColor: '#F4A227' }}
+            onClick={onContinuer}
+          >
+            <ArrowRight className="w-5 h-5" />
+            Commencer {matiereSuivante.split(" - ")[0]}
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+
 function EcranResultats({
   examen,
   resultats,
