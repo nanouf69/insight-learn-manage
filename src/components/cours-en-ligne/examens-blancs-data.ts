@@ -3462,7 +3462,42 @@ const matiere_anglais_examen5: Matiere = {
 
 const matiere_reglementation_taxi_examen5: Matiere = {
   id: "reglementation_taxi",
-  nom: "F(T) - Connaissance du territoire et réglementation locale TAXI",
+  nom: "F(T) - Réglementation nationale TAXI",
+  duree: 30, coefficient: 3, noteEliminatoire: 6, noteSur: 20,
+  questions: [
+    { id: 1, type: "QRC", enonce: "Citez les trois éléments constitutifs du montant affiché sur le compteur horokilométrique.", reponseQRC: "La prise en charge, le tarif kilométrique et l'heure d'attente ou marche lente.", reponses_possibles: ["prise en charge", "tarif kilométrique", "heure d'attente", "marche lente"] },
+    { id: 2, type: "QRC", enonce: "Lorsqu'un titulaire ne peut exploiter lui-même son ADS, quelles possibilités ?", reponseQRC: "La location du véhicule taxi à un conducteur. L'emploi d'un salarié.", reponses_possibles: ["location", "salarié"] },
+    { id: 3, type: "QRC", enonce: "Quelle est la définition du véhicule taxi ?", reponseQRC: "Véhicule automobile catégorie M1, 8 places max outre le conducteur, PTAC ≤ 3,5t, muni d'équipements spéciaux, titulaire d'une ADS sur la voie publique pour transport à titre onéreux.", reponses_possibles: ["M1", "huit places", "3,5 tonnes", "équipements spéciaux", "ADS"] },
+    { id: 4, type: "QRC", enonce: "Quelle convention doit appliquer le taxi pour un transport médical d'une CPAM différente ?", reponseQRC: "Il doit appliquer la convention de la CPAM de son département.", reponses_possibles: ["convention", "CPAM", "département"] },
+    { id: 5, type: "QCM", enonce: "Un conducteur de taxi peut-il transporter des colis non accompagnés ?", choix: [{ lettre: "A", texte: "Oui, paiement à l'arrivée au compteur" }, { lettre: "B", texte: "Oui, à condition de se faire payer d'avance", correct: true }, { lettre: "C", texte: "Non, c'est interdit" }, { lettre: "D", texte: "Non, même avec un contrat d'assistance bagages" }] },
+    { id: 6, type: "QCM", enonce: "Où adresser une demande de détaxe de carburants ?", choix: [{ lettre: "A", texte: "À la direction des Douanes", correct: true }, { lettre: "B", texte: "À la DDTM" }, { lettre: "C", texte: "Au bureau des taxis de la Préfecture" }] },
+    { id: 7, type: "QCM", enonce: "Le conducteur de taxi a le droit :", choix: [{ lettre: "A", texte: "De ne pas attendre les voyageurs dans une voie sans stationnement", correct: true }, { lettre: "B", texte: "De prendre en charge des voyageurs poursuivis" }, { lettre: "C", texte: "D'être accompagné de personnes autres que des clients" }, { lettre: "D", texte: "De solliciter un pourboire" }] },
+    { id: 8, type: "QCM", enonce: "Quelle prestation le conducteur de taxi artisan ne peut-il bénéficier ?", choix: [{ lettre: "A", texte: "La retraite de base" }, { lettre: "B", texte: "Les allocations familiales" }, { lettre: "C", texte: "L'indemnité de chômage", correct: true }, { lettre: "D", texte: "L'indemnité journalière maladie" }] },
+    { id: 9, type: "QCM", enonce: "Les taxis comportent :", choix: [{ lettre: "A", texte: "Outre le siège du conducteur, 8 places assises max", correct: true }, { lettre: "B", texte: "7 places max" }, { lettre: "C", texte: "9 places max" }, { lettre: "D", texte: "9 places y compris le conducteur" }] },
+    { id: 10, type: "QCM", enonce: "Qu'est-ce que le carnet de métrologie ?", choix: [{ lettre: "A", texte: "Un carnet de liaison entre installateur et taxi", correct: true }, { lettre: "B", texte: "Un cahier de note" }, { lettre: "C", texte: "Un livre" }, { lettre: "D", texte: "Un certificat de conformité" }] },
+    { id: 11, type: "QCM", enonce: "Exclusion de l'examen du CCPCT :", choix: [{ lettre: "A", texte: "Fraude dans les 5 ans", correct: true }, { lettre: "B", texte: "Fraude dans les 10 ans" }, { lettre: "C", texte: "Retrait définitif dans les 5 ans" }, { lettre: "D", texte: "Retrait définitif dans les 10 ans" }] },
+    { id: 12, type: "QCM", enonce: "Tarif maximum du prix de l'heure au niveau national ?", choix: [{ lettre: "A", texte: "40,15 €" }, { lettre: "B", texte: "41,15 €" }, { lettre: "C", texte: "42,15 €", correct: true }] },
+    { id: 13, type: "QCM", enonce: "Autorité compétente pour fixer localement une couleur unique des taxis ?", choix: [{ lettre: "A", texte: "Présidents du tribunal de commerce" }, { lettre: "B", texte: "Présidents de l'organisation professionnelle" }, { lettre: "C", texte: "Celle qui délivre les ADS", correct: true }, { lettre: "D", texte: "Présidents de la chambre de métiers" }] },
+    { id: 14, type: "QCM", enonce: "En cessant son activité, le titulaire de la carte professionnelle doit :", choix: [{ lettre: "A", texte: "La céder à titre onéreux" }, { lettre: "B", texte: "La détruire" }, { lettre: "C", texte: "La restituer à la préfecture", correct: true }] },
+    { id: 15, type: "QCM", enonce: "Lorsque le conducteur taxi est en service :", choix: [{ lettre: "A", texte: "Il peut éclairer le lumineux en vert" }, { lettre: "B", texte: "Il doit éclairer le lumineux en vert s'il n'est pas occupé", correct: true }, { lettre: "C", texte: "Il a interdiction d'éclairer en vert" }] }
+  ]
+};
+
+const matiere_reglementation_taxi2_examen5: Matiere = {
+  id: "reglementation_taxi2",
+  nom: "G(T) - Connaissance du territoire et réglementation locale TAXI",
+  duree: 20, coefficient: 3, noteEliminatoire: 6, noteSur: 20,
+  questions: [
+    { id: 1, type: "QRC", enonce: "Citez 4 boulevards du 8ème arrondissement.", reponseQRC: "Boulevard Ambroise Paré, Boulevard Pinel, Boulevard des États-Unis, Boulevard Jean 23.", reponses_possibles: ["Ambroise Paré", "Pinel", "États-Unis", "Jean 23"] },
+    { id: 2, type: "QRC", enonce: "Citez 4 consulats du 2ème arrondissement.", reponseQRC: "Consulat de Belgique, Pays-Bas, États-Unis, Luxembourg, Mexique, Pérou, Finlande, Canada, Thaïlande.", reponses_possibles: ["Belgique", "Pays-Bas", "États-Unis", "Luxembourg", "Mexique"] },
+    { id: 3, type: "QCM", enonce: "Quel est le principal monument religieux catholique sur Fourvière ?", choix: [{ lettre: "A", texte: "La cathédrale Saint Jean" }, { lettre: "B", texte: "La basilique de Notre Dame de Fourvière", correct: true }, { lettre: "C", texte: "L'église Saint Georges" }, { lettre: "D", texte: "L'église Sainte Blandine" }] },
+    { id: 4, type: "QCM", enonce: "Le musée des Confluences est un musée :", choix: [{ lettre: "A", texte: "D'histoire naturelle, anthropologie, sociétés et civilisations", correct: true }, { lettre: "B", texte: "Des beaux arts" }, { lettre: "C", texte: "D'architecture romaine" }, { lettre: "D", texte: "D'art contemporain" }] },
+    { id: 5, type: "QCM", enonce: "Quel événement est célébré le 8 décembre à Lyon ?", choix: [{ lettre: "A", texte: "La galette des rois" }, { lettre: "B", texte: "La fête des lumières", correct: true }, { lettre: "C", texte: "La fête des marrons" }] },
+    { id: 6, type: "QCM", enonce: "Où se trouve l'office du tourisme sur Lyon ?", choix: [{ lettre: "A", texte: "Place des Jacobins" }, { lettre: "B", texte: "Place Carnot" }, { lettre: "C", texte: "Place des Terreaux" }, { lettre: "D", texte: "Place Bellecour", correct: true }] },
+    { id: 7, type: "QCM", enonce: "Quel nom portait Lyon à l'époque gallo-romaine ?", choix: [{ lettre: "A", texte: "Lyon By Night" }, { lettre: "B", texte: "Lugdunum", correct: true }, { lettre: "C", texte: "Lion" }, { lettre: "D", texte: "La gone" }] },
+    { id: 8, type: "QCM", enonce: "Quel est le prix du TARIF C ?", choix: [{ lettre: "A", texte: "1€" }, { lettre: "B", texte: "2€", correct: true }, { lettre: "C", texte: "3€" }, { lettre: "D", texte: "4€" }] }
+  ]
+};
   duree: 30,
   coefficient: 3,
   noteEliminatoire: 6,
