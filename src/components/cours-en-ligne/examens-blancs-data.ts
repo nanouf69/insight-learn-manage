@@ -2298,49 +2298,119 @@ const matiere_reglementation_vtc_examen3: Matiere = {
   noteSur: 20,
   questions: [
     {
-      id: 1, type: "QRC", enonce: "Citez 2 cas dans lesquels la carte professionnelle peut être retirée à un conducteur du T3P.",
-      reponseQRC: "Annulation du permis de conduire. Délit pénal prévu par le code des transports (délits routiers, agressions sexuelles, etc.).",
-      reponses_possibles: ["annulation permis", "délit pénal", "code des transports"]
+      id: 1, type: "QRC", enonce: "Qui fixe le prix d'une prestation de VTC, selon quelle contrainte ?",
+      reponseQRC: "Le chauffeur VTC en fonction de l'offre et de la demande de son lieu d'exercice.",
+      reponses_possibles: ["chauffeur VTC", "offre et demande", "lieu d'exercice"]
     },
     {
-      id: 2, type: "QCM", enonce: "Un client est avec son chien d'aveugle et appelle pour une course VTC :",
+      id: 2, type: "QRC", enonce: "Citez 4 moyens de communication à votre disposition pour faire connaître votre entreprise.",
+      reponseQRC: "Site-web ou blog. E-mailing. Réseaux sociaux. Flyers. Journaux locaux. Presse professionnelle. Radio locale. Texto. Carte de visite. Bouche à oreille.",
+      reponses_possibles: ["site-web", "e-mailing", "réseaux sociaux", "flyers", "journaux", "radio", "carte de visite", "bouche à oreille"]
+    },
+    {
+      id: 3, type: "QRC", enonce: "Votre client oublie son portefeuille dans votre véhicule. Que faites-vous ?",
+      reponseQRC: "Le contacter le plus rapidement possible, le rassurer, lui proposer de ramener son bien le plus sûrement et rapidement possible.",
+      reponses_possibles: ["contacter", "rassurer", "ramener", "rapidement"]
+    },
+    {
+      id: 4, type: "QRC", enonce: "A quoi correspond le chiffre d'affaires d'un exploitant VTC ?",
+      reponseQRC: "Il correspond à la somme des prestations réalisées au cours d'un exercice (transports et prestations annexes).",
+      reponses_possibles: ["somme des prestations", "exercice", "transports", "prestations annexes"]
+    },
+    {
+      id: 5, type: "QCM", enonce: "Le conducteur de VTC doit se distinguer des autres transporteurs en :",
       choix: [
-        { lettre: "A", texte: "J'ai le droit de refuser" },
-        { lettre: "B", texte: "Je suis dans l'obligation de l'accepter lui et son chien", correct: true },
-        { lettre: "C", texte: "Je n'accepte que le client" }
+        { lettre: "A", texte: "prenant en charge tous les clients sans tenir compte de la qualité" },
+        { lettre: "B", texte: "optimisant sa structure, adoptant une attitude professionnelle et disposant d'un véhicule remarquable", correct: true },
+        { lettre: "C", texte: "utilisant un véhicule puissant pour déposer le client le plus rapidement possible" }
       ]
     },
     {
-      id: 3, type: "QCM", enonce: "La réglementation du T3P se trouve dans le :",
+      id: 6, type: "QCM", enonce: "Le prix psychologique correspond :",
       choix: [
-        { lettre: "A", texte: "code préfectoral" },
-        { lettre: "B", texte: "code du travail" },
-        { lettre: "C", texte: "code des transports", correct: true }
+        { lettre: "A", texte: "au prix perçu par le consommateur" },
+        { lettre: "B", texte: "au prix que le consommateur est prêt à payer", correct: true },
+        { lettre: "C", texte: "au prix dont se souvient le consommateur" }
       ]
     },
     {
-      id: 4, type: "QCM", enonce: "Un conducteur de T3P n'effectuant que des remplacements épisodiques doit-il être titulaire d'une carte professionnelle ?",
+      id: 7, type: "QCM", enonce: "Qu'est-ce qu'une zone de chalandise ?",
       choix: [
-        { lettre: "A", texte: "non, si moins de 10h par semaine" },
-        { lettre: "B", texte: "non" },
-        { lettre: "C", texte: "oui", correct: true }
+        { lettre: "A", texte: "c'est un bateau" },
+        { lettre: "B", texte: "c'est le nombre de conducteurs de VTC dans une zone" },
+        { lettre: "C", texte: "c'est la zone géographique d'où provient la majorité de la clientèle", correct: true }
       ]
     },
     {
-      id: 5, type: "QCM", enonce: "Pour s'inscrire à l'examen d'accès à la profession, le candidat ne doit pas avoir été exclu pour fraude :",
+      id: 8, type: "QCM", enonce: "Vendre une prestation à perte :",
       choix: [
-        { lettre: "A", texte: "dans les 10 ans qui précèdent sa demande" },
-        { lettre: "B", texte: "dans les 5 ans qui précèdent sa demande", correct: true },
-        { lettre: "C", texte: "dans l'année" },
-        { lettre: "D", texte: "dans les 2 ans qui précèdent sa demande" }
+        { lettre: "A", texte: "constitue une forme de concurrence déloyale" },
+        { lettre: "B", texte: "est interdit par le code du commerce", correct: true },
+        { lettre: "C", texte: "n'est possible que lorsqu'un contrat annuel a été souscrit" }
       ]
     },
     {
-      id: 6, type: "QCM", enonce: "Un examen médical supplémentaire peut être demandé :",
+      id: 9, type: "QCM", enonce: "Quelle affirmation est vraie ?",
       choix: [
-        { lettre: "A", texte: "En cas d'interruption d'activité de plus de six mois", correct: true },
-        { lettre: "B", texte: "En cas de suspension de moins d'un mois" },
-        { lettre: "C", texte: "En cas d'invalidation du permis", correct: true }
+        { lettre: "A", texte: "lorsque l'offre est supérieure à la demande, les prix diminuent", correct: true },
+        { lettre: "B", texte: "lorsque l'offre est inférieure à la demande, les prix diminuent" },
+        { lettre: "C", texte: "lorsque l'offre est supérieure à la demande, les prix augmentent" }
+      ]
+    },
+    {
+      id: 10, type: "QCM", enonce: "Le concierge dans un hôtel a pour fonction :",
+      choix: [
+        { lettre: "A", texte: "le ménage, la sortie des poubelles" },
+        { lettre: "B", texte: "de satisfaire les besoins et demandes des clients", correct: true },
+        { lettre: "C", texte: "la surveillance de l'hôtel" }
+      ]
+    },
+    {
+      id: 11, type: "QCM", enonce: "Diriez-vous que fidéliser vos clients VTC coûte :",
+      choix: [
+        { lettre: "A", texte: "plus cher que d'en trouver de nouveaux" },
+        { lettre: "B", texte: "moins cher que d'en trouver de nouveaux", correct: true },
+        { lettre: "C", texte: "le même prix que d'en trouver de nouveaux" }
+      ]
+    },
+    {
+      id: 12, type: "QCM", enonce: "En accueillant un client qui voyage seul, un chauffeur VTC l'invite à prendre place :",
+      choix: [
+        { lettre: "A", texte: "sur le siège arrière gauche" },
+        { lettre: "B", texte: "sur le siège arrière droit", correct: true },
+        { lettre: "C", texte: "sur le siège avant" }
+      ]
+    },
+    {
+      id: 13, type: "QCM", enonce: "Que doit-on dire lorsqu'on décroche un appel téléphonique ?",
+      choix: [
+        { lettre: "A", texte: "allo" },
+        { lettre: "B", texte: "le nom de la société" },
+        { lettre: "C", texte: "le nom de la société et bonjour", correct: true }
+      ]
+    },
+    {
+      id: 14, type: "QCM", enonce: "La formule binôme permet de calculer le prix de revient sur les termes suivants :",
+      choix: [
+        { lettre: "A", texte: "le coût conducteur" },
+        { lettre: "B", texte: "le coût variable par kilomètre", correct: true },
+        { lettre: "C", texte: "le coût fixe véhicule par jour", correct: true }
+      ]
+    },
+    {
+      id: 15, type: "QCM", enonce: "Qu'est-ce qu'un prospect ?",
+      choix: [
+        { lettre: "A", texte: "une brochure publicitaire" },
+        { lettre: "B", texte: "une publicité sur format papier" },
+        { lettre: "C", texte: "un client potentiel", correct: true }
+      ]
+    },
+    {
+      id: 16, type: "QCM", enonce: "Que signifie les 4P ?",
+      choix: [
+        { lettre: "A", texte: "produits/prix/communication ou promotion/distribution ou place", correct: true },
+        { lettre: "B", texte: "projet/prix/communication ou promotion/distribution ou place" },
+        { lettre: "C", texte: "produits/prix/commercialisation ou promotion/distribution ou place" }
       ]
     }
   ]
@@ -2355,25 +2425,64 @@ const matiere_reglementation_vtc2_examen3: Matiere = {
   noteSur: 20,
   questions: [
     {
-      id: 1, type: "QRC", enonce: "Qu'est-ce que l'honorabilité dans la profession de conducteur T3P ?",
-      reponseQRC: "Avoir le casier judiciaire B2 vierge.",
-      reponses_possibles: ["casier judiciaire b2 vierge", "b2 vierge", "casier b2"]
+      id: 1, type: "QRC", enonce: "Indiquez où doivent être apposés les macarons de la signalétique VTC.",
+      reponseQRC: "En bas à gauche de la place chauffeur du pare-brise avant, et en bas à droite à l'opposé de la place du chauffeur sur le pare-brise arrière.",
+      reponses_possibles: ["pare-brise avant", "pare-brise arrière", "bas à gauche", "bas à droite", "macaron"]
     },
     {
-      id: 2, type: "QCM", enonce: "La formation continue est valable :",
+      id: 2, type: "QRC", enonce: "Donnez la définition de l'activité de VTC.",
+      reponseQRC: "Les activités de VTC sont des exploitants qui mettent à la disposition de leur clientèle une ou plusieurs voitures de transport avec chauffeur dans des conditions fixées à l'avance entre les parties.",
+      reponses_possibles: ["exploitants", "clientèle", "voitures de transport", "chauffeur", "conditions fixées à l'avance"]
+    },
+    {
+      id: 3, type: "QCM", enonce: "La durée maximale de stationnement précédant l'horaire de prise en charge à un aéroport pour un VTC est de :",
       choix: [
-        { lettre: "A", texte: "5 ans", correct: true },
-        { lettre: "B", texte: "1 an" },
-        { lettre: "C", texte: "2 ans" },
-        { lettre: "D", texte: "10 ans" }
+        { lettre: "A", texte: "30 minutes" },
+        { lettre: "B", texte: "1 h 30" },
+        { lettre: "C", texte: "1 heure", correct: true },
+        { lettre: "D", texte: "45 minutes" }
       ]
     },
     {
-      id: 3, type: "QCM", enonce: "La carte professionnelle est délivrée par :",
+      id: 4, type: "QCM", enonce: "Quel est le périmètre d'exercice de l'activité de conducteur de VTC ?",
       choix: [
-        { lettre: "A", texte: "La préfecture", correct: true },
-        { lettre: "B", texte: "La DIRECCTE" },
-        { lettre: "C", texte: "La DREAL" }
+        { lettre: "A", texte: "son département de résidence" },
+        { lettre: "B", texte: "sa commune de résidence" },
+        { lettre: "C", texte: "Le territoire national", correct: true }
+      ]
+    },
+    {
+      id: 5, type: "QCM", enonce: "Un véhicule VTC doit être âgé de :",
+      choix: [
+        { lettre: "A", texte: "moins de 7 ans, sauf pour les véhicules de collection de 30 ans", correct: true },
+        { lettre: "B", texte: "moins de 5 ans" },
+        { lettre: "C", texte: "moins de 10 ans" }
+      ]
+    },
+    {
+      id: 6, type: "QCM", enonce: "La longueur minimale hors tout d'un véhicule VTC hybride ou électrique :",
+      choix: [
+        { lettre: "A", texte: "Est de 4,50 mètres" },
+        { lettre: "B", texte: "Est de 4 mètres" },
+        { lettre: "C", texte: "Est de 3 mètres" },
+        { lettre: "D", texte: "Aucune longueur minimale n'est imposée", correct: true }
+      ]
+    },
+    {
+      id: 7, type: "QCM", enonce: "La prise en charge d'un client sur une voie publique sans réservation préalable est :",
+      choix: [
+        { lettre: "A", texte: "autorisée si elle est consécutive à la dépose du client précédent" },
+        { lettre: "B", texte: "passible d'une suspension du permis de conduire" },
+        { lettre: "C", texte: "un délit puni d'une peine de prison et d'une amende pouvant aller jusqu'à 15 000€", correct: true }
+      ]
+    },
+    {
+      id: 8, type: "QCM", enonce: "Parmi les dimensions suivantes, lesquelles permettent à une voiture d'être exploitée en VTC ?",
+      choix: [
+        { lettre: "A", texte: "Longueur 4,47 m et largeur 1,85 m" },
+        { lettre: "B", texte: "Longueur 4,30 m et largeur 1,81 m" },
+        { lettre: "C", texte: "Longueur 4,70 m et largeur 1,80 m", correct: true },
+        { lettre: "D", texte: "Longueur 4,61 m et largeur 1,77 m" }
       ]
     }
   ]
@@ -2917,38 +3026,18 @@ const matiere_reglementation_vtc_examen4: Matiere = {
   noteEliminatoire: 6,
   noteSur: 20,
   questions: [
-    {
-      id: 1, type: "QCM", enonce: "Ce panneau signale :",
-      choix: [
-        { lettre: "A", texte: "Une chaussée à double sens de circulation" },
-        { lettre: "B", texte: "Une obligation de céder le passage à la circulation venant en sens inverse", correct: true },
-        { lettre: "C", texte: "Une priorité de passage" }
-      ]
-    },
-    {
-      id: 2, type: "QCM", enonce: "Le dépistage de stupéfiants est :",
-      choix: [
-        { lettre: "A", texte: "possible lors d'un accident corporel ou matériel", correct: true },
-        { lettre: "B", texte: "obligatoire pour toute infraction" },
-        { lettre: "C", texte: "obligatoire lors d'un accident mortel", correct: true }
-      ]
-    },
-    {
-      id: 3, type: "QCM", enonce: "Un conducteur VTC peut-il exercer dans n'importe quelle ville de France ?",
-      choix: [
-        { lettre: "A", texte: "Non, uniquement dans la ville d'immatriculation" },
-        { lettre: "B", texte: "Oui, sur tout le territoire national", correct: true },
-        { lettre: "C", texte: "Seulement dans sa région" }
-      ]
-    },
-    {
-      id: 4, type: "QCM", enonce: "La déclaration de cessation de paiement se fait :",
-      choix: [
-        { lettre: "A", texte: "à la chambre de commerce et d'industrie" },
-        { lettre: "B", texte: "à la chambre de métiers et de l'artisanat" },
-        { lettre: "C", texte: "auprès du greffe du Tribunal de Commerce", correct: true }
-      ]
-    }
+    { id: 1, type: "QRC", enonce: "A quoi correspond le chiffre d'affaires d'un exploitant VTC ?", reponseQRC: "Il correspond à la somme des prestations réalisées au cours d'un exercice (transports et prestations annexes).", reponses_possibles: ["somme des prestations", "exercice", "transports"] },
+    { id: 2, type: "QRC", enonce: "Citez 4 qualités indispensables pour l'exercice de la profession de VTC :", reponseQRC: "Amabilité, ponctualité, sens du service, discrétion, neutralité, propreté.", reponses_possibles: ["amabilité", "ponctualité", "discrétion", "sens du service"] },
+    { id: 3, type: "QRC", enonce: "Qui fixe le prix d'une prestation de VTC, selon quelle contrainte ?", reponseQRC: "Le chauffeur VTC en fonction de l'offre et de la demande de son lieu d'exercice.", reponses_possibles: ["chauffeur VTC", "offre et demande"] },
+    { id: 4, type: "QCM", enonce: "Lorsque vous préparez votre plan de marketing vous devez vous occuper des :", choix: [{ lettre: "A", texte: "3P" }, { lettre: "B", texte: "4P", correct: true }, { lettre: "C", texte: "5P" }] },
+    { id: 5, type: "QCM", enonce: "Vous travaillez avec une entreprise qui règle à 30 jours fin de mois. Si vous facturez le 2 mars, vous serez réglé le :", choix: [{ lettre: "A", texte: "31 mars" }, { lettre: "B", texte: "2 avril" }, { lettre: "C", texte: "30 avril", correct: true }] },
+    { id: 6, type: "QCM", enonce: "En tant qu'exploitant, je peux :", choix: [{ lettre: "A", texte: "fixer librement les prix en m'assurant de ne pas travailler à perte", correct: true }, { lettre: "B", texte: "fixer librement les prix, sous réserve d'être en dessous du prix de revient" }, { lettre: "C", texte: "fixer les prix en respectant la tarification imposée par l'État" }] },
+    { id: 7, type: "QCM", enonce: "Qu'est-ce qu'une zone de chalandise ?", choix: [{ lettre: "A", texte: "c'est le nombre de conducteurs de VTC dans une zone" }, { lettre: "B", texte: "c'est un bateau" }, { lettre: "C", texte: "c'est la zone géographique d'où provient la majorité de la clientèle", correct: true }] },
+    { id: 8, type: "QCM", enonce: "Que signifie B to C ?", choix: [{ lettre: "A", texte: "Business to Consumer", correct: true }, { lettre: "B", texte: "Business to Costumer" }, { lettre: "C", texte: "Business entre entreprises" }] },
+    { id: 9, type: "QCM", enonce: "Qu'est-ce qu'un prospect ?", choix: [{ lettre: "A", texte: "un client potentiel", correct: true }, { lettre: "B", texte: "l'ensemble des clients non facturés" }, { lettre: "C", texte: "une publicité format papier" }] },
+    { id: 10, type: "QCM", enonce: "Le prix de vente d'une prestation doit être égal au :", choix: [{ lettre: "A", texte: "coût de revient + TVA" }, { lettre: "B", texte: "coût de revient + marge + TVA", correct: true }, { lettre: "C", texte: "total des charges variables + TVA" }] },
+    { id: 11, type: "QCM", enonce: "Quelle affirmation est vraie ?", choix: [{ lettre: "A", texte: "lorsque l'offre est inférieure à la demande, les prix diminuent" }, { lettre: "B", texte: "lorsque l'offre est supérieure à la demande, les prix augmentent" }, { lettre: "C", texte: "lorsque l'offre est supérieure à la demande, les prix diminuent", correct: true }] },
+    { id: 12, type: "QCM", enonce: "Le panier moyen est :", choix: [{ lettre: "A", texte: "la moyenne des achats par client", correct: true }, { lettre: "B", texte: "la taille des achats à charger dans le coffre" }, { lettre: "C", texte: "la taille moyenne des paniers de courses en France" }] }
   ]
 };
 
@@ -2960,30 +3049,13 @@ const matiere_reglementation_vtc2_examen4: Matiere = {
   noteEliminatoire: 6,
   noteSur: 20,
   questions: [
-    {
-      id: 1, type: "QCM", enonce: "Un conducteur qui commet un excès de vitesse de 40 km/h risque :",
-      choix: [
-        { lettre: "A", texte: "une peine d'emprisonnement" },
-        { lettre: "B", texte: "la suspension de son permis de conduire", correct: true },
-        { lettre: "C", texte: "la réduction de six points du permis" }
-      ]
-    },
-    {
-      id: 2, type: "QCM", enonce: "Dans un tunnel éclairé, hors agglomération, je circule :",
-      choix: [
-        { lettre: "A", texte: "en feux de croisement", correct: true },
-        { lettre: "B", texte: "en feux de route" },
-        { lettre: "C", texte: "en feux de brouillard" }
-      ]
-    },
-    {
-      id: 3, type: "QCM", enonce: "En cas de contrôle, le conducteur VTC doit pouvoir justifier :",
-      choix: [
-        { lettre: "A", texte: "d'une réservation préalable électronique ou papier", correct: true },
-        { lettre: "B", texte: "uniquement de sa carte professionnelle" },
-        { lettre: "C", texte: "du montant de la course" }
-      ]
-    }
+    { id: 1, type: "QRC", enonce: "Quels sont les 4 éléments mentionnés sur la vignette définitive des VTC ?", reponseQRC: "Le numéro d'inscription de l'entreprise au registre des VTC, le n° d'immatriculation du véhicule, le QR code (code barre bidimensionnel), le numéro de référence de la vignette.", reponses_possibles: ["numéro d'inscription", "registre des VTC", "immatriculation", "QR code", "vignette"] },
+    { id: 2, type: "QCM", enonce: "La longueur minimale hors tout d'un véhicule VTC hybride ou électrique :", choix: [{ lettre: "A", texte: "Est de 4,50 mètres" }, { lettre: "B", texte: "Est de 3 mètres" }, { lettre: "C", texte: "Est de 4 mètres" }, { lettre: "D", texte: "Aucune longueur minimale n'est imposée", correct: true }] },
+    { id: 3, type: "QCM", enonce: "Quelle est l'ancienneté maximale d'un véhicule utilisé en exploitation VTC ?", choix: [{ lettre: "A", texte: "5 ans" }, { lettre: "B", texte: "Il n'y a pas d'ancienneté maximale" }, { lettre: "C", texte: "7 ans", correct: true }] },
+    { id: 4, type: "QCM", enonce: "Un véhicule VTC peut-il être électrique ?", choix: [{ lettre: "A", texte: "oui, s'il respecte les conditions de puissance" }, { lettre: "B", texte: "oui, s'il respecte les conditions de taille et de puissance", correct: true }, { lettre: "C", texte: "non, c'est interdit" }] },
+    { id: 5, type: "QCM", enonce: "Le ticket de réservation doit être établi :", choix: [{ lettre: "A", texte: "Sur support papier", correct: true }, { lettre: "B", texte: "un engagement oral suffit" }, { lettre: "C", texte: "Sur support électronique", correct: true }] },
+    { id: 6, type: "QCM", enonce: "Qui délivre la carte professionnelle des conducteurs de VTC ?", choix: [{ lettre: "A", texte: "les organisations professionnelles de VTC" }, { lettre: "B", texte: "la préfecture", correct: true }, { lettre: "C", texte: "la chambre de métiers et de l'artisanat" }] },
+    { id: 7, type: "QCM", enonce: "La taille minimale exigée pour un véhicule de transport avec chauffeur est de :", choix: [{ lettre: "A", texte: "L 4.5m x l 1.8m" }, { lettre: "B", texte: "L 4.8m x l 1.7m" }, { lettre: "C", texte: "L 4.5m x l 1.7m", correct: true }] }
   ]
 };
 
