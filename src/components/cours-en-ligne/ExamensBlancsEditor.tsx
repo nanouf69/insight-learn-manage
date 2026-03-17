@@ -212,27 +212,31 @@ function MatiereEditor({
     setEditingMeta(false);
   };
 
+  const questionsSafe = (matiere.questions ?? []).filter(
+    (q): q is Question => q != null && q?.type != null,
+  );
+
   const saveQuestion = (updated: Question) => {
-    const newQuestions = matiere.questions.map(q => q.id === updated.id ? updated : q);
+    const newQuestions = questionsSafe.map(q => q.id === updated.id ? updated : q);
     onChange({ ...matiere, questions: newQuestions });
     setEditingQId(null);
   };
 
   const deleteQuestion = (qId: number) => {
-    const newQuestions = matiere.questions.filter(q => q.id !== qId);
+    const newQuestions = questionsSafe.filter(q => q.id !== qId);
     onChange({ ...matiere, questions: newQuestions });
     setEditingQId(null);
   };
 
   const addQuestion = (type: "QCM" | "QRC") => {
-    const newId = Math.max(0, ...matiere.questions.map(q => q.id)) + 1;
+    const newId = Math.max(0, ...questionsSafe.map(q => q.id)) + 1;
     const newQ: Question = type === "QCM"
       ? { id: newId, type: "QCM", enonce: "Nouvelle question", choix: [
           { lettre: "A", texte: "Choix A", correct: true },
           { lettre: "B", texte: "Choix B" },
         ]}
       : { id: newId, type: "QRC", enonce: "Nouvelle question QRC", reponseQRC: "", reponses_possibles: [] };
-    onChange({ ...matiere, questions: [...matiere.questions, newQ] });
+    onChange({ ...matiere, questions: [...questionsSafe, newQ] });
     setEditingQId(newId);
   };
 
@@ -254,7 +258,7 @@ function MatiereEditor({
           </span>
           <span>Coeff. {matiere.coefficient}</span>
           <span className="text-destructive">Élim. {matiere.noteEliminatoire}/{matiere.noteSur}</span>
-          <span>{matiere.questions.length} questions</span>
+          <span>{questionsSafe.length} questions</span>
           <Button
             size="sm"
             variant="ghost"
@@ -298,7 +302,7 @@ function MatiereEditor({
       {/* Questions */}
       {expanded && (
         <div className="p-4 space-y-3">
-          {matiere.questions.map(q => (
+          {questionsSafe.map(q => (
             <div key={q.id}>
               {editingQId === q.id ? (
                 <QuestionEditor
