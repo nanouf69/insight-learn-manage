@@ -404,23 +404,18 @@ function PassageMatiere({
 
           {question.type === "QCM" && question.choix && (
             <div className="space-y-2 ml-2">
-              <RadioGroup
-                value={((reponses[question.id] as string[]) || [])[0] || ""}
-                onValueChange={(val) => handleQCMChange(question.id, val, true, false)}
-              >
-                {question.choix.map(choix => {
-                  const selected = ((reponses[question.id] as string[]) || [])[0] === choix.lettre;
-                  return (
-                    <div key={choix.lettre} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${selected ? "border-primary bg-primary/5" : "border-muted hover:border-primary/40"}`}>
-                      <RadioGroupItem value={choix.lettre} id={`q${question.id}-${choix.lettre}`} />
-                      <Label htmlFor={`q${question.id}-${choix.lettre}`} className="flex items-center gap-2 cursor-pointer w-full">
-                        <span className="font-mono text-sm font-bold w-6 shrink-0">{choix.lettre})</span>
-                        <span className="text-sm">{choix.texte}</span>
-                      </Label>
-                    </div>
-                  );
-                })}
-              </RadioGroup>
+              <p className="text-xs text-muted-foreground italic">Vous pouvez sélectionner une ou plusieurs réponses</p>
+              {question.choix.map(choix => {
+                const checked = ((reponses[question.id] as string[]) || []).includes(choix.lettre);
+                return (
+                  <div key={choix.lettre} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${checked ? "border-primary bg-primary/5" : "border-muted hover:border-primary/40"}`}
+                    onClick={() => handleQCMChange(question.id, choix.lettre, !checked, true)}>
+                    <Checkbox checked={checked} onCheckedChange={(c) => handleQCMChange(question.id, choix.lettre, !!c, true)} />
+                    <span className="font-mono text-sm font-bold w-6 shrink-0">{choix.lettre})</span>
+                    <span className="text-sm">{choix.texte}</span>
+                  </div>
+                );
+              })}
             </div>
           )}
 
