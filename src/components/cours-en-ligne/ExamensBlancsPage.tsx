@@ -468,16 +468,30 @@ function PassageMatiere({
           Précédente
         </Button>
 
-        <div className="flex gap-1">
-          {matiere.questions.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setQuestionIndex(i)}
-              className={`w-7 h-7 rounded text-xs font-medium transition-colors ${i === questionIndex ? "bg-primary text-primary-foreground" : reponses[matiere.questions[i].id] !== undefined ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground hover:bg-primary/10"}`}
-            >
-              {i + 1}
-            </button>
-          ))}
+        <div className="flex gap-1 flex-wrap justify-center">
+          {matiere.questions.map((q, i) => {
+            const rep = reponses[q.id];
+            const isAnswered = q.type === "QCM" 
+              ? Array.isArray(rep) && rep.length > 0 
+              : typeof rep === "string" && rep.trim().length > 0;
+            const isCurrent = i === questionIndex;
+            return (
+              <button
+                key={i}
+                onClick={() => setQuestionIndex(i)}
+                className={`w-7 h-7 rounded text-xs font-medium transition-colors ${
+                  isCurrent 
+                    ? "bg-primary text-primary-foreground ring-2 ring-primary/50" 
+                    : isAnswered 
+                      ? "bg-green-100 text-green-700 border border-green-300" 
+                      : "bg-red-50 text-red-500 border border-red-300 animate-pulse"
+                }`}
+                title={isAnswered ? `Question ${i + 1} — répondue ✓` : `Question ${i + 1} — NON répondue ✗`}
+              >
+                {i + 1}
+              </button>
+            );
+          })}
         </div>
 
         {questionIndex < matiere.questions.length - 1 ? (
