@@ -700,6 +700,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           <TabsTrigger value="examens" className="text-sm">Examens</TabsTrigger>
           <TabsTrigger value="emails" className="text-sm">Emails</TabsTrigger>
           <TabsTrigger value="devis" className="text-sm">Devis</TabsTrigger>
+          <TabsTrigger value="examens-blancs-reset" className="text-sm">Examens blancs</TabsTrigger>
           <TabsTrigger value="reset-cours" className="text-sm text-destructive">Remise à zéro</TabsTrigger>
           <TabsTrigger value="delete-account" className="text-sm text-destructive">Supprimer compte cours</TabsTrigger>
         </TabsList>
