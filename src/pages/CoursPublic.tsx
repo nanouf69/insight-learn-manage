@@ -21,6 +21,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { safeDateParse } from "@/lib/safeDateParse";
 import { useConnexionTracking } from "@/hooks/useConnexionTracking";
 import { useInactivityAlert } from "@/hooks/useInactivityAlert";
+import { usePresenceCheck } from "@/hooks/usePresenceCheck";
+import { PresenceCheckModal } from "@/components/cours-en-ligne/PresenceCheckModal";
 import { useAuth } from "@/contexts/AuthContext";
 
 const StableModuleDetailView = memo(ModuleDetailView);
