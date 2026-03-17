@@ -9,9 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGr
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Loader2, CalendarIcon, User, UserCheck, PlusCircle, X, Monitor } from "lucide-react";
+import { Loader2, CalendarIcon, User, UserCheck, PlusCircle, X, Monitor, CheckCircle2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MODULES_DATA } from "@/components/cours-en-ligne/formations-data";
+import { FORMATION_MODULES, ALL_MODULES, MANAGED_MODULE_IDS as MANAGED_IDS_CONFIG } from "@/components/cours-en-ligne/modules-config";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -1358,50 +1359,59 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                 </Popover>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>Modules autorisés</Label>
-              <div className="grid grid-cols-1 gap-1.5 max-h-[300px] overflow-y-auto border rounded-md p-3">
-                {MODULES_DATA.filter(m => MANAGED_MODULE_IDS.has(m.id)).map((mod) => {
-                  const isIntro = mod.nom.includes("INTRODUCTION");
-                  const isTA = mod.nom.includes(" TA") || mod.formations.includes("taxi-pour-vtc" as any);
-                  const isVA = mod.nom.includes(" VA") || mod.formations.includes("vtc-pour-taxi" as any);
-                  const isVTC = !isIntro && !isTA && !isVA && mod.formations.some((f: string) => f.includes("vtc"));
-                  const isTaxi = !isIntro && !isTA && !isVA && mod.formations.some((f: string) => f.includes("taxi"));
-                  const isCommon = isVTC && isTaxi;
+            {/* Modules de la formation — ordered like "Configurer l'accès cours" */}
+            {(() => {
+              // Determine formation type for module display
+              const formationType = formData.type_apprenant || "";
+              const formationConfig = FORMATION_MODULES[formationType];
+              const formationModuleIds = new Set(formationConfig?.modules.map(m => m.id) || []);
+              const additionalModules = ALL_MODULES.filter(m => MANAGED_IDS_CONFIG.has(m.id) && !formationModuleIds.has(m.id));
 
-                  let colorClass = "bg-muted/30 border-muted";
-                  let dotColor = "bg-gray-400";
-                  let label = "";
-                  if (isIntro) { colorClass = "bg-blue-50 border-blue-200"; dotColor = "bg-blue-500"; label = "INTRO"; }
-                  else if (isCommon) { colorClass = "bg-purple-50 border-purple-200"; dotColor = "bg-purple-500"; label = "COMMUN"; }
-                  else if (isTA) { colorClass = "bg-amber-50 border-amber-200"; dotColor = "bg-amber-500"; label = "TA"; }
-                  else if (isVA) { colorClass = "bg-teal-50 border-teal-200"; dotColor = "bg-teal-500"; label = "VA"; }
-                  else if (isVTC) { colorClass = "bg-emerald-50 border-emerald-200"; dotColor = "bg-emerald-500"; label = "VTC"; }
-                  else if (isTaxi) { colorClass = "bg-orange-50 border-orange-200"; dotColor = "bg-orange-500"; label = "TAXI"; }
+              return (
+                <>
+                  {formationConfig && (
+                    <div className="space-y-1">
+                      <Label>Modules de la formation</Label>
+                      <div className="max-h-44 overflow-y-auto border rounded-md p-3 space-y-1 bg-muted/30">
+                        {formationConfig.modules.map((mod) => (
+                          <div key={mod.id} className="flex items-center gap-2 text-sm px-2 py-1">
+                            <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                            <span className="font-medium">{mod.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-                  return (
-                    <label key={mod.id} className={cn("flex items-center gap-2 py-1.5 cursor-pointer rounded px-2 border", colorClass)}>
-                      <Checkbox
-                        checked={effectiveModulesAutorises.includes(mod.id)}
-                        onCheckedChange={(checked) => {
-                          setHasTouchedModules(true);
-                          const baseModules = (modulesAutorises.length > 0 || hasTouchedModules)
-                            ? modulesAutorises
-                            : fallbackDefaultModules;
-                          const nextModules = checked
-                            ? Array.from(new Set([...baseModules, mod.id]))
-                            : baseModules.filter(id => id !== mod.id);
-                          setModulesAutorises(nextModules);
-                        }}
-                      />
-                      <span className={cn("w-2 h-2 rounded-full shrink-0", dotColor)} />
-                      <span className="text-sm flex-1">{mod.nom}</span>
-                      {label && <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0", dotColor, "text-white")}>{label}</span>}
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
+                  <div className="space-y-2">
+                    <Label>{formationConfig ? "Modules supplémentaires" : "Modules autorisés"}</Label>
+                    <div className="max-h-44 overflow-y-auto border rounded-md p-3 space-y-2">
+                      {(formationConfig ? additionalModules : ALL_MODULES.filter(m => MANAGED_IDS_CONFIG.has(m.id))).map((mod) => {
+                        const isChecked = effectiveModulesAutorises.includes(mod.id);
+                        return (
+                          <label key={mod.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 rounded px-2 py-1">
+                            <Checkbox
+                              checked={isChecked}
+                              onCheckedChange={(checked) => {
+                                setHasTouchedModules(true);
+                                const baseModules = (modulesAutorises.length > 0 || hasTouchedModules)
+                                  ? modulesAutorises
+                                  : fallbackDefaultModules;
+                                const nextModules = checked
+                                  ? Array.from(new Set([...baseModules, mod.id]))
+                                  : baseModules.filter(id => id !== mod.id);
+                                setModulesAutorises(nextModules);
+                              }}
+                            />
+                            <span className={cn(!isChecked && "text-muted-foreground")}>{mod.nom}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
           </div>
 
           {/* Notes */}
