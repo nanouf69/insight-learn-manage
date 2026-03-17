@@ -537,7 +537,8 @@ function EcranResultats({
       examen.matieres.forEach((matiere, mi) => {
         const resultat = resultats[mi];
         if (!resultat) return;
-        matiere.questions.forEach(q => {
+        (matiere.questions || []).filter(Boolean).forEach(q => {
+          if (!q || !q.type) return;
           if (q.type === "QRC") {
             if (!initialCache[mi]) initialCache[mi] = {};
             initialCache[mi][q.id] = "loading";
