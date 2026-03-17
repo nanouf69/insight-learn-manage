@@ -437,9 +437,16 @@ function PassageMatiere({
                 if (!choix || choix === undefined) return null;
                 const checked = ((reponses[question.id] as string[]) || []).includes(choix.lettre);
                 return (
-                  <div key={choix.lettre} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${checked ? "border-primary bg-primary/5" : "border-muted hover:border-primary/40"}`}
-                    onClick={(e) => { e.preventDefault(); handleQCMChange(question.id, choix.lettre, !checked, true); }}>
-                    <Checkbox checked={checked} onCheckedChange={() => {}} onClick={(e) => e.stopPropagation()} />
+                  <div
+                    key={choix.lettre}
+                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${checked ? "border-primary bg-primary/5" : "border-muted hover:border-primary/40"}`}
+                    onClick={(e) => { e.preventDefault(); handleQCMChange(question.id, choix.lettre, !checked, true); }}
+                  >
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={(value) => handleQCMChange(question.id, choix.lettre, Boolean(value), true)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
                     <span className="font-mono text-sm font-bold w-6 shrink-0">{choix.lettre})</span>
                     <span className="text-sm">{choix.texte}</span>
                   </div>
@@ -1295,7 +1302,7 @@ export default function ExamensBlancsPage({
         </div>
 
         {/* Barre de progression latérale droite */}
-        <div className="hidden md:block w-48 lg:w-56 shrink-0">
+        <div className="hidden min-[520px]:block w-36 sm:w-40 md:w-48 lg:w-56 shrink-0">
           <div className="sticky top-4 space-y-2">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Progression</p>
             <div className="relative">
