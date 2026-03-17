@@ -536,13 +536,15 @@ function EcranResultats({
       // Corriger chaque QRC via l'IA (en parallèle par matière, séquentiel par question pour éviter le rate limit)
       for (let mi = 0; mi < examen.matieres.length; mi++) {
         const matiere = examen.matieres[mi];
+        if (!matiere || matiere === undefined) continue;
         const resultat = resultats[mi];
         if (!resultat) continue;
 
-        for (const q of (matiere.questions || []).filter(Boolean)) {
-          if (!q || q?.type !== "QRC") continue;
-          const reponseEtudiant = (resultat.reponses[q.id] as string) || "";
-          const pointsQuestion = getPointsParQuestion(matiere.id, q?.type);
+        const questionsSafe = (matiere.questions || []).filter(q => q && q?.type !== undefined);
+        for (const q of questionsSafe) {
+          if (!q || q === undefined || q?.type !== "QRC") continue;
+          const reponseEtudiant = (resultat.reponses?.[q.id] as string) || "";
+          const pointsQuestion = getPointsParQuestion(matiere.id, q?.type || "QRC");
 
           try {
             const { data, error } = await supabase.functions.invoke("corriger-qrc", {
