@@ -441,20 +441,30 @@ function PassageMatiere({
 
   return (
     <div className="space-y-4">
-      {/* En-tête matière */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div>
-          <p className="text-xs text-muted-foreground">Matière {numero}/{total}</p>
-          <h3 className="font-semibold text-base">{matiere.nom}</h3>
-        </div>
-        {isBilan ? (
-          <div className="flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-primary/30 bg-primary/5 text-primary text-sm font-medium">
-            <BookOpen className="w-4 h-4" />
-            <span>Sans chronomètre</span>
+      {/* Bandeau matière FTRANSPORT */}
+      <div className="rounded-lg px-4 py-3 flex items-center justify-between flex-wrap gap-2" style={{ backgroundColor: '#0D2540' }}>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold" style={{ backgroundColor: '#00B4D8', color: '#0D2540' }}>
+            {numero}
           </div>
-        ) : (
-          <TimerBadge seconds={dureeSecondes} onExpire={handleExpire} />
-        )}
+          <div>
+            <p className="text-xs font-medium" style={{ color: '#00B4D8' }}>Matière {numero}/{total}</p>
+            <h3 className="font-semibold text-base text-white">{matiere.nom}</h3>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-medium px-2 py-1 rounded" style={{ backgroundColor: 'rgba(0,180,216,0.15)', color: '#00B4D8' }}>
+            Questions 1 à {questionsSafe.length}
+          </span>
+          {isBilan ? (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium" style={{ backgroundColor: 'rgba(0,180,216,0.15)', color: '#00B4D8' }}>
+              <BookOpen className="w-4 h-4" />
+              <span>Sans chronomètre</span>
+            </div>
+          ) : (
+            <TimerBadge seconds={dureeSecondes} onExpire={handleExpire} />
+          )}
+        </div>
       </div>
 
       {/* Progression questions */}
