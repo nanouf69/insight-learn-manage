@@ -519,10 +519,12 @@ function EcranResultats({
       // Initialiser tous les QRC en "loading"
       const initialCache: { [matiereIdx: number]: CorrectionCache } = {};
       examen.matieres.forEach((matiere, mi) => {
+        if (!matiere || matiere === undefined) return;
         const resultat = resultats[mi];
         if (!resultat) return;
-        (matiere.questions || []).filter(Boolean).forEach(q => {
-          if (!q || !q?.type) return;
+        const questionsSafe = (matiere.questions || []).filter(q => q && q?.type !== undefined);
+        questionsSafe.forEach(q => {
+          if (!q || q === undefined) return;
           if (q?.type === "QRC") {
             if (!initialCache[mi]) initialCache[mi] = {};
             initialCache[mi][q.id] = "loading";
