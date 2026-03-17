@@ -3049,30 +3049,13 @@ const matiere_reglementation_vtc2_examen4: Matiere = {
   noteEliminatoire: 6,
   noteSur: 20,
   questions: [
-    {
-      id: 1, type: "QCM", enonce: "Un conducteur qui commet un excès de vitesse de 40 km/h risque :",
-      choix: [
-        { lettre: "A", texte: "une peine d'emprisonnement" },
-        { lettre: "B", texte: "la suspension de son permis de conduire", correct: true },
-        { lettre: "C", texte: "la réduction de six points du permis" }
-      ]
-    },
-    {
-      id: 2, type: "QCM", enonce: "Dans un tunnel éclairé, hors agglomération, je circule :",
-      choix: [
-        { lettre: "A", texte: "en feux de croisement", correct: true },
-        { lettre: "B", texte: "en feux de route" },
-        { lettre: "C", texte: "en feux de brouillard" }
-      ]
-    },
-    {
-      id: 3, type: "QCM", enonce: "En cas de contrôle, le conducteur VTC doit pouvoir justifier :",
-      choix: [
-        { lettre: "A", texte: "d'une réservation préalable électronique ou papier", correct: true },
-        { lettre: "B", texte: "uniquement de sa carte professionnelle" },
-        { lettre: "C", texte: "du montant de la course" }
-      ]
-    }
+    { id: 1, type: "QRC", enonce: "Quels sont les 4 éléments mentionnés sur la vignette définitive des VTC ?", reponseQRC: "Le numéro d'inscription de l'entreprise au registre des VTC, le n° d'immatriculation du véhicule, le QR code (code barre bidimensionnel), le numéro de référence de la vignette.", reponses_possibles: ["numéro d'inscription", "registre des VTC", "immatriculation", "QR code", "vignette"] },
+    { id: 2, type: "QCM", enonce: "La longueur minimale hors tout d'un véhicule VTC hybride ou électrique :", choix: [{ lettre: "A", texte: "Est de 4,50 mètres" }, { lettre: "B", texte: "Est de 3 mètres" }, { lettre: "C", texte: "Est de 4 mètres" }, { lettre: "D", texte: "Aucune longueur minimale n'est imposée", correct: true }] },
+    { id: 3, type: "QCM", enonce: "Quelle est l'ancienneté maximale d'un véhicule utilisé en exploitation VTC ?", choix: [{ lettre: "A", texte: "5 ans" }, { lettre: "B", texte: "Il n'y a pas d'ancienneté maximale" }, { lettre: "C", texte: "7 ans", correct: true }] },
+    { id: 4, type: "QCM", enonce: "Un véhicule VTC peut-il être électrique ?", choix: [{ lettre: "A", texte: "oui, s'il respecte les conditions de puissance" }, { lettre: "B", texte: "oui, s'il respecte les conditions de taille et de puissance", correct: true }, { lettre: "C", texte: "non, c'est interdit" }] },
+    { id: 5, type: "QCM", enonce: "Le ticket de réservation doit être établi :", choix: [{ lettre: "A", texte: "Sur support papier", correct: true }, { lettre: "B", texte: "un engagement oral suffit" }, { lettre: "C", texte: "Sur support électronique", correct: true }] },
+    { id: 6, type: "QCM", enonce: "Qui délivre la carte professionnelle des conducteurs de VTC ?", choix: [{ lettre: "A", texte: "les organisations professionnelles de VTC" }, { lettre: "B", texte: "la préfecture", correct: true }, { lettre: "C", texte: "la chambre de métiers et de l'artisanat" }] },
+    { id: 7, type: "QCM", enonce: "La taille minimale exigée pour un véhicule de transport avec chauffeur est de :", choix: [{ lettre: "A", texte: "L 4.5m x l 1.8m" }, { lettre: "B", texte: "L 4.8m x l 1.7m" }, { lettre: "C", texte: "L 4.5m x l 1.7m", correct: true }] }
   ]
 };
 
