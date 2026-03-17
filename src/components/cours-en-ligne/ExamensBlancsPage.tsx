@@ -1434,7 +1434,7 @@ export default function ExamensBlancsPage({
 
             </div>
 
-            <Button className="w-full gap-2 text-base py-5" onClick={handleDebuterExamen}>
+            <Button className="w-full gap-2 text-base py-5 text-white font-semibold" style={{ backgroundColor: '#F4A227' }} onClick={handleDebuterExamen}>
               <Timer className="w-5 h-5" />
               Démarrer l'examen
             </Button>
