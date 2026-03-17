@@ -1043,6 +1043,7 @@ export default function ExamensBlancsPage({
   };
 
   const handleTerminerMatiere = (reponses: Reponses) => {
+    try {
     if (!examenChoisi) return;
     const matiere = examenChoisi.matieres[matiereIndex];
     const note = calculerNote(matiere, reponses);
