@@ -1059,10 +1059,44 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return acc;
   }, {});
 
+  // Compute per-module quiz stats: how many quizzes completed vs total
+  const moduleQuizStatsById = modules.reduce<Record<number, { completedQuizzes: number; totalQuizzes: number; completedLabels: string[]; remainingLabels: string[] }>>((acc, module) => {
+    const rows = completionsByModuleId[module.id] || [];
+    const allLabels = new Set<string>();
+    const doneLabels = new Set<string>();
+
+    rows.forEach((row) => {
+      const details = Array.isArray(row?.details) ? row.details : [];
+      details.forEach((detail: any) => {
+        const exerciseTitle = typeof detail?.exerciceTitre === "string" ? detail.exerciceTitre : "";
+        const pointLabel = getPointLabelFromExerciseTitle(exerciseTitle, module.id);
+        if (pointLabel) {
+          allLabels.add(pointLabel);
+          const answer = detail?.reponseEleve;
+          if (answer !== null && answer !== undefined && `${answer}`.trim() !== "") {
+            doneLabels.add(pointLabel);
+          }
+        }
+      });
+    });
+
+    const completedLabelsArr = Array.from(doneLabels).sort();
+    const remainingLabelsArr = Array.from(allLabels).filter(l => !doneLabels.has(l)).sort();
+
+    acc[module.id] = {
+      completedQuizzes: doneLabels.size,
+      totalQuizzes: allLabels.size,
+      completedLabels: completedLabelsArr,
+      remainingLabels: remainingLabelsArr,
+    };
+    return acc;
+  }, {});
+
   const completedCount = modules.filter((m) => moduleProgressById[m.id]?.isDone).length;
   const globalProgress = modules.length > 0 ? Math.round((completedCount / modules.length) * 100) : 0;
   const remainingModules = modules.filter((m) => !moduleProgressById[m.id]?.isDone);
-  const doneModules = modules.filter((m) => moduleProgressById[m.id]?.hasProgress);
+  const doneModules = modules.filter((m) => moduleProgressById[m.id]?.isDone);
+  const inProgressModules = modules.filter((m) => !moduleProgressById[m.id]?.isDone && moduleProgressById[m.id]?.hasProgress);
   const lowModules = remainingModules.filter((m) => !moduleProgressById[m.id]?.hasProgress).slice(0, 3);
   const studentName = apprenant ? `${apprenant.prenom} ${apprenant.nom}` : "Apprenant";
 
