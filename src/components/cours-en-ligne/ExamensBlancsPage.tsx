@@ -99,12 +99,12 @@ function EcranSelection({ onStart, onEdit, defaultBilanId, apprenantType, examen
   const [typeFiltre, setTypeFiltre] = useState<"tous" | "TAXI" | "VTC" | "TA" | "VA">(forcedType || "tous");
 
   const examens = examensData.filter(e => {
-    const typeOk = typeFiltre === "tous" || e.type === typeFiltre;
+    const typeOk = typeFiltre === "tous" || e?.type === typeFiltre;
     const isBilan = e.id.startsWith("bilan-");
     return typeOk && !isBilan;
   });
 
-  const examensBlancs = examensData.filter(e => !e.id.startsWith("bilan-") && (typeFiltre === "tous" || e.type === typeFiltre));
+  const examensBlancs = examensData.filter(e => !e.id.startsWith("bilan-") && (typeFiltre === "tous" || e?.type === typeFiltre));
 
   return (
     <div className="space-y-6">
@@ -158,8 +158,8 @@ function EcranSelection({ onStart, onEdit, defaultBilanId, apprenantType, examen
                 <Card key={examen.id} className="hover:shadow-md transition-shadow cursor-pointer border-2 hover:border-primary/40">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
-                      <Badge variant={examen.type === "TAXI" ? "default" : "secondary"} className="text-xs">
-                        {examen.type}
+                      <Badge variant={examen?.type === "TAXI" ? "default" : "secondary"} className="text-xs">
+                        {examen?.type}
                       </Badge>
                       <span className="text-xs text-muted-foreground">N°{examen.numero}</span>
                     </div>
@@ -226,7 +226,8 @@ function PassageMatiere({
   const [expire, setExpire] = useState(false);
   const [initialLoaded, setInitialLoaded] = useState(false);
 
-  const question = matiere.questions[questionIndex];
+  const questionsSafe = (matiere.questions || []).filter((q): q is Question => !!q && q?.type !== undefined);
+  const question = questionsSafe[questionIndex] || null;
   const dureeSecondes = matiere.duree * 60;
 
   // Auto-save: get userId once
@@ -340,9 +341,10 @@ function PassageMatiere({
     });
   };
 
-  const allAnswered = matiere.questions.every(q => {
+  const allAnswered = questionsSafe.every(q => {
+    if (!q || q === undefined) return false;
     const rep = reponses[q.id];
-    if (q.type === "QCM") return Array.isArray(rep) && rep.length > 0;
+    if (q?.type === "QCM") return Array.isArray(rep) && rep.length > 0;
     return typeof rep === "string" && rep.trim().length > 0;
   });
 
@@ -356,9 +358,11 @@ function PassageMatiere({
   const handleExpire = () => { setExpire(true); onTerminer(reponses); };
 
   const isMultiple = (q: Question) =>
-    q.type === "QCM" && (q.choix?.filter(c => c.correct).length || 0) > 1;
+    q?.type === "QCM" && (q.choix?.filter(c => c.correct).length || 0) > 1;
 
-  const progress = ((questionIndex + 1) / matiere.questions.length) * 100;
+  const safeQuestionsCount = questionsSafe.length || 1;
+  const safeQuestionIndex = Math.min(questionIndex, safeQuestionsCount - 1);
+  const progress = ((safeQuestionIndex + 1) / safeQuestionsCount) * 100;
 
   return (
     <div className="space-y-4">
@@ -381,7 +385,7 @@ function PassageMatiere({
       {/* Progression questions */}
       <div className="space-y-1">
         <div className="flex justify-between text-xs text-muted-foreground">
-          <span>Question {questionIndex + 1} / {matiere.questions.length}</span>
+          <span>Question {safeQuestionIndex + 1} / {questionsSafe.length}</span>
           <span>{Math.round(progress)}%</span>
         </div>
         <Progress value={progress} className="h-2" />
@@ -392,20 +396,21 @@ function PassageMatiere({
         <CardContent className="pt-5 space-y-4">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-3 flex-1">
-              <Badge variant={question.type === "QRC" ? "secondary" : "outline"} className="shrink-0 mt-0.5">
-                {question.type}
+              <Badge variant={question?.type === "QRC" ? "secondary" : "outline"} className="shrink-0 mt-0.5">
+                {question?.type || "QCM"}
               </Badge>
-              <p className="font-medium leading-relaxed">{question.enonce}</p>
+              <p className="font-medium leading-relaxed">{question?.enonce || "Question indisponible"}</p>
             </div>
             <Badge variant="outline" className="shrink-0 text-xs font-semibold text-primary border-primary/40">
-              {getPointsParQuestion(matiere.id, question.type)} pt{getPointsParQuestion(matiere.id, question.type) > 1 ? "s" : ""}
+              {getPointsParQuestion(matiere.id, question?.type || "QCM")} pt{getPointsParQuestion(matiere.id, question?.type || "QCM") > 1 ? "s" : ""}
             </Badge>
           </div>
 
-          {question.type === "QCM" && question.choix && (
+          {question?.type === "QCM" && question.choix && (
             <div className="space-y-2 ml-2">
               <p className="text-xs text-muted-foreground italic">Vous pouvez sélectionner une ou plusieurs réponses</p>
-              {question.choix.map(choix => {
+              {question.choix.map((choix) => {
+                if (!choix || choix === undefined) return null;
                 const checked = ((reponses[question.id] as string[]) || []).includes(choix.lettre);
                 return (
                   <div key={choix.lettre} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${checked ? "border-primary bg-primary/5" : "border-muted hover:border-primary/40"}`}
@@ -419,7 +424,7 @@ function PassageMatiere({
             </div>
           )}
 
-          {question.type === "QRC" && (
+          {question?.type === "QRC" && (
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground">Rédigez votre réponse ci-dessous :</p>
               <Textarea
@@ -439,7 +444,7 @@ function PassageMatiere({
         <Button
           variant="outline"
           onClick={() => setQuestionIndex(i => Math.max(0, i - 1))}
-          disabled={questionIndex === 0}
+          disabled={safeQuestionIndex === 0}
           className="gap-2"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -447,21 +452,22 @@ function PassageMatiere({
         </Button>
 
         <div className="flex gap-1 flex-wrap justify-center">
-          {matiere.questions.map((q, i) => {
+          {questionsSafe.map((q, i) => {
+            if (!q || q === undefined) return null;
             const rep = reponses[q.id];
-            const isAnswered = q.type === "QCM" 
-              ? Array.isArray(rep) && rep.length > 0 
+            const isAnswered = q?.type === "QCM"
+              ? Array.isArray(rep) && rep.length > 0
               : typeof rep === "string" && rep.trim().length > 0;
-            const isCurrent = i === questionIndex;
+            const isCurrent = i === safeQuestionIndex;
             return (
               <button
                 key={i}
                 onClick={() => setQuestionIndex(i)}
                 className={`w-7 h-7 rounded text-xs font-medium transition-colors ${
-                  isCurrent 
-                    ? "bg-primary text-primary-foreground ring-2 ring-primary/50" 
-                    : isAnswered 
-                      ? "bg-green-100 text-green-700 border border-green-300" 
+                  isCurrent
+                    ? "bg-primary text-primary-foreground ring-2 ring-primary/50"
+                    : isAnswered
+                      ? "bg-green-100 text-green-700 border border-green-300"
                       : "bg-red-50 text-red-500 border border-red-300 animate-pulse"
                 }`}
                 title={isAnswered ? `Question ${i + 1} — répondue ✓` : `Question ${i + 1} — NON répondue ✗`}
@@ -472,7 +478,7 @@ function PassageMatiere({
           })}
         </div>
 
-        {questionIndex < matiere.questions.length - 1 ? (
+        {safeQuestionIndex < questionsSafe.length - 1 ? (
           <Button onClick={() => setQuestionIndex(i => i + 1)} className="gap-2">
             Suivante
             <ArrowRight className="w-4 h-4" />
@@ -481,7 +487,7 @@ function PassageMatiere({
           <Button onClick={handleTerminer} disabled={!allAnswered} className="gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-50">
             <CheckCircle2 className="w-4 h-4" />
             Terminer la matière
-            {!allAnswered && <span className="text-xs">({matiere.questions.filter(q => { const r = reponses[q.id]; return q.type === "QCM" ? Array.isArray(r) && r.length > 0 : typeof r === "string" && r.trim().length > 0; }).length}/{matiere.questions.length})</span>}
+            {!allAnswered && <span className="text-xs">({questionsSafe.filter(q => { if (!q || q === undefined) return false; const r = reponses[q.id]; return q?.type === "QCM" ? Array.isArray(r) && r.length > 0 : typeof r === "string" && r.trim().length > 0; }).length}/{questionsSafe.length})</span>}
           </Button>
         )}
       </div>
@@ -513,11 +519,13 @@ function EcranResultats({
       // Initialiser tous les QRC en "loading"
       const initialCache: { [matiereIdx: number]: CorrectionCache } = {};
       examen.matieres.forEach((matiere, mi) => {
+        if (!matiere || matiere === undefined) return;
         const resultat = resultats[mi];
         if (!resultat) return;
-        (matiere.questions || []).filter(Boolean).forEach(q => {
-          if (!q || !q.type) return;
-          if (q.type === "QRC") {
+        const questionsSafe = (matiere.questions || []).filter(q => q && q?.type !== undefined);
+        questionsSafe.forEach(q => {
+          if (!q || q === undefined) return;
+          if (q?.type === "QRC") {
             if (!initialCache[mi]) initialCache[mi] = {};
             initialCache[mi][q.id] = "loading";
           }
@@ -528,13 +536,15 @@ function EcranResultats({
       // Corriger chaque QRC via l'IA (en parallèle par matière, séquentiel par question pour éviter le rate limit)
       for (let mi = 0; mi < examen.matieres.length; mi++) {
         const matiere = examen.matieres[mi];
+        if (!matiere || matiere === undefined) continue;
         const resultat = resultats[mi];
         if (!resultat) continue;
 
-        for (const q of (matiere.questions || []).filter(Boolean)) {
-          if (!q || q.type !== "QRC") continue;
-          const reponseEtudiant = (resultat.reponses[q.id] as string) || "";
-          const pointsQuestion = getPointsParQuestion(matiere.id, q.type);
+        const questionsSafe = (matiere.questions || []).filter(q => q && q?.type !== undefined);
+        for (const q of questionsSafe) {
+          if (!q || q === undefined || q?.type !== "QRC") continue;
+          const reponseEtudiant = (resultat.reponses?.[q.id] as string) || "";
+          const pointsQuestion = getPointsParQuestion(matiere.id, q?.type || "QRC");
 
           try {
             const { data, error } = await supabase.functions.invoke("corriger-qrc", {
@@ -583,20 +593,24 @@ function EcranResultats({
 
   // Recalculer les notes avec les corrections IA
   const resultatsAvecIA = resultats.map((r, mi) => {
+    if (!r || r === undefined) return r;
     const cache = correctionsIA[mi];
     if (!cache) return r;
 
     const matiere = examen.matieres[mi];
+    if (!matiere) return r;
+    const questionsSafe = (matiere.questions || []).filter(q => q && q?.type !== undefined);
+
     let noteRecalculee = 0;
-    (matiere.questions || []).filter(Boolean).forEach(q => {
-      if (!q || !q.type) return;
-      if (q.type === "QCM" && q.choix) {
+    questionsSafe.forEach(q => {
+      if (!q || q === undefined) return;
+      if (q?.type === "QCM" && q.choix) {
         const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
-        const donnees = ((r.reponses[q.id] as string[]) || []).sort();
+        const donnees = ((r.reponses?.[q.id] as string[]) || []).sort();
         if (JSON.stringify(correctes) === JSON.stringify(donnees)) {
-          noteRecalculee += getPointsParQuestion(matiere.id, q.type);
+          noteRecalculee += getPointsParQuestion(matiere.id, q?.type || "QCM");
         }
-      } else if (q.type === "QRC") {
+      } else if (q?.type === "QRC") {
         const correction = cache[q.id];
         if (correction && correction !== "loading" && correction !== "error") {
           noteRecalculee += correction.pointsObtenus;
@@ -604,8 +618,7 @@ function EcranResultats({
       }
     });
 
-    // Ne recalculer que si toutes les corrections IA sont terminées
-    const toutTermine = (matiere.questions || []).filter(Boolean)
+    const toutTermine = questionsSafe
       .filter(q => q?.type === "QRC")
       .every(q => cache[q.id] && cache[q.id] !== "loading");
 
@@ -737,9 +750,11 @@ function EcranResultats({
       <div className="space-y-4">
         <h4 className="font-semibold">Correction détaillée</h4>
         {examen.matieres.map((matiere, mi) => {
+          if (!matiere || matiere === undefined) return null;
           const resultat = resultats[mi];
           if (!resultat) return null;
           const cacheMatiere = correctionsIA[mi] || {};
+          const questionsSafe = (matiere.questions || []).filter(q => q && q?.type !== undefined);
           return (
             <Card key={matiere.id}>
               <CardHeader className="pb-2">
@@ -747,20 +762,20 @@ function EcranResultats({
               </CardHeader>
               <CardContent className="space-y-3">
                 {(matiere.questions || []).filter(Boolean).map(q => {
-                  if (!q || !q.type) return null;
+                  if (!q || !q?.type) return null;
                   const rep = resultat.reponses?.[q.id];
-                  const pts = getPointsParQuestion(matiere.id, q.type);
+                  const pts = getPointsParQuestion(matiere.id, q?.type);
                   let isCorrect = false;
                   let pointsObtenus = 0;
                   let correctionDetail: string | null = null;
                   let isLoadingIA = false;
 
-                  if (q.type === "QCM" && q.choix) {
+                  if (q?.type === "QCM" && q.choix) {
                     const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
                     const donnees = ((rep as string[]) || []).sort();
                     isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
                     pointsObtenus = isCorrect ? pts : 0;
-                  } else if (q.type === "QRC") {
+                  } else if (q?.type === "QRC") {
                     const corrIA = cacheMatiere[q.id];
                     if (!corrIA || corrIA === "loading") {
                       isLoadingIA = true;
@@ -797,11 +812,11 @@ function EcranResultats({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2 mb-1">
                             <div className="flex items-center gap-1.5 flex-1">
-                              <Badge variant={q.type === "QRC" ? "secondary" : "outline"} className="text-xs shrink-0">{q.type}</Badge>
+                              <Badge variant={q?.type === "QRC" ? "secondary" : "outline"} className="text-xs shrink-0">{q?.type}</Badge>
                               <p className="text-sm font-medium">{q.id}. {q.enonce}</p>
                             </div>
                             <div className="flex items-center gap-1 shrink-0">
-                              {q.type === "QRC" && <Bot className="w-3 h-3 text-blue-500" aria-label="Corrigé par IA" />}
+                              {q?.type === "QRC" && <Bot className="w-3 h-3 text-blue-500" aria-label="Corrigé par IA" />}
                               {isLoadingIA ? (
                                 <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-blue-200 text-blue-800">
                                   ? / {pts} pt{pts > 1 ? "s" : ""}
@@ -814,7 +829,7 @@ function EcranResultats({
                             </div>
                           </div>
 
-                          {q.type === "QCM" && (
+                          {q?.type === "QCM" && (
                             <div className="mt-1 space-y-0.5">
                               {(q.choix || []).map(c => (
                                 <div key={c.lettre} className={`text-xs flex items-center gap-1 ${c.correct ? "text-green-700 font-semibold" : "text-muted-foreground"}`}>
@@ -831,7 +846,7 @@ function EcranResultats({
                             </div>
                           )}
 
-                          {q.type === "QRC" && (
+                          {q?.type === "QRC" && (
                             <div className="mt-1 space-y-1">
                               {rep != null && (
                                 <p className="text-xs italic text-muted-foreground">
@@ -999,15 +1014,15 @@ export default function ExamensBlancsPage({
   const calculerNote = (matiere: Matiere, reponses: Reponses): number => {
     let totalPoints = 0;
     (matiere.questions || []).filter(Boolean).forEach(q => {
-      if (!q || !q.type) return;
+      if (!q || !q?.type) return;
       const rep = reponses[q.id];
-      const pts = getPointsParQuestion(matiere.id, q.type);
+      const pts = getPointsParQuestion(matiere.id, q?.type);
       let correct = false;
-      if (q.type === "QCM" && q.choix) {
+      if (q?.type === "QCM" && q.choix) {
         const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
         const donnees = ((rep as string[]) || []).sort();
         correct = JSON.stringify(correctes) === JSON.stringify(donnees);
-      } else if (q.type === "QRC") {
+      } else if (q?.type === "QRC") {
         const repStr = ((rep as string) || "").toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
         const motsCles = q.reponses_possibles || [];
         let nbTrouvees = 0;
@@ -1028,6 +1043,10 @@ export default function ExamensBlancsPage({
     try {
     if (!examenChoisi) return;
     const matiere = examenChoisi.matieres[matiereIndex];
+    if (!matiere) {
+      toast.error("Matière introuvable. Veuillez relancer l'examen.");
+      return;
+    }
     const note = calculerNote(matiere, reponses);
     const maxPoints = calculerMaxPoints(matiere);
     const resultat: ResultatMatiere = {
@@ -1058,16 +1077,18 @@ export default function ExamensBlancsPage({
         const allResults = [...newResultats];
         // Save each matière result with full question details
         const rows = allResults.map(r => {
+          if (!r || r === undefined) return null;
           const matiere = examenChoisi.matieres.find(m => m.id === r.matiereId);
-          const questionDetails = matiere ? (matiere.questions || []).filter(Boolean).map(q => {
-            if (!q) return null;
+          const questionsSafe = (matiere?.questions || []).filter(q => q && q?.type !== undefined);
+          const questionDetails = matiere ? questionsSafe.map(q => {
+            if (!q || q === undefined) return null;
             const rep = r.reponses?.[q.id];
             return {
               questionId: q.id,
               enonce: q.enonce || "",
-              type: q.type || "QCM",
+              type: q?.type || "QCM",
               reponseEleve: rep ?? null,
-              reponseCorrecte: q.type === "QCM" && q.choix
+              reponseCorrecte: q?.type === "QCM" && q.choix
                 ? q.choix.filter(c => c.correct).map(c => c.lettre)
                 : (q.reponseQRC || (q.reponses_possibles || []).join(" / ")),
             };
@@ -1088,9 +1109,10 @@ export default function ExamensBlancsPage({
             details: { questions: questionDetails, reponses: r.reponses },
           };
         });
+        const rowsToInsert = rows.filter(Boolean);
         supabase
           .from("apprenant_quiz_results" as any)
-          .insert(rows)
+          .insert(rowsToInsert as any)
           .then(({ error }) => {
             if (error) console.error("Failed to save quiz results:", error);
           });
@@ -1121,8 +1143,8 @@ export default function ExamensBlancsPage({
 
         <Card className="border-2 border-primary/20">
           <CardHeader className="text-center">
-            <Badge className="mx-auto mb-2 w-fit" variant={examenChoisi.type === "TAXI" ? "default" : "secondary"}>
-              {examenChoisi.type}
+            <Badge className="mx-auto mb-2 w-fit" variant={examenChoisi?.type === "TAXI" ? "default" : "secondary"}>
+              {examenChoisi?.type}
             </Badge>
             <CardTitle className="text-xl">{examenChoisi.titre}</CardTitle>
           </CardHeader>
@@ -1160,7 +1182,12 @@ export default function ExamensBlancsPage({
                   </thead>
                   <tbody>
                     {examenChoisi.matieres.map((m, i) => {
-                      const maxPts = m.questions.reduce((acc, q) => acc + getPointsParQuestion(m.id, q.type), 0);
+                      if (!m || m === undefined) return null;
+                      const questionsSafe = (m.questions || []).filter(q => q && q?.type !== undefined);
+                      const maxPts = questionsSafe.reduce((acc, q) => {
+                        if (!q || q === undefined) return acc;
+                        return acc + getPointsParQuestion(m.id, q?.type || "QCM");
+                      }, 0);
                       const ptsQCM = getPointsParQuestion(m.id, "QCM");
                       const ptsQRC = getPointsParQuestion(m.id, "QRC");
                       return (
@@ -1177,7 +1204,15 @@ export default function ExamensBlancsPage({
                     <tr className="border-t-2 font-semibold bg-primary/5">
                       <td className="p-2">TOTAL</td>
                       <td className="p-2 text-center">{dureeTotal} min</td>
-                      <td className="p-2 text-center">{examenChoisi.matieres.reduce((acc, m) => acc + m.questions.reduce((a, q) => a + getPointsParQuestion(m.id, q.type), 0), 0)} pts</td>
+                      <td className="p-2 text-center">{examenChoisi.matieres.reduce((acc, m) => {
+                        if (!m || m === undefined) return acc;
+                        const questionsSafe = (m.questions || []).filter(q => q && q?.type !== undefined);
+                        const totalMatiere = questionsSafe.reduce((a, q) => {
+                          if (!q || q === undefined) return a;
+                          return a + getPointsParQuestion(m.id, q?.type || "QCM");
+                        }, 0);
+                        return acc + totalMatiere;
+                      }, 0)} pts</td>
                       <td className="p-2"></td>
                       <td className="p-2"></td>
                       <td className="p-2 text-center">Note finale /20</td>
@@ -1200,6 +1235,7 @@ export default function ExamensBlancsPage({
 
   if (phase === "examen" && examenChoisi) {
     const matiere = examenChoisi.matieres[matiereIndex];
+    if (!matiere) return null;
     return (
       <div className="max-w-3xl mx-auto space-y-4">
         {/* Barre de progression globale */}
