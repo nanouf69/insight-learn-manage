@@ -768,8 +768,9 @@ function EcranResultats({
                 <CardTitle className="text-sm font-semibold">{matiere.nom}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {matiere.questions.map(q => {
-                  const rep = resultat.reponses[q.id];
+                {(matiere.questions || []).filter(Boolean).map(q => {
+                  if (!q || !q.type) return null;
+                  const rep = resultat.reponses?.[q.id];
                   const pts = getPointsParQuestion(matiere.id, q.type);
                   let isCorrect = false;
                   let pointsObtenus = 0;
