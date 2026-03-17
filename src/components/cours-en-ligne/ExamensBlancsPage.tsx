@@ -1233,6 +1233,7 @@ export default function ExamensBlancsPage({
 
   if (phase === "examen" && examenChoisi) {
     const matiere = examenChoisi.matieres[matiereIndex];
+    if (!matiere) return null;
     return (
       <div className="max-w-3xl mx-auto space-y-4">
         {/* Barre de progression globale */}
