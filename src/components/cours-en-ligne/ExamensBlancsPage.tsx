@@ -1034,6 +1034,10 @@ export default function ExamensBlancsPage({
     try {
     if (!examenChoisi) return;
     const matiere = examenChoisi.matieres[matiereIndex];
+    if (!matiere) {
+      toast.error("Matière introuvable. Veuillez relancer l'examen.");
+      return;
+    }
     const note = calculerNote(matiere, reponses);
     const maxPoints = calculerMaxPoints(matiere);
     const resultat: ResultatMatiere = {
