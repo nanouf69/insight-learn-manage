@@ -1413,6 +1413,22 @@ export default function ExamensBlancsPage({
     );
   }
 
+  if (phase === "transition" && examenChoisi && lastMatiereResult) {
+    const matiereSuivante = examenChoisi.matieres[matiereIndex];
+    return (
+      <TransitionMatiere
+        matiereTerminee={lastMatiereResult.nomMatiere}
+        scoreObtenu={lastMatiereResult.noteObtenue}
+        maxPoints={lastMatiereResult.maxPoints}
+        noteSur={lastMatiereResult.noteSur}
+        matiereSuivante={matiereSuivante?.nom || "Matière suivante"}
+        numeroSuivant={matiereIndex + 1}
+        total={examenChoisi.matieres.length}
+        onContinuer={() => { setLastMatiereResult(null); setPhase("examen"); }}
+      />
+    );
+  }
+
   if (phase === "examen" && examenChoisi) {
     const matiere = examenChoisi.matieres[matiereIndex];
     if (!matiere) return null;
