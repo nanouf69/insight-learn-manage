@@ -3916,40 +3916,8 @@ const matiere_reglementation_taxi2_examen6: Matiere = {
 
 
 
-const matiere_reglementation_taxi2_examen6: Matiere = {
-  id: "reglementation_taxi2",
-  nom: "G(T) - Réglementation nationale TAXI et gestion propre à cette activité",
-  duree: 20,
-  coefficient: 3,
-  noteEliminatoire: 6,
-  noteSur: 20,
-  questions: [
-    {
-      id: 1, type: "QCM", enonce: "Dans une entreprise individuelle :",
-      choix: [
-        { lettre: "A", texte: "L'entrepreneur individuel est responsable des dettes", correct: true },
-        { lettre: "B", texte: "Les biens de l'entreprise et du fondateur sont confondus", correct: true },
-        { lettre: "C", texte: "L'entrepreneur est responsable à hauteur du capital" }
-      ]
-    },
-    {
-      id: 2, type: "QCM", enonce: "Je m'installe en tant qu'artisan. Je souscris un crédit-bail pour l'acquisition de mon véhicule :",
-      choix: [
-        { lettre: "A", texte: "Je l'amortis sur 5 ans" },
-        { lettre: "B", texte: "Je ne peux pas l'amortir", correct: true },
-        { lettre: "C", texte: "Je l'amortis sur 10 ans" }
-      ]
-    },
-    {
-      id: 3, type: "QCM", enonce: "Le dirigeant d'une micro-entreprise :",
-      choix: [
-        { lettre: "A", texte: "est soumis à l'impôt sur les sociétés" },
-        { lettre: "B", texte: "n'est pas soumis à l'impôt" },
-        { lettre: "C", texte: "est soumis à l'impôt sur le revenu", correct: true }
-      ]
-    }
-  ]
-};
+
+
 
 const matiere_reglementation_vtc_examen6: Matiere = {
   id: "reglementation_vtc",
