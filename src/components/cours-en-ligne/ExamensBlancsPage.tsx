@@ -252,7 +252,20 @@ function PassageMatiere({
 
   const questionsSafe = (matiere.questions || []).filter((q): q is Question => !!q && q?.type !== undefined);
   const question = questionsSafe[questionIndex] || null;
-  const dureeSecondes = matiere.duree * 60;
+  const dureeSecondes = (matiere.duree ?? 30) * 60;
+
+  // Helper: normalize reponses keys to number (DB JSON keys are strings)
+  const normalizeReponses = (raw: any): Reponses => {
+    if (!raw || typeof raw !== "object") return {};
+    const normalized: Reponses = {};
+    for (const [key, value] of Object.entries(raw)) {
+      const numKey = Number(key);
+      if (!isNaN(numKey) && value !== undefined && value !== null) {
+        normalized[numKey] = value as ReponseQCM | ReponseQRC;
+      }
+    }
+    return normalized;
+  };
 
   // Auto-save: get userId once
   const userIdRef = useRef<string | null>(null);
@@ -260,8 +273,8 @@ function PassageMatiere({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      userIdRef.current = data.session?.user?.id ?? null;
-      jwtTokenRef.current = data.session?.access_token ?? null;
+      userIdRef.current = data?.session?.user?.id ?? null;
+      jwtTokenRef.current = data?.session?.access_token ?? null;
     });
   }, []);
 
@@ -271,14 +284,22 @@ function PassageMatiere({
     if (!apprenantId || initialLoaded) return;
     (async () => {
       try {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from("reponses_apprenants" as any)
           .select("reponses, completed")
           .eq("apprenant_id", apprenantId)
           .eq("exercice_id", exerciceKey)
           .maybeSingle();
-        if (data && !(data as any).completed && (data as any).reponses) {
-          setReponses((data as any).reponses as Reponses);
+        if (error) {
+          console.warn("[AutoSave] Load query error:", error.message);
+        } else if (data) {
+          const completed = (data as any)?.completed ?? false;
+          const rawReponses = (data as any)?.reponses;
+          if (!completed && rawReponses) {
+            const parsed = normalizeReponses(rawReponses);
+            console.log(`[AutoSave] Loaded ${Object.keys(parsed).length} saved responses for ${exerciceKey}`);
+            setReponses(parsed);
+          }
         }
       } catch (e) { console.error("[AutoSave] Load error:", e); }
       setInitialLoaded(true);
