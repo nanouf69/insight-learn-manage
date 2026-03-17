@@ -1063,9 +1063,12 @@ export default function ExamensBlancsPage({
     setTousResultats(newResultats);
 
     if (matiereIndex < examenChoisi.matieres.length - 1) {
-      setMatiereIndex(i => i + 1);
+      const nextIndex = matiereIndex + 1;
+      setMatiereIndex(nextIndex);
+      persistExamSession("examen", examenChoisi.id, nextIndex);
     } else {
       setPhase("resultats");
+      persistExamSession("resultats", null, 0); // Clear session
       // Save results to database
       if (apprenantId && userId) {
         const duree = Math.round((Date.now() - examStartTimeRef.current) / 1000);
