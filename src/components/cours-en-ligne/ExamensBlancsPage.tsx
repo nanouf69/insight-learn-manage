@@ -852,9 +852,9 @@ function EcranResultats({
 
                           {q.type === "QRC" && (
                             <div className="mt-1 space-y-1">
-                              {rep && (
+                              {rep != null && (
                                 <p className="text-xs italic text-muted-foreground">
-                                  Votre réponse : {(rep as string) || "Aucune"}
+                                  Votre réponse : {String(rep) || "Aucune"}
                                 </p>
                               )}
                               {correctionDetail && (
@@ -864,7 +864,7 @@ function EcranResultats({
                                 </div>
                               )}
                               <p className="text-xs text-green-700 font-medium">
-                                Réponse attendue : {q.reponseQRC}
+                                Réponse attendue : {q.reponseQRC || (q.reponses_possibles || []).join(" / ") || "—"}
                               </p>
                             </div>
                           )}
