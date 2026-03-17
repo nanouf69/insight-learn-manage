@@ -615,15 +615,21 @@ function EcranResultats({
       .filter(q => q.type === "QRC")
       .every(q => cache[q.id] && cache[q.id] !== "loading");
 
+    const safeMaxPoints = r.maxPoints || 1;
+    const safeNoteSur = r.noteSur || 20;
+
     return {
       ...r,
       noteObtenue: toutTermine ? noteRecalculee : r.noteObtenue,
-      admis: toutTermine ? noteRecalculee >= (r.noteEliminatoire / r.noteSur) * r.maxPoints : r.admis,
+      admis: toutTermine ? noteRecalculee >= (r.noteEliminatoire / safeNoteSur) * safeMaxPoints : r.admis,
     };
   });
 
-  const totalCoef = resultatsAvecIA.reduce((acc, r) => acc + r.coefficient, 0);
-  const noteGlobale = resultatsAvecIA.reduce((acc, r) => acc + (r.noteObtenue / r.maxPoints * 20) * r.coefficient, 0) / totalCoef;
+  const totalCoef = resultatsAvecIA.reduce((acc, r) => acc + (r.coefficient || 1), 0) || 1;
+  const noteGlobale = resultatsAvecIA.reduce((acc, r) => {
+    const safeMax = r.maxPoints || 1;
+    return acc + (r.noteObtenue / safeMax * 20) * (r.coefficient || 1);
+  }, 0) / totalCoef;
   const hasNoteEliminatoire = resultatsAvecIA.some(r => !r.admis);
   const moyenneSuffisante = noteGlobale >= 10;
   const admisGlobal = moyenneSuffisante && !hasNoteEliminatoire;
@@ -692,7 +698,8 @@ function EcranResultats({
       <div className="space-y-3">
         <h4 className="font-semibold">Résultats par matière</h4>
         {resultatsAvecIA.map((r, mi) => {
-          const noteSur20 = (r.noteObtenue / r.maxPoints * 20);
+          const safeMaxPoints = r.maxPoints || 1;
+          const noteSur20 = (r.noteObtenue / safeMaxPoints * 20);
           const matiereEnCours = Object.values(correctionsIA[mi] || {}).some(v => v === "loading");
           return (
             <Card key={r.matiereId} className={`border-l-4 ${r.admis ? "border-l-green-500" : "border-l-red-500"}`}>
@@ -701,9 +708,9 @@ function EcranResultats({
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm truncate">{r.nomMatiere}</p>
                     <div className="flex items-center gap-3 mt-1 flex-wrap">
-                      <span className="text-xs text-muted-foreground">Coeff. {r.coefficient}</span>
+                      <span className="text-xs text-muted-foreground">Coeff. {r.coefficient || 1}</span>
                       <span className="text-xs text-muted-foreground">Barème : {r.maxPoints} pts</span>
-                      <span className="text-xs text-muted-foreground">Éliminatoire sous {r.noteEliminatoire}/{r.noteSur}</span>
+                      <span className="text-xs text-muted-foreground">Éliminatoire sous {r.noteEliminatoire}/{r.noteSur || 20}</span>
                       {!r.admis && <span className="text-xs font-semibold text-red-600 bg-red-100 px-1.5 py-0.5 rounded">⚠ Note éliminatoire</span>}
                       {matiereEnCours && <span className="text-xs text-blue-600 flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" />IA en cours</span>}
                     </div>
@@ -713,7 +720,7 @@ function EcranResultats({
                       <span className={`text-lg font-bold ${r.admis ? "text-green-600" : "text-red-600"}`}>
                         {r.noteObtenue} / {r.maxPoints} pts
                       </span>
-                      <p className="text-xs text-muted-foreground">= {noteSur20.toFixed(1)} / 20</p>
+                      <p className="text-xs text-muted-foreground">= {isFinite(noteSur20) ? noteSur20.toFixed(1) : "0.0"} / 20</p>
                     </div>
                     {r.admis ? (
                       <CheckCircle2 className="w-5 h-5 text-green-500" />
@@ -723,7 +730,7 @@ function EcranResultats({
                   </div>
                 </div>
                 <Progress
-                  value={(r.noteObtenue / r.maxPoints) * 100}
+                  value={safeMaxPoints > 0 ? Math.min((r.noteObtenue / safeMaxPoints) * 100, 100) : 0}
                   className={`h-1.5 mt-2 ${r.admis ? "[&>*]:bg-green-500" : "[&>*]:bg-red-500"}`}
                 />
               </CardContent>
@@ -987,7 +994,7 @@ export default function ExamensBlancsPage({
       noteSur: matiere.noteSur,
       noteEliminatoire: matiere.noteEliminatoire,
       coefficient: matiere.coefficient,
-      admis: note >= (matiere.noteEliminatoire / matiere.noteSur) * maxPoints,
+      admis: maxPoints > 0 ? note >= (matiere.noteEliminatoire / (matiere.noteSur || 20)) * maxPoints : false,
       reponses,
     };
 
@@ -1027,7 +1034,7 @@ export default function ExamensBlancsPage({
             matiere_nom: r.nomMatiere,
             score_obtenu: r.noteObtenue,
             score_max: r.maxPoints,
-            note_sur_20: Number(((r.noteObtenue / r.maxPoints) * r.noteSur).toFixed(1)),
+            note_sur_20: Number(((r.noteObtenue / (r.maxPoints || 1)) * (r.noteSur || 20)).toFixed(1)),
             reussi: r.admis,
             duree_secondes: Math.round(duree / allResults.length),
             details: { questions: questionDetails, reponses: r.reponses },
