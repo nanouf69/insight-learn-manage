@@ -410,8 +410,31 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
     }
   };
 
-  const handleReset = () => {
-    setExamens(JSON.parse(JSON.stringify(tousLesExamens)));
+  const handleReset = async () => {
+    const confirmed = window.confirm(
+      "⚠️ Réinitialiser tous les examens blancs ?\n\nCela supprimera toutes vos modifications sauvegardées en base et restaurera les questions d'origine.\n\nCette action est irréversible."
+    );
+    if (!confirmed) return;
+
+    try {
+      const moduleIds = tousLesExamens.map((_, i) => EXAMEN_BLANC_MODULE_BASE + i);
+      const { error } = await supabase
+        .from("module_editor_state")
+        .delete()
+        .in("module_id", moduleIds);
+
+      if (error) {
+        console.error("[ExamensEditor] Reset DB error:", error);
+        toast.error("Erreur lors de la réinitialisation en base");
+        return;
+      }
+
+      setExamens(JSON.parse(JSON.stringify(tousLesExamens)));
+      toast.success("Examens blancs réinitialisés aux valeurs d'origine");
+    } catch (err) {
+      console.error("[ExamensEditor] Reset failed:", err);
+      toast.error("Erreur lors de la réinitialisation");
+    }
   };
 
   return (
