@@ -2071,11 +2071,43 @@ const matiere_anglais_examen3: Matiere = {
 
 const matiere_reglementation_taxi_examen3: Matiere = {
   id: "reglementation_taxi",
-  nom: "F(T) - Connaissance du territoire et réglementation locale TAXI",
-  duree: 30,
-  coefficient: 3,
-  noteEliminatoire: 6,
-  noteSur: 20,
+  nom: "F(T) - Réglementation nationale TAXI",
+  duree: 30, coefficient: 3, noteEliminatoire: 6, noteSur: 20,
+  questions: [
+    { id: 1, type: "QRC", enonce: "Je veux passer mon véhicule professionnel en véhicule personnel pour la journée, que dois-je faire ?", reponseQRC: "Bâcher le lumineux. Éteindre le taximètre. Retirer la carte professionnelle.", reponses_possibles: ["bâcher", "lumineux", "éteindre", "taximètre", "retirer", "carte professionnelle"] },
+    { id: 2, type: "QRC", enonce: "Quelle est la sanction encourue pour l'exercice de l'activité de conducteur de taxi sans carte professionnelle en cours de validité ?", reponseQRC: "5ème classe, 1500 euros.", reponses_possibles: ["5ème classe", "1500"] },
+    { id: 3, type: "QRC", enonce: "Quelles sont les conditions de stationnement des taxis en attente de la clientèle ?", reponseQRC: "Le conducteur ne peut stationner en attente que dans sa zone de prise en charge et dans des stations aménagées, sauf réservation. Le dispositif lumineux ne doit pas être recouvert de la gaine opaque.", reponses_possibles: ["zone de prise en charge", "stations aménagées", "dispositif lumineux"] },
+    { id: 4, type: "QRC", enonce: "Développez le sigle TICPE.", reponseQRC: "Taxe intérieure sur la consommation des produits énergétiques.", reponses_possibles: ["taxe intérieure", "consommation", "produits énergétiques"] },
+    { id: 5, type: "QCM", enonce: "Est-il possible pendant une course de changer le tarif au taximètre et à quelle condition ?", choix: [{ lettre: "A", texte: "Oui, sans condition" }, { lettre: "B", texte: "Oui, au changement d'heure (jour/nuit) en prévenant le client", correct: true }, { lettre: "C", texte: "Non, jamais" }, { lettre: "D", texte: "Oui, à la demande du client" }] },
+    { id: 6, type: "QCM", enonce: "Qui décide du montant de la taxe de stationnement ?", choix: [{ lettre: "A", texte: "La préfecture" }, { lettre: "B", texte: "Le maire et son conseil municipal", correct: true }, { lettre: "C", texte: "Le trésor public" }, { lettre: "D", texte: "Le ministère de l'économie" }] },
+    { id: 7, type: "QCM", enonce: "Un conducteur de taxi peut-il prendre en charge un client dans une autre commune ?", choix: [{ lettre: "A", texte: "Non, en aucun cas" }, { lettre: "B", texte: "Oui, s'il demeure dans cette commune" }, { lettre: "C", texte: "Oui, s'il a fait l'objet d'une réservation préalable", correct: true }] },
+    { id: 8, type: "QCM", enonce: "Si le client vous demande une facture vous devez lui fournir :", choix: [{ lettre: "A", texte: "L'original du ticket de l'imprimante", correct: true }, { lettre: "B", texte: "Une copie du ticket" }, { lettre: "C", texte: "Une facture et une copie du ticket" }] },
+    { id: 9, type: "QCM", enonce: "Où doit-on adresser une demande de détaxe de carburants ?", choix: [{ lettre: "A", texte: "Au bureau des taxis de la Préfecture" }, { lettre: "B", texte: "À la Direction Départementale des Territoires et de la Mer" }, { lettre: "C", texte: "À la Direction des Douanes", correct: true }] },
+    { id: 10, type: "QCM", enonce: "À quelle périodicité un conducteur de taxi doit-il renouveler sa demande d'inscription sur la liste d'attente pour une licence gratuite ?", choix: [{ lettre: "A", texte: "C'est automatique" }, { lettre: "B", texte: "Tous les ans", correct: true }, { lettre: "C", texte: "Tous les 2 ans" }] },
+    { id: 11, type: "QCM", enonce: "Comment s'appelle le carnet de consignation des interventions sur les équipements spéciaux ?", choix: [{ lettre: "A", texte: "Carnet d'entretien du véhicule" }, { lettre: "B", texte: "Carnet d'intervention spécifique" }, { lettre: "C", texte: "Carnet métrologique", correct: true }] },
+    { id: 12, type: "QCM", enonce: "Le véhicule taxi doit être muni d'une plaque :", choix: [{ lettre: "A", texte: "Visible de l'extérieur", correct: true }, { lettre: "B", texte: "Indiquant le numéro de l'autorisation de stationnement", correct: true }, { lettre: "C", texte: "Indiquant le nom du propriétaire de l'ADS" }, { lettre: "D", texte: "Indiquant l'adresse de la préfecture" }] },
+    { id: 13, type: "QCM", enonce: "Quelles sont les composantes des tarifs des courses de taxi ?", choix: [{ lettre: "A", texte: "Prise en charge, indemnité kilométrique, heure d'attente ou marche lente", correct: true }, { lettre: "B", texte: "Indemnité horaire, prise en charge, marche lente" }, { lettre: "C", texte: "Indemnité horaire, indemnité kilométrique, heure d'attente" }] },
+    { id: 14, type: "QCM", enonce: "En cas de changement de tarif, sous quel délai modifier son compteur ?", choix: [{ lettre: "A", texte: "1 mois" }, { lettre: "B", texte: "2 mois", correct: true }, { lettre: "C", texte: "3 mois" }] },
+    { id: 15, type: "QCM", enonce: "Quel est l'emplacement du taximètre ?", choix: [{ lettre: "A", texte: "Sur le pare-brise arrière côté droit" }, { lettre: "B", texte: "Sur le toit à l'extérieur" }, { lettre: "C", texte: "À l'intérieur avant, à portée du conducteur et visible des clients", correct: true }, { lettre: "D", texte: "Sur l'aile droite" }] },
+    { id: 16, type: "QCM", enonce: "Par quel texte réglementaire national sont modifiés les tarifs des courses de taxi ?", choix: [{ lettre: "A", texte: "Un arrêté", correct: true }, { lettre: "B", texte: "Un décret" }, { lettre: "C", texte: "Une loi" }] }
+  ]
+};
+
+const matiere_reglementation_taxi2_examen3: Matiere = {
+  id: "reglementation_taxi2",
+  nom: "G(T) - Connaissance du territoire et réglementation locale TAXI",
+  duree: 20, coefficient: 3, noteEliminatoire: 6, noteSur: 20,
+  questions: [
+    { id: 1, type: "QRC", enonce: "Citez 4 musées de Lyon.", reponseQRC: "Musée des Beaux Arts (20 Place des Terreaux 69001). Musée des Confluences (86 quai Perrache 69002). Musée Lugdunum (17 rue Cléberg 69005). Musée d'Art Contemporain (81 quai Charles de Gaulle 69006). Institut Lumière (25 rue du 1er Film 69008).", reponses_possibles: ["Beaux Arts", "Confluences", "Lugdunum", "Art Contemporain", "Institut Lumière"] },
+    { id: 2, type: "QRC", enonce: "Citez 4 hôpitaux à Bron.", reponseQRC: "Hôpital Femme-Mère-Enfant, Hôpital Pierre Wertheimer (neurologique), Hôpital cardiovasculaire Louis-Pradel, Centre Hospitalier Le Vinatier — tous sur le Boulevard Pinel 69500 Bron.", reponses_possibles: ["Femme-Mère-Enfant", "Wertheimer", "Louis-Pradel", "Vinatier"] },
+    { id: 3, type: "QCM", enonce: "Que signifie le tarif D ?", choix: [{ lettre: "A", texte: "Course de jour" }, { lettre: "B", texte: "Trajet aller avec retour en charge" }, { lettre: "C", texte: "Course de nuit, dimanche, jours fériés" }, { lettre: "D", texte: "Trajet aller avec retour à vide à la station", correct: true }] },
+    { id: 4, type: "QCM", enonce: "Quel est le tarif maximum de prise en charge horaire sur le Rhône ?", choix: [{ lettre: "A", texte: "35.20 €" }, { lettre: "B", texte: "35.25 €" }, { lettre: "C", texte: "35.30 €" }, { lettre: "D", texte: "40.40 €", correct: true }] },
+    { id: 5, type: "QCM", enonce: "Quelle commune ne fait pas partie de la ZUPC ?", choix: [{ lettre: "A", texte: "Caluire-et-Cuire" }, { lettre: "B", texte: "Saint-Priest" }, { lettre: "C", texte: "Chassieu" }, { lettre: "D", texte: "Villefranche", correct: true }] },
+    { id: 6, type: "QCM", enonce: "Quel est le prix au km du tarif D ?", choix: [{ lettre: "A", texte: "2.43 €" }, { lettre: "B", texte: "1.54 €" }, { lettre: "C", texte: "1.22 €", correct: true }] },
+    { id: 7, type: "QCM", enonce: "Où se situe la chambre régionale d'agriculture ?", choix: [{ lettre: "A", texte: "2/4 rue Carry" }, { lettre: "B", texte: "23 rue Jean Baldassini", correct: true }, { lettre: "C", texte: "126 rue Vauban" }, { lettre: "D", texte: "26 Rue Duquesne" }] },
+    { id: 8, type: "QCM", enonce: "Qui est le maire de la ville de Lyon ?", choix: [{ lettre: "A", texte: "François Marchal" }, { lettre: "B", texte: "Julien Victoire" }, { lettre: "C", texte: "Jean François Debat" }, { lettre: "D", texte: "Grégory Doucet", correct: true }] }
+  ]
+};
   questions: [
     {
       id: 1, type: "QRC", enonce: "Qu'est-ce que la maraude pour un taxi ?",
