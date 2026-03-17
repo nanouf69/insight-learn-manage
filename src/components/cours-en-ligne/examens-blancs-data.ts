@@ -2805,40 +2805,8 @@ const matiere_reglementation_taxi2_examen4: Matiere = {
 
 
 
-const matiere_reglementation_taxi2_examen4: Matiere = {
-  id: "reglementation_taxi2",
-  nom: "G(T) - Réglementation nationale TAXI et gestion propre à cette activité",
-  duree: 20,
-  coefficient: 3,
-  noteEliminatoire: 6,
-  noteSur: 20,
-  questions: [
-    {
-      id: 1, type: "QCM", enonce: "Un conducteur qui commet un excès de vitesse de 40 km/h risque :",
-      choix: [
-        { lettre: "A", texte: "une peine d'emprisonnement" },
-        { lettre: "B", texte: "la suspension de son permis de conduire", correct: true },
-        { lettre: "C", texte: "la réduction de six points du permis" }
-      ]
-    },
-    {
-      id: 2, type: "QCM", enonce: "Dans un tunnel éclairé, hors agglomération, je circule :",
-      choix: [
-        { lettre: "A", texte: "en feux de croisement", correct: true },
-        { lettre: "B", texte: "en feux de route" },
-        { lettre: "C", texte: "en feux de brouillard" }
-      ]
-    },
-    {
-      id: 3, type: "QCM", enonce: "Parmi les 3 termes suivants, lequel n'est pas une composante de l'actif du bilan ?",
-      choix: [
-        { lettre: "A", texte: "le résultat de l'exercice", correct: true },
-        { lettre: "B", texte: "les disponibilités" },
-        { lettre: "C", texte: "les frais d'établissement" }
-      ]
-    }
-  ]
-};
+
+
 
 const matiere_reglementation_vtc_examen4: Matiere = {
   id: "reglementation_vtc",
