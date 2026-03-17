@@ -27,6 +27,7 @@ import { DevisSection } from "./apprenant-sections/DevisSection";
 import { ResetCoursTab } from "./apprenant-sections/ResetCoursTab";
 import { DocumentsCompletes } from "./apprenant-sections/DocumentsCompletes";
 import { ControleQualiteTab } from "./apprenant-sections/ControleQualiteTab";
+import ExamensBlancsResetTab from "./apprenant-sections/ExamensBlancsResetTab";
 import { ApprenantEditForm } from "@/components/apprenants/ApprenantEditForm";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
