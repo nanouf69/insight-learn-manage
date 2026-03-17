@@ -1100,9 +1100,10 @@ export default function ExamensBlancsPage({
             details: { questions: questionDetails, reponses: r.reponses },
           };
         });
+        const rowsToInsert = rows.filter(Boolean);
         supabase
           .from("apprenant_quiz_results" as any)
-          .insert(rows)
+          .insert(rowsToInsert as any)
           .then(({ error }) => {
             if (error) console.error("Failed to save quiz results:", error);
           });
