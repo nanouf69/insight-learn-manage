@@ -461,7 +461,8 @@ function PassageMatiere({
               <p className="text-xs text-muted-foreground italic">Vous pouvez sélectionner une ou plusieurs réponses</p>
               {question.choix.map((choix) => {
                 if (!choix || choix === undefined) return null;
-                const checked = ((reponses[question.id] as string[]) || []).includes(choix.lettre);
+                const rawRep = reponses[question.id] ?? reponses[String(question.id)];
+                const checked = (Array.isArray(rawRep) ? rawRep : []).includes(choix.lettre);
                 return (
                   <div
                     key={choix.lettre}
