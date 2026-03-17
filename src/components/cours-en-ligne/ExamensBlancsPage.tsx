@@ -922,7 +922,7 @@ export default function ExamensBlancsPage({
   );
   const [examenChoisi, setExamenChoisi] = useState<ExamenBlanc | null>(null);
   const [matiereIndex, setMatiereIndex] = useState(savedSession?.matiereIndex || 0);
-  const [tousResultats, setTousResultats] = useState<ResultatMatiere[]>([]);
+  const [tousResultats, setTousResultats] = useState<ResultatMatiere[]>(savedSession?.resultats || []);
   const [bilanPrefiltre, setBilanPrefiltre] = useState<string | null>(null);
   const [liveExamens, setLiveExamens] = useState<ExamenBlanc[]>(tousLesExamens);
   const examStartTimeRef = useRef<number>(savedSession?.examStartTime || Date.now());
