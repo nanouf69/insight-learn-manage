@@ -1244,7 +1244,9 @@ export default function ExamensBlancsPage({
 
     if (matiereIndex < examenChoisi.matieres.length - 1) {
       const nextIndex = matiereIndex + 1;
+      setLastMatiereResult(resultat);
       setMatiereIndex(nextIndex);
+      setPhase("transition");
       persistExamSession("examen", examenChoisi.id, nextIndex, newResultats);
     } else {
       setPhase("resultats");
