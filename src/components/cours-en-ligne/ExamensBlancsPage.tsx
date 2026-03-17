@@ -922,13 +922,13 @@ export default function ExamensBlancsPage({
   );
   const [examenChoisi, setExamenChoisi] = useState<ExamenBlanc | null>(null);
   const [matiereIndex, setMatiereIndex] = useState(savedSession?.matiereIndex || 0);
-  const [tousResultats, setTousResultats] = useState<ResultatMatiere[]>([]);
+  const [tousResultats, setTousResultats] = useState<ResultatMatiere[]>(savedSession?.resultats || []);
   const [bilanPrefiltre, setBilanPrefiltre] = useState<string | null>(null);
   const [liveExamens, setLiveExamens] = useState<ExamenBlanc[]>(tousLesExamens);
   const examStartTimeRef = useRef<number>(savedSession?.examStartTime || Date.now());
 
   // Persist exam session state to sessionStorage
-  const persistExamSession = (p: string, exId: string | null, mi: number) => {
+  const persistExamSession = (p: string, exId: string | null, mi: number, resultats?: ResultatMatiere[]) => {
     try {
       if (p === "examen" && exId) {
         sessionStorage.setItem(EXAM_SESSION_KEY, JSON.stringify({
@@ -936,6 +936,7 @@ export default function ExamensBlancsPage({
           examenId: exId,
           matiereIndex: mi,
           examStartTime: examStartTimeRef.current,
+          resultats: resultats || [],
         }));
       } else {
         sessionStorage.removeItem(EXAM_SESSION_KEY);
@@ -953,6 +954,9 @@ export default function ExamensBlancsPage({
         setExamenChoisi(found);
         setPhase("examen");
         setMatiereIndex(savedSession.matiereIndex || 0);
+        if (savedSession.resultats?.length) {
+          setTousResultats(savedSession.resultats);
+        }
       }
     }
     setSessionRestored(true);
@@ -1067,7 +1071,7 @@ export default function ExamensBlancsPage({
     if (matiereIndex < examenChoisi.matieres.length - 1) {
       const nextIndex = matiereIndex + 1;
       setMatiereIndex(nextIndex);
-      persistExamSession("examen", examenChoisi.id, nextIndex);
+      persistExamSession("examen", examenChoisi.id, nextIndex, newResultats);
     } else {
       setPhase("resultats");
       persistExamSession("resultats", null, 0); // Clear session
