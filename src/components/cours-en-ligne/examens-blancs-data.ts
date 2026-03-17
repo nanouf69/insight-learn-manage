@@ -4071,61 +4071,8 @@ const matiere_reglementation_taxi2_examen6: Matiere = {
     { id: 8, type: "QCM", enonce: "ADS de Vénissieux, quelles autorisations pour publicité sur la carrosserie ?", choix: [{ lettre: "A", texte: "Autorisation du préfet" }, { lettre: "B", texte: "Autorisation du service des taxis de la Métropole", correct: true }, { lettre: "C", texte: "Autorisation du service des taxis de la Métropole" }, { lettre: "D", texte: "Autorisation de la DDPP" }] }
   ]
 };
-  duree: 30,
-  coefficient: 3,
-  noteEliminatoire: 6,
-  noteSur: 20,
-  questions: [
-    {
-      id: 1, type: "QCM", enonce: "Le titulaire d'un permis de conduire catégorie B peut conduire un véhicule :",
-      choix: [
-        { lettre: "A", texte: "Pouvant transporter 10 passagers, conducteur non compris" },
-        { lettre: "B", texte: "Pouvant transporter 9 passagers, conducteur non compris" },
-        { lettre: "C", texte: "Pouvant transporter 8 passagers, conducteur non compris", correct: true }
-      ]
-    },
-    {
-      id: 2, type: "QCM", enonce: "Dans quel cas le conducteur doit-il réduire sa vitesse ?",
-      choix: [
-        { lettre: "A", texte: "Lors du croisement ou dépassement de piétons", correct: true },
-        { lettre: "B", texte: "Lorsque la route est dégagée" },
-        { lettre: "C", texte: "Lors du croisement ou dépassement de cyclistes", correct: true }
-      ]
-    },
-    {
-      id: 3, type: "QCM", enonce: "Le fait de ne pas présenter immédiatement son permis de conduire aux agents est puni de :",
-      choix: [
-        { lettre: "A", texte: "Une amende de quatrième classe", correct: true },
-        { lettre: "B", texte: "Une amende de seconde classe" },
-        { lettre: "C", texte: "Une amende de troisième classe" }
-      ]
-    },
-    {
-      id: 4, type: "QCM", enonce: "Quelles sont les précautions pour vérifier le niveau d'huile ?",
-      choix: [
-        { lettre: "A", texte: "Moteur chaud" },
-        { lettre: "B", texte: "Moteur froid", correct: true },
-        { lettre: "C", texte: "Terrain plat", correct: true },
-        { lettre: "D", texte: "Moteur allumé" }
-      ]
-    },
-    {
-      id: 5, type: "QCM", enonce: "Pour dépasser un cycliste en ville, je dois laisser un espace latéral minimum de :",
-      choix: [
-        { lettre: "A", texte: "1,00 m", correct: true },
-        { lettre: "B", texte: "2,00 m" }
-      ]
-    },
-    {
-      id: 6, type: "QCM", enonce: "Le marquage au sol de couleur jaune est :",
-      choix: [
-        { lettre: "A", texte: "un indicateur de croisement" },
-        { lettre: "B", texte: "définitif" },
-        { lettre: "C", texte: "provisoire", correct: true }
-      ]
-    }
-  ]
-};
+
+
 
 const matiere_reglementation_taxi2_examen6: Matiere = {
   id: "reglementation_taxi2",
