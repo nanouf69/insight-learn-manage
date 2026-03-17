@@ -1237,31 +1237,92 @@ export default function ExamensBlancsPage({
     const matiere = examenChoisi.matieres[matiereIndex];
     if (!matiere) return null;
     return (
-      <div className="max-w-3xl mx-auto space-y-4">
-        {/* Barre de progression globale */}
-        <div className="flex items-center gap-3">
-          <div className="flex gap-1.5">
-            {examenChoisi.matieres.map((_, i) => (
-              <div
-                key={i}
-                className={`h-2 rounded-full transition-all ${i < matiereIndex ? "w-8 bg-green-500" : i === matiereIndex ? "w-8 bg-primary" : "w-4 bg-muted"}`}
-              />
-            ))}
+      <div className="flex gap-6 max-w-[1200px] mx-auto">
+        {/* Contenu principal */}
+        <div className="flex-1 min-w-0 space-y-4">
+          {/* Barre de progression globale */}
+          <div className="flex items-center gap-3">
+            <div className="flex gap-1.5">
+              {examenChoisi.matieres.map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-2 rounded-full transition-all ${i < matiereIndex ? "w-8 bg-green-500" : i === matiereIndex ? "w-8 bg-primary" : "w-4 bg-muted"}`}
+                />
+              ))}
+            </div>
+            <span className="text-xs text-muted-foreground">
+              Matière {matiereIndex + 1}/{examenChoisi.matieres.length}
+            </span>
           </div>
-          <span className="text-xs text-muted-foreground">
-            Matière {matiereIndex + 1}/{examenChoisi.matieres.length}
-          </span>
+
+          <PassageMatiere
+            matiere={matiere}
+            numero={matiereIndex + 1}
+            total={examenChoisi.matieres.length}
+            onTerminer={handleTerminerMatiere}
+            isBilan={examenChoisi.id.startsWith("bilan-")}
+            apprenantId={apprenantId}
+            examenId={examenChoisi.id}
+          />
         </div>
 
-        <PassageMatiere
-          matiere={matiere}
-          numero={matiereIndex + 1}
-          total={examenChoisi.matieres.length}
-          onTerminer={handleTerminerMatiere}
-          isBilan={examenChoisi.id.startsWith("bilan-")}
-          apprenantId={apprenantId}
-          examenId={examenChoisi.id}
-        />
+        {/* Barre de progression latérale droite */}
+        <div className="hidden lg:block w-56 shrink-0">
+          <div className="sticky top-4 space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Progression</p>
+            <div className="relative">
+              {/* Ligne verticale de fond */}
+              <div className="absolute left-4 top-4 bottom-4 w-0.5 bg-muted rounded-full" />
+              {/* Ligne verticale de progression */}
+              <div
+                className="absolute left-4 top-4 w-0.5 bg-primary rounded-full transition-all duration-500"
+                style={{ height: `${examenChoisi.matieres.length > 1 ? (matiereIndex / (examenChoisi.matieres.length - 1)) * 100 : 100}%`, maxHeight: 'calc(100% - 2rem)' }}
+              />
+              <div className="space-y-1">
+                {examenChoisi.matieres.map((m, i) => {
+                  if (!m) return null;
+                  const isDone = i < matiereIndex;
+                  const isCurrent = i === matiereIndex;
+                  const isLocked = i > matiereIndex;
+                  return (
+                    <div
+                      key={m.id}
+                      className={`relative flex items-start gap-3 p-2 rounded-lg transition-all ${
+                        isCurrent
+                          ? "bg-primary/10 border border-primary/30"
+                          : isDone
+                            ? "bg-green-50 border border-green-200 cursor-default"
+                            : "opacity-50"
+                      }`}
+                    >
+                      {/* Indicateur circulaire */}
+                      <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold border-2 transition-all ${
+                        isDone
+                          ? "bg-green-500 border-green-500 text-white"
+                          : isCurrent
+                            ? "bg-primary border-primary text-primary-foreground ring-4 ring-primary/20"
+                            : "bg-background border-muted text-muted-foreground"
+                      }`}>
+                        {isDone ? <CheckCircle2 className="w-4 h-4" /> : i + 1}
+                      </div>
+                      {/* Texte */}
+                      <div className="min-w-0 pt-1">
+                        <p className={`text-xs font-medium leading-tight truncate ${
+                          isCurrent ? "text-primary" : isDone ? "text-green-700" : "text-muted-foreground"
+                        }`}>
+                          {m.nom.split(" - ")[0]}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          {isDone ? "✓ Terminée" : isCurrent ? `En cours • ${m.duree}min` : `${m.duree}min`}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
