@@ -9,9 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGr
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Loader2, CalendarIcon, User, UserCheck, PlusCircle, X, Monitor } from "lucide-react";
+import { Loader2, CalendarIcon, User, UserCheck, PlusCircle, X, Monitor, CheckCircle2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MODULES_DATA } from "@/components/cours-en-ligne/formations-data";
+import { FORMATION_MODULES, ALL_MODULES, MANAGED_MODULE_IDS as MANAGED_IDS_CONFIG } from "@/components/cours-en-ligne/modules-config";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
