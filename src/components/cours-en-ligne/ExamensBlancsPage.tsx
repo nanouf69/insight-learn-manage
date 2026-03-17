@@ -441,20 +441,30 @@ function PassageMatiere({
 
   return (
     <div className="space-y-4">
-      {/* En-tête matière */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div>
-          <p className="text-xs text-muted-foreground">Matière {numero}/{total}</p>
-          <h3 className="font-semibold text-base">{matiere.nom}</h3>
-        </div>
-        {isBilan ? (
-          <div className="flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-primary/30 bg-primary/5 text-primary text-sm font-medium">
-            <BookOpen className="w-4 h-4" />
-            <span>Sans chronomètre</span>
+      {/* Bandeau matière FTRANSPORT */}
+      <div className="rounded-lg px-4 py-3 flex items-center justify-between flex-wrap gap-2" style={{ backgroundColor: '#0D2540' }}>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold" style={{ backgroundColor: '#00B4D8', color: '#0D2540' }}>
+            {numero}
           </div>
-        ) : (
-          <TimerBadge seconds={dureeSecondes} onExpire={handleExpire} />
-        )}
+          <div>
+            <p className="text-xs font-medium" style={{ color: '#00B4D8' }}>Matière {numero}/{total}</p>
+            <h3 className="font-semibold text-base text-white">{matiere.nom}</h3>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-medium px-2 py-1 rounded" style={{ backgroundColor: 'rgba(0,180,216,0.15)', color: '#00B4D8' }}>
+            Questions 1 à {questionsSafe.length}
+          </span>
+          {isBilan ? (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium" style={{ backgroundColor: 'rgba(0,180,216,0.15)', color: '#00B4D8' }}>
+              <BookOpen className="w-4 h-4" />
+              <span>Sans chronomètre</span>
+            </div>
+          ) : (
+            <TimerBadge seconds={dureeSecondes} onExpire={handleExpire} />
+          )}
+        </div>
       </div>
 
       {/* Progression questions */}
@@ -575,7 +585,87 @@ function PassageMatiere({
   );
 }
 
-// ===== RÉSULTATS =====
+// ===== ÉCRAN DE TRANSITION ENTRE MATIÈRES =====
+function TransitionMatiere({
+  matiereTerminee,
+  scoreObtenu,
+  maxPoints,
+  noteSur,
+  matiereSuivante,
+  numeroSuivant,
+  total,
+  onContinuer,
+}: {
+  matiereTerminee: string;
+  scoreObtenu: number;
+  maxPoints: number;
+  noteSur: number;
+  matiereSuivante: string;
+  numeroSuivant: number;
+  total: number;
+  onContinuer: () => void;
+}) {
+  const noteSur20 = maxPoints > 0 ? (scoreObtenu / maxPoints) * (noteSur || 20) : 0;
+  return (
+    <div className="max-w-xl mx-auto space-y-6 py-8">
+      {/* Matière terminée */}
+      <Card className="border-2 overflow-hidden" style={{ borderColor: '#00B4D8' }}>
+        <div className="px-5 py-3 flex items-center gap-3" style={{ backgroundColor: '#0D2540' }}>
+          <CheckCircle2 className="w-5 h-5" style={{ color: '#00B4D8' }} />
+          <h3 className="font-semibold text-white text-sm">Matière terminée</h3>
+        </div>
+        <CardContent className="pt-4 pb-4 space-y-3">
+          <p className="font-semibold text-lg">{matiereTerminee}</p>
+          <div className="flex items-center gap-4">
+            <div className="text-center">
+              <p className="text-3xl font-black" style={{ color: '#00B4D8' }}>{scoreObtenu}</p>
+              <p className="text-xs text-muted-foreground">/ {maxPoints} pts</p>
+            </div>
+            <div className="h-12 w-px bg-border" />
+            <div className="text-center">
+              <p className="text-3xl font-black" style={{ color: '#00B4D8' }}>{isFinite(noteSur20) ? noteSur20.toFixed(1) : "0.0"}</p>
+              <p className="text-xs text-muted-foreground">/ {noteSur || 20}</p>
+            </div>
+            <div className="flex-1">
+              <Progress
+                value={maxPoints > 0 ? Math.min((scoreObtenu / maxPoints) * 100, 100) : 0}
+                className="h-2.5"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Flèche de transition */}
+      <div className="flex justify-center">
+        <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: '#0D2540' }}>
+          <ArrowRight className="w-5 h-5 text-white" />
+        </div>
+      </div>
+
+      {/* Matière suivante */}
+      <Card className="border-2 border-dashed" style={{ borderColor: '#F4A227' }}>
+        <CardContent className="pt-5 pb-5 text-center space-y-3">
+          <Badge className="text-xs font-semibold" style={{ backgroundColor: '#0D2540', color: '#00B4D8' }}>
+            Matière {numeroSuivant}/{total}
+          </Badge>
+          <h3 className="text-xl font-bold" style={{ color: '#0D2540' }}>{matiereSuivante}</h3>
+          <p className="text-sm text-muted-foreground">Préparez-vous, le chronomètre démarrera dès que vous cliquerez.</p>
+          <Button
+            className="gap-2 text-base px-8 py-5 font-semibold text-white"
+            style={{ backgroundColor: '#F4A227', borderColor: '#F4A227' }}
+            onClick={onContinuer}
+          >
+            <ArrowRight className="w-5 h-5" />
+            Commencer {matiereSuivante.split(" - ")[0]}
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+
 function EcranResultats({
   examen,
   resultats,
@@ -737,93 +827,124 @@ function EcranResultats({
         </div>
       )}
 
-      {/* Header résultats */}
-      <div className={`rounded-xl p-6 text-center ${admisGlobal ? "bg-green-50 border-2 border-green-300" : "bg-red-50 border-2 border-red-300"}`}>
-        {admisGlobal ? (
-          <Trophy className="w-12 h-12 text-green-600 mx-auto mb-2" />
-        ) : (
-          <XCircle className="w-12 h-12 text-red-500 mx-auto mb-2" />
-        )}
-        <h3 className="text-2xl font-bold mb-1">
-          {correctionEnCours
-            ? "Correction en cours..."
-            : admisGlobal
-              ? "Examen blanc réussi ✅"
-              : "Examen blanc échoué ❌"
-          }
-        </h3>
-        {correctionEnCours ? (
-          <div className="flex justify-center mt-2"><Loader2 className="w-8 h-8 animate-spin" /></div>
-        ) : (
-          <>
-            <p className="text-4xl font-black mt-2">Moyenne générale : {isFinite(noteGlobale) ? noteGlobale.toFixed(1) : "0.0"} / 20</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              (moyenne pondérée par coefficients sur {resultatsAvecIA.length} matières)
-            </p>
-            {!admisGlobal && !correctionEnCours && (
-              <div className="mt-3 space-y-1">
-                {!moyenneSuffisante && (
-                  <p className="text-sm text-red-600 font-medium">
-                    <AlertTriangle className="w-4 h-4 inline mr-1" />
-                    Moyenne inférieure à 10/20
-                  </p>
-                )}
-                {hasNoteEliminatoire && (
-                  <p className="text-sm text-red-600 font-medium">
-                    <AlertTriangle className="w-4 h-4 inline mr-1" />
-                    Note éliminatoire en : {matieresEliminatoires.join(", ")}
-                  </p>
-                )}
-              </div>
-            )}
-          </>
-        )}
-        <p className="text-sm text-muted-foreground mt-1">{examen.titre}</p>
+      {/* Header résultats FTRANSPORT */}
+      <div className="rounded-xl overflow-hidden border-2" style={{ borderColor: admisGlobal ? '#00B4D8' : '#ef4444' }}>
+        <div className="p-6 text-center text-white" style={{ backgroundColor: '#0D2540' }}>
+          {admisGlobal ? (
+            <Trophy className="w-12 h-12 mx-auto mb-2" style={{ color: '#F4A227' }} />
+          ) : (
+            <XCircle className="w-12 h-12 text-red-400 mx-auto mb-2" />
+          )}
+          <h3 className="text-2xl font-bold mb-1">
+            {correctionEnCours
+              ? "Correction en cours..."
+              : admisGlobal
+                ? "Examen blanc réussi ✅"
+                : "Examen blanc échoué ❌"
+            }
+          </h3>
+          {correctionEnCours ? (
+            <div className="flex justify-center mt-2"><Loader2 className="w-8 h-8 animate-spin text-white" /></div>
+          ) : (
+            <>
+              <p className="text-4xl font-black mt-2" style={{ color: '#00B4D8' }}>
+                {isFinite(noteGlobale) ? noteGlobale.toFixed(1) : "0.0"} / 20
+              </p>
+              <p className="text-sm text-gray-300 mt-1">
+                Moyenne pondérée par coefficients sur {resultatsAvecIA.length} matières
+              </p>
+            </>
+          )}
+          {!admisGlobal && !correctionEnCours && (
+            <div className="mt-3 space-y-1">
+              {!moyenneSuffisante && (
+                <p className="text-sm text-red-300 font-medium">
+                  <AlertTriangle className="w-4 h-4 inline mr-1" />
+                  Moyenne inférieure à 10/20
+                </p>
+              )}
+              {hasNoteEliminatoire && (
+                <p className="text-sm text-red-300 font-medium">
+                  <AlertTriangle className="w-4 h-4 inline mr-1" />
+                  Note éliminatoire en : {matieresEliminatoires.join(", ")}
+                </p>
+              )}
+            </div>
+          )}
+          <p className="text-sm text-gray-400 mt-1">{examen.titre}</p>
+        </div>
       </div>
 
-      {/* Détail par matière */}
-      <div className="space-y-3">
-        <h4 className="font-semibold">Résultats par matière</h4>
+      {/* Détail par matière — sous-totaux groupés */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <div className="w-1 h-6 rounded-full" style={{ backgroundColor: '#00B4D8' }} />
+          <h4 className="font-semibold text-lg" style={{ color: '#0D2540' }}>Résultats par matière</h4>
+        </div>
         {resultatsAvecIA.map((r, mi) => {
           const safeMaxPoints = r.maxPoints || 1;
-          const noteSur20 = (r.noteObtenue / safeMaxPoints * 20);
+          const noteSur20 = (r.noteObtenue / safeMaxPoints * (r.noteSur || 20));
           const matiereEnCours = Object.values(correctionsIA[mi] || {}).some(v => v === "loading");
+          const pctScore = safeMaxPoints > 0 ? Math.min((r.noteObtenue / safeMaxPoints) * 100, 100) : 0;
           return (
-            <Card key={r.matiereId} className={`border-l-4 ${r.admis ? "border-l-green-500" : "border-l-red-500"}`}>
+            <Card key={r.matiereId} className="border-l-4 overflow-hidden" style={{ borderLeftColor: r.admis ? '#00B4D8' : '#ef4444' }}>
+              <div className="px-4 py-2 flex items-center gap-2" style={{ backgroundColor: '#0D2540' }}>
+                <span className="text-xs font-semibold text-white">Matière {mi + 1}/{resultatsAvecIA.length}</span>
+                <span className="text-xs font-medium" style={{ color: '#00B4D8' }}>— Coeff. {r.coefficient || 1}</span>
+                {!r.admis && <span className="text-xs font-semibold text-red-400 ml-auto">⚠ Note éliminatoire</span>}
+                {matiereEnCours && <span className="text-xs flex items-center gap-1 ml-auto" style={{ color: '#00B4D8' }}><Loader2 className="w-3 h-3 animate-spin" />IA en cours</span>}
+              </div>
               <CardContent className="py-3 px-4">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{r.nomMatiere}</p>
+                    <p className="font-semibold text-sm" style={{ color: '#0D2540' }}>{r.nomMatiere}</p>
                     <div className="flex items-center gap-3 mt-1 flex-wrap">
-                      <span className="text-xs text-muted-foreground">Coeff. {r.coefficient || 1}</span>
                       <span className="text-xs text-muted-foreground">Barème : {r.maxPoints} pts</span>
                       <span className="text-xs text-muted-foreground">Éliminatoire sous {r.noteEliminatoire}/{r.noteSur || 20}</span>
-                      {!r.admis && <span className="text-xs font-semibold text-red-600 bg-red-100 px-1.5 py-0.5 rounded">⚠ Note éliminatoire</span>}
-                      {matiereEnCours && <span className="text-xs text-blue-600 flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" />IA en cours</span>}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-right">
-                      <span className={`text-lg font-bold ${r.admis ? "text-green-600" : "text-red-600"}`}>
+                      <span className="text-lg font-bold" style={{ color: r.admis ? '#00B4D8' : '#ef4444' }}>
                         {r.noteObtenue} / {r.maxPoints} pts
                       </span>
-                      <p className="text-xs text-muted-foreground">= {isFinite(noteSur20) ? noteSur20.toFixed(1) : "0.0"} / 20</p>
+                      <p className="text-xs text-muted-foreground">= {isFinite(noteSur20) ? noteSur20.toFixed(1) : "0.0"} / {r.noteSur || 20}</p>
                     </div>
                     {r.admis ? (
-                      <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      <CheckCircle2 className="w-5 h-5" style={{ color: '#00B4D8' }} />
                     ) : (
                       <XCircle className="w-5 h-5 text-red-500" />
                     )}
                   </div>
                 </div>
                 <Progress
-                  value={safeMaxPoints > 0 ? Math.min((r.noteObtenue / safeMaxPoints) * 100, 100) : 0}
-                  className={`h-1.5 mt-2 ${r.admis ? "[&>*]:bg-green-500" : "[&>*]:bg-red-500"}`}
+                  value={pctScore}
+                  className={`h-2 mt-2 ${r.admis ? "[&>*]:bg-[#00B4D8]" : "[&>*]:bg-red-500"}`}
                 />
               </CardContent>
             </Card>
           );
         })}
+
+        {/* Score global résumé */}
+        <Card className="border-2" style={{ borderColor: '#F4A227' }}>
+          <CardContent className="py-4 px-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold" style={{ color: '#0D2540' }}>Score global pondéré</p>
+                <p className="text-xs text-muted-foreground">{resultatsAvecIA.length} matières • Coefficients appliqués</p>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-black" style={{ color: admisGlobal ? '#00B4D8' : '#ef4444' }}>
+                  {isFinite(noteGlobale) ? noteGlobale.toFixed(1) : "0.0"} / 20
+                </p>
+                <p className="text-xs font-semibold" style={{ color: admisGlobal ? '#00B4D8' : '#ef4444' }}>
+                  {admisGlobal ? "ADMIS" : "NON ADMIS"}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Correction détaillée */}
@@ -997,12 +1118,13 @@ export default function ExamensBlancsPage({
 
   const savedSession = restoreSession();
 
-  const [phase, setPhase] = useState<"selection" | "intro" | "examen" | "resultats" | "edition">(
+  const [phase, setPhase] = useState<"selection" | "intro" | "examen" | "transition" | "resultats" | "edition">(
     savedSession?.phase === "examen" ? "examen" : "selection"
   );
   const [examenChoisi, setExamenChoisi] = useState<ExamenBlanc | null>(null);
   const [matiereIndex, setMatiereIndex] = useState(savedSession?.matiereIndex || 0);
   const [tousResultats, setTousResultats] = useState<ResultatMatiere[]>(savedSession?.resultats || []);
+  const [lastMatiereResult, setLastMatiereResult] = useState<ResultatMatiere | null>(null);
   const [bilanPrefiltre, setBilanPrefiltre] = useState<string | null>(null);
   const [liveExamens, setLiveExamens] = useState<ExamenBlanc[]>(tousLesExamens);
   const examStartTimeRef = useRef<number>(savedSession?.examStartTime || Date.now());
@@ -1153,7 +1275,9 @@ export default function ExamensBlancsPage({
 
     if (matiereIndex < examenChoisi.matieres.length - 1) {
       const nextIndex = matiereIndex + 1;
+      setLastMatiereResult(resultat);
       setMatiereIndex(nextIndex);
+      setPhase("transition");
       persistExamSession("examen", examenChoisi.id, nextIndex, newResultats);
     } else {
       setPhase("resultats");
@@ -1310,13 +1434,29 @@ export default function ExamensBlancsPage({
 
             </div>
 
-            <Button className="w-full gap-2 text-base py-5" onClick={handleDebuterExamen}>
+            <Button className="w-full gap-2 text-base py-5 text-white font-semibold" style={{ backgroundColor: '#F4A227' }} onClick={handleDebuterExamen}>
               <Timer className="w-5 h-5" />
               Démarrer l'examen
             </Button>
           </CardContent>
         </Card>
       </div>
+    );
+  }
+
+  if (phase === "transition" && examenChoisi && lastMatiereResult) {
+    const matiereSuivante = examenChoisi.matieres[matiereIndex];
+    return (
+      <TransitionMatiere
+        matiereTerminee={lastMatiereResult.nomMatiere}
+        scoreObtenu={lastMatiereResult.noteObtenue}
+        maxPoints={lastMatiereResult.maxPoints}
+        noteSur={lastMatiereResult.noteSur}
+        matiereSuivante={matiereSuivante?.nom || "Matière suivante"}
+        numeroSuivant={matiereIndex + 1}
+        total={examenChoisi.matieres.length}
+        onContinuer={() => { setLastMatiereResult(null); setPhase("examen"); }}
+      />
     );
   }
 
