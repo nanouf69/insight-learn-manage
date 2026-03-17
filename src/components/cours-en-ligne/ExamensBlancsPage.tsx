@@ -511,14 +511,11 @@ function PassageMatiere({
         <div className="flex gap-1 flex-wrap justify-center">
           {questionsSafe.map((q, i) => {
             if (!q || q === undefined) return null;
-            const rep = reponses[q.id];
-            const isAnswered = q?.type === "QCM"
-              ? Array.isArray(rep) && rep.length > 0
-              : typeof rep === "string" && rep.trim().length > 0;
+            const isAnswered = isQuestionAnswered(q);
             const isCurrent = i === safeQuestionIndex;
             return (
               <button
-                key={i}
+                key={q.id ?? i}
                 onClick={() => setQuestionIndex(i)}
                 className={`w-7 h-7 rounded text-xs font-medium transition-colors ${
                   isCurrent
