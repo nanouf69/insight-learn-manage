@@ -468,16 +468,30 @@ function PassageMatiere({
           Précédente
         </Button>
 
-        <div className="flex gap-1">
-          {matiere.questions.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setQuestionIndex(i)}
-              className={`w-7 h-7 rounded text-xs font-medium transition-colors ${i === questionIndex ? "bg-primary text-primary-foreground" : reponses[matiere.questions[i].id] !== undefined ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground hover:bg-primary/10"}`}
-            >
-              {i + 1}
-            </button>
-          ))}
+        <div className="flex gap-1 flex-wrap justify-center">
+          {matiere.questions.map((q, i) => {
+            const rep = reponses[q.id];
+            const isAnswered = q.type === "QCM" 
+              ? Array.isArray(rep) && rep.length > 0 
+              : typeof rep === "string" && rep.trim().length > 0;
+            const isCurrent = i === questionIndex;
+            return (
+              <button
+                key={i}
+                onClick={() => setQuestionIndex(i)}
+                className={`w-7 h-7 rounded text-xs font-medium transition-colors ${
+                  isCurrent 
+                    ? "bg-primary text-primary-foreground ring-2 ring-primary/50" 
+                    : isAnswered 
+                      ? "bg-green-100 text-green-700 border border-green-300" 
+                      : "bg-red-50 text-red-500 border border-red-300 animate-pulse"
+                }`}
+                title={isAnswered ? `Question ${i + 1} — répondue ✓` : `Question ${i + 1} — NON répondue ✗`}
+              >
+                {i + 1}
+              </button>
+            );
+          })}
         </div>
 
         {questionIndex < matiere.questions.length - 1 ? (
@@ -894,13 +908,59 @@ export default function ExamensBlancsPage({
   userId?: string | null;
   apprenantType?: string | null;
 } = {}) {
-  const [phase, setPhase] = useState<"selection" | "intro" | "examen" | "resultats" | "edition">("selection");
+  // Restore exam session from sessionStorage
+  const EXAM_SESSION_KEY = `exam_session_${apprenantId || "anon"}`;
+
+  const restoreSession = () => {
+    try {
+      const saved = sessionStorage.getItem(EXAM_SESSION_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch { }
+    return null;
+  };
+
+  const savedSession = restoreSession();
+
+  const [phase, setPhase] = useState<"selection" | "intro" | "examen" | "resultats" | "edition">(
+    savedSession?.phase === "examen" ? "examen" : "selection"
+  );
   const [examenChoisi, setExamenChoisi] = useState<ExamenBlanc | null>(null);
-  const [matiereIndex, setMatiereIndex] = useState(0);
+  const [matiereIndex, setMatiereIndex] = useState(savedSession?.matiereIndex || 0);
   const [tousResultats, setTousResultats] = useState<ResultatMatiere[]>([]);
   const [bilanPrefiltre, setBilanPrefiltre] = useState<string | null>(null);
   const [liveExamens, setLiveExamens] = useState<ExamenBlanc[]>(tousLesExamens);
-  const examStartTimeRef = useRef<number>(Date.now());
+  const examStartTimeRef = useRef<number>(savedSession?.examStartTime || Date.now());
+
+  // Persist exam session state to sessionStorage
+  const persistExamSession = (p: string, exId: string | null, mi: number) => {
+    try {
+      if (p === "examen" && exId) {
+        sessionStorage.setItem(EXAM_SESSION_KEY, JSON.stringify({
+          phase: p,
+          examenId: exId,
+          matiereIndex: mi,
+          examStartTime: examStartTimeRef.current,
+        }));
+      } else {
+        sessionStorage.removeItem(EXAM_SESSION_KEY);
+      }
+    } catch { }
+  };
+
+  // Restore the chosen exam once liveExamens are loaded
+  const [sessionRestored, setSessionRestored] = useState(false);
+  useEffect(() => {
+    if (sessionRestored || liveExamens.length === 0) return;
+    if (savedSession?.examenId) {
+      const found = liveExamens.find(e => e.id === savedSession.examenId);
+      if (found) {
+        setExamenChoisi(found);
+        setPhase("examen");
+        setMatiereIndex(savedSession.matiereIndex || 0);
+      }
+    }
+    setSessionRestored(true);
+  }, [liveExamens, sessionRestored]);
 
   // Load saved exam overrides from DB on mount
   useEffect(() => {
@@ -949,6 +1009,7 @@ export default function ExamensBlancsPage({
   const handleDebuterExamen = () => {
     examStartTimeRef.current = Date.now();
     setPhase("examen");
+    if (examenChoisi) persistExamSession("examen", examenChoisi.id, 0);
   };
 
   const calculerMaxPoints = (matiere: Matiere): number =>
@@ -1002,9 +1063,12 @@ export default function ExamensBlancsPage({
     setTousResultats(newResultats);
 
     if (matiereIndex < examenChoisi.matieres.length - 1) {
-      setMatiereIndex(i => i + 1);
+      const nextIndex = matiereIndex + 1;
+      setMatiereIndex(nextIndex);
+      persistExamSession("examen", examenChoisi.id, nextIndex);
     } else {
       setPhase("resultats");
+      persistExamSession("resultats", null, 0); // Clear session
       // Save results to database
       if (apprenantId && userId) {
         const duree = Math.round((Date.now() - examStartTimeRef.current) / 1000);
