@@ -1335,8 +1335,12 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                             <h3 className={`font-bold text-sm transition-colors ${locked ? "text-muted-foreground" : "text-foreground group-hover:text-primary"}`}>
                               {mod.nom}
                             </h3>
-                            <p className="text-xs text-muted-foreground line-clamp-1">
-                              {locked ? (INTRO_MODULE_IDS.has(modules[0]?.id) && !introCompleted ? "🔒 Terminez l'Introduction pour débloquer" : "🔒 Terminez le module précédent pour débloquer") : mod.description}
+                            <p className="text-xs text-muted-foreground line-clamp-2">
+                              {locked ? (INTRO_MODULE_IDS.has(modules[0]?.id) && !introCompleted ? "🔒 Terminez l'Introduction pour débloquer" : "🔒 Terminez le module précédent pour débloquer") : (
+                                moduleQuizStatsById[mod.id]?.totalQuizzes > 0 && moduleQuizStatsById[mod.id]?.completedQuizzes > 0
+                                  ? `📊 ${moduleQuizStatsById[mod.id].completedQuizzes}/${moduleQuizStatsById[mod.id].totalQuizzes} quiz complétés — Reste : ${moduleQuizStatsById[mod.id].remainingLabels.join(", ") || "aucun"}`
+                                  : mod.description
+                              )}
                             </p>
                           </div>
                           <div className="shrink-0">
