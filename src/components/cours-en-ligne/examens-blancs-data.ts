@@ -2425,25 +2425,64 @@ const matiere_reglementation_vtc2_examen3: Matiere = {
   noteSur: 20,
   questions: [
     {
-      id: 1, type: "QRC", enonce: "Qu'est-ce que l'honorabilité dans la profession de conducteur T3P ?",
-      reponseQRC: "Avoir le casier judiciaire B2 vierge.",
-      reponses_possibles: ["casier judiciaire b2 vierge", "b2 vierge", "casier b2"]
+      id: 1, type: "QRC", enonce: "Indiquez où doivent être apposés les macarons de la signalétique VTC.",
+      reponseQRC: "En bas à gauche de la place chauffeur du pare-brise avant, et en bas à droite à l'opposé de la place du chauffeur sur le pare-brise arrière.",
+      reponses_possibles: ["pare-brise avant", "pare-brise arrière", "bas à gauche", "bas à droite", "macaron"]
     },
     {
-      id: 2, type: "QCM", enonce: "La formation continue est valable :",
+      id: 2, type: "QRC", enonce: "Donnez la définition de l'activité de VTC.",
+      reponseQRC: "Les activités de VTC sont des exploitants qui mettent à la disposition de leur clientèle une ou plusieurs voitures de transport avec chauffeur dans des conditions fixées à l'avance entre les parties.",
+      reponses_possibles: ["exploitants", "clientèle", "voitures de transport", "chauffeur", "conditions fixées à l'avance"]
+    },
+    {
+      id: 3, type: "QCM", enonce: "La durée maximale de stationnement précédant l'horaire de prise en charge à un aéroport pour un VTC est de :",
       choix: [
-        { lettre: "A", texte: "5 ans", correct: true },
-        { lettre: "B", texte: "1 an" },
-        { lettre: "C", texte: "2 ans" },
-        { lettre: "D", texte: "10 ans" }
+        { lettre: "A", texte: "30 minutes" },
+        { lettre: "B", texte: "1 h 30" },
+        { lettre: "C", texte: "1 heure", correct: true },
+        { lettre: "D", texte: "45 minutes" }
       ]
     },
     {
-      id: 3, type: "QCM", enonce: "La carte professionnelle est délivrée par :",
+      id: 4, type: "QCM", enonce: "Quel est le périmètre d'exercice de l'activité de conducteur de VTC ?",
       choix: [
-        { lettre: "A", texte: "La préfecture", correct: true },
-        { lettre: "B", texte: "La DIRECCTE" },
-        { lettre: "C", texte: "La DREAL" }
+        { lettre: "A", texte: "son département de résidence" },
+        { lettre: "B", texte: "sa commune de résidence" },
+        { lettre: "C", texte: "Le territoire national", correct: true }
+      ]
+    },
+    {
+      id: 5, type: "QCM", enonce: "Un véhicule VTC doit être âgé de :",
+      choix: [
+        { lettre: "A", texte: "moins de 7 ans, sauf pour les véhicules de collection de 30 ans", correct: true },
+        { lettre: "B", texte: "moins de 5 ans" },
+        { lettre: "C", texte: "moins de 10 ans" }
+      ]
+    },
+    {
+      id: 6, type: "QCM", enonce: "La longueur minimale hors tout d'un véhicule VTC hybride ou électrique :",
+      choix: [
+        { lettre: "A", texte: "Est de 4,50 mètres" },
+        { lettre: "B", texte: "Est de 4 mètres" },
+        { lettre: "C", texte: "Est de 3 mètres" },
+        { lettre: "D", texte: "Aucune longueur minimale n'est imposée", correct: true }
+      ]
+    },
+    {
+      id: 7, type: "QCM", enonce: "La prise en charge d'un client sur une voie publique sans réservation préalable est :",
+      choix: [
+        { lettre: "A", texte: "autorisée si elle est consécutive à la dépose du client précédent" },
+        { lettre: "B", texte: "passible d'une suspension du permis de conduire" },
+        { lettre: "C", texte: "un délit puni d'une peine de prison et d'une amende pouvant aller jusqu'à 15 000€", correct: true }
+      ]
+    },
+    {
+      id: 8, type: "QCM", enonce: "Parmi les dimensions suivantes, lesquelles permettent à une voiture d'être exploitée en VTC ?",
+      choix: [
+        { lettre: "A", texte: "Longueur 4,47 m et largeur 1,85 m" },
+        { lettre: "B", texte: "Longueur 4,30 m et largeur 1,81 m" },
+        { lettre: "C", texte: "Longueur 4,70 m et largeur 1,80 m", correct: true },
+        { lettre: "D", texte: "Longueur 4,61 m et largeur 1,77 m" }
       ]
     }
   ]
