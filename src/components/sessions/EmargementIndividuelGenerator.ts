@@ -135,7 +135,7 @@ function generateIndividualPage(
   doc.setFontSize(12);
   doc.text(`${apprenant.nom.toUpperCase()} ${apprenant.prenom}`, margin + 28, yPos);
 
-  const typeLabel = (apprenant.type_apprenant || '').toUpperCase().replace(/-E$/, '');
+  const typeLabel = (apprenant.type_apprenant || '').toUpperCase().replace(/-E$/i, '');
   const formationWithType = typeLabel ? `${session.formation} (${typeLabel})` : session.formation;
 
   doc.setFontSize(10);

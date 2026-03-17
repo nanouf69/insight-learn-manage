@@ -91,7 +91,7 @@ function EcranSelection({ onStart, onEdit, defaultBilanId, apprenantType, examen
   // Determine the forced exam type from the student's formation type
   const forcedType = (() => {
     if (!apprenantType) return null;
-    const t = apprenantType.replace(/-E$/, "").toUpperCase();
+    const t = apprenantType.replace(/-e$/i, "").toUpperCase();
     if (["TAXI", "VTC", "TA", "VA"].includes(t)) return t as "TAXI" | "VTC" | "TA" | "VA";
     return null;
   })();
