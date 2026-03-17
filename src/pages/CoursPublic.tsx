@@ -21,6 +21,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { safeDateParse } from "@/lib/safeDateParse";
 import { useConnexionTracking } from "@/hooks/useConnexionTracking";
 import { useInactivityAlert } from "@/hooks/useInactivityAlert";
+import { usePresenceCheck } from "@/hooks/usePresenceCheck";
+import { PresenceCheckModal } from "@/components/cours-en-ligne/PresenceCheckModal";
 import { useAuth } from "@/contexts/AuthContext";
 
 const StableModuleDetailView = memo(ModuleDetailView);
@@ -604,10 +606,32 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [moduleCompletionsForNotes, setModuleCompletionsForNotes] = useState<Array<{ id: string; module_id: number; score_obtenu: number | null; score_max: number | null; completed_at: string; details: any }>>([]);
 
   // Tracking connexion élève (only for real student sessions, not admin preview)
-  const { trackModuleActivity } = useConnexionTracking({
+  const isStudentSession = !embedded && !!user && !!apprenant?.id;
+  const { trackModuleActivity, connexionId, sessionStartTime, endConnexion } = useConnexionTracking({
     apprenantId: !embedded && apprenant?.id ? apprenant.id : null,
     userId: user?.id || null,
-    enabled: !embedded && !!user && !!apprenant?.id,
+    enabled: isStudentSession,
+  });
+
+  // Presence verification: every 4h + 7h max session
+  const handleForceDisconnect = useCallback(async () => {
+    await supabase.auth.signOut();
+    navigate("/cours");
+    toast.error("Session terminée");
+  }, [navigate]);
+
+  const {
+    showModal: showPresenceModal,
+    countdownSeconds: presenceCountdown,
+    disconnectReason,
+    confirmPresence,
+  } = usePresenceCheck({
+    apprenantId: !embedded && apprenant?.id ? apprenant.id : null,
+    userId: user?.id || null,
+    connexionId: connexionId.current,
+    sessionStartTime,
+    enabled: isStudentSession,
+    onForceDisconnect: handleForceDisconnect,
   });
 
   // Inactivity alert after 2h
@@ -1432,6 +1456,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           </>
         )}
       </div>
+
+      {/* Presence verification modal (non-blocking overlay) */}
+      <PresenceCheckModal
+        show={showPresenceModal}
+        countdownSeconds={presenceCountdown}
+        disconnectReason={disconnectReason}
+        onConfirm={confirmPresence}
+      />
     </div>
   );
 };

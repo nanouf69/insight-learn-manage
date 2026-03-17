@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 const HEARTBEAT_INTERVAL = 60_000; // 1 minute
@@ -11,6 +11,20 @@ interface UseConnexionTrackingParams {
 
 export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnexionTrackingParams) {
   const connexionIdRef = useRef<string | null>(null);
+  const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
+
+  const endConnexion = async () => {
+    if (!connexionIdRef.current) return;
+    await supabase
+      .from("apprenant_connexions" as any)
+      .update({
+        ended_at: new Date().toISOString(),
+        last_seen_at: new Date().toISOString(),
+      })
+      .eq("id", connexionIdRef.current);
+    connexionIdRef.current = null;
+    setSessionStartTime(null);
+  };
 
   useEffect(() => {
     if (!enabled || !apprenantId || !userId) return;
@@ -25,6 +39,7 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
         .eq("apprenant_id", apprenantId)
         .is("ended_at", null);
 
+      const now = new Date();
       const { data, error } = await supabase
         .from("apprenant_connexions" as any)
         .insert({
@@ -37,6 +52,7 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
 
       if (!error && data) {
         connexionIdRef.current = (data as any).id;
+        setSessionStartTime(now.getTime());
       }
 
       // Fetch apprenant name for the alert
@@ -55,7 +71,7 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
             type: "connexion_apprenant",
             titre: `🟢 ${nom} vient de se connecter`,
             message: `L'apprenant ${nom} s'est connecté à son espace de cours${formation ? ` (${formation.toUpperCase()})` : ""}.`,
-            details: `Connexion le ${new Date().toLocaleString("fr-FR")}`,
+            details: `Connexion le ${now.toLocaleString("fr-FR")}`,
           });
       }
     };
@@ -68,33 +84,14 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
         .eq("id", connexionIdRef.current);
     };
 
-    const endConnexion = async () => {
-      if (!connexionIdRef.current) return;
-      await supabase
-        .from("apprenant_connexions" as any)
-        .update({
-          ended_at: new Date().toISOString(),
-          last_seen_at: new Date().toISOString(),
-        })
-        .eq("id", connexionIdRef.current);
-      connexionIdRef.current = null;
-    };
-
     startConnexion();
     heartbeatTimer = setInterval(heartbeat, HEARTBEAT_INTERVAL);
 
     const handleBeforeUnload = () => {
       if (connexionIdRef.current) {
-        const body = JSON.stringify({
-          ended_at: new Date().toISOString(),
-          last_seen_at: new Date().toISOString(),
-        });
-        // Use sendBeacon for reliability on page close
         navigator.sendBeacon?.(
           `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/apprenant_connexions?id=eq.${connexionIdRef.current}`,
-          // sendBeacon doesn't support PATCH easily, so we'll rely on the heartbeat + ended_at from cleanup
         );
-        // Fallback: try sync update
         endConnexion();
       }
     };
@@ -128,5 +125,10 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
       });
   };
 
-  return { trackModuleActivity, connexionId: connexionIdRef };
+  return {
+    trackModuleActivity,
+    connexionId: connexionIdRef,
+    sessionStartTime,
+    endConnexion,
+  };
 }
