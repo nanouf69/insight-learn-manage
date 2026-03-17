@@ -593,18 +593,22 @@ function EcranResultats({
 
   // Recalculer les notes avec les corrections IA
   const resultatsAvecIA = resultats.map((r, mi) => {
+    if (!r || r === undefined) return r;
     const cache = correctionsIA[mi];
     if (!cache) return r;
 
     const matiere = examen.matieres[mi];
+    if (!matiere) return r;
+    const questionsSafe = (matiere.questions || []).filter(q => q && q?.type !== undefined);
+
     let noteRecalculee = 0;
-    (matiere.questions || []).filter(Boolean).forEach(q => {
-      if (!q || !q?.type) return;
+    questionsSafe.forEach(q => {
+      if (!q || q === undefined) return;
       if (q?.type === "QCM" && q.choix) {
         const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
-        const donnees = ((r.reponses[q.id] as string[]) || []).sort();
+        const donnees = ((r.reponses?.[q.id] as string[]) || []).sort();
         if (JSON.stringify(correctes) === JSON.stringify(donnees)) {
-          noteRecalculee += getPointsParQuestion(matiere.id, q?.type);
+          noteRecalculee += getPointsParQuestion(matiere.id, q?.type || "QCM");
         }
       } else if (q?.type === "QRC") {
         const correction = cache[q.id];
@@ -614,8 +618,7 @@ function EcranResultats({
       }
     });
 
-    // Ne recalculer que si toutes les corrections IA sont terminées
-    const toutTermine = (matiere.questions || []).filter(Boolean)
+    const toutTermine = questionsSafe
       .filter(q => q?.type === "QRC")
       .every(q => cache[q.id] && cache[q.id] !== "loading");
 
