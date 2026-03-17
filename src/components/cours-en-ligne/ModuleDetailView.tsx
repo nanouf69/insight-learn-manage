@@ -3779,7 +3779,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           type: q?.type ?? ((q?.choix?.length ?? 0) > 0 ? "qcm" : "qrc"),
         };
       });
-      const questionsSafe = (exoQuestionsNormalized ?? []).filter((q: any) => q != null && q.type != null);
+      const questionsSafe = (exoQuestionsNormalized ?? []).filter((q: any) => q != null && q?.type != null);
       const exoTotalQ = questionsSafe.length;
       const exoCorrect = questionsSafe.filter((q: any) => {
         const key = `${exo.id}-${q.id}`;
@@ -4122,7 +4122,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           <h4 className="font-semibold text-sm">Actions</h4>
                           <div className="flex flex-col gap-2">
                             <Button variant="outline" size="sm" className="gap-2" onClick={() => {
-                              const exoKeys = (exo.questions || []).map(q => `${exo.id}-${q.id}`);
+                              const exoKeys = questionsSafe.map(q => `${exo.id}-${q.id}`);
                               setSelectedAnswers(prev => {
                                 const next = { ...prev };
                                 exoKeys.forEach(k => delete next[k]);
@@ -4136,7 +4136,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                             <Button variant="outline" size="sm" className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50" onClick={() => {
                               // Only clear wrong answers, keep correct ones
                               const wrongKeys: string[] = [];
-                              (exo.questions || []).forEach((q: any) => {
+                              questionsSafe.forEach((q: any) => {
                                 const key = `${exo.id}-${q.id}`;
                                 const selected = selectedAnswers[key];
                                 const correct = q.choix.find((c: any) => c.correct);
@@ -4155,7 +4155,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                             }}>
                               🎯 Refaire les fausses ({(() => {
                                 let count = 0;
-                                (exo.questions || []).forEach((q: any) => {
+                                questionsSafe.forEach((q: any) => {
                                   const key = `${exo.id}-${q.id}`;
                                   const selected = selectedAnswers[key];
                                   const correct = q.choix.find((c: any) => c.correct);
