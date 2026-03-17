@@ -3296,7 +3296,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     // Module IDs where Réglementation Nationale/Locale content exists for TAXI and TA
     const TAXI_REGLEMENTATION_MODULE_IDS = new Set([10, 9, 11, 40, 27, 28]);
-    const isTaxiOrTA = apprenantType === "taxi" || (apprenantType || "").toLowerCase().startsWith("ta");
+    const isTaxiOrTA = (apprenantType || "").toLowerCase().replace(/-e$/, "").match(/^(taxi|ta)$/) !== null;
 
     const isReglementationPage = (pageIdx: number): boolean => {
       if (!isTaxiOrTA || !TAXI_REGLEMENTATION_MODULE_IDS.has(Number(moduleData.id))) return false;
