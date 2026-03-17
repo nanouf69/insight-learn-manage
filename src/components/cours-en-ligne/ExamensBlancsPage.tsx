@@ -297,8 +297,33 @@ function PassageMatiere({
           const rawReponses = (data as any)?.reponses;
           if (!completed && rawReponses) {
             const parsed = normalizeReponses(rawReponses);
-            console.log(`[AutoSave] Loaded ${Object.keys(parsed).length} saved responses for ${exerciceKey}`);
+            const answeredCount = Object.keys(parsed).length;
+            console.log(`[AutoSave] Loaded ${answeredCount} saved responses for ${exerciceKey}`);
             setReponses(parsed);
+
+            // Resume at the last answered question (or the next unanswered one)
+            if (answeredCount > 0 && questionsSafe.length > 0) {
+              // Find the first unanswered question index
+              let resumeIndex = 0;
+              for (let i = 0; i < questionsSafe.length; i++) {
+                const q = questionsSafe[i];
+                if (!q) continue;
+                const rep = parsed[q.id] ?? parsed[String(q.id)];
+                const hasAnswer = q?.type === "QCM"
+                  ? Array.isArray(rep) && rep.length > 0
+                  : typeof rep === "string" && rep.trim().length > 0;
+                if (!hasAnswer) {
+                  resumeIndex = i;
+                  break;
+                }
+                resumeIndex = i; // if all answered, stay on last
+              }
+              setQuestionIndex(resumeIndex);
+              toast.info(`Vous reprenez votre examen à la question ${resumeIndex + 1}/${questionsSafe.length}`, {
+                duration: 4000,
+                icon: "📝",
+              });
+            }
           }
         }
       } catch (e) { console.error("[AutoSave] Load error:", e); }
