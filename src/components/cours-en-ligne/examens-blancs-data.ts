@@ -691,114 +691,45 @@ const matiere_anglais_examen1: Matiere = {
 // ===== MATIÈRE SPÉCIFIQUE TAXI =====
 const matiere_reglementation_taxi_examen1: Matiere = {
   id: "reglementation_taxi",
-  nom: "F(T) - Connaissance du territoire et réglementation locale TAXI",
+  nom: "F(T) - Réglementation nationale TAXI",
   duree: 30,
   coefficient: 3,
   noteEliminatoire: 6,
   noteSur: 20,
   questions: [
-    {
-      id: 1, type: "QRC", enonce: "Développez le sigle TICPE.",
-      reponseQRC: "Taxe Intérieure sur la Consommation des Produits Énergétiques.",
-      reponses_possibles: ["taxe intérieure", "consommation", "produits énergétiques"]
-    },
-    {
-      id: 2, type: "QRC", enonce: "Je veux passer mon véhicule professionnel en véhicule personnel pour la journée. Que dois-je faire ?",
-      reponseQRC: "Bâcher le lumineux. Éteindre le taximètre. Retirer la carte professionnelle.",
-      reponses_possibles: ["bâcher le lumineux", "éteindre le taximètre", "retirer la carte professionnelle"]
-    },
-    {
-      id: 3, type: "QRC", enonce: "Lorsqu'un titulaire ne peut exploiter lui-même son autorisation de stationnement, quelles sont les deux possibilités qui s'offrent à lui ?",
-      reponseQRC: "La location du véhicule taxi à un conducteur de taxi. L'emploi d'un salarié.",
-      reponses_possibles: ["location", "conducteur de taxi", "emploi d'un salarié", "salarié"]
-    },
-    {
-      id: 4, type: "QCM", enonce: "Le taximètre mesure :",
-      choix: [
-        { lettre: "A", texte: "La distance parcourue et le temps d'attente", correct: true },
-        { lettre: "B", texte: "La vitesse du véhicule" },
-        { lettre: "C", texte: "La consommation de carburant" }
-      ]
-    },
-    {
-      id: 5, type: "QCM", enonce: "L'autorisation de stationnement (ADS) d'un taxi est délivrée par :",
-      choix: [
-        { lettre: "A", texte: "La préfecture" },
-        { lettre: "B", texte: "Le maire de la commune", correct: true },
-        { lettre: "C", texte: "La chambre de métiers" },
-        { lettre: "D", texte: "Le conseil régional" }
-      ]
-    },
-    {
-      id: 6, type: "QCM", enonce: "La carte professionnelle de taxi est valable :",
-      choix: [
-        { lettre: "A", texte: "1 an" },
-        { lettre: "B", texte: "3 ans" },
-        { lettre: "C", texte: "5 ans", correct: true },
-        { lettre: "D", texte: "10 ans" }
-      ]
-    },
-    {
-      id: 7, type: "QCM", enonce: "Un taxi peut-il refuser une course ?",
-      choix: [
-        { lettre: "A", texte: "Jamais" },
-        { lettre: "B", texte: "Oui, en fin de service ou pour des motifs légitimes", correct: true },
-        { lettre: "C", texte: "Oui, à tout moment et sans justification" }
-      ]
-    }
+    { id: 1, type: "QRC", enonce: "Développez le sigle TICPE.", reponseQRC: "Taxe Intérieure sur la Consommation des Produits Énergétiques.", reponses_possibles: ["taxe intérieure", "consommation", "produits énergétiques"] },
+    { id: 2, type: "QRC", enonce: "Je veux passer mon véhicule professionnel en véhicule personnel pour la journée que dois-je faire ?", reponseQRC: "Bâcher le lumineux. Éteindre le taximètre. Retirer la carte professionnelle.", reponses_possibles: ["bâcher", "lumineux", "éteindre", "taximètre", "retirer", "carte professionnelle"] },
+    { id: 3, type: "QRC", enonce: "Lorsqu'un titulaire ne peut exploiter lui-même son autorisation de stationnement, quelles sont les deux possibilités qui s'offrent à lui pour que son entreprise reste active ?", reponseQRC: "La location du véhicule taxi à un conducteur de taxi. L'emploi d'un salarié.", reponses_possibles: ["location", "conducteur de taxi", "emploi", "salarié"] },
+    { id: 4, type: "QRC", enonce: "Quelles sont les différentes autorités administratives compétentes pour délivrer une ADS ?", reponseQRC: "Les mairies.", reponses_possibles: ["mairies", "maire"] },
+    { id: 5, type: "QCM", enonce: "Dans le cadre d'une cession d'autorisation, la condition tenant à l'exploitation effective et continue est justifiée :", choix: [{ lettre: "A", texte: "par tout autre moyen défini par un arrêté de l'autorité compétente", correct: true }, { lettre: "B", texte: "par la copie de l'autorisation de stationnement" }, { lettre: "C", texte: "par la copie des déclarations de revenus ou d'avis d'imposition", correct: true }, { lettre: "D", texte: "par la copie de la carte grise du véhicule" }] },
+    { id: 6, type: "QCM", enonce: "L'autorisation de stationnement délivrée postérieurement à la loi n°2014-1104 du 1er octobre 2014 :", choix: [{ lettre: "A", texte: "a une durée de validité de 5 ans" }, { lettre: "B", texte: "est cessible dans des conditions fixées par décret" }, { lettre: "C", texte: "est renouvelable dans des conditions fixées par décret", correct: true }, { lettre: "D", texte: "est cessible" }] },
+    { id: 7, type: "QCM", enonce: "Quelle autorité est compétente pour délivrer les autorisations de stationnement sur les aéroports ?", choix: [{ lettre: "A", texte: "les présidents de chambres de métiers et de l'artisanat" }, { lettre: "B", texte: "les présidents de chambres de commerce et d'industrie" }, { lettre: "C", texte: "les préfets ou préfet de police dans leur zone de compétences", correct: true }, { lettre: "D", texte: "les maires" }] },
+    { id: 8, type: "QCM", enonce: "Lorsque le client paye la course par carte bleue puis-je appliquer un supplément ?", choix: [{ lettre: "A", texte: "non", correct: true }, { lettre: "B", texte: "oui en accord avec le client" }, { lettre: "C", texte: "oui sous certaines conditions" }, { lettre: "D", texte: "oui" }] },
+    { id: 9, type: "QCM", enonce: "Le véhicule taxi :", choix: [{ lettre: "A", texte: "peut être muni d'un terminal de paiement électronique selon la réglementation locale" }, { lettre: "B", texte: "doit être muni d'un terminal de paiement électronique", correct: true }, { lettre: "C", texte: "n'a pas l'obligation d'être muni d'un terminal de paiement électronique" }] },
+    { id: 10, type: "QCM", enonce: "Un transport vers l'hôpital non pris en charge par la caisse d'assurance maladie peut être effectué :", choix: [{ lettre: "A", texte: "uniquement par les taxis non conventionnés" }, { lettre: "B", texte: "par tous les taxis", correct: true }, { lettre: "C", texte: "uniquement par les taxis conventionnés" }] },
+    { id: 11, type: "QCM", enonce: "Je veux faire du transport scolaire avec mon véhicule taxi que dois-je faire ?", choix: [{ lettre: "A", texte: "afficher une pancarte transport d'enfants", correct: true }, { lettre: "B", texte: "avoir un accompagnateur", correct: true }, { lettre: "C", texte: "bâcher le lumineux", correct: true }, { lettre: "D", texte: "retirer la carte professionnelle" }] },
+    { id: 12, type: "QCM", enonce: "Je mets en circulation un taxi de remplacement, quelle autorité dois-je aviser ?", choix: [{ lettre: "A", texte: "la préfecture, la chambre de métiers, le RSI ou la CPAM et le service des fraudes" }, { lettre: "B", texte: "la préfecture, la mairie de l'ADS remplacée, la CPAM et le service des fraudes" }, { lettre: "C", texte: "la préfecture, la chambre de métiers, la CPAM dans le cas d'un taxi conventionné et le service des fraudes", correct: true }] },
+    { id: 13, type: "QCM", enonce: "Quelle est l'autorité compétente pour décider de l'usage de signe distinctif commun à l'ensemble des taxis ?", choix: [{ lettre: "A", texte: "l'autorité compétente est exclusivement le préfet" }, { lettre: "B", texte: "l'autorité compétente est exclusivement le maire" }, { lettre: "C", texte: "l'autorité compétente est celle qui délivre les autorisations de stationnement", correct: true }] },
+    { id: 14, type: "QCM", enonce: "Si le client vous demande une facture vous devez lui fournir :", choix: [{ lettre: "A", texte: "l'original du ticket de l'imprimante et une facture", correct: true }, { lettre: "B", texte: "une facture et une copie du ticket de l'imprimante" }, { lettre: "C", texte: "une copie du ticket de l'imprimante" }, { lettre: "D", texte: "l'original du ticket de l'imprimante" }] }
   ]
 };
 
 const matiere_reglementation_taxi2_examen1: Matiere = {
   id: "reglementation_taxi2",
-  nom: "G(T) - Réglementation nationale TAXI et gestion propre à cette activité",
+  nom: "G(T) - Connaissance du territoire et réglementation locale TAXI",
   duree: 20,
   coefficient: 3,
   noteEliminatoire: 6,
   noteSur: 20,
   questions: [
-    {
-      id: 1, type: "QCM", enonce: "Le tarimètre (taximètre) doit être homologué par :",
-      choix: [
-        { lettre: "A", texte: "La préfecture" },
-        { lettre: "B", texte: "Un organisme agréé par le ministère", correct: true },
-        { lettre: "C", texte: "La chambre de métiers" }
-      ]
-    },
-    {
-      id: 2, type: "QCM", enonce: "La formation continue obligatoire pour les conducteurs de taxi est de :",
-      choix: [
-        { lettre: "A", texte: "14h tous les 5 ans", correct: true },
-        { lettre: "B", texte: "7h par an" },
-        { lettre: "C", texte: "21h tous les 3 ans" }
-      ]
-    },
-    {
-      id: 3, type: "QCM", enonce: "En cas de perte de la carte professionnelle de taxi, le conducteur doit :",
-      choix: [
-        { lettre: "A", texte: "Continuer à exercer en attendant le renouvellement" },
-        { lettre: "B", texte: "Cesser toute activité jusqu'à obtention d'un duplicata", correct: true },
-        { lettre: "C", texte: "Exercer sous la responsabilité de son employeur" }
-      ]
-    },
-    {
-      id: 4, type: "QCM", enonce: "Le tarif taxi est fixé par :",
-      choix: [
-        { lettre: "A", texte: "Le chauffeur librement" },
-        { lettre: "B", texte: "Le préfet après avis de la commission locale", correct: true },
-        { lettre: "C", texte: "Le maire de la commune" },
-        { lettre: "D", texte: "Le client par négociation" }
-      ]
-    },
-    {
-      id: 5, type: "QCM", enonce: "Le lumineux d'un taxi doit être de couleur :",
-      choix: [
-        { lettre: "A", texte: "Verte" },
-        { lettre: "B", texte: "Jaune orangée", correct: true },
-        { lettre: "C", texte: "Blanche" },
-        { lettre: "D", texte: "Rouge" }
-      ]
-    }
+    { id: 1, type: "QRC", enonce: "Citez 4 stations de TAXI du 6ème arrondissement de Lyon.", reponseQRC: "Station Cours Vitton. Angle rue Masséna. Place du Général Leclerc. Entrée du parc de la Tête d'Or. Avenue du Général Brosset (Métro Brotteaux). Place du Maréchal Lyautey (Métro Foch).", reponses_possibles: ["Cours Vitton", "Général Leclerc", "Tête d'Or", "Brotteaux", "Maréchal Lyautey", "Masséna"] },
+    { id: 2, type: "QRC", enonce: "Citez 4 mentions qui doivent être inscrites sur l'affichette TAXIS ?", reponseQRC: "Les taux horaires et kilométriques en vigueur. Les montants et conditions de la prise en charge et des suppléments. Les conditions de délivrance d'une note. L'information que le consommateur peut régler par carte bancaire. L'adresse de réclamation.", reponses_possibles: ["taux horaires", "kilométriques", "prise en charge", "suppléments", "carte bancaire", "réclamation"] },
+    { id: 3, type: "QCM", enonce: "Que signifie le tarif A ?", choix: [{ lettre: "A", texte: "Course de jour" }, { lettre: "B", texte: "Trajet aller avec le client et retour en charge à la station" }, { lettre: "C", texte: "Course de nuit, dimanche et jours fériés ou route enneigée/verglacée" }, { lettre: "D", texte: "Trajet aller avec le client et retour à vide à la station", correct: true }] },
+    { id: 4, type: "QCM", enonce: "Quel est le montant du supplément par passager ?", choix: [{ lettre: "A", texte: "2 €" }, { lettre: "B", texte: "2.50 €" }, { lettre: "C", texte: "4 €", correct: true }, { lettre: "D", texte: "3 €" }] },
+    { id: 5, type: "QCM", enonce: "Le supplément bagage est pour :", choix: [{ lettre: "A", texte: "Les valises au-delà de trois" }, { lettre: "B", texte: "Les valises au-delà de quatre" }, { lettre: "C", texte: "Les valises au-delà de cinq", correct: true }] },
+    { id: 6, type: "QCM", enonce: "Où se situe le musée LUGDUNUM ?", choix: [{ lettre: "A", texte: "46 allées d'Italie 69005" }, { lettre: "B", texte: "2 rue Bichat 69005" }, { lettre: "C", texte: "63 rue Philippe de Lassalle 69005" }, { lettre: "D", texte: "17 rue Cléberg 69005", correct: true }] },
+    { id: 7, type: "QCM", enonce: "Quel est le prix au km du tarif C ?", choix: [{ lettre: "A", texte: "2,31€" }, { lettre: "B", texte: "2€", correct: true }, { lettre: "C", texte: "2,28€" }, { lettre: "D", texte: "2,50€" }] },
+    { id: 8, type: "QCM", enonce: "Où se situe la mairie de Villeurbanne ?", choix: [{ lettre: "A", texte: "5 place du Petit Collège 69100" }, { lettre: "B", texte: "6 place du Marché 69100" }, { lettre: "C", texte: "16 place Jean Macé 69100" }, { lettre: "D", texte: "place du Dr Lazarre Goujon 69100", correct: true }] }
   ]
 };
 
