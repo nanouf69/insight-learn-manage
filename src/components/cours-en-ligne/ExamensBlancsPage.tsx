@@ -541,7 +541,7 @@ function PassageMatiere({
           <Button onClick={handleTerminer} disabled={!allAnswered} className="gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-50">
             <CheckCircle2 className="w-4 h-4" />
             Terminer la matière
-            {!allAnswered && <span className="text-xs">({questionsSafe.filter(q => { if (!q || q === undefined) return false; const r = reponses[q.id]; return q?.type === "QCM" ? Array.isArray(r) && r.length > 0 : typeof r === "string" && r.trim().length > 0; }).length}/{questionsSafe.length})</span>}
+            {!allAnswered && <span className="text-xs">({questionsSafe.filter(q => isQuestionAnswered(q)).length}/{questionsSafe.length})</span>}
           </Button>
         )}
       </div>
