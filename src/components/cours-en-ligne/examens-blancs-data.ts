@@ -2108,64 +2108,8 @@ const matiere_reglementation_taxi2_examen3: Matiere = {
     { id: 8, type: "QCM", enonce: "Qui est le maire de la ville de Lyon ?", choix: [{ lettre: "A", texte: "François Marchal" }, { lettre: "B", texte: "Julien Victoire" }, { lettre: "C", texte: "Jean François Debat" }, { lettre: "D", texte: "Grégory Doucet", correct: true }] }
   ]
 };
-  questions: [
-    {
-      id: 1, type: "QRC", enonce: "Qu'est-ce que la maraude pour un taxi ?",
-      reponseQRC: "La maraude est le fait pour un conducteur T3P de prendre en charge un client sur la voie publique sans réservation préalable. Ce droit est exclusif aux taxis.",
-      reponses_possibles: ["maraude", "voie publique", "sans réservation", "taxi"]
-    },
-    {
-      id: 2, type: "QCM", enonce: "Un client est avec son chien d'aveugle et vous appelle pour une course :",
-      choix: [
-        { lettre: "A", texte: "J'ai le droit de refuser la course" },
-        { lettre: "B", texte: "Je suis dans l'obligation de l'accepter lui et son chien", correct: true },
-        { lettre: "C", texte: "Je n'accepte que le client" },
-        { lettre: "D", texte: "Je risque une amende de 135€ si je refuse" }
-      ]
-    },
-    {
-      id: 3, type: "QCM", enonce: "Qui parmi les T3P peut être conventionné par la caisse d'assurance maladie ?",
-      choix: [
-        { lettre: "A", texte: "les taxis", correct: true },
-        { lettre: "B", texte: "les VTC" },
-        { lettre: "C", texte: "les véhicules motorisés à 2 ou 3 roues" }
-      ]
-    },
-    {
-      id: 4, type: "QCM", enonce: "La réglementation du T3P se trouve dans le :",
-      choix: [
-        { lettre: "A", texte: "code préfectoral" },
-        { lettre: "B", texte: "code du travail" },
-        { lettre: "C", texte: "code pénal" },
-        { lettre: "D", texte: "code des transports", correct: true }
-      ]
-    },
-    {
-      id: 5, type: "QCM", enonce: "Un artisan effectuant du T3P est victime d'un accident corporel dans l'exercice de son activité, sous quel régime est-il ?",
-      choix: [
-        { lettre: "A", texte: "pas de régime particulier" },
-        { lettre: "B", texte: "régime des indemnités journalières au titre de la maladie", correct: true },
-        { lettre: "C", texte: "de l'arrêt maladie classique" }
-      ]
-    },
-    {
-      id: 6, type: "QCM", enonce: "Un conducteur de T3P n'effectuant que des remplacements épisodiques doit-il être titulaire d'une carte professionnelle ?",
-      choix: [
-        { lettre: "A", texte: "non, si ces remplacements représentent moins de 10 heures par semaine" },
-        { lettre: "B", texte: "non" },
-        { lettre: "C", texte: "oui", correct: true }
-      ]
-    },
-    {
-      id: 7, type: "QCM", enonce: "Les centres de formation sont agréés par :",
-      choix: [
-        { lettre: "A", texte: "le préfet du département" },
-        { lettre: "B", texte: "le ministère des transports" },
-        { lettre: "C", texte: "le préfet de la région", correct: true }
-      ]
-    }
-  ]
-};
+
+
 
 const matiere_reglementation_taxi2_examen3: Matiere = {
   id: "reglementation_taxi2",
