@@ -252,7 +252,20 @@ function PassageMatiere({
 
   const questionsSafe = (matiere.questions || []).filter((q): q is Question => !!q && q?.type !== undefined);
   const question = questionsSafe[questionIndex] || null;
-  const dureeSecondes = matiere.duree * 60;
+  const dureeSecondes = (matiere.duree ?? 30) * 60;
+
+  // Helper: normalize reponses keys to number (DB JSON keys are strings)
+  const normalizeReponses = (raw: any): Reponses => {
+    if (!raw || typeof raw !== "object") return {};
+    const normalized: Reponses = {};
+    for (const [key, value] of Object.entries(raw)) {
+      const numKey = Number(key);
+      if (!isNaN(numKey) && value !== undefined && value !== null) {
+        normalized[numKey] = value as ReponseQCM | ReponseQRC;
+      }
+    }
+    return normalized;
+  };
 
   // Auto-save: get userId once
   const userIdRef = useRef<string | null>(null);
@@ -260,8 +273,8 @@ function PassageMatiere({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      userIdRef.current = data.session?.user?.id ?? null;
-      jwtTokenRef.current = data.session?.access_token ?? null;
+      userIdRef.current = data?.session?.user?.id ?? null;
+      jwtTokenRef.current = data?.session?.access_token ?? null;
     });
   }, []);
 
@@ -271,14 +284,22 @@ function PassageMatiere({
     if (!apprenantId || initialLoaded) return;
     (async () => {
       try {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from("reponses_apprenants" as any)
           .select("reponses, completed")
           .eq("apprenant_id", apprenantId)
           .eq("exercice_id", exerciceKey)
           .maybeSingle();
-        if (data && !(data as any).completed && (data as any).reponses) {
-          setReponses((data as any).reponses as Reponses);
+        if (error) {
+          console.warn("[AutoSave] Load query error:", error.message);
+        } else if (data) {
+          const completed = (data as any)?.completed ?? false;
+          const rawReponses = (data as any)?.reponses;
+          if (!completed && rawReponses) {
+            const parsed = normalizeReponses(rawReponses);
+            console.log(`[AutoSave] Loaded ${Object.keys(parsed).length} saved responses for ${exerciceKey}`);
+            setReponses(parsed);
+          }
         }
       } catch (e) { console.error("[AutoSave] Load error:", e); }
       setInitialLoaded(true);
@@ -365,12 +386,17 @@ function PassageMatiere({
     });
   };
 
-  const allAnswered = questionsSafe.every(q => {
-    if (!q || q === undefined) return false;
-    const rep = reponses[q.id];
+  // Robust check: question answered? Works with both number and string keys from DB
+  const isQuestionAnswered = (q: Question | null | undefined): boolean => {
+    if (!q || !q.id) return false;
+    const rep = reponses[q.id] ?? reponses[String(q.id)];
     if (q?.type === "QCM") return Array.isArray(rep) && rep.length > 0;
-    return typeof rep === "string" && rep.trim().length > 0;
-  });
+    if (q?.type === "QRC") return typeof rep === "string" && rep.trim().length > 0;
+    // Default: check if any value exists
+    return rep !== undefined && rep !== null && rep !== "";
+  };
+
+  const allAnswered = questionsSafe.every(q => isQuestionAnswered(q));
 
   const handleTerminer = () => {
     if (!allAnswered) {
@@ -435,7 +461,8 @@ function PassageMatiere({
               <p className="text-xs text-muted-foreground italic">Vous pouvez sélectionner une ou plusieurs réponses</p>
               {question.choix.map((choix) => {
                 if (!choix || choix === undefined) return null;
-                const checked = ((reponses[question.id] as string[]) || []).includes(choix.lettre);
+                const rawRep = reponses[question.id] ?? reponses[String(question.id)];
+                const checked = (Array.isArray(rawRep) ? rawRep : []).includes(choix.lettre);
                 return (
                   <div
                     key={choix.lettre}
@@ -461,7 +488,7 @@ function PassageMatiere({
               <Textarea
                 placeholder="Votre réponse..."
                 rows={4}
-                value={(reponses[question.id] as string) || ""}
+                value={String((reponses[question.id] ?? reponses[String(question.id)]) || "")}
                 onChange={e => handleQRCChange(question.id, e.target.value)}
                 className="resize-none"
               />
@@ -485,14 +512,11 @@ function PassageMatiere({
         <div className="flex gap-1 flex-wrap justify-center">
           {questionsSafe.map((q, i) => {
             if (!q || q === undefined) return null;
-            const rep = reponses[q.id];
-            const isAnswered = q?.type === "QCM"
-              ? Array.isArray(rep) && rep.length > 0
-              : typeof rep === "string" && rep.trim().length > 0;
+            const isAnswered = isQuestionAnswered(q);
             const isCurrent = i === safeQuestionIndex;
             return (
               <button
-                key={i}
+                key={q.id ?? i}
                 onClick={() => setQuestionIndex(i)}
                 className={`w-7 h-7 rounded text-xs font-medium transition-colors ${
                   isCurrent
@@ -518,7 +542,7 @@ function PassageMatiere({
           <Button onClick={handleTerminer} disabled={!allAnswered} className="gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-50">
             <CheckCircle2 className="w-4 h-4" />
             Terminer la matière
-            {!allAnswered && <span className="text-xs">({questionsSafe.filter(q => { if (!q || q === undefined) return false; const r = reponses[q.id]; return q?.type === "QCM" ? Array.isArray(r) && r.length > 0 : typeof r === "string" && r.trim().length > 0; }).length}/{questionsSafe.length})</span>}
+            {!allAnswered && <span className="text-xs">({questionsSafe.filter(q => isQuestionAnswered(q)).length}/{questionsSafe.length})</span>}
           </Button>
         )}
       </div>
@@ -1050,7 +1074,7 @@ export default function ExamensBlancsPage({
     let totalPoints = 0;
     (matiere.questions || []).filter(Boolean).forEach(q => {
       if (!q || !q?.type) return;
-      const rep = reponses[q.id];
+      const rep = reponses?.[q.id] ?? reponses?.[String(q.id)];
       const pts = getPointsParQuestion(matiere.id, q?.type);
       let correct = false;
       if (q?.type === "QCM" && q.choix) {
