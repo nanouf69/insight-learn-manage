@@ -1113,6 +1113,10 @@ export default function ExamensBlancsPage({
           });
       }
     }
+    } catch (err) {
+      console.error("[ExamenBlanc] Erreur dans handleTerminerMatiere:", err);
+      toast.error("Une erreur est survenue lors du calcul des résultats. Veuillez réessayer.");
+    }
   };
 
   if (phase === "edition") {
