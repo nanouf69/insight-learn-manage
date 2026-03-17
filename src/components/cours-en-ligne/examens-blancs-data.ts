@@ -3338,40 +3338,8 @@ const matiere_reglementation_taxi2_examen5: Matiere = {
 
 
 
-const matiere_reglementation_taxi2_examen5: Matiere = {
-  id: "reglementation_taxi2",
-  nom: "G(T) - Réglementation nationale TAXI et gestion propre à cette activité",
-  duree: 20,
-  coefficient: 3,
-  noteEliminatoire: 6,
-  noteSur: 20,
-  questions: [
-    {
-      id: 1, type: "QCM", enonce: "En cas de récidive d'une conduite sous influence de stupéfiants, vous encourez :",
-      choix: [
-        { lettre: "A", texte: "la confiscation/immobilisation de votre véhicule", correct: true },
-        { lettre: "B", texte: "la suspension de votre permis de conduire", correct: true },
-        { lettre: "C", texte: "l'annulation de votre permis de conduire", correct: true }
-      ]
-    },
-    {
-      id: 2, type: "QCM", enonce: "Vous êtes au volant et recevez un appel. Vous prenez le téléphone en main, vous encourez :",
-      choix: [
-        { lettre: "A", texte: "un retrait de deux points" },
-        { lettre: "B", texte: "un retrait d'un point" },
-        { lettre: "C", texte: "un retrait de trois points", correct: true }
-      ]
-    },
-    {
-      id: 3, type: "QCM", enonce: "La durée du temps de réaction est d'environ :",
-      choix: [
-        { lettre: "A", texte: "1/10 ième de seconde" },
-        { lettre: "B", texte: "1 seconde" },
-        { lettre: "C", texte: "1/2 seconde", correct: true }
-      ]
-    }
-  ]
-};
+
+
 
 const matiere_reglementation_vtc_examen5: Matiere = {
   id: "reglementation_vtc",
