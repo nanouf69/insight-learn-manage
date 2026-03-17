@@ -1068,9 +1068,11 @@ export default function ExamensBlancsPage({
         const allResults = [...newResultats];
         // Save each matière result with full question details
         const rows = allResults.map(r => {
+          if (!r || r === undefined) return null;
           const matiere = examenChoisi.matieres.find(m => m.id === r.matiereId);
-          const questionDetails = matiere ? (matiere.questions || []).filter(Boolean).map(q => {
-            if (!q) return null;
+          const questionsSafe = (matiere?.questions || []).filter(q => q && q?.type !== undefined);
+          const questionDetails = matiere ? questionsSafe.map(q => {
+            if (!q || q === undefined) return null;
             const rep = r.reponses?.[q.id];
             return {
               questionId: q.id,
