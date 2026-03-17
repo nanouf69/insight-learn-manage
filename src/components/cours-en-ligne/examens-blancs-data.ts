@@ -2896,45 +2896,8 @@ const matiere_reglementation_taxi2_examen4: Matiere = {
     { id: 7, type: "QCM", enonce: "Pour un covering publicitaire sur un taxi ADS Villeurbanne, à qui faire la demande ?", choix: [{ lettre: "A", texte: "À la mairie de Villeurbanne" }, { lettre: "B", texte: "À la mairie de Villeurbanne et au Service des Taxis de la Métropole", correct: true }, { lettre: "C", texte: "Au Service des Taxis de la Métropole" }] }
   ]
 };
-  duree: 30,
-  coefficient: 3,
-  noteEliminatoire: 6,
-  noteSur: 20,
-  questions: [
-    {
-      id: 1, type: "QCM", enonce: "Ce panneau signale :",
-      choix: [
-        { lettre: "A", texte: "Une chaussée à double sens de circulation" },
-        { lettre: "B", texte: "Une obligation de céder le passage à la circulation venant en sens inverse", correct: true },
-        { lettre: "C", texte: "Une priorité de passage par rapport à la circulation venant en sens inverse" }
-      ]
-    },
-    {
-      id: 2, type: "QCM", enonce: "Le dépistage de stupéfiants est :",
-      choix: [
-        { lettre: "A", texte: "possible lors d'un accident corporel ou matériel", correct: true },
-        { lettre: "B", texte: "obligatoire pour toute infraction" },
-        { lettre: "C", texte: "obligatoire lors d'un accident mortel", correct: true }
-      ]
-    },
-    {
-      id: 3, type: "QCM", enonce: "En suivant un stage de sensibilisation à la sécurité routière, un conducteur peut retrouver :",
-      choix: [
-        { lettre: "A", texte: "10 points" },
-        { lettre: "B", texte: "8 points" },
-        { lettre: "C", texte: "4 points", correct: true }
-      ]
-    },
-    {
-      id: 4, type: "QCM", enonce: "La déclaration de cessation de paiement se fait :",
-      choix: [
-        { lettre: "A", texte: "à la chambre de commerce et d'industrie" },
-        { lettre: "B", texte: "à la chambre de métiers et de l'artisanat" },
-        { lettre: "C", texte: "auprès du greffe du Tribunal de Commerce", correct: true }
-      ]
-    }
-  ]
-};
+
+
 
 const matiere_reglementation_taxi2_examen4: Matiere = {
   id: "reglementation_taxi2",
