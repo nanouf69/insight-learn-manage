@@ -488,7 +488,7 @@ function PassageMatiere({
               <Textarea
                 placeholder="Votre réponse..."
                 rows={4}
-                value={(reponses[question.id] as string) || ""}
+                value={String((reponses[question.id] ?? reponses[String(question.id)]) || "")}
                 onChange={e => handleQRCChange(question.id, e.target.value)}
                 className="resize-none"
               />
