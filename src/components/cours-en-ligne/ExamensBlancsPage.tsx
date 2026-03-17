@@ -1068,7 +1068,7 @@ export default function ExamensBlancsPage({
     if (matiereIndex < examenChoisi.matieres.length - 1) {
       const nextIndex = matiereIndex + 1;
       setMatiereIndex(nextIndex);
-      persistExamSession("examen", examenChoisi.id, nextIndex);
+      persistExamSession("examen", examenChoisi.id, nextIndex, newResultats);
     } else {
       setPhase("resultats");
       persistExamSession("resultats", null, 0); // Clear session
