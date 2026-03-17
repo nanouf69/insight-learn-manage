@@ -171,8 +171,9 @@ function EcranSelection({ onStart, onEdit, defaultBilanId, apprenantType, examen
             {examensBlancs.map(examen => {
               const totalQuestions = examen.matieres.reduce((acc, m) => acc + m.questions.length, 0);
               const dureeTotal = examen.matieres.reduce((acc, m) => acc + m.duree, 0);
+              const isCompleted = completedExamIds.has(examen.id);
               return (
-                <Card key={examen.id} className="hover:shadow-md transition-shadow cursor-pointer border-2 hover:border-primary/40">
+                <Card key={examen.id} className={`hover:shadow-md transition-shadow cursor-pointer border-2 ${isCompleted ? "border-green-500/60 bg-green-50/30" : "hover:border-primary/40"}`}>
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <Badge variant={examen?.type === "TAXI" ? "default" : "secondary"} className="text-xs">
@@ -181,6 +182,12 @@ function EcranSelection({ onStart, onEdit, defaultBilanId, apprenantType, examen
                       <span className="text-xs text-muted-foreground">N°{examen.numero}</span>
                     </div>
                     <CardTitle className="text-base mt-2">{examen.titre}</CardTitle>
+                    {isCompleted && (
+                      <div className="flex items-center gap-2 mt-2 bg-green-100 border border-green-300 rounded-lg px-3 py-2">
+                        <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
+                        <span className="text-green-700 font-bold text-lg uppercase tracking-wide">Examen réalisé</span>
+                      </div>
+                    )}
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="grid grid-cols-2 gap-2 text-sm">
@@ -205,8 +212,8 @@ function EcranSelection({ onStart, onEdit, defaultBilanId, apprenantType, examen
                         </div>
                       ))}
                     </div>
-                    <Button className="w-full mt-2 gap-2" onClick={() => onStart(examen)}>
-                      Commencer l'examen
+                    <Button className="w-full mt-2 gap-2" variant={isCompleted ? "outline" : "default"} onClick={() => onStart(examen)}>
+                      {isCompleted ? "Recommencer l'examen" : "Commencer l'examen"}
                       <ChevronRight className="w-4 h-4" />
                     </Button>
                   </CardContent>
