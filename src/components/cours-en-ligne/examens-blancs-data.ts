@@ -2111,46 +2111,8 @@ const matiere_reglementation_taxi2_examen3: Matiere = {
 
 
 
-const matiere_reglementation_taxi2_examen3: Matiere = {
-  id: "reglementation_taxi2",
-  nom: "G(T) - Réglementation nationale TAXI et gestion propre à cette activité",
-  duree: 20,
-  coefficient: 3,
-  noteEliminatoire: 6,
-  noteSur: 20,
-  questions: [
-    {
-      id: 1, type: "QRC", enonce: "Développez le sigle \"TICPE\".",
-      reponseQRC: "Taxe Intérieure sur la Consommation des Produits Énergétiques.",
-      reponses_possibles: ["taxe intérieure", "consommation", "produits énergétiques"]
-    },
-    {
-      id: 2, type: "QCM", enonce: "L'assurance RCP peut être invoquée par le conducteur s'il :",
-      choix: [
-        { lettre: "A", texte: "abîme le vêtement de son passager", correct: true },
-        { lettre: "B", texte: "accroche un autre véhicule en manœuvrant" },
-        { lettre: "C", texte: "n'a pas sa carte professionnelle lors d'un contrôle" }
-      ]
-    },
-    {
-      id: 3, type: "QCM", enonce: "La formation continue des conducteurs T3P est valable :",
-      choix: [
-        { lettre: "A", texte: "1 an" },
-        { lettre: "B", texte: "5 ans", correct: true },
-        { lettre: "C", texte: "2 ans" },
-        { lettre: "D", texte: "10 ans" }
-      ]
-    },
-    {
-      id: 4, type: "QCM", enonce: "Quel service délivre la carte professionnelle de conducteur de T3P ?",
-      choix: [
-        { lettre: "A", texte: "La préfecture", correct: true },
-        { lettre: "B", texte: "La DIRECCTE" },
-        { lettre: "C", texte: "La DREAL" }
-      ]
-    }
-  ]
-};
+
+
 
 const matiere_reglementation_vtc_examen3: Matiere = {
   id: "reglementation_vtc",
