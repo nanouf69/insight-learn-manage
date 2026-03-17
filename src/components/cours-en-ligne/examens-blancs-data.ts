@@ -2108,105 +2108,11 @@ const matiere_reglementation_taxi2_examen3: Matiere = {
     { id: 8, type: "QCM", enonce: "Qui est le maire de la ville de Lyon ?", choix: [{ lettre: "A", texte: "François Marchal" }, { lettre: "B", texte: "Julien Victoire" }, { lettre: "C", texte: "Jean François Debat" }, { lettre: "D", texte: "Grégory Doucet", correct: true }] }
   ]
 };
-  questions: [
-    {
-      id: 1, type: "QRC", enonce: "Qu'est-ce que la maraude pour un taxi ?",
-      reponseQRC: "La maraude est le fait pour un conducteur T3P de prendre en charge un client sur la voie publique sans réservation préalable. Ce droit est exclusif aux taxis.",
-      reponses_possibles: ["maraude", "voie publique", "sans réservation", "taxi"]
-    },
-    {
-      id: 2, type: "QCM", enonce: "Un client est avec son chien d'aveugle et vous appelle pour une course :",
-      choix: [
-        { lettre: "A", texte: "J'ai le droit de refuser la course" },
-        { lettre: "B", texte: "Je suis dans l'obligation de l'accepter lui et son chien", correct: true },
-        { lettre: "C", texte: "Je n'accepte que le client" },
-        { lettre: "D", texte: "Je risque une amende de 135€ si je refuse" }
-      ]
-    },
-    {
-      id: 3, type: "QCM", enonce: "Qui parmi les T3P peut être conventionné par la caisse d'assurance maladie ?",
-      choix: [
-        { lettre: "A", texte: "les taxis", correct: true },
-        { lettre: "B", texte: "les VTC" },
-        { lettre: "C", texte: "les véhicules motorisés à 2 ou 3 roues" }
-      ]
-    },
-    {
-      id: 4, type: "QCM", enonce: "La réglementation du T3P se trouve dans le :",
-      choix: [
-        { lettre: "A", texte: "code préfectoral" },
-        { lettre: "B", texte: "code du travail" },
-        { lettre: "C", texte: "code pénal" },
-        { lettre: "D", texte: "code des transports", correct: true }
-      ]
-    },
-    {
-      id: 5, type: "QCM", enonce: "Un artisan effectuant du T3P est victime d'un accident corporel dans l'exercice de son activité, sous quel régime est-il ?",
-      choix: [
-        { lettre: "A", texte: "pas de régime particulier" },
-        { lettre: "B", texte: "régime des indemnités journalières au titre de la maladie", correct: true },
-        { lettre: "C", texte: "de l'arrêt maladie classique" }
-      ]
-    },
-    {
-      id: 6, type: "QCM", enonce: "Un conducteur de T3P n'effectuant que des remplacements épisodiques doit-il être titulaire d'une carte professionnelle ?",
-      choix: [
-        { lettre: "A", texte: "non, si ces remplacements représentent moins de 10 heures par semaine" },
-        { lettre: "B", texte: "non" },
-        { lettre: "C", texte: "oui", correct: true }
-      ]
-    },
-    {
-      id: 7, type: "QCM", enonce: "Les centres de formation sont agréés par :",
-      choix: [
-        { lettre: "A", texte: "le préfet du département" },
-        { lettre: "B", texte: "le ministère des transports" },
-        { lettre: "C", texte: "le préfet de la région", correct: true }
-      ]
-    }
-  ]
-};
 
-const matiere_reglementation_taxi2_examen3: Matiere = {
-  id: "reglementation_taxi2",
-  nom: "G(T) - Réglementation nationale TAXI et gestion propre à cette activité",
-  duree: 20,
-  coefficient: 3,
-  noteEliminatoire: 6,
-  noteSur: 20,
-  questions: [
-    {
-      id: 1, type: "QRC", enonce: "Développez le sigle \"TICPE\".",
-      reponseQRC: "Taxe Intérieure sur la Consommation des Produits Énergétiques.",
-      reponses_possibles: ["taxe intérieure", "consommation", "produits énergétiques"]
-    },
-    {
-      id: 2, type: "QCM", enonce: "L'assurance RCP peut être invoquée par le conducteur s'il :",
-      choix: [
-        { lettre: "A", texte: "abîme le vêtement de son passager", correct: true },
-        { lettre: "B", texte: "accroche un autre véhicule en manœuvrant" },
-        { lettre: "C", texte: "n'a pas sa carte professionnelle lors d'un contrôle" }
-      ]
-    },
-    {
-      id: 3, type: "QCM", enonce: "La formation continue des conducteurs T3P est valable :",
-      choix: [
-        { lettre: "A", texte: "1 an" },
-        { lettre: "B", texte: "5 ans", correct: true },
-        { lettre: "C", texte: "2 ans" },
-        { lettre: "D", texte: "10 ans" }
-      ]
-    },
-    {
-      id: 4, type: "QCM", enonce: "Quel service délivre la carte professionnelle de conducteur de T3P ?",
-      choix: [
-        { lettre: "A", texte: "La préfecture", correct: true },
-        { lettre: "B", texte: "La DIRECCTE" },
-        { lettre: "C", texte: "La DREAL" }
-      ]
-    }
-  ]
-};
+
+
+
+
 
 const matiere_reglementation_vtc_examen3: Matiere = {
   id: "reglementation_vtc",
@@ -2896,80 +2802,11 @@ const matiere_reglementation_taxi2_examen4: Matiere = {
     { id: 7, type: "QCM", enonce: "Pour un covering publicitaire sur un taxi ADS Villeurbanne, à qui faire la demande ?", choix: [{ lettre: "A", texte: "À la mairie de Villeurbanne" }, { lettre: "B", texte: "À la mairie de Villeurbanne et au Service des Taxis de la Métropole", correct: true }, { lettre: "C", texte: "Au Service des Taxis de la Métropole" }] }
   ]
 };
-  duree: 30,
-  coefficient: 3,
-  noteEliminatoire: 6,
-  noteSur: 20,
-  questions: [
-    {
-      id: 1, type: "QCM", enonce: "Ce panneau signale :",
-      choix: [
-        { lettre: "A", texte: "Une chaussée à double sens de circulation" },
-        { lettre: "B", texte: "Une obligation de céder le passage à la circulation venant en sens inverse", correct: true },
-        { lettre: "C", texte: "Une priorité de passage par rapport à la circulation venant en sens inverse" }
-      ]
-    },
-    {
-      id: 2, type: "QCM", enonce: "Le dépistage de stupéfiants est :",
-      choix: [
-        { lettre: "A", texte: "possible lors d'un accident corporel ou matériel", correct: true },
-        { lettre: "B", texte: "obligatoire pour toute infraction" },
-        { lettre: "C", texte: "obligatoire lors d'un accident mortel", correct: true }
-      ]
-    },
-    {
-      id: 3, type: "QCM", enonce: "En suivant un stage de sensibilisation à la sécurité routière, un conducteur peut retrouver :",
-      choix: [
-        { lettre: "A", texte: "10 points" },
-        { lettre: "B", texte: "8 points" },
-        { lettre: "C", texte: "4 points", correct: true }
-      ]
-    },
-    {
-      id: 4, type: "QCM", enonce: "La déclaration de cessation de paiement se fait :",
-      choix: [
-        { lettre: "A", texte: "à la chambre de commerce et d'industrie" },
-        { lettre: "B", texte: "à la chambre de métiers et de l'artisanat" },
-        { lettre: "C", texte: "auprès du greffe du Tribunal de Commerce", correct: true }
-      ]
-    }
-  ]
-};
 
-const matiere_reglementation_taxi2_examen4: Matiere = {
-  id: "reglementation_taxi2",
-  nom: "G(T) - Réglementation nationale TAXI et gestion propre à cette activité",
-  duree: 20,
-  coefficient: 3,
-  noteEliminatoire: 6,
-  noteSur: 20,
-  questions: [
-    {
-      id: 1, type: "QCM", enonce: "Un conducteur qui commet un excès de vitesse de 40 km/h risque :",
-      choix: [
-        { lettre: "A", texte: "une peine d'emprisonnement" },
-        { lettre: "B", texte: "la suspension de son permis de conduire", correct: true },
-        { lettre: "C", texte: "la réduction de six points du permis" }
-      ]
-    },
-    {
-      id: 2, type: "QCM", enonce: "Dans un tunnel éclairé, hors agglomération, je circule :",
-      choix: [
-        { lettre: "A", texte: "en feux de croisement", correct: true },
-        { lettre: "B", texte: "en feux de route" },
-        { lettre: "C", texte: "en feux de brouillard" }
-      ]
-    },
-    {
-      id: 3, type: "QCM", enonce: "Parmi les 3 termes suivants, lequel n'est pas une composante de l'actif du bilan ?",
-      choix: [
-        { lettre: "A", texte: "le résultat de l'exercice", correct: true },
-        { lettre: "B", texte: "les disponibilités" },
-        { lettre: "C", texte: "les frais d'établissement" }
-      ]
-    }
-  ]
-};
+
+
+
+
 
 const matiere_reglementation_vtc_examen4: Matiere = {
   id: "reglementation_vtc",
@@ -3498,89 +3335,11 @@ const matiere_reglementation_taxi2_examen5: Matiere = {
     { id: 8, type: "QCM", enonce: "Quel est le prix du TARIF C ?", choix: [{ lettre: "A", texte: "1€" }, { lettre: "B", texte: "2€", correct: true }, { lettre: "C", texte: "3€" }, { lettre: "D", texte: "4€" }] }
   ]
 };
-  duree: 30,
-  coefficient: 3,
-  noteEliminatoire: 6,
-  noteSur: 20,
-  questions: [
-    {
-      id: 1, type: "QCM", enonce: "Lorsque les charges d'exploitation d'une entreprise sont inférieures aux produits :",
-      choix: [
-        { lettre: "A", texte: "Il y a perte d'exploitation" },
-        { lettre: "B", texte: "L'entreprise doit poser le bilan" },
-        { lettre: "C", texte: "Il y a bénéfice", correct: true }
-      ]
-    },
-    {
-      id: 2, type: "QCM", enonce: "Dans un bilan :",
-      choix: [
-        { lettre: "A", texte: "si le total de l'actif est inférieur au passif il y a perte" },
-        { lettre: "B", texte: "le total de l'actif est toujours égal au total du passif", correct: true },
-        { lettre: "C", texte: "si le total de l'actif est supérieur au passif il y a bénéfice" }
-      ]
-    },
-    {
-      id: 3, type: "QCM", enonce: "Un artisan au régime réel rembourse 930€/mois dont 620€ de capital. Quel montant de charges déduire au 31 décembre ?",
-      choix: [
-        { lettre: "A", texte: "3 720 €", correct: true },
-        { lettre: "B", texte: "5 580 €" },
-        { lettre: "C", texte: "7 740 €" }
-      ]
-    },
-    {
-      id: 4, type: "QCM", enonce: "Mon voyant d'essence vient de s'allumer :",
-      choix: [
-        { lettre: "A", texte: "j'allume mes feux de détresse" },
-        { lettre: "B", texte: "je continue ma route jusqu'à une station" },
-        { lettre: "C", texte: "je réduis mon allure pour diminuer ma consommation", correct: true },
-        { lettre: "D", texte: "je m'arrête sur ma droite" }
-      ]
-    },
-    {
-      id: 5, type: "QCM", enonce: "Titulaire d'un permis probatoire, dans quel cas dois-je suivre un stage de sensibilisation :",
-      choix: [
-        { lettre: "A", texte: "en cas de perte en une seule fois de 3 points", correct: true },
-        { lettre: "B", texte: "en cas de perte en une seule fois de 4 points" },
-        { lettre: "C", texte: "en cas de perte en une seule fois de 2 points" }
-      ]
-    }
-  ]
-};
 
-const matiere_reglementation_taxi2_examen5: Matiere = {
-  id: "reglementation_taxi2",
-  nom: "G(T) - Réglementation nationale TAXI et gestion propre à cette activité",
-  duree: 20,
-  coefficient: 3,
-  noteEliminatoire: 6,
-  noteSur: 20,
-  questions: [
-    {
-      id: 1, type: "QCM", enonce: "En cas de récidive d'une conduite sous influence de stupéfiants, vous encourez :",
-      choix: [
-        { lettre: "A", texte: "la confiscation/immobilisation de votre véhicule", correct: true },
-        { lettre: "B", texte: "la suspension de votre permis de conduire", correct: true },
-        { lettre: "C", texte: "l'annulation de votre permis de conduire", correct: true }
-      ]
-    },
-    {
-      id: 2, type: "QCM", enonce: "Vous êtes au volant et recevez un appel. Vous prenez le téléphone en main, vous encourez :",
-      choix: [
-        { lettre: "A", texte: "un retrait de deux points" },
-        { lettre: "B", texte: "un retrait d'un point" },
-        { lettre: "C", texte: "un retrait de trois points", correct: true }
-      ]
-    },
-    {
-      id: 3, type: "QCM", enonce: "La durée du temps de réaction est d'environ :",
-      choix: [
-        { lettre: "A", texte: "1/10 ième de seconde" },
-        { lettre: "B", texte: "1 seconde" },
-        { lettre: "C", texte: "1/2 seconde", correct: true }
-      ]
-    }
-  ]
-};
+
+
+
+
 
 const matiere_reglementation_vtc_examen5: Matiere = {
   id: "reglementation_vtc",
@@ -4154,96 +3913,11 @@ const matiere_reglementation_taxi2_examen6: Matiere = {
     { id: 8, type: "QCM", enonce: "ADS de Vénissieux, quelles autorisations pour publicité sur la carrosserie ?", choix: [{ lettre: "A", texte: "Autorisation du préfet" }, { lettre: "B", texte: "Autorisation du service des taxis de la Métropole", correct: true }, { lettre: "C", texte: "Autorisation du service des taxis de la Métropole" }, { lettre: "D", texte: "Autorisation de la DDPP" }] }
   ]
 };
-  duree: 30,
-  coefficient: 3,
-  noteEliminatoire: 6,
-  noteSur: 20,
-  questions: [
-    {
-      id: 1, type: "QCM", enonce: "Le titulaire d'un permis de conduire catégorie B peut conduire un véhicule :",
-      choix: [
-        { lettre: "A", texte: "Pouvant transporter 10 passagers, conducteur non compris" },
-        { lettre: "B", texte: "Pouvant transporter 9 passagers, conducteur non compris" },
-        { lettre: "C", texte: "Pouvant transporter 8 passagers, conducteur non compris", correct: true }
-      ]
-    },
-    {
-      id: 2, type: "QCM", enonce: "Dans quel cas le conducteur doit-il réduire sa vitesse ?",
-      choix: [
-        { lettre: "A", texte: "Lors du croisement ou dépassement de piétons", correct: true },
-        { lettre: "B", texte: "Lorsque la route est dégagée" },
-        { lettre: "C", texte: "Lors du croisement ou dépassement de cyclistes", correct: true }
-      ]
-    },
-    {
-      id: 3, type: "QCM", enonce: "Le fait de ne pas présenter immédiatement son permis de conduire aux agents est puni de :",
-      choix: [
-        { lettre: "A", texte: "Une amende de quatrième classe", correct: true },
-        { lettre: "B", texte: "Une amende de seconde classe" },
-        { lettre: "C", texte: "Une amende de troisième classe" }
-      ]
-    },
-    {
-      id: 4, type: "QCM", enonce: "Quelles sont les précautions pour vérifier le niveau d'huile ?",
-      choix: [
-        { lettre: "A", texte: "Moteur chaud" },
-        { lettre: "B", texte: "Moteur froid", correct: true },
-        { lettre: "C", texte: "Terrain plat", correct: true },
-        { lettre: "D", texte: "Moteur allumé" }
-      ]
-    },
-    {
-      id: 5, type: "QCM", enonce: "Pour dépasser un cycliste en ville, je dois laisser un espace latéral minimum de :",
-      choix: [
-        { lettre: "A", texte: "1,00 m", correct: true },
-        { lettre: "B", texte: "2,00 m" }
-      ]
-    },
-    {
-      id: 6, type: "QCM", enonce: "Le marquage au sol de couleur jaune est :",
-      choix: [
-        { lettre: "A", texte: "un indicateur de croisement" },
-        { lettre: "B", texte: "définitif" },
-        { lettre: "C", texte: "provisoire", correct: true }
-      ]
-    }
-  ]
-};
 
-const matiere_reglementation_taxi2_examen6: Matiere = {
-  id: "reglementation_taxi2",
-  nom: "G(T) - Réglementation nationale TAXI et gestion propre à cette activité",
-  duree: 20,
-  coefficient: 3,
-  noteEliminatoire: 6,
-  noteSur: 20,
-  questions: [
-    {
-      id: 1, type: "QCM", enonce: "Dans une entreprise individuelle :",
-      choix: [
-        { lettre: "A", texte: "L'entrepreneur individuel est responsable des dettes", correct: true },
-        { lettre: "B", texte: "Les biens de l'entreprise et du fondateur sont confondus", correct: true },
-        { lettre: "C", texte: "L'entrepreneur est responsable à hauteur du capital" }
-      ]
-    },
-    {
-      id: 2, type: "QCM", enonce: "Je m'installe en tant qu'artisan. Je souscris un crédit-bail pour l'acquisition de mon véhicule :",
-      choix: [
-        { lettre: "A", texte: "Je l'amortis sur 5 ans" },
-        { lettre: "B", texte: "Je ne peux pas l'amortir", correct: true },
-        { lettre: "C", texte: "Je l'amortis sur 10 ans" }
-      ]
-    },
-    {
-      id: 3, type: "QCM", enonce: "Le dirigeant d'une micro-entreprise :",
-      choix: [
-        { lettre: "A", texte: "est soumis à l'impôt sur les sociétés" },
-        { lettre: "B", texte: "n'est pas soumis à l'impôt" },
-        { lettre: "C", texte: "est soumis à l'impôt sur le revenu", correct: true }
-      ]
-    }
-  ]
-};
+
+
+
+
 
 const matiere_reglementation_vtc_examen6: Matiere = {
   id: "reglementation_vtc",
