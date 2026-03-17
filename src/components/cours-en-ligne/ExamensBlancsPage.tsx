@@ -954,6 +954,9 @@ export default function ExamensBlancsPage({
         setExamenChoisi(found);
         setPhase("examen");
         setMatiereIndex(savedSession.matiereIndex || 0);
+        if (savedSession.resultats?.length) {
+          setTousResultats(savedSession.resultats);
+        }
       }
     }
     setSessionRestored(true);
