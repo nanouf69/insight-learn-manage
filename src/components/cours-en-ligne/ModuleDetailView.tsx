@@ -3772,9 +3772,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         }
       };
 
-      const exoQuestions = exo.questions || [];
-      const exoTotalQ = exoQuestions.length;
-      const exoCorrect = exoQuestions.filter(q => {
+      const exoQuestionsNormalized = (exo.questions ?? []).map((q: any) => {
+        if (!q) return q;
+        return {
+          ...q,
+          type: q?.type ?? ((q?.choix?.length ?? 0) > 0 ? "qcm" : "qrc"),
+        };
+      });
+      const questionsSafe = (exoQuestionsNormalized ?? []).filter((q: any) => q != null && q.type != null);
+      const exoTotalQ = questionsSafe.length;
+      const exoCorrect = questionsSafe.filter((q: any) => {
         const key = `${exo.id}-${q.id}`;
         return isAnswerCorrect(selectedAnswers[key], q as any);
       }).length;
@@ -3859,7 +3866,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   })}
                 </div>
               )}
-              {exo.questions && exo.questions.map((q: any, qi: number) => {
+              {questionsSafe.map((q: any, qi: number) => {
                 const key = `${exo.id}-${q.id}`;
                 const isQrc = q?.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
                 const selected = selectedAnswers[key];
@@ -3954,7 +3961,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                       onClick={async () => {
                         // Check all QCM questions are answered (skip QRC)
                         const unansweredQcmKeys: string[] = [];
-                        (exo.questions || []).forEach((q: any, qi: number) => {
+                        questionsSafe.forEach((q: any) => {
                           const k = `${exo.id}-${q.id}`;
                           const isQrc = q?.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
                           const ans = selectedAnswers[k];
@@ -3966,7 +3973,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         if (unansweredQcmKeys.length > 0) {
                           setUnansweredKeys(new Set(unansweredQcmKeys));
                           // Scroll to first unanswered
-                          const firstIdx = (exo.questions || []).findIndex((q: any) => {
+                          const firstIdx = questionsSafe.findIndex((q: any) => {
                             const k = `${exo.id}-${q.id}`;
                             const isQrc = q?.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
                             return !isQrc && !selectedAnswers[k];
@@ -4070,7 +4077,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         <h4 className="font-semibold text-sm">Réponses</h4>
                         <p className="text-xs text-muted-foreground">Cliquez sur une question pour revoir la correction</p>
                         <div className="grid grid-cols-5 sm:grid-cols-8 gap-2">
-                          {(exo.questions || []).map((q, qi) => {
+                          {questionsSafe.map((q, qi) => {
                             const key = `${exo.id}-${q.id}`;
                             const selected = selectedAnswers[key];
                             const correct = q.choix.find((c: any) => c.correct);
