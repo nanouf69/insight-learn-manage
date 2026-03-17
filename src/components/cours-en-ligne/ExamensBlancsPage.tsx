@@ -385,7 +385,7 @@ function PassageMatiere({
       {/* Progression questions */}
       <div className="space-y-1">
         <div className="flex justify-between text-xs text-muted-foreground">
-          <span>Question {questionIndex + 1} / {matiere.questions.length}</span>
+          <span>Question {safeQuestionIndex + 1} / {questionsSafe.length}</span>
           <span>{Math.round(progress)}%</span>
         </div>
         <Progress value={progress} className="h-2" />
@@ -397,19 +397,20 @@ function PassageMatiere({
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-3 flex-1">
               <Badge variant={question?.type === "QRC" ? "secondary" : "outline"} className="shrink-0 mt-0.5">
-                {question?.type}
+                {question?.type || "QCM"}
               </Badge>
-              <p className="font-medium leading-relaxed">{question.enonce}</p>
+              <p className="font-medium leading-relaxed">{question?.enonce || "Question indisponible"}</p>
             </div>
             <Badge variant="outline" className="shrink-0 text-xs font-semibold text-primary border-primary/40">
-              {getPointsParQuestion(matiere.id, question?.type)} pt{getPointsParQuestion(matiere.id, question?.type) > 1 ? "s" : ""}
+              {getPointsParQuestion(matiere.id, question?.type || "QCM")} pt{getPointsParQuestion(matiere.id, question?.type || "QCM") > 1 ? "s" : ""}
             </Badge>
           </div>
 
           {question?.type === "QCM" && question.choix && (
             <div className="space-y-2 ml-2">
               <p className="text-xs text-muted-foreground italic">Vous pouvez sélectionner une ou plusieurs réponses</p>
-              {question.choix.map(choix => {
+              {question.choix.map((choix) => {
+                if (!choix || choix === undefined) return null;
                 const checked = ((reponses[question.id] as string[]) || []).includes(choix.lettre);
                 return (
                   <div key={choix.lettre} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${checked ? "border-primary bg-primary/5" : "border-muted hover:border-primary/40"}`}
@@ -443,7 +444,7 @@ function PassageMatiere({
         <Button
           variant="outline"
           onClick={() => setQuestionIndex(i => Math.max(0, i - 1))}
-          disabled={questionIndex === 0}
+          disabled={safeQuestionIndex === 0}
           className="gap-2"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -451,21 +452,22 @@ function PassageMatiere({
         </Button>
 
         <div className="flex gap-1 flex-wrap justify-center">
-          {matiere.questions.map((q, i) => {
+          {questionsSafe.map((q, i) => {
+            if (!q || q === undefined) return null;
             const rep = reponses[q.id];
-            const isAnswered = q?.type === "QCM" 
-              ? Array.isArray(rep) && rep.length > 0 
+            const isAnswered = q?.type === "QCM"
+              ? Array.isArray(rep) && rep.length > 0
               : typeof rep === "string" && rep.trim().length > 0;
-            const isCurrent = i === questionIndex;
+            const isCurrent = i === safeQuestionIndex;
             return (
               <button
                 key={i}
                 onClick={() => setQuestionIndex(i)}
                 className={`w-7 h-7 rounded text-xs font-medium transition-colors ${
-                  isCurrent 
-                    ? "bg-primary text-primary-foreground ring-2 ring-primary/50" 
-                    : isAnswered 
-                      ? "bg-green-100 text-green-700 border border-green-300" 
+                  isCurrent
+                    ? "bg-primary text-primary-foreground ring-2 ring-primary/50"
+                    : isAnswered
+                      ? "bg-green-100 text-green-700 border border-green-300"
                       : "bg-red-50 text-red-500 border border-red-300 animate-pulse"
                 }`}
                 title={isAnswered ? `Question ${i + 1} — répondue ✓` : `Question ${i + 1} — NON répondue ✗`}
@@ -476,7 +478,7 @@ function PassageMatiere({
           })}
         </div>
 
-        {questionIndex < matiere.questions.length - 1 ? (
+        {safeQuestionIndex < questionsSafe.length - 1 ? (
           <Button onClick={() => setQuestionIndex(i => i + 1)} className="gap-2">
             Suivante
             <ArrowRight className="w-4 h-4" />
@@ -485,7 +487,7 @@ function PassageMatiere({
           <Button onClick={handleTerminer} disabled={!allAnswered} className="gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-50">
             <CheckCircle2 className="w-4 h-4" />
             Terminer la matière
-            {!allAnswered && <span className="text-xs">({matiere.questions.filter(q => { const r = reponses[q.id]; return q?.type === "QCM" ? Array.isArray(r) && r.length > 0 : typeof r === "string" && r.trim().length > 0; }).length}/{matiere.questions.length})</span>}
+            {!allAnswered && <span className="text-xs">({questionsSafe.filter(q => { if (!q || q === undefined) return false; const r = reponses[q.id]; return q?.type === "QCM" ? Array.isArray(r) && r.length > 0 : typeof r === "string" && r.trim().length > 0; }).length}/{questionsSafe.length})</span>}
           </Button>
         )}
       </div>
