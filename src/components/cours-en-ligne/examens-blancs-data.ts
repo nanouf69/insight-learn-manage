@@ -964,8 +964,8 @@ const matiere_t3p_examen2: Matiere = {
   questions: [
     {
       id: 1, type: "QRC", enonce: "Citez trois des conditions d'accès et/ou d'exercice aux professions de conducteurs de T3P :",
-      reponseQRC: "Réussite à l'examen. Carte professionnelle en cours de validité. Formation continue. Aptitude médicale. Honorabilité.",
-      reponses_possibles: ["examen", "carte professionnelle", "formation continue", "aptitude médicale", "honorabilité"]
+      reponseQRC: "Réussite à l'examen (vérification de l'aptitude professionnelle). Carte professionnelle en cours de validité. Formation continue. Aptitude médicale. Honorabilité. Assurance responsabilité civile professionnelle. Respect de caractéristiques techniques des véhicules.",
+      reponses_possibles: ["examen", "carte professionnelle", "formation continue", "aptitude médicale", "honorabilité", "assurance", "permis"]
     },
     {
       id: 2, type: "QRC", enonce: "Quelles sont les sanctions possibles qui peuvent être décidées par les commissions disciplinaires locales ?",
@@ -973,30 +973,30 @@ const matiere_t3p_examen2: Matiere = {
       reponses_possibles: ["avertissement", "retrait temporaire", "retrait définitif"]
     },
     {
-      id: 3, type: "QRC", enonce: "Que devez-vous présenter aux agents pour justifier d'une réservation préalable ?",
+      id: 3, type: "QRC", enonce: "Que devez-vous présenter aux agents susceptibles d'effectuer des contrôles pour justifier d'une réservation préalable ?",
       reponseQRC: "Un document écrit sur support papier ou électronique.",
-      reponses_possibles: ["document écrit", "papier ou électronique"]
+      reponses_possibles: ["document écrit", "papier ou électronique", "support papier ou électronique"]
     },
     {
       id: 4, type: "QRC", enonce: "Qu'est-ce que l'honorabilité dans votre profession ?",
       reponseQRC: "Avoir le casier judiciaire B2 vierge.",
-      reponses_possibles: ["casier judiciaire b2 vierge", "b2 vierge", "casier b2"]
+      reponses_possibles: ["casier judiciaire b2 vierge", "b2 vierge", "casier b2 vierge"]
     },
     {
-      id: 5, type: "QRC", enonce: "Je me fais contrôler sur la route. Quels documents communs dois-je présenter aux forces de l'ordre ?",
-      reponseQRC: "Le permis de conduire. La carte professionnelle. L'attestation de formation continue. Le certificat médical. L'attestation d'assurance. L'attestation RCP.",
-      reponses_possibles: ["permis de conduire", "carte professionnelle", "formation continue", "certificat médical", "assurance"]
+      id: 5, type: "QRC", enonce: "Je me fais contrôler sur la route, quels documents communs aux trois professions dois-je présenter aux forces de l'ordre ?",
+      reponseQRC: "Le permis de conduire. La carte professionnelle en cours de validité. L'attestation de formation continue. Le certificat médical. L'attestation d'assurance du véhicule. L'attestation de responsabilité civile professionnelle (RCP).",
+      reponses_possibles: ["permis de conduire", "carte professionnelle", "formation continue", "certificat médical", "assurance", "responsabilité civile"]
     },
     {
-      id: 6, type: "QCM", enonce: "Quelles sont les conditions requises pour passer l'examen T3P ?",
+      id: 6, type: "QCM", enonce: "Quelles sont les conditions requises pour pouvoir passer l'examen de T3P ?",
       choix: [
-        { lettre: "A", texte: "Avoir son permis depuis plus de 3 ans", correct: true },
-        { lettre: "B", texte: "Être âgé de 21 ans minimum" },
-        { lettre: "C", texte: "Avoir un casier judiciaire B2 vierge", correct: true }
+        { lettre: "A", texte: "Avoir son permis de conduire depuis plus de 5 ans" },
+        { lettre: "B", texte: "Avoir 10 points minimum sur son permis de conduire" },
+        { lettre: "C", texte: "Casier judiciaire B2 vierge", correct: true }
       ]
     },
     {
-      id: 7, type: "QCM", enonce: "Les sanctions en cas d'exercice illégal d'une profession T3P ?",
+      id: 7, type: "QCM", enonce: "Quelles sont les sanctions possibles en cas d'exercice illégale d'une des professions du T3P ?",
       choix: [
         { lettre: "A", texte: "Une amende de 30 000 € et deux ans d'emprisonnement" },
         { lettre: "B", texte: "Une amende de 15 000 € et un an d'emprisonnement", correct: true },
@@ -1004,10 +1004,10 @@ const matiere_t3p_examen2: Matiere = {
       ]
     },
     {
-      id: 8, type: "QCM", enonce: "Parmi les entreprises du T3P, lesquelles sont soumises à l'obligation d'assurance RCP ?",
+      id: 8, type: "QCM", enonce: "Parmi les entreprises du T3P, quelles sont celles qui sont soumises à l'obligation de s'assurer en responsabilité civile professionnelle ?",
       choix: [
         { lettre: "A", texte: "VTC et 2 ou 3 roues" },
-        { lettre: "B", texte: "Le taxi, VTC et 2 ou 3 roues" },
+        { lettre: "B", texte: "Le taxi, VTC et 2 ou 3 roues seulement" },
         { lettre: "C", texte: "Le taxi seulement" },
         { lettre: "D", texte: "Le taxi et le VTC seulement", correct: true }
       ]
@@ -1016,17 +1016,17 @@ const matiere_t3p_examen2: Matiere = {
       id: 9, type: "QCM", enonce: "Pour effectuer du T3P, le véhicule doit :",
       choix: [
         { lettre: "A", texte: "Être de couleur blanche" },
-        { lettre: "B", texte: "Avoir des pneumatiques fixés par décret" },
+        { lettre: "B", texte: "Avoir des tailles de pneumatiques fixées par décret" },
         { lettre: "C", texte: "Avoir une signalétique distinctive", correct: true }
       ]
     },
     {
-      id: 10, type: "QCM", enonce: "Qui délivre les agréments aux centres de formation ?",
+      id: 10, type: "QCM", enonce: "Qui délivrent les agréments aux centres de formation ?",
       choix: [
         { lettre: "A", texte: "Les conseils départementaux" },
-        { lettre: "B", texte: "L'association permanente des chambres de métiers" },
+        { lettre: "B", texte: "L'association permanente des chambres de métiers et de l'artisanat" },
         { lettre: "C", texte: "Les préfectures", correct: true },
-        { lettre: "D", texte: "Le ministère des transports" }
+        { lettre: "D", texte: "Le ministère des transports pour les VTC, le ministère de l'environnement pour les 2 ou 3 roues, le ministère de l'intérieur pour les taxis" }
       ]
     },
     {
@@ -1034,17 +1034,44 @@ const matiere_t3p_examen2: Matiere = {
       choix: [
         { lettre: "A", texte: "Le représentant de chaque collège à tour de rôle" },
         { lettre: "B", texte: "Le préfet ou son représentant", correct: true },
-        { lettre: "C", texte: "Le directeur des transports" },
+        { lettre: "C", texte: "Le directeur des transports du département" },
         { lettre: "D", texte: "Le Président de la chambre de métiers" }
       ]
     },
     {
-      id: 12, type: "QCM", enonce: "Durée du mandat des membres de la commission locale des T3P ?",
+      id: 12, type: "QCM", enonce: "Quelle est la durée du mandat des membres de la commission locale des T3P ?",
       choix: [
         { lettre: "A", texte: "3 ans" },
         { lettre: "B", texte: "2 ans" },
         { lettre: "C", texte: "5 ans", correct: true },
         { lettre: "D", texte: "1 an" }
+      ]
+    },
+    {
+      id: 13, type: "QCM", enonce: "Un client avec une prescription médicale sera remboursé de son transport s'il utilise :",
+      choix: [
+        { lettre: "A", texte: "Un taxi conventionné ou un VTC conventionné" },
+        { lettre: "B", texte: "Un VTC conventionné ou un taxi moto conventionné" },
+        { lettre: "C", texte: "Un taxi conventionné ou un Taxi moto conventionné ou un VTC conventionné" },
+        { lettre: "D", texte: "Un taxi conventionné", correct: true }
+      ]
+    },
+    {
+      id: 14, type: "QCM", enonce: "Quels agents sont habilités à effectuer un contrôle routier de conducteur de T3P ?",
+      choix: [
+        { lettre: "A", texte: "Les agents représentant la SNCF" },
+        { lettre: "B", texte: "Les gendarmes", correct: true },
+        { lettre: "C", texte: "Le juge du tribunal d'instance" },
+        { lettre: "D", texte: "Les policiers", correct: true }
+      ]
+    },
+    {
+      id: 15, type: "QCM", enonce: "Parmi les condamnations suivantes, lesquelles peuvent être mentionnées au bulletin n° 2 du casier judiciaire ?",
+      choix: [
+        { lettre: "A", texte: "Transporter et déposer des objets, déchets, liquides insalubres en un lieu sans l'autorisation de la personne ayant la jouissance du lieu" },
+        { lettre: "B", texte: "Conduire avec un taux d'alcool dans le sang de 0,8 gramme par litre ou plus", correct: true },
+        { lettre: "C", texte: "Transporter un appareil permettant de déceler la présence de systèmes servant à la constatation des infractions" },
+        { lettre: "D", texte: "Poursuivre sa route, en connaissance de cause, après avoir occasionné un accident", correct: true }
       ]
     }
   ]
