@@ -1180,7 +1180,12 @@ export default function ExamensBlancsPage({
                   </thead>
                   <tbody>
                     {examenChoisi.matieres.map((m, i) => {
-                      const maxPts = m.questions.reduce((acc, q) => acc + getPointsParQuestion(m.id, q?.type), 0);
+                      if (!m || m === undefined) return null;
+                      const questionsSafe = (m.questions || []).filter(q => q && q?.type !== undefined);
+                      const maxPts = questionsSafe.reduce((acc, q) => {
+                        if (!q || q === undefined) return acc;
+                        return acc + getPointsParQuestion(m.id, q?.type || "QCM");
+                      }, 0);
                       const ptsQCM = getPointsParQuestion(m.id, "QCM");
                       const ptsQRC = getPointsParQuestion(m.id, "QRC");
                       return (
@@ -1197,7 +1202,15 @@ export default function ExamensBlancsPage({
                     <tr className="border-t-2 font-semibold bg-primary/5">
                       <td className="p-2">TOTAL</td>
                       <td className="p-2 text-center">{dureeTotal} min</td>
-                      <td className="p-2 text-center">{examenChoisi.matieres.reduce((acc, m) => acc + m.questions.reduce((a, q) => a + getPointsParQuestion(m.id, q?.type), 0), 0)} pts</td>
+                      <td className="p-2 text-center">{examenChoisi.matieres.reduce((acc, m) => {
+                        if (!m || m === undefined) return acc;
+                        const questionsSafe = (m.questions || []).filter(q => q && q?.type !== undefined);
+                        const totalMatiere = questionsSafe.reduce((a, q) => {
+                          if (!q || q === undefined) return a;
+                          return a + getPointsParQuestion(m.id, q?.type || "QCM");
+                        }, 0);
+                        return acc + totalMatiere;
+                      }, 0)} pts</td>
                       <td className="p-2"></td>
                       <td className="p-2"></td>
                       <td className="p-2 text-center">Note finale /20</td>
