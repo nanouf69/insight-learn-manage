@@ -610,7 +610,8 @@ function EcranResultats({
 
     const matiere = examen.matieres[mi];
     let noteRecalculee = 0;
-    matiere.questions.forEach(q => {
+    (matiere.questions || []).filter(Boolean).forEach(q => {
+      if (!q || !q.type) return;
       if (q.type === "QCM" && q.choix) {
         const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
         const donnees = ((r.reponses[q.id] as string[]) || []).sort();
