@@ -87,7 +87,7 @@ interface ResultatMatiere {
 }
 
 // ===== ÉCRAN DE SÉLECTION =====
-function EcranSelection({ onStart, onEdit, defaultBilanId, apprenantType, examensData }: { onStart: (examen: ExamenBlanc) => void; onEdit: () => void; defaultBilanId?: string | null; apprenantType?: string | null; examensData: ExamenBlanc[] }) {
+function EcranSelection({ onStart, onEdit, defaultBilanId, apprenantType, examensData, apprenantId }: { onStart: (examen: ExamenBlanc) => void; onEdit: () => void; defaultBilanId?: string | null; apprenantType?: string | null; examensData: ExamenBlanc[]; apprenantId?: string | null }) {
   // Determine the forced exam type from the student's formation type
   const forcedType = (() => {
     if (!apprenantType) return null;
@@ -97,6 +97,23 @@ function EcranSelection({ onStart, onEdit, defaultBilanId, apprenantType, examen
   })();
 
   const [typeFiltre, setTypeFiltre] = useState<"tous" | "TAXI" | "VTC" | "TA" | "VA">(forcedType || "tous");
+  const [completedExamIds, setCompletedExamIds] = useState<Set<string>>(new Set());
+
+  // Fetch completed exams from DB
+  useEffect(() => {
+    if (!apprenantId) return;
+    supabase
+      .from("apprenant_quiz_results" as any)
+      .select("quiz_id")
+      .eq("apprenant_id", apprenantId)
+      .eq("quiz_type", "examen_blanc")
+      .then(({ data }) => {
+        if (data) {
+          const ids = new Set<string>((data as any[]).map((r: any) => r.quiz_id));
+          setCompletedExamIds(ids);
+        }
+      });
+  }, [apprenantId]);
 
   const examens = examensData.filter(e => {
     const typeOk = typeFiltre === "tous" || e?.type === typeFiltre;
@@ -154,8 +171,9 @@ function EcranSelection({ onStart, onEdit, defaultBilanId, apprenantType, examen
             {examensBlancs.map(examen => {
               const totalQuestions = examen.matieres.reduce((acc, m) => acc + m.questions.length, 0);
               const dureeTotal = examen.matieres.reduce((acc, m) => acc + m.duree, 0);
+              const isCompleted = completedExamIds.has(examen.id);
               return (
-                <Card key={examen.id} className="hover:shadow-md transition-shadow cursor-pointer border-2 hover:border-primary/40">
+                <Card key={examen.id} className={`hover:shadow-md transition-shadow cursor-pointer border-2 ${isCompleted ? "border-green-500/60 bg-green-50/30" : "hover:border-primary/40"}`}>
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <Badge variant={examen?.type === "TAXI" ? "default" : "secondary"} className="text-xs">
@@ -164,6 +182,12 @@ function EcranSelection({ onStart, onEdit, defaultBilanId, apprenantType, examen
                       <span className="text-xs text-muted-foreground">N°{examen.numero}</span>
                     </div>
                     <CardTitle className="text-base mt-2">{examen.titre}</CardTitle>
+                    {isCompleted && (
+                      <div className="flex items-center gap-2 mt-2 bg-green-100 border border-green-300 rounded-lg px-3 py-2">
+                        <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
+                        <span className="text-green-700 font-bold text-lg uppercase tracking-wide">Examen réalisé</span>
+                      </div>
+                    )}
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="grid grid-cols-2 gap-2 text-sm">
@@ -188,8 +212,8 @@ function EcranSelection({ onStart, onEdit, defaultBilanId, apprenantType, examen
                         </div>
                       ))}
                     </div>
-                    <Button className="w-full mt-2 gap-2" onClick={() => onStart(examen)}>
-                      Commencer l'examen
+                    <Button className="w-full mt-2 gap-2" variant={isCompleted ? "outline" : "default"} onClick={() => onStart(examen)}>
+                      {isCompleted ? "Recommencer l'examen" : "Commencer l'examen"}
                       <ChevronRight className="w-4 h-4" />
                     </Button>
                   </CardContent>
@@ -1133,7 +1157,7 @@ export default function ExamensBlancsPage({
   }
 
   if (phase === "selection") {
-    return <EcranSelection onStart={handleStart} onEdit={() => setPhase("edition")} defaultBilanId={bilanPrefiltre} apprenantType={apprenantType} examensData={liveExamens} />;
+    return <EcranSelection onStart={handleStart} onEdit={() => setPhase("edition")} defaultBilanId={bilanPrefiltre} apprenantType={apprenantType} examensData={liveExamens} apprenantId={apprenantId} />;
   }
 
   if (phase === "intro" && examenChoisi) {
