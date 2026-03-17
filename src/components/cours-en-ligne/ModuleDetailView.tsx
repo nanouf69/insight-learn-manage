@@ -1810,7 +1810,7 @@ const ContentCard = ({
       "application/vnd.ms-powerpoint",
       "application/pdf",
     ];
-    if (!allowedTypes.includes(file.type)) {
+    if (!allowedTypes.includes(file?.type)) {
       toast.error("Format non supporté. Utilisez un fichier .pptx, .ppt ou .pdf");
       return;
     }
@@ -2698,7 +2698,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         const labels: Record<number, string> = {};
         let quizIndex = 0;
         pages.forEach((page, index) => {
-          if (page.type === "exercice-single") {
+          if (page?.type === "exercice-single") {
             quizIndex++;
             const cleanTitle = page.exercice.titre.replace(/^📝\s*|^📘\s*|^📗\s*|^📙\s*|^📕\s*|^📓\s*/, "");
             labels[index] = `${quizIndex}. 📝 Quiz — ${cleanTitle}`;
@@ -2710,7 +2710,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       // For modules with subject letters (A-G), group by subject
       const subjectNums: Record<string, number> = { A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7 };
       const hasSubjectLetters = pages.some(p =>
-        p.type === "cours" && /^\s*[A-G]\./i.test(p.cours.titre)
+        p?.type === "cours" && /^\s*[A-G]\./i.test(p.cours.titre)
       );
 
       if (hasSubjectLetters) {
@@ -2719,7 +2719,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         let currentMeta: { subjectNum: number; partNum: number } | null = null;
 
         pages.forEach((page, index) => {
-          if (page.type === "cours") {
+          if (page?.type === "cours") {
             const subjectLetter = page.cours.titre.match(/^\s*([A-G])\./i)?.[1]?.toUpperCase() || "A";
             const subjectNum = subjectNums[subjectLetter] || 1;
             const nextPart = (partBySubject[subjectNum] || 0) + 1;
@@ -2729,7 +2729,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             return;
           }
 
-          if (page.type === "exercice-single" && currentMeta) {
+          if (page?.type === "exercice-single" && currentMeta) {
             labels[index] = `${currentMeta.subjectNum}.${currentMeta.partNum} 📝 Quiz — ${page.exercice.titre}`;
           }
         });
@@ -2742,11 +2742,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       let lastCoursIndex = -1;
 
       pages.forEach((page, index) => {
-        if (page.type === "cours") {
+        if (page?.type === "cours") {
           pairNum++;
           lastCoursIndex = index;
           labels[index] = `${pairNum} 📖 Cours — ${page.cours.titre}`;
-        } else if (page.type === "exercice-single") {
+        } else if (page?.type === "exercice-single") {
           const isQuiz = page.exercice.questions && page.exercice.questions.length > 0;
           if (isQuiz) {
             // Use same pairNum as the preceding cours if this quiz directly follows it
@@ -2838,7 +2838,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
       const formPages: { pageIndex: number; docType: string }[] = [];
       pages.forEach((p, idx) => {
-        if (p.type === "cours" && p.cours.checklistType) {
+        if (p?.type === "cours" && p.cours.checklistType) {
           const docType = CHECKLIST_TO_DOC_TYPE[p.cours.checklistType];
           if (docType) formPages.push({ pageIndex: idx, docType });
         }
@@ -2899,7 +2899,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }
 
       const targetPageFromPages = pages.findIndex(
-        (p) => p.type === "exercice-single" && p.exercice.id === pendingResultRestore.exoId,
+        (p) => p?.type === "exercice-single" && p.exercice.id === pendingResultRestore.exoId,
       );
       const resolvedPage = targetPageFromPages >= 0 ? targetPageFromPages : pendingResultRestore.page;
 
@@ -3009,7 +3009,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 setCompletedPages((prev) => {
                   const next = new Set(prev);
                   validatedExoIds.forEach((exoId) => {
-                    const exoPage = pages.findIndex((p) => p.type === "exercice-single" && p.exercice.id === exoId);
+                    const exoPage = pages.findIndex((p) => p?.type === "exercice-single" && p.exercice.id === exoId);
                     if (exoPage >= 0) {
                       next.add(exoPage);
                       if (exoPage > 0) next.add(exoPage - 1);
@@ -3281,7 +3281,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     // BUT NOT for intro modules — those require explicit acknowledgment
     useEffect(() => {
       pages.forEach((p, i) => {
-        if (p.type === "cours") {
+        if (p?.type === "cours") {
           const hasPdf = p.cours.fichiers?.some(f => f.nom.endsWith(".pdf") || f.url.endsWith(".pdf"));
           const hasSlides = p.cours.slidesKey && slidesByKey[p.cours.slidesKey]?.length > 0;
           const hasQuiz = p.cours.quiz && p.cours.quiz.length > 0;
@@ -3302,9 +3302,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       if (!isTaxiOrTA || !TAXI_REGLEMENTATION_MODULE_IDS.has(Number(moduleData.id))) return false;
       const page = pages[pageIdx];
       if (!page) return false;
-      const title = page.type === "cours"
+      const title = page?.type === "cours"
         ? page.cours.titre
-        : page.type === "exercice-single"
+        : page?.type === "exercice-single"
           ? page.exercice.titre
           : "";
       return /réglementation\s+(nationale|locale)/i.test(title);
@@ -3861,7 +3861,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               )}
               {exo.questions && exo.questions.map((q: any, qi: number) => {
                 const key = `${exo.id}-${q.id}`;
-                const isQrc = q.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
+                const isQrc = q?.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
                 const selected = selectedAnswers[key];
                 const qrcResult = qrcResults[key];
 
@@ -3956,7 +3956,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         const unansweredQcmKeys: string[] = [];
                         (exo.questions || []).forEach((q: any, qi: number) => {
                           const k = `${exo.id}-${q.id}`;
-                          const isQrc = q.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
+                          const isQrc = q?.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
                           const ans = selectedAnswers[k];
                           const hasAnswer = Array.isArray(ans) ? ans.length > 0 : !!ans;
                           if (!isQrc && !hasAnswer) {
@@ -3968,7 +3968,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           // Scroll to first unanswered
                           const firstIdx = (exo.questions || []).findIndex((q: any) => {
                             const k = `${exo.id}-${q.id}`;
-                            const isQrc = q.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
+                            const isQrc = q?.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
                             return !isQrc && !selectedAnswers[k];
                           });
                           if (firstIdx >= 0) {
@@ -4208,10 +4208,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           const unlocked = isPageUnlocked(i);
           const isCurrent = i === currentPage;
           const isCompleted = completedPages.has(i);
-          const isQuizPage = p.type === "exercice-single" && p.exercice.questions && p.exercice.questions.length > 0;
-          const rawLabel = p.type === "cours"
+          const isQuizPage = p?.type === "exercice-single" && p.exercice.questions && p.exercice.questions.length > 0;
+          const rawLabel = p?.type === "cours"
             ? `📖 ${p.cours.titre}`
-            : p.type === "exercice-single"
+            : p?.type === "exercice-single"
               ? isQuizPage ? `📝 Quiz — ${p.exercice.titre}` : `📝 ${p.exercice.titre}`
               : "📝 Exercices";
           const label = hierarchicalLabelsByPage[i]
@@ -4276,7 +4276,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                       <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-700 border border-amber-300">Quiz</span>
                       {partNum && <span className="text-[9px] text-muted-foreground font-medium">Partie {partNum}</span>}
                     </span>
-                  ) : p.type === "cours" ? (
+                  ) : p?.type === "cours" ? (
                     <span className="shrink-0 inline-flex flex-col items-center gap-0.5">
                       <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-sky-100 text-sky-700 border border-sky-300">Cours</span>
                       {partNum && <span className="text-[9px] text-muted-foreground font-medium">Partie {partNum}</span>}
@@ -4291,8 +4291,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     );
 
     const renderProgressBar = () => {
-      const coursPages = pages.map((p, i) => ({ p, i })).filter(({ p }) => p.type === "cours");
-      const quizPages = pages.map((p, i) => ({ p, i })).filter(({ p }) => p.type === "exercice-single" && p.exercice?.questions?.length > 0);
+      const coursPages = pages.map((p, i) => ({ p, i })).filter(({ p }) => p?.type === "cours");
+      const quizPages = pages.map((p, i) => ({ p, i })).filter(({ p }) => p?.type === "exercice-single" && p.exercice?.questions?.length > 0);
       const coursCompleted = coursPages.filter(({ i }) => completedPages.has(i)).length;
       const quizCompleted = quizPages.filter(({ i }) => completedPages.has(i)).length;
 
@@ -4671,7 +4671,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                         </TableCell>
                         <TableCell className="font-medium">{r.nom}</TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="text-xs">{r.type?.toUpperCase() || '-'}</Badge>
+                          <Badge variant="outline" className="text-xs">{r?.type?.toUpperCase() || '-'}</Badge>
                         </TableCell>
                         <TableCell className="font-mono">{r.score_obtenu}/{r.score_max}</TableCell>
                         <TableCell>
