@@ -827,93 +827,124 @@ function EcranResultats({
         </div>
       )}
 
-      {/* Header résultats */}
-      <div className={`rounded-xl p-6 text-center ${admisGlobal ? "bg-green-50 border-2 border-green-300" : "bg-red-50 border-2 border-red-300"}`}>
-        {admisGlobal ? (
-          <Trophy className="w-12 h-12 text-green-600 mx-auto mb-2" />
-        ) : (
-          <XCircle className="w-12 h-12 text-red-500 mx-auto mb-2" />
-        )}
-        <h3 className="text-2xl font-bold mb-1">
-          {correctionEnCours
-            ? "Correction en cours..."
-            : admisGlobal
-              ? "Examen blanc réussi ✅"
-              : "Examen blanc échoué ❌"
-          }
-        </h3>
-        {correctionEnCours ? (
-          <div className="flex justify-center mt-2"><Loader2 className="w-8 h-8 animate-spin" /></div>
-        ) : (
-          <>
-            <p className="text-4xl font-black mt-2">Moyenne générale : {isFinite(noteGlobale) ? noteGlobale.toFixed(1) : "0.0"} / 20</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              (moyenne pondérée par coefficients sur {resultatsAvecIA.length} matières)
-            </p>
-            {!admisGlobal && !correctionEnCours && (
-              <div className="mt-3 space-y-1">
-                {!moyenneSuffisante && (
-                  <p className="text-sm text-red-600 font-medium">
-                    <AlertTriangle className="w-4 h-4 inline mr-1" />
-                    Moyenne inférieure à 10/20
-                  </p>
-                )}
-                {hasNoteEliminatoire && (
-                  <p className="text-sm text-red-600 font-medium">
-                    <AlertTriangle className="w-4 h-4 inline mr-1" />
-                    Note éliminatoire en : {matieresEliminatoires.join(", ")}
-                  </p>
-                )}
-              </div>
-            )}
-          </>
-        )}
-        <p className="text-sm text-muted-foreground mt-1">{examen.titre}</p>
+      {/* Header résultats FTRANSPORT */}
+      <div className="rounded-xl overflow-hidden border-2" style={{ borderColor: admisGlobal ? '#00B4D8' : '#ef4444' }}>
+        <div className="p-6 text-center text-white" style={{ backgroundColor: '#0D2540' }}>
+          {admisGlobal ? (
+            <Trophy className="w-12 h-12 mx-auto mb-2" style={{ color: '#F4A227' }} />
+          ) : (
+            <XCircle className="w-12 h-12 text-red-400 mx-auto mb-2" />
+          )}
+          <h3 className="text-2xl font-bold mb-1">
+            {correctionEnCours
+              ? "Correction en cours..."
+              : admisGlobal
+                ? "Examen blanc réussi ✅"
+                : "Examen blanc échoué ❌"
+            }
+          </h3>
+          {correctionEnCours ? (
+            <div className="flex justify-center mt-2"><Loader2 className="w-8 h-8 animate-spin text-white" /></div>
+          ) : (
+            <>
+              <p className="text-4xl font-black mt-2" style={{ color: '#00B4D8' }}>
+                {isFinite(noteGlobale) ? noteGlobale.toFixed(1) : "0.0"} / 20
+              </p>
+              <p className="text-sm text-gray-300 mt-1">
+                Moyenne pondérée par coefficients sur {resultatsAvecIA.length} matières
+              </p>
+            </>
+          )}
+          {!admisGlobal && !correctionEnCours && (
+            <div className="mt-3 space-y-1">
+              {!moyenneSuffisante && (
+                <p className="text-sm text-red-300 font-medium">
+                  <AlertTriangle className="w-4 h-4 inline mr-1" />
+                  Moyenne inférieure à 10/20
+                </p>
+              )}
+              {hasNoteEliminatoire && (
+                <p className="text-sm text-red-300 font-medium">
+                  <AlertTriangle className="w-4 h-4 inline mr-1" />
+                  Note éliminatoire en : {matieresEliminatoires.join(", ")}
+                </p>
+              )}
+            </div>
+          )}
+          <p className="text-sm text-gray-400 mt-1">{examen.titre}</p>
+        </div>
       </div>
 
-      {/* Détail par matière */}
-      <div className="space-y-3">
-        <h4 className="font-semibold">Résultats par matière</h4>
+      {/* Détail par matière — sous-totaux groupés */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <div className="w-1 h-6 rounded-full" style={{ backgroundColor: '#00B4D8' }} />
+          <h4 className="font-semibold text-lg" style={{ color: '#0D2540' }}>Résultats par matière</h4>
+        </div>
         {resultatsAvecIA.map((r, mi) => {
           const safeMaxPoints = r.maxPoints || 1;
-          const noteSur20 = (r.noteObtenue / safeMaxPoints * 20);
+          const noteSur20 = (r.noteObtenue / safeMaxPoints * (r.noteSur || 20));
           const matiereEnCours = Object.values(correctionsIA[mi] || {}).some(v => v === "loading");
+          const pctScore = safeMaxPoints > 0 ? Math.min((r.noteObtenue / safeMaxPoints) * 100, 100) : 0;
           return (
-            <Card key={r.matiereId} className={`border-l-4 ${r.admis ? "border-l-green-500" : "border-l-red-500"}`}>
+            <Card key={r.matiereId} className="border-l-4 overflow-hidden" style={{ borderLeftColor: r.admis ? '#00B4D8' : '#ef4444' }}>
+              <div className="px-4 py-2 flex items-center gap-2" style={{ backgroundColor: '#0D2540' }}>
+                <span className="text-xs font-semibold text-white">Matière {mi + 1}/{resultatsAvecIA.length}</span>
+                <span className="text-xs font-medium" style={{ color: '#00B4D8' }}>— Coeff. {r.coefficient || 1}</span>
+                {!r.admis && <span className="text-xs font-semibold text-red-400 ml-auto">⚠ Note éliminatoire</span>}
+                {matiereEnCours && <span className="text-xs flex items-center gap-1 ml-auto" style={{ color: '#00B4D8' }}><Loader2 className="w-3 h-3 animate-spin" />IA en cours</span>}
+              </div>
               <CardContent className="py-3 px-4">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{r.nomMatiere}</p>
+                    <p className="font-semibold text-sm" style={{ color: '#0D2540' }}>{r.nomMatiere}</p>
                     <div className="flex items-center gap-3 mt-1 flex-wrap">
-                      <span className="text-xs text-muted-foreground">Coeff. {r.coefficient || 1}</span>
                       <span className="text-xs text-muted-foreground">Barème : {r.maxPoints} pts</span>
                       <span className="text-xs text-muted-foreground">Éliminatoire sous {r.noteEliminatoire}/{r.noteSur || 20}</span>
-                      {!r.admis && <span className="text-xs font-semibold text-red-600 bg-red-100 px-1.5 py-0.5 rounded">⚠ Note éliminatoire</span>}
-                      {matiereEnCours && <span className="text-xs text-blue-600 flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" />IA en cours</span>}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-right">
-                      <span className={`text-lg font-bold ${r.admis ? "text-green-600" : "text-red-600"}`}>
+                      <span className="text-lg font-bold" style={{ color: r.admis ? '#00B4D8' : '#ef4444' }}>
                         {r.noteObtenue} / {r.maxPoints} pts
                       </span>
-                      <p className="text-xs text-muted-foreground">= {isFinite(noteSur20) ? noteSur20.toFixed(1) : "0.0"} / 20</p>
+                      <p className="text-xs text-muted-foreground">= {isFinite(noteSur20) ? noteSur20.toFixed(1) : "0.0"} / {r.noteSur || 20}</p>
                     </div>
                     {r.admis ? (
-                      <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      <CheckCircle2 className="w-5 h-5" style={{ color: '#00B4D8' }} />
                     ) : (
                       <XCircle className="w-5 h-5 text-red-500" />
                     )}
                   </div>
                 </div>
                 <Progress
-                  value={safeMaxPoints > 0 ? Math.min((r.noteObtenue / safeMaxPoints) * 100, 100) : 0}
-                  className={`h-1.5 mt-2 ${r.admis ? "[&>*]:bg-green-500" : "[&>*]:bg-red-500"}`}
+                  value={pctScore}
+                  className={`h-2 mt-2 ${r.admis ? "[&>*]:bg-[#00B4D8]" : "[&>*]:bg-red-500"}`}
                 />
               </CardContent>
             </Card>
           );
         })}
+
+        {/* Score global résumé */}
+        <Card className="border-2" style={{ borderColor: '#F4A227' }}>
+          <CardContent className="py-4 px-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold" style={{ color: '#0D2540' }}>Score global pondéré</p>
+                <p className="text-xs text-muted-foreground">{resultatsAvecIA.length} matières • Coefficients appliqués</p>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-black" style={{ color: admisGlobal ? '#00B4D8' : '#ef4444' }}>
+                  {isFinite(noteGlobale) ? noteGlobale.toFixed(1) : "0.0"} / 20
+                </p>
+                <p className="text-xs font-semibold" style={{ color: admisGlobal ? '#00B4D8' : '#ef4444' }}>
+                  {admisGlobal ? "ADMIS" : "NON ADMIS"}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Correction détaillée */}
