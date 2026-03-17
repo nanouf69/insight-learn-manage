@@ -842,9 +842,9 @@ function EcranResultats({
                                   {c.correct && <span className="text-green-600">✓</span>}
                                 </div>
                               ))}
-                              {rep && (
+                              {rep != null && (
                                 <p className="text-xs mt-1 italic text-muted-foreground">
-                                  Votre réponse : {(rep as string[]).join(", ") || "Aucune"}
+                                  Votre réponse : {Array.isArray(rep) ? rep.join(", ") || "Aucune" : String(rep) || "Aucune"}
                                 </p>
                               )}
                             </div>
