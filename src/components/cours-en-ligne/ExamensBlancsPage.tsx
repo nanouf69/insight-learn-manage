@@ -386,24 +386,17 @@ function PassageMatiere({
     });
   };
 
-  const allAnswered = questionsSafe.every(q => {
-    if (!q || q === undefined) return false;
-    const rep = reponses[q.id];
+  // Robust check: question answered? Works with both number and string keys from DB
+  const isQuestionAnswered = (q: Question | null | undefined): boolean => {
+    if (!q || !q.id) return false;
+    const rep = reponses[q.id] ?? reponses[String(q.id)];
     if (q?.type === "QCM") return Array.isArray(rep) && rep.length > 0;
-    return typeof rep === "string" && rep.trim().length > 0;
-  });
-
-  const handleTerminer = () => {
-    if (!allAnswered) {
-      toast.error("Veuillez répondre à toutes les questions avant de terminer la matière.");
-      return;
-    }
-    onTerminer(reponses);
+    if (q?.type === "QRC") return typeof rep === "string" && rep.trim().length > 0;
+    // Default: check if any value exists
+    return rep !== undefined && rep !== null && rep !== "";
   };
-  const handleExpire = () => { setExpire(true); onTerminer(reponses); };
 
-  const isMultiple = (q: Question) =>
-    q?.type === "QCM" && (q.choix?.filter(c => c.correct).length || 0) > 1;
+  const allAnswered = questionsSafe.every(q => isQuestionAnswered(q));
 
   const safeQuestionsCount = questionsSafe.length || 1;
   const safeQuestionIndex = Math.min(questionIndex, safeQuestionsCount - 1);
