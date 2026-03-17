@@ -1080,18 +1080,19 @@ export default function ExamensBlancsPage({
         // Save each matière result with full question details
         const rows = allResults.map(r => {
           const matiere = examenChoisi.matieres.find(m => m.id === r.matiereId);
-          const questionDetails = matiere ? matiere.questions.map(q => {
-            const rep = r.reponses[q.id];
+          const questionDetails = matiere ? (matiere.questions || []).filter(Boolean).map(q => {
+            if (!q) return null;
+            const rep = r.reponses?.[q.id];
             return {
               questionId: q.id,
-              enonce: q.enonce,
-              type: q.type,
+              enonce: q.enonce || "",
+              type: q.type || "QCM",
               reponseEleve: rep ?? null,
               reponseCorrecte: q.type === "QCM" && q.choix
                 ? q.choix.filter(c => c.correct).map(c => c.lettre)
                 : (q.reponseQRC || (q.reponses_possibles || []).join(" / ")),
             };
-          }) : [];
+          }).filter(Boolean) : [];
           return {
             apprenant_id: apprenantId,
             user_id: userId,
