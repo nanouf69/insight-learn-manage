@@ -605,11 +605,35 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [moduleScores, setModuleScores] = useState<Record<number, { score_obtenu: number | null; score_max: number | null }>>({});
   const [moduleCompletionsForNotes, setModuleCompletionsForNotes] = useState<Array<{ id: string; module_id: number; score_obtenu: number | null; score_max: number | null; completed_at: string; details: any }>>([]);
 
+  const navigate = useNavigate();
+
   // Tracking connexion élève (only for real student sessions, not admin preview)
-  const { trackModuleActivity } = useConnexionTracking({
+  const isStudentSession = !embedded && !!user && !!apprenant?.id;
+  const { trackModuleActivity, connexionId, sessionStartTime, endConnexion } = useConnexionTracking({
     apprenantId: !embedded && apprenant?.id ? apprenant.id : null,
     userId: user?.id || null,
-    enabled: !embedded && !!user && !!apprenant?.id,
+    enabled: isStudentSession,
+  });
+
+  // Presence verification: every 4h + 7h max session
+  const handleForceDisconnect = useCallback(async () => {
+    await supabase.auth.signOut();
+    navigate("/cours");
+    toast.error("Session terminée");
+  }, [navigate]);
+
+  const {
+    showModal: showPresenceModal,
+    countdownSeconds: presenceCountdown,
+    disconnectReason,
+    confirmPresence,
+  } = usePresenceCheck({
+    apprenantId: !embedded && apprenant?.id ? apprenant.id : null,
+    userId: user?.id || null,
+    connexionId: connexionId.current,
+    sessionStartTime,
+    enabled: isStudentSession,
+    onForceDisconnect: handleForceDisconnect,
   });
 
   // Inactivity alert after 2h
