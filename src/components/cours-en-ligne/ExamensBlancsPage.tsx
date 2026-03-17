@@ -1087,12 +1087,13 @@ export default function ExamensBlancsPage({
 
   const savedSession = restoreSession();
 
-  const [phase, setPhase] = useState<"selection" | "intro" | "examen" | "resultats" | "edition">(
+  const [phase, setPhase] = useState<"selection" | "intro" | "examen" | "transition" | "resultats" | "edition">(
     savedSession?.phase === "examen" ? "examen" : "selection"
   );
   const [examenChoisi, setExamenChoisi] = useState<ExamenBlanc | null>(null);
   const [matiereIndex, setMatiereIndex] = useState(savedSession?.matiereIndex || 0);
   const [tousResultats, setTousResultats] = useState<ResultatMatiere[]>(savedSession?.resultats || []);
+  const [lastMatiereResult, setLastMatiereResult] = useState<ResultatMatiere | null>(null);
   const [bilanPrefiltre, setBilanPrefiltre] = useState<string | null>(null);
   const [liveExamens, setLiveExamens] = useState<ExamenBlanc[]>(tousLesExamens);
   const examStartTimeRef = useRef<number>(savedSession?.examStartTime || Date.now());
