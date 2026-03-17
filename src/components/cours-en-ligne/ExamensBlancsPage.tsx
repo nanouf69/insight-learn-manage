@@ -928,7 +928,7 @@ export default function ExamensBlancsPage({
   const examStartTimeRef = useRef<number>(savedSession?.examStartTime || Date.now());
 
   // Persist exam session state to sessionStorage
-  const persistExamSession = (p: string, exId: string | null, mi: number) => {
+  const persistExamSession = (p: string, exId: string | null, mi: number, resultats?: ResultatMatiere[]) => {
     try {
       if (p === "examen" && exId) {
         sessionStorage.setItem(EXAM_SESSION_KEY, JSON.stringify({
@@ -936,6 +936,7 @@ export default function ExamensBlancsPage({
           examenId: exId,
           matiereIndex: mi,
           examStartTime: examStartTimeRef.current,
+          resultats: resultats || [],
         }));
       } else {
         sessionStorage.removeItem(EXAM_SESSION_KEY);
