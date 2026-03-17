@@ -1074,7 +1074,7 @@ export default function ExamensBlancsPage({
     let totalPoints = 0;
     (matiere.questions || []).filter(Boolean).forEach(q => {
       if (!q || !q?.type) return;
-      const rep = reponses[q.id];
+      const rep = reponses?.[q.id] ?? reponses?.[String(q.id)];
       const pts = getPointsParQuestion(matiere.id, q?.type);
       let correct = false;
       if (q?.type === "QCM" && q.choix) {
