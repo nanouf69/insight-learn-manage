@@ -24,6 +24,7 @@ import { useInactivityAlert } from "@/hooks/useInactivityAlert";
 import { usePresenceCheck } from "@/hooks/usePresenceCheck";
 import { PresenceCheckModal } from "@/components/cours-en-ligne/PresenceCheckModal";
 import { useAuth } from "@/contexts/AuthContext";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const StableModuleDetailView = memo(ModuleDetailView);
 
@@ -1248,11 +1249,19 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
         {/* Examens tab - Examens Blancs */}
         {activeTab === "examens" && (
-          <ExamensBlancsPage
-            apprenantId={apprenant?.id || null}
-            userId={user?.id || null}
-            apprenantType={apprenant?.type_apprenant || null}
-          />
+          <ErrorBoundary
+            fallback={
+              <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-foreground">
+                Une erreur est survenue dans la section Examens blancs. Rechargez la page ou réessayez dans quelques instants.
+              </div>
+            }
+          >
+            <ExamensBlancsPage
+              apprenantId={apprenant?.id || null}
+              userId={user?.id || null}
+              apprenantType={apprenant?.type_apprenant || null}
+            />
+          </ErrorBoundary>
         )}
 
         {/* Accueil tab */}

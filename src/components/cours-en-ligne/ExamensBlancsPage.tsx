@@ -816,7 +816,7 @@ function EcranResultats({
                 <CardTitle className="text-sm font-semibold">{matiere.nom}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {(matiere.questions || []).filter(Boolean).map(q => {
+                {questionsSafe.map(q => {
                   if (!q || !q?.type) return null;
                   const rep = resultat.reponses?.[q.id];
                   const pts = getPointsParQuestion(matiere.id, q?.type);
@@ -1067,12 +1067,15 @@ export default function ExamensBlancsPage({
     if (examenChoisi) persistExamSession("examen", examenChoisi.id, 0);
   };
 
-  const calculerMaxPoints = (matiere: Matiere): number =>
-    (matiere.questions || []).filter(Boolean).reduce((acc, q) => acc + getPointsParQuestion(matiere.id, q?.type || "QCM"), 0);
+  const calculerMaxPoints = (matiere: Matiere): number => {
+    const questionsSafe = (matiere.questions ?? []).filter((q): q is Question => q != null && q?.type != null);
+    return questionsSafe.reduce((acc, q) => acc + getPointsParQuestion(matiere.id, q?.type || "QCM"), 0);
+  };
 
   const calculerNote = (matiere: Matiere, reponses: Reponses): number => {
+    const questionsSafe = (matiere.questions ?? []).filter((q): q is Question => q != null && q?.type != null);
     let totalPoints = 0;
-    (matiere.questions || []).filter(Boolean).forEach(q => {
+    questionsSafe.forEach(q => {
       if (!q || !q?.type) return;
       const rep = reponses?.[q.id] ?? reponses?.[String(q.id)];
       const pts = getPointsParQuestion(matiere.id, q?.type);
