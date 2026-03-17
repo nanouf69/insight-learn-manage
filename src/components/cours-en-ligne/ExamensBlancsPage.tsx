@@ -1009,6 +1009,7 @@ export default function ExamensBlancsPage({
   const handleDebuterExamen = () => {
     examStartTimeRef.current = Date.now();
     setPhase("examen");
+    if (examenChoisi) persistExamSession("examen", examenChoisi.id, 0);
   };
 
   const calculerMaxPoints = (matiere: Matiere): number =>
