@@ -1302,7 +1302,7 @@ export default function ExamensBlancsPage({
         </div>
 
         {/* Barre de progression latérale droite */}
-        <div className="hidden md:block w-48 lg:w-56 shrink-0">
+        <div className="hidden min-[520px]:block w-36 sm:w-40 md:w-48 lg:w-56 shrink-0">
           <div className="sticky top-4 space-y-2">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Progression</p>
             <div className="relative">
