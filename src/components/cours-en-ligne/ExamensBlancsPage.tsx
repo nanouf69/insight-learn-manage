@@ -908,13 +908,59 @@ export default function ExamensBlancsPage({
   userId?: string | null;
   apprenantType?: string | null;
 } = {}) {
-  const [phase, setPhase] = useState<"selection" | "intro" | "examen" | "resultats" | "edition">("selection");
+  // Restore exam session from sessionStorage
+  const EXAM_SESSION_KEY = `exam_session_${apprenantId || "anon"}`;
+
+  const restoreSession = () => {
+    try {
+      const saved = sessionStorage.getItem(EXAM_SESSION_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch { }
+    return null;
+  };
+
+  const savedSession = restoreSession();
+
+  const [phase, setPhase] = useState<"selection" | "intro" | "examen" | "resultats" | "edition">(
+    savedSession?.phase === "examen" ? "examen" : "selection"
+  );
   const [examenChoisi, setExamenChoisi] = useState<ExamenBlanc | null>(null);
-  const [matiereIndex, setMatiereIndex] = useState(0);
+  const [matiereIndex, setMatiereIndex] = useState(savedSession?.matiereIndex || 0);
   const [tousResultats, setTousResultats] = useState<ResultatMatiere[]>([]);
   const [bilanPrefiltre, setBilanPrefiltre] = useState<string | null>(null);
   const [liveExamens, setLiveExamens] = useState<ExamenBlanc[]>(tousLesExamens);
-  const examStartTimeRef = useRef<number>(Date.now());
+  const examStartTimeRef = useRef<number>(savedSession?.examStartTime || Date.now());
+
+  // Persist exam session state to sessionStorage
+  const persistExamSession = (p: string, exId: string | null, mi: number) => {
+    try {
+      if (p === "examen" && exId) {
+        sessionStorage.setItem(EXAM_SESSION_KEY, JSON.stringify({
+          phase: p,
+          examenId: exId,
+          matiereIndex: mi,
+          examStartTime: examStartTimeRef.current,
+        }));
+      } else {
+        sessionStorage.removeItem(EXAM_SESSION_KEY);
+      }
+    } catch { }
+  };
+
+  // Restore the chosen exam once liveExamens are loaded
+  const [sessionRestored, setSessionRestored] = useState(false);
+  useEffect(() => {
+    if (sessionRestored || liveExamens.length === 0) return;
+    if (savedSession?.examenId) {
+      const found = liveExamens.find(e => e.id === savedSession.examenId);
+      if (found) {
+        setExamenChoisi(found);
+        setPhase("examen");
+        setMatiereIndex(savedSession.matiereIndex || 0);
+      }
+    }
+    setSessionRestored(true);
+  }, [liveExamens, sessionRestored]);
 
   // Load saved exam overrides from DB on mount
   useEffect(() => {
