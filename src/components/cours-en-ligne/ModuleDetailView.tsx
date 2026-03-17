@@ -1548,9 +1548,8 @@ function QuestionEditor({
   const handleChoixTexte = (i: number, val: string) => {
     setChoix(prev => prev.map((c, idx) => idx === i ? { ...c, texte: val } : c));
   };
-  const handleChoixCorrect = (i: number) => {
-    // 1 seule bonne réponse = radio
-    setChoix(prev => prev.map((c, idx) => ({ ...c, correct: idx === i })));
+  const handleChoixCorrect = (i: number, val: boolean) => {
+    setChoix(prev => prev.map((c, idx) => idx === i ? { ...c, correct: val } : c));
   };
   const addChoix = () => {
     const lettres = ["A", "B", "C", "D", "E", "F"];
