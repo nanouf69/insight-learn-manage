@@ -474,7 +474,7 @@ function SlideSynthesis({ slide, editing, onChange }: { slide: Slide & { type: "
 }
 
 function renderSlide(slide: Slide, editing: boolean, onChange?: (s: Slide) => void) {
-  switch (slide.type) {
+  switch (slide?.type) {
     case "title": return <SlideTitle slide={slide} editing={editing} onChange={onChange} />;
     case "sommaire": return <SlideSommaire slide={slide} editing={editing} onChange={onChange} />;
     case "section": return <SlideSection slide={slide} editing={editing} onChange={onChange} />;

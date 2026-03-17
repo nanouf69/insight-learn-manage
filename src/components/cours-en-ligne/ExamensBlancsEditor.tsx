@@ -86,7 +86,7 @@ function QuestionEditor({
       ...question,
       enonce,
     };
-    if (question.type === "QRC") {
+    if (question?.type === "QRC") {
       updated.reponseQRC = reponseQRC;
       updated.reponses_possibles = motsCles.split(",").map(s => s.trim()).filter(Boolean);
     } else {
@@ -98,8 +98,8 @@ function QuestionEditor({
   return (
     <div className="border-2 border-primary/30 rounded-lg p-4 bg-primary/5 space-y-4">
       <div className="flex items-center justify-between">
-        <Badge variant={question.type === "QCM" ? "default" : "secondary"}>
-          {question.type} — Q{question.id}
+        <Badge variant={question?.type === "QCM" ? "default" : "secondary"}>
+          {question?.type} — Q{question.id}
         </Badge>
         <div className="flex gap-2">
           <Button size="sm" variant="ghost" onClick={onCancel}>
@@ -127,7 +127,7 @@ function QuestionEditor({
       </div>
 
       {/* QRC */}
-      {question.type === "QRC" && (
+      {question?.type === "QRC" && (
         <>
           <div className="space-y-1">
             <Label className="text-xs font-semibold">Réponse correcte (affichée en correction)</Label>
@@ -154,7 +154,7 @@ function QuestionEditor({
       )}
 
       {/* QCM */}
-      {question.type === "QCM" && (
+      {question?.type === "QCM" && (
         <div className="space-y-2">
           <Label className="text-xs font-semibold">Choix de réponses</Label>
           {choix.map((c, i) => (
@@ -212,27 +212,31 @@ function MatiereEditor({
     setEditingMeta(false);
   };
 
+  const questionsSafe = (matiere.questions ?? []).filter(
+    (q): q is Question => q != null && q?.type != null,
+  );
+
   const saveQuestion = (updated: Question) => {
-    const newQuestions = matiere.questions.map(q => q.id === updated.id ? updated : q);
+    const newQuestions = questionsSafe.map(q => q.id === updated.id ? updated : q);
     onChange({ ...matiere, questions: newQuestions });
     setEditingQId(null);
   };
 
   const deleteQuestion = (qId: number) => {
-    const newQuestions = matiere.questions.filter(q => q.id !== qId);
+    const newQuestions = questionsSafe.filter(q => q.id !== qId);
     onChange({ ...matiere, questions: newQuestions });
     setEditingQId(null);
   };
 
   const addQuestion = (type: "QCM" | "QRC") => {
-    const newId = Math.max(0, ...matiere.questions.map(q => q.id)) + 1;
+    const newId = Math.max(0, ...questionsSafe.map(q => q.id)) + 1;
     const newQ: Question = type === "QCM"
       ? { id: newId, type: "QCM", enonce: "Nouvelle question", choix: [
           { lettre: "A", texte: "Choix A", correct: true },
           { lettre: "B", texte: "Choix B" },
         ]}
       : { id: newId, type: "QRC", enonce: "Nouvelle question QRC", reponseQRC: "", reponses_possibles: [] };
-    onChange({ ...matiere, questions: [...matiere.questions, newQ] });
+    onChange({ ...matiere, questions: [...questionsSafe, newQ] });
     setEditingQId(newId);
   };
 
@@ -254,7 +258,7 @@ function MatiereEditor({
           </span>
           <span>Coeff. {matiere.coefficient}</span>
           <span className="text-destructive">Élim. {matiere.noteEliminatoire}/{matiere.noteSur}</span>
-          <span>{matiere.questions.length} questions</span>
+          <span>{questionsSafe.length} questions</span>
           <Button
             size="sm"
             variant="ghost"
@@ -298,7 +302,7 @@ function MatiereEditor({
       {/* Questions */}
       {expanded && (
         <div className="p-4 space-y-3">
-          {matiere.questions.map(q => (
+          {questionsSafe.map(q => (
             <div key={q.id}>
               {editingQId === q.id ? (
                 <QuestionEditor
@@ -309,8 +313,8 @@ function MatiereEditor({
                 />
               ) : (
                 <div className="flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/20 group transition-colors">
-                  <Badge variant={q.type === "QCM" ? "default" : "secondary"} className="text-xs shrink-0 mt-0.5">
-                    {q.type}
+                  <Badge variant={q?.type === "QCM" ? "default" : "secondary"} className="text-xs shrink-0 mt-0.5">
+                    {q?.type}
                   </Badge>
                   <p className="text-sm flex-1 text-muted-foreground line-clamp-2">{q.enonce}</p>
                   <Button
@@ -353,7 +357,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const examensFiltres = examens.filter(e => typeFiltre === "tous" || e.type === typeFiltre);
+  const examensFiltres = examens.filter(e => typeFiltre === "tous" || e?.type === typeFiltre);
   const examenSel = examens.find(e => e.id === examenSelId) || null;
 
   const handleMatiereChange = (matiereId: string, updated: Matiere) => {
@@ -498,10 +502,10 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-1">
                       <Badge
-                        variant={ex.type === "TAXI" ? "default" : "secondary"}
+                        variant={ex?.type === "TAXI" ? "default" : "secondary"}
                         className="text-xs"
                       >
-                        {ex.type}
+                        {ex?.type}
                       </Badge>
                       {isBilan && (
                         <Badge className="text-xs bg-primary text-primary-foreground">BILAN</Badge>
@@ -530,8 +534,8 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-base">{examenSel.titre}</h3>
-                <Badge variant={examenSel.type === "TAXI" ? "default" : "secondary"}>
-                  {examenSel.type} — N°{examenSel.numero}
+                <Badge variant={examenSel?.type === "TAXI" ? "default" : "secondary"}>
+                  {examenSel?.type} — N°{examenSel.numero}
                 </Badge>
               </div>
 

@@ -498,8 +498,8 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
                           }}
                         >
                           <div className="flex items-center gap-2">
-                            <span className={`text-xs px-2 py-0.5 rounded-full ${item.type === "examen" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"}`}>
-                              {item.type === "examen" ? "Examen" : "Quiz"}
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${item?.type === "examen" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"}`}>
+                              {item?.type === "examen" ? "Examen" : "Quiz"}
                             </span>
                             <span className="text-xs text-slate-400">{format(new Date(item.date), "dd/MM/yyyy HH:mm", { locale: fr })}</span>
                           </div>
