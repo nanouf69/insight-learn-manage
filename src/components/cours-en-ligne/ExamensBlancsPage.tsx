@@ -627,8 +627,8 @@ function EcranResultats({
     });
 
     // Ne recalculer que si toutes les corrections IA sont terminées
-    const toutTermine = matiere.questions
-      .filter(q => q.type === "QRC")
+    const toutTermine = (matiere.questions || []).filter(Boolean)
+      .filter(q => q?.type === "QRC")
       .every(q => cache[q.id] && cache[q.id] !== "loading");
 
     const safeMaxPoints = r.maxPoints || 1;
