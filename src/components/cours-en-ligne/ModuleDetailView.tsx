@@ -1548,9 +1548,8 @@ function QuestionEditor({
   const handleChoixTexte = (i: number, val: string) => {
     setChoix(prev => prev.map((c, idx) => idx === i ? { ...c, texte: val } : c));
   };
-  const handleChoixCorrect = (i: number) => {
-    // 1 seule bonne réponse = radio
-    setChoix(prev => prev.map((c, idx) => ({ ...c, correct: idx === i })));
+  const handleChoixCorrect = (i: number, val: boolean) => {
+    setChoix(prev => prev.map((c, idx) => idx === i ? { ...c, correct: val } : c));
   };
   const addChoix = () => {
     const lettres = ["A", "B", "C", "D", "E", "F"];
@@ -1577,18 +1576,17 @@ function QuestionEditor({
         <Textarea value={enonce} onChange={e => setEnonce(e.target.value)} rows={2} className="text-sm" />
       </div>
       <div className="space-y-2">
-        <label className="text-xs font-semibold">Réponses (cochez la bonne — 1 bonne réponse = 1 point)</label>
+        <label className="text-xs font-semibold">Réponses (cochez les bonnes réponses — plusieurs possibles)</label>
         {choix.map((c, i) => (
           <div key={i} className="flex items-center gap-2">
             <span className="w-6 text-xs font-bold text-muted-foreground">{c.lettre}</span>
             <Input value={c.texte} onChange={e => handleChoixTexte(i, e.target.value)} className="text-sm flex-1" placeholder={`Choix ${c.lettre}`} />
             <div className="flex items-center gap-1 shrink-0">
               <input
-                type="radio"
-                name={`correct-${question.id}`}
+                type="checkbox"
                 checked={!!c.correct}
-                onChange={() => handleChoixCorrect(i)}
-                className="w-4 h-4 accent-primary"
+                onChange={e => handleChoixCorrect(i, e.target.checked)}
+                className="w-4 h-4"
                 title="Bonne réponse"
               />
               <span className="text-xs text-emerald-600 font-bold">{c.correct ? "✓" : ""}</span>
