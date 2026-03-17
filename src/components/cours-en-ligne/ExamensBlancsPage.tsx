@@ -87,7 +87,7 @@ interface ResultatMatiere {
 }
 
 // ===== ÉCRAN DE SÉLECTION =====
-function EcranSelection({ onStart, onEdit, defaultBilanId, apprenantType, examensData }: { onStart: (examen: ExamenBlanc) => void; onEdit: () => void; defaultBilanId?: string | null; apprenantType?: string | null; examensData: ExamenBlanc[] }) {
+function EcranSelection({ onStart, onEdit, defaultBilanId, apprenantType, examensData, apprenantId }: { onStart: (examen: ExamenBlanc) => void; onEdit: () => void; defaultBilanId?: string | null; apprenantType?: string | null; examensData: ExamenBlanc[]; apprenantId?: string | null }) {
   // Determine the forced exam type from the student's formation type
   const forcedType = (() => {
     if (!apprenantType) return null;
@@ -97,6 +97,23 @@ function EcranSelection({ onStart, onEdit, defaultBilanId, apprenantType, examen
   })();
 
   const [typeFiltre, setTypeFiltre] = useState<"tous" | "TAXI" | "VTC" | "TA" | "VA">(forcedType || "tous");
+  const [completedExamIds, setCompletedExamIds] = useState<Set<string>>(new Set());
+
+  // Fetch completed exams from DB
+  useEffect(() => {
+    if (!apprenantId) return;
+    supabase
+      .from("apprenant_quiz_results" as any)
+      .select("quiz_id")
+      .eq("apprenant_id", apprenantId)
+      .eq("quiz_type", "examen_blanc")
+      .then(({ data }) => {
+        if (data) {
+          const ids = new Set<string>((data as any[]).map((r: any) => r.quiz_id));
+          setCompletedExamIds(ids);
+        }
+      });
+  }, [apprenantId]);
 
   const examens = examensData.filter(e => {
     const typeOk = typeFiltre === "tous" || e?.type === typeFiltre;
