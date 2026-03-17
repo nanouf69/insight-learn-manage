@@ -1059,10 +1059,44 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return acc;
   }, {});
 
+  // Compute per-module quiz stats: how many quizzes completed vs total
+  const moduleQuizStatsById = modules.reduce<Record<number, { completedQuizzes: number; totalQuizzes: number; completedLabels: string[]; remainingLabels: string[] }>>((acc, module) => {
+    const rows = completionsByModuleId[module.id] || [];
+    const allLabels = new Set<string>();
+    const doneLabels = new Set<string>();
+
+    rows.forEach((row) => {
+      const details = Array.isArray(row?.details) ? row.details : [];
+      details.forEach((detail: any) => {
+        const exerciseTitle = typeof detail?.exerciceTitre === "string" ? detail.exerciceTitre : "";
+        const pointLabel = getPointLabelFromExerciseTitle(exerciseTitle, module.id);
+        if (pointLabel) {
+          allLabels.add(pointLabel);
+          const answer = detail?.reponseEleve;
+          if (answer !== null && answer !== undefined && `${answer}`.trim() !== "") {
+            doneLabels.add(pointLabel);
+          }
+        }
+      });
+    });
+
+    const completedLabelsArr = Array.from(doneLabels).sort();
+    const remainingLabelsArr = Array.from(allLabels).filter(l => !doneLabels.has(l)).sort();
+
+    acc[module.id] = {
+      completedQuizzes: doneLabels.size,
+      totalQuizzes: allLabels.size,
+      completedLabels: completedLabelsArr,
+      remainingLabels: remainingLabelsArr,
+    };
+    return acc;
+  }, {});
+
   const completedCount = modules.filter((m) => moduleProgressById[m.id]?.isDone).length;
   const globalProgress = modules.length > 0 ? Math.round((completedCount / modules.length) * 100) : 0;
   const remainingModules = modules.filter((m) => !moduleProgressById[m.id]?.isDone);
-  const doneModules = modules.filter((m) => moduleProgressById[m.id]?.hasProgress);
+  const doneModules = modules.filter((m) => moduleProgressById[m.id]?.isDone);
+  const inProgressModules = modules.filter((m) => !moduleProgressById[m.id]?.isDone && moduleProgressById[m.id]?.hasProgress);
   const lowModules = remainingModules.filter((m) => !moduleProgressById[m.id]?.hasProgress).slice(0, 3);
   const studentName = apprenant ? `${apprenant.prenom} ${apprenant.nom}` : "Apprenant";
 
@@ -1301,11 +1335,20 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                             <h3 className={`font-bold text-sm transition-colors ${locked ? "text-muted-foreground" : "text-foreground group-hover:text-primary"}`}>
                               {mod.nom}
                             </h3>
-                            <p className="text-xs text-muted-foreground line-clamp-1">
-                              {locked ? (INTRO_MODULE_IDS.has(modules[0]?.id) && !introCompleted ? "🔒 Terminez l'Introduction pour débloquer" : "🔒 Terminez le module précédent pour débloquer") : mod.description}
+                            <p className="text-xs text-muted-foreground line-clamp-2">
+                              {locked ? (INTRO_MODULE_IDS.has(modules[0]?.id) && !introCompleted ? "🔒 Terminez l'Introduction pour débloquer" : "🔒 Terminez le module précédent pour débloquer") : (
+                                moduleQuizStatsById[mod.id]?.totalQuizzes > 0 && moduleQuizStatsById[mod.id]?.completedQuizzes > 0
+                                  ? `📊 ${moduleQuizStatsById[mod.id].completedQuizzes}/${moduleQuizStatsById[mod.id].totalQuizzes} quiz complétés — Reste : ${moduleQuizStatsById[mod.id].remainingLabels.join(", ") || "aucun"}`
+                                  : mod.description
+                              )}
                             </p>
                           </div>
-                          <div className="shrink-0">
+                          <div className="shrink-0 flex items-center gap-2">
+                            {!locked && moduleQuizStatsById[mod.id]?.completedQuizzes > 0 && moduleQuizStatsById[mod.id]?.totalQuizzes > 0 && (
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-950/30">
+                                {moduleQuizStatsById[mod.id].completedQuizzes}/{moduleQuizStatsById[mod.id].totalQuizzes}
+                              </Badge>
+                            )}
                             {locked ? (
                               <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
                                 <Lock className="w-3.5 h-3.5 text-muted-foreground" />
