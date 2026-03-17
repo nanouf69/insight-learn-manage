@@ -615,15 +615,21 @@ function EcranResultats({
       .filter(q => q.type === "QRC")
       .every(q => cache[q.id] && cache[q.id] !== "loading");
 
+    const safeMaxPoints = r.maxPoints || 1;
+    const safeNoteSur = r.noteSur || 20;
+
     return {
       ...r,
       noteObtenue: toutTermine ? noteRecalculee : r.noteObtenue,
-      admis: toutTermine ? noteRecalculee >= (r.noteEliminatoire / r.noteSur) * r.maxPoints : r.admis,
+      admis: toutTermine ? noteRecalculee >= (r.noteEliminatoire / safeNoteSur) * safeMaxPoints : r.admis,
     };
   });
 
-  const totalCoef = resultatsAvecIA.reduce((acc, r) => acc + r.coefficient, 0);
-  const noteGlobale = resultatsAvecIA.reduce((acc, r) => acc + (r.noteObtenue / r.maxPoints * 20) * r.coefficient, 0) / totalCoef;
+  const totalCoef = resultatsAvecIA.reduce((acc, r) => acc + (r.coefficient || 1), 0) || 1;
+  const noteGlobale = resultatsAvecIA.reduce((acc, r) => {
+    const safeMax = r.maxPoints || 1;
+    return acc + (r.noteObtenue / safeMax * 20) * (r.coefficient || 1);
+  }, 0) / totalCoef;
   const hasNoteEliminatoire = resultatsAvecIA.some(r => !r.admis);
   const moyenneSuffisante = noteGlobale >= 10;
   const admisGlobal = moyenneSuffisante && !hasNoteEliminatoire;
