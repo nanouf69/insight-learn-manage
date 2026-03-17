@@ -1086,78 +1086,148 @@ const matiere_gestion_examen2: Matiere = {
   noteSur: 20,
   questions: [
     {
-      id: 1, type: "QRC", enonce: "Qu'est-ce que la TVA ? Développez le sigle.",
-      reponseQRC: "Taxe sur la Valeur Ajoutée. C'est un impôt indirect sur la consommation, collecté par les entreprises pour le compte de l'État.",
-      reponses_possibles: ["taxe sur la valeur ajoutée", "impôt", "consommation"]
+      id: 1, type: "QRC", enonce: "Développez les sigles URSSAF",
+      reponseQRC: "URSSAF : Union de Recouvrement des Cotisations de Sécurité Sociale et d'Allocations Familiales.",
+      reponses_possibles: ["union de recouvrement", "cotisations de sécurité sociale", "allocations familiales"]
     },
     {
-      id: 2, type: "QRC", enonce: "Qu'est-ce qu'un bilan comptable ?",
-      reponseQRC: "Le bilan est un document comptable qui présente la situation patrimoniale de l'entreprise à une date donnée, avec l'actif (ce que l'entreprise possède) et le passif (ce qu'elle doit).",
-      reponses_possibles: ["situation patrimoniale", "actif", "passif", "document comptable"]
+      id: 2, type: "QRC", enonce: "Citez deux régimes de base de la protection sociale en France",
+      reponseQRC: "Régime général (CPAM). Régime agricole. Régimes spéciaux (SNCF, fonctionnaires…).",
+      reponses_possibles: ["régime général", "régime agricole", "régimes spéciaux"]
     },
     {
-      id: 3, type: "QCM", enonce: "Le résultat d'exploitation est :",
+      id: 3, type: "QCM", enonce: "Quel statut du conjoint du chef d'entreprise ne convient pas à l'entreprise individuelle ?",
       choix: [
-        { lettre: "A", texte: "La différence entre produits et charges d'exploitation", correct: true },
-        { lettre: "B", texte: "Le chiffre d'affaires total" },
-        { lettre: "C", texte: "La trésorerie disponible" }
+        { lettre: "A", texte: "Conjoint salarié" },
+        { lettre: "B", texte: "Conjoint hors statut" },
+        { lettre: "C", texte: "Conjoint associé", correct: true },
+        { lettre: "D", texte: "Conjoint collaborateur" }
       ]
     },
     {
-      id: 4, type: "QCM", enonce: "L'auto-entrepreneur (micro-entrepreneur) est soumis à :",
+      id: 4, type: "QCM", enonce: "Vous empruntez 25 000 € sur 5 ans, l'annuité (ce que l'on paie par an) est de 5 600 €. Quel est le coût de l'emprunt ?",
       choix: [
-        { lettre: "A", texte: "L'impôt sur les sociétés" },
-        { lettre: "B", texte: "L'impôt sur le revenu dans la catégorie BIC", correct: true },
-        { lettre: "C", texte: "L'impôt forfaitaire" }
+        { lettre: "A", texte: "4 200 €" },
+        { lettre: "B", texte: "3 000 €", correct: true },
+        { lettre: "C", texte: "3 600 €" }
       ]
     },
     {
-      id: 5, type: "QCM", enonce: "Le seuil de chiffre d'affaires pour le régime micro-entrepreneur (VTC/Taxi) est :",
+      id: 5, type: "QCM", enonce: "Qu'est-ce qu'un chiffre d'affaires ?",
       choix: [
-        { lettre: "A", texte: "72 600 € HT" },
-        { lettre: "B", texte: "176 200 € HT" },
-        { lettre: "C", texte: "188 700 € HT", correct: true }
+        { lettre: "A", texte: "L'argent qui reste en banque après avoir payé toutes les charges" },
+        { lettre: "B", texte: "L'ensemble des commandes ou devis" },
+        { lettre: "C", texte: "L'ensemble des sommes facturées aux clients", correct: true },
+        { lettre: "D", texte: "La différence entre les produits et les charges" }
       ]
     },
     {
-      id: 6, type: "QCM", enonce: "Un véhicule utilisé à 70% pour l'activité professionnelle : quelle part des charges est déductible ?",
+      id: 6, type: "QCM", enonce: "Les revenus d'un chef d'entreprise individuelle sont imposés dans les catégories des :",
       choix: [
-        { lettre: "A", texte: "100%" },
-        { lettre: "B", texte: "70%", correct: true },
-        { lettre: "C", texte: "50%" }
+        { lettre: "A", texte: "BIC (bénéfices industriels et commerciaux)", correct: true },
+        { lettre: "B", texte: "BNC (bénéfices non commerciaux)" },
+        { lettre: "C", texte: "IS (impôts sur les sociétés)" },
+        { lettre: "D", texte: "RCM (revenus de capitaux mobiliers)" }
       ]
     },
     {
-      id: 7, type: "QCM", enonce: "Les cotisations sociales d'un auto-entrepreneur sont calculées sur :",
+      id: 7, type: "QCM", enonce: "Je peux être gérant minoritaire d'une entreprise individuelle ?",
       choix: [
-        { lettre: "A", texte: "Le bénéfice net" },
-        { lettre: "B", texte: "Le chiffre d'affaires brut", correct: true },
-        { lettre: "C", texte: "Le salaire minimum" }
+        { lettre: "A", texte: "Oui" },
+        { lettre: "B", texte: "Sous certaines conditions" },
+        { lettre: "C", texte: "Non", correct: true }
       ]
     },
     {
-      id: 8, type: "QCM", enonce: "L'amortissement d'un véhicule professionnel VTC s'effectue généralement sur :",
+      id: 8, type: "QCM", enonce: "Pour une entreprise sous statut SARL, la TVA est :",
       choix: [
-        { lettre: "A", texte: "2 ans" },
-        { lettre: "B", texte: "4 ans" },
-        { lettre: "C", texte: "5 ans", correct: true },
+        { lettre: "A", texte: "Une charge" },
+        { lettre: "B", texte: "Un mouvement de trésorerie", correct: true },
+        { lettre: "C", texte: "Un produit" },
+        { lettre: "D", texte: "Une charge financière" }
+      ]
+    },
+    {
+      id: 9, type: "QCM", enonce: "Existe-t-il une durée minimale pour un contrat à durée déterminée ?",
+      choix: [
+        { lettre: "A", texte: "7 jours" },
+        { lettre: "B", texte: "1 mois" },
+        { lettre: "C", texte: "Pas de durée minimale", correct: true },
+        { lettre: "D", texte: "15 jours" }
+      ]
+    },
+    {
+      id: 10, type: "QCM", enonce: "La SAS est sur le plan juridique :",
+      choix: [
+        { lettre: "A", texte: "Une personne physique" },
+        { lettre: "B", texte: "Une personne professionnelle" },
+        { lettre: "C", texte: "Une personne morale", correct: true }
+      ]
+    },
+    {
+      id: 11, type: "QCM", enonce: "La libération totale du capital social dans une société à responsabilité limitée (SARL) doit intervenir au plus tard dans un délai de :",
+      choix: [
+        { lettre: "A", texte: "5 ans", correct: true },
+        { lettre: "B", texte: "1 an" },
+        { lettre: "C", texte: "99 ans" },
         { lettre: "D", texte: "10 ans" }
       ]
     },
     {
-      id: 9, type: "QCM", enonce: "Un conducteur VTC/Taxi peut déduire ses frais de repas si :",
+      id: 12, type: "QCM", enonce: "Quelle est la dépense qui ne constitue pas une charge pour l'entreprise ?",
       choix: [
-        { lettre: "A", texte: "Il mange toujours au restaurant" },
-        { lettre: "B", texte: "Ils sont engagés dans le cadre de son activité professionnelle", correct: true },
-        { lettre: "C", texte: "Il facture plus de 50 000€ par an" }
+        { lettre: "A", texte: "Abonnement à une revue professionnelle" },
+        { lettre: "B", texte: "Intérêt d'un prêt professionnel" },
+        { lettre: "C", texte: "Remboursement du capital d'un prêt professionnel", correct: true }
       ]
     },
     {
-      id: 10, type: "QCM", enonce: "Le compte de résultat permet de savoir si l'entreprise :",
+      id: 13, type: "QCM", enonce: "Quelle mention n'est pas obligatoire sur le bulletin de salaire ?",
       choix: [
-        { lettre: "A", texte: "Est solvable" },
-        { lettre: "B", texte: "A réalisé un bénéfice ou une perte", correct: true },
-        { lettre: "C", texte: "Dispose de liquidités suffisantes" }
+        { lettre: "A", texte: "Le montant net à payer" },
+        { lettre: "B", texte: "Le diplôme du salarié", correct: true },
+        { lettre: "C", texte: "La convention collective applicable" }
+      ]
+    },
+    {
+      id: 14, type: "QCM", enonce: "Les montants figurant dans le compte de résultat sont :",
+      choix: [
+        { lettre: "A", texte: "BIC" },
+        { lettre: "B", texte: "TTC" },
+        { lettre: "C", texte: "HT", correct: true }
+      ]
+    },
+    {
+      id: 15, type: "QCM", enonce: "Lors de sa création, l'entreprise de Taxi ou de VTC doit s'inscrire :",
+      choix: [
+        { lettre: "A", texte: "À la chambre des métiers et de l'artisanat", correct: true },
+        { lettre: "B", texte: "À la chambre de commerce et de l'industrie" },
+        { lettre: "C", texte: "À la chambre d'agriculture" }
+      ]
+    },
+    {
+      id: 16, type: "QCM", enonce: "Au 1er janvier 2016, j'achète un véhicule 20 000 € HT amortissable sur 4 ans, un ordinateur portable 600 € HT amortissable sur 3 ans. Quel sera le montant de la dotation d'amortissement déductible sur les charges d'entreprise en 2017 ?",
+      choix: [
+        { lettre: "A", texte: "10 400 €" },
+        { lettre: "B", texte: "5 300 €" },
+        { lettre: "C", texte: "4 198 €" },
+        { lettre: "D", texte: "5 200 €", correct: true }
+      ]
+    },
+    {
+      id: 17, type: "QCM", enonce: "Dans un bilan comptable, un amortissement fait baisser :",
+      choix: [
+        { lettre: "A", texte: "Le bénéfice", correct: true },
+        { lettre: "B", texte: "L'imposition", correct: true },
+        { lettre: "C", texte: "Les charges" }
+      ]
+    },
+    {
+      id: 18, type: "QCM", enonce: "À l'actif du bilan figure :",
+      choix: [
+        { lettre: "A", texte: "Le bénéfice de l'année" },
+        { lettre: "B", texte: "Le capital" },
+        { lettre: "C", texte: "Les créances des clients", correct: true }
       ]
     }
   ]
