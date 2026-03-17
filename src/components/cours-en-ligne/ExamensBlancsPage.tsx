@@ -683,7 +683,7 @@ function EcranResultats({
           <div className="flex justify-center mt-2"><Loader2 className="w-8 h-8 animate-spin" /></div>
         ) : (
           <>
-            <p className="text-4xl font-black mt-2">Moyenne générale : {noteGlobale.toFixed(1)} / 20</p>
+            <p className="text-4xl font-black mt-2">Moyenne générale : {isFinite(noteGlobale) ? noteGlobale.toFixed(1) : "0.0"} / 20</p>
             <p className="text-sm text-muted-foreground mt-1">
               (moyenne pondérée par coefficients sur {resultatsAvecIA.length} matières)
             </p>
