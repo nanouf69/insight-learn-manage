@@ -537,7 +537,8 @@ function EcranResultats({
       examen.matieres.forEach((matiere, mi) => {
         const resultat = resultats[mi];
         if (!resultat) return;
-        matiere.questions.forEach(q => {
+        (matiere.questions || []).filter(Boolean).forEach(q => {
+          if (!q || !q.type) return;
           if (q.type === "QRC") {
             if (!initialCache[mi]) initialCache[mi] = {};
             initialCache[mi][q.id] = "loading";
@@ -552,8 +553,8 @@ function EcranResultats({
         const resultat = resultats[mi];
         if (!resultat) continue;
 
-        for (const q of matiere.questions) {
-          if (q.type !== "QRC") continue;
+        for (const q of (matiere.questions || []).filter(Boolean)) {
+          if (!q || q.type !== "QRC") continue;
           const reponseEtudiant = (resultat.reponses[q.id] as string) || "";
           const pointsQuestion = getPointsParQuestion(matiere.id, q.type);
 
@@ -609,7 +610,8 @@ function EcranResultats({
 
     const matiere = examen.matieres[mi];
     let noteRecalculee = 0;
-    matiere.questions.forEach(q => {
+    (matiere.questions || []).filter(Boolean).forEach(q => {
+      if (!q || !q.type) return;
       if (q.type === "QCM" && q.choix) {
         const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
         const donnees = ((r.reponses[q.id] as string[]) || []).sort();
@@ -625,8 +627,8 @@ function EcranResultats({
     });
 
     // Ne recalculer que si toutes les corrections IA sont terminées
-    const toutTermine = matiere.questions
-      .filter(q => q.type === "QRC")
+    const toutTermine = (matiere.questions || []).filter(Boolean)
+      .filter(q => q?.type === "QRC")
       .every(q => cache[q.id] && cache[q.id] !== "loading");
 
     const safeMaxPoints = r.maxPoints || 1;
@@ -766,8 +768,9 @@ function EcranResultats({
                 <CardTitle className="text-sm font-semibold">{matiere.nom}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {matiere.questions.map(q => {
-                  const rep = resultat.reponses[q.id];
+                {(matiere.questions || []).filter(Boolean).map(q => {
+                  if (!q || !q.type) return null;
+                  const rep = resultat.reponses?.[q.id];
                   const pts = getPointsParQuestion(matiere.id, q.type);
                   let isCorrect = false;
                   let pointsObtenus = 0;
@@ -1013,11 +1016,12 @@ export default function ExamensBlancsPage({
   };
 
   const calculerMaxPoints = (matiere: Matiere): number =>
-    matiere.questions.reduce((acc, q) => acc + getPointsParQuestion(matiere.id, q.type), 0);
+    (matiere.questions || []).filter(Boolean).reduce((acc, q) => acc + getPointsParQuestion(matiere.id, q?.type || "QCM"), 0);
 
   const calculerNote = (matiere: Matiere, reponses: Reponses): number => {
     let totalPoints = 0;
-    matiere.questions.forEach(q => {
+    (matiere.questions || []).filter(Boolean).forEach(q => {
+      if (!q || !q.type) return;
       const rep = reponses[q.id];
       const pts = getPointsParQuestion(matiere.id, q.type);
       let correct = false;
@@ -1077,18 +1081,19 @@ export default function ExamensBlancsPage({
         // Save each matière result with full question details
         const rows = allResults.map(r => {
           const matiere = examenChoisi.matieres.find(m => m.id === r.matiereId);
-          const questionDetails = matiere ? matiere.questions.map(q => {
-            const rep = r.reponses[q.id];
+          const questionDetails = matiere ? (matiere.questions || []).filter(Boolean).map(q => {
+            if (!q) return null;
+            const rep = r.reponses?.[q.id];
             return {
               questionId: q.id,
-              enonce: q.enonce,
-              type: q.type,
+              enonce: q.enonce || "",
+              type: q.type || "QCM",
               reponseEleve: rep ?? null,
               reponseCorrecte: q.type === "QCM" && q.choix
                 ? q.choix.filter(c => c.correct).map(c => c.lettre)
                 : (q.reponseQRC || (q.reponses_possibles || []).join(" / ")),
             };
-          }) : [];
+          }).filter(Boolean) : [];
           return {
             apprenant_id: apprenantId,
             user_id: userId,
