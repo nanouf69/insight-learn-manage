@@ -553,8 +553,8 @@ function EcranResultats({
         const resultat = resultats[mi];
         if (!resultat) continue;
 
-        for (const q of matiere.questions) {
-          if (q.type !== "QRC") continue;
+        for (const q of (matiere.questions || []).filter(Boolean)) {
+          if (!q || q.type !== "QRC") continue;
           const reponseEtudiant = (resultat.reponses[q.id] as string) || "";
           const pointsQuestion = getPointsParQuestion(matiere.id, q.type);
 
