@@ -1343,7 +1343,12 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                               )}
                             </p>
                           </div>
-                          <div className="shrink-0">
+                          <div className="shrink-0 flex items-center gap-2">
+                            {!locked && moduleQuizStatsById[mod.id]?.completedQuizzes > 0 && moduleQuizStatsById[mod.id]?.totalQuizzes > 0 && (
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-950/30">
+                                {moduleQuizStatsById[mod.id].completedQuizzes}/{moduleQuizStatsById[mod.id].totalQuizzes}
+                              </Badge>
+                            )}
                             {locked ? (
                               <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
                                 <Lock className="w-3.5 h-3.5 text-muted-foreground" />
