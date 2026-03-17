@@ -1016,11 +1016,12 @@ export default function ExamensBlancsPage({
   };
 
   const calculerMaxPoints = (matiere: Matiere): number =>
-    matiere.questions.reduce((acc, q) => acc + getPointsParQuestion(matiere.id, q.type), 0);
+    (matiere.questions || []).filter(Boolean).reduce((acc, q) => acc + getPointsParQuestion(matiere.id, q?.type || "QCM"), 0);
 
   const calculerNote = (matiere: Matiere, reponses: Reponses): number => {
     let totalPoints = 0;
-    matiere.questions.forEach(q => {
+    (matiere.questions || []).filter(Boolean).forEach(q => {
+      if (!q || !q.type) return;
       const rep = reponses[q.id];
       const pts = getPointsParQuestion(matiere.id, q.type);
       let correct = false;
