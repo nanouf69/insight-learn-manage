@@ -226,7 +226,8 @@ function PassageMatiere({
   const [expire, setExpire] = useState(false);
   const [initialLoaded, setInitialLoaded] = useState(false);
 
-  const question = matiere.questions[questionIndex];
+  const questionsSafe = (matiere.questions || []).filter((q): q is Question => !!q && q?.type !== undefined);
+  const question = questionsSafe[questionIndex] || null;
   const dureeSecondes = matiere.duree * 60;
 
   // Auto-save: get userId once
