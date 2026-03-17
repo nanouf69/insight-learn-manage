@@ -391,7 +391,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             ville,
             auth_user_id,
             date_debut_cours_en_ligne,
-            date_fin_cours_en_ligne
+            date_fin_cours_en_ligne,
+            date_debut_formation,
+            date_fin_formation
           )
         `)
         .eq('session_id', session.id);
@@ -557,8 +559,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     setAccountDialogApprenant(apprenant);
     const inferredId = inferAccountFormationId(apprenant);
     setSelectedFormationForAccount(inferredId);
-    setAccountStartDate(apprenant.date_debut_cours_en_ligne || "");
-    setAccountEndDate(apprenant.date_fin_cours_en_ligne || "");
+    setAccountStartDate(apprenant.date_debut_cours_en_ligne || apprenant.date_debut_formation || "");
+    setAccountEndDate(apprenant.date_fin_cours_en_ligne || apprenant.date_fin_formation || "");
     setAccountExtraModules([]);
     setGeneratedPassword("");
   };
