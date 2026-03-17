@@ -750,9 +750,11 @@ function EcranResultats({
       <div className="space-y-4">
         <h4 className="font-semibold">Correction détaillée</h4>
         {examen.matieres.map((matiere, mi) => {
+          if (!matiere || matiere === undefined) return null;
           const resultat = resultats[mi];
           if (!resultat) return null;
           const cacheMatiere = correctionsIA[mi] || {};
+          const questionsSafe = (matiere.questions || []).filter(q => q && q?.type !== undefined);
           return (
             <Card key={matiere.id}>
               <CardHeader className="pb-2">
