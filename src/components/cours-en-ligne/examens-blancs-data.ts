@@ -1405,90 +1405,46 @@ const matiere_anglais_examen2: Matiere = {
 // Examens 2 Taxi & VTC (matières spécifiques légèrement différentes)
 const matiere_reglementation_taxi_examen2: Matiere = {
   id: "reglementation_taxi",
-  nom: "F(T) - Connaissance du territoire et réglementation locale TAXI",
+  nom: "F(T) - Réglementation nationale TAXI",
   duree: 30,
   coefficient: 3,
   noteEliminatoire: 6,
   noteSur: 20,
   questions: [
-    {
-      id: 1, type: "QRC", enonce: "Qu'est-ce que l'autorisation de stationnement (ADS) pour un taxi ?",
-      reponseQRC: "L'ADS est une autorisation administrative délivrée par le maire permettant à son titulaire d'exercer la profession de taxi sur le territoire de la commune.",
-      reponses_possibles: ["autorisation administrative", "maire", "commune", "profession de taxi"]
-    },
-    {
-      id: 2, type: "QRC", enonce: "Dans quels cas le taxi peut-il utiliser les voies réservées aux bus ?",
-      reponseQRC: "Le taxi peut utiliser les voies réservées aux bus lorsque c'est explicitement indiqué sur les panneaux de signalisation.",
-      reponses_possibles: ["voies bus", "signalisation", "autorisé", "panneaux"]
-    },
-    {
-      id: 3, type: "QCM", enonce: "Le tarif B d'un taxi s'applique :",
-      choix: [
-        { lettre: "A", texte: "En agglomération de jour" },
-        { lettre: "B", texte: "La nuit, les week-ends et jours fériés", correct: true },
-        { lettre: "C", texte: "Pour les courses longue distance" }
-      ]
-    },
-    {
-      id: 4, type: "QCM", enonce: "Le reçu remis au client par le taxi doit mentionner :",
-      choix: [
-        { lettre: "A", texte: "Uniquement le montant total" },
-        { lettre: "B", texte: "Le montant, le numéro de taxi, la date et le trajet", correct: true },
-        { lettre: "C", texte: "Le nom du chauffeur uniquement" }
-      ]
-    },
-    {
-      id: 5, type: "QCM", enonce: "Un taxi en maraude (disponible) doit avoir son compteur en position :",
-      choix: [
-        { lettre: "A", texte: "Marche avec tarif A" },
-        { lettre: "B", texte: "Arrêt", correct: true },
-        { lettre: "C", texte: "Marche en veille" }
-      ]
-    }
+    { id: 1, type: "QRC", enonce: "Citez un cas pour lequel l'ADS est retirée définitivement ?", reponseQRC: "Après retrait définitif de la carte professionnelle. À la demande du titulaire. En cas d'inaptitude définitive du conducteur entraînant l'annulation du permis de conduire. En cas de décès du titulaire. L'autorisation n'est pas exploitée de façon effective et continue. En cas de violation grave et répétée.", reponses_possibles: ["retrait définitif", "carte professionnelle", "décès", "inaptitude", "violation grave"] },
+    { id: 2, type: "QRC", enonce: "Citez 2 autres sanctions possibles en cas de délit 15000€ d'amende et un an d'emprisonnement.", reponseQRC: "La suspension du permis de conduire pour 5 ans au plus. L'immobilisation du véhicule pour 1 an maximum. La confiscation du véhicule.", reponses_possibles: ["suspension", "permis", "immobilisation", "confiscation"] },
+    { id: 3, type: "QRC", enonce: "Que signifie la TICPE ?", reponseQRC: "Taxe intérieure de consommation sur les produits énergétiques.", reponses_possibles: ["taxe intérieure", "consommation", "produits énergétiques"] },
+    { id: 4, type: "QRC", enonce: "Citez 3 mentions devant être inscrites sur le bon de commande des taxis.", reponseQRC: "Nom ou dénomination sociale et coordonnées de la société. Numéro SIREN/SIRET. Nom et coordonnées téléphoniques du client. Date et heure de la réservation. Date et heure de la prise en charge. Lieu de prise en charge.", reponses_possibles: ["nom", "dénomination sociale", "SIREN", "client", "réservation", "prise en charge"] },
+    { id: 5, type: "QRC", enonce: "Définir le TAXI.", reponseQRC: "Les taxis sont des véhicules automobiles comportant, outre le siège du conducteur, huit places assises au maximum, munis d'équipements spéciaux et d'un terminal de paiement électronique, dont le propriétaire ou l'exploitant est titulaire d'une autorisation de stationnement sur la voie publique, en attente de la clientèle, afin d'effectuer à titre onéreux le transport particulier des personnes et de leurs bagages.", reponses_possibles: ["huit places", "équipements spéciaux", "terminal de paiement", "autorisation de stationnement", "titre onéreux"] },
+    { id: 6, type: "QCM", enonce: "Chaque intervention sur les équipements spéciaux des taxis doit être consignée sur un carnet spécifique, comment s'appelle ce document ?", choix: [{ lettre: "A", texte: "Carnet d'entretien du véhicule" }, { lettre: "B", texte: "Carnet d'intervention spécifique" }, { lettre: "C", texte: "Carnet métrologique", correct: true }] },
+    { id: 7, type: "QCM", enonce: "Que signifie CPAM ?", choix: [{ lettre: "A", texte: "Caisse primaire d'assurance maternité" }, { lettre: "B", texte: "Caisse primaire d'assurance maladie", correct: true }, { lettre: "C", texte: "Caisse principe d'assurance maladie" }, { lettre: "D", texte: "Caisse primordiale d'assurance maternité" }] },
+    { id: 8, type: "QCM", enonce: "Quelle sanction risque-t-on en cas d'absence de taximètre conforme ?", choix: [{ lettre: "A", texte: "3ème classe", correct: true }, { lettre: "B", texte: "2ème classe" }, { lettre: "C", texte: "1ère classe" }] },
+    { id: 9, type: "QCM", enonce: "L'activité de taxi fait partie :", choix: [{ lettre: "A", texte: "Du transport public collectif de personnes" }, { lettre: "B", texte: "Du transport public particulier de personnes", correct: true }, { lettre: "C", texte: "Du transport privé de personnes" }] },
+    { id: 10, type: "QCM", enonce: "Quel statut permet d'exploiter l'autorisation de stationnement de la société ?", choix: [{ lettre: "A", texte: "Taxi Salarié" }, { lettre: "B", texte: "Taxi Coopérateur" }, { lettre: "C", texte: "Taxi Gérant", correct: true }] },
+    { id: 11, type: "QCM", enonce: "Quelle sanction risque-t-on en cas d'exercice illégal de l'activité : absence d'autorisation de stationnement ?", choix: [{ lettre: "A", texte: "3ème classe" }, { lettre: "B", texte: "5ème classe" }, { lettre: "C", texte: "Délit", correct: true }] },
+    { id: 12, type: "QCM", enonce: "Quels éléments ne figurent pas sur le recto de la carte TAXI ?", choix: [{ lettre: "A", texte: "Le code à barres bidimensionnel et la mention « 2D-DOC »" }, { lettre: "B", texte: "Le prénom du conducteur" }, { lettre: "C", texte: "Le numéro de la carte" }, { lettre: "D", texte: "La signature du conducteur", correct: true }] },
+    { id: 13, type: "QCM", enonce: "Par qui sont gérées et entretenues les stations de TAXI ?", choix: [{ lettre: "A", texte: "La mairie" }, { lettre: "B", texte: "La préfecture" }, { lettre: "C", texte: "La métropole", correct: true }] },
+    { id: 14, type: "QCM", enonce: "Je peux revendre (hors cas dérogatoires) ma licence si je l'ai achetée au bout de :", choix: [{ lettre: "A", texte: "5 ans" }, { lettre: "B", texte: "1 an" }, { lettre: "C", texte: "3 ans", correct: true }] },
+    { id: 15, type: "QCM", enonce: "Quels types de transports collectifs puis-je effectuer en tant que taxi si je suis inscrit à la Dreal ?", choix: [{ lettre: "A", texte: "Services réguliers" }, { lettre: "B", texte: "Services occasionnels", correct: true }, { lettre: "C", texte: "Services à la demande" }] }
   ]
 };
 
 const matiere_reglementation_taxi2_examen2: Matiere = {
   id: "reglementation_taxi2",
-  nom: "G(T) - Réglementation nationale TAXI et gestion propre à cette activité",
+  nom: "G(T) - Connaissance du territoire et réglementation locale TAXI",
   duree: 20,
   coefficient: 3,
   noteEliminatoire: 6,
   noteSur: 20,
   questions: [
-    {
-      id: 1, type: "QCM", enonce: "La géolocalisation des taxis est obligatoire pour :",
-      choix: [
-        { lettre: "A", texte: "Tous les taxis en France" },
-        { lettre: "B", texte: "Les taxis ayant plus de 3 ans d'exercice" },
-        { lettre: "C", texte: "Les taxis opérant dans les agglomérations de plus de 100 000 habitants", correct: true }
-      ]
-    },
-    {
-      id: 2, type: "QCM", enonce: "En cas de litige sur le prix d'une course, que peut faire le client ?",
-      choix: [
-        { lettre: "A", texte: "Appeler la police immédiatement" },
-        { lettre: "B", texte: "Contacter la commission locale des T3P ou la DGCCRF", correct: true },
-        { lettre: "C", texte: "Refuser de payer" }
-      ]
-    },
-    {
-      id: 3, type: "QCM", enonce: "Un taxi peut transporter des animaux :",
-      choix: [
-        { lettre: "A", texte: "Jamais" },
-        { lettre: "B", texte: "Seulement les petits animaux en cage" },
-        { lettre: "C", texte: "Oui, avec l'accord du conducteur", correct: true }
-      ]
-    },
-    {
-      id: 4, type: "QCM", enonce: "La durée maximale de travail journalière d'un chauffeur de taxi salarié est de :",
-      choix: [
-        { lettre: "A", texte: "8 heures" },
-        { lettre: "B", texte: "10 heures" },
-        { lettre: "C", texte: "12 heures", correct: true },
-        { lettre: "D", texte: "14 heures" }
-      ]
-    }
+    { id: 1, type: "QRC", enonce: "Citez 4 consulats sur Lyon 6 ?", reponseQRC: "Consulat du Portugal (71 rue Crillon), Consulat d'Allemagne (33 bd des Belges), Consulat d'Algérie (126 rue Vauban), Consulat de Chine (69 rue Duquesnes), Consulat de Côte d'Ivoire (5 av Maréchal Foch), Consulat de Malte (15 place Jules Ferry), Consulat du Sénégal (97 Rue Garibaldi).", reponses_possibles: ["Portugal", "Allemagne", "Algérie", "Chine", "Côte d'Ivoire", "Malte", "Sénégal", "Italie", "Pologne", "Turquie"] },
+    { id: 2, type: "QRC", enonce: "Citez 4 adresses de mairie sur Lyon ?", reponseQRC: "Mairie de Lyon 1: 2 place Sathonay 69001. Mairie du 2ème: 2 rue d'Enghien 69002. Mairie du 3ème: 18 Rue François Garcin 69003. Mairie de Lyon 4: 133 boulevard de la Croix Rousse 69004.", reponses_possibles: ["Sathonay", "Enghien", "François Garcin", "Croix Rousse", "Edmond Locard", "Sèze", "Jean Macé"] },
+    { id: 3, type: "QCM", enonce: "Que signifie le tarif B ?", choix: [{ lettre: "A", texte: "Course de jour" }, { lettre: "B", texte: "Trajet aller avec le client et retour en charge à la station" }, { lettre: "C", texte: "Course de nuit, dimanche, jours fériés ou route enneigée/verglacée", correct: true }, { lettre: "D", texte: "Trajet aller avec le client et retour à vide à la station" }] },
+    { id: 4, type: "QCM", enonce: "Quel est le montant de la réservation immédiate ?", choix: [{ lettre: "A", texte: "2 €" }, { lettre: "B", texte: "2.50 €" }, { lettre: "C", texte: "4 €", correct: true }, { lettre: "D", texte: "3 €" }] },
+    { id: 5, type: "QCM", enonce: "Quel est le montant de la réservation à l'avance ?", choix: [{ lettre: "A", texte: "2 €", correct: true }, { lettre: "B", texte: "2.50 €" }, { lettre: "C", texte: "4 €" }, { lettre: "D", texte: "3 €" }] },
+    { id: 6, type: "QCM", enonce: "La basilique de Notre Dame de Fourvière est-elle inscrite au patrimoine mondial de l'UNESCO ?", choix: [{ lettre: "A", texte: "Oui", correct: true }, { lettre: "B", texte: "Non" }] },
+    { id: 7, type: "QCM", enonce: "Quel est le prix au km du tarif B ?", choix: [{ lettre: "A", texte: "2.31 €" }, { lettre: "B", texte: "1.54 €", correct: true }, { lettre: "C", texte: "1.50 €" }] },
+    { id: 8, type: "QCM", enonce: "Où se situe le consulat du Japon ?", choix: [{ lettre: "A", texte: "2/4 rue Carry 69003" }, { lettre: "B", texte: "131 Boulevard de Stalingrad, 69100", correct: true }, { lettre: "C", texte: "126 rue Vauban 69006" }, { lettre: "D", texte: "26 Rue Louis Blanc 69006" }] }
   ]
 };
 
@@ -2115,11 +2071,43 @@ const matiere_anglais_examen3: Matiere = {
 
 const matiere_reglementation_taxi_examen3: Matiere = {
   id: "reglementation_taxi",
-  nom: "F(T) - Connaissance du territoire et réglementation locale TAXI",
-  duree: 30,
-  coefficient: 3,
-  noteEliminatoire: 6,
-  noteSur: 20,
+  nom: "F(T) - Réglementation nationale TAXI",
+  duree: 30, coefficient: 3, noteEliminatoire: 6, noteSur: 20,
+  questions: [
+    { id: 1, type: "QRC", enonce: "Je veux passer mon véhicule professionnel en véhicule personnel pour la journée, que dois-je faire ?", reponseQRC: "Bâcher le lumineux. Éteindre le taximètre. Retirer la carte professionnelle.", reponses_possibles: ["bâcher", "lumineux", "éteindre", "taximètre", "retirer", "carte professionnelle"] },
+    { id: 2, type: "QRC", enonce: "Quelle est la sanction encourue pour l'exercice de l'activité de conducteur de taxi sans carte professionnelle en cours de validité ?", reponseQRC: "5ème classe, 1500 euros.", reponses_possibles: ["5ème classe", "1500"] },
+    { id: 3, type: "QRC", enonce: "Quelles sont les conditions de stationnement des taxis en attente de la clientèle ?", reponseQRC: "Le conducteur ne peut stationner en attente que dans sa zone de prise en charge et dans des stations aménagées, sauf réservation. Le dispositif lumineux ne doit pas être recouvert de la gaine opaque.", reponses_possibles: ["zone de prise en charge", "stations aménagées", "dispositif lumineux"] },
+    { id: 4, type: "QRC", enonce: "Développez le sigle TICPE.", reponseQRC: "Taxe intérieure sur la consommation des produits énergétiques.", reponses_possibles: ["taxe intérieure", "consommation", "produits énergétiques"] },
+    { id: 5, type: "QCM", enonce: "Est-il possible pendant une course de changer le tarif au taximètre et à quelle condition ?", choix: [{ lettre: "A", texte: "Oui, sans condition" }, { lettre: "B", texte: "Oui, au changement d'heure (jour/nuit) en prévenant le client", correct: true }, { lettre: "C", texte: "Non, jamais" }, { lettre: "D", texte: "Oui, à la demande du client" }] },
+    { id: 6, type: "QCM", enonce: "Qui décide du montant de la taxe de stationnement ?", choix: [{ lettre: "A", texte: "La préfecture" }, { lettre: "B", texte: "Le maire et son conseil municipal", correct: true }, { lettre: "C", texte: "Le trésor public" }, { lettre: "D", texte: "Le ministère de l'économie" }] },
+    { id: 7, type: "QCM", enonce: "Un conducteur de taxi peut-il prendre en charge un client dans une autre commune ?", choix: [{ lettre: "A", texte: "Non, en aucun cas" }, { lettre: "B", texte: "Oui, s'il demeure dans cette commune" }, { lettre: "C", texte: "Oui, s'il a fait l'objet d'une réservation préalable", correct: true }] },
+    { id: 8, type: "QCM", enonce: "Si le client vous demande une facture vous devez lui fournir :", choix: [{ lettre: "A", texte: "L'original du ticket de l'imprimante", correct: true }, { lettre: "B", texte: "Une copie du ticket" }, { lettre: "C", texte: "Une facture et une copie du ticket" }] },
+    { id: 9, type: "QCM", enonce: "Où doit-on adresser une demande de détaxe de carburants ?", choix: [{ lettre: "A", texte: "Au bureau des taxis de la Préfecture" }, { lettre: "B", texte: "À la Direction Départementale des Territoires et de la Mer" }, { lettre: "C", texte: "À la Direction des Douanes", correct: true }] },
+    { id: 10, type: "QCM", enonce: "À quelle périodicité un conducteur de taxi doit-il renouveler sa demande d'inscription sur la liste d'attente pour une licence gratuite ?", choix: [{ lettre: "A", texte: "C'est automatique" }, { lettre: "B", texte: "Tous les ans", correct: true }, { lettre: "C", texte: "Tous les 2 ans" }] },
+    { id: 11, type: "QCM", enonce: "Comment s'appelle le carnet de consignation des interventions sur les équipements spéciaux ?", choix: [{ lettre: "A", texte: "Carnet d'entretien du véhicule" }, { lettre: "B", texte: "Carnet d'intervention spécifique" }, { lettre: "C", texte: "Carnet métrologique", correct: true }] },
+    { id: 12, type: "QCM", enonce: "Le véhicule taxi doit être muni d'une plaque :", choix: [{ lettre: "A", texte: "Visible de l'extérieur", correct: true }, { lettre: "B", texte: "Indiquant le numéro de l'autorisation de stationnement", correct: true }, { lettre: "C", texte: "Indiquant le nom du propriétaire de l'ADS" }, { lettre: "D", texte: "Indiquant l'adresse de la préfecture" }] },
+    { id: 13, type: "QCM", enonce: "Quelles sont les composantes des tarifs des courses de taxi ?", choix: [{ lettre: "A", texte: "Prise en charge, indemnité kilométrique, heure d'attente ou marche lente", correct: true }, { lettre: "B", texte: "Indemnité horaire, prise en charge, marche lente" }, { lettre: "C", texte: "Indemnité horaire, indemnité kilométrique, heure d'attente" }] },
+    { id: 14, type: "QCM", enonce: "En cas de changement de tarif, sous quel délai modifier son compteur ?", choix: [{ lettre: "A", texte: "1 mois" }, { lettre: "B", texte: "2 mois", correct: true }, { lettre: "C", texte: "3 mois" }] },
+    { id: 15, type: "QCM", enonce: "Quel est l'emplacement du taximètre ?", choix: [{ lettre: "A", texte: "Sur le pare-brise arrière côté droit" }, { lettre: "B", texte: "Sur le toit à l'extérieur" }, { lettre: "C", texte: "À l'intérieur avant, à portée du conducteur et visible des clients", correct: true }, { lettre: "D", texte: "Sur l'aile droite" }] },
+    { id: 16, type: "QCM", enonce: "Par quel texte réglementaire national sont modifiés les tarifs des courses de taxi ?", choix: [{ lettre: "A", texte: "Un arrêté", correct: true }, { lettre: "B", texte: "Un décret" }, { lettre: "C", texte: "Une loi" }] }
+  ]
+};
+
+const matiere_reglementation_taxi2_examen3: Matiere = {
+  id: "reglementation_taxi2",
+  nom: "G(T) - Connaissance du territoire et réglementation locale TAXI",
+  duree: 20, coefficient: 3, noteEliminatoire: 6, noteSur: 20,
+  questions: [
+    { id: 1, type: "QRC", enonce: "Citez 4 musées de Lyon.", reponseQRC: "Musée des Beaux Arts (20 Place des Terreaux 69001). Musée des Confluences (86 quai Perrache 69002). Musée Lugdunum (17 rue Cléberg 69005). Musée d'Art Contemporain (81 quai Charles de Gaulle 69006). Institut Lumière (25 rue du 1er Film 69008).", reponses_possibles: ["Beaux Arts", "Confluences", "Lugdunum", "Art Contemporain", "Institut Lumière"] },
+    { id: 2, type: "QRC", enonce: "Citez 4 hôpitaux à Bron.", reponseQRC: "Hôpital Femme-Mère-Enfant, Hôpital Pierre Wertheimer (neurologique), Hôpital cardiovasculaire Louis-Pradel, Centre Hospitalier Le Vinatier — tous sur le Boulevard Pinel 69500 Bron.", reponses_possibles: ["Femme-Mère-Enfant", "Wertheimer", "Louis-Pradel", "Vinatier"] },
+    { id: 3, type: "QCM", enonce: "Que signifie le tarif D ?", choix: [{ lettre: "A", texte: "Course de jour" }, { lettre: "B", texte: "Trajet aller avec retour en charge" }, { lettre: "C", texte: "Course de nuit, dimanche, jours fériés" }, { lettre: "D", texte: "Trajet aller avec retour à vide à la station", correct: true }] },
+    { id: 4, type: "QCM", enonce: "Quel est le tarif maximum de prise en charge horaire sur le Rhône ?", choix: [{ lettre: "A", texte: "35.20 €" }, { lettre: "B", texte: "35.25 €" }, { lettre: "C", texte: "35.30 €" }, { lettre: "D", texte: "40.40 €", correct: true }] },
+    { id: 5, type: "QCM", enonce: "Quelle commune ne fait pas partie de la ZUPC ?", choix: [{ lettre: "A", texte: "Caluire-et-Cuire" }, { lettre: "B", texte: "Saint-Priest" }, { lettre: "C", texte: "Chassieu" }, { lettre: "D", texte: "Villefranche", correct: true }] },
+    { id: 6, type: "QCM", enonce: "Quel est le prix au km du tarif D ?", choix: [{ lettre: "A", texte: "2.43 €" }, { lettre: "B", texte: "1.54 €" }, { lettre: "C", texte: "1.22 €", correct: true }] },
+    { id: 7, type: "QCM", enonce: "Où se situe la chambre régionale d'agriculture ?", choix: [{ lettre: "A", texte: "2/4 rue Carry" }, { lettre: "B", texte: "23 rue Jean Baldassini", correct: true }, { lettre: "C", texte: "126 rue Vauban" }, { lettre: "D", texte: "26 Rue Duquesne" }] },
+    { id: 8, type: "QCM", enonce: "Qui est le maire de la ville de Lyon ?", choix: [{ lettre: "A", texte: "François Marchal" }, { lettre: "B", texte: "Julien Victoire" }, { lettre: "C", texte: "Jean François Debat" }, { lettre: "D", texte: "Grégory Doucet", correct: true }] }
+  ]
+};
   questions: [
     {
       id: 1, type: "QRC", enonce: "Qu'est-ce que la maraude pour un taxi ?",
@@ -2873,7 +2861,41 @@ const matiere_anglais_examen4: Matiere = {
 
 const matiere_reglementation_taxi_examen4: Matiere = {
   id: "reglementation_taxi",
-  nom: "F(T) - Connaissance du territoire et réglementation locale TAXI",
+  nom: "F(T) - Réglementation nationale TAXI",
+  duree: 30, coefficient: 3, noteEliminatoire: 6, noteSur: 20,
+  questions: [
+    { id: 1, type: "QRC", enonce: "Lorsqu'un titulaire ne peut exploiter lui-même son ADS, quelles sont les deux possibilités ?", reponseQRC: "La location du véhicule taxi à un conducteur de taxi. L'emploi d'un salarié. Location-gérance.", reponses_possibles: ["location", "salarié", "location-gérance"] },
+    { id: 2, type: "QRC", enonce: "Citez 4 équipements obligatoires hors taximètre, lumineux, plaques scellées, imprimante.", reponseQRC: "Terminal de paiement électronique, carnet de métrologie, les tarifs, trousse à pharmacie, facturier, horodateur (Paris).", reponses_possibles: ["terminal de paiement", "carnet de métrologie", "tarifs", "trousse à pharmacie", "facturier"] },
+    { id: 3, type: "QRC", enonce: "Sanctions administratives encourues par un titulaire d'ADS en cas de violation de la réglementation ?", reponseQRC: "L'avertissement. Le retrait (temporaire ou définitif) de l'ADS.", reponses_possibles: ["avertissement", "retrait", "ADS"] },
+    { id: 4, type: "QRC", enonce: "Citez les 2 types de trajet ouvrant droit au remboursement d'une fraction de la TICPE.", reponseQRC: "Exercice de la profession et aller-retour quotidien domicile lieu de travail.", reponses_possibles: ["exercice", "profession", "domicile", "travail"] },
+    { id: 5, type: "QCM", enonce: "Où doit être apposée la carte professionnelle d'un conducteur de taxi ?", choix: [{ lettre: "A", texte: "Sur le pare-brise avant côté passager" }, { lettre: "B", texte: "Dans le véhicule, tant qu'elle est lisible du siège arrière", correct: true }, { lettre: "C", texte: "Sur le pare-brise avant côté conducteur" }] },
+    { id: 6, type: "QCM", enonce: "Lors de la cession d'une ADS, quel document justifie son exploitation effective et continue ?", choix: [{ lettre: "A", texte: "Un certificat médical" }, { lettre: "B", texte: "La carte grise du véhicule" }, { lettre: "C", texte: "Bilan comptable, fiches de paie", correct: true }] },
+    { id: 7, type: "QCM", enonce: "Le véhicule taxi doit être muni d'une plaque :", choix: [{ lettre: "A", texte: "Indiquant le nom du propriétaire de l'ADS" }, { lettre: "B", texte: "Visible de l'extérieur", correct: true }, { lettre: "C", texte: "Indiquant l'adresse de la préfecture" }, { lettre: "D", texte: "Indiquant le numéro de l'ADS", correct: true }] },
+    { id: 8, type: "QCM", enonce: "Les ADS délivrées depuis la loi du 1er octobre 2014 :", choix: [{ lettre: "A", texte: "Peuvent être exploitées par des coopératives" }, { lettre: "B", texte: "Doivent être exploitées personnellement", correct: true }, { lettre: "C", texte: "Peuvent être exploitées par des salariés" }, { lettre: "D", texte: "Peuvent être exploitées par des locataires-gérants" }] },
+    { id: 9, type: "QCM", enonce: "Un compteur horokilométrique permet :", choix: [{ lettre: "A", texte: "De calculer le montant de la course", correct: true }, { lettre: "B", texte: "D'afficher la durée de la course" }, { lettre: "C", texte: "D'afficher le nombre de km parcourus" }] },
+    { id: 10, type: "QCM", enonce: "Le registre de disponibilité des taxis enregistre des informations relatives aux ADS lors :", choix: [{ lettre: "A", texte: "Des changements des équipements spéciaux" }, { lettre: "B", texte: "Des renouvellements et ventes d'ADS" }, { lettre: "C", texte: "Des formations quinquennales" }, { lettre: "D", texte: "Des délivrances et retraits d'ADS", correct: true }] },
+    { id: 11, type: "QCM", enonce: "Le conducteur de taxi a le droit :", choix: [{ lettre: "A", texte: "De ne pas attendre les voyageurs dans une voie où le stationnement est impossible", correct: true }, { lettre: "B", texte: "D'être accompagné de personnes autres que des clients" }, { lettre: "C", texte: "De solliciter un pourboire" }] },
+    { id: 12, type: "QCM", enonce: "Le carnet métrologique est :", choix: [{ lettre: "A", texte: "Carnet d'intervention spécifique" }, { lettre: "B", texte: "Carnet métrologique", correct: true }, { lettre: "C", texte: "Carnet d'entretien du véhicule" }] },
+    { id: 13, type: "QCM", enonce: "Le financement en crédit-bail d'un véhicule de taxi permet la déduction fiscale :", choix: [{ lettre: "A", texte: "Des loyers du crédit-bail", correct: true }, { lettre: "B", texte: "De l'amortissement du véhicule" }, { lettre: "C", texte: "Des intérêts et de l'assurance décès" }] },
+    { id: 14, type: "QCM", enonce: "Quelle mention ne doit pas figurer sur le registre des transactions d'ADS ?", choix: [{ lettre: "A", texte: "Le nom du successeur et du vendeur" }, { lettre: "B", texte: "Le numéro d'inscription à la chambre des métiers" }, { lettre: "C", texte: "Le montant de la transaction" }, { lettre: "D", texte: "La marque de la voiture", correct: true }] },
+    { id: 15, type: "QCM", enonce: "Un transport vers l'hôpital non pris en charge par la CPAM peut être effectué :", choix: [{ lettre: "A", texte: "Uniquement par les taxis conventionnés" }, { lettre: "B", texte: "Par tous les taxis", correct: true }, { lettre: "C", texte: "Uniquement par les taxis non conventionnés" }] }
+  ]
+};
+
+const matiere_reglementation_taxi2_examen4: Matiere = {
+  id: "reglementation_taxi2",
+  nom: "G(T) - Connaissance du territoire et réglementation locale TAXI",
+  duree: 20, coefficient: 3, noteEliminatoire: 6, noteSur: 20,
+  questions: [
+    { id: 1, type: "QRC", enonce: "Quel est le tarif en vigueur d'horaire d'attente ou de marche lente ?", reponseQRC: "40.40€ soit une chute de 0.10€ toutes les 8.91 secondes.", reponses_possibles: ["40.40", "0.10", "8.91"] },
+    { id: 2, type: "QRC", enonce: "Citez 4 ponts du Rhône.", reponseQRC: "Pont Raymond Barre, Pont Pasteur, Viaduc de Perrache, Pont Gallieni, Pont de l'Université, Pont de la Guillotière, Pont Wilson, Pont Lafayette, Pont Morand.", reponses_possibles: ["Raymond Barre", "Pasteur", "Perrache", "Gallieni", "Guillotière", "Wilson", "Lafayette", "Morand"] },
+    { id: 3, type: "QCM", enonce: "Le 24 décembre à 23h50, un client veut un aller-retour Part-Dieu à Fourvière. Quel tarif ?", choix: [{ lettre: "A", texte: "A" }, { lettre: "B", texte: "B" }, { lettre: "C", texte: "C", correct: true }, { lettre: "D", texte: "D" }] },
+    { id: 4, type: "QCM", enonce: "Les taxis peuvent-ils utiliser les voies bus sur la M6 et la M7 ?", choix: [{ lettre: "A", texte: "Oui", correct: true }, { lettre: "B", texte: "Non" }] },
+    { id: 5, type: "QCM", enonce: "Quel cru ne fait pas partie de la vallée du Rhône ?", choix: [{ lettre: "A", texte: "Le crément", correct: true }, { lettre: "B", texte: "Le condrieu" }, { lettre: "C", texte: "Le Château Grillet" }, { lettre: "D", texte: "Le Saint-Joseph" }] },
+    { id: 6, type: "QCM", enonce: "Y a-t-il un supplément pour les animaux ?", choix: [{ lettre: "A", texte: "Oui" }, { lettre: "B", texte: "Non", correct: true }] },
+    { id: 7, type: "QCM", enonce: "Pour un covering publicitaire sur un taxi ADS Villeurbanne, à qui faire la demande ?", choix: [{ lettre: "A", texte: "À la mairie de Villeurbanne" }, { lettre: "B", texte: "À la mairie de Villeurbanne et au Service des Taxis de la Métropole", correct: true }, { lettre: "C", texte: "Au Service des Taxis de la Métropole" }] }
+  ]
+};
   duree: 30,
   coefficient: 3,
   noteEliminatoire: 6,
@@ -3440,7 +3462,42 @@ const matiere_anglais_examen5: Matiere = {
 
 const matiere_reglementation_taxi_examen5: Matiere = {
   id: "reglementation_taxi",
-  nom: "F(T) - Connaissance du territoire et réglementation locale TAXI",
+  nom: "F(T) - Réglementation nationale TAXI",
+  duree: 30, coefficient: 3, noteEliminatoire: 6, noteSur: 20,
+  questions: [
+    { id: 1, type: "QRC", enonce: "Citez les trois éléments constitutifs du montant affiché sur le compteur horokilométrique.", reponseQRC: "La prise en charge, le tarif kilométrique et l'heure d'attente ou marche lente.", reponses_possibles: ["prise en charge", "tarif kilométrique", "heure d'attente", "marche lente"] },
+    { id: 2, type: "QRC", enonce: "Lorsqu'un titulaire ne peut exploiter lui-même son ADS, quelles possibilités ?", reponseQRC: "La location du véhicule taxi à un conducteur. L'emploi d'un salarié.", reponses_possibles: ["location", "salarié"] },
+    { id: 3, type: "QRC", enonce: "Quelle est la définition du véhicule taxi ?", reponseQRC: "Véhicule automobile catégorie M1, 8 places max outre le conducteur, PTAC ≤ 3,5t, muni d'équipements spéciaux, titulaire d'une ADS sur la voie publique pour transport à titre onéreux.", reponses_possibles: ["M1", "huit places", "3,5 tonnes", "équipements spéciaux", "ADS"] },
+    { id: 4, type: "QRC", enonce: "Quelle convention doit appliquer le taxi pour un transport médical d'une CPAM différente ?", reponseQRC: "Il doit appliquer la convention de la CPAM de son département.", reponses_possibles: ["convention", "CPAM", "département"] },
+    { id: 5, type: "QCM", enonce: "Un conducteur de taxi peut-il transporter des colis non accompagnés ?", choix: [{ lettre: "A", texte: "Oui, paiement à l'arrivée au compteur" }, { lettre: "B", texte: "Oui, à condition de se faire payer d'avance", correct: true }, { lettre: "C", texte: "Non, c'est interdit" }, { lettre: "D", texte: "Non, même avec un contrat d'assistance bagages" }] },
+    { id: 6, type: "QCM", enonce: "Où adresser une demande de détaxe de carburants ?", choix: [{ lettre: "A", texte: "À la direction des Douanes", correct: true }, { lettre: "B", texte: "À la DDTM" }, { lettre: "C", texte: "Au bureau des taxis de la Préfecture" }] },
+    { id: 7, type: "QCM", enonce: "Le conducteur de taxi a le droit :", choix: [{ lettre: "A", texte: "De ne pas attendre les voyageurs dans une voie sans stationnement", correct: true }, { lettre: "B", texte: "De prendre en charge des voyageurs poursuivis" }, { lettre: "C", texte: "D'être accompagné de personnes autres que des clients" }, { lettre: "D", texte: "De solliciter un pourboire" }] },
+    { id: 8, type: "QCM", enonce: "Quelle prestation le conducteur de taxi artisan ne peut-il bénéficier ?", choix: [{ lettre: "A", texte: "La retraite de base" }, { lettre: "B", texte: "Les allocations familiales" }, { lettre: "C", texte: "L'indemnité de chômage", correct: true }, { lettre: "D", texte: "L'indemnité journalière maladie" }] },
+    { id: 9, type: "QCM", enonce: "Les taxis comportent :", choix: [{ lettre: "A", texte: "Outre le siège du conducteur, 8 places assises max", correct: true }, { lettre: "B", texte: "7 places max" }, { lettre: "C", texte: "9 places max" }, { lettre: "D", texte: "9 places y compris le conducteur" }] },
+    { id: 10, type: "QCM", enonce: "Qu'est-ce que le carnet de métrologie ?", choix: [{ lettre: "A", texte: "Un carnet de liaison entre installateur et taxi", correct: true }, { lettre: "B", texte: "Un cahier de note" }, { lettre: "C", texte: "Un livre" }, { lettre: "D", texte: "Un certificat de conformité" }] },
+    { id: 11, type: "QCM", enonce: "Exclusion de l'examen du CCPCT :", choix: [{ lettre: "A", texte: "Fraude dans les 5 ans", correct: true }, { lettre: "B", texte: "Fraude dans les 10 ans" }, { lettre: "C", texte: "Retrait définitif dans les 5 ans" }, { lettre: "D", texte: "Retrait définitif dans les 10 ans" }] },
+    { id: 12, type: "QCM", enonce: "Tarif maximum du prix de l'heure au niveau national ?", choix: [{ lettre: "A", texte: "40,15 €" }, { lettre: "B", texte: "41,15 €" }, { lettre: "C", texte: "42,15 €", correct: true }] },
+    { id: 13, type: "QCM", enonce: "Autorité compétente pour fixer localement une couleur unique des taxis ?", choix: [{ lettre: "A", texte: "Présidents du tribunal de commerce" }, { lettre: "B", texte: "Présidents de l'organisation professionnelle" }, { lettre: "C", texte: "Celle qui délivre les ADS", correct: true }, { lettre: "D", texte: "Présidents de la chambre de métiers" }] },
+    { id: 14, type: "QCM", enonce: "En cessant son activité, le titulaire de la carte professionnelle doit :", choix: [{ lettre: "A", texte: "La céder à titre onéreux" }, { lettre: "B", texte: "La détruire" }, { lettre: "C", texte: "La restituer à la préfecture", correct: true }] },
+    { id: 15, type: "QCM", enonce: "Lorsque le conducteur taxi est en service :", choix: [{ lettre: "A", texte: "Il peut éclairer le lumineux en vert" }, { lettre: "B", texte: "Il doit éclairer le lumineux en vert s'il n'est pas occupé", correct: true }, { lettre: "C", texte: "Il a interdiction d'éclairer en vert" }] }
+  ]
+};
+
+const matiere_reglementation_taxi2_examen5: Matiere = {
+  id: "reglementation_taxi2",
+  nom: "G(T) - Connaissance du territoire et réglementation locale TAXI",
+  duree: 20, coefficient: 3, noteEliminatoire: 6, noteSur: 20,
+  questions: [
+    { id: 1, type: "QRC", enonce: "Citez 4 boulevards du 8ème arrondissement.", reponseQRC: "Boulevard Ambroise Paré, Boulevard Pinel, Boulevard des États-Unis, Boulevard Jean 23.", reponses_possibles: ["Ambroise Paré", "Pinel", "États-Unis", "Jean 23"] },
+    { id: 2, type: "QRC", enonce: "Citez 4 consulats du 2ème arrondissement.", reponseQRC: "Consulat de Belgique, Pays-Bas, États-Unis, Luxembourg, Mexique, Pérou, Finlande, Canada, Thaïlande.", reponses_possibles: ["Belgique", "Pays-Bas", "États-Unis", "Luxembourg", "Mexique"] },
+    { id: 3, type: "QCM", enonce: "Quel est le principal monument religieux catholique sur Fourvière ?", choix: [{ lettre: "A", texte: "La cathédrale Saint Jean" }, { lettre: "B", texte: "La basilique de Notre Dame de Fourvière", correct: true }, { lettre: "C", texte: "L'église Saint Georges" }, { lettre: "D", texte: "L'église Sainte Blandine" }] },
+    { id: 4, type: "QCM", enonce: "Le musée des Confluences est un musée :", choix: [{ lettre: "A", texte: "D'histoire naturelle, anthropologie, sociétés et civilisations", correct: true }, { lettre: "B", texte: "Des beaux arts" }, { lettre: "C", texte: "D'architecture romaine" }, { lettre: "D", texte: "D'art contemporain" }] },
+    { id: 5, type: "QCM", enonce: "Quel événement est célébré le 8 décembre à Lyon ?", choix: [{ lettre: "A", texte: "La galette des rois" }, { lettre: "B", texte: "La fête des lumières", correct: true }, { lettre: "C", texte: "La fête des marrons" }] },
+    { id: 6, type: "QCM", enonce: "Où se trouve l'office du tourisme sur Lyon ?", choix: [{ lettre: "A", texte: "Place des Jacobins" }, { lettre: "B", texte: "Place Carnot" }, { lettre: "C", texte: "Place des Terreaux" }, { lettre: "D", texte: "Place Bellecour", correct: true }] },
+    { id: 7, type: "QCM", enonce: "Quel nom portait Lyon à l'époque gallo-romaine ?", choix: [{ lettre: "A", texte: "Lyon By Night" }, { lettre: "B", texte: "Lugdunum", correct: true }, { lettre: "C", texte: "Lion" }, { lettre: "D", texte: "La gone" }] },
+    { id: 8, type: "QCM", enonce: "Quel est le prix du TARIF C ?", choix: [{ lettre: "A", texte: "1€" }, { lettre: "B", texte: "2€", correct: true }, { lettre: "C", texte: "3€" }, { lettre: "D", texte: "4€" }] }
+  ]
+};
   duree: 30,
   coefficient: 3,
   noteEliminatoire: 6,
@@ -4061,7 +4118,42 @@ const matiere_anglais_examen6: Matiere = {
 
 const matiere_reglementation_taxi_examen6: Matiere = {
   id: "reglementation_taxi",
-  nom: "F(T) - Connaissance du territoire et réglementation locale TAXI",
+  nom: "F(T) - Réglementation nationale TAXI",
+  duree: 30, coefficient: 3, noteEliminatoire: 6, noteSur: 20,
+  questions: [
+    { id: 1, type: "QRC", enonce: "Comment appelle-t-on le document de consignation des opérations sur les équipements spéciaux ? Doit-il être en permanence dans le véhicule ?", reponseQRC: "Carnet métrologique, oui en permanence.", reponses_possibles: ["carnet métrologique", "permanence"] },
+    { id: 2, type: "QRC", enonce: "Donner la définition de \"taxi\".", reponseQRC: "Véhicule automobile M1, 8 places max outre le conducteur, PTAC ≤ 3,5t, équipements spéciaux, titulaire d'une ADS sur la voie publique pour transport à titre onéreux de personnes et bagages.", reponses_possibles: ["M1", "huit places", "3,5 tonnes", "équipements spéciaux", "ADS"] },
+    { id: 3, type: "QRC", enonce: "Lors du transfert des ADS, quel délai pour déclarer la transaction à la recette des impôts ?", reponseQRC: "1 mois.", reponses_possibles: ["1 mois", "un mois"] },
+    { id: 4, type: "QRC", enonce: "Quelles sont les deux fonctions du compteur horokilométrique ?", reponseQRC: "Fonction horaire, Fonction kilométrique.", reponses_possibles: ["horaire", "kilométrique"] },
+    { id: 5, type: "QCM", enonce: "Puis-je demander à une connaissance d'un autre département de conduire mon taxi suite à une blessure ?", choix: [{ lettre: "A", texte: "Non" }, { lettre: "B", texte: "Oui mais seulement 10 jours" }, { lettre: "C", texte: "Oui, sous conditions", correct: true }] },
+    { id: 6, type: "QCM", enonce: "Quelles mentions figurent sur la liste d'attente des ADS ?", choix: [{ lettre: "A", texte: "Numéro d'enregistrement de la demande", correct: true }, { lettre: "B", texte: "Numéro de la carte professionnelle" }, { lettre: "C", texte: "Date de dépôt de la demande", correct: true }, { lettre: "D", texte: "État civil du demandeur", correct: true }] },
+    { id: 7, type: "QCM", enonce: "De quel régime de sécurité dépend le locataire-gérant ?", choix: [{ lettre: "A", texte: "Régime autonome des professions indépendantes" }, { lettre: "B", texte: "Régime agricole" }, { lettre: "C", texte: "Régime général", correct: true }, { lettre: "D", texte: "Régimes spéciaux" }] },
+    { id: 8, type: "QCM", enonce: "Conditions pour être artisan taxi ?", choix: [{ lettre: "A", texte: "Être inscrit sur une liste d'attente" }, { lettre: "B", texte: "Être répertorié à l'INSEE" }, { lettre: "C", texte: "Être titulaire d'une ou plusieurs ADS", correct: true }] },
+    { id: 9, type: "QCM", enonce: "Lorsqu'il est en service, le conducteur taxi peut :", choix: [{ lettre: "A", texte: "Solliciter un client dans une station" }, { lettre: "B", texte: "Solliciter un pourboire" }, { lettre: "C", texte: "Prendre un client hors de son ressort avec réservation préalable", correct: true }, { lettre: "D", texte: "Refuser une destination hors ressort" }] },
+    { id: 10, type: "QCM", enonce: "Parmi ces affirmations, laquelle est vraie ?", choix: [{ lettre: "A", texte: "La carte professionnelle est délivrée par le Préfet ou le Préfet de Police", correct: true }, { lettre: "B", texte: "Elle mentionne les départements autorisés" }, { lettre: "C", texte: "Elle mentionne la commune autorisée" }, { lettre: "D", texte: "Elle est délivrée par la Mairie" }] },
+    { id: 11, type: "QCM", enonce: "À qui est adressée la taxe de stationnement ?", choix: [{ lettre: "A", texte: "Au Préfet" }, { lettre: "B", texte: "Au ministre de l'intérieur" }, { lettre: "C", texte: "Au Maire", correct: true }] },
+    { id: 12, type: "QCM", enonce: "L'ADS délivrée à titre gratuit après la loi du 1er octobre 2014 :", choix: [{ lettre: "A", texte: "Est renouvelable dans des conditions fixées par décret", correct: true }, { lettre: "B", texte: "A une durée de validité de 5 ans", correct: true }] },
+    { id: 13, type: "QCM", enonce: "Service compétent pour conventionner un taxi au TAP ?", choix: [{ lettre: "A", texte: "La Mairie" }, { lettre: "B", texte: "La CPAM départementale", correct: true }, { lettre: "C", texte: "La Préfecture" }, { lettre: "D", texte: "L'ARS" }] },
+    { id: 14, type: "QCM", enonce: "Le véhicule taxi doit être muni d'une plaque de stationnement :", choix: [{ lettre: "A", texte: "Sur le toit du véhicule" }, { lettre: "B", texte: "Fixée au véhicule", correct: true }, { lettre: "C", texte: "Indiquant le nom de la commune de rattachement", correct: true }, { lettre: "D", texte: "Collée au véhicule" }] },
+    { id: 15, type: "QCM", enonce: "Le conducteur de taxi a le droit :", choix: [{ lettre: "A", texte: "D'être accompagné de personnes autres que des clients" }, { lettre: "B", texte: "De solliciter un pourboire" }, { lettre: "C", texte: "De ne pas attendre les voyageurs dans une voie sans stationnement", correct: true }, { lettre: "D", texte: "De prendre en charge des voyageurs poursuivis" }] }
+  ]
+};
+
+const matiere_reglementation_taxi2_examen6: Matiere = {
+  id: "reglementation_taxi2",
+  nom: "G(T) - Connaissance du territoire et réglementation locale TAXI",
+  duree: 20, coefficient: 3, noteEliminatoire: 6, noteSur: 20,
+  questions: [
+    { id: 1, type: "QRC", enonce: "Le 24 décembre 2022 à 7h05 à l'aéroport Lyon Saint Exupéry, 5 jeunes avec 15 bagages vers le Sofitel quai Gailleton Lyon 2ème. Calculez la prise en charge.", reponseQRC: "Prise en charge = 3 + 4 + (36×2=72€) = 79€.", reponses_possibles: ["79", "3", "4", "72"] },
+    { id: 2, type: "QRC", enonce: "Définition et prix au Km des tarifs B et C ?", reponseQRC: "B = 1.50€/km. C = 2€/km.", reponses_possibles: ["1.50", "2"] },
+    { id: 3, type: "QCM", enonce: "Situations ne permettant pas d'affecter un véhicule à l'activité de Taxi sur la métropole de Lyon ?", choix: [{ lettre: "A", texte: "Véhicule de plus de 13 ans", correct: true }, { lettre: "B", texte: "Véhicule de couleur rouge" }, { lettre: "C", texte: "Véhicule mis en service il y a 8 ans pour la première fois", correct: true }] },
+    { id: 4, type: "QCM", enonce: "Personnalités originaires de Lyon ?", choix: [{ lettre: "A", texte: "Jean Dujardin" }, { lettre: "B", texte: "Bertrand Tavernier", correct: true }, { lettre: "C", texte: "Claude Lelouch" }, { lettre: "D", texte: "Florence Foresti", correct: true }] },
+    { id: 5, type: "QCM", enonce: "Volume minimum du coffre pour un véhicule thermique taxi ?", choix: [{ lettre: "A", texte: "400 litres" }, { lettre: "B", texte: "500 litres", correct: true }, { lettre: "C", texte: "600 litres" }, { lettre: "D", texte: "700 litres" }] },
+    { id: 6, type: "QCM", enonce: "Nombre de communes dans la ZUPC ?", choix: [{ lettre: "A", texte: "15" }, { lettre: "B", texte: "20" }, { lettre: "C", texte: "24", correct: true }, { lettre: "D", texte: "26" }] },
+    { id: 7, type: "QCM", enonce: "Axes pour rejoindre Clermont-Ferrand depuis la place Bellecour ?", choix: [{ lettre: "A", texte: "A7" }, { lettre: "B", texte: "M6", correct: true }, { lettre: "C", texte: "A89", correct: true }, { lettre: "D", texte: "A46" }] },
+    { id: 8, type: "QCM", enonce: "ADS de Vénissieux, quelles autorisations pour publicité sur la carrosserie ?", choix: [{ lettre: "A", texte: "Autorisation du préfet" }, { lettre: "B", texte: "Autorisation du service des taxis de la Métropole", correct: true }, { lettre: "C", texte: "Autorisation du service des taxis de la Métropole" }, { lettre: "D", texte: "Autorisation de la DDPP" }] }
+  ]
+};
   duree: 30,
   coefficient: 3,
   noteEliminatoire: 6,
