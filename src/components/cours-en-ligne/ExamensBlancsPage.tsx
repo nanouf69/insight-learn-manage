@@ -683,7 +683,7 @@ function EcranResultats({
           <div className="flex justify-center mt-2"><Loader2 className="w-8 h-8 animate-spin" /></div>
         ) : (
           <>
-            <p className="text-4xl font-black mt-2">Moyenne générale : {noteGlobale.toFixed(1)} / 20</p>
+            <p className="text-4xl font-black mt-2">Moyenne générale : {isFinite(noteGlobale) ? noteGlobale.toFixed(1) : "0.0"} / 20</p>
             <p className="text-sm text-muted-foreground mt-1">
               (moyenne pondérée par coefficients sur {resultatsAvecIA.length} matières)
             </p>
@@ -842,9 +842,9 @@ function EcranResultats({
                                   {c.correct && <span className="text-green-600">✓</span>}
                                 </div>
                               ))}
-                              {rep && (
+                              {rep != null && (
                                 <p className="text-xs mt-1 italic text-muted-foreground">
-                                  Votre réponse : {(rep as string[]).join(", ") || "Aucune"}
+                                  Votre réponse : {Array.isArray(rep) ? rep.join(", ") || "Aucune" : String(rep) || "Aucune"}
                                 </p>
                               )}
                             </div>
@@ -852,9 +852,9 @@ function EcranResultats({
 
                           {q.type === "QRC" && (
                             <div className="mt-1 space-y-1">
-                              {rep && (
+                              {rep != null && (
                                 <p className="text-xs italic text-muted-foreground">
-                                  Votre réponse : {(rep as string) || "Aucune"}
+                                  Votre réponse : {String(rep) || "Aucune"}
                                 </p>
                               )}
                               {correctionDetail && (
@@ -864,7 +864,7 @@ function EcranResultats({
                                 </div>
                               )}
                               <p className="text-xs text-green-700 font-medium">
-                                Réponse attendue : {q.reponseQRC}
+                                Réponse attendue : {q.reponseQRC || (q.reponses_possibles || []).join(" / ") || "—"}
                               </p>
                             </div>
                           )}
@@ -1043,6 +1043,7 @@ export default function ExamensBlancsPage({
   };
 
   const handleTerminerMatiere = (reponses: Reponses) => {
+    try {
     if (!examenChoisi) return;
     const matiere = examenChoisi.matieres[matiereIndex];
     const note = calculerNote(matiere, reponses);
@@ -1111,6 +1112,10 @@ export default function ExamensBlancsPage({
             if (error) console.error("Failed to save quiz results:", error);
           });
       }
+    }
+    } catch (err) {
+      console.error("[ExamenBlanc] Erreur dans handleTerminerMatiere:", err);
+      toast.error("Une erreur est survenue lors du calcul des résultats. Veuillez réessayer.");
     }
   };
 
