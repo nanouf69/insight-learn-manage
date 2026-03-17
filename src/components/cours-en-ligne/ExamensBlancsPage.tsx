@@ -437,9 +437,16 @@ function PassageMatiere({
                 if (!choix || choix === undefined) return null;
                 const checked = ((reponses[question.id] as string[]) || []).includes(choix.lettre);
                 return (
-                  <div key={choix.lettre} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${checked ? "border-primary bg-primary/5" : "border-muted hover:border-primary/40"}`}
-                    onClick={(e) => { e.preventDefault(); handleQCMChange(question.id, choix.lettre, !checked, true); }}>
-                    <Checkbox checked={checked} onCheckedChange={() => {}} onClick={(e) => e.stopPropagation()} />
+                  <div
+                    key={choix.lettre}
+                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${checked ? "border-primary bg-primary/5" : "border-muted hover:border-primary/40"}`}
+                    onClick={(e) => { e.preventDefault(); handleQCMChange(question.id, choix.lettre, !checked, true); }}
+                  >
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={(value) => handleQCMChange(question.id, choix.lettre, Boolean(value), true)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
                     <span className="font-mono text-sm font-bold w-6 shrink-0">{choix.lettre})</span>
                     <span className="text-sm">{choix.texte}</span>
                   </div>
