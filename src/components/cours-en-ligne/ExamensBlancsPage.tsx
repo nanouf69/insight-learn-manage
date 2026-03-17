@@ -398,6 +398,18 @@ function PassageMatiere({
 
   const allAnswered = questionsSafe.every(q => isQuestionAnswered(q));
 
+  const handleTerminer = () => {
+    if (!allAnswered) {
+      toast.error("Veuillez répondre à toutes les questions avant de terminer la matière.");
+      return;
+    }
+    onTerminer(reponses);
+  };
+  const handleExpire = () => { setExpire(true); onTerminer(reponses); };
+
+  const isMultiple = (q: Question) =>
+    q?.type === "QCM" && (q.choix?.filter(c => c.correct).length || 0) > 1;
+
   const safeQuestionsCount = questionsSafe.length || 1;
   const safeQuestionIndex = Math.min(questionIndex, safeQuestionsCount - 1);
   const progress = ((safeQuestionIndex + 1) / safeQuestionsCount) * 100;
