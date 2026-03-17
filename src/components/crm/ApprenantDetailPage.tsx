@@ -806,6 +806,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           {activeTab === "examens" && <ExamensSection apprenant={apprenant} />}
           {activeTab === "emails" && <EmailsSection apprenant={apprenant} />}
           {activeTab === "devis" && <DevisSection apprenant={apprenant} />}
+          {activeTab === "examens-blancs-reset" && <ExamensBlancsResetTab apprenant={apprenant} />}
           {activeTab === "reset-cours" && <ResetCoursTab apprenant={apprenant} queryClient={queryClient} />}
           {activeTab === "delete-account" && (
             <Card className="border-destructive">
