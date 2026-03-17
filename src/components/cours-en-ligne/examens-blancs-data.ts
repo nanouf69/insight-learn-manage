@@ -2298,49 +2298,119 @@ const matiere_reglementation_vtc_examen3: Matiere = {
   noteSur: 20,
   questions: [
     {
-      id: 1, type: "QRC", enonce: "Citez 2 cas dans lesquels la carte professionnelle peut être retirée à un conducteur du T3P.",
-      reponseQRC: "Annulation du permis de conduire. Délit pénal prévu par le code des transports (délits routiers, agressions sexuelles, etc.).",
-      reponses_possibles: ["annulation permis", "délit pénal", "code des transports"]
+      id: 1, type: "QRC", enonce: "Qui fixe le prix d'une prestation de VTC, selon quelle contrainte ?",
+      reponseQRC: "Le chauffeur VTC en fonction de l'offre et de la demande de son lieu d'exercice.",
+      reponses_possibles: ["chauffeur VTC", "offre et demande", "lieu d'exercice"]
     },
     {
-      id: 2, type: "QCM", enonce: "Un client est avec son chien d'aveugle et appelle pour une course VTC :",
+      id: 2, type: "QRC", enonce: "Citez 4 moyens de communication à votre disposition pour faire connaître votre entreprise.",
+      reponseQRC: "Site-web ou blog. E-mailing. Réseaux sociaux. Flyers. Journaux locaux. Presse professionnelle. Radio locale. Texto. Carte de visite. Bouche à oreille.",
+      reponses_possibles: ["site-web", "e-mailing", "réseaux sociaux", "flyers", "journaux", "radio", "carte de visite", "bouche à oreille"]
+    },
+    {
+      id: 3, type: "QRC", enonce: "Votre client oublie son portefeuille dans votre véhicule. Que faites-vous ?",
+      reponseQRC: "Le contacter le plus rapidement possible, le rassurer, lui proposer de ramener son bien le plus sûrement et rapidement possible.",
+      reponses_possibles: ["contacter", "rassurer", "ramener", "rapidement"]
+    },
+    {
+      id: 4, type: "QRC", enonce: "A quoi correspond le chiffre d'affaires d'un exploitant VTC ?",
+      reponseQRC: "Il correspond à la somme des prestations réalisées au cours d'un exercice (transports et prestations annexes).",
+      reponses_possibles: ["somme des prestations", "exercice", "transports", "prestations annexes"]
+    },
+    {
+      id: 5, type: "QCM", enonce: "Le conducteur de VTC doit se distinguer des autres transporteurs en :",
       choix: [
-        { lettre: "A", texte: "J'ai le droit de refuser" },
-        { lettre: "B", texte: "Je suis dans l'obligation de l'accepter lui et son chien", correct: true },
-        { lettre: "C", texte: "Je n'accepte que le client" }
+        { lettre: "A", texte: "prenant en charge tous les clients sans tenir compte de la qualité" },
+        { lettre: "B", texte: "optimisant sa structure, adoptant une attitude professionnelle et disposant d'un véhicule remarquable", correct: true },
+        { lettre: "C", texte: "utilisant un véhicule puissant pour déposer le client le plus rapidement possible" }
       ]
     },
     {
-      id: 3, type: "QCM", enonce: "La réglementation du T3P se trouve dans le :",
+      id: 6, type: "QCM", enonce: "Le prix psychologique correspond :",
       choix: [
-        { lettre: "A", texte: "code préfectoral" },
-        { lettre: "B", texte: "code du travail" },
-        { lettre: "C", texte: "code des transports", correct: true }
+        { lettre: "A", texte: "au prix perçu par le consommateur" },
+        { lettre: "B", texte: "au prix que le consommateur est prêt à payer", correct: true },
+        { lettre: "C", texte: "au prix dont se souvient le consommateur" }
       ]
     },
     {
-      id: 4, type: "QCM", enonce: "Un conducteur de T3P n'effectuant que des remplacements épisodiques doit-il être titulaire d'une carte professionnelle ?",
+      id: 7, type: "QCM", enonce: "Qu'est-ce qu'une zone de chalandise ?",
       choix: [
-        { lettre: "A", texte: "non, si moins de 10h par semaine" },
-        { lettre: "B", texte: "non" },
-        { lettre: "C", texte: "oui", correct: true }
+        { lettre: "A", texte: "c'est un bateau" },
+        { lettre: "B", texte: "c'est le nombre de conducteurs de VTC dans une zone" },
+        { lettre: "C", texte: "c'est la zone géographique d'où provient la majorité de la clientèle", correct: true }
       ]
     },
     {
-      id: 5, type: "QCM", enonce: "Pour s'inscrire à l'examen d'accès à la profession, le candidat ne doit pas avoir été exclu pour fraude :",
+      id: 8, type: "QCM", enonce: "Vendre une prestation à perte :",
       choix: [
-        { lettre: "A", texte: "dans les 10 ans qui précèdent sa demande" },
-        { lettre: "B", texte: "dans les 5 ans qui précèdent sa demande", correct: true },
-        { lettre: "C", texte: "dans l'année" },
-        { lettre: "D", texte: "dans les 2 ans qui précèdent sa demande" }
+        { lettre: "A", texte: "constitue une forme de concurrence déloyale" },
+        { lettre: "B", texte: "est interdit par le code du commerce", correct: true },
+        { lettre: "C", texte: "n'est possible que lorsqu'un contrat annuel a été souscrit" }
       ]
     },
     {
-      id: 6, type: "QCM", enonce: "Un examen médical supplémentaire peut être demandé :",
+      id: 9, type: "QCM", enonce: "Quelle affirmation est vraie ?",
       choix: [
-        { lettre: "A", texte: "En cas d'interruption d'activité de plus de six mois", correct: true },
-        { lettre: "B", texte: "En cas de suspension de moins d'un mois" },
-        { lettre: "C", texte: "En cas d'invalidation du permis", correct: true }
+        { lettre: "A", texte: "lorsque l'offre est supérieure à la demande, les prix diminuent", correct: true },
+        { lettre: "B", texte: "lorsque l'offre est inférieure à la demande, les prix diminuent" },
+        { lettre: "C", texte: "lorsque l'offre est supérieure à la demande, les prix augmentent" }
+      ]
+    },
+    {
+      id: 10, type: "QCM", enonce: "Le concierge dans un hôtel a pour fonction :",
+      choix: [
+        { lettre: "A", texte: "le ménage, la sortie des poubelles" },
+        { lettre: "B", texte: "de satisfaire les besoins et demandes des clients", correct: true },
+        { lettre: "C", texte: "la surveillance de l'hôtel" }
+      ]
+    },
+    {
+      id: 11, type: "QCM", enonce: "Diriez-vous que fidéliser vos clients VTC coûte :",
+      choix: [
+        { lettre: "A", texte: "plus cher que d'en trouver de nouveaux" },
+        { lettre: "B", texte: "moins cher que d'en trouver de nouveaux", correct: true },
+        { lettre: "C", texte: "le même prix que d'en trouver de nouveaux" }
+      ]
+    },
+    {
+      id: 12, type: "QCM", enonce: "En accueillant un client qui voyage seul, un chauffeur VTC l'invite à prendre place :",
+      choix: [
+        { lettre: "A", texte: "sur le siège arrière gauche" },
+        { lettre: "B", texte: "sur le siège arrière droit", correct: true },
+        { lettre: "C", texte: "sur le siège avant" }
+      ]
+    },
+    {
+      id: 13, type: "QCM", enonce: "Que doit-on dire lorsqu'on décroche un appel téléphonique ?",
+      choix: [
+        { lettre: "A", texte: "allo" },
+        { lettre: "B", texte: "le nom de la société" },
+        { lettre: "C", texte: "le nom de la société et bonjour", correct: true }
+      ]
+    },
+    {
+      id: 14, type: "QCM", enonce: "La formule binôme permet de calculer le prix de revient sur les termes suivants :",
+      choix: [
+        { lettre: "A", texte: "le coût conducteur" },
+        { lettre: "B", texte: "le coût variable par kilomètre", correct: true },
+        { lettre: "C", texte: "le coût fixe véhicule par jour", correct: true }
+      ]
+    },
+    {
+      id: 15, type: "QCM", enonce: "Qu'est-ce qu'un prospect ?",
+      choix: [
+        { lettre: "A", texte: "une brochure publicitaire" },
+        { lettre: "B", texte: "une publicité sur format papier" },
+        { lettre: "C", texte: "un client potentiel", correct: true }
+      ]
+    },
+    {
+      id: 16, type: "QCM", enonce: "Que signifie les 4P ?",
+      choix: [
+        { lettre: "A", texte: "produits/prix/communication ou promotion/distribution ou place", correct: true },
+        { lettre: "B", texte: "projet/prix/communication ou promotion/distribution ou place" },
+        { lettre: "C", texte: "produits/prix/commercialisation ou promotion/distribution ou place" }
       ]
     }
   ]
