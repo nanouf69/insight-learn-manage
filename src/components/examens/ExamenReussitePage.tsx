@@ -2360,159 +2360,18 @@ export function ExamenReussitePage() {
               ))}
             </div>
             )}
-
-        const handleSendFelicitations = async () => {
-          setSendingFelicitations(true);
-          let sent = 0;
-          for (const a of reussisPratique) {
-            const subject = `Félicitations - Vous êtes professionnel du transport de personnes - ${a.prenom} ${a.nom}`;
-            const body = `Bonjour,<br><br>Félicitations, vous êtes maintenant professionnel du transport de personnes.<br><br>Nous vous remercions de votre confiance et nous vous souhaitons une belle aventure dans ce secteur d'activité.<br><br>Avant de vous donner la procédure pour effectuer la demande de carte professionnelle, nous vous demanderons de bien vouloir rédiger un avis sur le centre de formation sur google et réaliser une très courte évaluation concernant la formation sur le compte CPF.<br><br>Voici le lien pour mettre un avis sur google :<br><a href="https://www.google.fr/search?source=hp&ei=RLZFXJSwLIS5gwejzIdg&q=ftransport&btnK=Recherche+Google&oq=ftransport&gs_l=psy-ab.3.0.0i10l2j0i10i30l6j0i5i30j0i5i10i30.1107.3123..3553...0.0..0.64.535.10......0....1..gws-wiz.....0..0i131j0.rJF72XtZ4i8#btnK=Recherche%20Google&lrd=0x47f4c1cfb1d26135:0x7b288437c427e7b9,1,,," target="_blank">Cliquez ici pour laisser un avis Google</a><br><br>Voici la démarche pour évaluer la formation sur le CPF :<br>1. Connectez-vous sur le site <a href="https://www.moncompteformation.gouv.fr" target="_blank">www.moncompteformation.gouv.fr</a><br>2. Connectez-vous avec France connect<br>3. Cliquez sur dossier<br>4. Cliquez sur la formation que vous avez réalisée<br>5. Cliquez sur évaluer ma formation<br><br>Après avoir effectué ces deux tâches, merci de nous contacter pour que l'on puisse vous informer de la démarche à suivre pour la demande de carte professionnelle.<br><br>Cordialement.<br><br><strong>FTRANSPORT</strong><br>Centre de formation<br>86 Route de genas 69003 Lyon<br>04.28.29.60.91<br>De 9h à 17h sur rendez-vous`;
-            try {
-              await supabase.functions.invoke('sync-outlook-emails', {
-                body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id }
-              });
-              sent++;
-            } catch (e) {
-              console.error(`Erreur envoi félicitations à ${a.email}:`, e);
-            }
-          }
-          setSendingFelicitations(false);
-          setSentFelicitations(true);
-          toast.success(`📧 ${sent}/${reussisPratique.length} email(s) "Félicitations" envoyé(s)`);
-        };
-
-        const handleSendRepassagePratique = async () => {
-          setSendingRepassagePratique(true);
-          let sent = 0;
-          for (const a of echouesPratique) {
-            const type = (a.type_apprenant || '').toLowerCase();
-            let formation = 'VTC';
-            if (type.includes('ta-e') || type === 'ta') formation = 'TAXI (mobilité VTC vers TAXI)';
-            else if (type.includes('taxi') || type.includes('ta-i')) formation = 'TAXI';
-
-            const subject = `Réinscription à l'examen pratique T3P - ${a.prenom} ${a.nom}`;
-            const body = `Bonjour ${a.prenom},<br><br>Suite à votre précédent examen pratique ${formation}, vous devez procéder à une nouvelle inscription pour repasser l'examen pratique.<br><br>📌 <strong>ÉTAPES À SUIVRE :</strong><br><br><strong>1️⃣ Rendez-vous sur le site :</strong><br>👉 <a href="https://www.exament3p.fr" target="_blank">www.exament3p.fr</a><br><br><strong>2️⃣ Connectez-vous avec :</strong><br>• Login : votre adresse email<br>• Mot de passe : cliquez sur "Mot de passe oublié" pour en créer un nouveau<br><br><strong>3️⃣ Une fois connecté(e), procédez à votre réinscription à l'examen pratique</strong> en suivant les instructions du site.<br><br>⚠️ <strong>IMPORTANT — Département 69 obligatoire :</strong><br><span style="color: red; font-size: 16px; font-weight: bold;">🔴 ATTENTION : Lors de votre réinscription, vous devez IMPÉRATIVEMENT sélectionner le département 69 (Rhône), même si vous résidez dans un autre département. Si vous choisissez un autre département, nous ne pourrons pas vous former ni vous louer un véhicule pour l'examen pratique.</span><br><br>⚠️ <strong>IMPORTANT :</strong> Une fois votre réinscription effectuée sur le site, merci de nous recontacter immédiatement afin que nous puissions finaliser votre dossier et vous accompagner pour la suite.<br><br>📞 Tél : <strong>04 28 29 60 91</strong><br>📧 Email : contact@ftransport.fr<br><br>N'hésitez pas à nous contacter si vous rencontrez des difficultés lors de votre réinscription.<br><br>Cordialement,<br><strong>L'équipe Ftransport</strong><br>86 Route de Genas, 69003 Lyon`;
-            try {
-              await supabase.functions.invoke('sync-outlook-emails', {
-                body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id }
-              });
-              sent++;
-            } catch (e) {
-              console.error(`Erreur envoi repassage pratique à ${a.email}:`, e);
-            }
-          }
-          setSendingRepassagePratique(false);
-          setSentRepassagePratique(true);
-          toast.success(`📧 ${sent}/${echouesPratique.length} email(s) "Repassage pratique" envoyé(s)`);
-        };
-
-        return (
-          <Card className="border-l-4 border-l-purple-500">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5 text-purple-600" />
-                Mails Types — Résultats pratique
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Email Félicitations - Réussi pratique */}
-              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                    <h4 className="font-semibold text-emerald-800">📧 Félicitations — Admis pratique</h4>
-                    <Badge className="bg-emerald-100 text-emerald-800">{reussisPratique.length} candidat(s)</Badge>
-                  </div>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button size="sm" disabled={reussisPratique.length === 0 || sendingFelicitations || sentFelicitations} className={`gap-1.5 ${sentFelicitations ? 'bg-emerald-600' : ''}`}>
-                        {sentFelicitations ? <CheckCircle2 className="h-3 w-3" /> : <Mail className="h-3 w-3" />}
-                        {sendingFelicitations ? 'Envoi...' : sentFelicitations ? 'Envoyé ✓' : `Envoyer (${reussisPratique.length})`}
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Envoyer l'email de félicitations ?</AlertDialogTitle>
-                        <AlertDialogDescription asChild>
-                          <div className="space-y-2 text-sm">
-                            <p>L'email "Félicitations - Professionnel du transport" sera envoyé à <strong>{reussisPratique.length}</strong> candidat(s) ayant réussi l'examen pratique.</p>
-                            <p>Il contient :</p>
-                            <ul className="list-disc pl-4 space-y-1">
-                              <li>Le lien pour laisser un avis Google</li>
-                              <li>La démarche pour évaluer sur le CPF</li>
-                              <li>L'invitation à contacter pour la carte professionnelle</li>
-                            </ul>
-                            <div className="mt-2 max-h-32 overflow-y-auto space-y-1">
-                              {reussisPratique.map(a => (
-                                <div key={a.id} className="text-xs text-muted-foreground">{a.nom} {a.prenom} → {a.email}</div>
-                              ))}
-                            </div>
-                          </div>
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Annuler</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleSendFelicitations}>Confirmer l'envoi</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-                <p className="text-xs text-emerald-700">
-                  Contenu : Félicitations, demande d'avis Google + évaluation CPF, puis contact pour carte professionnelle.
-                </p>
-              </div>
-
-              {/* Email Repassage - Échoué pratique */}
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <XCircle className="h-5 w-5 text-red-600" />
-                    <h4 className="font-semibold text-red-800">📧 Repassage examen pratique — Ajourné</h4>
-                    <Badge className="bg-red-100 text-red-800">{echouesPratique.length} candidat(s)</Badge>
-                  </div>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button size="sm" variant="destructive" disabled={echouesPratique.length === 0 || sendingRepassagePratique || sentRepassagePratique} className={`gap-1.5 ${sentRepassagePratique ? 'bg-green-600' : ''}`}>
-                        {sentRepassagePratique ? <CheckCircle2 className="h-3 w-3" /> : <Mail className="h-3 w-3" />}
-                        {sendingRepassagePratique ? 'Envoi...' : sentRepassagePratique ? 'Envoyé ✓' : `Envoyer (${echouesPratique.length})`}
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Envoyer l'email de repassage pratique ?</AlertDialogTitle>
-                        <AlertDialogDescription asChild>
-                          <div className="space-y-2 text-sm">
-                            <p>L'email "Réinscription examen pratique" sera envoyé à <strong>{echouesPratique.length}</strong> candidat(s) ayant échoué l'examen pratique.</p>
-                            <p>Il contient :</p>
-                            <ul className="list-disc pl-4 space-y-1">
-                              <li>Le lien vers exament3p.fr</li>
-                              <li>Les instructions de connexion</li>
-                              <li>L'obligation de choisir le département 69</li>
-                            </ul>
-                            <div className="mt-2 max-h-32 overflow-y-auto space-y-1">
-                              {echouesPratique.map(a => (
-                                <div key={a.id} className="text-xs text-muted-foreground">{a.nom} {a.prenom} → {a.email}</div>
-                              ))}
-                            </div>
-                          </div>
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Annuler</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleSendRepassagePratique}>Confirmer l'envoi</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-                <p className="text-xs text-red-700">
-                  Contenu : Instructions de réinscription sur exament3p.fr, obligation département 69, invitation à recontacter.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })()}
-
+          {repassageApprenants.length === 0 && (
+            <div className="text-sm text-muted-foreground text-center py-4">
+              Aucun apprenant ajouté au repassage. Utilisez la recherche ci-dessus pour en ajouter.
+            </div>
+          )}
+          {repassageApprenants.length > 0 && (
+            <div className="text-sm text-muted-foreground">
+              {repassageApprenants.length} apprenant(s) en repassage
+            </div>
+          )}
+        </CardContent>
+      </Card>
       {/* PDF Résultats d'examen */}
       <Card className="border-l-4 border-l-sky-500">
         <CardHeader>
