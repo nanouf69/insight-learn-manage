@@ -1609,7 +1609,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             </div>
 
             {/* Envoyer convocation à un élève hors session */}
-            <div className="mt-4">
+            <div className="shrink-0 mt-4">
               <Button
                 variant={showHorsSession ? "secondary" : "outline"}
                 size="sm"
