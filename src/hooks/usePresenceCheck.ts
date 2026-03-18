@@ -7,6 +7,12 @@ const TEN_MINUTES_MS = 10 * 60 * 1000;
 const SEVEN_HOURS_MS = 7 * 60 * 60 * 1000;
 const COUNTDOWN_TICK_MS = 1000;
 
+/** Returns true if current time is between 22:00 and 05:00 */
+function isNightTime(): boolean {
+  const hour = new Date().getHours();
+  return hour >= 22 || hour < 5;
+}
+
 interface UsePresenceCheckParams {
   apprenantId: string | null;
   userId: string | null;
@@ -112,7 +118,21 @@ export function usePresenceCheck({
     if (countdownRef.current) clearInterval(countdownRef.current);
     countdownRef.current = null;
     lastCheckTimeRef.current = Date.now();
-  }, []);
+
+    // If night time, extend absolute limit to 7h (user confirmed presence)
+    if (isNightTime() && sessionStartTime && maxSessionRef.current) {
+      clearTimeout(maxSessionRef.current);
+      const elapsed = Date.now() - sessionStartTime;
+      const remaining = Math.max(0, SEVEN_HOURS_MS - elapsed);
+      if (remaining <= 0) {
+        endSession("max_duration");
+      } else {
+        maxSessionRef.current = setTimeout(() => {
+          endSession("max_duration");
+        }, remaining);
+      }
+    }
+  }, [sessionStartTime, endSession]);
 
   // Main effect: set up 4h interval check + 7h absolute limit
   useEffect(() => {
@@ -131,9 +151,10 @@ export function usePresenceCheck({
       }
     }, 60_000); // Check every minute if 4h has passed
 
-    // 7h absolute session limit
+    // Absolute session limit: 4h at night (22h-5h), 7h otherwise
+    const absoluteLimit = isNightTime() ? FOUR_HOURS_MS : SEVEN_HOURS_MS;
     const elapsed = Date.now() - sessionStartTime;
-    const remaining = Math.max(0, SEVEN_HOURS_MS - elapsed);
+    const remaining = Math.max(0, absoluteLimit - elapsed);
 
     if (remaining <= 0) {
       endSession("max_duration");
