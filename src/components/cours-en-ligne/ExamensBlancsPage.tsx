@@ -605,10 +605,9 @@ function TransitionMatiere({
   total: number;
   onContinuer: () => void;
 }) {
-  const noteSur20 = maxPoints > 0 ? (scoreObtenu / maxPoints) * (noteSur || 20) : 0;
   return (
     <div className="max-w-xl mx-auto space-y-6 py-8">
-      {/* Matière terminée */}
+      {/* Matière terminée — sans afficher le score */}
       <Card className="border-2 overflow-hidden" style={{ borderColor: '#00B4D8' }}>
         <div className="px-5 py-3 flex items-center gap-3" style={{ backgroundColor: '#0D2540' }}>
           <CheckCircle2 className="w-5 h-5" style={{ color: '#00B4D8' }} />
@@ -616,23 +615,7 @@ function TransitionMatiere({
         </div>
         <CardContent className="pt-4 pb-4 space-y-3">
           <p className="font-semibold text-lg">{matiereTerminee}</p>
-          <div className="flex items-center gap-4">
-            <div className="text-center">
-              <p className="text-3xl font-black" style={{ color: '#00B4D8' }}>{scoreObtenu}</p>
-              <p className="text-xs text-muted-foreground">/ {maxPoints} pts</p>
-            </div>
-            <div className="h-12 w-px bg-border" />
-            <div className="text-center">
-              <p className="text-3xl font-black" style={{ color: '#00B4D8' }}>{isFinite(noteSur20) ? noteSur20.toFixed(1) : "0.0"}</p>
-              <p className="text-xs text-muted-foreground">/ {noteSur || 20}</p>
-            </div>
-            <div className="flex-1">
-              <Progress
-                value={maxPoints > 0 ? Math.min((scoreObtenu / maxPoints) * 100, 100) : 0}
-                className="h-2.5"
-              />
-            </div>
-          </div>
+          <p className="text-sm text-muted-foreground">Épreuve complétée avec succès. Vos résultats seront affichés à la fin de toutes les épreuves.</p>
         </CardContent>
       </Card>
 
