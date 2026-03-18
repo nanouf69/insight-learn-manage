@@ -1229,64 +1229,131 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
             ) : (
-              <ScrollArea className="h-[350px]">
-                <div className="space-y-3">
-                  {apprenantsInSession.map((sessionApprenant: any) => {
+              <ScrollArea className="h-[400px]">
+                {/* Table header */}
+                <div className="sticky top-0 z-10 grid grid-cols-[32px_1fr_auto] gap-3 px-4 py-2 bg-muted/80 backdrop-blur rounded-t-lg border-b text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  <span></span>
+                  <span>Apprenant</span>
+                  <span className="text-right">Actions</span>
+                </div>
+
+                <div className="divide-y divide-border">
+                  {apprenantsInSession.map((sessionApprenant: any, idx: number) => {
                     const apprenant = sessionApprenant.apprenant;
                     if (!apprenant) return null;
                     
                     return (
                       <div 
                         key={sessionApprenant.id}
-                        className="p-4 rounded-xl border bg-card hover:shadow-md transition-shadow space-y-3"
+                        className={`px-4 py-3 hover:bg-accent/40 transition-colors ${idx % 2 === 0 ? 'bg-card' : 'bg-muted/20'}`}
                       >
-                        {/* Ligne 1: Identité + Badge type + Actions */}
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Checkbox 
-                              checked={selectedApprenants.has(apprenant.id)}
-                              onCheckedChange={() => toggleSelectApprenant(apprenant.id)}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                            <Avatar className="w-10 h-10">
+                        {/* Row principale */}
+                        <div className="flex items-start gap-3">
+                          <Checkbox 
+                            checked={selectedApprenants.has(apprenant.id)}
+                            onCheckedChange={() => toggleSelectApprenant(apprenant.id)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="mt-1"
+                          />
+                          
+                          {/* Bloc identité */}
+                          <div className="flex-1 min-w-0">
+                            {/* Nom + Badge type */}
+                            <div className="flex items-center gap-2 mb-1">
+                              <Avatar className="w-8 h-8 shrink-0">
+                                <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
+                                  {apprenant.prenom?.[0] || ""}{apprenant.nom?.[0] || ""}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span 
+                                className="font-semibold text-foreground hover:text-primary hover:underline cursor-pointer transition-colors truncate"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (onNavigateToApprenant) {
+                                    onOpenChange(false);
+                                    onNavigateToApprenant(apprenant.id);
+                                  }
+                                }}
+                              >{apprenant.prenom} {apprenant.nom}</span>
+                              <Badge className={`text-[10px] px-2 py-0 shrink-0 ${getTypeBadgeColor(apprenant.type_apprenant)}`}>
+                                {apprenant.type_apprenant?.toUpperCase() || "N/A"}
+                              </Badge>
+                            </div>
 
-                              <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                                {apprenant.prenom?.[0] || ""}{apprenant.nom?.[0] || ""}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span 
-                                  className="font-semibold text-foreground hover:text-primary hover:underline cursor-pointer transition-colors"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (onNavigateToApprenant) {
-                                      onOpenChange(false);
-                                      onNavigateToApprenant(apprenant.id);
-                                    }
-                                  }}
-                                >{apprenant.prenom} {apprenant.nom}</span>
-                                <Badge className={`text-xs ${getTypeBadgeColor(apprenant.type_apprenant)}`}>
-                                  {apprenant.type_apprenant?.toUpperCase() || "N/A"}
-                                </Badge>
-                              </div>
-                              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-                                <span className="flex items-center gap-1">
-                                  <FileText className="w-3 h-3" />
-                                  {apprenant.numero_dossier_cma || "CMA non défini"}
+                            {/* Coordonnées */}
+                            <div className="flex items-center gap-4 text-xs text-muted-foreground ml-10">
+                              <span className="flex items-center gap-1 shrink-0">
+                                <FileText className="w-3 h-3" />
+                                {apprenant.numero_dossier_cma || "CMA non défini"}
+                              </span>
+                              <span className="flex items-center gap-1 truncate">
+                                <Mail className="w-3 h-3 shrink-0" />
+                                {apprenant.email || "—"}
+                              </span>
+                              <span className="flex items-center gap-1 shrink-0">
+                                <Phone className="w-3 h-3" />
+                                {apprenant.telephone || "—"}
+                              </span>
+                            </div>
+
+                            {/* Badges statut compacts */}
+                            <div className="flex items-center gap-1.5 mt-2 ml-10 flex-wrap">
+                              <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                                hasConvocation(apprenant.id) 
+                                  ? 'bg-green-100 text-green-700' 
+                                  : 'bg-muted text-muted-foreground'
+                              }`}>
+                                {hasConvocation(apprenant.id) ? '✅ Convoqué' : '❌ Non convoqué'}
+                              </span>
+                              <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                                hasIdentifiants(apprenant.id) 
+                                  ? 'bg-blue-100 text-blue-700' 
+                                  : 'bg-muted text-muted-foreground'
+                              }`}>
+                                {hasIdentifiants(apprenant.id) ? '🔑 Identifiants' : '🔑 Non envoyés'}
+                              </span>
+                              <Badge className={`text-[10px] px-2 py-0 ${getFinancementBadge(sessionApprenant.mode_financement || apprenant.mode_financement).color}`}>
+                                {getFinancementBadge(sessionApprenant.mode_financement || apprenant.mode_financement).label}
+                              </Badge>
+                              {sessionApprenant.statut_suivi && (
+                                <span className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                                  sessionApprenant.statut_suivi === 'inscription_validee' || sessionApprenant.statut_suivi === 'document_complet'
+                                    ? 'bg-green-100 text-green-700'
+                                    : 'bg-orange-100 text-orange-700'
+                                }`}>
+                                  {sessionApprenant.statut_suivi === 'inscription_validee' ? '✅ Validé' :
+                                   sessionApprenant.statut_suivi === 'document_complet' ? '✅ Dossier complet' :
+                                   sessionApprenant.statut_suivi === 'manque_document' ? '📄 Manque doc' :
+                                   sessionApprenant.statut_suivi === 'a_payer' ? '💰 À payer' :
+                                   sessionApprenant.statut_suivi === 'mdp_change' ? '🔑 MDP changé' :
+                                   '⚠️ ' + sessionApprenant.statut_suivi}
                                 </span>
-                                <span className="flex items-center gap-1">
-                                  <Mail className="w-3 h-3" />
-                                  {apprenant.email || "Non défini"}
+                              )}
+                              {apprenant.resultat_examen === 'oui' && (
+                                <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700">✅ Théorie</span>
+                              )}
+                              {apprenant.resultat_examen === 'non' && (
+                                <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full bg-red-100 text-red-700">❌ Théorie</span>
+                              )}
+                              {apprenant.resultat_examen === 'absent' && (
+                                <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">🔶 Absent</span>
+                              )}
+                              {session.type_session === 'pratique' && (
+                                <span className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                                  sessionApprenant.presence_pratique === 'absent' ? 'bg-red-100 text-red-700' :
+                                  sessionApprenant.presence_pratique === 'deplace' ? 'bg-orange-100 text-orange-700' :
+                                  'bg-green-100 text-green-700'
+                                }`}>
+                                  {sessionApprenant.presence_pratique === 'absent' ? '❌ Absent' :
+                                   sessionApprenant.presence_pratique === 'deplace' ? '📅 Déplacé' :
+                                   '✅ Présent'}
                                 </span>
-                                <span className="flex items-center gap-1">
-                                  <Phone className="w-3 h-3" />
-                                  {apprenant.telephone || "Non défini"}
-                                </span>
-                              </div>
+                              )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-1">
+
+                          {/* Actions compactes */}
+                          <div className="flex items-center gap-0.5 shrink-0">
                             {[
                               { icon: FileText, title: "Télécharger émargement", print: false },
                               { icon: Printer, title: "Imprimer émargement", print: true },
@@ -1295,7 +1362,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                key={title}
                                size="sm"
                                variant="ghost"
-                                className="h-8 w-8 p-0 text-muted-foreground hover:text-primary"
+                                className="h-7 w-7 p-0 text-muted-foreground hover:text-primary"
                                 title={title}
                                 onClick={async (e) => {
                                   e.stopPropagation();
@@ -1376,175 +1443,23 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                   toast({ title: isPrint ? "Impression lancée" : "Emargement individuel genere", description: `Feuille pour ${apprenant.prenom} ${apprenant.nom} ${isPrint ? 'ouverte pour impression.' : 'telechargee.'}` });
                                 }}
                               >
-                                <Icon className="w-4 h-4" />
+                                <Icon className="w-3.5 h-3.5" />
                               </Button>
                             ))}
-                            <Button
-                              size="sm"
-                              variant={apprenant.auth_user_id ? "outline" : "default"}
-                              className="h-8 gap-1 text-xs"
-                              onClick={(e) => { e.stopPropagation(); openAccountDialog(apprenant); }}
-                            >
-                              <KeyRound className="w-3.5 h-3.5" />
-                              {apprenant.auth_user_id ? "Configurer l'accès" : "Créer un compte"}
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
-                              className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
-                              onClick={() => removeApprenant(sessionApprenant.id)}
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        
-                        {/* Ligne 2: Dates de formation */}
-                        <div className="flex items-center gap-4 pt-2 border-t text-sm">
-                          <div className="flex items-center gap-1.5 text-muted-foreground">
-                            <Calendar className="w-3.5 h-3.5" />
-                            <span>
-                              {(() => {
-                                const dateDebut = sessionApprenant.date_debut || apprenant.date_debut_formation;
-                                const dateFin = sessionApprenant.date_fin || apprenant.date_fin_formation;
-                                if (dateDebut && dateFin) {
-                                  return `${dateDebut} - ${dateFin}`;
-                                }
-                                return dateDebut || dateFin || "Dates non définies";
-                              })()}
-                            </span>
-                          </div>
-                          
-                          <Badge className={getFinancementBadge(sessionApprenant.mode_financement || apprenant.mode_financement).color}>
-                            {getFinancementBadge(sessionApprenant.mode_financement || apprenant.mode_financement).label}
-                          </Badge>
-
-                          <Select
-                            value={sessionApprenant.statut_suivi || ''}
-                            onValueChange={async (val) => {
-                              await updateSessionApprenant(sessionApprenant.id, { statut_suivi: val || null });
-                            }}
-                          >
-                            <SelectTrigger className={`h-7 w-[200px] text-xs ${
-                              sessionApprenant.statut_suivi === 'inscription_validee' ? 'border-green-300 text-green-700' :
-                              sessionApprenant.statut_suivi === 'document_complet' ? 'border-green-300 text-green-700' :
-                              sessionApprenant.statut_suivi ? 'border-orange-300 text-orange-700' : ''
-                            }`}>
-                              <SelectValue placeholder="⚙️ Statut suivi" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="manque_document">📄 Manque un document</SelectItem>
-                              <SelectItem value="manque_piece_identite">📋 Manque pièce d'identité</SelectItem>
-                              <SelectItem value="manque_justificatif_domicile">🏠 Manque justificatif de domicile récent</SelectItem>
-                              <SelectItem value="manque_permis">🚗 Manque permis de conduire</SelectItem>
-                              <SelectItem value="manque_signature">✍️ Manque signature</SelectItem>
-                              <SelectItem value="manque_photo">📸 Manque photo</SelectItem>
-                                <SelectItem value="document_complet">✅ Dossier complet</SelectItem>
-                                <SelectItem value="mdp_change">🔑 Mot de passe changé</SelectItem>
-                              <SelectItem value="email_non_valide">📧 Adresse mail non validée</SelectItem>
-                              <SelectItem value="injoignable">📵 Injoignable</SelectItem>
-                              <SelectItem value="a_payer">💰 À payer</SelectItem>
-                              <SelectItem value="inscription_validee">✅ Inscription validée</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        {/* Ligne 3: Présence (pratique) + Examen + Notes + Paiement */}
-                        {session.type_session === 'pratique' && (
-                          <div className="flex items-center gap-2 pt-2 border-t">
-                            <span className="text-sm text-muted-foreground font-medium">Présence :</span>
-                            <Select
-                              value={sessionApprenant.presence_pratique || 'present'}
-                              onValueChange={async (val) => {
-                                await updateSessionApprenant(sessionApprenant.id, { presence_pratique: val });
-                              }}
-                            >
-                              <SelectTrigger className="h-7 w-[230px] text-xs">
-                                <SelectValue placeholder="Non renseigné" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="present">✅ Présent</SelectItem>
-                                <SelectItem value="absent">❌ Absent</SelectItem>
-                                <SelectItem value="deplace">📅 Déplacé à la prochaine session</SelectItem>
-                              </SelectContent>
-                            </Select>
-                           </div>
-                        )}
-                        <div className="flex items-center justify-between gap-4 pt-2 border-t text-sm">
-                          <div className="flex items-center gap-4 flex-wrap">
-                            {/* Convocation status */}
-                            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full" style={hasConvocation(apprenant.id) ? { backgroundColor: 'hsl(142.1, 76.2%, 36.3%)', color: 'white' } : { backgroundColor: 'hsl(0, 0%, 90%)', color: 'hsl(0, 84.2%, 60.2%)' }}>
-                              {hasConvocation(apprenant.id) ? (
-                                <>
-                                  <CheckCircle className="w-4 h-4" />
-                                  <span className="font-medium text-sm">Convocation envoyée ✅</span>
-                                </>
-                              ) : (
-                                <>
-                                  <XCircle className="w-4 h-4" />
-                                  <span className="font-medium text-sm">Convocation non envoyée ❌</span>
-                                </>
-                              )}
-                            </div>
-
-                            {/* Identifiants status */}
-                            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full" style={hasIdentifiants(apprenant.id) ? { backgroundColor: 'hsl(221.2, 83.2%, 53.3%)', color: 'white' } : { backgroundColor: 'hsl(0, 0%, 90%)', color: 'hsl(0, 0%, 45.1%)' }}>
-                              {hasIdentifiants(apprenant.id) ? (
-                                <>
-                                  <CheckCircle className="w-4 h-4" />
-                                  <span className="font-medium text-sm">Identifiants envoyés ✅</span>
-                                </>
-                              ) : (
-                                <>
-                                  <XCircle className="w-4 h-4" />
-                                  <span className="font-medium text-sm">Identifiants non envoyés ❌</span>
-                                </>
-                              )}
-                            </div>
-
-                            <div className="flex items-center gap-1.5 text-muted-foreground">
-                              <GraduationCap className="w-3.5 h-3.5" />
-                              <span>Examen: 31 mars 2026 - Clermont-Ferrand</span>
-                            </div>
-                            
-                            <div className="flex items-center gap-1.5">
-                              {apprenant.resultat_examen === 'oui' ? (
-                                <>
-                                  <CheckCircle className="w-4 h-4 text-green-600" />
-                                  <span className="text-green-600 font-medium">Théorie réussie ✅</span>
-                                </>
-                              ) : apprenant.resultat_examen === 'non' ? (
-                                <>
-                                  <XCircle className="w-4 h-4 text-red-500" />
-                                  <span className="text-red-500 font-medium">Théorie échouée ❌</span>
-                                </>
-                              ) : apprenant.resultat_examen === 'absent' ? (
-                                <>
-                                  <XCircle className="w-4 h-4 text-orange-500" />
-                                  <span className="text-orange-500 font-medium">Absent 🔶</span>
-                                </>
-                              ) : (
-                                <span className="text-muted-foreground">Résultat en attente</span>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Boutons Notes, Mail type et Paiement */}
-                          <div className="flex items-center gap-2">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-8 px-2 gap-1 text-muted-foreground"
+                                  className="h-7 w-7 p-0 text-muted-foreground hover:text-primary"
+                                  title="Mail type"
                                   disabled={sendingEmailForApprenant === apprenant.id}
                                 >
                                   {sendingEmailForApprenant === apprenant.id ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                   ) : (
-                                    <Send className="w-4 h-4" />
+                                    <Send className="w-3.5 h-3.5" />
                                   )}
-                                  Mail type
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="max-h-80 overflow-y-auto w-72">
@@ -1577,13 +1492,62 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                 )}
                               </DropdownMenuContent>
                             </DropdownMenu>
-
                             <NotesPopover 
                               sessionApprenantId={sessionApprenant.id}
                               notes={sessionApprenant.notes || apprenant.notes || ""}
                               onSave={(notes) => updateSessionApprenant(sessionApprenant.id, { notes })}
                             />
-
+                            <Select
+                              value={sessionApprenant.statut_suivi || ''}
+                              onValueChange={async (val) => {
+                                await updateSessionApprenant(sessionApprenant.id, { statut_suivi: val || null });
+                              }}
+                            >
+                              <SelectTrigger className={`h-7 w-7 p-0 border-0 shadow-none [&>svg]:hidden text-muted-foreground hover:text-primary ${
+                                sessionApprenant.statut_suivi === 'inscription_validee' ? 'text-green-700' :
+                                sessionApprenant.statut_suivi === 'document_complet' ? 'text-green-700' :
+                                sessionApprenant.statut_suivi ? 'text-orange-700' : ''
+                              }`} title="Statut suivi">
+                                <SelectValue>
+                                  <span className="text-sm">⚙️</span>
+                                </SelectValue>
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="manque_document">📄 Manque un document</SelectItem>
+                                <SelectItem value="manque_piece_identite">📋 Manque pièce d'identité</SelectItem>
+                                <SelectItem value="manque_justificatif_domicile">🏠 Manque justificatif de domicile récent</SelectItem>
+                                <SelectItem value="manque_permis">🚗 Manque permis de conduire</SelectItem>
+                                <SelectItem value="manque_signature">✍️ Manque signature</SelectItem>
+                                <SelectItem value="manque_photo">📸 Manque photo</SelectItem>
+                                <SelectItem value="document_complet">✅ Dossier complet</SelectItem>
+                                <SelectItem value="mdp_change">🔑 Mot de passe changé</SelectItem>
+                                <SelectItem value="email_non_valide">📧 Adresse mail non validée</SelectItem>
+                                <SelectItem value="injoignable">📵 Injoignable</SelectItem>
+                                <SelectItem value="a_payer">💰 À payer</SelectItem>
+                                <SelectItem value="inscription_validee">✅ Inscription validée</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            {session.type_session === 'pratique' && (
+                              <Select
+                                value={sessionApprenant.presence_pratique || 'present'}
+                                onValueChange={async (val) => {
+                                  await updateSessionApprenant(sessionApprenant.id, { presence_pratique: val });
+                                }}
+                              >
+                                <SelectTrigger className="h-7 w-7 p-0 border-0 shadow-none [&>svg]:hidden text-muted-foreground hover:text-primary" title="Présence">
+                                  <SelectValue>
+                                    <span className="text-sm">
+                                      {sessionApprenant.presence_pratique === 'absent' ? '❌' : sessionApprenant.presence_pratique === 'deplace' ? '📅' : '✅'}
+                                    </span>
+                                  </SelectValue>
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="present">✅ Présent</SelectItem>
+                                  <SelectItem value="absent">❌ Absent</SelectItem>
+                                  <SelectItem value="deplace">📅 Déplacé à la prochaine session</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
                             {(sessionApprenant.mode_financement === "personnel" || apprenant.mode_financement === "personnel") && (
                               <PaiementPopover 
                                 sessionApprenantId={apprenant.id}
@@ -1594,6 +1558,23 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                 onSave={(data) => updateApprenantPaiement(apprenant.id, data)}
                               />
                             )}
+                            <Button
+                              size="sm"
+                              variant={apprenant.auth_user_id ? "outline" : "default"}
+                              className="h-7 gap-1 text-[11px] px-2"
+                              onClick={(e) => { e.stopPropagation(); openAccountDialog(apprenant); }}
+                            >
+                              <KeyRound className="w-3 h-3" />
+                              {apprenant.auth_user_id ? "Accès" : "Compte"}
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10 h-7 w-7 p-0"
+                              onClick={() => removeApprenant(sessionApprenant.id)}
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </Button>
                           </div>
                         </div>
                       </div>
