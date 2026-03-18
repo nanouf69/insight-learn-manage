@@ -1232,14 +1232,14 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
             ) : (
-              <div className="min-h-[400px] max-h-[60vh] overflow-y-auto pr-2">
+              <div className="min-h-[500px] max-h-[60vh] overflow-y-auto pr-2">
                 <div className="space-y-3 p-1">
                   {apprenantsInSession.map((sessionApprenant: any) => {
                     const apprenant = sessionApprenant.apprenant ?? allApprenants.find((a) => a.id === sessionApprenant.apprenant_id);
                     if (!apprenant) {
                       console.warn('[SessionDetail] apprenant introuvable pour session_apprenant:', sessionApprenant.id, 'apprenant_id:', sessionApprenant.apprenant_id);
                       return (
-                        <div key={sessionApprenant.id} className="p-4 rounded-xl border border-destructive/30 bg-destructive/5">
+                        <div key={sessionApprenant.id} className="block static p-4 rounded-xl border border-destructive/30 bg-destructive/5">
                           <p className="text-sm text-destructive">Apprenant introuvable (ID: {sessionApprenant.apprenant_id?.slice(0, 8)}…)</p>
                         </div>
                       );
@@ -1248,7 +1248,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                     return (
                       <div 
                         key={sessionApprenant.id}
-                        className="p-4 rounded-xl border bg-card hover:shadow-md transition-shadow"
+                        className="block static p-4 rounded-xl border bg-card hover:shadow-md transition-shadow"
                       >
                         {/* Ligne 1: Checkbox + Avatar + Nom + Badge */}
                         <div className="flex items-center gap-3 mb-2">
