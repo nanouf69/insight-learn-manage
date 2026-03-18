@@ -33,10 +33,8 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data: claims, error: claimsErr } = await callerClient.auth.getClaims(
-      authHeader.replace("Bearer ", "")
-    );
-    if (claimsErr || !claims?.claims?.sub) {
+    const { data: { user: callerUser }, error: callerErr } = await callerClient.auth.getUser();
+    if (callerErr || !callerUser) {
       return new Response(JSON.stringify({ error: "Non autorisé" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -44,7 +42,7 @@ serve(async (req) => {
     }
 
     const { data: isAdmin } = await supabaseAdmin.rpc("has_role", {
-      _user_id: claims.claims.sub,
+      _user_id: callerUser.id,
       _role: "admin",
     });
 
