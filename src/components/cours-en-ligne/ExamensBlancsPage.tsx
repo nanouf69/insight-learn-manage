@@ -1246,15 +1246,25 @@ export default function ExamensBlancsPage({
         const donnees = ((rep as string[]) || []).sort();
         correct = JSON.stringify(correctes) === JSON.stringify(donnees);
       } else if (q?.type === "QRC") {
-        const repStr = ((rep as string) || "").toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
-        const motsCles = q.reponses_possibles || [];
-        let nbTrouvees = 0;
-        motsCles.forEach(mc => {
-          const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
-          if (repStr.includes(mcN)) nbTrouvees++;
-        });
-        const ratio = motsCles.length > 0 ? nbTrouvees / motsCles.length : 0;
-        totalPoints += Math.round(ratio * pts * 10) / 10;
+        if (isCalculQuestion(q)) {
+          // Calcul question: check result + detail
+          const repStr = ((rep as string) || "").replace(/\s/g, "").toLowerCase();
+          const hasResult = (q.reponses_possibles || []).some(r => repStr.includes(r.replace(/\s/g, "").toLowerCase()));
+          const hasCalcDetail = /\d+\s*[\/×x\*\-\+]\s*\d+/.test((rep as string) || "") || /=\s*\d/.test((rep as string) || "");
+          if (hasResult && hasCalcDetail) totalPoints += pts;
+          else if (hasResult) totalPoints += Math.round(pts * 5) / 10;
+          // else 0
+        } else {
+          const repStr = ((rep as string) || "").toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+          const motsCles = q.reponses_possibles || [];
+          let nbTrouvees = 0;
+          motsCles.forEach(mc => {
+            const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+            if (repStr.includes(mcN)) nbTrouvees++;
+          });
+          const ratio = motsCles.length > 0 ? nbTrouvees / motsCles.length : 0;
+          totalPoints += Math.round(ratio * pts * 10) / 10;
+        }
         return; // prorata already added, skip the correct check below
       }
       if (correct) totalPoints += pts;
