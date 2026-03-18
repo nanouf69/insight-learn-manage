@@ -2425,16 +2425,40 @@ export function ExamenReussitePage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button
-                      variant="default"
-                      size="sm"
-                      className="gap-1"
-                      disabled={analyzing}
-                      onClick={() => handleAnalyzePdf(file.name)}
-                    >
-                      <CheckCircle2 className="h-4 w-4" />
-                      {analyzing ? "Analyse..." : "Analyser les résultats"}
-                    </Button>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="gap-1"
+                          disabled={analyzing}
+                        >
+                          <CheckCircle2 className="h-4 w-4" />
+                          {analyzing ? "Analyse..." : "Analyser les résultats"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-56 p-2" align="end">
+                        <p className="text-xs font-medium text-muted-foreground mb-2">Type d'épreuve :</p>
+                        <div className="space-y-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start gap-2 text-xs"
+                            onClick={() => handleAnalyzePdf(file.name, 'admissibilite')}
+                          >
+                            📝 Admissibilité (Théorie)
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start gap-2 text-xs"
+                            onClick={() => handleAnalyzePdf(file.name, 'admission')}
+                          >
+                            🚗 Admission (Pratique)
+                          </Button>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                     <Button variant="outline" size="icon" onClick={() => handleDownloadFile(file.name)} title="Télécharger">
                       <Download className="h-4 w-4" />
                     </Button>
