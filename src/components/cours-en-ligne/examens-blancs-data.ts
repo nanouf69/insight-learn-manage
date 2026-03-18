@@ -21,6 +21,23 @@ export interface Question {
   choix?: Choix[];
   reponseQRC?: string;
   reponses_possibles?: string[];
+  requiresCalcul?: boolean;
+}
+
+/**
+ * Détecte automatiquement si une question QRC est de type "calcul"
+ * en analysant l'énoncé et la réponse attendue.
+ */
+export function isCalculQuestion(q: Question): boolean {
+  if (q?.type !== "QRC") return false;
+  if (q.requiresCalcul === true) return true;
+  if (q.requiresCalcul === false) return false;
+  // Auto-detect: l'énoncé contient "calculez" ou la réponse contient des opérations arithmétiques
+  const enonceLC = (q.enonce ?? "").toLowerCase();
+  const reponseLC = (q.reponseQRC ?? "").toLowerCase();
+  const hasCalculKeyword = /\bcalcul(ez|er|ons|)\b/.test(enonceLC) || /\bamortiss/i.test(enonceLC) || /\bvaleur comptable\b/.test(enonceLC);
+  const hasArithmetic = /\d+\s*[\/×x\*\-\+]\s*\d+/.test(reponseLC) || /=\s*\d/.test(reponseLC);
+  return hasCalculKeyword || hasArithmetic;
 }
 
 export interface Matiere {

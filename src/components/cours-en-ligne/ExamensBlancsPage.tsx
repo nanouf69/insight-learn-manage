@@ -11,7 +11,7 @@ import {
   ArrowLeft, ArrowRight, Clock, CheckCircle2, XCircle, AlertTriangle,
   FileText, Timer, Trophy, RotateCcw, ChevronRight, BookOpen, Pencil, Loader2, Bot
 } from "lucide-react";
-import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, type Question } from "./examens-blancs-data";
+import { tousLesExamens, getPointsParQuestion, isCalculQuestion, type ExamenBlanc, type Matiere, type Question } from "./examens-blancs-data";
 import { loadSavedExamens, EXAMEN_BLANC_MODULE_BASE } from "./ExamensBlancsEditor";
 import ExamensBlancsEditor from "./ExamensBlancsEditor";
 import { supabase } from "@/integrations/supabase/client";
@@ -520,8 +520,16 @@ function PassageMatiere({
           {question?.type === "QRC" && (
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground">Rédigez votre réponse ci-dessous :</p>
+              {isCalculQuestion(question) && (
+                <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800">
+                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <p className="text-xs">
+                    ⚠️ Pour obtenir tous les points, détaillez votre calcul et précisez l'unité dans votre réponse (ex: 21 000 / 3 = 7 000 € HT)
+                  </p>
+                </div>
+              )}
               <Textarea
-                placeholder="Votre réponse..."
+                placeholder={isCalculQuestion(question) ? "Détaillez votre calcul et indiquez le résultat avec l'unité..." : "Votre réponse..."}
                 rows={4}
                 value={String((reponses[question.id] ?? reponses[String(question.id)]) || "")}
                 onChange={e => handleQRCChange(question.id, e.target.value)}
@@ -700,6 +708,7 @@ function EcranResultats({
           const pointsQuestion = getPointsParQuestion(matiere.id, q?.type || "QRC");
 
           try {
+            const isCalc = isCalculQuestion(q);
             const { data, error } = await supabase.functions.invoke("corriger-qrc", {
               body: {
                 question: q.enonce,
@@ -707,6 +716,8 @@ function EcranResultats({
                 reponsesAttendues: q.reponses_possibles || [q.reponseQRC || ""],
                 matiereId: matiere.id,
                 pointsQuestion,
+                isCalcul: isCalc,
+                reponseQRC: q.reponseQRC || "",
               },
             });
 
@@ -959,23 +970,43 @@ function EcranResultats({
                     const donnees = ((rep as string[]) || []).sort();
                     isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
                     pointsObtenus = isCorrect ? pts : 0;
-                  } else if (q?.type === "QRC") {
+                   } else if (q?.type === "QRC") {
                     const corrIA = cacheMatiere[q.id];
+                    const isCalc = isCalculQuestion(q);
                     if (!corrIA || corrIA === "loading") {
                       isLoadingIA = true;
                     } else if (corrIA === "error") {
-                      // Fallback mots-clés avec prorata
-                      const repStr = ((rep as string) || "").toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
-                      const motsCles = q.reponses_possibles || [];
-                      let nbTrouvees = 0;
-                      motsCles.forEach(mc => {
-                        const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
-                        if (repStr.includes(mcN)) nbTrouvees++;
-                      });
-                      const ratio = motsCles.length > 0 ? nbTrouvees / motsCles.length : 0;
-                      isCorrect = nbTrouvees >= motsCles.length;
-                      pointsObtenus = Math.round(ratio * pts * 10) / 10;
-                      correctionDetail = "⚠️ Correction IA indisponible – correction par mots-clés";
+                      if (isCalc) {
+                        // Fallback calcul : vérifier résultat + détail
+                        const repStr = ((rep as string) || "").replace(/\s/g, "").toLowerCase();
+                        const hasResult = (q.reponses_possibles || []).some(r => repStr.includes(r.replace(/\s/g, "").toLowerCase()));
+                        const hasCalcDetail = /\d+\s*[\/×x\*\-\+]\s*\d+/.test((rep as string) || "") || /=\s*\d/.test((rep as string) || "");
+                        if (hasResult && hasCalcDetail) {
+                          isCorrect = true;
+                          pointsObtenus = pts;
+                        } else if (hasResult) {
+                          isCorrect = false;
+                          pointsObtenus = Math.round(pts * 5) / 10;
+                          correctionDetail = `⚠️ Vous avez trouvé le bon résultat mais le détail du calcul est manquant → ${pointsObtenus}/${pts} pts`;
+                        } else {
+                          isCorrect = false;
+                          pointsObtenus = 0;
+                          correctionDetail = "❌ Résultat incorrect.";
+                        }
+                      } else {
+                        // Fallback mots-clés avec prorata
+                        const repStr = ((rep as string) || "").toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+                        const motsCles = q.reponses_possibles || [];
+                        let nbTrouvees = 0;
+                        motsCles.forEach(mc => {
+                          const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+                          if (repStr.includes(mcN)) nbTrouvees++;
+                        });
+                        const ratio = motsCles.length > 0 ? nbTrouvees / motsCles.length : 0;
+                        isCorrect = nbTrouvees >= motsCles.length;
+                        pointsObtenus = Math.round(ratio * pts * 10) / 10;
+                        correctionDetail = "⚠️ Correction IA indisponible – correction par mots-clés";
+                      }
                     } else {
                       isCorrect = corrIA.estCorrect;
                       pointsObtenus = corrIA.pointsObtenus;
@@ -1036,6 +1067,13 @@ function EcranResultats({
                                 <p className="text-xs italic text-muted-foreground">
                                   Votre réponse : {String(rep) || "Aucune"}
                                 </p>
+                              )}
+                              {/* Calcul-specific partial score explanation */}
+                              {isCalculQuestion(q) && !isLoadingIA && pointsObtenus > 0 && !isCorrect && (
+                                <div className="flex items-start gap-1 text-xs text-amber-700 bg-amber-50 rounded p-1.5 border border-amber-200">
+                                  <AlertTriangle className="w-3 h-3 shrink-0 mt-0.5" />
+                                  <span>Vous avez trouvé le bon résultat mais le détail du calcul est manquant → {pointsObtenus}/{pts} pts</span>
+                                </div>
                               )}
                               {correctionDetail && (
                                 <div className="flex items-start gap-1 text-xs text-blue-700 bg-blue-50 rounded p-1.5">
@@ -1215,15 +1253,25 @@ export default function ExamensBlancsPage({
         const donnees = ((rep as string[]) || []).sort();
         correct = JSON.stringify(correctes) === JSON.stringify(donnees);
       } else if (q?.type === "QRC") {
-        const repStr = ((rep as string) || "").toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
-        const motsCles = q.reponses_possibles || [];
-        let nbTrouvees = 0;
-        motsCles.forEach(mc => {
-          const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
-          if (repStr.includes(mcN)) nbTrouvees++;
-        });
-        const ratio = motsCles.length > 0 ? nbTrouvees / motsCles.length : 0;
-        totalPoints += Math.round(ratio * pts * 10) / 10;
+        if (isCalculQuestion(q)) {
+          // Calcul question: check result + detail
+          const repStr = ((rep as string) || "").replace(/\s/g, "").toLowerCase();
+          const hasResult = (q.reponses_possibles || []).some(r => repStr.includes(r.replace(/\s/g, "").toLowerCase()));
+          const hasCalcDetail = /\d+\s*[\/×x\*\-\+]\s*\d+/.test((rep as string) || "") || /=\s*\d/.test((rep as string) || "");
+          if (hasResult && hasCalcDetail) totalPoints += pts;
+          else if (hasResult) totalPoints += Math.round(pts * 5) / 10;
+          // else 0
+        } else {
+          const repStr = ((rep as string) || "").toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+          const motsCles = q.reponses_possibles || [];
+          let nbTrouvees = 0;
+          motsCles.forEach(mc => {
+            const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+            if (repStr.includes(mcN)) nbTrouvees++;
+          });
+          const ratio = motsCles.length > 0 ? nbTrouvees / motsCles.length : 0;
+          totalPoints += Math.round(ratio * pts * 10) / 10;
+        }
         return; // prorata already added, skip the correct check below
       }
       if (correct) totalPoints += pts;
