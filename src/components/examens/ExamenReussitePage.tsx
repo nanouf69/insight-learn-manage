@@ -2423,10 +2423,6 @@ export function ExamenReussitePage() {
         const reussisPratique = apprenants?.filter(a => (a as any).resultat_examen_pratique === 'oui' && a.email) || [];
         const echouesPratique = apprenants?.filter(a => (a as any).resultat_examen_pratique === 'non' && a.email) || [];
 
-        const [sendingFelicitations, setSendingFelicitations] = useState(false);
-        const [sentFelicitations, setSentFelicitations] = useState(false);
-        const [sendingRepassagePratique, setSendingRepassagePratique] = useState(false);
-        const [sentRepassagePratique, setSentRepassagePratique] = useState(false);
 
         const handleSendFelicitations = async () => {
           setSendingFelicitations(true);
