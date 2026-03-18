@@ -1578,7 +1578,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
               </div>
             )}
             {/* Récapitulatif par type de formation */}
-            <div className="mt-4 p-3 rounded-lg bg-muted/50 border">
+            <div className="shrink-0 mt-4 p-3 rounded-lg bg-muted/50 border">
               <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
                 <div className="flex items-center gap-2">
                   <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">🚕 TAXI</Badge>
