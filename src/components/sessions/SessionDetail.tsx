@@ -1230,26 +1230,19 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
               </div>
             ) : (
               <ScrollArea className="h-[400px]">
-                {/* Table header */}
-                <div className="sticky top-0 z-10 grid grid-cols-[32px_1fr_auto] gap-3 px-4 py-2 bg-muted/80 backdrop-blur rounded-t-lg border-b text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  <span></span>
-                  <span>Apprenant</span>
-                  <span className="text-right">Actions</span>
-                </div>
-
-                <div className="divide-y divide-border">
-                  {apprenantsInSession.map((sessionApprenant: any, idx: number) => {
+                <div className="space-y-3 p-1">
+                  {apprenantsInSession.map((sessionApprenant: any) => {
                     const apprenant = sessionApprenant.apprenant;
                     if (!apprenant) return null;
                     
                     return (
                       <div 
                         key={sessionApprenant.id}
-                        className={`px-4 py-3 hover:bg-accent/40 transition-colors ${idx % 2 === 0 ? 'bg-card' : 'bg-muted/20'}`}
+                        className="p-4 rounded-xl border bg-card hover:shadow-md transition-shadow"
                       >
-                        {/* Row principale */}
-                        <div className="flex items-start gap-3">
-                          <Checkbox 
+                        {/* Ligne 1: Checkbox + Avatar + Nom + Badge */}
+                        <div className="flex items-center gap-3 mb-2">
+                          <Checkbox
                             checked={selectedApprenants.has(apprenant.id)}
                             onCheckedChange={() => toggleSelectApprenant(apprenant.id)}
                             onClick={(e) => e.stopPropagation()}
