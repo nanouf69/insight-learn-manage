@@ -123,6 +123,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearAuthState();
   };
 
+  const isAdmin = profile?.role === 'admin';
+  useAppVersionCheck(!!user, isAdmin);
+
   return (
     <AuthContext.Provider value={{ user, session, loading, profile, signOut }}>
       {children}
