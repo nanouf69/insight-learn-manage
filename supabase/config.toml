@@ -68,3 +68,6 @@ verify_jwt = false
 
 [functions.relance-non-connectes]
 verify_jwt = false
+
+[functions.relance-inactifs]
+verify_jwt = false
