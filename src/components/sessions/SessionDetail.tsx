@@ -1591,13 +1591,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 </div>
               </ScrollArea>
             )}
-                    const apprenant = sessionApprenant.apprenant;
-                    if (!apprenant) return null;
-                    
-                    return (
-                      <div 
-                        key={sessionApprenant.id}
-                        className="p-4 rounded-xl border bg-card hover:shadow-md transition-shadow space-y-3"
+
+
                       >
                         {/* Ligne 1: Identité + Badge type + Actions */}
                         <div className="flex items-center justify-between">
