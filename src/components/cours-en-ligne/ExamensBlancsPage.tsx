@@ -885,6 +885,10 @@ function EcranResultats({
           const noteSur20 = (r.noteObtenue / safeMaxPoints * (r.noteSur || 20));
           const matiereEnCours = Object.values(correctionsIA[mi] || {}).some(v => v === "loading");
           const pctScore = safeMaxPoints > 0 ? Math.min((r.noteObtenue / safeMaxPoints) * 100, 100) : 0;
+          const matiere = examen.matieres[mi];
+          const cacheMatiere = correctionsIA[mi] || {};
+          const questionsSafe = matiere ? (matiere.questions || []).filter(q => q && q?.type !== undefined) : [];
+          const isExpanded = !!expandedMatieres[mi];
           return (
             <Card key={r.matiereId} className="border-l-4 overflow-hidden" style={{ borderLeftColor: r.admis ? '#00B4D8' : '#ef4444' }}>
               <div className="px-4 py-2 flex items-center gap-2" style={{ backgroundColor: '#0D2540' }}>
@@ -893,34 +897,149 @@ function EcranResultats({
                 {!r.admis && <span className="text-xs font-semibold text-red-400 ml-auto">⚠ Note éliminatoire</span>}
                 {matiereEnCours && <span className="text-xs flex items-center gap-1 ml-auto" style={{ color: '#00B4D8' }}><Loader2 className="w-3 h-3 animate-spin" />IA en cours</span>}
               </div>
-              <CardContent className="py-3 px-4">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm" style={{ color: '#0D2540' }}>{r.nomMatiere}</p>
-                    <div className="flex items-center gap-3 mt-1 flex-wrap">
-                      <span className="text-xs text-muted-foreground">Barème : {r.maxPoints} pts</span>
-                      <span className="text-xs text-muted-foreground">Éliminatoire sous {r.noteEliminatoire}/{r.noteSur || 20}</span>
+              <div className="cursor-pointer" onClick={() => toggleMatiere(mi)}>
+                <CardContent className="py-3 px-4">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm" style={{ color: '#0D2540' }}>{r.nomMatiere}</p>
+                      <div className="flex items-center gap-3 mt-1 flex-wrap">
+                        <span className="text-xs text-muted-foreground">Barème : {r.maxPoints} pts</span>
+                        <span className="text-xs text-muted-foreground">Éliminatoire sous {r.noteEliminatoire}/{r.noteSur || 20}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <span className="text-lg font-bold" style={{ color: r.admis ? '#00B4D8' : '#ef4444' }}>
+                          {r.noteObtenue} / {r.maxPoints} pts
+                        </span>
+                        <p className="text-xs text-muted-foreground">= {isFinite(noteSur20) ? noteSur20.toFixed(1) : "0.0"} / {r.noteSur || 20}</p>
+                      </div>
+                      {r.admis ? (
+                        <CheckCircle2 className="w-5 h-5" style={{ color: '#00B4D8' }} />
+                      ) : (
+                        <XCircle className="w-5 h-5 text-red-500" />
+                      )}
+                      <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-90" : ""}`} />
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <span className="text-lg font-bold" style={{ color: r.admis ? '#00B4D8' : '#ef4444' }}>
-                        {r.noteObtenue} / {r.maxPoints} pts
-                      </span>
-                      <p className="text-xs text-muted-foreground">= {isFinite(noteSur20) ? noteSur20.toFixed(1) : "0.0"} / {r.noteSur || 20}</p>
-                    </div>
-                    {r.admis ? (
-                      <CheckCircle2 className="w-5 h-5" style={{ color: '#00B4D8' }} />
-                    ) : (
-                      <XCircle className="w-5 h-5 text-red-500" />
-                    )}
-                  </div>
-                </div>
-                <Progress
-                  value={pctScore}
-                  className={`h-2 mt-2 ${r.admis ? "[&>*]:bg-[#00B4D8]" : "[&>*]:bg-red-500"}`}
-                />
-              </CardContent>
+                  <Progress
+                    value={pctScore}
+                    className={`h-2 mt-2 ${r.admis ? "[&>*]:bg-[#00B4D8]" : "[&>*]:bg-red-500"}`}
+                  />
+                  <p className="text-xs text-muted-foreground mt-2 text-center">
+                    {isExpanded ? "Cliquer pour masquer la correction" : "Cliquer pour voir la correction détaillée"}
+                  </p>
+                </CardContent>
+              </div>
+
+              {/* Correction détaillée inline */}
+              {isExpanded && (
+                <CardContent className="pt-0 px-4 pb-4 space-y-3 border-t">
+                  {questionsSafe.map(q => {
+                    if (!q || !q?.type) return null;
+                    const rep = r.reponses?.[q.id];
+                    const pts = getPointsParQuestion(matiere?.id ?? "", q?.type);
+                    let isCorrect = false;
+                    let pointsObtenus = 0;
+                    let correctionDetail: string | null = null;
+                    let isLoadingIA = false;
+
+                    if (q?.type === "QCM" && q.choix) {
+                      const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
+                      const donnees = ((rep as string[]) || []).sort();
+                      isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
+                      pointsObtenus = isCorrect ? pts : 0;
+                    } else if (q?.type === "QRC") {
+                      const corrIA = cacheMatiere[q.id];
+                      const isCalc = isCalculQuestion(q);
+                      if (!corrIA || corrIA === "loading") {
+                        isLoadingIA = true;
+                      } else if (corrIA === "error") {
+                        if (isCalc) {
+                          const repStr = ((rep as string) || "").replace(/\s/g, "").toLowerCase();
+                          const hasResult = (q.reponses_possibles || []).some(rr => repStr.includes(rr.replace(/\s/g, "").toLowerCase()));
+                          const hasCalcDetail = /\d+\s*[\/×x\*\-\+]\s*\d+/.test((rep as string) || "") || /=\s*\d/.test((rep as string) || "");
+                          if (hasResult && hasCalcDetail) { isCorrect = true; pointsObtenus = pts; }
+                          else if (hasResult) { pointsObtenus = Math.round(pts * 5) / 10; correctionDetail = `⚠️ Résultat correct mais détail du calcul manquant → ${pointsObtenus}/${pts} pts`; }
+                          else { correctionDetail = "❌ Résultat incorrect."; }
+                        } else {
+                          const repStr = ((rep as string) || "").toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+                          const motsCles = q.reponses_possibles || [];
+                          let nbTrouvees = 0;
+                          motsCles.forEach(mc => { const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, ""); if (repStr.includes(mcN)) nbTrouvees++; });
+                          const ratio = motsCles.length > 0 ? nbTrouvees / motsCles.length : 0;
+                          isCorrect = nbTrouvees >= motsCles.length;
+                          pointsObtenus = Math.round(ratio * pts * 10) / 10;
+                          correctionDetail = "⚠️ Correction IA indisponible – correction par mots-clés";
+                        }
+                      } else {
+                        isCorrect = corrIA.estCorrect;
+                        pointsObtenus = corrIA.pointsObtenus;
+                        correctionDetail = corrIA.explication;
+                      }
+                    }
+
+                    return (
+                      <div key={q.id} className={`p-3 rounded-lg border ${isLoadingIA ? "bg-blue-50 border-blue-200" : isCorrect ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
+                        <div className="flex items-start gap-2">
+                          {isLoadingIA ? (
+                            <Loader2 className="w-4 h-4 text-blue-500 shrink-0 mt-0.5 animate-spin" />
+                          ) : isCorrect ? (
+                            <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+                          ) : (
+                            <XCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2 mb-1">
+                              <div className="flex items-center gap-1.5 flex-1">
+                                <Badge variant={q?.type === "QRC" ? "secondary" : "outline"} className="text-xs shrink-0">{q?.type}</Badge>
+                                <p className="text-sm font-medium">{q.id}. {q.enonce}</p>
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                {q?.type === "QRC" && <Bot className="w-3 h-3 text-blue-500" aria-label="Corrigé par IA" />}
+                                {isLoadingIA ? (
+                                  <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-blue-200 text-blue-800">? / {pts} pt{pts > 1 ? "s" : ""}</span>
+                                ) : (
+                                  <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${isCorrect ? "bg-green-200 text-green-800" : pointsObtenus > 0 ? "bg-amber-200 text-amber-800" : "bg-red-200 text-red-800"}`}>+{pointsObtenus} / {pts} pt{pts > 1 ? "s" : ""}</span>
+                                )}
+                              </div>
+                            </div>
+
+                            {q?.type === "QCM" && (
+                              <div className="mt-1 space-y-0.5">
+                                {(q.choix || []).map(c => (
+                                  <div key={c.lettre} className={`text-xs flex items-center gap-1 ${c.correct ? "text-green-700 font-semibold" : "text-muted-foreground"}`}>
+                                    <span>{c.lettre})</span><span>{c.texte}</span>{c.correct && <span className="text-green-600">✓</span>}
+                                  </div>
+                                ))}
+                                {rep != null && <p className="text-xs mt-1 italic text-muted-foreground">Votre réponse : {Array.isArray(rep) ? rep.join(", ") || "Aucune" : String(rep) || "Aucune"}</p>}
+                              </div>
+                            )}
+
+                            {q?.type === "QRC" && (
+                              <div className="mt-1 space-y-1">
+                                {rep != null && <p className="text-xs italic text-muted-foreground">Votre réponse : {String(rep) || "Aucune"}</p>}
+                                {isCalculQuestion(q) && !isLoadingIA && pointsObtenus > 0 && !isCorrect && (
+                                  <div className="flex items-start gap-1 text-xs text-amber-700 bg-amber-50 rounded p-1.5 border border-amber-200">
+                                    <AlertTriangle className="w-3 h-3 shrink-0 mt-0.5" />
+                                    <span>Vous avez trouvé le bon résultat mais le détail du calcul est manquant → {pointsObtenus}/{pts} pts</span>
+                                  </div>
+                                )}
+                                {correctionDetail && (
+                                  <div className="flex items-start gap-1 text-xs text-blue-700 bg-blue-50 rounded p-1.5">
+                                    <Bot className="w-3 h-3 shrink-0 mt-0.5" /><span>{correctionDetail}</span>
+                                  </div>
+                                )}
+                                <p className="text-xs text-green-700 font-medium">Réponse attendue : {q.reponseQRC || (q.reponses_possibles || []).join(" / ") || "—"}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              )}
             </Card>
           );
         })}
