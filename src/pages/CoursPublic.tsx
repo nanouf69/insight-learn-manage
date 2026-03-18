@@ -1285,7 +1285,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                     totalModules={modules.length}
                     globalProgress={globalProgress}
                   />
-                   <XPBar xp={xp} />
+                   <XPBar xp={xp} moduleScores={moduleScores} />
                    <BadgeGrid badges={badges} />
                 </>
               );
