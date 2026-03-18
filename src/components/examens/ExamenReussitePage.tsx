@@ -2424,7 +2424,7 @@ export function ExamenReussitePage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Uploadez ici le PDF contenant les numéros de dossier avec les résultats d'examen.
+            Uploadez le PDF des résultats d'examen, puis cliquez sur "Analyser" en choisissant le type d'épreuve (Admissibilité = théorie, Admission = pratique). Les résultats seront mappés automatiquement par Nom + Prénom.
           </p>
           <div className="flex items-center gap-3">
             <input
