@@ -508,6 +508,11 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
 
   const rejectedDocs = documents.filter(d => d.status === 'rejected');
 
+  // Signature stagiaire obligatoire — bloque la validation du dossier
+  const signatureDoc = documents.find(d => d.id === 'signature');
+  const isSignatureUploaded = signatureDoc?.uploaded && signatureDoc?.status === 'valid';
+  const dossierComplet = uploadedCount === totalRequired && totalRequired > 0 && rejectedDocs.length === 0 && isSignatureUploaded;
+
   return (
     <Card>
       <CardHeader>
@@ -517,6 +522,19 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {/* Alerte signature obligatoire */}
+        {!isSignatureUploaded && (
+          <div className="mb-4 p-4 border border-destructive/40 rounded-lg bg-destructive/10 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-destructive">Signature stagiaire obligatoire</p>
+              <p className="text-xs text-destructive/80 mt-1">
+                La signature du stagiaire doit être uploadée avant de pouvoir valider le dossier ou le marquer comme complet.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Progress */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
@@ -534,13 +552,16 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
               {rejectedDocs.length} document(s) refusé(s) à remplacer
             </p>
           )}
-          {uploadedCount < totalRequired && rejectedDocs.length === 0 && (
+          {!dossierComplet && rejectedDocs.length === 0 && (
             <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
               <AlertCircle className="w-3 h-3" />
-              Dossier incomplet - {totalRequired - uploadedCount} document(s) manquant(s)
+              {!isSignatureUploaded 
+                ? 'Dossier bloqué — signature stagiaire manquante'
+                : `Dossier incomplet - ${totalRequired - uploadedCount} document(s) manquant(s)`
+              }
             </p>
           )}
-          {uploadedCount === totalRequired && totalRequired > 0 && rejectedDocs.length === 0 && (
+          {dossierComplet && (
             <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
               <CheckCircle2 className="w-3 h-3" />
               Dossier complet
