@@ -1767,6 +1767,8 @@ export default function ExamensBlancsPage({
           resultats={tousResultats}
           onRecommencer={() => handleStart(examenChoisi)}
           onRetour={() => setPhase("selection")}
+          apprenantId={apprenantId}
+          userId={userId}
         />
       </div>
     );
