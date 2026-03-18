@@ -300,11 +300,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
                           )}
                         </div>
                         {status.details.donnees && (
-                          <div className="bg-muted/50 rounded p-3 max-h-60 overflow-y-auto">
-                            <pre className="text-xs whitespace-pre-wrap">
-                              {JSON.stringify(status.details.donnees, null, 2)}
-                            </pre>
-                          </div>
+                          <DonneesRenderer donnees={status.details.donnees} />
                         )}
                       </div>
                     )}
