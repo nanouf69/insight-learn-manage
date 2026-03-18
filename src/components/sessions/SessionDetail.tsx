@@ -1127,7 +1127,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           </TabsList>
 
           {/* Apprenants Tab */}
-          <TabsContent value="apprenants" className="flex-1 min-h-0 overflow-auto flex flex-col mt-4">
+          <TabsContent value="apprenants" className="flex-1 overflow-auto flex flex-col mt-4">
             {/* Barre d'envoi groupé */}
             <div className="shrink-0 flex items-center gap-3 mb-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
               <Checkbox 
@@ -1232,7 +1232,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
             ) : (
-              <div className="max-h-[45vh] overflow-y-auto pr-2">
+              <div className="min-h-[400px] max-h-[60vh] overflow-y-auto pr-2">
                 <div className="space-y-3 p-1">
                   {apprenantsInSession.map((sessionApprenant: any) => {
                     const apprenant = sessionApprenant.apprenant ?? allApprenants.find((a) => a.id === sessionApprenant.apprenant_id);
