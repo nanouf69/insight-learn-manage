@@ -2110,11 +2110,17 @@ export function ExamenReussitePage() {
                   return (
                     <TableRow key={a.id} className={resultatP === 'deplace' ? 'bg-orange-50/50' : ''}>
                       <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
-                      <TableCell className="font-medium text-sm">
-                        {a.nom} {a.prenom}
-                        {resultatP === 'deplace' && (
-                          <Badge className="ml-2 bg-orange-100 text-orange-800 text-[10px]">📅 Déplacé</Badge>
-                        )}
+                      <TableCell>
+                        <div className="font-medium text-sm">
+                          {a.nom} {a.prenom}
+                          {resultatP === 'deplace' && (
+                            <Badge className="ml-2 bg-orange-100 text-orange-800 text-[10px]">📅 Déplacé</Badge>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5 space-y-0">
+                          {a.email && <div>📧 {a.email}</div>}
+                          {a.telephone && <div>📞 {a.telephone}</div>}
+                        </div>
                       </TableCell>
                       <TableCell className="text-xs">{a.date_examen_pratique ? formatDateShortFR(a.date_examen_pratique) : '-'}</TableCell>
                       <TableCell className="text-xs">{(a as any).heure_examen_pratique || '-'}</TableCell>
