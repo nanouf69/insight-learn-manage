@@ -670,6 +670,11 @@ function EcranResultats({
 }) {
   const [correctionsIA, setCorrectionsIA] = useState<{ [matiereIdx: number]: CorrectionCache }>({});
   const [correctionEnCours, setCorrectionEnCours] = useState(false);
+  const [expandedMatieres, setExpandedMatieres] = useState<{ [mi: number]: boolean }>({});
+
+  const toggleMatiere = (mi: number) => {
+    setExpandedMatieres(prev => ({ ...prev, [mi]: !prev[mi] }));
+  };
 
   // Lance la correction IA de tous les QRC à l'affichage des résultats
   useEffect(() => {
