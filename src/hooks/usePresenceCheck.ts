@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
 const TEN_MINUTES_MS = 10 * 60 * 1000;
@@ -65,6 +66,12 @@ export function usePresenceCheck({
   const startCountdown = useCallback(() => {
     setShowModal(true);
     setCountdownSeconds(600);
+
+    // Send encouraging toast message at 4h mark
+    toast.info("💪 Bravo ! Vous êtes connecté(e) depuis 4 heures. N'oubliez pas de faire une pause si besoin. Votre régularité est la clé de votre réussite !", {
+      duration: 10000,
+      position: "top-center",
+    });
 
     if (countdownRef.current) clearInterval(countdownRef.current);
 
