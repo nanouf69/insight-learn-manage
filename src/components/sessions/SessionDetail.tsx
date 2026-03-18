@@ -1175,7 +1175,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
 
             {showAddApprenant && (
-              <div className="mb-4 p-3 border rounded-lg bg-muted/30">
+              <div className="shrink-0 mb-4 p-3 border rounded-lg bg-muted/30">
                 <div className="relative mb-3">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
