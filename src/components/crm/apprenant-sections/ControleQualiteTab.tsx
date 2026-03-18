@@ -9,6 +9,84 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { generateControleQualitePdf } from "@/lib/pdf/controle-qualite";
 
+/** Renders donnees content with real question texts instead of raw JSON */
+function DonneesRenderer({ donnees }: { donnees: any }) {
+  if (!donnees || typeof donnees !== "object") return null;
+
+  // Competences / checklist format: { answers: { "0-0": "oui" }, sections: [...], sectionItems: [[...], [...]] }
+  if (donnees.answers && donnees.sections && donnees.sectionItems) {
+    return (
+      <div className="bg-muted/50 rounded p-3 max-h-80 overflow-y-auto space-y-3">
+        {donnees.formationLabel && (
+          <p className="text-xs font-semibold text-muted-foreground">{donnees.formationLabel}</p>
+        )}
+        {(donnees.sections as string[]).map((sectionTitle: string, sIdx: number) => {
+          const items: string[] = donnees.sectionItems?.[sIdx] || [];
+          return (
+            <div key={sIdx}>
+              <p className="text-xs font-bold text-primary mb-1">{sectionTitle}</p>
+              <div className="space-y-1">
+                {items.map((item: string, iIdx: number) => {
+                  const key = `${sIdx}-${iIdx}`;
+                  const answer = donnees.answers[key];
+                  return (
+                    <div key={key} className="flex items-start gap-2 text-xs">
+                      <span className={`shrink-0 font-semibold ${answer === "oui" ? "text-emerald-600" : answer === "non" ? "text-destructive" : "text-muted-foreground"}`}>
+                        {answer === "oui" ? "✅ Oui" : answer === "non" ? "❌ Non" : "—"}
+                      </span>
+                      <span className="text-foreground">{item}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // Generic key-value format (analyse-besoin, projet-professionnel, etc.)
+  const SKIP_KEYS = ["signature", "signatureResponsable", "_status"];
+  const LABELS: Record<string, string> = {
+    formType: "Type de formation", dateEntretien: "Date d'entretien", conseiller: "Conseiller",
+    lieuNaissance: "Lieu de naissance", statutActuel: "Statut actuel", metierActuel: "Métier actuel",
+    motivations: "Motivations", modeExercice: "Mode d'exercice", zoneExercice: "Zone d'exercice",
+    craintes: "Craintes", commentConnu: "Comment connu", coherenceProjet: "Cohérence du projet",
+    niveauMotivation: "Niveau de motivation", observations: "Observations",
+    situation_actuelle: "Situation actuelle", niveau_etude: "Niveau d'études",
+    experience_transport: "Expérience transport", motivation: "Motivation",
+    financement: "Financement", cgv_accepted: "CGV acceptées", ri_accepted: "RI accepté",
+    accepted: "Accepté", accepted_at: "Date d'acceptation", noteGlobale: "Note globale",
+    pointsForts: "Points forts", pointsAmeliorer: "Points à améliorer",
+    nom: "Nom", prenom: "Prénom", email: "Email", telephone: "Téléphone",
+  };
+
+  const entries = Object.entries(donnees).filter(
+    ([k, v]) => !SKIP_KEYS.includes(k) && v !== null && v !== undefined && v !== ""
+      && !(typeof v === "string" && v.startsWith("data:image/"))
+  );
+
+  if (entries.length === 0) return null;
+
+  return (
+    <div className="bg-muted/50 rounded p-3 max-h-80 overflow-y-auto space-y-1.5">
+      {entries.map(([key, value]) => {
+        const label = LABELS[key] || key.replace(/_/g, " ").replace(/([a-z])([A-Z])/g, "$1 $2").replace(/^./, s => s.toUpperCase());
+        const display = typeof value === "boolean" ? (value ? "Oui" : "Non")
+          : typeof value === "object" ? JSON.stringify(value)
+          : String(value);
+        return (
+          <div key={key} className="flex items-start gap-2 text-xs">
+            <span className="font-semibold text-muted-foreground shrink-0 min-w-[120px]">{label} :</span>
+            <span className="text-foreground">{display}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 interface Props {
   apprenant: any;
 }
@@ -300,11 +378,7 @@ export function ControleQualiteTab({ apprenant }: Props) {
                           )}
                         </div>
                         {status.details.donnees && (
-                          <div className="bg-muted/50 rounded p-3 max-h-60 overflow-y-auto">
-                            <pre className="text-xs whitespace-pre-wrap">
-                              {JSON.stringify(status.details.donnees, null, 2)}
-                            </pre>
-                          </div>
+                          <DonneesRenderer donnees={status.details.donnees} />
                         )}
                       </div>
                     )}
