@@ -444,9 +444,63 @@ export function ApprenantForm() {
         }
       }
 
+      // Auto-envoi du mail de pré-information selon la formation
+      let emailSent = false;
+      if (newApprenant && formData.email) {
+        try {
+          // Déterminer le type de pré-info (vtc, taxi, ta, va)
+          const baseType = typeApprenantFormation.replace(/-e$/, '').replace(/-e-presentiel$/, '');
+          const preInfoType = ['vtc', 'taxi', 'ta', 'va'].includes(baseType) ? baseType : null;
+          
+          if (preInfoType) {
+            // Utiliser le template "sans date" par défaut
+            const templateId = `pre-information-${preInfoType}-sans-date`;
+            
+            const { data: tpl } = await supabase
+              .from('email_templates')
+              .select('subject_template, body_template')
+              .eq('id', templateId)
+              .single();
+            
+            if (tpl) {
+              const vars: Record<string, string> = {
+                '{{prenom}}': formData.prenom,
+                '{{nom}}': formData.nom,
+                '{{email}}': formData.email,
+                '{{apprenant_id}}': newApprenant.id,
+                '{{formation}}': formData.formation_choisie || '',
+                '{{date_debut}}': formData.date_debut_formation || '',
+              };
+              
+              let subject = tpl.subject_template;
+              let body = tpl.body_template;
+              for (const [key, val] of Object.entries(vars)) {
+                subject = subject.replaceAll(key, val);
+                body = body.replaceAll(key, val);
+              }
+              
+              await supabase.functions.invoke('sync-outlook-emails', {
+                body: {
+                  action: 'send',
+                  apprenantId: newApprenant.id,
+                  userEmail: 'contact@ftransport.fr',
+                  to: formData.email,
+                  subject,
+                  body,
+                },
+              });
+              emailSent = true;
+            }
+          }
+        } catch (emailErr) {
+          console.error('Erreur envoi email pré-information:', emailErr);
+        }
+      }
+
+      const emailInfo = emailSent ? " — Email de pré-information envoyé ✉️" : "";
       toast({
         title: "Apprenant ajouté",
-        description: `${formData.prenom} ${formData.nom} a été ajouté en tant que ${typeApprenant === "prospect" ? "prospect" : "client"}${sessionInfo}.`,
+        description: `${formData.prenom} ${formData.nom} a été ajouté en tant que ${typeApprenant === "prospect" ? "prospect" : "client"}${sessionInfo}.${emailInfo}`,
       });
       resetForm();
       setOpen(false);
