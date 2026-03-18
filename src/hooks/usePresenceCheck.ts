@@ -67,6 +67,12 @@ export function usePresenceCheck({
     setShowModal(true);
     setCountdownSeconds(600);
 
+    // Send encouraging toast message at 4h mark
+    toast.info("💪 Bravo ! Vous êtes connecté(e) depuis 4 heures. N'oubliez pas de faire une pause si besoin. Votre régularité est la clé de votre réussite !", {
+      duration: 10000,
+      position: "top-center",
+    });
+
     if (countdownRef.current) clearInterval(countdownRef.current);
 
     const start = Date.now();
