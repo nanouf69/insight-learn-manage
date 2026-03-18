@@ -1126,7 +1126,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           {/* Apprenants Tab */}
           <TabsContent value="apprenants" className="flex-1 min-h-0 overflow-hidden flex flex-col mt-4">
             {/* Barre d'envoi groupé */}
-            <div className="flex items-center gap-3 mb-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
+            <div className="shrink-0 flex items-center gap-3 mb-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
               <Checkbox 
                 checked={apprenantsInSession.length > 0 && selectedApprenants.size === apprenantsInSession.length}
                 onCheckedChange={toggleSelectAll}
