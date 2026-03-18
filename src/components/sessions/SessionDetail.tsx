@@ -1593,21 +1593,6 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             )}
 
 
-                      >
-                        {/* Ligne 1: Identité + Badge type + Actions */}
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Checkbox 
-                              checked={selectedApprenants.has(apprenant.id)}
-                              onCheckedChange={() => toggleSelectApprenant(apprenant.id)}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                            <Avatar className="w-10 h-10">
-
-                              <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                                {apprenant.prenom?.[0] || ""}{apprenant.nom?.[0] || ""}
-                              </AvatarFallback>
-                            </Avatar>
                             <div>
                               <div className="flex items-center gap-2">
                                 <span 
