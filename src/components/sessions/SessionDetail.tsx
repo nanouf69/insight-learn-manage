@@ -1236,7 +1236,14 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 <div className="space-y-3 p-1">
                   {apprenantsInSession.map((sessionApprenant: any) => {
                     const apprenant = sessionApprenant.apprenant ?? allApprenants.find((a) => a.id === sessionApprenant.apprenant_id);
-                    if (!apprenant) return null;
+                    if (!apprenant) {
+                      console.warn('[SessionDetail] apprenant introuvable pour session_apprenant:', sessionApprenant.id, 'apprenant_id:', sessionApprenant.apprenant_id);
+                      return (
+                        <div key={sessionApprenant.id} className="p-4 rounded-xl border border-destructive/30 bg-destructive/5">
+                          <p className="text-sm text-destructive">Apprenant introuvable (ID: {sessionApprenant.apprenant_id?.slice(0, 8)}…)</p>
+                        </div>
+                      );
+                    }
                     
                     return (
                       <div 
