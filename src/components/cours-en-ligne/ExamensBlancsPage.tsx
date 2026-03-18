@@ -98,19 +98,31 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
 
   const [typeFiltre, setTypeFiltre] = useState<"tous" | "TAXI" | "VTC" | "TA" | "VA">(forcedType || "tous");
   const [completedExamIds, setCompletedExamIds] = useState<Set<string>>(new Set());
+  const [examScores, setExamScores] = useState<Record<string, { matiere_id: string; matiere_nom: string; note_sur_20: number }[]>>({});
 
-  // Fetch completed exams from DB
+  // Fetch completed exams with scores from DB
   useEffect(() => {
     if (!apprenantId) return;
     supabase
       .from("apprenant_quiz_results" as any)
-      .select("quiz_id")
+      .select("quiz_id, matiere_id, matiere_nom, note_sur_20")
       .eq("apprenant_id", apprenantId)
       .eq("quiz_type", "examen_blanc")
       .then(({ data }) => {
         if (data) {
           const ids = new Set<string>((data as any[]).map((r: any) => r.quiz_id));
           setCompletedExamIds(ids);
+          // Group scores by quiz_id
+          const scores: Record<string, { matiere_id: string; matiere_nom: string; note_sur_20: number }[]> = {};
+          (data as any[]).forEach((r: any) => {
+            if (!scores[r.quiz_id]) scores[r.quiz_id] = [];
+            scores[r.quiz_id].push({
+              matiere_id: r.matiere_id,
+              matiere_nom: r.matiere_nom,
+              note_sur_20: r.note_sur_20 ?? 0,
+            });
+          });
+          setExamScores(scores);
         }
       });
   }, [apprenantId]);
