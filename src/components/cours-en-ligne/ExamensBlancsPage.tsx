@@ -970,23 +970,43 @@ function EcranResultats({
                     const donnees = ((rep as string[]) || []).sort();
                     isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
                     pointsObtenus = isCorrect ? pts : 0;
-                  } else if (q?.type === "QRC") {
+                   } else if (q?.type === "QRC") {
                     const corrIA = cacheMatiere[q.id];
+                    const isCalc = isCalculQuestion(q);
                     if (!corrIA || corrIA === "loading") {
                       isLoadingIA = true;
                     } else if (corrIA === "error") {
-                      // Fallback mots-clés avec prorata
-                      const repStr = ((rep as string) || "").toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
-                      const motsCles = q.reponses_possibles || [];
-                      let nbTrouvees = 0;
-                      motsCles.forEach(mc => {
-                        const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
-                        if (repStr.includes(mcN)) nbTrouvees++;
-                      });
-                      const ratio = motsCles.length > 0 ? nbTrouvees / motsCles.length : 0;
-                      isCorrect = nbTrouvees >= motsCles.length;
-                      pointsObtenus = Math.round(ratio * pts * 10) / 10;
-                      correctionDetail = "⚠️ Correction IA indisponible – correction par mots-clés";
+                      if (isCalc) {
+                        // Fallback calcul : vérifier résultat + détail
+                        const repStr = ((rep as string) || "").replace(/\s/g, "").toLowerCase();
+                        const hasResult = (q.reponses_possibles || []).some(r => repStr.includes(r.replace(/\s/g, "").toLowerCase()));
+                        const hasCalcDetail = /\d+\s*[\/×x\*\-\+]\s*\d+/.test((rep as string) || "") || /=\s*\d/.test((rep as string) || "");
+                        if (hasResult && hasCalcDetail) {
+                          isCorrect = true;
+                          pointsObtenus = pts;
+                        } else if (hasResult) {
+                          isCorrect = false;
+                          pointsObtenus = Math.round(pts * 5) / 10;
+                          correctionDetail = `⚠️ Vous avez trouvé le bon résultat mais le détail du calcul est manquant → ${pointsObtenus}/${pts} pts`;
+                        } else {
+                          isCorrect = false;
+                          pointsObtenus = 0;
+                          correctionDetail = "❌ Résultat incorrect.";
+                        }
+                      } else {
+                        // Fallback mots-clés avec prorata
+                        const repStr = ((rep as string) || "").toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+                        const motsCles = q.reponses_possibles || [];
+                        let nbTrouvees = 0;
+                        motsCles.forEach(mc => {
+                          const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+                          if (repStr.includes(mcN)) nbTrouvees++;
+                        });
+                        const ratio = motsCles.length > 0 ? nbTrouvees / motsCles.length : 0;
+                        isCorrect = nbTrouvees >= motsCles.length;
+                        pointsObtenus = Math.round(ratio * pts * 10) / 10;
+                        correctionDetail = "⚠️ Correction IA indisponible – correction par mots-clés";
+                      }
                     } else {
                       isCorrect = corrIA.estCorrect;
                       pointsObtenus = corrIA.pointsObtenus;
