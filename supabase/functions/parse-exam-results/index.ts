@@ -6,13 +6,21 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+/** Remove accents and lowercase */
+function normalize(s: string): string {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const { fileName } = await req.json();
+    const { fileName, examType } = await req.json();
+    // examType: "admissibilite" (théorie) or "admission" (pratique)
+    const type = examType === "admission" ? "admission" : "admissibilite";
+
     if (!fileName) {
       return new Response(JSON.stringify({ error: "fileName requis" }), {
         status: 400,
@@ -38,10 +46,35 @@ Deno.serve(async (req) => {
 
     // Convert to base64 for AI analysis
     const arrayBuffer = await fileData.arrayBuffer();
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    const uint8 = new Uint8Array(arrayBuffer);
+    // Convert in chunks to avoid stack overflow on large files
+    let base64 = "";
+    const chunkSize = 8192;
+    for (let i = 0; i < uint8.length; i += chunkSize) {
+      base64 += String.fromCharCode(...uint8.slice(i, i + chunkSize));
+    }
+    base64 = btoa(base64);
 
-    // Use Lovable AI (Gemini) to extract dossier numbers and results
     const lovableApiKey = Deno.env.get("LOVABLE_API_KEY")!;
+
+    const promptText = `Analyse ce document PDF de résultats d'examen.
+
+Extrais TOUS les candidats avec leur Nom, Prénom et résultat.
+
+Le résultat peut être :
+- "Admis" ou "Admissible" → résultat positif
+- "Ajourné" ou "Non admissible" ou "Non admis" → résultat négatif
+
+Réponds UNIQUEMENT avec un JSON valide, sans aucun texte avant ou après. Le format doit être exactement:
+[{"nom": "DUPONT", "prenom": "Jean", "resultat": "admis"}, {"nom": "MARTIN", "prenom": "Pierre", "resultat": "ajourne"}]
+
+- "nom" = le nom de famille EN MAJUSCULES
+- "prenom" = le prénom avec majuscule initiale
+- "resultat" = "admis" si le candidat a réussi, "ajourne" sinon
+
+Si tu trouves aussi un numéro de dossier, ajoute-le: {"nom": "DUPONT", "prenom": "Jean", "resultat": "admis", "dossier": "00017322"}
+
+Ne mets aucune explication, juste le tableau JSON.`;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -55,26 +88,13 @@ Deno.serve(async (req) => {
           {
             role: "user",
             content: [
-              {
-                type: "text",
-                text: `Analyse ce document PDF de résultats d'examen. Extrais TOUS les numéros de dossier et leur résultat (admissible ou non admissible).
-
-Réponds UNIQUEMENT avec un JSON valide, sans aucun texte avant ou après. Le format doit être exactement:
-[{"dossier": "00017322", "resultat": "admissible"}, {"dossier": "00017323", "resultat": "non admissible"}]
-
-- "dossier" = le numéro de dossier (string, garder les zéros devant)
-- "resultat" = "admissible" ou "non admissible" exactement
-
-Ne mets aucune explication, juste le tableau JSON.`
-              },
+              { type: "text", text: promptText },
               {
                 type: "image_url",
-                image_url: {
-                  url: `data:application/pdf;base64,${base64}`
-                }
-              }
-            ]
-          }
+                image_url: { url: `data:application/pdf;base64,${base64}` },
+              },
+            ],
+          },
         ],
         temperature: 0,
       }),
@@ -94,9 +114,8 @@ Ne mets aucune explication, juste le tableau JSON.`
     console.log("AI raw response:", content);
 
     // Parse the JSON from AI response
-    let results: Array<{ dossier: string; resultat: string }>;
+    let results: Array<{ nom: string; prenom: string; resultat: string; dossier?: string }>;
     try {
-      // Try to extract JSON from the response (handle markdown code blocks)
       const jsonMatch = content.match(/\[[\s\S]*\]/);
       if (!jsonMatch) throw new Error("No JSON array found");
       results = JSON.parse(jsonMatch[0]);
@@ -108,11 +127,10 @@ Ne mets aucune explication, juste le tableau JSON.`
       });
     }
 
-    // Fetch all apprenants with exam dates containing "janvier"
+    // Fetch ALL apprenants
     const { data: apprenants, error: fetchErr } = await supabase
       .from("apprenants")
-      .select("id, nom, prenom, numero_dossier_cma, resultat_examen")
-      .or("date_examen_theorique.ilike.%janvier%,date_examen_theorique.ilike.%Janvier%");
+      .select("id, nom, prenom, numero_dossier_cma, resultat_examen, resultat_examen_pratique");
 
     if (fetchErr) {
       return new Response(JSON.stringify({ error: "Erreur DB: " + fetchErr.message }), {
@@ -121,48 +139,84 @@ Ne mets aucune explication, juste le tableau JSON.`
       });
     }
 
-    // Build a map of dossier -> result from PDF
-    const dossierMap = new Map<string, string>();
-    for (const r of results) {
-      // Normalize: remove leading zeros for comparison too, but keep original
-      dossierMap.set(r.dossier, r.resultat.toLowerCase().includes("non") ? "non" : "oui");
-    }
+    // Build normalized lookup from PDF results
+    const pdfResults = results.map(r => ({
+      ...r,
+      normNom: normalize(r.nom),
+      normPrenom: normalize(r.prenom),
+      mappedResultat: r.resultat.toLowerCase().includes("ajourne") || r.resultat.toLowerCase().includes("non") ? "non" : "oui",
+    }));
 
-    const updates: Array<{ id: string; nom: string; prenom: string; resultat: string; dossier: string | null }> = [];
+    // Build apprenant lookup
+    const apprenantList = (apprenants || []).map(a => ({
+      ...a,
+      normNom: normalize(a.nom),
+      normPrenom: normalize(a.prenom),
+    }));
 
-    for (const a of apprenants || []) {
-      let resultat: string;
-      if (!a.numero_dossier_cma) {
-        resultat = "absent";
-      } else if (dossierMap.has(a.numero_dossier_cma)) {
-        resultat = dossierMap.get(a.numero_dossier_cma)!;
-      } else {
-        // Try without leading zeros
-        const stripped = a.numero_dossier_cma.replace(/^0+/, "");
-        const found = [...dossierMap.entries()].find(([k]) => k.replace(/^0+/, "") === stripped);
-        if (found) {
-          resultat = found[1];
-        } else {
-          resultat = "absent";
-        }
+    const matched: Array<{ id: string; nom: string; prenom: string; resultat: string; dossier?: string }> = [];
+    const notFound: Array<{ nom: string; prenom: string; resultat: string }> = [];
+
+    for (const pdfEntry of pdfResults) {
+      // Try matching by name (accent/case insensitive)
+      let found = apprenantList.find(
+        a => a.normNom === pdfEntry.normNom && a.normPrenom === pdfEntry.normPrenom
+      );
+
+      // If not found by exact normalized name, try with dossier number
+      if (!found && pdfEntry.dossier) {
+        found = apprenantList.find(a => {
+          if (!a.numero_dossier_cma) return false;
+          return a.numero_dossier_cma.replace(/^0+/, "") === pdfEntry.dossier!.replace(/^0+/, "");
+        });
       }
 
-      // Update in DB
-      const { error: updateErr } = await supabase
-        .from("apprenants")
-        .update({ resultat_examen: resultat })
-        .eq("id", a.id);
+      // If still not found, try fuzzy: last name matches exactly, first name starts with
+      if (!found) {
+        found = apprenantList.find(
+          a => a.normNom === pdfEntry.normNom && (
+            a.normPrenom.startsWith(pdfEntry.normPrenom) || pdfEntry.normPrenom.startsWith(a.normPrenom)
+          )
+        );
+      }
 
-      if (!updateErr) {
-        updates.push({ id: a.id, nom: a.nom, prenom: a.prenom, resultat, dossier: a.numero_dossier_cma });
+      if (found) {
+        // Update the correct field based on exam type
+        const updateField = type === "admission"
+          ? { resultat_examen_pratique: pdfEntry.mappedResultat }
+          : { resultat_examen: pdfEntry.mappedResultat };
+
+        const { error: updateErr } = await supabase
+          .from("apprenants")
+          .update(updateField)
+          .eq("id", found.id);
+
+        if (!updateErr) {
+          matched.push({
+            id: found.id,
+            nom: found.nom,
+            prenom: found.prenom,
+            resultat: pdfEntry.mappedResultat,
+            dossier: pdfEntry.dossier,
+          });
+        }
+      } else {
+        notFound.push({
+          nom: pdfEntry.nom,
+          prenom: pdfEntry.prenom,
+          resultat: pdfEntry.mappedResultat,
+        });
       }
     }
 
     return new Response(JSON.stringify({
       success: true,
+      examType: type,
       totalExtracted: results.length,
-      totalUpdated: updates.length,
-      details: updates,
+      totalMatched: matched.length,
+      totalNotFound: notFound.length,
+      matched,
+      notFound,
       extractedFromPdf: results,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

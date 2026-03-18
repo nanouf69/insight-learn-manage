@@ -374,7 +374,7 @@ export function ExamenReussitePage() {
     window.open(data.signedUrl, '_blank');
   };
 
-  const handleAnalyzePdf = async (fileName: string) => {
+  const handleAnalyzePdf = async (fileName: string, examType: 'admissibilite' | 'admission') => {
     setAnalyzing(true);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -386,53 +386,32 @@ export function ExamenReussitePage() {
           'Authorization': `Bearer ${token}`,
           'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         },
-        body: JSON.stringify({ fileName }),
+        body: JSON.stringify({ fileName, examType }),
       });
       const result = await res.json();
       if (!res.ok || result.error) {
         toast.error("Erreur : " + (result.error || "Échec de l'analyse"));
       } else {
-        const oui = result.details?.filter((d: any) => d.resultat === 'oui').length || 0;
-        const non = result.details?.filter((d: any) => d.resultat === 'non').length || 0;
-        const absent = result.details?.filter((d: any) => d.resultat === 'absent').length || 0;
-        toast.success(`Résultats mis à jour ! ✅ ${oui} admis, ❌ ${non} non admis, 🔶 ${absent} absents`);
-        queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] });
+        const totalExtracted = result.totalExtracted || 0;
+        const totalMatched = result.totalMatched || 0;
+        const totalNotFound = result.totalNotFound || 0;
+        const oui = result.matched?.filter((d: any) => d.resultat === 'oui').length || 0;
+        const non = result.matched?.filter((d: any) => d.resultat === 'non').length || 0;
+        const typeLabel = examType === 'admission' ? 'Admission (Pratique)' : 'Admissibilité (Théorie)';
 
-        // Envoi automatique du mail "Repassage examen théorique" aux non-admis
-        if (non > 0) {
-          const echoues = result.details?.filter((d: any) => d.resultat === 'non') || [];
-          // Récupérer les infos des apprenants échoués
-          const { data: echouesApprenants } = await supabase
-            .from('apprenants')
-            .select('id, nom, prenom, email, type_apprenant')
-            .in('numero_dossier_cma', echoues.map((e: any) => e.dossier).filter(Boolean));
-          
-          if (echouesApprenants && echouesApprenants.length > 0) {
-            let emailsSent = 0;
-            for (const apprenant of echouesApprenants) {
-              if (!apprenant.email) continue;
-              const type = (apprenant.type_apprenant || '').toLowerCase();
-              let formation = 'VTC';
-              if (type.includes('ta-e') || type === 'ta') formation = 'TAXI (mobilité VTC vers TAXI)';
-              else if (type.includes('taxi') || type.includes('ta-i')) formation = 'TAXI';
+        toast.success(
+          `${typeLabel} : ${totalMatched} résultats mappés sur ${totalExtracted} candidats — ${totalNotFound} non trouvé(s)\n✅ ${oui} admis, ❌ ${non} ajourné(s)`,
+          { duration: 10000 }
+        );
 
-              const subject = `Réinscription à l'examen théorique T3P - ${apprenant.prenom} ${apprenant.nom}`;
-              const body = `Bonjour ${apprenant.prenom},<br><br>Suite à votre précédent examen théorique ${formation}, vous devez procéder à une nouvelle inscription pour repasser l'examen théorique.<br><br>📌 <strong>ÉTAPES À SUIVRE :</strong><br><br><strong>1️⃣ Rendez-vous sur le site :</strong><br>👉 <a href="https://www.exament3p.fr" target="_blank">www.exament3p.fr</a><br><br><strong>2️⃣ Connectez-vous avec :</strong><br>• Login : votre adresse email<br>• Mot de passe : cliquez sur "Mot de passe oublié" pour en créer un nouveau<br><br><strong>3️⃣ Une fois connecté(e), procédez à votre réinscription à l'examen théorique</strong> en suivant les instructions du site.<br><br>⚠️ <strong>IMPORTANT — Département 69 obligatoire :</strong><br><span style="color: red; font-size: 16px; font-weight: bold;">🔴 ATTENTION : Lors de votre réinscription, vous devez IMPÉRATIVEMENT sélectionner le département 69 (Rhône), même si vous résidez dans un autre département. Si vous choisissez un autre département, nous ne pourrons pas vous former ni vous louer un véhicule pour l'examen pratique.</span><br><br>⚠️ <strong>IMPORTANT :</strong> Une fois votre réinscription effectuée sur le site, merci de nous recontacter immédiatement afin que nous puissions finaliser votre dossier et vous accompagner pour la suite.<br><br>📞 Tél : <strong>04 28 29 60 91</strong><br>📧 Email : contact@ftransport.fr<br><br>N'hésitez pas à nous contacter si vous rencontrez des difficultés lors de votre réinscription.<br><br>Cordialement,<br><strong>L'équipe Ftransport</strong><br>86 Route de Genas, 69003 Lyon`;
-
-              try {
-                await supabase.functions.invoke('sync-outlook-emails', {
-                  body: { action: 'send', userEmail: 'contact@ftransport.fr', to: apprenant.email, subject, body, apprenantId: apprenant.id }
-                });
-                emailsSent++;
-              } catch (e) {
-                console.error(`Erreur envoi email repassage à ${apprenant.email}:`, e);
-              }
-            }
-            if (emailsSent > 0) {
-              toast.success(`📧 ${emailsSent} email(s) "Repassage examen théorique" envoyé(s) automatiquement`);
-            }
-          }
+        if (result.notFound?.length > 0) {
+          const names = result.notFound.map((n: any) => `${n.nom} ${n.prenom}`).join(', ');
+          toast.warning(`⚠️ Candidats non trouvés (saisie manuelle requise) : ${names}`, { duration: 15000 });
+          console.log("Candidats non trouvés:", result.notFound);
         }
+
+        queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] });
+        queryClient.invalidateQueries({ queryKey: ['all-apprenants'] });
       }
     } catch (err: any) {
       toast.error("Erreur : " + err.message);
@@ -2229,7 +2208,8 @@ export function ExamenReussitePage() {
                     <TableHead>Téléphone</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Date d'examen</TableHead>
-                    <TableHead className="text-center">Examen réussi</TableHead>
+                    <TableHead className="text-center">Admissibilité (Théorie)</TableHead>
+                    <TableHead className="text-center">Admission (Pratique)</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -2237,6 +2217,7 @@ export function ExamenReussitePage() {
                     const tLabel = typeLabel[apprenant.type_apprenant || ''] || apprenant.type_apprenant || '-';
                     const tColor = typeColor[apprenant.type_apprenant || ''] || 'bg-gray-100 text-gray-800';
                     const resultat = (apprenant as any).resultat_examen || '';
+                    const resultatPratique = (apprenant as any).resultat_examen_pratique || '';
 
                     return (
                       <TableRow key={apprenant.id}>
@@ -2267,7 +2248,7 @@ export function ExamenReussitePage() {
                               })
                             }
                           >
-                            <SelectTrigger className={`w-36 mx-auto ${
+                            <SelectTrigger className={`w-32 mx-auto text-xs ${
                               resultat === 'oui' ? 'border-emerald-500 text-emerald-700 bg-emerald-50' :
                               resultat === 'non' ? 'border-red-500 text-red-700 bg-red-50' :
                               resultat === 'absent' ? 'border-orange-500 text-orange-700 bg-orange-50' :
@@ -2277,10 +2258,41 @@ export function ExamenReussitePage() {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="non_renseigne">-</SelectItem>
-                              <SelectItem value="oui">✅ Oui</SelectItem>
-                              <SelectItem value="non">❌ Non</SelectItem>
+                              <SelectItem value="oui">✅ Admis</SelectItem>
+                              <SelectItem value="non">❌ Ajourné</SelectItem>
                               <SelectItem value="absent">🔶 Absent</SelectItem>
-                              <SelectItem value="deplace">📅 Déplacé prochaine session</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Select
+                            value={resultatPratique || "non_renseigne"}
+                            onValueChange={async (val) => {
+                              const newVal = val === "non_renseigne" ? null : val;
+                              try {
+                                await supabase
+                                  .from('apprenants')
+                                  .update({ resultat_examen_pratique: newVal } as any)
+                                  .eq('id', apprenant.id);
+                                queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] });
+                                toast.success("Résultat pratique mis à jour");
+                              } catch (err: any) {
+                                toast.error(err.message || "Erreur");
+                              }
+                            }}
+                          >
+                            <SelectTrigger className={`w-32 mx-auto text-xs ${
+                              resultatPratique === 'oui' ? 'border-emerald-500 text-emerald-700 bg-emerald-50' :
+                              resultatPratique === 'non' ? 'border-red-500 text-red-700 bg-red-50' :
+                              resultatPratique === 'deplace' ? 'border-orange-500 text-orange-700 bg-orange-50' : ''
+                            }`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="non_renseigne">-</SelectItem>
+                              <SelectItem value="oui">✅ Admis</SelectItem>
+                              <SelectItem value="non">❌ Ajourné</SelectItem>
+                              <SelectItem value="deplace">📅 Déplacé</SelectItem>
                             </SelectContent>
                           </Select>
                         </TableCell>
@@ -2412,7 +2424,7 @@ export function ExamenReussitePage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Uploadez ici le PDF contenant les numéros de dossier avec les résultats d'examen.
+            Uploadez le PDF des résultats d'examen, puis cliquez sur "Analyser" en choisissant le type d'épreuve (Admissibilité = théorie, Admission = pratique). Les résultats seront mappés automatiquement par Nom + Prénom.
           </p>
           <div className="flex items-center gap-3">
             <input
@@ -2446,16 +2458,40 @@ export function ExamenReussitePage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button
-                      variant="default"
-                      size="sm"
-                      className="gap-1"
-                      disabled={analyzing}
-                      onClick={() => handleAnalyzePdf(file.name)}
-                    >
-                      <CheckCircle2 className="h-4 w-4" />
-                      {analyzing ? "Analyse..." : "Analyser les résultats"}
-                    </Button>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="gap-1"
+                          disabled={analyzing}
+                        >
+                          <CheckCircle2 className="h-4 w-4" />
+                          {analyzing ? "Analyse..." : "Analyser les résultats"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-56 p-2" align="end">
+                        <p className="text-xs font-medium text-muted-foreground mb-2">Type d'épreuve :</p>
+                        <div className="space-y-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start gap-2 text-xs"
+                            onClick={() => handleAnalyzePdf(file.name, 'admissibilite')}
+                          >
+                            📝 Admissibilité (Théorie)
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start gap-2 text-xs"
+                            onClick={() => handleAnalyzePdf(file.name, 'admission')}
+                          >
+                            🚗 Admission (Pratique)
+                          </Button>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                     <Button variant="outline" size="icon" onClick={() => handleDownloadFile(file.name)} title="Télécharger">
                       <Download className="h-4 w-4" />
                     </Button>
