@@ -59,6 +59,31 @@ const FIELD_LABELS: Record<string, string> = {
   cgv_accepted: 'CGV acceptees', ri_accepted: 'Reglement interieur accepte',
   accepted: 'Accepte', accepted_at: 'Date acceptation',
   signed_at: 'Date de signature', formationLabel: 'Formation',
+  // Pre-information publique - Analyse du besoin
+  situation_actuelle: 'Quelle est votre situation actuelle ?',
+  niveau_etude: "Quel est votre niveau d'etudes ?",
+  experience_transport: 'Avez-vous une experience dans le transport de personnes ?',
+  type_experience: 'Si oui, dans quel secteur ?',
+  permis_conduire: 'Depuis combien de temps avez-vous le permis B ?',
+  motivation: 'Quelle est votre principale motivation pour cette formation ?',
+  disponibilite: 'Quelles sont vos disponibilites pour suivre la formation ?',
+  financement: 'Quel mode de financement envisagez-vous ?',
+  besoins_specifiques: 'Avez-vous des besoins specifiques ?',
+  comment_connu: 'Comment avez-vous connu FTRANSPORT ?',
+  attentes: 'Quelles sont vos principales attentes vis-a-vis de la formation ?',
+  delai_formation: 'Quand souhaitez-vous commencer la formation ?',
+  // Pre-information publique - Projet professionnel
+  objectif_court_terme: 'Quel est votre objectif a court terme (6 mois) ?',
+  objectif_moyen_terme: 'Quel est votre objectif a moyen terme (1 a 3 ans) ?',
+  type_activite: "Quel type d'activite envisagez-vous ?",
+  zone_geographique: 'Dans quelle zone geographique souhaitez-vous exercer ?',
+  statut_juridique: 'Quel statut juridique envisagez-vous ?',
+  vehicule_prevu: 'Avez-vous deja prevu un vehicule pour votre activite ?',
+  budget_investissement: "Quel est votre budget d'investissement estime ?",
+  date_debut_activite: 'Quand souhaitez-vous demarrer votre activite professionnelle ?',
+  connaissance_reglementation: 'Connaissez-vous la reglementation du secteur ?',
+  plateforme_envisagee: 'Envisagez-vous de travailler avec une plateforme de mise en relation ?',
+  accompagnement_souhaite: 'Souhaitez-vous un accompagnement apres la formation ?',
 };
 
 const TYPE_TITLES: Record<string, string> = {
