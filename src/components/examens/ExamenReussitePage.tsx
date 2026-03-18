@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { safeDateParse, formatDateFR, formatDateShortFR } from "@/lib/safeDateParse";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,12 @@ import { Button } from "@/components/ui/button";
 import { ClipboardCheck, CheckCircle2, XCircle, UserX, Search, RotateCcw, Plus, X, Upload, FileText, Trash2, Download, Users, Mail, GraduationCap, Calendar, MessageSquare, CalendarPlus } from "lucide-react";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Eye, Edit } from "lucide-react";
 
 export function ExamenReussitePage() {
   const [search, setSearch] = useState("");
@@ -43,6 +49,12 @@ export function ExamenReussitePage() {
   const [sentFelicitations, setSentFelicitations] = useState(false);
   const [sendingRepassagePratique, setSendingRepassagePratique] = useState(false);
   const [sentRepassagePratique, setSentRepassagePratique] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewMailType, setPreviewMailType] = useState<'felicitations' | 'repassage_pratique'>('felicitations');
+  const [previewSubject, setPreviewSubject] = useState('');
+  const [previewBody, setPreviewBody] = useState('');
+  const [previewRecipients, setPreviewRecipients] = useState<any[]>([]);
+  const [previewTab, setPreviewTab] = useState<string>('preview');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const planningFileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
@@ -2205,47 +2217,19 @@ export function ExamenReussitePage() {
                             <span className="text-sm font-semibold text-emerald-800">Félicitations — Admis</span>
                             <Badge className="bg-emerald-100 text-emerald-800 text-[10px]">{reussisEmail.length}</Badge>
                           </div>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button size="sm" disabled={reussisEmail.length === 0 || sendingFelicitations || sentFelicitations} className={`gap-1.5 text-xs ${sentFelicitations ? 'bg-emerald-600' : ''}`}>
-                                {sentFelicitations ? <CheckCircle2 className="h-3 w-3" /> : <Mail className="h-3 w-3" />}
-                                {sendingFelicitations ? 'Envoi...' : sentFelicitations ? 'Envoyé ✓' : `Envoyer (${reussisEmail.length})`}
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Envoyer l'email de félicitations ?</AlertDialogTitle>
-                                <AlertDialogDescription asChild>
-                                  <div className="space-y-2 text-sm">
-                                    <p>Envoi à <strong>{reussisEmail.length}</strong> candidat(s) admis (avis Google + CPF + carte pro).</p>
-                                    <div className="mt-2 max-h-32 overflow-y-auto space-y-1">
-                                      {reussisEmail.map(a => (
-                                        <div key={a.id} className="text-xs text-muted-foreground">{a.nom} {a.prenom} → {a.email}</div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                <AlertDialogAction onClick={async () => {
-                                  setSendingFelicitations(true);
-                                  let sent = 0;
-                                  for (const a of reussisEmail) {
-                                    const subject = `Félicitations - Vous êtes professionnel du transport de personnes - ${a.prenom} ${a.nom}`;
-                                    const body = `Bonjour,<br><br>Félicitations, vous êtes maintenant professionnel du transport de personnes.<br><br>Nous vous remercions de votre confiance et nous vous souhaitons une belle aventure dans ce secteur d'activité.<br><br>Avant de vous donner la procédure pour effectuer la demande de carte professionnelle, nous vous demanderons de bien vouloir rédiger un avis sur le centre de formation sur google et réaliser une très courte évaluation concernant la formation sur le compte CPF.<br><br>Voici le lien pour mettre un avis sur google :<br><a href="https://www.google.fr/search?source=hp&ei=RLZFXJSwLIS5gwejzIdg&q=ftransport&btnK=Recherche+Google&oq=ftransport&gs_l=psy-ab.3.0.0i10l2j0i10i30l6j0i5i30j0i5i10i30.1107.3123..3553...0.0..0.64.535.10......0....1..gws-wiz.....0..0i131j0.rJF72XtZ4i8#btnK=Recherche%20Google&lrd=0x47f4c1cfb1d26135:0x7b288437c427e7b9,1,,," target="_blank">Cliquez ici pour laisser un avis Google</a><br><br>Voici la démarche pour évaluer la formation sur le CPF :<br>1. Connectez-vous sur le site <a href="https://www.moncompteformation.gouv.fr" target="_blank">www.moncompteformation.gouv.fr</a><br>2. Connectez-vous avec France connect<br>3. Cliquez sur dossier<br>4. Cliquez sur la formation que vous avez réalisée<br>5. Cliquez sur évaluer ma formation<br><br>Après avoir effectué ces deux tâches, merci de nous contacter pour que l'on puisse vous informer de la démarche à suivre pour la demande de carte professionnelle.<br><br>Cordialement.<br><br><strong>FTRANSPORT</strong><br>Centre de formation<br>86 Route de genas 69003 Lyon<br>04.28.29.60.91<br>De 9h à 17h sur rendez-vous`;
-                                    try {
-                                      await supabase.functions.invoke('sync-outlook-emails', { body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id } });
-                                      sent++;
-                                    } catch (e) { console.error(e); }
-                                  }
-                                  setSendingFelicitations(false);
-                                  setSentFelicitations(true);
-                                  toast.success(`📧 ${sent}/${reussisEmail.length} email(s) "Félicitations" envoyé(s)`);
-                                }}>Confirmer l'envoi</AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                          <Button size="sm" disabled={reussisEmail.length === 0 || sendingFelicitations || sentFelicitations} className={`gap-1.5 text-xs ${sentFelicitations ? 'bg-emerald-600' : ''}`}
+                            onClick={() => {
+                              const defaultSubject = `Félicitations - Vous êtes professionnel du transport de personnes`;
+                              const defaultBody = `Bonjour,\n\nFélicitations, vous êtes maintenant professionnel du transport de personnes.\n\nNous vous remercions de votre confiance et nous vous souhaitons une belle aventure dans ce secteur d'activité.\n\nAvant de vous donner la procédure pour effectuer la demande de carte professionnelle, nous vous demanderons de bien vouloir rédiger un avis sur le centre de formation sur google et réaliser une très courte évaluation concernant la formation sur le compte CPF.\n\nVoici le lien pour mettre un avis sur google :\nhttps://www.google.fr/search?source=hp&ei=RLZFXJSwLIS5gwejzIdg&q=ftransport&btnK=Recherche+Google&oq=ftransport&gs_l=psy-ab.3.0.0i10l2j0i10i30l6j0i5i30j0i5i10i30.1107.3123..3553...0.0..0.64.535.10......0....1..gws-wiz.....0..0i131j0.rJF72XtZ4i8#btnK=Recherche%20Google&lrd=0x47f4c1cfb1d26135:0x7b288437c427e7b9,1,,,\n\nVoici la démarche pour évaluer la formation sur le CPF :\n1. Connectez-vous sur le site www.moncompteformation.gouv.fr\n2. Connectez-vous avec France connect\n3. Cliquez sur dossier\n4. Cliquez sur la formation que vous avez réalisée\n5. Cliquez sur évaluer ma formation\n\nAprès avoir effectué ces deux tâches, merci de nous contacter pour que l'on puisse vous informer de la démarche à suivre pour la demande de carte professionnelle.\n\nCordialement.\n\nFTRANSPORT\nCentre de formation\n86 Route de genas 69003 Lyon\n04.28.29.60.91\nDe 9h à 17h sur rendez-vous`;
+                              setPreviewMailType('felicitations');
+                              setPreviewSubject(defaultSubject);
+                              setPreviewBody(defaultBody);
+                              setPreviewRecipients(reussisEmail);
+                              setPreviewOpen(true);
+                            }}>
+                            {sentFelicitations ? <CheckCircle2 className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                            {sendingFelicitations ? 'Envoi...' : sentFelicitations ? 'Envoyé ✓' : `Envoyer (${reussisEmail.length})`}
+                          </Button>
                         </div>
                         <p className="text-[11px] text-emerald-700">Avis Google + évaluation CPF + carte professionnelle</p>
                       </div>
@@ -2263,51 +2247,19 @@ export function ExamenReussitePage() {
                             <span className="text-sm font-semibold text-red-800">Repassage — Ajourné</span>
                             <Badge className="bg-red-100 text-red-800 text-[10px]">{echouesEmail.length}</Badge>
                           </div>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button size="sm" variant="destructive" disabled={echouesEmail.length === 0 || sendingRepassagePratique || sentRepassagePratique} className={`gap-1.5 text-xs ${sentRepassagePratique ? 'bg-green-600' : ''}`}>
-                                {sentRepassagePratique ? <CheckCircle2 className="h-3 w-3" /> : <Mail className="h-3 w-3" />}
-                                {sendingRepassagePratique ? 'Envoi...' : sentRepassagePratique ? 'Envoyé ✓' : `Envoyer (${echouesEmail.length})`}
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Envoyer l'email de repassage pratique ?</AlertDialogTitle>
-                                <AlertDialogDescription asChild>
-                                  <div className="space-y-2 text-sm">
-                                    <p>Envoi à <strong>{echouesEmail.length}</strong> candidat(s) ajournés (réinscription exament3p.fr).</p>
-                                    <div className="mt-2 max-h-32 overflow-y-auto space-y-1">
-                                      {echouesEmail.map(a => (
-                                        <div key={a.id} className="text-xs text-muted-foreground">{a.nom} {a.prenom} → {a.email}</div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                <AlertDialogAction onClick={async () => {
-                                  setSendingRepassagePratique(true);
-                                  let sent = 0;
-                                  for (const a of echouesEmail) {
-                                    const type = (a.type_apprenant || '').toLowerCase();
-                                    let formation = 'VTC';
-                                    if (type.includes('ta-e') || type === 'ta') formation = 'TAXI (mobilité VTC vers TAXI)';
-                                    else if (type.includes('taxi') || type.includes('ta-i')) formation = 'TAXI';
-                                    const subject = `Réinscription à l'examen pratique T3P - ${a.prenom} ${a.nom}`;
-                                    const body = `Bonjour ${a.prenom},<br><br>Suite à votre précédent examen pratique ${formation}, vous devez procéder à une nouvelle inscription pour repasser l'examen pratique.<br><br>📌 <strong>ÉTAPES À SUIVRE :</strong><br><br><strong>1️⃣ Rendez-vous sur le site :</strong><br>👉 <a href="https://www.exament3p.fr" target="_blank">www.exament3p.fr</a><br><br><strong>2️⃣ Connectez-vous avec :</strong><br>• Login : votre adresse email<br>• Mot de passe : cliquez sur "Mot de passe oublié" pour en créer un nouveau<br><br><strong>3️⃣ Une fois connecté(e), procédez à votre réinscription à l'examen pratique</strong> en suivant les instructions du site.<br><br>⚠️ <strong>IMPORTANT — Département 69 obligatoire :</strong><br><span style="color: red; font-size: 16px; font-weight: bold;">🔴 ATTENTION : Lors de votre réinscription, vous devez IMPÉRATIVEMENT sélectionner le département 69 (Rhône), même si vous résidez dans un autre département. Si vous choisissez un autre département, nous ne pourrons pas vous former ni vous louer un véhicule pour l'examen pratique.</span><br><br>⚠️ <strong>IMPORTANT :</strong> Une fois votre réinscription effectuée sur le site, merci de nous recontacter immédiatement afin que nous puissions finaliser votre dossier et vous accompagner pour la suite.<br><br>📞 Tél : <strong>04 28 29 60 91</strong><br>📧 Email : contact@ftransport.fr<br><br>N'hésitez pas à nous contacter si vous rencontrez des difficultés lors de votre réinscription.<br><br>Cordialement,<br><strong>L'équipe Ftransport</strong><br>86 Route de Genas, 69003 Lyon`;
-                                    try {
-                                      await supabase.functions.invoke('sync-outlook-emails', { body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id } });
-                                      sent++;
-                                    } catch (e) { console.error(e); }
-                                  }
-                                  setSendingRepassagePratique(false);
-                                  setSentRepassagePratique(true);
-                                  toast.success(`📧 ${sent}/${echouesEmail.length} email(s) "Repassage pratique" envoyé(s)`);
-                                }}>Confirmer l'envoi</AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                          <Button size="sm" variant="destructive" disabled={echouesEmail.length === 0 || sendingRepassagePratique || sentRepassagePratique} className={`gap-1.5 text-xs ${sentRepassagePratique ? 'bg-green-600' : ''}`}
+                            onClick={() => {
+                              const defaultSubject = `Réinscription à l'examen pratique T3P`;
+                              const defaultBody = `Bonjour {{prenom}},\n\nSuite à votre précédent examen pratique, vous devez procéder à une nouvelle inscription pour repasser l'examen pratique.\n\n📌 ÉTAPES À SUIVRE :\n\n1️⃣ Rendez-vous sur le site :\n👉 www.exament3p.fr\n\n2️⃣ Connectez-vous avec :\n• Login : votre adresse email\n• Mot de passe : cliquez sur "Mot de passe oublié" pour en créer un nouveau\n\n3️⃣ Une fois connecté(e), procédez à votre réinscription à l'examen pratique en suivant les instructions du site.\n\n⚠️ IMPORTANT — Département 69 obligatoire :\n🔴 ATTENTION : Lors de votre réinscription, vous devez IMPÉRATIVEMENT sélectionner le département 69 (Rhône), même si vous résidez dans un autre département. Si vous choisissez un autre département, nous ne pourrons pas vous former ni vous louer un véhicule pour l'examen pratique.\n\n⚠️ IMPORTANT : Une fois votre réinscription effectuée sur le site, merci de nous recontacter immédiatement afin que nous puissions finaliser votre dossier et vous accompagner pour la suite.\n\n📞 Tél : 04 28 29 60 91\n📧 Email : contact@ftransport.fr\n\nN'hésitez pas à nous contacter si vous rencontrez des difficultés lors de votre réinscription.\n\nCordialement,\nL'équipe Ftransport\n86 Route de Genas, 69003 Lyon`;
+                              setPreviewMailType('repassage_pratique');
+                              setPreviewSubject(defaultSubject);
+                              setPreviewBody(defaultBody);
+                              setPreviewRecipients(echouesEmail);
+                              setPreviewOpen(true);
+                            }}>
+                            {sentRepassagePratique ? <CheckCircle2 className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                            {sendingRepassagePratique ? 'Envoi...' : sentRepassagePratique ? 'Envoyé ✓' : `Envoyer (${echouesEmail.length})`}
+                          </Button>
                         </div>
                         <p className="text-[11px] text-red-700">Réinscription exament3p.fr + département 69 obligatoire</p>
                       </div>
@@ -2596,6 +2548,123 @@ export function ExamenReussitePage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Email Preview/Edit Dialog */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              {previewMailType === 'felicitations' ? '📧 Aperçu — Félicitations (Admis)' : '📧 Aperçu — Repassage pratique (Ajourné)'}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Users className="h-4 w-4" />
+            <span><strong>{previewRecipients.length}</strong> destinataire(s)</span>
+          </div>
+
+          <ScrollArea className="max-h-24 border rounded-md p-2 text-xs space-y-0.5">
+            {previewRecipients.map(a => (
+              <div key={a.id} className="flex justify-between py-0.5">
+                <span className="font-medium">{a.nom} {a.prenom}</span>
+                <span className="text-muted-foreground">{a.email}</span>
+              </div>
+            ))}
+          </ScrollArea>
+
+          <Tabs value={previewTab} onValueChange={setPreviewTab} className="flex-1 flex flex-col min-h-0">
+            <TabsList className="w-fit">
+              <TabsTrigger value="preview" className="gap-1.5"><Eye className="h-3.5 w-3.5" /> Aperçu</TabsTrigger>
+              <TabsTrigger value="edit" className="gap-1.5"><Edit className="h-3.5 w-3.5" /> Modifier</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="preview" className="flex-1 min-h-0 mt-3">
+              <div className="border rounded-lg p-4 bg-white space-y-3 overflow-y-auto max-h-[45vh]">
+                <div className="border-b pb-2">
+                  <p className="text-xs text-muted-foreground">Objet :</p>
+                  <p className="font-semibold text-sm">{previewSubject}{previewMailType === 'felicitations' ? ' - {{prenom}} {{nom}}' : ' - {{prenom}} {{nom}}'}</p>
+                </div>
+                <div className="text-sm whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: previewBody.replace(/\n/g, '<br>').replace(/{{prenom}}/g, '<span class="bg-blue-100 text-blue-800 px-1 rounded text-xs">{{prénom}}</span>').replace(/{{nom}}/g, '<span class="bg-blue-100 text-blue-800 px-1 rounded text-xs">{{nom}}</span>') }} />
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-2">
+                💡 Les variables <span className="bg-blue-100 text-blue-800 px-1 rounded">{'{{prénom}}'}</span> et <span className="bg-blue-100 text-blue-800 px-1 rounded">{'{{nom}}'}</span> seront remplacées automatiquement pour chaque destinataire.
+              </p>
+            </TabsContent>
+
+            <TabsContent value="edit" className="flex-1 min-h-0 mt-3 space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="mail-subject" className="text-sm font-medium">Objet du mail</Label>
+                <Input id="mail-subject" value={previewSubject} onChange={e => setPreviewSubject(e.target.value)} />
+              </div>
+              <div className="space-y-2 flex-1">
+                <Label htmlFor="mail-body" className="text-sm font-medium">Corps du message</Label>
+                <Textarea id="mail-body" value={previewBody} onChange={e => setPreviewBody(e.target.value)} className="min-h-[35vh] font-mono text-xs" />
+                <p className="text-[11px] text-muted-foreground">
+                  💡 Utilisez {'{{prenom}}'} et {'{{nom}}'} pour personnaliser le message. Les retours à la ligne seront convertis en HTML.
+                </p>
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          <DialogFooter className="gap-2 pt-2">
+            <DialogClose asChild>
+              <Button variant="outline">Annuler</Button>
+            </DialogClose>
+            <Button
+              disabled={
+                (previewMailType === 'felicitations' && (sendingFelicitations || sentFelicitations)) ||
+                (previewMailType === 'repassage_pratique' && (sendingRepassagePratique || sentRepassagePratique))
+              }
+              variant={previewMailType === 'repassage_pratique' ? 'destructive' : 'default'}
+              className="gap-1.5"
+              onClick={async () => {
+                const recipients = previewRecipients;
+                if (previewMailType === 'felicitations') {
+                  setSendingFelicitations(true);
+                  setPreviewOpen(false);
+                  let sent = 0;
+                  for (const a of recipients) {
+                    const subject = `${previewSubject} - ${a.prenom} ${a.nom}`;
+                    const body = previewBody
+                      .replace(/{{prenom}}/g, a.prenom)
+                      .replace(/{{nom}}/g, a.nom)
+                      .replace(/\n/g, '<br>');
+                    try {
+                      await supabase.functions.invoke('sync-outlook-emails', { body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id } });
+                      sent++;
+                    } catch (e) { console.error(e); }
+                  }
+                  setSendingFelicitations(false);
+                  setSentFelicitations(true);
+                  toast.success(`📧 ${sent}/${recipients.length} email(s) "Félicitations" envoyé(s)`);
+                } else {
+                  setSendingRepassagePratique(true);
+                  setPreviewOpen(false);
+                  let sent = 0;
+                  for (const a of recipients) {
+                    const subject = `${previewSubject} - ${a.prenom} ${a.nom}`;
+                    const body = previewBody
+                      .replace(/{{prenom}}/g, a.prenom)
+                      .replace(/{{nom}}/g, a.nom)
+                      .replace(/\n/g, '<br>');
+                    try {
+                      await supabase.functions.invoke('sync-outlook-emails', { body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id } });
+                      sent++;
+                    } catch (e) { console.error(e); }
+                  }
+                  setSendingRepassagePratique(false);
+                  setSentRepassagePratique(true);
+                  toast.success(`📧 ${sent}/${recipients.length} email(s) "Repassage pratique" envoyé(s)`);
+                }
+              }}
+            >
+              <Mail className="h-4 w-4" />
+              Confirmer l'envoi ({previewRecipients.length})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
