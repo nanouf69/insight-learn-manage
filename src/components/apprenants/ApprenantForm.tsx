@@ -444,18 +444,29 @@ export function ApprenantForm() {
         }
       }
 
-      // Auto-envoi du mail de pré-information selon la formation
-      let emailSent = false;
+      // Auto-envoi des emails (pré-information + bienvenue)
+      let emailPreInfoSent = false;
+      let emailBienvenueSent = false;
       if (newApprenant && formData.email) {
-        try {
-          // Déterminer le type de pré-info (vtc, taxi, ta, va)
-          const baseType = typeApprenantFormation.replace(/-e$/, '').replace(/-e-presentiel$/, '');
-          const preInfoType = ['vtc', 'taxi', 'ta', 'va'].includes(baseType) ? baseType : null;
-          
-          if (preInfoType) {
-            // Utiliser le template "sans date" par défaut
+        const ONBOARDING_URL = "https://insight-learn-manage.lovable.app/bienvenue";
+        
+        // Déterminer le type de pré-info (vtc, taxi, ta, va)
+        const baseType = typeApprenantFormation.replace(/-e$/, '').replace(/-e-presentiel$/, '');
+        const preInfoType = ['vtc', 'taxi', 'ta', 'va'].includes(baseType) ? baseType : null;
+
+        // Déterminer le label de formation pour le mail de bienvenue
+        const formationLabels: Record<string, string> = {
+          'vtc': 'VTC', 'vtc-e': 'VTC (E-learning)', 'vtc-e-presentiel': 'VTC (E-learning + Présentiel)',
+          'taxi': 'TAXI', 'taxi-e': 'TAXI (E-learning)', 'taxi-e-presentiel': 'TAXI (E-learning + Présentiel)',
+          'ta': 'Passerelle TA (VTC→TAXI)', 'ta-e': 'Passerelle TA (E-learning)', 'ta-e-presentiel': 'Passerelle TA (E-learning + Présentiel)',
+          'va': 'Passerelle VA (TAXI→VTC)', 'va-e': 'Passerelle VA (E-learning)', 'va-e-presentiel': 'Passerelle VA (E-learning + Présentiel)',
+        };
+        const formationLabel = formationLabels[typeApprenantFormation] || typeApprenantFormation.toUpperCase();
+
+        // 1) Email pré-information
+        if (preInfoType) {
+          try {
             const templateId = `pre-information-${preInfoType}-sans-date`;
-            
             const { data: tpl } = await supabase
               .from('email_templates')
               .select('subject_template, body_template')
@@ -471,33 +482,46 @@ export function ApprenantForm() {
                 '{{formation}}': formData.formation_choisie || '',
                 '{{date_debut}}': formData.date_debut_formation || '',
               };
-              
               let subject = tpl.subject_template;
               let body = tpl.body_template;
               for (const [key, val] of Object.entries(vars)) {
-              subject = subject.split(key).join(val);
-              body = body.split(key).join(val);
+                subject = subject.split(key).join(val);
+                body = body.split(key).join(val);
               }
-              
               await supabase.functions.invoke('sync-outlook-emails', {
-                body: {
-                  action: 'send',
-                  apprenantId: newApprenant.id,
-                  userEmail: 'contact@ftransport.fr',
-                  to: formData.email,
-                  subject,
-                  body,
-                },
+                body: { action: 'send', apprenantId: newApprenant.id, userEmail: 'contact@ftransport.fr', to: formData.email, subject, body },
               });
-              emailSent = true;
+              emailPreInfoSent = true;
             }
+          } catch (err) {
+            console.error('Erreur envoi email pré-information:', err);
           }
-        } catch (emailErr) {
-          console.error('Erreur envoi email pré-information:', emailErr);
+        }
+
+        // 2) Email de bienvenue (onboarding)
+        try {
+          const bienvenueSubject = `Bienvenue chez Ftransport - ${formData.prenom} ${formData.nom}`;
+          const bienvenueBody = `<p>Bonjour ${formData.prenom} ${formData.nom},</p>
+<p>Nous avons le plaisir de vous confirmer votre inscription à la formation <strong>${formationLabel}</strong>.</p>
+<p>🚨 <strong style="color: #dc2626;">IMPORTANT : Afin de valider définitivement votre inscription à l'examen, merci de cliquer sur le lien ci-dessous et de suivre les étapes. Sans cela, vous ne serez pas inscrit à l'examen.</strong></p>
+<p>👉 <strong><a href="${ONBOARDING_URL}">CLIQUEZ ICI POUR COMPLÉTER VOTRE DOSSIER D'INSCRIPTION</a></strong></p>
+<p>⚠️ <strong>Ce dossier est OBLIGATOIRE. Sans celui-ci complété, vous ne pourrez pas effectuer votre formation.</strong></p>
+<p>Pour toute question :<br>📞 04 28 29 60 91<br>📧 contact@ftransport.fr</p>
+<p>Cordialement,<br><strong>L'équipe Ftransport</strong><br>86 Route de Genas, 69003 Lyon</p>`;
+
+          await supabase.functions.invoke('sync-outlook-emails', {
+            body: { action: 'send', apprenantId: newApprenant.id, userEmail: 'contact@ftransport.fr', to: formData.email, subject: bienvenueSubject, body: bienvenueBody },
+          });
+          emailBienvenueSent = true;
+        } catch (err) {
+          console.error('Erreur envoi email bienvenue:', err);
         }
       }
 
-      const emailInfo = emailSent ? " — Email de pré-information envoyé ✉️" : "";
+      const emailInfoParts: string[] = [];
+      if (emailPreInfoSent) emailInfoParts.push("Pré-information");
+      if (emailBienvenueSent) emailInfoParts.push("Bienvenue");
+      const emailInfo = emailInfoParts.length > 0 ? ` — Emails envoyés : ${emailInfoParts.join(" + ")} ✉️` : "";
       toast({
         title: "Apprenant ajouté",
         description: `${formData.prenom} ${formData.nom} a été ajouté en tant que ${typeApprenant === "prospect" ? "prospect" : "client"}${sessionInfo}.${emailInfo}`,
