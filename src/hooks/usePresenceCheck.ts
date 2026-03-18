@@ -7,6 +7,12 @@ const TEN_MINUTES_MS = 10 * 60 * 1000;
 const SEVEN_HOURS_MS = 7 * 60 * 60 * 1000;
 const COUNTDOWN_TICK_MS = 1000;
 
+/** Returns true if current time is between 22:00 and 05:00 */
+function isNightTime(): boolean {
+  const hour = new Date().getHours();
+  return hour >= 22 || hour < 5;
+}
+
 interface UsePresenceCheckParams {
   apprenantId: string | null;
   userId: string | null;
