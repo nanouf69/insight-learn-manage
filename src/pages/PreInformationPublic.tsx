@@ -891,7 +891,6 @@ export default function PreInformationPublic() {
               <div className="border-t pt-4 space-y-2">
                 <label className="text-sm font-medium">Signature (Nom et Prénom) *</label>
                 <Input value={signature} onChange={(e) => setSignature(e.target.value)} placeholder="Votre nom et prénom pour valider" />
-                <p className="text-xs text-muted-foreground">Fait le {signatureDate}</p>
               </div>
 
               <Button className="w-full" onClick={handleSubmitCompetences} disabled={saving || answeredCompetences < totalCompetences}>
