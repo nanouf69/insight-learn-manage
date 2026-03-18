@@ -392,14 +392,16 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             ville,
             auth_user_id,
             date_debut_cours_en_ligne,
-            date_fin_cours_en_ligne,
-            date_debut_formation,
-            date_fin_formation
+            date_fin_cours_en_ligne
           )
         `)
         .eq('session_id', session.id);
       
-      if (error) throw error;
+      if (error) {
+        console.error('[SessionDetail] Erreur chargement apprenants:', error);
+        return [];
+      }
+      console.log('[SessionDetail] apprenantsInSession chargés:', data?.length, data);
       return data || [];
     },
     enabled: !!session?.id && open,
