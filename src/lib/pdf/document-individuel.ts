@@ -302,6 +302,20 @@ function renderEvaluationAcquis(doc: jsPDF, donnees: any, y: number, margin: num
 }
 
 function renderProjetProfessionnel(doc: jsPDF, donnees: any, y: number, margin: number, pw: number): number {
+  // Public pre-information format: donnees.reponses contains QCM answers
+  if (donnees.reponses && typeof donnees.reponses === 'object') {
+    if (donnees.formation) {
+      y = renderField(doc, 'formationLabel', donnees.formation, y, margin, pw);
+    }
+    y = renderSectionHeader(doc, 'PROJET PROFESSIONNEL', y, margin, pw);
+    for (const [key, value] of Object.entries(donnees.reponses)) {
+      const question = getLabel(key);
+      const answer = Array.isArray(value) ? (value as string[]).join(', ') : String(value || '(Non repondu)');
+      y = renderQA(doc, question, answer, y, margin, pw);
+    }
+    return y;
+  }
+
   const SECTIONS = [
     { title: 'INFORMATIONS GENERALES', keys: ['formType', 'dateEntretien', 'conseiller', 'lieuNaissance'] },
     { title: 'SITUATION ACTUELLE', keys: ['statutActuel', 'metierActuel', 'anciennete', 'niveauFormation'] },
@@ -323,6 +337,20 @@ function renderProjetProfessionnel(doc: jsPDF, donnees: any, y: number, margin: 
 }
 
 function renderAnalyseBesoin(doc: jsPDF, donnees: any, y: number, margin: number, pw: number): number {
+  // Public pre-information format: donnees.reponses contains QCM answers
+  if (donnees.reponses && typeof donnees.reponses === 'object') {
+    if (donnees.formation) {
+      y = renderField(doc, 'formationLabel', donnees.formation, y, margin, pw);
+    }
+    y = renderSectionHeader(doc, 'ANALYSE DU BESOIN', y, margin, pw);
+    for (const [key, value] of Object.entries(donnees.reponses)) {
+      const question = getLabel(key);
+      const answer = Array.isArray(value) ? (value as string[]).join(', ') : String(value || '(Non repondu)');
+      y = renderQA(doc, question, answer, y, margin, pw);
+    }
+    return y;
+  }
+
   const SECTIONS = [
     { title: 'IDENTITE', keys: ['nom', 'prenom', 'email', 'telephone', 'adresse', 'codePostal', 'ville'] },
     { title: 'FORMATION SOUHAITEE', keys: ['formationVTC', 'formationTAXI', 'centreFormation'] },
