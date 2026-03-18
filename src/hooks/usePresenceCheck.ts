@@ -73,6 +73,24 @@ export function usePresenceCheck({
       position: "top-center",
     });
 
+    // Log the 4h encouragement to the database
+    if (apprenantId && userId && connexionId) {
+      supabase
+        .from("apprenant_module_activites" as any)
+        .insert({
+          apprenant_id: apprenantId,
+          user_id: userId,
+          connexion_id: connexionId,
+          module_id: 0,
+          module_nom: "Système",
+          action_type: "encouragement_4h",
+          metadata: { message: "Message d'encouragement à 4h de connexion" },
+        })
+        .then(() => {
+          console.log("Encouragement 4h enregistré");
+        });
+    }
+
     if (countdownRef.current) clearInterval(countdownRef.current);
 
     const start = Date.now();
@@ -86,7 +104,7 @@ export function usePresenceCheck({
         endSession("no_response");
       }
     }, COUNTDOWN_TICK_MS);
-  }, [endSession]);
+  }, [endSession, apprenantId, userId, connexionId]);
 
   const confirmPresence = useCallback(() => {
     setShowModal(false);
