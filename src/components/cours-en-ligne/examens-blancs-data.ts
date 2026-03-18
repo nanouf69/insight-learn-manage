@@ -1290,6 +1290,14 @@ const matiere_francais_examen2: Matiere = {
   coefficient: 2,
   noteEliminatoire: 6,
   noteSur: 20,
+  texteSupport: `Alors que les statistiques de l'accidentalité routière démontrent une conduite plus respectueuse des règles de la part des femmes, les clichés sur les femmes au volant, héritage des débuts de l'automobile cantonnant la femme au rôle de passagère, ont la vie dure. Comment expliquer ce paradoxe ?
+
+Par ailleurs, il existe actuellement un écart de 10 points entre les hommes et les femmes dans la réussite à l'épreuve pratique du permis de conduire. Comprendre les raisons de cet écart persistant dans le temps et trouver des solutions pour y remédier constitue un réel enjeu d'égalité, alors que le permis de conduire est un élément indispensable pour l'autonomie, l'intégration professionnelle et l'insertion sociale des personnes.
+
+En outre, en raison de l'influence des stéréotypes masculins et féminins tout au long du parcours scolaire, l'industrie automobile, caractérisée par une grande variété de métiers, demeure marquée par une féminisation encore très limitée. Pourtant, ce secteur est susceptible d'offrir des perspectives de carrière intéressantes aux jeunes femmes. Comment inverser la tendance ?
+
+Enfin, il existe un lien marqué entre la précarité, qui touche plus particulièrement les femmes, et les contraintes de mobilité qui contribuent à aggraver leur fragilité économique et sociale. Comment favoriser la mobilité des femmes précaires ?`,
+  texteSource: "Rapport d'information de Mmes Chantal JOUANNO et Christiane HUMMEL, délégation aux droits des femmes n° 835 (2015-2016) — 20 septembre 2016",
   questions: [
     {
       id: 1, type: "QRC", enonce: "Rédigez un message professionnel pour confirmer un rendez-vous avec un client.",
