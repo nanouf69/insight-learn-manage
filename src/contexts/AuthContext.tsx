@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { useAppVersionCheck } from '@/hooks/useAppVersionCheck';
 
 interface Profile {
   full_name: string | null;
