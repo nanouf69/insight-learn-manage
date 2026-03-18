@@ -39,6 +39,10 @@ export function ExamenReussitePage() {
   const [sentTAXISMS, setSentTAXISMS] = useState(false);
   const [sendingRepassage, setSendingRepassage] = useState(false);
   const [sentRepassage, setSentRepassage] = useState(false);
+  const [sendingFelicitations, setSendingFelicitations] = useState(false);
+  const [sentFelicitations, setSentFelicitations] = useState(false);
+  const [sendingRepassagePratique, setSendingRepassagePratique] = useState(false);
+  const [sentRepassagePratique, setSentRepassagePratique] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const planningFileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
