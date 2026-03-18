@@ -1229,7 +1229,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
             ) : (
-              <ScrollArea className="h-[400px]">
+              <ScrollArea className="flex-1">
                 <div className="space-y-3 p-1">
                   {apprenantsInSession.map((sessionApprenant: any) => {
                     const apprenant = sessionApprenant.apprenant;
