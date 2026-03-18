@@ -212,6 +212,12 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                         </div>
                       ))}
                     </div>
+                    {isCompleted && (
+                      <Button className="w-full mt-2 gap-2" variant="secondary" onClick={() => onViewResults(examen)}>
+                        <Trophy className="w-4 h-4" />
+                        Voir mes résultats
+                      </Button>
+                    )}
                     <Button className="w-full mt-2 gap-2" variant={isCompleted ? "outline" : "default"} onClick={() => onStart(examen)}>
                       {isCompleted ? "Recommencer l'examen" : "Commencer l'examen"}
                       <ChevronRight className="w-4 h-4" />
