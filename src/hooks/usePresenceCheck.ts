@@ -118,7 +118,21 @@ export function usePresenceCheck({
     if (countdownRef.current) clearInterval(countdownRef.current);
     countdownRef.current = null;
     lastCheckTimeRef.current = Date.now();
-  }, []);
+
+    // If night time, extend absolute limit to 7h (user confirmed presence)
+    if (isNightTime() && sessionStartTime && maxSessionRef.current) {
+      clearTimeout(maxSessionRef.current);
+      const elapsed = Date.now() - sessionStartTime;
+      const remaining = Math.max(0, SEVEN_HOURS_MS - elapsed);
+      if (remaining <= 0) {
+        endSession("max_duration");
+      } else {
+        maxSessionRef.current = setTimeout(() => {
+          endSession("max_duration");
+        }, remaining);
+      }
+    }
+  }, [sessionStartTime, endSession]);
 
   // Main effect: set up 4h interval check + 7h absolute limit
   useEffect(() => {
