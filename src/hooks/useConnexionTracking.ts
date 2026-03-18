@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 const HEARTBEAT_INTERVAL = 60_000; // 1 minute
+const MAX_SESSION_MS = 7 * 60 * 60 * 1000; // 7 hours in milliseconds
 
 interface UseConnexionTrackingParams {
   apprenantId: string | null;
@@ -12,18 +13,29 @@ interface UseConnexionTrackingParams {
 export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnexionTrackingParams) {
   const connexionIdRef = useRef<string | null>(null);
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
+  const sessionStartRef = useRef<number | null>(null);
 
   const endConnexion = async () => {
     if (!connexionIdRef.current) return;
+    const now = new Date();
+    // Cap ended_at to max 7h after session start
+    let endedAt = now;
+    if (sessionStartRef.current) {
+      const maxEnd = new Date(sessionStartRef.current + MAX_SESSION_MS);
+      if (now > maxEnd) {
+        endedAt = maxEnd;
+      }
+    }
     await supabase
       .from("apprenant_connexions" as any)
       .update({
-        ended_at: new Date().toISOString(),
-        last_seen_at: new Date().toISOString(),
+        ended_at: endedAt.toISOString(),
+        last_seen_at: endedAt.toISOString(),
       })
       .eq("id", connexionIdRef.current);
     connexionIdRef.current = null;
     setSessionStartTime(null);
+    sessionStartRef.current = null;
   };
 
   useEffect(() => {
@@ -53,6 +65,7 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
       if (!error && data) {
         connexionIdRef.current = (data as any).id;
         setSessionStartTime(now.getTime());
+        sessionStartRef.current = now.getTime();
       }
 
       // Fetch apprenant name for the alert
@@ -78,6 +91,24 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
 
     const heartbeat = async () => {
       if (!connexionIdRef.current) return;
+      // Check if session has exceeded 7h – if so, cap and stop
+      if (sessionStartRef.current) {
+        const elapsed = Date.now() - sessionStartRef.current;
+        if (elapsed >= MAX_SESSION_MS) {
+          const maxEnd = new Date(sessionStartRef.current + MAX_SESSION_MS);
+          await supabase
+            .from("apprenant_connexions" as any)
+            .update({
+              ended_at: maxEnd.toISOString(),
+              last_seen_at: maxEnd.toISOString(),
+            })
+            .eq("id", connexionIdRef.current);
+          connexionIdRef.current = null;
+          setSessionStartTime(null);
+          sessionStartRef.current = null;
+          return;
+        }
+      }
       await supabase
         .from("apprenant_connexions" as any)
         .update({ last_seen_at: new Date().toISOString() })
