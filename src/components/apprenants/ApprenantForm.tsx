@@ -475,8 +475,8 @@ export function ApprenantForm() {
               let subject = tpl.subject_template;
               let body = tpl.body_template;
               for (const [key, val] of Object.entries(vars)) {
-                subject = subject.replaceAll(key, val);
-                body = body.replaceAll(key, val);
+              subject = subject.split(key).join(val);
+              body = body.split(key).join(val);
               }
               
               await supabase.functions.invoke('sync-outlook-emails', {
