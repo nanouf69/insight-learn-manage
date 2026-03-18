@@ -1063,7 +1063,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-[800px] h-[90vh] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-3">
@@ -1111,7 +1111,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           )}
         </div>
 
-        <Tabs defaultValue="apprenants" className="flex-1 flex flex-col overflow-hidden">
+        <Tabs defaultValue="apprenants" className="flex-1 min-h-0 flex flex-col overflow-hidden">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="apprenants" className="gap-2">
               <Users className="w-4 h-4" />
@@ -1124,9 +1124,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           </TabsList>
 
           {/* Apprenants Tab */}
-          <TabsContent value="apprenants" className="flex-1 overflow-hidden flex flex-col mt-4">
+          <TabsContent value="apprenants" className="flex-1 min-h-0 overflow-hidden flex flex-col mt-4">
             {/* Barre d'envoi groupé */}
-            <div className="flex items-center gap-3 mb-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
+            <div className="shrink-0 flex items-center gap-3 mb-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
               <Checkbox 
                 checked={apprenantsInSession.length > 0 && selectedApprenants.size === apprenantsInSession.length}
                 onCheckedChange={toggleSelectAll}
@@ -1175,7 +1175,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
 
             {showAddApprenant && (
-              <div className="mb-4 p-3 border rounded-lg bg-muted/30">
+              <div className="shrink-0 mb-4 p-3 border rounded-lg bg-muted/30">
                 <div className="relative mb-3">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
@@ -1229,7 +1229,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
             ) : (
-              <ScrollArea className="flex-1">
+              <div className="flex-1 min-h-0 overflow-y-scroll pr-2">
                 <div className="space-y-3 p-1">
                   {apprenantsInSession.map((sessionApprenant: any) => {
                     const apprenant = sessionApprenant.apprenant;
@@ -1575,10 +1575,10 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                     </div>
                   )}
                 </div>
-              </ScrollArea>
+              </div>
             )}
             {/* Récapitulatif par type de formation */}
-            <div className="mt-4 p-3 rounded-lg bg-muted/50 border">
+            <div className="shrink-0 mt-4 p-3 rounded-lg bg-muted/50 border">
               <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
                 <div className="flex items-center gap-2">
                   <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">🚕 TAXI</Badge>
@@ -1609,7 +1609,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             </div>
 
             {/* Envoyer convocation à un élève hors session */}
-            <div className="mt-4">
+            <div className="shrink-0 mt-4">
               <Button
                 variant={showHorsSession ? "secondary" : "outline"}
                 size="sm"
@@ -1691,7 +1691,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           </TabsContent>
 
           {/* Formateurs Tab */}
-          <TabsContent value="formateurs" className="flex-1 overflow-hidden flex flex-col mt-4">
+          <TabsContent value="formateurs" className="flex-1 min-h-0 overflow-hidden flex flex-col mt-4">
             <div className="flex items-center justify-between mb-3">
               <h4 className="font-medium text-foreground">Formateurs assignés</h4>
               <Button 
