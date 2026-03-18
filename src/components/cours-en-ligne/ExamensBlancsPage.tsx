@@ -1380,8 +1380,10 @@ export default function ExamensBlancsPage({
       return;
     }
     // Reconstruct ResultatMatiere[] from saved DB rows
-    const results: ResultatMatiere[] = (data as any[]).map((row: any) => {
+    const results: ResultatMatiere[] = (data as any[]).map((row: any, idx: number) => {
       const matiere = examen.matieres.find(m => m.id === row.matiere_id);
+      // Extract saved IA corrections from details if available
+      const savedCorrections = row.details?.correctionsIA || null;
       return {
         matiereId: row.matiere_id,
         nomMatiere: row.matiere_nom,
@@ -1392,6 +1394,7 @@ export default function ExamensBlancsPage({
         coefficient: matiere?.coefficient || 1,
         admis: row.reussi ?? true,
         reponses: row.details?.reponses || {},
+        correctionsIA: savedCorrections,
       };
     });
     setExamenChoisi(examen);
