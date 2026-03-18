@@ -1575,7 +1575,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                     </div>
                   )}
                 </div>
-              </ScrollArea>
+              </div>
             )}
             {/* Récapitulatif par type de formation */}
             <div className="mt-4 p-3 rounded-lg bg-muted/50 border">
