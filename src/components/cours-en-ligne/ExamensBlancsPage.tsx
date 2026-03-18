@@ -184,8 +184,13 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
               const totalQuestions = examen.matieres.reduce((acc, m) => acc + m.questions.length, 0);
               const dureeTotal = examen.matieres.reduce((acc, m) => acc + m.duree, 0);
               const isCompleted = completedExamIds.has(examen.id);
+              const scores = examScores[examen.id] || [];
               return (
-                <Card key={examen.id} className={`hover:shadow-md transition-shadow cursor-pointer border-2 ${isCompleted ? "border-green-500/60 bg-green-50/30" : "hover:border-primary/40"}`}>
+                <Card
+                  key={examen.id}
+                  className={`hover:shadow-md transition-shadow border-2 ${isCompleted ? "border-green-500/60 bg-green-50/30 cursor-pointer" : "hover:border-primary/40"}`}
+                  onClick={isCompleted ? () => onViewResults(examen) : undefined}
+                >
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <Badge variant={examen?.type === "TAXI" ? "default" : "secondary"} className="text-xs">
@@ -217,20 +222,29 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                       </div>
                     </div>
                     <div className="space-y-1">
-                      {examen.matieres.map(m => (
-                        <div key={m.id} className="flex justify-between text-xs text-muted-foreground">
-                          <span className="truncate pr-2">{m.nom.split(" - ")[0]}</span>
-                          <span className="shrink-0">{m.duree}min</span>
-                        </div>
-                      ))}
+                      {examen.matieres.map(m => {
+                        const scoreData = scores.find(s => s.matiere_id === m.id);
+                        return (
+                          <div key={m.id} className="flex justify-between text-xs text-muted-foreground">
+                            <span className="truncate pr-2">{m.nom.split(" - ")[0]}</span>
+                            {isCompleted && scoreData ? (
+                              <span className={`shrink-0 font-bold ${scoreData.note_sur_20 >= (m.noteEliminatoire || 6) ? "text-green-600" : "text-red-500"}`}>
+                                {scoreData.note_sur_20.toFixed(1)}/20
+                              </span>
+                            ) : (
+                              <span className="shrink-0">{m.duree}min</span>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                     {isCompleted && (
-                      <Button className="w-full mt-2 gap-2" variant="secondary" onClick={() => onViewResults(examen)}>
+                      <Button className="w-full mt-2 gap-2" variant="secondary" onClick={(e) => { e.stopPropagation(); onViewResults(examen); }}>
                         <Trophy className="w-4 h-4" />
                         Voir mes résultats
                       </Button>
                     )}
-                    <Button className="w-full mt-2 gap-2" variant={isCompleted ? "outline" : "default"} onClick={() => onStart(examen)}>
+                    <Button className="w-full mt-2 gap-2" variant={isCompleted ? "outline" : "default"} onClick={(e) => { e.stopPropagation(); onStart(examen); }}>
                       {isCompleted ? "Recommencer l'examen" : "Commencer l'examen"}
                       <ChevronRight className="w-4 h-4" />
                     </Button>
