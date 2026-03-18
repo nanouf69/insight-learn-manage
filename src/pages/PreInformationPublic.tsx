@@ -651,6 +651,7 @@ export default function PreInformationPublic() {
     const saved = await saveForm("test-competences", `Test de compétences – ${formationLabel}`, {
       answers: competencesAnswers,
       sections: competencesData.sections.map((s) => s.titre),
+      sectionItems: competencesData.sections.map((s) => s.items),
       formationLabel: competencesData.formationLabel,
     });
     if (saved) {
