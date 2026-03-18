@@ -520,8 +520,16 @@ function PassageMatiere({
           {question?.type === "QRC" && (
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground">Rédigez votre réponse ci-dessous :</p>
+              {isCalculQuestion(question) && (
+                <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800">
+                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <p className="text-xs">
+                    ⚠️ Pour obtenir tous les points, détaillez votre calcul et précisez l'unité dans votre réponse (ex: 21 000 / 3 = 7 000 € HT)
+                  </p>
+                </div>
+              )}
               <Textarea
-                placeholder="Votre réponse..."
+                placeholder={isCalculQuestion(question) ? "Détaillez votre calcul et indiquez le résultat avec l'unité..." : "Votre réponse..."}
                 rows={4}
                 value={String((reponses[question.id] ?? reponses[String(question.id)]) || "")}
                 onChange={e => handleQRCChange(question.id, e.target.value)}
