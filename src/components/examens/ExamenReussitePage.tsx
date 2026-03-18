@@ -2548,6 +2548,123 @@ export function ExamenReussitePage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Email Preview/Edit Dialog */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              {previewMailType === 'felicitations' ? '📧 Aperçu — Félicitations (Admis)' : '📧 Aperçu — Repassage pratique (Ajourné)'}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Users className="h-4 w-4" />
+            <span><strong>{previewRecipients.length}</strong> destinataire(s)</span>
+          </div>
+
+          <ScrollArea className="max-h-24 border rounded-md p-2 text-xs space-y-0.5">
+            {previewRecipients.map(a => (
+              <div key={a.id} className="flex justify-between py-0.5">
+                <span className="font-medium">{a.nom} {a.prenom}</span>
+                <span className="text-muted-foreground">{a.email}</span>
+              </div>
+            ))}
+          </ScrollArea>
+
+          <Tabs value={previewTab} onValueChange={setPreviewTab} className="flex-1 flex flex-col min-h-0">
+            <TabsList className="w-fit">
+              <TabsTrigger value="preview" className="gap-1.5"><Eye className="h-3.5 w-3.5" /> Aperçu</TabsTrigger>
+              <TabsTrigger value="edit" className="gap-1.5"><Edit className="h-3.5 w-3.5" /> Modifier</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="preview" className="flex-1 min-h-0 mt-3">
+              <div className="border rounded-lg p-4 bg-white space-y-3 overflow-y-auto max-h-[45vh]">
+                <div className="border-b pb-2">
+                  <p className="text-xs text-muted-foreground">Objet :</p>
+                  <p className="font-semibold text-sm">{previewSubject}{previewMailType === 'felicitations' ? ' - {{prenom}} {{nom}}' : ' - {{prenom}} {{nom}}'}</p>
+                </div>
+                <div className="text-sm whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: previewBody.replace(/\n/g, '<br>').replace(/{{prenom}}/g, '<span class="bg-blue-100 text-blue-800 px-1 rounded text-xs">{{prénom}}</span>').replace(/{{nom}}/g, '<span class="bg-blue-100 text-blue-800 px-1 rounded text-xs">{{nom}}</span>') }} />
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-2">
+                💡 Les variables <span className="bg-blue-100 text-blue-800 px-1 rounded">{'{{prénom}}'}</span> et <span className="bg-blue-100 text-blue-800 px-1 rounded">{'{{nom}}'}</span> seront remplacées automatiquement pour chaque destinataire.
+              </p>
+            </TabsContent>
+
+            <TabsContent value="edit" className="flex-1 min-h-0 mt-3 space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="mail-subject" className="text-sm font-medium">Objet du mail</Label>
+                <Input id="mail-subject" value={previewSubject} onChange={e => setPreviewSubject(e.target.value)} />
+              </div>
+              <div className="space-y-2 flex-1">
+                <Label htmlFor="mail-body" className="text-sm font-medium">Corps du message</Label>
+                <Textarea id="mail-body" value={previewBody} onChange={e => setPreviewBody(e.target.value)} className="min-h-[35vh] font-mono text-xs" />
+                <p className="text-[11px] text-muted-foreground">
+                  💡 Utilisez {'{{prenom}}'} et {'{{nom}}'} pour personnaliser le message. Les retours à la ligne seront convertis en HTML.
+                </p>
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          <DialogFooter className="gap-2 pt-2">
+            <DialogClose asChild>
+              <Button variant="outline">Annuler</Button>
+            </DialogClose>
+            <Button
+              disabled={
+                (previewMailType === 'felicitations' && (sendingFelicitations || sentFelicitations)) ||
+                (previewMailType === 'repassage_pratique' && (sendingRepassagePratique || sentRepassagePratique))
+              }
+              variant={previewMailType === 'repassage_pratique' ? 'destructive' : 'default'}
+              className="gap-1.5"
+              onClick={async () => {
+                const recipients = previewRecipients;
+                if (previewMailType === 'felicitations') {
+                  setSendingFelicitations(true);
+                  setPreviewOpen(false);
+                  let sent = 0;
+                  for (const a of recipients) {
+                    const subject = `${previewSubject} - ${a.prenom} ${a.nom}`;
+                    const body = previewBody
+                      .replace(/{{prenom}}/g, a.prenom)
+                      .replace(/{{nom}}/g, a.nom)
+                      .replace(/\n/g, '<br>');
+                    try {
+                      await supabase.functions.invoke('sync-outlook-emails', { body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id } });
+                      sent++;
+                    } catch (e) { console.error(e); }
+                  }
+                  setSendingFelicitations(false);
+                  setSentFelicitations(true);
+                  toast.success(`📧 ${sent}/${recipients.length} email(s) "Félicitations" envoyé(s)`);
+                } else {
+                  setSendingRepassagePratique(true);
+                  setPreviewOpen(false);
+                  let sent = 0;
+                  for (const a of recipients) {
+                    const subject = `${previewSubject} - ${a.prenom} ${a.nom}`;
+                    const body = previewBody
+                      .replace(/{{prenom}}/g, a.prenom)
+                      .replace(/{{nom}}/g, a.nom)
+                      .replace(/\n/g, '<br>');
+                    try {
+                      await supabase.functions.invoke('sync-outlook-emails', { body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id } });
+                      sent++;
+                    } catch (e) { console.error(e); }
+                  }
+                  setSendingRepassagePratique(false);
+                  setSentRepassagePratique(true);
+                  toast.success(`📧 ${sent}/${recipients.length} email(s) "Repassage pratique" envoyé(s)`);
+                }
+              }}
+            >
+              <Mail className="h-4 w-4" />
+              Confirmer l'envoi ({previewRecipients.length})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
