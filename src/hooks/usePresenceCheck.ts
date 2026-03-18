@@ -151,9 +151,10 @@ export function usePresenceCheck({
       }
     }, 60_000); // Check every minute if 4h has passed
 
-    // 7h absolute session limit
+    // Absolute session limit: 4h at night (22h-5h), 7h otherwise
+    const absoluteLimit = isNightTime() ? FOUR_HOURS_MS : SEVEN_HOURS_MS;
     const elapsed = Date.now() - sessionStartTime;
-    const remaining = Math.max(0, SEVEN_HOURS_MS - elapsed);
+    const remaining = Math.max(0, absoluteLimit - elapsed);
 
     if (remaining <= 0) {
       endSession("max_duration");
