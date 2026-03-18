@@ -1235,6 +1235,38 @@ export default function ExamensBlancsPage({
     setPhase("intro");
   };
 
+  const handleViewResults = async (examen: ExamenBlanc) => {
+    if (!apprenantId) return;
+    const { data } = await supabase
+      .from("apprenant_quiz_results" as any)
+      .select("*")
+      .eq("apprenant_id", apprenantId)
+      .eq("quiz_id", examen.id)
+      .eq("quiz_type", examen.id.startsWith("bilan-") ? "bilan" : "examen_blanc");
+    if (!data || (data as any[]).length === 0) {
+      toast.error("Aucun résultat trouvé pour cet examen.");
+      return;
+    }
+    // Reconstruct ResultatMatiere[] from saved DB rows
+    const results: ResultatMatiere[] = (data as any[]).map((row: any) => {
+      const matiere = examen.matieres.find(m => m.id === row.matiere_id);
+      return {
+        matiereId: row.matiere_id,
+        nomMatiere: row.matiere_nom,
+        noteObtenue: row.score_obtenu,
+        maxPoints: row.score_max,
+        noteSur: matiere?.noteSur || 20,
+        noteEliminatoire: matiere?.noteEliminatoire || 0,
+        coefficient: matiere?.coefficient || 1,
+        admis: row.reussi ?? true,
+        reponses: row.details?.reponses || {},
+      };
+    });
+    setExamenChoisi(examen);
+    setTousResultats(results);
+    setPhase("resultats");
+  };
+
 
   const handleDebuterExamen = () => {
     examStartTimeRef.current = Date.now();
