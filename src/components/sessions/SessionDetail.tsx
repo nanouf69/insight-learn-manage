@@ -1691,7 +1691,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           </TabsContent>
 
           {/* Formateurs Tab */}
-          <TabsContent value="formateurs" className="flex-1 overflow-hidden flex flex-col mt-4">
+          <TabsContent value="formateurs" className="flex-1 min-h-0 overflow-hidden flex flex-col mt-4">
             <div className="flex items-center justify-between mb-3">
               <h4 className="font-medium text-foreground">Formateurs assignés</h4>
               <Button 
