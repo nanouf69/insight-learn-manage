@@ -1068,6 +1068,13 @@ function EcranResultats({
                                   Votre réponse : {String(rep) || "Aucune"}
                                 </p>
                               )}
+                              {/* Calcul-specific partial score explanation */}
+                              {isCalculQuestion(q) && !isLoadingIA && pointsObtenus > 0 && !isCorrect && (
+                                <div className="flex items-start gap-1 text-xs text-amber-700 bg-amber-50 rounded p-1.5 border border-amber-200">
+                                  <AlertTriangle className="w-3 h-3 shrink-0 mt-0.5" />
+                                  <span>Vous avez trouvé le bon résultat mais le détail du calcul est manquant → {pointsObtenus}/{pts} pts</span>
+                                </div>
+                              )}
                               {correctionDetail && (
                                 <div className="flex items-start gap-1 text-xs text-blue-700 bg-blue-50 rounded p-1.5">
                                   <Bot className="w-3 h-3 shrink-0 mt-0.5" />
