@@ -512,6 +512,61 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
   const signatureDoc = documents.find(d => d.id === 'signature');
   const isSignatureUploaded = signatureDoc?.uploaded && signatureDoc?.status === 'valid';
   const dossierComplet = uploadedCount === totalRequired && totalRequired > 0 && rejectedDocs.length === 0 && isSignatureUploaded;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <FileCheck className="w-5 h-5" />
+          Documents pour Inscription
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {/* Alerte signature obligatoire */}
+        {!isSignatureUploaded && (
+          <div className="mb-4 p-4 border border-destructive/40 rounded-lg bg-destructive/10 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-destructive">Signature stagiaire obligatoire</p>
+              <p className="text-xs text-destructive/80 mt-1">
+                La signature du stagiaire doit être uploadée avant de pouvoir valider le dossier ou le marquer comme complet.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Progress */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium">
+              Progression du dossier
+            </span>
+            <span className="text-sm text-muted-foreground">
+              {uploadedCount}/{totalRequired} documents
+            </span>
+          </div>
+          <Progress value={progress} className="h-2" />
+          {rejectedDocs.length > 0 && (
+            <p className="text-xs text-destructive mt-2 flex items-center gap-1">
+              <Ban className="w-3 h-3" />
+              {rejectedDocs.length} document(s) refusé(s) à remplacer
+            </p>
+          )}
+          {!dossierComplet && rejectedDocs.length === 0 && (
+            <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" />
+              {!isSignatureUploaded 
+                ? 'Dossier bloqué — signature stagiaire manquante'
+                : `Dossier incomplet - ${totalRequired - uploadedCount} document(s) manquant(s)`
+              }
+            </p>
+          )}
+          {dossierComplet && (
+            <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3" />
+              Dossier complet
+            </p>
+          )}
           <p className="text-xs text-muted-foreground mt-3">
             📎 Formats acceptés : {ACCEPTED_FORMATS_DISPLAY} • Max {MAX_FILE_SIZE_MB}Mo par fichier
           </p>
