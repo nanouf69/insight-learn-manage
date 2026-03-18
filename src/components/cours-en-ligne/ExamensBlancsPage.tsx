@@ -725,13 +725,30 @@ function EcranResultats({
   resultats,
   onRecommencer,
   onRetour,
+  apprenantId,
+  userId,
 }: {
   examen: ExamenBlanc;
   resultats: ResultatMatiere[];
   onRecommencer: () => void;
   onRetour: () => void;
+  apprenantId?: string | null;
+  userId?: string | null;
 }) {
-  const [correctionsIA, setCorrectionsIA] = useState<{ [matiereIdx: number]: CorrectionCache }>({});
+  // Check if corrections are already cached in the resultats (from DB)
+  const hasPreloadedCorrections = resultats.some(r => r.correctionsIA && Object.keys(r.correctionsIA).length > 0);
+
+  const [correctionsIA, setCorrectionsIA] = useState<{ [matiereIdx: number]: CorrectionCache }>(() => {
+    if (!hasPreloadedCorrections) return {};
+    // Initialize from preloaded data
+    const initial: { [matiereIdx: number]: CorrectionCache } = {};
+    resultats.forEach((r, mi) => {
+      if (r.correctionsIA && Object.keys(r.correctionsIA).length > 0) {
+        initial[mi] = r.correctionsIA;
+      }
+    });
+    return initial;
+  });
   const [correctionEnCours, setCorrectionEnCours] = useState(false);
   const [expandedMatieres, setExpandedMatieres] = useState<{ [mi: number]: boolean }>({});
 
@@ -739,10 +756,91 @@ function EcranResultats({
     setExpandedMatieres(prev => ({ ...prev, [mi]: !prev[mi] }));
   };
 
-  // Lance la correction IA de tous les QRC à l'affichage des résultats
+  // Save AI corrections to DB once complete
+  const saveCorrectionsToDb = async (finalCorrections: { [matiereIdx: number]: CorrectionCache }) => {
+    if (!apprenantId || !userId) return;
+    const quizType = examen.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
+    
+    for (let mi = 0; mi < examen.matieres.length; mi++) {
+      const matiere = examen.matieres[mi];
+      if (!matiere) continue;
+      const cache = finalCorrections[mi];
+      if (!cache) continue;
+      
+      // Only save if all QRC corrections are done (no "loading")
+      const hasLoading = Object.values(cache).some(v => v === "loading");
+      if (hasLoading) continue;
+
+      // Serialize corrections (convert "error" to a proper object)
+      const serializedCache: Record<string, any> = {};
+      for (const [qId, val] of Object.entries(cache)) {
+        if (val === "error") {
+          serializedCache[qId] = { estCorrect: false, pointsObtenus: 0, nombrefautes: 0, explication: "Erreur de correction" };
+        } else if (val !== "loading") {
+          serializedCache[qId] = val;
+        }
+      }
+
+      // Recalculate score with IA corrections
+      const resultat = resultats[mi];
+      if (!resultat) continue;
+      const questionsSafe = (matiere.questions || []).filter(q => q && q?.type !== undefined);
+      let noteRecalculee = 0;
+      questionsSafe.forEach(q => {
+        if (!q) return;
+        if (q?.type === "QCM" && q.choix) {
+          const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
+          const donnees = ((resultat.reponses?.[q.id] as string[]) || []).sort();
+          if (JSON.stringify(correctes) === JSON.stringify(donnees)) {
+            noteRecalculee += getPointsParQuestion(matiere.id, q?.type || "QCM");
+          }
+        } else if (q?.type === "QRC") {
+          const correction = cache[q.id];
+          if (correction && correction !== "loading" && correction !== "error") {
+            noteRecalculee += correction.pointsObtenus;
+          }
+        }
+      });
+
+      const safeMax = resultat.maxPoints || 1;
+      const noteSur20 = Number(((noteRecalculee / safeMax) * (resultat.noteSur || 20)).toFixed(1));
+
+      // Update the existing row with corrections
+      await supabase
+        .from("apprenant_quiz_results" as any)
+        .update({
+          score_obtenu: noteRecalculee,
+          note_sur_20: noteSur20,
+          reussi: noteRecalculee >= ((resultat.noteEliminatoire || 0) / (resultat.noteSur || 20)) * safeMax,
+          details: {
+            questions: (resultat as any).details?.questions || [],
+            reponses: resultat.reponses,
+            correctionsIA: serializedCache,
+          },
+        } as any)
+        .eq("apprenant_id", apprenantId)
+        .eq("quiz_id", examen.id)
+        .eq("quiz_type", quizType)
+        .eq("matiere_id", matiere.id);
+    }
+  };
+
+  // Lance la correction IA de tous les QRC à l'affichage des résultats — ONLY if not already cached
   useEffect(() => {
+    // Skip if corrections already loaded from DB
+    if (hasPreloadedCorrections) return;
+
     let cancelled = false;
     const corrigerTout = async () => {
+      // Check if there are any QRC questions to correct
+      let hasQRC = false;
+      examen.matieres.forEach((matiere) => {
+        if (!matiere) return;
+        const questionsSafe = (matiere.questions || []).filter(q => q && q?.type !== undefined);
+        if (questionsSafe.some(q => q?.type === "QRC")) hasQRC = true;
+      });
+      if (!hasQRC) return;
+
       setCorrectionEnCours(true);
 
       // Initialiser tous les QRC en "loading"
@@ -762,7 +860,9 @@ function EcranResultats({
       });
       if (!cancelled) setCorrectionsIA({ ...initialCache });
 
-      // Corriger chaque QRC via l'IA (en parallèle par matière, séquentiel par question pour éviter le rate limit)
+      const finalCorrections = { ...initialCache };
+
+      // Corriger chaque QRC via l'IA
       for (let mi = 0; mi < examen.matieres.length; mi++) {
         const matiere = examen.matieres[mi];
         if (!matiere || matiere === undefined) continue;
@@ -792,11 +892,13 @@ function EcranResultats({
             if (cancelled) return;
 
             if (error || !data || data.error) {
+              finalCorrections[mi] = { ...(finalCorrections[mi] || {}), [q.id]: "error" };
               setCorrectionsIA(prev => ({
                 ...prev,
                 [mi]: { ...(prev[mi] || {}), [q.id]: "error" },
               }));
             } else {
+              finalCorrections[mi] = { ...(finalCorrections[mi] || {}), [q.id]: data as CorrectionQRC };
               setCorrectionsIA(prev => ({
                 ...prev,
                 [mi]: { ...(prev[mi] || {}), [q.id]: data as CorrectionQRC },
@@ -804,6 +906,7 @@ function EcranResultats({
             }
           } catch {
             if (!cancelled) {
+              finalCorrections[mi] = { ...(finalCorrections[mi] || {}), [q.id]: "error" };
               setCorrectionsIA(prev => ({
                 ...prev,
                 [mi]: { ...(prev[mi] || {}), [q.id]: "error" },
@@ -811,17 +914,20 @@ function EcranResultats({
             }
           }
 
-          // Petit délai pour éviter le rate limiting
           await new Promise(r => setTimeout(r, 300));
         }
       }
 
-      if (!cancelled) setCorrectionEnCours(false);
+      if (!cancelled) {
+        setCorrectionEnCours(false);
+        // Save corrections to DB
+        saveCorrectionsToDb(finalCorrections);
+      }
     };
 
     corrigerTout();
     return () => { cancelled = true; };
-  }, [examen, resultats]);
+  }, [examen, resultats, hasPreloadedCorrections]);
 
   // Recalculer les notes avec les corrections IA
   const resultatsAvecIA = resultats.map((r, mi) => {
@@ -1274,8 +1380,10 @@ export default function ExamensBlancsPage({
       return;
     }
     // Reconstruct ResultatMatiere[] from saved DB rows
-    const results: ResultatMatiere[] = (data as any[]).map((row: any) => {
+    const results: ResultatMatiere[] = (data as any[]).map((row: any, idx: number) => {
       const matiere = examen.matieres.find(m => m.id === row.matiere_id);
+      // Extract saved IA corrections from details if available
+      const savedCorrections = row.details?.correctionsIA || null;
       return {
         matiereId: row.matiere_id,
         nomMatiere: row.matiere_nom,
@@ -1286,6 +1394,7 @@ export default function ExamensBlancsPage({
         coefficient: matiere?.coefficient || 1,
         admis: row.reussi ?? true,
         reponses: row.details?.reponses || {},
+        correctionsIA: savedCorrections,
       };
     });
     setExamenChoisi(examen);
@@ -1658,6 +1767,8 @@ export default function ExamensBlancsPage({
           resultats={tousResultats}
           onRecommencer={() => handleStart(examenChoisi)}
           onRetour={() => setPhase("selection")}
+          apprenantId={apprenantId}
+          userId={userId}
         />
       </div>
     );
