@@ -2208,7 +2208,8 @@ export function ExamenReussitePage() {
                     <TableHead>Téléphone</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Date d'examen</TableHead>
-                    <TableHead className="text-center">Examen réussi</TableHead>
+                    <TableHead className="text-center">Admissibilité (Théorie)</TableHead>
+                    <TableHead className="text-center">Admission (Pratique)</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -2216,6 +2217,7 @@ export function ExamenReussitePage() {
                     const tLabel = typeLabel[apprenant.type_apprenant || ''] || apprenant.type_apprenant || '-';
                     const tColor = typeColor[apprenant.type_apprenant || ''] || 'bg-gray-100 text-gray-800';
                     const resultat = (apprenant as any).resultat_examen || '';
+                    const resultatPratique = (apprenant as any).resultat_examen_pratique || '';
 
                     return (
                       <TableRow key={apprenant.id}>
@@ -2246,7 +2248,7 @@ export function ExamenReussitePage() {
                               })
                             }
                           >
-                            <SelectTrigger className={`w-36 mx-auto ${
+                            <SelectTrigger className={`w-32 mx-auto text-xs ${
                               resultat === 'oui' ? 'border-emerald-500 text-emerald-700 bg-emerald-50' :
                               resultat === 'non' ? 'border-red-500 text-red-700 bg-red-50' :
                               resultat === 'absent' ? 'border-orange-500 text-orange-700 bg-orange-50' :
@@ -2256,10 +2258,41 @@ export function ExamenReussitePage() {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="non_renseigne">-</SelectItem>
-                              <SelectItem value="oui">✅ Oui</SelectItem>
-                              <SelectItem value="non">❌ Non</SelectItem>
+                              <SelectItem value="oui">✅ Admis</SelectItem>
+                              <SelectItem value="non">❌ Ajourné</SelectItem>
                               <SelectItem value="absent">🔶 Absent</SelectItem>
-                              <SelectItem value="deplace">📅 Déplacé prochaine session</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Select
+                            value={resultatPratique || "non_renseigne"}
+                            onValueChange={async (val) => {
+                              const newVal = val === "non_renseigne" ? null : val;
+                              try {
+                                await supabase
+                                  .from('apprenants')
+                                  .update({ resultat_examen_pratique: newVal } as any)
+                                  .eq('id', apprenant.id);
+                                queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] });
+                                toast.success("Résultat pratique mis à jour");
+                              } catch (err: any) {
+                                toast.error(err.message || "Erreur");
+                              }
+                            }}
+                          >
+                            <SelectTrigger className={`w-32 mx-auto text-xs ${
+                              resultatPratique === 'oui' ? 'border-emerald-500 text-emerald-700 bg-emerald-50' :
+                              resultatPratique === 'non' ? 'border-red-500 text-red-700 bg-red-50' :
+                              resultatPratique === 'deplace' ? 'border-orange-500 text-orange-700 bg-orange-50' : ''
+                            }`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="non_renseigne">-</SelectItem>
+                              <SelectItem value="oui">✅ Admis</SelectItem>
+                              <SelectItem value="non">❌ Ajourné</SelectItem>
+                              <SelectItem value="deplace">📅 Déplacé</SelectItem>
                             </SelectContent>
                           </Select>
                         </TableCell>
