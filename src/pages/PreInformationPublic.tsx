@@ -662,7 +662,7 @@ export default function PreInformationPublic() {
         prenom: apprenant?.prenom || "",
         email: apprenant?.email || "",
         telephone: apprenant?.telephone || "",
-        donnees: { answers: competencesAnswers, sections: competencesData.sections.map((s) => s.titre), formationLabel: competencesData.formationLabel },
+        donnees: { answers: competencesAnswers, sections: competencesData.sections.map((s) => s.titre), sectionItems: competencesData.sections.map((s) => s.items), formationLabel: competencesData.formationLabel },
       });
       setCompletedSteps((prev) => new Set([...prev, "competences"]));
     }
