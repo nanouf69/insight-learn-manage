@@ -19,7 +19,7 @@ export function PresenceCheckModal({
   if (disconnectReason) {
     const message =
       disconnectReason === "max_duration"
-        ? "Vous avez atteint la durée maximale de session (7h). Veuillez vous reconnecter pour continuer."
+        ? "Vous avez atteint la durée maximale de session. Veuillez vous reconnecter pour continuer."
         : "Votre session a été fermée pour inactivité. Veuillez vous reconnecter pour continuer.";
 
     return (
