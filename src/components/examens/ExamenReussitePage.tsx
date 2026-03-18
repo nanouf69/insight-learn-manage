@@ -2470,14 +2470,14 @@ export function ExamenReussitePage() {
                           {analyzing ? "Analyse..." : "Analyser les résultats"}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-56 p-2" align="end">
+                      <PopoverContent className="w-56 p-2 z-[9999]" align="end" sideOffset={5} onOpenAutoFocus={(e) => e.preventDefault()}>
                         <p className="text-xs font-medium text-muted-foreground mb-2">Type d'épreuve :</p>
                         <div className="space-y-1">
                           <Button
                             variant="ghost"
                             size="sm"
                             className="w-full justify-start gap-2 text-xs"
-                            onClick={() => handleAnalyzePdf(file.name, 'admissibilite')}
+                            onClick={(e) => { e.stopPropagation(); handleAnalyzePdf(file.name, 'admissibilite'); }}
                           >
                             📝 Admissibilité (Théorie)
                           </Button>
@@ -2485,7 +2485,7 @@ export function ExamenReussitePage() {
                             variant="ghost"
                             size="sm"
                             className="w-full justify-start gap-2 text-xs"
-                            onClick={() => handleAnalyzePdf(file.name, 'admission')}
+                            onClick={(e) => { e.stopPropagation(); handleAnalyzePdf(file.name, 'admission'); }}
                           >
                             🚗 Admission (Pratique)
                           </Button>
