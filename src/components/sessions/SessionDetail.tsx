@@ -1233,7 +1233,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
               <div className="max-h-[45vh] overflow-y-auto pr-2">
                 <div className="space-y-3 p-1">
                   {apprenantsInSession.map((sessionApprenant: any) => {
-                    const apprenant = sessionApprenant.apprenant;
+                    const apprenant = sessionApprenant.apprenant ?? allApprenants.find((a) => a.id === sessionApprenant.apprenant_id);
                     if (!apprenant) return null;
                     
                     return (
