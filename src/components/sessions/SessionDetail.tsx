@@ -392,14 +392,16 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             ville,
             auth_user_id,
             date_debut_cours_en_ligne,
-            date_fin_cours_en_ligne,
-            date_debut_formation,
-            date_fin_formation
+            date_fin_cours_en_ligne
           )
         `)
         .eq('session_id', session.id);
       
-      if (error) throw error;
+      if (error) {
+        console.error('[SessionDetail] Erreur chargement apprenants:', error);
+        return [];
+      }
+      console.log('[SessionDetail] apprenantsInSession chargés:', data?.length, data);
       return data || [];
     },
     enabled: !!session?.id && open,
@@ -1234,7 +1236,14 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 <div className="space-y-3 p-1">
                   {apprenantsInSession.map((sessionApprenant: any) => {
                     const apprenant = sessionApprenant.apprenant ?? allApprenants.find((a) => a.id === sessionApprenant.apprenant_id);
-                    if (!apprenant) return null;
+                    if (!apprenant) {
+                      console.warn('[SessionDetail] apprenant introuvable pour session_apprenant:', sessionApprenant.id, 'apprenant_id:', sessionApprenant.apprenant_id);
+                      return (
+                        <div key={sessionApprenant.id} className="p-4 rounded-xl border border-destructive/30 bg-destructive/5">
+                          <p className="text-sm text-destructive">Apprenant introuvable (ID: {sessionApprenant.apprenant_id?.slice(0, 8)}…)</p>
+                        </div>
+                      );
+                    }
                     
                     return (
                       <div 
