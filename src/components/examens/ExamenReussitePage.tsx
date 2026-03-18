@@ -49,6 +49,12 @@ export function ExamenReussitePage() {
   const [sentFelicitations, setSentFelicitations] = useState(false);
   const [sendingRepassagePratique, setSendingRepassagePratique] = useState(false);
   const [sentRepassagePratique, setSentRepassagePratique] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewMailType, setPreviewMailType] = useState<'felicitations' | 'repassage_pratique'>('felicitations');
+  const [previewSubject, setPreviewSubject] = useState('');
+  const [previewBody, setPreviewBody] = useState('');
+  const [previewRecipients, setPreviewRecipients] = useState<any[]>([]);
+  const [previewTab, setPreviewTab] = useState<string>('preview');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const planningFileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
