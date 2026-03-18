@@ -2211,47 +2211,19 @@ export function ExamenReussitePage() {
                             <span className="text-sm font-semibold text-emerald-800">Félicitations — Admis</span>
                             <Badge className="bg-emerald-100 text-emerald-800 text-[10px]">{reussisEmail.length}</Badge>
                           </div>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button size="sm" disabled={reussisEmail.length === 0 || sendingFelicitations || sentFelicitations} className={`gap-1.5 text-xs ${sentFelicitations ? 'bg-emerald-600' : ''}`}>
-                                {sentFelicitations ? <CheckCircle2 className="h-3 w-3" /> : <Mail className="h-3 w-3" />}
-                                {sendingFelicitations ? 'Envoi...' : sentFelicitations ? 'Envoyé ✓' : `Envoyer (${reussisEmail.length})`}
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Envoyer l'email de félicitations ?</AlertDialogTitle>
-                                <AlertDialogDescription asChild>
-                                  <div className="space-y-2 text-sm">
-                                    <p>Envoi à <strong>{reussisEmail.length}</strong> candidat(s) admis (avis Google + CPF + carte pro).</p>
-                                    <div className="mt-2 max-h-32 overflow-y-auto space-y-1">
-                                      {reussisEmail.map(a => (
-                                        <div key={a.id} className="text-xs text-muted-foreground">{a.nom} {a.prenom} → {a.email}</div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                <AlertDialogAction onClick={async () => {
-                                  setSendingFelicitations(true);
-                                  let sent = 0;
-                                  for (const a of reussisEmail) {
-                                    const subject = `Félicitations - Vous êtes professionnel du transport de personnes - ${a.prenom} ${a.nom}`;
-                                    const body = `Bonjour,<br><br>Félicitations, vous êtes maintenant professionnel du transport de personnes.<br><br>Nous vous remercions de votre confiance et nous vous souhaitons une belle aventure dans ce secteur d'activité.<br><br>Avant de vous donner la procédure pour effectuer la demande de carte professionnelle, nous vous demanderons de bien vouloir rédiger un avis sur le centre de formation sur google et réaliser une très courte évaluation concernant la formation sur le compte CPF.<br><br>Voici le lien pour mettre un avis sur google :<br><a href="https://www.google.fr/search?source=hp&ei=RLZFXJSwLIS5gwejzIdg&q=ftransport&btnK=Recherche+Google&oq=ftransport&gs_l=psy-ab.3.0.0i10l2j0i10i30l6j0i5i30j0i5i10i30.1107.3123..3553...0.0..0.64.535.10......0....1..gws-wiz.....0..0i131j0.rJF72XtZ4i8#btnK=Recherche%20Google&lrd=0x47f4c1cfb1d26135:0x7b288437c427e7b9,1,,," target="_blank">Cliquez ici pour laisser un avis Google</a><br><br>Voici la démarche pour évaluer la formation sur le CPF :<br>1. Connectez-vous sur le site <a href="https://www.moncompteformation.gouv.fr" target="_blank">www.moncompteformation.gouv.fr</a><br>2. Connectez-vous avec France connect<br>3. Cliquez sur dossier<br>4. Cliquez sur la formation que vous avez réalisée<br>5. Cliquez sur évaluer ma formation<br><br>Après avoir effectué ces deux tâches, merci de nous contacter pour que l'on puisse vous informer de la démarche à suivre pour la demande de carte professionnelle.<br><br>Cordialement.<br><br><strong>FTRANSPORT</strong><br>Centre de formation<br>86 Route de genas 69003 Lyon<br>04.28.29.60.91<br>De 9h à 17h sur rendez-vous`;
-                                    try {
-                                      await supabase.functions.invoke('sync-outlook-emails', { body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id } });
-                                      sent++;
-                                    } catch (e) { console.error(e); }
-                                  }
-                                  setSendingFelicitations(false);
-                                  setSentFelicitations(true);
-                                  toast.success(`📧 ${sent}/${reussisEmail.length} email(s) "Félicitations" envoyé(s)`);
-                                }}>Confirmer l'envoi</AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                          <Button size="sm" disabled={reussisEmail.length === 0 || sendingFelicitations || sentFelicitations} className={`gap-1.5 text-xs ${sentFelicitations ? 'bg-emerald-600' : ''}`}
+                            onClick={() => {
+                              const defaultSubject = `Félicitations - Vous êtes professionnel du transport de personnes`;
+                              const defaultBody = `Bonjour,\n\nFélicitations, vous êtes maintenant professionnel du transport de personnes.\n\nNous vous remercions de votre confiance et nous vous souhaitons une belle aventure dans ce secteur d'activité.\n\nAvant de vous donner la procédure pour effectuer la demande de carte professionnelle, nous vous demanderons de bien vouloir rédiger un avis sur le centre de formation sur google et réaliser une très courte évaluation concernant la formation sur le compte CPF.\n\nVoici le lien pour mettre un avis sur google :\nhttps://www.google.fr/search?source=hp&ei=RLZFXJSwLIS5gwejzIdg&q=ftransport&btnK=Recherche+Google&oq=ftransport&gs_l=psy-ab.3.0.0i10l2j0i10i30l6j0i5i30j0i5i10i30.1107.3123..3553...0.0..0.64.535.10......0....1..gws-wiz.....0..0i131j0.rJF72XtZ4i8#btnK=Recherche%20Google&lrd=0x47f4c1cfb1d26135:0x7b288437c427e7b9,1,,,\n\nVoici la démarche pour évaluer la formation sur le CPF :\n1. Connectez-vous sur le site www.moncompteformation.gouv.fr\n2. Connectez-vous avec France connect\n3. Cliquez sur dossier\n4. Cliquez sur la formation que vous avez réalisée\n5. Cliquez sur évaluer ma formation\n\nAprès avoir effectué ces deux tâches, merci de nous contacter pour que l'on puisse vous informer de la démarche à suivre pour la demande de carte professionnelle.\n\nCordialement.\n\nFTRANSPORT\nCentre de formation\n86 Route de genas 69003 Lyon\n04.28.29.60.91\nDe 9h à 17h sur rendez-vous`;
+                              setPreviewMailType('felicitations');
+                              setPreviewSubject(defaultSubject);
+                              setPreviewBody(defaultBody);
+                              setPreviewRecipients(reussisEmail);
+                              setPreviewOpen(true);
+                            }}>
+                            {sentFelicitations ? <CheckCircle2 className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                            {sendingFelicitations ? 'Envoi...' : sentFelicitations ? 'Envoyé ✓' : `Envoyer (${reussisEmail.length})`}
+                          </Button>
                         </div>
                         <p className="text-[11px] text-emerald-700">Avis Google + évaluation CPF + carte professionnelle</p>
                       </div>
@@ -2269,51 +2241,19 @@ export function ExamenReussitePage() {
                             <span className="text-sm font-semibold text-red-800">Repassage — Ajourné</span>
                             <Badge className="bg-red-100 text-red-800 text-[10px]">{echouesEmail.length}</Badge>
                           </div>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button size="sm" variant="destructive" disabled={echouesEmail.length === 0 || sendingRepassagePratique || sentRepassagePratique} className={`gap-1.5 text-xs ${sentRepassagePratique ? 'bg-green-600' : ''}`}>
-                                {sentRepassagePratique ? <CheckCircle2 className="h-3 w-3" /> : <Mail className="h-3 w-3" />}
-                                {sendingRepassagePratique ? 'Envoi...' : sentRepassagePratique ? 'Envoyé ✓' : `Envoyer (${echouesEmail.length})`}
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Envoyer l'email de repassage pratique ?</AlertDialogTitle>
-                                <AlertDialogDescription asChild>
-                                  <div className="space-y-2 text-sm">
-                                    <p>Envoi à <strong>{echouesEmail.length}</strong> candidat(s) ajournés (réinscription exament3p.fr).</p>
-                                    <div className="mt-2 max-h-32 overflow-y-auto space-y-1">
-                                      {echouesEmail.map(a => (
-                                        <div key={a.id} className="text-xs text-muted-foreground">{a.nom} {a.prenom} → {a.email}</div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                <AlertDialogAction onClick={async () => {
-                                  setSendingRepassagePratique(true);
-                                  let sent = 0;
-                                  for (const a of echouesEmail) {
-                                    const type = (a.type_apprenant || '').toLowerCase();
-                                    let formation = 'VTC';
-                                    if (type.includes('ta-e') || type === 'ta') formation = 'TAXI (mobilité VTC vers TAXI)';
-                                    else if (type.includes('taxi') || type.includes('ta-i')) formation = 'TAXI';
-                                    const subject = `Réinscription à l'examen pratique T3P - ${a.prenom} ${a.nom}`;
-                                    const body = `Bonjour ${a.prenom},<br><br>Suite à votre précédent examen pratique ${formation}, vous devez procéder à une nouvelle inscription pour repasser l'examen pratique.<br><br>📌 <strong>ÉTAPES À SUIVRE :</strong><br><br><strong>1️⃣ Rendez-vous sur le site :</strong><br>👉 <a href="https://www.exament3p.fr" target="_blank">www.exament3p.fr</a><br><br><strong>2️⃣ Connectez-vous avec :</strong><br>• Login : votre adresse email<br>• Mot de passe : cliquez sur "Mot de passe oublié" pour en créer un nouveau<br><br><strong>3️⃣ Une fois connecté(e), procédez à votre réinscription à l'examen pratique</strong> en suivant les instructions du site.<br><br>⚠️ <strong>IMPORTANT — Département 69 obligatoire :</strong><br><span style="color: red; font-size: 16px; font-weight: bold;">🔴 ATTENTION : Lors de votre réinscription, vous devez IMPÉRATIVEMENT sélectionner le département 69 (Rhône), même si vous résidez dans un autre département. Si vous choisissez un autre département, nous ne pourrons pas vous former ni vous louer un véhicule pour l'examen pratique.</span><br><br>⚠️ <strong>IMPORTANT :</strong> Une fois votre réinscription effectuée sur le site, merci de nous recontacter immédiatement afin que nous puissions finaliser votre dossier et vous accompagner pour la suite.<br><br>📞 Tél : <strong>04 28 29 60 91</strong><br>📧 Email : contact@ftransport.fr<br><br>N'hésitez pas à nous contacter si vous rencontrez des difficultés lors de votre réinscription.<br><br>Cordialement,<br><strong>L'équipe Ftransport</strong><br>86 Route de Genas, 69003 Lyon`;
-                                    try {
-                                      await supabase.functions.invoke('sync-outlook-emails', { body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id } });
-                                      sent++;
-                                    } catch (e) { console.error(e); }
-                                  }
-                                  setSendingRepassagePratique(false);
-                                  setSentRepassagePratique(true);
-                                  toast.success(`📧 ${sent}/${echouesEmail.length} email(s) "Repassage pratique" envoyé(s)`);
-                                }}>Confirmer l'envoi</AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                          <Button size="sm" variant="destructive" disabled={echouesEmail.length === 0 || sendingRepassagePratique || sentRepassagePratique} className={`gap-1.5 text-xs ${sentRepassagePratique ? 'bg-green-600' : ''}`}
+                            onClick={() => {
+                              const defaultSubject = `Réinscription à l'examen pratique T3P`;
+                              const defaultBody = `Bonjour {{prenom}},\n\nSuite à votre précédent examen pratique, vous devez procéder à une nouvelle inscription pour repasser l'examen pratique.\n\n📌 ÉTAPES À SUIVRE :\n\n1️⃣ Rendez-vous sur le site :\n👉 www.exament3p.fr\n\n2️⃣ Connectez-vous avec :\n• Login : votre adresse email\n• Mot de passe : cliquez sur "Mot de passe oublié" pour en créer un nouveau\n\n3️⃣ Une fois connecté(e), procédez à votre réinscription à l'examen pratique en suivant les instructions du site.\n\n⚠️ IMPORTANT — Département 69 obligatoire :\n🔴 ATTENTION : Lors de votre réinscription, vous devez IMPÉRATIVEMENT sélectionner le département 69 (Rhône), même si vous résidez dans un autre département. Si vous choisissez un autre département, nous ne pourrons pas vous former ni vous louer un véhicule pour l'examen pratique.\n\n⚠️ IMPORTANT : Une fois votre réinscription effectuée sur le site, merci de nous recontacter immédiatement afin que nous puissions finaliser votre dossier et vous accompagner pour la suite.\n\n📞 Tél : 04 28 29 60 91\n📧 Email : contact@ftransport.fr\n\nN'hésitez pas à nous contacter si vous rencontrez des difficultés lors de votre réinscription.\n\nCordialement,\nL'équipe Ftransport\n86 Route de Genas, 69003 Lyon`;
+                              setPreviewMailType('repassage_pratique');
+                              setPreviewSubject(defaultSubject);
+                              setPreviewBody(defaultBody);
+                              setPreviewRecipients(echouesEmail);
+                              setPreviewOpen(true);
+                            }}>
+                            {sentRepassagePratique ? <CheckCircle2 className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                            {sendingRepassagePratique ? 'Envoi...' : sentRepassagePratique ? 'Envoyé ✓' : `Envoyer (${echouesEmail.length})`}
+                          </Button>
                         </div>
                         <p className="text-[11px] text-red-700">Réinscription exament3p.fr + département 69 obligatoire</p>
                       </div>
