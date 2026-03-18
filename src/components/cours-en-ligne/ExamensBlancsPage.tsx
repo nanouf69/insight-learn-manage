@@ -11,7 +11,7 @@ import {
   ArrowLeft, ArrowRight, Clock, CheckCircle2, XCircle, AlertTriangle,
   FileText, Timer, Trophy, RotateCcw, ChevronRight, BookOpen, Pencil, Loader2, Bot
 } from "lucide-react";
-import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, type Question } from "./examens-blancs-data";
+import { tousLesExamens, getPointsParQuestion, isCalculQuestion, type ExamenBlanc, type Matiere, type Question } from "./examens-blancs-data";
 import { loadSavedExamens, EXAMEN_BLANC_MODULE_BASE } from "./ExamensBlancsEditor";
 import ExamensBlancsEditor from "./ExamensBlancsEditor";
 import { supabase } from "@/integrations/supabase/client";
