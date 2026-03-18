@@ -97,6 +97,27 @@ export type Database = {
         }
         Relationships: []
       }
+      app_version: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          version?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          version?: string
+        }
+        Relationships: []
+      }
       apprenant_connexions: {
         Row: {
           apprenant_id: string
