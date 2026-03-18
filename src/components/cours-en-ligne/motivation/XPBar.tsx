@@ -10,13 +10,25 @@ const XP_LEVELS = [
 
 interface XPBarProps {
   xp: number;
+  moduleScores?: Record<number, { score_obtenu: number | null; score_max: number | null }>;
 }
 
-export function XPBar({ xp }: XPBarProps) {
+export function XPBar({ xp, moduleScores }: XPBarProps) {
   const level = XP_LEVELS.find((l) => xp >= l.min && xp < l.max) || XP_LEVELS[4];
   const next = XP_LEVELS.find((l) => l.level === level.level + 1);
   const progress = next ? ((xp - level.min) / (next.min - level.min)) * 100 : 100;
   const [animated, setAnimated] = useState(0);
+
+  // Calcul de la moyenne sur 20
+  const averageNote = (() => {
+    if (!moduleScores) return null;
+    const entries = Object.values(moduleScores).filter(
+      (s) => s.score_obtenu != null && s.score_max != null && s.score_max > 0
+    );
+    if (entries.length === 0) return null;
+    const total = entries.reduce((sum, s) => sum + (s.score_obtenu! / s.score_max!) * 20, 0);
+    return total / entries.length;
+  })();
 
   useEffect(() => {
     const t = setTimeout(() => setAnimated(progress), 300);
@@ -26,15 +38,25 @@ export function XPBar({ xp }: XPBarProps) {
   return (
     <div className="bg-card rounded-2xl p-5 mb-5 shadow-sm border">
       <div className="flex justify-between items-center mb-3">
-        <div className="flex items-center gap-2">
-          <span className="text-lg">{level.emoji}</span>
-          <span className="font-bold text-foreground text-sm">
-            Niveau {level.level} — {level.label}
-          </span>
+        <div className="flex items-center gap-3">
+          {averageNote !== null && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-3xl font-extrabold text-primary">
+                {averageNote.toFixed(1)}
+              </span>
+              <span className="text-sm text-muted-foreground font-medium">/20</span>
+            </div>
+          )}
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1.5">
+              <span className="text-lg">{level.emoji}</span>
+              <span className="font-bold text-foreground text-sm">
+                Niv. {level.level} — {level.label}
+              </span>
+            </div>
+            <span className="text-xs text-muted-foreground">⚡ {xp} XP</span>
+          </div>
         </div>
-        <span className="bg-amber-500 text-white rounded-full px-3 py-0.5 text-xs font-bold flex items-center gap-1">
-          ⚡ {xp} XP
-        </span>
       </div>
       <div className="bg-muted rounded-full h-3.5 overflow-hidden">
         <div
