@@ -1127,7 +1127,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           </TabsList>
 
           {/* Apprenants Tab */}
-          <TabsContent value="apprenants" className="flex-1 min-h-0 overflow-hidden flex flex-col mt-4">
+          <TabsContent value="apprenants" className="flex-1 min-h-0 overflow-auto flex flex-col mt-4">
             {/* Barre d'envoi groupé */}
             <div className="shrink-0 flex items-center gap-3 mb-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
               <Checkbox 
