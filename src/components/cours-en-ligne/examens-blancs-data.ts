@@ -347,6 +347,24 @@ const matiere_gestion_examen1: Matiere = {
         { lettre: "B", texte: "L'ensemble des commandes ou devis" },
         { lettre: "C", texte: "L'ensemble des sommes facturées aux clients", correct: true },
         { lettre: "D", texte: "La différence entre les produits et les charges" }
+,
+    {
+      id: 17, type: "QCM", enonce: "Lors de sa création, l'entreprise de Taxi ou de VTC doit s'inscrire :",
+      choix: [
+        { lettre: "A", texte: "À la chambre de métiers et de l'artisanat", correct: true },
+        { lettre: "B", texte: "À la chambre de commerce et d'industrie" },
+        { lettre: "C", texte: "À la chambre d'agriculture" }
+      ]
+    },
+    {
+      id: 18, type: "QCM", enonce: "Les revenus d'un chef d'entreprise individuelle sont imposés dans les catégories des :",
+      choix: [
+        { lettre: "A", texte: "RCM (revenus de capitaux mobiliers)" },
+        { lettre: "B", texte: "BNC (bénéfices non commerciaux)" },
+        { lettre: "C", texte: "IS (Impôts sur les sociétés)" },
+        { lettre: "D", texte: "BIC (bénéfices industriels et commerciaux)", correct: true }
+      ]
+    }
       ]
     }
   ]
@@ -487,6 +505,33 @@ const matiere_securite_examen1: Matiere = {
         { lettre: "B", texte: "La distance d'arrêt augmente", correct: true },
         { lettre: "C", texte: "La distance de freinage augmente" },
         { lettre: "D", texte: "La distance d'arrêt est inchangée" }
+,
+    {
+      id: 16, type: "QCM", enonce: "Mon permis porte la mention \"verres correcteurs\". Pour conduire, je peux porter des lentilles de contact :",
+      choix: [
+        { lettre: "A", texte: "Il est conseillé d'avoir des lunettes de rechange" },
+        { lettre: "B", texte: "Oui", correct: true },
+        { lettre: "C", texte: "Non" },
+        { lettre: "D", texte: "Je dois avoir des lunettes de rechange à bord" }
+      ]
+    },
+    {
+      id: 17, type: "QCM", enonce: "Rouler à 120 km/h au lieu de 130 km/h permet de réduire les émissions de CO2 :",
+      choix: [
+        { lettre: "A", texte: "Non" },
+        { lettre: "B", texte: "Oui", correct: true },
+        { lettre: "C", texte: "Cela n'a aucun effet sur les émissions" }
+      ]
+    },
+    {
+      id: 18, type: "QCM", enonce: "Quelles infractions entraînent un retrait de 4 points du permis de conduire ?",
+      choix: [
+        { lettre: "A", texte: "Utilisation du téléphone en conduisant" },
+        { lettre: "B", texte: "Circulation en sens interdit", correct: true },
+        { lettre: "C", texte: "Stop glissé" },
+        { lettre: "D", texte: "Non port de la ceinture de sécurité" }
+      ]
+    }
       ]
     }
   ]
@@ -708,6 +753,47 @@ const matiere_anglais_examen1: Matiere = {
         { lettre: "B", texte: "I've been a driver since 1990", correct: true },
         { lettre: "C", texte: "I was a driver in the 90's" },
         { lettre: "D", texte: "I've been a driver for 27 years" }
+,
+    {
+      id: 16, type: "QCM", enonce: "J'ai un avion demain matin à 10h20. En anglais :",
+      choix: [
+        { lettre: "A", texte: "I have a plane tomorrow morning at twenty to ten" },
+        { lettre: "B", texte: "I had a plane tomorrow evening at twenty to ten" },
+        { lettre: "C", texte: "I have a plane tomorrow morning at twenty past ten", correct: true }
+      ]
+    },
+    {
+      id: 17, type: "QCM", enonce: "Which French monuments do you advise us to visit?",
+      choix: [
+        { lettre: "A", texte: "You can go by car or by train to visit them" },
+        { lettre: "B", texte: "I don't see" },
+        { lettre: "C", texte: "I think that the Louvres and the Reims Cathedral would be great", correct: true }
+      ]
+    },
+    {
+      id: 18, type: "QCM", enonce: "Sélectionnez la phrase correctement formulée :",
+      choix: [
+        { lettre: "A", texte: "There are a few pubs in Reims", correct: true },
+        { lettre: "B", texte: "There is many pubs in Reims" },
+        { lettre: "C", texte: "There is a few pubs in Reims" }
+      ]
+    },
+    {
+      id: 19, type: "QCM", enonce: "We will probably not make it on time. There's too much traffic. Traduisez :",
+      choix: [
+        { lettre: "A", texte: "Nous arriverons probablement en retard. Il y a trop de circulation", correct: true },
+        { lettre: "B", texte: "Nous arriverons probablement en retard. Il y a beaucoup de ralentissement" },
+        { lettre: "C", texte: "Nous arriverons probablement en retard. Il y a peu de circulation" }
+      ]
+    },
+    {
+      id: 20, type: "QCM", enonce: "Avec une circulation normale, il faut 45 minutes pour atteindre l'aéroport. En anglais :",
+      choix: [
+        { lettre: "A", texte: "With a normal circulation, It must forty five minutes for attend the airport" },
+        { lettre: "B", texte: "In normal traffic, 45 minutes are needed for attent the airport" },
+        { lettre: "C", texte: "With a normal traffic, it takes forty five minutes to get the airport", correct: true }
+      ]
+    }
       ]
     }
   ]
@@ -1196,90 +1282,27 @@ const matiere_securite_examen2: Matiere = {
   coefficient: 3,
   noteEliminatoire: 6,
   noteSur: 20,
-  questions: [
-    {
-      id: 1, type: "QCM", enonce: "La distance de freinage double quand la vitesse :",
-      choix: [
-        { lettre: "A", texte: "Double" },
-        { lettre: "B", texte: "Triple" },
-        { lettre: "C", texte: "Augmente de 40%" },
-        { lettre: "D", texte: "Double, la distance de freinage quadruple", correct: true }
-      ]
-    },
-    {
-      id: 2, type: "QCM", enonce: "En ville, la vitesse maximale autorisée en zone 30 est de :",
-      choix: [
-        { lettre: "A", texte: "20 km/h" },
-        { lettre: "B", texte: "30 km/h", correct: true },
-        { lettre: "C", texte: "50 km/h" }
-      ]
-    },
-    {
-      id: 3, type: "QCM", enonce: "Le taux d'alcoolémie maximal autorisé pour un conducteur professionnel est de :",
-      choix: [
-        { lettre: "A", texte: "0,5 g/L de sang" },
-        { lettre: "B", texte: "0,2 g/L de sang", correct: true },
-        { lettre: "C", texte: "0,8 g/L de sang" }
-      ]
-    },
-    {
-      id: 4, type: "QCM", enonce: "En cas de crevaison, le conducteur doit :",
-      choix: [
-        { lettre: "A", texte: "Freiner brusquement" },
-        { lettre: "B", texte: "Tenir fermement le volant et ralentir progressivement", correct: true },
-        { lettre: "C", texte: "Accélérer pour s'éloigner du danger" }
-      ]
-    },
-    {
-      id: 5, type: "QCM", enonce: "Le délai légal pour déclarer un accident matériel à l'assurance est de :",
-      choix: [
-        { lettre: "A", texte: "24 heures" },
-        { lettre: "B", texte: "5 jours ouvrés", correct: true },
-        { lettre: "C", texte: "15 jours" },
-        { lettre: "D", texte: "1 mois" }
-      ]
-    },
-    {
-      id: 6, type: "QCM", enonce: "L'éco-conduite permet de réduire la consommation de carburant d'environ :",
-      choix: [
-        { lettre: "A", texte: "5%" },
-        { lettre: "B", texte: "15%", correct: true },
-        { lettre: "C", texte: "30%" }
-      ]
-    },
-    {
-      id: 7, type: "QCM", enonce: "Sur autoroute, la distance de sécurité minimale doit être :",
-      choix: [
-        { lettre: "A", texte: "50 mètres" },
-        { lettre: "B", texte: "La distance parcourue en 2 secondes", correct: true },
-        { lettre: "C", texte: "100 mètres fixes" }
-      ]
-    },
-    {
-      id: 8, type: "QCM", enonce: "Quelle infraction entraîne la perte de 6 points sur le permis ?",
-      choix: [
-        { lettre: "A", texte: "Excès de vitesse de plus de 50 km/h", correct: true },
-        { lettre: "B", texte: "Utilisation du téléphone en conduisant" },
-        { lettre: "C", texte: "Stationnement interdit" }
-      ]
-    },
-    {
-      id: 9, type: "QCM", enonce: "Un véhicule doit obligatoirement passer le contrôle technique tous les :",
-      choix: [
-        { lettre: "A", texte: "2 ans", correct: true },
-        { lettre: "B", texte: "1 an" },
-        { lettre: "C", texte: "3 ans" },
-        { lettre: "D", texte: "4 ans" }
-      ]
-    },
-    {
-      id: 10, type: "QCM", enonce: "Le port de la ceinture de sécurité est :",
-      choix: [
-        { lettre: "A", texte: "Obligatoire uniquement sur autoroute" },
-        { lettre: "B", texte: "Obligatoire pour tous les occupants du véhicule", correct: true },
-        { lettre: "C", texte: "Obligatoire seulement pour le conducteur" }
-      ]
-    }
+    questions: [
+    { id: 1, type: "QCM", enonce: "À 127 km/h sur sol sec, quelle est la distance d'arrêt approximative ?", choix: [{ lettre: "A", texte: "60 mètres" }, { lettre: "B", texte: "80 mètres" }, { lettre: "C", texte: "127 mètres", correct: true }] },
+    { id: 2, type: "QCM", enonce: "Sur une autoroute à 3 voies, je peux dépasser par la droite ?", choix: [{ lettre: "A", texte: "Vrai" }, { lettre: "B", texte: "Faux", correct: true }] },
+    { id: 3, type: "QCM", enonce: "Que risquez-vous en vous garant sur une place PMR sans carte ?", choix: [{ lettre: "A", texte: "Une amende de 3ème classe" }, { lettre: "B", texte: "Une amende de 4ème classe", correct: true }, { lettre: "C", texte: "Une amende de 1ère classe" }, { lettre: "D", texte: "La mise en fourrière du véhicule", correct: true }] },
+    { id: 4, type: "QCM", enonce: "À un feu jaune clignotant :", choix: [{ lettre: "A", texte: "Je dois m'arrêter" }, { lettre: "B", texte: "Je peux passer en cédant le passage à droite", correct: true }, { lettre: "C", texte: "Je peux passer en cédant le passage à gauche" }] },
+    { id: 5, type: "QCM", enonce: "En montagne, sur une pente, celui qui doit s'arrêter est :", choix: [{ lettre: "A", texte: "Le véhicule le plus chargé" }, { lettre: "B", texte: "Le véhicule qui monte" }, { lettre: "C", texte: "Le véhicule qui descend si de même gabarit", correct: true }] },
+    { id: 6, type: "QCM", enonce: "Hors agglomération, pour dépasser un cycliste, je dois laisser au minimum :", choix: [{ lettre: "A", texte: "1 mètre" }, { lettre: "B", texte: "1,50 mètre", correct: true }, { lettre: "C", texte: "2 mètres" }] },
+    { id: 7, type: "QCM", enonce: "Un panneau rond sur fond bleu marqué 30 signifie :", choix: [{ lettre: "A", texte: "Une vitesse conseillée" }, { lettre: "B", texte: "Une vitesse maximum autorisée" }, { lettre: "C", texte: "Une vitesse minimum obligatoire", correct: true }] },
+    { id: 8, type: "QCM", enonce: "Sur une route étroite, un camion arrive en face, je dois lui céder le passage ?", choix: [{ lettre: "A", texte: "Oui", correct: true }, { lettre: "B", texte: "Non" }] },
+    { id: 9, type: "QCM", enonce: "En présence d'un accident, je dois :", choix: [{ lettre: "A", texte: "Protéger, alerter, secourir", correct: true }, { lettre: "B", texte: "Alerter, secourir, protéger" }, { lettre: "C", texte: "Secourir, protéger, alerter" }] },
+    { id: 10, type: "QCM", enonce: "Je perds 2 points pour une contravention de 2ème classe, je les récupère sans infraction dans :", choix: [{ lettre: "A", texte: "6 mois" }, { lettre: "B", texte: "2 ans", correct: true }, { lettre: "C", texte: "3 ans" }] },
+    { id: 11, type: "QCM", enonce: "Test d'alcoolémie : résultat 0,30 mg/l d'air expiré, cette infraction est un délit :", choix: [{ lettre: "A", texte: "Vrai" }, { lettre: "B", texte: "Faux", correct: true }] },
+    { id: 12, type: "QCM", enonce: "Quelles infractions entraînent un retrait de 3 points ?", choix: [{ lettre: "A", texte: "Chevauchement d'une ligne continue" }, { lettre: "B", texte: "Usage d'un appareil de détection de contrôles" }, { lettre: "C", texte: "Dépassement dangereux", correct: true }, { lettre: "D", texte: "Non-respect des distances de sécurité", correct: true }] },
+    { id: 13, type: "QCM", enonce: "Par temps de forte pluie, je peux allumer mes feux antibrouillard arrière ?", choix: [{ lettre: "A", texte: "Oui", correct: true }, { lettre: "B", texte: "Non" }] },
+    { id: 14, type: "QCM", enonce: "Je roule à 90 km/h, quelle est ma distance de sécurité approximative ?", choix: [{ lettre: "A", texte: "15 mètres" }, { lettre: "B", texte: "64 mètres" }, { lettre: "C", texte: "59 mètres", correct: true }] },
+    { id: 15, type: "QCM", enonce: "En suivant un stage de sensibilisation, un conducteur peut retrouver :", choix: [{ lettre: "A", texte: "8 points" }, { lettre: "B", texte: "4 points", correct: true }, { lettre: "C", texte: "6 points" }] },
+    { id: 16, type: "QCM", enonce: "Ne pas s'arrêter quand un agent fait signe constitue :", choix: [{ lettre: "A", texte: "un délit de fuite" }, { lettre: "B", texte: "un délit" }, { lettre: "C", texte: "un refus d'obtempérer", correct: true }] },
+    { id: 17, type: "QCM", enonce: "Les feux de position sont visibles jusqu'à :", choix: [{ lettre: "A", texte: "150 m" }, { lettre: "B", texte: "100 m" }, { lettre: "C", texte: "50 m", correct: true }] },
+    { id: 18, type: "QCM", enonce: "Pourquoi faut-il rédiger un constat amiable ?", choix: [{ lettre: "A", texte: "pour le devis du garagiste" }, { lettre: "B", texte: "pour calculer les indemnisations" }, { lettre: "C", texte: "pour déterminer la sanction" }, { lettre: "D", texte: "pour déterminer les responsabilités", correct: true }] },
+    { id: 19, type: "QCM", enonce: "Les feux de croisement éclairent à :", choix: [{ lettre: "A", texte: "150 m" }, { lettre: "B", texte: "100 m", correct: true }, { lettre: "C", texte: "30 m" }] },
+    { id: 20, type: "QCM", enonce: "Ce panneau indique qu'à la prochaine intersection :", choix: [{ lettre: "A", texte: "Je devrai céder la priorité à droite", correct: true }, { lettre: "B", texte: "Je devrai céder la priorité à gauche" }, { lettre: "C", texte: "Je devrai céder la priorité à gauche et à droite" }] }
   ]
 };
 
@@ -1298,49 +1321,29 @@ En outre, en raison de l'influence des stéréotypes masculins et féminins tout
 
 Enfin, il existe un lien marqué entre la précarité, qui touche plus particulièrement les femmes, et les contraintes de mobilité qui contribuent à aggraver leur fragilité économique et sociale. Comment favoriser la mobilité des femmes précaires ?`,
   texteSource: "Rapport d'information de Mmes Chantal JOUANNO et Christiane HUMMEL, délégation aux droits des femmes n° 835 (2015-2016) — 20 septembre 2016",
-  questions: [
+    questions: [
     {
-      id: 1, type: "QRC", enonce: "Rédigez un message professionnel pour confirmer un rendez-vous avec un client.",
-      reponseQRC: "Madame, Monsieur, Je vous confirme notre rendez-vous le [date] à [heure]. Je serai présent à [lieu]. Cordialement, [Nom].",
-      reponses_possibles: ["confirme", "rendez-vous", "date", "heure", "cordialement"]
+      id: 1, type: "QRC", enonce: "Expliquez en quoi la précarité touche plus particulièrement les femmes et en quoi les difficultés de mobilité aggravent la situation.",
+      reponseQRC: "Travail à temps partiel, famille monoparentale, salaire plus bas. Mobilité et précarité : manque d'indépendance, ne peut répondre aux propositions intéressantes et plus éloignées, éloignement des lieux d'habitation par rapport au bassin d'emploi.",
+      reponses_possibles: ["précarité", "femmes", "mobilité", "temps partiel", "indépendance"]
     },
     {
-      id: 2, type: "QRC", enonce: "Comment accueillez-vous un client dans votre véhicule ? Développez votre réponse.",
-      reponseQRC: "Je salue le client poliment, je l'aide avec ses bagages si nécessaire, je confirme sa destination, je m'assure de son confort et je lui signale les options disponibles (climatisation, musique).",
-      reponses_possibles: ["salue", "politesse", "destination", "confort", "bagages"]
+      id: 2, type: "QRC", enonce: "Expliquez le paradoxe relevé par les auteures sans paraphraser le texte.",
+      reponseQRC: "Bien que statistiquement les femmes ont moins d'accidents et sont plus prudentes, les clichés persistent : les femmes seraient peu habiles au volant, voire dangereuses.",
+      reponses_possibles: ["paradoxe", "femmes", "accidents", "prudentes", "clichés"]
     },
     {
-      id: 3, type: "QCM", enonce: "Quel est le ton approprié dans une communication professionnelle ?",
-      choix: [
-        { lettre: "A", texte: "Familier et détendu" },
-        { lettre: "B", texte: "Courtois, clair et professionnel", correct: true },
-        { lettre: "C", texte: "Froid et distant" }
-      ]
+      id: 3, type: "QRC", enonce: "En quoi le permis de conduire est-il indispensable à l'insertion sociale des personnes d'après vous ?",
+      reponseQRC: "Le permis de conduire permet d'accéder aux lieux de culture (cinéma, bibliothèque…), administratifs (allocations familiales, impôts, mairie…), et favorise la création d'un réseau d'amis et de famille.",
+      reponses_possibles: ["insertion sociale", "culture", "administratifs", "réseau", "permis"]
     },
-    {
-      id: 4, type: "QCM", enonce: "Un client se plaint du trajet. Comment réagissez-vous ?",
-      choix: [
-        { lettre: "A", texte: "Vous l'ignorez" },
-        { lettre: "B", texte: "Vous l'écoutez, vous expliquez et vous proposez une solution", correct: true },
-        { lettre: "C", texte: "Vous lui dites qu'il a tort" }
-      ]
-    },
-    {
-      id: 5, type: "QCM", enonce: "Qu'est-ce qu'un service de qualité dans le transport VTC/Taxi ?",
-      choix: [
-        { lettre: "A", texte: "Arriver le plus vite possible" },
-        { lettre: "B", texte: "Ponctualité, courtoisie, véhicule propre, conduite apaisée", correct: true },
-        { lettre: "C", texte: "Proposer le tarif le moins cher" }
-      ]
-    },
-    {
-      id: 6, type: "QCM", enonce: "Dans quelle situation un conducteur peut-il parler au téléphone ?",
-      choix: [
-        { lettre: "A", texte: "Avec un kit mains-libres et seulement si nécessaire", correct: true },
-        { lettre: "B", texte: "En tenant le téléphone si le client l'appelle" },
-        { lettre: "C", texte: "Jamais, même avec un kit mains-libres" }
-      ]
-    }
+    { id: 4, type: "QCM", enonce: "Quel(s) est (sont) le(s) synonyme(s) de paradoxe :", choix: [{ lettre: "A", texte: "invraisemblance", correct: true }, { lettre: "B", texte: "accord" }, { lettre: "C", texte: "concordance de genre" }] },
+    { id: 5, type: "QCM", enonce: "L'industrie automobile :", choix: [{ lettre: "A", texte: "respecte la parité homme / femme" }, { lettre: "B", texte: "compte peu de femmes dans ses effectifs", correct: true }, { lettre: "C", texte: "est un secteur très masculin", correct: true }] },
+    { id: 6, type: "QCM", enonce: "Les auteures parlent d'un écart de 10 points entre les hommes et les femmes à l'examen du permis, cela signifie que :", choix: [{ lettre: "A", texte: "les femmes réussissent davantage" }, { lettre: "B", texte: "les hommes réussissent plus souvent", correct: true }, { lettre: "C", texte: "le permis des femmes a moins de points" }] },
+    { id: 7, type: "QCM", enonce: "L'accidentalité est :", choix: [{ lettre: "A", texte: "le taux d'accident rapporté à une population", correct: true }, { lettre: "B", texte: "le nombre d'accidents par an" }, { lettre: "C", texte: "la science qui étudie la nature des accidents" }] },
+    { id: 8, type: "QCM", enonce: "L'influence des stéréotypes tout au long du parcours scolaire a quelle(s) conséquence(s) ?", choix: [{ lettre: "A", texte: "les filles ne s'orientent pas vers les filières techniques automobiles", correct: true }, { lettre: "B", texte: "l'industrie automobile ne veut pas recruter des femmes" }] },
+    { id: 9, type: "QCM", enonce: "Qu'est-ce qu'un stéréotype ?", choix: [{ lettre: "A", texte: "un cliché", correct: true }, { lettre: "B", texte: "une typologie" }, { lettre: "C", texte: "un genre" }] },
+    { id: 10, type: "QCM", enonce: "Trouvez le(s) synonyme(s) de précarité :", choix: [{ lettre: "A", texte: "instabilité", correct: true }, { lettre: "B", texte: "fragilité", correct: true }, { lettre: "C", texte: "pauvreté" }] }
   ]
 };
 
@@ -1351,87 +1354,27 @@ const matiere_anglais_examen2: Matiere = {
   coefficient: 1,
   noteEliminatoire: 4,
   noteSur: 20,
-  questions: [
-    {
-      id: 1, type: "QCM", enonce: "Where would you like to go? Traduisez :",
-      choix: [
-        { lettre: "A", texte: "Où habitez-vous ?" },
-        { lettre: "B", texte: "Où voulez-vous aller ?", correct: true },
-        { lettre: "C", texte: "D'où venez-vous ?" }
-      ]
-    },
-    {
-      id: 2, type: "QCM", enonce: "I'll be there in ten minutes. Traduisez :",
-      choix: [
-        { lettre: "A", texte: "Je suis là depuis dix minutes" },
-        { lettre: "B", texte: "J'y serai dans dix minutes", correct: true },
-        { lettre: "C", texte: "Il était là il y a dix minutes" }
-      ]
-    },
-    {
-      id: 3, type: "QCM", enonce: "Could you please open the trunk? Que demande le client ?",
-      choix: [
-        { lettre: "A", texte: "D'ouvrir la fenêtre" },
-        { lettre: "B", texte: "D'ouvrir le coffre", correct: true },
-        { lettre: "C", texte: "D'ouvrir la porte arrière" }
-      ]
-    },
-    {
-      id: 4, type: "QCM", enonce: "Is the airport far from here?",
-      choix: [
-        { lettre: "A", texte: "L'aéroport est-il loin d'ici ?", correct: true },
-        { lettre: "B", texte: "Pouvez-vous aller à l'aéroport ?" },
-        { lettre: "C", texte: "Combien coûte l'aéroport ?" }
-      ]
-    },
-    {
-      id: 5, type: "QCM", enonce: "Please fasten your seatbelt. Que signifie cette phrase ?",
-      choix: [
-        { lettre: "A", texte: "Fermez la portière, s'il vous plaît" },
-        { lettre: "B", texte: "Veuillez attacher votre ceinture", correct: true },
-        { lettre: "C", texte: "Asseyez-vous, s'il vous plaît" }
-      ]
-    },
-    {
-      id: 6, type: "QCM", enonce: "Can you recommend a good restaurant? Que demande le passager ?",
-      choix: [
-        { lettre: "A", texte: "S'arrêter dans un restaurant" },
-        { lettre: "B", texte: "De recommander un bon restaurant", correct: true },
-        { lettre: "C", texte: "D'appeler un restaurant" }
-      ]
-    },
-    {
-      id: 7, type: "QCM", enonce: "What time does your shift end? Que vous demande-t-on ?",
-      choix: [
-        { lettre: "A", texte: "À quelle heure commence votre service ?" },
-        { lettre: "B", texte: "À quelle heure se termine votre service ?", correct: true },
-        { lettre: "C", texte: "Combien d'heures travaillez-vous ?" }
-      ]
-    },
-    {
-      id: 8, type: "QCM", enonce: "I've left my luggage in your car. Que signifie cette phrase ?",
-      choix: [
-        { lettre: "A", texte: "J'ai laissé mes bagages dans votre voiture", correct: true },
-        { lettre: "B", texte: "J'ai perdu mes bagages" },
-        { lettre: "C", texte: "Pouvez-vous porter mes bagages ?" }
-      ]
-    },
-    {
-      id: 9, type: "QCM", enonce: "Is it possible to pay by credit card?",
-      choix: [
-        { lettre: "A", texte: "Est-il possible de payer par carte bancaire ?", correct: true },
-        { lettre: "B", texte: "Acceptez-vous les chèques ?" },
-        { lettre: "C", texte: "Quel est le prix de la course ?" }
-      ]
-    },
-    {
-      id: 10, type: "QCM", enonce: "Could you please turn down the music?",
-      choix: [
-        { lettre: "A", texte: "Pouvez-vous baisser la musique, s'il vous plaît ?", correct: true },
-        { lettre: "B", texte: "Pouvez-vous mettre de la musique ?" },
-        { lettre: "C", texte: "Pouvez-vous éteindre la radio ?" }
-      ]
-    }
+    questions: [
+    { id: 1, type: "QCM", enonce: "Il y a un supplément pour la quatrième personne. En anglais :", choix: [{ lettre: "A", texte: "there is no extra charge for the fourth person" }, { lettre: "B", texte: "there is a supplement for the third person" }, { lettre: "C", texte: "there is an extra charge for the fourth person", correct: true }] },
+    { id: 2, type: "QCM", enonce: "\"Break down\" signifie :", choix: [{ lettre: "A", texte: "freiner au maximum" }, { lettre: "B", texte: "faire une dépression" }, { lettre: "C", texte: "tomber en panne", correct: true }] },
+    { id: 3, type: "QCM", enonce: "Merci pour la course. Gardez la monnaie ! En anglais :", choix: [{ lettre: "A", texte: "thank you for the race. Save the change!" }, { lettre: "B", texte: "thank you for the ride. Keep the change!", correct: true }, { lettre: "C", texte: "thank you for the errand. Give the change!" }] },
+    { id: 4, type: "QCM", enonce: "Write the opposite of \"boring\":", choix: [{ lettre: "A", texte: "dangerous" }, { lettre: "B", texte: "noisy" }, { lettre: "C", texte: "exciting", correct: true }] },
+    { id: 5, type: "QCM", enonce: "La voiture de mon cousin est très vieille. En anglais :", choix: [{ lettre: "A", texte: "my cousin car is very old" }, { lettre: "B", texte: "my cousin's car is very old", correct: true }] },
+    { id: 6, type: "QCM", enonce: "The secretary was given a bonus:", choix: [{ lettre: "A", texte: "la secrétaire a reçu une prime", correct: true }, { lettre: "B", texte: "on a donné une prime à la secrétaire", correct: true }, { lettre: "C", texte: "le secrétaire était donné en prime" }] },
+    { id: 7, type: "QCM", enonce: "Y a-t-il un problème ? La route est bloquée. En anglais :", choix: [{ lettre: "A", texte: "is there a problem? The road is blocked", correct: true }, { lettre: "B", texte: "are there a problem? The road is blocked" }, { lettre: "C", texte: "is there a problem? The road is open" }] },
+    { id: 8, type: "QCM", enonce: "Il y a un festival à Édimbourg tous les quatre ans. En anglais :", choix: [{ lettre: "A", texte: "it is a festival at Edinburgh every four year" }, { lettre: "B", texte: "there is a festival in Edinburgh every four years", correct: true }, { lettre: "C", texte: "there is a festival on Edinburgh every four years" }] },
+    { id: 9, type: "QCM", enonce: "Un client vous demande de l'amener à \"the suburb\", où irez-vous ?", choix: [{ lettre: "A", texte: "au métro" }, { lettre: "B", texte: "en banlieue", correct: true }, { lettre: "C", texte: "au bord de la mer" }] },
+    { id: 10, type: "QCM", enonce: "I have Italian lessons …… Monday:", choix: [{ lettre: "A", texte: "on", correct: true }, { lettre: "B", texte: "in" }, { lettre: "C", texte: "at" }] },
+    { id: 11, type: "QCM", enonce: "Nous vérifions ma voiture deux à trois fois par semaine. En anglais :", choix: [{ lettre: "A", texte: "we tcheck my car too or three time by week" }, { lettre: "B", texte: "we check my car two or three times a week", correct: true }, { lettre: "C", texte: "we check my car two or three times by week" }] },
+    { id: 12, type: "QCM", enonce: "Fill it up, please. Traduisez :", choix: [{ lettre: "A", texte: "remplissez-le s'il vous plaît" }, { lettre: "B", texte: "le plein s'il vous plaît", correct: true }] },
+    { id: 13, type: "QCM", enonce: "We will probably not make it on time. There's too much traffic:", choix: [{ lettre: "A", texte: "nous arriverons probablement en retard. Il y a trop de circulation", correct: true }, { lettre: "B", texte: "nous arriverons probablement en retard. Il y a beaucoup de ralentissement" }, { lettre: "C", texte: "nous arriverons certainement en retard. Il y a peu de circulation" }] },
+    { id: 14, type: "QCM", enonce: "\"To demand\" signifie :", choix: [{ lettre: "A", texte: "exiger", correct: true }, { lettre: "B", texte: "demander" }, { lettre: "C", texte: "supplier" }] },
+    { id: 15, type: "QCM", enonce: "How long are you planning to stay in France?", choix: [{ lettre: "A", texte: "comment comptez-vous rester en France ?" }, { lettre: "B", texte: "combien de fois êtes-vous venu en France ?" }, { lettre: "C", texte: "combien de temps comptez-vous rester en France ?", correct: true }] },
+    { id: 16, type: "QCM", enonce: "Est-ce qu'il y a un musée dans votre ville ? En anglais :", choix: [{ lettre: "A", texte: "is there a museum in your town?", correct: true }, { lettre: "B", texte: "whats a museum in your town?" }, { lettre: "C", texte: "is there museum on your town?" }] },
+    { id: 17, type: "QCM", enonce: "\"The landscape\" signifie :", choix: [{ lettre: "A", texte: "la campagne" }, { lettre: "B", texte: "la prairie" }, { lettre: "C", texte: "le paysage", correct: true }] },
+    { id: 18, type: "QCM", enonce: "Avez-vous des enfants ? En anglais :", choix: [{ lettre: "A", texte: "have you get children?" }, { lettre: "B", texte: "have you children?" }, { lettre: "C", texte: "have you got children?", correct: true }] },
+    { id: 19, type: "QCM", enonce: "I went to Paris …… air:", choix: [{ lettre: "A", texte: "by", correct: true }, { lettre: "B", texte: "in the" }, { lettre: "C", texte: "with" }, { lettre: "D", texte: "on" }] },
+    { id: 20, type: "QCM", enonce: "\"A refund\" signifie :", choix: [{ lettre: "A", texte: "un remboursement", correct: true }, { lettre: "B", texte: "un refus" }, { lettre: "C", texte: "une retrouvaille" }] }
   ]
 };
 
