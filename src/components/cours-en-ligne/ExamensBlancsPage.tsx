@@ -708,6 +708,7 @@ function EcranResultats({
           const pointsQuestion = getPointsParQuestion(matiere.id, q?.type || "QRC");
 
           try {
+            const isCalc = isCalculQuestion(q);
             const { data, error } = await supabase.functions.invoke("corriger-qrc", {
               body: {
                 question: q.enonce,
@@ -715,6 +716,8 @@ function EcranResultats({
                 reponsesAttendues: q.reponses_possibles || [q.reponseQRC || ""],
                 matiereId: matiere.id,
                 pointsQuestion,
+                isCalcul: isCalc,
+                reponseQRC: q.reponseQRC || "",
               },
             });
 
