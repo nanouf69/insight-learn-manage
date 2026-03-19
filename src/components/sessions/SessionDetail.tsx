@@ -1415,6 +1415,11 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
                                 const agendaDays: AgendaDaySlot[] = Array.from(dayMap.entries())
                                   .sort(([a], [b]) => a.localeCompare(b))
+                                  .filter(([key, val]) => {
+                                    // Exclure le vendredi 20 mars 2026
+                                    if (key === '2026-03-20') return false;
+                                    return true;
+                                  })
                                   .map(([, val]) => {
                                     const morningSlots = val.slots.filter(s => s.debut < '12:30');
                                     const afternoonSlots = val.slots.filter(s => s.debut >= '12:30');
@@ -1426,6 +1431,11 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                     if (afternoonSlots.length > 0) {
                                       result.apremDebut = afternoonSlots.reduce((min, s) => s.debut < min ? s.debut : min, afternoonSlots[0].debut);
                                       result.apremFin = afternoonSlots.reduce((max, s) => s.fin > max ? s.fin : max, afternoonSlots[0].fin);
+                                    }
+                                    // Pour VTC : forcer les horaires 09:00-12:00 / 13:00-16:00
+                                    if (isVTC) {
+                                      if (result.matinDebut) { result.matinDebut = '09:00'; result.matinFin = '12:00'; }
+                                      if (result.apremDebut) { result.apremDebut = '13:00'; result.apremFin = '16:00'; }
                                     }
                                     return result;
                                   });
