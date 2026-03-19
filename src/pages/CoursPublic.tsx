@@ -773,14 +773,21 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     };
   }, [apprenantOverride, embedded]);
 
-  // Fetch completed modules
+  // Fetch completed modules + exam blanc results
   useEffect(() => {
     if (!apprenant?.id) return;
     const fetchCompletions = async () => {
-      const { data } = await supabase
-        .from("apprenant_module_completion")
-        .select("id, module_id, score_obtenu, score_max, completed_at, details")
-        .eq("apprenant_id", apprenant.id!);
+      const [{ data }, { data: examData }] = await Promise.all([
+        supabase
+          .from("apprenant_module_completion")
+          .select("id, module_id, score_obtenu, score_max, completed_at, details")
+          .eq("apprenant_id", apprenant.id!),
+        supabase
+          .from("apprenant_quiz_results" as any)
+          .select("quiz_id")
+          .eq("apprenant_id", apprenant.id!)
+          .eq("quiz_type", "examen_blanc"),
+      ]);
 
       if (data) {
         const completionRows = data as any[];
@@ -793,6 +800,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         });
         setModuleScores(scores);
         setModuleCompletionsForNotes(completionRows);
+      }
+
+      if (examData) {
+        const ids = new Set<string>((examData as any[]).map((r: any) => r.quiz_id));
+        setExamBlancCompletedIds(ids);
       }
     };
     fetchCompletions();
