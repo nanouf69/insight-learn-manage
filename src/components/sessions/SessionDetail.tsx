@@ -1375,9 +1375,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                 const isVA = type === 'va' || type === 'va-e';
                                 const isTaxi = type.includes('taxi') || isTA;
                                 const formationLabel = isTaxi ? 'Formation TAXI' : 'Formation VTC';
+                                const isVTC = type === 'vtc' || type === 'vtc-e';
                                 const formateurNames = (isTA || isVA)
                                   ? ["Rim TOUIL"]
-                                  : ["Naoufal GUENICHI", "Rim TOUIL"];
+                                  : isVTC
+                                    ? ["Naoufal GUENICHI"]
+                                    : ["Naoufal GUENICHI", "Rim TOUIL"];
 
                                 const dateDebut = new Date(session.dateDebut);
                                 const dateFin = new Date(session.dateFin);
