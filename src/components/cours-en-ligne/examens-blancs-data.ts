@@ -2008,7 +2008,7 @@ const eb1Matieres: Matiere[] = [
   {
     id: "reglementation_vtc2",
     nom: "G(V) - Réglementation nationale spécifique à l'activité de VTC",
-    duree: 15,
+    duree: 20,
     coefficient: 3,
     noteEliminatoire: 6,
     noteSur: 24,
@@ -3119,7 +3119,7 @@ const eb2Matieres: Matiere[] = [
   {
     id: "reglementation_vtc2",
     nom: "G(V) - Réglementation nationale spécifique à l'activité de VTC",
-    duree: 15,
+    duree: 20,
     coefficient: 3,
     noteEliminatoire: 6,
     noteSur: 24,
@@ -4265,7 +4265,7 @@ const eb3Matieres: Matiere[] = [
   {
     id: "reglementation_vtc2",
     nom: "G(V) - Réglementation nationale spécifique à l'activité de VTC",
-    duree: 15,
+    duree: 20,
     coefficient: 3,
     noteEliminatoire: 6,
     noteSur: 24,
@@ -5372,7 +5372,7 @@ const eb4Matieres: Matiere[] = [
   {
     id: "reglementation_vtc2",
     nom: "G(V) - Réglementation nationale spécifique à l'activité de VTC",
-    duree: 15,
+    duree: 20,
     coefficient: 3,
     noteEliminatoire: 6,
     noteSur: 24,
@@ -6492,7 +6492,7 @@ const eb5Matieres: Matiere[] = [
   {
     id: "reglementation_vtc2",
     nom: "G(V) - Réglementation nationale spécifique à l'activité de VTC",
-    duree: 15,
+    duree: 20,
     coefficient: 3,
     noteEliminatoire: 6,
     noteSur: 24,
@@ -7592,7 +7592,7 @@ const eb6Matieres: Matiere[] = [
   {
     id: "reglementation_vtc2",
     nom: "G(V) - Réglementation nationale spécifique à l'activité de VTC",
-    duree: 15,
+    duree: 20,
     coefficient: 3,
     noteEliminatoire: 6,
     noteSur: 24,
