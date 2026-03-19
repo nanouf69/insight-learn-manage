@@ -2076,6 +2076,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_apprenant_session: {
+        Args: { _apprenant_id: string; _connexion_id: string; _event?: string }
+        Returns: {
+          disconnect_reason: string
+          is_valid: boolean
+          remaining_presence_seconds: number
+          server_now: string
+          session_started_at: string
+          should_show_presence_prompt: boolean
+        }[]
+      }
       daitch_mokotoff: { Args: { "": string }; Returns: string[] }
       dmetaphone: { Args: { "": string }; Returns: string }
       dmetaphone_alt: { Args: { "": string }; Returns: string }
