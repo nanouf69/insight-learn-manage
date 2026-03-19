@@ -704,6 +704,11 @@ function TransitionMatiere({
             Matière {numeroSuivant}/{total}
           </Badge>
           <h3 className="text-xl font-bold" style={{ color: '#0D2540' }}>{matiereSuivante}</h3>
+          <div className="rounded-lg px-4 py-3 mb-1" style={{ backgroundColor: '#FFF3E0', border: '2px solid #F4A227' }}>
+            <p className="text-base font-bold" style={{ color: '#D84315' }}>
+              ⚠️ VOUS DEVEZ RÉPONDRE À TOUTES LES QUESTIONS AVANT DE VALIDER
+            </p>
+          </div>
           <p className="text-sm text-muted-foreground">Préparez-vous, le chronomètre démarrera dès que vous cliquerez.</p>
           <Button
             className="gap-2 text-base px-8 py-5 font-semibold text-white"
@@ -1577,7 +1582,7 @@ export default function ExamensBlancsPage({
                 <li>Les questions QRC sont corrigées par mots-clés</li>
                 <li>Une note éliminatoire inférieure au seuil entraîne l'échec</li>
                 <li>Vous ne pouvez pas revenir à une matière terminée</li>
-                <li>Répondez à toutes les questions avant de valider la matière</li>
+                <li className="text-base font-bold text-red-700">⚠️ VOUS DEVEZ RÉPONDRE À TOUTES LES QUESTIONS AVANT DE VALIDER</li>
               </ul>
             </div>
 
