@@ -1300,6 +1300,175 @@ function EcranResultats({
   );
 }
 
+// ===== RÉVISION DES QUESTIONS FAUSSES =====
+function RevisionFausses({
+  wrongQuestions,
+  onTerminer,
+}: {
+  wrongQuestions: { matiere: Matiere; question: Question; matiereNom: string }[];
+  onTerminer: () => void;
+}) {
+  const [reponses, setReponses] = useState<Reponses>({});
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [showCorrection, setShowCorrection] = useState(false);
+  const [correctedCount, setCorrectedCount] = useState(0);
+
+  if (wrongQuestions.length === 0) {
+    return (
+      <Card>
+        <CardContent className="py-8 text-center">
+          <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-3" />
+          <p className="font-semibold text-lg">Aucune question fausse à réviser !</p>
+          <Button className="mt-4" onClick={onTerminer}>Retour aux résultats</Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const current = wrongQuestions[currentIndex];
+  if (!current) return null;
+  const { question: q, matiereNom } = current;
+  const rep = reponses[q.id];
+
+  const checkAnswer = () => {
+    let isCorrect = false;
+    if (q?.type === "QCM" && q.choix) {
+      const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
+      const donnees = ((rep as string[]) || []).sort();
+      isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
+    } else if (q?.type === "QRC") {
+      const repStr = ((rep as string) || "").toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+      const motsCles = q.reponses_possibles || [];
+      let nbTrouvees = 0;
+      motsCles.forEach(mc => { const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, ""); if (repStr.includes(mcN)) nbTrouvees++; });
+      isCorrect = nbTrouvees >= motsCles.length;
+    }
+    if (isCorrect) setCorrectedCount(prev => prev + 1);
+    setShowCorrection(true);
+  };
+
+  const goNext = () => {
+    setShowCorrection(false);
+    if (currentIndex < wrongQuestions.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    } else {
+      // Finished all wrong questions
+      toast.success(`Révision terminée ! ${correctedCount}/${wrongQuestions.length} questions corrigées.`);
+      onTerminer();
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Progress */}
+      <div className="flex items-center justify-between">
+        <Badge style={{ backgroundColor: '#0D2540', color: '#00B4D8' }}>
+          Question {currentIndex + 1} / {wrongQuestions.length}
+        </Badge>
+        <span className="text-xs text-muted-foreground">{matiereNom}</span>
+      </div>
+      <Progress value={((currentIndex + 1) / wrongQuestions.length) * 100} className="h-2" />
+
+      <Card className="border-2" style={{ borderColor: '#0D2540' }}>
+        <CardContent className="pt-5 pb-5 space-y-4">
+          <p className="font-semibold text-base" style={{ color: '#0D2540' }}>
+            {q.enonce}
+          </p>
+
+          {q?.type === "QCM" && q.choix && (
+            <div className="space-y-2">
+              {q.choix.map(c => {
+                const selected = ((rep as string[]) || []).includes(c.lettre);
+                const isCorrectChoice = c.correct;
+                let borderColor = selected ? '#0D2540' : '#e5e7eb';
+                let bgColor = 'transparent';
+                if (showCorrection) {
+                  if (isCorrectChoice) { borderColor = '#22c55e'; bgColor = '#f0fdf4'; }
+                  else if (selected && !isCorrectChoice) { borderColor = '#ef4444'; bgColor = '#fef2f2'; }
+                }
+                return (
+                  <div
+                    key={c.lettre}
+                    className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${showCorrection ? 'pointer-events-none' : ''}`}
+                    style={{ borderColor, backgroundColor: bgColor }}
+                    onClick={() => {
+                      if (showCorrection) return;
+                      const prev = (rep as string[]) || [];
+                      const correctCount = q.choix!.filter(ch => ch.correct).length;
+                      if (correctCount <= 1) {
+                        setReponses({ ...reponses, [q.id]: [c.lettre] });
+                      } else {
+                        setReponses({
+                          ...reponses,
+                          [q.id]: prev.includes(c.lettre) ? prev.filter(l => l !== c.lettre) : [...prev, c.lettre],
+                        });
+                      }
+                    }}
+                  >
+                    <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 ${
+                      selected ? 'text-white' : ''
+                    }`} style={{
+                      borderColor: showCorrection && isCorrectChoice ? '#22c55e' : selected ? '#0D2540' : '#d1d5db',
+                      backgroundColor: selected ? '#0D2540' : 'transparent',
+                    }}>
+                      {showCorrection && isCorrectChoice ? <CheckCircle2 className="w-4 h-4 text-green-600" /> :
+                       showCorrection && selected && !isCorrectChoice ? <XCircle className="w-4 h-4 text-red-500" /> :
+                       c.lettre}
+                    </div>
+                    <span className="text-sm">{c.texte}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {q?.type === "QRC" && (
+            <div className="space-y-2">
+              <Textarea
+                value={(rep as string) || ""}
+                onChange={e => setReponses({ ...reponses, [q.id]: e.target.value })}
+                placeholder="Saisissez votre réponse..."
+                disabled={showCorrection}
+                rows={3}
+              />
+              {showCorrection && (
+                <div className="p-3 rounded-lg bg-green-50 border border-green-200">
+                  <p className="text-sm font-medium text-green-800">
+                    Réponse attendue : {q.reponseQRC || (q.reponses_possibles || []).join(" / ") || "—"}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {!showCorrection ? (
+            <Button
+              onClick={checkAnswer}
+              disabled={!rep || (Array.isArray(rep) && rep.length === 0)}
+              className="w-full gap-2"
+              style={{ backgroundColor: '#0D2540' }}
+            >
+              Valider ma réponse
+            </Button>
+          ) : (
+            <Button
+              onClick={goNext}
+              className="w-full gap-2"
+              style={{ backgroundColor: '#F4A227' }}
+            >
+              {currentIndex < wrongQuestions.length - 1 ? (
+                <>Question suivante <ArrowRight className="w-4 h-4" /></>
+              ) : (
+                <>Terminer la révision <CheckCircle2 className="w-4 h-4" /></>
+              )}
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // ===== COMPOSANT PRINCIPAL =====
 export default function ExamensBlancsPage({
   defaultBilanId,
