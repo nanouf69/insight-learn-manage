@@ -225,9 +225,16 @@ function MatiereEditor({
   };
 
   const deleteQuestion = (qId: number) => {
-    const newQuestions = questionsSafe.filter(q => q.id !== qId);
+    setConfirmDeleteQId(qId);
+  };
+
+  const confirmDelete = () => {
+    if (confirmDeleteQId === null) return;
+    const newQuestions = questionsSafe.filter(q => q.id !== confirmDeleteQId);
     onChange({ ...matiere, questions: newQuestions });
     setEditingQId(null);
+    setConfirmDeleteQId(null);
+    toast.success("Question supprimée avec succès");
   };
 
   const addQuestion = (type: "QCM" | "QRC") => {
