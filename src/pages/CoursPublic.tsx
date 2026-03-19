@@ -1159,6 +1159,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return acc;
   }, {});
 
+  const completedCount = modules.filter((m) => moduleProgressById[m.id]?.isDone).length;
   const globalProgress = modules.length > 0 ? Math.round((completedCount / modules.length) * 100) : 0;
   const remainingModules = modules.filter((m) => !moduleProgressById[m.id]?.isDone);
   const doneModules = modules.filter((m) => moduleProgressById[m.id]?.isDone);
