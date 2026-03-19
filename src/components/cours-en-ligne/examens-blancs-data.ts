@@ -7715,6 +7715,53 @@ export const EXAMENS_BLANCS_VTC: ExamenBlanc[] = [
   },
 ];
 
+// ===== EXAMENS BLANCS TAXI (mêmes 5 premières matières que VTC + matières spécifiques TAXI) =====
+
+export const EXAMENS_BLANCS_TAXI: ExamenBlanc[] = [
+  {
+    id: "EB1-TAXI",
+    numero: 1,
+    type: "TAXI",
+    titre: "Examen Blanc TAXI N°1",
+    matieres: [...eb1Matieres.slice(0, 5), matiere_reglementation_taxi_examen1, matiere_reglementation_taxi2_examen1],
+  },
+  {
+    id: "EB2-TAXI",
+    numero: 2,
+    type: "TAXI",
+    titre: "Examen Blanc TAXI N°2",
+    matieres: [...eb2Matieres.slice(0, 5), matiere_reglementation_taxi_examen1, matiere_reglementation_taxi2_examen1],
+  },
+  {
+    id: "EB3-TAXI",
+    numero: 3,
+    type: "TAXI",
+    titre: "Examen Blanc TAXI N°3",
+    matieres: [...eb3Matieres.slice(0, 5), matiere_reglementation_taxi_examen1, matiere_reglementation_taxi2_examen1],
+  },
+  {
+    id: "EB4-TAXI",
+    numero: 4,
+    type: "TAXI",
+    titre: "Examen Blanc TAXI N°4",
+    matieres: [...eb4Matieres.slice(0, 5), matiere_reglementation_taxi_examen1, matiere_reglementation_taxi2_examen1],
+  },
+  {
+    id: "EB5-TAXI",
+    numero: 5,
+    type: "TAXI",
+    titre: "Examen Blanc TAXI N°5",
+    matieres: [...eb5Matieres.slice(0, 5), matiere_reglementation_taxi_examen1, matiere_reglementation_taxi2_examen1],
+  },
+  {
+    id: "EB6-TAXI",
+    numero: 6,
+    type: "TAXI",
+    titre: "Examen Blanc TAXI N°6",
+    matieres: [...eb6Matieres.slice(0, 5), matiere_reglementation_taxi_examen1, matiere_reglementation_taxi2_examen1],
+  },
+];
+
 
 // ===== BILAN EXAMEN TAXI =====
 
