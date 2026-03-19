@@ -1412,14 +1412,23 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                             </h3>
                             <p className="text-xs text-muted-foreground line-clamp-2">
                               {locked ? (INTRO_MODULE_IDS.has(modules[0]?.id) && !introCompleted ? "🔒 Terminez l'Introduction pour débloquer" : "🔒 Terminez le module précédent pour débloquer") : (
-                                moduleQuizStatsById[mod.id]?.totalQuizzes > 0 && moduleQuizStatsById[mod.id]?.completedQuizzes > 0
-                                  ? `📊 ${moduleQuizStatsById[mod.id].completedQuizzes}/${moduleQuizStatsById[mod.id].totalQuizzes} quiz complétés — Reste : ${moduleQuizStatsById[mod.id].remainingLabels.join(", ") || "aucun"}`
-                                  : mod.description
+                                examBlancStatsById[mod.id]
+                                  ? (examBlancStatsById[mod.id].completed > 0
+                                    ? `📊 ${examBlancStatsById[mod.id].completed}/${examBlancStatsById[mod.id].total} examens blancs réalisés`
+                                    : mod.description)
+                                  : moduleQuizStatsById[mod.id]?.totalQuizzes > 0 && moduleQuizStatsById[mod.id]?.completedQuizzes > 0
+                                    ? `📊 ${moduleQuizStatsById[mod.id].completedQuizzes}/${moduleQuizStatsById[mod.id].totalQuizzes} quiz complétés — Reste : ${moduleQuizStatsById[mod.id].remainingLabels.join(", ") || "aucun"}`
+                                    : mod.description
                               )}
                             </p>
                           </div>
                           <div className="shrink-0 flex items-center gap-2">
-                            {!locked && moduleQuizStatsById[mod.id]?.completedQuizzes > 0 && moduleQuizStatsById[mod.id]?.totalQuizzes > 0 && (
+                            {!locked && examBlancStatsById[mod.id] && examBlancStatsById[mod.id].completed > 0 && (
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-950/30">
+                                {examBlancStatsById[mod.id].completed}/{examBlancStatsById[mod.id].total}
+                              </Badge>
+                            )}
+                            {!locked && !examBlancStatsById[mod.id] && moduleQuizStatsById[mod.id]?.completedQuizzes > 0 && moduleQuizStatsById[mod.id]?.totalQuizzes > 0 && (
                               <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-950/30">
                                 {moduleQuizStatsById[mod.id].completedQuizzes}/{moduleQuizStatsById[mod.id].totalQuizzes}
                               </Badge>
