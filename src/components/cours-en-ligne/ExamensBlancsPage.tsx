@@ -1243,6 +1243,48 @@ function EcranResultats({
 
 
 
+      {/* Bouton refaire les fausses */}
+      {(() => {
+        // Count wrong questions excluding français
+        let nbFausses = 0;
+        resultatsAvecIA.forEach((r, mi) => {
+          if (r.matiereId === "francais" || r.matiereId === "bilan_francais") return;
+          const matiere = examen.matieres[mi];
+          if (!matiere) return;
+          const qSafe = (matiere.questions || []).filter((q): q is Question => !!q && q?.type !== undefined);
+          qSafe.forEach(q => {
+            const rep = r.reponses?.[q.id];
+            if (q?.type === "QCM" && q.choix) {
+              const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
+              const donnees = ((rep as string[]) || []).sort();
+              if (JSON.stringify(correctes) !== JSON.stringify(donnees)) nbFausses++;
+            } else if (q?.type === "QRC") {
+              const corrIA = correctionsIA[mi]?.[q.id];
+              if (corrIA && corrIA !== "loading" && corrIA !== "error") {
+                if (!corrIA.estCorrect) nbFausses++;
+              } else {
+                // Fallback: keyword check
+                const repStr = ((rep as string) || "").toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+                const motsCles = q.reponses_possibles || [];
+                let nbTrouvees = 0;
+                motsCles.forEach(mc => { const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, ""); if (repStr.includes(mcN)) nbTrouvees++; });
+                if (nbTrouvees < motsCles.length) nbFausses++;
+              }
+            }
+          });
+        });
+        if (nbFausses === 0) return null;
+        return (
+          <Button
+            onClick={onRefaireFausses}
+            className="w-full gap-2 text-base py-5 font-semibold"
+            style={{ backgroundColor: '#F4A227', borderColor: '#F4A227' }}
+          >
+            🎯 Refaire uniquement les questions fausses ({nbFausses} questions)
+          </Button>
+        );
+      })()}
+
       {/* Boutons */}
       <div className="flex gap-3">
         <Button variant="outline" onClick={onRetour} className="flex-1 gap-2">
