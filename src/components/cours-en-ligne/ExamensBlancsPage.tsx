@@ -1327,7 +1327,7 @@ export default function ExamensBlancsPage({
 
   const savedSession = restoreSession();
 
-  const [phase, setPhase] = useState<"selection" | "intro" | "examen" | "transition" | "resultats" | "edition">(
+  const [phase, setPhase] = useState<"selection" | "intro" | "examen" | "transition" | "resultats" | "edition" | "revision">(
     savedSession?.phase === "examen" ? "examen" : "selection"
   );
   const [examenChoisi, setExamenChoisi] = useState<ExamenBlanc | null>(null);
