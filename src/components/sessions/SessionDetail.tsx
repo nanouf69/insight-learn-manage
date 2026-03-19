@@ -1432,20 +1432,33 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                       result.apremDebut = afternoonSlots.reduce((min, s) => s.debut < min ? s.debut : min, afternoonSlots[0].debut);
                                       result.apremFin = afternoonSlots.reduce((max, s) => s.fin > max ? s.fin : max, afternoonSlots[0].fin);
                                     }
-                                    // Pour VTC : forcer les horaires 09:00-12:00 / 13:00-16:00
+                                    // Pour VTC : forcer les horaires selon le créneau
                                     if (isVTC) {
-                                      if (result.matinDebut) { result.matinDebut = '09:00'; result.matinFin = '12:00'; }
-                                      if (result.apremDebut) { result.apremDebut = '13:00'; result.apremFin = '16:00'; }
+                                      const isCoursDuSoir = (session.title || '').toLowerCase().includes('soir');
+                                      if (isCoursDuSoir) {
+                                        // Cours du soir : 17:00-21:00 en un seul bloc après-midi
+                                        result.matinDebut = undefined;
+                                        result.matinFin = undefined;
+                                        result.apremDebut = '17:00';
+                                        result.apremFin = '21:00';
+                                      } else {
+                                        if (result.matinDebut) { result.matinDebut = '09:00'; result.matinFin = '12:00'; }
+                                        if (result.apremDebut) { result.apremDebut = '13:00'; result.apremFin = '16:00'; }
+                                      }
                                     }
                                     return result;
                                   });
 
                                 // Pour VTC : ajouter le lundi 30 mars 2026 s'il n'existe pas déjà
                                 if (isVTC) {
+                                  const isCoursDuSoir = (session.title || '').toLowerCase().includes('soir');
                                   const march30Key = '2026-03-30';
                                   const hasMarch30 = agendaDays.some(d => d.date.toISOString().slice(0, 10) === march30Key);
                                   if (!hasMarch30) {
-                                    agendaDays.push({
+                                    agendaDays.push(isCoursDuSoir ? {
+                                      date: new Date('2026-03-30T00:00:00'),
+                                      apremDebut: '17:00', apremFin: '21:00',
+                                    } : {
                                       date: new Date('2026-03-30T00:00:00'),
                                       matinDebut: '09:00', matinFin: '12:00',
                                       apremDebut: '13:00', apremFin: '16:00',
