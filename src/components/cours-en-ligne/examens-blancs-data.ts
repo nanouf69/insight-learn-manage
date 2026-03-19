@@ -4861,14 +4861,22 @@ const eb4Matieres: Matiere[] = [
           { lettre: "A", texte: "2 points" },
           { lettre: "B", texte: "3 points" },
           { lettre: "C", texte: "4 points" },
-          { lettre: "A", texte: "son occupation illicite est punie d'une contravention de troisième classe" },
-          { lettre: "A", texte: "son occupation illicite fait encourir une mise en fourrière du véhicule" },
-          { lettre: "B", texte: "est réservé aux véhicules portant une carte de stationnement pour personnes handicapées" },
-          { lettre: "D", texte: "est réservé aux véhicules transportant une ou plusieurs personnes handicapées" },
         ],
       },
       {
         id: 19,
+        type: "QCM",
+        enonce: "Cet emplacement :",
+        image: "handicap_parking",
+        choix: [
+          { lettre: "A", texte: "son occupation illicite est punie d'une contravention de troisième classe" },
+          { lettre: "B", texte: "son occupation illicite fait encourir une mise en fourrière du véhicule" },
+          { lettre: "C", texte: "est réservé aux véhicules portant une carte de stationnement pour personnes handicapées" },
+          { lettre: "D", texte: "est réservé aux véhicules transportant une ou plusieurs personnes handicapées" },
+        ],
+      },
+      {
+        id: 20,
         type: "QCM",
         enonce: "L'ABS (système d'antiblocage des roues) :",
         choix: [
