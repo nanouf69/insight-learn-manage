@@ -793,8 +793,6 @@ const matiere_anglais_examen1: Matiere = {
         { lettre: "C", texte: "With a normal traffic, it takes forty five minutes to get the airport", correct: true }
       ]
     }
-      ]
-    }
   ]
 };
 
