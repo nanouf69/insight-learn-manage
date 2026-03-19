@@ -8045,7 +8045,7 @@ export const bilanExamenVA: ExamenBlanc = {
 export const examenBlanc1TA: ExamenBlanc = {
   id: "eb1-ta", numero: 1, type: "TA",
   titre: "Examen Blanc N°1 - Passerelle TA",
-  matieres: [matiere_reglementation_taxi_examen1, matiere_reglementation_taxi2_examen1]
+  matieres: [taxi_nationale_eb1, taxi_locale_eb1]
 };
 
 // ===== EXAMENS BLANCS VA (Passerelle VTC) — Dév. Commercial + Réglementation Spécifique VTC =====
