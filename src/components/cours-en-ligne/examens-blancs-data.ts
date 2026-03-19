@@ -5,6 +5,14 @@ import { BILAN_FRANCAIS_QUESTIONS } from "./bilan-questions-francais";
 import { BILAN_ANGLAIS_QUESTIONS } from "./bilan-questions-anglais";
 import { BILAN_REGLEMENTATION_VTC_QUESTIONS } from "./bilan-questions-reglementation-vtc";
 import { BILAN_DEV_COMMERCIAL_QUESTIONS } from "./bilan-questions-dev-commercial";
+import {
+  taxi_nationale_eb1, taxi_locale_eb1,
+  taxi_nationale_eb2, taxi_locale_eb2,
+  taxi_nationale_eb3, taxi_locale_eb3,
+  taxi_nationale_eb4, taxi_locale_eb4,
+  taxi_nationale_eb5, taxi_locale_eb5,
+  taxi_nationale_eb6, taxi_locale_eb6,
+} from "./examens-blancs-taxi-matieres";
 
 export type QuestionType = "QCM" | "QRC";
 
