@@ -347,7 +347,8 @@ const matiere_gestion_examen1: Matiere = {
         { lettre: "B", texte: "L'ensemble des commandes ou devis" },
         { lettre: "C", texte: "L'ensemble des sommes facturées aux clients", correct: true },
         { lettre: "D", texte: "La différence entre les produits et les charges" }
-,
+      ]
+    },
     {
       id: 17, type: "QCM", enonce: "Lors de sa création, l'entreprise de Taxi ou de VTC doit s'inscrire :",
       choix: [
