@@ -1451,10 +1451,14 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
                                 // Pour VTC : ajouter le lundi 30 mars 2026 s'il n'existe pas déjà
                                 if (isVTC) {
+                                  const isCoursDuSoir = (session.title || '').toLowerCase().includes('soir');
                                   const march30Key = '2026-03-30';
                                   const hasMarch30 = agendaDays.some(d => d.date.toISOString().slice(0, 10) === march30Key);
                                   if (!hasMarch30) {
-                                    agendaDays.push({
+                                    agendaDays.push(isCoursDuSoir ? {
+                                      date: new Date('2026-03-30T00:00:00'),
+                                      apremDebut: '17:00', apremFin: '21:00',
+                                    } : {
                                       date: new Date('2026-03-30T00:00:00'),
                                       matinDebut: '09:00', matinFin: '12:00',
                                       apremDebut: '13:00', apremFin: '16:00',
