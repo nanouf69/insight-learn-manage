@@ -366,8 +366,6 @@ const matiere_gestion_examen1: Matiere = {
         { lettre: "D", texte: "BIC (bénéfices industriels et commerciaux)", correct: true }
       ]
     }
-      ]
-    }
   ]
 };
 
