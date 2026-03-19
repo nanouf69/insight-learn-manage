@@ -755,7 +755,8 @@ const matiere_anglais_examen1: Matiere = {
         { lettre: "B", texte: "I've been a driver since 1990", correct: true },
         { lettre: "C", texte: "I was a driver in the 90's" },
         { lettre: "D", texte: "I've been a driver for 27 years" }
-,
+      ]
+    },
     {
       id: 16, type: "QCM", enonce: "J'ai un avion demain matin à 10h20. En anglais :",
       choix: [
