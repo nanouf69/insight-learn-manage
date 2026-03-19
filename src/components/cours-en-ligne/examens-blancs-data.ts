@@ -532,8 +532,6 @@ const matiere_securite_examen1: Matiere = {
         { lettre: "D", texte: "Non port de la ceinture de sécurité" }
       ]
     }
-      ]
-    }
   ]
 };
 
