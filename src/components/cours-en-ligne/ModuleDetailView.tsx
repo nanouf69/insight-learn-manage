@@ -1632,10 +1632,18 @@ function ExerciceCard({
     setEditingQId(null);
   };
 
+  const [confirmDeleteQId, setConfirmDeleteQId] = useState<number | null>(null);
+
   const deleteQuestion = (qId: number) => {
-    if (!item.questions) return;
-    onUpdateQuestions(item.id, item.questions.filter(q => q.id !== qId));
+    setConfirmDeleteQId(qId);
+  };
+
+  const confirmDelete = () => {
+    if (confirmDeleteQId === null || !item.questions) return;
+    onUpdateQuestions(item.id, item.questions.filter(q => q.id !== confirmDeleteQId));
     setEditingQId(null);
+    setConfirmDeleteQId(null);
+    toast.success("Question supprimée avec succès");
   };
 
   const addQuestion = () => {
