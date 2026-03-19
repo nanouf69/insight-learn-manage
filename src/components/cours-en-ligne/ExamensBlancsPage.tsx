@@ -1169,7 +1169,7 @@ function EcranResultats({
                             <div className="flex items-start justify-between gap-2 mb-1">
                               <div className="flex items-center gap-1.5 flex-1">
                                 <Badge variant={q?.type === "QRC" ? "secondary" : "outline"} className="text-xs shrink-0">{q?.type}</Badge>
-                                <p className="text-sm font-medium">{q.id}. {q.enonce}</p>
+                                <p className="text-sm font-bold">{q.id}. {q.enonce}</p>
                               </div>
                               <div className="flex items-center gap-1 shrink-0">
                                 {q?.type === "QRC" && <Bot className="w-3 h-3 text-blue-500" aria-label="Corrigé par IA" />}
