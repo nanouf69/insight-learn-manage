@@ -1,9 +1,10 @@
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, ArrowUp, ArrowDown, Pencil, Trash2, Plus, ToggleLeft, ToggleRight, Save, X, CheckCircle2, Eye, Settings, Download, FileText, Upload, Loader2, ZoomIn, ZoomOut, RotateCcw, Maximize, Users, ChevronDown, ChevronUp, Lock, Printer } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -1632,10 +1633,18 @@ function ExerciceCard({
     setEditingQId(null);
   };
 
+  const [confirmDeleteQId, setConfirmDeleteQId] = useState<number | null>(null);
+
   const deleteQuestion = (qId: number) => {
-    if (!item.questions) return;
-    onUpdateQuestions(item.id, item.questions.filter(q => q.id !== qId));
+    setConfirmDeleteQId(qId);
+  };
+
+  const confirmDelete = () => {
+    if (confirmDeleteQId === null || !item.questions) return;
+    onUpdateQuestions(item.id, item.questions.filter(q => q.id !== confirmDeleteQId));
     setEditingQId(null);
+    setConfirmDeleteQId(null);
+    toast.success("Question supprimée avec succès");
   };
 
   const addQuestion = () => {
@@ -1737,6 +1746,24 @@ function ExerciceCard({
           </div>
         )}
       </CardContent>
+
+      {/* Confirmation de suppression de question */}
+      <AlertDialog open={confirmDeleteQId !== null} onOpenChange={(open) => { if (!open) setConfirmDeleteQId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer la question Q{confirmDeleteQId} ? Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

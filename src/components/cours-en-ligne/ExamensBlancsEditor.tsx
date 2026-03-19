@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import {
   ArrowLeft, ChevronDown, ChevronRight, Pencil, Trash2, Plus,
@@ -206,6 +207,7 @@ function MatiereEditor({
   const [noteElim, setNoteElim] = useState(matiere.noteEliminatoire);
   const [noteSur, setNoteSur] = useState(matiere.noteSur);
   const [editingMeta, setEditingMeta] = useState(false);
+  const [confirmDeleteQId, setConfirmDeleteQId] = useState<number | null>(null);
 
   const saveMeta = () => {
     onChange({ ...matiere, duree, coefficient, noteEliminatoire: noteElim, noteSur });
@@ -223,9 +225,16 @@ function MatiereEditor({
   };
 
   const deleteQuestion = (qId: number) => {
-    const newQuestions = questionsSafe.filter(q => q.id !== qId);
+    setConfirmDeleteQId(qId);
+  };
+
+  const confirmDelete = () => {
+    if (confirmDeleteQId === null) return;
+    const newQuestions = questionsSafe.filter(q => q.id !== confirmDeleteQId);
     onChange({ ...matiere, questions: newQuestions });
     setEditingQId(null);
+    setConfirmDeleteQId(null);
+    toast.success("Question supprimée avec succès");
   };
 
   const addQuestion = (type: "QCM" | "QRC") => {
@@ -241,6 +250,7 @@ function MatiereEditor({
   };
 
   return (
+    <>
     <div className="border rounded-lg overflow-hidden">
       {/* En-tête matière */}
       <div
@@ -344,6 +354,24 @@ function MatiereEditor({
         </div>
       )}
     </div>
+
+    <AlertDialog open={confirmDeleteQId !== null} onOpenChange={(open) => { if (!open) setConfirmDeleteQId(null); }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+          <AlertDialogDescription>
+            Êtes-vous sûr de vouloir supprimer cette question ? Cette action est irréversible.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Annuler</AlertDialogCancel>
+          <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            Supprimer
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
 
