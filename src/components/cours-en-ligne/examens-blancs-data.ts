@@ -5440,6 +5440,17 @@ const eb4Matieres: Matiere[] = [
           { lettre: "C", texte: "L 4.5m x l 1.7m" },
         ],
       },
+      {
+        id: 8,
+        type: "QCM",
+        enonce: "Quelle est l'ancienneté maximale d'un véhicule utilisé en exploitation VTC ?",
+        choix: [
+          { lettre: "A", texte: "3 ans" },
+          { lettre: "B", texte: "4 ans" },
+          { lettre: "C", texte: "Il n'y a pas d'ancienneté maximale" },
+          { lettre: "D", texte: "7 ans" },
+        ],
+      },
     ],
   },
 ];
