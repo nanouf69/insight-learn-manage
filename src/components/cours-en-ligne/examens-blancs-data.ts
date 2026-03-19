@@ -8050,6 +8050,7 @@ export const examenBlanc1VA: ExamenBlanc = {
 
 export const tousLesExamens: ExamenBlanc[] = [
   ...EXAMENS_BLANCS_VTC,
+  ...EXAMENS_BLANCS_TAXI,
   examenBlanc1TA,
   examenBlanc1VA,
   bilanExamenTaxi, bilanExamenVTC, bilanExamenTA, bilanExamenVA,
