@@ -1241,6 +1241,46 @@ function EcranResultats({
         </Card>
       </div>
 
+      {/* Bouton refaire les fausses — EN HAUT bien visible */}
+      {(() => {
+        let nbFaussesTop = 0;
+        resultatsAvecIA.forEach((r, mi) => {
+          if (r.matiereId === "francais" || r.matiereId === "bilan_francais") return;
+          const matiere = examen.matieres[mi];
+          if (!matiere) return;
+          const qSafe = (matiere.questions || []).filter((q): q is Question => !!q && q?.type !== undefined);
+          qSafe.forEach(q => {
+            const rep = r.reponses?.[q.id];
+            if (q?.type === "QCM" && q.choix) {
+              const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
+              const donnees = ((rep as string[]) || []).sort();
+              if (JSON.stringify(correctes) !== JSON.stringify(donnees)) nbFaussesTop++;
+            } else if (q?.type === "QRC") {
+              const corrIA = correctionsIA[mi]?.[q.id];
+              if (corrIA && corrIA !== "loading" && corrIA !== "error") {
+                if (!corrIA.estCorrect) nbFaussesTop++;
+              } else {
+                const repStr = ((rep as string) || "").toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+                const motsCles = q.reponses_possibles || [];
+                let nbTrouvees = 0;
+                motsCles.forEach(mc => { const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, ""); if (repStr.includes(mcN)) nbTrouvees++; });
+                if (nbTrouvees < motsCles.length) nbFaussesTop++;
+              }
+            }
+          });
+        });
+        if (nbFaussesTop === 0) return null;
+        return (
+          <Button
+            onClick={onRefaireFausses}
+            className="w-full gap-2 text-lg py-6 font-bold shadow-lg"
+            style={{ backgroundColor: '#F4A227', borderColor: '#F4A227', color: 'white', fontSize: '18px' }}
+          >
+            🎯 Refaire uniquement les questions fausses ({nbFaussesTop} questions)
+          </Button>
+        );
+      })()}
+
 
 
       {/* Bouton refaire les fausses */}
