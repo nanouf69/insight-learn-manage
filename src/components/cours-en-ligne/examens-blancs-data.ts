@@ -506,7 +506,8 @@ const matiere_securite_examen1: Matiere = {
         { lettre: "B", texte: "La distance d'arrêt augmente", correct: true },
         { lettre: "C", texte: "La distance de freinage augmente" },
         { lettre: "D", texte: "La distance d'arrêt est inchangée" }
-,
+      ]
+    },
     {
       id: 16, type: "QCM", enonce: "Mon permis porte la mention \"verres correcteurs\". Pour conduire, je peux porter des lentilles de contact :",
       choix: [
