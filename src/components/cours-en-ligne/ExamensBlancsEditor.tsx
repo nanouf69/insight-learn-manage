@@ -250,6 +250,7 @@ function MatiereEditor({
   };
 
   return (
+    <>
     <div className="border rounded-lg overflow-hidden">
       {/* En-tête matière */}
       <div
