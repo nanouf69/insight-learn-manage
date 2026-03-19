@@ -5,6 +5,14 @@ import { BILAN_FRANCAIS_QUESTIONS } from "./bilan-questions-francais";
 import { BILAN_ANGLAIS_QUESTIONS } from "./bilan-questions-anglais";
 import { BILAN_REGLEMENTATION_VTC_QUESTIONS } from "./bilan-questions-reglementation-vtc";
 import { BILAN_DEV_COMMERCIAL_QUESTIONS } from "./bilan-questions-dev-commercial";
+import {
+  taxi_nationale_eb1, taxi_locale_eb1,
+  taxi_nationale_eb2, taxi_locale_eb2,
+  taxi_nationale_eb3, taxi_locale_eb3,
+  taxi_nationale_eb4, taxi_locale_eb4,
+  taxi_nationale_eb5, taxi_locale_eb5,
+  taxi_nationale_eb6, taxi_locale_eb6,
+} from "./examens-blancs-taxi-matieres";
 
 export type QuestionType = "QCM" | "QRC";
 
@@ -7723,42 +7731,42 @@ export const EXAMENS_BLANCS_TAXI: ExamenBlanc[] = [
     numero: 1,
     type: "TAXI",
     titre: "Examen Blanc TAXI N°1",
-    matieres: [...eb1Matieres.slice(0, 5), matiere_reglementation_taxi_examen1, matiere_reglementation_taxi2_examen1],
+    matieres: [...eb1Matieres.slice(0, 5), taxi_nationale_eb1, taxi_locale_eb1],
   },
   {
     id: "EB2-TAXI",
     numero: 2,
     type: "TAXI",
     titre: "Examen Blanc TAXI N°2",
-    matieres: [...eb2Matieres.slice(0, 5), matiere_reglementation_taxi_examen1, matiere_reglementation_taxi2_examen1],
+    matieres: [...eb2Matieres.slice(0, 5), taxi_nationale_eb2, taxi_locale_eb2],
   },
   {
     id: "EB3-TAXI",
     numero: 3,
     type: "TAXI",
     titre: "Examen Blanc TAXI N°3",
-    matieres: [...eb3Matieres.slice(0, 5), matiere_reglementation_taxi_examen1, matiere_reglementation_taxi2_examen1],
+    matieres: [...eb3Matieres.slice(0, 5), taxi_nationale_eb3, taxi_locale_eb3],
   },
   {
     id: "EB4-TAXI",
     numero: 4,
     type: "TAXI",
     titre: "Examen Blanc TAXI N°4",
-    matieres: [...eb4Matieres.slice(0, 5), matiere_reglementation_taxi_examen1, matiere_reglementation_taxi2_examen1],
+    matieres: [...eb4Matieres.slice(0, 5), taxi_nationale_eb4, taxi_locale_eb4],
   },
   {
     id: "EB5-TAXI",
     numero: 5,
     type: "TAXI",
     titre: "Examen Blanc TAXI N°5",
-    matieres: [...eb5Matieres.slice(0, 5), matiere_reglementation_taxi_examen1, matiere_reglementation_taxi2_examen1],
+    matieres: [...eb5Matieres.slice(0, 5), taxi_nationale_eb5, taxi_locale_eb5],
   },
   {
     id: "EB6-TAXI",
     numero: 6,
     type: "TAXI",
     titre: "Examen Blanc TAXI N°6",
-    matieres: [...eb6Matieres.slice(0, 5), matiere_reglementation_taxi_examen1, matiere_reglementation_taxi2_examen1],
+    matieres: [...eb6Matieres.slice(0, 5), taxi_nationale_eb6, taxi_locale_eb6],
   },
 ];
 
@@ -8037,7 +8045,7 @@ export const bilanExamenVA: ExamenBlanc = {
 export const examenBlanc1TA: ExamenBlanc = {
   id: "eb1-ta", numero: 1, type: "TA",
   titre: "Examen Blanc N°1 - Passerelle TA",
-  matieres: [matiere_reglementation_taxi_examen1, matiere_reglementation_taxi2_examen1]
+  matieres: [taxi_nationale_eb1, taxi_locale_eb1]
 };
 
 // ===== EXAMENS BLANCS VA (Passerelle VTC) — Dév. Commercial + Réglementation Spécifique VTC =====
