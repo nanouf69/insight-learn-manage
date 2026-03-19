@@ -207,6 +207,7 @@ function MatiereEditor({
   const [noteElim, setNoteElim] = useState(matiere.noteEliminatoire);
   const [noteSur, setNoteSur] = useState(matiere.noteSur);
   const [editingMeta, setEditingMeta] = useState(false);
+  const [confirmDeleteQId, setConfirmDeleteQId] = useState<number | null>(null);
 
   const saveMeta = () => {
     onChange({ ...matiere, duree, coefficient, noteEliminatoire: noteElim, noteSur });
