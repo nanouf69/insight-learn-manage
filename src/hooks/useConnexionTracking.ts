@@ -1,8 +1,18 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-const HEARTBEAT_INTERVAL = 60_000; // 1 minute
-const MAX_SESSION_MS = 7 * 60 * 60 * 1000; // 7 hours in milliseconds
+const MAX_SESSION_MS = 7 * 60 * 60 * 1000;
+
+type SessionCheckEvent = "heartbeat" | "action" | "confirm_presence";
+
+interface SessionCheckRow {
+  is_valid: boolean;
+  disconnect_reason: string | null;
+  should_show_presence_prompt: boolean;
+  remaining_presence_seconds: number;
+  server_now: string;
+  session_started_at: string | null;
+}
 
 interface UseConnexionTrackingParams {
   apprenantId: string | null;
@@ -15,43 +25,99 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
   const sessionStartRef = useRef<number | null>(null);
 
-  const endConnexion = async () => {
-    if (!connexionIdRef.current) return;
-    const now = new Date();
-    // Cap ended_at to max 7h after session start
-    let endedAt = now;
-    if (sessionStartRef.current) {
-      const maxEnd = new Date(sessionStartRef.current + MAX_SESSION_MS);
-      if (now > maxEnd) {
-        endedAt = maxEnd;
-      }
-    }
-    await supabase
-      .from("apprenant_connexions" as any)
-      .update({
-        ended_at: endedAt.toISOString(),
-        last_seen_at: endedAt.toISOString(),
-      })
-      .eq("id", connexionIdRef.current);
+  const resetLocalSession = useCallback(() => {
     connexionIdRef.current = null;
     setSessionStartTime(null);
     sessionStartRef.current = null;
-  };
+  }, []);
+
+  const endConnexion = useCallback(async () => {
+    if (!connexionIdRef.current) return;
+
+    const now = Date.now();
+    const maxEndAt = sessionStartRef.current ? sessionStartRef.current + MAX_SESSION_MS : now;
+    const safeEndAt = new Date(Math.min(now, maxEndAt)).toISOString();
+
+    await supabase
+      .from("apprenant_connexions" as any)
+      .update({
+        ended_at: safeEndAt,
+        last_seen_at: safeEndAt,
+      })
+      .eq("id", connexionIdRef.current)
+      .is("ended_at", null);
+
+    resetLocalSession();
+  }, [resetLocalSession]);
+
+  const checkSessionOnServer = useCallback(
+    async (event: SessionCheckEvent): Promise<SessionCheckRow | null> => {
+      if (!enabled || !apprenantId || !userId || !connexionIdRef.current) return null;
+
+      const { data, error } = await supabase.rpc("check_apprenant_session" as any, {
+        _apprenant_id: apprenantId,
+        _connexion_id: connexionIdRef.current,
+        _event: event,
+      });
+
+      if (error) {
+        console.error("Session check error:", error);
+        return null;
+      }
+
+      const row = (Array.isArray(data) ? data[0] : null) as SessionCheckRow | null;
+      if (!row) return null;
+
+      if (row.session_started_at) {
+        const parsedStart = new Date(row.session_started_at).getTime();
+        if (Number.isFinite(parsedStart)) {
+          sessionStartRef.current = parsedStart;
+          setSessionStartTime(parsedStart);
+        }
+      }
+
+      return row;
+    },
+    [enabled, apprenantId, userId],
+  );
 
   useEffect(() => {
-    if (!enabled || !apprenantId || !userId) return;
+    if (!enabled || !apprenantId || !userId) {
+      resetLocalSession();
+      return;
+    }
 
-    let heartbeatTimer: ReturnType<typeof setInterval>;
+    let cancelled = false;
 
     const startConnexion = async () => {
-      // Close any existing active sessions for this student (single-session enforcement)
-      await supabase
+      const nowIso = new Date().toISOString();
+
+      const { data: activeSessions } = await supabase
         .from("apprenant_connexions" as any)
-        .update({ ended_at: new Date().toISOString(), last_seen_at: new Date().toISOString() })
+        .select("id, started_at")
         .eq("apprenant_id", apprenantId)
+        .eq("user_id", userId)
         .is("ended_at", null);
 
-      const now = new Date();
+      if (activeSessions?.length) {
+        await Promise.all(
+          activeSessions.map((session: any) => {
+            const startedAtMs = new Date(session.started_at).getTime();
+            const cappedEndAtMs = Number.isFinite(startedAtMs)
+              ? Math.min(Date.now(), startedAtMs + MAX_SESSION_MS)
+              : Date.now();
+            return supabase
+              .from("apprenant_connexions" as any)
+              .update({
+                ended_at: new Date(cappedEndAtMs).toISOString(),
+                last_seen_at: new Date(cappedEndAtMs).toISOString(),
+              })
+              .eq("id", session.id)
+              .is("ended_at", null);
+          }),
+        );
+      }
+
       const { data, error } = await supabase
         .from("apprenant_connexions" as any)
         .insert({
@@ -59,94 +125,66 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
           user_id: userId,
           source: "cours",
         })
-        .select("id")
+        .select("id, started_at")
         .single();
 
-      if (!error && data) {
-        connexionIdRef.current = (data as any).id;
-        setSessionStartTime(now.getTime());
-        sessionStartRef.current = now.getTime();
+      if (cancelled || error || !data) return;
+
+      const startedAtMs = new Date((data as any).started_at).getTime();
+      connexionIdRef.current = (data as any).id;
+      if (Number.isFinite(startedAtMs)) {
+        sessionStartRef.current = startedAtMs;
+        setSessionStartTime(startedAtMs);
       }
 
-      // Fetch apprenant name for the alert
       const { data: apprenantData } = await supabase
         .from("apprenants")
         .select("nom, prenom, formation_choisie, type_apprenant")
         .eq("id", apprenantId)
         .maybeSingle();
 
-      if (apprenantData) {
-        const nom = `${apprenantData.prenom} ${apprenantData.nom}`;
-        const formation = apprenantData.type_apprenant || apprenantData.formation_choisie || "";
-        await supabase
-          .from("alertes_systeme")
-          .insert({
-            type: "connexion_apprenant",
-            titre: `🟢 ${nom} vient de se connecter`,
-            message: `L'apprenant ${nom} s'est connecté à son espace de cours${formation ? ` (${formation.toUpperCase()})` : ""}.`,
-            details: `Connexion le ${now.toLocaleString("fr-FR")}`,
-          });
-      }
+      if (cancelled || !apprenantData) return;
+
+      const nom = `${apprenantData.prenom} ${apprenantData.nom}`;
+      const formation = apprenantData.type_apprenant || apprenantData.formation_choisie || "";
+      await supabase.from("alertes_systeme").insert({
+        type: "connexion_apprenant",
+        titre: `🟢 ${nom} vient de se connecter`,
+        message: `L'apprenant ${nom} s'est connecté à son espace de cours${formation ? ` (${formation.toUpperCase()})` : ""}.`,
+        details: `Connexion le ${new Date(nowIso).toLocaleString("fr-FR")}`,
+      });
     };
 
-    const heartbeat = async () => {
-      if (!connexionIdRef.current) return;
-
-      // Check real elapsed time every heartbeat — reliable even after sleep/wake
-      if (sessionStartRef.current) {
-        const elapsed = Date.now() - sessionStartRef.current;
-        if (elapsed >= MAX_SESSION_MS) {
-          // Cap the session at exactly 7h and stop tracking
-          const maxEnd = new Date(sessionStartRef.current + MAX_SESSION_MS);
-          await supabase
-            .from("apprenant_connexions" as any)
-            .update({
-              ended_at: maxEnd.toISOString(),
-              last_seen_at: maxEnd.toISOString(),
-            })
-            .eq("id", connexionIdRef.current);
-          connexionIdRef.current = null;
-          setSessionStartTime(null);
-          sessionStartRef.current = null;
-          // Force sign out to actually end the session
-          await supabase.auth.signOut();
-          return;
-        }
-      }
-      await supabase
-        .from("apprenant_connexions" as any)
-        .update({ last_seen_at: new Date().toISOString() })
-        .eq("id", connexionIdRef.current);
-    };
-
-    startConnexion();
-    heartbeatTimer = setInterval(heartbeat, HEARTBEAT_INTERVAL);
+    void startConnexion();
 
     const handleBeforeUnload = () => {
-      if (connexionIdRef.current) {
-        navigator.sendBeacon?.(
-          `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/apprenant_connexions?id=eq.${connexionIdRef.current}`,
-        );
-        endConnexion();
-      }
+      void endConnexion();
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
 
     return () => {
-      clearInterval(heartbeatTimer);
+      cancelled = true;
       window.removeEventListener("beforeunload", handleBeforeUnload);
-      endConnexion();
+      void endConnexion();
     };
-  }, [enabled, apprenantId, userId]);
+  }, [enabled, apprenantId, userId, endConnexion, resetLocalSession]);
 
   const trackModuleActivity = async (
     moduleId: number,
     moduleNom: string,
     actionType: string = "open_module",
-    metadata: Record<string, any> = {}
+    metadata: Record<string, any> = {},
   ) => {
-    if (!apprenantId || !userId) return;
+    if (!apprenantId || !userId || !connexionIdRef.current) return;
+
+    const validation = await checkSessionOnServer("action");
+    if (validation && !validation.is_valid) {
+      resetLocalSession();
+      await supabase.auth.signOut();
+      return;
+    }
+
     await supabase
       .from("apprenant_module_activites" as any)
       .insert({
