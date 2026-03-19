@@ -1142,7 +1142,23 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return acc;
   }, {});
 
-  const completedCount = modules.filter((m) => moduleProgressById[m.id]?.isDone).length;
+  // Compute examen blanc stats per module (35=VTC, 36=TAXI, 37=TA, 38=VA)
+  const EXAMEN_BLANC_EXAM_IDS: Record<number, string[]> = {
+    35: EXAMENS_BLANCS_VTC.filter(e => !e.id.startsWith("bilan-")).map(e => e.id),
+    36: EXAMENS_BLANCS_TAXI.filter(e => !e.id.startsWith("bilan-")).map(e => e.id),
+    37: [examenBlanc1TA.id],
+    38: [examenBlanc1VA.id],
+  };
+
+  const examBlancStatsById = modules.reduce<Record<number, { completed: number; total: number }>>((acc, module) => {
+    const examIds = EXAMEN_BLANC_EXAM_IDS[module.id];
+    if (examIds) {
+      const completed = examIds.filter(id => examBlancCompletedIds.has(id)).length;
+      acc[module.id] = { completed, total: examIds.length };
+    }
+    return acc;
+  }, {});
+
   const globalProgress = modules.length > 0 ? Math.round((completedCount / modules.length) * 100) : 0;
   const remainingModules = modules.filter((m) => !moduleProgressById[m.id]?.isDone);
   const doneModules = modules.filter((m) => moduleProgressById[m.id]?.isDone);
