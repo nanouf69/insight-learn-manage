@@ -2532,6 +2532,65 @@ const matiere_gestion_examen4: Matiere = {
         { lettre: "B", texte: "parts sociales", correct: true },
         { lettre: "C", texte: "obligations" }
       ]
+    },
+    {
+      id: 11, type: "QCM", enonce: "Quelle mission ne peut pas être exercée par une Chambre de Métiers et de l'Artisanat ?",
+      choix: [
+        { lettre: "A", texte: "Former les artisans" },
+        { lettre: "B", texte: "Gérer le répertoire des Métiers" },
+        { lettre: "C", texte: "Gérer les autorisations de stationnement en ville", correct: true },
+        { lettre: "D", texte: "Immatriculer les futures entreprises du T3P" }
+      ]
+    },
+    {
+      id: 12, type: "QCM", enonce: "Que signifie le sigle CRDS ?",
+      choix: [
+        { lettre: "A", texte: "contribution pour la réduction de la dette sociale" },
+        { lettre: "B", texte: "contribution régionale pour les dépenses sociales" },
+        { lettre: "C", texte: "contribution pour le regroupement des dettes sociales" },
+        { lettre: "D", texte: "contribution pour le remboursement de la dette sociale", correct: true }
+      ]
+    },
+    {
+      id: 13, type: "QCM", enonce: "Pour être immatriculé au Répertoire des métiers, le futur chef d'entreprise du T3P doit :",
+      choix: [
+        { lettre: "A", texte: "être titulaire du permis D transports en commun" },
+        { lettre: "B", texte: "avoir une qualification professionnelle spécifique", correct: true },
+        { lettre: "C", texte: "être propriétaire de son véhicule" }
+      ]
+    },
+    {
+      id: 14, type: "QCM", enonce: "Quel acte donne naissance à l'entreprise ?",
+      choix: [
+        { lettre: "A", texte: "le paiement des cotisations sociales" },
+        { lettre: "B", texte: "l'immatriculation au CFE", correct: true },
+        { lettre: "C", texte: "la rédaction de la première facture" }
+      ]
+    },
+    {
+      id: 15, type: "QCM", enonce: "Les chambres de métiers et de l'artisanat et les chambres de commerce et d'industrie sont des :",
+      choix: [
+        { lettre: "A", texte: "Établissements publics", correct: true },
+        { lettre: "B", texte: "Entreprises" },
+        { lettre: "C", texte: "Collectivités territoriales" },
+        { lettre: "D", texte: "Associations" }
+      ]
+    },
+    {
+      id: 16, type: "QCM", enonce: "La déclaration de cessation de paiement se fait :",
+      choix: [
+        { lettre: "A", texte: "à la chambre de commerce et d'industrie" },
+        { lettre: "B", texte: "à la chambre de métiers et de l'artisanat" },
+        { lettre: "C", texte: "auprès du greffe du Tribunal de Commerce", correct: true }
+      ]
+    },
+    {
+      id: 17, type: "QCM", enonce: "Parmi les 3 termes de comptabilité suivants, lequel n'est pas une composante de l'actif du bilan ?",
+      choix: [
+        { lettre: "A", texte: "le résultat de l'exercice", correct: true },
+        { lettre: "B", texte: "les disponibilités" },
+        { lettre: "C", texte: "les frais d'établissement" }
+      ]
     }
   ]
 };
