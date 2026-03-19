@@ -605,7 +605,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [activeTab, setActiveTab] = useState<"accueil" | "examens" | "notes">("accueil");
   const [completedModuleIds, setCompletedModuleIds] = useState<Set<number>>(new Set());
   const [moduleScores, setModuleScores] = useState<Record<number, { score_obtenu: number | null; score_max: number | null }>>({});
-  const [moduleCompletionsForNotes, setModuleCompletionsForNotes] = useState<Array<{ id: string; module_id: number; score_obtenu: number | null; score_max: number | null; completed_at: string; details: any }>>([]);
+  const [examBlancCompletedIds, setExamBlancCompletedIds] = useState<Set<string>>(new Set());
 
   // Tracking connexion élève (only for real student sessions, not admin preview)
   const isStudentSession = !embedded && !!user && !!apprenant?.id;
