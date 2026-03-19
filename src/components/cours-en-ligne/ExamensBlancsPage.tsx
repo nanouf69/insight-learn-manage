@@ -730,6 +730,7 @@ function EcranResultats({
   resultats,
   onRecommencer,
   onRetour,
+  onRefaireFausses,
   apprenantId,
   userId,
 }: {
@@ -737,6 +738,7 @@ function EcranResultats({
   resultats: ResultatMatiere[];
   onRecommencer: () => void;
   onRetour: () => void;
+  onRefaireFausses: () => void;
   apprenantId?: string | null;
   userId?: string | null;
 }) {
