@@ -4866,8 +4866,7 @@ const eb4Matieres: Matiere[] = [
       {
         id: 19,
         type: "QCM",
-        enonce: "Cet emplacement :",
-        image: "handicap_parking",
+        enonce: "Cet emplacement (place de stationnement réservée aux personnes handicapées) :",
         choix: [
           { lettre: "A", texte: "son occupation illicite est punie d'une contravention de troisième classe" },
           { lettre: "B", texte: "son occupation illicite fait encourir une mise en fourrière du véhicule" },
