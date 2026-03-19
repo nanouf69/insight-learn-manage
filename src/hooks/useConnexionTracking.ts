@@ -91,10 +91,12 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
 
     const heartbeat = async () => {
       if (!connexionIdRef.current) return;
-      // Check if session has exceeded 7h – if so, cap and stop
+
+      // Check real elapsed time every heartbeat — reliable even after sleep/wake
       if (sessionStartRef.current) {
         const elapsed = Date.now() - sessionStartRef.current;
         if (elapsed >= MAX_SESSION_MS) {
+          // Cap the session at exactly 7h and stop tracking
           const maxEnd = new Date(sessionStartRef.current + MAX_SESSION_MS);
           await supabase
             .from("apprenant_connexions" as any)
@@ -106,6 +108,8 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
           connexionIdRef.current = null;
           setSessionStartTime(null);
           sessionStartRef.current = null;
+          // Force sign out to actually end the session
+          await supabase.auth.signOut();
           return;
         }
       }
