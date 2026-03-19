@@ -347,7 +347,8 @@ const matiere_gestion_examen1: Matiere = {
         { lettre: "B", texte: "L'ensemble des commandes ou devis" },
         { lettre: "C", texte: "L'ensemble des sommes facturées aux clients", correct: true },
         { lettre: "D", texte: "La différence entre les produits et les charges" }
-,
+      ]
+    },
     {
       id: 17, type: "QCM", enonce: "Lors de sa création, l'entreprise de Taxi ou de VTC doit s'inscrire :",
       choix: [
@@ -363,8 +364,6 @@ const matiere_gestion_examen1: Matiere = {
         { lettre: "B", texte: "BNC (bénéfices non commerciaux)" },
         { lettre: "C", texte: "IS (Impôts sur les sociétés)" },
         { lettre: "D", texte: "BIC (bénéfices industriels et commerciaux)", correct: true }
-      ]
-    }
       ]
     }
   ]
@@ -505,7 +504,8 @@ const matiere_securite_examen1: Matiere = {
         { lettre: "B", texte: "La distance d'arrêt augmente", correct: true },
         { lettre: "C", texte: "La distance de freinage augmente" },
         { lettre: "D", texte: "La distance d'arrêt est inchangée" }
-,
+      ]
+    },
     {
       id: 16, type: "QCM", enonce: "Mon permis porte la mention \"verres correcteurs\". Pour conduire, je peux porter des lentilles de contact :",
       choix: [
@@ -530,8 +530,6 @@ const matiere_securite_examen1: Matiere = {
         { lettre: "B", texte: "Circulation en sens interdit", correct: true },
         { lettre: "C", texte: "Stop glissé" },
         { lettre: "D", texte: "Non port de la ceinture de sécurité" }
-      ]
-    }
       ]
     }
   ]
@@ -753,7 +751,8 @@ const matiere_anglais_examen1: Matiere = {
         { lettre: "B", texte: "I've been a driver since 1990", correct: true },
         { lettre: "C", texte: "I was a driver in the 90's" },
         { lettre: "D", texte: "I've been a driver for 27 years" }
-,
+      ]
+    },
     {
       id: 16, type: "QCM", enonce: "J'ai un avion demain matin à 10h20. En anglais :",
       choix: [
@@ -792,8 +791,6 @@ const matiere_anglais_examen1: Matiere = {
         { lettre: "A", texte: "With a normal circulation, It must forty five minutes for attend the airport" },
         { lettre: "B", texte: "In normal traffic, 45 minutes are needed for attent the airport" },
         { lettre: "C", texte: "With a normal traffic, it takes forty five minutes to get the airport", correct: true }
-      ]
-    }
       ]
     }
   ]
@@ -2429,6 +2426,22 @@ const matiere_t3p_examen4: Matiere = {
         { lettre: "B", texte: "non" },
         { lettre: "C", texte: "oui", correct: true }
       ]
+    },
+    {
+      id: 14, type: "QCM", enonce: "Un artisan effectuant du T3P est victime d'un accident corporel de la circulation dans l'exercice de son activité, sous quel régime est-il ?",
+      choix: [
+        { lettre: "A", texte: "pas de régime particulier" },
+        { lettre: "B", texte: "journalières et sont couverts au titre de la maladie", correct: true },
+        { lettre: "C", texte: "de l'arrêt maladie" }
+      ]
+    },
+    {
+      id: 15, type: "QCM", enonce: "Les centres de formation sont agréés par :",
+      choix: [
+        { lettre: "A", texte: "le préfet du département", correct: true },
+        { lettre: "B", texte: "le ministère des transports" },
+        { lettre: "C", texte: "le préfet de la région" }
+      ]
     }
   ]
 };
@@ -2515,6 +2528,65 @@ const matiere_gestion_examen4: Matiere = {
         { lettre: "A", texte: "Actions" },
         { lettre: "B", texte: "parts sociales", correct: true },
         { lettre: "C", texte: "obligations" }
+      ]
+    },
+    {
+      id: 11, type: "QCM", enonce: "Quelle mission ne peut pas être exercée par une Chambre de Métiers et de l'Artisanat ?",
+      choix: [
+        { lettre: "A", texte: "Former les artisans" },
+        { lettre: "B", texte: "Gérer le répertoire des Métiers" },
+        { lettre: "C", texte: "Gérer les autorisations de stationnement en ville", correct: true },
+        { lettre: "D", texte: "Immatriculer les futures entreprises du T3P" }
+      ]
+    },
+    {
+      id: 12, type: "QCM", enonce: "Que signifie le sigle CRDS ?",
+      choix: [
+        { lettre: "A", texte: "contribution pour la réduction de la dette sociale" },
+        { lettre: "B", texte: "contribution régionale pour les dépenses sociales" },
+        { lettre: "C", texte: "contribution pour le regroupement des dettes sociales" },
+        { lettre: "D", texte: "contribution pour le remboursement de la dette sociale", correct: true }
+      ]
+    },
+    {
+      id: 13, type: "QCM", enonce: "Pour être immatriculé au Répertoire des métiers, le futur chef d'entreprise du T3P doit :",
+      choix: [
+        { lettre: "A", texte: "être titulaire du permis D transports en commun" },
+        { lettre: "B", texte: "avoir une qualification professionnelle spécifique", correct: true },
+        { lettre: "C", texte: "être propriétaire de son véhicule" }
+      ]
+    },
+    {
+      id: 14, type: "QCM", enonce: "Quel acte donne naissance à l'entreprise ?",
+      choix: [
+        { lettre: "A", texte: "le paiement des cotisations sociales" },
+        { lettre: "B", texte: "l'immatriculation au CFE", correct: true },
+        { lettre: "C", texte: "la rédaction de la première facture" }
+      ]
+    },
+    {
+      id: 15, type: "QCM", enonce: "Les chambres de métiers et de l'artisanat et les chambres de commerce et d'industrie sont des :",
+      choix: [
+        { lettre: "A", texte: "Établissements publics", correct: true },
+        { lettre: "B", texte: "Entreprises" },
+        { lettre: "C", texte: "Collectivités territoriales" },
+        { lettre: "D", texte: "Associations" }
+      ]
+    },
+    {
+      id: 16, type: "QCM", enonce: "La déclaration de cessation de paiement se fait :",
+      choix: [
+        { lettre: "A", texte: "à la chambre de commerce et d'industrie" },
+        { lettre: "B", texte: "à la chambre de métiers et de l'artisanat" },
+        { lettre: "C", texte: "auprès du greffe du Tribunal de Commerce", correct: true }
+      ]
+    },
+    {
+      id: 17, type: "QCM", enonce: "Parmi les 3 termes de comptabilité suivants, lequel n'est pas une composante de l'actif du bilan ?",
+      choix: [
+        { lettre: "A", texte: "le résultat de l'exercice", correct: true },
+        { lettre: "B", texte: "les disponibilités" },
+        { lettre: "C", texte: "les frais d'établissement" }
       ]
     }
   ]
