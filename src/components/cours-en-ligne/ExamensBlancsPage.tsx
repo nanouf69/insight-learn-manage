@@ -1241,12 +1241,9 @@ function EcranResultats({
         </Card>
       </div>
 
-
-
-      {/* Bouton refaire les fausses */}
+      {/* Bouton refaire les fausses — EN HAUT bien visible */}
       {(() => {
-        // Count wrong questions excluding français
-        let nbFausses = 0;
+        let nbFaussesTop = 0;
         resultatsAvecIA.forEach((r, mi) => {
           if (r.matiereId === "francais" || r.matiereId === "bilan_francais") return;
           const matiere = examen.matieres[mi];
@@ -1257,33 +1254,35 @@ function EcranResultats({
             if (q?.type === "QCM" && q.choix) {
               const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
               const donnees = ((rep as string[]) || []).sort();
-              if (JSON.stringify(correctes) !== JSON.stringify(donnees)) nbFausses++;
+              if (JSON.stringify(correctes) !== JSON.stringify(donnees)) nbFaussesTop++;
             } else if (q?.type === "QRC") {
               const corrIA = correctionsIA[mi]?.[q.id];
               if (corrIA && corrIA !== "loading" && corrIA !== "error") {
-                if (!corrIA.estCorrect) nbFausses++;
+                if (!corrIA.estCorrect) nbFaussesTop++;
               } else {
-                // Fallback: keyword check
                 const repStr = ((rep as string) || "").toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
                 const motsCles = q.reponses_possibles || [];
                 let nbTrouvees = 0;
                 motsCles.forEach(mc => { const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, ""); if (repStr.includes(mcN)) nbTrouvees++; });
-                if (nbTrouvees < motsCles.length) nbFausses++;
+                if (nbTrouvees < motsCles.length) nbFaussesTop++;
               }
             }
           });
         });
-        if (nbFausses === 0) return null;
+        if (nbFaussesTop === 0) return null;
         return (
           <Button
             onClick={onRefaireFausses}
-            className="w-full gap-2 text-base py-5 font-semibold"
-            style={{ backgroundColor: '#F4A227', borderColor: '#F4A227' }}
+            className="w-full gap-2 text-lg py-6 font-bold shadow-lg"
+            style={{ backgroundColor: '#F4A227', borderColor: '#F4A227', color: 'white', fontSize: '18px' }}
           >
-            🎯 Refaire uniquement les questions fausses ({nbFausses} questions)
+            🎯 Refaire uniquement les questions fausses ({nbFaussesTop} questions)
           </Button>
         );
       })()}
+
+
+
 
       {/* Boutons */}
       <div className="flex gap-3">
