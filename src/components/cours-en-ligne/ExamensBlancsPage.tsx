@@ -1808,6 +1808,61 @@ export default function ExamensBlancsPage({
     );
   }
 
+  if (phase === "revision" && examenChoisi) {
+    // Build wrong questions excluding français
+    const wrongQuestions: { matiere: Matiere; question: Question; matiereNom: string }[] = [];
+    examenChoisi.matieres.forEach((matiere, mi) => {
+      if (!matiere) return;
+      if (matiere.id === "francais" || matiere.id === "bilan_francais") return;
+      const r = tousResultats[mi];
+      if (!r) return;
+      const qSafe = (matiere.questions || []).filter((q): q is Question => !!q && q?.type !== undefined);
+      qSafe.forEach(q => {
+        const rep = r.reponses?.[q.id];
+        let isCorrect = false;
+        if (q?.type === "QCM" && q.choix) {
+          const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
+          const donnees = ((rep as string[]) || []).sort();
+          isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
+        } else if (q?.type === "QRC") {
+          const repStr = ((rep as string) || "").toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+          const motsCles = q.reponses_possibles || [];
+          let nbTrouvees = 0;
+          motsCles.forEach(mc => { const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, ""); if (repStr.includes(mcN)) nbTrouvees++; });
+          isCorrect = nbTrouvees >= motsCles.length;
+        }
+        if (!isCorrect) {
+          wrongQuestions.push({ matiere, question: q, matiereNom: matiere.nom });
+        }
+      });
+    });
+
+    return (
+      <div className="max-w-3xl mx-auto space-y-6">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={() => setPhase("resultats")} className="gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Retour aux résultats
+          </Button>
+          <h2 className="text-xl font-bold" style={{ color: '#0D2540' }}>
+            🎯 Révision des questions fausses
+          </h2>
+        </div>
+
+        <div className="rounded-lg px-4 py-3" style={{ backgroundColor: '#FFF3E0', border: '2px solid #F4A227' }}>
+          <p className="text-sm font-semibold" style={{ color: '#D84315' }}>
+            {wrongQuestions.length} question{wrongQuestions.length > 1 ? "s" : ""} à réviser (hors épreuve de Français)
+          </p>
+        </div>
+
+        <RevisionFausses
+          wrongQuestions={wrongQuestions}
+          onTerminer={() => setPhase("resultats")}
+        />
+      </div>
+    );
+  }
+
   if (phase === "resultats" && examenChoisi) {
     return (
       <div className="max-w-3xl mx-auto">
@@ -1816,6 +1871,7 @@ export default function ExamensBlancsPage({
           resultats={tousResultats}
           onRecommencer={() => handleStart(examenChoisi)}
           onRetour={() => setPhase("selection")}
+          onRefaireFausses={() => setPhase("revision")}
           apprenantId={apprenantId}
           userId={userId}
         />
