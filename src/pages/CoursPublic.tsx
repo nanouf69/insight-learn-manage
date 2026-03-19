@@ -1482,7 +1482,17 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                             </h3>
                             <p className="text-xs text-emerald-600">
                               {introLockedDone ? "✅ Terminé — Accès verrouillé" : "✅ Terminé"}
-                              {!introLockedDone && moduleRealizedPointsById[mod.id]?.length > 0 && (
+                              {!introLockedDone && examBlancStatsById[mod.id] && (
+                                <span className="ml-2 font-semibold">
+                                  — {examBlancStatsById[mod.id].completed}/{examBlancStatsById[mod.id].total} examens blancs réalisés
+                                </span>
+                              )}
+                              {!introLockedDone && !examBlancStatsById[mod.id] && moduleQuizStatsById[mod.id]?.totalQuizzes > 0 && (
+                                <span className="ml-2 font-semibold">
+                                  — {moduleQuizStatsById[mod.id].completedQuizzes}/{moduleQuizStatsById[mod.id].totalQuizzes} quiz complétés
+                                </span>
+                              )}
+                              {!introLockedDone && !examBlancStatsById[mod.id] && moduleRealizedPointsById[mod.id]?.length > 0 && !(moduleQuizStatsById[mod.id]?.totalQuizzes > 0) && (
                                 <span className="ml-2 font-semibold">
                                   — Point{moduleRealizedPointsById[mod.id].length > 1 ? "s" : ""} réalisé{moduleRealizedPointsById[mod.id].length > 1 ? "s" : ""} : {moduleRealizedPointsById[mod.id].join(", ")}
                                 </span>
