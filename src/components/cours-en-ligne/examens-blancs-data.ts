@@ -2429,6 +2429,22 @@ const matiere_t3p_examen4: Matiere = {
         { lettre: "B", texte: "non" },
         { lettre: "C", texte: "oui", correct: true }
       ]
+    },
+    {
+      id: 14, type: "QCM", enonce: "Un artisan effectuant du T3P est victime d'un accident corporel de la circulation dans l'exercice de son activité, sous quel régime est-il ?",
+      choix: [
+        { lettre: "A", texte: "pas de régime particulier" },
+        { lettre: "B", texte: "journalières et sont couverts au titre de la maladie", correct: true },
+        { lettre: "C", texte: "de l'arrêt maladie" }
+      ]
+    },
+    {
+      id: 15, type: "QCM", enonce: "Les centres de formation sont agréés par :",
+      choix: [
+        { lettre: "A", texte: "le préfet du département", correct: true },
+        { lettre: "B", texte: "le ministère des transports" },
+        { lettre: "C", texte: "le préfet de la région" }
+      ]
     }
   ]
 };
