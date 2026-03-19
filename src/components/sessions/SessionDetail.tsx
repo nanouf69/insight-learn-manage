@@ -1440,6 +1440,20 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                     return result;
                                   });
 
+                                // Pour VTC : ajouter le lundi 30 mars 2026 s'il n'existe pas déjà
+                                if (isVTC) {
+                                  const march30Key = '2026-03-30';
+                                  const hasMarch30 = agendaDays.some(d => d.date.toISOString().slice(0, 10) === march30Key);
+                                  if (!hasMarch30) {
+                                    agendaDays.push({
+                                      date: new Date('2026-03-30T00:00:00'),
+                                      matinDebut: '09:00', matinFin: '12:00',
+                                      apremDebut: '13:00', apremFin: '16:00',
+                                    });
+                                    agendaDays.sort((a, b) => a.date.getTime() - b.date.getTime());
+                                  }
+                                }
+
                                 if (agendaDays.length === 0) {
                                   toast({ title: "Aucun cours trouvé", description: "Aucun bloc agenda trouvé pour cette session.", variant: "destructive" });
                                   return;
