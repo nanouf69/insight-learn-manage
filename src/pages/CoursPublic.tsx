@@ -17,6 +17,7 @@ import ExamensBlancsPage from "@/components/cours-en-ligne/ExamensBlancsPage";
 import NotesView from "@/components/cours-en-ligne/NotesView";
 import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
 import { FORMATIONS, MODULES_DATA, expandModulesAutorises, type FormationId } from "@/components/cours-en-ligne/formations-data";
+import { EXAMENS_BLANCS_VTC, EXAMENS_BLANCS_TAXI, examenBlanc1TA, examenBlanc1VA } from "@/components/cours-en-ligne/examens-blancs-data";
 import { supabase } from "@/integrations/supabase/client";
 import { safeDateParse } from "@/lib/safeDateParse";
 import { useConnexionTracking } from "@/hooks/useConnexionTracking";
@@ -605,6 +606,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [completedModuleIds, setCompletedModuleIds] = useState<Set<number>>(new Set());
   const [moduleScores, setModuleScores] = useState<Record<number, { score_obtenu: number | null; score_max: number | null }>>({});
   const [moduleCompletionsForNotes, setModuleCompletionsForNotes] = useState<Array<{ id: string; module_id: number; score_obtenu: number | null; score_max: number | null; completed_at: string; details: any }>>([]);
+  const [examBlancCompletedIds, setExamBlancCompletedIds] = useState<Set<string>>(new Set());
 
   // Tracking connexion élève (only for real student sessions, not admin preview)
   const isStudentSession = !embedded && !!user && !!apprenant?.id;
@@ -771,14 +773,21 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     };
   }, [apprenantOverride, embedded]);
 
-  // Fetch completed modules
+  // Fetch completed modules + exam blanc results
   useEffect(() => {
     if (!apprenant?.id) return;
     const fetchCompletions = async () => {
-      const { data } = await supabase
-        .from("apprenant_module_completion")
-        .select("id, module_id, score_obtenu, score_max, completed_at, details")
-        .eq("apprenant_id", apprenant.id!);
+      const [{ data }, { data: examData }] = await Promise.all([
+        supabase
+          .from("apprenant_module_completion")
+          .select("id, module_id, score_obtenu, score_max, completed_at, details")
+          .eq("apprenant_id", apprenant.id!),
+        supabase
+          .from("apprenant_quiz_results" as any)
+          .select("quiz_id")
+          .eq("apprenant_id", apprenant.id!)
+          .eq("quiz_type", "examen_blanc"),
+      ]);
 
       if (data) {
         const completionRows = data as any[];
@@ -792,6 +801,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         setModuleScores(scores);
         setModuleCompletionsForNotes(completionRows);
       }
+
+      if (examData) {
+        const ids = new Set<string>((examData as any[]).map((r: any) => r.quiz_id));
+        setExamBlancCompletedIds(ids);
+      }
     };
     fetchCompletions();
   }, [apprenant?.id]);
@@ -804,10 +818,17 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     setSelectedModule(null);
     // Re-fetch completions to pick up any quiz results saved during the module
     if (apprenant?.id) {
-      const { data } = await supabase
-        .from("apprenant_module_completion")
-        .select("id, module_id, score_obtenu, score_max, completed_at, details")
-        .eq("apprenant_id", apprenant.id);
+      const [{ data }, { data: examData }] = await Promise.all([
+        supabase
+          .from("apprenant_module_completion")
+          .select("id, module_id, score_obtenu, score_max, completed_at, details")
+          .eq("apprenant_id", apprenant.id),
+        supabase
+          .from("apprenant_quiz_results" as any)
+          .select("quiz_id")
+          .eq("apprenant_id", apprenant.id)
+          .eq("quiz_type", "examen_blanc"),
+      ]);
       if (data) {
         const completionRows = data as any[];
         setCompletedModuleIds(computeFullyCompletedModuleIds(completionRows));
@@ -819,6 +840,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         });
         setModuleScores(scores);
         setModuleCompletionsForNotes(completionRows);
+      }
+      if (examData) {
+        const ids = new Set<string>((examData as any[]).map((r: any) => r.quiz_id));
+        setExamBlancCompletedIds(ids);
       }
     }
   }, [apprenant?.id]);
@@ -1117,6 +1142,23 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return acc;
   }, {});
 
+  // Compute examen blanc stats per module (35=VTC, 36=TAXI, 37=TA, 38=VA)
+  const EXAMEN_BLANC_EXAM_IDS: Record<number, string[]> = {
+    35: EXAMENS_BLANCS_VTC.filter(e => !e.id.startsWith("bilan-")).map(e => e.id),
+    36: EXAMENS_BLANCS_TAXI.filter(e => !e.id.startsWith("bilan-")).map(e => e.id),
+    37: [examenBlanc1TA.id],
+    38: [examenBlanc1VA.id],
+  };
+
+  const examBlancStatsById = modules.reduce<Record<number, { completed: number; total: number }>>((acc, module) => {
+    const examIds = EXAMEN_BLANC_EXAM_IDS[module.id];
+    if (examIds) {
+      const completed = examIds.filter(id => examBlancCompletedIds.has(id)).length;
+      acc[module.id] = { completed, total: examIds.length };
+    }
+    return acc;
+  }, {});
+
   const completedCount = modules.filter((m) => moduleProgressById[m.id]?.isDone).length;
   const globalProgress = modules.length > 0 ? Math.round((completedCount / modules.length) * 100) : 0;
   const remainingModules = modules.filter((m) => !moduleProgressById[m.id]?.isDone);
@@ -1370,14 +1412,23 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                             </h3>
                             <p className="text-xs text-muted-foreground line-clamp-2">
                               {locked ? (INTRO_MODULE_IDS.has(modules[0]?.id) && !introCompleted ? "🔒 Terminez l'Introduction pour débloquer" : "🔒 Terminez le module précédent pour débloquer") : (
-                                moduleQuizStatsById[mod.id]?.totalQuizzes > 0 && moduleQuizStatsById[mod.id]?.completedQuizzes > 0
-                                  ? `📊 ${moduleQuizStatsById[mod.id].completedQuizzes}/${moduleQuizStatsById[mod.id].totalQuizzes} quiz complétés — Reste : ${moduleQuizStatsById[mod.id].remainingLabels.join(", ") || "aucun"}`
-                                  : mod.description
+                                examBlancStatsById[mod.id]
+                                  ? (examBlancStatsById[mod.id].completed > 0
+                                    ? `📊 ${examBlancStatsById[mod.id].completed}/${examBlancStatsById[mod.id].total} examens blancs réalisés`
+                                    : mod.description)
+                                  : moduleQuizStatsById[mod.id]?.totalQuizzes > 0 && moduleQuizStatsById[mod.id]?.completedQuizzes > 0
+                                    ? `📊 ${moduleQuizStatsById[mod.id].completedQuizzes}/${moduleQuizStatsById[mod.id].totalQuizzes} quiz complétés — Reste : ${moduleQuizStatsById[mod.id].remainingLabels.join(", ") || "aucun"}`
+                                    : mod.description
                               )}
                             </p>
                           </div>
                           <div className="shrink-0 flex items-center gap-2">
-                            {!locked && moduleQuizStatsById[mod.id]?.completedQuizzes > 0 && moduleQuizStatsById[mod.id]?.totalQuizzes > 0 && (
+                            {!locked && examBlancStatsById[mod.id] && examBlancStatsById[mod.id].completed > 0 && (
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-950/30">
+                                {examBlancStatsById[mod.id].completed}/{examBlancStatsById[mod.id].total}
+                              </Badge>
+                            )}
+                            {!locked && !examBlancStatsById[mod.id] && moduleQuizStatsById[mod.id]?.completedQuizzes > 0 && moduleQuizStatsById[mod.id]?.totalQuizzes > 0 && (
                               <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-950/30">
                                 {moduleQuizStatsById[mod.id].completedQuizzes}/{moduleQuizStatsById[mod.id].totalQuizzes}
                               </Badge>
@@ -1431,7 +1482,17 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                             </h3>
                             <p className="text-xs text-emerald-600">
                               {introLockedDone ? "✅ Terminé — Accès verrouillé" : "✅ Terminé"}
-                              {!introLockedDone && moduleRealizedPointsById[mod.id]?.length > 0 && (
+                              {!introLockedDone && examBlancStatsById[mod.id] && (
+                                <span className="ml-2 font-semibold">
+                                  — {examBlancStatsById[mod.id].completed}/{examBlancStatsById[mod.id].total} examens blancs réalisés
+                                </span>
+                              )}
+                              {!introLockedDone && !examBlancStatsById[mod.id] && moduleQuizStatsById[mod.id]?.totalQuizzes > 0 && (
+                                <span className="ml-2 font-semibold">
+                                  — {moduleQuizStatsById[mod.id].completedQuizzes}/{moduleQuizStatsById[mod.id].totalQuizzes} quiz complétés
+                                </span>
+                              )}
+                              {!introLockedDone && !examBlancStatsById[mod.id] && moduleRealizedPointsById[mod.id]?.length > 0 && !(moduleQuizStatsById[mod.id]?.totalQuizzes > 0) && (
                                 <span className="ml-2 font-semibold">
                                   — Point{moduleRealizedPointsById[mod.id].length > 1 ? "s" : ""} réalisé{moduleRealizedPointsById[mod.id].length > 1 ? "s" : ""} : {moduleRealizedPointsById[mod.id].join(", ")}
                                 </span>
