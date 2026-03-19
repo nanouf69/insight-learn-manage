@@ -6,12 +6,7 @@ const FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
 const TEN_MINUTES_MS = 10 * 60 * 1000;
 const SEVEN_HOURS_MS = 7 * 60 * 60 * 1000;
 const COUNTDOWN_TICK_MS = 1000;
-
-/** Returns true if current time is between 22:00 and 05:00 */
-function isNightTime(): boolean {
-  const hour = new Date().getHours();
-  return hour >= 22 || hour < 5;
-}
+const POLL_INTERVAL_MS = 30_000; // Check every 30 seconds for reliability
 
 interface UsePresenceCheckParams {
   apprenantId: string | null;
@@ -34,31 +29,40 @@ export function usePresenceCheck({
   const [countdownSeconds, setCountdownSeconds] = useState(600); // 10 min
   const [disconnectReason, setDisconnectReason] = useState<string | null>(null);
 
-  const checkIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const maxSessionRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastCheckTimeRef = useRef<number>(Date.now());
+  const lastConfirmTimeRef = useRef<number>(Date.now());
+  const modalShownRef = useRef(false);
+  const modalStartRef = useRef<number | null>(null);
+  const endingRef = useRef(false);
 
   const clearAllTimers = useCallback(() => {
-    if (checkIntervalRef.current) clearInterval(checkIntervalRef.current);
+    if (pollRef.current) clearInterval(pollRef.current);
     if (countdownRef.current) clearInterval(countdownRef.current);
-    if (maxSessionRef.current) clearTimeout(maxSessionRef.current);
-    checkIntervalRef.current = null;
+    pollRef.current = null;
     countdownRef.current = null;
-    maxSessionRef.current = null;
   }, []);
 
   const endSession = useCallback(async (reason: string) => {
+    if (endingRef.current) return;
+    endingRef.current = true;
     clearAllTimers();
     setShowModal(false);
+    modalShownRef.current = false;
     setDisconnectReason(reason);
 
     if (connexionId) {
+      // Cap ended_at to sessionStart + 7h
+      let endedAt = new Date();
+      if (sessionStartTime) {
+        const maxEnd = new Date(sessionStartTime + SEVEN_HOURS_MS);
+        if (endedAt > maxEnd) endedAt = maxEnd;
+      }
       await supabase
         .from("apprenant_connexions" as any)
         .update({
-          ended_at: new Date().toISOString(),
-          last_seen_at: new Date().toISOString(),
+          ended_at: endedAt.toISOString(),
+          last_seen_at: endedAt.toISOString(),
         })
         .eq("id", connexionId);
     }
@@ -67,9 +71,12 @@ export function usePresenceCheck({
     setTimeout(() => {
       onForceDisconnect();
     }, 3000);
-  }, [connexionId, clearAllTimers, onForceDisconnect]);
+  }, [connexionId, sessionStartTime, clearAllTimers, onForceDisconnect]);
 
   const startCountdown = useCallback(() => {
+    if (modalShownRef.current) return; // Already showing
+    modalShownRef.current = true;
+    modalStartRef.current = Date.now();
     setShowModal(true);
     setCountdownSeconds(600);
 
@@ -98,10 +105,9 @@ export function usePresenceCheck({
     }
 
     if (countdownRef.current) clearInterval(countdownRef.current);
-
-    const start = Date.now();
     countdownRef.current = setInterval(() => {
-      const elapsed = Date.now() - start;
+      if (!modalStartRef.current) return;
+      const elapsed = Date.now() - modalStartRef.current;
       const remaining = Math.max(0, Math.ceil((TEN_MINUTES_MS - elapsed) / 1000));
       setCountdownSeconds(remaining);
 
@@ -114,56 +120,61 @@ export function usePresenceCheck({
 
   const confirmPresence = useCallback(() => {
     setShowModal(false);
+    modalShownRef.current = false;
+    modalStartRef.current = null;
     setCountdownSeconds(600);
     if (countdownRef.current) clearInterval(countdownRef.current);
     countdownRef.current = null;
-    lastCheckTimeRef.current = Date.now();
+    lastConfirmTimeRef.current = Date.now();
+  }, []);
 
-    // If night time, extend absolute limit to 7h (user confirmed presence)
-    if (isNightTime() && sessionStartTime && maxSessionRef.current) {
-      clearTimeout(maxSessionRef.current);
-      const elapsed = Date.now() - sessionStartTime;
-      const remaining = Math.max(0, SEVEN_HOURS_MS - elapsed);
-      if (remaining <= 0) {
-        endSession("max_duration");
-      } else {
-        maxSessionRef.current = setTimeout(() => {
-          endSession("max_duration");
-        }, remaining);
-      }
-    }
-  }, [sessionStartTime, endSession]);
-
-  // Main effect: set up 4h interval check + 7h absolute limit
+  // Main polling effect: check elapsed time every 30s
+  // This is resilient to browser throttling and device sleep
   useEffect(() => {
     if (!enabled || !sessionStartTime) {
       clearAllTimers();
+      endingRef.current = false;
       return;
     }
 
-    lastCheckTimeRef.current = Date.now();
+    endingRef.current = false;
+    lastConfirmTimeRef.current = Date.now();
 
-    // 4-hour periodic check
-    checkIntervalRef.current = setInterval(() => {
-      const elapsed = Date.now() - lastCheckTimeRef.current;
-      if (elapsed >= FOUR_HOURS_MS) {
-        startCountdown();
+    const checkTimeLimits = () => {
+      if (endingRef.current) return;
+
+      const now = Date.now();
+      const totalElapsed = now - sessionStartTime;
+
+      // HARD LIMIT: 7 hours absolute maximum — no exceptions
+      if (totalElapsed >= SEVEN_HOURS_MS) {
+        console.log(`Session limit reached: ${Math.round(totalElapsed / 60000)}min elapsed, forcing disconnect`);
+        endSession("max_duration");
+        return;
       }
-    }, 60_000); // Check every minute if 4h has passed
 
-    // Absolute session limit: 4h at night (22h-5h), 7h otherwise
-    const absoluteLimit = isNightTime() ? FOUR_HOURS_MS : SEVEN_HOURS_MS;
-    const elapsed = Date.now() - sessionStartTime;
-    const remaining = Math.max(0, absoluteLimit - elapsed);
+      // 4-hour presence check: if modal not showing and 4h since last confirm
+      if (!modalShownRef.current) {
+        const sinceLast = now - lastConfirmTimeRef.current;
+        if (sinceLast >= FOUR_HOURS_MS) {
+          startCountdown();
+        }
+      }
 
-    if (remaining <= 0) {
-      endSession("max_duration");
-      return;
-    }
+      // If modal is showing, check the 10min countdown using real elapsed time
+      if (modalShownRef.current && modalStartRef.current) {
+        const modalElapsed = now - modalStartRef.current;
+        if (modalElapsed >= TEN_MINUTES_MS) {
+          endSession("no_response");
+        }
+      }
+    };
 
-    maxSessionRef.current = setTimeout(() => {
-      endSession("max_duration");
-    }, remaining);
+    // Run immediately on mount
+    checkTimeLimits();
+
+    // Poll every 30 seconds — works even after browser wakes from sleep
+    pollRef.current = setInterval(checkTimeLimits, POLL_INTERVAL_MS);
 
     return () => {
       clearAllTimers();
