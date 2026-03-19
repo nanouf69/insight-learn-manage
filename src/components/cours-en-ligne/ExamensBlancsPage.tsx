@@ -1582,7 +1582,7 @@ export default function ExamensBlancsPage({
                 <li>Les questions QRC sont corrigées par mots-clés</li>
                 <li>Une note éliminatoire inférieure au seuil entraîne l'échec</li>
                 <li>Vous ne pouvez pas revenir à une matière terminée</li>
-                <li>Répondez à toutes les questions avant de valider la matière</li>
+                <li className="text-base font-bold text-red-700">⚠️ VOUS DEVEZ RÉPONDRE À TOUTES LES QUESTIONS AVANT DE VALIDER</li>
               </ul>
             </div>
 
