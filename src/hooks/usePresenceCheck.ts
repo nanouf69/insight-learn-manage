@@ -90,7 +90,7 @@ export function usePresenceCheck({
   );
 
   const handleServerValidation = useCallback(
-    async (event: "heartbeat" | "confirm_presence" = "heartbeat") => {
+    async (event: "heartbeat" | "action" | "confirm_presence" = "heartbeat") => {
       if (endingRef.current) return;
 
       const validation = await runServerCheck(event);
