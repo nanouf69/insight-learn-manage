@@ -286,18 +286,11 @@ export default function ApprenantActivityReport({ onBack }: Props) {
       <div className="flex flex-wrap gap-4">
         <div className="flex-1 min-w-[250px]">
           <label className="text-sm font-medium mb-1 block">Sélectionner un élève :</label>
-          <Select value={selectedId} onValueChange={setSelectedId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Choisir un élève..." />
-            </SelectTrigger>
-            <SelectContent>
-              {apprenants.map((a) => (
-                <SelectItem key={a.id} value={a.id}>
-                  {a.prenom} {a.nom} {a.type_apprenant ? `(${a.type_apprenant})` : ""} — {a.email || "pas d'email"}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <ApprenantCombobox
+            apprenants={apprenants}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+          />
         </div>
         <div className="w-48">
           <label className="text-sm font-medium mb-1 block">Période :</label>
