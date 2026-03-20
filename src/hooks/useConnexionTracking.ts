@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-const MAX_SESSION_MS = 7 * 60 * 60 * 1000;
-
 type SessionCheckEvent = "heartbeat" | "action" | "confirm_presence";
 
 interface SessionCheckRow {
@@ -22,33 +20,34 @@ interface UseConnexionTrackingParams {
 
 export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnexionTrackingParams) {
   const connexionIdRef = useRef<string | null>(null);
-  const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
-  const sessionStartRef = useRef<number | null>(null);
+  const [connexionId, setConnexionId] = useState<string | null>(null);
 
   const resetLocalSession = useCallback(() => {
     connexionIdRef.current = null;
-    setSessionStartTime(null);
-    sessionStartRef.current = null;
+    setConnexionId(null);
   }, []);
+
+  const closeConnexionServerSide = useCallback(
+    async (id: string) => {
+      const { error } = await supabase.rpc("close_apprenant_connexion" as any, {
+        _connexion_id: id,
+        _apprenant_id: apprenantId,
+      });
+
+      if (error) {
+        console.error("close_apprenant_connexion error:", error);
+      }
+    },
+    [apprenantId],
+  );
 
   const endConnexion = useCallback(async () => {
     if (!connexionIdRef.current) return;
 
-    const now = Date.now();
-    const maxEndAt = sessionStartRef.current ? sessionStartRef.current + MAX_SESSION_MS : now;
-    const safeEndAt = new Date(Math.min(now, maxEndAt)).toISOString();
-
-    await supabase
-      .from("apprenant_connexions" as any)
-      .update({
-        ended_at: safeEndAt,
-        last_seen_at: safeEndAt,
-      })
-      .eq("id", connexionIdRef.current)
-      .is("ended_at", null);
+    await closeConnexionServerSide(connexionIdRef.current);
 
     resetLocalSession();
-  }, [resetLocalSession]);
+  }, [closeConnexionServerSide, resetLocalSession]);
 
   const checkSessionOnServer = useCallback(
     async (event: SessionCheckEvent): Promise<SessionCheckRow | null> => {
@@ -68,14 +67,6 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
       const row = (Array.isArray(data) ? data[0] : null) as SessionCheckRow | null;
       if (!row) return null;
 
-      if (row.session_started_at) {
-        const parsedStart = new Date(row.session_started_at).getTime();
-        if (Number.isFinite(parsedStart)) {
-          sessionStartRef.current = parsedStart;
-          setSessionStartTime(parsedStart);
-        }
-      }
-
       return row;
     },
     [enabled, apprenantId, userId],
@@ -90,31 +81,16 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
     let cancelled = false;
 
     const startConnexion = async () => {
-      const nowIso = new Date().toISOString();
-
       const { data: activeSessions } = await supabase
         .from("apprenant_connexions" as any)
-        .select("id, started_at")
+        .select("id")
         .eq("apprenant_id", apprenantId)
         .eq("user_id", userId)
         .is("ended_at", null);
 
       if (activeSessions?.length) {
         await Promise.all(
-          activeSessions.map((session: any) => {
-            const startedAtMs = new Date(session.started_at).getTime();
-            const cappedEndAtMs = Number.isFinite(startedAtMs)
-              ? Math.min(Date.now(), startedAtMs + MAX_SESSION_MS)
-              : Date.now();
-            return supabase
-              .from("apprenant_connexions" as any)
-              .update({
-                ended_at: new Date(cappedEndAtMs).toISOString(),
-                last_seen_at: new Date(cappedEndAtMs).toISOString(),
-              })
-              .eq("id", session.id)
-              .is("ended_at", null);
-          }),
+          activeSessions.map((session: any) => closeConnexionServerSide(session.id)),
         );
       }
 
@@ -130,12 +106,8 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
 
       if (cancelled || error || !data) return;
 
-      const startedAtMs = new Date((data as any).started_at).getTime();
       connexionIdRef.current = (data as any).id;
-      if (Number.isFinite(startedAtMs)) {
-        sessionStartRef.current = startedAtMs;
-        setSessionStartTime(startedAtMs);
-      }
+      setConnexionId((data as any).id);
 
       const { data: apprenantData } = await supabase
         .from("apprenants")
@@ -151,7 +123,7 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
         type: "connexion_apprenant",
         titre: `🟢 ${nom} vient de se connecter`,
         message: `L'apprenant ${nom} s'est connecté à son espace de cours${formation ? ` (${formation.toUpperCase()})` : ""}.`,
-        details: `Connexion le ${new Date(nowIso).toLocaleString("fr-FR")}`,
+        details: `Connexion le ${new Date().toLocaleString("fr-FR")}`,
       });
     };
 
@@ -168,7 +140,7 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
       window.removeEventListener("beforeunload", handleBeforeUnload);
       void endConnexion();
     };
-  }, [enabled, apprenantId, userId, endConnexion, resetLocalSession]);
+  }, [enabled, apprenantId, userId, closeConnexionServerSide, endConnexion, resetLocalSession]);
 
   const trackModuleActivity = async (
     moduleId: number,
@@ -180,7 +152,7 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
 
     const validation = await checkSessionOnServer("action");
     if (validation && !validation.is_valid) {
-      resetLocalSession();
+      await endConnexion();
       await supabase.auth.signOut();
       return;
     }
@@ -200,8 +172,7 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
 
   return {
     trackModuleActivity,
-    connexionId: connexionIdRef,
-    sessionStartTime,
+    connexionId,
     endConnexion,
   };
 }

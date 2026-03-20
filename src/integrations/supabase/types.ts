@@ -2087,6 +2087,14 @@ export type Database = {
           should_show_presence_prompt: boolean
         }[]
       }
+      close_apprenant_connexion: {
+        Args: { _apprenant_id?: string; _connexion_id: string }
+        Returns: {
+          closed: boolean
+          ended_at: string
+          reason: string
+        }[]
+      }
       daitch_mokotoff: { Args: { "": string }; Returns: string[] }
       dmetaphone: { Args: { "": string }; Returns: string }
       dmetaphone_alt: { Args: { "": string }; Returns: string }
