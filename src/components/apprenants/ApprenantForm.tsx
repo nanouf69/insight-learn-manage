@@ -18,6 +18,7 @@ import { autoAssignToSession } from "@/hooks/useAutoAssignSession";
 import { parseDateRange } from "@/lib/parseDateRange";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MODULES_DATA } from "@/components/cours-en-ligne/formations-data";
+import { filterFutureExamDates, filterFutureDateStrings } from "@/lib/filterPastDates";
 
 // Mapping type d'apprenant → modules par défaut
 const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {

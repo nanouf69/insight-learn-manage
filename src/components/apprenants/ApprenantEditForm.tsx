@@ -168,7 +168,7 @@ const datesExamenPratique = filterFutureDateStrings([
 ]);
 
 // Dates de formation continue 2026
-const datesFormationContinue = [
+const datesFormationContinue = filterFutureDateStrings([
   "27 et 28 janvier 2026",
   "17 et 18 février 2026",
   "31 mars et 1er avril 2026",
@@ -180,7 +180,7 @@ const datesFormationContinue = [
   "28 et 29 octobre 2026",
   "17 et 18 novembre 2026",
   "23 et 24 décembre 2026",
-];
+]);
 
 const prixFormations: Record<string, string> = {
   "vtc": "1099",
