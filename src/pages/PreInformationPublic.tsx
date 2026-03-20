@@ -463,6 +463,7 @@ export default function PreInformationPublic() {
   const [searchParams] = useSearchParams();
   const apprenantId = searchParams.get("id");
   const formationType = searchParams.get("type");
+  const noDate = searchParams.get("nodate") === "1";
 
   const [apprenant, setApprenant] = useState<ApprenantInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -790,7 +791,7 @@ export default function PreInformationPublic() {
               <div className="border-t pt-4 space-y-2">
                 <label className="text-sm font-medium">Signature manuscrite *</label>
                 <SignatureCanvas onSignatureChange={setAnalyseSignatureData} />
-                <p className="text-xs text-muted-foreground">Fait le {signatureDate}</p>
+                {!noDate && <p className="text-xs text-muted-foreground">Fait le {signatureDate}</p>}
               </div>
 
               <Button className="w-full" onClick={handleSubmitAnalyse} disabled={saving}>
@@ -828,7 +829,7 @@ export default function PreInformationPublic() {
               <div className="border-t pt-4 space-y-2">
                 <label className="text-sm font-medium">Signature manuscrite *</label>
                 <SignatureCanvas onSignatureChange={setProjetSignatureData} />
-                <p className="text-xs text-muted-foreground">Fait le {signatureDate}</p>
+                {!noDate && <p className="text-xs text-muted-foreground">Fait le {signatureDate}</p>}
               </div>
 
               <Button className="w-full" onClick={handleSubmitProjet} disabled={saving}>
