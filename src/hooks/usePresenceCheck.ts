@@ -2,9 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const SEVEN_HOURS_MS = 7 * 60 * 60 * 1000;
 const COUNTDOWN_TICK_MS = 1000;
 const POLL_INTERVAL_MS = 15_000;
+const ACTION_CHECK_THROTTLE_MS = 20_000;
 
 interface ServerSessionCheck {
   is_valid: boolean;
@@ -19,7 +19,6 @@ interface UsePresenceCheckParams {
   apprenantId: string | null;
   userId: string | null;
   connexionId: string | null;
-  sessionStartTime: number | null;
   enabled: boolean;
   onForceDisconnect: () => void;
 }
@@ -28,7 +27,6 @@ export function usePresenceCheck({
   apprenantId,
   userId,
   connexionId,
-  sessionStartTime,
   enabled,
   onForceDisconnect,
 }: UsePresenceCheckParams) {
@@ -41,6 +39,7 @@ export function usePresenceCheck({
   const modalDeadlineRef = useRef<number | null>(null);
   const endingRef = useRef(false);
   const promptLoggedRef = useRef(false);
+  const lastActionCheckAtRef = useRef(0);
 
   const clearTimers = useCallback(() => {
     if (pollRef.current) clearInterval(pollRef.current);
@@ -50,7 +49,7 @@ export function usePresenceCheck({
   }, []);
 
   const runServerCheck = useCallback(
-    async (event: "heartbeat" | "confirm_presence" = "heartbeat"): Promise<ServerSessionCheck | null> => {
+    async (event: "heartbeat" | "action" | "confirm_presence" = "heartbeat"): Promise<ServerSessionCheck | null> => {
       if (!enabled || !apprenantId || !userId || !connexionId) return null;
 
       const { data, error } = await supabase.rpc("check_apprenant_session" as any, {
@@ -79,22 +78,15 @@ export function usePresenceCheck({
       setDisconnectReason(reason);
 
       if (connexionId) {
-        const now = Date.now();
-        const maxEndAt = sessionStartTime ? sessionStartTime + SEVEN_HOURS_MS : now;
-        const safeEndAt = new Date(Math.min(now, maxEndAt)).toISOString();
-        await supabase
-          .from("apprenant_connexions" as any)
-          .update({
-            ended_at: safeEndAt,
-            last_seen_at: safeEndAt,
-          })
-          .eq("id", connexionId)
-          .is("ended_at", null);
+        await supabase.rpc("close_apprenant_connexion" as any, {
+          _connexion_id: connexionId,
+          _apprenant_id: apprenantId,
+        });
       }
 
       await onForceDisconnect();
     },
-    [clearTimers, connexionId, onForceDisconnect, sessionStartTime],
+    [apprenantId, clearTimers, connexionId, onForceDisconnect],
   );
 
   const handleServerValidation = useCallback(
@@ -135,6 +127,7 @@ export function usePresenceCheck({
       } else {
         setShowModal(false);
         modalDeadlineRef.current = null;
+        promptLoggedRef.current = false;
       }
     },
     [apprenantId, connexionId, endSession, runServerCheck, userId],
@@ -152,6 +145,7 @@ export function usePresenceCheck({
     setShowModal(false);
     modalDeadlineRef.current = null;
     setCountdownSeconds(600);
+    lastActionCheckAtRef.current = Date.now();
   }, [endSession, runServerCheck]);
 
   useEffect(() => {
@@ -175,6 +169,41 @@ export function usePresenceCheck({
       clearTimers();
     };
   }, [enabled, apprenantId, userId, connexionId, clearTimers, handleServerValidation]);
+
+  useEffect(() => {
+    if (!enabled || !apprenantId || !userId || !connexionId) return;
+
+    const runHeartbeatCheck = () => {
+      void handleServerValidation("heartbeat");
+    };
+
+    const runActionCheck = () => {
+      const now = Date.now();
+      if (now - lastActionCheckAtRef.current < ACTION_CHECK_THROTTLE_MS) return;
+      lastActionCheckAtRef.current = now;
+      void handleServerValidation("action");
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        runHeartbeatCheck();
+      }
+    };
+
+    window.addEventListener("focus", runHeartbeatCheck);
+    window.addEventListener("online", runHeartbeatCheck);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    const activityEvents: Array<keyof WindowEventMap> = ["click", "keydown", "touchstart", "pointerdown"];
+    activityEvents.forEach((eventName) => window.addEventListener(eventName, runActionCheck));
+
+    return () => {
+      window.removeEventListener("focus", runHeartbeatCheck);
+      window.removeEventListener("online", runHeartbeatCheck);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      activityEvents.forEach((eventName) => window.removeEventListener(eventName, runActionCheck));
+    };
+  }, [enabled, apprenantId, userId, connexionId, handleServerValidation]);
 
   useEffect(() => {
     if (!showModal || !modalDeadlineRef.current) {
