@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { filterFutureExamValues } from "@/lib/filterPastDates";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, AlertTriangle, CheckCircle, FileText, Calendar, MapPin, GraduationCap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";

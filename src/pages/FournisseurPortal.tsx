@@ -34,6 +34,7 @@ import { CAS_PRATIQUE_TAXI_EXERCICES } from "@/components/cours-en-ligne/cas-pra
 import { NotesFraisTab } from "@/components/comptabilite/NotesFraisTab";
 import { Badge } from "@/components/ui/badge";
 import CoursPublic from "@/pages/CoursPublic";
+import { filterFutureExamDates, filterFutureDateStrings } from "@/lib/filterPastDates";
 
 // Dates formations (same as ApprenantForm)
 const datesFormations = {

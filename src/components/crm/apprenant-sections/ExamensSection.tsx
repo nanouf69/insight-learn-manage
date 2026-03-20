@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { filterFutureExamDates } from "@/lib/filterPastDates";
 import { formatDateFR } from "@/lib/safeDateParse";
 import { GraduationCap, Calendar, CheckCircle2, XCircle, Clock, Edit2, MapPin, Dumbbell, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
