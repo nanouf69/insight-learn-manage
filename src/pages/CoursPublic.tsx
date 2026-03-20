@@ -21,7 +21,6 @@ import { EXAMENS_BLANCS_VTC, EXAMENS_BLANCS_TAXI, examenBlanc1TA, examenBlanc1VA
 import { supabase } from "@/integrations/supabase/client";
 import { safeDateParse } from "@/lib/safeDateParse";
 import { useConnexionTracking } from "@/hooks/useConnexionTracking";
-import { useInactivityAlert } from "@/hooks/useInactivityAlert";
 import { usePresenceCheck } from "@/hooks/usePresenceCheck";
 import { PresenceCheckModal } from "@/components/cours-en-ligne/PresenceCheckModal";
 import { useAuth } from "@/contexts/AuthContext";
@@ -610,7 +609,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
   // Tracking connexion élève (only for real student sessions, not admin preview)
   const isStudentSession = !embedded && !!user && !!apprenant?.id;
-  const { trackModuleActivity, connexionId, sessionStartTime, endConnexion } = useConnexionTracking({
+  const { trackModuleActivity, connexionId, endConnexion } = useConnexionTracking({
     apprenantId: !embedded && apprenant?.id ? apprenant.id : null,
     userId: user?.id || null,
     enabled: isStudentSession,
@@ -631,20 +630,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   } = usePresenceCheck({
     apprenantId: !embedded && apprenant?.id ? apprenant.id : null,
     userId: user?.id || null,
-    connexionId: connexionId.current,
-    sessionStartTime,
+    connexionId,
     enabled: isStudentSession,
     onForceDisconnect: handleForceDisconnect,
-  });
-
-  // Inactivity alert after 2h
-  const [showInactivityModal, setShowInactivityModal] = useState(false);
-  const handleInactive = useCallback(() => {
-    setShowInactivityModal(true);
-  }, []);
-  useInactivityAlert({
-    enabled: !embedded && !!user && !!apprenant?.id,
-    onInactive: handleInactive,
   });
 
   // Fetch apprenant info when user is logged in
@@ -1223,29 +1211,6 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
   return (
     <div className={embedded ? "" : "min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50"}>
-      {/* Inactivity modal */}
-      <Dialog open={showInactivityModal} onOpenChange={setShowInactivityModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-amber-600">
-              <AlertTriangle className="w-5 h-5" />
-              Êtes-vous encore là ?
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <p className="text-sm text-muted-foreground">
-              Nous avons remarqué qu'il n'y a plus eu d'activité depuis <strong>2 heures</strong> sur la plateforme.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              N'oubliez pas de continuer vos révisions pour bien préparer votre examen ! 💪
-            </p>
-            <Button className="w-full" onClick={() => setShowInactivityModal(false)}>
-              Je suis là, je continue !
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
        {/* Top navbar */}
        <nav className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-lg">
          <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
