@@ -122,6 +122,7 @@ export type Database = {
         Row: {
           apprenant_id: string
           created_at: string
+          end_reason: string | null
           ended_at: string | null
           id: string
           last_seen_at: string
@@ -133,6 +134,7 @@ export type Database = {
         Insert: {
           apprenant_id: string
           created_at?: string
+          end_reason?: string | null
           ended_at?: string | null
           id?: string
           last_seen_at?: string
@@ -144,6 +146,7 @@ export type Database = {
         Update: {
           apprenant_id?: string
           created_at?: string
+          end_reason?: string | null
           ended_at?: string | null
           id?: string
           last_seen_at?: string
@@ -2098,6 +2101,13 @@ export type Database = {
       daitch_mokotoff: { Args: { "": string }; Returns: string[] }
       dmetaphone: { Args: { "": string }; Returns: string }
       dmetaphone_alt: { Args: { "": string }; Returns: string }
+      enforce_apprenant_session_limits: {
+        Args: never
+        Returns: {
+          closed_max_duration: number
+          closed_no_response: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
