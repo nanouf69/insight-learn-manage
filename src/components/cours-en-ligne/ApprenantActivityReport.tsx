@@ -29,6 +29,8 @@ interface Connexion {
   last_seen_at: string;
 }
 
+const MAX_SESSION_DURATION_MS = 7 * 60 * 60 * 1000;
+
 interface ModuleActivite {
   id: string;
   module_id: number;
@@ -142,11 +144,21 @@ export default function ApprenantActivityReport({ onBack }: Props) {
 
   const selectedApprenant = apprenants.find((a) => a.id === selectedId);
 
+  const getCappedSessionEnd = (connexion: Connexion) => {
+    const start = parseISO(connexion.started_at);
+    const rawEnd = connexion.ended_at ? parseISO(connexion.ended_at) : parseISO(connexion.last_seen_at);
+    const cappedEnd = new Date(start.getTime() + MAX_SESSION_DURATION_MS);
+    return rawEnd > cappedEnd ? cappedEnd : rawEnd;
+  };
+
+  const getSessionMinutes = (connexion: Connexion) => {
+    const start = parseISO(connexion.started_at);
+    return Math.max(0, differenceInMinutes(getCappedSessionEnd(connexion), start));
+  };
+
   // Calculate stats
   const totalMinutes = connexions.reduce((sum, c) => {
-    const end = c.ended_at ? parseISO(c.ended_at) : parseISO(c.last_seen_at);
-    const start = parseISO(c.started_at);
-    return sum + Math.max(0, differenceInMinutes(end, start));
+    return sum + getSessionMinutes(c);
   }, 0);
 
   const totalHours = Math.floor(totalMinutes / 60);
@@ -165,8 +177,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
     }
     connexions.forEach((c) => {
       const day = format(parseISO(c.started_at), "yyyy-MM-dd");
-      const end = c.ended_at ? parseISO(c.ended_at) : parseISO(c.last_seen_at);
-      const mins = Math.max(0, differenceInMinutes(end, parseISO(c.started_at)));
+      const mins = getSessionMinutes(c);
       map.set(day, (map.get(day) || 0) + mins);
     });
     return [...map.entries()].map(([date, minutes]) => ({
@@ -238,8 +249,8 @@ export default function ApprenantActivityReport({ onBack }: Props) {
           <tbody>
             ${connexions.map((c) => {
               const start = parseISO(c.started_at);
-              const end = c.ended_at ? parseISO(c.ended_at) : parseISO(c.last_seen_at);
-              const mins = Math.max(0, differenceInMinutes(end, start));
+              const end = getCappedSessionEnd(c);
+              const mins = getSessionMinutes(c);
               const h = Math.floor(mins / 60);
               const m = mins % 60;
               return `<tr>
@@ -442,8 +453,8 @@ export default function ApprenantActivityReport({ onBack }: Props) {
                   )}
                   {connexions.map((c) => {
                     const start = parseISO(c.started_at);
-                    const end = c.ended_at ? parseISO(c.ended_at) : parseISO(c.last_seen_at);
-                    const mins = Math.max(0, differenceInMinutes(end, start));
+                    const end = getCappedSessionEnd(c);
+                    const mins = getSessionMinutes(c);
                     const h = Math.floor(mins / 60);
                     const m = mins % 60;
                     return (
