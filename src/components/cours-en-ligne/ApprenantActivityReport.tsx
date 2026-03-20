@@ -37,6 +37,49 @@ interface ModuleActivite {
   occurred_at: string;
 }
 
+function ApprenantCombobox({ apprenants, selectedId, onSelect }: {
+  apprenants: Apprenant[];
+  selectedId: string;
+  onSelect: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = apprenants.find((a) => a.id === selectedId);
+  const label = selected
+    ? `${selected.prenom} ${selected.nom} ${selected.type_apprenant ? `(${selected.type_apprenant})` : ""}`
+    : "Rechercher un élève...";
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between font-normal">
+          <span className="truncate">{label}</span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[400px] p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Taper un nom ou prénom..." />
+          <CommandList>
+            <CommandEmpty>Aucun élève trouvé.</CommandEmpty>
+            <CommandGroup>
+              {apprenants.map((a) => (
+                <CommandItem
+                  key={a.id}
+                  value={`${a.prenom} ${a.nom} ${a.email || ""} ${a.type_apprenant || ""}`}
+                  onSelect={() => { onSelect(a.id); setOpen(false); }}
+                >
+                  <Check className={cn("mr-2 h-4 w-4", selectedId === a.id ? "opacity-100" : "opacity-0")} />
+                  {a.prenom} {a.nom} {a.type_apprenant ? `(${a.type_apprenant})` : ""} — {a.email || "pas d'email"}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 interface Props {
   onBack: () => void;
 }
