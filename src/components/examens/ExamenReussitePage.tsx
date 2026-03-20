@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from "react";
+import { filterFutureExamDates, filterFutureDateStrings } from "@/lib/filterPastDates";
 import { safeDateParse, formatDateFR, formatDateShortFR } from "@/lib/safeDateParse";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -200,16 +201,16 @@ export function ExamenReussitePage() {
     }
   };
 
-  const datesExamenTheorique = [
+  const datesExamenTheorique = filterFutureExamDates([
     { date: "27 janvier 2026", lieu: "Villeurbanne", pratiqueIndex: 0 },
     { date: "31 mars 2026", lieu: "Clermont-Ferrand", pratiqueIndex: 1 },
     { date: "26 mai 2026", lieu: "Villeurbanne", pratiqueIndex: 2 },
     { date: "21 juillet 2026", lieu: "Villeurbanne", pratiqueIndex: 3 },
     { date: "29 septembre 2026", lieu: "Villeurbanne", pratiqueIndex: 4 },
     { date: "17 novembre 2026", lieu: "Villeurbanne", pratiqueIndex: 5 },
-  ];
+  ]);
 
-  const datesExamenPratique = [
+  const datesExamenPratique = filterFutureDateStrings([
     "Du 23 fevrier au 6 mars 2026",
     "Du 4 au 13 mai 2026",
     "Du 29 juin au 7 juillet 2026",
@@ -217,7 +218,7 @@ export function ExamenReussitePage() {
     "Du 2 au 13 novembre 2026",
     "Du 16 au 23 decembre 2026",
     "Debut janvier 2027",
-  ];
+  ]);
 
   const handleExamDateChange = (date: string) => {
     setSelectedExamDate(date);

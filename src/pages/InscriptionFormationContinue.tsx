@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { filterFutureByFin } from "@/lib/filterPastDates";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckCircle, FileText, AlertTriangle } from "lucide-react";
@@ -16,13 +17,13 @@ import {
 import logoFtransport from "@/assets/logo-ftransport.png";
 
 // Dates de formation continue disponibles
-const datesFormationContinue = [
+const datesFormationContinue = filterFutureByFin([
   { value: "2026-03-09", label: "9 - 10 mars 2026", fin: "2026-03-10" },
   { value: "2026-05-04", label: "4 - 5 mai 2026", fin: "2026-05-05" },
   { value: "2026-06-29", label: "29 - 30 juin 2026", fin: "2026-06-30" },
   { value: "2026-09-07", label: "7 - 8 septembre 2026", fin: "2026-09-08" },
   { value: "2026-11-02", label: "2 - 3 novembre 2026", fin: "2026-11-03" },
-];
+]);
 
 type FormationType = "vtc" | "taxi";
 

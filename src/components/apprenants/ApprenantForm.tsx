@@ -18,6 +18,7 @@ import { autoAssignToSession } from "@/hooks/useAutoAssignSession";
 import { parseDateRange } from "@/lib/parseDateRange";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MODULES_DATA } from "@/components/cours-en-ligne/formations-data";
+import { filterFutureExamDates, filterFutureDateStrings } from "@/lib/filterPastDates";
 
 // Mapping type d'apprenant → modules par défaut
 const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {
@@ -54,41 +55,41 @@ interface Apprenant {
 const datesFormations = {
   vtc: {
     label: "Formation VTC",
-    dates: [
+    dates: filterFutureDateStrings([
       "Du 12 au 25 janvier 2026",
       "Du 16 au 30 mars 2026",
       "Du 11 au 24 mai 2026",
       "Du 6 au 19 juillet 2026",
       "Du 14 au 27 septembre 2026",
       "Du 2 au 15 novembre 2026"
-    ]
+    ])
   },
   taxi: {
     label: "Formation TAXI",
-    dates: [
+    dates: filterFutureDateStrings([
       "Du 5 au 26 janvier 2026",
       "Du 9 au 30 mars 2026",
       "Du 4 au 25 mai 2026",
       "Du 29 juin au 20 juillet 2026",
       "Du 7 au 28 septembre 2026",
       "Du 26 octobre au 16 novembre 2026"
-    ]
+    ])
   },
   ta: {
     label: "Formation TAXI pour chauffeur VTC (TA)",
-    dates: [
+    dates: filterFutureDateStrings([
       "Du 5 au 26 janvier 2026",
       "Du 9 au 30 mars 2026",
       "Du 4 au 25 mai 2026",
       "Du 29 juin au 20 juillet 2026",
       "Du 7 au 28 septembre 2026",
       "Du 26 octobre au 16 novembre 2026"
-    ]
+    ])
   }
 };
 
 // Dates des examens théoriques 2026
-const datesExamenTheorique = [
+const _allDatesExamenTheorique = [
   { date: "27 janvier 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
   { date: "31 mars 2026", lieu: "Puy-de-Dôme – Polydome, Place du 1er mai, 63100 Clermont-Ferrand", horaire: "après-midi" },
   { date: "26 mai 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
@@ -96,9 +97,10 @@ const datesExamenTheorique = [
   { date: "29 septembre 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
   { date: "17 novembre 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
 ];
+const datesExamenTheorique = filterFutureExamDates(_allDatesExamenTheorique);
 
 // Dates des examens pratiques 2026 (Rhône 69)
-const datesExamenPratique = [
+const datesExamenPratique = filterFutureDateStrings([
   "Du 23 février au 6 mars 2026",
   "Du 4 au 13 mai 2026",
   "Du 29 juin au 7 juillet 2026",
@@ -106,10 +108,10 @@ const datesExamenPratique = [
   "Du 2 au 13 novembre 2026",
   "Du 16 au 23 décembre 2026",
   "Début janvier 2027",
-];
+]);
 
 // Dates de formation continue 2026
-const datesFormationContinue = [
+const datesFormationContinue = filterFutureDateStrings([
   "27 et 28 janvier 2026",
   "17 et 18 février 2026",
   "31 mars et 1er avril 2026",
@@ -121,7 +123,7 @@ const datesFormationContinue = [
   "28 et 29 octobre 2026",
   "17 et 18 novembre 2026",
   "23 et 24 décembre 2026",
-];
+]);
 
 export function ApprenantForm() {
   const [open, setOpen] = useState(false);
