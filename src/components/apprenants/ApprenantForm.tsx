@@ -88,7 +88,7 @@ const datesFormations = {
 };
 
 // Dates des examens théoriques 2026
-const datesExamenTheorique = [
+const _allDatesExamenTheorique = [
   { date: "27 janvier 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
   { date: "31 mars 2026", lieu: "Puy-de-Dôme – Polydome, Place du 1er mai, 63100 Clermont-Ferrand", horaire: "après-midi" },
   { date: "26 mai 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
@@ -96,6 +96,7 @@ const datesExamenTheorique = [
   { date: "29 septembre 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
   { date: "17 novembre 2026", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne", horaire: "après-midi" },
 ];
+const datesExamenTheorique = filterFutureExamDates(_allDatesExamenTheorique);
 
 // Dates des examens pratiques 2026 (Rhône 69)
 const datesExamenPratique = [
