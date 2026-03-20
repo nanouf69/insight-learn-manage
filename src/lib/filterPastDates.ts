@@ -31,6 +31,13 @@ function parseLastFrenchDate(str: string): Date | null {
     return parseFrenchDate(last[0]);
   }
 
+  // Handle "Du X au DD month YYYY" where end date has month+year
+  const auMatch = str.match(/au\s+(\d{1,2})\s+(\w+)\s+(\d{4})/i);
+  if (auMatch) {
+    const m = MONTH_MAP[auMatch[2].toLowerCase()];
+    if (m !== undefined) return new Date(Number(auMatch[3]), m, Number(auMatch[1]));
+  }
+
   // Handle "Début janvier 2027"
   const debutMatch = str.match(/(?:début|fin|debut)\s+(\w+)\s+(\d{4})/i);
   if (debutMatch) {
