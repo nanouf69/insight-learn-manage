@@ -3,9 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Printer, Clock, BookOpen, Calendar, ArrowLeft, BarChart3 } from "lucide-react";
+import { Printer, Clock, BookOpen, Calendar, ArrowLeft, BarChart3, ChevronsUpDown, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format, subDays, differenceInMinutes, parseISO, startOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -32,6 +35,49 @@ interface ModuleActivite {
   module_nom: string;
   action_type: string;
   occurred_at: string;
+}
+
+function ApprenantCombobox({ apprenants, selectedId, onSelect }: {
+  apprenants: Apprenant[];
+  selectedId: string;
+  onSelect: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = apprenants.find((a) => a.id === selectedId);
+  const label = selected
+    ? `${selected.prenom} ${selected.nom} ${selected.type_apprenant ? `(${selected.type_apprenant})` : ""}`
+    : "Rechercher un élève...";
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between font-normal">
+          <span className="truncate">{label}</span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[400px] p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Taper un nom ou prénom..." />
+          <CommandList>
+            <CommandEmpty>Aucun élève trouvé.</CommandEmpty>
+            <CommandGroup>
+              {apprenants.map((a) => (
+                <CommandItem
+                  key={a.id}
+                  value={`${a.prenom} ${a.nom} ${a.email || ""} ${a.type_apprenant || ""}`}
+                  onSelect={() => { onSelect(a.id); setOpen(false); }}
+                >
+                  <Check className={cn("mr-2 h-4 w-4", selectedId === a.id ? "opacity-100" : "opacity-0")} />
+                  {a.prenom} {a.nom} {a.type_apprenant ? `(${a.type_apprenant})` : ""} — {a.email || "pas d'email"}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
 }
 
 interface Props {
@@ -283,18 +329,11 @@ export default function ApprenantActivityReport({ onBack }: Props) {
       <div className="flex flex-wrap gap-4">
         <div className="flex-1 min-w-[250px]">
           <label className="text-sm font-medium mb-1 block">Sélectionner un élève :</label>
-          <Select value={selectedId} onValueChange={setSelectedId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Choisir un élève..." />
-            </SelectTrigger>
-            <SelectContent>
-              {apprenants.map((a) => (
-                <SelectItem key={a.id} value={a.id}>
-                  {a.prenom} {a.nom} {a.type_apprenant ? `(${a.type_apprenant})` : ""} — {a.email || "pas d'email"}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <ApprenantCombobox
+            apprenants={apprenants}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+          />
         </div>
         <div className="w-48">
           <label className="text-sm font-medium mb-1 block">Période :</label>
