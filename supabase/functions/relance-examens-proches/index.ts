@@ -184,7 +184,7 @@ serve(async (req) => {
                   Votre examen théorique <strong>${formation}</strong> est prévu le <strong>${examDateFormatted}</strong>.
                 </p>
                 <p style="font-size: 16px; color: #1f2937; line-height: 1.6;">
-                  Or, vous n'avez complété que <strong>${pct}%</strong> de vos modules (<strong>${completedCount}/${totalModules}</strong>). Il vous reste encore <strong>${remaining} module${remaining > 1 ? "s" : ""}</strong> à terminer.
+                  Vous n'avez pas encore terminé tous vos modules de formation. Il est urgent de les compléter avant le jour de l'examen.
                 </p>
               </div>
 
