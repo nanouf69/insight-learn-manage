@@ -86,6 +86,7 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
       const { data: regularData, error: regularError } = await supabase
         .from('apprenants')
         .select('*')
+        .is('deleted_at' as any, null)
         .order('created_at', { ascending: false });
       
       if (regularError) throw regularError;
