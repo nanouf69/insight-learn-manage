@@ -502,8 +502,63 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
             <Pencil className="w-4 h-4 mr-2" />
             Modifier
           </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+            onClick={() => setShowSoftDeleteDialog(true)}
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Corbeille
+          </Button>
         </div>
       </div>
+
+      {/* Soft Delete Confirmation */}
+      {showSoftDeleteDialog && (
+        <Dialog open={showSoftDeleteDialog} onOpenChange={setShowSoftDeleteDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="w-5 h-5" />
+                Déplacer vers la corbeille ?
+              </DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              <strong>{apprenant.prenom} {apprenant.nom}</strong> sera déplacé dans la corbeille. Vous pourrez le restaurer ultérieurement depuis la page Corbeille.
+            </p>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowSoftDeleteDialog(false)}>Annuler</Button>
+              <Button
+                variant="destructive"
+                disabled={softDeleting}
+                onClick={async () => {
+                  setSoftDeleting(true);
+                  try {
+                    const { error } = await supabase
+                      .from("apprenants")
+                      .update({ deleted_at: new Date().toISOString() } as any)
+                      .eq("id", apprenantId);
+                    if (error) throw error;
+                    toast.success(`${apprenant.prenom} ${apprenant.nom} déplacé dans la corbeille`);
+                    queryClient.invalidateQueries({ queryKey: ["apprenants"] });
+                    queryClient.invalidateQueries({ queryKey: ["apprenants-crm"] });
+                    queryClient.invalidateQueries({ queryKey: ["apprenants-corbeille"] });
+                    onBack();
+                  } catch (err: any) {
+                    toast.error(err.message || "Erreur lors de la suppression");
+                  } finally {
+                    setSoftDeleting(false);
+                  }
+                }}
+              >
+                {softDeleting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                Mettre à la corbeille
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Edit Dialog */}
       {showEditDialog && (
