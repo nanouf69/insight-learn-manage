@@ -45,10 +45,18 @@ function ApprenantCombobox({ apprenants, selectedId, onSelect }: {
   onSelect: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const selected = apprenants.find((a) => a.id === selectedId);
   const label = selected
     ? `${selected.prenom} ${selected.nom} ${selected.type_apprenant ? `(${selected.type_apprenant})` : ""}`
     : "Rechercher un élève...";
+
+  const filtered = search.trim().length >= 2
+    ? apprenants.filter((a) => {
+        const q = search.toLowerCase();
+        return a.nom.toLowerCase().includes(q) || a.prenom.toLowerCase().includes(q) || (a.email || "").toLowerCase().includes(q);
+      })
+    : [];
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -59,22 +67,27 @@ function ApprenantCombobox({ apprenants, selectedId, onSelect }: {
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[400px] p-0" align="start">
-        <Command>
-          <CommandInput placeholder="Taper un nom ou prénom..." />
+        <Command shouldFilter={false}>
+          <CommandInput placeholder="Taper un nom ou prénom (min. 2 lettres)..." value={search} onValueChange={setSearch} />
           <CommandList>
-            <CommandEmpty>Aucun élève trouvé.</CommandEmpty>
-            <CommandGroup>
-              {apprenants.map((a) => (
-                <CommandItem
-                  key={a.id}
-                  value={`${a.prenom} ${a.nom} ${a.email || ""} ${a.type_apprenant || ""}`}
-                  onSelect={() => { onSelect(a.id); setOpen(false); }}
-                >
-                  <Check className={cn("mr-2 h-4 w-4", selectedId === a.id ? "opacity-100" : "opacity-0")} />
-                  {a.prenom} {a.nom} {a.type_apprenant ? `(${a.type_apprenant})` : ""} — {a.email || "pas d'email"}
-                </CommandItem>
-              ))}
-            </CommandGroup>
+            {search.trim().length < 2 ? (
+              <CommandEmpty>Tapez au moins 2 lettres pour rechercher.</CommandEmpty>
+            ) : filtered.length === 0 ? (
+              <CommandEmpty>Aucun élève trouvé.</CommandEmpty>
+            ) : (
+              <CommandGroup heading={`${filtered.length} résultat(s)`}>
+                {filtered.slice(0, 50).map((a) => (
+                  <CommandItem
+                    key={a.id}
+                    value={a.id}
+                    onSelect={() => { onSelect(a.id); setOpen(false); setSearch(""); }}
+                  >
+                    <Check className={cn("mr-2 h-4 w-4", selectedId === a.id ? "opacity-100" : "opacity-0")} />
+                    {a.prenom} {a.nom} {a.type_apprenant ? `(${a.type_apprenant})` : ""} — {a.email || "pas d'email"}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
           </CommandList>
         </Command>
       </PopoverContent>
@@ -98,12 +111,22 @@ export default function ApprenantActivityReport({ onBack }: Props) {
   // Load apprenants list
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase
-        .from("apprenants")
-        .select("id, nom, prenom, email, type_apprenant, formation_choisie")
-        .not("auth_user_id", "is", null)
-        .order("nom");
-      setApprenants((data as Apprenant[]) || []);
+      let all: Apprenant[] = [];
+      let from = 0;
+      const PAGE = 1000;
+      while (true) {
+        const { data } = await supabase
+          .from("apprenants")
+          .select("id, nom, prenom, email, type_apprenant, formation_choisie")
+          .not("auth_user_id", "is", null)
+          .order("nom")
+          .range(from, from + PAGE - 1);
+        const batch = (data as Apprenant[]) || [];
+        all = all.concat(batch);
+        if (batch.length < PAGE) break;
+        from += PAGE;
+      }
+      setApprenants(all);
     };
     load();
   }, []);
