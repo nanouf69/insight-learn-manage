@@ -274,6 +274,8 @@ const Index = () => {
         return <CoursEnLignePage />;
       case "fournisseurs":
         return <FournisseursPage />;
+      case "corbeille":
+        return <ApprenantsCorbeille />;
       case "settings":
         return <SettingsPage />;
       default:
