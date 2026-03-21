@@ -426,9 +426,9 @@ export function ApprenantsList() {
       <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog(prev => ({ ...prev, open }))}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer cet apprenant ?</AlertDialogTitle>
+            <AlertDialogTitle>Déplacer vers la corbeille ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer <strong>{deleteDialog.name}</strong> ? Cette action est irréversible.
+              <strong>{deleteDialog.name}</strong> sera déplacé dans la corbeille. Vous pourrez le restaurer ultérieurement.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
