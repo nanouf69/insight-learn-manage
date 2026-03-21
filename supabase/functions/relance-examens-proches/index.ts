@@ -157,12 +157,8 @@ serve(async (req) => {
         const daysUntilExam = Math.ceil((examDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
         const formation = (apprenant.type_apprenant || apprenant.formation_choisie || "").toUpperCase();
 
-        const authorizedModules: number[] = apprenant.modules_autorises || [];
-        const completed = completionMap.get(apprenant.id) || new Set();
-        const completedCount = authorizedModules.filter((m: number) => completed.has(m)).length;
-        const totalModules = authorizedModules.length;
-        const pct = Math.round((completedCount / totalModules) * 100);
-        const remaining = totalModules - completedCount;
+
+
 
         const examDateFormatted = examDate.toLocaleDateString("fr-FR", {
           weekday: "long", day: "numeric", month: "long", year: "numeric",
@@ -184,7 +180,7 @@ serve(async (req) => {
                   Votre examen théorique <strong>${formation}</strong> est prévu le <strong>${examDateFormatted}</strong>.
                 </p>
                 <p style="font-size: 16px; color: #1f2937; line-height: 1.6;">
-                  Or, vous n'avez complété que <strong>${pct}%</strong> de vos modules (<strong>${completedCount}/${totalModules}</strong>). Il vous reste encore <strong>${remaining} module${remaining > 1 ? "s" : ""}</strong> à terminer.
+                  Vous n'avez pas encore terminé tous vos modules de formation. Il est urgent de les compléter avant le jour de l'examen.
                 </p>
               </div>
 
@@ -230,7 +226,7 @@ serve(async (req) => {
           </div>
         `;
 
-        const subject = `⚠️ ${prenom}, votre examen approche dans ${daysUntilExam} jours – ${pct}% des modules complétés !`;
+        const subject = `⚠️ ${prenom}, votre examen approche dans ${daysUntilExam} jours – Terminez vos modules !`;
 
         const sendUrl = `https://graph.microsoft.com/v1.0/users/${senderEmail}/sendMail`;
         const sendRes = await fetch(sendUrl, {
@@ -253,7 +249,7 @@ serve(async (req) => {
           await supabaseAdmin.from("emails").insert({
             apprenant_id: apprenant.id,
             subject,
-            body_preview: `Votre examen ${formation} est dans ${daysUntilExam} jours et vous n'avez complété que ${pct}% de vos modules.`,
+            body_preview: `Votre examen ${formation} est dans ${daysUntilExam} jours. Terminez vos modules de formation au plus vite !`,
             body_html: emailBody,
             sender_email: senderEmail,
             recipients: [apprenant.email],
