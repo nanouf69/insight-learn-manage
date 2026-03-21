@@ -390,6 +390,7 @@ export type Database = {
           date_formation_catalogue: string | null
           date_naissance: string | null
           date_paiement: string | null
+          deleted_at: string | null
           documents_complets: boolean | null
           email: string | null
           formation_choisie: string | null
@@ -434,6 +435,7 @@ export type Database = {
           date_formation_catalogue?: string | null
           date_naissance?: string | null
           date_paiement?: string | null
+          deleted_at?: string | null
           documents_complets?: boolean | null
           email?: string | null
           formation_choisie?: string | null
@@ -478,6 +480,7 @@ export type Database = {
           date_formation_catalogue?: string | null
           date_naissance?: string | null
           date_paiement?: string | null
+          deleted_at?: string | null
           documents_complets?: boolean | null
           email?: string | null
           formation_choisie?: string | null
