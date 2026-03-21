@@ -439,7 +439,7 @@ export function ApprenantsList() {
               disabled={deleteMutation.isPending}
             >
               {deleteMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-              Supprimer
+              Mettre à la corbeille
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
