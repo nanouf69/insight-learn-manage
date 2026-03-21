@@ -230,7 +230,7 @@ serve(async (req) => {
           </div>
         `;
 
-        const subject = `⚠️ ${prenom}, votre examen approche dans ${daysUntilExam} jours – ${pct}% des modules complétés !`;
+        const subject = `⚠️ ${prenom}, votre examen approche dans ${daysUntilExam} jours – Terminez vos modules !`;
 
         const sendUrl = `https://graph.microsoft.com/v1.0/users/${senderEmail}/sendMail`;
         const sendRes = await fetch(sendUrl, {
