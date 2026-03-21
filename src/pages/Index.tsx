@@ -24,6 +24,7 @@ import { AgendaView } from "@/components/agenda/AgendaView";
 import { ExamenReussitePage } from "@/components/examens/ExamenReussitePage";
 import CoursEnLignePage from "@/components/cours-en-ligne/CoursEnLignePage";
 import { FournisseursPage } from "@/components/fournisseurs/FournisseursPage";
+import { ApprenantsCorbeille } from "@/components/apprenants/ApprenantsCorbeille";
 import { FournisseurInvoiceAlerts } from "@/components/dashboard/FournisseurInvoiceAlerts";
 import { SmallTransfersTable } from "@/components/dashboard/SmallTransfersTable";
 import { GraduationCap, Users, ArrowDownCircle, ArrowUpCircle, Menu, X, Send, Loader2 } from "lucide-react";
