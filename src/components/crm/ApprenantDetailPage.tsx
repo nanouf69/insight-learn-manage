@@ -265,6 +265,8 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
   const [activeTab, setActiveTab] = useState("infos");
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showSoftDeleteDialog, setShowSoftDeleteDialog] = useState(false);
+  const [softDeleting, setSoftDeleting] = useState(false);
   const [selectedFormationForModules, setSelectedFormationForModules] = useState("");
   const [selectedFormationForAccount, setSelectedFormationForAccount] = useState("");
   const [accountStartDate, setAccountStartDate] = useState("");
