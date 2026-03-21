@@ -308,7 +308,7 @@ export function ApprenantsList() {
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('apprenants')
-        .delete()
+        .update({ deleted_at: new Date().toISOString() } as any)
         .eq('id', id);
       
       if (error) throw error;
