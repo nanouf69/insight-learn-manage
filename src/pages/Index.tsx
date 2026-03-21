@@ -51,6 +51,7 @@ const pageConfig = {
   bpf: { title: "BPF", subtitle: "Bilan Pédagogique et Financier" },
   "cours-en-ligne": { title: "Cours en ligne", subtitle: "Gérez vos formations e-learning" },
   fournisseurs: { title: "Fournisseurs", subtitle: "Gérez vos fournisseurs et leurs espaces" },
+  corbeille: { title: "Corbeille", subtitle: "Apprenants supprimés — restaurer ou supprimer définitivement" },
 };
 
 const fmt = (n: number) =>
