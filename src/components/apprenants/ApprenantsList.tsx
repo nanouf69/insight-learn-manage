@@ -295,6 +295,7 @@ export function ApprenantsList() {
       const { data, error } = await supabase
         .from('apprenants')
         .select('*')
+        .is('deleted_at' as any, null)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
