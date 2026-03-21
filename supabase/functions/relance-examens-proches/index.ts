@@ -157,12 +157,8 @@ serve(async (req) => {
         const daysUntilExam = Math.ceil((examDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
         const formation = (apprenant.type_apprenant || apprenant.formation_choisie || "").toUpperCase();
 
-        const authorizedModules: number[] = apprenant.modules_autorises || [];
-        const completed = completionMap.get(apprenant.id) || new Set();
-        const completedCount = authorizedModules.filter((m: number) => completed.has(m)).length;
-        const totalModules = authorizedModules.length;
-        const pct = Math.round((completedCount / totalModules) * 100);
-        const remaining = totalModules - completedCount;
+
+
 
         const examDateFormatted = examDate.toLocaleDateString("fr-FR", {
           weekday: "long", day: "numeric", month: "long", year: "numeric",
