@@ -295,6 +295,7 @@ export function ApprenantsList() {
       const { data, error } = await supabase
         .from('apprenants')
         .select('*')
+        .is('deleted_at' as any, null)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -307,14 +308,15 @@ export function ApprenantsList() {
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('apprenants')
-        .delete()
+        .update({ deleted_at: new Date().toISOString() } as any)
         .eq('id', id);
       
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['apprenants'] });
-      toast.success(`${deleteDialog.name} a été supprimé`);
+      queryClient.invalidateQueries({ queryKey: ['apprenants-corbeille'] });
+      toast.success(`${deleteDialog.name} a été déplacé dans la corbeille`);
       setDeleteDialog({ open: false, id: null, name: "" });
     },
     onError: (error) => {
@@ -424,9 +426,9 @@ export function ApprenantsList() {
       <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog(prev => ({ ...prev, open }))}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer cet apprenant ?</AlertDialogTitle>
+            <AlertDialogTitle>Déplacer vers la corbeille ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer <strong>{deleteDialog.name}</strong> ? Cette action est irréversible.
+              <strong>{deleteDialog.name}</strong> sera déplacé dans la corbeille. Vous pourrez le restaurer ultérieurement.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -437,7 +439,7 @@ export function ApprenantsList() {
               disabled={deleteMutation.isPending}
             >
               {deleteMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-              Supprimer
+              Mettre à la corbeille
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

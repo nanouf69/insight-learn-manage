@@ -17,7 +17,8 @@ import {
   ClipboardCheck,
   Truck,
   Monitor,
-  Package
+  Package,
+  Trash2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -46,6 +47,7 @@ const menuItems = [
   { id: "bpf", label: "BPF", icon: ClipboardList },
   { id: "cours-en-ligne", label: "Cours en ligne", icon: Monitor },
   { id: "fournisseurs", label: "Fournisseurs", icon: Package },
+  { id: "corbeille", label: "Corbeille", icon: Trash2 },
 ];
 
 export function Sidebar({ currentPage, onNavigate, collapsed = false, onToggleCollapse }: SidebarProps) {
