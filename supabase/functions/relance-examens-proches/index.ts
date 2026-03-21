@@ -253,7 +253,7 @@ serve(async (req) => {
           await supabaseAdmin.from("emails").insert({
             apprenant_id: apprenant.id,
             subject,
-            body_preview: `Votre examen ${formation} est dans ${daysUntilExam} jours et vous n'avez complété que ${pct}% de vos modules.`,
+            body_preview: `Votre examen ${formation} est dans ${daysUntilExam} jours. Terminez vos modules de formation au plus vite !`,
             body_html: emailBody,
             sender_email: senderEmail,
             recipients: [apprenant.email],
