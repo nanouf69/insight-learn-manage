@@ -111,12 +111,22 @@ export default function ApprenantActivityReport({ onBack }: Props) {
   // Load apprenants list
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase
-        .from("apprenants")
-        .select("id, nom, prenom, email, type_apprenant, formation_choisie")
-        .not("auth_user_id", "is", null)
-        .order("nom");
-      setApprenants((data as Apprenant[]) || []);
+      let all: Apprenant[] = [];
+      let from = 0;
+      const PAGE = 1000;
+      while (true) {
+        const { data } = await supabase
+          .from("apprenants")
+          .select("id, nom, prenom, email, type_apprenant, formation_choisie")
+          .not("auth_user_id", "is", null)
+          .order("nom")
+          .range(from, from + PAGE - 1);
+        const batch = (data as Apprenant[]) || [];
+        all = all.concat(batch);
+        if (batch.length < PAGE) break;
+        from += PAGE;
+      }
+      setApprenants(all);
     };
     load();
   }, []);
