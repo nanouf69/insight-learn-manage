@@ -315,7 +315,8 @@ export function ApprenantsList() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['apprenants'] });
-      toast.success(`${deleteDialog.name} a été supprimé`);
+      queryClient.invalidateQueries({ queryKey: ['apprenants-corbeille'] });
+      toast.success(`${deleteDialog.name} a été déplacé dans la corbeille`);
       setDeleteDialog({ open: false, id: null, name: "" });
     },
     onError: (error) => {
