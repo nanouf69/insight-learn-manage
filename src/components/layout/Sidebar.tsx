@@ -17,7 +17,8 @@ import {
   ClipboardCheck,
   Truck,
   Monitor,
-  Package
+  Package,
+  Trash2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
