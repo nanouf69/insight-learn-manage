@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { filterFutureExamDates, filterFutureDateStrings } from "@/lib/filterPastDates";
+import { ALL_DATES_EXAMEN_REUSSITE, ALL_DATES_EXAMEN_PRATIQUE_NO_ACCENT } from '@/lib/examDatesConfig';
 import { safeDateParse, formatDateFR, formatDateShortFR } from "@/lib/safeDateParse";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
