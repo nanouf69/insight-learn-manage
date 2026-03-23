@@ -1550,6 +1550,29 @@ function EcranResultats({
     };
   });
 
+  // Auto-save recalculated scores to DB when viewing saved results
+  useEffect(() => {
+    if (!isViewingSaved || !apprenantId || !examen) return;
+    const quizType = examen.id?.startsWith("taxi") ? "examen_blanc_taxi" : "examen_blanc";
+    resultatsAvecIA.forEach(async (r, mi) => {
+      const matiere = examen.matieres[mi];
+      if (!matiere) return;
+      const safeMax = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
+      const noteSur20 = normalizeNoteSur20(r.noteObtenue, safeMax);
+      await supabase
+        .from("apprenant_quiz_results" as any)
+        .update({
+          score_obtenu: r.noteObtenue,
+          note_sur_20: noteSur20,
+          reussi: r.admis,
+        } as any)
+        .eq("apprenant_id", apprenantId)
+        .eq("quiz_id", examen.id)
+        .eq("quiz_type", quizType)
+        .eq("matiere_id", matiere.id);
+    });
+  }, [isViewingSaved, resultatsAvecIA.map(r => r.noteObtenue).join(",")]);
+
   const totalCoef = resultatsAvecIA.reduce((acc, r) => acc + (r.coefficient || 1), 0) || 1;
   const noteGlobaleBrute = resultatsAvecIA.reduce((acc, r) => {
     return acc + normalizeNoteSur20(r.noteObtenue, r.maxPoints) * (r.coefficient || 1);
