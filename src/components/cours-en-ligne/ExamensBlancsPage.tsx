@@ -547,7 +547,12 @@ function PassageMatiere({
               <Badge variant={question?.type === "QRC" ? "secondary" : "outline"} className="shrink-0 mt-0.5">
                 {question?.type || "QCM"}
               </Badge>
-              <p className="font-medium leading-relaxed">{question?.enonce || "Question indisponible"}</p>
+              <div>
+                <p className="font-medium leading-relaxed">{question?.enonce || "Question indisponible"}</p>
+                {question?.image && (
+                  <img src={question.image} alt="Illustration de la question" className="mt-3 max-h-40 rounded-lg border" />
+                )}
+              </div>
             </div>
             <Badge variant="outline" className="shrink-0 text-xs font-semibold text-primary border-primary/40">
               {getPointsParQuestion(matiere.id, question?.type || "QCM")} pt{getPointsParQuestion(matiere.id, question?.type || "QCM") > 1 ? "s" : ""}
