@@ -129,32 +129,56 @@ function evaluateQrcDeterministic(question: Question, response: unknown, pointsQ
   }
 
   const normalizedResponse = normalizeAnswerText(responseRaw);
-  const expectedTokens = Array.from(
+
+  // Build keyword list from reponses_possibles (each entry = one keyword/element)
+  const expectedKeywords = Array.from(
     new Set(
-      (question.reponses_possibles || [question.reponseQRC || ""])
+      (question.reponses_possibles || [])
         .map((token) => normalizeAnswerText(token))
         .filter(Boolean)
     )
   );
 
-  if (expectedTokens.length === 0) {
+  // Fallback: if no reponses_possibles, use reponseQRC as a single block
+  if (expectedKeywords.length === 0) {
+    const fallbackToken = normalizeAnswerText(question.reponseQRC || "");
+    if (!fallbackToken) {
+      return {
+        estCorrect: false,
+        pointsObtenus: 0,
+        nombrefautes: 0,
+        explication: "Réponse attendue indisponible pour cette question.",
+      };
+    }
+    const isMatch = normalizedResponse.includes(fallbackToken);
     return {
-      estCorrect: false,
-      pointsObtenus: 0,
+      estCorrect: isMatch,
+      pointsObtenus: isMatch ? maxPoints : 0,
       nombrefautes: 0,
-      explication: "Réponse attendue indisponible pour cette question.",
+      explication: isMatch
+        ? "Réponse correcte."
+        : "Réponse incorrecte.",
     };
   }
 
-  const matched = expectedTokens.filter((token) => normalizedResponse.includes(token)).length;
-  const ratio = expectedTokens.length > 0 ? matched / expectedTokens.length : 0;
-  const points = clampToQuestionMax(Math.round(ratio * maxPoints * 10) / 10, maxPoints);
+  // Count how many expected keywords are found in the student's answer
+  const matched = expectedKeywords.filter((kw) => normalizedResponse.includes(kw)).length;
+  const total = expectedKeywords.length;
+
+  // Rule: 3+ correct elements = full points; otherwise proportional
+  const MIN_FOR_FULL_POINTS = 3;
+  const gotFullPoints = matched >= MIN_FOR_FULL_POINTS;
+  const points = gotFullPoints
+    ? maxPoints
+    : clampToQuestionMax(Math.round((matched / Math.min(total, MIN_FOR_FULL_POINTS)) * maxPoints * 10) / 10, maxPoints);
 
   return {
-    estCorrect: matched >= expectedTokens.length,
+    estCorrect: gotFullPoints,
     pointsObtenus: points,
     nombrefautes: 0,
-    explication: `Correction déterministe : ${matched}/${expectedTokens.length} élément(s) attendu(s) trouvés.`,
+    explication: gotFullPoints
+      ? `Correction déterministe : ${matched}/${total} élément(s) trouvés — totalité des points attribuée (≥${MIN_FOR_FULL_POINTS}).`
+      : `Correction déterministe : ${matched}/${total} élément(s) attendu(s) trouvés.`,
   };
 }
 

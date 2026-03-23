@@ -983,6 +983,7 @@ const eb1Matieres: Matiere[] = [
         type: "QRC",
         enonce: "Je me fais contrôler sur la route quels documents communs aux trois professions dois-je présenter aux forces de l'ordre ? (QRC)",
         reponseQRC: "Le permis de conduire. La carte professionnelle. L'attestation de formation continue. Certificat médical. L'attestation d'assurance du véhicule. Attestation de responsabilité civile professionnelle (RCP - Transport de personnes à titre onéreux).",
+        reponses_possibles: ["permis de conduire", "carte professionnelle", "attestation de formation", "certificat médical", "assurance", "responsabilité civile"],
       },
       {
         id: 2,
@@ -2151,6 +2152,7 @@ const eb2Matieres: Matiere[] = [
         type: "QRC",
         enonce: "Je me fais contrôler sur la route quels documents communs aux trois professions dois-je présenter aux forces de l'ordre ? (QRC)",
         reponseQRC: "Le permis de conduire. La carte professionnelle en cours de validité. L'attestation de formation continue. Certificat médical. L'attestation d'assurance du véhicule. Attestation de responsabilité civile professionnelle (RCP - Transport de personnes à titre onéreux).",
+        reponses_possibles: ["permis de conduire", "carte professionnelle", "attestation de formation", "certificat médical", "assurance", "responsabilité civile"],
       },
       {
         id: 6,
