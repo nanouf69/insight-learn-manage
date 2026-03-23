@@ -2603,7 +2603,8 @@ const eb2Matieres: Matiere[] = [
       {
         id: 16,
         type: "QCM",
-        enonce: "Ce panneau indique qu’à la prochaine intersection [Une image contenant Panneau de signalisation, symbole, signalisation, ligne Le contenu généré par l’IA peut être incorrect.]",
+        enonce: "Ce panneau indique qu'à la prochaine intersection :",
+        image: "/cours/examens/panneau-intersection-priorite-droite.png",
         choix: [
           { lettre: "A", texte: "Je devrais cédez la priorité à droite" , correct: true },
           { lettre: "B", texte: "Je devrais cédez la priorité à gauche" },
