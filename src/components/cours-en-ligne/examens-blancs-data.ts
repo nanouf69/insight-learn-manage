@@ -1828,7 +1828,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "Pas de vacances" },
           { lettre: "B", texte: "Pas de vacanciers" },
-          { lettre: "C", texte: "Complet" },
+          { lettre: "C", texte: "Complet", correct: true },
         ],
       },
       {
