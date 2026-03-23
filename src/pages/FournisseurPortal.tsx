@@ -44,10 +44,18 @@ const datesFormations = {
 };
 
 // Dates centralisées
-import { ALL_DATES_EXAMEN_THEORIQUE_SHORT, ALL_DATES_EXAMEN_PRATIQUE, ALL_DATES_FORMATION_CONTINUE } from '@/lib/examDatesConfig';
+import { ALL_DATES_EXAMEN_THEORIQUE_SHORT, ALL_DATES_EXAMEN_PRATIQUE } from '@/lib/examDatesConfig';
 const datesExamenTheorique = filterFutureExamDates(ALL_DATES_EXAMEN_THEORIQUE_SHORT);
 const datesExamenPratique = filterFutureDateStrings(ALL_DATES_EXAMEN_PRATIQUE);
-const datesFormationContinue = filterFutureDateStrings(ALL_DATES_FORMATION_CONTINUE);
+const datesFormationContinue = filterFutureDateStrings([
+  "26 et 27 mai 2026",
+  "23 et 24 juin 2026",
+  "21 et 22 juillet 2026",
+  "29 et 30 septembre 2026",
+  "28 et 29 octobre 2026",
+  "17 et 18 novembre 2026",
+  "23 et 24 décembre 2026",
+]);
 
 const prixFormations: Record<string, string> = {
   "vtc": "1099", "vtc-exam": "1599", "taxi": "1299", "taxi-exam": "1799",

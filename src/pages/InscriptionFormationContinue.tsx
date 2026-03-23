@@ -16,9 +16,12 @@ import {
 } from "@/components/ui/select";
 import logoFtransport from "@/assets/logo-ftransport.png";
 
-// Dates centralisées
-import { ALL_DATES_INSCRIPTION_CONTINUE } from '@/lib/examDatesConfig';
-const datesFormationContinue = filterFutureByFin(ALL_DATES_INSCRIPTION_CONTINUE);
+// Dates de formation continue disponibles
+const datesFormationContinue = filterFutureByFin([
+  { value: "2026-06-29", label: "29 - 30 juin 2026", fin: "2026-06-30" },
+  { value: "2026-09-07", label: "7 - 8 septembre 2026", fin: "2026-09-08" },
+  { value: "2026-11-02", label: "2 - 3 novembre 2026", fin: "2026-11-03" },
+]);
 
 type FormationType = "vtc" | "taxi";
 
