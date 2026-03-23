@@ -7049,7 +7049,8 @@ const eb6Matieres: Matiere[] = [
       {
         id: 13,
         type: "QCM",
-        enonce: "Je vais rencontrer [Une image contenant symbole, cercle, Graphique, logo Le contenu généré par l’IA peut être incorrect.] :",
+        enonce: "Je vais rencontrer :",
+        image: "/cours/examens/panneau-stationnement-payant.png",
         choix: [
           { lettre: "A", texte: "une zone où l’arrêt est formellement interdit" },
           { lettre: "B", texte: "une zone de stationnement payant et limité" },
