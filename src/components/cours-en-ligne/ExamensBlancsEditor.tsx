@@ -484,13 +484,18 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
   const examenSel = examens.find(e => e.id === examenSelId) || null;
 
   const handleMatiereChange = (matiereId: string, updated: Matiere) => {
-    setExamens(prev => prev.map(ex => {
-      if (ex.id !== examenSelId) return ex;
-      return {
-        ...ex,
-        matieres: ex.matieres.map(m => m.id === matiereId ? updated : m),
-      };
-    }));
+    setExamens(prev => {
+      const next = prev.map(ex => {
+        if (ex.id !== examenSelId) return ex;
+        return {
+          ...ex,
+          matieres: ex.matieres.map(m => m.id === matiereId ? updated : m),
+        };
+      });
+      // After any edit, sync VTC → TAXI common matières
+      syncVtcTaxiMatieres(next);
+      return next;
+    });
   };
 
   // Load saved data from DB on mount
