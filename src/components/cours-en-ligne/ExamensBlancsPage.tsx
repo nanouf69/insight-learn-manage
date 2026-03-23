@@ -1947,26 +1947,9 @@ export default function ExamensBlancsPage({
         const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
          const donnees = (Array.isArray(rep) ? (rep as string[]) : []).sort();
          correct = JSON.stringify(correctes) === JSON.stringify(donnees);
-       } else if (q?.type === "QRC") {
-        if (isCalculQuestion(q)) {
-          // Calcul question: check result + detail
-           const repStr = safeStr(rep).replace(/\s/g, "").toLowerCase();
-          const hasResult = (q.reponses_possibles || []).some(r => repStr.includes(r.replace(/\s/g, "").toLowerCase()));
-          const hasCalcDetail = /\d+\s*[\/×x\*\-\+]\s*\d+/.test(safeStr(rep)) || /=\s*\d/.test(safeStr(rep));
-          if (hasResult && hasCalcDetail) totalPoints += pts;
-          else if (hasResult) totalPoints += Math.round(pts * 5) / 10;
-          // else 0
-        } else {
-          const repStr = safeStr(rep).toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
-          const motsCles = q.reponses_possibles || [];
-          let nbTrouvees = 0;
-          motsCles.forEach(mc => {
-            const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
-            if (repStr.includes(mcN)) nbTrouvees++;
-          });
-          const ratio = motsCles.length > 0 ? nbTrouvees / motsCles.length : 0;
-          totalPoints += Math.round(ratio * pts * 10) / 10;
-        }
+      } else if (q?.type === "QRC") {
+        const correction = evaluateQrcDeterministic(q, rep, pts);
+        totalPoints += correction.pointsObtenus;
         return; // prorata already added, skip the correct check below
       }
       if (correct) totalPoints += pts;
