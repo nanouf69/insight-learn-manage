@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   ArrowLeft, ArrowRight, Clock, CheckCircle2, XCircle, AlertTriangle,
-  FileText, Timer, Trophy, RotateCcw, ChevronRight, BookOpen, Pencil, Loader2, Bot, Calculator, X
+  FileText, Timer, Trophy, RotateCcw, ChevronRight, BookOpen, Pencil, Loader2, Bot, Calculator, X, Ban
 } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, isCalculQuestion, type ExamenBlanc, type Matiere, type Question } from "./examens-blancs-data";
 import { loadSavedExamens, EXAMEN_BLANC_MODULE_BASE } from "./ExamensBlancsEditor";
@@ -597,6 +597,7 @@ function PassageMatiere({
   const [initialLoaded, setInitialLoaded] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [showCalculator, setShowCalculator] = useState(false);
+  const [showInterruptConfirm, setShowInterruptConfirm] = useState(false);
   const isGestion = matiere.id === "gestion" || matiere.id === "bilan_gestion";
   const saveStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -1020,6 +1021,57 @@ function PassageMatiere({
           </Button>
         )}
       </div>
+
+      {/* Bouton interrompre l'épreuve */}
+      <div className="flex justify-start">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowInterruptConfirm(true)}
+          className="gap-2 text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+        >
+          <Ban className="w-4 h-4" />
+          Interrompre l'épreuve
+        </Button>
+      </div>
+
+      {/* Modal confirmation interruption */}
+      {showInterruptConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <Card className="w-full max-w-md mx-4 shadow-2xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="w-5 h-5" />
+                Interrompre l'épreuve
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Êtes-vous sûr de vouloir interrompre cette épreuve ? Les questions non répondues seront comptées comme <strong>fausses (0 point)</strong>. L'apprenant passera directement à la matière suivante.
+              </p>
+              <div className="text-sm font-medium bg-destructive/10 text-destructive rounded-lg px-3 py-2">
+                ⚠️ {questionsSafe.filter(q => !isQuestionAnswered(q)).length} question(s) non répondue(s) sur {questionsSafe.length}
+              </div>
+              <div className="flex gap-3 justify-end">
+                <Button variant="outline" onClick={() => setShowInterruptConfirm(false)}>
+                  Annuler
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    setShowInterruptConfirm(false);
+                    onTerminer(reponses);
+                  }}
+                  className="gap-2"
+                >
+                  <Ban className="w-4 h-4" />
+                  Confirmer l'interruption
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Calculatrice flottante pour Gestion */}
       {isGestion && showCalculator && (
