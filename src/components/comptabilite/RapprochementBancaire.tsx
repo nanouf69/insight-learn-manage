@@ -701,7 +701,7 @@ export function RapprochementBancaire() {
             <FileText className="h-12 w-12 text-muted-foreground/30" />
             <p className="text-muted-foreground font-medium">
               {transactions.length === 0
-                ? "Importez votre relevé CSV BNP pour commencer le rapprochement"
+                ? "Importez votre relevé CSV (BNP ou Revolut) pour commencer le rapprochement"
                 : "Aucune transaction ne correspond aux filtres"}
             </p>
           </CardContent>
