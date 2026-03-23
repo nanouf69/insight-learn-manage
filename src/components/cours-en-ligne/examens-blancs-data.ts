@@ -6073,6 +6073,32 @@ const eb5Matieres: Matiere[] = [
     coefficient: 2,
     noteEliminatoire: 5,
     noteSur: 24,
+    texteSupport: `Gros fail et design douteux... Elon Musk présente le «cybertruck» 100% électrique de Tesla
+
+BLADE RUNNER Cet engin électrique est censé résister à toute attaque extérieure (mais n'a pas résisté pendant le show)
+
+Lignes (très) épurées et inox mat pour le nouveau véhicule Tesla. Elon Musk fait un bond dans le futur en présentant jeudi soir près de Los Angeles son étrange «cybertruck», moitié véhicule blindé, moitié avion furtif et 100 % électrique. Un show à l'américaine.. qui ne s'est pas déroulé comme prévu.
+
+Elon Musk avait prévenu: son véhicule aurait une allure «futuriste» et «cyberpunk» inspirée par Blade Runner, le film de science-fiction de Ridley Scott.
+
+«Il ne ressemble à rien d'autre», a résumé fièrement le PDG de Tesla sur scène, désignant son pick-up massif aux lignes angulaires lors d'un show dans le centre de design du constructeur à Hawthorne (Californie). Un design rapidement moqué sur les réseaux sociaux.
+
+Résistant.. mais pas trop
+
+A défaut d'arborer un design élégant, le «cybertruck» affiche sur le papier des performances impressionnantes, abondamment vantées par Elon Musk avec des démonstrations impliquant des coups de masse, des jets de boules en acier, voire des tirs d'arme à feu, ceux-là enregistrés en vidéo pour raisons de sécurité.
+
+«C'est littéralement résistant aux balles de pistolet calibre 9 mm», a-t-il assuré. «C'est un alliage en acier inoxydable ultrarésistant que nous avons développé. Nous allons utiliser le même alliage pour la fusée spatiale que pour le "cybertruck"», a lancé Elon Musk en référence à l'activité de SpaceX, dont il est aussi le fondateur et le PDG.
+
+Problème: lors de l'essai de l'envoi d'une balle d'acier sur scène, la démonstration rate, et la vitre du prototype casse (sans toutefois exploser). Rires dans la salle, sourire gêné pour Elon Musk. «Oh my f**king God. Bon... Peut-être que c'était un peu trop violent. On va arranger ça en post-production», blague le milliardaire.
+
+Moins de 50.000 dollars
+
+Le futur pickup de Tesla aura six places, pourra emporter plus de 1,5 tonne et sera capable de tracter sept tonnes, a-t-il détaillé. Le «cybertruck» sera décliné en trois modèles, 39.900 dollars et 400 km d'autonomie pour l'entrée de gamme, jusqu'à 69.900 dollars et 800 km d'autonomie annoncée pour le modèle supérieur. Et il pourra passer de 0 à 100 km/h en environ trois secondes, s'est réjoui le fantasque patron de Tesla.
+
+Elon Musk avait promis que son fameux pick-up coûterait moins de 50.000 dollars, un prix dans la moyenne pour cette catégorie de véhicules, et qu'il surpasserait les performances du Ford F-150, numéro un aux Etats-Unis sur ce segment depuis longtemps.
+
+Certains experts estiment que le pick-up électrique Tesla aura du mal à séduire la clientèle traditionnelle pour ce type d'engins. «Même si le pick-up de Tesla ne séduit pas les amateurs habituels du F-150, il n'en a pas forcément besoin», relevait Jessica Caldwell, directrice de la prospective pour le guide automobile Ens, dans une déclaration transmise avant la présentation. «Si le pickup Tesla n'était pas un peu polémique, ce ne serait pas une Tesla», a-t-elle ajouté.`,
+    texteSource: "Article de presse — Présentation du Cybertruck Tesla",
     questions: [
       {
         id: 1,
