@@ -1989,6 +1989,7 @@ export default function ExamensBlancsPage({
       setPhase("transition");
       persistExamSession("examen", examenChoisi.id, nextIndex, newResultats);
     } else {
+      setIsViewingSavedResults(false);
       setPhase("resultats");
       persistExamSession("resultats", null, 0); // Clear session
       // Save results to database
