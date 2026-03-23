@@ -64,6 +64,20 @@ const MODULE_TO_MATIERE: Record<number, string> = {
   8: "Pratique VTC",
 };
 
+const normalizeQuizNoteSur20 = (result: QuizResult): number | null => {
+  const score = Number(result.score_obtenu ?? 0);
+  const max = Number(result.score_max ?? 0);
+  if (Number.isFinite(max) && max > 0) {
+    const safeScore = Math.min(Math.max(Number.isFinite(score) ? score : 0, 0), max);
+    return Number(((safeScore / max) * 20).toFixed(1));
+  }
+
+  if (result.note_sur_20 == null) return null;
+  const fallback = Number(result.note_sur_20);
+  if (!Number.isFinite(fallback)) return null;
+  return Number(Math.min(Math.max(fallback, 0), 20).toFixed(1));
+};
+
 const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: NotesViewProps) => {
   const [quizResults, setQuizResults] = useState<QuizResult[]>([]);
   const [moduleCompletions, setModuleCompletions] = useState<ModuleCompletion[]>(moduleCompletionsSeed);
@@ -124,7 +138,8 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
     const allScores: { score: number; max: number }[] = [];
     
     quizResults.forEach(r => {
-      if (r.note_sur_20 != null) allScores.push({ score: r.note_sur_20, max: 20 });
+      const noteSur20 = normalizeQuizNoteSur20(r);
+      if (noteSur20 != null) allScores.push({ score: noteSur20, max: 20 });
     });
     moduleCompletions.forEach(m => {
       if (m.score_obtenu != null && m.score_max != null && m.score_max > 0) {
@@ -245,8 +260,9 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
     });
 
     quizResults.forEach(r => {
-      if (r.note_sur_20 != null) {
-        all.push({ date: new Date(r.completed_at), pct: r.note_sur_20, titre: r.quiz_titre });
+      const noteSur20 = normalizeQuizNoteSur20(r);
+      if (noteSur20 != null) {
+        all.push({ date: new Date(r.completed_at), pct: noteSur20, titre: r.quiz_titre });
       }
     });
 
@@ -539,26 +555,31 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
                 <div className="col-span-2 text-center">Date</div>
               </div>
               {quizResults.slice().reverse().map((r) => (
-                <div key={r.id} className="grid grid-cols-1 md:grid-cols-12 gap-2 px-6 py-3 border-b last:border-b-0 hover:bg-slate-50/50 transition-colors items-center text-sm">
-                  <div className="md:col-span-3 font-medium text-slate-800">{r.quiz_titre}</div>
-                  <div className="md:col-span-2 text-slate-500 text-xs">{r.matiere_nom || "—"}</div>
-                  <div className="md:col-span-2 text-center">
-                    <span className={`font-bold ${(r.note_sur_20 ?? 0) >= 10 ? "text-emerald-600" : "text-red-500"}`}>
-                      {r.note_sur_20?.toFixed(1) ?? "—"}/20
-                    </span>
-                  </div>
-                  <div className="md:col-span-2 text-center">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${r.reussi ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
-                      {r.reussi ? "✅ Réussi" : "❌ Échoué"}
-                    </span>
-                  </div>
-                  <div className="md:col-span-1 text-center text-xs text-slate-500">
-                    {r.duree_secondes ? formatDuration(r.duree_secondes) : "—"}
-                  </div>
-                  <div className="md:col-span-2 text-center text-xs text-slate-500">
-                    {format(new Date(r.completed_at), "dd/MM/yyyy HH:mm", { locale: fr })}
-                  </div>
-                </div>
+                (() => {
+                  const noteSur20 = normalizeQuizNoteSur20(r);
+                  return (
+                    <div key={r.id} className="grid grid-cols-1 md:grid-cols-12 gap-2 px-6 py-3 border-b last:border-b-0 hover:bg-slate-50/50 transition-colors items-center text-sm">
+                      <div className="md:col-span-3 font-medium text-slate-800">{r.quiz_titre}</div>
+                      <div className="md:col-span-2 text-slate-500 text-xs">{r.matiere_nom || "—"}</div>
+                      <div className="md:col-span-2 text-center">
+                        <span className={`font-bold ${(noteSur20 ?? 0) >= 10 ? "text-emerald-600" : "text-red-500"}`}>
+                          {noteSur20 != null ? `${noteSur20.toFixed(1)}/20` : "—"}
+                        </span>
+                      </div>
+                      <div className="md:col-span-2 text-center">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${r.reussi ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
+                          {r.reussi ? "✅ Réussi" : "❌ Échoué"}
+                        </span>
+                      </div>
+                      <div className="md:col-span-1 text-center text-xs text-slate-500">
+                        {r.duree_secondes ? formatDuration(r.duree_secondes) : "—"}
+                      </div>
+                      <div className="md:col-span-2 text-center text-xs text-slate-500">
+                        {format(new Date(r.completed_at), "dd/MM/yyyy HH:mm", { locale: fr })}
+                      </div>
+                    </div>
+                  );
+                })()
               ))}
             </>
           )}
