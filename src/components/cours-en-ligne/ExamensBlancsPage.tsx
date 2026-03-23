@@ -596,6 +596,8 @@ function PassageMatiere({
   const [expire, setExpire] = useState(false);
   const [initialLoaded, setInitialLoaded] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [showCalculator, setShowCalculator] = useState(false);
+  const isGestion = matiere.id === "gestion" || matiere.id === "bilan_gestion";
   const saveStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const questionsSafe = (matiere.questions || []).filter((q): q is Question => !!q && q?.type !== undefined);
