@@ -121,11 +121,13 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
 function QuestionEditor({
   question,
   onSave,
+  onDraftChange,
   onDelete,
   onCancel,
 }: {
   question: Question;
   onSave: (q: Question) => void;
+  onDraftChange: (q: Question) => void;
   onDelete: () => void;
   onCancel: () => void;
 }) {
@@ -134,32 +136,46 @@ function QuestionEditor({
   const [motsCles, setMotsCles] = useState((question.reponses_possibles || []).join(", "));
   const [choix, setChoix] = useState<Choix[]>(question.choix ? [...question.choix] : []);
 
-  const handleChoixTexte = (i: number, val: string) => {
-    setChoix(prev => prev.map((c, idx) => idx === i ? { ...c, texte: val } : c));
-  };
-  const handleChoixCorrect = (i: number, val: boolean) => {
-    setChoix(prev => prev.map((c, idx) => idx === i ? { ...c, correct: val } : c));
-  };
-  const addChoix = () => {
-    const lettres = ["A", "B", "C", "D", "E"];
-    setChoix(prev => [...prev, { lettre: lettres[prev.length] || String(prev.length + 1), texte: "", correct: false }]);
-  };
-  const removeChoix = (i: number) => {
-    setChoix(prev => prev.filter((_, idx) => idx !== i));
-  };
-
-  const handleSave = () => {
+  const buildUpdatedQuestion = (): Question => {
     const updated: Question = {
       ...question,
       enonce,
     };
+
     if (question?.type === "QRC") {
       updated.reponseQRC = reponseQRC;
       updated.reponses_possibles = motsCles.split(",").map(s => s.trim()).filter(Boolean);
     } else {
       updated.choix = choix;
     }
-    onSave(updated);
+
+    return updated;
+  };
+
+  useEffect(() => {
+    onDraftChange(buildUpdatedQuestion());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enonce, reponseQRC, motsCles, choix]);
+
+  const handleChoixTexte = (i: number, val: string) => {
+    setChoix(prev => prev.map((c, idx) => idx === i ? { ...c, texte: val } : c));
+  };
+
+  const handleChoixCorrect = (i: number, val: boolean) => {
+    setChoix(prev => prev.map((c, idx) => idx === i ? { ...c, correct: val } : c));
+  };
+
+  const addChoix = () => {
+    const lettres = ["A", "B", "C", "D", "E"];
+    setChoix(prev => [...prev, { lettre: lettres[prev.length] || String(prev.length + 1), texte: "", correct: false }]);
+  };
+
+  const removeChoix = (i: number) => {
+    setChoix(prev => prev.filter((_, idx) => idx !== i));
+  };
+
+  const handleSave = () => {
+    onSave(buildUpdatedQuestion());
   };
 
   return (
