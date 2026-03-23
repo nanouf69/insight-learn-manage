@@ -74,6 +74,37 @@ function normalizeAnswerText(value: unknown): string {
     .trim();
 }
 
+/** Fuzzy match: checks if keyword appears in text, tolerating 1-2 missing/swapped letters */
+function fuzzyContains(text: string, keyword: string): boolean {
+  // Exact match first
+  if (text.includes(keyword)) return true;
+  // For short keywords (<=3 chars), require exact match
+  if (keyword.length <= 3) return false;
+
+  // Check if any substring of text is within edit distance 1-2 of keyword
+  // Simplified: check if keyword with 1 char removed matches anywhere
+  for (let i = 0; i < keyword.length; i++) {
+    const partial = keyword.slice(0, i) + keyword.slice(i + 1);
+    if (partial.length >= 3 && text.includes(partial)) return true;
+  }
+
+  // Also check if text contains a word that starts/ends like the keyword (handles missing first/last letter)
+  const words = text.split(" ");
+  for (const word of words) {
+    if (word.length < 3 || keyword.length < 4) continue;
+    // Same length ±1, and at least 80% chars match in order
+    if (Math.abs(word.length - keyword.length) <= 2) {
+      let ki = 0;
+      for (let wi = 0; wi < word.length && ki < keyword.length; wi++) {
+        if (word[wi] === keyword[ki]) ki++;
+      }
+      if (ki >= keyword.length - 1) return true;
+    }
+  }
+
+  return false;
+}
+
 function hasCalculationDetail(value: unknown): boolean {
   const raw = safeStr(value);
   return /\d+\s*[\/×x\*\-\+]\s*\d+/.test(raw) || /=\s*\d/.test(raw);
@@ -162,7 +193,7 @@ function evaluateQrcDeterministic(question: Question, response: unknown, pointsQ
   }
 
   // Count how many expected keywords are found in the student's answer
-  const matched = expectedKeywords.filter((kw) => normalizedResponse.includes(kw)).length;
+  const matched = expectedKeywords.filter((kw) => fuzzyContains(normalizedResponse, kw)).length;
   const total = expectedKeywords.length;
 
   // Rule: 3+ correct elements = full points; otherwise proportional
