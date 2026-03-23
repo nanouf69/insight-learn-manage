@@ -4691,7 +4691,8 @@ const eb4Matieres: Matiere[] = [
       {
         id: 1,
         type: "QCM",
-        enonce: "Ce panneau signale : [Une image contenant symbole, logo, Police, cercle Le contenu généré par l’IA peut être incorrect.]",
+        enonce: "Ce panneau signale :",
+        image: "/cours/examens/panneau-cedez-passage-sens-inverse.png",
         choix: [
           { lettre: "A", texte: "Une chaussée à double sens de circulation" },
           { lettre: "B", texte: "Une obligation de céder le passage à la circulation venant en sens inverse" , correct: true },
