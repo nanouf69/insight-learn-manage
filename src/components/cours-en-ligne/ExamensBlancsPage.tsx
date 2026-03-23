@@ -519,7 +519,27 @@ function PassageMatiere({
       <div className="space-y-1">
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>Question {safeQuestionIndex + 1} / {questionsSafe.length}</span>
-          <span>{Math.round(progress)}%</span>
+          <div className="flex items-center gap-3">
+            {saveStatus === "saving" && (
+              <span className="flex items-center gap-1 text-amber-600 animate-pulse">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                Sauvegarde...
+              </span>
+            )}
+            {saveStatus === "saved" && (
+              <span className="flex items-center gap-1 text-green-600">
+                <CheckCircle2 className="w-3 h-3" />
+                Sauvegardé ✓
+              </span>
+            )}
+            {saveStatus === "error" && (
+              <span className="flex items-center gap-1 text-red-600">
+                <XCircle className="w-3 h-3" />
+                Erreur de sauvegarde
+              </span>
+            )}
+            <span>{Math.round(progress)}%</span>
+          </div>
         </div>
         <Progress value={progress} className="h-2" />
       </div>
