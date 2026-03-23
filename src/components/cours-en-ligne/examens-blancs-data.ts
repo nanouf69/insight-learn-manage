@@ -4925,6 +4925,20 @@ const eb4Matieres: Matiere[] = [
     coefficient: 2,
     noteEliminatoire: 5,
     noteSur: 24,
+    texteSupport: `La voiture 100% autonome, c'est pour demain?
+
+SANS LES MAINS Pour les experts, la voiture sans conducteur à bord n'est pas encore près de voir le jour.
+
+Quitter le volant des yeux pour regarder une série, ou faire la sieste et se réveiller quelques heures plus tard... à destination. Ce rêve deviendra-t-il réalité ? De Google à Uber en passant par Tesla, plusieurs poids lourds dépensent des milliards de dollars pour développer cette voiture sans conducteur. General Motors veut faire rouler une auto sans volant ni pédale, Google teste des taxis sans chauffeurs en Arizona et Elon Musk parle d'un modèle autonome pour la fin de l'année. Mais les experts sont partagés. Certains assurent que la voiture sans conducteur ne verra pas le jour avant 50 ans, voire jamais !
+
+Gérer l'imprévu
+
+Aujourd'hui, les constructeurs intègrent des dispositifs d'assistance à la conduite de plus en plus sophistiqués. Alors le véhicule automatisé « sur certaines portions d'autoroute, dans les embouteillages ou capable de se garer tout seul... Tout cela arrive ! », s'enthousiasme Arnaud de La Fortelle. [...] « Mais les interactions avec les humains restent compliquées à gérer. Une place où l'on croise des vélos, des rollers, d'autres conducteurs humains. Ou une route passant devant une école avec plein d'enfants... Ces situations sont un challenge pour la voiture ». Les robots ne savent pas traiter les intentions, confirme Michel Parent, conseiller scientifique [...] spécialisé dans la conduite automatique. « En tant qu'humain, on anticipe des choses très complexes. Quand on observe deux piétons qui discutent sur le bord de la route par exemple, on sait s'ils vont traverser ou non. À l'heure actuelle, les capteurs ont du mal à percevoir et anticiper ces cas de figure.
+
+Une question de cohabitation
+
+L'interaction entre voitures autonomes et véhicule classique est l'autre grand sujet d'inquiétude. Cela dit, on ne sait pas comment vont évoluer les choses, nuance Michel Parent. Si on interdit la circulation des voitures classiques dans certaines zones par exemple, cela devient plus envisageable. [...] D'ici là, mieux vaut garder les yeux sur la route !`,
+    texteSource: "20minutes.fr — Nouvelles mobilités, 08/03/2019",
     questions: [
       {
         id: 1,
