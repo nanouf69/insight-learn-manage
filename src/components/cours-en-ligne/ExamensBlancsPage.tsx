@@ -366,14 +366,15 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {examensBlancs.map(examen => {
-              const totalQuestions = examen.matieres.reduce((acc, m) => acc + m.questions.length, 0);
+               const totalQuestions = examen.matieres.reduce((acc, m) => acc + m.questions.length, 0);
               const dureeTotal = examen.matieres.reduce((acc, m) => acc + m.duree, 0);
               const isCompleted = completedExamIds.has(examen.id);
+              const isStartedNotFinished = !isCompleted && startedNotFinishedIds.has(examen.id);
               const scores = examScores[examen.id] || [];
               return (
                 <Card
                   key={examen.id}
-                  className={`hover:shadow-md transition-shadow border-2 ${isCompleted ? "border-green-500/60 bg-green-50/30 cursor-pointer" : "hover:border-primary/40"}`}
+                  className={`hover:shadow-md transition-shadow border-2 ${isCompleted ? "border-green-500/60 bg-green-50/30 cursor-pointer" : isStartedNotFinished ? "border-orange-400/60 bg-orange-50/30" : "hover:border-primary/40"}`}
                   onClick={isCompleted ? () => onViewResults(examen) : undefined}
                 >
                   <CardHeader className="pb-3">
@@ -388,6 +389,12 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                       <div className="flex items-center gap-2 mt-2 bg-green-100 border border-green-300 rounded-lg px-3 py-2">
                         <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
                         <span className="text-green-700 font-bold text-lg uppercase tracking-wide">Examen réalisé</span>
+                      </div>
+                    )}
+                    {isStartedNotFinished && (
+                      <div className="flex items-center gap-2 mt-2 bg-orange-100 border-2 border-orange-400 rounded-lg px-3 py-3">
+                        <AlertTriangle className="w-6 h-6 text-orange-600 shrink-0" />
+                        <span className="text-orange-700 font-extrabold text-lg uppercase tracking-wide">Non terminé</span>
                       </div>
                     )}
                   </CardHeader>
@@ -429,8 +436,8 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                         Voir mes résultats
                       </Button>
                     )}
-                    <Button className="w-full mt-2 gap-2" variant={isCompleted ? "outline" : "default"} onClick={(e) => { e.stopPropagation(); onStart(examen); }}>
-                      {isCompleted ? "Recommencer l'examen" : "Commencer l'examen"}
+                    <Button className="w-full mt-2 gap-2" variant={isCompleted ? "outline" : isStartedNotFinished ? "default" : "default"} onClick={(e) => { e.stopPropagation(); onStart(examen); }}>
+                      {isCompleted ? "Recommencer l'examen" : isStartedNotFinished ? "Reprendre l'examen" : "Commencer l'examen"}
                       <ChevronRight className="w-4 h-4" />
                     </Button>
                   </CardContent>
