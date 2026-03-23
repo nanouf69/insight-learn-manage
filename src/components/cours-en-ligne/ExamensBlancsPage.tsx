@@ -1918,6 +1918,7 @@ export default function ExamensBlancsPage({
 
   const handleDebuterExamen = () => {
     examStartTimeRef.current = Date.now();
+    setIsViewingSavedResults(false);
     setPhase("examen");
     if (examenChoisi) persistExamSession("examen", examenChoisi.id, 0);
   };
