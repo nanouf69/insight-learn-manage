@@ -3794,6 +3794,14 @@ const eb3Matieres: Matiere[] = [
     coefficient: 2,
     noteEliminatoire: 5,
     noteSur: 24,
+    texteSupport: `Le véhicule automatisé intrigue et fascine. Reste à savoir quand et comment nous allons pouvoir lâcher le volant.
+
+La voiture autonome titille les esprits, même si on a parfois le sentiment qu'elle est un moyen de communication facile pour les constructeurs et les équipementiers. Les prototypes actuels, bardés d'une armée de capteurs, réussissent en effet de spectaculaires démonstrations dont les médias sont friands.
+
+La voiture autonome porte en elle de nombreuses promesses. Elle devrait éradiquer la mortalité routière en supprimant toute intervention humaine sur la conduite. Elle devrait permettre à chacun d'accéder en permanence à une mobilité personnelle. Elle devrait supprimer les embouteillages en participant à la rationalisation du trafic. Elle devrait, aussi, rendre la planète plus propre, car elle sera forcément mue par l'électricité.
+
+Il y a quelque chose de mystique dans la voiture autonome. Des dizaines de milliers de personnes se penchent sur elle chaque jour dans le monde entier, sans savoir quand elle arrivera sur les routes. Du moins dans sa forme aboutie, c'est-à-dire celle qui lui permettra de se dispenser de conducteur (niveau 5). Pour que des voitures autonomes soient vraiment mises en circulation, elles devront vraiment être capables de faire face à toutes les situations, même en cas de comportement erratique du piéton. La voiture sans chauffeur, sans volant ni pédales de frein ou d'accélérateur pourrait se faire attendre.`,
+    texteSource: "Philippe Doucet, Libération.fr le 03/10/2018",
     questions: [
       {
         id: 1,
