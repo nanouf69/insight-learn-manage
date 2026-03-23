@@ -544,36 +544,37 @@ function PassageMatiere({
         <Progress value={progress} className="h-2" />
       </div>
 
-      {/* Texte support (français) */}
-      {matiere.texteSupport && (
-        <Card className="border border-blue-200 bg-blue-50/50">
-          <div
-            className="flex items-center justify-between px-4 py-3 cursor-pointer select-none"
-            onClick={() => {
-              const el = document.getElementById(`texte-support-${matiere.id}`);
-              if (el) el.classList.toggle("hidden");
-              const chevron = document.getElementById(`texte-chevron-${matiere.id}`);
-              if (chevron) chevron.classList.toggle("rotate-90");
-            }}
-          >
-            <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-blue-600" />
-              <span className="font-semibold text-sm text-blue-800">📄 Texte support — Lisez attentivement avant de répondre</span>
+      {/* Texte support (français) - toujours visible */}
+      {(() => {
+        const fallbackMatiere = examenId
+          ? tousLesExamens
+              .find((ex) => ex.id === examenId)
+              ?.matieres.find((m) => m.id === matiere.id)
+          : undefined;
+        const texteSupport = matiere.texteSupport ?? fallbackMatiere?.texteSupport;
+        const texteSource = matiere.texteSource ?? fallbackMatiere?.texteSource;
+
+        if (!texteSupport) return null;
+
+        return (
+          <Card className="border border-primary/20 bg-primary/5">
+            <div className="flex items-center gap-2 px-4 py-3">
+              <FileText className="w-4 h-4 text-primary" />
+              <span className="font-semibold text-sm text-primary">📄 Texte support — Lisez attentivement avant de répondre</span>
             </div>
-            <ChevronRight id={`texte-chevron-${matiere.id}`} className="w-4 h-4 text-blue-600 transition-transform rotate-90" />
-          </div>
-          <div id={`texte-support-${matiere.id}`} className="px-4 pb-4">
-            <div className="bg-white rounded-lg border border-blue-100 p-4 max-h-[300px] overflow-y-auto">
-              {matiere.texteSupport.split("\n\n").map((p, i) => (
-                <p key={i} className="text-sm leading-relaxed text-foreground mb-3 last:mb-0">{p}</p>
-              ))}
+            <div className="px-4 pb-4">
+              <div className="bg-background rounded-lg border border-border p-4 max-h-[300px] overflow-y-auto">
+                {texteSupport.split("\n\n").map((p, i) => (
+                  <p key={i} className="text-sm leading-relaxed text-foreground mb-3 last:mb-0">{p}</p>
+                ))}
+              </div>
+              {texteSource && (
+                <p className="text-xs text-muted-foreground italic mt-2">Source : {texteSource}</p>
+              )}
             </div>
-            {matiere.texteSource && (
-              <p className="text-xs text-muted-foreground italic mt-2">Source : {matiere.texteSource}</p>
-            )}
-          </div>
-        </Card>
-      )}
+          </Card>
+        );
+      })()}
 
       {/* Question */}
       <Card className="border-2 border-primary/10">
