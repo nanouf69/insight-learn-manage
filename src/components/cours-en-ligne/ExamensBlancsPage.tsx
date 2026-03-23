@@ -839,7 +839,7 @@ function EcranResultats({
         if (!q) return;
         if (q?.type === "QCM" && q.choix) {
           const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
-          const donnees = ((resultat.reponses?.[q.id] as string[]) || []).sort();
+          const donnees = (Array.isArray(resultat.reponses?.[q.id]) ? (resultat.reponses[q.id] as string[]) : []).sort();
           if (JSON.stringify(correctes) === JSON.stringify(donnees)) {
             noteRecalculee += getPointsParQuestion(matiere.id, q?.type || "QCM");
           }
@@ -993,9 +993,9 @@ function EcranResultats({
       if (!q || q === undefined) return;
       if (q?.type === "QCM" && q.choix) {
         const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
-        const donnees = ((r.reponses?.[q.id] as string[]) || []).sort();
-        if (JSON.stringify(correctes) === JSON.stringify(donnees)) {
-          noteRecalculee += getPointsParQuestion(matiere.id, q?.type || "QCM");
+         const donnees = (Array.isArray(r.reponses?.[q.id]) ? (r.reponses[q.id] as string[]) : []).sort();
+         if (JSON.stringify(correctes) === JSON.stringify(donnees)) {
+           noteRecalculee += getPointsParQuestion(matiere.id, q?.type || "QCM");
         }
       } else if (q?.type === "QRC") {
         const correction = cache[q.id];
@@ -1164,9 +1164,9 @@ function EcranResultats({
 
                     if (q?.type === "QCM" && q.choix) {
                       const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
-                      const donnees = ((rep as string[]) || []).sort();
-                      isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
-                      pointsObtenus = isCorrect ? pts : 0;
+                       const donnees = (Array.isArray(rep) ? (rep as string[]) : []).sort();
+                       isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
+                       pointsObtenus = isCorrect ? pts : 0;
                     } else if (q?.type === "QRC") {
                       const corrIA = cacheMatiere[q.id];
                       const isCalc = isCalculQuestion(q);
@@ -1315,8 +1315,8 @@ function EcranResultats({
             const rep = r.reponses?.[q.id];
             if (q?.type === "QCM" && q.choix) {
               const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
-              const donnees = ((rep as string[]) || []).sort();
-              if (JSON.stringify(correctes) !== JSON.stringify(donnees)) nbFaussesTop++;
+               const donnees = (Array.isArray(rep) ? (rep as string[]) : []).sort();
+               if (JSON.stringify(correctes) !== JSON.stringify(donnees)) nbFaussesTop++;
             } else if (q?.type === "QRC") {
               const corrIA = correctionsIA[mi]?.[q.id];
               if (corrIA && corrIA !== "loading" && corrIA !== "error") {
@@ -1394,12 +1394,12 @@ function RevisionFausses({
   const checkAnswer = () => {
     let isCorrect = false;
     if (q?.type === "QCM" && q.choix) {
-      const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
-      const donnees = ((rep as string[]) || []).sort();
-      isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
-    } else if (q?.type === "QRC") {
-      const repStr = ((rep as string) || "").toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
-      const motsCles = q.reponses_possibles || [];
+       const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
+       const donnees = (Array.isArray(rep) ? (rep as string[]) : []).sort();
+       isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
+     } else if (q?.type === "QRC") {
+       const repStr = ((typeof rep === 'string' ? rep : String(rep || ""))).toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+       const motsCles = Array.isArray(q.reponses_possibles) ? q.reponses_possibles : [];
       let nbTrouvees = 0;
       motsCles.forEach(mc => { const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, ""); if (repStr.includes(mcN)) nbTrouvees++; });
       isCorrect = nbTrouvees >= motsCles.length;
@@ -1761,9 +1761,9 @@ export default function ExamensBlancsPage({
       let correct = false;
       if (q?.type === "QCM" && q.choix) {
         const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
-        const donnees = ((rep as string[]) || []).sort();
-        correct = JSON.stringify(correctes) === JSON.stringify(donnees);
-      } else if (q?.type === "QRC") {
+         const donnees = (Array.isArray(rep) ? (rep as string[]) : []).sort();
+         correct = JSON.stringify(correctes) === JSON.stringify(donnees);
+       } else if (q?.type === "QRC") {
         if (isCalculQuestion(q)) {
           // Calcul question: check result + detail
           const repStr = ((rep as string) || "").replace(/\s/g, "").toLowerCase();
@@ -2110,8 +2110,8 @@ export default function ExamensBlancsPage({
         let isCorrect = false;
         if (q?.type === "QCM" && q.choix) {
           const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
-          const donnees = ((rep as string[]) || []).sort();
-          isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
+           const donnees = (Array.isArray(rep) ? (rep as string[]) : []).sort();
+           isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
         } else if (q?.type === "QRC") {
           const repStr = ((rep as string) || "").toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
           const motsCles = q.reponses_possibles || [];
