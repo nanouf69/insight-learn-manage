@@ -151,6 +151,97 @@ function parseBNPCsv(text: string): Omit<Transaction, "id" | "statut" | "justifi
   return results;
 }
 
+/**
+ * Parse Revolut Business CSV — format standard :
+ * Colonnes : Type,Product,Started Date,Completed Date,Description,Amount,Fee,Currency,State,Balance
+ * Montant : "1500.00" ou "-2046.30" (point décimal, signe négatif)
+ */
+function parseRevolutCsv(text: string): Omit<Transaction, "id" | "statut" | "justificatif_id" | "source" | "created_at" | "categorie" | "fournisseur_client" | "notes" | "reference">[] {
+  const rawLines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+  const results: ReturnType<typeof parseRevolutCsv> = [];
+  if (rawLines.length < 2) return results;
+
+  const sep = rawLines[0].includes("\t") ? "\t" : rawLines[0].split(",").length > rawLines[0].split(";").length ? "," : ";";
+
+  const splitLine = (line: string): string[] => {
+    const parts: string[] = [];
+    let current = "";
+    let inQuotes = false;
+    for (const ch of line) {
+      if (ch === '"') { inQuotes = !inQuotes; continue; }
+      if (ch === sep.charAt(0) && !inQuotes) { parts.push(current.trim()); current = ""; continue; }
+      current += ch;
+    }
+    parts.push(current.trim());
+    return parts;
+  };
+
+  const headerCols = splitLine(rawLines[0]).map(h => h.toLowerCase().trim());
+  const findCol = (...names: string[]) => {
+    for (const name of names) {
+      const idx = headerCols.findIndex(h => h.includes(name));
+      if (idx >= 0) return idx;
+    }
+    return -1;
+  };
+
+  const dateCol = findCol("completed date", "date completed", "completed");
+  const startDateCol = findCol("started date", "date started", "started");
+  const descCol = findCol("description");
+  const amountCol = findCol("amount");
+  const balanceCol = findCol("balance");
+  const stateCol = findCol("state", "status");
+  const typeCol = findCol("type");
+
+  const useDateCol = dateCol >= 0 ? dateCol : startDateCol;
+  if (useDateCol < 0 || descCol < 0 || amountCol < 0) return results;
+
+  for (let i = 1; i < rawLines.length; i++) {
+    const raw = rawLines[i].trim();
+    if (!raw) continue;
+    const cols = splitLine(raw);
+
+    if (stateCol >= 0) {
+      const state = (cols[stateCol] || "").toLowerCase();
+      if (state === "reverted" || state === "declined" || state === "failed") continue;
+    }
+
+    const dateStr = (cols[useDateCol] || "").trim();
+    let dateObj: Date | null = null;
+    try {
+      if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) dateObj = new Date(dateStr.slice(0, 10));
+      else if (/^\d{2}\/\d{2}\/\d{4}/.test(dateStr)) dateObj = parse(dateStr.slice(0, 10), "dd/MM/yyyy", new Date());
+      else dateObj = new Date(dateStr);
+    } catch { /* ignore */ }
+    if (!dateObj || isNaN(dateObj.getTime())) continue;
+
+    const date_operation = format(dateObj, "yyyy-MM-dd");
+    const amountStr = (cols[amountCol] || "").replace(/[^\d.\-]/g, "");
+    const montant = parseFloat(amountStr);
+    if (isNaN(montant) || montant === 0) continue;
+
+    const desc = cols[descCol] || "—";
+    const typeStr = typeCol >= 0 ? cols[typeCol] || "" : "";
+    const libelle = typeStr && !["card_payment", "transfer", "topup"].includes(typeStr.toLowerCase())
+      ? `${typeStr} – ${desc}`.slice(0, 100)
+      : desc.slice(0, 100);
+
+    const balanceStr = balanceCol >= 0 ? (cols[balanceCol] || "").replace(/[^\d.\-]/g, "") : "";
+    const solde = balanceStr ? parseFloat(balanceStr) : null;
+
+    results.push({ date_operation, libelle, montant, solde: isNaN(solde as number) ? null : solde, banque: "Revolut Pro" });
+  }
+  return results;
+}
+
+/** Auto-detect bank from CSV content */
+function detectBankFromCsv(text: string): "bnp" | "revolut" | null {
+  const firstLine = text.split("\n")[0].toLowerCase();
+  if (firstLine.includes("completed date") || firstLine.includes("description") && firstLine.includes("amount") && firstLine.includes("balance")) return "revolut";
+  if (firstLine.includes("compte") || /^\d{2}\/\d{2}\/\d{4}/.test(firstLine.trim()) || firstLine.split(";").length >= 3) return "bnp";
+  return null;
+}
+
 interface AiSuggestion {
   scores: { index: number; score: number; raison: string }[];
   meilleur_index: number;
@@ -182,6 +273,7 @@ export function RapprochementBancaire() {
   const [importing, setImporting] = useState(false);
   const [filterStatut, setFilterStatut] = useState("tous");
   const [filterType, setFilterType] = useState("tous"); // tous, debit, credit
+  const [filterBanque, setFilterBanque] = useState("tous"); // tous, BNP Paribas, Revolut Pro
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Transaction>>({});
@@ -230,7 +322,14 @@ export function RapprochementBancaire() {
     setImporting(true);
     try {
       const text = await file.text();
-      const rows = parseBNPCsv(text);
+      // Auto-detect bank format
+      const detected = detectBankFromCsv(text);
+      let rows: ReturnType<typeof parseBNPCsv>;
+      if (detected === "revolut") {
+        rows = parseRevolutCsv(text);
+      } else {
+        rows = parseBNPCsv(text);
+      }
       if (rows.length === 0) {
         toast.error("Aucune transaction trouvée dans ce fichier. Vérifiez le format CSV.");
         setImporting(false);
@@ -239,7 +338,8 @@ export function RapprochementBancaire() {
       const inserts = rows.map(r => ({ ...r, statut: "non_justifie", source: "import_csv" }));
       const { error } = await supabase.from("transactions_bancaires").insert(inserts);
       if (error) throw error;
-      toast.success(`${rows.length} transactions importées !`);
+      const bankName = rows[0]?.banque || "inconnue";
+      toast.success(`${rows.length} transactions ${bankName} importées !`);
       await fetchAll();
     } catch (err) {
       toast.error("Erreur import : " + (err instanceof Error ? err.message : "Erreur"));
@@ -410,11 +510,12 @@ export function RapprochementBancaire() {
   const filtered = transactions.filter(tx => {
     const matchStatut = filterStatut === "tous" || tx.statut === filterStatut;
     const matchType = filterType === "tous" || (filterType === "debit" ? tx.montant < 0 : tx.montant > 0);
+    const matchBanque = filterBanque === "tous" || tx.banque === filterBanque;
     const matchSearch = !search ||
       tx.libelle.toLowerCase().includes(search.toLowerCase()) ||
       (tx.fournisseur_client || "").toLowerCase().includes(search.toLowerCase()) ||
       (tx.categorie || "").toLowerCase().includes(search.toLowerCase());
-    return matchStatut && matchType && matchSearch;
+    return matchStatut && matchType && matchSearch && matchBanque;
   });
 
   // Group by month
@@ -507,8 +608,8 @@ export function RapprochementBancaire() {
                 {importing ? <RefreshCw className="h-6 w-6 text-primary animate-spin" /> : <Upload className="h-6 w-6 text-primary" />}
               </div>
               <div>
-                <p className="font-semibold">Importer un relevé CSV BNP Paribas</p>
-                <p className="text-sm text-muted-foreground">Format : Date;Libellé;Débit;Crédit;Solde — ou télécharger via l'export BNP</p>
+                <p className="font-semibold">Importer un relevé CSV — BNP Paribas ou Revolut Pro</p>
+                <p className="text-sm text-muted-foreground">Le format est détecté automatiquement (BNP : export CSV / Revolut : Transaction statement CSV)</p>
               </div>
             </div>
             <Button variant="outline" size="sm" disabled={importing} className="flex-shrink-0">
@@ -571,6 +672,24 @@ export function RapprochementBancaire() {
             </Button>
           ))}
         </div>
+        {/* Filtre par banque */}
+        {(() => {
+          const banques = [...new Set(transactions.map(t => t.banque))];
+          if (banques.length <= 1) return null;
+          return (
+            <div className="flex gap-2">
+              <Button size="sm" variant={filterBanque === "tous" ? "secondary" : "ghost"} onClick={() => setFilterBanque("tous")}>
+                🏦 Toutes
+              </Button>
+              {banques.map(b => (
+                <Button key={b} size="sm" variant={filterBanque === b ? "secondary" : "ghost"} onClick={() => setFilterBanque(filterBanque === b ? "tous" : b)}>
+                  {b === "BNP Paribas" ? "🔵 BNP" : b === "Revolut Pro" ? "🟣 Revolut" : b}
+                  <Badge className="ml-1.5 h-4 px-1 text-[10px]">{transactions.filter(t => t.banque === b).length}</Badge>
+                </Button>
+              ))}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Transactions */}
@@ -582,7 +701,7 @@ export function RapprochementBancaire() {
             <FileText className="h-12 w-12 text-muted-foreground/30" />
             <p className="text-muted-foreground font-medium">
               {transactions.length === 0
-                ? "Importez votre relevé CSV BNP pour commencer le rapprochement"
+                ? "Importez votre relevé CSV (BNP ou Revolut) pour commencer le rapprochement"
                 : "Aucune transaction ne correspond aux filtres"}
             </p>
           </CardContent>
@@ -645,6 +764,11 @@ export function RapprochementBancaire() {
                                 <p className="font-medium text-sm truncate">{tx.libelle}</p>
                                 <p className="text-xs text-muted-foreground">
                                   {format(new Date(tx.date_operation), "dd MMMM yyyy", { locale: fr })}
+                                  {tx.banque && tx.banque !== "BNP Paribas" && (
+                                    <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-700">
+                                      {tx.banque}
+                                    </span>
+                                  )}
                                   {tx.solde != null && <span className="ml-2">· Solde : {fmt(tx.solde)}</span>}
                                 </p>
                                 {matchedApprenant && (
@@ -970,4 +1094,3 @@ export function RapprochementBancaire() {
     </div>
   );
 }
-
