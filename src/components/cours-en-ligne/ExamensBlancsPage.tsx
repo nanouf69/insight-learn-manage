@@ -1100,7 +1100,7 @@ function EcranResultats({
         </div>
         {resultatsAvecIA.map((r, mi) => {
           const safeMaxPoints = r.maxPoints || 1;
-          const noteSur20 = (r.noteObtenue / safeMaxPoints * (r.noteSur || 20));
+          const noteSur20 = (r.noteObtenue / safeMaxPoints * 20);
           const matiereEnCours = Object.values(correctionsIA[mi] || {}).some(v => v === "loading");
           const pctScore = safeMaxPoints > 0 ? Math.min((r.noteObtenue / safeMaxPoints) * 100, 100) : 0;
           const matiere = examen.matieres[mi];
