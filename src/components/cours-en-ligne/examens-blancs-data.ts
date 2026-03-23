@@ -2072,9 +2072,9 @@ const eb1Matieres: Matiere[] = [
         enonce: "Parmi les puissances de moteur suivantes, quelles sont celles permettant à une voiture d’être exploitée en VTC ?",
         choix: [
           { lettre: "A", texte: "82 kilowatts" },
-          { lettre: "B", texte: "86 kilowatts" },
+          { lettre: "B", texte: "86 kilowatts", correct: true },
           { lettre: "C", texte: "80 kilowatts" },
-          { lettre: "D", texte: "84 kilowatts" },
+          { lettre: "D", texte: "84 kilowatts", correct: true },
         ],
       },
       {
