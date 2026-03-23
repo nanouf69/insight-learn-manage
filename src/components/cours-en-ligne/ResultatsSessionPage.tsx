@@ -34,6 +34,14 @@ interface CompletionRow {
   score_max: number | null;
 }
 
+interface QuestionDetail {
+  questionId: number;
+  enonce: string;
+  type: string;
+  reponseEleve: string[];
+  reponseCorrecte: string[];
+}
+
 interface QuizResultRow {
   id: string;
   apprenant_id: string;
@@ -48,6 +56,7 @@ interface QuizResultRow {
   matiere_nom: string | null;
   completed_at: string;
   duree_secondes: number | null;
+  details: { questions?: QuestionDetail[] } | null;
 }
 
 const PASS_THRESHOLD = 50; // 50% = seuil de réussite pour les modules
@@ -63,6 +72,7 @@ const ResultatsSessionPage = () => {
   const [loadingData, setLoadingData] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [expandedExam, setExpandedExam] = useState<string | null>(null);
+  const [expandedMatiere, setExpandedMatiere] = useState<string | null>(null);
 
   // Load sessions
   useEffect(() => {
@@ -122,7 +132,7 @@ const ResultatsSessionPage = () => {
             .in("apprenant_id", apprenantIds),
           supabase
             .from("apprenant_quiz_results")
-            .select("id, apprenant_id, quiz_id, quiz_titre, quiz_type, score_obtenu, score_max, note_sur_20, reussi, matiere_id, matiere_nom, completed_at, duree_secondes")
+            .select("id, apprenant_id, quiz_id, quiz_titre, quiz_type, score_obtenu, score_max, note_sur_20, reussi, matiere_id, matiere_nom, completed_at, duree_secondes, details")
             .in("apprenant_id", apprenantIds)
             .order("completed_at", { ascending: false }),
         ]);
@@ -307,6 +317,39 @@ const ResultatsSessionPage = () => {
       moyenneNote: totalCandidats > 0 ? Math.round((totalNote / totalCandidats) * 10) / 10 : 0,
     };
   }, [examStats]);
+
+  // Per-question stats for a given exam + matiere
+  const getQuestionStats = (quizId: string, matiereNom: string) => {
+    const examResults = examBlancResults.filter(r => r.quiz_id === quizId && (r.matiere_nom || r.quiz_titre) === matiereNom);
+    // Collect all questions across all students (last attempt per student)
+    const lastPerStudent: Record<string, QuizResultRow> = {};
+    for (const r of examResults) {
+      if (!lastPerStudent[r.apprenant_id] || new Date(r.completed_at) > new Date(lastPerStudent[r.apprenant_id].completed_at)) {
+        lastPerStudent[r.apprenant_id] = r;
+      }
+    }
+
+    // Aggregate per questionId
+    const questionMap: Record<number, { enonce: string; type: string; correct: number; incorrect: number; total: number }> = {};
+    for (const r of Object.values(lastPerStudent)) {
+      const questions = (r.details as any)?.questions as QuestionDetail[] | undefined;
+      if (!Array.isArray(questions)) continue;
+      for (const q of questions) {
+        if (!questionMap[q.questionId]) {
+          questionMap[q.questionId] = { enonce: q.enonce, type: q.type || 'QCM', correct: 0, incorrect: 0, total: 0 };
+        }
+        const isCorrect = Array.isArray(q.reponseEleve) && Array.isArray(q.reponseCorrecte)
+          && q.reponseEleve.length === q.reponseCorrecte.length
+          && q.reponseEleve.every((v: string) => q.reponseCorrecte.includes(v));
+        questionMap[q.questionId].total++;
+        if (isCorrect) questionMap[q.questionId].correct++; else questionMap[q.questionId].incorrect++;
+      }
+    }
+
+    return Object.entries(questionMap)
+      .sort(([a], [b]) => Number(a) - Number(b))
+      .map(([id, data]) => ({ questionId: Number(id), ...data }));
+  };
 
   // Module pass/fail global
   const globalModuleStats = useMemo(() => {
@@ -678,24 +721,81 @@ const ResultatsSessionPage = () => {
                           {/* Matière averages */}
                           {matieresArr.length > 0 && (
                             <div className="px-5 py-4 bg-muted/10 border-b">
-                              <h4 className="text-sm font-semibold mb-3">Résultats par matière</h4>
+                              <h4 className="text-sm font-semibold mb-3">Résultats par matière <span className="text-xs text-muted-foreground font-normal">(cliquez pour voir le détail par question)</span></h4>
                               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                                 {matieresArr.map(m => {
                                   const mAvg = m.count > 0 ? Math.round((m.totalNote / m.count) * 10) / 10 : 0;
                                   const mTaux = m.count > 0 ? Math.round((m.pass / m.count) * 100) : 0;
+                                  const mKey = `${qId}__${m.nom}`;
+                                  const isMatiereExpanded = expandedMatiere === mKey;
+                                  const questionStats = isMatiereExpanded ? getQuestionStats(qId, m.nom) : [];
+
                                   return (
-                                    <div key={m.nom} className="bg-background border rounded-lg p-3 space-y-2">
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-sm font-medium truncate">{m.nom}</span>
-                                        <span className={`text-sm font-bold ${getNoteColor(mAvg)}`}>{mAvg}/20</span>
+                                    <div key={m.nom} className={`bg-background border rounded-lg overflow-hidden transition-all ${isMatiereExpanded ? 'col-span-full' : ''}`}>
+                                      <div
+                                        className="p-3 space-y-2 cursor-pointer hover:bg-muted/30 transition-colors"
+                                        onClick={() => setExpandedMatiere(isMatiereExpanded ? null : mKey)}
+                                      >
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex items-center gap-1.5">
+                                            {isMatiereExpanded ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
+                                            <span className="text-sm font-medium truncate">{m.nom}</span>
+                                          </div>
+                                          <span className={`text-sm font-bold ${getNoteColor(mAvg)}`}>{mAvg}/20</span>
+                                        </div>
+                                        <Progress value={mTaux} className="h-2" />
+                                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                          <span>{m.count} élèves</span>
+                                          <span>
+                                            <span className="text-emerald-600">{m.pass} ✓</span> / <span className="text-destructive">{m.fail} ✗</span>
+                                          </span>
+                                        </div>
                                       </div>
-                                      <Progress value={mTaux} className="h-2" />
-                                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                        <span>{m.count} élèves</span>
-                                        <span>
-                                          <span className="text-emerald-600">{m.pass} ✓</span> / <span className="text-destructive">{m.fail} ✗</span>
-                                        </span>
-                                      </div>
+
+                                      {/* Per-question drill-down */}
+                                      {isMatiereExpanded && (
+                                        <div className="border-t px-3 py-3 space-y-2 bg-muted/5">
+                                          {questionStats.length === 0 ? (
+                                            <p className="text-xs text-muted-foreground text-center py-2">Aucun détail par question disponible.</p>
+                                          ) : (
+                                            <>
+                                              <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground border-b pb-1 mb-1">
+                                                <span>Question</span>
+                                                <span className="w-40 text-right">Bonnes / Mauvaises</span>
+                                              </div>
+                                              {questionStats.map((q, idx) => {
+                                                const tauxBon = q.total > 0 ? Math.round((q.correct / q.total) * 100) : 0;
+                                                return (
+                                                  <div key={q.questionId} className="space-y-1">
+                                                    <div className="flex items-start gap-2">
+                                                      <span className="text-xs font-bold text-muted-foreground w-6 shrink-0">Q{idx + 1}</span>
+                                                      <p className="text-xs flex-1 leading-snug">{q.enonce}</p>
+                                                      <div className="flex items-center gap-2 shrink-0 w-40 justify-end">
+                                                        <span className="text-xs text-emerald-600 font-semibold">{q.correct} ✓</span>
+                                                        <span className="text-xs text-destructive font-semibold">{q.incorrect} ✗</span>
+                                                        <Badge
+                                                          variant={tauxBon >= 60 ? "default" : "destructive"}
+                                                          className="text-[10px] px-1.5"
+                                                        >
+                                                          {tauxBon}%
+                                                        </Badge>
+                                                      </div>
+                                                    </div>
+                                                    <div className="ml-6">
+                                                      <div className="w-full h-1.5 rounded-full bg-muted/30 overflow-hidden">
+                                                        <div
+                                                          className={`h-full rounded-full transition-all ${tauxBon >= 80 ? 'bg-emerald-500' : tauxBon >= 60 ? 'bg-amber-400' : 'bg-destructive'}`}
+                                                          style={{ width: `${tauxBon}%` }}
+                                                        />
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                );
+                                              })}
+                                            </>
+                                          )}
+                                        </div>
+                                      )}
                                     </div>
                                   );
                                 })}
