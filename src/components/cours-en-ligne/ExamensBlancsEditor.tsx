@@ -589,7 +589,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
       setAutoSaving(true);
       await persistExamens(examens, false);
       setAutoSaving(false);
-    }, 600);
+    }, 2000);
 
     return () => {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
