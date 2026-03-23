@@ -504,9 +504,58 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
   const [typeFiltre, setTypeFiltre] = useState<"tous" | "TAXI" | "VTC">("tous");
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [autoSaving, setAutoSaving] = useState(false);
+  const initialLoadDoneRef = useRef(false);
+  const lastSavedFingerprintRef = useRef("");
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const examensFiltres = examens.filter(e => typeFiltre === "tous" || e?.type === typeFiltre);
   const examenSel = examens.find(e => e.id === examenSelId) || null;
+
+  const persistExamens = async (sourceExamens: ExamenBlanc[], showSuccessToast = false): Promise<boolean> => {
+    try {
+      const synced = JSON.parse(JSON.stringify(sourceExamens)) as ExamenBlanc[];
+      syncVtcTaxiMatieres(synced);
+
+      const promises = synced.map((ex, i) => {
+        const moduleId = EXAMEN_BLANC_MODULE_BASE + i;
+        return supabase.from("module_editor_state").upsert(
+          [{
+            module_id: moduleId,
+            module_data: ex as any,
+            deleted_cours: [] as any,
+            deleted_exercices: [] as any,
+            updated_at: new Date().toISOString(),
+          }],
+          { onConflict: "module_id" }
+        );
+      });
+
+      const results = await Promise.all(promises);
+      const errors = results.filter(r => r.error);
+
+      if (errors.length > 0) {
+        console.error("[ExamensEditor] Save errors:", errors.map(e => e.error));
+        const firstMessage = errors[0].error?.message || "Erreur inconnue";
+        toast.error(`Sauvegarde impossible: ${firstMessage}`);
+        return false;
+      }
+
+      lastSavedFingerprintRef.current = JSON.stringify(synced);
+
+      if (showSuccessToast) {
+        setSaved(true);
+        toast.success("Examens blancs sauvegardés ! Les élèves verront les modifications.");
+        setTimeout(() => setSaved(false), 2500);
+      }
+
+      return true;
+    } catch (err) {
+      console.error("[ExamensEditor] Save failed:", err);
+      toast.error("Erreur lors de la sauvegarde");
+      return false;
+    }
+  };
 
   const handleMatiereChange = (matiereId: string, updated: Matiere) => {
     setExamens(prev => {
@@ -525,49 +574,36 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
 
   // Load saved data from DB on mount
   useEffect(() => {
-    loadSavedExamens().then(saved => {
-      setExamens(saved);
+    loadSavedExamens().then(loadedExamens => {
+      setExamens(loadedExamens);
+      lastSavedFingerprintRef.current = JSON.stringify(loadedExamens);
+      initialLoadDoneRef.current = true;
     });
   }, []);
 
+  // Auto-save to backend when admin edits answers/questions
+  useEffect(() => {
+    if (!initialLoadDoneRef.current) return;
+
+    const currentFingerprint = JSON.stringify(examens);
+    if (currentFingerprint === lastSavedFingerprintRef.current) return;
+
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(async () => {
+      setAutoSaving(true);
+      await persistExamens(examens, false);
+      setAutoSaving(false);
+    }, 600);
+
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    };
+  }, [examens]);
+
   const handleSaveAll = async () => {
     setSaving(true);
-    try {
-      // Ensure VTC→TAXI sync before saving
-      const synced = [...examens];
-      syncVtcTaxiMatieres(synced);
-      // Save each modified exam to module_editor_state
-      const promises = synced.map((ex, i) => {
-        const moduleId = EXAMEN_BLANC_MODULE_BASE + i;
-        return supabase.from("module_editor_state").upsert(
-          [{
-            module_id: moduleId,
-            module_data: ex as any,
-            deleted_cours: [] as any,
-            deleted_exercices: [] as any,
-            updated_at: new Date().toISOString(),
-          }],
-          { onConflict: "module_id" }
-        );
-      });
-      
-      const results = await Promise.all(promises);
-      const errors = results.filter(r => r.error);
-      
-      if (errors.length > 0) {
-        console.error("[ExamensEditor] Save errors:", errors.map(e => e.error));
-        toast.error("Erreur lors de la sauvegarde de certains examens");
-      } else {
-        setSaved(true);
-        toast.success("Examens blancs sauvegardés ! Les élèves verront les modifications.");
-        setTimeout(() => setSaved(false), 2500);
-      }
-    } catch (err) {
-      console.error("[ExamensEditor] Save failed:", err);
-      toast.error("Erreur lors de la sauvegarde");
-    } finally {
-      setSaving(false);
-    }
+    await persistExamens(examens, true);
+    setSaving(false);
   };
 
   const handleReset = async () => {
@@ -589,7 +625,9 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
         return;
       }
 
-      setExamens(JSON.parse(JSON.stringify(tousLesExamens)));
+      const resetExamens = JSON.parse(JSON.stringify(tousLesExamens)) as ExamenBlanc[];
+      setExamens(resetExamens);
+      lastSavedFingerprintRef.current = JSON.stringify(resetExamens);
       toast.success("Examens blancs réinitialisés aux valeurs d'origine");
     } catch (err) {
       console.error("[ExamensEditor] Reset failed:", err);
