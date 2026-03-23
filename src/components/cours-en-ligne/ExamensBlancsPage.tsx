@@ -22,6 +22,11 @@ function safeStr(v: unknown): string {
   if (Array.isArray(v)) return v.join(", ");
   try { return JSON.stringify(v); } catch { return ""; }
 }
+
+function toTimestamp(value: unknown): number {
+  const ts = new Date(String(value ?? "")).getTime();
+  return Number.isFinite(ts) ? ts : 0;
+}
 import ExamensBlancsEditor from "./ExamensBlancsEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -114,16 +119,27 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
     if (!apprenantId) return;
     supabase
       .from("apprenant_quiz_results" as any)
-      .select("quiz_id, matiere_id, matiere_nom, note_sur_20")
+      .select("quiz_id, matiere_id, matiere_nom, note_sur_20, completed_at, created_at")
       .eq("apprenant_id", apprenantId)
       .eq("quiz_type", "examen_blanc")
       .then(({ data }) => {
         if (data) {
-          const ids = new Set<string>((data as any[]).map((r: any) => r.quiz_id));
-          setCompletedExamIds(ids);
-          // Group scores by quiz_id
-          const scores: Record<string, { matiere_id: string; matiere_nom: string; note_sur_20: number }[]> = {};
+          // Keep only latest row per quiz + matière to avoid mixing attempts
+          const latestByQuizMatiere = new Map<string, any>();
           (data as any[]).forEach((r: any) => {
+            const key = `${r.quiz_id}::${r.matiere_id || r.matiere_nom || "unknown"}`;
+            const prev = latestByQuizMatiere.get(key);
+            const prevTs = prev ? Math.max(toTimestamp(prev.completed_at), toTimestamp(prev.created_at)) : 0;
+            const currTs = Math.max(toTimestamp(r.completed_at), toTimestamp(r.created_at));
+            if (!prev || currTs >= prevTs) latestByQuizMatiere.set(key, r);
+          });
+
+          const latestRows = Array.from(latestByQuizMatiere.values());
+          const ids = new Set<string>(latestRows.map((r: any) => r.quiz_id));
+          setCompletedExamIds(ids);
+
+          const scores: Record<string, { matiere_id: string; matiere_nom: string; note_sur_20: number }[]> = {};
+          latestRows.forEach((r: any) => {
             if (!scores[r.quiz_id]) scores[r.quiz_id] = [];
             scores[r.quiz_id].push({
               matiere_id: r.matiere_id,
@@ -1715,42 +1731,62 @@ export default function ExamensBlancsPage({
 
   const handleViewResults = async (examen: ExamenBlanc) => {
     if (!apprenantId) return;
+
+    const examReference = liveExamens.find((live) => live.id === examen.id) ?? examen;
     const { data } = await supabase
       .from("apprenant_quiz_results" as any)
       .select("*")
       .eq("apprenant_id", apprenantId)
-      .eq("quiz_id", examen.id)
-      .eq("quiz_type", examen.id.startsWith("bilan-") ? "bilan" : "examen_blanc");
+      .eq("quiz_id", examReference.id)
+      .eq("quiz_type", examReference.id.startsWith("bilan-") ? "bilan" : "examen_blanc");
+
     if (!data || (data as any[]).length === 0) {
       toast.error("Aucun résultat trouvé pour cet examen.");
       return;
     }
-    // Reconstruct ResultatMatiere[] from saved DB rows
-    const resultsUnsorted: ResultatMatiere[] = (data as any[]).map((row: any, idx: number) => {
-      const matiere = examen.matieres.find(m => m.id === row.matiere_id);
-      // Extract saved IA corrections from details if available
-      const savedCorrections = row.details?.correctionsIA || null;
-      return {
-        matiereId: row.matiere_id,
-        nomMatiere: row.matiere_nom,
-        noteObtenue: row.score_obtenu,
-        maxPoints: row.score_max,
-        noteSur: matiere?.noteSur || 20,
-        noteEliminatoire: matiere?.noteEliminatoire || 0,
-        coefficient: matiere?.coefficient || 1,
-        admis: row.reussi ?? true,
-        reponses: row.details?.reponses || {},
-        correctionsIA: savedCorrections,
-      };
+
+    // Keep latest row per matière to prevent attempt mixing
+    const latestByMatiere = new Map<string, any>();
+    (data as any[]).forEach((row: any, idx: number) => {
+      const key = row.matiere_id || row.matiere_nom || `unknown-${idx}`;
+      const prev = latestByMatiere.get(key);
+      const prevTs = prev ? Math.max(toTimestamp(prev.completed_at), toTimestamp(prev.created_at)) : 0;
+      const currTs = Math.max(toTimestamp(row.completed_at), toTimestamp(row.created_at));
+      if (!prev || currTs >= prevTs) latestByMatiere.set(key, row);
     });
-    // Sort results to match the original matière order from the exam definition
-    const matiereOrder = examen.matieres.map(m => m.id);
-    const results = resultsUnsorted.sort((a, b) => {
-      const idxA = matiereOrder.indexOf(a.matiereId);
-      const idxB = matiereOrder.indexOf(b.matiereId);
-      return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
-    });
-    setExamenChoisi(examen);
+
+    const latestRows = Array.from(latestByMatiere.values());
+    const rowsByMatiereId = new Map(latestRows.filter((r: any) => !!r.matiere_id).map((r: any) => [r.matiere_id, r]));
+    const rowsByMatiereNom = new Map(latestRows.filter((r: any) => !!r.matiere_nom).map((r: any) => [r.matiere_nom, r]));
+
+    // Rebuild strictly in official exam order (A -> B -> C ...)
+    const results = examReference.matieres
+      .map((matiere): ResultatMatiere | null => {
+        const row = rowsByMatiereId.get(matiere.id) || rowsByMatiereNom.get(matiere.nom);
+        if (!row) return null;
+        const savedCorrections = row.details?.correctionsIA || null;
+
+        return {
+          matiereId: row.matiere_id || matiere.id,
+          nomMatiere: row.matiere_nom || matiere.nom,
+          noteObtenue: row.score_obtenu,
+          maxPoints: row.score_max,
+          noteSur: matiere.noteSur || 20,
+          noteEliminatoire: matiere.noteEliminatoire || 0,
+          coefficient: matiere.coefficient || 1,
+          admis: row.reussi ?? true,
+          reponses: row.details?.reponses || {},
+          correctionsIA: savedCorrections,
+        };
+      })
+      .filter((r): r is ResultatMatiere => r !== null);
+
+    if (results.length === 0) {
+      toast.error("Résultats introuvables pour les matières de cet examen.");
+      return;
+    }
+
+    setExamenChoisi(examReference);
     setTousResultats(results);
     setPhase("resultats");
   };
