@@ -7128,9 +7128,9 @@ const eb6Matieres: Matiere[] = [
         type: "QCM",
         enonce: "Cet emplacement (place de stationnement réservée aux personnes handicapées) :",
         choix: [
-          { lettre: "A", texte: "son occupation illicite est punie d'une contravention de troisième classe" },
-          { lettre: "B", texte: "son occupation illicite fait encourir une mise en fourrière du véhicule" },
-          { lettre: "C", texte: "est réservé aux véhicules portant une carte de stationnement pour personnes handicapées" },
+          { lettre: "A", texte: "son occupation illicite est punie d'une contravention de troisième classe", correct: true },
+          { lettre: "B", texte: "son occupation illicite fait encourir une mise en fourrière du véhicule", correct: true },
+          { lettre: "C", texte: "est réservé aux véhicules portant une carte de stationnement pour personnes handicapées", correct: true },
           { lettre: "D", texte: "est réservé aux véhicules transportant une ou plusieurs personnes handicapées" },
         ],
       },
