@@ -3,45 +3,9 @@ import { Link } from "react-router-dom";
 import { ArrowRight, ArrowLeft, AlertTriangle, Calendar, ChevronDown, MapPin } from "lucide-react";
 import { OnboardingLayout } from "../OnboardingLayout";
 
-// Liste des dates d'examen 2026
-const EXAM_DATES = [
-  {
-    id: '2026-01-27-pm',
-    date: new Date(2026, 0, 27, 14, 0),
-    label: '27 janvier 2026 (après-midi)',
-    location: 'Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne',
-  },
-  {
-    id: '2026-02-24-pm',
-    date: new Date(2026, 1, 24, 14, 0),
-    label: '24 février 2026 (après-midi)',
-    location: 'Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne',
-  },
-  {
-    id: '2026-03-31-pm',
-    date: new Date(2026, 2, 31, 14, 0),
-    label: '31 mars 2026 (après-midi)',
-    location: 'Clermont-Ferrand',
-  },
-  {
-    id: '2026-04-28-pm',
-    date: new Date(2026, 3, 28, 14, 0),
-    label: '28 avril 2026 (après-midi)',
-    location: 'Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne',
-  },
-  {
-    id: '2026-05-26-pm',
-    date: new Date(2026, 4, 26, 14, 0),
-    label: '26 mai 2026 (après-midi)',
-    location: 'Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne',
-  },
-  {
-    id: '2026-06-23-pm',
-    date: new Date(2026, 5, 23, 14, 0),
-    label: '23 juin 2026 (après-midi)',
-    location: 'Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne',
-  },
-];
+// Dates centralisées
+import { ALL_DATES_EXAMEN_STEP5 } from '@/lib/examDatesConfig';
+const EXAM_DATES = ALL_DATES_EXAMEN_STEP5;
 
 export default function Step5() {
   const [selectedExamId, setSelectedExamId] = useState<string>(() => localStorage.getItem('onboarding_step5_examId') || '');

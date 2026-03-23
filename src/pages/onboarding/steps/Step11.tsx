@@ -14,16 +14,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-// Dates des examens théoriques 2026
-const datesExamenTheorique = filterFutureExamValues([
-  { value: "27 janvier 2026", label: "27 janvier 2026 (après-midi)", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne" },
-  { value: "24 février 2026", label: "24 février 2026 (après-midi)", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne" },
-  { value: "31 mars 2026", label: "31 mars 2026 (après-midi)", lieu: "Puy-de-Dôme – Polydome, Place du 1er mai, 63100 Clermont-Ferrand" },
-  { value: "26 mai 2026", label: "26 mai 2026 (après-midi)", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne" },
-  { value: "21 juillet 2026", label: "21 juillet 2026 (après-midi)", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne" },
-  { value: "29 septembre 2026", label: "29 septembre 2026 (après-midi)", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne" },
-  { value: "17 novembre 2026", label: "17 novembre 2026 (après-midi)", lieu: "Rhône – Double Mixte, 10 Avenue Gaston Berger, 69100 Villeurbanne" },
-]);
+// Dates centralisées
+import { ALL_DATES_EXAMEN_THEORIQUE_VALUES } from '@/lib/examDatesConfig';
+const datesExamenTheorique = filterFutureExamValues(ALL_DATES_EXAMEN_THEORIQUE_VALUES);
 
 // Types d'examens disponibles
 const typesExamen = [
