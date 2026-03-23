@@ -193,7 +193,7 @@ function evaluateQrcDeterministic(question: Question, response: unknown, pointsQ
   }
 
   // Count how many expected keywords are found in the student's answer
-  const matched = expectedKeywords.filter((kw) => normalizedResponse.includes(kw)).length;
+  const matched = expectedKeywords.filter((kw) => fuzzyContains(normalizedResponse, kw)).length;
   const total = expectedKeywords.length;
 
   // Rule: 3+ correct elements = full points; otherwise proportional
