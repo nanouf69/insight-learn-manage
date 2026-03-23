@@ -2342,6 +2342,7 @@ export default function ExamensBlancsPage({
           onRefaireFausses={() => setPhase("revision")}
           apprenantId={apprenantId}
           userId={userId}
+          isViewingSaved={isViewingSavedResults}
         />
       </div>
     );
