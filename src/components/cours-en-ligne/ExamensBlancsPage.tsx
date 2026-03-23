@@ -50,6 +50,115 @@ function normalizeNoteSur20(scoreObtenu: unknown, scoreMax: unknown, fallback?: 
 function clampToQuestionMax(pointsObtenus: unknown, questionMax: number): number {
   return clamp(toFiniteNumber(pointsObtenus, 0), 0, Math.max(questionMax, 0));
 }
+
+const ENABLE_AI_QRC_CORRECTION = false;
+
+function normalizeAnswerText(value: unknown): string {
+  return safeStr(value)
+    .toLowerCase()
+    .replace(/[àâäáã]/g, "a")
+    .replace(/[éèêë]/g, "e")
+    .replace(/[îïí]/g, "i")
+    .replace(/[ôöó]/g, "o")
+    .replace(/[ùûüú]/g, "u")
+    .replace(/[ç]/g, "c")
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function hasCalculationDetail(value: unknown): boolean {
+  const raw = safeStr(value);
+  return /\d+\s*[\/×x\*\-\+]\s*\d+/.test(raw) || /=\s*\d/.test(raw);
+}
+
+function evaluateQrcDeterministic(question: Question, response: unknown, pointsQuestion: number): CorrectionQRC {
+  const maxPoints = Math.max(toFiniteNumber(pointsQuestion, 0), 0);
+  const responseRaw = safeStr(response);
+
+  if (maxPoints <= 0) {
+    return {
+      estCorrect: false,
+      pointsObtenus: 0,
+      nombrefautes: 0,
+      explication: "Barème indisponible pour cette question.",
+    };
+  }
+
+  if (!responseRaw.trim()) {
+    return {
+      estCorrect: false,
+      pointsObtenus: 0,
+      nombrefautes: 0,
+      explication: "Aucune réponse fournie.",
+    };
+  }
+
+  if (isCalculQuestion(question)) {
+    const responseCompact = responseRaw.replace(/\s/g, "").toLowerCase();
+    const expectedResults = (question.reponses_possibles || [question.reponseQRC || ""])
+      .map((r) => safeStr(r).replace(/\s/g, "").toLowerCase())
+      .filter(Boolean);
+    const hasResult = expectedResults.some((expected) => responseCompact.includes(expected));
+    const hasDetail = hasCalculationDetail(responseRaw);
+
+    let points = 0;
+    if (hasResult && hasDetail) {
+      points = maxPoints;
+    } else if (hasResult) {
+      points = Math.round(maxPoints * 5) / 10;
+    }
+
+    return {
+      estCorrect: hasResult && hasDetail,
+      pointsObtenus: clampToQuestionMax(points, maxPoints),
+      nombrefautes: 0,
+      explication: hasResult && hasDetail
+        ? "Résultat correct avec détail du calcul."
+        : hasResult
+          ? `Résultat correct mais détail du calcul manquant → ${Math.round(maxPoints * 5) / 10}/${maxPoints} pts`
+          : "Résultat incorrect.",
+    };
+  }
+
+  const normalizedResponse = normalizeAnswerText(responseRaw);
+  const expectedTokens = Array.from(
+    new Set(
+      (question.reponses_possibles || [question.reponseQRC || ""])
+        .map((token) => normalizeAnswerText(token))
+        .filter(Boolean)
+    )
+  );
+
+  if (expectedTokens.length === 0) {
+    return {
+      estCorrect: false,
+      pointsObtenus: 0,
+      nombrefautes: 0,
+      explication: "Réponse attendue indisponible pour cette question.",
+    };
+  }
+
+  const matched = expectedTokens.filter((token) => normalizedResponse.includes(token)).length;
+  const ratio = expectedTokens.length > 0 ? matched / expectedTokens.length : 0;
+  const points = clampToQuestionMax(Math.round(ratio * maxPoints * 10) / 10, maxPoints);
+
+  return {
+    estCorrect: matched >= expectedTokens.length,
+    pointsObtenus: points,
+    nombrefautes: 0,
+    explication: `Correction déterministe : ${matched}/${expectedTokens.length} élément(s) attendu(s) trouvés.`,
+  };
+}
+
+function computeAdmisForMatiere(noteObtenue: unknown, maxPoints: unknown, noteEliminatoire: unknown, noteSur: unknown, fallback = false): boolean {
+  const safeMax = Math.max(toFiniteNumber(maxPoints, 0), 0);
+  if (safeMax <= 0) return fallback;
+  const safeScore = clamp(toFiniteNumber(noteObtenue, 0), 0, safeMax);
+  const safeNoteSur = Math.max(toFiniteNumber(noteSur, 20), 1);
+  const seuil = (Math.max(toFiniteNumber(noteEliminatoire, 0), 0) / safeNoteSur) * safeMax;
+  return safeScore >= seuil;
+}
 import ExamensBlancsEditor from "./ExamensBlancsEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -833,7 +942,9 @@ function EcranResultats({
   userId?: string | null;
 }) {
   // Check if corrections are already cached in the resultats (from DB)
-  const hasPreloadedCorrections = resultats.some(r => r.correctionsIA && Object.keys(r.correctionsIA).length > 0);
+  const hasPreloadedCorrections = resultats.some(
+    (r) => r.correctionsIA && Object.values(r.correctionsIA).some((value) => value && value !== "loading")
+  );
 
   const [correctionsIA, setCorrectionsIA] = useState<{ [matiereIdx: number]: CorrectionCache }>(() => {
     if (!hasPreloadedCorrections) return {};
@@ -912,7 +1023,13 @@ function EcranResultats({
         .update({
           score_obtenu: noteRecalculeeSecurisee,
           note_sur_20: noteSur20,
-          reussi: noteRecalculeeSecurisee >= ((resultat.noteEliminatoire || 0) / (resultat.noteSur || 20)) * safeMax,
+          reussi: computeAdmisForMatiere(
+            noteRecalculeeSecurisee,
+            safeMax,
+            resultat.noteEliminatoire,
+            resultat.noteSur,
+            Boolean(resultat.admis)
+          ),
           details: {
             questions: (resultat as any).details?.questions || [],
             reponses: resultat.reponses,
@@ -928,8 +1045,8 @@ function EcranResultats({
 
   // Lance la correction IA de tous les QRC à l'affichage des résultats — ONLY if not already cached
   useEffect(() => {
-    // Skip if corrections already loaded from DB
-    if (hasPreloadedCorrections) return;
+    // IA temporairement désactivée pour garantir stabilité et cohérence des notes
+    if (!ENABLE_AI_QRC_CORRECTION || hasPreloadedCorrections) return;
 
     let cancelled = false;
     const corrigerTout = async () => {
@@ -963,66 +1080,79 @@ function EcranResultats({
 
       const finalCorrections = { ...initialCache };
 
-      // Corriger chaque QRC via l'IA
-      for (let mi = 0; mi < examen.matieres.length; mi++) {
-        const matiere = examen.matieres[mi];
-        if (!matiere || matiere === undefined) continue;
-        const resultat = resultats[mi];
-        if (!resultat) continue;
+      try {
+        // Corriger chaque QRC via l'IA
+        for (let mi = 0; mi < examen.matieres.length; mi++) {
+          const matiere = examen.matieres[mi];
+          if (!matiere || matiere === undefined) continue;
+          const resultat = resultats[mi];
+          if (!resultat) continue;
 
-        const questionsSafe = (matiere.questions || []).filter(q => q && q?.type !== undefined);
-        for (const q of questionsSafe) {
-          if (!q || q === undefined || q?.type !== "QRC") continue;
-          const reponseEtudiant = (resultat.reponses?.[q.id] as string) || "";
-          const pointsQuestion = getPointsParQuestion(matiere.id, q?.type || "QRC");
+          const questionsSafe = (matiere.questions || []).filter(q => q && q?.type !== undefined);
+          for (const q of questionsSafe) {
+            if (!q || q === undefined || q?.type !== "QRC") continue;
+            const reponseEtudiant = (resultat.reponses?.[q.id] as string) || "";
+            const pointsQuestion = getPointsParQuestion(matiere.id, q?.type || "QRC");
 
-          try {
-            const isCalc = isCalculQuestion(q);
-            const { data, error } = await supabase.functions.invoke("corriger-qrc", {
-              body: {
-                question: q.enonce,
-                reponseEtudiant,
-                reponsesAttendues: q.reponses_possibles || [q.reponseQRC || ""],
-                matiereId: matiere.id,
-                pointsQuestion,
-                isCalcul: isCalc,
-                reponseQRC: q.reponseQRC || "",
-              },
-            });
+            try {
+              const isCalc = isCalculQuestion(q);
+              const invokePromise = supabase.functions.invoke("corriger-qrc", {
+                body: {
+                  question: q.enonce,
+                  reponseEtudiant,
+                  reponsesAttendues: q.reponses_possibles || [q.reponseQRC || ""],
+                  matiereId: matiere.id,
+                  pointsQuestion,
+                  isCalcul: isCalc,
+                  reponseQRC: q.reponseQRC || "",
+                },
+              });
 
-            if (cancelled) return;
+              const timeoutPromise = new Promise<never>((_, reject) => {
+                window.setTimeout(() => reject(new Error("IA timeout")), 12000);
+              });
 
-            if (error || !data || data.error) {
-              finalCorrections[mi] = { ...(finalCorrections[mi] || {}), [q.id]: "error" };
-              setCorrectionsIA(prev => ({
-                ...prev,
-                [mi]: { ...(prev[mi] || {}), [q.id]: "error" },
-              }));
-            } else {
-              finalCorrections[mi] = { ...(finalCorrections[mi] || {}), [q.id]: data as CorrectionQRC };
-              setCorrectionsIA(prev => ({
-                ...prev,
-                [mi]: { ...(prev[mi] || {}), [q.id]: data as CorrectionQRC },
-              }));
+              const { data, error } = await Promise.race([invokePromise, timeoutPromise]);
+
+              if (cancelled) return;
+
+              if (error || !data || (data as any).error) {
+                finalCorrections[mi] = { ...(finalCorrections[mi] || {}), [q.id]: "error" };
+                setCorrectionsIA(prev => ({
+                  ...prev,
+                  [mi]: { ...(prev[mi] || {}), [q.id]: "error" },
+                }));
+              } else {
+                const safeData = data as CorrectionQRC;
+                const clamped: CorrectionQRC = {
+                  ...safeData,
+                  pointsObtenus: clampToQuestionMax(safeData.pointsObtenus, pointsQuestion),
+                };
+                finalCorrections[mi] = { ...(finalCorrections[mi] || {}), [q.id]: clamped };
+                setCorrectionsIA(prev => ({
+                  ...prev,
+                  [mi]: { ...(prev[mi] || {}), [q.id]: clamped },
+                }));
+              }
+            } catch {
+              if (!cancelled) {
+                finalCorrections[mi] = { ...(finalCorrections[mi] || {}), [q.id]: "error" };
+                setCorrectionsIA(prev => ({
+                  ...prev,
+                  [mi]: { ...(prev[mi] || {}), [q.id]: "error" },
+                }));
+              }
             }
-          } catch {
-            if (!cancelled) {
-              finalCorrections[mi] = { ...(finalCorrections[mi] || {}), [q.id]: "error" };
-              setCorrectionsIA(prev => ({
-                ...prev,
-                [mi]: { ...(prev[mi] || {}), [q.id]: "error" },
-              }));
-            }
+
+            await new Promise(r => setTimeout(r, 300));
           }
-
-          await new Promise(r => setTimeout(r, 300));
         }
-      }
 
-      if (!cancelled) {
-        setCorrectionEnCours(false);
-        // Save corrections to DB
-        saveCorrectionsToDb(finalCorrections);
+        if (!cancelled) {
+          saveCorrectionsToDb(finalCorrections);
+        }
+      } finally {
+        if (!cancelled) setCorrectionEnCours(false);
       }
     };
 
@@ -1030,55 +1160,25 @@ function EcranResultats({
     return () => { cancelled = true; };
   }, [examen, resultats, hasPreloadedCorrections]);
 
-  // Recalculer les notes avec les corrections IA
-  const resultatsAvecIA = resultats.map((r, mi) => {
-    if (!r || r === undefined) return r;
-    const cache = correctionsIA[mi];
-    if (!cache) return r;
-
-    const matiere = examen.matieres[mi];
-    if (!matiere) return r;
-    const questionsSafe = (matiere.questions || []).filter(q => q && q?.type !== undefined);
-
-    let noteRecalculee = 0;
-    questionsSafe.forEach(q => {
-      if (!q || q === undefined) return;
-      if (q?.type === "QCM" && q.choix) {
-        const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
-         const donnees = (Array.isArray(r.reponses?.[q.id]) ? (r.reponses[q.id] as string[]) : []).sort();
-         if (JSON.stringify(correctes) === JSON.stringify(donnees)) {
-           noteRecalculee += getPointsParQuestion(matiere.id, q?.type || "QCM");
-        }
-      } else if (q?.type === "QRC") {
-        const correction = cache[q.id];
-        if (correction && correction !== "loading" && correction !== "error") {
-          noteRecalculee += clampToQuestionMax(
-            correction.pointsObtenus,
-            getPointsParQuestion(matiere.id, q?.type || "QRC")
-          );
-        }
-      }
-    });
-
-    const toutTermine = questionsSafe
-      .filter(q => q?.type === "QRC")
-      .every(q => cache[q.id] && cache[q.id] !== "loading");
-
+  // Résultats sécurisés (aucune note hors bornes, aucun recalcul instable)
+  const resultatsAvecIA = resultats.map((r) => {
     const safeMaxPoints = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
-    const noteRecalculeeSecurisee = safeMaxPoints > 0 ? clamp(noteRecalculee, 0, safeMaxPoints) : Math.max(noteRecalculee, 0);
-    const safeNoteSur = r.noteSur || 20;
+    const safeNote = safeMaxPoints > 0
+      ? clamp(toFiniteNumber(r.noteObtenue, 0), 0, safeMaxPoints)
+      : Math.max(toFiniteNumber(r.noteObtenue, 0), 0);
 
     return {
       ...r,
-      noteObtenue: toutTermine ? noteRecalculeeSecurisee : r.noteObtenue,
-      admis: toutTermine ? noteRecalculeeSecurisee >= (r.noteEliminatoire / safeNoteSur) * safeMaxPoints : r.admis,
+      noteObtenue: safeNote,
+      admis: computeAdmisForMatiere(safeNote, safeMaxPoints, r.noteEliminatoire, r.noteSur, Boolean(r.admis)),
     };
   });
 
   const totalCoef = resultatsAvecIA.reduce((acc, r) => acc + (r.coefficient || 1), 0) || 1;
-  const noteGlobale = resultatsAvecIA.reduce((acc, r) => {
+  const noteGlobaleBrute = resultatsAvecIA.reduce((acc, r) => {
     return acc + normalizeNoteSur20(r.noteObtenue, r.maxPoints) * (r.coefficient || 1);
   }, 0) / totalCoef;
+  const noteGlobale = clamp(toFiniteNumber(noteGlobaleBrute, 0), 0, 20);
   const hasNoteEliminatoire = resultatsAvecIA.some(r => !r.admis);
   const moyenneSuffisante = noteGlobale >= 10;
   const admisGlobal = moyenneSuffisante && !hasNoteEliminatoire;
@@ -1227,31 +1327,19 @@ function EcranResultats({
                        pointsObtenus = isCorrect ? pts : 0;
                     } else if (q?.type === "QRC") {
                       const corrIA = cacheMatiere[q.id];
-                      const isCalc = isCalculQuestion(q);
-                      if (!corrIA || corrIA === "loading") {
+                      const fallback = evaluateQrcDeterministic(q, rep, pts);
+                      if (corrIA === "loading") {
                         isLoadingIA = true;
-                      } else if (corrIA === "error") {
-                        if (isCalc) {
-                          const repStr = safeStr(rep).replace(/\s/g, "").toLowerCase();
-                          const hasResult = (q.reponses_possibles || []).some(rr => repStr.includes(rr.replace(/\s/g, "").toLowerCase()));
-                          const hasCalcDetail = /\d+\s*[\/×x\*\-\+]\s*\d+/.test(safeStr(rep)) || /=\s*\d/.test(safeStr(rep));
-                          if (hasResult && hasCalcDetail) { isCorrect = true; pointsObtenus = pts; }
-                          else if (hasResult) { pointsObtenus = Math.round(pts * 5) / 10; correctionDetail = `⚠️ Résultat correct mais détail du calcul manquant → ${pointsObtenus}/${pts} pts`; }
-                          else { correctionDetail = "❌ Résultat incorrect."; }
-                        } else {
-                          const repStr = safeStr(rep).toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
-                          const motsCles = q.reponses_possibles || [];
-                          let nbTrouvees = 0;
-                          motsCles.forEach(mc => { const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, ""); if (repStr.includes(mcN)) nbTrouvees++; });
-                          const ratio = motsCles.length > 0 ? nbTrouvees / motsCles.length : 0;
-                          isCorrect = nbTrouvees >= motsCles.length;
-                          pointsObtenus = Math.round(ratio * pts * 10) / 10;
-                          correctionDetail = "⚠️ Correction IA indisponible – correction par mots-clés";
-                        }
-                      } else {
-                        isCorrect = corrIA.estCorrect;
-                        pointsObtenus = corrIA.pointsObtenus;
+                      } else if (corrIA && corrIA !== "error") {
+                        pointsObtenus = clampToQuestionMax(corrIA.pointsObtenus, pts);
+                        isCorrect = Boolean(corrIA.estCorrect) && pointsObtenus >= pts;
                         correctionDetail = corrIA.explication;
+                      } else {
+                        isCorrect = fallback.estCorrect;
+                        pointsObtenus = fallback.pointsObtenus;
+                        correctionDetail = corrIA === "error"
+                          ? `Correction IA indisponible. ${fallback.explication}`
+                          : fallback.explication;
                       }
                     }
 
@@ -1380,11 +1468,8 @@ function EcranResultats({
               if (corrIA && corrIA !== "loading" && corrIA !== "error") {
                 if (!corrIA.estCorrect) nbFaussesTop++;
               } else {
-                const repStr = safeStr(rep).toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
-                const motsCles = q.reponses_possibles || [];
-                let nbTrouvees = 0;
-                motsCles.forEach(mc => { const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, ""); if (repStr.includes(mcN)) nbTrouvees++; });
-                if (nbTrouvees < motsCles.length) nbFaussesTop++;
+                const fallback = evaluateQrcDeterministic(q, rep, getPointsParQuestion(matiere.id, q?.type || "QRC"));
+                if (!fallback.estCorrect) nbFaussesTop++;
               }
             }
           });
@@ -1805,9 +1890,13 @@ export default function ExamensBlancsPage({
           ? clamp(toFiniteNumber(row.score_obtenu, 0), 0, safeScoreMax)
           : Math.max(toFiniteNumber(row.score_obtenu, 0), 0);
         const safeNoteSur = matiere.noteSur || 20;
-        const admisCalcule = safeScoreMax > 0
-          ? safeScoreObtenu >= ((matiere.noteEliminatoire || 0) / safeNoteSur) * safeScoreMax
-          : Boolean(row.reussi);
+        const admisCalcule = computeAdmisForMatiere(
+          safeScoreObtenu,
+          safeScoreMax,
+          matiere.noteEliminatoire,
+          safeNoteSur,
+          Boolean(row.reussi)
+        );
 
         return {
           matiereId: row.matiere_id || matiere.id,
@@ -1858,26 +1947,9 @@ export default function ExamensBlancsPage({
         const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
          const donnees = (Array.isArray(rep) ? (rep as string[]) : []).sort();
          correct = JSON.stringify(correctes) === JSON.stringify(donnees);
-       } else if (q?.type === "QRC") {
-        if (isCalculQuestion(q)) {
-          // Calcul question: check result + detail
-           const repStr = safeStr(rep).replace(/\s/g, "").toLowerCase();
-          const hasResult = (q.reponses_possibles || []).some(r => repStr.includes(r.replace(/\s/g, "").toLowerCase()));
-          const hasCalcDetail = /\d+\s*[\/×x\*\-\+]\s*\d+/.test(safeStr(rep)) || /=\s*\d/.test(safeStr(rep));
-          if (hasResult && hasCalcDetail) totalPoints += pts;
-          else if (hasResult) totalPoints += Math.round(pts * 5) / 10;
-          // else 0
-        } else {
-          const repStr = safeStr(rep).toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
-          const motsCles = q.reponses_possibles || [];
-          let nbTrouvees = 0;
-          motsCles.forEach(mc => {
-            const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
-            if (repStr.includes(mcN)) nbTrouvees++;
-          });
-          const ratio = motsCles.length > 0 ? nbTrouvees / motsCles.length : 0;
-          totalPoints += Math.round(ratio * pts * 10) / 10;
-        }
+      } else if (q?.type === "QRC") {
+        const correction = evaluateQrcDeterministic(q, rep, pts);
+        totalPoints += correction.pointsObtenus;
         return; // prorata already added, skip the correct check below
       }
       if (correct) totalPoints += pts;
@@ -1904,7 +1976,13 @@ export default function ExamensBlancsPage({
       noteSur: matiere.noteSur,
       noteEliminatoire: matiere.noteEliminatoire,
       coefficient: matiere.coefficient,
-      admis: maxPoints > 0 ? noteSecurisee >= (matiere.noteEliminatoire / (matiere.noteSur || 20)) * maxPoints : false,
+      admis: computeAdmisForMatiere(
+        noteSecurisee,
+        maxPoints,
+        matiere.noteEliminatoire,
+        matiere.noteSur,
+        false
+      ),
       reponses,
     };
 
@@ -1959,9 +2037,13 @@ export default function ExamensBlancsPage({
             score_obtenu: safeScoreObtenu,
             score_max: safeScoreMax,
             note_sur_20: normalizeNoteSur20(safeScoreObtenu, safeScoreMax),
-            reussi: safeScoreMax > 0
-              ? safeScoreObtenu >= ((r.noteEliminatoire || 0) / (r.noteSur || 20)) * safeScoreMax
-              : Boolean(r.admis),
+            reussi: computeAdmisForMatiere(
+              safeScoreObtenu,
+              safeScoreMax,
+              r.noteEliminatoire,
+              r.noteSur,
+              Boolean(r.admis)
+            ),
             duree_secondes: Math.round(duree / allResults.length),
             details: { questions: questionDetails, reponses: r.reponses },
           };
