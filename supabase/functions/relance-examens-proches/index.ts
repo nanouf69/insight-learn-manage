@@ -79,7 +79,7 @@ serve(async (req) => {
     }
 
     // Filter: apprenants who completed less than 50% of their authorized modules
-    const behindSchedule = apprenants.filter((a: any) => {
+    const behindSchedule = filteredApprenants.filter((a: any) => {
       const authorizedModules: number[] = a.modules_autorises || [];
       if (authorizedModules.length === 0) return false;
       const completed = completionMap.get(a.id) || new Set();
