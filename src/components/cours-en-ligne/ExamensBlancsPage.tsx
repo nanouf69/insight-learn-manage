@@ -251,11 +251,14 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
 
   const [typeFiltre, setTypeFiltre] = useState<"tous" | "TAXI" | "VTC" | "TA" | "VA">(forcedType || "tous");
   const [completedExamIds, setCompletedExamIds] = useState<Set<string>>(new Set());
+  const [startedNotFinishedIds, setStartedNotFinishedIds] = useState<Set<string>>(new Set());
   const [examScores, setExamScores] = useState<Record<string, { matiere_id: string; matiere_nom: string; note_sur_20: number }[]>>({});
 
-  // Fetch completed exams with scores from DB
+  // Fetch completed exams with scores from DB + started-but-not-finished
   useEffect(() => {
     if (!apprenantId) return;
+
+    // 1) Fetch completed results
     supabase
       .from("apprenant_quiz_results" as any)
       .select("quiz_id, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, completed_at, created_at")
@@ -263,7 +266,6 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
       .eq("quiz_type", "examen_blanc")
       .then(({ data }) => {
         if (data) {
-          // Keep only latest row per quiz + matière to avoid mixing attempts
           const latestByQuizMatiere = new Map<string, any>();
           (data as any[]).forEach((r: any) => {
             const key = `${r.quiz_id}::${r.matiere_id || r.matiere_nom || "unknown"}`;
@@ -287,6 +289,25 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
             });
           });
           setExamScores(scores);
+
+          // 2) Fetch started-but-not-finished exams from reponses_apprenants
+          supabase
+            .from("reponses_apprenants" as any)
+            .select("exercice_id, completed")
+            .eq("apprenant_id", apprenantId)
+            .eq("exercice_type", "examen_blanc")
+            .then(({ data: repData }) => {
+              const started = new Set<string>();
+              if (repData) {
+                (repData as any[]).forEach((r: any) => {
+                  // Started but not finished = has a reponse row but not in completedExamIds
+                  if (!ids.has(r.exercice_id)) {
+                    started.add(r.exercice_id);
+                  }
+                });
+              }
+              setStartedNotFinishedIds(started);
+            });
         }
       });
   }, [apprenantId]);
