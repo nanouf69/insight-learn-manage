@@ -50,6 +50,115 @@ function normalizeNoteSur20(scoreObtenu: unknown, scoreMax: unknown, fallback?: 
 function clampToQuestionMax(pointsObtenus: unknown, questionMax: number): number {
   return clamp(toFiniteNumber(pointsObtenus, 0), 0, Math.max(questionMax, 0));
 }
+
+const ENABLE_AI_QRC_CORRECTION = false;
+
+function normalizeAnswerText(value: unknown): string {
+  return safeStr(value)
+    .toLowerCase()
+    .replace(/[àâäáã]/g, "a")
+    .replace(/[éèêë]/g, "e")
+    .replace(/[îïí]/g, "i")
+    .replace(/[ôöó]/g, "o")
+    .replace(/[ùûüú]/g, "u")
+    .replace(/[ç]/g, "c")
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function hasCalculationDetail(value: unknown): boolean {
+  const raw = safeStr(value);
+  return /\d+\s*[\/×x\*\-\+]\s*\d+/.test(raw) || /=\s*\d/.test(raw);
+}
+
+function evaluateQrcDeterministic(question: Question, response: unknown, pointsQuestion: number): CorrectionQRC {
+  const maxPoints = Math.max(toFiniteNumber(pointsQuestion, 0), 0);
+  const responseRaw = safeStr(response);
+
+  if (maxPoints <= 0) {
+    return {
+      estCorrect: false,
+      pointsObtenus: 0,
+      nombrefautes: 0,
+      explication: "Barème indisponible pour cette question.",
+    };
+  }
+
+  if (!responseRaw.trim()) {
+    return {
+      estCorrect: false,
+      pointsObtenus: 0,
+      nombrefautes: 0,
+      explication: "Aucune réponse fournie.",
+    };
+  }
+
+  if (isCalculQuestion(question)) {
+    const responseCompact = responseRaw.replace(/\s/g, "").toLowerCase();
+    const expectedResults = (question.reponses_possibles || [question.reponseQRC || ""])
+      .map((r) => safeStr(r).replace(/\s/g, "").toLowerCase())
+      .filter(Boolean);
+    const hasResult = expectedResults.some((expected) => responseCompact.includes(expected));
+    const hasDetail = hasCalculationDetail(responseRaw);
+
+    let points = 0;
+    if (hasResult && hasDetail) {
+      points = maxPoints;
+    } else if (hasResult) {
+      points = Math.round(maxPoints * 5) / 10;
+    }
+
+    return {
+      estCorrect: hasResult && hasDetail,
+      pointsObtenus: clampToQuestionMax(points, maxPoints),
+      nombrefautes: 0,
+      explication: hasResult && hasDetail
+        ? "Résultat correct avec détail du calcul."
+        : hasResult
+          ? `Résultat correct mais détail du calcul manquant → ${Math.round(maxPoints * 5) / 10}/${maxPoints} pts`
+          : "Résultat incorrect.",
+    };
+  }
+
+  const normalizedResponse = normalizeAnswerText(responseRaw);
+  const expectedTokens = Array.from(
+    new Set(
+      (question.reponses_possibles || [question.reponseQRC || ""])
+        .map((token) => normalizeAnswerText(token))
+        .filter(Boolean)
+    )
+  );
+
+  if (expectedTokens.length === 0) {
+    return {
+      estCorrect: false,
+      pointsObtenus: 0,
+      nombrefautes: 0,
+      explication: "Réponse attendue indisponible pour cette question.",
+    };
+  }
+
+  const matched = expectedTokens.filter((token) => normalizedResponse.includes(token)).length;
+  const ratio = expectedTokens.length > 0 ? matched / expectedTokens.length : 0;
+  const points = clampToQuestionMax(Math.round(ratio * maxPoints * 10) / 10, maxPoints);
+
+  return {
+    estCorrect: matched >= expectedTokens.length,
+    pointsObtenus: points,
+    nombrefautes: 0,
+    explication: `Correction déterministe : ${matched}/${expectedTokens.length} élément(s) attendu(s) trouvés.`,
+  };
+}
+
+function computeAdmisForMatiere(noteObtenue: unknown, maxPoints: unknown, noteEliminatoire: unknown, noteSur: unknown, fallback = false): boolean {
+  const safeMax = Math.max(toFiniteNumber(maxPoints, 0), 0);
+  if (safeMax <= 0) return fallback;
+  const safeScore = clamp(toFiniteNumber(noteObtenue, 0), 0, safeMax);
+  const safeNoteSur = Math.max(toFiniteNumber(noteSur, 20), 1);
+  const seuil = (Math.max(toFiniteNumber(noteEliminatoire, 0), 0) / safeNoteSur) * safeMax;
+  return safeScore >= seuil;
+}
 import ExamensBlancsEditor from "./ExamensBlancsEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
