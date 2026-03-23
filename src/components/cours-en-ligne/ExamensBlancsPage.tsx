@@ -1020,7 +1020,6 @@ function PassageMatiere({
           </Button>
         )}
       </div>
-    </div>
 
       {/* Calculatrice flottante pour Gestion */}
       {isGestion && showCalculator && (
