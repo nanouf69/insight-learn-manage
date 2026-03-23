@@ -759,7 +759,8 @@ const matiere_anglais_examen1: Matiere = {
         { lettre: "A", texte: "I have been a driver for half past four" },
         { lettre: "B", texte: "I've been a driver since 1990", correct: true },
         { lettre: "C", texte: "I was a driver in the 90's" },
-        { lettre: "D", texte: "I've been a driver for 27 years" }
+        { lettre: "D", texte: "I've been a driver for 27 years" , correct: true }
+
       ]
     },
     {
@@ -1020,7 +1021,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "avoir son permis de conduire depuis plus de 5 ans" },
           { lettre: "B", texte: "avoir 10 points minimum sur son permis de conduire" },
-          { lettre: "C", texte: "casier judiciaire B2 vierge" },
+          { lettre: "C", texte: "casier judiciaire B2 vierge" , correct: true },
         ],
       },
       {
@@ -1029,7 +1030,7 @@ const eb1Matieres: Matiere[] = [
         enonce: "Quelles sont les sanctions possibles en cas d'exercice illégale d'une des professions du T3P ?",
         choix: [
           { lettre: "A", texte: "une amende de 30 000 € et un deux ans d’emprisonnement" },
-          { lettre: "B", texte: "une amende de 15 000 € et un an d’emprisonnement" },
+          { lettre: "B", texte: "une amende de 15 000 € et un an d’emprisonnement" , correct: true },
           { lettre: "C", texte: "une amende de 1 500 € et six mois d’emprisonnement" },
         ],
       },
@@ -1040,7 +1041,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "être de couleur blanche" },
           { lettre: "B", texte: "avoir des tailles de pneumatiques fixées par décret" },
-          { lettre: "C", texte: "avoir une signalétique distinctive" },
+          { lettre: "C", texte: "avoir une signalétique distinctive" , correct: true },
         ],
       },
       {
@@ -1049,7 +1050,7 @@ const eb1Matieres: Matiere[] = [
         enonce: "Parmi les entreprises du T3P, quelles sont celles qui sont soumises à l'obligation de s'assurer en responsabilité civile professionnelle ?",
         choix: [
           { lettre: "A", texte: "VTC et 2 ou 3 roues" },
-          { lettre: "B", texte: "le taxi, VTC et 2 ou 3 roues seulement" },
+          { lettre: "B", texte: "le taxi, VTC et 2 ou 3 roues seulement" , correct: true },
           { lettre: "C", texte: "le taxi seulement" },
           { lettre: "D", texte: "le taxi et le VTC seulement" },
         ],
@@ -1061,7 +1062,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "les conseils départementaux" },
           { lettre: "B", texte: "l’association permanente des chambres de métiers et de l’artisanat" },
-          { lettre: "C", texte: "les préfectures" },
+          { lettre: "C", texte: "les préfectures" , correct: true },
           { lettre: "D", texte: "le ministère des transports pour les VTC, le ministère de l’environnement pour les 2 ou 3 roues, le ministère de l’intérieur pour les taxis" },
         ],
       },
@@ -1071,9 +1072,9 @@ const eb1Matieres: Matiere[] = [
         enonce: "Qui préside la commission locale du T3P ?",
         choix: [
           { lettre: "A", texte: "le représentant de chaque collège à tour de rôle" },
-          { lettre: "B", texte: "le préfet ou son représentant" },
+          { lettre: "B", texte: "le préfet ou son représentant" , correct: true },
           { lettre: "C", texte: "le directeur des transports du département" },
-          { lettre: "D", texte: "le Président de la chambre de métiers" },
+          { lettre: "D", texte: "le Président de la chambre de métiers" , correct: true },
         ],
       },
       {
@@ -1095,7 +1096,7 @@ const eb1Matieres: Matiere[] = [
           { lettre: "A", texte: "un taxi conventionné ou un VTC conventionné" },
           { lettre: "B", texte: "un VTC conventionné ou un taxi moto conventionné" },
           { lettre: "C", texte: "un taxi conventionné ou un Taxi moto conventionné ou un VTC conventionné" },
-          { lettre: "D", texte: "un taxi conventionné" },
+          { lettre: "D", texte: "un taxi conventionné" , correct: true },
         ],
       },
       {
@@ -1104,9 +1105,9 @@ const eb1Matieres: Matiere[] = [
         enonce: "Quels agents sont habilités à effectuer un contrôle routier de conducteur de T3P ?",
         choix: [
           { lettre: "A", texte: "les agents représentant la SNCF" },
-          { lettre: "B", texte: "les gendarmes" },
+          { lettre: "B", texte: "les gendarmes" , correct: true },
           { lettre: "C", texte: "le juge du tribunal d’instance" },
-          { lettre: "D", texte: "les policiers" },
+          { lettre: "D", texte: "les policiers" , correct: true },
         ],
       },
       {
@@ -1115,9 +1116,9 @@ const eb1Matieres: Matiere[] = [
         enonce: "Parmi les condamnations suivantes, lesquelles peuvent être mentionnées au bulletin n° 2 du casier judiciaire ?",
         choix: [
           { lettre: "A", texte: "transporter et déposer des objets, déchets, liquides insalubres en un lieu sans l’autorisation de la personne ayant la jouissance du lieu" },
-          { lettre: "B", texte: "conduire avec un taux d’alcool dans le sang de 0,8 gramme par litre ou plus" },
+          { lettre: "B", texte: "conduire avec un taux d’alcool dans le sang de 0,8 gramme par litre ou plus", correct: true },
           { lettre: "C", texte: "transporter un appareil permettant de déceler la présence de systèmes servant à la constatation des infractions à la législation, ou à la réglementation de la circulation routière" },
-          { lettre: "D", texte: "poursuivre sa route, en connaissance de cause, après avoir occasionné un accident" },
+          { lettre: "D", texte: "poursuivre sa route, en connaissance de cause, après avoir occasionné un accident", correct: true },
         ],
       },
     ],
@@ -1151,7 +1152,7 @@ const eb1Matieres: Matiere[] = [
         type: "QCM",
         enonce: "A l'actif du bilan figure :",
         choix: [
-          { lettre: "A", texte: "les créances des clients" },
+          { lettre: "A", texte: "les créances des clients" , correct: true },
           { lettre: "B", texte: "le capital" },
           { lettre: "C", texte: "le bénéfice de l'année" },
         ],
@@ -1162,7 +1163,7 @@ const eb1Matieres: Matiere[] = [
         enonce: "Quelle mention n'est pas obligatoire sur le bulletin de salaire ?",
         choix: [
           { lettre: "A", texte: "le montant net à payer" },
-          { lettre: "B", texte: "le diplôme du salarié" },
+          { lettre: "B", texte: "le diplôme du salarié" , correct: true },
           { lettre: "C", texte: "la convention collective applicable" },
         ],
       },
@@ -1172,7 +1173,7 @@ const eb1Matieres: Matiere[] = [
         enonce: "La SAS est sur le plan juridique :",
         choix: [
           { lettre: "A", texte: "une personne juridique" },
-          { lettre: "B", texte: "une personne morale" },
+          { lettre: "B", texte: "une personne morale" , correct: true },
           { lettre: "C", texte: "une personne professionnelle" },
           { lettre: "D", texte: "une personne physique" },
         ],
@@ -1183,8 +1184,8 @@ const eb1Matieres: Matiere[] = [
         enonce: "Dans un bilan comptable, un amortissement fait baisser :",
         choix: [
           { lettre: "A", texte: "les charges" },
-          { lettre: "B", texte: "le bénéfice" },
-          { lettre: "C", texte: "l’imposition" },
+          { lettre: "B", texte: "le bénéfice" , correct: true },
+          { lettre: "C", texte: "l’imposition" , correct: true },
         ],
       },
       {
@@ -1193,7 +1194,7 @@ const eb1Matieres: Matiere[] = [
         enonce: "La libération totale du capital social dans une société à responsabilité limitée (SARL) doit intervenir au plus tard dans un délai de :",
         choix: [
           { lettre: "A", texte: "99 ans" },
-          { lettre: "B", texte: "5 ans" },
+          { lettre: "B", texte: "5 ans" , correct: true },
           { lettre: "C", texte: "10 ans" },
           { lettre: "D", texte: "1 an" },
         ],
@@ -1205,7 +1206,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "HT" },
           { lettre: "B", texte: "TTC" },
-          { lettre: "C", texte: "BIC" },
+          { lettre: "C", texte: "BIC" , correct: true },
         ],
       },
       {
@@ -1214,7 +1215,7 @@ const eb1Matieres: Matiere[] = [
         enonce: "Au 1er janvier 2016, j'achète un véhicule 20 000 € HT amortissable sur 4 ans, un ordinateur portable 600 € HT amortissable sur 3 ans. Quel sera le montant de la dotation d'amortissement déductible sur les charges d'entreprise en 2017 ?",
         choix: [
           { lettre: "A", texte: "5 300 €" },
-          { lettre: "B", texte: "5 200 €" },
+          { lettre: "B", texte: "5 200 €" , correct: true },
           { lettre: "C", texte: "10 400 €" },
           { lettre: "D", texte: "4 198 €" },
         ],
@@ -1225,7 +1226,7 @@ const eb1Matieres: Matiere[] = [
         enonce: "Existe-t-il une durée minimale pour un contrat à durée déterminée ?",
         choix: [
           { lettre: "A", texte: "1 mois" },
-          { lettre: "B", texte: "pas de durée minimale" },
+          { lettre: "B", texte: "pas de durée minimale" , correct: true },
           { lettre: "C", texte: "7 jours" },
           { lettre: "D", texte: "15 jours" },
         ],
@@ -1237,7 +1238,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "une charge financière" },
           { lettre: "B", texte: "une charge" },
-          { lettre: "C", texte: "un mouvement de trésorerie" },
+          { lettre: "C", texte: "un mouvement de trésorerie" , correct: true },
           { lettre: "D", texte: "un produit" },
         ],
       },
@@ -1248,7 +1249,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "intérêt d'un prêt professionnel" },
           { lettre: "B", texte: "abonnement à une revue professionnelle" },
-          { lettre: "C", texte: "remboursement du capital d'un prêt professionnel" },
+          { lettre: "C", texte: "remboursement du capital d'un prêt professionnel" , correct: true },
         ],
       },
       {
@@ -1258,7 +1259,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "sous certaines conditions" },
           { lettre: "B", texte: "oui" },
-          { lettre: "C", texte: "non" },
+          { lettre: "C", texte: "non" , correct: true },
         ],
       },
       {
@@ -1268,7 +1269,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "conjoint salarié" },
           { lettre: "B", texte: "conjoint hors statut" },
-          { lettre: "C", texte: "conjoint associé" },
+          { lettre: "C", texte: "conjoint associé" , correct: true },
           { lettre: "D", texte: "conjoint collaborateur" },
         ],
       },
@@ -1278,7 +1279,7 @@ const eb1Matieres: Matiere[] = [
         enonce: "Vous empruntez 25 000 € sur une durée de 5 ans ; l'annuité est de 5 600 €. Quel le coût de l'emprunt ?",
         choix: [
           { lettre: "A", texte: "4200 €" },
-          { lettre: "B", texte: "3000 €" },
+          { lettre: "B", texte: "3000 €" , correct: true },
           { lettre: "C", texte: "3600 €" },
         ],
       },
@@ -1289,7 +1290,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "l’argent qui reste en banque après avoir payé toutes les charges" },
           { lettre: "B", texte: "l’ensemble des commandes ou devis" },
-          { lettre: "C", texte: "l’ensemble des sommes facturées aux clients" },
+          { lettre: "C", texte: "l’ensemble des sommes facturées aux clients" , correct: true },
           { lettre: "D", texte: "la différence entre les produits et les charges" },
         ],
       },
@@ -1298,7 +1299,7 @@ const eb1Matieres: Matiere[] = [
         type: "QCM",
         enonce: "Lors de sa création, l'entreprise de Taxi ou de VTC doit s'inscrire",
         choix: [
-          { lettre: "A", texte: "à la chambre de métiers et de l’artisanat" },
+          { lettre: "A", texte: "à la chambre de métiers et de l’artisanat" , correct: true },
           { lettre: "B", texte: "à la chambre de commerce et d’industrie" },
           { lettre: "C", texte: "à la chambre d’agriculture" },
         ],
@@ -1311,7 +1312,7 @@ const eb1Matieres: Matiere[] = [
           { lettre: "A", texte: "RCM (revenus de capitaux mobiliers)" },
           { lettre: "B", texte: "BNC (bénéfices non commerciaux)" },
           { lettre: "C", texte: "IS (Impôts sur les sociétés)" },
-          { lettre: "D", texte: "BIC (bénéfices industriels et commerciaux)" },
+          { lettre: "D", texte: "BIC (bénéfices industriels et commerciaux)" , correct: true },
         ],
       },
     ],
@@ -1331,7 +1332,7 @@ const eb1Matieres: Matiere[] = [
         image: "/cours/examens/panneau-stationnement-interdit.png",
         choix: [
           { lettre: "A", texte: "Un stationnement à durée limitée" },
-          { lettre: "B", texte: "Que du 1er au 15 de chaque mois, le stationnement est autorisé du coté des numéros impairs des immeubles bordant la rue" },
+          { lettre: "B", texte: "Que du 1er au 15 de chaque mois, le stationnement est autorisé du coté des numéros impairs des immeubles bordant la rue", correct: true },
           { lettre: "C", texte: "Que du 1 er au 15 de chaque mois, le stationnement est autorisé du coté des numéros pairs des immeubles bordant la rue" },
         ],
       },
@@ -1341,7 +1342,7 @@ const eb1Matieres: Matiere[] = [
         enonce: "Pour faire établir une nouvelle carte grise lors d'un changement de domicile, le propriétaire dispose de :",
         choix: [
           { lettre: "A", texte: "3 semaines" },
-          { lettre: "B", texte: "1 mois" },
+          { lettre: "B", texte: "1 mois" , correct: true },
           { lettre: "C", texte: "15 jours" },
         ],
       },
@@ -1351,8 +1352,8 @@ const eb1Matieres: Matiere[] = [
         enonce: "En agglomération éclairée la nuit :",
         choix: [
           { lettre: "A", texte: "Je dois rouler en feux de croisement" },
-          { lettre: "B", texte: "Je peux rouler en feux de position" },
-          { lettre: "C", texte: "Je peux rouler en feux de croisement" },
+          { lettre: "B", texte: "Je peux rouler en feux de position" , correct: true },
+          { lettre: "C", texte: "Je peux rouler en feux de croisement" , correct: true },
           { lettre: "D", texte: "Je peux rouler sans feux" },
         ],
       },
@@ -1361,7 +1362,7 @@ const eb1Matieres: Matiere[] = [
         type: "QCM",
         enonce: "Sur les routes à 2x2 voies séparées par une ligne continue, la vitesse est limitée à :",
         choix: [
-          { lettre: "A", texte: "90 km/h" },
+          { lettre: "A", texte: "90 km/h" , correct: true },
           { lettre: "B", texte: "110 km/h" },
           { lettre: "C", texte: "130 km/h" },
         ],
@@ -1371,8 +1372,8 @@ const eb1Matieres: Matiere[] = [
         type: "QCM",
         enonce: "Les éléments qui favorisent le risque d'aquaplanage sont :",
         choix: [
-          { lettre: "A", texte: "Une grande quantité d'eau sur la chaussée" },
-          { lettre: "B", texte: "Une vitesse élevée" },
+          { lettre: "A", texte: "Une grande quantité d'eau sur la chaussée" , correct: true },
+          { lettre: "B", texte: "Une vitesse élevée" , correct: true },
           { lettre: "C", texte: "Une route sèche" },
           { lettre: "D", texte: "Un fort vent latéral" },
         ],
@@ -1384,7 +1385,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "100 m" },
           { lettre: "B", texte: "40 m" },
-          { lettre: "C", texte: "50 m" },
+          { lettre: "C", texte: "50 m" , correct: true },
           { lettre: "D", texte: "30 m" },
         ],
       },
@@ -1393,7 +1394,7 @@ const eb1Matieres: Matiere[] = [
         type: "QCM",
         enonce: "La roue de secours est-elle obligatoire dans une voiture ?",
         choix: [
-          { lettre: "A", texte: "Non, la règlementation francaise ne l'impose pas" },
+          { lettre: "A", texte: "Non, la règlementation francaise ne l'impose pas" , correct: true },
           { lettre: "B", texte: "Oui, il s'agit d'un équipement de sécurité" },
           { lettre: "C", texte: "Oui, il s'agit d'une obligation européenne" },
         ],
@@ -1405,8 +1406,8 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "Réduire la distance de sécurité à l'arrêt pour faciliter l'accès des secours" },
           { lettre: "B", texte: "Faire un demi-tour avec son véhicule pour fuir au plus vite" },
-          { lettre: "C", texte: "Laisser les clefs de contact sur le véhicule, après avoir eteint le moteur" },
-          { lettre: "D", texte: "Evacuer le tunnel par l'issue de secours la plus proche" },
+          { lettre: "C", texte: "Laisser les clefs de contact sur le véhicule, après avoir eteint le moteur" , correct: true },
+          { lettre: "D", texte: "Evacuer le tunnel par l'issue de secours la plus proche" , correct: true },
         ],
       },
       {
@@ -1414,8 +1415,8 @@ const eb1Matieres: Matiere[] = [
         type: "QCM",
         enonce: "Mon permis de conduire porte la mention \"verres correcteurs\" : pour conduire je peux porter des lentilles de contact :",
         choix: [
-          { lettre: "A", texte: "Il est conseillé d'avoir à bord de mon véhicule des lunettes de rechange" },
-          { lettre: "B", texte: "Oui" },
+          { lettre: "A", texte: "Il est conseillé d'avoir à bord de mon véhicule des lunettes de rechange" , correct: true },
+          { lettre: "B", texte: "Oui" , correct: true },
           { lettre: "C", texte: "Non" },
           { lettre: "D", texte: "Je dois avoir des lunettes de rechange à bord de mon véhicule" },
         ],
@@ -1427,7 +1428,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "20 mètres environ" },
           { lettre: "B", texte: "80 mètres environ" },
-          { lettre: "C", texte: "50 mètres environ" },
+          { lettre: "C", texte: "50 mètres environ" , correct: true },
           { lettre: "D", texte: "30 mètres environ" },
         ],
       },
@@ -1436,8 +1437,8 @@ const eb1Matieres: Matiere[] = [
         type: "QCM",
         enonce: "Conduisant durant une période de suspension du permis de conduire :",
         choix: [
-          { lettre: "A", texte: "Je commets un délit" },
-          { lettre: "B", texte: "Je risque un retrait de 6 points de mon permis de conduire" },
+          { lettre: "A", texte: "Je commets un délit" , correct: true },
+          { lettre: "B", texte: "Je risque un retrait de 6 points de mon permis de conduire" , correct: true },
           { lettre: "C", texte: "Il ne peut pas y avoir de retrait de point" },
         ],
       },
@@ -1448,7 +1449,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "de 2.50 m" },
           { lettre: "B", texte: "de 1 m" },
-          { lettre: "C", texte: "de 1.5 m" },
+          { lettre: "C", texte: "de 1.5 m" , correct: true },
         ],
       },
       {
@@ -1457,7 +1458,7 @@ const eb1Matieres: Matiere[] = [
         enonce: "Rouler à 120 km/h au lieu de 130 km/h permet de réduire les émissions de gaz carbonique (CO2) :",
         choix: [
           { lettre: "A", texte: "Non" },
-          { lettre: "B", texte: "Oui" },
+          { lettre: "B", texte: "Oui" , correct: true },
           { lettre: "C", texte: "Cela n'a aucun effet sur les émissions de gaz carbonique" },
         ],
       },
@@ -1468,7 +1469,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "30 jours" },
           { lettre: "B", texte: "40 jours" },
-          { lettre: "C", texte: "45 jours" },
+          { lettre: "C", texte: "45 jours" , correct: true },
         ],
       },
       {
@@ -1478,7 +1479,7 @@ const eb1Matieres: Matiere[] = [
         image: "/cours/examens/pictogramme-niveau3.png",
         choix: [
           { lettre: "A", texte: "Soyez très prudent. Ne pas conduire sans l’avis d’un professionnel de santé" },
-          { lettre: "B", texte: "Attention, danger : ne pas conduire. Pour la reprise de la conduite, demandez l’avis d’un médecin" },
+          { lettre: "B", texte: "Attention, danger : ne pas conduire. Pour la reprise de la conduite, demandez l’avis d’un médecin" , correct: true },
           { lettre: "C", texte: "Soyez prudent. Ne pas conduire sans avoir lu la notice" },
         ],
       },
@@ -1488,8 +1489,8 @@ const eb1Matieres: Matiere[] = [
         enonce: "Dans cette liste d'infractions, quelles sont celles qui entrainent un retrait de 4 points du permis de conduire ?",
         choix: [
           { lettre: "A", texte: "Utilisation du téléphone en conduisant" },
-          { lettre: "B", texte: "Circulation en sens interdit" },
-          { lettre: "C", texte: "Stop glissé" },
+          { lettre: "B", texte: "Circulation en sens interdit" , correct: true },
+          { lettre: "C", texte: "Stop glissé" , correct: true },
           { lettre: "D", texte: "Non port de la ceinture de sécurité" },
         ],
       },
@@ -1501,7 +1502,7 @@ const eb1Matieres: Matiere[] = [
           { lettre: "A", texte: "50 m" },
           { lettre: "B", texte: "200 m" },
           { lettre: "C", texte: "100 m" },
-          { lettre: "D", texte: "150 m" },
+          { lettre: "D", texte: "150 m" , correct: true },
         ],
       },
       {
@@ -1510,7 +1511,7 @@ const eb1Matieres: Matiere[] = [
         enonce: "Les témoins sur le tableaux de bord du véhicule qui alertent le conducteur d’une urgence mécanique sont de couleur :",
         choix: [
           { lettre: "A", texte: "Bleue" },
-          { lettre: "B", texte: "Rouge" },
+          { lettre: "B", texte: "Rouge", correct: true },
           { lettre: "C", texte: "Orange" },
           { lettre: "D", texte: "Verte" },
         ],
@@ -1523,7 +1524,7 @@ const eb1Matieres: Matiere[] = [
           { lettre: "A", texte: "7 passagers" },
           { lettre: "B", texte: "6 passagers" },
           { lettre: "C", texte: "9 passagers" },
-          { lettre: "D", texte: "8 passagers" },
+          { lettre: "D", texte: "8 passagers" , correct: true },
         ],
       },
       {
@@ -1531,8 +1532,8 @@ const eb1Matieres: Matiere[] = [
         type: "QCM",
         enonce: "Si mon temps de réaction augmente :",
         choix: [
-          { lettre: "A", texte: "La distance de réaction augmente" },
-          { lettre: "B", texte: "La distance d'arrêt augmente" },
+          { lettre: "A", texte: "La distance de réaction augmente", correct: true },
+          { lettre: "B", texte: "La distance d'arrêt augmente", correct: true },
           { lettre: "C", texte: "La distance de freinage augmente" },
           { lettre: "D", texte: "La distance d'arrêt est inchangée" },
         ],
@@ -1575,7 +1576,7 @@ const eb1Matieres: Matiere[] = [
         enonce: "Selon l’auteur, après quel événement l’automobile est devenue symbole de liberté individuelle ?",
         choix: [
           { lettre: "A", texte: "Après la démocratisation" },
-          { lettre: "B", texte: "Après la première guerre mondiale" },
+          { lettre: "B", texte: "Après la première guerre mondiale" , correct: true },
           { lettre: "C", texte: "Après la révolution industrielle" },
         ],
       },
@@ -1585,7 +1586,7 @@ const eb1Matieres: Matiere[] = [
         enonce: "Que signifie l’expression « conducteur exacerbé » employée par l’auteur ?",
         choix: [
           { lettre: "A", texte: "Le conducteur est désorienté" },
-          { lettre: "B", texte: "Le conducteur éprouve une forte colère" },
+          { lettre: "B", texte: "Le conducteur éprouve une forte colère" , correct: true },
           { lettre: "C", texte: "Le conducteur est paisible" },
         ],
       },
@@ -1594,7 +1595,7 @@ const eb1Matieres: Matiere[] = [
         type: "QCM",
         enonce: "Que signifie la voiture après la 1ère guerre mondiale ?",
         choix: [
-          { lettre: "A", texte: "La liberté" },
+          { lettre: "A", texte: "La liberté" , correct: true },
           { lettre: "B", texte: "La contrainte" },
           { lettre: "C", texte: "Un danger" },
         ],
@@ -1604,8 +1605,8 @@ const eb1Matieres: Matiere[] = [
         type: "QCM",
         enonce: "La voiture permet :",
         choix: [
-          { lettre: "A", texte: "De raccourcir le temps de trajet" },
-          { lettre: "B", texte: "De modifier les rapports spatiotemporels de la personne" },
+          { lettre: "A", texte: "De raccourcir le temps de trajet" , correct: true },
+          { lettre: "B", texte: "De modifier les rapports spatiotemporels de la personne" , correct: true },
           { lettre: "C", texte: "De montrer que l’on est riche" },
         ],
       },
@@ -1615,7 +1616,7 @@ const eb1Matieres: Matiere[] = [
         enonce: "D’après le texte disposer une voiture pour l’homme signifie :",
         choix: [
           { lettre: "A", texte: "Etre intelligent" },
-          { lettre: "B", texte: "Etre fort" },
+          { lettre: "B", texte: "Etre fort" , correct: true },
           { lettre: "C", texte: "Etre beau" },
         ],
       },
@@ -1624,8 +1625,8 @@ const eb1Matieres: Matiere[] = [
         type: "QCM",
         enonce: "Quelles sont les autres fonctions de la voiture citées dans le texte :",
         choix: [
-          { lettre: "A", texte: "Elle permet d’afficher son rang" },
-          { lettre: "B", texte: "Elle permet d’afficher sa réussite sociale" },
+          { lettre: "A", texte: "Elle permet d’afficher son rang" , correct: true },
+          { lettre: "B", texte: "Elle permet d’afficher sa réussite sociale" , correct: true },
           { lettre: "C", texte: "Elle permet de gagner beaucoup d’argent" },
         ],
       },
@@ -1634,7 +1635,7 @@ const eb1Matieres: Matiere[] = [
         type: "QCM",
         enonce: "La voiture est vue :",
         choix: [
-          { lettre: "A", texte: "Comme une chose personnelle" },
+          { lettre: "A", texte: "Comme une chose personnelle" , correct: true },
           { lettre: "B", texte: "Comme un objet public" },
         ],
       },
@@ -1655,7 +1656,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "I only accept cash and card" },
           { lettre: "B", texte: "It's possible to pay by cheques" },
-          { lettre: "C", texte: "You can only pay in Euro" },
+          { lettre: "C", texte: "You can only pay in Euro" , correct: true },
         ],
       },
       {
@@ -1665,7 +1666,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "Less" },
           { lettre: "B", texte: "Reduction" },
-          { lettre: "C", texte: "Lower" },
+          { lettre: "C", texte: "Lower" , correct: true },
           { lettre: "D", texte: "Gooder" },
         ],
       },
@@ -1676,7 +1677,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "Vous vous êtes trompé d'adresse" },
           { lettre: "B", texte: "Je ne suis pas certain que ce soit le bon endroit" },
-          { lettre: "C", texte: "Etes-vous sur de prendre le chemin le plus court ?" },
+          { lettre: "C", texte: "Etes-vous sur de prendre le chemin le plus court ?" , correct: true },
         ],
       },
       {
@@ -1685,7 +1686,7 @@ const eb1Matieres: Matiere[] = [
         enonce: "France has ......... places to visit",
         choix: [
           { lettre: "A", texte: "Lots of" },
-          { lettre: "B", texte: "A lot of" },
+          { lettre: "B", texte: "A lot of" , correct: true },
           { lettre: "C", texte: "A many" },
         ],
       },
@@ -1694,7 +1695,7 @@ const eb1Matieres: Matiere[] = [
         type: "QCM",
         enonce: "Ma voiture ne demarre pas",
         choix: [
-          { lettre: "A", texte: "My car doesn't start" },
+          { lettre: "A", texte: "My car doesn't start" , correct: true },
           { lettre: "B", texte: "My car won't start" },
           { lettre: "C", texte: "My car didn't start" },
         ],
@@ -1706,7 +1707,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "I have a plane tomorrow morning at twenty to ten" },
           { lettre: "B", texte: "I had a plane tomorrow evening at twenty to ten" },
-          { lettre: "C", texte: "I have a plane tomorrow morning at twenty past ten" },
+          { lettre: "C", texte: "I have a plane tomorrow morning at twenty past ten" , correct: true },
         ],
       },
       {
@@ -1715,7 +1716,7 @@ const eb1Matieres: Matiere[] = [
         enonce: "Votre séjour s'est-il bien passé ?",
         choix: [
           { lettre: "A", texte: "Where would you like to go ?" },
-          { lettre: "B", texte: "Did you enjoy your stay ?" },
+          { lettre: "B", texte: "Did you enjoy your stay ?" , correct: true },
           { lettre: "C", texte: "How was your trip ?" },
         ],
       },
@@ -1725,7 +1726,7 @@ const eb1Matieres: Matiere[] = [
         enonce: "Your passenger plans to stay in Guadeloupe for a fortnignt",
         choix: [
           { lettre: "A", texte: "He leaves after four nights" },
-          { lettre: "B", texte: "He'll stay during two weeks" },
+          { lettre: "B", texte: "He'll stay during two weeks" , correct: true },
           { lettre: "C", texte: "He's got a solution to stay a long time in the archipelago" },
         ],
       },
@@ -1735,7 +1736,7 @@ const eb1Matieres: Matiere[] = [
         enonce: "Can I eat in your car ?",
         choix: [
           { lettre: "A", texte: "No I am not" },
-          { lettre: "B", texte: "No I would prefer you wait" },
+          { lettre: "B", texte: "No I would prefer you wait" , correct: true },
           { lettre: "C", texte: "No I don't have this music" },
         ],
       },
@@ -1745,7 +1746,7 @@ const eb1Matieres: Matiere[] = [
         enonce: "That's fine, keep the change",
         choix: [
           { lettre: "A", texte: "C'est bon, je veux faire le change" },
-          { lettre: "B", texte: "C'est bon, gardez la monnaie" },
+          { lettre: "B", texte: "C'est bon, gardez la monnaie" , correct: true },
           { lettre: "C", texte: "C'est bien, j'avais besoin de monnaie" },
         ],
       },
@@ -1754,7 +1755,7 @@ const eb1Matieres: Matiere[] = [
         type: "QCM",
         enonce: "Don't forget to give me a bill, please",
         choix: [
-          { lettre: "A", texte: "Of course, I will prepare it as soon as we arrive" },
+          { lettre: "A", texte: "Of course, I will prepare it as soon as we arrive" , correct: true },
           { lettre: "B", texte: "Sorry, I don't know Bill" },
           { lettre: "C", texte: "Of course, I give you them when we arrive" },
         ],
@@ -1766,7 +1767,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "Est-ce que vous vivez en ville ?" },
           { lettre: "B", texte: "Pourquoi êtes-vous en ville ?" },
-          { lettre: "C", texte: "Vous restez longtemps en ville ?" },
+          { lettre: "C", texte: "Vous restez longtemps en ville ?" , correct: true },
         ],
       },
       {
@@ -1776,7 +1777,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "You can go by car or by train to visit them" },
           { lettre: "B", texte: "I don't see" },
-          { lettre: "C", texte: "I think that the Louvres and the Reims Cathedral would be great" },
+          { lettre: "C", texte: "I think that the Louvres and the Reims Cathedral would be great" , correct: true },
         ],
       },
       {
@@ -1784,7 +1785,7 @@ const eb1Matieres: Matiere[] = [
         type: "QCM",
         enonce: "Séléctionnez la phrase correctement formulée",
         choix: [
-          { lettre: "A", texte: "There are a few pubs in Reims" },
+          { lettre: "A", texte: "There are a few pubs in Reims" , correct: true },
           { lettre: "B", texte: "There is many pubs in Reims" },
           { lettre: "C", texte: "There is a few pubs in Reims" },
         ],
@@ -1795,7 +1796,7 @@ const eb1Matieres: Matiere[] = [
         enonce: "Do you mind if I smoke in the car, sir ?",
         choix: [
           { lettre: "A", texte: "Ai-je le droit de fumer dans la voiture, monsieur ?" },
-          { lettre: "B", texte: "Est-ce que ca vous dérange si je fume dans la voiture, monsieur ?" },
+          { lettre: "B", texte: "Est-ce que ca vous dérange si je fume dans la voiture, monsieur ?" , correct: true },
           { lettre: "C", texte: "Puis-je fumer dans la voiture, monsieur ?" },
           { lettre: "D", texte: "Est-ce possible de fumer dans la voiture, monsieur ?" },
         ],
@@ -1806,7 +1807,7 @@ const eb1Matieres: Matiere[] = [
         enonce: "A quel nom dois-je établir la facture ?",
         choix: [
           { lettre: "A", texte: "What is the name of the bill ?" },
-          { lettre: "B", texte: "What name do I put on the bill ?" },
+          { lettre: "B", texte: "What name do I put on the bill ?" , correct: true },
           { lettre: "C", texte: "Which name for the bill ?" },
         ],
       },
@@ -1815,7 +1816,7 @@ const eb1Matieres: Matiere[] = [
         type: "QCM",
         enonce: "We will probably not make it on time. There's too much traffic",
         choix: [
-          { lettre: "A", texte: "Nous arriverons probablement en retard. Il y'a trop de circulation" },
+          { lettre: "A", texte: "Nous arriverons probablement en retard. Il y'a trop de circulation" , correct: true },
           { lettre: "B", texte: "Nous arriverons probablement en retard. Il y'a beaucoup de ralentissement" },
           { lettre: "C", texte: "Nous arriverons probablement en retard. Il y'a peu de circulation" },
         ],
@@ -1827,7 +1828,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "Pas de vacances" },
           { lettre: "B", texte: "Pas de vacanciers" },
-          { lettre: "C", texte: "Complet" },
+          { lettre: "C", texte: "Complet", correct: true },
         ],
       },
       {
@@ -1835,7 +1836,7 @@ const eb1Matieres: Matiere[] = [
         type: "QCM",
         enonce: "Avec une circulation normale il faut 45 minutes pour atteindre l'aéroport",
         choix: [
-          { lettre: "A", texte: "With a normal circulation, It must forty five minutes for attend the airport" },
+          { lettre: "A", texte: "With a normal circulation, It must forty five minutes for attend the airport" , correct: true },
           { lettre: "B", texte: "In normal traffic, 45 minutes are needed for attent the airport" },
           { lettre: "C", texte: "With a normal traffic, it takes forty five minutes to get the airport" },
         ],
@@ -1846,9 +1847,9 @@ const eb1Matieres: Matiere[] = [
         enonce: "Have you been a driver for a long time ?",
         choix: [
           { lettre: "A", texte: "I have been a driver for half past four" },
-          { lettre: "B", texte: "I've been a driver since 1990" },
+          { lettre: "B", texte: "I've been a driver since 1990", correct: true },
           { lettre: "C", texte: "I was a driver in the 90's" },
-          { lettre: "D", texte: "I've been a driver for 27 years" },
+          { lettre: "D", texte: "I've been a driver for 27 years", correct: true },
         ],
       },
     ],
@@ -1892,7 +1893,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "3,20 €" },
           { lettre: "B", texte: "5,00 €" },
-          { lettre: "C", texte: "4,00 €" },
+          { lettre: "C", texte: "4,00 €" , correct: true },
         ],
       },
       {
@@ -1902,7 +1903,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "lorsque la demande est supérieure à l’offre, les prix diminuent" },
           { lettre: "B", texte: "lorsque la demande est inférieure à l’offre, les prix augmentent" },
-          { lettre: "C", texte: "lorsque la demande est supérieure à l’offre, les prix augmentent" },
+          { lettre: "C", texte: "lorsque la demande est supérieure à l’offre, les prix augmentent" , correct: true },
         ],
       },
       {
@@ -1910,7 +1911,7 @@ const eb1Matieres: Matiere[] = [
         type: "QCM",
         enonce: "En accueillant un client qui voyage seul, un chauffeur VTC l'invite à prendre place :",
         choix: [
-          { lettre: "A", texte: "sur le siège arrière droit" },
+          { lettre: "A", texte: "sur le siège arrière droit" , correct: true },
           { lettre: "B", texte: "sur le siège arrière gauche" },
           { lettre: "C", texte: "sur le siège avant" },
         ],
@@ -1921,7 +1922,7 @@ const eb1Matieres: Matiere[] = [
         enonce: "Diriez-vous que fidéliser vos clients VTC coûte :",
         choix: [
           { lettre: "A", texte: "le même prix que d’en trouver de nouveaux" },
-          { lettre: "B", texte: "moins cher que d’en trouver de nouveaux" },
+          { lettre: "B", texte: "moins cher que d’en trouver de nouveaux" , correct: true },
           { lettre: "C", texte: "plus cher que d’en trouver de nouveaux" },
         ],
       },
@@ -1932,7 +1933,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "c’est un bateau" },
           { lettre: "B", texte: "c’est le nombre de conducteurs de VTC qu’il y a dans une zone géographique" },
-          { lettre: "C", texte: "c’est la zone géographique d’où provient la majorité de la clientèle" },
+          { lettre: "C", texte: "c’est la zone géographique d’où provient la majorité de la clientèle" , correct: true },
         ],
       },
       {
@@ -1942,7 +1943,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "un consommateur" },
           { lettre: "B", texte: "un grossiste" },
-          { lettre: "C", texte: "un prescripteur" },
+          { lettre: "C", texte: "un prescripteur" , correct: true },
         ],
       },
       {
@@ -1952,7 +1953,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "le lien où des producteurs se rassemblent pour proposer directement leurs produits/prestations aux consommateurs" },
           { lettre: "B", texte: "le lien de rencontre physique ou virtuel de l'offre et de la demande" },
-          { lettre: "C", texte: "l'ensemble des vendeurs et des acheteurs concernés par l'échange d'un bien ou d'un service" },
+          { lettre: "C", texte: "l'ensemble des vendeurs et des acheteurs concernés par l'échange d'un bien ou d'un service" , correct: true },
         ],
       },
       {
@@ -1962,7 +1963,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "un service de premier prix" },
           { lettre: "B", texte: "un service gratuit" },
-          { lettre: "C", texte: "un service haut de gamme" },
+          { lettre: "C", texte: "un service haut de gamme" , correct: true },
         ],
       },
       {
@@ -1970,10 +1971,10 @@ const eb1Matieres: Matiere[] = [
         type: "QCM",
         enonce: "Font partie des frais financiers à prendre en compte dans le calcul du coût de revient :",
         choix: [
-          { lettre: "A", texte: "la rémunération des capitaux propres investis par l'entreprise" },
+          { lettre: "A", texte: "la rémunération des capitaux propres investis par l'entreprise" , correct: true },
           { lettre: "B", texte: "la TVA reversée aux services fiscaux" },
           { lettre: "C", texte: "la rémunération du cabinet comptable de l'entreprise" },
-          { lettre: "D", texte: "les intérêts bancaires des emprunts contractés" },
+          { lettre: "D", texte: "les intérêts bancaires des emprunts contractés" , correct: true },
         ],
       },
       {
@@ -1981,7 +1982,7 @@ const eb1Matieres: Matiere[] = [
         type: "QCM",
         enonce: "Que doit-on dire lorsqu'on décroche un appel téléphonique ?",
         choix: [
-          { lettre: "A", texte: "le nom de la société et bonjour" },
+          { lettre: "A", texte: "le nom de la société et bonjour" , correct: true },
           { lettre: "B", texte: "le nom de la société" },
           { lettre: "C", texte: "allo" },
         ],
@@ -1991,7 +1992,7 @@ const eb1Matieres: Matiere[] = [
         type: "QCM",
         enonce: "La mercatique a pour objet de :",
         choix: [
-          { lettre: "A", texte: "Prévoir, constater ou stimuler les besoins du marché" },
+          { lettre: "A", texte: "Prévoir, constater ou stimuler les besoins du marché" , correct: true },
           { lettre: "B", texte: "Réaliser un résultat de commercialisation" },
           { lettre: "C", texte: "Prévoir et acheter son produit commercialisé sur un marché" },
         ],
@@ -2001,7 +2002,7 @@ const eb1Matieres: Matiere[] = [
         type: "QCM",
         enonce: "On appelle marketing direct",
         choix: [
-          { lettre: "A", texte: "l’envoi d’un message personnalisé à un groupe de personnes qualifiées" },
+          { lettre: "A", texte: "l’envoi d’un message personnalisé à un groupe de personnes qualifiées", correct: true },
           { lettre: "B", texte: "l’achat d’espace publicitaire dans la presse locale" },
           { lettre: "C", texte: "la mise en valeur d’offres promotionnelles dans le véhicule" },
         ],
@@ -2039,7 +2040,7 @@ const eb1Matieres: Matiere[] = [
         enonce: "La durée maximale de stationnement précédant l’horaire de prise en charge mentionné par le client lors de sa réservation à un aéroport ou une gare pour un VTC est de :",
         choix: [
           { lettre: "A", texte: "45 minutes" },
-          { lettre: "B", texte: "1 heure" },
+          { lettre: "B", texte: "1 heure" , correct: true },
           { lettre: "C", texte: "30 minutes" },
           { lettre: "D", texte: "1 h 30" },
         ],
@@ -2049,7 +2050,7 @@ const eb1Matieres: Matiere[] = [
         type: "QCM",
         enonce: "Qui délivre la carte professionnelle des conducteurs de VTC ?",
         choix: [
-          { lettre: "A", texte: "la prefecture" },
+          { lettre: "A", texte: "la prefecture", correct: true },
           { lettre: "B", texte: "la chambre de métiers et de l’artisanat" },
           { lettre: "C", texte: "la Mairie" },
           { lettre: "D", texte: "les organisations professionnelles de VTC" },
@@ -2062,7 +2063,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "doit obligatoirement mentionner le nom du bénéficiaire de la prestation" },
           { lettre: "B", texte: "est facultative" },
-          { lettre: "C", texte: "peut être établie sur support numérique" },
+          { lettre: "C", texte: "peut être établie sur support numérique", correct: true },
         ],
       },
       {
@@ -2071,9 +2072,9 @@ const eb1Matieres: Matiere[] = [
         enonce: "Parmi les puissances de moteur suivantes, quelles sont celles permettant à une voiture d’être exploitée en VTC ?",
         choix: [
           { lettre: "A", texte: "82 kilowatts" },
-          { lettre: "B", texte: "86 kilowatts" },
+          { lettre: "B", texte: "86 kilowatts", correct: true },
           { lettre: "C", texte: "80 kilowatts" },
-          { lettre: "D", texte: "84 kilowatts" },
+          { lettre: "D", texte: "84 kilowatts", correct: true },
         ],
       },
       {
@@ -2082,8 +2083,8 @@ const eb1Matieres: Matiere[] = [
         enonce: "Quelle(s) entreprise(s) doit (doivent) être inscrite(s) au registre des exploitants de VTC ?",
         choix: [
           { lettre: "A", texte: "les entreprises assurant des services collectifs de manière occasionnelle" },
-          { lettre: "B", texte: "les exploitants de VTC" },
-          { lettre: "C", texte: "les intermédiaires mettant en relation les exploitants et les clients" },
+          { lettre: "B", texte: "les exploitants de VTC", correct: true },
+          { lettre: "C", texte: "les intermédiaires mettant en relation les exploitants et les clients", correct: true },
         ],
       },
     ],
@@ -3824,7 +3825,7 @@ const eb3Matieres: Matiere[] = [
         enonce: "Que signifie le verbe “éradiquer”?",
         choix: [
           { lettre: "A", texte: "maintenir" },
-          { lettre: "B", texte: "faire disparaître" },
+          { lettre: "B", texte: "faire disparaître", correct: true },
           { lettre: "C", texte: "conserver" },
         ],
       },
@@ -4293,7 +4294,7 @@ const eb3Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "30 minutes" },
           { lettre: "B", texte: "1 h 30" },
-          { lettre: "C", texte: "1 heure" },
+          { lettre: "C", texte: "1 heure", correct: true },
           { lettre: "D", texte: "45 minutes" },
         ],
       },
@@ -4883,9 +4884,9 @@ const eb4Matieres: Matiere[] = [
         enonce: "Cet emplacement :",
         image: "/cours/examens/place-handicape.png",
         choix: [
-          { lettre: "A", texte: "son occupation illicite est punie d'une contravention de troisième classe" },
-          { lettre: "B", texte: "son occupation illicite fait encourir une mise en fourrière du véhicule" },
-          { lettre: "C", texte: "est réservé aux véhicules portant une carte de stationnement pour personnes handicapées" },
+          { lettre: "A", texte: "son occupation illicite est punie d'une contravention de troisième classe", correct: true },
+          { lettre: "B", texte: "son occupation illicite fait encourir une mise en fourrière du véhicule", correct: true },
+          { lettre: "C", texte: "est réservé aux véhicules portant une carte de stationnement pour personnes handicapées", correct: true },
           { lettre: "D", texte: "est réservé aux véhicules transportant une ou plusieurs personnes handicapées" },
         ],
       },
@@ -5248,7 +5249,7 @@ const eb4Matieres: Matiere[] = [
         enonce: "Lorsque vous préparez votre plan de marketing vous devez vous occuper des :",
         choix: [
           { lettre: "A", texte: "3P" },
-          { lettre: "B", texte: "4P" },
+          { lettre: "B", texte: "4P", correct: true },
           { lettre: "C", texte: "5P" },
         ],
       },
@@ -6721,8 +6722,8 @@ const eb6Matieres: Matiere[] = [
         enonce: "Quelle(s) est (sont) le(s) exemple(s) d'infractions pouvant figurer au Bulletin n°2 du casier judiciaire ?",
         choix: [
           { lettre: "A", texte: "Non présentation du permis de conduire" },
-          { lettre: "B", texte: "Escroquerie" },
-          { lettre: "C", texte: "Extorsion de fonds" },
+          { lettre: "B", texte: "Escroquerie", correct: true },
+          { lettre: "C", texte: "Extorsion de fonds", correct: true },
           { lettre: "D", texte: "Non respect d'un feu tricolore" },
         ],
       },
@@ -7127,9 +7128,9 @@ const eb6Matieres: Matiere[] = [
         type: "QCM",
         enonce: "Cet emplacement (place de stationnement réservée aux personnes handicapées) :",
         choix: [
-          { lettre: "A", texte: "son occupation illicite est punie d'une contravention de troisième classe" },
-          { lettre: "B", texte: "son occupation illicite fait encourir une mise en fourrière du véhicule" },
-          { lettre: "C", texte: "est réservé aux véhicules portant une carte de stationnement pour personnes handicapées" },
+          { lettre: "A", texte: "son occupation illicite est punie d'une contravention de troisième classe", correct: true },
+          { lettre: "B", texte: "son occupation illicite fait encourir une mise en fourrière du véhicule", correct: true },
+          { lettre: "C", texte: "est réservé aux véhicules portant une carte de stationnement pour personnes handicapées", correct: true },
           { lettre: "D", texte: "est réservé aux véhicules transportant une ou plusieurs personnes handicapées" },
         ],
       },
