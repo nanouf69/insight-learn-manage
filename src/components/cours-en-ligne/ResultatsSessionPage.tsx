@@ -318,6 +318,39 @@ const ResultatsSessionPage = () => {
     };
   }, [examStats]);
 
+  // Per-question stats for a given exam + matiere
+  const getQuestionStats = (quizId: string, matiereNom: string) => {
+    const examResults = examBlancResults.filter(r => r.quiz_id === quizId && (r.matiere_nom || r.quiz_titre) === matiereNom);
+    // Collect all questions across all students (last attempt per student)
+    const lastPerStudent: Record<string, QuizResultRow> = {};
+    for (const r of examResults) {
+      if (!lastPerStudent[r.apprenant_id] || new Date(r.completed_at) > new Date(lastPerStudent[r.apprenant_id].completed_at)) {
+        lastPerStudent[r.apprenant_id] = r;
+      }
+    }
+
+    // Aggregate per questionId
+    const questionMap: Record<number, { enonce: string; type: string; correct: number; incorrect: number; total: number }> = {};
+    for (const r of Object.values(lastPerStudent)) {
+      const questions = (r.details as any)?.questions as QuestionDetail[] | undefined;
+      if (!Array.isArray(questions)) continue;
+      for (const q of questions) {
+        if (!questionMap[q.questionId]) {
+          questionMap[q.questionId] = { enonce: q.enonce, type: q.type || 'QCM', correct: 0, incorrect: 0, total: 0 };
+        }
+        const isCorrect = Array.isArray(q.reponseEleve) && Array.isArray(q.reponseCorrecte)
+          && q.reponseEleve.length === q.reponseCorrecte.length
+          && q.reponseEleve.every((v: string) => q.reponseCorrecte.includes(v));
+        questionMap[q.questionId].total++;
+        if (isCorrect) questionMap[q.questionId].correct++; else questionMap[q.questionId].incorrect++;
+      }
+    }
+
+    return Object.entries(questionMap)
+      .sort(([a], [b]) => Number(a) - Number(b))
+      .map(([id, data]) => ({ questionId: Number(id), ...data }));
+  };
+
   // Module pass/fail global
   const globalModuleStats = useMemo(() => {
     let pass = 0, fail = 0;
