@@ -281,6 +281,8 @@ function PassageMatiere({
   const [questionIndex, setQuestionIndex] = useState(0);
   const [expire, setExpire] = useState(false);
   const [initialLoaded, setInitialLoaded] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const saveStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const questionsSafe = (matiere.questions || []).filter((q): q is Question => !!q && q?.type !== undefined);
   const question = questionsSafe[questionIndex] || null;
@@ -370,9 +372,10 @@ function PassageMatiere({
   const persistReponses = (updated: Reponses) => {
     if (!apprenantId || !userIdRef.current) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
+    setSaveStatus("saving");
     debounceRef.current = setTimeout(async () => {
       try {
-        await supabase.from("reponses_apprenants" as any).upsert({
+        const { error } = await supabase.from("reponses_apprenants" as any).upsert({
           apprenant_id: apprenantId,
           user_id: userIdRef.current,
           exercice_id: exerciceKey,
@@ -381,7 +384,20 @@ function PassageMatiere({
           completed: false,
           updated_at: new Date().toISOString(),
         } as any, { onConflict: "apprenant_id,exercice_id" });
-      } catch (e) { console.error("[AutoSave] Save error:", e); }
+        if (error) {
+          console.error("[AutoSave] Save error:", error);
+          setSaveStatus("error");
+        } else {
+          setSaveStatus("saved");
+        }
+        if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
+        saveStatusTimerRef.current = setTimeout(() => setSaveStatus("idle"), 2000);
+      } catch (e) {
+        console.error("[AutoSave] Save error:", e);
+        setSaveStatus("error");
+        if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
+        saveStatusTimerRef.current = setTimeout(() => setSaveStatus("idle"), 3000);
+      }
     }, 300);
   };
 
@@ -503,7 +519,27 @@ function PassageMatiere({
       <div className="space-y-1">
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>Question {safeQuestionIndex + 1} / {questionsSafe.length}</span>
-          <span>{Math.round(progress)}%</span>
+          <div className="flex items-center gap-3">
+            {saveStatus === "saving" && (
+              <span className="flex items-center gap-1 text-amber-600 animate-pulse">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                Sauvegarde...
+              </span>
+            )}
+            {saveStatus === "saved" && (
+              <span className="flex items-center gap-1 text-green-600">
+                <CheckCircle2 className="w-3 h-3" />
+                Sauvegardé ✓
+              </span>
+            )}
+            {saveStatus === "error" && (
+              <span className="flex items-center gap-1 text-red-600">
+                <XCircle className="w-3 h-3" />
+                Erreur de sauvegarde
+              </span>
+            )}
+            <span>{Math.round(progress)}%</span>
+          </div>
         </div>
         <Progress value={progress} className="h-2" />
       </div>
