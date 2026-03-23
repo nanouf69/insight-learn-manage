@@ -1008,6 +1008,7 @@ const eb1Matieres: Matiere[] = [
         type: "QRC",
         enonce: "Citez trois des conditions d'accès et ou d'exercice aux professions de conducteurs de T3P : (QRC)",
         reponseQRC: "Réussite à l'examen (vérification de l'aptitude professionnelle). Carte professionnelle en cours de validité Formation continue. Aptitude médicale. Honorabilité. Assurance responsabilité civile professionnelle. Respect de caractéristiques techniques des véhicules (contrôle technique - et le cas échéant puissance, dimension, équipement spéciaux).",
+        reponses_possibles: ["examen", "carte professionnelle", "formation continue", "aptitude médicale", "honorabilité", "assurance", "permis de conduire", "casier judiciaire", "contrôle technique"],
       },
       {
         id: 5,
@@ -2112,11 +2113,7 @@ const eb2Matieres: Matiere[] = [
         type: "QRC",
         enonce: "Citez trois des conditions d'accès et ou d'exercice aux professions de conducteurs de T3P : (QRC)",
         reponseQRC: "Réussite à l'examen (vérification de l'aptitude professionnelle). Carte professionnelle en cours de validité, Formation continue. Aptitude médicale. Honorabilité. Assurance responsabilité civile professionnelle. Respect de caractéristiques techniques des véhicules (contrôle technique - et le cas échéant puissance, dimension, équipement spéciaux).",
-        reponses_possibles: [
-          "Réussite à l'examen (vérification de l'aptitude professionnelle). Carte professionnelle en cours de validité, Formation continue. Aptitude médicale. Honorabilité. Assurance responsabilité civile professionnelle. Respect de caractéristiques techniques des véhicules (contrôle technique - et le cas échéant puissance, dimension, équipement spéciaux).",
-          "Permis de conduire, carte de vtc, véhicule",
-          "Permis de plus de 3 ans donc hors période probatoire, casier judiciaire num 2 vierge et obtention de la carte professionnelle auprès de la préfecture",
-        ],
+        reponses_possibles: ["examen", "carte professionnelle", "formation continue", "aptitude médicale", "honorabilité", "assurance", "permis de conduire", "casier judiciaire", "contrôle technique"],
       },
       {
         id: 2,
