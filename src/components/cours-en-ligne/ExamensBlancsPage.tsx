@@ -547,7 +547,12 @@ function PassageMatiere({
               <Badge variant={question?.type === "QRC" ? "secondary" : "outline"} className="shrink-0 mt-0.5">
                 {question?.type || "QCM"}
               </Badge>
-              <p className="font-medium leading-relaxed">{question?.enonce || "Question indisponible"}</p>
+              <div>
+                <p className="font-medium leading-relaxed">{question?.enonce || "Question indisponible"}</p>
+                {question?.image && (
+                  <img src={question.image} alt="Illustration de la question" className="mt-3 max-h-40 rounded-lg border" />
+                )}
+              </div>
             </div>
             <Badge variant="outline" className="shrink-0 text-xs font-semibold text-primary border-primary/40">
               {getPointsParQuestion(matiere.id, question?.type || "QCM")} pt{getPointsParQuestion(matiere.id, question?.type || "QCM") > 1 ? "s" : ""}
@@ -1170,6 +1175,7 @@ function EcranResultats({
                               <div className="flex items-center gap-1.5 flex-1">
                                 <Badge variant={q?.type === "QRC" ? "secondary" : "outline"} className="text-xs shrink-0">{q?.type}</Badge>
                                 <p className="text-sm font-bold">{q.id}. {q.enonce}</p>
+                                {q?.image && <img src={q.image} alt="" className="mt-1 max-h-24 rounded border" />}
                               </div>
                               <div className="flex items-center gap-1 shrink-0">
                                 {q?.type === "QRC" && <Bot className="w-3 h-3 text-blue-500" aria-label="Corrigé par IA" />}
@@ -1373,6 +1379,9 @@ function RevisionFausses({
           <p className="font-semibold text-base" style={{ color: '#0D2540' }}>
             {q.enonce}
           </p>
+          {q?.image && (
+            <img src={q.image} alt="Illustration" className="mt-2 max-h-40 rounded-lg border" />
+          )}
 
           {q?.type === "QCM" && q.choix && (
             <div className="space-y-2">
