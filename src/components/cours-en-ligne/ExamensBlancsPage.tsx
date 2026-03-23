@@ -1202,26 +1202,19 @@ function EcranResultats({
             <XCircle className="w-12 h-12 text-red-400 mx-auto mb-2" />
           )}
           <h3 className="text-2xl font-bold mb-1">
-            {correctionEnCours
-              ? "Correction en cours..."
-              : admisGlobal
-                ? "Examen blanc réussi ✅"
-                : "Examen blanc échoué ❌"
+            {admisGlobal
+              ? "Examen blanc réussi ✅"
+              : "Examen blanc échoué ❌"
             }
           </h3>
-          {correctionEnCours ? (
-            <div className="flex justify-center mt-2"><Loader2 className="w-8 h-8 animate-spin text-white" /></div>
-          ) : (
-            <>
-              <p className="text-4xl font-black mt-2" style={{ color: '#00B4D8' }}>
-                {isFinite(noteGlobale) ? noteGlobale.toFixed(1) : "0.0"} / 20
-              </p>
-              <p className="text-sm text-gray-300 mt-1">
-                Moyenne pondérée par coefficients sur {resultatsAvecIA.length} matières
-              </p>
-            </>
-          )}
-          {!admisGlobal && !correctionEnCours && (
+          <p className="text-4xl font-black mt-2" style={{ color: '#00B4D8' }}>
+            {isFinite(noteGlobale) ? noteGlobale.toFixed(1) : "0.0"} / 20
+            {correctionEnCours && <Loader2 className="w-5 h-5 animate-spin inline ml-2 text-blue-300" />}
+          </p>
+          <p className="text-sm text-gray-300 mt-1">
+            Moyenne pondérée par coefficients sur {resultatsAvecIA.length} matières
+          </p>
+          {!admisGlobal && (
             <div className="mt-3 space-y-1">
               {!moyenneSuffisante && (
                 <p className="text-sm text-red-300 font-medium">
