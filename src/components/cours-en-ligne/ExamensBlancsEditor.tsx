@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,7 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from "@/components/ui/label";
 import {
   ArrowLeft, ChevronDown, ChevronRight, Pencil, Trash2, Plus,
-  Save, CheckCircle2, X, Clock, Layers
+  Save, CheckCircle2, X, Clock, Layers, Loader2
 } from "lucide-react";
 import { tousLesExamens, type ExamenBlanc, type Matiere, type Question, type Choix } from "./examens-blancs-data";
 import { supabase } from "@/integrations/supabase/client";
@@ -121,11 +121,13 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
 function QuestionEditor({
   question,
   onSave,
+  onDraftChange,
   onDelete,
   onCancel,
 }: {
   question: Question;
   onSave: (q: Question) => void;
+  onDraftChange: (q: Question) => void;
   onDelete: () => void;
   onCancel: () => void;
 }) {
@@ -134,32 +136,46 @@ function QuestionEditor({
   const [motsCles, setMotsCles] = useState((question.reponses_possibles || []).join(", "));
   const [choix, setChoix] = useState<Choix[]>(question.choix ? [...question.choix] : []);
 
-  const handleChoixTexte = (i: number, val: string) => {
-    setChoix(prev => prev.map((c, idx) => idx === i ? { ...c, texte: val } : c));
-  };
-  const handleChoixCorrect = (i: number, val: boolean) => {
-    setChoix(prev => prev.map((c, idx) => idx === i ? { ...c, correct: val } : c));
-  };
-  const addChoix = () => {
-    const lettres = ["A", "B", "C", "D", "E"];
-    setChoix(prev => [...prev, { lettre: lettres[prev.length] || String(prev.length + 1), texte: "", correct: false }]);
-  };
-  const removeChoix = (i: number) => {
-    setChoix(prev => prev.filter((_, idx) => idx !== i));
-  };
-
-  const handleSave = () => {
+  const buildUpdatedQuestion = (): Question => {
     const updated: Question = {
       ...question,
       enonce,
     };
+
     if (question?.type === "QRC") {
       updated.reponseQRC = reponseQRC;
       updated.reponses_possibles = motsCles.split(",").map(s => s.trim()).filter(Boolean);
     } else {
       updated.choix = choix;
     }
-    onSave(updated);
+
+    return updated;
+  };
+
+  useEffect(() => {
+    onDraftChange(buildUpdatedQuestion());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enonce, reponseQRC, motsCles, choix]);
+
+  const handleChoixTexte = (i: number, val: string) => {
+    setChoix(prev => prev.map((c, idx) => idx === i ? { ...c, texte: val } : c));
+  };
+
+  const handleChoixCorrect = (i: number, val: boolean) => {
+    setChoix(prev => prev.map((c, idx) => idx === i ? { ...c, correct: val } : c));
+  };
+
+  const addChoix = () => {
+    const lettres = ["A", "B", "C", "D", "E"];
+    setChoix(prev => [...prev, { lettre: lettres[prev.length] || String(prev.length + 1), texte: "", correct: false }]);
+  };
+
+  const removeChoix = (i: number) => {
+    setChoix(prev => prev.filter((_, idx) => idx !== i));
+  };
+
+  const handleSave = () => {
+    onSave(buildUpdatedQuestion());
   };
 
   return (
@@ -284,10 +300,18 @@ function MatiereEditor({
     (q): q is Question => q != null && q?.type != null,
   );
 
-  const saveQuestion = (updated: Question) => {
+  const updateQuestion = (updated: Question, closeEditor: boolean) => {
     const newQuestions = questionsSafe.map(q => q.id === updated.id ? updated : q);
     onChange({ ...matiere, questions: newQuestions });
-    setEditingQId(null);
+    if (closeEditor) setEditingQId(null);
+  };
+
+  const saveQuestionDraft = (updated: Question) => {
+    updateQuestion(updated, false);
+  };
+
+  const saveQuestion = (updated: Question) => {
+    updateQuestion(updated, true);
   };
 
   const deleteQuestion = (qId: number) => {
@@ -384,6 +408,7 @@ function MatiereEditor({
                 <QuestionEditor
                   question={q}
                   onSave={saveQuestion}
+                  onDraftChange={saveQuestionDraft}
                   onDelete={() => deleteQuestion(q.id)}
                   onCancel={() => setEditingQId(null)}
                 />
@@ -479,9 +504,58 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
   const [typeFiltre, setTypeFiltre] = useState<"tous" | "TAXI" | "VTC">("tous");
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [autoSaving, setAutoSaving] = useState(false);
+  const initialLoadDoneRef = useRef(false);
+  const lastSavedFingerprintRef = useRef("");
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const examensFiltres = examens.filter(e => typeFiltre === "tous" || e?.type === typeFiltre);
   const examenSel = examens.find(e => e.id === examenSelId) || null;
+
+  const persistExamens = async (sourceExamens: ExamenBlanc[], showSuccessToast = false): Promise<boolean> => {
+    try {
+      const synced = JSON.parse(JSON.stringify(sourceExamens)) as ExamenBlanc[];
+      syncVtcTaxiMatieres(synced);
+
+      const promises = synced.map((ex, i) => {
+        const moduleId = EXAMEN_BLANC_MODULE_BASE + i;
+        return supabase.from("module_editor_state").upsert(
+          [{
+            module_id: moduleId,
+            module_data: ex as any,
+            deleted_cours: [] as any,
+            deleted_exercices: [] as any,
+            updated_at: new Date().toISOString(),
+          }],
+          { onConflict: "module_id" }
+        );
+      });
+
+      const results = await Promise.all(promises);
+      const errors = results.filter(r => r.error);
+
+      if (errors.length > 0) {
+        console.error("[ExamensEditor] Save errors:", errors.map(e => e.error));
+        const firstMessage = errors[0].error?.message || "Erreur inconnue";
+        toast.error(`Sauvegarde impossible: ${firstMessage}`);
+        return false;
+      }
+
+      lastSavedFingerprintRef.current = JSON.stringify(synced);
+
+      if (showSuccessToast) {
+        setSaved(true);
+        toast.success("Examens blancs sauvegardés ! Les élèves verront les modifications.");
+        setTimeout(() => setSaved(false), 2500);
+      }
+
+      return true;
+    } catch (err) {
+      console.error("[ExamensEditor] Save failed:", err);
+      toast.error("Erreur lors de la sauvegarde");
+      return false;
+    }
+  };
 
   const handleMatiereChange = (matiereId: string, updated: Matiere) => {
     setExamens(prev => {
@@ -500,49 +574,36 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
 
   // Load saved data from DB on mount
   useEffect(() => {
-    loadSavedExamens().then(saved => {
-      setExamens(saved);
+    loadSavedExamens().then(loadedExamens => {
+      setExamens(loadedExamens);
+      lastSavedFingerprintRef.current = JSON.stringify(loadedExamens);
+      initialLoadDoneRef.current = true;
     });
   }, []);
 
+  // Auto-save to backend when admin edits answers/questions
+  useEffect(() => {
+    if (!initialLoadDoneRef.current) return;
+
+    const currentFingerprint = JSON.stringify(examens);
+    if (currentFingerprint === lastSavedFingerprintRef.current) return;
+
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(async () => {
+      setAutoSaving(true);
+      await persistExamens(examens, false);
+      setAutoSaving(false);
+    }, 600);
+
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    };
+  }, [examens]);
+
   const handleSaveAll = async () => {
     setSaving(true);
-    try {
-      // Ensure VTC→TAXI sync before saving
-      const synced = [...examens];
-      syncVtcTaxiMatieres(synced);
-      // Save each modified exam to module_editor_state
-      const promises = synced.map((ex, i) => {
-        const moduleId = EXAMEN_BLANC_MODULE_BASE + i;
-        return supabase.from("module_editor_state").upsert(
-          [{
-            module_id: moduleId,
-            module_data: ex as any,
-            deleted_cours: [] as any,
-            deleted_exercices: [] as any,
-            updated_at: new Date().toISOString(),
-          }],
-          { onConflict: "module_id" }
-        );
-      });
-      
-      const results = await Promise.all(promises);
-      const errors = results.filter(r => r.error);
-      
-      if (errors.length > 0) {
-        console.error("[ExamensEditor] Save errors:", errors.map(e => e.error));
-        toast.error("Erreur lors de la sauvegarde de certains examens");
-      } else {
-        setSaved(true);
-        toast.success("Examens blancs sauvegardés ! Les élèves verront les modifications.");
-        setTimeout(() => setSaved(false), 2500);
-      }
-    } catch (err) {
-      console.error("[ExamensEditor] Save failed:", err);
-      toast.error("Erreur lors de la sauvegarde");
-    } finally {
-      setSaving(false);
-    }
+    await persistExamens(examens, true);
+    setSaving(false);
   };
 
   const handleReset = async () => {
@@ -564,7 +625,9 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
         return;
       }
 
-      setExamens(JSON.parse(JSON.stringify(tousLesExamens)));
+      const resetExamens = JSON.parse(JSON.stringify(tousLesExamens)) as ExamenBlanc[];
+      setExamens(resetExamens);
+      lastSavedFingerprintRef.current = JSON.stringify(resetExamens);
       toast.success("Examens blancs réinitialisés aux valeurs d'origine");
     } catch (err) {
       console.error("[ExamensEditor] Reset failed:", err);
@@ -589,13 +652,25 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
             <p className="text-xs text-muted-foreground">Modifiez les questions, réponses, points et durées</p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          {autoSaving && (
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              Sauvegarde auto...
+            </span>
+          )}
           <Button variant="outline" size="sm" onClick={handleReset}>
             Réinitialiser
           </Button>
-          <Button size="sm" onClick={handleSaveAll} className="gap-2">
-            {saved ? <CheckCircle2 className="w-4 h-4 text-primary" /> : <Save className="w-4 h-4" />}
-            {saved ? "Sauvegardé !" : "Sauvegarder tout"}
+          <Button size="sm" onClick={handleSaveAll} className="gap-2" disabled={saving}>
+            {saving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : saved ? (
+              <CheckCircle2 className="w-4 h-4 text-primary" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            {saving ? "Sauvegarde..." : saved ? "Sauvegardé !" : "Sauvegarder tout"}
           </Button>
         </div>
       </div>
