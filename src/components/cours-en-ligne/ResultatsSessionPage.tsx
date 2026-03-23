@@ -34,6 +34,14 @@ interface CompletionRow {
   score_max: number | null;
 }
 
+interface QuestionDetail {
+  questionId: number;
+  enonce: string;
+  type: string;
+  reponseEleve: string[];
+  reponseCorrecte: string[];
+}
+
 interface QuizResultRow {
   id: string;
   apprenant_id: string;
@@ -48,6 +56,7 @@ interface QuizResultRow {
   matiere_nom: string | null;
   completed_at: string;
   duree_secondes: number | null;
+  details: { questions?: QuestionDetail[] } | null;
 }
 
 const PASS_THRESHOLD = 50; // 50% = seuil de réussite pour les modules
