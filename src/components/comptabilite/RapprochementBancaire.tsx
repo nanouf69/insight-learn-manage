@@ -151,7 +151,98 @@ function parseBNPCsv(text: string): Omit<Transaction, "id" | "statut" | "justifi
   return results;
 }
 
-interface AiSuggestion {
+/**
+ * Parse Revolut Business CSV — format standard :
+ * Colonnes : Type,Product,Started Date,Completed Date,Description,Amount,Fee,Currency,State,Balance
+ * Montant : "1500.00" ou "-2046.30" (point décimal, signe négatif)
+ */
+function parseRevolutCsv(text: string): Omit<Transaction, "id" | "statut" | "justificatif_id" | "source" | "created_at" | "categorie" | "fournisseur_client" | "notes" | "reference">[] {
+  const rawLines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+  const results: ReturnType<typeof parseRevolutCsv> = [];
+  if (rawLines.length < 2) return results;
+
+  const sep = rawLines[0].includes("\t") ? "\t" : rawLines[0].split(",").length > rawLines[0].split(";").length ? "," : ";";
+
+  const splitLine = (line: string): string[] => {
+    const parts: string[] = [];
+    let current = "";
+    let inQuotes = false;
+    for (const ch of line) {
+      if (ch === '"') { inQuotes = !inQuotes; continue; }
+      if (ch === sep.charAt(0) && !inQuotes) { parts.push(current.trim()); current = ""; continue; }
+      current += ch;
+    }
+    parts.push(current.trim());
+    return parts;
+  };
+
+  const headerCols = splitLine(rawLines[0]).map(h => h.toLowerCase().trim());
+  const findCol = (...names: string[]) => {
+    for (const name of names) {
+      const idx = headerCols.findIndex(h => h.includes(name));
+      if (idx >= 0) return idx;
+    }
+    return -1;
+  };
+
+  const dateCol = findCol("completed date", "date completed", "completed");
+  const startDateCol = findCol("started date", "date started", "started");
+  const descCol = findCol("description");
+  const amountCol = findCol("amount");
+  const balanceCol = findCol("balance");
+  const stateCol = findCol("state", "status");
+  const typeCol = findCol("type");
+
+  const useDateCol = dateCol >= 0 ? dateCol : startDateCol;
+  if (useDateCol < 0 || descCol < 0 || amountCol < 0) return results;
+
+  for (let i = 1; i < rawLines.length; i++) {
+    const raw = rawLines[i].trim();
+    if (!raw) continue;
+    const cols = splitLine(raw);
+
+    if (stateCol >= 0) {
+      const state = (cols[stateCol] || "").toLowerCase();
+      if (state === "reverted" || state === "declined" || state === "failed") continue;
+    }
+
+    const dateStr = (cols[useDateCol] || "").trim();
+    let dateObj: Date | null = null;
+    try {
+      if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) dateObj = new Date(dateStr.slice(0, 10));
+      else if (/^\d{2}\/\d{2}\/\d{4}/.test(dateStr)) dateObj = parse(dateStr.slice(0, 10), "dd/MM/yyyy", new Date());
+      else dateObj = new Date(dateStr);
+    } catch { /* ignore */ }
+    if (!dateObj || isNaN(dateObj.getTime())) continue;
+
+    const date_operation = format(dateObj, "yyyy-MM-dd");
+    const amountStr = (cols[amountCol] || "").replace(/[^\d.\-]/g, "");
+    const montant = parseFloat(amountStr);
+    if (isNaN(montant) || montant === 0) continue;
+
+    const desc = cols[descCol] || "—";
+    const typeStr = typeCol >= 0 ? cols[typeCol] || "" : "";
+    const libelle = typeStr && !["card_payment", "transfer", "topup"].includes(typeStr.toLowerCase())
+      ? `${typeStr} – ${desc}`.slice(0, 100)
+      : desc.slice(0, 100);
+
+    const balanceStr = balanceCol >= 0 ? (cols[balanceCol] || "").replace(/[^\d.\-]/g, "") : "";
+    const solde = balanceStr ? parseFloat(balanceStr) : null;
+
+    results.push({ date_operation, libelle, montant, solde: isNaN(solde as number) ? null : solde, banque: "Revolut Pro" });
+  }
+  return results;
+}
+
+/** Auto-detect bank from CSV content */
+function detectBankFromCsv(text: string): "bnp" | "revolut" | null {
+  const firstLine = text.split("\n")[0].toLowerCase();
+  if (firstLine.includes("completed date") || firstLine.includes("description") && firstLine.includes("amount") && firstLine.includes("balance")) return "revolut";
+  if (firstLine.includes("compte") || /^\d{2}\/\d{2}\/\d{4}/.test(firstLine.trim()) || firstLine.split(";").length >= 3) return "bnp";
+  return null;
+}
+
+
   scores: { index: number; score: number; raison: string }[];
   meilleur_index: number;
   analyse: string;
