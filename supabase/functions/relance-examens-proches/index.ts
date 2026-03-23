@@ -63,7 +63,7 @@ serve(async (req) => {
     }
 
     // Get module completion for these apprenants
-    const ids = apprenants.map((a: any) => a.id);
+    const ids = filteredApprenants.map((a: any) => a.id);
     const { data: completions } = await supabaseAdmin
       .from("apprenant_module_completion")
       .select("apprenant_id, module_id")

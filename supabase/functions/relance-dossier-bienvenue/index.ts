@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
     const apprenantIdsWithDoc = new Set((docsCompletes || []).map(d => d.apprenant_id));
 
     // 3. Filter apprenants who DON'T have the welcome document
-    const apprenantsSansPdf = apprenants.filter(a => !apprenantIdsWithDoc.has(a.id));
+    const apprenantsSansPdf = elearningApprenants.filter(a => !apprenantIdsWithDoc.has(a.id));
 
     if (apprenantsSansPdf.length === 0) {
       return new Response(JSON.stringify({ success: true, message: 'Tous les apprenants ont leur document de bienvenue', sent: 0 }), {
