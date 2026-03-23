@@ -274,7 +274,6 @@ function evaluateQrcDeterministic(question: Question, response: unknown, pointsQ
 
    return {
      pointsObtenus: points,
-     reponseCorrigee: rep,
      nombrefautes: 0,
      explication: gotFullPoints
        ? `Correction déterministe : ${matched}/${total} élément(s) trouvés — totalité des points (≥${Math.round(seuilPourcent * 100)}% soit ${requiredForFullPoints}/${total}).`
