@@ -7199,6 +7199,18 @@ const eb6Matieres: Matiere[] = [
     coefficient: 2,
     noteEliminatoire: 5,
     noteSur: 24,
+    texteSupport: `A Lyon, des taxis-bateaux sur la Saône et le Rhône pour s'affranchir des bouchons
+
+Il est en discussion avec la Métropole pour développer son projet : à Lyon, un entrepreneur souhaite créer un service régulier de taxis-bateaux avec plusieurs stations sur les rives de la Saône et du Rhône.
+
+Depuis 2017, Jeff Fèvre propose des visites de Lyon au fil de l'eau et des excursions privatives sur la Saône ou le Rhône. Et depuis quelque temps, on peut également faire appel à lui pour des courses simples d'un point à un autre, comme un taxi classique, mais sans les embouteillages.
+
+Un service de taxi-bateau qu'il aimerait désormais développer, auprès des visiteurs évidemment, en desservant les principaux points d'intérêt de la ville, mais aussi auprès des Lyonnais pressés qui veulent s'affranchir des bouchons qui engorgent la capitale des Gaules ou des transports en commun très souvent saturés aux heures de pointe. "Ma vision de départ, c'était que l'historique même de la ville est basée sur la rivière de la Saône et le fleuve du Rhône, et qu'on pouvait aller partout en utilisant les voies d'eau", résume l'entrepreneur.
+
+Pour ce faire, il faut proposer un service régulier, bien identifié et multiplier les points d'embarquement et de débarquement sur le Rhône et la Saône. Jeff Fèvre est actuellement en discussion avec la Métropole et la régie des transports qui doivent se prononcer sur la possibilité de développer ce nouveau service et lui accorder les autorisations pour accoster à différents endroits stratégiques de la ville.
+
+Si pour le moment, la prestation reste chère, on peut imaginer qu'avec plusieurs bateaux, et si la clientèle est au rendez-vous, le prix d'une course pourrait baisser et se rapprocher des tarifs pratiqués par les taxis classiques, les bouchons en moins donc. Et comme le capitaine est un Lyonnais pur jus, amoureux de sa ville, il ne manquera pas de vous livrer quelques anecdotes sur la riche histoire de Lyon.`,
+    texteSource: "Article de presse — Taxis-bateaux à Lyon",
     questions: [
       {
         id: 1,
