@@ -22,6 +22,28 @@ const cloneExamens = (examens: ExamenBlanc[]): ExamenBlanc[] =>
   JSON.parse(JSON.stringify(examens)) as ExamenBlanc[];
 
 let lastSuccessfulExamensSnapshot: ExamenBlanc[] | null = null;
+const EXAMENS_SNAPSHOT_STORAGE_KEY = "examens_blancs_snapshot_v1";
+
+function readExamensSnapshotFromStorage(): ExamenBlanc[] | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(EXAMENS_SNAPSHOT_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as ExamenBlanc[];
+    return Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeExamensSnapshotToStorage(examens: ExamenBlanc[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(EXAMENS_SNAPSHOT_STORAGE_KEY, JSON.stringify(examens));
+  } catch {
+    // Ignore quota / storage errors silently
+  }
+}
 
 export function getExamenModuleId(examIndex: number): number {
   return EXAMEN_BLANC_MODULE_BASE + examIndex;
@@ -88,6 +110,13 @@ function syncVtcTaxiMatieres(examens: ExamenBlanc[]): void {
 
 // Load saved exam overrides from DB
 export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
+  if (!lastSuccessfulExamensSnapshot) {
+    const cached = readExamensSnapshotFromStorage();
+    if (cached) {
+      lastSuccessfulExamensSnapshot = cloneExamens(cached);
+    }
+  }
+
   const examens = cloneExamens(tousLesExamens);
   
   try {
@@ -106,6 +135,7 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
       repairCorrectFlags(examens);
       syncVtcTaxiMatieres(examens);
       lastSuccessfulExamensSnapshot = cloneExamens(examens);
+      writeExamensSnapshotToStorage(lastSuccessfulExamensSnapshot);
       return examens;
     }
 
@@ -143,6 +173,7 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
   repairCorrectFlags(examens);
   syncVtcTaxiMatieres(examens);
   lastSuccessfulExamensSnapshot = cloneExamens(examens);
+  writeExamensSnapshotToStorage(lastSuccessfulExamensSnapshot);
   
   return examens;
 }
