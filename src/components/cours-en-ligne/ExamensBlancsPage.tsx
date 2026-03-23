@@ -1139,7 +1139,7 @@ function EcranResultats({
                         <span className="text-lg font-bold" style={{ color: r.admis ? '#00B4D8' : '#ef4444' }}>
                           {r.noteObtenue} / {r.maxPoints} pts
                         </span>
-                        <p className="text-xs text-muted-foreground">= {isFinite(noteSur20) ? noteSur20.toFixed(1) : "0.0"} / {r.noteSur || 20}</p>
+                        <p className="text-xs text-muted-foreground">= {isFinite(noteSur20) ? noteSur20.toFixed(1) : "0.0"} / 20</p>
                       </div>
                       {r.admis ? (
                         <CheckCircle2 className="w-5 h-5" style={{ color: '#00B4D8' }} />
