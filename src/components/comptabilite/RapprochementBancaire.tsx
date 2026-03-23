@@ -970,9 +970,6 @@ export function RapprochementBancaire() {
     </div>
   );
 }
-
-/**
- * Parse Revolut Business CSV — format standard :
  * Colonnes : Type,Product,Started Date,Completed Date,Description,Amount,Fee,Currency,State,Balance
  * ou parfois : Date started (UTC),Date completed (UTC),... 
  * Le séparateur peut être , ou ;
