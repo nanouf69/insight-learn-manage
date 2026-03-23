@@ -721,24 +721,81 @@ const ResultatsSessionPage = () => {
                           {/* Matière averages */}
                           {matieresArr.length > 0 && (
                             <div className="px-5 py-4 bg-muted/10 border-b">
-                              <h4 className="text-sm font-semibold mb-3">Résultats par matière</h4>
+                              <h4 className="text-sm font-semibold mb-3">Résultats par matière <span className="text-xs text-muted-foreground font-normal">(cliquez pour voir le détail par question)</span></h4>
                               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                                 {matieresArr.map(m => {
                                   const mAvg = m.count > 0 ? Math.round((m.totalNote / m.count) * 10) / 10 : 0;
                                   const mTaux = m.count > 0 ? Math.round((m.pass / m.count) * 100) : 0;
+                                  const mKey = `${qId}__${m.nom}`;
+                                  const isMatiereExpanded = expandedMatiere === mKey;
+                                  const questionStats = isMatiereExpanded ? getQuestionStats(qId, m.nom) : [];
+
                                   return (
-                                    <div key={m.nom} className="bg-background border rounded-lg p-3 space-y-2">
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-sm font-medium truncate">{m.nom}</span>
-                                        <span className={`text-sm font-bold ${getNoteColor(mAvg)}`}>{mAvg}/20</span>
+                                    <div key={m.nom} className={`bg-background border rounded-lg overflow-hidden transition-all ${isMatiereExpanded ? 'col-span-full' : ''}`}>
+                                      <div
+                                        className="p-3 space-y-2 cursor-pointer hover:bg-muted/30 transition-colors"
+                                        onClick={() => setExpandedMatiere(isMatiereExpanded ? null : mKey)}
+                                      >
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex items-center gap-1.5">
+                                            {isMatiereExpanded ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
+                                            <span className="text-sm font-medium truncate">{m.nom}</span>
+                                          </div>
+                                          <span className={`text-sm font-bold ${getNoteColor(mAvg)}`}>{mAvg}/20</span>
+                                        </div>
+                                        <Progress value={mTaux} className="h-2" />
+                                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                          <span>{m.count} élèves</span>
+                                          <span>
+                                            <span className="text-emerald-600">{m.pass} ✓</span> / <span className="text-destructive">{m.fail} ✗</span>
+                                          </span>
+                                        </div>
                                       </div>
-                                      <Progress value={mTaux} className="h-2" />
-                                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                        <span>{m.count} élèves</span>
-                                        <span>
-                                          <span className="text-emerald-600">{m.pass} ✓</span> / <span className="text-destructive">{m.fail} ✗</span>
-                                        </span>
-                                      </div>
+
+                                      {/* Per-question drill-down */}
+                                      {isMatiereExpanded && (
+                                        <div className="border-t px-3 py-3 space-y-2 bg-muted/5">
+                                          {questionStats.length === 0 ? (
+                                            <p className="text-xs text-muted-foreground text-center py-2">Aucun détail par question disponible.</p>
+                                          ) : (
+                                            <>
+                                              <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground border-b pb-1 mb-1">
+                                                <span>Question</span>
+                                                <span className="w-40 text-right">Bonnes / Mauvaises</span>
+                                              </div>
+                                              {questionStats.map((q, idx) => {
+                                                const tauxBon = q.total > 0 ? Math.round((q.correct / q.total) * 100) : 0;
+                                                return (
+                                                  <div key={q.questionId} className="space-y-1">
+                                                    <div className="flex items-start gap-2">
+                                                      <span className="text-xs font-bold text-muted-foreground w-6 shrink-0">Q{idx + 1}</span>
+                                                      <p className="text-xs flex-1 leading-snug">{q.enonce}</p>
+                                                      <div className="flex items-center gap-2 shrink-0 w-40 justify-end">
+                                                        <span className="text-xs text-emerald-600 font-semibold">{q.correct} ✓</span>
+                                                        <span className="text-xs text-destructive font-semibold">{q.incorrect} ✗</span>
+                                                        <Badge
+                                                          variant={tauxBon >= 60 ? "default" : "destructive"}
+                                                          className="text-[10px] px-1.5"
+                                                        >
+                                                          {tauxBon}%
+                                                        </Badge>
+                                                      </div>
+                                                    </div>
+                                                    <div className="ml-6">
+                                                      <div className="w-full h-1.5 rounded-full bg-muted/30 overflow-hidden">
+                                                        <div
+                                                          className={`h-full rounded-full transition-all ${tauxBon >= 80 ? 'bg-emerald-500' : tauxBon >= 60 ? 'bg-amber-400' : 'bg-destructive'}`}
+                                                          style={{ width: `${tauxBon}%` }}
+                                                        />
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                );
+                                              })}
+                                            </>
+                                          )}
+                                        </div>
+                                      )}
                                     </div>
                                   );
                                 })}
