@@ -1189,7 +1189,7 @@ function EcranResultats({
         <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-sm">
           <Bot className="w-4 h-4 shrink-0" />
           <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-          <span>L'IA corrige vos réponses ouvertes (QRC)... Les notes se mettent à jour automatiquement.</span>
+          <span>L'IA affine vos réponses ouvertes (QRC)... Les notes peuvent légèrement s'améliorer.</span>
         </div>
       )}
 
