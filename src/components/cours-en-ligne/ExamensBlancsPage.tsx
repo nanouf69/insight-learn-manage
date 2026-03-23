@@ -1595,7 +1595,7 @@ function RevisionFausses({
                     style={{ borderColor, backgroundColor: bgColor }}
                     onClick={() => {
                       if (showCorrection) return;
-                      const prev = (rep as string[]) || [];
+                      const prev = safeArray<string>(rep);
                       const correctCount = q.choix!.filter(ch => ch.correct).length;
                       if (correctCount <= 1) {
                         setReponses({ ...reponses, [q.id]: [c.lettre] });
