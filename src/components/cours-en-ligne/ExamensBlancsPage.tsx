@@ -1580,7 +1580,7 @@ function RevisionFausses({
           {q?.type === "QCM" && q.choix && (
             <div className="space-y-2">
               {q.choix.map(c => {
-                const selected = ((rep as string[]) || []).includes(c.lettre);
+                const selected = safeArray<string>(rep).includes(c.lettre);
                 const isCorrectChoice = c.correct;
                 let borderColor = selected ? '#0D2540' : '#e5e7eb';
                 let bgColor = 'transparent';
