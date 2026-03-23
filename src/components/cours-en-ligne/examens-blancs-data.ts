@@ -5993,7 +5993,8 @@ const eb5Matieres: Matiere[] = [
       {
         id: 17,
         type: "QCM",
-        enonce: "Ce panneau signale [Une image contenant Panneau de signalisation, signe Le contenu généré par l’IA peut être incorrect.]:",
+        enonce: "Ce panneau signale :",
+        image: "/cours/examens/panneau-cassis.png",
         choix: [
           { lettre: "A", texte: "un cassis ou dos d'âne" , correct: true },
           { lettre: "B", texte: "un ralentisseur de type dos d'âne" },
