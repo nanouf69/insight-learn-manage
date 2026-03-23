@@ -13,6 +13,15 @@ import {
 } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, isCalculQuestion, type ExamenBlanc, type Matiere, type Question } from "./examens-blancs-data";
 import { loadSavedExamens, EXAMEN_BLANC_MODULE_BASE } from "./ExamensBlancsEditor";
+
+/** Safely coerce any value to string — handles null, undefined, arrays, objects, numbers, booleans */
+function safeStr(v: unknown): string {
+  if (v == null) return "";
+  if (typeof v === "string") return v;
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  if (Array.isArray(v)) return v.join(", ");
+  try { return JSON.stringify(v); } catch { return ""; }
+}
 import ExamensBlancsEditor from "./ExamensBlancsEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -1174,14 +1183,14 @@ function EcranResultats({
                         isLoadingIA = true;
                       } else if (corrIA === "error") {
                         if (isCalc) {
-                          const repStr = ((rep as string) || "").replace(/\s/g, "").toLowerCase();
+                          const repStr = safeStr(rep).replace(/\s/g, "").toLowerCase();
                           const hasResult = (q.reponses_possibles || []).some(rr => repStr.includes(rr.replace(/\s/g, "").toLowerCase()));
-                          const hasCalcDetail = /\d+\s*[\/×x\*\-\+]\s*\d+/.test((rep as string) || "") || /=\s*\d/.test((rep as string) || "");
+                          const hasCalcDetail = /\d+\s*[\/×x\*\-\+]\s*\d+/.test(safeStr(rep)) || /=\s*\d/.test(safeStr(rep));
                           if (hasResult && hasCalcDetail) { isCorrect = true; pointsObtenus = pts; }
                           else if (hasResult) { pointsObtenus = Math.round(pts * 5) / 10; correctionDetail = `⚠️ Résultat correct mais détail du calcul manquant → ${pointsObtenus}/${pts} pts`; }
                           else { correctionDetail = "❌ Résultat incorrect."; }
                         } else {
-                          const repStr = ((rep as string) || "").toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+                          const repStr = safeStr(rep).toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
                           const motsCles = q.reponses_possibles || [];
                           let nbTrouvees = 0;
                           motsCles.forEach(mc => { const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, ""); if (repStr.includes(mcN)) nbTrouvees++; });
@@ -1322,7 +1331,7 @@ function EcranResultats({
               if (corrIA && corrIA !== "loading" && corrIA !== "error") {
                 if (!corrIA.estCorrect) nbFaussesTop++;
               } else {
-                const repStr = ((rep as string) || "").toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+                const repStr = safeStr(rep).toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
                 const motsCles = q.reponses_possibles || [];
                 let nbTrouvees = 0;
                 motsCles.forEach(mc => { const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, ""); if (repStr.includes(mcN)) nbTrouvees++; });
@@ -1398,7 +1407,7 @@ function RevisionFausses({
        const donnees = (Array.isArray(rep) ? (rep as string[]) : []).sort();
        isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
      } else if (q?.type === "QRC") {
-       const repStr = ((typeof rep === 'string' ? rep : String(rep || ""))).toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+       const repStr = safeStr(rep).toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
        const motsCles = Array.isArray(q.reponses_possibles) ? q.reponses_possibles : [];
       let nbTrouvees = 0;
       motsCles.forEach(mc => { const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, ""); if (repStr.includes(mcN)) nbTrouvees++; });
@@ -1766,14 +1775,14 @@ export default function ExamensBlancsPage({
        } else if (q?.type === "QRC") {
         if (isCalculQuestion(q)) {
           // Calcul question: check result + detail
-          const repStr = ((rep as string) || "").replace(/\s/g, "").toLowerCase();
+           const repStr = safeStr(rep).replace(/\s/g, "").toLowerCase();
           const hasResult = (q.reponses_possibles || []).some(r => repStr.includes(r.replace(/\s/g, "").toLowerCase()));
-          const hasCalcDetail = /\d+\s*[\/×x\*\-\+]\s*\d+/.test((rep as string) || "") || /=\s*\d/.test((rep as string) || "");
+          const hasCalcDetail = /\d+\s*[\/×x\*\-\+]\s*\d+/.test(safeStr(rep)) || /=\s*\d/.test(safeStr(rep));
           if (hasResult && hasCalcDetail) totalPoints += pts;
           else if (hasResult) totalPoints += Math.round(pts * 5) / 10;
           // else 0
         } else {
-          const repStr = ((rep as string) || "").toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+          const repStr = safeStr(rep).toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
           const motsCles = q.reponses_possibles || [];
           let nbTrouvees = 0;
           motsCles.forEach(mc => {
@@ -2113,7 +2122,7 @@ export default function ExamensBlancsPage({
            const donnees = (Array.isArray(rep) ? (rep as string[]) : []).sort();
            isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
         } else if (q?.type === "QRC") {
-          const repStr = ((rep as string) || "").toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+          const repStr = safeStr(rep).toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
           const motsCles = q.reponses_possibles || [];
           let nbTrouvees = 0;
           motsCles.forEach(mc => { const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, ""); if (repStr.includes(mcN)) nbTrouvees++; });
