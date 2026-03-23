@@ -1547,6 +1547,12 @@ const eb1Matieres: Matiere[] = [
     coefficient: 2,
     noteEliminatoire: 5,
     noteSur: 24,
+    texteSupport: `Avec la démocratisation de l'automobile survenue en France après la première guerre mondiale, la voiture devint un symbole de liberté individuelle offrant à l'homme la possibilité de se déplacer rapidement et de façon autonome. Elle apparait comme un véritable raccourci du temps, modifiant les rapports spatiotemporels de l'individu.
+
+Grâce à la vitesse, l'homme est en mesure de dépasser ses limites physiologiques ; en même temps, va se développer chez lui un sentiment de domination et de toute puissance. Par ailleurs, au travers de la typologie du véhicule, le conducteur a la possibilité d'exprimer son rang et sa réussite sociale. La voiture est donc vécue comme le prolongement de l'habitat, véritable sphère privée, dans laquelle le conducteur se sent protégé et à l'abri des pressions extérieures.
+
+Ainsi tout « écart » intempestif est considéré comme une agression à la propriété privée, et le conducteur exacerbé choisit d'extérioriser ce débordement très souvent par un comportement agressif et incivique. Cette manière d'être manifeste l'attitude habituelle ou circonstanciée du conducteur. L'attitude est déterminée par la situation de conduite qui se présente. L'attitude est porteuse de sens, sinon d'intentions, ce qui a permis de mettre en évidence les différents comportements routiers : à risque et sécuritaire.`,
+    texteSource: "Questions Vives Recherches en éducation Vol. 9 n° 19 | 2013 — Éducation routière, changement de comportement et formation à la conduite",
     questions: [
       {
         id: 1,
