@@ -934,6 +934,7 @@ function EcranResultats({
   onRefaireFausses,
   apprenantId,
   userId,
+  isViewingSaved,
 }: {
   examen: ExamenBlanc;
   resultats: ResultatMatiere[];
@@ -942,6 +943,7 @@ function EcranResultats({
   onRefaireFausses: () => void;
   apprenantId?: string | null;
   userId?: string | null;
+  isViewingSaved?: boolean;
 }) {
   // Check if corrections are already cached in the resultats (from DB)
   const hasPreloadedCorrections = resultats.some(
@@ -1047,7 +1049,8 @@ function EcranResultats({
 
   // Mode hybride : correction IA en arrière-plan, ne peut qu'AMÉLIORER le score déterministe
   useEffect(() => {
-    if (!ENABLE_AI_QRC_CORRECTION || hasPreloadedCorrections) return;
+    // Skip AI correction if viewing saved results or already has corrections
+    if (!ENABLE_AI_QRC_CORRECTION || hasPreloadedCorrections || isViewingSaved) return;
 
     let cancelled = false;
     const corrigerTout = async () => {
@@ -1152,7 +1155,7 @@ function EcranResultats({
 
     corrigerTout();
     return () => { cancelled = true; };
-  }, [examen, resultats, hasPreloadedCorrections]);
+  }, [examen, resultats, hasPreloadedCorrections, isViewingSaved]);
 
   // Résultats sécurisés (aucune note hors bornes, aucun recalcul instable)
   const resultatsAvecIA = resultats.map((r) => {
@@ -1697,6 +1700,7 @@ export default function ExamensBlancsPage({
   const [matiereIndex, setMatiereIndex] = useState(savedSession?.matiereIndex || 0);
   const [tousResultats, setTousResultats] = useState<ResultatMatiere[]>(savedSession?.resultats || []);
   const [lastMatiereResult, setLastMatiereResult] = useState<ResultatMatiere | null>(null);
+  const [isViewingSavedResults, setIsViewingSavedResults] = useState(false);
   const [bilanPrefiltre, setBilanPrefiltre] = useState<string | null>(null);
   const [liveExamens, setLiveExamens] = useState<ExamenBlanc[]>(tousLesExamens);
   const examStartTimeRef = useRef<number>(savedSession?.examStartTime || Date.now());
@@ -1907,12 +1911,14 @@ export default function ExamensBlancsPage({
 
     setExamenChoisi(examReference);
     setTousResultats(results);
+    setIsViewingSavedResults(true);
     setPhase("resultats");
   };
 
 
   const handleDebuterExamen = () => {
     examStartTimeRef.current = Date.now();
+    setIsViewingSavedResults(false);
     setPhase("examen");
     if (examenChoisi) persistExamSession("examen", examenChoisi.id, 0);
   };
@@ -1983,6 +1989,7 @@ export default function ExamensBlancsPage({
       setPhase("transition");
       persistExamSession("examen", examenChoisi.id, nextIndex, newResultats);
     } else {
+      setIsViewingSavedResults(false);
       setPhase("resultats");
       persistExamSession("resultats", null, 0); // Clear session
       // Save results to database
@@ -2335,6 +2342,7 @@ export default function ExamensBlancsPage({
           onRefaireFausses={() => setPhase("revision")}
           apprenantId={apprenantId}
           userId={userId}
+          isViewingSaved={isViewingSavedResults}
         />
       </div>
     );
