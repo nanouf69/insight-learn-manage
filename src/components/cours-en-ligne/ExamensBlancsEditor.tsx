@@ -22,6 +22,65 @@ export function getExamenModuleId(examIndex: number): number {
   return EXAMEN_BLANC_MODULE_BASE + examIndex;
 }
 
+// VTC exams are at indices 0-5, TAXI exams at 6-11 in tousLesExamens
+// TAXI exams share their first 5 matières with VTC exams
+const VTC_COUNT = 6;
+const TAXI_OFFSET = 6;
+
+/**
+ * Repair missing `correct` flags on QCM choices by falling back to the
+ * original source data when the saved data has lost them.
+ */
+function repairCorrectFlags(examens: ExamenBlanc[]): void {
+  const source = tousLesExamens;
+  for (let i = 0; i < examens.length && i < source.length; i++) {
+    const ex = examens[i];
+    const srcEx = source[i];
+    for (let mi = 0; mi < ex.matieres.length && mi < srcEx.matieres.length; mi++) {
+      const mat = ex.matieres[mi];
+      const srcMat = srcEx.matieres[mi];
+      if (mat.id !== srcMat.id) continue;
+      const savedCorrectCount = mat.questions.filter(
+        q => q?.type === "QCM" && Array.isArray(q.choix) && q.choix.some(c => c.correct === true)
+      ).length;
+      const srcCorrectCount = srcMat.questions.filter(
+        q => q?.type === "QCM" && Array.isArray(q.choix) && q.choix.some(c => c.correct === true)
+      ).length;
+      // If saved data has significantly fewer correct answers, restore from source
+      if (srcCorrectCount > 0 && savedCorrectCount < srcCorrectCount * 0.5) {
+        console.log(`[ExamRepair] Restoring correct flags for exam ${ex.id}, matière ${mat.id}: ${savedCorrectCount} → ${srcCorrectCount}`);
+        for (const q of mat.questions) {
+          if (q?.type !== "QCM" || !Array.isArray(q.choix)) continue;
+          const srcQ = srcMat.questions.find(sq => sq.id === q.id);
+          if (!srcQ || srcQ?.type !== "QCM" || !Array.isArray(srcQ.choix)) continue;
+          for (const c of q.choix) {
+            const srcC = srcQ.choix?.find(sc => sc.lettre === c.lettre);
+            if (srcC) {
+              c.correct = srcC.correct === true ? true : undefined;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Sync the 5 common matières from VTC exams to TAXI exams.
+ * VTC is the source of truth for the common subjects.
+ */
+function syncVtcTaxiMatieres(examens: ExamenBlanc[]): void {
+  for (let n = 0; n < VTC_COUNT; n++) {
+    const vtcIdx = n;
+    const taxiIdx = TAXI_OFFSET + n;
+    if (vtcIdx >= examens.length || taxiIdx >= examens.length) continue;
+    const vtcEx = examens[vtcIdx];
+    const taxiEx = examens[taxiIdx];
+    const vtcCommon = JSON.parse(JSON.stringify(vtcEx.matieres.slice(0, 5))) as Matiere[];
+    taxiEx.matieres = [...vtcCommon, ...taxiEx.matieres.slice(5)];
+  }
+}
+
 // Load saved exam overrides from DB
 export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
   const examens = JSON.parse(JSON.stringify(tousLesExamens)) as ExamenBlanc[];
@@ -33,7 +92,10 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
       .select("module_id, module_data")
       .in("module_id", moduleIds);
     
-    if (error || !data || data.length === 0) return examens;
+    if (error || !data || data.length === 0) {
+      syncVtcTaxiMatieres(examens);
+      return examens;
+    }
     
     for (const row of data) {
       const idx = row.module_id - EXAMEN_BLANC_MODULE_BASE;
@@ -47,6 +109,10 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
   } catch (err) {
     console.error("[ExamensEditor] Error loading saved exams:", err);
   }
+  
+  // Repair any missing correct flags, then sync VTC → TAXI
+  repairCorrectFlags(examens);
+  syncVtcTaxiMatieres(examens);
   
   return examens;
 }
@@ -418,13 +484,18 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
   const examenSel = examens.find(e => e.id === examenSelId) || null;
 
   const handleMatiereChange = (matiereId: string, updated: Matiere) => {
-    setExamens(prev => prev.map(ex => {
-      if (ex.id !== examenSelId) return ex;
-      return {
-        ...ex,
-        matieres: ex.matieres.map(m => m.id === matiereId ? updated : m),
-      };
-    }));
+    setExamens(prev => {
+      const next = prev.map(ex => {
+        if (ex.id !== examenSelId) return ex;
+        return {
+          ...ex,
+          matieres: ex.matieres.map(m => m.id === matiereId ? updated : m),
+        };
+      });
+      // After any edit, sync VTC → TAXI common matières
+      syncVtcTaxiMatieres(next);
+      return next;
+    });
   };
 
   // Load saved data from DB on mount
@@ -437,8 +508,11 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
   const handleSaveAll = async () => {
     setSaving(true);
     try {
+      // Ensure VTC→TAXI sync before saving
+      const synced = [...examens];
+      syncVtcTaxiMatieres(synced);
       // Save each modified exam to module_editor_state
-      const promises = examens.map((ex, i) => {
+      const promises = synced.map((ex, i) => {
         const moduleId = EXAMEN_BLANC_MODULE_BASE + i;
         return supabase.from("module_editor_state").upsert(
           [{
