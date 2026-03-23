@@ -2041,7 +2041,7 @@ Ainsi tout « écart » intempestif est considéré comme une agression à la pr
         type: "QRC",
         enonce: "Un conducteur de VTC doit-il obligatoirement être propriétaire de son véhicule ? (QRC)Développez votre réponse.",
         reponseQRC: "Non, il peut aussi louer le véhicule sous réserve de justifier au moins de l'inscription au registre des exploitants de VTC",
-        reponses_possibles: ["non", "louer", "registre", "exploitants", "vtc", "societe", "location", "pas obligatoirement"],
+        reponses_possibles: ["non", "louer|location", "registre|exploitants", "vtc|societe"],
       },
       {
         id: 4,
