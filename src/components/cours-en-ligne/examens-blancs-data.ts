@@ -4294,7 +4294,7 @@ const eb3Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "30 minutes" },
           { lettre: "B", texte: "1 h 30" },
-          { lettre: "C", texte: "1 heure" },
+          { lettre: "C", texte: "1 heure", correct: true },
           { lettre: "D", texte: "45 minutes" },
         ],
       },
