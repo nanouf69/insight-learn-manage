@@ -1942,8 +1942,8 @@ export default function ExamensBlancsPage({
       const pts = getPointsParQuestion(matiere.id, q?.type);
       let correct = false;
       if (q?.type === "QCM" && q.choix) {
-        const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
-         const donnees = (Array.isArray(rep) ? (rep as string[]) : []).sort();
+        const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
+         const donnees = safeArray<string>(rep).sort();
          correct = JSON.stringify(correctes) === JSON.stringify(donnees);
       } else if (q?.type === "QRC") {
         const correction = evaluateQrcDeterministic(q, rep, pts);
