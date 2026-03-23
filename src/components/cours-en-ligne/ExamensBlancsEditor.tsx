@@ -507,26 +507,56 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
   const [autoSaving, setAutoSaving] = useState(false);
   const initialLoadDoneRef = useRef(false);
   const lastSavedFingerprintRef = useRef("");
+  const lastSavedModuleFingerprintsRef = useRef<Record<number, string>>({});
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const persistChainRef = useRef<Promise<boolean>>(Promise.resolve(true));
 
   const examensFiltres = examens.filter(e => typeFiltre === "tous" || e?.type === typeFiltre);
   const examenSel = examens.find(e => e.id === examenSelId) || null;
 
   const persistExamens = async (sourceExamens: ExamenBlanc[], showSuccessToast = false): Promise<boolean> => {
+    const snapshot = JSON.parse(JSON.stringify(sourceExamens)) as ExamenBlanc[];
+
+    persistChainRef.current = persistChainRef.current.then(async () => {
     try {
-      const synced = JSON.parse(JSON.stringify(sourceExamens)) as ExamenBlanc[];
+      const synced = JSON.parse(JSON.stringify(snapshot)) as ExamenBlanc[];
       syncVtcTaxiMatieres(synced);
 
       const now = new Date().toISOString();
-      const rows = synced.map((ex, i) => ({
-        module_id: EXAMEN_BLANC_MODULE_BASE + i,
-        module_data: ex as any,
-        deleted_cours: [] as any,
-        deleted_exercices: [] as any,
-        updated_at: now,
-      }));
+      const changedModuleFingerprints: Record<number, string> = {};
+      const rows = synced
+        .map((ex, i) => {
+          const moduleId = EXAMEN_BLANC_MODULE_BASE + i;
+          const moduleFingerprint = JSON.stringify(ex.matieres ?? []);
+          const hasChanged = lastSavedModuleFingerprintsRef.current[moduleId] !== moduleFingerprint;
 
-      // Send as a single batch upsert instead of 12+ parallel requests
+          if (!hasChanged) return null;
+
+          changedModuleFingerprints[moduleId] = moduleFingerprint;
+          return {
+            module_id: moduleId,
+            module_data: {
+              id: ex.id,
+              matieres: ex.matieres,
+            } as any,
+            deleted_cours: [] as any,
+            deleted_exercices: [] as any,
+            updated_at: now,
+          };
+        })
+        .filter((row): row is NonNullable<typeof row> => row !== null);
+
+      if (rows.length === 0) {
+        lastSavedFingerprintRef.current = JSON.stringify(synced);
+        if (showSuccessToast) {
+          setSaved(true);
+          toast.success("Aucune modification à sauvegarder.");
+          setTimeout(() => setSaved(false), 2500);
+        }
+        return true;
+      }
+
+      // Save only changed exams in one batch request
       const { error } = await supabase
         .from("module_editor_state")
         .upsert(rows, { onConflict: "module_id" });
@@ -538,6 +568,10 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
       }
 
       lastSavedFingerprintRef.current = JSON.stringify(synced);
+      lastSavedModuleFingerprintsRef.current = {
+        ...lastSavedModuleFingerprintsRef.current,
+        ...changedModuleFingerprints,
+      };
 
       if (showSuccessToast) {
         setSaved(true);
@@ -551,6 +585,9 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
       toast.error("Erreur lors de la sauvegarde");
       return false;
     }
+    });
+
+    return persistChainRef.current;
   };
 
   const handleMatiereChange = (matiereId: string, updated: Matiere) => {
@@ -573,6 +610,10 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
     loadSavedExamens().then(loadedExamens => {
       setExamens(loadedExamens);
       lastSavedFingerprintRef.current = JSON.stringify(loadedExamens);
+      lastSavedModuleFingerprintsRef.current = loadedExamens.reduce<Record<number, string>>((acc, ex, i) => {
+        acc[EXAMEN_BLANC_MODULE_BASE + i] = JSON.stringify(ex.matieres ?? []);
+        return acc;
+      }, {});
       initialLoadDoneRef.current = true;
     });
   }, []);
@@ -624,6 +665,10 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
       const resetExamens = JSON.parse(JSON.stringify(tousLesExamens)) as ExamenBlanc[];
       setExamens(resetExamens);
       lastSavedFingerprintRef.current = JSON.stringify(resetExamens);
+      lastSavedModuleFingerprintsRef.current = resetExamens.reduce<Record<number, string>>((acc, ex, i) => {
+        acc[EXAMEN_BLANC_MODULE_BASE + i] = JSON.stringify(ex.matieres ?? []);
+        return acc;
+      }, {});
       toast.success("Examens blancs réinitialisés aux valeurs d'origine");
     } catch (err) {
       console.error("[ExamensEditor] Reset failed:", err);
