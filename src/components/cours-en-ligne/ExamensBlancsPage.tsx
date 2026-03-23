@@ -251,11 +251,14 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
 
   const [typeFiltre, setTypeFiltre] = useState<"tous" | "TAXI" | "VTC" | "TA" | "VA">(forcedType || "tous");
   const [completedExamIds, setCompletedExamIds] = useState<Set<string>>(new Set());
+  const [startedNotFinishedIds, setStartedNotFinishedIds] = useState<Set<string>>(new Set());
   const [examScores, setExamScores] = useState<Record<string, { matiere_id: string; matiere_nom: string; note_sur_20: number }[]>>({});
 
-  // Fetch completed exams with scores from DB
+  // Fetch completed exams with scores from DB + started-but-not-finished
   useEffect(() => {
     if (!apprenantId) return;
+
+    // 1) Fetch completed results
     supabase
       .from("apprenant_quiz_results" as any)
       .select("quiz_id, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, completed_at, created_at")
@@ -263,7 +266,6 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
       .eq("quiz_type", "examen_blanc")
       .then(({ data }) => {
         if (data) {
-          // Keep only latest row per quiz + matière to avoid mixing attempts
           const latestByQuizMatiere = new Map<string, any>();
           (data as any[]).forEach((r: any) => {
             const key = `${r.quiz_id}::${r.matiere_id || r.matiere_nom || "unknown"}`;
@@ -287,6 +289,25 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
             });
           });
           setExamScores(scores);
+
+          // 2) Fetch started-but-not-finished exams from reponses_apprenants
+          supabase
+            .from("reponses_apprenants" as any)
+            .select("exercice_id, completed")
+            .eq("apprenant_id", apprenantId)
+            .eq("exercice_type", "examen_blanc")
+            .then(({ data: repData }) => {
+              const started = new Set<string>();
+              if (repData) {
+                (repData as any[]).forEach((r: any) => {
+                  // Started but not finished = has a reponse row but not in completedExamIds
+                  if (!ids.has(r.exercice_id)) {
+                    started.add(r.exercice_id);
+                  }
+                });
+              }
+              setStartedNotFinishedIds(started);
+            });
         }
       });
   }, [apprenantId]);
@@ -345,14 +366,15 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {examensBlancs.map(examen => {
-              const totalQuestions = examen.matieres.reduce((acc, m) => acc + m.questions.length, 0);
+               const totalQuestions = examen.matieres.reduce((acc, m) => acc + m.questions.length, 0);
               const dureeTotal = examen.matieres.reduce((acc, m) => acc + m.duree, 0);
               const isCompleted = completedExamIds.has(examen.id);
+              const isStartedNotFinished = !isCompleted && startedNotFinishedIds.has(examen.id);
               const scores = examScores[examen.id] || [];
               return (
                 <Card
                   key={examen.id}
-                  className={`hover:shadow-md transition-shadow border-2 ${isCompleted ? "border-green-500/60 bg-green-50/30 cursor-pointer" : "hover:border-primary/40"}`}
+                  className={`hover:shadow-md transition-shadow border-2 ${isCompleted ? "border-green-500/60 bg-green-50/30 cursor-pointer" : isStartedNotFinished ? "border-orange-400/60 bg-orange-50/30" : "hover:border-primary/40"}`}
                   onClick={isCompleted ? () => onViewResults(examen) : undefined}
                 >
                   <CardHeader className="pb-3">
@@ -367,6 +389,12 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                       <div className="flex items-center gap-2 mt-2 bg-green-100 border border-green-300 rounded-lg px-3 py-2">
                         <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
                         <span className="text-green-700 font-bold text-lg uppercase tracking-wide">Examen réalisé</span>
+                      </div>
+                    )}
+                    {isStartedNotFinished && (
+                      <div className="flex items-center gap-2 mt-2 bg-orange-100 border-2 border-orange-400 rounded-lg px-3 py-3">
+                        <AlertTriangle className="w-6 h-6 text-orange-600 shrink-0" />
+                        <span className="text-orange-700 font-extrabold text-lg uppercase tracking-wide">Non terminé</span>
                       </div>
                     )}
                   </CardHeader>
@@ -408,8 +436,8 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                         Voir mes résultats
                       </Button>
                     )}
-                    <Button className="w-full mt-2 gap-2" variant={isCompleted ? "outline" : "default"} onClick={(e) => { e.stopPropagation(); onStart(examen); }}>
-                      {isCompleted ? "Recommencer l'examen" : "Commencer l'examen"}
+                    <Button className="w-full mt-2 gap-2" variant={isCompleted ? "outline" : isStartedNotFinished ? "default" : "default"} onClick={(e) => { e.stopPropagation(); onStart(examen); }}>
+                      {isCompleted ? "Recommencer l'examen" : isStartedNotFinished ? "Reprendre l'examen" : "Commencer l'examen"}
                       <ChevronRight className="w-4 h-4" />
                     </Button>
                   </CardContent>
