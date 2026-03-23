@@ -119,16 +119,27 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
     if (!apprenantId) return;
     supabase
       .from("apprenant_quiz_results" as any)
-      .select("quiz_id, matiere_id, matiere_nom, note_sur_20")
+      .select("quiz_id, matiere_id, matiere_nom, note_sur_20, completed_at, created_at")
       .eq("apprenant_id", apprenantId)
       .eq("quiz_type", "examen_blanc")
       .then(({ data }) => {
         if (data) {
-          const ids = new Set<string>((data as any[]).map((r: any) => r.quiz_id));
-          setCompletedExamIds(ids);
-          // Group scores by quiz_id
-          const scores: Record<string, { matiere_id: string; matiere_nom: string; note_sur_20: number }[]> = {};
+          // Keep only latest row per quiz + matière to avoid mixing attempts
+          const latestByQuizMatiere = new Map<string, any>();
           (data as any[]).forEach((r: any) => {
+            const key = `${r.quiz_id}::${r.matiere_id || r.matiere_nom || "unknown"}`;
+            const prev = latestByQuizMatiere.get(key);
+            const prevTs = prev ? Math.max(toTimestamp(prev.completed_at), toTimestamp(prev.created_at)) : 0;
+            const currTs = Math.max(toTimestamp(r.completed_at), toTimestamp(r.created_at));
+            if (!prev || currTs >= prevTs) latestByQuizMatiere.set(key, r);
+          });
+
+          const latestRows = Array.from(latestByQuizMatiere.values());
+          const ids = new Set<string>(latestRows.map((r: any) => r.quiz_id));
+          setCompletedExamIds(ids);
+
+          const scores: Record<string, { matiere_id: string; matiere_nom: string; note_sur_20: number }[]> = {};
+          latestRows.forEach((r: any) => {
             if (!scores[r.quiz_id]) scores[r.quiz_id] = [];
             scores[r.quiz_id].push({
               matiere_id: r.matiere_id,
