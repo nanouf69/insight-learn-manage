@@ -1511,7 +1511,7 @@ const eb1Matieres: Matiere[] = [
         enonce: "Les témoins sur le tableaux de bord du véhicule qui alertent le conducteur d’une urgence mécanique sont de couleur :",
         choix: [
           { lettre: "A", texte: "Bleue" },
-          { lettre: "B", texte: "Rouge" },
+          { lettre: "B", texte: "Rouge", correct: true },
           { lettre: "C", texte: "Orange" },
           { lettre: "D", texte: "Verte" },
         ],
