@@ -496,7 +496,8 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 
