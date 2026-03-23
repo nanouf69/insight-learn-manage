@@ -408,6 +408,7 @@ function MatiereEditor({
                 <QuestionEditor
                   question={q}
                   onSave={saveQuestion}
+                  onDraftChange={saveQuestionDraft}
                   onDelete={() => deleteQuestion(q.id)}
                   onCancel={() => setEditingQId(null)}
                 />
