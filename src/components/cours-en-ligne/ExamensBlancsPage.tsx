@@ -1155,7 +1155,7 @@ function EcranResultats({
 
     corrigerTout();
     return () => { cancelled = true; };
-  }, [examen, resultats, hasPreloadedCorrections]);
+  }, [examen, resultats, hasPreloadedCorrections, isViewingSaved]);
 
   // Résultats sécurisés (aucune note hors bornes, aucun recalcul instable)
   const resultatsAvecIA = resultats.map((r) => {
