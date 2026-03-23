@@ -970,7 +970,6 @@ export function RapprochementBancaire() {
     </div>
   );
 }
- * Colonnes : Type,Product,Started Date,Completed Date,Description,Amount,Fee,Currency,State,Balance
  * ou parfois : Date started (UTC),Date completed (UTC),... 
  * Le séparateur peut être , ou ;
  * Montant : "1500.00" ou "-2046.30" (point décimal, signe négatif)
