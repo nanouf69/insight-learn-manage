@@ -1911,6 +1911,7 @@ export default function ExamensBlancsPage({
 
     setExamenChoisi(examReference);
     setTousResultats(results);
+    setIsViewingSavedResults(true);
     setPhase("resultats");
   };
 
