@@ -2270,11 +2270,6 @@ const eb2Matieres: Matiere[] = [
     noteSur: 36,
     questions: [
       {
-        id: 1,
-        type: "QRC",
-        enonce: "GESTION",
-      },
-      {
         id: 2,
         type: "QRC",
         enonce: "Développez les sigles URSSAF (QRC)",
@@ -5669,11 +5664,6 @@ const eb5Matieres: Matiere[] = [
     noteSur: 36,
     questions: [
       {
-        id: 1,
-        type: "QRC",
-        enonce: "GESTION",
-      },
-      {
         id: 2,
         type: "QRC",
         enonce: "Qu'est-ce qu'une personne morale ? (QRC)",
@@ -6106,11 +6096,6 @@ Elon Musk avait promis que son fameux pick-up coûterait moins de 50.000 dollars
 Certains experts estiment que le pick-up électrique Tesla aura du mal à séduire la clientèle traditionnelle pour ce type d'engins. «Même si le pick-up de Tesla ne séduit pas les amateurs habituels du F-150, il n'en a pas forcément besoin», relevait Jessica Caldwell, directrice de la prospective pour le guide automobile Ens, dans une déclaration transmise avant la présentation. «Si le pickup Tesla n'était pas un peu polémique, ce ne serait pas une Tesla», a-t-elle ajouté.`,
     texteSource: "Article de presse — Présentation du Cybertruck Tesla",
     questions: [
-      {
-        id: 1,
-        type: "QRC",
-        enonce: "Francais",
-      },
       {
         id: 2,
         type: "QRC",
@@ -6799,11 +6784,6 @@ const eb6Matieres: Matiere[] = [
     noteEliminatoire: 6,
     noteSur: 36,
     questions: [
-      {
-        id: 1,
-        type: "QRC",
-        enonce: "GESTION",
-      },
       {
         id: 2,
         type: "QRC",
