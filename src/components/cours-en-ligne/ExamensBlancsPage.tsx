@@ -1023,7 +1023,13 @@ function EcranResultats({
         .update({
           score_obtenu: noteRecalculeeSecurisee,
           note_sur_20: noteSur20,
-          reussi: noteRecalculeeSecurisee >= ((resultat.noteEliminatoire || 0) / (resultat.noteSur || 20)) * safeMax,
+          reussi: computeAdmisForMatiere(
+            noteRecalculeeSecurisee,
+            safeMax,
+            resultat.noteEliminatoire,
+            resultat.noteSur,
+            Boolean(resultat.admis)
+          ),
           details: {
             questions: (resultat as any).details?.questions || [],
             reponses: resultat.reponses,
@@ -1916,9 +1922,13 @@ export default function ExamensBlancsPage({
           ? clamp(toFiniteNumber(row.score_obtenu, 0), 0, safeScoreMax)
           : Math.max(toFiniteNumber(row.score_obtenu, 0), 0);
         const safeNoteSur = matiere.noteSur || 20;
-        const admisCalcule = safeScoreMax > 0
-          ? safeScoreObtenu >= ((matiere.noteEliminatoire || 0) / safeNoteSur) * safeScoreMax
-          : Boolean(row.reussi);
+        const admisCalcule = computeAdmisForMatiere(
+          safeScoreObtenu,
+          safeScoreMax,
+          matiere.noteEliminatoire,
+          safeNoteSur,
+          Boolean(row.reussi)
+        );
 
         return {
           matiereId: row.matiere_id || matiere.id,
@@ -2015,7 +2025,13 @@ export default function ExamensBlancsPage({
       noteSur: matiere.noteSur,
       noteEliminatoire: matiere.noteEliminatoire,
       coefficient: matiere.coefficient,
-      admis: maxPoints > 0 ? noteSecurisee >= (matiere.noteEliminatoire / (matiere.noteSur || 20)) * maxPoints : false,
+      admis: computeAdmisForMatiere(
+        noteSecurisee,
+        maxPoints,
+        matiere.noteEliminatoire,
+        matiere.noteSur,
+        false
+      ),
       reponses,
     };
 
@@ -2070,9 +2086,13 @@ export default function ExamensBlancsPage({
             score_obtenu: safeScoreObtenu,
             score_max: safeScoreMax,
             note_sur_20: normalizeNoteSur20(safeScoreObtenu, safeScoreMax),
-            reussi: safeScoreMax > 0
-              ? safeScoreObtenu >= ((r.noteEliminatoire || 0) / (r.noteSur || 20)) * safeScoreMax
-              : Boolean(r.admis),
+            reussi: computeAdmisForMatiere(
+              safeScoreObtenu,
+              safeScoreMax,
+              r.noteEliminatoire,
+              r.noteSur,
+              Boolean(r.admis)
+            ),
             duree_secondes: Math.round(duree / allResults.length),
             details: { questions: questionDetails, reponses: r.reponses },
           };
