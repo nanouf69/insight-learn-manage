@@ -372,9 +372,10 @@ function PassageMatiere({
   const persistReponses = (updated: Reponses) => {
     if (!apprenantId || !userIdRef.current) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
+    setSaveStatus("saving");
     debounceRef.current = setTimeout(async () => {
       try {
-        await supabase.from("reponses_apprenants" as any).upsert({
+        const { error } = await supabase.from("reponses_apprenants" as any).upsert({
           apprenant_id: apprenantId,
           user_id: userIdRef.current,
           exercice_id: exerciceKey,
@@ -383,7 +384,20 @@ function PassageMatiere({
           completed: false,
           updated_at: new Date().toISOString(),
         } as any, { onConflict: "apprenant_id,exercice_id" });
-      } catch (e) { console.error("[AutoSave] Save error:", e); }
+        if (error) {
+          console.error("[AutoSave] Save error:", error);
+          setSaveStatus("error");
+        } else {
+          setSaveStatus("saved");
+        }
+        if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
+        saveStatusTimerRef.current = setTimeout(() => setSaveStatus("idle"), 2000);
+      } catch (e) {
+        console.error("[AutoSave] Save error:", e);
+        setSaveStatus("error");
+        if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
+        saveStatusTimerRef.current = setTimeout(() => setSaveStatus("idle"), 3000);
+      }
     }, 300);
   };
 
