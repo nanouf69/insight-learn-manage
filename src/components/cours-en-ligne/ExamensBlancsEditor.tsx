@@ -652,13 +652,25 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
             <p className="text-xs text-muted-foreground">Modifiez les questions, réponses, points et durées</p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          {autoSaving && (
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              Sauvegarde auto...
+            </span>
+          )}
           <Button variant="outline" size="sm" onClick={handleReset}>
             Réinitialiser
           </Button>
-          <Button size="sm" onClick={handleSaveAll} className="gap-2">
-            {saved ? <CheckCircle2 className="w-4 h-4 text-primary" /> : <Save className="w-4 h-4" />}
-            {saved ? "Sauvegardé !" : "Sauvegarder tout"}
+          <Button size="sm" onClick={handleSaveAll} className="gap-2" disabled={saving}>
+            {saving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : saved ? (
+              <CheckCircle2 className="w-4 h-4 text-primary" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            {saving ? "Sauvegarde..." : saved ? "Sauvegardé !" : "Sauvegarder tout"}
           </Button>
         </div>
       </div>
