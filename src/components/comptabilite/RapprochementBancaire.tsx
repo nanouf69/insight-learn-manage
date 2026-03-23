@@ -510,11 +510,12 @@ export function RapprochementBancaire() {
   const filtered = transactions.filter(tx => {
     const matchStatut = filterStatut === "tous" || tx.statut === filterStatut;
     const matchType = filterType === "tous" || (filterType === "debit" ? tx.montant < 0 : tx.montant > 0);
+    const matchBanque = filterBanque === "tous" || tx.banque === filterBanque;
     const matchSearch = !search ||
       tx.libelle.toLowerCase().includes(search.toLowerCase()) ||
       (tx.fournisseur_client || "").toLowerCase().includes(search.toLowerCase()) ||
       (tx.categorie || "").toLowerCase().includes(search.toLowerCase());
-    return matchStatut && matchType && matchSearch;
+    return matchStatut && matchType && matchSearch && matchBanque;
   });
 
   // Group by month
