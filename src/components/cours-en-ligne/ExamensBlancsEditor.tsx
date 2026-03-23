@@ -102,7 +102,16 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
       if (idx >= 0 && idx < examens.length && row.module_data) {
         const saved = row.module_data as unknown as ExamenBlanc;
         if (saved.matieres && Array.isArray(saved.matieres)) {
-          examens[idx] = { ...examens[idx], matieres: saved.matieres };
+          // Merge saved matières but preserve texteSupport/texteSource from source data
+          const sourceMatieres = examens[idx].matieres;
+          const mergedMatieres = saved.matieres.map((savedMat) => {
+            const sourceMat = sourceMatieres.find(sm => sm.id === savedMat.id);
+            if (sourceMat && sourceMat.texteSupport && !savedMat.texteSupport) {
+              return { ...savedMat, texteSupport: sourceMat.texteSupport, texteSource: sourceMat.texteSource };
+            }
+            return savedMat;
+          });
+          examens[idx] = { ...examens[idx], matieres: mergedMatieres };
         }
       }
     }
