@@ -1847,9 +1847,9 @@ const eb1Matieres: Matiere[] = [
         enonce: "Have you been a driver for a long time ?",
         choix: [
           { lettre: "A", texte: "I have been a driver for half past four" },
-          { lettre: "B", texte: "I've been a driver since 1990" },
+          { lettre: "B", texte: "I've been a driver since 1990", correct: true },
           { lettre: "C", texte: "I was a driver in the 90's" },
-          { lettre: "D", texte: "I've been a driver for 27 years" },
+          { lettre: "D", texte: "I've been a driver for 27 years", correct: true },
         ],
       },
     ],
