@@ -320,16 +320,19 @@ const ResultatsSessionPage = () => {
 
   // Per-question stats for a given exam + matiere
   const getQuestionStats = (quizId: string, matiereNom: string) => {
-    // Match by quiz_id AND matiere name (fallback to quiz_titre)
+    // Match by quiz_id AND matiere name
     const examResults = examBlancResults.filter(r => {
       if (r.quiz_id !== quizId) return false;
       const rMatiere = r.matiere_nom || r.quiz_titre || '';
       return rMatiere === matiereNom;
     });
 
-    // Collect last attempt per student
+    // Collect last attempt per student THAT HAS question details
     const lastPerStudent: Record<string, QuizResultRow> = {};
     for (const r of examResults) {
+      const det = r.details as any;
+      const hasQuestions = Array.isArray(det?.questions) && det.questions.length > 0;
+      if (!hasQuestions) continue;
       if (!lastPerStudent[r.apprenant_id] || new Date(r.completed_at) > new Date(lastPerStudent[r.apprenant_id].completed_at)) {
         lastPerStudent[r.apprenant_id] = r;
       }
@@ -339,7 +342,7 @@ const ResultatsSessionPage = () => {
     const questionMap: Record<number, { enonce: string; type: string; correct: number; incorrect: number; total: number }> = {};
     for (const r of Object.values(lastPerStudent)) {
       const det = r.details as any;
-      const questions: any[] = Array.isArray(det?.questions) ? det.questions : [];
+      const questions: any[] = det?.questions || [];
       for (const q of questions) {
         const qId = q?.questionId ?? q?.id;
         if (qId == null || !q?.enonce) continue;
