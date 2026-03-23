@@ -263,9 +263,10 @@ function evaluateQrcDeterministic(question: Question, response: unknown, pointsQ
   // Règle : le seuil de 3 ne s'applique QUE si la question a PLUS de 3 réponses possibles.
   // Si total <= 3, il faut TOUS les éléments, même pour les questions de type liste.
   const requestedCount = extractRequestedElementsCount(question.enonce || "");
-   // Règle : si plus de 3 réponses possibles, 3 trouvées = tous les points
-   // Si 3 ou moins de réponses possibles, il faut TOUTES les trouver
-   const requiredForFullPoints = total > 3 ? 3 : total;
+   // Règle : >3 réponses possibles → 3 trouvées = tous les points
+   //         3 réponses possibles → 2 trouvées (≥80%) = tous les points  
+   //         ≤2 réponses possibles → il faut toutes les trouver
+   const requiredForFullPoints = total > 3 ? 3 : total <= 2 ? total : Math.ceil(total * 0.8);
 
    const gotFullPoints = matched >= requiredForFullPoints;
    const points = gotFullPoints
