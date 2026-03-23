@@ -942,7 +942,9 @@ function EcranResultats({
   userId?: string | null;
 }) {
   // Check if corrections are already cached in the resultats (from DB)
-  const hasPreloadedCorrections = resultats.some(r => r.correctionsIA && Object.keys(r.correctionsIA).length > 0);
+  const hasPreloadedCorrections = resultats.some(
+    (r) => r.correctionsIA && Object.values(r.correctionsIA).some((value) => value && value !== "loading")
+  );
 
   const [correctionsIA, setCorrectionsIA] = useState<{ [matiereIdx: number]: CorrectionCache }>(() => {
     if (!hasPreloadedCorrections) return {};
