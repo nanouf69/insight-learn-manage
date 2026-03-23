@@ -22,6 +22,11 @@ function safeStr(v: unknown): string {
   if (Array.isArray(v)) return v.join(", ");
   try { return JSON.stringify(v); } catch { return ""; }
 }
+
+function toTimestamp(value: unknown): number {
+  const ts = new Date(String(value ?? "")).getTime();
+  return Number.isFinite(ts) ? ts : 0;
+}
 import ExamensBlancsEditor from "./ExamensBlancsEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
