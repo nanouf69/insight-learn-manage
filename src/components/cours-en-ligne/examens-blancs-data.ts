@@ -6722,8 +6722,8 @@ const eb6Matieres: Matiere[] = [
         enonce: "Quelle(s) est (sont) le(s) exemple(s) d'infractions pouvant figurer au Bulletin n°2 du casier judiciaire ?",
         choix: [
           { lettre: "A", texte: "Non présentation du permis de conduire" },
-          { lettre: "B", texte: "Escroquerie" },
-          { lettre: "C", texte: "Extorsion de fonds" },
+          { lettre: "B", texte: "Escroquerie", correct: true },
+          { lettre: "C", texte: "Extorsion de fonds", correct: true },
           { lettre: "D", texte: "Non respect d'un feu tricolore" },
         ],
       },
