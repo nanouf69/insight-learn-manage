@@ -1008,6 +1008,7 @@ const eb1Matieres: Matiere[] = [
         type: "QRC",
         enonce: "Citez trois des conditions d'accès et ou d'exercice aux professions de conducteurs de T3P : (QRC)",
         reponseQRC: "Réussite à l'examen (vérification de l'aptitude professionnelle). Carte professionnelle en cours de validité Formation continue. Aptitude médicale. Honorabilité. Assurance responsabilité civile professionnelle. Respect de caractéristiques techniques des véhicules (contrôle technique - et le cas échéant puissance, dimension, équipement spéciaux).",
+        reponses_possibles: ["examen", "carte professionnelle", "formation continue", "aptitude médicale", "honorabilité", "assurance", "permis de conduire", "casier judiciaire", "contrôle technique"],
       },
       {
         id: 5,
