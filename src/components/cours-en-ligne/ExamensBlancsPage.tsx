@@ -51,7 +51,9 @@ function clampToQuestionMax(pointsObtenus: unknown, questionMax: number): number
   return clamp(toFiniteNumber(pointsObtenus, 0), 0, Math.max(questionMax, 0));
 }
 
-const ENABLE_AI_QRC_CORRECTION = false;
+const ENABLE_AI_QRC_CORRECTION = true;
+// Mode hybride : le déterministe fournit un score instantané, l'IA ne peut qu'améliorer
+const AI_ONLY_UPGRADES = true;
 
 function normalizeAnswerText(value: unknown): string {
   return safeStr(value)
@@ -1043,112 +1045,104 @@ function EcranResultats({
     }
   };
 
-  // Lance la correction IA de tous les QRC à l'affichage des résultats — ONLY if not already cached
+  // Mode hybride : correction IA en arrière-plan, ne peut qu'AMÉLIORER le score déterministe
   useEffect(() => {
-    // IA temporairement désactivée pour garantir stabilité et cohérence des notes
     if (!ENABLE_AI_QRC_CORRECTION || hasPreloadedCorrections) return;
 
     let cancelled = false;
     const corrigerTout = async () => {
-      // Check if there are any QRC questions to correct
-      let hasQRC = false;
-      examen.matieres.forEach((matiere) => {
-        if (!matiere) return;
-        const questionsSafe = (matiere.questions || []).filter(q => q && q?.type !== undefined);
-        if (questionsSafe.some(q => q?.type === "QRC")) hasQRC = true;
-      });
-      if (!hasQRC) return;
-
-      setCorrectionEnCours(true);
-
-      // Initialiser tous les QRC en "loading"
-      const initialCache: { [matiereIdx: number]: CorrectionCache } = {};
+      // Collect QRC questions that got less than max points with deterministic
+      const qrcToCorrect: { mi: number; q: Question; rep: string; pts: number; deterministicScore: number }[] = [];
       examen.matieres.forEach((matiere, mi) => {
-        if (!matiere || matiere === undefined) return;
+        if (!matiere) return;
         const resultat = resultats[mi];
         if (!resultat) return;
         const questionsSafe = (matiere.questions || []).filter(q => q && q?.type !== undefined);
         questionsSafe.forEach(q => {
-          if (!q || q === undefined) return;
-          if (q?.type === "QRC") {
-            if (!initialCache[mi]) initialCache[mi] = {};
-            initialCache[mi][q.id] = "loading";
+          if (!q || q?.type !== "QRC") return;
+          const rep = safeStr(resultat.reponses?.[q.id]);
+          if (!rep.trim()) return; // skip empty answers
+          const pts = getPointsParQuestion(matiere.id, q?.type || "QRC");
+          const deterResult = evaluateQrcDeterministic(q, rep, pts);
+          // Only call AI if deterministic didn't give full points
+          if (deterResult.pointsObtenus < pts) {
+            qrcToCorrect.push({ mi, q, rep, pts, deterministicScore: deterResult.pointsObtenus });
           }
         });
       });
-      if (!cancelled) setCorrectionsIA({ ...initialCache });
 
-      const finalCorrections = { ...initialCache };
+      if (qrcToCorrect.length === 0) return;
+
+      // Don't block the UI - show a subtle indicator
+      setCorrectionEnCours(true);
+
+      const finalCorrections: { [matiereIdx: number]: CorrectionCache } = {};
 
       try {
-        // Corriger chaque QRC via l'IA
-        for (let mi = 0; mi < examen.matieres.length; mi++) {
+        for (const { mi, q, rep, pts, deterministicScore } of qrcToCorrect) {
+          if (cancelled) return;
           const matiere = examen.matieres[mi];
-          if (!matiere || matiere === undefined) continue;
-          const resultat = resultats[mi];
-          if (!resultat) continue;
+          if (!matiere) continue;
 
-          const questionsSafe = (matiere.questions || []).filter(q => q && q?.type !== undefined);
-          for (const q of questionsSafe) {
-            if (!q || q === undefined || q?.type !== "QRC") continue;
-            const reponseEtudiant = (resultat.reponses?.[q.id] as string) || "";
-            const pointsQuestion = getPointsParQuestion(matiere.id, q?.type || "QRC");
+          try {
+            const isCalc = isCalculQuestion(q);
+            const invokePromise = supabase.functions.invoke("corriger-qrc", {
+              body: {
+                question: q.enonce,
+                reponseEtudiant: rep,
+                reponsesAttendues: q.reponses_possibles || [q.reponseQRC || ""],
+                matiereId: matiere.id,
+                pointsQuestion: pts,
+                isCalcul: isCalc,
+                reponseQRC: q.reponseQRC || "",
+              },
+            });
 
-            try {
-              const isCalc = isCalculQuestion(q);
-              const invokePromise = supabase.functions.invoke("corriger-qrc", {
-                body: {
-                  question: q.enonce,
-                  reponseEtudiant,
-                  reponsesAttendues: q.reponses_possibles || [q.reponseQRC || ""],
-                  matiereId: matiere.id,
-                  pointsQuestion,
-                  isCalcul: isCalc,
-                  reponseQRC: q.reponseQRC || "",
-                },
-              });
+            const timeoutPromise = new Promise<never>((_, reject) => {
+              window.setTimeout(() => reject(new Error("IA timeout")), 12000);
+            });
 
-              const timeoutPromise = new Promise<never>((_, reject) => {
-                window.setTimeout(() => reject(new Error("IA timeout")), 12000);
-              });
+            const { data, error } = await Promise.race([invokePromise, timeoutPromise]);
 
-              const { data, error } = await Promise.race([invokePromise, timeoutPromise]);
+            if (cancelled) return;
 
-              if (cancelled) return;
-
-              if (error || !data || (data as any).error) {
-                finalCorrections[mi] = { ...(finalCorrections[mi] || {}), [q.id]: "error" };
-                setCorrectionsIA(prev => ({
-                  ...prev,
-                  [mi]: { ...(prev[mi] || {}), [q.id]: "error" },
-                }));
-              } else {
-                const safeData = data as CorrectionQRC;
-                const clamped: CorrectionQRC = {
-                  ...safeData,
-                  pointsObtenus: clampToQuestionMax(safeData.pointsObtenus, pointsQuestion),
-                };
-                finalCorrections[mi] = { ...(finalCorrections[mi] || {}), [q.id]: clamped };
-                setCorrectionsIA(prev => ({
-                  ...prev,
-                  [mi]: { ...(prev[mi] || {}), [q.id]: clamped },
-                }));
-              }
-            } catch {
-              if (!cancelled) {
-                finalCorrections[mi] = { ...(finalCorrections[mi] || {}), [q.id]: "error" };
-                setCorrectionsIA(prev => ({
-                  ...prev,
-                  [mi]: { ...(prev[mi] || {}), [q.id]: "error" },
-                }));
-              }
+            if (error || !data || (data as any).error) {
+              // AI failed → keep deterministic score, no change
+              continue;
             }
 
-            await new Promise(r => setTimeout(r, 300));
+            const safeData = data as CorrectionQRC;
+            let aiScore = clampToQuestionMax(safeData.pointsObtenus, pts);
+
+            // HYBRID RULE: AI can only UPGRADE the score, never downgrade
+            if (AI_ONLY_UPGRADES && aiScore <= deterministicScore) {
+              // AI didn't improve → keep deterministic
+              continue;
+            }
+
+            const clamped: CorrectionQRC = {
+              ...safeData,
+              pointsObtenus: aiScore,
+            };
+
+            if (!finalCorrections[mi]) finalCorrections[mi] = {};
+            finalCorrections[mi][q.id] = clamped;
+
+            if (!cancelled) {
+              setCorrectionsIA(prev => ({
+                ...prev,
+                [mi]: { ...(prev[mi] || {}), [q.id]: clamped },
+              }));
+            }
+          } catch {
+            // Timeout or network error → keep deterministic, no blocking
+            continue;
           }
+
+          await new Promise(r => setTimeout(r, 300));
         }
 
-        if (!cancelled) {
+        if (!cancelled && Object.keys(finalCorrections).length > 0) {
           saveCorrectionsToDb(finalCorrections);
         }
       } finally {
@@ -1195,7 +1189,7 @@ function EcranResultats({
         <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-sm">
           <Bot className="w-4 h-4 shrink-0" />
           <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-          <span>L'IA corrige vos réponses ouvertes (QRC)... Les notes se mettent à jour automatiquement.</span>
+          <span>L'IA affine vos réponses ouvertes (QRC)... Les notes peuvent légèrement s'améliorer.</span>
         </div>
       )}
 
@@ -1208,26 +1202,19 @@ function EcranResultats({
             <XCircle className="w-12 h-12 text-red-400 mx-auto mb-2" />
           )}
           <h3 className="text-2xl font-bold mb-1">
-            {correctionEnCours
-              ? "Correction en cours..."
-              : admisGlobal
-                ? "Examen blanc réussi ✅"
-                : "Examen blanc échoué ❌"
+            {admisGlobal
+              ? "Examen blanc réussi ✅"
+              : "Examen blanc échoué ❌"
             }
           </h3>
-          {correctionEnCours ? (
-            <div className="flex justify-center mt-2"><Loader2 className="w-8 h-8 animate-spin text-white" /></div>
-          ) : (
-            <>
-              <p className="text-4xl font-black mt-2" style={{ color: '#00B4D8' }}>
-                {isFinite(noteGlobale) ? noteGlobale.toFixed(1) : "0.0"} / 20
-              </p>
-              <p className="text-sm text-gray-300 mt-1">
-                Moyenne pondérée par coefficients sur {resultatsAvecIA.length} matières
-              </p>
-            </>
-          )}
-          {!admisGlobal && !correctionEnCours && (
+          <p className="text-4xl font-black mt-2" style={{ color: '#00B4D8' }}>
+            {isFinite(noteGlobale) ? noteGlobale.toFixed(1) : "0.0"} / 20
+            {correctionEnCours && <Loader2 className="w-5 h-5 animate-spin inline ml-2 text-blue-300" />}
+          </p>
+          <p className="text-sm text-gray-300 mt-1">
+            Moyenne pondérée par coefficients sur {resultatsAvecIA.length} matières
+          </p>
+          {!admisGlobal && (
             <div className="mt-3 space-y-1">
               {!moyenneSuffisante && (
                 <p className="text-sm text-red-300 font-medium">
