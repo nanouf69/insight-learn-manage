@@ -950,6 +950,8 @@ function EcranResultats({
   userId?: string | null;
   isViewingSaved?: boolean;
 }) {
+  // Ensure resultats is always a proper array (DB data can be malformed)
+  resultats = safeArray<ResultatMatiere>(resultats);
   // Check if corrections are already cached in the resultats (from DB)
   const hasPreloadedCorrections = resultats.some(
     (r) => r.correctionsIA && Object.values(r.correctionsIA).some((value) => value && value !== "loading")
