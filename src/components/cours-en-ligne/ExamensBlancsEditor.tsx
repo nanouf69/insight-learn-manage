@@ -508,8 +508,11 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
   const handleSaveAll = async () => {
     setSaving(true);
     try {
+      // Ensure VTC→TAXI sync before saving
+      const synced = [...examens];
+      syncVtcTaxiMatieres(synced);
       // Save each modified exam to module_editor_state
-      const promises = examens.map((ex, i) => {
+      const promises = synced.map((ex, i) => {
         const moduleId = EXAMEN_BLANC_MODULE_BASE + i;
         return supabase.from("module_editor_state").upsert(
           [{
