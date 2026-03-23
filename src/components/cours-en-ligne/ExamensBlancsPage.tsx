@@ -263,25 +263,23 @@ function evaluateQrcDeterministic(question: Question, response: unknown, pointsQ
   // Règle : le seuil de 3 ne s'applique QUE si la question a PLUS de 3 réponses possibles.
   // Si total <= 3, il faut TOUS les éléments, même pour les questions de type liste.
   const requestedCount = extractRequestedElementsCount(question.enonce || "");
-  const isEnumerative = isEnumerativeQrcQuestion(question);
-  const seuil = requestedCount ?? 3;
-  const requiredForFullPoints = isEnumerative && total > seuil
-    ? seuil
-    : total;
+   // Règle : 80% des éléments attendus = totalité des points
+   const seuilPourcent = 0.8;
+   const requiredForFullPoints = Math.ceil(total * seuilPourcent);
 
-  const gotFullPoints = matched >= requiredForFullPoints;
-  const points = gotFullPoints
-    ? maxPoints
-    : clampToQuestionMax(Math.round((matched / requiredForFullPoints) * maxPoints * 10) / 10, maxPoints);
+   const gotFullPoints = matched >= requiredForFullPoints;
+   const points = gotFullPoints
+     ? maxPoints
+     : clampToQuestionMax(Math.round((matched / total) * maxPoints * 10) / 10, maxPoints);
 
-  return {
-    estCorrect: gotFullPoints,
-    pointsObtenus: points,
-    nombrefautes: 0,
-    explication: gotFullPoints
-      ? `Correction déterministe : ${matched}/${total} élément(s) trouvés — totalité des points attribuée (≥${requiredForFullPoints}).`
-      : `Correction déterministe : ${matched}/${total} élément(s) attendu(s) trouvés.`,
-  };
+   return {
+     pointsObtenus: points,
+     reponseCorrigee: rep,
+     nombrefautes: 0,
+     explication: gotFullPoints
+       ? `Correction déterministe : ${matched}/${total} élément(s) trouvés — totalité des points (≥${Math.round(seuilPourcent * 100)}% soit ${requiredForFullPoints}/${total}).`
+       : `Correction déterministe : ${matched}/${total} élément(s) attendu(s) — ${Math.round((matched / total) * 100)}% (seuil ${Math.round(seuilPourcent * 100)}% requis pour tous les points).`,
+   };
 }
 
 function computeAdmisForMatiere(noteObtenue: unknown, maxPoints: unknown, noteEliminatoire: unknown, noteSur: unknown, fallback = false): boolean {
