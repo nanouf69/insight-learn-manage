@@ -779,19 +779,19 @@ const ResultatsSessionPage = () => {
                                                     <div className="flex items-start gap-2">
                                                       <span className="text-xs font-bold text-muted-foreground w-6 shrink-0">Q{idx + 1}</span>
                                                       <p className="text-xs flex-1 leading-snug">{q.enonce}</p>
-                                                      <div className="flex items-center gap-2 shrink-0 w-40 justify-end">
+                                                      <div className="flex items-center gap-2 shrink-0 justify-end">
                                                         <span className="text-xs text-emerald-600 font-semibold">{q.correct} ✓</span>
                                                         <span className="text-xs text-destructive font-semibold">{q.incorrect} ✗</span>
                                                         <Badge
                                                           variant={tauxBon >= 60 ? "default" : "destructive"}
-                                                          className="text-[10px] px-1.5"
+                                                          className="text-xs px-2 py-0.5 min-w-[50px] text-center"
                                                         >
                                                           {tauxBon}%
                                                         </Badge>
                                                       </div>
                                                     </div>
                                                     <div className="ml-6">
-                                                      <div className="w-full h-1.5 rounded-full bg-muted/30 overflow-hidden">
+                                                      <div className="w-full h-2 rounded-full bg-muted/30 overflow-hidden">
                                                         <div
                                                           className={`h-full rounded-full transition-all ${tauxBon >= 80 ? 'bg-emerald-500' : tauxBon >= 60 ? 'bg-amber-400' : 'bg-destructive'}`}
                                                           style={{ width: `${tauxBon}%` }}
