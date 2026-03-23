@@ -27,6 +27,11 @@ function toTimestamp(value: unknown): number {
   const ts = new Date(String(value ?? "")).getTime();
   return Number.isFinite(ts) ? ts : 0;
 }
+/** Ensure value is always a proper array — handles null, undefined, objects, strings */
+function safeArray<T = unknown>(v: unknown): T[] {
+  if (Array.isArray(v)) return v as T[];
+  return [];
+}
 
 function toFiniteNumber(value: unknown, fallback = 0): number {
   const n = typeof value === "number" ? value : Number(value);
@@ -945,6 +950,8 @@ function EcranResultats({
   userId?: string | null;
   isViewingSaved?: boolean;
 }) {
+  // Ensure resultats is always a proper array (DB data can be malformed)
+  resultats = safeArray<ResultatMatiere>(resultats);
   // Check if corrections are already cached in the resultats (from DB)
   const hasPreloadedCorrections = resultats.some(
     (r) => r.correctionsIA && Object.values(r.correctionsIA).some((value) => value && value !== "loading")
@@ -1001,8 +1008,8 @@ function EcranResultats({
       questionsSafe.forEach(q => {
         if (!q) return;
         if (q?.type === "QCM" && q.choix) {
-          const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
-          const donnees = (Array.isArray(resultat.reponses?.[q.id]) ? (resultat.reponses[q.id] as string[]) : []).sort();
+          const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
+          const donnees = safeArray<string>(resultat.reponses?.[q.id]).sort();
           if (JSON.stringify(correctes) === JSON.stringify(donnees)) {
             noteRecalculee += getPointsParQuestion(matiere.id, q?.type || "QCM");
           }
@@ -1311,8 +1318,8 @@ function EcranResultats({
                     let isLoadingIA = false;
 
                     if (q?.type === "QCM" && q.choix) {
-                      const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
-                       const donnees = (Array.isArray(rep) ? (rep as string[]) : []).sort();
+                      const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
+                       const donnees = safeArray<string>(rep).sort();
                        isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
                        pointsObtenus = isCorrect ? pts : 0;
                     } else if (q?.type === "QRC") {
@@ -1450,8 +1457,8 @@ function EcranResultats({
           qSafe.forEach(q => {
             const rep = r.reponses?.[q.id];
             if (q?.type === "QCM" && q.choix) {
-              const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
-               const donnees = (Array.isArray(rep) ? (rep as string[]) : []).sort();
+              const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
+               const donnees = safeArray<string>(rep).sort();
                if (JSON.stringify(correctes) !== JSON.stringify(donnees)) nbFaussesTop++;
             } else if (q?.type === "QRC") {
               const corrIA = correctionsIA[mi]?.[q.id];
@@ -1527,8 +1534,8 @@ function RevisionFausses({
   const checkAnswer = () => {
     let isCorrect = false;
     if (q?.type === "QCM" && q.choix) {
-       const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
-       const donnees = (Array.isArray(rep) ? (rep as string[]) : []).sort();
+       const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
+       const donnees = safeArray<string>(rep).sort();
        isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
      } else if (q?.type === "QRC") {
        const repStr = safeStr(rep).toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
@@ -1575,7 +1582,7 @@ function RevisionFausses({
           {q?.type === "QCM" && q.choix && (
             <div className="space-y-2">
               {q.choix.map(c => {
-                const selected = ((rep as string[]) || []).includes(c.lettre);
+                const selected = safeArray<string>(rep).includes(c.lettre);
                 const isCorrectChoice = c.correct;
                 let borderColor = selected ? '#0D2540' : '#e5e7eb';
                 let bgColor = 'transparent';
@@ -1590,7 +1597,7 @@ function RevisionFausses({
                     style={{ borderColor, backgroundColor: bgColor }}
                     onClick={() => {
                       if (showCorrection) return;
-                      const prev = (rep as string[]) || [];
+                      const prev = safeArray<string>(rep);
                       const correctCount = q.choix!.filter(ch => ch.correct).length;
                       if (correctCount <= 1) {
                         setReponses({ ...reponses, [q.id]: [c.lettre] });
@@ -1698,7 +1705,7 @@ export default function ExamensBlancsPage({
   );
   const [examenChoisi, setExamenChoisi] = useState<ExamenBlanc | null>(null);
   const [matiereIndex, setMatiereIndex] = useState(savedSession?.matiereIndex || 0);
-  const [tousResultats, setTousResultats] = useState<ResultatMatiere[]>(savedSession?.resultats || []);
+  const [tousResultats, setTousResultats] = useState<ResultatMatiere[]>(safeArray<ResultatMatiere>(savedSession?.resultats));
   const [lastMatiereResult, setLastMatiereResult] = useState<ResultatMatiere | null>(null);
   const [isViewingSavedResults, setIsViewingSavedResults] = useState(false);
   const [bilanPrefiltre, setBilanPrefiltre] = useState<string | null>(null);
@@ -1937,8 +1944,8 @@ export default function ExamensBlancsPage({
       const pts = getPointsParQuestion(matiere.id, q?.type);
       let correct = false;
       if (q?.type === "QCM" && q.choix) {
-        const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
-         const donnees = (Array.isArray(rep) ? (rep as string[]) : []).sort();
+        const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
+         const donnees = safeArray<string>(rep).sort();
          correct = JSON.stringify(correctes) === JSON.stringify(donnees);
       } else if (q?.type === "QRC") {
         const correction = evaluateQrcDeterministic(q, rep, pts);
@@ -2289,8 +2296,8 @@ export default function ExamensBlancsPage({
         const rep = r.reponses?.[q.id];
         let isCorrect = false;
         if (q?.type === "QCM" && q.choix) {
-          const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
-           const donnees = (Array.isArray(rep) ? (rep as string[]) : []).sort();
+          const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
+           const donnees = safeArray<string>(rep).sort();
            isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
         } else if (q?.type === "QRC") {
           const repStr = safeStr(rep).toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
