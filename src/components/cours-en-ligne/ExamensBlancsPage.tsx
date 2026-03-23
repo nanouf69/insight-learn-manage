@@ -934,6 +934,7 @@ function EcranResultats({
   onRefaireFausses,
   apprenantId,
   userId,
+  isViewingSaved,
 }: {
   examen: ExamenBlanc;
   resultats: ResultatMatiere[];
@@ -942,6 +943,7 @@ function EcranResultats({
   onRefaireFausses: () => void;
   apprenantId?: string | null;
   userId?: string | null;
+  isViewingSaved?: boolean;
 }) {
   // Check if corrections are already cached in the resultats (from DB)
   const hasPreloadedCorrections = resultats.some(
