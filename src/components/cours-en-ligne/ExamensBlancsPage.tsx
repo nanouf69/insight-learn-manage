@@ -1856,7 +1856,7 @@ export default function ExamensBlancsPage({
             matiere_nom: r.nomMatiere,
             score_obtenu: r.noteObtenue,
             score_max: r.maxPoints,
-            note_sur_20: Number(((r.noteObtenue / (r.maxPoints || 1)) * (r.noteSur || 20)).toFixed(1)),
+            note_sur_20: Number(((r.noteObtenue / (r.maxPoints || 1)) * 20).toFixed(1)),
             reussi: r.admis,
             duree_secondes: Math.round(duree / allResults.length),
             details: { questions: questionDetails, reponses: r.reponses },
