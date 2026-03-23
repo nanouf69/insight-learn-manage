@@ -1006,8 +1006,8 @@ function EcranResultats({
       questionsSafe.forEach(q => {
         if (!q) return;
         if (q?.type === "QCM" && q.choix) {
-          const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
-          const donnees = (Array.isArray(resultat.reponses?.[q.id]) ? (resultat.reponses[q.id] as string[]) : []).sort();
+          const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
+          const donnees = safeArray<string>(resultat.reponses?.[q.id]).sort();
           if (JSON.stringify(correctes) === JSON.stringify(donnees)) {
             noteRecalculee += getPointsParQuestion(matiere.id, q?.type || "QCM");
           }
