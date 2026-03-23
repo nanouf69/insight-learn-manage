@@ -1700,6 +1700,7 @@ export default function ExamensBlancsPage({
   const [matiereIndex, setMatiereIndex] = useState(savedSession?.matiereIndex || 0);
   const [tousResultats, setTousResultats] = useState<ResultatMatiere[]>(savedSession?.resultats || []);
   const [lastMatiereResult, setLastMatiereResult] = useState<ResultatMatiere | null>(null);
+  const [isViewingSavedResults, setIsViewingSavedResults] = useState(false);
   const [bilanPrefiltre, setBilanPrefiltre] = useState<string | null>(null);
   const [liveExamens, setLiveExamens] = useState<ExamenBlanc[]>(tousLesExamens);
   const examStartTimeRef = useRef<number>(savedSession?.examStartTime || Date.now());
