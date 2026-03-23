@@ -852,7 +852,7 @@ function EcranResultats({
       });
 
       const safeMax = resultat.maxPoints || 1;
-      const noteSur20 = Number(((noteRecalculee / safeMax) * (resultat.noteSur || 20)).toFixed(1));
+      const noteSur20 = Number(((noteRecalculee / safeMax) * 20).toFixed(1));
 
       // Update the existing row with corrections
       await supabase
