@@ -18,6 +18,11 @@ import { toast } from "sonner";
 // Each exam gets a unique module_id based on its index
 export const EXAMEN_BLANC_MODULE_BASE = 90000;
 
+const cloneExamens = (examens: ExamenBlanc[]): ExamenBlanc[] =>
+  JSON.parse(JSON.stringify(examens)) as ExamenBlanc[];
+
+let lastSuccessfulExamensSnapshot: ExamenBlanc[] | null = null;
+
 export function getExamenModuleId(examIndex: number): number {
   return EXAMEN_BLANC_MODULE_BASE + examIndex;
 }
@@ -83,48 +88,61 @@ function syncVtcTaxiMatieres(examens: ExamenBlanc[]): void {
 
 // Load saved exam overrides from DB
 export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
-  const examens = JSON.parse(JSON.stringify(tousLesExamens)) as ExamenBlanc[];
+  const examens = cloneExamens(tousLesExamens);
   
   try {
     const moduleIds = examens.map((_, i) => EXAMEN_BLANC_MODULE_BASE + i);
     const { data, error } = await supabase
       .from("module_editor_state")
-      .select("module_id, module_data")
+      .select("module_id, module_data, updated_at")
+      .order("updated_at", { ascending: true })
       .in("module_id", moduleIds);
     
-    if (error || !data || data.length === 0) {
+    if (error) {
+      console.error("[ExamensEditor] Error loading saved exams:", error);
+      if (lastSuccessfulExamensSnapshot) {
+        return cloneExamens(lastSuccessfulExamensSnapshot);
+      }
+      repairCorrectFlags(examens);
       syncVtcTaxiMatieres(examens);
+      lastSuccessfulExamensSnapshot = cloneExamens(examens);
       return examens;
     }
-    
-    for (const row of data) {
-      const idx = row.module_id - EXAMEN_BLANC_MODULE_BASE;
-      if (idx >= 0 && idx < examens.length && row.module_data) {
-        const saved = row.module_data as unknown as ExamenBlanc;
-        if (saved.matieres && Array.isArray(saved.matieres)) {
-          // Always preserve texteSupport/texteSource from source code (authoritative)
-          const sourceMatieres = examens[idx].matieres;
-          const mergedMatieres = saved.matieres.map((savedMat) => {
-            const sourceMat = sourceMatieres.find(sm => sm.id === savedMat.id);
-            if (sourceMat) {
-              const merged = { ...savedMat };
-              if (sourceMat.texteSupport) merged.texteSupport = sourceMat.texteSupport;
-              if (sourceMat.texteSource) merged.texteSource = sourceMat.texteSource;
-              return merged;
-            }
-            return savedMat;
-          });
-          examens[idx] = { ...examens[idx], matieres: mergedMatieres };
+
+    if (data && data.length > 0) {
+      for (const row of data) {
+        const idx = row.module_id - EXAMEN_BLANC_MODULE_BASE;
+        if (idx >= 0 && idx < examens.length && row.module_data) {
+          const saved = row.module_data as unknown as ExamenBlanc;
+          if (saved.matieres && Array.isArray(saved.matieres)) {
+            // Always preserve texteSupport/texteSource from source code (authoritative)
+            const sourceMatieres = examens[idx].matieres;
+            const mergedMatieres = saved.matieres.map((savedMat) => {
+              const sourceMat = sourceMatieres.find(sm => sm.id === savedMat.id);
+              if (sourceMat) {
+                const merged = { ...savedMat };
+                if (sourceMat.texteSupport) merged.texteSupport = sourceMat.texteSupport;
+                if (sourceMat.texteSource) merged.texteSource = sourceMat.texteSource;
+                return merged;
+              }
+              return savedMat;
+            });
+            examens[idx] = { ...examens[idx], matieres: mergedMatieres };
+          }
         }
       }
     }
   } catch (err) {
     console.error("[ExamensEditor] Error loading saved exams:", err);
+    if (lastSuccessfulExamensSnapshot) {
+      return cloneExamens(lastSuccessfulExamensSnapshot);
+    }
   }
   
   // Repair any missing correct flags, then sync VTC → TAXI
   repairCorrectFlags(examens);
   syncVtcTaxiMatieres(examens);
+  lastSuccessfulExamensSnapshot = cloneExamens(examens);
   
   return examens;
 }
