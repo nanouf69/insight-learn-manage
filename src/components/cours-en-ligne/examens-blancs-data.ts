@@ -5249,7 +5249,7 @@ const eb4Matieres: Matiere[] = [
         enonce: "Lorsque vous préparez votre plan de marketing vous devez vous occuper des :",
         choix: [
           { lettre: "A", texte: "3P" },
-          { lettre: "B", texte: "4P" },
+          { lettre: "B", texte: "4P", correct: true },
           { lettre: "C", texte: "5P" },
         ],
       },
