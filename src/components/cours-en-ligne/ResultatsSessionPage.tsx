@@ -320,8 +320,14 @@ const ResultatsSessionPage = () => {
 
   // Per-question stats for a given exam + matiere
   const getQuestionStats = (quizId: string, matiereNom: string) => {
-    const examResults = examBlancResults.filter(r => r.quiz_id === quizId && (r.matiere_nom || r.quiz_titre) === matiereNom);
-    // Collect all questions across all students (last attempt per student)
+    // Match by quiz_id AND matiere name (fallback to quiz_titre)
+    const examResults = examBlancResults.filter(r => {
+      if (r.quiz_id !== quizId) return false;
+      const rMatiere = r.matiere_nom || r.quiz_titre || '';
+      return rMatiere === matiereNom;
+    });
+
+    // Collect last attempt per student
     const lastPerStudent: Record<string, QuizResultRow> = {};
     for (const r of examResults) {
       if (!lastPerStudent[r.apprenant_id] || new Date(r.completed_at) > new Date(lastPerStudent[r.apprenant_id].completed_at)) {
@@ -332,17 +338,20 @@ const ResultatsSessionPage = () => {
     // Aggregate per questionId
     const questionMap: Record<number, { enonce: string; type: string; correct: number; incorrect: number; total: number }> = {};
     for (const r of Object.values(lastPerStudent)) {
-      const questions = (r.details as any)?.questions as QuestionDetail[] | undefined;
-      if (!Array.isArray(questions)) continue;
+      const det = r.details as any;
+      const questions: any[] = Array.isArray(det?.questions) ? det.questions : [];
       for (const q of questions) {
-        if (!questionMap[q.questionId]) {
-          questionMap[q.questionId] = { enonce: q.enonce, type: q.type || 'QCM', correct: 0, incorrect: 0, total: 0 };
+        const qId = q?.questionId ?? q?.id;
+        if (qId == null || !q?.enonce) continue;
+        if (!questionMap[qId]) {
+          questionMap[qId] = { enonce: q.enonce, type: q.type || 'QCM', correct: 0, incorrect: 0, total: 0 };
         }
-        const isCorrect = Array.isArray(q.reponseEleve) && Array.isArray(q.reponseCorrecte)
-          && q.reponseEleve.length === q.reponseCorrecte.length
-          && q.reponseEleve.every((v: string) => q.reponseCorrecte.includes(v));
-        questionMap[q.questionId].total++;
-        if (isCorrect) questionMap[q.questionId].correct++; else questionMap[q.questionId].incorrect++;
+        const eleve = Array.isArray(q.reponseEleve) ? q.reponseEleve : [];
+        const correcte = Array.isArray(q.reponseCorrecte) ? q.reponseCorrecte : [];
+        const isCorrect = eleve.length > 0 && eleve.length === correcte.length
+          && eleve.every((v: string) => correcte.includes(v));
+        questionMap[qId].total++;
+        if (isCorrect) questionMap[qId].correct++; else questionMap[qId].incorrect++;
       }
     }
 
