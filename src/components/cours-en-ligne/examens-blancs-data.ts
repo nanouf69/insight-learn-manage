@@ -2210,8 +2210,8 @@ const eb2Matieres: Matiere[] = [
         type: "QCM",
         enonce: "Quelle est la durée du mandat des membres de la commission locale des T3P ?",
         choix: [
-          { lettre: "A", texte: "3 ans" , correct: true },
-          { lettre: "B", texte: "2 ans" , correct: true },
+          { lettre: "A", texte: "3 ans", correct: true },
+          { lettre: "B", texte: "2 ans" },
           { lettre: "C", texte: "5 ans" },
           { lettre: "D", texte: "1 an" },
         ],
