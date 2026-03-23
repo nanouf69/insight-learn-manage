@@ -281,6 +281,8 @@ function PassageMatiere({
   const [questionIndex, setQuestionIndex] = useState(0);
   const [expire, setExpire] = useState(false);
   const [initialLoaded, setInitialLoaded] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const saveStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const questionsSafe = (matiere.questions || []).filter((q): q is Question => !!q && q?.type !== undefined);
   const question = questionsSafe[questionIndex] || null;
