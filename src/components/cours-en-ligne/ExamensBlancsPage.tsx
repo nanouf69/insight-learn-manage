@@ -1045,8 +1045,8 @@ function EcranResultats({
 
   // Lance la correction IA de tous les QRC à l'affichage des résultats — ONLY if not already cached
   useEffect(() => {
-    // Skip if corrections already loaded from DB
-    if (hasPreloadedCorrections) return;
+    // IA temporairement désactivée pour garantir stabilité et cohérence des notes
+    if (!ENABLE_AI_QRC_CORRECTION || hasPreloadedCorrections) return;
 
     let cancelled = false;
     const corrigerTout = async () => {
@@ -1080,66 +1080,79 @@ function EcranResultats({
 
       const finalCorrections = { ...initialCache };
 
-      // Corriger chaque QRC via l'IA
-      for (let mi = 0; mi < examen.matieres.length; mi++) {
-        const matiere = examen.matieres[mi];
-        if (!matiere || matiere === undefined) continue;
-        const resultat = resultats[mi];
-        if (!resultat) continue;
+      try {
+        // Corriger chaque QRC via l'IA
+        for (let mi = 0; mi < examen.matieres.length; mi++) {
+          const matiere = examen.matieres[mi];
+          if (!matiere || matiere === undefined) continue;
+          const resultat = resultats[mi];
+          if (!resultat) continue;
 
-        const questionsSafe = (matiere.questions || []).filter(q => q && q?.type !== undefined);
-        for (const q of questionsSafe) {
-          if (!q || q === undefined || q?.type !== "QRC") continue;
-          const reponseEtudiant = (resultat.reponses?.[q.id] as string) || "";
-          const pointsQuestion = getPointsParQuestion(matiere.id, q?.type || "QRC");
+          const questionsSafe = (matiere.questions || []).filter(q => q && q?.type !== undefined);
+          for (const q of questionsSafe) {
+            if (!q || q === undefined || q?.type !== "QRC") continue;
+            const reponseEtudiant = (resultat.reponses?.[q.id] as string) || "";
+            const pointsQuestion = getPointsParQuestion(matiere.id, q?.type || "QRC");
 
-          try {
-            const isCalc = isCalculQuestion(q);
-            const { data, error } = await supabase.functions.invoke("corriger-qrc", {
-              body: {
-                question: q.enonce,
-                reponseEtudiant,
-                reponsesAttendues: q.reponses_possibles || [q.reponseQRC || ""],
-                matiereId: matiere.id,
-                pointsQuestion,
-                isCalcul: isCalc,
-                reponseQRC: q.reponseQRC || "",
-              },
-            });
+            try {
+              const isCalc = isCalculQuestion(q);
+              const invokePromise = supabase.functions.invoke("corriger-qrc", {
+                body: {
+                  question: q.enonce,
+                  reponseEtudiant,
+                  reponsesAttendues: q.reponses_possibles || [q.reponseQRC || ""],
+                  matiereId: matiere.id,
+                  pointsQuestion,
+                  isCalcul: isCalc,
+                  reponseQRC: q.reponseQRC || "",
+                },
+              });
 
-            if (cancelled) return;
+              const timeoutPromise = new Promise<never>((_, reject) => {
+                window.setTimeout(() => reject(new Error("IA timeout")), 12000);
+              });
 
-            if (error || !data || data.error) {
-              finalCorrections[mi] = { ...(finalCorrections[mi] || {}), [q.id]: "error" };
-              setCorrectionsIA(prev => ({
-                ...prev,
-                [mi]: { ...(prev[mi] || {}), [q.id]: "error" },
-              }));
-            } else {
-              finalCorrections[mi] = { ...(finalCorrections[mi] || {}), [q.id]: data as CorrectionQRC };
-              setCorrectionsIA(prev => ({
-                ...prev,
-                [mi]: { ...(prev[mi] || {}), [q.id]: data as CorrectionQRC },
-              }));
+              const { data, error } = await Promise.race([invokePromise, timeoutPromise]);
+
+              if (cancelled) return;
+
+              if (error || !data || (data as any).error) {
+                finalCorrections[mi] = { ...(finalCorrections[mi] || {}), [q.id]: "error" };
+                setCorrectionsIA(prev => ({
+                  ...prev,
+                  [mi]: { ...(prev[mi] || {}), [q.id]: "error" },
+                }));
+              } else {
+                const safeData = data as CorrectionQRC;
+                const clamped: CorrectionQRC = {
+                  ...safeData,
+                  pointsObtenus: clampToQuestionMax(safeData.pointsObtenus, pointsQuestion),
+                };
+                finalCorrections[mi] = { ...(finalCorrections[mi] || {}), [q.id]: clamped };
+                setCorrectionsIA(prev => ({
+                  ...prev,
+                  [mi]: { ...(prev[mi] || {}), [q.id]: clamped },
+                }));
+              }
+            } catch {
+              if (!cancelled) {
+                finalCorrections[mi] = { ...(finalCorrections[mi] || {}), [q.id]: "error" };
+                setCorrectionsIA(prev => ({
+                  ...prev,
+                  [mi]: { ...(prev[mi] || {}), [q.id]: "error" },
+                }));
+              }
             }
-          } catch {
-            if (!cancelled) {
-              finalCorrections[mi] = { ...(finalCorrections[mi] || {}), [q.id]: "error" };
-              setCorrectionsIA(prev => ({
-                ...prev,
-                [mi]: { ...(prev[mi] || {}), [q.id]: "error" },
-              }));
-            }
+
+            await new Promise(r => setTimeout(r, 300));
           }
-
-          await new Promise(r => setTimeout(r, 300));
         }
-      }
 
-      if (!cancelled) {
-        setCorrectionEnCours(false);
-        // Save corrections to DB
-        saveCorrectionsToDb(finalCorrections);
+        if (!cancelled) {
+          saveCorrectionsToDb(finalCorrections);
+        }
+      } finally {
+        if (!cancelled) setCorrectionEnCours(false);
       }
     };
 
@@ -1147,55 +1160,25 @@ function EcranResultats({
     return () => { cancelled = true; };
   }, [examen, resultats, hasPreloadedCorrections]);
 
-  // Recalculer les notes avec les corrections IA
-  const resultatsAvecIA = resultats.map((r, mi) => {
-    if (!r || r === undefined) return r;
-    const cache = correctionsIA[mi];
-    if (!cache) return r;
-
-    const matiere = examen.matieres[mi];
-    if (!matiere) return r;
-    const questionsSafe = (matiere.questions || []).filter(q => q && q?.type !== undefined);
-
-    let noteRecalculee = 0;
-    questionsSafe.forEach(q => {
-      if (!q || q === undefined) return;
-      if (q?.type === "QCM" && q.choix) {
-        const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
-         const donnees = (Array.isArray(r.reponses?.[q.id]) ? (r.reponses[q.id] as string[]) : []).sort();
-         if (JSON.stringify(correctes) === JSON.stringify(donnees)) {
-           noteRecalculee += getPointsParQuestion(matiere.id, q?.type || "QCM");
-        }
-      } else if (q?.type === "QRC") {
-        const correction = cache[q.id];
-        if (correction && correction !== "loading" && correction !== "error") {
-          noteRecalculee += clampToQuestionMax(
-            correction.pointsObtenus,
-            getPointsParQuestion(matiere.id, q?.type || "QRC")
-          );
-        }
-      }
-    });
-
-    const toutTermine = questionsSafe
-      .filter(q => q?.type === "QRC")
-      .every(q => cache[q.id] && cache[q.id] !== "loading");
-
+  // Résultats sécurisés (aucune note hors bornes, aucun recalcul instable)
+  const resultatsAvecIA = resultats.map((r) => {
     const safeMaxPoints = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
-    const noteRecalculeeSecurisee = safeMaxPoints > 0 ? clamp(noteRecalculee, 0, safeMaxPoints) : Math.max(noteRecalculee, 0);
-    const safeNoteSur = r.noteSur || 20;
+    const safeNote = safeMaxPoints > 0
+      ? clamp(toFiniteNumber(r.noteObtenue, 0), 0, safeMaxPoints)
+      : Math.max(toFiniteNumber(r.noteObtenue, 0), 0);
 
     return {
       ...r,
-      noteObtenue: toutTermine ? noteRecalculeeSecurisee : r.noteObtenue,
-      admis: toutTermine ? noteRecalculeeSecurisee >= (r.noteEliminatoire / safeNoteSur) * safeMaxPoints : r.admis,
+      noteObtenue: safeNote,
+      admis: computeAdmisForMatiere(safeNote, safeMaxPoints, r.noteEliminatoire, r.noteSur, Boolean(r.admis)),
     };
   });
 
   const totalCoef = resultatsAvecIA.reduce((acc, r) => acc + (r.coefficient || 1), 0) || 1;
-  const noteGlobale = resultatsAvecIA.reduce((acc, r) => {
+  const noteGlobaleBrute = resultatsAvecIA.reduce((acc, r) => {
     return acc + normalizeNoteSur20(r.noteObtenue, r.maxPoints) * (r.coefficient || 1);
   }, 0) / totalCoef;
+  const noteGlobale = clamp(toFiniteNumber(noteGlobaleBrute, 0), 0, 20);
   const hasNoteEliminatoire = resultatsAvecIA.some(r => !r.admis);
   const moyenneSuffisante = noteGlobale >= 10;
   const admisGlobal = moyenneSuffisante && !hasNoteEliminatoire;
