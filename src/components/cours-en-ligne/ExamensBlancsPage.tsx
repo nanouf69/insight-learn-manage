@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -1570,6 +1570,27 @@ export default function ExamensBlancsPage({
   const [bilanPrefiltre, setBilanPrefiltre] = useState<string | null>(null);
   const [liveExamens, setLiveExamens] = useState<ExamenBlanc[]>(tousLesExamens);
   const examStartTimeRef = useRef<number>(savedSession?.examStartTime || Date.now());
+  const reloadInFlightRef = useRef<Promise<ExamenBlanc[]> | null>(null);
+
+  const refreshLiveExamens = useCallback(async () => {
+    if (reloadInFlightRef.current) return reloadInFlightRef.current;
+
+    reloadInFlightRef.current = (async () => {
+      const saved = await loadSavedExamens();
+      setLiveExamens(saved);
+      setExamenChoisi((prev) => {
+        if (!prev) return prev;
+        return saved.find((exam) => exam.id === prev.id) ?? prev;
+      });
+      return saved;
+    })();
+
+    try {
+      return await reloadInFlightRef.current;
+    } finally {
+      reloadInFlightRef.current = null;
+    }
+  }, []);
 
   // Persist exam session state to sessionStorage
   const persistExamSession = (p: string, exId: string | null, mi: number, resultats?: ResultatMatiere[]) => {
@@ -1608,30 +1629,63 @@ export default function ExamensBlancsPage({
 
   // Load saved exam overrides from DB on mount
   useEffect(() => {
-    loadSavedExamens().then(saved => setLiveExamens(saved));
-  }, []);
+    void refreshLiveExamens();
+  }, [refreshLiveExamens]);
 
   // Realtime: reload when admin saves exam changes
   useEffect(() => {
+    const maxExamModuleId = EXAMEN_BLANC_MODULE_BASE + tousLesExamens.length - 1;
+    const isExamModuleEvent = (payload: any) => {
+      const moduleId = Number(payload?.new?.module_id ?? payload?.old?.module_id);
+      return Number.isFinite(moduleId) && moduleId >= EXAMEN_BLANC_MODULE_BASE && moduleId <= maxExamModuleId;
+    };
+
     const channel = supabase
-      .channel('examens-blancs-live')
+      .channel(`examens-blancs-live-${Date.now()}-${Math.random().toString(36).slice(2)}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'module_editor_state',
-          filter: `module_id=gte.${EXAMEN_BLANC_MODULE_BASE}`,
         },
-        () => {
+        (payload) => {
+          if (!isExamModuleEvent(payload)) return;
           console.log("[Realtime] Exam blanc updated, reloading...");
-          loadSavedExamens().then(saved => setLiveExamens(saved));
+          void refreshLiveExamens();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          void refreshLiveExamens();
+        }
+      });
 
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [refreshLiveExamens]);
+
+  // Fallback: keep learner data synced even if realtime disconnects temporarily
+  useEffect(() => {
+    const refreshOnFocus = () => { void refreshLiveExamens(); };
+    const refreshOnVisibility = () => {
+      if (document.visibilityState === "visible") {
+        void refreshLiveExamens();
+      }
+    };
+
+    const intervalId = window.setInterval(() => {
+      void refreshLiveExamens();
+    }, 5000);
+
+    window.addEventListener("focus", refreshOnFocus);
+    document.addEventListener("visibilitychange", refreshOnVisibility);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", refreshOnFocus);
+      document.removeEventListener("visibilitychange", refreshOnVisibility);
+    };
+  }, [refreshLiveExamens]);
 
   // Quand un bilan est demandé depuis les modules, on le met en avant
   useEffect(() => {
@@ -1642,8 +1696,9 @@ export default function ExamensBlancsPage({
   }, [defaultBilanId]);
 
   const handleStart = (examen: ExamenBlanc) => {
+    const latestExamen = liveExamens.find((live) => live.id === examen.id) ?? examen;
     setBilanPrefiltre(null);
-    setExamenChoisi(examen);
+    setExamenChoisi(latestExamen);
     setMatiereIndex(0);
     setTousResultats([]);
     setPhase("intro");
