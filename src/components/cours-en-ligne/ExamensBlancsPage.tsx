@@ -112,6 +112,88 @@ function hasCalculationDetail(value: unknown): boolean {
   return /\d+\s*[\/×x\*\-\+]\s*\d+/.test(raw) || /=\s*\d/.test(raw);
 }
 
+function extractRequestedElementsCount(enonce: string): number | null {
+  const normalized = normalizeAnswerText(enonce);
+  const digitMatch = normalized.match(/\b(\d{1,2})\b/);
+  if (digitMatch) {
+    const parsed = Number(digitMatch[1]);
+    if (Number.isFinite(parsed) && parsed > 0 && parsed <= 20) return parsed;
+  }
+
+  const numberWords: Record<string, number> = {
+    un: 1,
+    une: 1,
+    deux: 2,
+    trois: 3,
+    quatre: 4,
+    cinq: 5,
+    six: 6,
+    sept: 7,
+    huit: 8,
+    neuf: 9,
+    dix: 10,
+  };
+
+  for (const [word, value] of Object.entries(numberWords)) {
+    if (new RegExp(`\\b${word}\\b`).test(normalized)) return value;
+  }
+
+  return null;
+}
+
+function isEnumerativeQrcQuestion(question: Question): boolean {
+  const normalizedEnonce = normalizeAnswerText(question.enonce || "");
+  if (/\b(citez|donnez|indiquez|listez|enumerez|quels|quelles|nommez|mentionnez)\b/.test(normalizedEnonce)) {
+    return true;
+  }
+
+  const chunks = safeStr(question.reponseQRC)
+    .split(/[\.;]/)
+    .map((chunk) => normalizeAnswerText(chunk))
+    .filter(Boolean);
+
+  return chunks.length >= 3;
+}
+
+function buildExpectedQrcElements(question: Question): string[][] {
+  const explicitEntries = Array.isArray(question.reponses_possibles) ? question.reponses_possibles : [];
+
+  if (explicitEntries.length > 0) {
+    const elements = explicitEntries
+      .map((entry) =>
+        Array.from(
+          new Set(
+            safeStr(entry)
+              .split("|")
+              .map((alt) => normalizeAnswerText(alt))
+              .filter(Boolean)
+          )
+        )
+      )
+      .filter((alts) => alts.length > 0);
+
+    if (elements.length > 0) return elements;
+  }
+
+  const normalizedExpected = normalizeAnswerText(question.reponseQRC || "");
+  if (!normalizedExpected) return [];
+
+  const stopwords = new Set([
+    "avec", "dans", "pour", "sans", "dont", "plus", "moins", "etre", "avoir", "faire", "cette", "votre", "vous", "leur", "leurs", "entre", "sous", "aux", "des", "les", "une", "du", "de", "la", "le", "et", "ou", "au", "il", "elle", "ils", "elles", "son", "ses", "sur", "par", "qui",
+  ]);
+
+  const fallbackKeywords = Array.from(
+    new Set(
+      normalizedExpected
+        .split(" ")
+        .map((word) => word.trim())
+        .filter((word) => word.length >= 3 && !stopwords.has(word))
+    )
+  ).slice(0, 12);
+
+  return fallbackKeywords.map((kw) => [kw]);
+}
+
 function evaluateQrcDeterministic(question: Question, response: unknown, pointsQuestion: number): CorrectionQRC {
   const maxPoints = Math.max(toFiniteNumber(pointsQuestion, 0), 0);
   const responseRaw = safeStr(response);
@@ -162,38 +244,9 @@ function evaluateQrcDeterministic(question: Question, response: unknown, pointsQ
   }
 
   const normalizedResponse = normalizeAnswerText(responseRaw);
+  const expectedElements = buildExpectedQrcElements(question);
 
-  // Build keyword list from reponses_possibles (each entry = one keyword/element)
-  const explicitKeywords = Array.from(
-    new Set(
-      (question.reponses_possibles || [])
-        .map((token) => normalizeAnswerText(token))
-        .filter(Boolean)
-    )
-  );
-
-  // Fallback robuste: si l'éditeur a perdu les mots-clés, on les dérive depuis reponseQRC
-  const fallbackKeywords = (() => {
-    const normalizedExpected = normalizeAnswerText(question.reponseQRC || "");
-    if (!normalizedExpected) return [] as string[];
-
-    const stopwords = new Set([
-      "avec", "dans", "pour", "sans", "dont", "plus", "moins", "etre", "avoir", "faire", "cette", "cette", "votre", "vous", "leur", "leurs", "entre", "sous", "aux", "des", "les", "une", "des", "du", "de", "la", "le", "et", "ou", "au", "il", "elle", "ils", "elles", "son", "ses", "sur", "par", "qui",
-    ]);
-
-    return Array.from(
-      new Set(
-        normalizedExpected
-          .split(" ")
-          .map((word) => word.trim())
-          .filter((word) => word.length >= 3 && !stopwords.has(word))
-      )
-    ).slice(0, 12);
-  })();
-
-  const expectedKeywords = explicitKeywords.length > 0 ? explicitKeywords : fallbackKeywords;
-
-  if (expectedKeywords.length === 0) {
+  if (expectedElements.length === 0) {
     return {
       estCorrect: false,
       pointsObtenus: 0,
@@ -202,13 +255,19 @@ function evaluateQrcDeterministic(question: Question, response: unknown, pointsQ
     };
   }
 
-  // Count how many expected keywords are found in the student's answer
-  const matched = expectedKeywords.filter((kw) => fuzzyContains(normalizedResponse, kw)).length;
-  const total = expectedKeywords.length;
+  const matched = expectedElements.filter((alternatives) =>
+    alternatives.some((alt) => fuzzyContains(normalizedResponse, alt))
+  ).length;
+  const total = expectedElements.length;
 
-  // Rule: 3+ correct elements = full points, sauf si moins de 3 éléments attendus
-  const MIN_FOR_FULL_POINTS = 3;
-  const requiredForFullPoints = Math.max(1, Math.min(total, MIN_FOR_FULL_POINTS));
+  // Règle stricte: hors questions de type "liste", il faut tous les éléments.
+  // Exception "liste" (citez/donnez/quels...): seuil minimal demandé (ou 3 par défaut).
+  const requestedCount = extractRequestedElementsCount(question.enonce || "");
+  const isEnumerative = isEnumerativeQrcQuestion(question);
+  const requiredForFullPoints = isEnumerative
+    ? Math.max(1, Math.min(total, requestedCount ?? 3))
+    : total;
+
   const gotFullPoints = matched >= requiredForFullPoints;
   const points = gotFullPoints
     ? maxPoints
