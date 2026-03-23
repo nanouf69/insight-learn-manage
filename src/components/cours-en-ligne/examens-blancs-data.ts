@@ -2063,7 +2063,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "doit obligatoirement mentionner le nom du bénéficiaire de la prestation" },
           { lettre: "B", texte: "est facultative" },
-          { lettre: "C", texte: "peut être établie sur support numérique" },
+          { lettre: "C", texte: "peut être établie sur support numérique", correct: true },
         ],
       },
       {
