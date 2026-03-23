@@ -5852,7 +5852,7 @@ const eb5Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "10 minutes" },
           { lettre: "B", texte: "15minutes" },
-          { lettre: "C", texte: "8 minutes" },
+          { lettre: "C", texte: "8 minutes", correct: true },
         ],
       },
       {
