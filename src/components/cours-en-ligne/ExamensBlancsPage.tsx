@@ -1731,42 +1731,62 @@ export default function ExamensBlancsPage({
 
   const handleViewResults = async (examen: ExamenBlanc) => {
     if (!apprenantId) return;
+
+    const examReference = liveExamens.find((live) => live.id === examen.id) ?? examen;
     const { data } = await supabase
       .from("apprenant_quiz_results" as any)
       .select("*")
       .eq("apprenant_id", apprenantId)
-      .eq("quiz_id", examen.id)
-      .eq("quiz_type", examen.id.startsWith("bilan-") ? "bilan" : "examen_blanc");
+      .eq("quiz_id", examReference.id)
+      .eq("quiz_type", examReference.id.startsWith("bilan-") ? "bilan" : "examen_blanc");
+
     if (!data || (data as any[]).length === 0) {
       toast.error("Aucun résultat trouvé pour cet examen.");
       return;
     }
-    // Reconstruct ResultatMatiere[] from saved DB rows
-    const resultsUnsorted: ResultatMatiere[] = (data as any[]).map((row: any, idx: number) => {
-      const matiere = examen.matieres.find(m => m.id === row.matiere_id);
-      // Extract saved IA corrections from details if available
-      const savedCorrections = row.details?.correctionsIA || null;
-      return {
-        matiereId: row.matiere_id,
-        nomMatiere: row.matiere_nom,
-        noteObtenue: row.score_obtenu,
-        maxPoints: row.score_max,
-        noteSur: matiere?.noteSur || 20,
-        noteEliminatoire: matiere?.noteEliminatoire || 0,
-        coefficient: matiere?.coefficient || 1,
-        admis: row.reussi ?? true,
-        reponses: row.details?.reponses || {},
-        correctionsIA: savedCorrections,
-      };
+
+    // Keep latest row per matière to prevent attempt mixing
+    const latestByMatiere = new Map<string, any>();
+    (data as any[]).forEach((row: any, idx: number) => {
+      const key = row.matiere_id || row.matiere_nom || `unknown-${idx}`;
+      const prev = latestByMatiere.get(key);
+      const prevTs = prev ? Math.max(toTimestamp(prev.completed_at), toTimestamp(prev.created_at)) : 0;
+      const currTs = Math.max(toTimestamp(row.completed_at), toTimestamp(row.created_at));
+      if (!prev || currTs >= prevTs) latestByMatiere.set(key, row);
     });
-    // Sort results to match the original matière order from the exam definition
-    const matiereOrder = examen.matieres.map(m => m.id);
-    const results = resultsUnsorted.sort((a, b) => {
-      const idxA = matiereOrder.indexOf(a.matiereId);
-      const idxB = matiereOrder.indexOf(b.matiereId);
-      return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
-    });
-    setExamenChoisi(examen);
+
+    const latestRows = Array.from(latestByMatiere.values());
+    const rowsByMatiereId = new Map(latestRows.filter((r: any) => !!r.matiere_id).map((r: any) => [r.matiere_id, r]));
+    const rowsByMatiereNom = new Map(latestRows.filter((r: any) => !!r.matiere_nom).map((r: any) => [r.matiere_nom, r]));
+
+    // Rebuild strictly in official exam order (A -> B -> C ...)
+    const results = examReference.matieres
+      .map((matiere): ResultatMatiere | null => {
+        const row = rowsByMatiereId.get(matiere.id) || rowsByMatiereNom.get(matiere.nom);
+        if (!row) return null;
+        const savedCorrections = row.details?.correctionsIA || null;
+
+        return {
+          matiereId: row.matiere_id || matiere.id,
+          nomMatiere: row.matiere_nom || matiere.nom,
+          noteObtenue: row.score_obtenu,
+          maxPoints: row.score_max,
+          noteSur: matiere.noteSur || 20,
+          noteEliminatoire: matiere.noteEliminatoire || 0,
+          coefficient: matiere.coefficient || 1,
+          admis: row.reussi ?? true,
+          reponses: row.details?.reponses || {},
+          correctionsIA: savedCorrections,
+        };
+      })
+      .filter((r): r is ResultatMatiere => r !== null);
+
+    if (results.length === 0) {
+      toast.error("Résultats introuvables pour les matières de cet examen.");
+      return;
+    }
+
+    setExamenChoisi(examReference);
     setTousResultats(results);
     setPhase("resultats");
   };
