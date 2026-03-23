@@ -322,7 +322,14 @@ export function RapprochementBancaire() {
     setImporting(true);
     try {
       const text = await file.text();
-      const rows = parseBNPCsv(text);
+      // Auto-detect bank format
+      const detected = detectBankFromCsv(text);
+      let rows: ReturnType<typeof parseBNPCsv>;
+      if (detected === "revolut") {
+        rows = parseRevolutCsv(text);
+      } else {
+        rows = parseBNPCsv(text);
+      }
       if (rows.length === 0) {
         toast.error("Aucune transaction trouvée dans ce fichier. Vérifiez le format CSV.");
         setImporting(false);
@@ -331,7 +338,8 @@ export function RapprochementBancaire() {
       const inserts = rows.map(r => ({ ...r, statut: "non_justifie", source: "import_csv" }));
       const { error } = await supabase.from("transactions_bancaires").insert(inserts);
       if (error) throw error;
-      toast.success(`${rows.length} transactions importées !`);
+      const bankName = rows[0]?.banque || "inconnue";
+      toast.success(`${rows.length} transactions ${bankName} importées !`);
       await fetchAll();
     } catch (err) {
       toast.error("Erreur import : " + (err instanceof Error ? err.message : "Erreur"));
