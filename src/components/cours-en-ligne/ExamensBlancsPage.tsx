@@ -1049,7 +1049,8 @@ function EcranResultats({
 
   // Mode hybride : correction IA en arrière-plan, ne peut qu'AMÉLIORER le score déterministe
   useEffect(() => {
-    if (!ENABLE_AI_QRC_CORRECTION || hasPreloadedCorrections) return;
+    // Skip AI correction if viewing saved results or already has corrections
+    if (!ENABLE_AI_QRC_CORRECTION || hasPreloadedCorrections || isViewingSaved) return;
 
     let cancelled = false;
     const corrigerTout = async () => {
