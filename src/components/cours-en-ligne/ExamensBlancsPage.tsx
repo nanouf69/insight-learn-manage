@@ -27,6 +27,11 @@ function toTimestamp(value: unknown): number {
   const ts = new Date(String(value ?? "")).getTime();
   return Number.isFinite(ts) ? ts : 0;
 }
+/** Ensure value is always a proper array — handles null, undefined, objects, strings */
+function safeArray<T = unknown>(v: unknown): T[] {
+  if (Array.isArray(v)) return v as T[];
+  return [];
+}
 
 function toFiniteNumber(value: unknown, fallback = 0): number {
   const n = typeof value === "number" ? value : Number(value);
