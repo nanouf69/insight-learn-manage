@@ -1139,7 +1139,7 @@ function EcranResultats({
                         <span className="text-lg font-bold" style={{ color: r.admis ? '#00B4D8' : '#ef4444' }}>
                           {r.noteObtenue} / {r.maxPoints} pts
                         </span>
-                        <p className="text-xs text-muted-foreground">= {isFinite(noteSur20) ? noteSur20.toFixed(1) : "0.0"} / {r.noteSur || 20}</p>
+                        <p className="text-xs text-muted-foreground">= {isFinite(noteSur20) ? noteSur20.toFixed(1) : "0.0"} / 20</p>
                       </div>
                       {r.admis ? (
                         <CheckCircle2 className="w-5 h-5" style={{ color: '#00B4D8' }} />
@@ -1726,7 +1726,7 @@ export default function ExamensBlancsPage({
       return;
     }
     // Reconstruct ResultatMatiere[] from saved DB rows
-    const results: ResultatMatiere[] = (data as any[]).map((row: any, idx: number) => {
+    const resultsUnsorted: ResultatMatiere[] = (data as any[]).map((row: any, idx: number) => {
       const matiere = examen.matieres.find(m => m.id === row.matiere_id);
       // Extract saved IA corrections from details if available
       const savedCorrections = row.details?.correctionsIA || null;
@@ -1742,6 +1742,13 @@ export default function ExamensBlancsPage({
         reponses: row.details?.reponses || {},
         correctionsIA: savedCorrections,
       };
+    });
+    // Sort results to match the original matière order from the exam definition
+    const matiereOrder = examen.matieres.map(m => m.id);
+    const results = resultsUnsorted.sort((a, b) => {
+      const idxA = matiereOrder.indexOf(a.matiereId);
+      const idxB = matiereOrder.indexOf(b.matiereId);
+      return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
     });
     setExamenChoisi(examen);
     setTousResultats(results);
