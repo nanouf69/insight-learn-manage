@@ -145,12 +145,29 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
         if (idx >= 0 && idx < examens.length && row.module_data) {
           const saved = row.module_data as unknown as ExamenBlanc;
           if (saved.matieres && Array.isArray(saved.matieres)) {
-            // Always preserve texteSupport/texteSource from source code (authoritative)
+            // Always preserve texteSupport/texteSource + repair missing QRC keywords from source code (authoritative)
             const sourceMatieres = examens[idx].matieres;
             const mergedMatieres = saved.matieres.map((savedMat) => {
               const sourceMat = sourceMatieres.find(sm => sm.id === savedMat.id);
               if (sourceMat) {
-                const merged = { ...savedMat };
+                const sourceQuestions = Array.isArray(sourceMat.questions) ? sourceMat.questions : [];
+                const savedQuestions = Array.isArray(savedMat.questions) ? savedMat.questions : [];
+
+                const mergedQuestions = savedQuestions.map((savedQ) => {
+                  const sourceQ = sourceQuestions.find((sq) => sq.id === savedQ.id && sq.type === savedQ.type);
+                  if (!sourceQ || savedQ.type !== "QRC") return savedQ;
+
+                  const hasSavedKeywords = Array.isArray(savedQ.reponses_possibles) && savedQ.reponses_possibles.length > 0;
+                  const sourceKeywords = Array.isArray(sourceQ.reponses_possibles) ? sourceQ.reponses_possibles : [];
+
+                  if (!hasSavedKeywords && sourceKeywords.length > 0) {
+                    return { ...savedQ, reponses_possibles: [...sourceKeywords] };
+                  }
+
+                  return savedQ;
+                });
+
+                const merged = { ...savedMat, questions: mergedQuestions };
                 if (sourceMat.texteSupport) merged.texteSupport = sourceMat.texteSupport;
                 if (sourceMat.texteSource) merged.texteSource = sourceMat.texteSource;
                 return merged;

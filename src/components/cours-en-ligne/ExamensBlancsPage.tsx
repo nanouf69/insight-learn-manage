@@ -164,7 +164,7 @@ function evaluateQrcDeterministic(question: Question, response: unknown, pointsQ
   const normalizedResponse = normalizeAnswerText(responseRaw);
 
   // Build keyword list from reponses_possibles (each entry = one keyword/element)
-  const expectedKeywords = Array.from(
+  const explicitKeywords = Array.from(
     new Set(
       (question.reponses_possibles || [])
         .map((token) => normalizeAnswerText(token))
@@ -172,25 +172,33 @@ function evaluateQrcDeterministic(question: Question, response: unknown, pointsQ
     )
   );
 
-  // Fallback: if no reponses_possibles, use reponseQRC as a single block
+  // Fallback robuste: si l'éditeur a perdu les mots-clés, on les dérive depuis reponseQRC
+  const fallbackKeywords = (() => {
+    const normalizedExpected = normalizeAnswerText(question.reponseQRC || "");
+    if (!normalizedExpected) return [] as string[];
+
+    const stopwords = new Set([
+      "avec", "dans", "pour", "sans", "dont", "plus", "moins", "etre", "avoir", "faire", "cette", "cette", "votre", "vous", "leur", "leurs", "entre", "sous", "aux", "des", "les", "une", "des", "du", "de", "la", "le", "et", "ou", "au", "il", "elle", "ils", "elles", "son", "ses", "sur", "par", "qui",
+    ]);
+
+    return Array.from(
+      new Set(
+        normalizedExpected
+          .split(" ")
+          .map((word) => word.trim())
+          .filter((word) => word.length >= 3 && !stopwords.has(word))
+      )
+    ).slice(0, 12);
+  })();
+
+  const expectedKeywords = explicitKeywords.length > 0 ? explicitKeywords : fallbackKeywords;
+
   if (expectedKeywords.length === 0) {
-    const fallbackToken = normalizeAnswerText(question.reponseQRC || "");
-    if (!fallbackToken) {
-      return {
-        estCorrect: false,
-        pointsObtenus: 0,
-        nombrefautes: 0,
-        explication: "Réponse attendue indisponible pour cette question.",
-      };
-    }
-    const isMatch = normalizedResponse.includes(fallbackToken);
     return {
-      estCorrect: isMatch,
-      pointsObtenus: isMatch ? maxPoints : 0,
+      estCorrect: false,
+      pointsObtenus: 0,
       nombrefautes: 0,
-      explication: isMatch
-        ? "Réponse correcte."
-        : "Réponse incorrecte.",
+      explication: "Réponse attendue indisponible pour cette question.",
     };
   }
 
@@ -198,19 +206,20 @@ function evaluateQrcDeterministic(question: Question, response: unknown, pointsQ
   const matched = expectedKeywords.filter((kw) => fuzzyContains(normalizedResponse, kw)).length;
   const total = expectedKeywords.length;
 
-  // Rule: 3+ correct elements = full points; otherwise proportional
+  // Rule: 3+ correct elements = full points, sauf si moins de 3 éléments attendus
   const MIN_FOR_FULL_POINTS = 3;
-  const gotFullPoints = matched >= MIN_FOR_FULL_POINTS;
+  const requiredForFullPoints = Math.max(1, Math.min(total, MIN_FOR_FULL_POINTS));
+  const gotFullPoints = matched >= requiredForFullPoints;
   const points = gotFullPoints
     ? maxPoints
-    : clampToQuestionMax(Math.round((matched / Math.min(total, MIN_FOR_FULL_POINTS)) * maxPoints * 10) / 10, maxPoints);
+    : clampToQuestionMax(Math.round((matched / requiredForFullPoints) * maxPoints * 10) / 10, maxPoints);
 
   return {
     estCorrect: gotFullPoints,
     pointsObtenus: points,
     nombrefautes: 0,
     explication: gotFullPoints
-      ? `Correction déterministe : ${matched}/${total} élément(s) trouvés — totalité des points attribuée (≥${MIN_FOR_FULL_POINTS}).`
+      ? `Correction déterministe : ${matched}/${total} élément(s) trouvés — totalité des points attribuée (≥${requiredForFullPoints}).`
       : `Correction déterministe : ${matched}/${total} élément(s) attendu(s) trouvés.`,
   };
 }
