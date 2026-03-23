@@ -26,6 +26,7 @@ export interface Question {
   id: number;
   type: QuestionType;
   enonce: string;
+  image?: string;
   choix?: Choix[];
   reponseQRC?: string;
   reponses_possibles?: string[];
