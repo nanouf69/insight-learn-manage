@@ -1508,16 +1508,44 @@ function EcranResultats({
     return () => { cancelled = true; };
   }, [examen, resultats, hasPreloadedCorrections, isViewingSaved]);
 
-  // Résultats sécurisés (aucune note hors bornes, aucun recalcul instable)
-  const resultatsAvecIA = resultats.map((r) => {
+  // Résultats sécurisés + score matière recalculé depuis le détail affiché
+  // pour garder la note principale strictement alignée avec les sous-notes.
+  const resultatsAvecIA = resultats.map((r, mi) => {
     const safeMaxPoints = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
+    const matiere = examen.matieres[mi];
+    const questionsSafe = matiere ? (matiere.questions || []).filter((q): q is Question => q != null && q?.type !== undefined) : [];
+    const cacheMatiere = correctionsIA[mi] || {};
+
+    const recalculatedFromDetails = questionsSafe.reduce((acc, q) => {
+      const pts = getPointsParQuestion(matiere?.id ?? "", q?.type || "QRC");
+      const rep = r.reponses?.[q.id];
+
+      if (q?.type === "QCM" && q.choix) {
+        const correctes = safeArray<string>(q.choix.filter(c => c.correct).map(c => c.lettre)).sort();
+        const donnees = safeArray<string>(rep).sort();
+        return acc + (JSON.stringify(correctes) === JSON.stringify(donnees) ? pts : 0);
+      }
+
+      if (q?.type === "QRC") {
+        const corrIA = cacheMatiere[q.id];
+        const fallback = evaluateQrcDeterministic(q, rep, pts);
+        if (corrIA && corrIA !== "loading" && corrIA !== "error") {
+          return acc + clampToQuestionMax(corrIA.pointsObtenus, pts);
+        }
+        return acc + clampToQuestionMax(fallback.pointsObtenus, pts);
+      }
+
+      return acc;
+    }, 0);
+
+    const baseNote = questionsSafe.length > 0 ? recalculatedFromDetails : toFiniteNumber(r.noteObtenue, 0);
     const safeNote = safeMaxPoints > 0
-      ? clamp(toFiniteNumber(r.noteObtenue, 0), 0, safeMaxPoints)
-      : Math.max(toFiniteNumber(r.noteObtenue, 0), 0);
+      ? clamp(baseNote, 0, safeMaxPoints)
+      : Math.max(baseNote, 0);
 
     return {
       ...r,
-      noteObtenue: safeNote,
+      noteObtenue: Number(safeNote.toFixed(1)),
       admis: computeAdmisForMatiere(safeNote, safeMaxPoints, r.noteEliminatoire, r.noteSur, Boolean(r.admis)),
     };
   });
