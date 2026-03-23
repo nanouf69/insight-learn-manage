@@ -852,7 +852,7 @@ function EcranResultats({
       });
 
       const safeMax = resultat.maxPoints || 1;
-      const noteSur20 = Number(((noteRecalculee / safeMax) * (resultat.noteSur || 20)).toFixed(1));
+      const noteSur20 = Number(((noteRecalculee / safeMax) * 20).toFixed(1));
 
       // Update the existing row with corrections
       await supabase
@@ -1100,7 +1100,7 @@ function EcranResultats({
         </div>
         {resultatsAvecIA.map((r, mi) => {
           const safeMaxPoints = r.maxPoints || 1;
-          const noteSur20 = (r.noteObtenue / safeMaxPoints * (r.noteSur || 20));
+          const noteSur20 = (r.noteObtenue / safeMaxPoints * 20);
           const matiereEnCours = Object.values(correctionsIA[mi] || {}).some(v => v === "loading");
           const pctScore = safeMaxPoints > 0 ? Math.min((r.noteObtenue / safeMaxPoints) * 100, 100) : 0;
           const matiere = examen.matieres[mi];
@@ -1856,7 +1856,7 @@ export default function ExamensBlancsPage({
             matiere_nom: r.nomMatiere,
             score_obtenu: r.noteObtenue,
             score_max: r.maxPoints,
-            note_sur_20: Number(((r.noteObtenue / (r.maxPoints || 1)) * (r.noteSur || 20)).toFixed(1)),
+            note_sur_20: Number(((r.noteObtenue / (r.maxPoints || 1)) * 20).toFixed(1)),
             reussi: r.admis,
             duree_secondes: Math.round(duree / allResults.length),
             details: { questions: questionDetails, reponses: r.reponses },
