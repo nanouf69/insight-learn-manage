@@ -56,8 +56,10 @@ function clampToQuestionMax(pointsObtenus: unknown, questionMax: number): number
   return clamp(toFiniteNumber(pointsObtenus, 0), 0, Math.max(questionMax, 0));
 }
 
-const ENABLE_AI_QRC_CORRECTION = true;
-// Mode hybride : le déterministe fournit un score instantané, l'IA ne peut qu'améliorer
+// DÉSACTIVÉ : la correction IA introduisait des variations de notes non déterministes.
+// Seule la correction déterministe (mots-clés + calculs) est utilisée pour garantir
+// qu'une même réponse donne toujours le même score, sans recalcul possible.
+const ENABLE_AI_QRC_CORRECTION = false;
 const AI_ONLY_UPGRADES = true;
 
 function normalizeAnswerText(value: unknown): string {
