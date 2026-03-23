@@ -2284,9 +2284,17 @@ export default function ExamensBlancsPage({
           if (!r || r === undefined) return null;
           const matiere = examenChoisi.matieres.find(m => m.id === r.matiereId);
           const questionsSafe = (matiere?.questions || []).filter(q => q && q?.type !== undefined);
+          // Build frozen deterministic QRC corrections
+          const frozenCorrections: Record<string, any> = {};
           const questionDetails = matiere ? questionsSafe.map(q => {
             if (!q || q === undefined) return null;
             const rep = r.reponses?.[q.id];
+            // Freeze QRC correction at save time — deterministic, never recalculated
+            if (q?.type === "QRC") {
+              const pts = getPointsParQuestion(matiere.id, q?.type || "QRC");
+              const correction = evaluateQrcDeterministic(q, rep, pts);
+              frozenCorrections[q.id] = correction;
+            }
             return {
               questionId: q.id,
               enonce: q.enonce || "",
@@ -2322,7 +2330,12 @@ export default function ExamensBlancsPage({
               Boolean(r.admis)
             ),
             duree_secondes: Math.round(duree / allResults.length),
-            details: { questions: questionDetails, reponses: r.reponses },
+            details: {
+              questions: questionDetails,
+              reponses: r.reponses,
+              // Corrections figées définitivement — aucun recalcul possible
+              correctionsIA: Object.keys(frozenCorrections).length > 0 ? frozenCorrections : undefined,
+            },
           };
         });
         const rowsToInsert = rows.filter(Boolean);
