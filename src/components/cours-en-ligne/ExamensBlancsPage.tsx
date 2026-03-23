@@ -1022,6 +1022,57 @@ function PassageMatiere({
         )}
       </div>
 
+      {/* Bouton interrompre l'épreuve */}
+      <div className="flex justify-start">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowInterruptConfirm(true)}
+          className="gap-2 text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+        >
+          <Ban className="w-4 h-4" />
+          Interrompre l'épreuve
+        </Button>
+      </div>
+
+      {/* Modal confirmation interruption */}
+      {showInterruptConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <Card className="w-full max-w-md mx-4 shadow-2xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="w-5 h-5" />
+                Interrompre l'épreuve
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Êtes-vous sûr de vouloir interrompre cette épreuve ? Les questions non répondues seront comptées comme <strong>fausses (0 point)</strong>. L'apprenant passera directement à la matière suivante.
+              </p>
+              <div className="text-sm font-medium bg-destructive/10 text-destructive rounded-lg px-3 py-2">
+                ⚠️ {questionsSafe.filter(q => !isQuestionAnswered(q)).length} question(s) non répondue(s) sur {questionsSafe.length}
+              </div>
+              <div className="flex gap-3 justify-end">
+                <Button variant="outline" onClick={() => setShowInterruptConfirm(false)}>
+                  Annuler
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    setShowInterruptConfirm(false);
+                    onTerminer(reponses);
+                  }}
+                  className="gap-2"
+                >
+                  <Ban className="w-4 h-4" />
+                  Confirmer l'interruption
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Calculatrice flottante pour Gestion */}
       {isGestion && showCalculator && (
         <CalculatriceExamen onClose={() => setShowCalculator(false)} />
