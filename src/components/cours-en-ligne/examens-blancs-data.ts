@@ -1475,6 +1475,7 @@ const eb1Matieres: Matiere[] = [
         id: 15,
         type: "QCM",
         enonce: "Ce pictogramme, qui figure sur des boites de médicaments, signifie :",
+        image: "/cours/examens/pictogramme-niveau3.png",
         choix: [
           { lettre: "A", texte: "Soyez très prudent. Ne pas conduire sans l’avis d’un professionnel de santé" },
           { lettre: "B", texte: "Attention, danger : ne pas conduire. Pour la reprise de la conduite, demandez l’avis d’un médecin" },
