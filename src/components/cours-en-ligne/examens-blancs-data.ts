@@ -2083,8 +2083,8 @@ const eb1Matieres: Matiere[] = [
         enonce: "Quelle(s) entreprise(s) doit (doivent) être inscrite(s) au registre des exploitants de VTC ?",
         choix: [
           { lettre: "A", texte: "les entreprises assurant des services collectifs de manière occasionnelle" },
-          { lettre: "B", texte: "les exploitants de VTC" },
-          { lettre: "C", texte: "les intermédiaires mettant en relation les exploitants et les clients" },
+          { lettre: "B", texte: "les exploitants de VTC", correct: true },
+          { lettre: "C", texte: "les intermédiaires mettant en relation les exploitants et les clients", correct: true },
         ],
       },
     ],
