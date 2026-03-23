@@ -817,6 +817,16 @@ function PassageMatiere({
           </div>
         </div>
         <div className="flex items-center gap-3">
+          {isGestion && (
+            <button
+              onClick={() => setShowCalculator(v => !v)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+              style={{ backgroundColor: showCalculator ? '#00B4D8' : 'rgba(0,180,216,0.15)', color: showCalculator ? '#0D2540' : '#00B4D8' }}
+            >
+              <Calculator className="w-4 h-4" />
+              <span>Calculatrice</span>
+            </button>
+          )}
           <span className="text-xs font-medium px-2 py-1 rounded" style={{ backgroundColor: 'rgba(0,180,216,0.15)', color: '#00B4D8' }}>
             Questions 1 à {questionsSafe.length}
           </span>
