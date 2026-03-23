@@ -4714,7 +4714,8 @@ const eb4Matieres: Matiere[] = [
       {
         id: 3,
         type: "QCM",
-        enonce: "A ce carrefour, je dois : [Une image contenant scène, plein air, passage pour piétons, voie Le contenu généré par l’IA peut être incorrect.]",
+        enonce: "A ce carrefour, je dois :",
+        image: "/cours/examens/carrefour-priorite-droite.png",
         choix: [
           { lettre: "A", texte: "Céder le passage à droite et à gauche" },
           { lettre: "B", texte: "Marquer l’arrêt" },
