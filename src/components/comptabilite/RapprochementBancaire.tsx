@@ -971,3 +971,106 @@ export function RapprochementBancaire() {
   );
 }
 
+/**
+ * Parse Revolut Business CSV — format standard :
+ * Colonnes : Type,Product,Started Date,Completed Date,Description,Amount,Fee,Currency,State,Balance
+ * ou parfois : Date started (UTC),Date completed (UTC),... 
+ * Le séparateur peut être , ou ;
+ * Montant : "1500.00" ou "-2046.30" (point décimal, signe négatif)
+ */
+function parseRevolutCsv(text: string): Omit<Transaction, "id" | "statut" | "justificatif_id" | "source" | "created_at" | "categorie" | "fournisseur_client" | "notes" | "reference">[] {
+  const rawLines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+  const results: ReturnType<typeof parseRevolutCsv> = [];
+
+  if (rawLines.length < 2) return results;
+
+  // Detect separator
+  const sep = rawLines[0].includes("\t") ? "\t" : rawLines[0].split(",").length > rawLines[0].split(";").length ? "," : ";";
+
+  const splitLine = (line: string): string[] => {
+    const parts: string[] = [];
+    let current = "";
+    let inQuotes = false;
+    for (const ch of line) {
+      if (ch === '"') { inQuotes = !inQuotes; continue; }
+      if (ch === sep.charAt(0) && !inQuotes) { parts.push(current.trim()); current = ""; continue; }
+      current += ch;
+    }
+    parts.push(current.trim());
+    return parts;
+  };
+
+  // Parse header to find column indices
+  const headerCols = splitLine(rawLines[0]).map(h => h.toLowerCase().trim());
+  
+  const findCol = (...names: string[]) => {
+    for (const name of names) {
+      const idx = headerCols.findIndex(h => h.includes(name));
+      if (idx >= 0) return idx;
+    }
+    return -1;
+  };
+
+  const dateCol = findCol("completed date", "date completed", "completed");
+  const startDateCol = findCol("started date", "date started", "started");
+  const descCol = findCol("description");
+  const amountCol = findCol("amount");
+  const balanceCol = findCol("balance");
+  const stateCol = findCol("state", "status");
+  const typeCol = findCol("type");
+
+  // Must have at least date, description and amount
+  const useDateCol = dateCol >= 0 ? dateCol : startDateCol;
+  if (useDateCol < 0 || descCol < 0 || amountCol < 0) return results;
+
+  for (let i = 1; i < rawLines.length; i++) {
+    const raw = rawLines[i].trim();
+    if (!raw) continue;
+    const cols = splitLine(raw);
+
+    // Skip reverted/declined transactions
+    if (stateCol >= 0) {
+      const state = (cols[stateCol] || "").toLowerCase();
+      if (state === "reverted" || state === "declined" || state === "failed") continue;
+    }
+
+    // Parse date — Revolut uses various formats: "2024-01-15 10:30:00", "Jan 15, 2024", "15/01/2024"
+    const dateStr = (cols[useDateCol] || "").trim();
+    let dateObj: Date | null = null;
+    try {
+      // Try ISO format first (2024-01-15 or 2024-01-15 10:30:00)
+      if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
+        dateObj = new Date(dateStr.slice(0, 10));
+      } else if (/^\d{2}\/\d{2}\/\d{4}/.test(dateStr)) {
+        dateObj = parse(dateStr.slice(0, 10), "dd/MM/yyyy", new Date());
+      } else if (/^\d{2}\.\d{2}\.\d{4}/.test(dateStr)) {
+        dateObj = parse(dateStr.slice(0, 10), "dd.MM.yyyy", new Date());
+      } else {
+        dateObj = new Date(dateStr);
+      }
+    } catch { /* ignore */ }
+    if (!dateObj || isNaN(dateObj.getTime())) continue;
+
+    const date_operation = format(dateObj, "yyyy-MM-dd");
+
+    // Amount
+    const amountStr = (cols[amountCol] || "").replace(/[^\d.\-]/g, "");
+    const montant = parseFloat(amountStr);
+    if (isNaN(montant) || montant === 0) continue;
+
+    // Description
+    const desc = cols[descCol] || "—";
+    const typeStr = typeCol >= 0 ? cols[typeCol] || "" : "";
+    const libelle = typeStr && typeStr.toLowerCase() !== "card_payment" && typeStr.toLowerCase() !== "transfer"
+      ? `${typeStr} – ${desc}`.slice(0, 100)
+      : desc.slice(0, 100);
+
+    // Balance
+    const balanceStr = balanceCol >= 0 ? (cols[balanceCol] || "").replace(/[^\d.\-]/g, "") : "";
+    const solde = balanceStr ? parseFloat(balanceStr) : null;
+
+    results.push({ date_operation, libelle, montant, solde: isNaN(solde as number) ? null : solde, banque: "Revolut Pro" });
+  }
+  return results;
+}
+
