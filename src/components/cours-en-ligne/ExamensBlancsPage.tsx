@@ -1378,6 +1378,9 @@ function RevisionFausses({
           <p className="font-semibold text-base" style={{ color: '#0D2540' }}>
             {q.enonce}
           </p>
+          {q?.image && (
+            <img src={q.image} alt="Illustration" className="mt-2 max-h-40 rounded-lg border" />
+          )}
 
           {q?.type === "QCM" && q.choix && (
             <div className="space-y-2">
