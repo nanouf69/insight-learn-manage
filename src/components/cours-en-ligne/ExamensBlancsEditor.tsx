@@ -300,10 +300,18 @@ function MatiereEditor({
     (q): q is Question => q != null && q?.type != null,
   );
 
-  const saveQuestion = (updated: Question) => {
+  const updateQuestion = (updated: Question, closeEditor: boolean) => {
     const newQuestions = questionsSafe.map(q => q.id === updated.id ? updated : q);
     onChange({ ...matiere, questions: newQuestions });
-    setEditingQId(null);
+    if (closeEditor) setEditingQId(null);
+  };
+
+  const saveQuestionDraft = (updated: Question) => {
+    updateQuestion(updated, false);
+  };
+
+  const saveQuestion = (updated: Question) => {
+    updateQuestion(updated, true);
   };
 
   const deleteQuestion = (qId: number) => {
