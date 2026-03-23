@@ -132,7 +132,7 @@ const ResultatsSessionPage = () => {
             .in("apprenant_id", apprenantIds),
           supabase
             .from("apprenant_quiz_results")
-            .select("id, apprenant_id, quiz_id, quiz_titre, quiz_type, score_obtenu, score_max, note_sur_20, reussi, matiere_id, matiere_nom, completed_at, duree_secondes")
+            .select("id, apprenant_id, quiz_id, quiz_titre, quiz_type, score_obtenu, score_max, note_sur_20, reussi, matiere_id, matiere_nom, completed_at, duree_secondes, details")
             .in("apprenant_id", apprenantIds)
             .order("completed_at", { ascending: false }),
         ]);
