@@ -1584,7 +1584,7 @@ function EcranResultats({
               {/* Correction détaillée inline */}
               {isExpanded && (
                 <CardContent className="pt-0 px-4 pb-4 space-y-3 border-t">
-                  {questionsSafe.map(q => {
+                  {questionsSafe.map((q, qIdx) => {
                     if (!q || !q?.type) return null;
                     const rep = r.reponses?.[q.id];
                     const pts = getPointsParQuestion(matiere?.id ?? "", q?.type);
