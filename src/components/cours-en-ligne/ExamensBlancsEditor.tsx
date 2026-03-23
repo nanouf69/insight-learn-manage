@@ -322,19 +322,48 @@ function MatiereEditor({
                   onCancel={() => setEditingQId(null)}
                 />
               ) : (
-                <div className="flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/20 group transition-colors">
-                  <Badge variant={q?.type === "QCM" ? "default" : "secondary"} className="text-xs shrink-0 mt-0.5">
-                    {q?.type}
-                  </Badge>
-                  <p className="text-sm flex-1 text-muted-foreground line-clamp-2">{q.enonce}</p>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity h-7 px-2"
-                    onClick={() => setEditingQId(q.id)}
-                  >
-                    <Pencil className="w-3 h-3" />
-                  </Button>
+                <div className="border rounded-lg hover:bg-muted/20 group transition-colors p-4 space-y-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 flex-1">
+                      <Badge variant={q?.type === "QCM" ? "default" : "secondary"} className="text-sm shrink-0 mt-0.5 px-2 py-0.5">
+                        {q?.type} — Q{q.id}
+                      </Badge>
+                      <div className="flex-1">
+                        <p className="text-base font-medium text-foreground leading-relaxed">{q.enonce}</p>
+                        {q.image && (
+                          <img src={q.image} alt={`Question ${q.id}`} className="mt-2 max-h-32 rounded border" />
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity h-8 px-2"
+                      onClick={() => setEditingQId(q.id)}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  {/* Réponses affichées sous la question */}
+                  {q?.type === "QCM" && q.choix && (
+                    <div className="ml-10 space-y-1.5">
+                      {q.choix.map((c, ci) => (
+                        <div
+                          key={ci}
+                          className={`flex items-start gap-2 text-base px-3 py-1.5 rounded ${c.correct ? "bg-green-100 text-green-800 font-semibold border border-green-300" : "text-muted-foreground"}`}
+                        >
+                          <span className="font-bold shrink-0">{c.lettre}.</span>
+                          <span>{c.texte}</span>
+                          {c.correct && <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {q?.type === "QRC" && q.reponseQRC && (
+                    <div className="ml-10 px-3 py-2 rounded bg-blue-50 border border-blue-200 text-base text-blue-800">
+                      <span className="font-semibold">Réponse : </span>{q.reponseQRC}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
