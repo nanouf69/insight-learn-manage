@@ -1547,6 +1547,12 @@ const eb1Matieres: Matiere[] = [
     coefficient: 2,
     noteEliminatoire: 5,
     noteSur: 24,
+    texteSupport: `Avec la démocratisation de l'automobile survenue en France après la première guerre mondiale, la voiture devint un symbole de liberté individuelle offrant à l'homme la possibilité de se déplacer rapidement et de façon autonome. Elle apparait comme un véritable raccourci du temps, modifiant les rapports spatiotemporels de l'individu.
+
+Grâce à la vitesse, l'homme est en mesure de dépasser ses limites physiologiques ; en même temps, va se développer chez lui un sentiment de domination et de toute puissance. Par ailleurs, au travers de la typologie du véhicule, le conducteur a la possibilité d'exprimer son rang et sa réussite sociale. La voiture est donc vécue comme le prolongement de l'habitat, véritable sphère privée, dans laquelle le conducteur se sent protégé et à l'abri des pressions extérieures.
+
+Ainsi tout « écart » intempestif est considéré comme une agression à la propriété privée, et le conducteur exacerbé choisit d'extérioriser ce débordement très souvent par un comportement agressif et incivique. Cette manière d'être manifeste l'attitude habituelle ou circonstanciée du conducteur. L'attitude est déterminée par la situation de conduite qui se présente. L'attitude est porteuse de sens, sinon d'intentions, ce qui a permis de mettre en évidence les différents comportements routiers : à risque et sécuritaire.`,
+    texteSource: "Questions Vives Recherches en éducation Vol. 9 n° 19 | 2013 — Éducation routière, changement de comportement et formation à la conduite",
     questions: [
       {
         id: 1,
@@ -2662,6 +2668,14 @@ const eb2Matieres: Matiere[] = [
     coefficient: 2,
     noteEliminatoire: 5,
     noteSur: 24,
+    texteSupport: `Alors que les statistiques de l'accidentalité routière démontrent une conduite plus respectueuse des règles de la part des femmes, les clichés sur les femmes au volant, héritage des débuts de l'automobile cantonnant la femme au rôle de passagère, ont la vie dure. Comment expliquer ce paradoxe?
+
+Par ailleurs, il existe actuellement un écart de 10 points entre les hommes et les femmes dans la réussite à l'épreuve pratique du permis de conduire. Comprendre les raisons de cet écart persistant dans le temps et trouver des solutions pour y remédier constitue un réel enjeu d'égalité, alors que le permis de conduire est un élément indispensable pour l'autonomie, l'intégration professionnelle et l'insertion sociale des personnes.
+
+En outre, en raison de l'influence des stéréotypes masculins et féminins tout au long du parcours scolaire, l'industrie automobile, caractérisée par une grande variété de métiers, demeure marquée par une féminisation encore très limitée. Pourtant, ce secteur est susceptible d'offrir des perspectives de carrière intéressantes aux jeunes femmes. Comment inverser la tendance?
+
+Enfin, il existe un lien marqué entre la précarité, qui touche plus particulièrement les femmes, et les contraintes de mobilité qui contribuent à aggraver leur fragilité économique et sociale. Comment favoriser la mobilité des femmes précaires?`,
+    texteSource: "Rapport d'information de Mmes Chantal JOUANNO et Christiane HUMMEL, fait au nom de la délégation aux droits des femmes n° 835 (2015-2016) — 20 septembre 2016",
     questions: [
       {
         id: 1,
@@ -3786,6 +3800,14 @@ const eb3Matieres: Matiere[] = [
     coefficient: 2,
     noteEliminatoire: 5,
     noteSur: 24,
+    texteSupport: `Le véhicule automatisé intrigue et fascine. Reste à savoir quand et comment nous allons pouvoir lâcher le volant.
+
+La voiture autonome titille les esprits, même si on a parfois le sentiment qu'elle est un moyen de communication facile pour les constructeurs et les équipementiers. Les prototypes actuels, bardés d'une armée de capteurs, réussissent en effet de spectaculaires démonstrations dont les médias sont friands.
+
+La voiture autonome porte en elle de nombreuses promesses. Elle devrait éradiquer la mortalité routière en supprimant toute intervention humaine sur la conduite. Elle devrait permettre à chacun d'accéder en permanence à une mobilité personnelle. Elle devrait supprimer les embouteillages en participant à la rationalisation du trafic. Elle devrait, aussi, rendre la planète plus propre, car elle sera forcément mue par l'électricité.
+
+Il y a quelque chose de mystique dans la voiture autonome. Des dizaines de milliers de personnes se penchent sur elle chaque jour dans le monde entier, sans savoir quand elle arrivera sur les routes. Du moins dans sa forme aboutie, c'est-à-dire celle qui lui permettra de se dispenser de conducteur (niveau 5). Pour que des voitures autonomes soient vraiment mises en circulation, elles devront vraiment être capables de faire face à toutes les situations, même en cas de comportement erratique du piéton. La voiture sans chauffeur, sans volant ni pédales de frein ou d'accélérateur pourrait se faire attendre.`,
+    texteSource: "Philippe Doucet, Libération.fr le 03/10/2018",
     questions: [
       {
         id: 1,
@@ -4909,6 +4931,20 @@ const eb4Matieres: Matiere[] = [
     coefficient: 2,
     noteEliminatoire: 5,
     noteSur: 24,
+    texteSupport: `La voiture 100% autonome, c'est pour demain?
+
+SANS LES MAINS Pour les experts, la voiture sans conducteur à bord n'est pas encore près de voir le jour.
+
+Quitter le volant des yeux pour regarder une série, ou faire la sieste et se réveiller quelques heures plus tard... à destination. Ce rêve deviendra-t-il réalité ? De Google à Uber en passant par Tesla, plusieurs poids lourds dépensent des milliards de dollars pour développer cette voiture sans conducteur. General Motors veut faire rouler une auto sans volant ni pédale, Google teste des taxis sans chauffeurs en Arizona et Elon Musk parle d'un modèle autonome pour la fin de l'année. Mais les experts sont partagés. Certains assurent que la voiture sans conducteur ne verra pas le jour avant 50 ans, voire jamais !
+
+Gérer l'imprévu
+
+Aujourd'hui, les constructeurs intègrent des dispositifs d'assistance à la conduite de plus en plus sophistiqués. Alors le véhicule automatisé « sur certaines portions d'autoroute, dans les embouteillages ou capable de se garer tout seul... Tout cela arrive ! », s'enthousiasme Arnaud de La Fortelle. [...] « Mais les interactions avec les humains restent compliquées à gérer. Une place où l'on croise des vélos, des rollers, d'autres conducteurs humains. Ou une route passant devant une école avec plein d'enfants... Ces situations sont un challenge pour la voiture ». Les robots ne savent pas traiter les intentions, confirme Michel Parent, conseiller scientifique [...] spécialisé dans la conduite automatique. « En tant qu'humain, on anticipe des choses très complexes. Quand on observe deux piétons qui discutent sur le bord de la route par exemple, on sait s'ils vont traverser ou non. À l'heure actuelle, les capteurs ont du mal à percevoir et anticiper ces cas de figure.
+
+Une question de cohabitation
+
+L'interaction entre voitures autonomes et véhicule classique est l'autre grand sujet d'inquiétude. Cela dit, on ne sait pas comment vont évoluer les choses, nuance Michel Parent. Si on interdit la circulation des voitures classiques dans certaines zones par exemple, cela devient plus envisageable. [...] D'ici là, mieux vaut garder les yeux sur la route !`,
+    texteSource: "20minutes.fr — Nouvelles mobilités, 08/03/2019",
     questions: [
       {
         id: 1,
@@ -6043,6 +6079,32 @@ const eb5Matieres: Matiere[] = [
     coefficient: 2,
     noteEliminatoire: 5,
     noteSur: 24,
+    texteSupport: `Gros fail et design douteux... Elon Musk présente le «cybertruck» 100% électrique de Tesla
+
+BLADE RUNNER Cet engin électrique est censé résister à toute attaque extérieure (mais n'a pas résisté pendant le show)
+
+Lignes (très) épurées et inox mat pour le nouveau véhicule Tesla. Elon Musk fait un bond dans le futur en présentant jeudi soir près de Los Angeles son étrange «cybertruck», moitié véhicule blindé, moitié avion furtif et 100 % électrique. Un show à l'américaine.. qui ne s'est pas déroulé comme prévu.
+
+Elon Musk avait prévenu: son véhicule aurait une allure «futuriste» et «cyberpunk» inspirée par Blade Runner, le film de science-fiction de Ridley Scott.
+
+«Il ne ressemble à rien d'autre», a résumé fièrement le PDG de Tesla sur scène, désignant son pick-up massif aux lignes angulaires lors d'un show dans le centre de design du constructeur à Hawthorne (Californie). Un design rapidement moqué sur les réseaux sociaux.
+
+Résistant.. mais pas trop
+
+A défaut d'arborer un design élégant, le «cybertruck» affiche sur le papier des performances impressionnantes, abondamment vantées par Elon Musk avec des démonstrations impliquant des coups de masse, des jets de boules en acier, voire des tirs d'arme à feu, ceux-là enregistrés en vidéo pour raisons de sécurité.
+
+«C'est littéralement résistant aux balles de pistolet calibre 9 mm», a-t-il assuré. «C'est un alliage en acier inoxydable ultrarésistant que nous avons développé. Nous allons utiliser le même alliage pour la fusée spatiale que pour le "cybertruck"», a lancé Elon Musk en référence à l'activité de SpaceX, dont il est aussi le fondateur et le PDG.
+
+Problème: lors de l'essai de l'envoi d'une balle d'acier sur scène, la démonstration rate, et la vitre du prototype casse (sans toutefois exploser). Rires dans la salle, sourire gêné pour Elon Musk. «Oh my f**king God. Bon... Peut-être que c'était un peu trop violent. On va arranger ça en post-production», blague le milliardaire.
+
+Moins de 50.000 dollars
+
+Le futur pickup de Tesla aura six places, pourra emporter plus de 1,5 tonne et sera capable de tracter sept tonnes, a-t-il détaillé. Le «cybertruck» sera décliné en trois modèles, 39.900 dollars et 400 km d'autonomie pour l'entrée de gamme, jusqu'à 69.900 dollars et 800 km d'autonomie annoncée pour le modèle supérieur. Et il pourra passer de 0 à 100 km/h en environ trois secondes, s'est réjoui le fantasque patron de Tesla.
+
+Elon Musk avait promis que son fameux pick-up coûterait moins de 50.000 dollars, un prix dans la moyenne pour cette catégorie de véhicules, et qu'il surpasserait les performances du Ford F-150, numéro un aux Etats-Unis sur ce segment depuis longtemps.
+
+Certains experts estiment que le pick-up électrique Tesla aura du mal à séduire la clientèle traditionnelle pour ce type d'engins. «Même si le pick-up de Tesla ne séduit pas les amateurs habituels du F-150, il n'en a pas forcément besoin», relevait Jessica Caldwell, directrice de la prospective pour le guide automobile Ens, dans une déclaration transmise avant la présentation. «Si le pickup Tesla n'était pas un peu polémique, ce ne serait pas une Tesla», a-t-elle ajouté.`,
+    texteSource: "Article de presse — Présentation du Cybertruck Tesla",
     questions: [
       {
         id: 1,
@@ -7143,6 +7205,18 @@ const eb6Matieres: Matiere[] = [
     coefficient: 2,
     noteEliminatoire: 5,
     noteSur: 24,
+    texteSupport: `A Lyon, des taxis-bateaux sur la Saône et le Rhône pour s'affranchir des bouchons
+
+Il est en discussion avec la Métropole pour développer son projet : à Lyon, un entrepreneur souhaite créer un service régulier de taxis-bateaux avec plusieurs stations sur les rives de la Saône et du Rhône.
+
+Depuis 2017, Jeff Fèvre propose des visites de Lyon au fil de l'eau et des excursions privatives sur la Saône ou le Rhône. Et depuis quelque temps, on peut également faire appel à lui pour des courses simples d'un point à un autre, comme un taxi classique, mais sans les embouteillages.
+
+Un service de taxi-bateau qu'il aimerait désormais développer, auprès des visiteurs évidemment, en desservant les principaux points d'intérêt de la ville, mais aussi auprès des Lyonnais pressés qui veulent s'affranchir des bouchons qui engorgent la capitale des Gaules ou des transports en commun très souvent saturés aux heures de pointe. "Ma vision de départ, c'était que l'historique même de la ville est basée sur la rivière de la Saône et le fleuve du Rhône, et qu'on pouvait aller partout en utilisant les voies d'eau", résume l'entrepreneur.
+
+Pour ce faire, il faut proposer un service régulier, bien identifié et multiplier les points d'embarquement et de débarquement sur le Rhône et la Saône. Jeff Fèvre est actuellement en discussion avec la Métropole et la régie des transports qui doivent se prononcer sur la possibilité de développer ce nouveau service et lui accorder les autorisations pour accoster à différents endroits stratégiques de la ville.
+
+Si pour le moment, la prestation reste chère, on peut imaginer qu'avec plusieurs bateaux, et si la clientèle est au rendez-vous, le prix d'une course pourrait baisser et se rapprocher des tarifs pratiqués par les taxis classiques, les bouchons en moins donc. Et comme le capitaine est un Lyonnais pur jus, amoureux de sa ville, il ne manquera pas de vous livrer quelques anecdotes sur la riche histoire de Lyon.`,
+    texteSource: "Article de presse — Taxis-bateaux à Lyon",
     questions: [
       {
         id: 1,
