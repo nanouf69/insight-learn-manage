@@ -273,6 +273,7 @@ export function RapprochementBancaire() {
   const [importing, setImporting] = useState(false);
   const [filterStatut, setFilterStatut] = useState("tous");
   const [filterType, setFilterType] = useState("tous"); // tous, debit, credit
+  const [filterBanque, setFilterBanque] = useState("tous"); // tous, BNP Paribas, Revolut Pro
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Transaction>>({});
