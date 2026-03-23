@@ -1703,7 +1703,7 @@ export default function ExamensBlancsPage({
   );
   const [examenChoisi, setExamenChoisi] = useState<ExamenBlanc | null>(null);
   const [matiereIndex, setMatiereIndex] = useState(savedSession?.matiereIndex || 0);
-  const [tousResultats, setTousResultats] = useState<ResultatMatiere[]>(savedSession?.resultats || []);
+  const [tousResultats, setTousResultats] = useState<ResultatMatiere[]>(safeArray<ResultatMatiere>(savedSession?.resultats));
   const [lastMatiereResult, setLastMatiereResult] = useState<ResultatMatiere | null>(null);
   const [isViewingSavedResults, setIsViewingSavedResults] = useState(false);
   const [bilanPrefiltre, setBilanPrefiltre] = useState<string | null>(null);
