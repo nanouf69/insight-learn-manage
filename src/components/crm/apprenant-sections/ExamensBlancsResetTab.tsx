@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -15,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { RotateCcw, Trophy, Calendar, Hash, Loader2 } from "lucide-react";
+import { RotateCcw, Trophy, Calendar, Hash, Loader2, ChevronDown, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -27,22 +26,50 @@ interface ExamensBlancsResetTabProps {
   };
 }
 
-interface MatiereResult {
+interface ExamenResult {
+  quiz_id: string;
   matiere_id: string;
   matiere_nom: string;
-  tentatives: number;
-  meilleur_score: number;
+  score_obtenu: number;
   score_max: number;
-  derniere_date: string;
-  quiz_ids: string[];
+  completed_at: string;
+}
+
+interface ExamenGroup {
+  examenNum: number;
+  examenLabel: string;
+  type: string; // vtc, taxi, ta, va
+  results: ExamenResult[];
+  totalScore: number;
+  totalMax: number;
+  lastDate: string;
+}
+
+function parseExamenInfo(quizId: string): { num: number; type: string } {
+  const lower = quizId.toLowerCase();
+  // Formats: "EB1", "eb3-vtc", "eb4-taxi", "eb1-ta", "eb2-va"
+  const match = lower.match(/eb(\d+)(?:-(vtc|taxi|ta|va))?/);
+  if (!match) return { num: 0, type: "vtc" };
+  return { num: parseInt(match[1]), type: match[2] || "vtc" };
+}
+
+function typeLabel(type: string): string {
+  switch (type) {
+    case "vtc": return "VTC";
+    case "taxi": return "TAXI";
+    case "ta": return "TA";
+    case "va": return "VA";
+    default: return type.toUpperCase();
+  }
 }
 
 export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetTabProps) {
   const queryClient = useQueryClient();
-  const [confirmTarget, setConfirmTarget] = useState<MatiereResult | null>(null);
+  const [confirmTarget, setConfirmTarget] = useState<ExamenGroup | null>(null);
   const [resetting, setResetting] = useState(false);
+  const [expandedExams, setExpandedExams] = useState<Set<string>>(new Set());
 
-  const { data: resultats = [], isLoading } = useQuery({
+  const { data: examGroups = [], isLoading } = useQuery({
     queryKey: ["examen-blanc-results-admin", apprenant.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -54,85 +81,94 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
       if (error) throw error;
       if (!data || data.length === 0) return [];
 
-      // Group by matiere
-      const grouped = new Map<string, MatiereResult>();
+      // Group by exam number + type
+      const grouped = new Map<string, ExamenGroup>();
       for (const row of data) {
-        const mId = row.matiere_id ?? "unknown";
-        const mNom = row.matiere_nom ?? "Matière inconnue";
-        const existing = grouped.get(mId);
+        const { num, type } = parseExamenInfo(row.quiz_id);
+        const key = `${num}-${type}`;
+        const existing = grouped.get(key);
+        const result: ExamenResult = {
+          quiz_id: row.quiz_id,
+          matiere_id: row.matiere_id ?? "unknown",
+          matiere_nom: row.matiere_nom ?? "Matière inconnue",
+          score_obtenu: row.score_obtenu ?? 0,
+          score_max: row.score_max ?? 20,
+          completed_at: row.completed_at,
+        };
+
         if (existing) {
-          existing.tentatives += 1;
-          if ((row.score_obtenu ?? 0) > existing.meilleur_score) {
-            existing.meilleur_score = row.score_obtenu ?? 0;
-            existing.score_max = row.score_max ?? 20;
-          }
-          if (row.completed_at > existing.derniere_date) {
-            existing.derniere_date = row.completed_at;
-          }
-          if (!existing.quiz_ids.includes(row.quiz_id)) {
-            existing.quiz_ids.push(row.quiz_id);
+          existing.results.push(result);
+          existing.totalScore += result.score_obtenu;
+          existing.totalMax += result.score_max;
+          if (result.completed_at > existing.lastDate) {
+            existing.lastDate = result.completed_at;
           }
         } else {
-          grouped.set(mId, {
-            matiere_id: mId,
-            matiere_nom: mNom,
-            tentatives: 1,
-            meilleur_score: row.score_obtenu ?? 0,
-            score_max: row.score_max ?? 20,
-            derniere_date: row.completed_at,
-            quiz_ids: [row.quiz_id],
+          grouped.set(key, {
+            examenNum: num,
+            examenLabel: `Examen Blanc ${num} — ${typeLabel(type)}`,
+            type,
+            results: [result],
+            totalScore: result.score_obtenu,
+            totalMax: result.score_max,
+            lastDate: result.completed_at,
           });
         }
       }
 
-      return Array.from(grouped.values()).sort((a, b) => a.matiere_nom.localeCompare(b.matiere_nom));
+      return Array.from(grouped.values()).sort((a, b) => {
+        if (a.type !== b.type) return a.type.localeCompare(b.type);
+        return a.examenNum - b.examenNum;
+      });
     },
     enabled: !!apprenant.id,
   });
 
-  const handleReset = async (matiere: MatiereResult) => {
+  const toggleExpand = (key: string) => {
+    setExpandedExams((prev) => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  };
+
+  const handleReset = async (group: ExamenGroup) => {
     setResetting(true);
     try {
-      // Get admin info
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error("Session expirée");
-        return;
+      if (!user) { toast.error("Session expirée"); return; }
+
+      // Collect all unique quiz_ids for this exam group
+      const quizIds = [...new Set(group.results.map((r) => r.quiz_id))];
+
+      // Delete all results matching these quiz_ids for this apprenant
+      for (const qid of quizIds) {
+        const { error } = await supabase
+          .from("apprenant_quiz_results")
+          .delete()
+          .eq("apprenant_id", apprenant.id)
+          .eq("quiz_type", "examen_blanc")
+          .eq("quiz_id", qid);
+        if (error) throw error;
       }
 
-      // Delete quiz results for this matiere + apprenant
-      const { error: deleteError } = await supabase
-        .from("apprenant_quiz_results")
-        .delete()
-        .eq("apprenant_id", apprenant.id)
-        .eq("quiz_type", "examen_blanc")
-        .eq("matiere_id", matiere.matiere_id);
+      // Audit log
+      await supabase.from("audit_logs").insert({
+        action: "reset_examen_blanc",
+        admin_user_id: user.id,
+        admin_email: user.email ?? null,
+        apprenant_id: apprenant.id,
+        apprenant_nom: `${apprenant.prenom} ${apprenant.nom}`,
+        details: {
+          examen_label: group.examenLabel,
+          examen_num: group.examenNum,
+          type: group.type,
+          quiz_ids: quizIds,
+          matieres_supprimees: group.results.length,
+        },
+      });
 
-      if (deleteError) throw deleteError;
-
-      // Log audit entry
-      const { error: auditError } = await supabase
-        .from("audit_logs")
-        .insert({
-          action: "reset_examen_blanc",
-          admin_user_id: user.id,
-          admin_email: user.email ?? null,
-          apprenant_id: apprenant.id,
-          apprenant_nom: `${apprenant.prenom} ${apprenant.nom}`,
-          details: {
-            matiere_id: matiere.matiere_id,
-            matiere_nom: matiere.matiere_nom,
-            tentatives_supprimees: matiere.tentatives,
-            meilleur_score: matiere.meilleur_score,
-            score_max: matiere.score_max,
-          },
-        });
-
-      if (auditError) {
-        console.error("Erreur audit log:", auditError);
-      }
-
-      toast.success(`Examen blanc "${matiere.matiere_nom}" réinitialisé pour ${apprenant.prenom} ${apprenant.nom}`);
+      toast.success(`${group.examenLabel} réinitialisé pour ${apprenant.prenom} ${apprenant.nom}`);
       queryClient.invalidateQueries({ queryKey: ["examen-blanc-results-admin", apprenant.id] });
     } catch (err: any) {
       console.error("Erreur reset examen blanc:", err);
@@ -148,10 +184,10 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Trophy className="w-5 h-5" />
-          Examens blancs — Remise à zéro par matière
+          Examens blancs — Remise à zéro
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Réinitialisez les résultats d'examen blanc de <strong>{apprenant.prenom} {apprenant.nom}</strong> par matière.
+          Réinitialisez les résultats d'examen blanc de <strong>{apprenant.prenom} {apprenant.nom}</strong> par examen.
           L'action est tracée pour la conformité Qualiopi.
         </p>
       </CardHeader>
@@ -160,44 +196,78 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
-        ) : resultats.length === 0 ? (
+        ) : examGroups.length === 0 ? (
           <p className="text-sm text-muted-foreground py-4">
             Aucun résultat d'examen blanc trouvé pour cet apprenant.
           </p>
         ) : (
           <div className="space-y-3">
-            {resultats.map((mat) => {
-              const note = mat.score_max > 0 ? ((mat.meilleur_score / mat.score_max) * 20).toFixed(1) : "0";
+            {examGroups.map((group) => {
+              const key = `${group.examenNum}-${group.type}`;
+              const expanded = expandedExams.has(key);
+              const noteGlobale = group.totalMax > 0
+                ? ((group.totalScore / group.totalMax) * 20).toFixed(1)
+                : "0";
+
               return (
-                <div
-                  key={mat.matiere_id}
-                  className="flex items-center justify-between p-3 border rounded-lg bg-muted/30"
-                >
-                  <div className="flex-1 space-y-1">
-                    <p className="font-medium text-sm">{mat.matiere_nom}</p>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Trophy className="w-3 h-3" />
-                        Meilleur : {note}/20
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Hash className="w-3 h-3" />
-                        {mat.tentatives} tentative{mat.tentatives > 1 ? "s" : ""}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {format(new Date(mat.derniere_date), "dd/MM/yyyy HH:mm", { locale: fr })}
-                      </span>
+                <div key={key} className="border rounded-lg overflow-hidden">
+                  {/* Header */}
+                  <div className="flex items-center justify-between p-3 bg-muted/30">
+                    <div
+                      className="flex-1 cursor-pointer flex items-center gap-2"
+                      onClick={() => toggleExpand(key)}
+                    >
+                      {expanded ? (
+                        <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                      )}
+                      <div>
+                        <p className="font-medium text-sm">{group.examenLabel}</p>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                          <span className="flex items-center gap-1">
+                            <Trophy className="w-3 h-3" />
+                            Note : {noteGlobale}/20
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Hash className="w-3 h-3" />
+                            {group.results.length} matière{group.results.length > 1 ? "s" : ""}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {format(new Date(group.lastDate), "dd/MM/yyyy HH:mm", { locale: fr })}
+                          </span>
+                        </div>
+                      </div>
                     </div>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => setConfirmTarget(group)}
+                    >
+                      <RotateCcw className="w-4 h-4 mr-1" />
+                      Remettre à zéro
+                    </Button>
                   </div>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => setConfirmTarget(mat)}
-                  >
-                    <RotateCcw className="w-4 h-4 mr-1" />
-                    Remettre à zéro
-                  </Button>
+
+                  {/* Matières détaillées */}
+                  {expanded && (
+                    <div className="border-t divide-y">
+                      {group.results
+                        .sort((a, b) => a.matiere_nom.localeCompare(b.matiere_nom))
+                        .map((r, i) => {
+                          const note = r.score_max > 0
+                            ? ((r.score_obtenu / r.score_max) * 20).toFixed(1)
+                            : "0";
+                          return (
+                            <div key={i} className="px-4 py-2 flex items-center justify-between text-sm">
+                              <span className="text-muted-foreground">{r.matiere_nom}</span>
+                              <span className="font-mono text-xs">{note}/20</span>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -210,11 +280,11 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmer la remise à zéro</AlertDialogTitle>
             <AlertDialogDescription>
-              Voulez-vous vraiment réinitialiser l'examen blanc <strong>"{confirmTarget?.matiere_nom}"</strong> pour{" "}
+              Voulez-vous vraiment réinitialiser <strong>"{confirmTarget?.examenLabel}"</strong> pour{" "}
               <strong>{apprenant.prenom} {apprenant.nom}</strong> ?
               <br /><br />
-              Cette action est <strong>irréversible</strong>. Les {confirmTarget?.tentatives} tentative(s) seront supprimées
-              et l'apprenant pourra refaire cet examen blanc depuis zéro.
+              Cette action est <strong>irréversible</strong>. Les résultats des {confirmTarget?.results.length} matière(s) seront supprimés
+              et l'apprenant pourra refaire cet examen depuis zéro.
               <br /><br />
               <em className="text-xs">L'action sera enregistrée dans le journal d'audit (traçabilité Qualiopi/MCF).</em>
             </AlertDialogDescription>
