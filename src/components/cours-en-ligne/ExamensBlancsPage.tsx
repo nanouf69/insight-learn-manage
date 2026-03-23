@@ -1184,8 +1184,8 @@ function EcranResultats({
                             {q?.type === "QCM" && (
                               <div className="mt-1 space-y-0.5">
                                 {(q.choix || []).map(c => (
-                                  <div key={c.lettre} className={`text-xs flex items-center gap-1 ${c.correct ? "text-green-700 font-semibold" : "text-muted-foreground"}`}>
-                                    <span>{c.lettre})</span><span>{c.texte}</span>{c.correct && <span className="text-green-600">✓</span>}
+                                  <div key={c.lettre} className={`text-xs flex items-center gap-1 px-1.5 py-0.5 rounded ${c.correct ? "bg-yellow-100 border border-yellow-400 text-yellow-900 font-semibold" : "text-muted-foreground"}`}>
+                                    <span>{c.lettre})</span><span>{c.texte}</span>{c.correct && <span className="text-yellow-700 font-bold">✓ Bonne réponse</span>}
                                   </div>
                                 ))}
                                 {rep != null && <p className="text-xs mt-1 italic text-muted-foreground">Votre réponse : {Array.isArray(rep) ? rep.join(", ") || "Aucune" : String(rep) || "Aucune"}</p>}
