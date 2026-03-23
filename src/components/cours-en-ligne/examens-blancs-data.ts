@@ -1532,8 +1532,8 @@ const eb1Matieres: Matiere[] = [
         type: "QCM",
         enonce: "Si mon temps de réaction augmente :",
         choix: [
-          { lettre: "A", texte: "La distance de réaction augmente" },
-          { lettre: "B", texte: "La distance d'arrêt augmente" },
+          { lettre: "A", texte: "La distance de réaction augmente", correct: true },
+          { lettre: "B", texte: "La distance d'arrêt augmente", correct: true },
           { lettre: "C", texte: "La distance de freinage augmente" },
           { lettre: "D", texte: "La distance d'arrêt est inchangée" },
         ],
