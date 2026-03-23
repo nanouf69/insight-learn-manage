@@ -1327,31 +1327,19 @@ function EcranResultats({
                        pointsObtenus = isCorrect ? pts : 0;
                     } else if (q?.type === "QRC") {
                       const corrIA = cacheMatiere[q.id];
-                      const isCalc = isCalculQuestion(q);
-                      if (!corrIA || corrIA === "loading") {
+                      const fallback = evaluateQrcDeterministic(q, rep, pts);
+                      if (corrIA === "loading") {
                         isLoadingIA = true;
-                      } else if (corrIA === "error") {
-                        if (isCalc) {
-                          const repStr = safeStr(rep).replace(/\s/g, "").toLowerCase();
-                          const hasResult = (q.reponses_possibles || []).some(rr => repStr.includes(rr.replace(/\s/g, "").toLowerCase()));
-                          const hasCalcDetail = /\d+\s*[\/×x\*\-\+]\s*\d+/.test(safeStr(rep)) || /=\s*\d/.test(safeStr(rep));
-                          if (hasResult && hasCalcDetail) { isCorrect = true; pointsObtenus = pts; }
-                          else if (hasResult) { pointsObtenus = Math.round(pts * 5) / 10; correctionDetail = `⚠️ Résultat correct mais détail du calcul manquant → ${pointsObtenus}/${pts} pts`; }
-                          else { correctionDetail = "❌ Résultat incorrect."; }
-                        } else {
-                          const repStr = safeStr(rep).toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
-                          const motsCles = q.reponses_possibles || [];
-                          let nbTrouvees = 0;
-                          motsCles.forEach(mc => { const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, ""); if (repStr.includes(mcN)) nbTrouvees++; });
-                          const ratio = motsCles.length > 0 ? nbTrouvees / motsCles.length : 0;
-                          isCorrect = nbTrouvees >= motsCles.length;
-                          pointsObtenus = Math.round(ratio * pts * 10) / 10;
-                          correctionDetail = "⚠️ Correction IA indisponible – correction par mots-clés";
-                        }
-                      } else {
-                        isCorrect = corrIA.estCorrect;
-                        pointsObtenus = corrIA.pointsObtenus;
+                      } else if (corrIA && corrIA !== "error") {
+                        pointsObtenus = clampToQuestionMax(corrIA.pointsObtenus, pts);
+                        isCorrect = Boolean(corrIA.estCorrect) && pointsObtenus >= pts;
                         correctionDetail = corrIA.explication;
+                      } else {
+                        isCorrect = fallback.estCorrect;
+                        pointsObtenus = fallback.pointsObtenus;
+                        correctionDetail = corrIA === "error"
+                          ? `Correction IA indisponible. ${fallback.explication}`
+                          : fallback.explication;
                       }
                     }
 
@@ -1480,11 +1468,8 @@ function EcranResultats({
               if (corrIA && corrIA !== "loading" && corrIA !== "error") {
                 if (!corrIA.estCorrect) nbFaussesTop++;
               } else {
-                const repStr = safeStr(rep).toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
-                const motsCles = q.reponses_possibles || [];
-                let nbTrouvees = 0;
-                motsCles.forEach(mc => { const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, ""); if (repStr.includes(mcN)) nbTrouvees++; });
-                if (nbTrouvees < motsCles.length) nbFaussesTop++;
+                const fallback = evaluateQrcDeterministic(q, rep, getPointsParQuestion(matiere.id, q?.type || "QRC"));
+                if (!fallback.estCorrect) nbFaussesTop++;
               }
             }
           });
