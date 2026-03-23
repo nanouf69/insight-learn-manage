@@ -3006,9 +3006,9 @@ const eb2Matieres: Matiere[] = [
         type: "QCM",
         enonce: "Vendre une prestation à perte :",
         choix: [
-          { lettre: "A", texte: "est interdit par le code du commerce" },
+          { lettre: "A", texte: "est interdit par le code du commerce", correct: true },
           { lettre: "B", texte: "n'est possible que lorsqu'un contrat annuel de type abonnement a été souscrit par le client" },
-          { lettre: "C", texte: "constitue une forme de concurrence déloyale" },
+          { lettre: "C", texte: "constitue une forme de concurrence déloyale", correct: true },
         ],
       },
       {
