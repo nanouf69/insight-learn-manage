@@ -1116,9 +1116,9 @@ const eb1Matieres: Matiere[] = [
         enonce: "Parmi les condamnations suivantes, lesquelles peuvent être mentionnées au bulletin n° 2 du casier judiciaire ?",
         choix: [
           { lettre: "A", texte: "transporter et déposer des objets, déchets, liquides insalubres en un lieu sans l’autorisation de la personne ayant la jouissance du lieu" },
-          { lettre: "B", texte: "conduire avec un taux d’alcool dans le sang de 0,8 gramme par litre ou plus" },
+          { lettre: "B", texte: "conduire avec un taux d’alcool dans le sang de 0,8 gramme par litre ou plus", correct: true },
           { lettre: "C", texte: "transporter un appareil permettant de déceler la présence de systèmes servant à la constatation des infractions à la législation, ou à la réglementation de la circulation routière" },
-          { lettre: "D", texte: "poursuivre sa route, en connaissance de cause, après avoir occasionné un accident" },
+          { lettre: "D", texte: "poursuivre sa route, en connaissance de cause, après avoir occasionné un accident", correct: true },
         ],
       },
     ],
@@ -2002,7 +2002,7 @@ const eb1Matieres: Matiere[] = [
         type: "QCM",
         enonce: "On appelle marketing direct",
         choix: [
-          { lettre: "A", texte: "l’envoi d’un message personnalisé à un groupe de personnes qualifiées" },
+          { lettre: "A", texte: "l’envoi d’un message personnalisé à un groupe de personnes qualifiées", correct: true },
           { lettre: "B", texte: "l’achat d’espace publicitaire dans la presse locale" },
           { lettre: "C", texte: "la mise en valeur d’offres promotionnelles dans le véhicule" },
         ],
