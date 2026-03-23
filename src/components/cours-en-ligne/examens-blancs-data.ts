@@ -3825,7 +3825,7 @@ const eb3Matieres: Matiere[] = [
         enonce: "Que signifie le verbe “éradiquer”?",
         choix: [
           { lettre: "A", texte: "maintenir" },
-          { lettre: "B", texte: "faire disparaître" },
+          { lettre: "B", texte: "faire disparaître", correct: true },
           { lettre: "C", texte: "conserver" },
         ],
       },
