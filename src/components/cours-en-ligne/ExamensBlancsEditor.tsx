@@ -381,7 +381,9 @@ function MatiereEditor({
 
   const confirmDelete = () => {
     if (confirmDeleteQId === null) return;
-    const newQuestions = questionsSafe.filter(q => q.id !== confirmDeleteQId);
+    const newQuestions = questionsSafe
+      .filter(q => q.id !== confirmDeleteQId)
+      .map((q, i) => ({ ...q, id: i + 1 }));
     onChange({ ...matiere, questions: newQuestions });
     setEditingQId(null);
     setConfirmDeleteQId(null);
