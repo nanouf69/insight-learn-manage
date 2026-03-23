@@ -2050,7 +2050,7 @@ const eb1Matieres: Matiere[] = [
         type: "QCM",
         enonce: "Qui délivre la carte professionnelle des conducteurs de VTC ?",
         choix: [
-          { lettre: "A", texte: "la prefecture" },
+          { lettre: "A", texte: "la prefecture", correct: true },
           { lettre: "B", texte: "la chambre de métiers et de l’artisanat" },
           { lettre: "C", texte: "la Mairie" },
           { lettre: "D", texte: "les organisations professionnelles de VTC" },
