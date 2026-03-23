@@ -517,27 +517,23 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
       const synced = JSON.parse(JSON.stringify(sourceExamens)) as ExamenBlanc[];
       syncVtcTaxiMatieres(synced);
 
-      const promises = synced.map((ex, i) => {
-        const moduleId = EXAMEN_BLANC_MODULE_BASE + i;
-        return supabase.from("module_editor_state").upsert(
-          [{
-            module_id: moduleId,
-            module_data: ex as any,
-            deleted_cours: [] as any,
-            deleted_exercices: [] as any,
-            updated_at: new Date().toISOString(),
-          }],
-          { onConflict: "module_id" }
-        );
-      });
+      const now = new Date().toISOString();
+      const rows = synced.map((ex, i) => ({
+        module_id: EXAMEN_BLANC_MODULE_BASE + i,
+        module_data: ex as any,
+        deleted_cours: [] as any,
+        deleted_exercices: [] as any,
+        updated_at: now,
+      }));
 
-      const results = await Promise.all(promises);
-      const errors = results.filter(r => r.error);
+      // Send as a single batch upsert instead of 12+ parallel requests
+      const { error } = await supabase
+        .from("module_editor_state")
+        .upsert(rows, { onConflict: "module_id" });
 
-      if (errors.length > 0) {
-        console.error("[ExamensEditor] Save errors:", errors.map(e => e.error));
-        const firstMessage = errors[0].error?.message || "Erreur inconnue";
-        toast.error(`Sauvegarde impossible: ${firstMessage}`);
+      if (error) {
+        console.error("[ExamensEditor] Save error:", error);
+        toast.error(`Sauvegarde impossible: ${error.message}`);
         return false;
       }
 
