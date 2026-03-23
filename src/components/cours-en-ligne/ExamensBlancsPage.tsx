@@ -1188,13 +1188,32 @@ function EcranResultats({
                             </div>
 
                             {q?.type === "QCM" && (
-                              <div className="mt-1 space-y-0.5">
-                                {(q.choix || []).map(c => (
-                                  <div key={c.lettre} className={`text-xs flex items-center gap-1 px-1.5 py-0.5 rounded ${c.correct ? "bg-yellow-100 border border-yellow-400 text-yellow-900 font-semibold" : "text-muted-foreground"}`}>
-                                    <span>{c.lettre})</span><span>{c.texte}</span>{c.correct && <span className="text-yellow-700 font-bold">✓ Bonne réponse</span>}
-                                  </div>
-                                ))}
-                                {rep != null && <p className="text-xs mt-1 italic text-muted-foreground">Votre réponse : {Array.isArray(rep) ? rep.join(", ") || "Aucune" : String(rep) || "Aucune"}</p>}
+                              <div className="mt-2 space-y-1.5">
+                                {(q.choix || []).map(c => {
+                                  const isSelected = Array.isArray(rep) && rep.includes(c.lettre);
+                                  const isCorrectChoice = c.correct === true;
+                                  let classes = "text-sm flex items-center gap-2 px-3 py-2 rounded-lg border-2 ";
+                                  if (isCorrectChoice) {
+                                    classes += "bg-green-100 border-green-500 text-green-900 font-semibold";
+                                  } else if (isSelected && !isCorrectChoice) {
+                                    classes += "bg-red-50 border-red-400 text-red-800";
+                                  } else {
+                                    classes += "border-muted bg-muted/30 text-muted-foreground";
+                                  }
+                                  return (
+                                    <div key={c.lettre} className={classes}>
+                                      <span className="font-bold shrink-0">{c.lettre})</span>
+                                      <span className="flex-1">{c.texte}</span>
+                                      {isCorrectChoice && <span className="text-green-700 font-bold text-xs bg-green-200 px-2 py-0.5 rounded-full shrink-0">✓ Bonne réponse</span>}
+                                      {isSelected && !isCorrectChoice && <span className="text-red-600 font-bold text-xs bg-red-200 px-2 py-0.5 rounded-full shrink-0">✗ Votre choix</span>}
+                                      {isSelected && isCorrectChoice && <span className="text-green-700 font-bold text-xs bg-green-300 px-2 py-0.5 rounded-full shrink-0">✓ Votre choix</span>}
+                                    </div>
+                                  );
+                                })}
+                                <div className="mt-2 flex flex-wrap gap-3 text-sm">
+                                  <span className="font-medium text-muted-foreground">Votre réponse : <strong className={isCorrect ? "text-green-700" : "text-red-600"}>{Array.isArray(rep) && rep.length > 0 ? rep.join(", ") : "Aucune"}</strong></span>
+                                  <span className="font-medium text-green-700">Bonne réponse : <strong>{(q.choix || []).filter(c => c.correct).map(c => c.lettre).join(", ") || "—"}</strong></span>
+                                </div>
                               </div>
                             )}
 
