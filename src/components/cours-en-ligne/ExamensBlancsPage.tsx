@@ -51,7 +51,9 @@ function clampToQuestionMax(pointsObtenus: unknown, questionMax: number): number
   return clamp(toFiniteNumber(pointsObtenus, 0), 0, Math.max(questionMax, 0));
 }
 
-const ENABLE_AI_QRC_CORRECTION = false;
+const ENABLE_AI_QRC_CORRECTION = true;
+// Mode hybride : le déterministe fournit un score instantané, l'IA ne peut qu'améliorer
+const AI_ONLY_UPGRADES = true;
 
 function normalizeAnswerText(value: unknown): string {
   return safeStr(value)
