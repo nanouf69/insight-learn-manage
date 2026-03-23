@@ -273,6 +273,7 @@ function evaluateQrcDeterministic(question: Question, response: unknown, pointsQ
      : clampToQuestionMax(Math.round((matched / total) * maxPoints * 10) / 10, maxPoints);
 
    return {
+     estCorrect: gotFullPoints,
      pointsObtenus: points,
      nombrefautes: 0,
      explication: gotFullPoints
