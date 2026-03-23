@@ -2294,8 +2294,8 @@ export default function ExamensBlancsPage({
         const rep = r.reponses?.[q.id];
         let isCorrect = false;
         if (q?.type === "QCM" && q.choix) {
-          const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
-           const donnees = (Array.isArray(rep) ? (rep as string[]) : []).sort();
+          const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
+           const donnees = safeArray<string>(rep).sort();
            isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
         } else if (q?.type === "QRC") {
           const repStr = safeStr(rep).toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
