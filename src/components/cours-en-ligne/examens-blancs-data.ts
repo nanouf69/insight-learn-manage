@@ -1332,7 +1332,7 @@ const eb1Matieres: Matiere[] = [
         image: "/cours/examens/panneau-stationnement-interdit.png",
         choix: [
           { lettre: "A", texte: "Un stationnement à durée limitée" },
-          { lettre: "B", texte: "Que du 1er au 15 de chaque mois, le stationnement est autorisé du coté des numéros impairs des immeubles bordant la rue" },
+          { lettre: "B", texte: "Que du 1er au 15 de chaque mois, le stationnement est autorisé du coté des numéros impairs des immeubles bordant la rue", correct: true },
           { lettre: "C", texte: "Que du 1 er au 15 de chaque mois, le stationnement est autorisé du coté des numéros pairs des immeubles bordant la rue" },
         ],
       },
