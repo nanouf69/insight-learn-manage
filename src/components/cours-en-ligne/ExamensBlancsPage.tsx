@@ -1573,6 +1573,7 @@ function EcranResultats({
     });
   }, [isViewingSaved, resultatsAvecIA.map(r => r.noteObtenue).join(",")]);
 
+  const totalCoef = resultatsAvecIA.reduce((acc, r) => acc + (r.coefficient || 1), 0) || 1;
   const noteGlobaleBrute = resultatsAvecIA.reduce((acc, r) => {
     return acc + normalizeNoteSur20(r.noteObtenue, r.maxPoints) * (r.coefficient || 1);
   }, 0) / totalCoef;
