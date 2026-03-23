@@ -608,8 +608,8 @@ export function RapprochementBancaire() {
                 {importing ? <RefreshCw className="h-6 w-6 text-primary animate-spin" /> : <Upload className="h-6 w-6 text-primary" />}
               </div>
               <div>
-                <p className="font-semibold">Importer un relevé CSV BNP Paribas</p>
-                <p className="text-sm text-muted-foreground">Format : Date;Libellé;Débit;Crédit;Solde — ou télécharger via l'export BNP</p>
+                <p className="font-semibold">Importer un relevé CSV — BNP Paribas ou Revolut Pro</p>
+                <p className="text-sm text-muted-foreground">Le format est détecté automatiquement (BNP : export CSV / Revolut : Transaction statement CSV)</p>
               </div>
             </div>
             <Button variant="outline" size="sm" disabled={importing} className="flex-shrink-0">
