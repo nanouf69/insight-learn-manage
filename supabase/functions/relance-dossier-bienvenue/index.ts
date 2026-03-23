@@ -19,12 +19,20 @@ Deno.serve(async (req) => {
     // 1. Get all apprenants with email
     const { data: apprenants, error: appError } = await supabase
       .from('apprenants')
-      .select('id, nom, prenom, email, formation_choisie')
+      .select('id, nom, prenom, email, formation_choisie, type_apprenant')
       .not('email', 'is', null)
       .not('email', 'eq', '');
 
     if (appError) throw appError;
-    if (!apprenants || apprenants.length === 0) {
+
+    // Exclude présentiel formations from relances
+    const PRESENTIEL_TYPES = ["vtc", "vtc-exam", "taxi", "taxi-exam", "vtc-e-presentiel", "taxi-e-presentiel", "ta-e-presentiel"];
+    const elearningApprenants = (apprenants || []).filter((a: any) => {
+      const type = (a.type_apprenant || a.formation_choisie || "").toLowerCase();
+      return !PRESENTIEL_TYPES.includes(type);
+    });
+
+    if (elearningApprenants.length === 0) {
       return new Response(JSON.stringify({ success: true, message: 'Aucun apprenant trouvé', sent: 0 }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -39,7 +47,7 @@ Deno.serve(async (req) => {
     const apprenantIdsWithDoc = new Set((docsCompletes || []).map(d => d.apprenant_id));
 
     // 3. Filter apprenants who DON'T have the welcome document
-    const apprenantsSansPdf = apprenants.filter(a => !apprenantIdsWithDoc.has(a.id));
+    const apprenantsSansPdf = elearningApprenants.filter(a => !apprenantIdsWithDoc.has(a.id));
 
     if (apprenantsSansPdf.length === 0) {
       return new Response(JSON.stringify({ success: true, message: 'Tous les apprenants ont leur document de bienvenue', sent: 0 }), {

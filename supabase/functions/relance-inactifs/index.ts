@@ -33,8 +33,16 @@ serve(async (req) => {
 
     if (fetchErr) throw fetchErr;
 
-    // Filter: active course period
+    // Exclude présentiel formations from relances
+    const PRESENTIEL_TYPES = ["vtc", "vtc-exam", "taxi", "taxi-exam", "vtc-e-presentiel", "taxi-e-presentiel", "ta-e-presentiel"];
+    const isElearning = (a: any) => {
+      const type = (a.type_apprenant || a.formation_choisie || "").toLowerCase();
+      return !PRESENTIEL_TYPES.includes(type);
+    };
+
+    // Filter: active course period + e-learning only
     const eligible = (apprenants || []).filter((a: any) => {
+      if (!isElearning(a)) return false;
       const startDate = a.date_debut_cours_en_ligne || a.date_debut_formation;
       const endDate = a.date_fin_cours_en_ligne || a.date_fin_formation;
       if (!startDate) return false;

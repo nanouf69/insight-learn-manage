@@ -46,9 +46,16 @@ serve(async (req) => {
 
     if (fetchErr) throw fetchErr;
 
-    console.log(`[relance-examens] ${(apprenants || []).length} apprenants with exam in window`);
+    // Exclude présentiel formations from relances
+    const PRESENTIEL_TYPES = ["vtc", "vtc-exam", "taxi", "taxi-exam", "vtc-e-presentiel", "taxi-e-presentiel", "ta-e-presentiel"];
+    const filteredApprenants = (apprenants || []).filter((a: any) => {
+      const type = (a.type_apprenant || a.formation_choisie || "").toLowerCase();
+      return !PRESENTIEL_TYPES.includes(type);
+    });
 
-    if (!apprenants || apprenants.length === 0) {
+    console.log(`[relance-examens] ${filteredApprenants.length} e-learning apprenants with exam in window (excluded ${(apprenants || []).length - filteredApprenants.length} présentiel)`);
+
+    if (filteredApprenants.length === 0) {
       return new Response(
         JSON.stringify({ success: true, message: "Aucun apprenant avec examen proche", count: 0 }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -56,7 +63,7 @@ serve(async (req) => {
     }
 
     // Get module completion for these apprenants
-    const ids = apprenants.map((a: any) => a.id);
+    const ids = filteredApprenants.map((a: any) => a.id);
     const { data: completions } = await supabaseAdmin
       .from("apprenant_module_completion")
       .select("apprenant_id, module_id")
@@ -72,7 +79,7 @@ serve(async (req) => {
     }
 
     // Filter: apprenants who completed less than 50% of their authorized modules
-    const behindSchedule = apprenants.filter((a: any) => {
+    const behindSchedule = filteredApprenants.filter((a: any) => {
       const authorizedModules: number[] = a.modules_autorises || [];
       if (authorizedModules.length === 0) return false;
       const completed = completionMap.get(a.id) || new Set();

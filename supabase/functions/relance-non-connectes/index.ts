@@ -36,8 +36,16 @@ serve(async (req) => {
       throw fetchErr;
     }
 
-    // Filter: course period has started (at least 3 days ago) and not ended yet
+    // Exclude présentiel formations from relances
+    const PRESENTIEL_TYPES = ["vtc", "vtc-exam", "taxi", "taxi-exam", "vtc-e-presentiel", "taxi-e-presentiel", "ta-e-presentiel"];
+    const isElearning = (a: any) => {
+      const type = (a.type_apprenant || a.formation_choisie || "").toLowerCase();
+      return !PRESENTIEL_TYPES.includes(type);
+    };
+
+    // Filter: course period has started (at least 3 days ago) and not ended yet + e-learning only
     const eligibleApprenants = (apprenants || []).filter((a: any) => {
+      if (!isElearning(a)) return false;
       const startDate = a.date_debut_cours_en_ligne || a.date_debut_formation;
       const endDate = a.date_fin_cours_en_ligne || a.date_fin_formation;
       if (!startDate) return false;
@@ -45,7 +53,6 @@ serve(async (req) => {
       const start = new Date(startDate);
       const end = endDate ? new Date(endDate) : null;
 
-      // Must have started at least 3 days ago
       const threeDaysAfterStart = new Date(start);
       threeDaysAfterStart.setDate(threeDaysAfterStart.getDate() + 3);
 

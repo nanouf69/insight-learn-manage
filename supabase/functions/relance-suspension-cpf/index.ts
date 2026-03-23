@@ -36,12 +36,18 @@ serve(async (req) => {
     const sevenDaysAgo = new Date(today);
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
+    // Exclude présentiel formations from relances
+    const PRESENTIEL_TYPES = ["vtc", "vtc-exam", "taxi", "taxi-exam", "vtc-e-presentiel", "taxi-e-presentiel", "ta-e-presentiel"];
+    const isElearning = (a: any) => {
+      const type = (a.type_apprenant || a.formation_choisie || "").toLowerCase();
+      return !PRESENTIEL_TYPES.includes(type);
+    };
+
     const eligible = (apprenants || []).filter((a: any) => {
-      // Use date_debut_cours_en_ligne or date_debut_formation as "credentials sent" date
+      if (!isElearning(a)) return false;
       const startDate = a.date_debut_cours_en_ligne || a.date_debut_formation;
       if (!startDate) return false;
       const start = new Date(startDate);
-      // Only target those whose start was between 7 and 14 days ago
       const fourteenDaysAgo = new Date(today);
       fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
       return start <= sevenDaysAgo && start >= fourteenDaysAgo;
