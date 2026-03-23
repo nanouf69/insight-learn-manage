@@ -357,10 +357,19 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
         </Card>
       ) : (
         <div className="grid gap-4">
-          {filteredSessions.map((session) => (
+          {filteredSessions.map((session) => {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const debut = new Date(session.date_debut);
+            debut.setHours(0, 0, 0, 0);
+            const fin = new Date(session.date_fin);
+            fin.setHours(0, 0, 0, 0);
+            const isCurrent = today >= debut && today <= fin;
+
+            return (
             <Card 
               key={session.id} 
-              className="hover:shadow-md transition-shadow cursor-pointer"
+              className={`hover:shadow-md transition-shadow cursor-pointer ${isCurrent ? 'border-2 border-red-500 bg-red-50 dark:bg-red-950/20' : ''}`}
               onClick={() => openSessionDetail(session)}
             >
               <CardContent className="p-5">
@@ -487,7 +496,8 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 
