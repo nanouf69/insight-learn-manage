@@ -186,8 +186,8 @@ const matiere_t3p_examen1: Matiere = {
       id: 12, type: "QCM", enonce: "Quelle est la durée du mandat des membres de la commission locale des T3P ?",
       choix: [
         { lettre: "A", texte: "3 ans", correct: true },
-        { lettre: "B", texte: "2 ans" },
-        { lettre: "C", texte: "5 ans" },
+        { lettre: "B", texte: "2 ans", correct: true },
+        { lettre: "C", texte: "5 ans", correct: true },
         { lettre: "D", texte: "1 an" }
       ]
     },
@@ -275,9 +275,9 @@ const matiere_gestion_examen1: Matiere = {
     {
       id: 7, type: "QCM", enonce: "La libération totale du capital social dans une SARL doit intervenir au plus tard dans un délai de :",
       choix: [
-        { lettre: "A", texte: "99 ans" },
+        { lettre: "A", texte: "99 ans", correct: true },
         { lettre: "B", texte: "5 ans", correct: true },
-        { lettre: "C", texte: "10 ans" },
+        { lettre: "C", texte: "10 ans", correct: true },
         { lettre: "D", texte: "1 an" }
       ]
     },
@@ -304,7 +304,7 @@ const matiere_gestion_examen1: Matiere = {
         { lettre: "A", texte: "1 mois" },
         { lettre: "B", texte: "Pas de durée minimale", correct: true },
         { lettre: "C", texte: "7 jours" },
-        { lettre: "D", texte: "15 jours" }
+        { lettre: "D", texte: "15 jours", correct: true }
       ]
     },
     {
@@ -391,7 +391,7 @@ const matiere_securite_examen1: Matiere = {
       choix: [
         { lettre: "A", texte: "3 semaines" },
         { lettre: "B", texte: "1 mois", correct: true },
-        { lettre: "C", texte: "15 jours" }
+        { lettre: "C", texte: "15 jours", correct: true }
       ]
     },
     {
@@ -520,14 +520,14 @@ const matiere_securite_examen1: Matiere = {
       choix: [
         { lettre: "A", texte: "Il est conseillé d'avoir des lunettes de rechange" },
         { lettre: "B", texte: "Oui", correct: true },
-        { lettre: "C", texte: "Non" },
+        { lettre: "C", texte: "Non", correct: true },
         { lettre: "D", texte: "Je dois avoir des lunettes de rechange à bord" }
       ]
     },
     {
       id: 17, type: "QCM", enonce: "Rouler à 120 km/h au lieu de 130 km/h permet de réduire les émissions de CO2 :",
       choix: [
-        { lettre: "A", texte: "Non" },
+        { lettre: "A", texte: "Non", correct: true },
         { lettre: "B", texte: "Oui", correct: true },
         { lettre: "C", texte: "Cela n'a aucun effet sur les émissions" }
       ]
@@ -644,7 +644,7 @@ const matiere_anglais_examen1: Matiere = {
       choix: [
         { lettre: "A", texte: "I only accept cash and card", correct: true },
         { lettre: "B", texte: "It's possible to pay by cheques" },
-        { lettre: "C", texte: "You can only pay in Euro" }
+        { lettre: "C", texte: "You can only pay in Euro", correct: true }
       ]
     },
     {
@@ -960,7 +960,7 @@ const matiere_reglementation_vtc2_examen1: Matiere = {
     {
       id: 5, type: "QCM", enonce: "L'inscription au registre VTC doit être renouvelée :",
       choix: [
-        { lettre: "A", texte: "Tous les ans" },
+        { lettre: "A", texte: "Tous les ans", correct: true },
         { lettre: "B", texte: "Tous les 5 ans", correct: true },
         { lettre: "C", texte: "Tous les 3 ans" },
         { lettre: "D", texte: "Elle est permanente" }
@@ -1083,8 +1083,8 @@ const eb1Matieres: Matiere[] = [
         enonce: "Quelle est la durée du mandat des membres de la commission locale des T3P ?",
         choix: [
           { lettre: "A", texte: "3 ans", correct: true },
-          { lettre: "B", texte: "2 ans" },
-          { lettre: "C", texte: "5 ans" },
+          { lettre: "B", texte: "2 ans", correct: true },
+          { lettre: "C", texte: "5 ans", correct: true },
           { lettre: "D", texte: "1 an" },
         ],
       },
@@ -1193,9 +1193,9 @@ const eb1Matieres: Matiere[] = [
         type: "QCM",
         enonce: "La libération totale du capital social dans une société à responsabilité limitée (SARL) doit intervenir au plus tard dans un délai de :",
         choix: [
-          { lettre: "A", texte: "99 ans" },
+          { lettre: "A", texte: "99 ans", correct: true },
           { lettre: "B", texte: "5 ans" , correct: true },
-          { lettre: "C", texte: "10 ans" },
+          { lettre: "C", texte: "10 ans", correct: true },
           { lettre: "D", texte: "1 an" },
         ],
       },
@@ -1228,7 +1228,7 @@ const eb1Matieres: Matiere[] = [
           { lettre: "A", texte: "1 mois" },
           { lettre: "B", texte: "pas de durée minimale" , correct: true },
           { lettre: "C", texte: "7 jours" },
-          { lettre: "D", texte: "15 jours" },
+          { lettre: "D", texte: "15 jours", correct: true },
         ],
       },
       {
@@ -1343,7 +1343,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "3 semaines" },
           { lettre: "B", texte: "1 mois" , correct: true },
-          { lettre: "C", texte: "15 jours" },
+          { lettre: "C", texte: "15 jours", correct: true },
         ],
       },
       {
@@ -1363,7 +1363,7 @@ const eb1Matieres: Matiere[] = [
         enonce: "Sur les routes à 2x2 voies séparées par une ligne continue, la vitesse est limitée à :",
         choix: [
           { lettre: "A", texte: "90 km/h" , correct: true },
-          { lettre: "B", texte: "110 km/h" },
+          { lettre: "B", texte: "110 km/h", correct: true },
           { lettre: "C", texte: "130 km/h" },
         ],
       },
@@ -1417,7 +1417,7 @@ const eb1Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "Il est conseillé d'avoir à bord de mon véhicule des lunettes de rechange" , correct: true },
           { lettre: "B", texte: "Oui" , correct: true },
-          { lettre: "C", texte: "Non" },
+          { lettre: "C", texte: "Non", correct: true },
           { lettre: "D", texte: "Je dois avoir des lunettes de rechange à bord de mon véhicule" },
         ],
       },
@@ -1457,7 +1457,7 @@ const eb1Matieres: Matiere[] = [
         type: "QCM",
         enonce: "Rouler à 120 km/h au lieu de 130 km/h permet de réduire les émissions de gaz carbonique (CO2) :",
         choix: [
-          { lettre: "A", texte: "Non" },
+          { lettre: "A", texte: "Non", correct: true },
           { lettre: "B", texte: "Oui" , correct: true },
           { lettre: "C", texte: "Cela n'a aucun effet sur les émissions de gaz carbonique" },
         ],
@@ -1902,7 +1902,7 @@ const eb1Matieres: Matiere[] = [
         enonce: "Quelle affirmation est vraie ?",
         choix: [
           { lettre: "A", texte: "lorsque la demande est supérieure à l’offre, les prix diminuent" },
-          { lettre: "B", texte: "lorsque la demande est inférieure à l’offre, les prix augmentent" },
+          { lettre: "B", texte: "lorsque la demande est inférieure à l’offre, les prix augmentent", correct: true },
           { lettre: "C", texte: "lorsque la demande est supérieure à l’offre, les prix augmentent" , correct: true },
         ],
       },
@@ -2051,7 +2051,7 @@ const eb1Matieres: Matiere[] = [
         enonce: "Qui délivre la carte professionnelle des conducteurs de VTC ?",
         choix: [
           { lettre: "A", texte: "la prefecture", correct: true },
-          { lettre: "B", texte: "la chambre de métiers et de l’artisanat" },
+          { lettre: "B", texte: "la chambre de métiers et de l’artisanat", correct: true },
           { lettre: "C", texte: "la Mairie" },
           { lettre: "D", texte: "les organisations professionnelles de VTC" },
         ],
@@ -2215,8 +2215,8 @@ const eb2Matieres: Matiere[] = [
         enonce: "Quelle est la durée du mandat des membres de la commission locale des T3P ?",
         choix: [
           { lettre: "A", texte: "3 ans", correct: true },
-          { lettre: "B", texte: "2 ans" },
-          { lettre: "C", texte: "5 ans" },
+          { lettre: "B", texte: "2 ans", correct: true },
+          { lettre: "C", texte: "5 ans", correct: true },
           { lettre: "D", texte: "1 an" },
         ],
       },
@@ -2355,7 +2355,7 @@ const eb2Matieres: Matiere[] = [
         enonce: "Existe-t-il une durée minimale pour un contrat à durée déterminée ?",
         choix: [
           { lettre: "A", texte: "7 jours" },
-          { lettre: "B", texte: "15 jours" },
+          { lettre: "B", texte: "15 jours", correct: true },
           { lettre: "C", texte: "Pas de durée minimale" , correct: true },
           { lettre: "D", texte: "1 mois" },
         ],
@@ -2377,8 +2377,8 @@ const eb2Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "5 ans" , correct: true },
           { lettre: "B", texte: "1 an" },
-          { lettre: "C", texte: "99 ans" },
-          { lettre: "D", texte: "10 ans" },
+          { lettre: "C", texte: "99 ans", correct: true },
+          { lettre: "D", texte: "10 ans", correct: true },
         ],
       },
       {
@@ -2508,7 +2508,7 @@ const eb2Matieres: Matiere[] = [
         type: "QCM",
         enonce: "Hors agglomération, pour dépasser un cycliste, je dois laisser au minimum entre le cycliste et mon véhicule",
         choix: [
-          { lettre: "A", texte: "1 mètre" },
+          { lettre: "A", texte: "1 mètre", correct: true },
           { lettre: "B", texte: "1,50 mètre" , correct: true },
           { lettre: "C", texte: "2 mètres" },
         ],
@@ -2549,7 +2549,7 @@ const eb2Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "6 mois" },
           { lettre: "B", texte: "2 ans" , correct: true },
-          { lettre: "C", texte: "3 ans" },
+          { lettre: "C", texte: "3 ans", correct: true },
         ],
       },
       {
@@ -3013,7 +3013,7 @@ const eb2Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "est interdit par le code du commerce", correct: true },
           { lettre: "B", texte: "n'est possible que lorsqu'un contrat annuel de type abonnement a été souscrit par le client", correct: true },
-          { lettre: "C", texte: "constitue une forme de concurrence déloyale" },
+          { lettre: "C", texte: "constitue une forme de concurrence déloyale", correct: true },
         ],
       },
       {
@@ -3115,7 +3115,7 @@ const eb2Matieres: Matiere[] = [
         enonce: "Quelle affirmation est vraie ?",
         choix: [
           { lettre: "A", texte: "lorsque la demande est supérieur à l'offre, les prix augmentent" },
-          { lettre: "B", texte: "lorsque la demande est inférieure à l'offre, les prix augmentent" },
+          { lettre: "B", texte: "lorsque la demande est inférieure à l'offre, les prix augmentent", correct: true },
           { lettre: "C", texte: "lorsque la demande est supérieur à l'offre, les prix diminuent" , correct: true },
         ],
       },
@@ -3167,7 +3167,7 @@ const eb2Matieres: Matiere[] = [
         enonce: "Le renouvellement de l'inscription au registre des VTC doit avoir lieu :",
         choix: [
           { lettre: "A", texte: "elle se fait automatiquement" },
-          { lettre: "B", texte: "tous les ans" },
+          { lettre: "B", texte: "tous les ans", correct: true },
           { lettre: "C", texte: "tous les 5 ans" , correct: true },
         ],
       },
@@ -3310,7 +3310,7 @@ const eb3Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "1 an" },
           { lettre: "B", texte: "2 ans" , correct: true },
-          { lettre: "C", texte: "5 ans" },
+          { lettre: "C", texte: "5 ans", correct: true },
           { lettre: "D", texte: "7 ans" },
         ],
       },
@@ -3668,7 +3668,7 @@ const eb3Matieres: Matiere[] = [
         type: "QCM",
         enonce: "Un excès de vitessse de 35km /h au dessus de la vitesse maximale autorisée entraine une perte de :",
         choix: [
-          { lettre: "A", texte: "1 point" },
+          { lettre: "A", texte: "1 point", correct: true },
           { lettre: "B", texte: "3 points" , correct: true },
           { lettre: "C", texte: "4 points" },
         ],
@@ -4158,7 +4158,7 @@ const eb3Matieres: Matiere[] = [
           { lettre: "A", texte: "au prix perçu par le consommateur" },
           { lettre: "B", texte: "au prix que le consommateur est prêt à payer pour acheter le produit/la prestation" , correct: true },
           { lettre: "C", texte: "au prix dont se souvient le consommateur" },
-          { lettre: "D", texte: "au prix de référence pour une catégorie de produits/prestations" },
+          { lettre: "D", texte: "au prix de référence pour une catégorie de produits/prestations", correct: true },
         ],
       },
       {
@@ -4471,7 +4471,7 @@ const eb4Matieres: Matiere[] = [
         type: "QCM",
         enonce: "Un artisan effectuant du T3P est victime d'un accident corporel de la circulation dans l'exercice de son activité, sous quel régime est-il ?",
         choix: [
-          { lettre: "A", texte: "pas de régime particulier" },
+          { lettre: "A", texte: "pas de régime particulier", correct: true },
           { lettre: "B", texte: "journalières et sont couverts au titre de la maladie." },
           { lettre: "C", texte: "de l'arrêt maladie" , correct: true },
         ],
@@ -5441,7 +5441,7 @@ const eb4Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "les organisations professionnelles de VTC" },
           { lettre: "B", texte: "la préfecture" , correct: true },
-          { lettre: "C", texte: "la chambre de métiers et de l'artisanat" },
+          { lettre: "C", texte: "la chambre de métiers et de l'artisanat", correct: true },
           { lettre: "D", texte: "la Mairie" },
         ],
       },
@@ -5460,7 +5460,7 @@ const eb4Matieres: Matiere[] = [
         type: "QCM",
         enonce: "Quelle est l'ancienneté maximale d'un véhicule utilisé en exploitation VTC ?",
         choix: [
-          { lettre: "A", texte: "3 ans" },
+          { lettre: "A", texte: "3 ans", correct: true },
           { lettre: "B", texte: "4 ans" },
           { lettre: "C", texte: "Il n'y a pas d'ancienneté maximale" },
           { lettre: "D", texte: "7 ans" , correct: true },
@@ -5674,8 +5674,8 @@ const eb5Matieres: Matiere[] = [
         enonce: "Selon le code commerce, les documents comptables doivent être conservés :",
         choix: [
           { lettre: "A", texte: "un an" },
-          { lettre: "B", texte: "3 ans" },
-          { lettre: "C", texte: "5 ans" },
+          { lettre: "B", texte: "3 ans", correct: true },
+          { lettre: "C", texte: "5 ans", correct: true },
           { lettre: "D", texte: "10 ans" , correct: true },
         ],
       },
@@ -5708,7 +5708,7 @@ const eb5Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "99 ans" , correct: true },
           { lettre: "B", texte: "25 ans" },
-          { lettre: "C", texte: "10 ans" },
+          { lettre: "C", texte: "10 ans", correct: true },
           { lettre: "D", texte: "50 ans" },
         ],
       },
@@ -5852,7 +5852,7 @@ const eb5Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "10 minutes" },
           { lettre: "B", texte: "15minutes" },
-          { lettre: "C", texte: "8 minutes" },
+          { lettre: "C", texte: "8 minutes", correct: true },
         ],
       },
       {
@@ -5884,7 +5884,7 @@ const eb5Matieres: Matiere[] = [
           { lettre: "A", texte: "La perte de deux points du permis de conduire" },
           { lettre: "B", texte: "Une contravention de quatrième classe" , correct: true },
           { lettre: "C", texte: "La perte de quatre points du permis de conduire" , correct: true },
-          { lettre: "D", texte: "Une contravention de première classe" },
+          { lettre: "D", texte: "Une contravention de première classe", correct: true },
         ],
       },
       {
@@ -5902,7 +5902,7 @@ const eb5Matieres: Matiere[] = [
         type: "QCM",
         enonce: "Combien de points perdez-vous en cas de chevauchement d'une ligne continue ?",
         choix: [
-          { lettre: "A", texte: "3 points" },
+          { lettre: "A", texte: "3 points", correct: true },
           { lettre: "B", texte: "1 point" , correct: true },
           { lettre: "C", texte: "2 points" },
         ],
@@ -6284,7 +6284,7 @@ const eb5Matieres: Matiere[] = [
         type: "QCM",
         enonce: "the yellow vests block the motorways",
         choix: [
-          { lettre: "A", texte: "the yellow vests are blocking the motorways" },
+          { lettre: "A", texte: "the yellow vests are blocking the motorways", correct: true },
           { lettre: "B", texte: "the yellew vests blocked the motorways" , correct: true },
           { lettre: "C", texte: "the yellow vests will block the ùotorways" },
         ],
@@ -6442,7 +6442,7 @@ const eb5Matieres: Matiere[] = [
         enonce: "Le matériel informatique peut être amorti sur :",
         choix: [
           { lettre: "A", texte: "3 ans" , correct: true },
-          { lettre: "B", texte: "5 ans" },
+          { lettre: "B", texte: "5 ans", correct: true },
           { lettre: "C", texte: "1 an" },
         ],
       },
@@ -6636,8 +6636,8 @@ const eb6Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "5 ans" , correct: true },
           { lettre: "B", texte: "1 an" },
-          { lettre: "C", texte: "2 ans" },
-          { lettre: "D", texte: "10 ans" },
+          { lettre: "C", texte: "2 ans", correct: true },
+          { lettre: "D", texte: "10 ans", correct: true },
         ],
       },
       {
@@ -7012,7 +7012,7 @@ const eb6Matieres: Matiere[] = [
           { lettre: "A", texte: "réduit considérablement la distance d’arrêt" },
           { lettre: "B", texte: "permet de ne pas allonger la distance d’arrêt" , correct: true },
           { lettre: "C", texte: "aide à maintenir la direction du véhicule" , correct: true },
-          { lettre: "D", texte: "Une contravention de quatrième classe" },
+          { lettre: "D", texte: "Une contravention de quatrième classe", correct: true },
         ],
       },
       {
@@ -7023,7 +7023,7 @@ const eb6Matieres: Matiere[] = [
           { lettre: "A", texte: "La perte de quatre points de permis de conduire" , correct: true },
           { lettre: "B", texte: "La perte de deux points de permis de conduire" },
           { lettre: "C", texte: "Une contravention de première classe" , correct: true },
-          { lettre: "D", texte: "Une contravention de quatrième classe" },
+          { lettre: "D", texte: "Une contravention de quatrième classe", correct: true },
         ],
       },
       {
@@ -7169,7 +7169,7 @@ const eb6Matieres: Matiere[] = [
         choix: [
           { lettre: "A", texte: "La Métropole" , correct: true },
           { lettre: "B", texte: "La régie des transports" , correct: true },
-          { lettre: "C", texte: "La ville de Lyon" },
+          { lettre: "C", texte: "La ville de Lyon", correct: true },
           { lettre: "D", texte: "Le conseil Départemental" },
         ],
       },
@@ -7199,8 +7199,8 @@ const eb6Matieres: Matiere[] = [
         enonce: "A quoi fait référence \"la Capitale des Gaules\" ?",
         choix: [
           { lettre: "A", texte: "La ville de Lyon" , correct: true },
-          { lettre: "B", texte: "La Métropole" },
-          { lettre: "C", texte: "La régie des transports" },
+          { lettre: "B", texte: "La Métropole", correct: true },
+          { lettre: "C", texte: "La régie des transports", correct: true },
         ],
       },
       {
@@ -7624,8 +7624,8 @@ const eb6Matieres: Matiere[] = [
         type: "QCM",
         enonce: "Combien de temps est valide la carte VTC ?",
         choix: [
-          { lettre: "A", texte: "2 ans" },
-          { lettre: "B", texte: "3 ans" },
+          { lettre: "A", texte: "2 ans", correct: true },
+          { lettre: "B", texte: "3 ans", correct: true },
           { lettre: "C", texte: "4 ans" },
           { lettre: "D", texte: "5 ans" , correct: true },
         ],
