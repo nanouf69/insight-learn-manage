@@ -1183,14 +1183,14 @@ function EcranResultats({
                         isLoadingIA = true;
                       } else if (corrIA === "error") {
                         if (isCalc) {
-                          const repStr = ((rep as string) || "").replace(/\s/g, "").toLowerCase();
+                          const repStr = safeStr(rep).replace(/\s/g, "").toLowerCase();
                           const hasResult = (q.reponses_possibles || []).some(rr => repStr.includes(rr.replace(/\s/g, "").toLowerCase()));
-                          const hasCalcDetail = /\d+\s*[\/×x\*\-\+]\s*\d+/.test((rep as string) || "") || /=\s*\d/.test((rep as string) || "");
+                          const hasCalcDetail = /\d+\s*[\/×x\*\-\+]\s*\d+/.test(safeStr(rep)) || /=\s*\d/.test(safeStr(rep));
                           if (hasResult && hasCalcDetail) { isCorrect = true; pointsObtenus = pts; }
                           else if (hasResult) { pointsObtenus = Math.round(pts * 5) / 10; correctionDetail = `⚠️ Résultat correct mais détail du calcul manquant → ${pointsObtenus}/${pts} pts`; }
                           else { correctionDetail = "❌ Résultat incorrect."; }
                         } else {
-                          const repStr = ((rep as string) || "").toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+                          const repStr = safeStr(rep).toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
                           const motsCles = q.reponses_possibles || [];
                           let nbTrouvees = 0;
                           motsCles.forEach(mc => { const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, ""); if (repStr.includes(mcN)) nbTrouvees++; });
