@@ -1327,7 +1327,8 @@ const eb1Matieres: Matiere[] = [
       {
         id: 1,
         type: "QCM",
-        enonce: "Ce panneau m'indique : [Une image contenant cercle, Police, logo, symbole Le contenu généré par l’IA peut être incorrect.]",
+        enonce: "Ce panneau m'indique :",
+        image: "/cours/examens/panneau-stationnement-interdit.png",
         choix: [
           { lettre: "A", texte: "Un stationnement à durée limitée" },
           { lettre: "B", texte: "Que du 1er au 15 de chaque mois, le stationnement est autorisé du coté des numéros impairs des immeubles bordant la rue" },
