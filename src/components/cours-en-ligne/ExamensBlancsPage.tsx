@@ -260,12 +260,13 @@ function evaluateQrcDeterministic(question: Question, response: unknown, pointsQ
   ).length;
   const total = expectedElements.length;
 
-  // Règle stricte: hors questions de type "liste", il faut tous les éléments.
-  // Exception "liste" (citez/donnez/quels...): seuil minimal demandé (ou 3 par défaut).
+  // Règle : le seuil de 3 ne s'applique QUE si la question a PLUS de 3 réponses possibles.
+  // Si total <= 3, il faut TOUS les éléments, même pour les questions de type liste.
   const requestedCount = extractRequestedElementsCount(question.enonce || "");
   const isEnumerative = isEnumerativeQrcQuestion(question);
-  const requiredForFullPoints = isEnumerative
-    ? Math.max(1, Math.min(total, requestedCount ?? 3))
+  const seuil = requestedCount ?? 3;
+  const requiredForFullPoints = isEnumerative && total > seuil
+    ? seuil
     : total;
 
   const gotFullPoints = matched >= requiredForFullPoints;
