@@ -27,6 +27,29 @@ function toTimestamp(value: unknown): number {
   const ts = new Date(String(value ?? "")).getTime();
   return Number.isFinite(ts) ? ts : 0;
 }
+
+function toFiniteNumber(value: unknown, fallback = 0): number {
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
+
+function normalizeNoteSur20(scoreObtenu: unknown, scoreMax: unknown, fallback?: unknown): number {
+  const safeMax = Math.max(toFiniteNumber(scoreMax, 0), 0);
+  if (safeMax <= 0) {
+    return Number(clamp(toFiniteNumber(fallback, 0), 0, 20).toFixed(1));
+  }
+
+  const safeScore = clamp(toFiniteNumber(scoreObtenu, 0), 0, safeMax);
+  return Number(((safeScore / safeMax) * 20).toFixed(1));
+}
+
+function clampToQuestionMax(pointsObtenus: unknown, questionMax: number): number {
+  return clamp(toFiniteNumber(pointsObtenus, 0), 0, Math.max(questionMax, 0));
+}
 import ExamensBlancsEditor from "./ExamensBlancsEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -119,7 +142,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
     if (!apprenantId) return;
     supabase
       .from("apprenant_quiz_results" as any)
-      .select("quiz_id, matiere_id, matiere_nom, note_sur_20, completed_at, created_at")
+      .select("quiz_id, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, completed_at, created_at")
       .eq("apprenant_id", apprenantId)
       .eq("quiz_type", "examen_blanc")
       .then(({ data }) => {
@@ -144,7 +167,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
             scores[r.quiz_id].push({
               matiere_id: r.matiere_id,
               matiere_nom: r.matiere_nom,
-              note_sur_20: r.note_sur_20 ?? 0,
+              note_sur_20: normalizeNoteSur20(r.score_obtenu, r.score_max, r.note_sur_20),
             });
           });
           setExamScores(scores);
@@ -871,21 +894,25 @@ function EcranResultats({
         } else if (q?.type === "QRC") {
           const correction = cache[q.id];
           if (correction && correction !== "loading" && correction !== "error") {
-            noteRecalculee += correction.pointsObtenus;
+            noteRecalculee += clampToQuestionMax(
+              correction.pointsObtenus,
+              getPointsParQuestion(matiere.id, q?.type || "QRC")
+            );
           }
         }
       });
 
-      const safeMax = resultat.maxPoints || 1;
-      const noteSur20 = Number(((noteRecalculee / safeMax) * 20).toFixed(1));
+      const safeMax = Math.max(toFiniteNumber(resultat.maxPoints, 0), 0);
+      const noteRecalculeeSecurisee = safeMax > 0 ? clamp(noteRecalculee, 0, safeMax) : Math.max(noteRecalculee, 0);
+      const noteSur20 = normalizeNoteSur20(noteRecalculeeSecurisee, safeMax);
 
       // Update the existing row with corrections
       await supabase
         .from("apprenant_quiz_results" as any)
         .update({
-          score_obtenu: noteRecalculee,
+          score_obtenu: noteRecalculeeSecurisee,
           note_sur_20: noteSur20,
-          reussi: noteRecalculee >= ((resultat.noteEliminatoire || 0) / (resultat.noteSur || 20)) * safeMax,
+          reussi: noteRecalculeeSecurisee >= ((resultat.noteEliminatoire || 0) / (resultat.noteSur || 20)) * safeMax,
           details: {
             questions: (resultat as any).details?.questions || [],
             reponses: resultat.reponses,
@@ -1025,7 +1052,10 @@ function EcranResultats({
       } else if (q?.type === "QRC") {
         const correction = cache[q.id];
         if (correction && correction !== "loading" && correction !== "error") {
-          noteRecalculee += correction.pointsObtenus;
+          noteRecalculee += clampToQuestionMax(
+            correction.pointsObtenus,
+            getPointsParQuestion(matiere.id, q?.type || "QRC")
+          );
         }
       }
     });
@@ -1034,20 +1064,20 @@ function EcranResultats({
       .filter(q => q?.type === "QRC")
       .every(q => cache[q.id] && cache[q.id] !== "loading");
 
-    const safeMaxPoints = r.maxPoints || 1;
+    const safeMaxPoints = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
+    const noteRecalculeeSecurisee = safeMaxPoints > 0 ? clamp(noteRecalculee, 0, safeMaxPoints) : Math.max(noteRecalculee, 0);
     const safeNoteSur = r.noteSur || 20;
 
     return {
       ...r,
-      noteObtenue: toutTermine ? noteRecalculee : r.noteObtenue,
-      admis: toutTermine ? noteRecalculee >= (r.noteEliminatoire / safeNoteSur) * safeMaxPoints : r.admis,
+      noteObtenue: toutTermine ? noteRecalculeeSecurisee : r.noteObtenue,
+      admis: toutTermine ? noteRecalculeeSecurisee >= (r.noteEliminatoire / safeNoteSur) * safeMaxPoints : r.admis,
     };
   });
 
   const totalCoef = resultatsAvecIA.reduce((acc, r) => acc + (r.coefficient || 1), 0) || 1;
   const noteGlobale = resultatsAvecIA.reduce((acc, r) => {
-    const safeMax = r.maxPoints || 1;
-    return acc + (r.noteObtenue / safeMax * 20) * (r.coefficient || 1);
+    return acc + normalizeNoteSur20(r.noteObtenue, r.maxPoints) * (r.coefficient || 1);
   }, 0) / totalCoef;
   const hasNoteEliminatoire = resultatsAvecIA.some(r => !r.admis);
   const moyenneSuffisante = noteGlobale >= 10;
@@ -1124,10 +1154,13 @@ function EcranResultats({
           <h4 className="font-semibold text-lg" style={{ color: '#0D2540' }}>Résultats par matière</h4>
         </div>
         {resultatsAvecIA.map((r, mi) => {
-          const safeMaxPoints = r.maxPoints || 1;
-          const noteSur20 = (r.noteObtenue / safeMaxPoints * 20);
+          const safeMaxPoints = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
+          const noteObtenueSafe = safeMaxPoints > 0
+            ? clamp(toFiniteNumber(r.noteObtenue, 0), 0, safeMaxPoints)
+            : Math.max(toFiniteNumber(r.noteObtenue, 0), 0);
+          const noteSur20 = normalizeNoteSur20(noteObtenueSafe, safeMaxPoints);
           const matiereEnCours = Object.values(correctionsIA[mi] || {}).some(v => v === "loading");
-          const pctScore = safeMaxPoints > 0 ? Math.min((r.noteObtenue / safeMaxPoints) * 100, 100) : 0;
+          const pctScore = safeMaxPoints > 0 ? Math.min((noteObtenueSafe / safeMaxPoints) * 100, 100) : 0;
           const matiere = examen.matieres[mi];
           const cacheMatiere = correctionsIA[mi] || {};
           const questionsSafe = matiere ? (matiere.questions || []).filter(q => q && q?.type !== undefined) : [];
@@ -1153,9 +1186,9 @@ function EcranResultats({
                     <div className="flex items-center gap-3">
                       <div className="text-right">
                         <span className="text-lg font-bold" style={{ color: r.admis ? '#00B4D8' : '#ef4444' }}>
-                          {r.noteObtenue} / {r.maxPoints} pts
+                          {noteObtenueSafe} / {safeMaxPoints} pts
                         </span>
-                        <p className="text-xs text-muted-foreground">= {isFinite(noteSur20) ? noteSur20.toFixed(1) : "0.0"} / 20</p>
+                        <p className="text-xs text-muted-foreground">= {noteSur20.toFixed(1)} / 20</p>
                       </div>
                       {r.admis ? (
                         <CheckCircle2 className="w-5 h-5" style={{ color: '#00B4D8' }} />
@@ -1765,16 +1798,26 @@ export default function ExamensBlancsPage({
         const row = rowsByMatiereId.get(matiere.id) || rowsByMatiereNom.get(matiere.nom);
         if (!row) return null;
         const savedCorrections = row.details?.correctionsIA || null;
+        const rawScoreMax = toFiniteNumber(row.score_max, 0);
+        const computedMax = calculerMaxPoints(matiere);
+        const safeScoreMax = rawScoreMax > 0 ? rawScoreMax : computedMax;
+        const safeScoreObtenu = safeScoreMax > 0
+          ? clamp(toFiniteNumber(row.score_obtenu, 0), 0, safeScoreMax)
+          : Math.max(toFiniteNumber(row.score_obtenu, 0), 0);
+        const safeNoteSur = matiere.noteSur || 20;
+        const admisCalcule = safeScoreMax > 0
+          ? safeScoreObtenu >= ((matiere.noteEliminatoire || 0) / safeNoteSur) * safeScoreMax
+          : Boolean(row.reussi);
 
         return {
           matiereId: row.matiere_id || matiere.id,
           nomMatiere: row.matiere_nom || matiere.nom,
-          noteObtenue: row.score_obtenu,
-          maxPoints: row.score_max,
-          noteSur: matiere.noteSur || 20,
+          noteObtenue: safeScoreObtenu,
+          maxPoints: safeScoreMax,
+          noteSur: safeNoteSur,
           noteEliminatoire: matiere.noteEliminatoire || 0,
           coefficient: matiere.coefficient || 1,
-          admis: row.reussi ?? true,
+          admis: admisCalcule,
           reponses: row.details?.reponses || {},
           correctionsIA: savedCorrections,
         };
@@ -1852,15 +1895,16 @@ export default function ExamensBlancsPage({
     }
     const note = calculerNote(matiere, reponses);
     const maxPoints = calculerMaxPoints(matiere);
+    const noteSecurisee = maxPoints > 0 ? clamp(note, 0, maxPoints) : Math.max(note, 0);
     const resultat: ResultatMatiere = {
       matiereId: matiere.id,
       nomMatiere: matiere.nom,
-      noteObtenue: note,
+      noteObtenue: noteSecurisee,
       maxPoints,
       noteSur: matiere.noteSur,
       noteEliminatoire: matiere.noteEliminatoire,
       coefficient: matiere.coefficient,
-      admis: maxPoints > 0 ? note >= (matiere.noteEliminatoire / (matiere.noteSur || 20)) * maxPoints : false,
+      admis: maxPoints > 0 ? noteSecurisee >= (matiere.noteEliminatoire / (matiere.noteSur || 20)) * maxPoints : false,
       reponses,
     };
 
@@ -1898,6 +1942,12 @@ export default function ExamensBlancsPage({
                 : (q.reponseQRC || (q.reponses_possibles || []).join(" / ")),
             };
           }).filter(Boolean) : [];
+
+          const safeScoreMax = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
+          const safeScoreObtenu = safeScoreMax > 0
+            ? clamp(toFiniteNumber(r.noteObtenue, 0), 0, safeScoreMax)
+            : Math.max(toFiniteNumber(r.noteObtenue, 0), 0);
+
           return {
             apprenant_id: apprenantId,
             user_id: userId,
@@ -1906,10 +1956,12 @@ export default function ExamensBlancsPage({
             quiz_titre: examenChoisi.titre,
             matiere_id: r.matiereId,
             matiere_nom: r.nomMatiere,
-            score_obtenu: r.noteObtenue,
-            score_max: r.maxPoints,
-            note_sur_20: Number(((r.noteObtenue / (r.maxPoints || 1)) * 20).toFixed(1)),
-            reussi: r.admis,
+            score_obtenu: safeScoreObtenu,
+            score_max: safeScoreMax,
+            note_sur_20: normalizeNoteSur20(safeScoreObtenu, safeScoreMax),
+            reussi: safeScoreMax > 0
+              ? safeScoreObtenu >= ((r.noteEliminatoire || 0) / (r.noteSur || 20)) * safeScoreMax
+              : Boolean(r.admis),
             duree_secondes: Math.round(duree / allResults.length),
             details: { questions: questionDetails, reponses: r.reponses },
           };
