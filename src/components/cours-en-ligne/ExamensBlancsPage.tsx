@@ -1455,8 +1455,8 @@ function EcranResultats({
           qSafe.forEach(q => {
             const rep = r.reponses?.[q.id];
             if (q?.type === "QCM" && q.choix) {
-              const correctes = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
-               const donnees = (Array.isArray(rep) ? (rep as string[]) : []).sort();
+              const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
+               const donnees = safeArray<string>(rep).sort();
                if (JSON.stringify(correctes) !== JSON.stringify(donnees)) nbFaussesTop++;
             } else if (q?.type === "QRC") {
               const corrIA = correctionsIA[mi]?.[q.id];
