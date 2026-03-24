@@ -426,9 +426,11 @@ function QuestionEditor({
 function MatiereEditor({
   matiere,
   onChange,
+  examTitre,
 }: {
   matiere: Matiere;
   onChange: (m: Matiere) => void;
+  examTitre?: string;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [editingQId, setEditingQId] = useState<number | null>(null);
@@ -520,7 +522,7 @@ function MatiereEditor({
       >
         <div className="flex items-center gap-3">
           {expanded ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
-          <span className="font-bold text-base">{matiere.nom}</span>
+          <span className="font-bold text-lg">{matiere.nom}{examTitre ? <span className="ml-2 text-sm font-semibold text-muted-foreground">— {examTitre}</span> : null}</span>
         </div>
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
@@ -995,6 +997,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
                 <MatiereEditor
                   key={m.id}
                   matiere={m}
+                  examTitre={`${examenSel.type} — Examen Blanc N°${examenSel.numero}`}
                   onChange={updated => handleMatiereChange(m.id, updated)}
                 />
               ))}
