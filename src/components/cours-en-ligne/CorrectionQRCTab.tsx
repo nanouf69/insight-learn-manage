@@ -117,10 +117,10 @@ const CorrectionQRCTab = () => {
 
         const app = apprenantMap[r.apprenant_id] || { nom: "Inconnu", prenom: "" };
 
-        // Auto score from keyword matching (before any manual override)
-        const autoScore = correction && typeof correction === "object" && !correction.explication?.includes("manuelle")
-          ? correction.pointsObtenus ?? null
-          : null;
+        // Auto score: always show what the keyword engine gave (or 0 if no auto-correction ran)
+        const autoScore = correction && typeof correction === "object"
+          ? (correction.pointsObtenus ?? 0)
+          : 0;
         const autoExplication = correction && typeof correction === "object"
           ? correction.explication || null
           : null;
@@ -143,8 +143,8 @@ const CorrectionQRCTab = () => {
           pointsObtenus: correction && typeof correction === "object" ? correction.pointsObtenus : null,
           corrigeManuel: !!hasManualCorrection,
           completedAt: r.completed_at,
-          autoScore: autoScore != null ? autoScore : (correction && typeof correction === "object" ? correction.pointsObtenus : null),
-          autoExplication: autoExplication,
+          autoScore,
+          autoExplication,
           noteSur20: r.note_sur_20 ?? null,
           scoreMatiereObtenu: r.score_obtenu ?? 0,
           scoreMatiereMax: r.score_max ?? 20,
