@@ -145,6 +145,9 @@ const CorrectionQRCTab = () => {
           completedAt: r.completed_at,
           autoScore: autoScore != null ? autoScore : (correction && typeof correction === "object" ? correction.pointsObtenus : null),
           autoExplication: autoExplication,
+          noteSur20: r.note_sur_20 ?? null,
+          scoreMatiereObtenu: r.score_obtenu ?? 0,
+          scoreMatiereMax: r.score_max ?? 20,
         });
       }
     }
