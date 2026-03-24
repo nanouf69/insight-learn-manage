@@ -206,7 +206,31 @@ const CorrectionQRCTab = () => {
 
       const correctionsIA = details.correctionsIA || {};
 
-      for (const q of details.questions) {
+      // Build question list: prefer details.questions, but fall back to examen definition + correctionsIA
+      let questionList = Array.isArray(details.questions) && details.questions.length > 0
+        ? details.questions
+        : null;
+
+      // If questions array is empty but correctionsIA exists, reconstruct from examen definition
+      if (!questionList && matiere && Object.keys(correctionsIA).length > 0) {
+        const reponses = details.reponses || {};
+        questionList = (matiere.questions || []).map((mq: any) => {
+          if (!mq) return null;
+          return {
+            questionId: mq.id,
+            enonce: mq.enonce || "",
+            type: mq.type || "QCM",
+            reponseEleve: reponses[mq.id] ?? null,
+            reponseCorrecte: mq.type === "QCM" && mq.choix
+              ? mq.choix.filter((c: any) => c.correct).map((c: any) => c.lettre)
+              : (mq.reponseQRC || (mq.reponses_possibles || []).join(" / ")),
+          };
+        }).filter(Boolean);
+      }
+
+      if (!questionList) continue;
+
+      for (const q of questionList) {
         if (q.type !== "QRC") continue;
 
         const pts = getPointsParQuestion(r.matiere_id || "", "QRC", matiere || undefined);
