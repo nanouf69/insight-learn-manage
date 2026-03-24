@@ -521,37 +521,46 @@ export default function ApprenantActivityReport({ onBack }: Props) {
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Module</TableHead>
-                    <TableHead>Nombre d'accès</TableHead>
-                    <TableHead>Dernière consultation</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {uniqueModules.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
-                        Aucun module consulté
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {uniqueModules.map(([modId, modNom]) => {
-                    const modActivites = activites.filter(a => a.module_id === modId && a.action_type === "open_module");
-                    const last = modActivites[0];
-                    return (
-                      <TableRow key={modId}>
-                        <TableCell className="font-medium">{modNom}</TableCell>
-                        <TableCell>{modActivites.length}</TableCell>
-                        <TableCell>
-                          {last ? format(parseISO(last.occurred_at), "dd/MM/yyyy à HH:mm", { locale: fr }) : "—"}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+                   <TableRow>
+                     <TableHead>Module</TableHead>
+                     <TableHead>Nombre d'accès</TableHead>
+                     <TableHead>Dernière consultation</TableHead>
+                     <TableHead>Terminé</TableHead>
+                   </TableRow>
+                 </TableHeader>
+                 <TableBody>
+                   {uniqueModules.length === 0 && (
+                     <TableRow>
+                       <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                         Aucun module consulté
+                       </TableCell>
+                     </TableRow>
+                   )}
+                   {uniqueModules.map(([modId, modNom]) => {
+                     const modActivites = activites.filter(a => a.module_id === modId && a.action_type === "open_module");
+                     const last = modActivites[0];
+                     const done = completedModuleIds.has(modId);
+                     return (
+                       <TableRow key={modId}>
+                         <TableCell className="font-medium">{modNom}</TableCell>
+                         <TableCell>{modActivites.length}</TableCell>
+                         <TableCell>
+                           {last ? format(parseISO(last.occurred_at), "dd/MM/yyyy à HH:mm", { locale: fr }) : "—"}
+                         </TableCell>
+                         <TableCell>
+                           {done ? (
+                             <span className="inline-flex items-center gap-1 text-green-600 font-semibold"><CheckCircle2 className="w-4 h-4" /> Oui</span>
+                           ) : (
+                             <span className="inline-flex items-center gap-1 text-red-500 font-semibold"><XCircle className="w-4 h-4" /> Non</span>
+                           )}
+                         </TableCell>
+                       </TableRow>
+                     );
+                   })}
+                 </TableBody>
+               </Table>
+             </CardContent>
+           </Card>
         </div>
       )}
 
