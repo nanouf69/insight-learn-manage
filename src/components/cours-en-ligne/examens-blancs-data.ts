@@ -20,6 +20,7 @@ export interface Choix {
   lettre: string;
   texte: string;
   correct?: boolean;
+  explication?: string;
 }
 
 export interface Question {
