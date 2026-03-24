@@ -2079,12 +2079,14 @@ export default function ExamensBlancsPage({
   apprenantId,
   userId,
   apprenantType,
+  isAdmin,
 }: {
   defaultBilanId?: string | null;
   onBilanConsumed?: () => void;
   apprenantId?: string | null;
   userId?: string | null;
   apprenantType?: string | null;
+  isAdmin?: boolean;
 } = {}) {
   // Restore exam session from sessionStorage
   const EXAM_SESSION_KEY = `exam_session_${apprenantId || "anon"}`;
