@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { BookOpen, Layers, GraduationCap, Plus, Users, TrendingUp, AlertTriangle, FileText, Monitor, ArrowUp, ArrowDown, Pencil, Trash2, ClipboardList, Trophy, Eye, Search, X, ChevronRight, BarChart3, TableProperties, CheckCircle2 } from "lucide-react";
+import { BookOpen, Layers, GraduationCap, Plus, Users, TrendingUp, AlertTriangle, FileText, Monitor, ArrowUp, ArrowDown, Pencil, Trash2, ClipboardList, Trophy, Eye, Search, X, ChevronRight, BarChart3, TableProperties, CheckCircle2, MessageSquareText } from "lucide-react";
 import { MODULES_DATA } from "./formations-data";
 import { ALL_MODULES, FORMATION_MODULES } from "./modules-config";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,6 +14,7 @@ import ExamensBlancsPage from "./ExamensBlancsPage";
 import ExamensBlancsEditor from "./ExamensBlancsEditor";
 import CoursPublic from "@/pages/CoursPublic";
 import ApprenantActivityReport from "./ApprenantActivityReport";
+import CorrectionQRCTab from "./CorrectionQRCTab";
 import ResultatsSessionPage from "./ResultatsSessionPage";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -179,7 +180,7 @@ const ApprenantSearchPreview = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full max-w-4xl grid-cols-6">
+        <TabsList className="flex w-full max-w-5xl flex-wrap">
           <TabsTrigger value="accueil" className="flex items-center gap-2">
             <BookOpen className="w-4 h-4" />
             Accueil
@@ -207,6 +208,10 @@ const ApprenantSearchPreview = () => {
           <TabsTrigger value="resultats-session" className="flex items-center gap-2">
             <TableProperties className="w-4 h-4" />
             Résultats
+          </TabsTrigger>
+          <TabsTrigger value="correction-qrc" className="flex items-center gap-2">
+            <MessageSquareText className="w-4 h-4" />
+            Correction QRC
           </TabsTrigger>
         </TabsList>
 
@@ -476,6 +481,9 @@ const ApprenantSearchPreview = () => {
         {/* Résultats par session */}
         <TabsContent value="resultats-session" className="mt-6">
           <ResultatsSessionPage />
+        </TabsContent>
+        <TabsContent value="correction-qrc" className="mt-6">
+          <CorrectionQRCTab />
         </TabsContent>
       </Tabs>
     </div>
