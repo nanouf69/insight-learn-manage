@@ -1948,7 +1948,7 @@ function EcranResultats({
               if (corrIA && corrIA !== "loading" && corrIA !== "error") {
                 if (!corrIA.estCorrect) nbFaussesTop++;
               } else {
-                const fallback = evaluateQrcDeterministic(q, rep, getPointsParQuestion(matiere.id, q?.type || "QRC"), matiere);
+                const fallback = evaluateQrcDeterministic(q, rep, getPointsParQuestion(matiere.id, q?.type || "QRC", matiere));
                 if (!fallback.estCorrect) nbFaussesTop++;
               }
             }
