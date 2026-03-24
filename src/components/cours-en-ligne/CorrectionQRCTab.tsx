@@ -209,9 +209,7 @@ const CorrectionQRCTab = () => {
       for (const q of details.questions) {
         if (q.type !== "QRC") continue;
 
-        const pts = matiere
-          ? getPointsParQuestion(matiere.id, "QRC", matiere)
-          : 2;
+        const pts = getPointsParQuestion(r.matiere_id || "", "QRC", matiere || undefined);
 
         const correction = correctionsIA[q.questionId];
         const hasManualCorrection = correction && typeof correction === "object" && correction.explication?.includes("manuelle");
