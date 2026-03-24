@@ -285,9 +285,15 @@ function QuestionEditor({
   return (
     <div className="border-2 border-primary/30 rounded-lg p-4 bg-primary/5 space-y-4">
       <div className="flex items-center justify-between">
-        <Badge variant={question?.type === "QCM" ? "default" : "secondary"}>
-          {question?.type} — Q{question.id}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant={qType === "QCM" ? "default" : "secondary"}>
+            {qType} — Q{question.id}
+          </Badge>
+          <Button size="sm" variant="outline" onClick={toggleType} className="gap-1 h-7 text-xs">
+            <ArrowLeftRight className="w-3 h-3" />
+            → {qType === "QCM" ? "QRC" : "QCM"}
+          </Button>
+        </div>
         <div className="flex gap-2">
           <Button size="sm" variant="ghost" onClick={onCancel}>
             <X className="w-4 h-4" />
