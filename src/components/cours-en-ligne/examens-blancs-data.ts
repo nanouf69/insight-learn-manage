@@ -8153,10 +8153,15 @@ export const examenBlanc1VA: ExamenBlanc = {
   matieres: [matiere_reglementation_vtc_examen1, matiere_reglementation_vtc2_examen1]
 };
 
+export const EXAMENS_BLANCS_TA: ExamenBlanc[] = [
+  examenBlanc1TA, examenBlanc2TA, examenBlanc3TA,
+  examenBlanc4TA, examenBlanc5TA, examenBlanc6TA,
+];
+
 export const tousLesExamens: ExamenBlanc[] = [
   ...EXAMENS_BLANCS_VTC,
   ...EXAMENS_BLANCS_TAXI,
-  examenBlanc1TA,
+  ...EXAMENS_BLANCS_TA,
   examenBlanc1VA,
   bilanExamenTaxi, bilanExamenVTC, bilanExamenTA, bilanExamenVA,
 ];
