@@ -120,7 +120,7 @@ function recomputeQrcAutoScore(questionDef: any, reponseEleve: string, pointsMax
   const gotFullPoints = matched >= requiredForFullPoints;
   const points = gotFullPoints
     ? pointsMax
-    : Math.round((matched / requiredForFullPoints) * pointsMax * 10) / 10;
+    : Math.floor((matched / requiredForFullPoints) * pointsMax * 2) / 2;
 
   return {
     autoScore: Math.min(points, pointsMax),
