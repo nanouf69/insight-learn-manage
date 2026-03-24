@@ -2180,6 +2180,7 @@ export default function ExamensBlancsPage({
   userId,
   apprenantType,
   isAdmin,
+  isPresentiel,
 }: {
   defaultBilanId?: string | null;
   onBilanConsumed?: () => void;
@@ -2187,6 +2188,7 @@ export default function ExamensBlancsPage({
   userId?: string | null;
   apprenantType?: string | null;
   isAdmin?: boolean;
+  isPresentiel?: boolean;
 } = {}) {
   // Restore exam session from sessionStorage
   const EXAM_SESSION_KEY = `exam_session_${apprenantId || "anon"}`;
