@@ -192,7 +192,12 @@ const CorrectionQRCTab = () => {
 
     const qrcItems: QrcItem[] = [];
 
+    // Deduplicate: keep only the latest result per apprenant + quiz + matière
+    const seenApprenantQuizMatiere = new Set<string>();
     for (const r of results as any[]) {
+      const dedupeKey = `${r.apprenant_id}__${r.quiz_id}__${r.matiere_id || ""}`;
+      if (seenApprenantQuizMatiere.has(dedupeKey)) continue;
+      seenApprenantQuizMatiere.add(dedupeKey);
       const details = r.details as any;
       if (!details?.questions) continue;
 
