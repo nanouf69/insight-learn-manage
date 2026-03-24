@@ -198,11 +198,11 @@ export default function ApprenantActivityReport({ onBack }: Props) {
   // Modules consultés (unique)
   const uniqueModules = [...new Map(activites.filter(a => a.action_type === "open_module").map((a) => [a.module_id, a.module_nom])).entries()];
 
-  // All formation modules for this student
+  // All formation modules for this student (use type_apprenant as key)
   const formationModules = (() => {
+    const ta = selectedApprenant?.type_apprenant?.toLowerCase()?.trim() || "";
     const fc = selectedApprenant?.formation_choisie?.toLowerCase()?.trim() || "";
-    // Try exact match, then base type
-    const def = FORMATION_MODULES[fc] || FORMATION_MODULES[fc.replace(/-e-presentiel$|-e$/, "")] || null;
+    const def = FORMATION_MODULES[ta] || FORMATION_MODULES[fc] || null;
     return def?.modules || [];
   })();
   // Chart data: connexion par jour
