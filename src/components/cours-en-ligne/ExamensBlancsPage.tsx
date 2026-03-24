@@ -1571,28 +1571,39 @@ function EcranResultats({
     };
   });
 
-  // Auto-save recalculated scores to DB when viewing saved results
+  // Auto-save recalculated scores to DB when viewing saved results or admin overrides
   useEffect(() => {
-    if (!isViewingSaved || !apprenantId || !examen) return;
+    if ((!isViewingSaved && !isAdmin) || !apprenantId || !examen) return;
     const quizType = examen.id?.startsWith("taxi") ? "examen_blanc_taxi" : "examen_blanc";
     resultatsAvecIA.forEach(async (r, mi) => {
       const matiere = examen.matieres[mi];
       if (!matiere) return;
       const safeMax = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
       const noteSur20 = normalizeNoteSur20(r.noteObtenue, safeMax);
+      // Also save the correctionsIA in the details column for admin overrides
+      const cacheMatiere = correctionsIA[mi] || {};
+      const serializedCache: Record<string, CorrectionQRC> = {};
+      for (const [k, v] of Object.entries(cacheMatiere)) {
+        if (v && v !== "loading" && v !== "error") serializedCache[k] = v;
+      }
       await supabase
         .from("apprenant_quiz_results" as any)
         .update({
           score_obtenu: r.noteObtenue,
           note_sur_20: noteSur20,
           reussi: r.admis,
+          details: {
+            questions: (resultats[mi] as any)?.details?.questions || [],
+            reponses: r.reponses,
+            correctionsIA: Object.keys(serializedCache).length > 0 ? serializedCache : undefined,
+          },
         } as any)
         .eq("apprenant_id", apprenantId)
         .eq("quiz_id", examen.id)
         .eq("quiz_type", quizType)
         .eq("matiere_id", matiere.id);
     });
-  }, [isViewingSaved, resultatsAvecIA.map(r => r.noteObtenue).join(",")]);
+  }, [isViewingSaved, isAdmin, resultatsAvecIA.map(r => r.noteObtenue).join(",")]);
 
   const totalCoef = resultatsAvecIA.reduce((acc, r) => acc + (r.coefficient || 1), 0) || 1;
   const noteGlobaleBrute = resultatsAvecIA.reduce((acc, r) => {
