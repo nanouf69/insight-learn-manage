@@ -320,7 +320,7 @@ function QuestionEditor({
       </div>
 
       {/* QRC */}
-      {question?.type === "QRC" && (
+      {qType === "QRC" && (
         <>
           <div className="space-y-1">
             <Label className="text-xs font-semibold">Réponse correcte (affichée en correction)</Label>
