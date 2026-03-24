@@ -833,8 +833,10 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
           matieres: ex.matieres.map(m => m.id === matiereId ? updated : m),
         };
       });
-      // After any edit, sync VTC → TAXI common matières
+      // After any edit, sync VTC → TAXI → TA, VTC → VA
       syncVtcTaxiMatieres(next);
+      syncVtcVaMatieres(next);
+      syncTaxiTaMatieres(next);
       return next;
     });
   };
