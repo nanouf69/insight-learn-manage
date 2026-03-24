@@ -467,12 +467,13 @@ export default function ApprenantActivityReport({ onBack }: Props) {
                     <TableHead>Heure début</TableHead>
                     <TableHead>Heure fin</TableHead>
                     <TableHead>Durée</TableHead>
+                    <TableHead>Module consulté</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {connexions.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                         Aucune connexion enregistrée
                       </TableCell>
                     </TableRow>
@@ -494,6 +495,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
                           }
                         </TableCell>
                         <TableCell className="font-medium">{h}h{m.toString().padStart(2, "0")}</TableCell>
+                        <TableCell className="text-muted-foreground">{c.current_module || "—"}</TableCell>
                       </TableRow>
                     );
                   })}
