@@ -74,7 +74,8 @@ export interface ExamenBlanc {
 /**
  * Retourne les points attribués pour une question selon la matière et le type de question.
  * - Français (D) : QCM=2pts, QRC=2pts
- * - Réglementation spécifique (F) et Réglementation locale (G) : QCM=2pts, QRC=4pts
+ * - Réglementation locale TAXI (G(T)) et Réglementation spécifique VTC (G(V)) : QCM=2pts, QRC=4pts
+ * - Réglementation nationale TAXI (F(T)) et Développement commercial VTC (F(V)) : QCM=1pt, QRC=2pts
  * - Toutes les autres matières : QCM=1pt, QRC=2pts
  */
 export function getPointsParQuestion(matiereId: string, questionType: QuestionType, matiere?: Matiere): number {
@@ -90,15 +91,14 @@ export function getPointsParQuestion(matiereId: string, questionType: QuestionTy
   if (matiereId === "francais") {
     return questionType === "QCM" ? 2 : 2;
   }
+  // Réglementation locale TAXI (G(T)) et Réglementation spécifique VTC (G(V)) : QCM=2, QRC=4
   if (
-    matiereId === "reglementation_taxi" ||
-    matiereId === "reglementation_vtc" ||
     matiereId === "reglementation_taxi2" ||
     matiereId === "reglementation_vtc2"
   ) {
     return questionType === "QCM" ? 2 : 4;
   }
-  // Défaut : t3p, gestion, securite, anglais
+  // Défaut (inclut reglementation_taxi, reglementation_vtc, t3p, gestion, securite, anglais) : QCM=1, QRC=2
   return questionType === "QCM" ? 1 : 2;
 }
 
