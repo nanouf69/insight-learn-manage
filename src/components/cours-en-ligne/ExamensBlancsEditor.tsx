@@ -8,7 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from "@/components/ui/label";
 import {
   ArrowLeft, ChevronDown, ChevronRight, Pencil, Trash2, Plus,
-  Save, CheckCircle2, X, Clock, Layers, Loader2
+  Save, CheckCircle2, X, Clock, Layers, Loader2, ArrowUp, ArrowDown
 } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, type Question, type Choix } from "./examens-blancs-data";
 import { supabase } from "@/integrations/supabase/client";
@@ -437,6 +437,23 @@ function MatiereEditor({
     setEditingQId(newId);
   };
 
+  const moveQuestion = (qId: number, direction: "up" | "down") => {
+    const idx = questionsSafe.findIndex(q => q.id === qId);
+    if (idx < 0) return;
+    if (direction === "up" && idx === 0) return;
+    if (direction === "down" && idx === questionsSafe.length - 1) return;
+    const newQuestions = [...questionsSafe];
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    [newQuestions[idx], newQuestions[swapIdx]] = [newQuestions[swapIdx], newQuestions[idx]];
+    // Re-number IDs sequentially
+    const renumbered = newQuestions.map((q, i) => ({ ...q, id: i + 1 }));
+    onChange({ ...matiere, questions: renumbered });
+    // Track the moved question's new editing id if needed
+    if (editingQId === qId) {
+      setEditingQId(renumbered[swapIdx].id);
+    }
+  };
+
   return (
     <>
     <div className="border rounded-lg overflow-hidden">
@@ -543,6 +560,28 @@ function MatiereEditor({
                     >
                       <Pencil className="w-4 h-4" />
                     </Button>
+                    <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 px-1"
+                        disabled={questionsSafe.indexOf(q) === 0}
+                        onClick={() => moveQuestion(q.id, "up")}
+                        title="Monter"
+                      >
+                        <ArrowUp className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 px-1"
+                        disabled={questionsSafe.indexOf(q) === questionsSafe.length - 1}
+                        onClick={() => moveQuestion(q.id, "down")}
+                        title="Descendre"
+                      >
+                        <ArrowDown className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
                   </div>
                   {/* Réponses affichées sous la question */}
                   {q?.type === "QCM" && q.choix && (
