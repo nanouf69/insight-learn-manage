@@ -209,9 +209,7 @@ const CorrectionQRCTab = () => {
       for (const q of details.questions) {
         if (q.type !== "QRC") continue;
 
-        const pts = matiere
-          ? getPointsParQuestion(matiere.id, "QRC", matiere)
-          : 2;
+        const pts = getPointsParQuestion(r.matiere_id || "", "QRC", matiere || undefined);
 
         const correction = correctionsIA[q.questionId];
         const hasManualCorrection = correction && typeof correction === "object" && correction.explication?.includes("manuelle");
@@ -310,7 +308,7 @@ const CorrectionQRCTab = () => {
     let newScore = 0;
     for (const q of questions) {
       if (!q) continue;
-      const pts = matiere ? getPointsParQuestion(matiere.id, q.type || "QCM", matiere) : (q.type === "QRC" ? 2 : 1);
+      const pts = getPointsParQuestion(matiere?.id || "", q.type || "QCM", matiere || undefined);
 
       if (q.type === "QCM" && q.reponseCorrecte) {
         const correctes = Array.isArray(q.reponseCorrecte) ? [...q.reponseCorrecte].sort() : [q.reponseCorrecte];
