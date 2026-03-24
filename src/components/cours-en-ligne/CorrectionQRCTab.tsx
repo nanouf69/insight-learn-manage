@@ -391,15 +391,13 @@ const CorrectionQRCTab = () => {
                   </div>
 
                   {/* Note automatique (mots clés) */}
-                  {item.autoScore !== null && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                      <p className="text-xs font-semibold text-blue-700 mb-1">🤖 Note automatique (mots clés) :</p>
-                      <p className="text-sm font-bold text-blue-900">{item.autoScore}/{item.pointsMax} pts</p>
-                      {item.autoExplication && !item.autoExplication.includes("manuelle") && (
-                        <p className="text-xs text-blue-600 mt-1">{item.autoExplication}</p>
-                      )}
-                    </div>
-                  )}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-xs font-semibold text-blue-700 mb-1">🤖 Note automatique (mots clés) :</p>
+                    <p className="text-sm font-bold text-blue-900">{item.autoScore}/{item.pointsMax} pts</p>
+                    {item.autoExplication && !item.autoExplication.includes("manuelle") && (
+                      <p className="text-xs text-blue-600 mt-1">{item.autoExplication}</p>
+                    )}
+                  </div>
 
                   {/* Correction directe */}
                   <div className="flex items-center gap-2 p-2 bg-amber-50 border border-amber-300 rounded-lg flex-wrap">
