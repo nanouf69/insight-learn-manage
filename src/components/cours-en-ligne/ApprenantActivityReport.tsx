@@ -198,6 +198,13 @@ export default function ApprenantActivityReport({ onBack }: Props) {
   // Modules consultés (unique)
   const uniqueModules = [...new Map(activites.filter(a => a.action_type === "open_module").map((a) => [a.module_id, a.module_nom])).entries()];
 
+  // All formation modules for this student
+  const formationModules = (() => {
+    const fc = selectedApprenant?.formation_choisie?.toLowerCase()?.trim() || "";
+    // Try exact match, then base type
+    const def = FORMATION_MODULES[fc] || FORMATION_MODULES[fc.replace(/-e-presentiel$|-e$/, "")] || null;
+    return def?.modules || [];
+  })();
   // Chart data: connexion par jour
   const chartData = (() => {
     const days = period === "all" ? 30 : parseInt(period);
