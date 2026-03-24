@@ -42,6 +42,10 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
+function roundToHalfStep(value: number): number {
+  return Math.round(value * 2) / 2;
+}
+
 function normalizeNoteSur20(scoreObtenu: unknown, scoreMax: unknown, fallback?: unknown): number {
   const safeMax = Math.max(toFiniteNumber(scoreMax, 0), 0);
   if (safeMax <= 0) {
@@ -53,7 +57,9 @@ function normalizeNoteSur20(scoreObtenu: unknown, scoreMax: unknown, fallback?: 
 }
 
 function clampToQuestionMax(pointsObtenus: unknown, questionMax: number): number {
-  return clamp(toFiniteNumber(pointsObtenus, 0), 0, Math.max(questionMax, 0));
+  const safeMax = Math.max(questionMax, 0);
+  const safePoints = clamp(toFiniteNumber(pointsObtenus, 0), 0, safeMax);
+  return clamp(roundToHalfStep(safePoints), 0, safeMax);
 }
 
 // DÉSACTIVÉ : la correction IA introduisait des variations de notes non déterministes.
@@ -225,10 +231,11 @@ function evaluateQrcDeterministic(question: Question, response: unknown, pointsQ
     const hasDetail = hasCalculationDetail(responseRaw);
 
     let points = 0;
+    const partialPoints = clampToQuestionMax(maxPoints / 2, maxPoints);
     if (hasResult && hasDetail) {
       points = maxPoints;
     } else if (hasResult) {
-      points = Math.round(maxPoints * 5) / 10;
+      points = partialPoints;
     }
 
     return {
@@ -238,7 +245,7 @@ function evaluateQrcDeterministic(question: Question, response: unknown, pointsQ
       explication: hasResult && hasDetail
         ? "Résultat correct avec détail du calcul."
         : hasResult
-          ? `Résultat correct mais détail du calcul manquant → ${Math.round(maxPoints * 5) / 10}/${maxPoints} pts`
+          ? `Résultat correct mais détail du calcul manquant → ${partialPoints}/${maxPoints} pts`
           : "Résultat incorrect.",
     };
   }
@@ -271,7 +278,7 @@ function evaluateQrcDeterministic(question: Question, response: unknown, pointsQ
    const gotFullPoints = matched >= requiredForFullPoints;
    const points = gotFullPoints
      ? maxPoints
-     : clampToQuestionMax(Math.floor((matched / requiredForFullPoints) * maxPoints * 2) / 2, maxPoints);
+     : clampToQuestionMax((matched / requiredForFullPoints) * maxPoints, maxPoints);
 
    return {
      estCorrect: gotFullPoints,
