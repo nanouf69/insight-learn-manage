@@ -122,6 +122,7 @@ export type Database = {
         Row: {
           apprenant_id: string
           created_at: string
+          current_module: string | null
           end_reason: string | null
           ended_at: string | null
           id: string
@@ -134,6 +135,7 @@ export type Database = {
         Insert: {
           apprenant_id: string
           created_at?: string
+          current_module?: string | null
           end_reason?: string | null
           ended_at?: string | null
           id?: string
@@ -146,6 +148,7 @@ export type Database = {
         Update: {
           apprenant_id?: string
           created_at?: string
+          current_module?: string | null
           end_reason?: string | null
           ended_at?: string | null
           id?: string

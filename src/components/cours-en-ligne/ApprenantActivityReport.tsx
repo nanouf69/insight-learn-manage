@@ -27,6 +27,7 @@ interface Connexion {
   started_at: string;
   ended_at: string | null;
   last_seen_at: string;
+  current_module: string | null;
 }
 
 const MAX_SESSION_DURATION_MS = 7 * 60 * 60 * 1000;
@@ -146,7 +147,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
       const [connRes, actRes] = await Promise.all([
         supabase
           .from("apprenant_connexions" as any)
-          .select("id, started_at, ended_at, last_seen_at")
+          .select("id, started_at, ended_at, last_seen_at, current_module")
           .eq("apprenant_id", selectedId)
           .gte("started_at", since)
           .order("started_at", { ascending: false }),
@@ -267,6 +268,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
               <th>Heure début</th>
               <th>Heure fin</th>
               <th>Durée</th>
+              <th>Module consulté</th>
             </tr>
           </thead>
           <tbody>
@@ -281,9 +283,10 @@ export default function ApprenantActivityReport({ onBack }: Props) {
                 <td>${format(start, "HH:mm", { locale: fr })}</td>
                 <td>${c.ended_at ? format(end, "HH:mm", { locale: fr }) : "En cours"}</td>
                 <td>${h}h${m.toString().padStart(2, "0")}</td>
+                <td>${c.current_module || "—"}</td>
               </tr>`;
             }).join("")}
-            ${connexions.length === 0 ? '<tr><td colspan="4" style="text-align:center;color:#9ca3af;">Aucune connexion</td></tr>' : ""}
+            ${connexions.length === 0 ? '<tr><td colspan="5" style="text-align:center;color:#9ca3af;">Aucune connexion</td></tr>' : ""}
           </tbody>
         </table>
 
@@ -464,12 +467,13 @@ export default function ApprenantActivityReport({ onBack }: Props) {
                     <TableHead>Heure début</TableHead>
                     <TableHead>Heure fin</TableHead>
                     <TableHead>Durée</TableHead>
+                    <TableHead>Module consulté</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {connexions.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                         Aucune connexion enregistrée
                       </TableCell>
                     </TableRow>
@@ -491,6 +495,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
                           }
                         </TableCell>
                         <TableCell className="font-medium">{h}h{m.toString().padStart(2, "0")}</TableCell>
+                        <TableCell className="text-muted-foreground">{c.current_module || "—"}</TableCell>
                       </TableRow>
                     );
                   })}
