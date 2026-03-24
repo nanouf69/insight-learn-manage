@@ -7,7 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Printer, Clock, BookOpen, Calendar, ArrowLeft, BarChart3, ChevronsUpDown, Check } from "lucide-react";
+import { Printer, Clock, BookOpen, Calendar, ArrowLeft, BarChart3, ChevronsUpDown, Check, CheckCircle2, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format, subDays, differenceInMinutes, parseISO, startOfDay } from "date-fns";
@@ -105,6 +105,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
   const [selectedId, setSelectedId] = useState<string>("");
   const [connexions, setConnexions] = useState<Connexion[]>([]);
   const [activites, setActivites] = useState<ModuleActivite[]>([]);
+  const [completedModuleIds, setCompletedModuleIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(false);
   const [period, setPeriod] = useState<"7" | "30" | "90" | "all">("30");
   const printRef = useRef<HTMLDivElement>(null);
@@ -144,7 +145,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
       setLoading(true);
       const since = period === "all" ? "2000-01-01" : format(subDays(new Date(), parseInt(period)), "yyyy-MM-dd");
 
-      const [connRes, actRes] = await Promise.all([
+      const [connRes, actRes, complRes] = await Promise.all([
         supabase
           .from("apprenant_connexions" as any)
           .select("id, started_at, ended_at, last_seen_at, current_module")
@@ -157,10 +158,15 @@ export default function ApprenantActivityReport({ onBack }: Props) {
           .eq("apprenant_id", selectedId)
           .gte("occurred_at", since)
           .order("occurred_at", { ascending: false }),
+        supabase
+          .from("apprenant_module_completion")
+          .select("module_id")
+          .eq("apprenant_id", selectedId),
       ]);
 
       setConnexions(((connRes.data as any[]) || []) as Connexion[]);
       setActivites(((actRes.data as any[]) || []) as ModuleActivite[]);
+      setCompletedModuleIds(new Set(((complRes.data as any[]) || []).map((r: any) => r.module_id as number)));
       setLoading(false);
     };
     load();
@@ -297,19 +303,22 @@ export default function ApprenantActivityReport({ onBack }: Props) {
               <th>Module</th>
               <th>Nombre d'accès</th>
               <th>Dernière consultation</th>
+              <th>Terminé</th>
             </tr>
           </thead>
           <tbody>
             ${uniqueModules.map(([modId, modNom]) => {
               const modActivites = activites.filter(a => a.module_id === modId && a.action_type === "open_module");
               const last = modActivites[0];
+              const done = completedModuleIds.has(modId);
               return `<tr>
                 <td>${modNom}</td>
                 <td>${modActivites.length}</td>
                 <td>${last ? format(parseISO(last.occurred_at), "dd/MM/yyyy à HH:mm", { locale: fr }) : "—"}</td>
+                <td style="color:${done ? '#16a34a' : '#dc2626'};font-weight:600">${done ? "✅ Oui" : "❌ Non"}</td>
               </tr>`;
             }).join("")}
-            ${uniqueModules.length === 0 ? '<tr><td colspan="3" style="text-align:center;color:#9ca3af;">Aucun module consulté</td></tr>' : ""}
+            ${uniqueModules.length === 0 ? '<tr><td colspan="4" style="text-align:center;color:#9ca3af;">Aucun module consulté</td></tr>' : ""}
           </tbody>
         </table>
 
@@ -512,37 +521,46 @@ export default function ApprenantActivityReport({ onBack }: Props) {
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Module</TableHead>
-                    <TableHead>Nombre d'accès</TableHead>
-                    <TableHead>Dernière consultation</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {uniqueModules.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
-                        Aucun module consulté
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {uniqueModules.map(([modId, modNom]) => {
-                    const modActivites = activites.filter(a => a.module_id === modId && a.action_type === "open_module");
-                    const last = modActivites[0];
-                    return (
-                      <TableRow key={modId}>
-                        <TableCell className="font-medium">{modNom}</TableCell>
-                        <TableCell>{modActivites.length}</TableCell>
-                        <TableCell>
-                          {last ? format(parseISO(last.occurred_at), "dd/MM/yyyy à HH:mm", { locale: fr }) : "—"}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+                   <TableRow>
+                     <TableHead>Module</TableHead>
+                     <TableHead>Nombre d'accès</TableHead>
+                     <TableHead>Dernière consultation</TableHead>
+                     <TableHead>Terminé</TableHead>
+                   </TableRow>
+                 </TableHeader>
+                 <TableBody>
+                   {uniqueModules.length === 0 && (
+                     <TableRow>
+                       <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                         Aucun module consulté
+                       </TableCell>
+                     </TableRow>
+                   )}
+                   {uniqueModules.map(([modId, modNom]) => {
+                     const modActivites = activites.filter(a => a.module_id === modId && a.action_type === "open_module");
+                     const last = modActivites[0];
+                     const done = completedModuleIds.has(modId);
+                     return (
+                       <TableRow key={modId}>
+                         <TableCell className="font-medium">{modNom}</TableCell>
+                         <TableCell>{modActivites.length}</TableCell>
+                         <TableCell>
+                           {last ? format(parseISO(last.occurred_at), "dd/MM/yyyy à HH:mm", { locale: fr }) : "—"}
+                         </TableCell>
+                         <TableCell>
+                           {done ? (
+                             <span className="inline-flex items-center gap-1 text-green-600 font-semibold"><CheckCircle2 className="w-4 h-4" /> Oui</span>
+                           ) : (
+                             <span className="inline-flex items-center gap-1 text-red-500 font-semibold"><XCircle className="w-4 h-4" /> Non</span>
+                           )}
+                         </TableCell>
+                       </TableRow>
+                     );
+                   })}
+                 </TableBody>
+               </Table>
+             </CardContent>
+           </Card>
         </div>
       )}
 
