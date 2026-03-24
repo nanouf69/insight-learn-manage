@@ -482,6 +482,9 @@ const ApprenantSearchPreview = () => {
         <TabsContent value="resultats-session" className="mt-6">
           <ResultatsSessionPage />
         </TabsContent>
+        <TabsContent value="correction-qrc" className="mt-6">
+          <CorrectionQRCTab />
+        </TabsContent>
       </Tabs>
     </div>
   );
