@@ -693,6 +693,19 @@ const ResultatsSessionPage = () => {
 
             {/* ── TAB: Examens blancs ── */}
             <TabsContent value="examens" className="space-y-4 mt-4">
+              {Object.keys(examStats).length > 0 && (
+                <div className="flex items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+                  <XCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-destructive">⚠️ Vérification des QRC requise</p>
+                    <p className="text-sm text-destructive/80 mt-1">
+                      Les notes affichées incluent une correction automatique des questions QRC (réponses courtes). 
+                      Pensez à <strong>vérifier et corriger manuellement les réponses QRC</strong> dans l'onglet « Correction QRC » 
+                      avant de communiquer les résultats aux candidats.
+                    </p>
+                  </div>
+                </div>
+              )}
               {Object.keys(examStats).length === 0 ? (
                 <Card><CardContent className="py-12 text-center text-muted-foreground">Aucun examen blanc passé pour cette session.</CardContent></Card>
               ) : (
