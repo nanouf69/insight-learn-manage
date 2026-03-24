@@ -33,6 +33,7 @@ interface QrcItem {
   noteSur20: number | null;
   scoreMatiereObtenu: number;
   scoreMatiereMax: number;
+  commentaire: string;
 }
 
 function safeStr(v: unknown): string {
