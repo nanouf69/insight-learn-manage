@@ -210,21 +210,43 @@ function QuestionEditor({
   onCancel: () => void;
 }) {
   const [enonce, setEnonce] = useState(question.enonce);
+  const [qType, setQType] = useState<"QCM" | "QRC">(question?.type as "QCM" | "QRC" || "QCM");
   const [reponseQRC, setReponseQRC] = useState(question.reponseQRC || "");
   const [motsCles, setMotsCles] = useState((question.reponses_possibles || []).join(", "));
   const [choix, setChoix] = useState<Choix[]>(question.choix ? [...question.choix] : []);
 
+  const toggleType = () => {
+    if (qType === "QCM") {
+      setQType("QRC");
+      // Keep enonce, clear choix, init QRC fields
+      if (!reponseQRC) setReponseQRC("");
+    } else {
+      setQType("QCM");
+      // Keep enonce, init default choix if empty
+      if (choix.length === 0) {
+        setChoix([
+          { lettre: "A", texte: "Choix A", correct: true },
+          { lettre: "B", texte: "Choix B" },
+        ]);
+      }
+    }
+  };
+
   const buildUpdatedQuestion = (): Question => {
     const updated: Question = {
       ...question,
+      type: qType,
       enonce,
     };
 
-    if (question?.type === "QRC") {
+    if (qType === "QRC") {
       updated.reponseQRC = reponseQRC;
       updated.reponses_possibles = motsCles.split(",").map(s => s.trim()).filter(Boolean);
+      delete (updated as any).choix;
     } else {
       updated.choix = choix;
+      delete (updated as any).reponseQRC;
+      delete (updated as any).reponses_possibles;
     }
 
     return updated;
