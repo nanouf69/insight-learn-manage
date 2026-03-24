@@ -127,15 +127,8 @@ function syncVtcTaxiMatieres(examens: ExamenBlanc[]): void {
   }
 }
 
-// Load saved exam overrides from DB
+// Load saved exam overrides from DB — NO CACHE, always fresh from DB
 export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
-  if (!lastSuccessfulExamensSnapshot) {
-    const cached = readExamensSnapshotFromStorage();
-    if (cached) {
-      lastSuccessfulExamensSnapshot = cloneExamens(cached);
-    }
-  }
-
   const examens = cloneExamens(tousLesExamens);
   
   try {
@@ -148,13 +141,9 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
     
     if (error) {
       console.error("[ExamensEditor] Error loading saved exams:", error);
-      if (lastSuccessfulExamensSnapshot) {
-        return cloneExamens(lastSuccessfulExamensSnapshot);
-      }
+      // On error, return source data (no stale cache)
       repairCorrectFlags(examens);
       syncVtcTaxiMatieres(examens);
-      lastSuccessfulExamensSnapshot = cloneExamens(examens);
-      writeExamensSnapshotToStorage(lastSuccessfulExamensSnapshot);
       return examens;
     }
 
@@ -197,16 +186,12 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
     }
   } catch (err) {
     console.error("[ExamensEditor] Error loading saved exams:", err);
-    if (lastSuccessfulExamensSnapshot) {
-      return cloneExamens(lastSuccessfulExamensSnapshot);
-    }
+    // On error, return source data (no stale cache)
   }
   
   // Repair any missing correct flags, then sync VTC → TAXI
   repairCorrectFlags(examens);
   syncVtcTaxiMatieres(examens);
-  lastSuccessfulExamensSnapshot = cloneExamens(examens);
-  writeExamensSnapshotToStorage(lastSuccessfulExamensSnapshot);
   
   return examens;
 }
