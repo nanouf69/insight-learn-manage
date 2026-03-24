@@ -387,27 +387,36 @@ const CorrectionQRCTab = () => {
                     </div>
                   )}
 
-                  {/* Correction */}
-                  <div className="flex items-center gap-3 pt-1">
-                    {isEditing ? (
-                      <div className="flex items-center gap-2 p-2 bg-amber-50 border border-amber-300 rounded-lg flex-wrap">
-                        <Pencil className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                        <span className="text-xs font-medium text-amber-800">Points :</span>
-                        <input
-                          type="number"
-                          min={0}
-                          max={item.pointsMax}
-                          step={0.5}
-                          value={editingPoints}
-                          onChange={(e) => setEditingPoints(Number(e.target.value))}
-                          className="w-16 px-2 py-1 text-xs border rounded text-center font-bold"
-                          autoFocus
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") handleSaveCorrection(item, editingPoints);
-                            if (e.key === "Escape") setEditingId(null);
-                          }}
-                        />
-                        <span className="text-xs text-amber-700">/ {item.pointsMax}</span>
+                  {/* Correction directe */}
+                  <div className="flex items-center gap-2 p-2 bg-amber-50 border border-amber-300 rounded-lg flex-wrap">
+                    <Pencil className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    <span className="text-xs font-medium text-amber-800">Points :</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={item.pointsMax}
+                      step={0.5}
+                      value={isEditing ? editingPoints : (item.pointsObtenus ?? 0)}
+                      onChange={(e) => {
+                        if (!isEditing) {
+                          setEditingId(uniqueKey);
+                        }
+                        setEditingPoints(Number(e.target.value));
+                      }}
+                      onFocus={() => {
+                        if (!isEditing) {
+                          setEditingId(uniqueKey);
+                          setEditingPoints(item.pointsObtenus ?? 0);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleSaveCorrection(item, editingPoints);
+                      }}
+                      className="w-16 px-2 py-1 text-xs border rounded text-center font-bold"
+                    />
+                    <span className="text-xs text-amber-700">/ {item.pointsMax}</span>
+                    {isEditing && (
+                      <>
                         <Button
                           size="sm"
                           className="h-6 px-2 text-xs"
@@ -424,20 +433,10 @@ const CorrectionQRCTab = () => {
                         >
                           Annuler
                         </Button>
-                      </div>
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="gap-1 border-amber-300 text-amber-700 hover:bg-amber-50"
-                        onClick={() => {
-                          setEditingId(uniqueKey);
-                          setEditingPoints(item.pointsObtenus ?? 0);
-                        }}
-                      >
-                        <Pencil className="w-3 h-3" />
-                        {item.pointsObtenus !== null ? "Modifier la note" : "Corriger"}
-                      </Button>
+                      </>
+                    )}
+                    {item.pointsObtenus !== null && !isEditing && (
+                      <Badge className="bg-green-100 text-green-700 border-green-300 text-xs ml-1">✅ Corrigé</Badge>
                     )}
                   </div>
                 </CardContent>
