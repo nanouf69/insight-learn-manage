@@ -1044,7 +1044,7 @@ function PassageMatiere({
               </div>
             </div>
             <Badge variant="outline" className="shrink-0 text-xs font-semibold text-primary border-primary/40">
-              {getPointsParQuestion(matiere.id, question?.type || "QCM")} pt{getPointsParQuestion(matiere.id, question?.type || "QCM", matiere) > 1 ? "s" : ""}
+              {getPointsParQuestion(matiere.id, question?.type || "QCM", matiere)} pt{getPointsParQuestion(matiere.id, question?.type || "QCM", matiere) > 1 ? "s" : ""}
             </Badge>
           </div>
 
