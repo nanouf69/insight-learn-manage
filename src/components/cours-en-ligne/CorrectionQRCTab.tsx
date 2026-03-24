@@ -201,13 +201,21 @@ const CorrectionQRCTab = () => {
 
         const app = apprenantMap[r.apprenant_id] || { nom: "Inconnu", prenom: "" };
 
-        // Auto score: always show what the keyword engine gave (or 0 if no auto-correction ran)
-        const autoScore = correction && typeof correction === "object"
-          ? (correction.pointsObtenus ?? 0)
-          : 0;
-        const autoExplication = correction && typeof correction === "object"
-          ? correction.explication || null
-          : null;
+        // Auto score: use saved correction, or recompute from question definition
+        let autoScore = 0;
+        let autoExplication: string | null = null;
+        if (correction && typeof correction === "object") {
+          autoScore = correction.pointsObtenus ?? 0;
+          autoExplication = correction.explication || null;
+        } else {
+          // No frozen correction — recompute from question definition
+          const questionDef = matiere?.questions?.find((mq: any) => mq && mq.id === q.questionId);
+          if (questionDef) {
+            const recomputed = recomputeQrcAutoScore(questionDef, safeStr(q.reponseEleve), pts);
+            autoScore = recomputed.autoScore;
+            autoExplication = recomputed.explication;
+          }
+        }
 
         qrcItems.push({
           resultId: r.id,
