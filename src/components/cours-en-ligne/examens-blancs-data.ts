@@ -8183,10 +8183,15 @@ export const EXAMENS_BLANCS_TA: ExamenBlanc[] = [
   examenBlanc4TA, examenBlanc5TA, examenBlanc6TA,
 ];
 
+export const EXAMENS_BLANCS_VA: ExamenBlanc[] = [
+  examenBlanc1VA, examenBlanc2VA, examenBlanc3VA,
+  examenBlanc4VA, examenBlanc5VA, examenBlanc6VA,
+];
+
 export const tousLesExamens: ExamenBlanc[] = [
   ...EXAMENS_BLANCS_VTC,
   ...EXAMENS_BLANCS_TAXI,
   ...EXAMENS_BLANCS_TA,
-  examenBlanc1VA,
+  ...EXAMENS_BLANCS_VA,
   bilanExamenTaxi, bilanExamenVTC, bilanExamenTA, bilanExamenVA,
 ];
