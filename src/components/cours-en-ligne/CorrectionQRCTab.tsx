@@ -252,6 +252,7 @@ const CorrectionQRCTab = () => {
           noteSur20: r.note_sur_20 ?? null,
           scoreMatiereObtenu: r.score_obtenu ?? 0,
           scoreMatiereMax: r.score_max ?? 20,
+          commentaire: correction && typeof correction === "object" ? (correction.commentaire || "") : "",
         });
       }
     }
