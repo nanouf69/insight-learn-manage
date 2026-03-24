@@ -2538,7 +2538,11 @@ export default function ExamensBlancsPage({
   }) => {
     if (!apprenantId || !userId) return;
 
-    const questionsSafe = (matiere?.questions || []).filter(q => q && q?.type !== undefined);
+    const rawQuestions = matiere?.questions || [];
+    const questionsSafe = rawQuestions.filter(q => q != null);
+    if (questionsSafe.length === 0 && rawQuestions.length > 0) {
+      console.warn("[saveMatiereResult] All questions filtered out!", { rawCount: rawQuestions.length, sample: rawQuestions[0] });
+    }
     const frozenCorrections: Record<string, any> = {};
     const questionDetails = questionsSafe.map(q => {
       if (!q) return null;
