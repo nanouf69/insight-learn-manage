@@ -424,7 +424,10 @@ const CorrectionQRCTab = () => {
   };
 
   const filtered = items.filter(item => {
-    if (filter === "pending" && item.corrigeManuel) return false;
+    if (filter === "pending") {
+      const key = `${item.resultId}-${item.questionId}`;
+      if (item.corrigeManuel && !recentlyCorrected.has(key)) return false;
+    }
     if (filter === "done" && !item.corrigeManuel) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
