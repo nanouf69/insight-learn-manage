@@ -347,7 +347,7 @@ function QuestionEditor({
       )}
 
       {/* QCM */}
-      {question?.type === "QCM" && (
+      {qType === "QCM" && (
         <div className="space-y-2">
           <Label className="text-xs font-semibold">Choix de réponses</Label>
           {choix.map((c, i) => (
