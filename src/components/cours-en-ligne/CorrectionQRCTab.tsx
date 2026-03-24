@@ -415,6 +415,9 @@ const CorrectionQRCTab = () => {
     return true;
   });
 
+  // Reset index when filter/search changes
+  useEffect(() => { setCurrentIndex(0); }, [filter, searchQuery]);
+
   const pendingCount = items.filter(i => !i.corrigeManuel).length;
   const doneCount = items.filter(i => i.corrigeManuel).length;
 
