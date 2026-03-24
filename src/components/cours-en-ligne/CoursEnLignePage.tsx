@@ -424,7 +424,7 @@ const ApprenantSearchPreview = () => {
 
         {/* Examens Blancs */}
         <TabsContent value="examens-blancs" className="mt-6">
-          <ExamensBlancsPage defaultBilanId={bilanActif} onBilanConsumed={() => setBilanActif(null)} />
+          <ExamensBlancsPage defaultBilanId={bilanActif} onBilanConsumed={() => setBilanActif(null)} isAdmin={true} />
         </TabsContent>
 
         {/* Formations — Mapping modules par formation */}

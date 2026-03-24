@@ -1284,6 +1284,7 @@ function EcranResultats({
   apprenantId,
   userId,
   isViewingSaved,
+  isAdmin,
 }: {
   examen: ExamenBlanc;
   resultats: ResultatMatiere[];
@@ -1293,6 +1294,7 @@ function EcranResultats({
   apprenantId?: string | null;
   userId?: string | null;
   isViewingSaved?: boolean;
+  isAdmin?: boolean;
 }) {
   // Ensure resultats is always a proper array (DB data can be malformed)
   resultats = safeArray<ResultatMatiere>(resultats);
@@ -1314,9 +1316,28 @@ function EcranResultats({
   });
   const [correctionEnCours, setCorrectionEnCours] = useState(false);
   const [expandedMatieres, setExpandedMatieres] = useState<{ [mi: number]: boolean }>({});
+  const [editingQrc, setEditingQrc] = useState<string | null>(null); // "mi-qid" key for admin editing
+  const [editingPoints, setEditingPoints] = useState<number>(0);
 
   const toggleMatiere = (mi: number) => {
     setExpandedMatieres(prev => ({ ...prev, [mi]: !prev[mi] }));
+  };
+
+  // Admin manual QRC override
+  const handleAdminOverrideQrc = (mi: number, questionId: number, newPoints: number, pts: number) => {
+    const clamped = clampToQuestionMax(newPoints, pts);
+    const correction: CorrectionQRC = {
+      estCorrect: clamped >= pts,
+      pointsObtenus: clamped,
+      nombrefautes: 0,
+      explication: `Correction manuelle par l'administrateur : ${clamped}/${pts} pts`,
+    };
+    setCorrectionsIA(prev => ({
+      ...prev,
+      [mi]: { ...(prev[mi] || {}), [questionId]: correction },
+    }));
+    setEditingQrc(null);
+    toast.success(`QRC corrigée : ${clamped}/${pts} pts`);
   };
 
   // Save AI corrections to DB once complete
@@ -1550,28 +1571,39 @@ function EcranResultats({
     };
   });
 
-  // Auto-save recalculated scores to DB when viewing saved results
+  // Auto-save recalculated scores to DB when viewing saved results or admin overrides
   useEffect(() => {
-    if (!isViewingSaved || !apprenantId || !examen) return;
+    if ((!isViewingSaved && !isAdmin) || !apprenantId || !examen) return;
     const quizType = examen.id?.startsWith("taxi") ? "examen_blanc_taxi" : "examen_blanc";
     resultatsAvecIA.forEach(async (r, mi) => {
       const matiere = examen.matieres[mi];
       if (!matiere) return;
       const safeMax = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
       const noteSur20 = normalizeNoteSur20(r.noteObtenue, safeMax);
+      // Also save the correctionsIA in the details column for admin overrides
+      const cacheMatiere = correctionsIA[mi] || {};
+      const serializedCache: Record<string, CorrectionQRC> = {};
+      for (const [k, v] of Object.entries(cacheMatiere)) {
+        if (v && v !== "loading" && v !== "error") serializedCache[k] = v;
+      }
       await supabase
         .from("apprenant_quiz_results" as any)
         .update({
           score_obtenu: r.noteObtenue,
           note_sur_20: noteSur20,
           reussi: r.admis,
+          details: {
+            questions: (resultats[mi] as any)?.details?.questions || [],
+            reponses: r.reponses,
+            correctionsIA: Object.keys(serializedCache).length > 0 ? serializedCache : undefined,
+          },
         } as any)
         .eq("apprenant_id", apprenantId)
         .eq("quiz_id", examen.id)
         .eq("quiz_type", quizType)
         .eq("matiere_id", matiere.id);
     });
-  }, [isViewingSaved, resultatsAvecIA.map(r => r.noteObtenue).join(",")]);
+  }, [isViewingSaved, isAdmin, resultatsAvecIA.map(r => r.noteObtenue).join(",")]);
 
   const totalCoef = resultatsAvecIA.reduce((acc, r) => acc + (r.coefficient || 1), 0) || 1;
   const noteGlobaleBrute = resultatsAvecIA.reduce((acc, r) => {
@@ -1807,6 +1839,62 @@ function EcranResultats({
                                   </div>
                                 )}
                                 <p className="text-xs text-green-700 font-medium">Réponse attendue : {q.reponseQRC || (q.reponses_possibles || []).join(" / ") || "—"}</p>
+                                {/* Admin manual QRC override */}
+                                {isAdmin && !isLoadingIA && (
+                                  <div className="mt-2">
+                                    {editingQrc === `${mi}-${q.id}` ? (
+                                      <div className="flex items-center gap-2 p-2 bg-amber-50 border border-amber-300 rounded-lg">
+                                        <Pencil className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                        <span className="text-xs font-medium text-amber-800">Points :</span>
+                                        <input
+                                          type="number"
+                                          min={0}
+                                          max={pts}
+                                          step={0.5}
+                                          value={editingPoints}
+                                          onChange={(e) => setEditingPoints(Number(e.target.value))}
+                                          className="w-16 px-2 py-1 text-xs border rounded text-center font-bold"
+                                          autoFocus
+                                          onKeyDown={(e) => {
+                                            if (e.key === "Enter") handleAdminOverrideQrc(mi, q.id, editingPoints, pts);
+                                            if (e.key === "Escape") setEditingQrc(null);
+                                          }}
+                                        />
+                                        <span className="text-xs text-amber-700">/ {pts}</span>
+                                        <Button
+                                          size="sm"
+                                          variant="default"
+                                          className="h-6 px-2 text-xs"
+                                          onClick={() => handleAdminOverrideQrc(mi, q.id, editingPoints, pts)}
+                                        >
+                                          ✓ Valider
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="h-6 px-2 text-xs"
+                                          onClick={() => setEditingQrc(null)}
+                                        >
+                                          Annuler
+                                        </Button>
+                                      </div>
+                                    ) : (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-6 px-2 text-xs gap-1 border-amber-300 text-amber-700 hover:bg-amber-50"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setEditingQrc(`${mi}-${q.id}`);
+                                          setEditingPoints(pointsObtenus);
+                                        }}
+                                      >
+                                        <Pencil className="w-3 h-3" />
+                                        Corriger manuellement
+                                      </Button>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
@@ -2075,12 +2163,14 @@ export default function ExamensBlancsPage({
   apprenantId,
   userId,
   apprenantType,
+  isAdmin,
 }: {
   defaultBilanId?: string | null;
   onBilanConsumed?: () => void;
   apprenantId?: string | null;
   userId?: string | null;
   apprenantType?: string | null;
+  isAdmin?: boolean;
 } = {}) {
   // Restore exam session from sessionStorage
   const EXAM_SESSION_KEY = `exam_session_${apprenantId || "anon"}`;
@@ -2758,6 +2848,7 @@ export default function ExamensBlancsPage({
           apprenantId={apprenantId}
           userId={userId}
           isViewingSaved={isViewingSavedResults}
+          isAdmin={isAdmin}
         />
       </div>
     );
