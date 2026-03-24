@@ -881,7 +881,8 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
   };
 
   return (
-    <div className="space-y-6">
+    <div className="fixed inset-0 z-50 bg-background overflow-auto">
+      <div className="max-w-[1800px] mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
