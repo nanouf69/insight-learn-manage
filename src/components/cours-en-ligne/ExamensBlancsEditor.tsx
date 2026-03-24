@@ -595,17 +595,17 @@ function MatiereEditor({
                 />
               ) : (
                 <div className="border rounded-lg hover:bg-muted/20 group transition-colors p-4 space-y-2">
+                  {examTitre && (
+                    <p className="text-xs font-semibold text-muted-foreground mb-1">
+                      {matiere.nom} — {examTitre}
+                    </p>
+                  )}
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-3 flex-1">
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
                       <Badge variant={q?.type === "QCM" ? "default" : "secondary"} className="text-sm shrink-0 mt-0.5 px-2 py-0.5">
                         {q?.type} — Q{q.id}
                       </Badge>
-                      {examTitre && (
-                        <span className="text-xs font-semibold text-muted-foreground shrink-0 mt-1">
-                          {matiere.nom} • {examTitre}
-                        </span>
-                      )}
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <p className="text-base font-medium text-foreground leading-relaxed">{q.enonce}</p>
                         {q.image && (
                           <img src={q.image} alt={`Question ${q.id}`} className="mt-2 max-h-32 rounded border" />
