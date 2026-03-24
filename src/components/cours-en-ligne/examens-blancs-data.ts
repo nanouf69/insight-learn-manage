@@ -56,6 +56,8 @@ export interface Matiere {
   coefficient: number;
   noteEliminatoire: number;
   noteSur: number;
+  ptsQCM?: number;
+  ptsQRC?: number;
   texteSupport?: string;
   texteSource?: string;
   questions: Question[];
