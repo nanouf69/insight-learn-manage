@@ -995,6 +995,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
                 <MatiereEditor
                   key={m.id}
                   matiere={m}
+                  examTitre={`${examenSel.type} — Examen Blanc N°${examenSel.numero}`}
                   onChange={updated => handleMatiereChange(m.id, updated)}
                 />
               ))}
