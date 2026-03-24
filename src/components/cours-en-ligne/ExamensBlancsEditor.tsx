@@ -15,37 +15,40 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 // Virtual module_id range for examens blancs: 90000+
-// Each exam gets a unique module_id based on its index
+// Stable mapping from exam ID → module_id (survives reordering / additions)
 export const EXAMEN_BLANC_MODULE_BASE = 90000;
 
-const cloneExamens = (examens: ExamenBlanc[]): ExamenBlanc[] =>
-  JSON.parse(JSON.stringify(examens)) as ExamenBlanc[];
+const EXAM_ID_TO_MODULE_ID: Record<string, number> = {
+  // VTC EB1-6
+  "EB1": 90000, "EB2": 90001, "EB3": 90002, "EB4": 90003, "EB5": 90004, "EB6": 90005,
+  // TAXI EB1-6
+  "EB1-TAXI": 90006, "EB2-TAXI": 90007, "EB3-TAXI": 90008, "EB4-TAXI": 90009, "EB5-TAXI": 90010, "EB6-TAXI": 90011,
+  // TA EB1-6
+  "eb1-ta": 90012, "eb2-ta": 90018, "eb3-ta": 90019, "eb4-ta": 90020, "eb5-ta": 90021, "eb6-ta": 90022,
+  // VA
+  "eb1-va": 90013,
+  // Bilans
+  "bilan-taxi": 90014, "bilan-vtc": 90015, "bilan-ta": 90016, "bilan-va": 90017,
+};
 
-let lastSuccessfulExamensSnapshot: ExamenBlanc[] | null = null;
-const EXAMENS_SNAPSHOT_STORAGE_KEY = "examens_blancs_snapshot_v1";
-
-function readExamensSnapshotFromStorage(): ExamenBlanc[] | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(EXAMENS_SNAPSHOT_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as ExamenBlanc[];
-    return Array.isArray(parsed) ? parsed : null;
-  } catch {
-    return null;
-  }
+export function getModuleIdForExamId(examId: string): number {
+  return EXAM_ID_TO_MODULE_ID[examId] ?? (EXAMEN_BLANC_MODULE_BASE + 100 + Math.abs(hashCode(examId)));
 }
 
-function writeExamensSnapshotToStorage(examens: ExamenBlanc[]): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(EXAMENS_SNAPSHOT_STORAGE_KEY, JSON.stringify(examens));
-  } catch {
-    // Ignore quota / storage errors silently
-  }
+function hashCode(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  return h;
+}
+
+// Build reverse lookup
+const MODULE_ID_TO_EXAM_ID: Record<number, string> = {};
+for (const [eid, mid] of Object.entries(EXAM_ID_TO_MODULE_ID)) {
+  MODULE_ID_TO_EXAM_ID[mid] = eid;
 }
 
 export function getExamenModuleId(examIndex: number): number {
+  // Legacy compat — prefer getModuleIdForExamId
   return EXAMEN_BLANC_MODULE_BASE + examIndex;
 }
 
