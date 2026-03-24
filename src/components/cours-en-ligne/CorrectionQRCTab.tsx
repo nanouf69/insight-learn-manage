@@ -437,6 +437,7 @@ const CorrectionQRCTab = () => {
                     )}
                     {item.pointsObtenus !== null && !isEditing && (
                       <Badge className="bg-green-100 text-green-700 border-green-300 text-xs ml-1">✅ Corrigé</Badge>
+                    )}
                   </div>
                 </CardContent>
               </Card>
