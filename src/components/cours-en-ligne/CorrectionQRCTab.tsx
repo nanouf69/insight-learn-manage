@@ -149,6 +149,7 @@ const CorrectionQRCTab = () => {
   const [examenMap, setExamenMap] = useState<Record<string, ExamenBlanc>>({});
   const [editingComments, setEditingComments] = useState<Record<string, string>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [recentlyCorrected, setRecentlyCorrected] = useState<Set<string>>(new Set());
 
   const QUICK_COMMENTS = [
     "Précisez !!!",
