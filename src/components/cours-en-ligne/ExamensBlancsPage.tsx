@@ -1982,7 +1982,7 @@ function EcranResultats({
       </div>
 
       {/* Bouton refaire les fausses — EN HAUT bien visible */}
-      {(() => {
+      {!hasQrcPendingValidation && (() => {
         let nbFaussesTop = 0;
         resultatsAvecIA.forEach((r, mi) => {
           if (r.matiereId === "francais" || r.matiereId === "bilan_francais") return;
