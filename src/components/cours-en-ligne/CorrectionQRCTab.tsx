@@ -28,6 +28,8 @@ interface QrcItem {
   pointsObtenus: number | null; // null = pas encore corrigé manuellement
   corrigeManuel: boolean;
   completedAt: string;
+  autoScore: number | null;
+  autoExplication: string | null;
 }
 
 function safeStr(v: unknown): string {
@@ -112,6 +114,14 @@ const CorrectionQRCTab = () => {
 
         const app = apprenantMap[r.apprenant_id] || { nom: "Inconnu", prenom: "" };
 
+        // Auto score from keyword matching (before any manual override)
+        const autoScore = correction && typeof correction === "object" && !correction.explication?.includes("manuelle")
+          ? correction.pointsObtenus ?? null
+          : null;
+        const autoExplication = correction && typeof correction === "object"
+          ? correction.explication || null
+          : null;
+
         qrcItems.push({
           resultId: r.id,
           apprenantId: r.apprenant_id,
@@ -130,6 +140,8 @@ const CorrectionQRCTab = () => {
           pointsObtenus: correction && typeof correction === "object" ? correction.pointsObtenus : null,
           corrigeManuel: !!hasManualCorrection,
           completedAt: r.completed_at,
+          autoScore: autoScore != null ? autoScore : (correction && typeof correction === "object" ? correction.pointsObtenus : null),
+          autoExplication: autoExplication,
         });
       }
     }
@@ -363,6 +375,17 @@ const CorrectionQRCTab = () => {
                     <p className="text-xs font-semibold text-green-700 mb-1">✓ Réponse attendue :</p>
                     <p className="text-sm whitespace-pre-wrap text-green-900">{item.reponseCorrecte}</p>
                   </div>
+
+                  {/* Note automatique (mots clés) */}
+                  {item.autoScore !== null && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <p className="text-xs font-semibold text-blue-700 mb-1">🤖 Note automatique (mots clés) :</p>
+                      <p className="text-sm font-bold text-blue-900">{item.autoScore}/{item.pointsMax} pts</p>
+                      {item.autoExplication && !item.autoExplication.includes("manuelle") && (
+                        <p className="text-xs text-blue-600 mt-1">{item.autoExplication}</p>
+                      )}
+                    </div>
+                  )}
 
                   {/* Correction */}
                   <div className="flex items-center gap-3 pt-1">
