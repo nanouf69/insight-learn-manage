@@ -53,8 +53,8 @@ const EXAM_ID_TO_MODULE_ID: Record<string, number> = {
   "EB1-TAXI": 90006, "EB2-TAXI": 90007, "EB3-TAXI": 90008, "EB4-TAXI": 90009, "EB5-TAXI": 90010, "EB6-TAXI": 90011,
   // TA EB1-6
   "eb1-ta": 90012, "eb2-ta": 90018, "eb3-ta": 90019, "eb4-ta": 90020, "eb5-ta": 90021, "eb6-ta": 90022,
-  // VA
-  "eb1-va": 90013,
+  // VA EB1-6
+  "eb1-va": 90013, "eb2-va": 90023, "eb3-va": 90024, "eb4-va": 90025, "eb5-va": 90026, "eb6-va": 90027,
   // Bilans
   "bilan-taxi": 90014, "bilan-vtc": 90015, "bilan-ta": 90016, "bilan-va": 90017,
 };
