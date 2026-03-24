@@ -147,7 +147,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
       const [connRes, actRes] = await Promise.all([
         supabase
           .from("apprenant_connexions" as any)
-          .select("id, started_at, ended_at, last_seen_at")
+          .select("id, started_at, ended_at, last_seen_at, current_module")
           .eq("apprenant_id", selectedId)
           .gte("started_at", since)
           .order("started_at", { ascending: false }),

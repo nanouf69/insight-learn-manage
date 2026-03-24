@@ -157,6 +157,14 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
       return;
     }
 
+    // Update current_module on the connexion row
+    if (actionType === "open_module") {
+      await supabase
+        .from("apprenant_connexions" as any)
+        .update({ current_module: moduleNom } as any)
+        .eq("id", connexionIdRef.current);
+    }
+
     await supabase
       .from("apprenant_module_activites" as any)
       .insert({

@@ -120,7 +120,7 @@ export function usePresenceCheck({
             connexion_id: connexionId,
             module_id: 0,
             module_nom: "Système",
-            action_type: "presence_check_4h",
+            action_type: "presence_check_1h",
             metadata: { source: "server_session_check" },
           });
         }
