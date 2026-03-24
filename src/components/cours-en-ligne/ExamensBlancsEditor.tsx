@@ -10,7 +10,7 @@ import {
   ArrowLeft, ChevronDown, ChevronRight, Pencil, Trash2, Plus,
   Save, CheckCircle2, X, Clock, Layers, Loader2
 } from "lucide-react";
-import { tousLesExamens, type ExamenBlanc, type Matiere, type Question, type Choix } from "./examens-blancs-data";
+import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, type Question, type Choix } from "./examens-blancs-data";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -505,6 +505,9 @@ function MatiereEditor({
                           <img src={q.image} alt={`Question ${q.id}`} className="mt-2 max-h-32 rounded border" />
                         )}
                       </div>
+                      <Badge variant="outline" className="shrink-0 text-xs font-semibold text-primary border-primary/40">
+                        {getPointsParQuestion(matiere.id, q?.type || "QCM")} pt{getPointsParQuestion(matiere.id, q?.type || "QCM") > 1 ? "s" : ""}
+                      </Badge>
                     </div>
                     <Button
                       size="sm"
