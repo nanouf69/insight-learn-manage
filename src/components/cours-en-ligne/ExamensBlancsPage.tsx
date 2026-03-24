@@ -401,8 +401,28 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
           });
 
           const latestRows = Array.from(latestByQuizMatiere.values());
-          const ids = new Set<string>(latestRows.map((r: any) => r.quiz_id));
-          setCompletedExamIds(ids);
+          const completedIds = new Set<string>();
+          const matieresDoneByQuiz = new Map<string, Set<string>>();
+
+          latestRows.forEach((row: any) => {
+            const quizId = row.quiz_id;
+            const matiereKey = row.matiere_id || row.matiere_nom || "unknown";
+            if (!quizId) return;
+            if (!matieresDoneByQuiz.has(quizId)) {
+              matieresDoneByQuiz.set(quizId, new Set<string>());
+            }
+            matieresDoneByQuiz.get(quizId)!.add(matiereKey);
+          });
+
+          matieresDoneByQuiz.forEach((doneSet, quizId) => {
+            const examDef = examensData.find((e) => e.id === quizId);
+            const requiredMatieres = examDef?.matieres?.length || 1;
+            if (doneSet.size >= requiredMatieres) {
+              completedIds.add(quizId);
+            }
+          });
+
+          setCompletedExamIds(completedIds);
 
           const scores: Record<string, { matiere_id: string; matiere_nom: string; note_sur_20: number }[]> = {};
           latestRows.forEach((r: any) => {
@@ -426,7 +446,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
               if (repData) {
                 (repData as any[]).forEach((r: any) => {
                   // Started but not finished = has a reponse row but not in completedExamIds
-                  if (!ids.has(r.exercice_id)) {
+                  if (!completedIds.has(r.exercice_id)) {
                     started.add(r.exercice_id);
                   }
                 });
@@ -435,7 +455,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
             });
         }
       });
-  }, [apprenantId]);
+  }, [apprenantId, examensData]);
 
   const examens = examensData.filter(e => {
     const typeOk = typeFiltre === "tous" || e?.type === typeFiltre;
@@ -2505,6 +2525,82 @@ export default function ExamensBlancsPage({
     return totalPoints;
   };
 
+  const saveMatiereResult = async ({
+    examen,
+    matiere,
+    resultat,
+    dureeSecondes,
+  }: {
+    examen: ExamenBlanc;
+    matiere: Matiere;
+    resultat: ResultatMatiere;
+    dureeSecondes: number;
+  }) => {
+    if (!apprenantId || !userId) return;
+
+    const questionsSafe = (matiere?.questions || []).filter(q => q && q?.type !== undefined);
+    const frozenCorrections: Record<string, any> = {};
+    const questionDetails = questionsSafe.map(q => {
+      if (!q) return null;
+      const rep = resultat.reponses?.[q.id];
+
+      if (q?.type === "QRC") {
+        const pts = getPointsParQuestion(matiere.id, q?.type || "QRC", matiere);
+        const correction = evaluateQrcDeterministic(q, rep, pts);
+        frozenCorrections[q.id] = correction;
+      }
+
+      return {
+        questionId: q.id,
+        enonce: q.enonce || "",
+        type: q?.type || "QCM",
+        reponseEleve: rep ?? null,
+        reponseCorrecte: q?.type === "QCM" && q.choix
+          ? q.choix.filter(c => c.correct).map(c => c.lettre)
+          : (q.reponseQRC || (q.reponses_possibles || []).join(" / ")),
+      };
+    }).filter(Boolean);
+
+    const safeScoreMax = Math.max(toFiniteNumber(resultat.maxPoints, 0), 0);
+    const safeScoreObtenu = safeScoreMax > 0
+      ? clamp(toFiniteNumber(resultat.noteObtenue, 0), 0, safeScoreMax)
+      : Math.max(toFiniteNumber(resultat.noteObtenue, 0), 0);
+
+    const { error } = await supabase
+      .from("apprenant_quiz_results" as any)
+      .insert([
+        {
+          apprenant_id: apprenantId,
+          user_id: userId,
+          quiz_type: examen.id.startsWith("bilan-") ? "bilan" : "examen_blanc",
+          quiz_id: examen.id,
+          quiz_titre: examen.titre,
+          matiere_id: resultat.matiereId,
+          matiere_nom: resultat.nomMatiere,
+          score_obtenu: safeScoreObtenu,
+          score_max: safeScoreMax,
+          note_sur_20: normalizeNoteSur20(safeScoreObtenu, safeScoreMax),
+          reussi: computeAdmisForMatiere(
+            safeScoreObtenu,
+            safeScoreMax,
+            resultat.noteEliminatoire,
+            resultat.noteSur,
+            Boolean(resultat.admis)
+          ),
+          duree_secondes: Math.max(Math.round(dureeSecondes), 0),
+          details: {
+            questions: questionDetails,
+            reponses: resultat.reponses,
+            correctionsIA: Object.keys(frozenCorrections).length > 0 ? frozenCorrections : undefined,
+          },
+        },
+      ] as any);
+
+    if (error) {
+      console.error("Failed to save matière result:", error);
+    }
+  };
+
   const handleTerminerMatiere = (reponses: Reponses) => {
     try {
     if (!examenChoisi) return;
@@ -2537,6 +2633,17 @@ export default function ExamensBlancsPage({
     const newResultats = [...tousResultats, resultat];
     setTousResultats(newResultats);
 
+    if (apprenantId && userId) {
+      const elapsedSeconds = Math.round((Date.now() - examStartTimeRef.current) / 1000);
+      const avgPerMatiere = elapsedSeconds / Math.max(newResultats.length, 1);
+      void saveMatiereResult({
+        examen: examenChoisi,
+        matiere,
+        resultat,
+        dureeSecondes: avgPerMatiere,
+      });
+    }
+
     if (matiereIndex < examenChoisi.matieres.length - 1) {
       const nextIndex = matiereIndex + 1;
       setLastMatiereResult(resultat);
@@ -2547,77 +2654,6 @@ export default function ExamensBlancsPage({
       setIsViewingSavedResults(false);
       setPhase("resultats");
       persistExamSession("resultats", null, 0); // Clear session
-      // Save results to database
-      if (apprenantId && userId) {
-        const duree = Math.round((Date.now() - examStartTimeRef.current) / 1000);
-        const allResults = [...newResultats];
-        // Save each matière result with full question details
-        const rows = allResults.map(r => {
-          if (!r || r === undefined) return null;
-          const matiere = examenChoisi.matieres.find(m => m.id === r.matiereId);
-          const questionsSafe = (matiere?.questions || []).filter(q => q && q?.type !== undefined);
-          // Build frozen deterministic QRC corrections
-          const frozenCorrections: Record<string, any> = {};
-          const questionDetails = matiere ? questionsSafe.map(q => {
-            if (!q || q === undefined) return null;
-            const rep = r.reponses?.[q.id];
-            // Freeze QRC correction at save time — deterministic, never recalculated
-            if (q?.type === "QRC") {
-              const pts = getPointsParQuestion(matiere.id, q?.type || "QRC", matiere);
-              const correction = evaluateQrcDeterministic(q, rep, pts);
-              frozenCorrections[q.id] = correction;
-            }
-            return {
-              questionId: q.id,
-              enonce: q.enonce || "",
-              type: q?.type || "QCM",
-              reponseEleve: rep ?? null,
-              reponseCorrecte: q?.type === "QCM" && q.choix
-                ? q.choix.filter(c => c.correct).map(c => c.lettre)
-                : (q.reponseQRC || (q.reponses_possibles || []).join(" / ")),
-            };
-          }).filter(Boolean) : [];
-
-          const safeScoreMax = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
-          const safeScoreObtenu = safeScoreMax > 0
-            ? clamp(toFiniteNumber(r.noteObtenue, 0), 0, safeScoreMax)
-            : Math.max(toFiniteNumber(r.noteObtenue, 0), 0);
-
-          return {
-            apprenant_id: apprenantId,
-            user_id: userId,
-            quiz_type: examenChoisi.id.startsWith("bilan-") ? "bilan" : "examen_blanc",
-            quiz_id: examenChoisi.id,
-            quiz_titre: examenChoisi.titre,
-            matiere_id: r.matiereId,
-            matiere_nom: r.nomMatiere,
-            score_obtenu: safeScoreObtenu,
-            score_max: safeScoreMax,
-            note_sur_20: normalizeNoteSur20(safeScoreObtenu, safeScoreMax),
-            reussi: computeAdmisForMatiere(
-              safeScoreObtenu,
-              safeScoreMax,
-              r.noteEliminatoire,
-              r.noteSur,
-              Boolean(r.admis)
-            ),
-            duree_secondes: Math.round(duree / allResults.length),
-            details: {
-              questions: questionDetails,
-              reponses: r.reponses,
-              // Corrections figées définitivement — aucun recalcul possible
-              correctionsIA: Object.keys(frozenCorrections).length > 0 ? frozenCorrections : undefined,
-            },
-          };
-        });
-        const rowsToInsert = rows.filter(Boolean);
-        supabase
-          .from("apprenant_quiz_results" as any)
-          .insert(rowsToInsert as any)
-          .then(({ error }) => {
-            if (error) console.error("Failed to save quiz results:", error);
-          });
-      }
     }
     } catch (err) {
       console.error("[ExamenBlanc] Erreur dans handleTerminerMatiere:", err);

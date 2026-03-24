@@ -362,8 +362,8 @@ const CorrectionQRCTab = () => {
   };
 
   const filtered = items.filter(item => {
-    if (filter === "pending" && item.pointsObtenus !== null) return false;
-    if (filter === "done" && item.pointsObtenus === null) return false;
+    if (filter === "pending" && item.corrigeManuel) return false;
+    if (filter === "done" && !item.corrigeManuel) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       return (
@@ -377,8 +377,8 @@ const CorrectionQRCTab = () => {
     return true;
   });
 
-  const pendingCount = items.filter(i => i.pointsObtenus === null).length;
-  const doneCount = items.filter(i => i.pointsObtenus !== null).length;
+  const pendingCount = items.filter(i => !i.corrigeManuel).length;
+  const doneCount = items.filter(i => i.corrigeManuel).length;
 
   if (loading) {
     return (
@@ -451,7 +451,7 @@ const CorrectionQRCTab = () => {
             const isSaving = savingId === uniqueKey;
 
             return (
-              <Card key={uniqueKey} className={`transition-colors ${item.pointsObtenus !== null ? "border-green-200 bg-green-50/30" : "border-amber-200 bg-amber-50/20"}`}>
+              <Card key={uniqueKey} className={`transition-colors ${item.corrigeManuel ? "border-green-200 bg-green-50/30" : "border-amber-200 bg-amber-50/20"}`}>
                 <CardContent className="py-4 px-5 space-y-3">
                   {/* Header */}
                   <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -469,13 +469,13 @@ const CorrectionQRCTab = () => {
                       </p>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      {item.pointsObtenus !== null ? (
+                      {item.corrigeManuel ? (
                         <Badge className="bg-green-100 text-green-800 border-green-300">
-                          ✅ {item.pointsObtenus}/{item.pointsMax} pts
+                          ✅ Corrigé : {(item.pointsObtenus ?? item.autoScore)}/{item.pointsMax} pts
                         </Badge>
                       ) : (
                         <Badge className="bg-amber-100 text-amber-800 border-amber-300">
-                          ⏳ À corriger
+                          ⏳ En attente (auto: {item.autoScore}/{item.pointsMax})
                         </Badge>
                       )}
                       <Badge variant="outline" className="font-bold text-sm">
@@ -538,7 +538,7 @@ const CorrectionQRCTab = () => {
                     >
                       {isSaving ? "..." : "✓ Valider"}
                     </Button>
-                    {item.pointsObtenus !== null && !isSaving && (
+                    {item.corrigeManuel && !isSaving && (
                       <Badge className="bg-green-100 text-green-700 border-green-300 text-xs ml-1">✅ Corrigé</Badge>
                     )}
                   </div>
