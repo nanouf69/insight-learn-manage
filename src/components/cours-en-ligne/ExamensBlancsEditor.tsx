@@ -235,9 +235,11 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
     // On error, return source data (no stale cache)
   }
   
-  // Repair any missing correct flags, then sync VTC → TAXI
+  // Repair any missing correct flags, then sync across exam types
   repairCorrectFlags(examens);
   syncVtcTaxiMatieres(examens);
+  syncVtcVaMatieres(examens);
+  syncTaxiTaMatieres(examens);
   
   return examens;
 }
