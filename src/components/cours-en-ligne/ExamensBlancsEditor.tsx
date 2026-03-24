@@ -753,6 +753,8 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
     try {
       const synced = JSON.parse(JSON.stringify(snapshot)) as ExamenBlanc[];
       syncVtcTaxiMatieres(synced);
+      syncVtcVaMatieres(synced);
+      syncTaxiTaMatieres(synced);
 
       const now = new Date().toISOString();
       const changedModuleFingerprints: Record<number, string> = {};
