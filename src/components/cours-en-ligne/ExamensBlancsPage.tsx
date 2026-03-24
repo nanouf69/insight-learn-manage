@@ -2867,6 +2867,7 @@ export default function ExamensBlancsPage({
           userId={userId}
           isViewingSaved={isViewingSavedResults}
           isAdmin={isAdmin}
+          isPresentiel={isPresentiel}
         />
       </div>
     );
