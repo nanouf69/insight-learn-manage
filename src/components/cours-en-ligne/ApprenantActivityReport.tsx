@@ -27,6 +27,7 @@ interface Connexion {
   started_at: string;
   ended_at: string | null;
   last_seen_at: string;
+  current_module: string | null;
 }
 
 const MAX_SESSION_DURATION_MS = 7 * 60 * 60 * 1000;
