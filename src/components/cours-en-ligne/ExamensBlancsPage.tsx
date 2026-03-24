@@ -372,7 +372,7 @@ interface ResultatMatiere {
 }
 
 // ===== ÉCRAN DE SÉLECTION =====
-function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, apprenantType, examensData, apprenantId }: { onStart: (examen: ExamenBlanc) => void; onEdit: () => void; onViewResults: (examen: ExamenBlanc) => void; defaultBilanId?: string | null; apprenantType?: string | null; examensData: ExamenBlanc[]; apprenantId?: string | null }) {
+function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, apprenantType, examensData, apprenantId, isAdmin }: { onStart: (examen: ExamenBlanc) => void; onEdit: () => void; onViewResults: (examen: ExamenBlanc) => void; defaultBilanId?: string | null; apprenantType?: string | null; examensData: ExamenBlanc[]; apprenantId?: string | null; isAdmin?: boolean }) {
   // Determine the forced exam type from the student's formation type
   const forcedType = (() => {
     if (!apprenantType) return null;
@@ -484,10 +484,12 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
             }
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={onEdit} className="gap-2 shrink-0">
-          <Pencil className="w-4 h-4" />
-          Modifier les examens
-        </Button>
+        {isAdmin && (
+          <Button variant="outline" size="sm" onClick={onEdit} className="gap-2 shrink-0">
+            <Pencil className="w-4 h-4" />
+            Modifier les examens
+          </Button>
+        )}
       </div>
 
       {/* Filtres — masqués si l'apprenant a un type forcé */}
@@ -522,6 +524,8 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
               const dureeTotal = examen.matieres.reduce((acc, m) => acc + m.duree, 0);
               const isCompleted = completedExamIds.has(examen.id);
               const isStartedNotFinished = !isCompleted && startedNotFinishedIds.has(examen.id);
+              const canRetake = Boolean(isAdmin);
+              const canStartExam = !isCompleted || canRetake;
               const scores = examScores[examen.id] || [];
               return (
                 <Card
@@ -588,8 +592,13 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                         Voir mes résultats
                       </Button>
                     )}
-                    <Button className="w-full mt-2 gap-2" variant={isCompleted ? "outline" : isStartedNotFinished ? "default" : "default"} onClick={(e) => { e.stopPropagation(); onStart(examen); }}>
-                      {isCompleted ? "Recommencer l'examen" : isStartedNotFinished ? "Reprendre l'examen" : "Commencer l'examen"}
+                    <Button
+                      className="w-full mt-2 gap-2"
+                      variant={isCompleted && !canRetake ? "secondary" : isCompleted ? "outline" : isStartedNotFinished ? "default" : "default"}
+                      disabled={!canStartExam}
+                      onClick={(e) => { e.stopPropagation(); if (canStartExam) onStart(examen); }}
+                    >
+                      {isCompleted ? (canRetake ? "Recommencer l'examen" : "Examen déjà réalisé") : isStartedNotFinished ? "Reprendre l'examen" : "Commencer l'examen"}
                       <ChevronRight className="w-4 h-4" />
                     </Button>
                   </CardContent>
@@ -1312,6 +1321,7 @@ function EcranResultats({
   userId,
   isViewingSaved,
   isAdmin,
+  canRetry,
   isPresentiel,
 }: {
   examen: ExamenBlanc;
@@ -1323,6 +1333,7 @@ function EcranResultats({
   userId?: string | null;
   isViewingSaved?: boolean;
   isAdmin?: boolean;
+  canRetry?: boolean;
   isPresentiel?: boolean;
 }) {
   // Ensure resultats is always a proper array (DB data can be malformed)
@@ -1602,7 +1613,7 @@ function EcranResultats({
 
   // Auto-save recalculated scores to DB when viewing saved results or admin overrides
   useEffect(() => {
-    if ((!isViewingSaved && !isAdmin) || !apprenantId || !examen) return;
+    if (!isAdmin || !apprenantId || !examen) return;
     const quizType = examen.id?.startsWith("taxi") ? "examen_blanc_taxi" : "examen_blanc";
     resultatsAvecIA.forEach(async (r, mi) => {
       const matiere = examen.matieres[mi];
@@ -2050,14 +2061,16 @@ function EcranResultats({
 
       {/* Boutons */}
       <div className="flex gap-3">
-        <Button variant="outline" onClick={onRetour} className="flex-1 gap-2">
+        <Button variant="outline" onClick={onRetour} className={`${canRetry ? "flex-1" : "w-full"} gap-2`}>
           <ArrowLeft className="w-4 h-4" />
           Retour aux examens
         </Button>
-        <Button onClick={onRecommencer} className="flex-1 gap-2">
-          <RotateCcw className="w-4 h-4" />
-          Recommencer
-        </Button>
+        {canRetry && (
+          <Button onClick={onRecommencer} className="flex-1 gap-2">
+            <RotateCcw className="w-4 h-4" />
+            Recommencer
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -2411,8 +2424,30 @@ export default function ExamensBlancsPage({
     }
   }, [defaultBilanId]);
 
-  const handleStart = (examen: ExamenBlanc) => {
+  const handleStart = async (examen: ExamenBlanc) => {
     const latestExamen = liveExamens.find((live) => live.id === examen.id) ?? examen;
+
+    if (!isAdmin && apprenantId) {
+      const quizType = latestExamen.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
+      const { count, error } = await supabase
+        .from("apprenant_quiz_results" as any)
+        .select("id", { count: "exact", head: true })
+        .eq("apprenant_id", apprenantId)
+        .eq("quiz_id", latestExamen.id)
+        .eq("quiz_type", quizType);
+
+      if (error) {
+        toast.error("Vérification de sécurité impossible. Réessayez.");
+        return;
+      }
+
+      const matieresTotal = Math.max(latestExamen.matieres?.length || 1, 1);
+      if ((count ?? 0) >= matieresTotal) {
+        toast.error("Examen déjà réalisé. Demandez une remise à zéro à l'administration.");
+        return;
+      }
+    }
+
     setBilanPrefiltre(null);
     setExamenChoisi(latestExamen);
     setMatiereIndex(0);
@@ -2677,7 +2712,13 @@ export default function ExamensBlancsPage({
   }
 
   if (phase === "selection") {
-    return <EcranSelection onStart={handleStart} onEdit={() => setPhase("edition")} onViewResults={handleViewResults} defaultBilanId={bilanPrefiltre} apprenantType={apprenantType} examensData={liveExamens} apprenantId={apprenantId} />;
+    return <EcranSelection onStart={handleStart} onEdit={() => {
+      if (!isAdmin) {
+        toast.error("Accès réservé à l'administration.");
+        return;
+      }
+      setPhase("edition");
+    }} onViewResults={handleViewResults} defaultBilanId={bilanPrefiltre} apprenantType={apprenantType} examensData={liveExamens} apprenantId={apprenantId} isAdmin={isAdmin} />;
   }
 
   if (phase === "intro" && examenChoisi) {
@@ -2959,6 +3000,7 @@ export default function ExamensBlancsPage({
           userId={userId}
           isViewingSaved={isViewingSavedResults}
           isAdmin={isAdmin}
+          canRetry={Boolean(isAdmin)}
           isPresentiel={isPresentiel}
         />
       </div>
