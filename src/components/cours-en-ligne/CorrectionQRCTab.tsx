@@ -401,7 +401,7 @@ const CorrectionQRCTab = () => {
                       min={0}
                       max={item.pointsMax}
                       step={0.5}
-                      value={isEditing ? editingPoints : (item.pointsObtenus ?? 0)}
+                      value={isEditing ? editingPoints : (item.pointsObtenus ?? item.autoScore)}
                       onChange={(e) => {
                         const val = Number(e.target.value);
                         setEditingPoints(val);
