@@ -539,6 +539,37 @@ const CorrectionQRCTab = () => {
                       <Badge className="bg-green-100 text-green-700 border-green-300 text-xs ml-1">✅ Corrigé</Badge>
                     )}
                   </div>
+
+                  {/* Commentaire pour l'apprenant */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
+                      <span className="text-xs font-medium text-muted-foreground">Commentaire pour l'apprenant :</span>
+                    </div>
+                    <textarea
+                      rows={2}
+                      placeholder="Ajouter un commentaire..."
+                      value={editingComments[uniqueKey] ?? item.commentaire}
+                      onChange={(e) => setEditingComments(prev => ({ ...prev, [uniqueKey]: e.target.value }))}
+                      className="w-full text-xs border rounded-md p-2 resize-none bg-background"
+                    />
+                    <div className="flex flex-wrap gap-1">
+                      {QUICK_COMMENTS.map((qc) => (
+                        <button
+                          key={qc}
+                          type="button"
+                          onClick={() => {
+                            const current = editingComments[uniqueKey] ?? item.commentaire;
+                            const sep = current.trim() ? (current.trim().endsWith(".") ? " " : ". ") : "";
+                            setEditingComments(prev => ({ ...prev, [uniqueKey]: current.trim() + sep + qc }));
+                          }}
+                          className="text-[10px] px-2 py-0.5 rounded-full border bg-muted hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
+                        >
+                          + {qc}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             );
