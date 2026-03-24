@@ -357,7 +357,7 @@ const CorrectionQRCTab = () => {
                         {new Date(item.completedAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       {item.pointsObtenus !== null ? (
                         <Badge className="bg-green-100 text-green-800 border-green-300">
                           ✅ {item.pointsObtenus}/{item.pointsMax} pts
@@ -367,6 +367,9 @@ const CorrectionQRCTab = () => {
                           ⏳ À corriger
                         </Badge>
                       )}
+                      <Badge variant="outline" className="font-bold text-sm">
+                        📊 {item.noteSur20 != null ? `${item.noteSur20}/20` : `${item.scoreMatiereObtenu}/${item.scoreMatiereMax}`}
+                      </Badge>
                     </div>
                   </div>
 
