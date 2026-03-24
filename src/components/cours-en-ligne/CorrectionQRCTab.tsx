@@ -28,6 +28,8 @@ interface QrcItem {
   pointsObtenus: number | null; // null = pas encore corrigé manuellement
   corrigeManuel: boolean;
   completedAt: string;
+  autoScore: number | null;
+  autoExplication: string | null;
 }
 
 function safeStr(v: unknown): string {
