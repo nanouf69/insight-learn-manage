@@ -1242,7 +1242,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
               </Button>
             </div>
           )}
-          {embedded && (
+          {embedded && isAdmin && (
             <Button variant="secondary" size="sm" className="text-xs" onClick={() => setSelectedFormation(null)}>
               Changer de formation
             </Button>
