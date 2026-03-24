@@ -846,8 +846,8 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
     loadSavedExamens().then(loadedExamens => {
       setExamens(loadedExamens);
       lastSavedFingerprintRef.current = JSON.stringify(loadedExamens);
-      lastSavedModuleFingerprintsRef.current = loadedExamens.reduce<Record<number, string>>((acc, ex, i) => {
-        acc[EXAMEN_BLANC_MODULE_BASE + i] = JSON.stringify(ex.matieres ?? []);
+      lastSavedModuleFingerprintsRef.current = loadedExamens.reduce<Record<number, string>>((acc, ex) => {
+        acc[getModuleIdForExamId(ex.id)] = JSON.stringify(ex.matieres ?? []);
         return acc;
       }, {});
       initialLoadDoneRef.current = true;
