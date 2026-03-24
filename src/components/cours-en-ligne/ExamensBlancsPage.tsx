@@ -1706,6 +1706,7 @@ function EcranResultats({
           <p className="text-sm text-gray-400 mt-1">{examen.titre}</p>
         </div>
       </div>
+      )}
 
       {/* Détail par matière — sous-totaux groupés */}
       <div className="space-y-4">
