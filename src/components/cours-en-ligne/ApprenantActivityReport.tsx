@@ -145,7 +145,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
       setLoading(true);
       const since = period === "all" ? "2000-01-01" : format(subDays(new Date(), parseInt(period)), "yyyy-MM-dd");
 
-      const [connRes, actRes] = await Promise.all([
+      const [connRes, actRes, complRes] = await Promise.all([
         supabase
           .from("apprenant_connexions" as any)
           .select("id, started_at, ended_at, last_seen_at, current_module")
@@ -158,10 +158,15 @@ export default function ApprenantActivityReport({ onBack }: Props) {
           .eq("apprenant_id", selectedId)
           .gte("occurred_at", since)
           .order("occurred_at", { ascending: false }),
+        supabase
+          .from("apprenant_module_completion")
+          .select("module_id")
+          .eq("apprenant_id", selectedId),
       ]);
 
       setConnexions(((connRes.data as any[]) || []) as Connexion[]);
       setActivites(((actRes.data as any[]) || []) as ModuleActivite[]);
+      setCompletedModuleIds(new Set(((complRes.data as any[]) || []).map((r: any) => r.module_id as number)));
       setLoading(false);
     };
     load();
