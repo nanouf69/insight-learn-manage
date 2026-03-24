@@ -123,7 +123,7 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
   const examens = cloneExamens(tousLesExamens);
   
   try {
-    const moduleIds = examens.map((_, i) => EXAMEN_BLANC_MODULE_BASE + i);
+    const moduleIds = examens.map((ex) => getModuleIdForExamId(ex.id));
     const { data, error } = await supabase
       .from("module_editor_state")
       .select("module_id, module_data, updated_at")
@@ -143,9 +143,13 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
     }
 
     if (data && data.length > 0) {
+      // Build moduleId → exam index lookup
+      const moduleIdToIdx: Record<number, number> = {};
+      examens.forEach((ex, i) => { moduleIdToIdx[getModuleIdForExamId(ex.id)] = i; });
+
       for (const row of data) {
-        const idx = row.module_id - EXAMEN_BLANC_MODULE_BASE;
-        if (idx >= 0 && idx < examens.length && row.module_data) {
+        const idx = moduleIdToIdx[row.module_id];
+        if (idx === undefined || idx < 0 || idx >= examens.length || !row.module_data) continue;
           const saved = row.module_data as unknown as ExamenBlanc;
           if (saved.matieres && Array.isArray(saved.matieres)) {
             // Always preserve texteSupport/texteSource + repair missing QRC keywords from source code (authoritative)
