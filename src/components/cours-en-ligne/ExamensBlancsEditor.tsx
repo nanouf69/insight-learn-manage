@@ -243,6 +243,10 @@ function QuestionEditor({
     setChoix(prev => prev.map((c, idx) => idx === i ? { ...c, correct: val } : c));
   };
 
+  const handleChoixExplication = (i: number, val: string) => {
+    setChoix(prev => prev.map((c, idx) => idx === i ? { ...c, explication: val || undefined } : c));
+  };
+
   const addChoix = () => {
     const lettres = ["A", "B", "C", "D", "E"];
     setChoix(prev => [...prev, { lettre: lettres[prev.length] || String(prev.length + 1), texte: "", correct: false }]);
