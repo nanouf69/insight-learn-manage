@@ -934,6 +934,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             apprenantId={apprenant?.id || null}
             userId={user?.id || null}
             apprenantType={apprenant?.type_apprenant || null}
+            isPresentiel={!["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"].includes(selectedFormation)}
           />
         </div>
       );
