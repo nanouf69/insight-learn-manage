@@ -44,6 +44,16 @@ function safeStr(v: unknown): string {
   try { return JSON.stringify(v); } catch { return ""; }
 }
 
+function roundToHalfStep(value: number): number {
+  return Math.round(value * 2) / 2;
+}
+
+function clampToHalfStep(value: number, max: number): number {
+  const safeMax = Number.isFinite(max) ? Math.max(max, 0) : 0;
+  const safeValue = Number.isFinite(value) ? value : 0;
+  return Math.min(Math.max(roundToHalfStep(safeValue), 0), safeMax);
+}
+
 function normalizeText(value: string): string {
   return value
     .toLowerCase()
@@ -120,10 +130,10 @@ function recomputeQrcAutoScore(questionDef: any, reponseEleve: string, pointsMax
   const gotFullPoints = matched >= requiredForFullPoints;
   const points = gotFullPoints
     ? pointsMax
-    : Math.floor((matched / requiredForFullPoints) * pointsMax * 2) / 2;
+    : clampToHalfStep((matched / requiredForFullPoints) * pointsMax, pointsMax);
 
   return {
-    autoScore: Math.min(points, pointsMax),
+    autoScore: clampToHalfStep(points, pointsMax),
     explication: `Recalcul : ${matched}/${total} élément(s) trouvés.`,
   };
 }
@@ -240,20 +250,21 @@ const CorrectionQRCTab = () => {
 
         const app = apprenantMap[r.apprenant_id] || { nom: "Inconnu", prenom: "" };
 
-        // Auto score: use saved correction, or recompute from question definition
+        const questionDef = matiere?.questions?.find((mq: any) => mq && mq.id === q.questionId);
+
+        // Auto score: if manual correction exists, use it; otherwise recompute deterministically
         let autoScore = 0;
         let autoExplication: string | null = null;
-        if (correction && typeof correction === "object") {
-          autoScore = correction.pointsObtenus ?? 0;
+        if (correction && typeof correction === "object" && hasManualCorrection) {
+          autoScore = clampToHalfStep(correction.pointsObtenus ?? 0, pts);
           autoExplication = correction.explication || null;
-        } else {
-          // No frozen correction — recompute from question definition
-          const questionDef = matiere?.questions?.find((mq: any) => mq && mq.id === q.questionId);
-          if (questionDef) {
-            const recomputed = recomputeQrcAutoScore(questionDef, safeStr(q.reponseEleve), pts);
-            autoScore = recomputed.autoScore;
-            autoExplication = recomputed.explication;
-          }
+        } else if (questionDef) {
+          const recomputed = recomputeQrcAutoScore(questionDef, safeStr(q.reponseEleve), pts);
+          autoScore = recomputed.autoScore;
+          autoExplication = recomputed.explication;
+        } else if (correction && typeof correction === "object") {
+          autoScore = clampToHalfStep(correction.pointsObtenus ?? 0, pts);
+          autoExplication = correction.explication || null;
         }
 
         qrcItems.push({
@@ -271,7 +282,9 @@ const CorrectionQRCTab = () => {
           reponseEleve: safeStr(q.reponseEleve),
           reponseCorrecte: safeStr(q.reponseCorrecte),
           pointsMax: pts,
-          pointsObtenus: correction && typeof correction === "object" ? correction.pointsObtenus : null,
+          pointsObtenus: correction && typeof correction === "object" && hasManualCorrection
+            ? clampToHalfStep(correction.pointsObtenus ?? 0, pts)
+            : null,
           corrigeManuel: !!hasManualCorrection,
           completedAt: r.completed_at,
           autoScore,
@@ -294,7 +307,7 @@ const CorrectionQRCTab = () => {
     const uniqueKey = `${item.resultId}-${item.questionId}`;
     setSavingId(uniqueKey);
 
-    const clamped = Math.min(Math.max(newPoints, 0), item.pointsMax);
+    const clamped = clampToHalfStep(newPoints, item.pointsMax);
 
     // Fetch current details
     const { data: row, error: fetchErr } = await supabase
@@ -343,7 +356,7 @@ const CorrectionQRCTab = () => {
       } else if (q.type === "QRC") {
         const corr = correctionsIA[q.questionId];
         if (corr && typeof corr === "object") {
-          newScore += Math.min(corr.pointsObtenus || 0, pts);
+          newScore += clampToHalfStep(corr.pointsObtenus || 0, pts);
         }
       }
     }
