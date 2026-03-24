@@ -1807,15 +1807,20 @@ function EcranResultats({
                                   } else {
                                     classes += "border-muted bg-muted/30 text-muted-foreground";
                                   }
-                                  return (
-                                    <div key={c.lettre} className={classes}>
-                                      <span className="font-bold shrink-0">{c.lettre})</span>
-                                      <span className="flex-1">{c.texte}</span>
-                                      {isCorrectChoice && <span className="text-green-700 font-bold text-xs bg-green-200 px-2 py-0.5 rounded-full shrink-0">✓ Bonne réponse</span>}
-                                      {isSelected && !isCorrectChoice && <span className="text-red-600 font-bold text-xs bg-red-200 px-2 py-0.5 rounded-full shrink-0">✗ Votre choix</span>}
-                                      {isSelected && isCorrectChoice && <span className="text-green-700 font-bold text-xs bg-green-300 px-2 py-0.5 rounded-full shrink-0">✓ Votre choix</span>}
-                                    </div>
-                                  );
+                                    return (
+                                      <div key={c.lettre}>
+                                        <div className={classes}>
+                                          <span className="font-bold shrink-0">{c.lettre})</span>
+                                          <span className="flex-1">{c.texte}</span>
+                                          {isCorrectChoice && <span className="text-green-700 font-bold text-xs bg-green-200 px-2 py-0.5 rounded-full shrink-0">✓ Bonne réponse</span>}
+                                          {isSelected && !isCorrectChoice && <span className="text-red-600 font-bold text-xs bg-red-200 px-2 py-0.5 rounded-full shrink-0">✗ Votre choix</span>}
+                                          {isSelected && isCorrectChoice && <span className="text-green-700 font-bold text-xs bg-green-300 px-2 py-0.5 rounded-full shrink-0">✓ Votre choix</span>}
+                                        </div>
+                                        {c.explication && (isSelected || isCorrectChoice) && (
+                                          <p className="text-xs text-muted-foreground italic ml-8 mt-1">💡 {c.explication}</p>
+                                        )}
+                                      </div>
+                                    );
                                 })}
                                 <div className="mt-2 flex flex-wrap gap-3 text-sm">
                                   <span className="font-medium text-muted-foreground">Votre réponse : <strong className={isCorrect ? "text-green-700" : "text-red-600"}>{Array.isArray(rep) && rep.length > 0 ? rep.join(", ") : "Aucune"}</strong></span>
