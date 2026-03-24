@@ -383,16 +383,30 @@ const CorrectionQRCTab = () => {
     } else {
       toast.success(`QRC corrigée : ${clamped}/${item.pointsMax} pts — Note matière : ${noteSur20}/20`);
       // Update local state for ALL QRC items sharing the same resultId
-      setItems(prev => prev.map(i => {
-        if (i.resultId === item.resultId) {
-          const updated: Partial<QrcItem> = { noteSur20, scoreMatiereObtenu: safeClamped };
-          if (i.questionId === item.questionId) {
-            return { ...i, ...updated, pointsObtenus: clamped, corrigeManuel: true, commentaire: commentaire || "" };
+      setItems(prev => {
+        const updated = prev.map(i => {
+          if (i.resultId === item.resultId) {
+            const upd: Partial<QrcItem> = { noteSur20, scoreMatiereObtenu: safeClamped };
+            if (i.questionId === item.questionId) {
+              return { ...i, ...upd, pointsObtenus: clamped, corrigeManuel: true, commentaire: commentaire || "" };
+            }
+            return { ...i, ...upd };
           }
-          return { ...i, ...updated };
-        }
-        return i;
-      }));
+          return i;
+        });
+        // After marking as done, the filtered list may shrink — adjust currentIndex
+        setTimeout(() => {
+          setCurrentIndex(prev => {
+            const newFiltered = updated.filter(i => {
+              if (filter === "pending") return !i.corrigeManuel;
+              if (filter === "done") return i.corrigeManuel;
+              return true;
+            });
+            return Math.min(prev, Math.max(0, newFiltered.length - 1));
+          });
+        }, 0);
+        return updated;
+      });
     }
 
     setSavingId(null);
