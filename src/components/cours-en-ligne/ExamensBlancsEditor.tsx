@@ -127,6 +127,50 @@ function syncVtcTaxiMatieres(examens: ExamenBlanc[]): void {
   }
 }
 
+// Offsets in tousLesExamens: VTC=0-5, TAXI=6-11, TA=12-17, VA=18-23
+const TA_OFFSET = 12;
+const VA_OFFSET = 18;
+
+/**
+ * Sync F(V) and G(V) from VTC exams to VA exams.
+ * VA exams only have 2 matières (F(V) at index 0, G(V) at index 1)
+ * which correspond to VTC matières at indices 5 and 6.
+ */
+function syncVtcVaMatieres(examens: ExamenBlanc[]): void {
+  for (let n = 0; n < VTC_COUNT; n++) {
+    const vtcIdx = n;
+    const vaIdx = VA_OFFSET + n;
+    if (vtcIdx >= examens.length || vaIdx >= examens.length) continue;
+    const vtcEx = examens[vtcIdx];
+    const vaEx = examens[vaIdx];
+    if (!vtcEx.matieres[5] || !vtcEx.matieres[6]) continue;
+    // Deep clone F(V) and G(V) from VTC into VA
+    const fv = JSON.parse(JSON.stringify(vtcEx.matieres[5])) as Matiere;
+    const gv = JSON.parse(JSON.stringify(vtcEx.matieres[6])) as Matiere;
+    vaEx.matieres = [fv, gv];
+  }
+}
+
+/**
+ * Sync F(T) and G(T) from TAXI exams to TA exams.
+ * TA exams only have 2 matières (F(T) at index 0, G(T) at index 1)
+ * which correspond to TAXI matières at indices 5 and 6.
+ */
+function syncTaxiTaMatieres(examens: ExamenBlanc[]): void {
+  for (let n = 0; n < VTC_COUNT; n++) {
+    const taxiIdx = TAXI_OFFSET + n;
+    const taIdx = TA_OFFSET + n;
+    if (taxiIdx >= examens.length || taIdx >= examens.length) continue;
+    const taxiEx = examens[taxiIdx];
+    const taEx = examens[taIdx];
+    if (!taxiEx.matieres[5] || !taxiEx.matieres[6]) continue;
+    // Deep clone F(T) and G(T) from TAXI into TA
+    const ft = JSON.parse(JSON.stringify(taxiEx.matieres[5])) as Matiere;
+    const gt = JSON.parse(JSON.stringify(taxiEx.matieres[6])) as Matiere;
+    taEx.matieres = [ft, gt];
+  }
+}
+
 // Load saved exam overrides from DB — NO CACHE, always fresh from DB
 export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
   const examens = cloneExamens(tousLesExamens);
