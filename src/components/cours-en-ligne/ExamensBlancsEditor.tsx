@@ -21,29 +21,17 @@ export const EXAMEN_BLANC_MODULE_BASE = 90000;
 const cloneExamens = (examens: ExamenBlanc[]): ExamenBlanc[] =>
   JSON.parse(JSON.stringify(examens)) as ExamenBlanc[];
 
-let lastSuccessfulExamensSnapshot: ExamenBlanc[] | null = null;
-const EXAMENS_SNAPSHOT_STORAGE_KEY = "examens_blancs_snapshot_v3";
+// ────────────────────────────────────────────────────────────────────────────
+// CRITICAL: No localStorage / in-memory cache.
+// Every call to loadSavedExamens() MUST hit the DB so that ALL students
+// always see the exact same version of exam data after an admin edit.
+// ────────────────────────────────────────────────────────────────────────────
 
-function readExamensSnapshotFromStorage(): ExamenBlanc[] | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(EXAMENS_SNAPSHOT_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0) return parsed as ExamenBlanc[];
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-function writeExamensSnapshotToStorage(examens: ExamenBlanc[]): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(EXAMENS_SNAPSHOT_STORAGE_KEY, JSON.stringify(examens));
-  } catch {
-    // Ignore quota / storage errors silently
-  }
+// Purge any stale localStorage snapshot left by previous versions
+if (typeof window !== "undefined") {
+  try { window.localStorage.removeItem("examens_blancs_snapshot_v3"); } catch {}
+  try { window.localStorage.removeItem("examens_blancs_snapshot_v2"); } catch {}
+  try { window.localStorage.removeItem("examens_blancs_snapshot"); } catch {}
 }
 
 const EXAM_ID_TO_MODULE_ID: Record<string, number> = {
