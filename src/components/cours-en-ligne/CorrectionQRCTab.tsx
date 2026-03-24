@@ -308,7 +308,7 @@ const CorrectionQRCTab = () => {
     let newScore = 0;
     for (const q of questions) {
       if (!q) continue;
-      const pts = matiere ? getPointsParQuestion(matiere.id, q.type || "QCM", matiere) : (q.type === "QRC" ? 2 : 1);
+      const pts = getPointsParQuestion(matiere?.id || "", q.type || "QCM", matiere || undefined);
 
       if (q.type === "QCM" && q.reponseCorrecte) {
         const correctes = Array.isArray(q.reponseCorrecte) ? [...q.reponseCorrecte].sort() : [q.reponseCorrecte];
