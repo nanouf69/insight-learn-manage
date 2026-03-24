@@ -753,6 +753,8 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
     try {
       const synced = JSON.parse(JSON.stringify(snapshot)) as ExamenBlanc[];
       syncVtcTaxiMatieres(synced);
+      syncVtcVaMatieres(synced);
+      syncTaxiTaMatieres(synced);
 
       const now = new Date().toISOString();
       const changedModuleFingerprints: Record<number, string> = {};
@@ -831,8 +833,10 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
           matieres: ex.matieres.map(m => m.id === matiereId ? updated : m),
         };
       });
-      // After any edit, sync VTC → TAXI common matières
+      // After any edit, sync VTC → TAXI → TA, VTC → VA
       syncVtcTaxiMatieres(next);
+      syncVtcVaMatieres(next);
+      syncTaxiTaMatieres(next);
       return next;
     });
   };
@@ -842,8 +846,8 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
     loadSavedExamens().then(loadedExamens => {
       setExamens(loadedExamens);
       lastSavedFingerprintRef.current = JSON.stringify(loadedExamens);
-      lastSavedModuleFingerprintsRef.current = loadedExamens.reduce<Record<number, string>>((acc, ex, i) => {
-        acc[EXAMEN_BLANC_MODULE_BASE + i] = JSON.stringify(ex.matieres ?? []);
+      lastSavedModuleFingerprintsRef.current = loadedExamens.reduce<Record<number, string>>((acc, ex) => {
+        acc[getModuleIdForExamId(ex.id)] = JSON.stringify(ex.matieres ?? []);
         return acc;
       }, {});
       initialLoadDoneRef.current = true;
