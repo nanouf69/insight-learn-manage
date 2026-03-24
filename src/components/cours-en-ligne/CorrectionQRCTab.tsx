@@ -30,6 +30,9 @@ interface QrcItem {
   completedAt: string;
   autoScore: number | null;
   autoExplication: string | null;
+  noteSur20: number | null;
+  scoreMatiereObtenu: number;
+  scoreMatiereMax: number;
 }
 
 function safeStr(v: unknown): string {
@@ -71,7 +74,7 @@ const CorrectionQRCTab = () => {
     // Fetch all exam_blanc results that have QRC questions
     const { data: results, error } = await supabase
       .from("apprenant_quiz_results")
-      .select("id, apprenant_id, quiz_id, quiz_type, quiz_titre, matiere_id, matiere_nom, details, completed_at, score_obtenu, score_max")
+      .select("id, apprenant_id, quiz_id, quiz_type, quiz_titre, matiere_id, matiere_nom, details, completed_at, score_obtenu, score_max, note_sur_20")
       .in("quiz_type", ["examen_blanc", "bilan"])
       .order("completed_at", { ascending: false });
 
@@ -142,6 +145,9 @@ const CorrectionQRCTab = () => {
           completedAt: r.completed_at,
           autoScore: autoScore != null ? autoScore : (correction && typeof correction === "object" ? correction.pointsObtenus : null),
           autoExplication: autoExplication,
+          noteSur20: r.note_sur_20 ?? null,
+          scoreMatiereObtenu: r.score_obtenu ?? 0,
+          scoreMatiereMax: r.score_max ?? 20,
         });
       }
     }
@@ -226,13 +232,18 @@ const CorrectionQRCTab = () => {
     if (updateErr) {
       toast.error("Erreur lors de la sauvegarde");
     } else {
-      toast.success(`QRC corrigée : ${clamped}/${item.pointsMax} pts`);
-      // Update local state
-      setItems(prev => prev.map(i =>
-        i.resultId === item.resultId && i.questionId === item.questionId
-          ? { ...i, pointsObtenus: clamped, corrigeManuel: true }
-          : i
-      ));
+      toast.success(`QRC corrigée : ${clamped}/${item.pointsMax} pts — Note matière : ${noteSur20}/20`);
+      // Update local state for ALL QRC items sharing the same resultId
+      setItems(prev => prev.map(i => {
+        if (i.resultId === item.resultId) {
+          const updated: Partial<QrcItem> = { noteSur20, scoreMatiereObtenu: safeClamped };
+          if (i.questionId === item.questionId) {
+            return { ...i, ...updated, pointsObtenus: clamped, corrigeManuel: true };
+          }
+          return { ...i, ...updated };
+        }
+        return i;
+      }));
     }
 
     setSavingId(null);
@@ -346,7 +357,7 @@ const CorrectionQRCTab = () => {
                         {new Date(item.completedAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       {item.pointsObtenus !== null ? (
                         <Badge className="bg-green-100 text-green-800 border-green-300">
                           ✅ {item.pointsObtenus}/{item.pointsMax} pts
@@ -356,6 +367,9 @@ const CorrectionQRCTab = () => {
                           ⏳ À corriger
                         </Badge>
                       )}
+                      <Badge variant="outline" className="font-bold text-sm">
+                        📊 {item.noteSur20 != null ? `${item.noteSur20}/20` : `${item.scoreMatiereObtenu}/${item.scoreMatiereMax}`}
+                      </Badge>
                     </div>
                   </div>
 
