@@ -7,7 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Printer, Clock, BookOpen, Calendar, ArrowLeft, BarChart3, ChevronsUpDown, Check } from "lucide-react";
+import { Printer, Clock, BookOpen, Calendar, ArrowLeft, BarChart3, ChevronsUpDown, Check, CheckCircle2, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format, subDays, differenceInMinutes, parseISO, startOfDay } from "date-fns";
