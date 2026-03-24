@@ -390,17 +390,10 @@ const CorrectionQRCTab = () => {
                     <p className="text-sm whitespace-pre-wrap text-green-900">{item.reponseCorrecte}</p>
                   </div>
 
-                  {/* Note automatique (mots clés) */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <p className="text-xs font-semibold text-blue-700 mb-1">🤖 Note automatique (mots clés) :</p>
-                    <p className="text-sm font-bold text-blue-900">{item.autoScore}/{item.pointsMax} pts</p>
-                    {item.autoExplication && !item.autoExplication.includes("manuelle") && (
-                      <p className="text-xs text-blue-600 mt-1">{item.autoExplication}</p>
-                    )}
-                  </div>
-
                   {/* Correction directe */}
                   <div className="flex items-center gap-2 p-2 bg-amber-50 border border-amber-300 rounded-lg flex-wrap">
+                    <span className="text-xs text-blue-700 font-medium">🤖 Mots clés : {item.autoScore}/{item.pointsMax}</span>
+                    <span className="text-amber-300">|</span>
                     <Pencil className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                     <span className="text-xs font-medium text-amber-800">Points :</span>
                     <input
