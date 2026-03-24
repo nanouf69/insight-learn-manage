@@ -180,7 +180,7 @@ const ApprenantSearchPreview = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full max-w-4xl grid-cols-6">
+        <TabsList className="flex w-full max-w-5xl flex-wrap">
           <TabsTrigger value="accueil" className="flex items-center gap-2">
             <BookOpen className="w-4 h-4" />
             Accueil
