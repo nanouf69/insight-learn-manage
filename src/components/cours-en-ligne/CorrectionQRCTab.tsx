@@ -285,7 +285,6 @@ const CorrectionQRCTab = () => {
     const details = (row as any).details as any;
     const correctionsIA = details.correctionsIA || {};
 
-    const uniqueKey = `${item.resultId}-${item.questionId}`;
     const commentaire = editingComments[uniqueKey] ?? item.commentaire;
 
     // Update this specific question's correction
