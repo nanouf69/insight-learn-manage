@@ -518,7 +518,7 @@ function MatiereEditor({
                         )}
                       </div>
                       <Badge variant="outline" className="shrink-0 text-xs font-semibold text-primary border-primary/40">
-                        {getPointsParQuestion(matiere.id, q?.type || "QCM")} pt{getPointsParQuestion(matiere.id, q?.type || "QCM") > 1 ? "s" : ""}
+                        {getPointsParQuestion(matiere.id, q?.type || "QCM", matiere)} pt{getPointsParQuestion(matiere.id, q?.type || "QCM", matiere) > 1 ? "s" : ""}
                       </Badge>
                     </div>
                     <Button
