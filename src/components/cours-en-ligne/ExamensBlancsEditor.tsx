@@ -15,22 +15,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 // Virtual module_id range for examens blancs: 90000+
-// Each exam gets a unique module_id based on its index
+// Stable mapping from exam ID → module_id (survives reordering / additions)
 export const EXAMEN_BLANC_MODULE_BASE = 90000;
 
 const cloneExamens = (examens: ExamenBlanc[]): ExamenBlanc[] =>
   JSON.parse(JSON.stringify(examens)) as ExamenBlanc[];
 
 let lastSuccessfulExamensSnapshot: ExamenBlanc[] | null = null;
-const EXAMENS_SNAPSHOT_STORAGE_KEY = "examens_blancs_snapshot_v1";
+const EXAMENS_SNAPSHOT_STORAGE_KEY = "examens_blancs_snapshot_v2";
 
 function readExamensSnapshotFromStorage(): ExamenBlanc[] | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = window.localStorage.getItem(EXAMENS_SNAPSHOT_STORAGE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as ExamenBlanc[];
-    return Array.isArray(parsed) ? parsed : null;
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed as ExamenBlanc[];
+    return null;
   } catch {
     return null;
   }
@@ -45,7 +46,37 @@ function writeExamensSnapshotToStorage(examens: ExamenBlanc[]): void {
   }
 }
 
+const EXAM_ID_TO_MODULE_ID: Record<string, number> = {
+  // VTC EB1-6
+  "EB1": 90000, "EB2": 90001, "EB3": 90002, "EB4": 90003, "EB5": 90004, "EB6": 90005,
+  // TAXI EB1-6
+  "EB1-TAXI": 90006, "EB2-TAXI": 90007, "EB3-TAXI": 90008, "EB4-TAXI": 90009, "EB5-TAXI": 90010, "EB6-TAXI": 90011,
+  // TA EB1-6
+  "eb1-ta": 90012, "eb2-ta": 90018, "eb3-ta": 90019, "eb4-ta": 90020, "eb5-ta": 90021, "eb6-ta": 90022,
+  // VA
+  "eb1-va": 90013,
+  // Bilans
+  "bilan-taxi": 90014, "bilan-vtc": 90015, "bilan-ta": 90016, "bilan-va": 90017,
+};
+
+export function getModuleIdForExamId(examId: string): number {
+  return EXAM_ID_TO_MODULE_ID[examId] ?? (EXAMEN_BLANC_MODULE_BASE + 100 + Math.abs(hashCode(examId)));
+}
+
+function hashCode(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  return h;
+}
+
+// Build reverse lookup
+const MODULE_ID_TO_EXAM_ID: Record<number, string> = {};
+for (const [eid, mid] of Object.entries(EXAM_ID_TO_MODULE_ID)) {
+  MODULE_ID_TO_EXAM_ID[mid] = eid;
+}
+
 export function getExamenModuleId(examIndex: number): number {
+  // Legacy compat — prefer getModuleIdForExamId
   return EXAMEN_BLANC_MODULE_BASE + examIndex;
 }
 
@@ -120,7 +151,7 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
   const examens = cloneExamens(tousLesExamens);
   
   try {
-    const moduleIds = examens.map((_, i) => EXAMEN_BLANC_MODULE_BASE + i);
+    const moduleIds = examens.map((ex) => getModuleIdForExamId(ex.id));
     const { data, error } = await supabase
       .from("module_editor_state")
       .select("module_id, module_data, updated_at")
@@ -140,42 +171,39 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
     }
 
     if (data && data.length > 0) {
+      // Build moduleId → exam index lookup
+      const moduleIdToIdx: Record<number, number> = {};
+      examens.forEach((ex, i) => { moduleIdToIdx[getModuleIdForExamId(ex.id)] = i; });
+
       for (const row of data) {
-        const idx = row.module_id - EXAMEN_BLANC_MODULE_BASE;
-        if (idx >= 0 && idx < examens.length && row.module_data) {
-          const saved = row.module_data as unknown as ExamenBlanc;
-          if (saved.matieres && Array.isArray(saved.matieres)) {
-            // Always preserve texteSupport/texteSource + repair missing QRC keywords from source code (authoritative)
-            const sourceMatieres = examens[idx].matieres;
-            const mergedMatieres = saved.matieres.map((savedMat) => {
-              const sourceMat = sourceMatieres.find(sm => sm.id === savedMat.id);
-              if (sourceMat) {
-                const sourceQuestions = Array.isArray(sourceMat.questions) ? sourceMat.questions : [];
-                const savedQuestions = Array.isArray(savedMat.questions) ? savedMat.questions : [];
-
-                const mergedQuestions = savedQuestions.map((savedQ) => {
-                  const sourceQ = sourceQuestions.find((sq) => sq.id === savedQ.id && sq.type === savedQ.type);
-                  if (!sourceQ || savedQ.type !== "QRC") return savedQ;
-
-                  const hasSavedKeywords = Array.isArray(savedQ.reponses_possibles) && savedQ.reponses_possibles.length > 0;
-                  const sourceKeywords = Array.isArray(sourceQ.reponses_possibles) ? sourceQ.reponses_possibles : [];
-
-                  if (!hasSavedKeywords && sourceKeywords.length > 0) {
-                    return { ...savedQ, reponses_possibles: [...sourceKeywords] };
-                  }
-
-                  return savedQ;
-                });
-
-                const merged = { ...savedMat, questions: mergedQuestions };
-                if (sourceMat.texteSupport) merged.texteSupport = sourceMat.texteSupport;
-                if (sourceMat.texteSource) merged.texteSource = sourceMat.texteSource;
-                return merged;
-              }
-              return savedMat;
-            });
-            examens[idx] = { ...examens[idx], matieres: mergedMatieres };
-          }
+        const idx = moduleIdToIdx[row.module_id];
+        if (idx === undefined || idx < 0 || idx >= examens.length || !row.module_data) continue;
+        const saved = row.module_data as unknown as ExamenBlanc;
+        if (saved.matieres && Array.isArray(saved.matieres)) {
+          const sourceMatieres = examens[idx].matieres;
+          const mergedMatieres = saved.matieres.map((savedMat) => {
+            const sourceMat = sourceMatieres.find(sm => sm.id === savedMat.id);
+            if (sourceMat) {
+              const sourceQuestions = Array.isArray(sourceMat.questions) ? sourceMat.questions : [];
+              const savedQuestions = Array.isArray(savedMat.questions) ? savedMat.questions : [];
+              const mergedQuestions = savedQuestions.map((savedQ) => {
+                const sourceQ = sourceQuestions.find((sq) => sq.id === savedQ.id && sq.type === savedQ.type);
+                if (!sourceQ || savedQ.type !== "QRC") return savedQ;
+                const hasSavedKeywords = Array.isArray(savedQ.reponses_possibles) && savedQ.reponses_possibles.length > 0;
+                const sourceKeywords = Array.isArray(sourceQ.reponses_possibles) ? sourceQ.reponses_possibles : [];
+                if (!hasSavedKeywords && sourceKeywords.length > 0) {
+                  return { ...savedQ, reponses_possibles: [...sourceKeywords] };
+                }
+                return savedQ;
+              });
+              const merged = { ...savedMat, questions: mergedQuestions };
+              if (sourceMat.texteSupport) merged.texteSupport = sourceMat.texteSupport;
+              if (sourceMat.texteSource) merged.texteSource = sourceMat.texteSource;
+              return merged;
+            }
+            return savedMat;
+          });
+          examens[idx] = { ...examens[idx], matieres: mergedMatieres };
         }
       }
     }
@@ -702,7 +730,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
       const changedModuleFingerprints: Record<number, string> = {};
       const rows = synced
         .map((ex, i) => {
-          const moduleId = EXAMEN_BLANC_MODULE_BASE + i;
+          const moduleId = getModuleIdForExamId(ex.id);
           const moduleFingerprint = JSON.stringify(ex.matieres ?? []);
           const hasChanged = lastSavedModuleFingerprintsRef.current[moduleId] !== moduleFingerprint;
 
