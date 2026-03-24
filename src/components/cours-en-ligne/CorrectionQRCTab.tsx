@@ -246,6 +246,11 @@ const CorrectionQRCTab = () => {
       for (const q of questionList) {
         if (q.type !== "QRC") continue;
 
+        // Deduplicate per apprenant + quiz + matière + question
+        const qrcKey = `${r.apprenant_id}__${r.quiz_id}__${r.matiere_id || ""}__${q.questionId}`;
+        if (seenQrcKeys.has(qrcKey)) continue;
+        seenQrcKeys.add(qrcKey);
+
         const pts = getPointsParQuestion(r.matiere_id || "", "QRC", matiere || undefined);
 
         const correction = correctionsIA[q.questionId];
