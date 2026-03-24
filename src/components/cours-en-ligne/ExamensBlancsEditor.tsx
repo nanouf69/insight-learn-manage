@@ -18,6 +18,34 @@ import { toast } from "sonner";
 // Stable mapping from exam ID → module_id (survives reordering / additions)
 export const EXAMEN_BLANC_MODULE_BASE = 90000;
 
+const cloneExamens = (examens: ExamenBlanc[]): ExamenBlanc[] =>
+  JSON.parse(JSON.stringify(examens)) as ExamenBlanc[];
+
+let lastSuccessfulExamensSnapshot: ExamenBlanc[] | null = null;
+const EXAMENS_SNAPSHOT_STORAGE_KEY = "examens_blancs_snapshot_v1";
+
+function readExamensSnapshotFromStorage(): ExamenBlanc[] | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(EXAMENS_SNAPSHOT_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed as ExamenBlanc[];
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function writeExamensSnapshotToStorage(examens: ExamenBlanc[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(EXAMENS_SNAPSHOT_STORAGE_KEY, JSON.stringify(examens));
+  } catch {
+    // Ignore quota / storage errors silently
+  }
+}
+
 const EXAM_ID_TO_MODULE_ID: Record<string, number> = {
   // VTC EB1-6
   "EB1": 90000, "EB2": 90001, "EB3": 90002, "EB4": 90003, "EB5": 90004, "EB6": 90005,
