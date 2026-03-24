@@ -137,6 +137,17 @@ const CorrectionQRCTab = () => {
   const [editingPoints, setEditingPoints] = useState(0);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [examenMap, setExamenMap] = useState<Record<string, ExamenBlanc>>({});
+  const [editingComments, setEditingComments] = useState<Record<string, string>>({});
+
+  const QUICK_COMMENTS = [
+    "Précisez !!!",
+    "Dire plutôt permis de conduire hors période probatoire",
+    "Précisez casier B2 vierge",
+    "Mal dit",
+    "Attention aux fautes",
+    "Réponse incomplète",
+    "Hors sujet",
+  ];
 
   // Load examens (source + saved)
   useEffect(() => {
