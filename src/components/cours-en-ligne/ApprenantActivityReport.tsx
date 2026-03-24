@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format, subDays, differenceInMinutes, parseISO, startOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
+import { FORMATION_MODULES } from "./modules-config";
 
 interface Apprenant {
   id: string;
