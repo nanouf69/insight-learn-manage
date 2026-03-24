@@ -14,6 +14,7 @@ import ExamensBlancsPage from "./ExamensBlancsPage";
 import ExamensBlancsEditor from "./ExamensBlancsEditor";
 import CoursPublic from "@/pages/CoursPublic";
 import ApprenantActivityReport from "./ApprenantActivityReport";
+import CorrectionQRCTab from "./CorrectionQRCTab";
 import ResultatsSessionPage from "./ResultatsSessionPage";
 import { supabase } from "@/integrations/supabase/client";
 
