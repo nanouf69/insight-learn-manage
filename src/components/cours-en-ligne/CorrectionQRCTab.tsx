@@ -74,7 +74,7 @@ const CorrectionQRCTab = () => {
     // Fetch all exam_blanc results that have QRC questions
     const { data: results, error } = await supabase
       .from("apprenant_quiz_results")
-      .select("id, apprenant_id, quiz_id, quiz_type, quiz_titre, matiere_id, matiere_nom, details, completed_at, score_obtenu, score_max")
+      .select("id, apprenant_id, quiz_id, quiz_type, quiz_titre, matiere_id, matiere_nom, details, completed_at, score_obtenu, score_max, note_sur_20")
       .in("quiz_type", ["examen_blanc", "bilan"])
       .order("completed_at", { ascending: false });
 
