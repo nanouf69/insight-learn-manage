@@ -2422,7 +2422,7 @@ export default function ExamensBlancsPage({
 
   const calculerMaxPoints = (matiere: Matiere): number => {
     const questionsSafe = (matiere.questions ?? []).filter((q): q is Question => q != null && q?.type != null);
-    return questionsSafe.reduce((acc, q) => acc + getPointsParQuestion(matiere.id, q?.type || "QCM"), 0, matiere);
+    return questionsSafe.reduce((acc, q) => acc + getPointsParQuestion(matiere.id, q?.type || "QCM", matiere), 0);
   };
 
   const calculerNote = (matiere: Matiere, reponses: Reponses): number => {
