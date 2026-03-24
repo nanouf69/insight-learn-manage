@@ -285,12 +285,16 @@ const CorrectionQRCTab = () => {
     const details = (row as any).details as any;
     const correctionsIA = details.correctionsIA || {};
 
+    const uniqueKey = `${item.resultId}-${item.questionId}`;
+    const commentaire = editingComments[uniqueKey] ?? item.commentaire;
+
     // Update this specific question's correction
     correctionsIA[item.questionId] = {
       estCorrect: clamped >= item.pointsMax,
       pointsObtenus: clamped,
       nombrefautes: 0,
       explication: `Correction manuelle par l'administrateur : ${clamped}/${item.pointsMax} pts`,
+      commentaire: commentaire || "",
     };
 
     // Recalculate total score for this matiere
