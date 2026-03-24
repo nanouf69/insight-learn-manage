@@ -2363,10 +2363,13 @@ export default function ExamensBlancsPage({
 
   // Realtime: reload when admin saves exam changes
   useEffect(() => {
-    const maxExamModuleId = EXAMEN_BLANC_MODULE_BASE + tousLesExamens.length - 1;
+    // Use the actual Set of valid exam module IDs (not a contiguous range)
+    const validExamModuleIds = new Set(
+      tousLesExamens.map((ex) => getModuleIdForExamId(ex.id))
+    );
     const isExamModuleEvent = (payload: any) => {
       const moduleId = Number(payload?.new?.module_id ?? payload?.old?.module_id);
-      return Number.isFinite(moduleId) && moduleId >= EXAMEN_BLANC_MODULE_BASE && moduleId <= maxExamModuleId;
+      return Number.isFinite(moduleId) && validExamModuleIds.has(moduleId);
     };
 
     const channel = supabase
@@ -2380,7 +2383,9 @@ export default function ExamensBlancsPage({
         },
         (payload) => {
           if (!isExamModuleEvent(payload)) return;
-          console.log("[Realtime] Exam blanc updated, reloading...");
+          console.log("[Realtime] Exam blanc updated, clearing session & reloading...");
+          // Invalidate any in-progress exam session so the student gets fresh data
+          try { sessionStorage.removeItem(EXAM_SESSION_KEY); } catch {}
           void refreshLiveExamens();
         }
       )
@@ -2391,7 +2396,7 @@ export default function ExamensBlancsPage({
       });
 
     return () => { supabase.removeChannel(channel); };
-  }, [refreshLiveExamens]);
+  }, [refreshLiveExamens, EXAM_SESSION_KEY]);
 
   // Fallback: keep learner data synced even if realtime disconnects temporarily
   useEffect(() => {
