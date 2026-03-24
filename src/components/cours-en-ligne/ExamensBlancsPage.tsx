@@ -1828,6 +1828,62 @@ function EcranResultats({
                                   </div>
                                 )}
                                 <p className="text-xs text-green-700 font-medium">Réponse attendue : {q.reponseQRC || (q.reponses_possibles || []).join(" / ") || "—"}</p>
+                                {/* Admin manual QRC override */}
+                                {isAdmin && !isLoadingIA && (
+                                  <div className="mt-2">
+                                    {editingQrc === `${mi}-${q.id}` ? (
+                                      <div className="flex items-center gap-2 p-2 bg-amber-50 border border-amber-300 rounded-lg">
+                                        <Pencil className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                        <span className="text-xs font-medium text-amber-800">Points :</span>
+                                        <input
+                                          type="number"
+                                          min={0}
+                                          max={pts}
+                                          step={0.5}
+                                          value={editingPoints}
+                                          onChange={(e) => setEditingPoints(Number(e.target.value))}
+                                          className="w-16 px-2 py-1 text-xs border rounded text-center font-bold"
+                                          autoFocus
+                                          onKeyDown={(e) => {
+                                            if (e.key === "Enter") handleAdminOverrideQrc(mi, q.id, editingPoints, pts);
+                                            if (e.key === "Escape") setEditingQrc(null);
+                                          }}
+                                        />
+                                        <span className="text-xs text-amber-700">/ {pts}</span>
+                                        <Button
+                                          size="sm"
+                                          variant="default"
+                                          className="h-6 px-2 text-xs"
+                                          onClick={() => handleAdminOverrideQrc(mi, q.id, editingPoints, pts)}
+                                        >
+                                          ✓ Valider
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="h-6 px-2 text-xs"
+                                          onClick={() => setEditingQrc(null)}
+                                        >
+                                          Annuler
+                                        </Button>
+                                      </div>
+                                    ) : (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-6 px-2 text-xs gap-1 border-amber-300 text-amber-700 hover:bg-amber-50"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setEditingQrc(`${mi}-${q.id}`);
+                                          setEditingPoints(pointsObtenus);
+                                        }}
+                                      >
+                                        <Pencil className="w-3 h-3" />
+                                        Corriger manuellement
+                                      </Button>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
