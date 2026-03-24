@@ -203,6 +203,7 @@ const CorrectionQRCTab = () => {
     (apprenants || []).forEach((a: any) => { apprenantMap[a.id] = { nom: a.nom, prenom: a.prenom }; });
 
     const qrcItems: QrcItem[] = [];
+    const seenQrcKeys = new Set<string>();
 
     // Deduplicate: keep only the latest result per apprenant + quiz + matière
     const seenApprenantQuizMatiere = new Set<string>();
