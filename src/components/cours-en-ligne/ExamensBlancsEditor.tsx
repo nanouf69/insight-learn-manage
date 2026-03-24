@@ -188,6 +188,8 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
       // On error, return source data (no stale cache)
       repairCorrectFlags(examens);
       syncVtcTaxiMatieres(examens);
+      syncVtcVaMatieres(examens);
+      syncTaxiTaMatieres(examens);
       return examens;
     }
 
