@@ -1951,6 +1951,15 @@ function EcranResultats({
         })}
 
         {/* Score global résumé */}
+        {hasQrcPendingValidation ? (
+          <Card className="border-2 border-amber-400">
+            <CardContent className="py-6 px-5 text-center">
+              <Clock className="w-8 h-8 mx-auto mb-2 text-amber-500" />
+              <p className="text-xl font-black text-amber-600">En attente de validation du formateur</p>
+              <p className="text-sm text-muted-foreground mt-1">Le résultat final sera disponible après correction des QRC par votre formateur.</p>
+            </CardContent>
+          </Card>
+        ) : (
         <Card className="border-2" style={{ borderColor: '#F4A227' }}>
           <CardContent className="py-4 px-5">
             <div className="flex items-center justify-between">
@@ -1969,6 +1978,7 @@ function EcranResultats({
             </div>
           </CardContent>
         </Card>
+        )}
       </div>
 
       {/* Bouton refaire les fausses — EN HAUT bien visible */}
