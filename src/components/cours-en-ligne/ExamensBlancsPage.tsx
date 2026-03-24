@@ -2055,9 +2055,14 @@ function RevisionFausses({
 
       <Card className="border-2" style={{ borderColor: '#0D2540' }}>
         <CardContent className="pt-5 pb-5 space-y-4">
-          <p className="font-semibold text-base" style={{ color: '#0D2540' }}>
-            {q.enonce}
-          </p>
+          <div className="flex items-start justify-between gap-3">
+            <p className="font-semibold text-base flex-1" style={{ color: '#0D2540' }}>
+              {q.enonce}
+            </p>
+            <Badge variant="outline" className="shrink-0 text-xs font-semibold text-primary border-primary/40">
+              {getPointsParQuestion(current.matiere.id, q?.type || "QCM")} pt{getPointsParQuestion(current.matiere.id, q?.type || "QCM") > 1 ? "s" : ""}
+            </Badge>
+          </div>
           {q?.image && (
             <img src={q.image} alt="Illustration" className="mt-2 max-h-40 rounded-lg border" />
           )}
