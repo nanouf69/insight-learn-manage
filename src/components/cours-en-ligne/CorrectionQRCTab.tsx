@@ -43,6 +43,90 @@ function safeStr(v: unknown): string {
   try { return JSON.stringify(v); } catch { return ""; }
 }
 
+function normalizeText(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[àâäáã]/g, "a")
+    .replace(/[éèêë]/g, "e")
+    .replace(/[îïí]/g, "i")
+    .replace(/[ôöó]/g, "o")
+    .replace(/[ùûüú]/g, "u")
+    .replace(/[ç]/g, "c")
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function fuzzyContainsLocal(text: string, keyword: string): boolean {
+  if (text.includes(keyword)) return true;
+  if (keyword.length <= 3) return false;
+  for (let i = 0; i < keyword.length; i++) {
+    const partial = keyword.slice(0, i) + keyword.slice(i + 1);
+    if (partial.length >= 3 && text.includes(partial)) return true;
+  }
+  const words = text.split(" ");
+  for (const word of words) {
+    if (word.length < 3 || keyword.length < 4) continue;
+    if (Math.abs(word.length - keyword.length) <= 2) {
+      let ki = 0;
+      for (let wi = 0; wi < word.length && ki < keyword.length; wi++) {
+        if (word[wi] === keyword[ki]) ki++;
+      }
+      if (ki >= keyword.length - 1) return true;
+    }
+  }
+  return false;
+}
+
+const STOPWORDS = new Set([
+  "avec", "dans", "pour", "sans", "dont", "plus", "moins", "etre", "avoir", "faire", "cette", "votre", "vous", "leur", "leurs", "entre", "sous", "aux", "des", "les", "une", "du", "de", "la", "le", "et", "ou", "au", "il", "elle", "ils", "elles", "son", "ses", "sur", "par", "qui",
+]);
+
+/** Recompute QRC auto-score from question definition + student response */
+function recomputeQrcAutoScore(questionDef: any, reponseEleve: string, pointsMax: number): { autoScore: number; explication: string } {
+  if (!questionDef || !reponseEleve.trim()) return { autoScore: 0, explication: "Aucune réponse." };
+
+  const normalizedResponse = normalizeText(reponseEleve);
+
+  // Build expected elements from question definition
+  const explicitEntries: string[] = Array.isArray(questionDef.reponses_possibles) ? questionDef.reponses_possibles : [];
+  let elements: string[][] = [];
+
+  if (explicitEntries.length > 0) {
+    elements = explicitEntries
+      .map((entry: string) =>
+        Array.from(new Set(safeStr(entry).split("|").map((alt: string) => normalizeText(alt)).filter(Boolean)))
+      )
+      .filter((alts: string[]) => alts.length > 0);
+  }
+
+  if (elements.length === 0) {
+    const normalizedExpected = normalizeText(safeStr(questionDef.reponseQRC || ""));
+    if (!normalizedExpected) return { autoScore: 0, explication: "Réponse attendue indisponible." };
+    const fallbackKeywords = Array.from(new Set(
+      normalizedExpected.split(" ").map(w => w.trim()).filter(w => w.length >= 3 && !STOPWORDS.has(w))
+    )).slice(0, 12);
+    elements = fallbackKeywords.map(kw => [kw]);
+  }
+
+  if (elements.length === 0) return { autoScore: 0, explication: "Aucun mot-clé défini." };
+
+  const matched = elements.filter(alternatives =>
+    alternatives.some(alt => fuzzyContainsLocal(normalizedResponse, alt))
+  ).length;
+  const total = elements.length;
+  const requiredForFullPoints = total > 3 ? 3 : total <= 2 ? total : Math.ceil(total * 0.8);
+  const gotFullPoints = matched >= requiredForFullPoints;
+  const points = gotFullPoints
+    ? pointsMax
+    : Math.round((matched / requiredForFullPoints) * pointsMax * 10) / 10;
+
+  return {
+    autoScore: Math.min(points, pointsMax),
+    explication: `Recalcul : ${matched}/${total} élément(s) trouvés.`,
+  };
+}
+
 const CorrectionQRCTab = () => {
   const [items, setItems] = useState<QrcItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -117,13 +201,21 @@ const CorrectionQRCTab = () => {
 
         const app = apprenantMap[r.apprenant_id] || { nom: "Inconnu", prenom: "" };
 
-        // Auto score: always show what the keyword engine gave (or 0 if no auto-correction ran)
-        const autoScore = correction && typeof correction === "object"
-          ? (correction.pointsObtenus ?? 0)
-          : 0;
-        const autoExplication = correction && typeof correction === "object"
-          ? correction.explication || null
-          : null;
+        // Auto score: use saved correction, or recompute from question definition
+        let autoScore = 0;
+        let autoExplication: string | null = null;
+        if (correction && typeof correction === "object") {
+          autoScore = correction.pointsObtenus ?? 0;
+          autoExplication = correction.explication || null;
+        } else {
+          // No frozen correction — recompute from question definition
+          const questionDef = matiere?.questions?.find((mq: any) => mq && mq.id === q.questionId);
+          if (questionDef) {
+            const recomputed = recomputeQrcAutoScore(questionDef, safeStr(q.reponseEleve), pts);
+            autoScore = recomputed.autoScore;
+            autoExplication = recomputed.explication;
+          }
+        }
 
         qrcItems.push({
           resultId: r.id,
