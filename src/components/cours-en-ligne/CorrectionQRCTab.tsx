@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle2, Clock, Pencil, Search, User, FileText, Filter, MessageSquare } from "lucide-react";
+import { CheckCircle2, Clock, Pencil, Search, User, FileText, Filter, MessageSquare, ChevronLeft, ChevronRight } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere } from "./examens-blancs-data";
@@ -148,6 +148,7 @@ const CorrectionQRCTab = () => {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [examenMap, setExamenMap] = useState<Record<string, ExamenBlanc>>({});
   const [editingComments, setEditingComments] = useState<Record<string, string>>({});
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   const QUICK_COMMENTS = [
     "Précisez !!!",
@@ -414,6 +415,9 @@ const CorrectionQRCTab = () => {
     return true;
   });
 
+  // Reset index when filter/search changes
+  useEffect(() => { setCurrentIndex(0); }, [filter, searchQuery]);
+
   const pendingCount = items.filter(i => !i.corrigeManuel).length;
   const doneCount = items.filter(i => i.corrigeManuel).length;
 
@@ -482,7 +486,37 @@ const CorrectionQRCTab = () => {
         </Card>
       ) : (
         <div className="space-y-3">
-          {filtered.map((item) => {
+          {/* Navigation arrows */}
+          <div className="flex items-center justify-between bg-muted/50 rounded-lg px-4 py-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => { setCurrentIndex(Math.max(0, currentIndex - 1)); setEditingId(null); }}
+              disabled={currentIndex <= 0}
+              className="gap-1"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Précédent
+            </Button>
+            <span className="text-sm font-medium text-muted-foreground">
+              {currentIndex + 1} / {filtered.length}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => { setCurrentIndex(Math.min(filtered.length - 1, currentIndex + 1)); setEditingId(null); }}
+              disabled={currentIndex >= filtered.length - 1}
+              className="gap-1"
+            >
+              Suivant
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+
+          {(() => {
+            const safeIdx = Math.min(currentIndex, filtered.length - 1);
+            const item = filtered[safeIdx];
+            if (!item) return null;
             const uniqueKey = `${item.resultId}-${item.questionId}`;
             const isEditing = editingId === uniqueKey;
             const isSaving = savingId === uniqueKey;
@@ -613,7 +647,7 @@ const CorrectionQRCTab = () => {
                 </CardContent>
               </Card>
             );
-          })}
+          })()}
         </div>
       )}
     </div>
