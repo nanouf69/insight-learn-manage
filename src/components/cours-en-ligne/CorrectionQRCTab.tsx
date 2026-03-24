@@ -28,7 +28,7 @@ interface QrcItem {
   pointsObtenus: number | null; // null = pas encore corrigé manuellement
   corrigeManuel: boolean;
   completedAt: string;
-  autoScore: number | null;
+  autoScore: number;
   autoExplication: string | null;
   noteSur20: number | null;
   scoreMatiereObtenu: number;
@@ -117,10 +117,10 @@ const CorrectionQRCTab = () => {
 
         const app = apprenantMap[r.apprenant_id] || { nom: "Inconnu", prenom: "" };
 
-        // Auto score from keyword matching (before any manual override)
-        const autoScore = correction && typeof correction === "object" && !correction.explication?.includes("manuelle")
-          ? correction.pointsObtenus ?? null
-          : null;
+        // Auto score: always show what the keyword engine gave (or 0 if no auto-correction ran)
+        const autoScore = correction && typeof correction === "object"
+          ? (correction.pointsObtenus ?? 0)
+          : 0;
         const autoExplication = correction && typeof correction === "object"
           ? correction.explication || null
           : null;
@@ -143,8 +143,8 @@ const CorrectionQRCTab = () => {
           pointsObtenus: correction && typeof correction === "object" ? correction.pointsObtenus : null,
           corrigeManuel: !!hasManualCorrection,
           completedAt: r.completed_at,
-          autoScore: autoScore != null ? autoScore : (correction && typeof correction === "object" ? correction.pointsObtenus : null),
-          autoExplication: autoExplication,
+          autoScore,
+          autoExplication,
           noteSur20: r.note_sur_20 ?? null,
           scoreMatiereObtenu: r.score_obtenu ?? 0,
           scoreMatiereMax: r.score_max ?? 20,
@@ -391,15 +391,13 @@ const CorrectionQRCTab = () => {
                   </div>
 
                   {/* Note automatique (mots clés) */}
-                  {item.autoScore !== null && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                      <p className="text-xs font-semibold text-blue-700 mb-1">🤖 Note automatique (mots clés) :</p>
-                      <p className="text-sm font-bold text-blue-900">{item.autoScore}/{item.pointsMax} pts</p>
-                      {item.autoExplication && !item.autoExplication.includes("manuelle") && (
-                        <p className="text-xs text-blue-600 mt-1">{item.autoExplication}</p>
-                      )}
-                    </div>
-                  )}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-xs font-semibold text-blue-700 mb-1">🤖 Note automatique (mots clés) :</p>
+                    <p className="text-sm font-bold text-blue-900">{item.autoScore}/{item.pointsMax} pts</p>
+                    {item.autoExplication && !item.autoExplication.includes("manuelle") && (
+                      <p className="text-xs text-blue-600 mt-1">{item.autoExplication}</p>
+                    )}
+                  </div>
 
                   {/* Correction directe */}
                   <div className="flex items-center gap-2 p-2 bg-amber-50 border border-amber-300 rounded-lg flex-wrap">
