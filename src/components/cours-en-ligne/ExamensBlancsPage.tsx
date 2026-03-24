@@ -1323,6 +1323,23 @@ function EcranResultats({
     setExpandedMatieres(prev => ({ ...prev, [mi]: !prev[mi] }));
   };
 
+  // Admin manual QRC override
+  const handleAdminOverrideQrc = (mi: number, questionId: number, newPoints: number, pts: number) => {
+    const clamped = clampToQuestionMax(newPoints, pts);
+    const correction: CorrectionQRC = {
+      estCorrect: clamped >= pts,
+      pointsObtenus: clamped,
+      nombrefautes: 0,
+      explication: `Correction manuelle par l'administrateur : ${clamped}/${pts} pts`,
+    };
+    setCorrectionsIA(prev => ({
+      ...prev,
+      [mi]: { ...(prev[mi] || {}), [questionId]: correction },
+    }));
+    setEditingQrc(null);
+    toast.success(`QRC corrigée : ${clamped}/${pts} pts`);
+  };
+
   // Save AI corrections to DB once complete
   const saveCorrectionsToDb = async (finalCorrections: { [matiereIdx: number]: CorrectionCache }) => {
     if (!apprenantId || !userId) return;
