@@ -22,7 +22,7 @@ const cloneExamens = (examens: ExamenBlanc[]): ExamenBlanc[] =>
   JSON.parse(JSON.stringify(examens)) as ExamenBlanc[];
 
 let lastSuccessfulExamensSnapshot: ExamenBlanc[] | null = null;
-const EXAMENS_SNAPSHOT_STORAGE_KEY = "examens_blancs_snapshot_v1";
+const EXAMENS_SNAPSHOT_STORAGE_KEY = "examens_blancs_snapshot_v2";
 
 function readExamensSnapshotFromStorage(): ExamenBlanc[] | null {
   if (typeof window === "undefined") return null;
