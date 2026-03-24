@@ -730,7 +730,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
       const changedModuleFingerprints: Record<number, string> = {};
       const rows = synced
         .map((ex, i) => {
-          const moduleId = EXAMEN_BLANC_MODULE_BASE + i;
+          const moduleId = getModuleIdForExamId(ex.id);
           const moduleFingerprint = JSON.stringify(ex.matieres ?? []);
           const hasChanged = lastSavedModuleFingerprintsRef.current[moduleId] !== moduleFingerprint;
 
