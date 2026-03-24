@@ -149,7 +149,7 @@ const CorrectionQRCTab = () => {
   const [examenMap, setExamenMap] = useState<Record<string, ExamenBlanc>>({});
   const [editingComments, setEditingComments] = useState<Record<string, string>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [recentlyCorrected, setRecentlyCorrected] = useState<Set<string>>(new Set());
+  const [lastCorrectedKey, setLastCorrectedKey] = useState<string | null>(null);
 
   const QUICK_COMMENTS = [
     "Précisez !!!",
@@ -383,12 +383,8 @@ const CorrectionQRCTab = () => {
       toast.error("Erreur lors de la sauvegarde");
     } else {
       toast.success(`QRC corrigée : ${clamped}/${item.pointsMax} pts — Note matière : ${noteSur20}/20`);
-      // Update local state for ALL QRC items sharing the same resultId
-      setRecentlyCorrected(prev => {
-        const next = new Set(prev);
-        next.add(uniqueKey);
-        return next;
-      });
+      // Keep only the latest corrected item visible in pending mode (for quick back navigation)
+      setLastCorrectedKey(uniqueKey);
 
       setItems(prev => {
         const updated = prev.map(i => {
@@ -406,11 +402,15 @@ const CorrectionQRCTab = () => {
           setCurrentIndex(prev => {
             const newFiltered = updated.filter(i => {
               const key = `${i.resultId}-${i.questionId}`;
-              const isRecently = key === uniqueKey || recentlyCorrected.has(key);
-              if (filter === "pending") return !i.corrigeManuel || isRecently;
+              if (filter === "pending") return !i.corrigeManuel || key === uniqueKey;
               if (filter === "done") return i.corrigeManuel;
               return true;
             });
+
+            if (filter === "pending") {
+              return Math.min(prev + 1, Math.max(0, newFiltered.length - 1));
+            }
+
             return Math.min(prev, Math.max(0, newFiltered.length - 1));
           });
         }, 0);
@@ -426,7 +426,7 @@ const CorrectionQRCTab = () => {
   const filtered = items.filter(item => {
     if (filter === "pending") {
       const key = `${item.resultId}-${item.questionId}`;
-      if (item.corrigeManuel && !recentlyCorrected.has(key)) return false;
+      if (item.corrigeManuel && key !== lastCorrectedKey) return false;
     }
     if (filter === "done" && !item.corrigeManuel) return false;
     if (searchQuery) {
@@ -443,7 +443,10 @@ const CorrectionQRCTab = () => {
   });
 
   // Reset index when filter/search changes
-  useEffect(() => { setCurrentIndex(0); }, [filter, searchQuery]);
+  useEffect(() => {
+    setCurrentIndex(0);
+    setLastCorrectedKey(null);
+  }, [filter, searchQuery]);
 
   const pendingCount = items.filter(i => !i.corrigeManuel).length;
   const doneCount = items.filter(i => i.corrigeManuel).length;
