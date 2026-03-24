@@ -8,7 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from "@/components/ui/label";
 import {
   ArrowLeft, ChevronDown, ChevronRight, Pencil, Trash2, Plus,
-  Save, CheckCircle2, X, Clock, Layers, Loader2, ArrowUp, ArrowDown
+  Save, CheckCircle2, X, Clock, Layers, Loader2, ArrowUp, ArrowDown, ArrowLeftRight
 } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, type Question, type Choix } from "./examens-blancs-data";
 import { supabase } from "@/integrations/supabase/client";
@@ -210,21 +210,43 @@ function QuestionEditor({
   onCancel: () => void;
 }) {
   const [enonce, setEnonce] = useState(question.enonce);
+  const [qType, setQType] = useState<"QCM" | "QRC">(question?.type as "QCM" | "QRC" || "QCM");
   const [reponseQRC, setReponseQRC] = useState(question.reponseQRC || "");
   const [motsCles, setMotsCles] = useState((question.reponses_possibles || []).join(", "));
   const [choix, setChoix] = useState<Choix[]>(question.choix ? [...question.choix] : []);
 
+  const toggleType = () => {
+    if (qType === "QCM") {
+      setQType("QRC");
+      // Keep enonce, clear choix, init QRC fields
+      if (!reponseQRC) setReponseQRC("");
+    } else {
+      setQType("QCM");
+      // Keep enonce, init default choix if empty
+      if (choix.length === 0) {
+        setChoix([
+          { lettre: "A", texte: "Choix A", correct: true },
+          { lettre: "B", texte: "Choix B" },
+        ]);
+      }
+    }
+  };
+
   const buildUpdatedQuestion = (): Question => {
     const updated: Question = {
       ...question,
+      type: qType,
       enonce,
     };
 
-    if (question?.type === "QRC") {
+    if (qType === "QRC") {
       updated.reponseQRC = reponseQRC;
       updated.reponses_possibles = motsCles.split(",").map(s => s.trim()).filter(Boolean);
+      delete (updated as any).choix;
     } else {
       updated.choix = choix;
+      delete (updated as any).reponseQRC;
+      delete (updated as any).reponses_possibles;
     }
 
     return updated;
@@ -233,7 +255,7 @@ function QuestionEditor({
   useEffect(() => {
     onDraftChange(buildUpdatedQuestion());
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enonce, reponseQRC, motsCles, choix]);
+  }, [enonce, reponseQRC, motsCles, choix, qType]);
 
   const handleChoixTexte = (i: number, val: string) => {
     setChoix(prev => prev.map((c, idx) => idx === i ? { ...c, texte: val } : c));
@@ -263,9 +285,15 @@ function QuestionEditor({
   return (
     <div className="border-2 border-primary/30 rounded-lg p-4 bg-primary/5 space-y-4">
       <div className="flex items-center justify-between">
-        <Badge variant={question?.type === "QCM" ? "default" : "secondary"}>
-          {question?.type} — Q{question.id}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant={qType === "QCM" ? "default" : "secondary"}>
+            {qType} — Q{question.id}
+          </Badge>
+          <Button size="sm" variant="outline" onClick={toggleType} className="gap-1 h-7 text-xs">
+            <ArrowLeftRight className="w-3 h-3" />
+            → {qType === "QCM" ? "QRC" : "QCM"}
+          </Button>
+        </div>
         <div className="flex gap-2">
           <Button size="sm" variant="ghost" onClick={onCancel}>
             <X className="w-4 h-4" />
@@ -292,7 +320,7 @@ function QuestionEditor({
       </div>
 
       {/* QRC */}
-      {question?.type === "QRC" && (
+      {qType === "QRC" && (
         <>
           <div className="space-y-1">
             <Label className="text-xs font-semibold">Réponse correcte (affichée en correction)</Label>
@@ -319,7 +347,7 @@ function QuestionEditor({
       )}
 
       {/* QCM */}
-      {question?.type === "QCM" && (
+      {qType === "QCM" && (
         <div className="space-y-2">
           <Label className="text-xs font-semibold">Choix de réponses</Label>
           {choix.map((c, i) => (
