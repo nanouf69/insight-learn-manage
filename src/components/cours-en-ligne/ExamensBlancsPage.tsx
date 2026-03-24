@@ -1285,6 +1285,7 @@ function EcranResultats({
   userId,
   isViewingSaved,
   isAdmin,
+  isPresentiel,
 }: {
   examen: ExamenBlanc;
   resultats: ResultatMatiere[];
@@ -1295,6 +1296,7 @@ function EcranResultats({
   userId?: string | null;
   isViewingSaved?: boolean;
   isAdmin?: boolean;
+  isPresentiel?: boolean;
 }) {
   // Ensure resultats is always a proper array (DB data can be malformed)
   resultats = safeArray<ResultatMatiere>(resultats);
@@ -1619,6 +1621,26 @@ function EcranResultats({
     .filter(r => !r.admis)
     .map(r => r.nomMatiere.split(" - ")[0]);
 
+  // Detect if QRC corrections are pending (for présentiel: formateur must validate)
+  const hasQrcPendingValidation = isPresentiel && !isAdmin && (() => {
+    for (let mi = 0; mi < examen.matieres.length; mi++) {
+      const matiere = examen.matieres[mi];
+      if (!matiere) continue;
+      const questionsSafe = (matiere.questions || []).filter((q): q is Question => q != null && q?.type !== undefined);
+      const qrcQuestions = questionsSafe.filter(q => q?.type === "QRC");
+      if (qrcQuestions.length === 0) continue;
+      const cacheMatiere = correctionsIA[mi] || {};
+      for (const q of qrcQuestions) {
+        const corr = cacheMatiere[q.id];
+        // A QRC is considered validated by formateur if it has a manual correction
+        if (!corr || corr === "loading" || corr === "error") return true;
+        const corrObj = corr as CorrectionQRC;
+        if (!corrObj.explication?.includes("Correction manuelle")) return true;
+      }
+    }
+    return false;
+  })();
+
   return (
     <div className="space-y-6">
       {/* Bandeau correction IA en cours */}
@@ -1631,6 +1653,20 @@ function EcranResultats({
       )}
 
       {/* Header résultats FTRANSPORT */}
+      {hasQrcPendingValidation ? (
+        <div className="rounded-xl overflow-hidden border-2 border-amber-400">
+          <div className="p-8 text-center text-white" style={{ backgroundColor: '#0D2540' }}>
+            <Clock className="w-14 h-14 mx-auto mb-3 text-amber-400" />
+            <h3 className="text-3xl font-black mb-2 text-amber-400">
+              En attente de validation du formateur
+            </h3>
+            <p className="text-lg text-gray-300 mt-2">
+              Vos réponses aux questions ouvertes (QRC) doivent être corrigées par votre formateur avant d'obtenir votre résultat final.
+            </p>
+            <p className="text-sm text-gray-400 mt-3">{examen.titre}</p>
+          </div>
+        </div>
+      ) : (
       <div className="rounded-xl overflow-hidden border-2" style={{ borderColor: admisGlobal ? '#00B4D8' : '#ef4444' }}>
         <div className="p-6 text-center text-white" style={{ backgroundColor: '#0D2540' }}>
           {admisGlobal ? (
@@ -1670,6 +1706,7 @@ function EcranResultats({
           <p className="text-sm text-gray-400 mt-1">{examen.titre}</p>
         </div>
       </div>
+      )}
 
       {/* Détail par matière — sous-totaux groupés */}
       <div className="space-y-4">
@@ -1914,6 +1951,15 @@ function EcranResultats({
         })}
 
         {/* Score global résumé */}
+        {hasQrcPendingValidation ? (
+          <Card className="border-2 border-amber-400">
+            <CardContent className="py-6 px-5 text-center">
+              <Clock className="w-8 h-8 mx-auto mb-2 text-amber-500" />
+              <p className="text-xl font-black text-amber-600">En attente de validation du formateur</p>
+              <p className="text-sm text-muted-foreground mt-1">Le résultat final sera disponible après correction des QRC par votre formateur.</p>
+            </CardContent>
+          </Card>
+        ) : (
         <Card className="border-2" style={{ borderColor: '#F4A227' }}>
           <CardContent className="py-4 px-5">
             <div className="flex items-center justify-between">
@@ -1932,10 +1978,11 @@ function EcranResultats({
             </div>
           </CardContent>
         </Card>
+        )}
       </div>
 
       {/* Bouton refaire les fausses — EN HAUT bien visible */}
-      {(() => {
+      {!hasQrcPendingValidation && (() => {
         let nbFaussesTop = 0;
         resultatsAvecIA.forEach((r, mi) => {
           if (r.matiereId === "francais" || r.matiereId === "bilan_francais") return;
@@ -2178,6 +2225,7 @@ export default function ExamensBlancsPage({
   userId,
   apprenantType,
   isAdmin,
+  isPresentiel,
 }: {
   defaultBilanId?: string | null;
   onBilanConsumed?: () => void;
@@ -2185,6 +2233,7 @@ export default function ExamensBlancsPage({
   userId?: string | null;
   apprenantType?: string | null;
   isAdmin?: boolean;
+  isPresentiel?: boolean;
 } = {}) {
   // Restore exam session from sessionStorage
   const EXAM_SESSION_KEY = `exam_session_${apprenantId || "anon"}`;
@@ -2863,6 +2912,7 @@ export default function ExamensBlancsPage({
           userId={userId}
           isViewingSaved={isViewingSavedResults}
           isAdmin={isAdmin}
+          isPresentiel={isPresentiel}
         />
       </div>
     );
