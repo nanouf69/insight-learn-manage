@@ -1285,6 +1285,7 @@ function EcranResultats({
   userId,
   isViewingSaved,
   isAdmin,
+  isPresentiel,
 }: {
   examen: ExamenBlanc;
   resultats: ResultatMatiere[];
@@ -1295,6 +1296,7 @@ function EcranResultats({
   userId?: string | null;
   isViewingSaved?: boolean;
   isAdmin?: boolean;
+  isPresentiel?: boolean;
 }) {
   // Ensure resultats is always a proper array (DB data can be malformed)
   resultats = safeArray<ResultatMatiere>(resultats);
