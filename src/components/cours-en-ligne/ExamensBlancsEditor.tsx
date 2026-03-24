@@ -519,8 +519,8 @@ function MatiereEditor({
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-center gap-3">
-          {expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-          <span className="font-medium text-sm">{matiere.nom}</span>
+          {expanded ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+          <span className="font-bold text-base">{matiere.nom}</span>
         </div>
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
