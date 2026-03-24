@@ -1314,6 +1314,8 @@ function EcranResultats({
   });
   const [correctionEnCours, setCorrectionEnCours] = useState(false);
   const [expandedMatieres, setExpandedMatieres] = useState<{ [mi: number]: boolean }>({});
+  const [editingQrc, setEditingQrc] = useState<string | null>(null); // "mi-qid" key for admin editing
+  const [editingPoints, setEditingPoints] = useState<number>(0);
 
   const toggleMatiere = (mi: number) => {
     setExpandedMatieres(prev => ({ ...prev, [mi]: !prev[mi] }));
