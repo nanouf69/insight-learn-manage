@@ -255,7 +255,7 @@ function QuestionEditor({
   useEffect(() => {
     onDraftChange(buildUpdatedQuestion());
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enonce, reponseQRC, motsCles, choix]);
+  }, [enonce, reponseQRC, motsCles, choix, qType]);
 
   const handleChoixTexte = (i: number, val: string) => {
     setChoix(prev => prev.map((c, idx) => idx === i ? { ...c, texte: val } : c));
