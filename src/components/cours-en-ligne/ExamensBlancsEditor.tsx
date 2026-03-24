@@ -366,11 +366,15 @@ function MatiereEditor({
   const [coefficient, setCoefficient] = useState(matiere.coefficient);
   const [noteElim, setNoteElim] = useState(matiere.noteEliminatoire);
   const [noteSur, setNoteSur] = useState(matiere.noteSur);
+  const defaultPtsQCM = getPointsParQuestion(matiere.id, "QCM");
+  const defaultPtsQRC = getPointsParQuestion(matiere.id, "QRC");
+  const [ptsQCM, setPtsQCM] = useState(matiere.ptsQCM ?? defaultPtsQCM);
+  const [ptsQRC, setPtsQRC] = useState(matiere.ptsQRC ?? defaultPtsQRC);
   const [editingMeta, setEditingMeta] = useState(false);
   const [confirmDeleteQId, setConfirmDeleteQId] = useState<number | null>(null);
 
   const saveMeta = () => {
-    onChange({ ...matiere, duree, coefficient, noteEliminatoire: noteElim, noteSur });
+    onChange({ ...matiere, duree, coefficient, noteEliminatoire: noteElim, noteSur, ptsQCM, ptsQRC });
     setEditingMeta(false);
   };
 
