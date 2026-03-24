@@ -243,6 +243,10 @@ function QuestionEditor({
     setChoix(prev => prev.map((c, idx) => idx === i ? { ...c, correct: val } : c));
   };
 
+  const handleChoixExplication = (i: number, val: string) => {
+    setChoix(prev => prev.map((c, idx) => idx === i ? { ...c, explication: val || undefined } : c));
+  };
+
   const addChoix = () => {
     const lettres = ["A", "B", "C", "D", "E"];
     setChoix(prev => [...prev, { lettre: lettres[prev.length] || String(prev.length + 1), texte: "", correct: false }]);
@@ -319,27 +323,37 @@ function QuestionEditor({
         <div className="space-y-2">
           <Label className="text-xs font-semibold">Choix de réponses</Label>
           {choix.map((c, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <span className="w-6 text-xs font-bold text-muted-foreground">{c.lettre}</span>
-              <Input
-                value={c.texte}
-                onChange={e => handleChoixTexte(i, e.target.value)}
-                className="text-sm flex-1"
-                placeholder={`Choix ${c.lettre}`}
-              />
-              <div className="flex items-center gap-1 shrink-0">
-                <input
-                  type="checkbox"
-                  checked={!!c.correct}
-                  onChange={e => handleChoixCorrect(i, e.target.checked)}
-                  className="w-4 h-4"
-                  title="Bonne réponse"
+            <div key={i} className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="w-6 text-xs font-bold text-muted-foreground">{c.lettre}</span>
+                <Input
+                  value={c.texte}
+                  onChange={e => handleChoixTexte(i, e.target.value)}
+                  className="text-sm flex-1"
+                  placeholder={`Choix ${c.lettre}`}
                 />
-                <span className="text-xs text-foreground">✓</span>
+                <div className="flex items-center gap-1 shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={!!c.correct}
+                    onChange={e => handleChoixCorrect(i, e.target.checked)}
+                    className="w-4 h-4"
+                    title="Bonne réponse"
+                  />
+                  <span className="text-xs text-foreground">✓</span>
+                </div>
+                <Button size="sm" variant="ghost" onClick={() => removeChoix(i)}>
+                  <X className="w-3 h-3" />
+                </Button>
               </div>
-              <Button size="sm" variant="ghost" onClick={() => removeChoix(i)}>
-                <X className="w-3 h-3" />
-              </Button>
+              <div className="ml-6">
+                <Input
+                  value={c.explication || ""}
+                  onChange={e => handleChoixExplication(i, e.target.value)}
+                  className="text-xs h-7"
+                  placeholder="Explication (optionnel, affiché en correction)"
+                />
+              </div>
             </div>
           ))}
           <Button size="sm" variant="outline" onClick={addChoix} className="gap-1">

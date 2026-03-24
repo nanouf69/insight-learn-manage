@@ -1807,15 +1807,20 @@ function EcranResultats({
                                   } else {
                                     classes += "border-muted bg-muted/30 text-muted-foreground";
                                   }
-                                  return (
-                                    <div key={c.lettre} className={classes}>
-                                      <span className="font-bold shrink-0">{c.lettre})</span>
-                                      <span className="flex-1">{c.texte}</span>
-                                      {isCorrectChoice && <span className="text-green-700 font-bold text-xs bg-green-200 px-2 py-0.5 rounded-full shrink-0">✓ Bonne réponse</span>}
-                                      {isSelected && !isCorrectChoice && <span className="text-red-600 font-bold text-xs bg-red-200 px-2 py-0.5 rounded-full shrink-0">✗ Votre choix</span>}
-                                      {isSelected && isCorrectChoice && <span className="text-green-700 font-bold text-xs bg-green-300 px-2 py-0.5 rounded-full shrink-0">✓ Votre choix</span>}
-                                    </div>
-                                  );
+                                    return (
+                                      <div key={c.lettre}>
+                                        <div className={classes}>
+                                          <span className="font-bold shrink-0">{c.lettre})</span>
+                                          <span className="flex-1">{c.texte}</span>
+                                          {isCorrectChoice && <span className="text-green-700 font-bold text-xs bg-green-200 px-2 py-0.5 rounded-full shrink-0">✓ Bonne réponse</span>}
+                                          {isSelected && !isCorrectChoice && <span className="text-red-600 font-bold text-xs bg-red-200 px-2 py-0.5 rounded-full shrink-0">✗ Votre choix</span>}
+                                          {isSelected && isCorrectChoice && <span className="text-green-700 font-bold text-xs bg-green-300 px-2 py-0.5 rounded-full shrink-0">✓ Votre choix</span>}
+                                        </div>
+                                        {c.explication && (isSelected || isCorrectChoice) && (
+                                          <p className="text-xs text-muted-foreground italic ml-8 mt-1">💡 {c.explication}</p>
+                                        )}
+                                      </div>
+                                    );
                                 })}
                                 <div className="mt-2 flex flex-wrap gap-3 text-sm">
                                   <span className="font-medium text-muted-foreground">Votre réponse : <strong className={isCorrect ? "text-green-700" : "text-red-600"}>{Array.isArray(rep) && rep.length > 0 ? rep.join(", ") : "Aucune"}</strong></span>
@@ -2079,37 +2084,41 @@ function RevisionFausses({
                   else if (selected && !isCorrectChoice) { borderColor = '#ef4444'; bgColor = '#fef2f2'; }
                 }
                 return (
-                  <div
-                    key={c.lettre}
-                    className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${showCorrection ? 'pointer-events-none' : ''}`}
-                    style={{ borderColor, backgroundColor: bgColor }}
-                    onClick={() => {
-                      if (showCorrection) return;
-                      const prev = safeArray<string>(rep);
-                      const correctCount = q.choix!.filter(ch => ch.correct).length;
-                      if (correctCount <= 1) {
-                        setReponses({ ...reponses, [q.id]: [c.lettre] });
-                      } else {
-                        setReponses({
-                          ...reponses,
-                          [q.id]: prev.includes(c.lettre) ? prev.filter(l => l !== c.lettre) : [...prev, c.lettre],
-                        });
-                      }
-                    }}
-                  >
-                    <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 ${
-                      selected ? 'text-white' : ''
-                    }`} style={{
-                      borderColor: showCorrection && isCorrectChoice ? '#22c55e' : selected ? '#0D2540' : '#d1d5db',
-                      backgroundColor: selected ? '#0D2540' : 'transparent',
-                    }}>
-                      {showCorrection && isCorrectChoice ? <CheckCircle2 className="w-4 h-4 text-green-600" /> :
-                       showCorrection && selected && !isCorrectChoice ? <XCircle className="w-4 h-4 text-red-500" /> :
-                       c.lettre}
+                    <div key={c.lettre}>
+                      <div
+                        className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${showCorrection ? 'pointer-events-none' : ''}`}
+                        style={{ borderColor, backgroundColor: bgColor }}
+                        onClick={() => {
+                          if (showCorrection) return;
+                          const prev = safeArray<string>(rep);
+                          const correctCount = q.choix!.filter(ch => ch.correct).length;
+                          if (correctCount <= 1) {
+                            setReponses({ ...reponses, [q.id]: [c.lettre] });
+                          } else {
+                            setReponses({
+                              ...reponses,
+                              [q.id]: prev.includes(c.lettre) ? prev.filter(l => l !== c.lettre) : [...prev, c.lettre],
+                            });
+                          }
+                        }}
+                      >
+                        <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 ${
+                          selected ? 'text-white' : ''
+                        }`} style={{
+                          borderColor: showCorrection && isCorrectChoice ? '#22c55e' : selected ? '#0D2540' : '#d1d5db',
+                          backgroundColor: selected ? '#0D2540' : 'transparent',
+                        }}>
+                          {showCorrection && isCorrectChoice ? <CheckCircle2 className="w-4 h-4 text-green-600" /> :
+                           showCorrection && selected && !isCorrectChoice ? <XCircle className="w-4 h-4 text-red-500" /> :
+                           c.lettre}
+                        </div>
+                        <span className="text-sm">{c.texte}</span>
+                      </div>
+                      {showCorrection && c.explication && (selected || isCorrectChoice) && (
+                        <p className="text-xs text-muted-foreground italic ml-10 mt-1">💡 {c.explication}</p>
+                      )}
                     </div>
-                    <span className="text-sm">{c.texte}</span>
-                  </div>
-                );
+                  );
               })}
             </div>
           )}
