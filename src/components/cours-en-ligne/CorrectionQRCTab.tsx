@@ -384,6 +384,12 @@ const CorrectionQRCTab = () => {
     } else {
       toast.success(`QRC corrigée : ${clamped}/${item.pointsMax} pts — Note matière : ${noteSur20}/20`);
       // Update local state for ALL QRC items sharing the same resultId
+      setRecentlyCorrected(prev => {
+        const next = new Set(prev);
+        next.add(uniqueKey);
+        return next;
+      });
+
       setItems(prev => {
         const updated = prev.map(i => {
           if (i.resultId === item.resultId) {
@@ -395,17 +401,20 @@ const CorrectionQRCTab = () => {
           }
           return i;
         });
-        // After marking as done, the filtered list may shrink — adjust currentIndex
+
         setTimeout(() => {
           setCurrentIndex(prev => {
             const newFiltered = updated.filter(i => {
-              if (filter === "pending") return !i.corrigeManuel;
+              const key = `${i.resultId}-${i.questionId}`;
+              const isRecently = key === uniqueKey || recentlyCorrected.has(key);
+              if (filter === "pending") return !i.corrigeManuel || isRecently;
               if (filter === "done") return i.corrigeManuel;
               return true;
             });
             return Math.min(prev, Math.max(0, newFiltered.length - 1));
           });
         }, 0);
+
         return updated;
       });
     }
