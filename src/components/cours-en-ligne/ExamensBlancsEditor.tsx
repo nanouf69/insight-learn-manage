@@ -426,9 +426,11 @@ function QuestionEditor({
 function MatiereEditor({
   matiere,
   onChange,
+  examTitre,
 }: {
   matiere: Matiere;
   onChange: (m: Matiere) => void;
+  examTitre?: string;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [editingQId, setEditingQId] = useState<number | null>(null);
