@@ -505,6 +505,9 @@ function MatiereEditor({
                           <img src={q.image} alt={`Question ${q.id}`} className="mt-2 max-h-32 rounded border" />
                         )}
                       </div>
+                      <Badge variant="outline" className="shrink-0 text-xs font-semibold text-primary border-primary/40">
+                        {getPointsParQuestion(matiere.id, q?.type || "QCM")} pt{getPointsParQuestion(matiere.id, q?.type || "QCM") > 1 ? "s" : ""}
+                      </Badge>
                     </div>
                     <Button
                       size="sm"
