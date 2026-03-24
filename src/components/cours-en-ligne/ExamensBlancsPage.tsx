@@ -1044,7 +1044,7 @@ function PassageMatiere({
               </div>
             </div>
             <Badge variant="outline" className="shrink-0 text-xs font-semibold text-primary border-primary/40">
-              {getPointsParQuestion(matiere.id, question?.type || "QCM")} pt{getPointsParQuestion(matiere.id, question?.type || "QCM") > 1 ? "s" : ""}
+              {getPointsParQuestion(matiere.id, question?.type || "QCM")} pt{getPointsParQuestion(matiere.id, question?.type || "QCM", matiere) > 1 ? "s" : ""}
             </Badge>
           </div>
 
@@ -1376,14 +1376,14 @@ function EcranResultats({
           const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
           const donnees = safeArray<string>(resultat.reponses?.[q.id]).sort();
           if (JSON.stringify(correctes) === JSON.stringify(donnees)) {
-            noteRecalculee += getPointsParQuestion(matiere.id, q?.type || "QCM");
+            noteRecalculee += getPointsParQuestion(matiere.id, q?.type || "QCM", matiere);
           }
         } else if (q?.type === "QRC") {
           const correction = cache[q.id];
           if (correction && correction !== "loading" && correction !== "error") {
             noteRecalculee += clampToQuestionMax(
               correction.pointsObtenus,
-              getPointsParQuestion(matiere.id, q?.type || "QRC")
+              getPointsParQuestion(matiere.id, q?.type || "QRC", matiere)
             );
           }
         }
@@ -1437,7 +1437,7 @@ function EcranResultats({
           if (!q || q?.type !== "QRC") return;
           const rep = safeStr(resultat.reponses?.[q.id]);
           if (!rep.trim()) return; // skip empty answers
-          const pts = getPointsParQuestion(matiere.id, q?.type || "QRC");
+          const pts = getPointsParQuestion(matiere.id, q?.type || "QRC", matiere);
           const deterResult = evaluateQrcDeterministic(q, rep, pts);
           // Only call AI if deterministic didn't give full points
           if (deterResult.pointsObtenus < pts) {
@@ -1538,7 +1538,7 @@ function EcranResultats({
     const cacheMatiere = correctionsIA[mi] || {};
 
     const recalculatedFromDetails = questionsSafe.reduce((acc, q) => {
-      const pts = getPointsParQuestion(matiere?.id ?? "", q?.type || "QRC");
+      const pts = getPointsParQuestion(matiere?.id ?? "", q?.type || "QRC", matiere);
       const rep = r.reponses?.[q.id];
 
       if (q?.type === "QCM" && q.choix) {
@@ -1738,7 +1738,7 @@ function EcranResultats({
                   {questionsSafe.map((q, qIdx) => {
                     if (!q || !q?.type) return null;
                     const rep = r.reponses?.[q.id];
-                    const pts = getPointsParQuestion(matiere?.id ?? "", q?.type);
+                    const pts = getPointsParQuestion(matiere?.id ?? "", q?.type, matiere);
                     let isCorrect = false;
                     let pointsObtenus = 0;
                     let correctionDetail: string | null = null;
@@ -1948,7 +1948,7 @@ function EcranResultats({
               if (corrIA && corrIA !== "loading" && corrIA !== "error") {
                 if (!corrIA.estCorrect) nbFaussesTop++;
               } else {
-                const fallback = evaluateQrcDeterministic(q, rep, getPointsParQuestion(matiere.id, q?.type || "QRC"));
+                const fallback = evaluateQrcDeterministic(q, rep, getPointsParQuestion(matiere.id, q?.type || "QRC"), matiere);
                 if (!fallback.estCorrect) nbFaussesTop++;
               }
             }
@@ -2060,7 +2060,7 @@ function RevisionFausses({
               {q.enonce}
             </p>
             <Badge variant="outline" className="shrink-0 text-xs font-semibold text-primary border-primary/40">
-              {getPointsParQuestion(current.matiere.id, q?.type || "QCM")} pt{getPointsParQuestion(current.matiere.id, q?.type || "QCM") > 1 ? "s" : ""}
+              {getPointsParQuestion(current.matiere.id, q?.type || "QCM")} pt{getPointsParQuestion(current.matiere.id, q?.type || "QCM", current.matiere) > 1 ? "s" : ""}
             </Badge>
           </div>
           {q?.image && (
@@ -2422,7 +2422,7 @@ export default function ExamensBlancsPage({
 
   const calculerMaxPoints = (matiere: Matiere): number => {
     const questionsSafe = (matiere.questions ?? []).filter((q): q is Question => q != null && q?.type != null);
-    return questionsSafe.reduce((acc, q) => acc + getPointsParQuestion(matiere.id, q?.type || "QCM"), 0);
+    return questionsSafe.reduce((acc, q) => acc + getPointsParQuestion(matiere.id, q?.type || "QCM"), 0, matiere);
   };
 
   const calculerNote = (matiere: Matiere, reponses: Reponses): number => {
@@ -2431,7 +2431,7 @@ export default function ExamensBlancsPage({
     questionsSafe.forEach(q => {
       if (!q || !q?.type) return;
       const rep = reponses?.[q.id] ?? reponses?.[String(q.id)];
-      const pts = getPointsParQuestion(matiere.id, q?.type);
+      const pts = getPointsParQuestion(matiere.id, q?.type, matiere);
       let correct = false;
       if (q?.type === "QCM" && q.choix) {
         const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
@@ -2505,7 +2505,7 @@ export default function ExamensBlancsPage({
             const rep = r.reponses?.[q.id];
             // Freeze QRC correction at save time — deterministic, never recalculated
             if (q?.type === "QRC") {
-              const pts = getPointsParQuestion(matiere.id, q?.type || "QRC");
+              const pts = getPointsParQuestion(matiere.id, q?.type || "QRC", matiere);
               const correction = evaluateQrcDeterministic(q, rep, pts);
               frozenCorrections[q.id] = correction;
             }
@@ -2629,10 +2629,10 @@ export default function ExamensBlancsPage({
                       const questionsSafe = (m.questions || []).filter(q => q && q?.type !== undefined);
                       const maxPts = questionsSafe.reduce((acc, q) => {
                         if (!q || q === undefined) return acc;
-                        return acc + getPointsParQuestion(m.id, q?.type || "QCM");
+                        return acc + getPointsParQuestion(m.id, q?.type || "QCM", m);
                       }, 0);
-                      const ptsQCM = getPointsParQuestion(m.id, "QCM");
-                      const ptsQRC = getPointsParQuestion(m.id, "QRC");
+                      const ptsQCM = getPointsParQuestion(m.id, "QCM", m);
+                      const ptsQRC = getPointsParQuestion(m.id, "QRC", m);
                       return (
                         <tr key={m.id} className={i % 2 === 0 ? "bg-background" : "bg-muted/30"}>
                           <td className="p-2 text-xs">{m.nom}</td>
@@ -2652,7 +2652,7 @@ export default function ExamensBlancsPage({
                         const questionsSafe = (m.questions || []).filter(q => q && q?.type !== undefined);
                         const totalMatiere = questionsSafe.reduce((a, q) => {
                           if (!q || q === undefined) return a;
-                          return a + getPointsParQuestion(m.id, q?.type || "QCM");
+                          return a + getPointsParQuestion(m.id, q?.type || "QCM", m);
                         }, 0);
                         return acc + totalMatiere;
                       }, 0)} pts</td>
