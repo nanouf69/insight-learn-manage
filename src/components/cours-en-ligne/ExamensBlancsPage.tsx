@@ -271,7 +271,7 @@ function evaluateQrcDeterministic(question: Question, response: unknown, pointsQ
    const gotFullPoints = matched >= requiredForFullPoints;
    const points = gotFullPoints
      ? maxPoints
-     : clampToQuestionMax(Math.round((matched / requiredForFullPoints) * maxPoints * 10) / 10, maxPoints);
+     : clampToQuestionMax(Math.floor((matched / requiredForFullPoints) * maxPoints * 2) / 2, maxPoints);
 
    return {
      estCorrect: gotFullPoints,
