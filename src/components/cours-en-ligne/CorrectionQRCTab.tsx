@@ -232,13 +232,18 @@ const CorrectionQRCTab = () => {
     if (updateErr) {
       toast.error("Erreur lors de la sauvegarde");
     } else {
-      toast.success(`QRC corrigée : ${clamped}/${item.pointsMax} pts`);
-      // Update local state
-      setItems(prev => prev.map(i =>
-        i.resultId === item.resultId && i.questionId === item.questionId
-          ? { ...i, pointsObtenus: clamped, corrigeManuel: true }
-          : i
-      ));
+      toast.success(`QRC corrigée : ${clamped}/${item.pointsMax} pts — Note matière : ${noteSur20}/20`);
+      // Update local state for ALL QRC items sharing the same resultId
+      setItems(prev => prev.map(i => {
+        if (i.resultId === item.resultId) {
+          const updated: Partial<QrcItem> = { noteSur20, scoreMatiereObtenu: safeClamped };
+          if (i.questionId === item.questionId) {
+            return { ...i, ...updated, pointsObtenus: clamped, corrigeManuel: true };
+          }
+          return { ...i, ...updated };
+        }
+        return i;
+      }));
     }
 
     setSavingId(null);
