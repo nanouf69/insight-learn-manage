@@ -30,6 +30,9 @@ interface QrcItem {
   completedAt: string;
   autoScore: number | null;
   autoExplication: string | null;
+  noteSur20: number | null;
+  scoreMatiereObtenu: number;
+  scoreMatiereMax: number;
 }
 
 function safeStr(v: unknown): string {
