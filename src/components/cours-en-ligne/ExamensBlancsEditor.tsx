@@ -600,6 +600,11 @@ function MatiereEditor({
                       <Badge variant={q?.type === "QCM" ? "default" : "secondary"} className="text-sm shrink-0 mt-0.5 px-2 py-0.5">
                         {q?.type} — Q{q.id}
                       </Badge>
+                      {examTitre && (
+                        <span className="text-xs font-semibold text-muted-foreground shrink-0 mt-1">
+                          {matiere.nom} • {examTitre}
+                        </span>
+                      )}
                       <div className="flex-1">
                         <p className="text-base font-medium text-foreground leading-relaxed">{q.enonce}</p>
                         {q.image && (
