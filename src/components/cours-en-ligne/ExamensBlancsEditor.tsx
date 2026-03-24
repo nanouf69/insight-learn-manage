@@ -366,11 +366,15 @@ function MatiereEditor({
   const [coefficient, setCoefficient] = useState(matiere.coefficient);
   const [noteElim, setNoteElim] = useState(matiere.noteEliminatoire);
   const [noteSur, setNoteSur] = useState(matiere.noteSur);
+  const defaultPtsQCM = getPointsParQuestion(matiere.id, "QCM");
+  const defaultPtsQRC = getPointsParQuestion(matiere.id, "QRC");
+  const [ptsQCM, setPtsQCM] = useState(matiere.ptsQCM ?? defaultPtsQCM);
+  const [ptsQRC, setPtsQRC] = useState(matiere.ptsQRC ?? defaultPtsQRC);
   const [editingMeta, setEditingMeta] = useState(false);
   const [confirmDeleteQId, setConfirmDeleteQId] = useState<number | null>(null);
 
   const saveMeta = () => {
-    onChange({ ...matiere, duree, coefficient, noteEliminatoire: noteElim, noteSur });
+    onChange({ ...matiere, duree, coefficient, noteEliminatoire: noteElim, noteSur, ptsQCM, ptsQRC });
     setEditingMeta(false);
   };
 
@@ -469,6 +473,14 @@ function MatiereEditor({
             <Label className="text-xs">Note sur</Label>
             <Input type="number" value={noteSur} onChange={e => setNoteSur(Number(e.target.value))} className="text-sm h-8" />
           </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Points / QCM</Label>
+            <Input type="number" step={0.5} min={0} value={ptsQCM} onChange={e => setPtsQCM(Number(e.target.value))} className="text-sm h-8" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Points / QRC</Label>
+            <Input type="number" step={0.5} min={0} value={ptsQRC} onChange={e => setPtsQRC(Number(e.target.value))} className="text-sm h-8" />
+          </div>
           <div className="col-span-2 md:col-span-4 flex gap-2">
             <Button size="sm" onClick={saveMeta} className="gap-1">
               <Save className="w-3 h-3" />
@@ -506,7 +518,7 @@ function MatiereEditor({
                         )}
                       </div>
                       <Badge variant="outline" className="shrink-0 text-xs font-semibold text-primary border-primary/40">
-                        {getPointsParQuestion(matiere.id, q?.type || "QCM")} pt{getPointsParQuestion(matiere.id, q?.type || "QCM") > 1 ? "s" : ""}
+                        {getPointsParQuestion(matiere.id, q?.type || "QCM", matiere)} pt{getPointsParQuestion(matiere.id, q?.type || "QCM", matiere) > 1 ? "s" : ""}
                       </Badge>
                     </div>
                     <Button
