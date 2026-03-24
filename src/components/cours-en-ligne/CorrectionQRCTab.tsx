@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle2, Clock, Pencil, Search, User, FileText, Filter } from "lucide-react";
+import { CheckCircle2, Clock, Pencil, Search, User, FileText, Filter, MessageSquare } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere } from "./examens-blancs-data";
@@ -33,6 +33,7 @@ interface QrcItem {
   noteSur20: number | null;
   scoreMatiereObtenu: number;
   scoreMatiereMax: number;
+  commentaire: string;
 }
 
 function safeStr(v: unknown): string {
@@ -136,6 +137,17 @@ const CorrectionQRCTab = () => {
   const [editingPoints, setEditingPoints] = useState(0);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [examenMap, setExamenMap] = useState<Record<string, ExamenBlanc>>({});
+  const [editingComments, setEditingComments] = useState<Record<string, string>>({});
+
+  const QUICK_COMMENTS = [
+    "Précisez !!!",
+    "Dire plutôt permis de conduire hors période probatoire",
+    "Précisez casier B2 vierge",
+    "Mal dit",
+    "Attention aux fautes",
+    "Réponse incomplète",
+    "Hors sujet",
+  ];
 
   // Load examens (source + saved)
   useEffect(() => {
@@ -240,6 +252,7 @@ const CorrectionQRCTab = () => {
           noteSur20: r.note_sur_20 ?? null,
           scoreMatiereObtenu: r.score_obtenu ?? 0,
           scoreMatiereMax: r.score_max ?? 20,
+          commentaire: correction && typeof correction === "object" ? (correction.commentaire || "") : "",
         });
       }
     }
@@ -272,12 +285,15 @@ const CorrectionQRCTab = () => {
     const details = (row as any).details as any;
     const correctionsIA = details.correctionsIA || {};
 
+    const commentaire = editingComments[uniqueKey] ?? item.commentaire;
+
     // Update this specific question's correction
     correctionsIA[item.questionId] = {
       estCorrect: clamped >= item.pointsMax,
       pointsObtenus: clamped,
       nombrefautes: 0,
       explication: `Correction manuelle par l'administrateur : ${clamped}/${item.pointsMax} pts`,
+      commentaire: commentaire || "",
     };
 
     // Recalculate total score for this matiere
@@ -330,7 +346,7 @@ const CorrectionQRCTab = () => {
         if (i.resultId === item.resultId) {
           const updated: Partial<QrcItem> = { noteSur20, scoreMatiereObtenu: safeClamped };
           if (i.questionId === item.questionId) {
-            return { ...i, ...updated, pointsObtenus: clamped, corrigeManuel: true };
+            return { ...i, ...updated, pointsObtenus: clamped, corrigeManuel: true, commentaire: commentaire || "" };
           }
           return { ...i, ...updated };
         }
@@ -522,6 +538,37 @@ const CorrectionQRCTab = () => {
                     {item.pointsObtenus !== null && !isSaving && (
                       <Badge className="bg-green-100 text-green-700 border-green-300 text-xs ml-1">✅ Corrigé</Badge>
                     )}
+                  </div>
+
+                  {/* Commentaire pour l'apprenant */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
+                      <span className="text-xs font-medium text-muted-foreground">Commentaire pour l'apprenant :</span>
+                    </div>
+                    <textarea
+                      rows={2}
+                      placeholder="Ajouter un commentaire..."
+                      value={editingComments[uniqueKey] ?? item.commentaire}
+                      onChange={(e) => setEditingComments(prev => ({ ...prev, [uniqueKey]: e.target.value }))}
+                      className="w-full text-xs border rounded-md p-2 resize-none bg-background"
+                    />
+                    <div className="flex flex-wrap gap-1">
+                      {QUICK_COMMENTS.map((qc) => (
+                        <button
+                          key={qc}
+                          type="button"
+                          onClick={() => {
+                            const current = editingComments[uniqueKey] ?? item.commentaire;
+                            const sep = current.trim() ? (current.trim().endsWith(".") ? " " : ". ") : "";
+                            setEditingComments(prev => ({ ...prev, [uniqueKey]: current.trim() + sep + qc }));
+                          }}
+                          className="text-[10px] px-2 py-0.5 rounded-full border bg-muted hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
+                        >
+                          + {qc}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
