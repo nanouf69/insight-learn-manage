@@ -303,19 +303,22 @@ export default function ApprenantActivityReport({ onBack }: Props) {
               <th>Module</th>
               <th>Nombre d'accès</th>
               <th>Dernière consultation</th>
+              <th>Terminé</th>
             </tr>
           </thead>
           <tbody>
             ${uniqueModules.map(([modId, modNom]) => {
               const modActivites = activites.filter(a => a.module_id === modId && a.action_type === "open_module");
               const last = modActivites[0];
+              const done = completedModuleIds.has(modId);
               return `<tr>
                 <td>${modNom}</td>
                 <td>${modActivites.length}</td>
                 <td>${last ? format(parseISO(last.occurred_at), "dd/MM/yyyy à HH:mm", { locale: fr }) : "—"}</td>
+                <td style="color:${done ? '#16a34a' : '#dc2626'};font-weight:600">${done ? "✅ Oui" : "❌ Non"}</td>
               </tr>`;
             }).join("")}
-            ${uniqueModules.length === 0 ? '<tr><td colspan="3" style="text-align:center;color:#9ca3af;">Aucun module consulté</td></tr>' : ""}
+            ${uniqueModules.length === 0 ? '<tr><td colspan="4" style="text-align:center;color:#9ca3af;">Aucun module consulté</td></tr>' : ""}
           </tbody>
         </table>
 
