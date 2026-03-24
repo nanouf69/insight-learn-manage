@@ -423,10 +423,16 @@ const CorrectionQRCTab = () => {
     setEditingId(null);
   };
 
+  const pendingCount = items.filter(i => !i.corrigeManuel).length;
+  const doneCount = items.filter(i => i.corrigeManuel).length;
+
   const filtered = items.filter(item => {
     if (filter === "pending") {
       const key = `${item.resultId}-${item.questionId}`;
-      if (item.corrigeManuel && key !== lastCorrectedKey) return false;
+      if (item.corrigeManuel) {
+        if (pendingCount === 0) return false;
+        if (key !== lastCorrectedKey) return false;
+      }
     }
     if (filter === "done" && !item.corrigeManuel) return false;
     if (searchQuery) {
@@ -447,9 +453,6 @@ const CorrectionQRCTab = () => {
     setCurrentIndex(0);
     setLastCorrectedKey(null);
   }, [filter, searchQuery]);
-
-  const pendingCount = items.filter(i => !i.corrigeManuel).length;
-  const doneCount = items.filter(i => i.corrigeManuel).length;
 
   if (loading) {
     return (
@@ -505,15 +508,21 @@ const CorrectionQRCTab = () => {
       </div>
 
       {filtered.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
-            <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p className="font-medium">
-              {filter === "pending" ? "Aucune QRC en attente de correction" : "Aucune QRC trouvée"}
-            </p>
-            <p className="text-sm mt-1">Les réponses QRC apparaîtront ici au fur et à mesure des examens</p>
-          </CardContent>
-        </Card>
+        filter === "pending" && !searchQuery.trim() ? (
+          <div className="min-h-[340px] rounded-xl border bg-background flex items-center justify-center">
+            <p className="text-lg font-semibold">Plus de correction actuellement</p>
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="py-12 text-center text-muted-foreground">
+              <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
+              <p className="font-medium">
+                {filter === "pending" ? "Aucune QRC en attente de correction" : "Aucune QRC trouvée"}
+              </p>
+              <p className="text-sm mt-1">Les réponses QRC apparaîtront ici au fur et à mesure des examens</p>
+            </CardContent>
+          </Card>
+        )
       ) : (
         <div className="space-y-3">
           {/* Navigation arrows */}
