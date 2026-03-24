@@ -403,44 +403,25 @@ const CorrectionQRCTab = () => {
                       step={0.5}
                       value={isEditing ? editingPoints : (item.pointsObtenus ?? 0)}
                       onChange={(e) => {
-                        if (!isEditing) {
-                          setEditingId(uniqueKey);
-                        }
-                        setEditingPoints(Number(e.target.value));
+                        const val = Number(e.target.value);
+                        setEditingPoints(val);
+                        if (!isEditing) setEditingId(uniqueKey);
                       }}
-                      onFocus={() => {
-                        if (!isEditing) {
-                          setEditingId(uniqueKey);
-                          setEditingPoints(item.pointsObtenus ?? 0);
+                      onBlur={() => {
+                        if (isEditing) {
+                          handleSaveCorrection(item, editingPoints);
                         }
                       }}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter") handleSaveCorrection(item, editingPoints);
+                        if (e.key === "Enter") {
+                          (e.target as HTMLInputElement).blur();
+                        }
                       }}
                       className="w-16 px-2 py-1 text-xs border rounded text-center font-bold"
                     />
                     <span className="text-xs text-amber-700">/ {item.pointsMax}</span>
-                    {isEditing && (
-                      <>
-                        <Button
-                          size="sm"
-                          className="h-6 px-2 text-xs"
-                          onClick={() => handleSaveCorrection(item, editingPoints)}
-                          disabled={isSaving}
-                        >
-                          {isSaving ? "..." : "✓ Valider"}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-6 px-2 text-xs"
-                          onClick={() => setEditingId(null)}
-                        >
-                          Annuler
-                        </Button>
-                      </>
-                    )}
-                    {item.pointsObtenus !== null && !isEditing && (
+                    {isSaving && <span className="text-xs text-muted-foreground">⏳</span>}
+                    {item.pointsObtenus !== null && !isEditing && !isSaving && (
                       <Badge className="bg-green-100 text-green-700 border-green-300 text-xs ml-1">✅ Corrigé</Badge>
                     )}
                   </div>
