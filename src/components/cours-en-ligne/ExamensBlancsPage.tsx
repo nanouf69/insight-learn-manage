@@ -1621,6 +1621,26 @@ function EcranResultats({
     .filter(r => !r.admis)
     .map(r => r.nomMatiere.split(" - ")[0]);
 
+  // Detect if QRC corrections are pending (for présentiel: formateur must validate)
+  const hasQrcPendingValidation = isPresentiel && !isAdmin && (() => {
+    for (let mi = 0; mi < examen.matieres.length; mi++) {
+      const matiere = examen.matieres[mi];
+      if (!matiere) continue;
+      const questionsSafe = (matiere.questions || []).filter((q): q is Question => q != null && q?.type !== undefined);
+      const qrcQuestions = questionsSafe.filter(q => q?.type === "QRC");
+      if (qrcQuestions.length === 0) continue;
+      const cacheMatiere = correctionsIA[mi] || {};
+      for (const q of qrcQuestions) {
+        const corr = cacheMatiere[q.id];
+        // A QRC is considered validated by formateur if it has a manual correction
+        if (!corr || corr === "loading" || corr === "error") return true;
+        const corrObj = corr as CorrectionQRC;
+        if (!corrObj.explication?.includes("Correction manuelle")) return true;
+      }
+    }
+    return false;
+  })();
+
   return (
     <div className="space-y-6">
       {/* Bandeau correction IA en cours */}
@@ -1633,6 +1653,20 @@ function EcranResultats({
       )}
 
       {/* Header résultats FTRANSPORT */}
+      {hasQrcPendingValidation ? (
+        <div className="rounded-xl overflow-hidden border-2 border-amber-400">
+          <div className="p-8 text-center text-white" style={{ backgroundColor: '#0D2540' }}>
+            <Clock className="w-14 h-14 mx-auto mb-3 text-amber-400" />
+            <h3 className="text-3xl font-black mb-2 text-amber-400">
+              En attente de validation du formateur
+            </h3>
+            <p className="text-lg text-gray-300 mt-2">
+              Vos réponses aux questions ouvertes (QRC) doivent être corrigées par votre formateur avant d'obtenir votre résultat final.
+            </p>
+            <p className="text-sm text-gray-400 mt-3">{examen.titre}</p>
+          </div>
+        </div>
+      ) : (
       <div className="rounded-xl overflow-hidden border-2" style={{ borderColor: admisGlobal ? '#00B4D8' : '#ef4444' }}>
         <div className="p-6 text-center text-white" style={{ backgroundColor: '#0D2540' }}>
           {admisGlobal ? (
