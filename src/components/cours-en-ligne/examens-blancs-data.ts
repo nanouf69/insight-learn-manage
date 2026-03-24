@@ -8119,6 +8119,31 @@ export const examenBlanc1TA: ExamenBlanc = {
   titre: "Examen Blanc N°1 - Passerelle TA",
   matieres: [taxi_nationale_eb1, taxi_locale_eb1]
 };
+export const examenBlanc2TA: ExamenBlanc = {
+  id: "eb2-ta", numero: 2, type: "TA",
+  titre: "Examen Blanc N°2 - Passerelle TA",
+  matieres: [taxi_nationale_eb2, taxi_locale_eb2]
+};
+export const examenBlanc3TA: ExamenBlanc = {
+  id: "eb3-ta", numero: 3, type: "TA",
+  titre: "Examen Blanc N°3 - Passerelle TA",
+  matieres: [taxi_nationale_eb3, taxi_locale_eb3]
+};
+export const examenBlanc4TA: ExamenBlanc = {
+  id: "eb4-ta", numero: 4, type: "TA",
+  titre: "Examen Blanc N°4 - Passerelle TA",
+  matieres: [taxi_nationale_eb4, taxi_locale_eb4]
+};
+export const examenBlanc5TA: ExamenBlanc = {
+  id: "eb5-ta", numero: 5, type: "TA",
+  titre: "Examen Blanc N°5 - Passerelle TA",
+  matieres: [taxi_nationale_eb5, taxi_locale_eb5]
+};
+export const examenBlanc6TA: ExamenBlanc = {
+  id: "eb6-ta", numero: 6, type: "TA",
+  titre: "Examen Blanc N°6 - Passerelle TA",
+  matieres: [taxi_nationale_eb6, taxi_locale_eb6]
+};
 
 // ===== EXAMENS BLANCS VA (Passerelle VTC) — Dév. Commercial + Réglementation Spécifique VTC =====
 
