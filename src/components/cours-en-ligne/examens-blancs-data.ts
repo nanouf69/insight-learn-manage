@@ -77,7 +77,12 @@ export interface ExamenBlanc {
  * - Réglementation spécifique (F) et Réglementation locale (G) : QCM=2pts, QRC=4pts
  * - Toutes les autres matières : QCM=1pt, QRC=2pts
  */
-export function getPointsParQuestion(matiereId: string, questionType: QuestionType): number {
+export function getPointsParQuestion(matiereId: string, questionType: QuestionType, matiere?: Matiere): number {
+  // If matiere has custom points defined, use them
+  if (matiere) {
+    if (questionType === "QCM" && matiere.ptsQCM != null) return matiere.ptsQCM;
+    if (questionType === "QRC" && matiere.ptsQRC != null) return matiere.ptsQRC;
+  }
   // Matières Bilan : tout est à 1 point (QCM uniquement)
   if (matiereId.startsWith("bilan_") || matiereId.startsWith("bilan_pratique")) {
     return 1;
