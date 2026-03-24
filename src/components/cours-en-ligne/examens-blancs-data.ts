@@ -8145,12 +8145,37 @@ export const examenBlanc6TA: ExamenBlanc = {
   matieres: [taxi_nationale_eb6, taxi_locale_eb6]
 };
 
-// ===== EXAMENS BLANCS VA (Passerelle VTC) — Dév. Commercial + Réglementation Spécifique VTC =====
+// ===== EXAMENS BLANCS VA (Passerelle VTC) — F(V) + G(V) extraits des examens VTC =====
 
 export const examenBlanc1VA: ExamenBlanc = {
   id: "eb1-va", numero: 1, type: "VA",
   titre: "Examen Blanc N°1 - Passerelle VA",
-  matieres: [matiere_reglementation_vtc_examen1, matiere_reglementation_vtc2_examen1]
+  matieres: [eb1Matieres[5], eb1Matieres[6]]
+};
+export const examenBlanc2VA: ExamenBlanc = {
+  id: "eb2-va", numero: 2, type: "VA",
+  titre: "Examen Blanc N°2 - Passerelle VA",
+  matieres: [eb2Matieres[5], eb2Matieres[6]]
+};
+export const examenBlanc3VA: ExamenBlanc = {
+  id: "eb3-va", numero: 3, type: "VA",
+  titre: "Examen Blanc N°3 - Passerelle VA",
+  matieres: [eb3Matieres[5], eb3Matieres[6]]
+};
+export const examenBlanc4VA: ExamenBlanc = {
+  id: "eb4-va", numero: 4, type: "VA",
+  titre: "Examen Blanc N°4 - Passerelle VA",
+  matieres: [eb4Matieres[5], eb4Matieres[6]]
+};
+export const examenBlanc5VA: ExamenBlanc = {
+  id: "eb5-va", numero: 5, type: "VA",
+  titre: "Examen Blanc N°5 - Passerelle VA",
+  matieres: [eb5Matieres[5], eb5Matieres[6]]
+};
+export const examenBlanc6VA: ExamenBlanc = {
+  id: "eb6-va", numero: 6, type: "VA",
+  titre: "Examen Blanc N°6 - Passerelle VA",
+  matieres: [eb6Matieres[5], eb6Matieres[6]]
 };
 
 export const EXAMENS_BLANCS_TA: ExamenBlanc[] = [
