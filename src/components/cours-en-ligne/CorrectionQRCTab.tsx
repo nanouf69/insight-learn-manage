@@ -346,7 +346,7 @@ const CorrectionQRCTab = () => {
         if (i.resultId === item.resultId) {
           const updated: Partial<QrcItem> = { noteSur20, scoreMatiereObtenu: safeClamped };
           if (i.questionId === item.questionId) {
-            return { ...i, ...updated, pointsObtenus: clamped, corrigeManuel: true };
+            return { ...i, ...updated, pointsObtenus: clamped, corrigeManuel: true, commentaire: commentaire || "" };
           }
           return { ...i, ...updated };
         }
