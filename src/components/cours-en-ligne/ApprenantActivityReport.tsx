@@ -531,10 +531,10 @@ export default function ApprenantActivityReport({ onBack }: Props) {
             </CardContent>
           </Card>
 
-          {/* Modules consultés */}
+          {/* Modules de la formation */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Modules consultés</CardTitle>
+              <CardTitle className="text-base">Modules de la formation {selectedApprenant?.formation_choisie ? `(${selectedApprenant.formation_choisie.toUpperCase()})` : ""}</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
@@ -547,14 +547,34 @@ export default function ApprenantActivityReport({ onBack }: Props) {
                    </TableRow>
                  </TableHeader>
                  <TableBody>
-                   {uniqueModules.length === 0 && (
+                   {formationModules.length === 0 && uniqueModules.length === 0 && (
                      <TableRow>
                        <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                         Aucun module consulté
+                         Aucun module
                        </TableCell>
                      </TableRow>
                    )}
-                   {uniqueModules.map(([modId, modNom]) => {
+                   {(formationModules.length > 0 ? formationModules.map((mod) => {
+                     const modActivites = activites.filter(a => a.module_id === mod.id && a.action_type === "open_module");
+                     const last = modActivites[0];
+                     const done = completedModuleIds.has(mod.id);
+                     return (
+                       <TableRow key={mod.id}>
+                         <TableCell className="font-medium">{mod.label}</TableCell>
+                         <TableCell>{modActivites.length || "—"}</TableCell>
+                         <TableCell>
+                           {last ? format(parseISO(last.occurred_at), "dd/MM/yyyy à HH:mm", { locale: fr }) : "—"}
+                         </TableCell>
+                         <TableCell>
+                           {done ? (
+                             <span className="inline-flex items-center gap-1 text-green-600 font-semibold"><CheckCircle2 className="w-4 h-4" /> Oui</span>
+                           ) : (
+                             <span className="inline-flex items-center gap-1 text-red-500 font-semibold"><XCircle className="w-4 h-4" /> Non</span>
+                           )}
+                         </TableCell>
+                       </TableRow>
+                     );
+                   }) : uniqueModules.map(([modId, modNom]) => {
                      const modActivites = activites.filter(a => a.module_id === modId && a.action_type === "open_module");
                      const last = modActivites[0];
                      const done = completedModuleIds.has(modId);
@@ -574,7 +594,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
                          </TableCell>
                        </TableRow>
                      );
-                   })}
+                   }))}
                  </TableBody>
                </Table>
              </CardContent>
