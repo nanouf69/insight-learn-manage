@@ -448,6 +448,15 @@ const CorrectionQRCTab = () => {
     return true;
   });
 
+  // Sort by exam number (EB1, EB2, ...), then by matiere, then by question
+  const sortedFiltered = [...filtered].sort((a, b) => {
+    const numA = parseInt((a.quizTitre.match(/N°(\d+)/)?.[1]) || "0", 10);
+    const numB = parseInt((b.quizTitre.match(/N°(\d+)/)?.[1]) || "0", 10);
+    if (numA !== numB) return numA - numB;
+    if (a.matiereId !== b.matiereId) return a.matiereId.localeCompare(b.matiereId);
+    return a.questionId - b.questionId;
+  });
+
   // Reset index when filter/search changes
   useEffect(() => {
     setCurrentIndex(0);
@@ -507,7 +516,7 @@ const CorrectionQRCTab = () => {
         </Select>
       </div>
 
-      {filtered.length === 0 ? (
+      {sortedFiltered.length === 0 ? (
         filter === "pending" && !searchQuery.trim() ? (
           <div className="min-h-[340px] rounded-xl border bg-background flex items-center justify-center">
             <p className="text-lg font-semibold">Plus de correction actuellement</p>
@@ -538,13 +547,13 @@ const CorrectionQRCTab = () => {
               Précédent
             </Button>
             <span className="text-sm font-medium text-muted-foreground">
-              {currentIndex + 1} / {filtered.length}
+              {currentIndex + 1} / {sortedFiltered.length}
             </span>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => { setCurrentIndex(Math.min(filtered.length - 1, currentIndex + 1)); setEditingId(null); }}
-              disabled={currentIndex >= filtered.length - 1}
+              onClick={() => { setCurrentIndex(Math.min(sortedFiltered.length - 1, currentIndex + 1)); setEditingId(null); }}
+              disabled={currentIndex >= sortedFiltered.length - 1}
               className="gap-1"
             >
               Suivant
@@ -553,8 +562,8 @@ const CorrectionQRCTab = () => {
           </div>
 
           {(() => {
-            const safeIdx = Math.min(currentIndex, filtered.length - 1);
-            const item = filtered[safeIdx];
+            const safeIdx = Math.min(currentIndex, sortedFiltered.length - 1);
+            const item = sortedFiltered[safeIdx];
             if (!item) return null;
             const uniqueKey = `${item.resultId}-${item.questionId}`;
             const isEditing = editingId === uniqueKey;
