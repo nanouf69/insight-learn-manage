@@ -1004,6 +1004,5 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
       </div>
       </div>
     </div>
-    </div>
   );
 }
