@@ -473,6 +473,14 @@ function MatiereEditor({
             <Label className="text-xs">Note sur</Label>
             <Input type="number" value={noteSur} onChange={e => setNoteSur(Number(e.target.value))} className="text-sm h-8" />
           </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Points / QCM</Label>
+            <Input type="number" step={0.5} min={0} value={ptsQCM} onChange={e => setPtsQCM(Number(e.target.value))} className="text-sm h-8" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Points / QRC</Label>
+            <Input type="number" step={0.5} min={0} value={ptsQRC} onChange={e => setPtsQRC(Number(e.target.value))} className="text-sm h-8" />
+          </div>
           <div className="col-span-2 md:col-span-4 flex gap-2">
             <Button size="sm" onClick={saveMeta} className="gap-1">
               <Save className="w-3 h-3" />
