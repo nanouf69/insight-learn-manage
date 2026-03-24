@@ -209,6 +209,10 @@ const ApprenantSearchPreview = () => {
             <TableProperties className="w-4 h-4" />
             Résultats
           </TabsTrigger>
+          <TabsTrigger value="correction-qrc" className="flex items-center gap-2">
+            <MessageSquareText className="w-4 h-4" />
+            Correction QRC
+          </TabsTrigger>
         </TabsList>
 
         {/* Accueil */}
