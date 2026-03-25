@@ -282,11 +282,27 @@ export default function ApprenantActivityReport({ onBack }: Props) {
     return m.length > 40 ? m.substring(0, 40) + "…" : m;
   };
 
-  // Get exercise/quiz titles completed during a connexion time window
+  // Get exercise/quiz titles + cours/parties completed during a connexion time window
   const getExerciceNamesDuringConnexion = (connexion: Connexion) => {
     const start = parseISO(connexion.started_at);
     const end = getCappedSessionEnd(connexion);
     const titles: string[] = [];
+
+    // Cours & parties consultés (module activities)
+    const moduleActs = activites.filter(a => {
+      const t = parseISO(a.occurred_at);
+      return t >= start && t <= end && a.action_type === "open_module";
+    });
+    const seenModules = new Set<string>();
+    moduleActs.forEach(a => {
+      const key = `${a.module_id}`;
+      if (!seenModules.has(key)) {
+        seenModules.add(key);
+        titles.push(`📖 ${a.module_nom}`);
+      }
+    });
+
+    // Exercices complétés
     exercicesCompletes.filter(e => {
       const t = parseISO(e.updated_at);
       return t >= start && t <= end;
@@ -406,7 +422,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
               <th>Durée</th>
               <th>Module consulté</th>
               <th>Quiz / Examens réalisés</th>
-              <th>Exercices effectués</th>
+              <th>Cours & Exercices effectués</th>
             </tr>
           </thead>
           <tbody>
@@ -625,7 +641,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
                     <TableHead>Durée</TableHead>
                     <TableHead>Module consulté</TableHead>
                     <TableHead>Quiz / Examens réalisés</TableHead>
-                    <TableHead>Exercices effectués</TableHead>
+                    <TableHead>Cours & Exercices effectués</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
