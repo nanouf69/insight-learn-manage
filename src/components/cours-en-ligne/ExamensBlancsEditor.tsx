@@ -277,7 +277,7 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
               return merged;
             }
             // No matching source matiere — still try to find texteSupport from source by nom
-            const fallbackSource = sourceExam.matieres.find((sm: any) => sm.nom === savedMat.nom);
+            const fallbackSource = sourceMatieres.find((sm: any) => sm.nom === savedMat.nom);
             if (fallbackSource?.texteSupport && !savedMat.texteSupport) {
               return { ...savedMat, texteSupport: fallbackSource.texteSupport, texteSource: fallbackSource.texteSource };
             }
