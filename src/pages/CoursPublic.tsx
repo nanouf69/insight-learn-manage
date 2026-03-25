@@ -771,7 +771,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   useEffect(() => {
     if (!apprenant?.id) return;
     const fetchCompletions = async () => {
-      const [{ data }, { data: examData }, { data: lastConnData }] = await Promise.all([
+      const [{ data }, { data: examData }, { data: lastActivityData }, { data: lastConnData }] = await Promise.all([
         supabase
           .from("apprenant_module_completion")
           .select("id, module_id, score_obtenu, score_max, completed_at, details")
@@ -781,6 +781,15 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           .select("quiz_id")
           .eq("apprenant_id", apprenant.id!)
           .eq("quiz_type", "examen_blanc"),
+        // Primary: use apprenant_module_activites (works even without active connexion)
+        supabase
+          .from("apprenant_module_activites" as any)
+          .select("module_nom")
+          .eq("apprenant_id", apprenant.id!)
+          .eq("action_type", "open_module")
+          .order("occurred_at", { ascending: false })
+          .limit(1),
+        // Fallback: use apprenant_connexions.current_module
         supabase
           .from("apprenant_connexions" as any)
           .select("current_module")
@@ -808,9 +817,12 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         setExamBlancCompletedIds(ids);
       }
 
-      if (lastConnData && (lastConnData as any[]).length > 0) {
-        setLastModuleName((lastConnData as any[])[0].current_module || null);
-      }
+      // Use activity log as primary source, fall back to connexion current_module
+      const lastModName =
+        (lastActivityData && (lastActivityData as any[]).length > 0 && (lastActivityData as any[])[0].module_nom) ||
+        (lastConnData && (lastConnData as any[]).length > 0 && (lastConnData as any[])[0].current_module) ||
+        null;
+      setLastModuleName(lastModName);
     };
     fetchCompletions();
   }, [apprenant?.id]);
