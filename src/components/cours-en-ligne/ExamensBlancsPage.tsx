@@ -123,7 +123,15 @@ interface ExamScoreItem {
 function pickBestScoreRow(prev: any, current: any) {
   if (!prev) return current;
 
-  // Prendre uniquement la ligne la plus récente par created_at
+  // Détecter les rows corrompues (score 0 avec des réponses existantes = bug de batch save)
+  const prevCorrupted = isCorruptedZeroRow(prev);
+  const currCorrupted = isCorruptedZeroRow(current);
+
+  // Si une seule des deux est corrompue, prendre l'autre
+  if (prevCorrupted && !currCorrupted) return current;
+  if (!prevCorrupted && currCorrupted) return prev;
+
+  // Sinon, prendre la ligne la plus récente par created_at
   const prevTs = toTimestamp(prev.created_at) || toTimestamp(prev.completed_at);
   const currTs = toTimestamp(current.created_at) || toTimestamp(current.completed_at);
 
@@ -132,6 +140,19 @@ function pickBestScoreRow(prev: any, current: any) {
 
   // En cas d'égalité de timestamp, garder le premier rencontré (le plus récent du ORDER BY DESC)
   return prev;
+}
+
+/** Détecte une row corrompue : score_obtenu = 0 mais des réponses existent dans details */
+function isCorruptedZeroRow(row: any): boolean {
+  if (!row) return false;
+  const score = toFiniteNumber(row.score_obtenu, -1);
+  if (score > 0) return false; // Score valide
+  // Score = 0 : vérifier s'il y a des réponses (indice de corruption)
+  const reponses = row.details?.reponses;
+  if (reponses && typeof reponses === "object" && Object.keys(reponses).length > 0) {
+    return true; // 0 score avec des réponses = corrompu
+  }
+  return false;
 }
 
 function findScoreForMatiere(scores: ExamScoreItem[], matiere: Pick<Matiere, "id" | "nom">): ExamScoreItem | undefined {
@@ -2918,6 +2939,16 @@ export default function ExamensBlancsPage({
       score_max: maxPoints,
       note_sur_20: normalizeNoteSur20(noteSecurisee, maxPoints),
     });
+    // Guard: si le score est 0 mais des réponses existent, loguer un avertissement
+    if (noteSecurisee === 0 && Object.keys(reponses || {}).length > 0) {
+      console.warn("[ExamSubmission][EB][ANOMALY] Score 0 avec des réponses existantes!", {
+        quiz_id: examenChoisi.id,
+        matiere_id: matiere.id,
+        nb_questions: (matiere.questions ?? []).filter(q => q != null && q?.type != null).length,
+        nb_reponses: Object.keys(reponses || {}).length,
+        questions_sample: (matiere.questions ?? []).slice(0, 2).map(q => ({ id: q?.id, type: q?.type })),
+      });
+    }
     const resultat: ResultatMatiere = {
       matiereId: matiere.id,
       nomMatiere: matiere.nom,
