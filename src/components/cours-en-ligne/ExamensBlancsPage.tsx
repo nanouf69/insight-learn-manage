@@ -372,7 +372,7 @@ interface ResultatMatiere {
 }
 
 // ===== ÉCRAN DE SÉLECTION =====
-function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, apprenantType, examensData, apprenantId, isAdmin }: { onStart: (examen: ExamenBlanc) => void; onEdit: () => void; onViewResults: (examen: ExamenBlanc) => void; defaultBilanId?: string | null; apprenantType?: string | null; examensData: ExamenBlanc[]; apprenantId?: string | null; isAdmin?: boolean }) {
+function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, apprenantType, examensData, apprenantId, isAdmin, refreshKey }: { onStart: (examen: ExamenBlanc) => void; onEdit: () => void; onViewResults: (examen: ExamenBlanc) => void; defaultBilanId?: string | null; apprenantType?: string | null; examensData: ExamenBlanc[]; apprenantId?: string | null; isAdmin?: boolean; refreshKey?: number }) {
   // Determine the forced exam type from the student's formation type
   const forcedType = (() => {
     if (!apprenantType) return null;
@@ -462,7 +462,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
             });
         }
       });
-  }, [apprenantId, examensData]);
+  }, [apprenantId, examensData, refreshKey]);
 
   const examens = examensData.filter(e => {
     const typeOk = typeFiltre === "tous" || e?.type === typeFiltre;
@@ -2298,6 +2298,7 @@ export default function ExamensBlancsPage({
   const [isViewingSavedResults, setIsViewingSavedResults] = useState(false);
   const [bilanPrefiltre, setBilanPrefiltre] = useState<string | null>(null);
   const [liveExamens, setLiveExamens] = useState<ExamenBlanc[]>(tousLesExamens);
+  const [selectionRefreshKey, setSelectionRefreshKey] = useState(0);
   const examStartTimeRef = useRef<number>(savedSession?.examStartTime || Date.now());
   const reloadInFlightRef = useRef<Promise<ExamenBlanc[]> | null>(null);
 
@@ -2704,6 +2705,7 @@ export default function ExamensBlancsPage({
     } else {
       setIsViewingSavedResults(false);
       setPhase("resultats");
+      setSelectionRefreshKey(k => k + 1);
       persistExamSession("resultats", null, 0); // Clear session
     }
     } catch (err) {
@@ -2723,7 +2725,7 @@ export default function ExamensBlancsPage({
         return;
       }
       setPhase("edition");
-    }} onViewResults={handleViewResults} defaultBilanId={bilanPrefiltre} apprenantType={apprenantType} examensData={liveExamens} apprenantId={apprenantId} isAdmin={isAdmin} />;
+    }} onViewResults={handleViewResults} defaultBilanId={bilanPrefiltre} apprenantType={apprenantType} examensData={liveExamens} apprenantId={apprenantId} isAdmin={isAdmin} refreshKey={selectionRefreshKey} />;
   }
 
   if (phase === "intro" && examenChoisi) {
@@ -2999,7 +3001,7 @@ export default function ExamensBlancsPage({
           examen={examenChoisi}
           resultats={tousResultats}
           onRecommencer={() => handleStart(examenChoisi)}
-          onRetour={() => setPhase("selection")}
+          onRetour={() => { setSelectionRefreshKey(k => k + 1); setPhase("selection"); }}
           onRefaireFausses={() => setPhase("revision")}
           apprenantId={apprenantId}
           userId={userId}
