@@ -109,6 +109,70 @@ function shareLookupKey(a: string[], b: string[]): boolean {
   return a.some((k) => setB.has(k));
 }
 
+const STORAGE_PUBLIC_PATH = "/storage/v1/object/public/";
+const SUPABASE_PUBLIC_BASE = (import.meta.env.VITE_SUPABASE_URL ?? "").replace(/\/$/, "");
+
+function resolveExamQuestionImageUrl(image: unknown): string | null {
+  const raw = safeStr(image).trim();
+  if (!raw) return null;
+
+  if (/^(https?:|data:|blob:)/i.test(raw)) return raw;
+  if (raw.startsWith(STORAGE_PUBLIC_PATH)) {
+    return SUPABASE_PUBLIC_BASE ? `${SUPABASE_PUBLIC_BASE}${raw}` : raw;
+  }
+  if (raw.startsWith("/")) return raw;
+
+  // bucket/path fallback (ex: cours-fichiers/eb3/q2.png)
+  if (SUPABASE_PUBLIC_BASE && /^[^/]+\/.+/.test(raw)) {
+    return `${SUPABASE_PUBLIC_BASE}${STORAGE_PUBLIC_PATH}${raw}`;
+  }
+
+  return raw;
+}
+
+function addCacheBuster(url: string, token: number): string {
+  return `${url}${url.includes("?") ? "&" : "?"}cb=${token}`;
+}
+
+function ExamQuestionImage({
+  image,
+  alt,
+  className,
+  fallbackClassName,
+}: {
+  image: unknown;
+  alt: string;
+  className?: string;
+  fallbackClassName?: string;
+}) {
+  const resolvedUrl = resolveExamQuestionImageUrl(image);
+  const [cacheToken, setCacheToken] = useState<number>(() => Date.now());
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    setHasError(false);
+    if (resolvedUrl) {
+      setCacheToken(Date.now());
+    }
+  }, [resolvedUrl]);
+
+  if (!resolvedUrl || hasError) {
+    return <p className={fallbackClassName ?? "mt-2 text-xs text-muted-foreground italic"}>Image non disponible</p>;
+  }
+
+  const src = addCacheBuster(resolvedUrl, cacheToken);
+  return (
+    <img
+      src={src}
+      alt={alt}
+      loading="eager"
+      decoding="async"
+      onError={() => setHasError(true)}
+      className={className ?? "mt-2 max-h-40 rounded-lg border"}
+    />
+  );
+}
+
 interface ExamScoreItem {
   matiere_id: string;
   matiere_nom: string;
@@ -1390,7 +1454,12 @@ function PassageMatiere({
               <div>
                 <p className="font-medium leading-relaxed">{question?.enonce || "Question indisponible"}</p>
                 {question?.image && (
-                  <img src={question.image} alt="Illustration de la question" className="mt-3 max-h-40 rounded-lg border" />
+                  <ExamQuestionImage
+                    image={question.image}
+                    alt={`Illustration de la question ${question.id}`}
+                    className="mt-3 max-h-40 rounded-lg border"
+                    fallbackClassName="mt-3 text-xs text-muted-foreground italic"
+                  />
                 )}
               </div>
             </div>
@@ -2172,7 +2241,14 @@ function EcranResultats({
                               <div className="flex items-center gap-1.5 flex-1">
                                 <Badge variant={q?.type === "QRC" ? "secondary" : "outline"} className="text-xs shrink-0">{q?.type}</Badge>
                                 <p className="text-sm font-bold">{qIdx + 1}. {q.enonce}</p>
-                                {q?.image && <img src={q.image} alt="" className="mt-1 max-h-24 rounded border" />}
+                                {q?.image && (
+                                  <ExamQuestionImage
+                                    image={q.image}
+                                    alt={`Illustration de la question ${qIdx + 1}`}
+                                    className="mt-1 max-h-24 rounded border"
+                                    fallbackClassName="mt-1 text-xs text-muted-foreground italic"
+                                  />
+                                )}
                               </div>
                               <div className="flex items-center gap-1 shrink-0">
                                 {q?.type === "QRC" && <Bot className="w-3 h-3 text-blue-500" aria-label="Corrigé par IA" />}
@@ -2471,7 +2547,12 @@ function RevisionFausses({
             </Badge>
           </div>
           {q?.image && (
-            <img src={q.image} alt="Illustration" className="mt-2 max-h-40 rounded-lg border" />
+            <ExamQuestionImage
+              image={q.image}
+              alt={`Illustration de la question ${q.id}`}
+              className="mt-2 max-h-40 rounded-lg border"
+              fallbackClassName="mt-2 text-xs text-muted-foreground italic"
+            />
           )}
 
           {q?.type === "QCM" && q.choix && (
