@@ -2040,8 +2040,60 @@ export function ExamenReussitePage() {
         const taxiPratique = candidatsPratique.filter(a => getCategoriePratique(a.type_apprenant) === 'TAXI');
         const vtcPratique = candidatsPratique.filter(a => getCategoriePratique(a.type_apprenant) === 'VTC');
 
+        const sendSatisfactionEmail = async (apprenant: any) => {
+          try {
+            // Fetch the satisfaction template
+            const { data: tpl } = await supabase
+              .from('email_templates')
+              .select('subject_template, body_template')
+              .eq('id', 'questionnaire-satisfaction-pratique')
+              .single();
+            if (!tpl || !apprenant.email) return;
+
+            const formation = apprenant.type_apprenant || 'VTC';
+            const subject = tpl.subject_template
+              .replace(/\{\{formation\}\}/g, formation)
+              .replace(/\{\{prenom\}\}/g, apprenant.prenom || '')
+              .replace(/\{\{nom\}\}/g, apprenant.nom || '');
+            const body = tpl.body_template
+              .replace(/\{\{formation\}\}/g, formation)
+              .replace(/\{\{prenom\}\}/g, apprenant.prenom || '')
+              .replace(/\{\{nom\}\}/g, apprenant.nom || '');
+
+            const htmlBody = body.replace(/\n/g, '<br>');
+            const { data, error } = await supabase.functions.invoke('sync-outlook-emails', {
+              body: {
+                action: 'send',
+                userEmail: 'contact@ftransport.fr',
+                to: apprenant.email,
+                subject,
+                body: htmlBody,
+              },
+            });
+            if (!error && data?.success) {
+              await supabase.from('emails').insert({
+                subject,
+                body_html: htmlBody,
+                body_preview: body.slice(0, 200),
+                sender_email: 'contact@ftransport.fr',
+                recipients: [apprenant.email],
+                type: 'sent',
+                is_read: true,
+                sent_at: new Date().toISOString(),
+                apprenant_id: apprenant.id,
+              });
+            }
+          } catch (e) {
+            console.error("Erreur envoi questionnaire satisfaction:", e);
+          }
+        };
+
         const updateResultatPratique = async (id: string, resultat: string | null) => {
           try {
+            // Get current result before update to avoid re-sending
+            const candidat = candidatsPratique.find(a => a.id === id);
+            const previousResult = (candidat as any)?.resultat_examen_pratique;
+
             // Update resultat_examen_pratique in apprenants
             const { error } = await supabase
               .from('apprenants')
@@ -2071,6 +2123,12 @@ export function ExamenReussitePage() {
               toast.success("Candidat déplacé à la prochaine session — il peut réserver un nouveau créneau");
             } else if (resultat !== 'deplace') {
               toast.success("Résultat pratique mis à jour");
+            }
+
+            // Send satisfaction questionnaire email when result changes to "oui"
+            if (resultat === 'oui' && previousResult !== 'oui' && candidat) {
+              sendSatisfactionEmail(candidat);
+              toast.success("📋 Questionnaire de satisfaction envoyé automatiquement");
             }
 
             queryClient.invalidateQueries({ queryKey: ['all-apprenants'] });
