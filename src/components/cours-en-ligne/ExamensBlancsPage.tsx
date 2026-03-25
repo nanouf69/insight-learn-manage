@@ -536,6 +536,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
 
           const allRows = data as any[];
           const debugRowsEb1 = allRows.filter((row) => row?.quiz_id === "EB1");
+          const debugRowsEb2 = allRows.filter((row) => row?.quiz_id === "EB2");
 
           console.groupCollapsed(`[ExamensBlancs][RAW Supabase] apprenant=${apprenantId} quiz=EB1 lignes=${debugRowsEb1.length}`);
           console.table(
@@ -596,6 +597,39 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
             score_obtenu: sampleAorFvZero.score_obtenu,
             score_max: sampleAorFvZero.score_max,
           } : "Introuvable");
+
+          const latestEb1ByKey = new Map<string, any>();
+          debugRowsEb1.forEach((row) => {
+            const key = getMatiereCanonicalKey(row?.matiere_id, row?.matiere_nom);
+            latestEb1ByKey.set(key, pickBestScoreRow(latestEb1ByKey.get(key), row));
+          });
+
+          const latestEb2ByKey = new Map<string, any>();
+          debugRowsEb2.forEach((row) => {
+            const key = getMatiereCanonicalKey(row?.matiere_id, row?.matiere_nom);
+            latestEb2ByKey.set(key, pickBestScoreRow(latestEb2ByKey.get(key), row));
+          });
+
+          const comparedKeys = Array.from(new Set([...latestEb1ByKey.keys(), ...latestEb2ByKey.keys()]));
+          console.groupCollapsed(`[ExamensBlancs][RAW compare EB1 vs EB2] apprenant=${apprenantId}`);
+          console.log("[ExamensBlancs][RAW compare] EB1 matiere_id exacts:", Array.from(new Set(debugRowsEb1.map((r) => JSON.stringify(r?.matiere_id)))));
+          console.log("[ExamensBlancs][RAW compare] EB2 matiere_id exacts:", Array.from(new Set(debugRowsEb2.map((r) => JSON.stringify(r?.matiere_id)))));
+          console.table(
+            comparedKeys.map((key) => {
+              const eb1 = latestEb1ByKey.get(key);
+              const eb2 = latestEb2ByKey.get(key);
+              return {
+                canonical_key: key,
+                eb1_matiere_id_exact: eb1 ? JSON.stringify(eb1.matiere_id) : null,
+                eb1_matiere_nom_exact: eb1 ? JSON.stringify(eb1.matiere_nom) : null,
+                eb1_note_sur_20: eb1 ? normalizeNoteSur20(eb1.score_obtenu, eb1.score_max, eb1.note_sur_20).toFixed(1) : null,
+                eb2_matiere_id_exact: eb2 ? JSON.stringify(eb2.matiere_id) : null,
+                eb2_matiere_nom_exact: eb2 ? JSON.stringify(eb2.matiere_nom) : null,
+                eb2_note_sur_20: eb2 ? normalizeNoteSur20(eb2.score_obtenu, eb2.score_max, eb2.note_sur_20).toFixed(1) : null,
+              };
+            })
+          );
+          console.groupEnd();
 
           Object.entries(scores).forEach(([quizId, quizScores]) => {
             const examDef = examensData.find((exam) => exam.id === quizId);
