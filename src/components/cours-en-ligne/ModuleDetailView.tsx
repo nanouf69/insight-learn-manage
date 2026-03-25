@@ -2851,6 +2851,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }
     }, [learnerUiStateKey, learnerUiStateAnonymousFallbackKey, apprenantId, totalPages, uiStateHydrated]);
 
+    // Track initial cours page view after hydration
+    const initialCoursTrackedRef = useRef(false);
+    useEffect(() => {
+      if (!uiStateHydrated || initialCoursTrackedRef.current || pages.length === 0) return;
+      initialCoursTrackedRef.current = true;
+      const page = pages[currentPage];
+      if (page?.type === "cours" && onTrackCours) {
+        onTrackCours(module.id, page.cours.titre);
+      }
+    }, [uiStateHydrated, pages.length]);
+
     // --- Restore completedPages from Supabase for interactive form pages ---
     useEffect(() => {
       if (!uiStateHydrated || !apprenantId || pages.length === 0) return;
