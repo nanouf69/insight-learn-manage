@@ -875,4 +875,4 @@ Le: ${dirigeant.date}
       </Tabs>
     </div>
   );
-}
+});
