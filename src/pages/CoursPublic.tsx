@@ -1450,10 +1450,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                   )}
                   {doneModules.map((mod) => {
                     const introLockedDone = isIntroLocked(mod.id);
+                    const lastMod = isLastModule(mod.nom);
                     return (
                     <Card
                       key={mod.id}
-                      className={`border-0 shadow-sm transition-all duration-300 overflow-hidden border-l-4 border-l-emerald-400 ${introLockedDone ? "opacity-70 cursor-not-allowed" : "hover:shadow-md cursor-pointer group"}`}
+                      className={`shadow-sm transition-all duration-300 overflow-hidden border-l-4 ${lastMod ? "border-2 border-red-500 ring-2 ring-red-200 dark:ring-red-900/40 border-l-red-500" : "border-l-emerald-400"} ${introLockedDone ? "opacity-70 cursor-not-allowed" : "hover:shadow-md cursor-pointer group"}`}
                       onClick={() => { if (!introLockedDone) { trackModuleActivity(mod.id, mod.nom); setSelectedModule(mod); } }}
                     >
                       <CardContent className="p-0">
