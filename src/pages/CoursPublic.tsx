@@ -1169,6 +1169,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const lowModules = remainingModules.filter((m) => !moduleProgressById[m.id]?.hasProgress).slice(0, 3);
   const studentName = apprenant ? `${apprenant.prenom} ${apprenant.nom}` : "Apprenant";
 
+  // Check if a module was the last one the learner was on
+  const isLastModule = (modNom: string) =>
+    !!lastModuleName && modNom.trim().toLowerCase() === lastModuleName.trim().toLowerCase();
+
   // E-learning sequential order enforcement
   const ELEARNING_FORMATION_IDS: FormationId[] = ["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"];
   const isElearning = ELEARNING_FORMATION_IDS.includes(selectedFormation);
