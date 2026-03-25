@@ -217,7 +217,33 @@ export default function ApprenantActivityReport({ onBack }: Props) {
     return Math.max(0, differenceInMinutes(getCappedSessionEnd(connexion), start));
   };
 
-  // Calculate stats
+  // Get exercises/quizzes completed during a connexion time window
+  const getExercicesDuringConnexion = (connexion: Connexion) => {
+    const start = parseISO(connexion.started_at);
+    const end = getCappedSessionEnd(connexion);
+    const exCount = exercicesCompletes.filter(e => {
+      const t = parseISO(e.updated_at);
+      return t >= start && t <= end;
+    }).length;
+    const qrCount = quizResults.filter(q => {
+      const t = parseISO(q.completed_at);
+      return t >= start && t <= end;
+    }).length;
+    return exCount + qrCount;
+  };
+
+  const getExercicesTitlesDuringConnexion = (connexion: Connexion) => {
+    const start = parseISO(connexion.started_at);
+    const end = getCappedSessionEnd(connexion);
+    const titles: string[] = [];
+    quizResults.filter(q => {
+      const t = parseISO(q.completed_at);
+      return t >= start && t <= end;
+    }).forEach(q => titles.push(q.quiz_titre));
+    return titles;
+  };
+
+
   const totalMinutes = connexions.reduce((sum, c) => {
     return sum + getSessionMinutes(c);
   }, 0);
