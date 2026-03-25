@@ -375,6 +375,65 @@ export function RapprochementBancaire() {
     await fetchAll();
   };
 
+  /** Sync Revolut API transactions into transactions_bancaires */
+  const handleSyncRevolut = async () => {
+    setSyncingRevolut(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("revolut-transactions");
+      if (fnError) throw new Error(fnError.message);
+      if (data?.error) throw new Error(data.error);
+
+      const revolutTxs: any[] = data?.transactions || [];
+      if (revolutTxs.length === 0) {
+        toast.info("Aucune transaction Revolut récupérée depuis l'API.");
+        setSyncingRevolut(false);
+        return;
+      }
+
+      // Get existing Revolut references to avoid duplicates
+      const { data: existing } = await supabase
+        .from("transactions_bancaires")
+        .select("reference")
+        .eq("banque", "Revolut Pro")
+        .not("reference", "is", null);
+      const existingRefs = new Set((existing || []).map(e => e.reference));
+
+      const inserts = revolutTxs
+        .filter((tx: any) => tx.state === "completed" && tx.legs?.length > 0)
+        .filter((tx: any) => !existingRefs.has(tx.id))
+        .map((tx: any) => {
+          const leg = tx.legs[0];
+          const desc = tx.description || tx.reference || leg.description || "—";
+          const dateStr = (tx.completed_at || tx.created_at || "").slice(0, 10);
+          return {
+            date_operation: dateStr,
+            libelle: desc.slice(0, 100),
+            montant: leg.amount,
+            solde: null as number | null,
+            banque: "Revolut Pro",
+            reference: tx.id,
+            statut: "non_justifie",
+            source: "revolut_api",
+          };
+        });
+
+      if (inserts.length === 0) {
+        toast.info("Toutes les transactions Revolut sont déjà synchronisées.");
+        setSyncingRevolut(false);
+        return;
+      }
+
+      const { error: insertErr } = await supabase.from("transactions_bancaires").insert(inserts);
+      if (insertErr) throw insertErr;
+
+      toast.success(`${inserts.length} transactions Revolut synchronisées !`);
+      await fetchAll();
+    } catch (err) {
+      toast.error("Erreur sync Revolut : " + (err instanceof Error ? err.message : "Erreur"));
+    }
+    setSyncingRevolut(false);
+  };
+
   const quickUpdate = async (id: string, updates: Partial<Transaction>) => {
     await supabase.from("transactions_bancaires").update(updates).eq("id", id);
     await fetchAll();
