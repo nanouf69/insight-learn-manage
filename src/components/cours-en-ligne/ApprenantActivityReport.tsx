@@ -243,17 +243,16 @@ export default function ApprenantActivityReport({ onBack }: Props) {
     return titles;
   };
 
-  // Get cours/parties consulted during a connexion time window
+  // Get quiz/examen titles completed during a connexion time window
   const getCoursDuringConnexion = (connexion: Connexion) => {
     const start = parseISO(connexion.started_at);
     const end = getCappedSessionEnd(connexion);
-    const modules = activites.filter(a => {
-      if (a.action_type !== "open_module") return false;
-      const t = parseISO(a.occurred_at);
+    const titles: string[] = [];
+    quizResults.filter(q => {
+      const t = parseISO(q.completed_at);
       return t >= start && t <= end;
-    });
-    const unique = [...new Set(modules.map(m => m.module_nom))];
-    return unique;
+    }).forEach(q => titles.push(q.quiz_titre));
+    return titles;
   };
 
 
