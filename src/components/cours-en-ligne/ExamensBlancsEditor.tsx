@@ -203,32 +203,74 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
         if (idx === undefined || idx < 0 || idx >= examens.length || !row.module_data) continue;
         const saved = row.module_data as unknown as ExamenBlanc;
         if (saved.matieres && Array.isArray(saved.matieres)) {
+          const normalizeQuestionType = (value: unknown) => String(value ?? "").trim().toUpperCase();
+          const getQuestionKey = (value: any) => `${Number(value?.id)}::${normalizeQuestionType(value?.type)}`;
+
           const sourceMatieres = examens[idx].matieres;
           const mergedMatieres = saved.matieres.map((savedMat) => {
             const sourceMat = sourceMatieres.find(sm => sm.id === savedMat.id);
             if (sourceMat) {
               const sourceQuestions = Array.isArray(sourceMat.questions) ? sourceMat.questions : [];
               const savedQuestions = Array.isArray(savedMat.questions) ? savedMat.questions : [];
-              const mergedQuestions = savedQuestions.map((savedQ) => {
-                const sourceQ = sourceQuestions.find((sq) => sq.id === savedQ.id && sq.type === savedQ.type);
-                if (!sourceQ) return savedQ;
+              const savedByKey = new Map<string, any>();
+              const savedById = new Map<number, any[]>();
 
+              savedQuestions.forEach((savedQ) => {
+                const key = getQuestionKey(savedQ);
+                savedByKey.set(key, savedQ);
+                const numericId = Number(savedQ?.id);
+                if (!Number.isNaN(numericId)) {
+                  const current = savedById.get(numericId) ?? [];
+                  current.push(savedQ);
+                  savedById.set(numericId, current);
+                }
+              });
+
+              const consumedSavedQuestions = new Set<any>();
+
+              const mergedQuestions = sourceQuestions.map((sourceQ) => {
+                const key = getQuestionKey(sourceQ);
+                let savedQ = savedByKey.get(key);
+
+                if (!savedQ) {
+                  const sameId = savedById.get(Number(sourceQ?.id)) ?? [];
+                  const sameType = sameId.find((candidate) => normalizeQuestionType(candidate?.type) === normalizeQuestionType(sourceQ?.type));
+                  savedQ = sameType ?? sameId[0];
+                }
+
+                if (!savedQ) return sourceQ;
+                consumedSavedQuestions.add(savedQ);
+
+                const mergedImage = savedQ?.image ?? savedQ?.image_url ?? sourceQ?.image ?? (sourceQ as any)?.image_url;
                 const mergedQuestion: Question = {
+                  ...sourceQ,
                   ...savedQ,
-                  image: savedQ.image ?? sourceQ.image,
+                  image: mergedImage,
                 };
 
-                if (savedQ.type !== "QRC") return mergedQuestion;
+                if (normalizeQuestionType(mergedQuestion.type) !== "QRC") return mergedQuestion;
 
-                const hasSavedKeywords = Array.isArray(savedQ.reponses_possibles) && savedQ.reponses_possibles.length > 0;
-                const sourceKeywords = Array.isArray(sourceQ.reponses_possibles) ? sourceQ.reponses_possibles : [];
+                const hasSavedKeywords = Array.isArray(savedQ?.reponses_possibles) && savedQ.reponses_possibles.length > 0;
+                const sourceKeywords = Array.isArray(sourceQ?.reponses_possibles) ? sourceQ.reponses_possibles : [];
                 if (!hasSavedKeywords && sourceKeywords.length > 0) {
                   return { ...mergedQuestion, reponses_possibles: [...sourceKeywords] };
                 }
 
                 return mergedQuestion;
               });
-              const merged = { ...savedMat, questions: mergedQuestions };
+
+              const extraSavedQuestions = savedQuestions
+                .filter((savedQ) => !consumedSavedQuestions.has(savedQ))
+                .map((savedQ) => ({
+                  ...savedQ,
+                  image: savedQ?.image ?? savedQ?.image_url,
+                }));
+
+              const merged = {
+                ...sourceMat,
+                ...savedMat,
+                questions: [...mergedQuestions, ...extraSavedQuestions],
+              };
               if (sourceMat.texteSupport) merged.texteSupport = sourceMat.texteSupport;
               if (sourceMat.texteSource) merged.texteSource = sourceMat.texteSource;
               return merged;
