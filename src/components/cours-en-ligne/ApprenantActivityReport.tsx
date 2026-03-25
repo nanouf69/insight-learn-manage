@@ -291,14 +291,18 @@ export default function ApprenantActivityReport({ onBack }: Props) {
     // Cours & parties consultés (module activities)
     const moduleActs = activites.filter(a => {
       const t = parseISO(a.occurred_at);
-      return t >= start && t <= end && a.action_type === "open_module";
+      return t >= start && t <= end && (a.action_type === "open_module" || a.action_type === "open_cours");
     });
     const seenModules = new Set<string>();
     moduleActs.forEach(a => {
-      const key = `${a.module_id}`;
+      const key = `${a.action_type}_${a.module_id}_${a.module_nom}`;
       if (!seenModules.has(key)) {
         seenModules.add(key);
-        titles.push(`📖 ${a.module_nom}`);
+        if (a.action_type === "open_cours") {
+          titles.push(`📖 ${a.module_nom}`);
+        } else {
+          titles.push(`📖 ${a.module_nom}`);
+        }
       }
     });
 
