@@ -1184,6 +1184,18 @@ function getInitialModuleDataRaw(
     };
   }
 
+  // Bilan Exercices Formation Continue VTC (module 81) — sans Gestion
+  if (module.id === 81) {
+    const { BILAN_EXERCICES_FC_VTC } = await import("./bilan-exercices-fc-vtc-data");
+    return {
+      id: 81,
+      nom: "1.BILAN EXERCICES FORMATION CONTINUE VTC",
+      description: "Tous les exercices regroupés par matière (sans Gestion). Refaites-les autant de fois que nécessaire.",
+      cours: [],
+      exercices: BILAN_EXERCICES_FC_VTC,
+    };
+  }
+
   // Bilan Exercices TAXI (module 9) — toutes les matières
   if (module.id === 9) {
     return {
