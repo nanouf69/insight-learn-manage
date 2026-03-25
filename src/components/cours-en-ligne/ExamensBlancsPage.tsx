@@ -2939,6 +2939,16 @@ export default function ExamensBlancsPage({
       score_max: maxPoints,
       note_sur_20: normalizeNoteSur20(noteSecurisee, maxPoints),
     });
+    // Guard: si le score est 0 mais des réponses existent, loguer un avertissement
+    if (noteSecurisee === 0 && Object.keys(reponses || {}).length > 0) {
+      console.warn("[ExamSubmission][EB][ANOMALY] Score 0 avec des réponses existantes!", {
+        quiz_id: examenChoisi.id,
+        matiere_id: matiere.id,
+        nb_questions: (matiere.questions ?? []).filter(q => q != null && q?.type != null).length,
+        nb_reponses: Object.keys(reponses || {}).length,
+        questions_sample: (matiere.questions ?? []).slice(0, 2).map(q => ({ id: q?.id, type: q?.type })),
+      });
+    }
     const resultat: ResultatMatiere = {
       matiereId: matiere.id,
       nomMatiere: matiere.nom,
