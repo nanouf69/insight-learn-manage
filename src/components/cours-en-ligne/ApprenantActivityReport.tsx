@@ -225,7 +225,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
           .order("updated_at", { ascending: false }),
         supabase
           .from("apprenant_quiz_results")
-          .select("id, quiz_titre, completed_at")
+          .select("id, quiz_titre, matiere_nom, completed_at")
           .eq("apprenant_id", selectedId)
           .gte("completed_at", since)
           .order("completed_at", { ascending: false }),
