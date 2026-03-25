@@ -368,6 +368,13 @@ export const MODULES_DATA: ModuleInfo[] = [
     description: "Évaluation des acquis et enquête de satisfaction — Passerelle VA",
     formations: ["vtc-pour-taxi"],
   },
+  // === Formation Continue VTC ===
+  {
+    id: 81,
+    nom: "1.BILAN EXERCICES FORMATION CONTINUE VTC",
+    description: "Bilan exercices VTC sans Gestion — Formation continue",
+    formations: ["continue-vtc"],
+  },
 ];
 
 // Expansion des modules_autorises :
