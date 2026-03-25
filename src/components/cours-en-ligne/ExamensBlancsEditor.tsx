@@ -263,7 +263,7 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
                 .filter((savedQ) => !consumedSavedQuestions.has(savedQ))
                 .map((savedQ) => ({
                   ...savedQ,
-                  image: savedQ?.image ?? savedQ?.image_url,
+                  image: savedQ?.image ?? (savedQ as any)?.image_url,
                 }));
 
               const merged = {
