@@ -1161,6 +1161,34 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return acc;
   }, {});
 
+  // A module is truly "done" only if ALL its quizzes/exams are completed
+  const moduleProgressById = modules.reduce<Record<number, { isDone: boolean; hasProgress: boolean }>>((acc, module) => {
+    const rows = completionsByModuleId[module.id] || [];
+    let isDone = completedModuleIds.has(module.id);
+
+    // If module has quiz stats, require ALL quizzes completed
+    const quizStats = moduleQuizStatsById[module.id];
+    if (isDone && quizStats && quizStats.totalQuizzes > 0) {
+      if (quizStats.completedQuizzes < quizStats.totalQuizzes) {
+        isDone = false;
+      }
+    }
+
+    // If module has exam blanc stats, require ALL exams completed
+    const examStats = examBlancStatsById[module.id];
+    if (isDone && examStats && examStats.total > 0) {
+      if (examStats.completed < examStats.total) {
+        isDone = false;
+      }
+    }
+
+    acc[module.id] = {
+      isDone,
+      hasProgress: rows.some(hasModuleCompletionProgress),
+    };
+    return acc;
+  }, {});
+
   const completedCount = modules.filter((m) => moduleProgressById[m.id]?.isDone).length;
   const globalProgress = modules.length > 0 ? Math.round((completedCount / modules.length) * 100) : 0;
   const remainingModules = modules.filter((m) => !moduleProgressById[m.id]?.isDone);
