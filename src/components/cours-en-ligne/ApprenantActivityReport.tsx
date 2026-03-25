@@ -31,6 +31,19 @@ interface Connexion {
   current_module: string | null;
 }
 
+interface ExerciceComplete {
+  id: string;
+  exercice_id: string;
+  completed: boolean;
+  updated_at: string;
+}
+
+interface QuizResult {
+  id: string;
+  quiz_titre: string;
+  completed_at: string;
+}
+
 const MAX_SESSION_DURATION_MS = 7 * 60 * 60 * 1000;
 
 interface ModuleActivite {
@@ -107,6 +120,8 @@ export default function ApprenantActivityReport({ onBack }: Props) {
   const [connexions, setConnexions] = useState<Connexion[]>([]);
   const [activites, setActivites] = useState<ModuleActivite[]>([]);
   const [completedModuleIds, setCompletedModuleIds] = useState<Set<number>>(new Set());
+  const [exercicesCompletes, setExercicesCompletes] = useState<ExerciceComplete[]>([]);
+  const [quizResults, setQuizResults] = useState<QuizResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [period, setPeriod] = useState<"7" | "30" | "90" | "all">("30");
   const printRef = useRef<HTMLDivElement>(null);
@@ -146,7 +161,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
       setLoading(true);
       const since = period === "all" ? "2000-01-01" : format(subDays(new Date(), parseInt(period)), "yyyy-MM-dd");
 
-      const [connRes, actRes, complRes] = await Promise.all([
+      const [connRes, actRes, complRes, exRes, qrRes] = await Promise.all([
         supabase
           .from("apprenant_connexions" as any)
           .select("id, started_at, ended_at, last_seen_at, current_module")
@@ -163,11 +178,26 @@ export default function ApprenantActivityReport({ onBack }: Props) {
           .from("apprenant_module_completion")
           .select("module_id")
           .eq("apprenant_id", selectedId),
+        supabase
+          .from("reponses_apprenants")
+          .select("id, exercice_id, completed, updated_at")
+          .eq("apprenant_id", selectedId)
+          .eq("completed", true)
+          .gte("updated_at", since)
+          .order("updated_at", { ascending: false }),
+        supabase
+          .from("apprenant_quiz_results")
+          .select("id, quiz_titre, completed_at")
+          .eq("apprenant_id", selectedId)
+          .gte("completed_at", since)
+          .order("completed_at", { ascending: false }),
       ]);
 
       setConnexions(((connRes.data as any[]) || []) as Connexion[]);
       setActivites(((actRes.data as any[]) || []) as ModuleActivite[]);
       setCompletedModuleIds(new Set(((complRes.data as any[]) || []).map((r: any) => r.module_id as number)));
+      setExercicesCompletes(((exRes.data as any[]) || []) as ExerciceComplete[]);
+      setQuizResults(((qrRes.data as any[]) || []) as QuizResult[]);
       setLoading(false);
     };
     load();
@@ -187,7 +217,33 @@ export default function ApprenantActivityReport({ onBack }: Props) {
     return Math.max(0, differenceInMinutes(getCappedSessionEnd(connexion), start));
   };
 
-  // Calculate stats
+  // Get exercises/quizzes completed during a connexion time window
+  const getExercicesDuringConnexion = (connexion: Connexion) => {
+    const start = parseISO(connexion.started_at);
+    const end = getCappedSessionEnd(connexion);
+    const exCount = exercicesCompletes.filter(e => {
+      const t = parseISO(e.updated_at);
+      return t >= start && t <= end;
+    }).length;
+    const qrCount = quizResults.filter(q => {
+      const t = parseISO(q.completed_at);
+      return t >= start && t <= end;
+    }).length;
+    return exCount + qrCount;
+  };
+
+  const getExercicesTitlesDuringConnexion = (connexion: Connexion) => {
+    const start = parseISO(connexion.started_at);
+    const end = getCappedSessionEnd(connexion);
+    const titles: string[] = [];
+    quizResults.filter(q => {
+      const t = parseISO(q.completed_at);
+      return t >= start && t <= end;
+    }).forEach(q => titles.push(q.quiz_titre));
+    return titles;
+  };
+
+
   const totalMinutes = connexions.reduce((sum, c) => {
     return sum + getSessionMinutes(c);
   }, 0);
@@ -283,6 +339,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
               <th>Heure fin</th>
               <th>Durée</th>
               <th>Module consulté</th>
+              <th>Exercices effectués</th>
             </tr>
           </thead>
           <tbody>
@@ -292,15 +349,18 @@ export default function ApprenantActivityReport({ onBack }: Props) {
               const mins = getSessionMinutes(c);
               const h = Math.floor(mins / 60);
               const m = mins % 60;
+              const exCount = getExercicesDuringConnexion(c);
               return `<tr>
                 <td>${format(start, "dd/MM/yyyy", { locale: fr })}</td>
                 <td>${format(start, "HH:mm", { locale: fr })}</td>
                 <td>${c.ended_at ? format(end, "HH:mm", { locale: fr }) : "En cours"}</td>
                 <td>${h}h${m.toString().padStart(2, "0")}</td>
                 <td>${c.current_module || "—"}</td>
+                <td>${exCount > 0 ? exCount + " exercice(s)" : "—"}</td>
               </tr>`;
             }).join("")}
-            ${connexions.length === 0 ? '<tr><td colspan="5" style="text-align:center;color:#9ca3af;">Aucune connexion</td></tr>' : ""}
+            ${connexions.length === 0 ? '<tr><td colspan="6" style="text-align:center;color:#9ca3af;">Aucune connexion</td></tr>' : ""}
+          </tbody>
           </tbody>
         </table>
 
@@ -495,12 +555,13 @@ export default function ApprenantActivityReport({ onBack }: Props) {
                     <TableHead>Heure fin</TableHead>
                     <TableHead>Durée</TableHead>
                     <TableHead>Module consulté</TableHead>
+                    <TableHead>Exercices effectués</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {connexions.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                         Aucune connexion enregistrée
                       </TableCell>
                     </TableRow>
@@ -511,6 +572,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
                     const mins = getSessionMinutes(c);
                     const h = Math.floor(mins / 60);
                     const m = mins % 60;
+                    const exCount = getExercicesDuringConnexion(c);
                     return (
                       <TableRow key={c.id}>
                         <TableCell>{format(start, "dd/MM/yyyy", { locale: fr })}</TableCell>
@@ -523,6 +585,13 @@ export default function ApprenantActivityReport({ onBack }: Props) {
                         </TableCell>
                         <TableCell className="font-medium">{h}h{m.toString().padStart(2, "0")}</TableCell>
                         <TableCell className="text-muted-foreground">{c.current_module || "—"}</TableCell>
+                        <TableCell>
+                          {exCount > 0 ? (
+                            <Badge variant="outline" className="text-xs">{exCount} exercice(s)</Badge>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
                       </TableRow>
                     );
                   })}
