@@ -75,12 +75,6 @@ async function importPrivateKey(pem: string): Promise<CryptoKey> {
     throw new Error("REVOLUT_PRIVATE_KEY vide après normalisation");
   }
 
-  if (base64Body.length < 512) {
-    throw new Error(
-      `REVOLUT_PRIVATE_KEY invalide: longueur trop courte (${base64Body.length}). Clé privée complète attendue.`
-    );
-  }
-
   const paddedBase64 =
     base64Body + "=".repeat((4 - (base64Body.length % 4)) % 4);
 
@@ -102,6 +96,12 @@ async function importPrivateKey(pem: string): Promise<CryptoKey> {
     normalizedFirst30: normalizedPem.substring(0, 30),
     normalizedLast30: normalizedPem.substring(normalizedPem.length - 30),
   });
+
+  if (base64Body.length < 512) {
+    throw new Error(
+      `REVOLUT_PRIVATE_KEY invalide: longueur base64=${base64Body.length} (attendu ~1700+). La clé semble tronquée ou incomplète. Longueur brute du secret: ${pem.length} caractères.`
+    );
+  }
 
   let binaryDer: Uint8Array;
   try {
