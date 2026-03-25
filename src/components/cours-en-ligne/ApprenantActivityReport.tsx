@@ -18,6 +18,7 @@ import { TAXI_COURS_DATA } from "./taxi-cours-data";
 import { TA_COURS_DATA } from "./ta-cours-data";
 import { VA_COURS_DATA } from "./va-cours-data";
 import { BILAN_EXERCICES_VTC } from "./bilan-exercices-vtc-data";
+import { BILAN_EXERCICES_FC_VTC } from "./bilan-exercices-fc-vtc-data";
 import { BILAN_EXERCICES_TAXI } from "./bilan-exercices-taxi-data";
 import { BILAN_EXERCICES_TA } from "./bilan-exercices-ta-data";
 import { BILAN_EXERCICES_VA } from "./bilan-exercices-va-data";
