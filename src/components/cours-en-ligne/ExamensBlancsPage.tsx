@@ -1789,6 +1789,25 @@ function EcranResultats({
   const [expandedMatieres, setExpandedMatieres] = useState<{ [mi: number]: boolean }>({});
   const [editingQrc, setEditingQrc] = useState<string | null>(null); // "mi-qid" key for admin editing
   const [editingPoints, setEditingPoints] = useState<number>(0);
+  const [revisionDejaFaite, setRevisionDejaFaite] = useState(false);
+
+  // Check if revision has already been done for this exam
+  useEffect(() => {
+    if (!apprenantId || !examen?.id) return;
+    const checkRevision = async () => {
+      const { data } = await supabase
+        .from("apprenant_quiz_results" as any)
+        .select("id")
+        .eq("apprenant_id", apprenantId)
+        .eq("quiz_type", "revision_fausses")
+        .eq("quiz_id", examen.id)
+        .limit(1);
+      if (data && (data as any[]).length > 0) {
+        setRevisionDejaFaite(true);
+      }
+    };
+    checkRevision();
+  }, [apprenantId, examen?.id]);
 
   const toggleMatiere = (mi: number) => {
     setExpandedMatieres(prev => ({ ...prev, [mi]: !prev[mi] }));
