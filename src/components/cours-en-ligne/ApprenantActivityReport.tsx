@@ -243,6 +243,19 @@ export default function ApprenantActivityReport({ onBack }: Props) {
     return titles;
   };
 
+  // Get cours/parties consulted during a connexion time window
+  const getCoursDuringConnexion = (connexion: Connexion) => {
+    const start = parseISO(connexion.started_at);
+    const end = getCappedSessionEnd(connexion);
+    const modules = activites.filter(a => {
+      if (a.action_type !== "open_module") return false;
+      const t = parseISO(a.occurred_at);
+      return t >= start && t <= end;
+    });
+    const unique = [...new Set(modules.map(m => m.module_nom))];
+    return unique;
+  };
+
 
   const totalMinutes = connexions.reduce((sum, c) => {
     return sum + getSessionMinutes(c);
@@ -339,6 +352,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
               <th>Heure fin</th>
               <th>Durée</th>
               <th>Module consulté</th>
+              <th>Cours / Parties</th>
               <th>Exercices effectués</th>
             </tr>
           </thead>
@@ -349,6 +363,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
               const mins = getSessionMinutes(c);
               const h = Math.floor(mins / 60);
               const m = mins % 60;
+              const coursNames = getCoursDuringConnexion(c);
               const exCount = getExercicesDuringConnexion(c);
               return `<tr>
                 <td>${format(start, "dd/MM/yyyy", { locale: fr })}</td>
@@ -356,10 +371,11 @@ export default function ApprenantActivityReport({ onBack }: Props) {
                 <td>${c.ended_at ? format(end, "HH:mm", { locale: fr }) : "En cours"}</td>
                 <td>${h}h${m.toString().padStart(2, "0")}</td>
                 <td>${c.current_module || "—"}</td>
+                <td>${coursNames.length > 0 ? coursNames.join(", ") : "—"}</td>
                 <td>${exCount > 0 ? exCount + " exercice(s)" : "—"}</td>
               </tr>`;
             }).join("")}
-            ${connexions.length === 0 ? '<tr><td colspan="6" style="text-align:center;color:#9ca3af;">Aucune connexion</td></tr>' : ""}
+            ${connexions.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:#9ca3af;">Aucune connexion</td></tr>' : ""}
           </tbody>
           </tbody>
         </table>
@@ -555,13 +571,14 @@ export default function ApprenantActivityReport({ onBack }: Props) {
                     <TableHead>Heure fin</TableHead>
                     <TableHead>Durée</TableHead>
                     <TableHead>Module consulté</TableHead>
+                    <TableHead>Cours / Parties</TableHead>
                     <TableHead>Exercices effectués</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {connexions.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                         Aucune connexion enregistrée
                       </TableCell>
                     </TableRow>
@@ -572,6 +589,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
                     const mins = getSessionMinutes(c);
                     const h = Math.floor(mins / 60);
                     const m = mins % 60;
+                    const coursNames = getCoursDuringConnexion(c);
                     const exCount = getExercicesDuringConnexion(c);
                     return (
                       <TableRow key={c.id}>
@@ -585,6 +603,17 @@ export default function ApprenantActivityReport({ onBack }: Props) {
                         </TableCell>
                         <TableCell className="font-medium">{h}h{m.toString().padStart(2, "0")}</TableCell>
                         <TableCell className="text-muted-foreground">{c.current_module || "—"}</TableCell>
+                        <TableCell>
+                          {coursNames.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {coursNames.map((name, i) => (
+                                <Badge key={i} variant="secondary" className="text-xs">{name}</Badge>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
                         <TableCell>
                           {exCount > 0 ? (
                             <Badge variant="outline" className="text-xs">{exCount} exercice(s)</Badge>
