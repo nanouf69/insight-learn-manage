@@ -1088,8 +1088,6 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return acc;
   }, {});
 
-  // moduleProgressById is computed AFTER moduleQuizStatsById and examBlancStatsById
-  // so we move it below those computations (see below)
 
   const moduleRealizedPointsById = modules.reduce<Record<number, string[]>>((acc, module) => {
     const rows = completionsByModuleId[module.id] || [];
