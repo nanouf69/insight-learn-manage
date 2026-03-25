@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import SlideViewer from "./slides/SlideViewer";
 import PdfSlideViewer from "./PdfSlideViewer";
 import ImageCarouselViewer from "./ImageCarouselViewer";
+import { FICHE_IMAGE_SLIDES } from "./fiches-revision-slides";
 import PptxViewerComparison from "./PptxViewerComparison";
 import { T3P_PARTIE1_SLIDES, type Slide } from "./slides/t3p-partie1-data";
 import { T3P_PARTIE2_SLIDES } from "./slides/t3p-partie2-data";
@@ -3549,15 +3550,29 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                                 />
                               )}
 
-                              {isPdf && !shouldShowViewers && (
-                                <div className="mt-2">
-                                  <PdfSlideViewer
-                                    url={f.url.startsWith("http") ? f.url : f.url.startsWith("/") ? f.url : `/${f.url}`}
-                                    nom={cours.titre}
-                                    onLastPageReached={() => markPageCompleted(currentPage)}
-                                  />
-                                </div>
-                              )}
+                              {isPdf && !shouldShowViewers && (() => {
+                                const ficheSlides = FICHE_IMAGE_SLIDES[f.nom];
+                                if (ficheSlides) {
+                                  return (
+                                    <div className="mt-2">
+                                      <ImageCarouselViewer
+                                        images={ficheSlides}
+                                        nom={cours.titre}
+                                        onLastPageReached={() => markPageCompleted(currentPage)}
+                                      />
+                                    </div>
+                                  );
+                                }
+                                return (
+                                  <div className="mt-2">
+                                    <PdfSlideViewer
+                                      url={f.url.startsWith("http") ? f.url : f.url.startsWith("/") ? f.url : `/${f.url}`}
+                                      nom={cours.titre}
+                                      onLastPageReached={() => markPageCompleted(currentPage)}
+                                    />
+                                  </div>
+                                );
+                              })()}
                             </div>
                           );
                         })}
