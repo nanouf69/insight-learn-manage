@@ -94,6 +94,15 @@ async function importPrivateKey(pem: string): Promise<CryptoKey> {
     base64Length: base64Body.length,
   });
 
+  // Log first and last chars (safe — not the key itself) to debug truncation
+  console.log("revolut-connect key debug", {
+    rawLength: pem.length,
+    first20: pem.substring(0, 20),
+    last20: pem.substring(pem.length - 20),
+    normalizedFirst30: normalizedPem.substring(0, 30),
+    normalizedLast30: normalizedPem.substring(normalizedPem.length - 30),
+  });
+
   let binaryDer: Uint8Array;
   try {
     binaryDer = Uint8Array.from(atob(paddedBase64), (c) => c.charCodeAt(0));
