@@ -20,16 +20,21 @@ async function importPrivateKey(pem: string): Promise<CryptoKey> {
   const normalizedPem = normalizePrivateKey(pem);
   const hasBegin = /-----BEGIN (RSA )?PRIVATE KEY-----/.test(normalizedPem);
   const hasEnd = /-----END (RSA )?PRIVATE KEY-----/.test(normalizedPem);
+  const hasPemMarkers = hasBegin && hasEnd;
 
-  if (!hasBegin || !hasEnd) {
-    throw new Error(
-      "REVOLUT_PRIVATE_KEY mal formatée: marqueurs BEGIN/END PRIVATE KEY manquants"
+  const keyBody = hasPemMarkers
+    ? normalizedPem
+        .replace(/-----BEGIN (RSA )?PRIVATE KEY-----/g, "")
+        .replace(/-----END (RSA )?PRIVATE KEY-----/g, "")
+    : normalizedPem;
+
+  if (!hasPemMarkers) {
+    console.warn(
+      "REVOLUT_PRIVATE_KEY sans marqueurs PEM BEGIN/END, tentative de décodage brut"
     );
   }
 
-  const base64Body = normalizedPem
-    .replace(/-----BEGIN (RSA )?PRIVATE KEY-----/g, "")
-    .replace(/-----END (RSA )?PRIVATE KEY-----/g, "")
+  const base64Body = keyBody
     .replace(/\s/g, "")
     .replace(/[^A-Za-z0-9+/=]/g, "");
 
