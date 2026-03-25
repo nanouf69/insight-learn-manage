@@ -232,6 +232,20 @@ export default function ApprenantActivityReport({ onBack }: Props) {
     return Math.max(0, differenceInMinutes(getCappedSessionEnd(connexion), start));
   };
 
+  // Resolve exercice_id to human-readable title
+  const resolveExerciceTitle = (exerciceId: string): string => {
+    // Check static map first
+    const mapped = EXERCICE_TITLE_MAP.get(exerciceId);
+    if (mapped) return mapped;
+    // Fallback: parse module_X_exo_Y → module name
+    const match = exerciceId.match(/^module_(\d+)_exo_(\d+)$/);
+    if (match) {
+      const modName = MODULE_NAME_MAP.get(parseInt(match[1]));
+      if (modName) return `${modName} — Exo ${match[2]}`;
+    }
+    return exerciceId;
+  };
+
   // Get exercise/quiz titles completed during a connexion time window
   const getExerciceNamesDuringConnexion = (connexion: Connexion) => {
     const start = parseISO(connexion.started_at);
@@ -240,18 +254,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
     exercicesCompletes.filter(e => {
       const t = parseISO(e.updated_at);
       return t >= start && t <= end;
-    }).forEach(e => titles.push(e.exercice_id));
-    quizResults.filter(q => {
-      const t = parseISO(q.completed_at);
-      return t >= start && t <= end;
-    }).forEach(q => titles.push(q.quiz_titre));
-    return titles;
-  };
-
-  const getExercicesTitlesDuringConnexion = (connexion: Connexion) => {
-    const start = parseISO(connexion.started_at);
-    const end = getCappedSessionEnd(connexion);
-    const titles: string[] = [];
+    }).forEach(e => titles.push(resolveExerciceTitle(e.exercice_id)));
     quizResults.filter(q => {
       const t = parseISO(q.completed_at);
       return t >= start && t <= end;
