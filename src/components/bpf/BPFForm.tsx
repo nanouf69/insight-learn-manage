@@ -80,7 +80,7 @@ const autoData = {
   },
 };
 
-export function BPFForm() {
+export const BPFForm = forwardRef<HTMLDivElement>(function BPFForm(_props, ref) {
   const [activeTab, setActiveTab] = useState("generer");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
