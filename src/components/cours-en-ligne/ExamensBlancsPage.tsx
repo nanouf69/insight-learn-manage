@@ -3552,6 +3552,9 @@ export default function ExamensBlancsPage({
         <RevisionFausses
           wrongQuestions={wrongQuestions}
           onTerminer={() => setPhase("resultats")}
+          apprenantId={apprenantId}
+          userId={userId}
+          examenId={examenChoisi.id}
         />
       </div>
     );
