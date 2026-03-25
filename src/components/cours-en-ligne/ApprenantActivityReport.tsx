@@ -47,6 +47,7 @@ registerModuleExercises(4, BILAN_EXERCICES_VTC);   // 4.BILAN EXERCICES VTC
 registerModuleExercises(9, BILAN_EXERCICES_TAXI);   // 4.BILAN EXERCICES TAXI
 registerModuleExercises(27, BILAN_EXERCICES_TA);    // 4.BILAN EXERCICES TA
 registerModuleExercises(29, BILAN_EXERCICES_VA);    // 4.BILAN EXERCICES VA
+registerModuleExercises(81, BILAN_EXERCICES_FC_VTC); // BILAN EXERCICES FORMATION CONTINUE VTC
 
 // Module name map for fallback
 const MODULE_NAME_MAP = new Map<number, string>();
