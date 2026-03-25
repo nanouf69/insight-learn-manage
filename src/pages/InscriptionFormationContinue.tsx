@@ -100,7 +100,57 @@ export default function InscriptionFormationContinue() {
       const formationChoisie = type === "vtc" ? "formation-continue-vtc" : "formation-continue-taxi";
       const typeApprenant = type === "vtc" ? "PA VTC" : "PA TAXI";
 
-      // 1. Create apprenant
+      // 1. Find or create a session FIRST (before creating apprenant)
+      const sessionNom = `Formation Continue ${type.toUpperCase()} - ${selectedDate.label}`;
+
+      const { data: existingSessions } = await supabase
+        .from("sessions")
+        .select("*")
+        .eq("date_debut", selectedDate.value)
+        .eq("date_fin", selectedDate.fin)
+        .eq("type_session", "theorique");
+
+      let sessionId: string;
+      const matchingSession = existingSessions?.find(s =>
+        s.nom?.toLowerCase().includes("formation continue") &&
+        s.nom?.toLowerCase().includes(type)
+      );
+
+      if (matchingSession) {
+        // Count REAL enrollments instead of trusting the counter
+        const { count: realCount } = await supabase
+          .from("session_apprenants")
+          .select("id", { count: "exact", head: true })
+          .eq("session_id", matchingSession.id);
+
+        const actualEnrolled = realCount ?? 0;
+        if (actualEnrolled >= MAX_PLACES) {
+          throw new Error("Cette session est complète. Veuillez choisir une autre date.");
+        }
+        sessionId = matchingSession.id;
+      } else {
+        const { data: newSession, error: createErr } = await supabase
+          .from("sessions")
+          .insert({
+            nom: sessionNom,
+            date_debut: selectedDate.value,
+            date_fin: selectedDate.fin,
+            types_apprenant: [typeApprenant],
+            places_disponibles: MAX_PLACES,
+            statut: "planifiee",
+            type_session: "theorique",
+            lieu: "86 route de genas 69003 Lyon",
+            heure_debut: "09:00",
+            heure_fin: "17:00",
+          })
+          .select()
+          .single();
+
+        if (createErr) throw createErr;
+        sessionId = newSession.id;
+      }
+
+      // 2. Create apprenant (only after session is confirmed available)
       const { data: apprenant, error: insertErr } = await supabase
         .from("apprenants")
         .insert({
@@ -127,57 +177,7 @@ export default function InscriptionFormationContinue() {
 
       if (insertErr) throw insertErr;
 
-      // 2. Find or create a session for this formation continue date
-      const sessionNom = `Formation Continue ${type.toUpperCase()} - ${selectedDate.label}`;
-      
-      const { data: existingSessions } = await supabase
-        .from("sessions")
-        .select("*")
-        .eq("date_debut", selectedDate.value)
-        .eq("date_fin", selectedDate.fin)
-        .eq("type_session", "theorique");
-
-      // Look for a matching formation continue session
-      let sessionId: string;
-      const matchingSession = existingSessions?.find(s => 
-        s.nom?.toLowerCase().includes("formation continue") && 
-        s.nom?.toLowerCase().includes(type)
-      );
-
-      if (matchingSession) {
-        const remaining = matchingSession.places_disponibles ?? MAX_PLACES;
-        if (remaining <= 0) {
-          throw new Error("Cette session est complète. Veuillez choisir une autre date.");
-        }
-        sessionId = matchingSession.id;
-        await supabase
-          .from("sessions")
-          .update({ places_disponibles: Math.max(0, remaining - 1) })
-          .eq("id", sessionId);
-      } else {
-        // Create new session with 16 places max, minus this one = 15
-        const { data: newSession, error: createErr } = await supabase
-          .from("sessions")
-          .insert({
-            nom: sessionNom,
-            date_debut: selectedDate.value,
-            date_fin: selectedDate.fin,
-            types_apprenant: [typeApprenant],
-            places_disponibles: MAX_PLACES - 1,
-            statut: "planifiee",
-            type_session: "theorique",
-            lieu: "86 route de genas 69003 Lyon",
-            heure_debut: "09:00",
-            heure_fin: "17:00",
-          })
-          .select()
-          .single();
-
-        if (createErr) throw createErr;
-        sessionId = newSession.id;
-      }
-
-      // 3. Link apprenant to session — CRITICAL: check for errors
+      // 3. Link apprenant to session
       const { error: linkErr } = await supabase
         .from("session_apprenants")
         .insert({
@@ -195,7 +195,18 @@ export default function InscriptionFormationContinue() {
         throw new Error("Erreur lors de l'inscription à la session. Veuillez réessayer.");
       }
 
-      // 4. Verify the link was created
+      // 4. Update places_disponibles to reflect real count
+      const { count: updatedCount } = await supabase
+        .from("session_apprenants")
+        .select("id", { count: "exact", head: true })
+        .eq("session_id", sessionId);
+
+      await supabase
+        .from("sessions")
+        .update({ places_disponibles: Math.max(0, MAX_PLACES - (updatedCount ?? 0)) })
+        .eq("id", sessionId);
+
+      // 5. Verify the link was created
       const { data: verifyLink } = await supabase
         .from("session_apprenants")
         .select("id")
@@ -207,7 +218,7 @@ export default function InscriptionFormationContinue() {
         throw new Error("L'inscription n'a pas pu être confirmée. Veuillez réessayer.");
       }
 
-      console.log("✅ Inscription réussie:", { apprenantId: apprenant.id, sessionId, linkId: verifyLink.id });
+      console.log("✅ Inscription réussie:", { apprenantId: apprenant.id, sessionId, linkId: verifyLink.id, placesRestantes: Math.max(0, MAX_PLACES - (updatedCount ?? 0)) });
       setSubmitted(true);
     } catch (err: any) {
       console.error("Erreur inscription:", err);
