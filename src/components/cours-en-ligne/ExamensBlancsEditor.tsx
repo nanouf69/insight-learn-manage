@@ -271,9 +271,15 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
                 ...savedMat,
                 questions: [...mergedQuestions, ...extraSavedQuestions],
               };
-              if (sourceMat.texteSupport) merged.texteSupport = sourceMat.texteSupport;
-              if (sourceMat.texteSource) merged.texteSource = sourceMat.texteSource;
+              // Always preserve texteSupport/texteSource from source (never lose them)
+              merged.texteSupport = sourceMat.texteSupport || savedMat.texteSupport;
+              merged.texteSource = sourceMat.texteSource || savedMat.texteSource;
               return merged;
+            }
+            // No matching source matiere — still try to find texteSupport from source by nom
+            const fallbackSource = sourceExam.matieres.find((sm: any) => sm.nom === savedMat.nom);
+            if (fallbackSource?.texteSupport && !savedMat.texteSupport) {
+              return { ...savedMat, texteSupport: fallbackSource.texteSupport, texteSource: fallbackSource.texteSource };
             }
             return savedMat;
           });
