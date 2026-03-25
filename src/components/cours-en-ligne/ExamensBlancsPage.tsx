@@ -2705,6 +2705,7 @@ export default function ExamensBlancsPage({
     } else {
       setIsViewingSavedResults(false);
       setPhase("resultats");
+      setSelectionRefreshKey(k => k + 1);
       persistExamSession("resultats", null, 0); // Clear session
     }
     } catch (err) {
