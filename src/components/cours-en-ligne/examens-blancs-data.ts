@@ -3664,6 +3664,7 @@ const eb3Matieres: Matiere[] = [
         id: 8,
         type: "QCM",
         enonce: "Ce panneau :",
+        image: "/cours/examens/securite_eb3_q8.png",
         choix: [
           { lettre: "A", texte: "m’indique une descente dangereuse dans un sens de circulation unique sur deux voies" },
           { lettre: "B", texte: "m’indique une descente dangereuse dans 1 500 mètres de distance" },
