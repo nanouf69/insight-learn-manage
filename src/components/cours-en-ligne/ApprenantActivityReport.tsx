@@ -281,7 +281,10 @@ export default function ApprenantActivityReport({ onBack }: Props) {
     quizResults.filter(q => {
       const t = parseISO(q.completed_at);
       return t >= start && t <= end;
-    }).forEach(q => titles.push(q.quiz_titre));
+    }).forEach(q => {
+      const label = q.matiere_nom ? `${q.quiz_titre} — ${q.matiere_nom}` : q.quiz_titre;
+      titles.push(label);
+    });
     return titles;
   };
 
