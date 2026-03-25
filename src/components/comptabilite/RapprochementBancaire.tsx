@@ -695,6 +695,16 @@ export function RapprochementBancaire() {
               <Upload className="h-4 w-4 mr-2" />
               {importing ? "Import en cours..." : "Choisir un fichier CSV"}
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={syncingRevolut}
+              className="flex-shrink-0"
+              onClick={(e) => { e.stopPropagation(); handleSyncRevolut(); }}
+            >
+              {syncingRevolut ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+              {syncingRevolut ? "Sync en cours..." : "🟣 Sync Revolut API"}
+            </Button>
           </div>
           <input
             ref={fileInputRef}
