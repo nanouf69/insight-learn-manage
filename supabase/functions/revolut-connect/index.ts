@@ -26,9 +26,6 @@ function tryDecodeWrappedPem(normalized: string): string {
   }
 
   const compact = toBase64Body(normalized);
-  if (compact.length < 600) {
-    return normalized;
-  }
 
   try {
     const decoded = atob(compact);
