@@ -339,6 +339,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
               <th>Heure fin</th>
               <th>Durée</th>
               <th>Module consulté</th>
+              <th>Exercices effectués</th>
             </tr>
           </thead>
           <tbody>
@@ -348,15 +349,18 @@ export default function ApprenantActivityReport({ onBack }: Props) {
               const mins = getSessionMinutes(c);
               const h = Math.floor(mins / 60);
               const m = mins % 60;
+              const exCount = getExercicesDuringConnexion(c);
               return `<tr>
                 <td>${format(start, "dd/MM/yyyy", { locale: fr })}</td>
                 <td>${format(start, "HH:mm", { locale: fr })}</td>
                 <td>${c.ended_at ? format(end, "HH:mm", { locale: fr }) : "En cours"}</td>
                 <td>${h}h${m.toString().padStart(2, "0")}</td>
                 <td>${c.current_module || "—"}</td>
+                <td>${exCount > 0 ? exCount + " exercice(s)" : "—"}</td>
               </tr>`;
             }).join("")}
-            ${connexions.length === 0 ? '<tr><td colspan="5" style="text-align:center;color:#9ca3af;">Aucune connexion</td></tr>' : ""}
+            ${connexions.length === 0 ? '<tr><td colspan="6" style="text-align:center;color:#9ca3af;">Aucune connexion</td></tr>' : ""}
+          </tbody>
           </tbody>
         </table>
 
