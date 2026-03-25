@@ -155,6 +155,81 @@ function isCorruptedZeroRow(row: any): boolean {
   return false;
 }
 
+function normalizeSelectedChoices(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map((item) => safeStr(item).trim().toUpperCase()).filter(Boolean).sort();
+  }
+  const single = safeStr(value).trim().toUpperCase();
+  return single ? [single] : [];
+}
+
+function getCorrectQcmChoices(question: Question): string[] {
+  const rawChoices = safeArray<any>(question?.choix);
+  return rawChoices
+    .map((choice, index) => ({
+      isCorrect: Boolean(choice?.correct || choice?.correcte),
+      letter: safeStr(choice?.lettre).trim().toUpperCase() || String.fromCharCode(65 + index),
+    }))
+    .filter((choice) => choice.isCorrect)
+    .map((choice) => choice.letter)
+    .filter(Boolean)
+    .sort();
+}
+
+function recoverCorruptedScoreRow(row: any, examensData: ExamenBlanc[]) {
+  if (!isCorruptedZeroRow(row)) return null;
+
+  const examDef = examensData.find((exam) => exam.id === row?.quiz_id);
+  if (!examDef) return null;
+
+  const rowKey = getMatiereCanonicalKey(row?.matiere_id, row?.matiere_nom);
+  const matiere = examDef.matieres.find((m) => getMatiereCanonicalKey(m?.id, m?.nom) === rowKey);
+  if (!matiere) return null;
+
+  const reponses = row?.details?.reponses;
+  if (!reponses || typeof reponses !== "object") return null;
+
+  const correctionsIA = row?.details?.correctionsIA;
+  let recoveredScore = 0;
+  let recoveredMax = 0;
+
+  safeArray<Question>(matiere.questions).forEach((question) => {
+    if (!question?.type) return;
+    const pointsQuestion = getPointsParQuestion(matiere.id, question.type, matiere);
+    recoveredMax += pointsQuestion;
+
+    const reponseQuestion = (reponses as Record<string, unknown>)[String(question.id)];
+
+    if (question.type === "QCM") {
+      const correctes = getCorrectQcmChoices(question);
+      const donnees = normalizeSelectedChoices(reponseQuestion);
+      if (JSON.stringify(correctes) === JSON.stringify(donnees)) {
+        recoveredScore += pointsQuestion;
+      }
+      return;
+    }
+
+    if (question.type === "QRC") {
+      const correction = correctionsIA?.[String(question.id)] ?? correctionsIA?.[question.id];
+      if (correction && typeof correction === "object" && "pointsObtenus" in correction) {
+        recoveredScore += clampToQuestionMax((correction as any).pointsObtenus, pointsQuestion);
+      } else {
+        const fallback = evaluateQrcDeterministic(question, reponseQuestion, pointsQuestion);
+        recoveredScore += clampToQuestionMax(fallback.pointsObtenus, pointsQuestion);
+      }
+    }
+  });
+
+  if (recoveredMax <= 0) return null;
+
+  const safeRecoveredScore = clamp(recoveredScore, 0, recoveredMax);
+  return {
+    score_obtenu: safeRecoveredScore,
+    score_max: recoveredMax,
+    note_sur_20: normalizeNoteSur20(safeRecoveredScore, recoveredMax),
+  };
+}
+
 function findScoreForMatiere(scores: ExamScoreItem[], matiere: Pick<Matiere, "id" | "nom">): ExamScoreItem | undefined {
   const expectedKeys = buildMatiereLookupKeys(matiere.id, matiere.nom);
   return scores.find((score) => shareLookupKey(score.lookupKeys, expectedKeys));
@@ -497,7 +572,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
     // 1) Fetch completed results
     supabase
       .from("apprenant_quiz_results" as any)
-      .select("quiz_id, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, completed_at, created_at")
+      .select("quiz_id, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, completed_at, created_at, details")
       .eq("apprenant_id", apprenantId)
       .eq("quiz_type", "examen_blanc")
       .order("completed_at", { ascending: false })
@@ -538,17 +613,28 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
 
           const scores: Record<string, ExamScoreItem[]> = {};
           latestRows.forEach((r: any) => {
+            const recovered = recoverCorruptedScoreRow(r, examensData);
+            const scoreSource = recovered && recovered.score_obtenu > toFiniteNumber(r.score_obtenu, 0)
+              ? { ...r, ...recovered }
+              : r;
+
             if (!scores[r.quiz_id]) scores[r.quiz_id] = [];
             scores[r.quiz_id].push({
-              matiere_id: r.matiere_id,
-              matiere_nom: r.matiere_nom,
-              note_sur_20: normalizeNoteSur20(r.score_obtenu, r.score_max, r.note_sur_20),
-              score_obtenu: toFiniteNumber(r.score_obtenu, 0),
-              score_max: toFiniteNumber(r.score_max, 0),
-              completed_at: r.completed_at,
-              created_at: r.created_at,
-              lookupKeys: buildMatiereLookupKeys(r.matiere_id, r.matiere_nom),
+              matiere_id: scoreSource.matiere_id,
+              matiere_nom: scoreSource.matiere_nom,
+              note_sur_20: normalizeNoteSur20(scoreSource.score_obtenu, scoreSource.score_max, scoreSource.note_sur_20),
+              score_obtenu: toFiniteNumber(scoreSource.score_obtenu, 0),
+              score_max: toFiniteNumber(scoreSource.score_max, 0),
+              completed_at: scoreSource.completed_at,
+              created_at: scoreSource.created_at,
+              lookupKeys: buildMatiereLookupKeys(scoreSource.matiere_id, scoreSource.matiere_nom),
             });
+
+            if (recovered && recovered.score_obtenu > toFiniteNumber(r.score_obtenu, 0)) {
+              console.warn(
+                `[ExamensBlancs][Recovery] Score restauré ${r.quiz_id}/${r.matiere_id}: ${r.score_obtenu}/${r.score_max} -> ${recovered.score_obtenu}/${recovered.score_max}`
+              );
+            }
           });
 
           const allRows = data as any[];
