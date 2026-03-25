@@ -8,7 +8,9 @@ const corsHeaders = {
 };
 
 async function importPrivateKey(pem: string): Promise<CryptoKey> {
-  const pemContents = pem
+  // Handle literal \n from env secrets + strip PEM headers
+  const normalized = pem.replace(/\\n/g, "\n");
+  const pemContents = normalized
     .replace(/-----BEGIN (RSA )?PRIVATE KEY-----/g, "")
     .replace(/-----END (RSA )?PRIVATE KEY-----/g, "")
     .replace(/\s/g, "");
