@@ -1795,14 +1795,17 @@ function EcranResultats({
   useEffect(() => {
     if (!apprenantId || !examen?.id) return;
     const checkRevision = async () => {
-      const { data } = await supabase
-        .from("apprenant_quiz_results" as any)
+      const { data, error } = await supabase
+        .from("apprenant_quiz_results")
         .select("id")
         .eq("apprenant_id", apprenantId)
         .eq("quiz_type", "revision_fausses")
         .eq("quiz_id", examen.id)
         .limit(1);
-      if (data && (data as any[]).length > 0) {
+      if (error) {
+        console.error("Erreur vérification révision:", error.message);
+      }
+      if (data && data.length > 0) {
         setRevisionDejaFaite(true);
       }
     };
@@ -2599,22 +2602,23 @@ function RevisionFausses({
     if (currentIndex < wrongQuestions.length - 1) {
       setCurrentIndex(currentIndex + 1);
     } else {
-      // Save revision results to database
+      // Save revision results to database — use correctedCount + current correction
+      const finalCorrected = correctedCount; // already updated by handleAnswer before goNext
       if (apprenantId && userId && examenId) {
         const saveRevisionResults = async () => {
           try {
-            await supabase
-              .from("apprenant_quiz_results" as any)
+            const { error } = await supabase
+              .from("apprenant_quiz_results")
               .insert({
                 apprenant_id: apprenantId,
                 user_id: userId,
                 quiz_type: "revision_fausses",
                 quiz_id: examenId,
                 quiz_titre: `Révision questions fausses — ${examenId}`,
-                score_obtenu: correctedCount,
+                score_obtenu: finalCorrected,
                 score_max: wrongQuestions.length,
-                note_sur_20: Math.round((correctedCount / wrongQuestions.length) * 20 * 2) / 2,
-                reussi: correctedCount === wrongQuestions.length,
+                note_sur_20: Math.round((finalCorrected / wrongQuestions.length) * 20 * 2) / 2,
+                reussi: finalCorrected === wrongQuestions.length,
                 details: {
                   reponses,
                   questions: wrongQuestions.map(wq => ({
@@ -2623,15 +2627,20 @@ function RevisionFausses({
                     matiereNom: wq.matiereNom,
                     enonce: wq.question.enonce,
                   })),
-                },
-              } as any);
+                } as any,
+              });
+            if (error) {
+              console.error("Erreur sauvegarde révision:", error.message, error.details);
+            } else {
+              console.log("Révision sauvegardée avec succès");
+            }
           } catch (err) {
             console.error("Erreur sauvegarde révision:", err);
           }
         };
         saveRevisionResults();
       }
-      toast.success(`Révision terminée ! ${correctedCount}/${wrongQuestions.length} questions corrigées.`);
+      toast.success(`Révision terminée ! ${finalCorrected}/${wrongQuestions.length} questions corrigées.`);
       onTerminer();
     }
   };
