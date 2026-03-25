@@ -953,9 +953,9 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Sidebar - liste des examens */}
-        <div className="lg:col-span-1 space-y-3">
+      <div className="space-y-6">
+        {/* Barre de sélection des examens - en haut */}
+        <div className="space-y-3">
           <div className="flex gap-1">
             {(["tous", "TAXI", "VTC"] as const).map(t => (
               <Button
@@ -963,21 +963,21 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
                 size="sm"
                 variant={typeFiltre === t ? "default" : "outline"}
                 onClick={() => setTypeFiltre(t)}
-                className="text-xs flex-1"
+                className="text-xs"
               >
                 {t === "tous" ? "Tous" : t}
               </Button>
             ))}
           </div>
 
-          <div className="space-y-1.5">
+          <div className="flex flex-wrap gap-2">
             {examensFiltres.map(ex => {
               const isBilan = ex.id.startsWith("bilan-");
               return (
                 <button
                   key={ex.id}
                   onClick={() => setExamenSelId(ex.id)}
-                  className={`w-full text-left p-3 rounded-lg border transition-all ${
+                  className={`text-left p-3 rounded-lg border transition-all min-w-[180px] max-w-[220px] ${
                     examenSelId === ex.id
                       ? "border-primary bg-primary/10 font-semibold"
                       : "border-border hover:bg-muted/50"
@@ -1007,8 +1007,8 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
           </div>
         </div>
 
-        {/* Éditeur de l'examen sélectionné */}
-        <div className="lg:col-span-3">
+        {/* Éditeur de l'examen sélectionné - pleine largeur */}
+        <div>
           {!examenSel ? (
             <div className="flex flex-col items-center justify-center h-64 text-muted-foreground border-2 border-dashed rounded-lg">
               <Layers className="w-10 h-10 mb-3 opacity-30" />
