@@ -211,13 +211,22 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
               const savedQuestions = Array.isArray(savedMat.questions) ? savedMat.questions : [];
               const mergedQuestions = savedQuestions.map((savedQ) => {
                 const sourceQ = sourceQuestions.find((sq) => sq.id === savedQ.id && sq.type === savedQ.type);
-                if (!sourceQ || savedQ.type !== "QRC") return savedQ;
+                if (!sourceQ) return savedQ;
+
+                const mergedQuestion: Question = {
+                  ...savedQ,
+                  image: savedQ.image ?? sourceQ.image,
+                };
+
+                if (savedQ.type !== "QRC") return mergedQuestion;
+
                 const hasSavedKeywords = Array.isArray(savedQ.reponses_possibles) && savedQ.reponses_possibles.length > 0;
                 const sourceKeywords = Array.isArray(sourceQ.reponses_possibles) ? sourceQ.reponses_possibles : [];
                 if (!hasSavedKeywords && sourceKeywords.length > 0) {
-                  return { ...savedQ, reponses_possibles: [...sourceKeywords] };
+                  return { ...mergedQuestion, reponses_possibles: [...sourceKeywords] };
                 }
-                return savedQ;
+
+                return mergedQuestion;
               });
               const merged = { ...savedMat, questions: mergedQuestions };
               if (sourceMat.texteSupport) merged.texteSupport = sourceMat.texteSupport;
