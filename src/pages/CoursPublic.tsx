@@ -1088,16 +1088,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return acc;
   }, {});
 
-  const moduleProgressById = modules.reduce<Record<number, { isDone: boolean; hasProgress: boolean }>>((acc, module) => {
-    const rows = completionsByModuleId[module.id] || [];
-    // A module is only "done" when it's in completedModuleIds (truly 100% complete)
-    // This applies to ALL modules: parent modules with children AND simple modules
-    acc[module.id] = {
-      isDone: completedModuleIds.has(module.id),
-      hasProgress: rows.some(hasModuleCompletionProgress),
-    };
-    return acc;
-  }, {});
+  // moduleProgressById is computed AFTER moduleQuizStatsById and examBlancStatsById
+  // so we move it below those computations (see below)
 
   const moduleRealizedPointsById = modules.reduce<Record<number, string[]>>((acc, module) => {
     const rows = completionsByModuleId[module.id] || [];
