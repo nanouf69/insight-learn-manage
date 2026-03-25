@@ -283,6 +283,7 @@ export function RapprochementBancaire() {
   const [aiSuggestionLoading, setAiSuggestionLoading] = useState(false);
   const [aiConfirmation, setAiConfirmation] = useState<AiConfirmation | null>(null);
   const [confirmingLink, setConfirmingLink] = useState(false);
+  const [syncingRevolut, setSyncingRevolut] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchAll = useCallback(async () => {
