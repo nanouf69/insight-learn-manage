@@ -606,6 +606,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [moduleScores, setModuleScores] = useState<Record<number, { score_obtenu: number | null; score_max: number | null }>>({});
   const [moduleCompletionsForNotes, setModuleCompletionsForNotes] = useState<Array<{ id: string; module_id: number; score_obtenu: number | null; score_max: number | null; completed_at: string; details: any }>>([]);
   const [examBlancCompletedIds, setExamBlancCompletedIds] = useState<Set<string>>(new Set());
+  const [lastModuleName, setLastModuleName] = useState<string | null>(null);
 
   // Tracking connexion élève (only for real student sessions, not admin preview)
   const isStudentSession = !embedded && !!user && !!apprenant?.id;
@@ -761,11 +762,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     };
   }, [apprenantOverride, embedded]);
 
-  // Fetch completed modules + exam blanc results
+  // Fetch completed modules + exam blanc results + last module
   useEffect(() => {
     if (!apprenant?.id) return;
     const fetchCompletions = async () => {
-      const [{ data }, { data: examData }] = await Promise.all([
+      const [{ data }, { data: examData }, { data: lastConnData }] = await Promise.all([
         supabase
           .from("apprenant_module_completion")
           .select("id, module_id, score_obtenu, score_max, completed_at, details")
@@ -775,6 +776,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           .select("quiz_id")
           .eq("apprenant_id", apprenant.id!)
           .eq("quiz_type", "examen_blanc"),
+        supabase
+          .from("apprenant_connexions" as any)
+          .select("current_module")
+          .eq("apprenant_id", apprenant.id!)
+          .not("current_module", "is", null)
+          .order("started_at", { ascending: false })
+          .limit(1),
       ]);
 
       if (data) {
@@ -793,6 +801,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       if (examData) {
         const ids = new Set<string>((examData as any[]).map((r: any) => r.quiz_id));
         setExamBlancCompletedIds(ids);
+      }
+
+      if (lastConnData && (lastConnData as any[]).length > 0) {
+        setLastModuleName((lastConnData as any[])[0].current_module || null);
       }
     };
     fetchCompletions();
@@ -1157,6 +1169,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const lowModules = remainingModules.filter((m) => !moduleProgressById[m.id]?.hasProgress).slice(0, 3);
   const studentName = apprenant ? `${apprenant.prenom} ${apprenant.nom}` : "Apprenant";
 
+  // Check if a module was the last one the learner was on
+  const isLastModule = (modNom: string) =>
+    !!lastModuleName && modNom.trim().toLowerCase() === lastModuleName.trim().toLowerCase();
+
   // E-learning sequential order enforcement
   const ELEARNING_FORMATION_IDS: FormationId[] = ["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"];
   const isElearning = ELEARNING_FORMATION_IDS.includes(selectedFormation);
@@ -1355,10 +1371,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                   )}
                   {remainingModules.map((mod, idx) => {
                     const locked = isModuleLocked(mod.id);
+                    const lastMod = isLastModule(mod.nom);
                     return (
                     <Card
                       key={mod.id}
-                      className={`border-0 shadow-sm transition-all duration-300 overflow-hidden ${locked ? "opacity-60 cursor-not-allowed" : "hover:shadow-lg cursor-pointer group"}`}
+                      className={`shadow-sm transition-all duration-300 overflow-hidden ${lastMod ? "border-2 border-red-500 ring-2 ring-red-200 dark:ring-red-900/40" : "border-0"} ${locked ? "opacity-60 cursor-not-allowed" : "hover:shadow-lg cursor-pointer group"}`}
                       onClick={() => { if (!locked) { trackModuleActivity(mod.id, mod.nom); setSelectedModule(mod); } }}
                     >
                       <CardContent className="p-0">
@@ -1372,6 +1389,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                           <div className="flex-1 min-w-0">
                             <h3 className={`font-bold text-sm transition-colors ${locked ? "text-muted-foreground" : "text-foreground group-hover:text-primary"}`}>
                               {mod.nom}
+                              {lastMod && !locked && (
+                                <Badge className="ml-2 text-[10px] px-1.5 py-0 bg-red-500 text-white border-red-500">
+                                  ▶ Reprendre
+                                </Badge>
+                              )}
                             </h3>
                             <p className="text-xs text-muted-foreground line-clamp-2">
                               {locked ? (INTRO_MODULE_IDS.has(modules[0]?.id) && !introCompleted ? "🔒 Terminez l'Introduction pour débloquer" : "🔒 Terminez le module précédent pour débloquer") : (
@@ -1428,10 +1450,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                   )}
                   {doneModules.map((mod) => {
                     const introLockedDone = isIntroLocked(mod.id);
+                    const lastMod = isLastModule(mod.nom);
                     return (
                     <Card
                       key={mod.id}
-                      className={`border-0 shadow-sm transition-all duration-300 overflow-hidden border-l-4 border-l-emerald-400 ${introLockedDone ? "opacity-70 cursor-not-allowed" : "hover:shadow-md cursor-pointer group"}`}
+                      className={`shadow-sm transition-all duration-300 overflow-hidden border-l-4 ${lastMod ? "border-2 border-red-500 ring-2 ring-red-200 dark:ring-red-900/40 border-l-red-500" : "border-l-emerald-400"} ${introLockedDone ? "opacity-70 cursor-not-allowed" : "hover:shadow-md cursor-pointer group"}`}
                       onClick={() => { if (!introLockedDone) { trackModuleActivity(mod.id, mod.nom); setSelectedModule(mod); } }}
                     >
                       <CardContent className="p-0">
@@ -1442,6 +1465,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                           <div className="flex-1 min-w-0">
                             <h3 className={`font-bold text-sm transition-colors ${introLockedDone ? "text-muted-foreground" : "text-foreground group-hover:text-emerald-600"}`}>
                               {mod.nom}
+                              {lastMod && !introLockedDone && (
+                                <Badge className="ml-2 text-[10px] px-1.5 py-0 bg-red-500 text-white border-red-500">
+                                  ▶ Reprendre
+                                </Badge>
+                              )}
                             </h3>
                             <p className="text-xs text-emerald-600">
                               {introLockedDone ? "✅ Terminé — Accès verrouillé" : "✅ Terminé"}
