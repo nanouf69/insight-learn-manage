@@ -364,7 +364,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
               const h = Math.floor(mins / 60);
               const m = mins % 60;
               const coursNames = getCoursDuringConnexion(c);
-              const exCount = getExercicesDuringConnexion(c);
+              const exNames = getExerciceNamesDuringConnexion(c);
               return `<tr>
                 <td>${format(start, "dd/MM/yyyy", { locale: fr })}</td>
                 <td>${format(start, "HH:mm", { locale: fr })}</td>
@@ -372,7 +372,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
                 <td>${h}h${m.toString().padStart(2, "0")}</td>
                 <td>${c.current_module || "—"}</td>
                 <td>${coursNames.length > 0 ? coursNames.join(", ") : "—"}</td>
-                <td>${exCount > 0 ? exCount + " exercice(s)" : "—"}</td>
+                <td>${exNames.length > 0 ? exNames.join(", ") : "—"}</td>
               </tr>`;
             }).join("")}
             ${connexions.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:#9ca3af;">Aucune connexion</td></tr>' : ""}
