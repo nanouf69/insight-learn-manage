@@ -12,7 +12,22 @@ import { cn } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format, subDays, differenceInMinutes, parseISO, startOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
-import { FORMATION_MODULES } from "./modules-config";
+import { FORMATION_MODULES, ALL_MODULES } from "./modules-config";
+import { VTC_COURS_DATA } from "./vtc-cours-data";
+import { TAXI_COURS_DATA } from "./taxi-cours-data";
+import { TA_COURS_DATA } from "./ta-cours-data";
+import { VA_COURS_DATA } from "./va-cours-data";
+
+// Build a static map: exercice_id → human-readable title
+const EXERCICE_TITLE_MAP = new Map<string, string>();
+[VTC_COURS_DATA, TAXI_COURS_DATA, TA_COURS_DATA, VA_COURS_DATA].forEach(mod => {
+  (mod.exercices || []).forEach(exo => {
+    EXERCICE_TITLE_MAP.set(`module_${mod.id}_exo_${exo.id}`, exo.titre);
+  });
+});
+// Also map module IDs to names for fallback
+const MODULE_NAME_MAP = new Map<number, string>();
+ALL_MODULES.forEach(m => MODULE_NAME_MAP.set(m.id, m.nom));
 
 interface Apprenant {
   id: string;
