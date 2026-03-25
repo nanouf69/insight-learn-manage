@@ -2825,39 +2825,75 @@ export default function ExamensBlancsPage({
     const safeScoreObtenu = safeScoreMax > 0
       ? clamp(toFiniteNumber(resultat.noteObtenue, 0), 0, safeScoreMax)
       : Math.max(toFiniteNumber(resultat.noteObtenue, 0), 0);
+    const quizType = examen.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
+    const noteSur20 = normalizeNoteSur20(safeScoreObtenu, safeScoreMax);
+
+    const payload = {
+      apprenant_id: apprenantId,
+      user_id: userId,
+      quiz_type: quizType,
+      quiz_id: examen.id,
+      quiz_titre: examen.titre,
+      matiere_id: resultat.matiereId,
+      matiere_nom: resultat.nomMatiere,
+      score_obtenu: safeScoreObtenu,
+      score_max: safeScoreMax,
+      note_sur_20: noteSur20,
+      reussi: computeAdmisForMatiere(
+        safeScoreObtenu,
+        safeScoreMax,
+        resultat.noteEliminatoire,
+        resultat.noteSur,
+        Boolean(resultat.admis)
+      ),
+      duree_secondes: Math.max(Math.round(dureeSecondes), 0),
+      details: {
+        questions: questionDetails,
+        reponses: resultat.reponses,
+        correctionsIA: Object.keys(frozenCorrections).length > 0 ? frozenCorrections : undefined,
+      },
+    };
+
+    console.groupCollapsed(
+      `[ExamSubmission][EB][InsertAttempt] quiz_id=${examen.id} matiere_id=${JSON.stringify(payload.matiere_id)} matiere_nom=${JSON.stringify(payload.matiere_nom)}`
+    );
+    console.table([
+      {
+        quiz_id: payload.quiz_id,
+        quiz_type: payload.quiz_type,
+        matiere_id_exact: JSON.stringify(payload.matiere_id),
+        matiere_nom_exact: JSON.stringify(payload.matiere_nom),
+        score_obtenu: payload.score_obtenu,
+        score_max: payload.score_max,
+        note_sur_20: payload.note_sur_20,
+        reussi: payload.reussi,
+        duree_secondes: payload.duree_secondes,
+        nb_questions: questionDetails.length,
+        nb_reponses: Object.keys(resultat.reponses || {}).length,
+      },
+    ]);
+    console.log("[ExamSubmission][EB][InsertPayload]", payload);
+    console.groupEnd();
 
     const { error } = await supabase
       .from("apprenant_quiz_results" as any)
-      .insert([
-        {
-          apprenant_id: apprenantId,
-          user_id: userId,
-          quiz_type: examen.id.startsWith("bilan-") ? "bilan" : "examen_blanc",
-          quiz_id: examen.id,
-          quiz_titre: examen.titre,
-          matiere_id: resultat.matiereId,
-          matiere_nom: resultat.nomMatiere,
-          score_obtenu: safeScoreObtenu,
-          score_max: safeScoreMax,
-          note_sur_20: normalizeNoteSur20(safeScoreObtenu, safeScoreMax),
-          reussi: computeAdmisForMatiere(
-            safeScoreObtenu,
-            safeScoreMax,
-            resultat.noteEliminatoire,
-            resultat.noteSur,
-            Boolean(resultat.admis)
-          ),
-          duree_secondes: Math.max(Math.round(dureeSecondes), 0),
-          details: {
-            questions: questionDetails,
-            reponses: resultat.reponses,
-            correctionsIA: Object.keys(frozenCorrections).length > 0 ? frozenCorrections : undefined,
-          },
-        },
-      ] as any);
+      .insert([payload] as any);
 
     if (error) {
-      console.error("Failed to save matière result:", error);
+      console.error("[ExamSubmission][EB][InsertError]", {
+        quiz_id: payload.quiz_id,
+        matiere_id: payload.matiere_id,
+        score_obtenu: payload.score_obtenu,
+        score_max: payload.score_max,
+        error,
+      });
+    } else {
+      console.info("[ExamSubmission][EB][InsertSuccess]", {
+        quiz_id: payload.quiz_id,
+        matiere_id: payload.matiere_id,
+        score_obtenu: payload.score_obtenu,
+        score_max: payload.score_max,
+      });
     }
   };
 
@@ -2872,6 +2908,16 @@ export default function ExamensBlancsPage({
     const note = calculerNote(matiere, reponses);
     const maxPoints = calculerMaxPoints(matiere);
     const noteSecurisee = maxPoints > 0 ? clamp(note, 0, maxPoints) : Math.max(note, 0);
+    console.log("[ExamSubmission][EB][ComputeMatiere]", {
+      quiz_id: examenChoisi.id,
+      matiere_id: matiere.id,
+      matiere_nom: matiere.nom,
+      reponses_keys: Object.keys(reponses || {}),
+      score_calcule: note,
+      score_securise: noteSecurisee,
+      score_max: maxPoints,
+      note_sur_20: normalizeNoteSur20(noteSecurisee, maxPoints),
+    });
     const resultat: ResultatMatiere = {
       matiereId: matiere.id,
       nomMatiere: matiere.nom,
