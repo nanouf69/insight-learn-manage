@@ -426,11 +426,15 @@ const ResultatsSessionPage = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="e-learning">🖥️ E-Learning (tous)</SelectItem>
-            {sessions.map(s => (
-              <SelectItem key={s.id} value={s.id}>
-                {s.nom || `Session ${s.type_session}`} — {formatDate(s.date_debut)} au {formatDate(s.date_fin)}
-              </SelectItem>
-            ))}
+            {sessions.map(s => {
+              const now = new Date();
+              const isActive = now >= new Date(s.date_debut) && now <= new Date(s.date_fin);
+              return (
+                <SelectItem key={s.id} value={s.id} className={isActive ? "text-red-600 font-bold" : ""}>
+                  {isActive ? "🔴 " : ""}{s.nom || `Session ${s.type_session}`} — {formatDate(s.date_debut)} au {formatDate(s.date_fin)}
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
       </div>
