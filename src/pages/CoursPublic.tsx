@@ -762,11 +762,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     };
   }, [apprenantOverride, embedded]);
 
-  // Fetch completed modules + exam blanc results
+  // Fetch completed modules + exam blanc results + last module
   useEffect(() => {
     if (!apprenant?.id) return;
     const fetchCompletions = async () => {
-      const [{ data }, { data: examData }] = await Promise.all([
+      const [{ data }, { data: examData }, { data: lastConnData }] = await Promise.all([
         supabase
           .from("apprenant_module_completion")
           .select("id, module_id, score_obtenu, score_max, completed_at, details")
@@ -776,6 +776,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           .select("quiz_id")
           .eq("apprenant_id", apprenant.id!)
           .eq("quiz_type", "examen_blanc"),
+        supabase
+          .from("apprenant_connexions" as any)
+          .select("current_module")
+          .eq("apprenant_id", apprenant.id!)
+          .not("current_module", "is", null)
+          .order("started_at", { ascending: false })
+          .limit(1),
       ]);
 
       if (data) {
@@ -794,6 +801,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       if (examData) {
         const ids = new Set<string>((examData as any[]).map((r: any) => r.quiz_id));
         setExamBlancCompletedIds(ids);
+      }
+
+      if (lastConnData && (lastConnData as any[]).length > 0) {
+        setLastModuleName((lastConnData as any[])[0].current_module || null);
       }
     };
     fetchCompletions();
