@@ -31,6 +31,19 @@ interface Connexion {
   current_module: string | null;
 }
 
+interface ExerciceComplete {
+  id: string;
+  exercice_id: string;
+  completed: boolean;
+  updated_at: string;
+}
+
+interface QuizResult {
+  id: string;
+  quiz_titre: string;
+  completed_at: string;
+}
+
 const MAX_SESSION_DURATION_MS = 7 * 60 * 60 * 1000;
 
 interface ModuleActivite {
