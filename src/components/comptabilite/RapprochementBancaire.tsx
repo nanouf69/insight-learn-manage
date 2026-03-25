@@ -283,17 +283,37 @@ export function RapprochementBancaire() {
   const [aiSuggestionLoading, setAiSuggestionLoading] = useState(false);
   const [aiConfirmation, setAiConfirmation] = useState<AiConfirmation | null>(null);
   const [confirmingLink, setConfirmingLink] = useState(false);
+  const [syncingRevolut, setSyncingRevolut] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
-    const [{ data: txs }, { data: just }, { data: apprenantsData }, { data: saData }] = await Promise.all([
-      supabase.from("transactions_bancaires").select("*").order("date_operation", { ascending: false }),
+    // Fetch ALL transactions (bypass 1000-row default limit) by paginating
+    const fetchAllTxs = async (): Promise<Transaction[]> => {
+      const all: Transaction[] = [];
+      let from = 0;
+      const PAGE = 1000;
+      while (true) {
+        const { data, error } = await supabase
+          .from("transactions_bancaires")
+          .select("*")
+          .order("date_operation", { ascending: false })
+          .range(from, from + PAGE - 1);
+        if (error || !data || data.length === 0) break;
+        all.push(...(data as Transaction[]));
+        if (data.length < PAGE) break;
+        from += PAGE;
+      }
+      return all;
+    };
+
+    const [txs, { data: just }, { data: apprenantsData }, { data: saData }] = await Promise.all([
+      fetchAllTxs(),
       supabase.from("justificatifs").select("id, nom_fichier, url, montant_ttc, date_operation, categorie, fournisseur, statut"),
       supabase.from("apprenants").select("id, nom, prenom, date_debut_formation, date_fin_formation"),
       supabase.from("session_apprenants").select("apprenant_id, date_debut, date_fin, sessions(date_debut, date_fin)"),
     ]);
-    if (txs) setTransactions(txs as Transaction[]);
+    if (txs) setTransactions(txs);
     if (just) setJustificatifs(just as Justificatif[]);
     
     // Build apprenants with session dates
@@ -353,6 +373,65 @@ export function RapprochementBancaire() {
     if (error) { toast.error("Erreur lors de la suppression"); return; }
     toast.success("Toutes les transactions supprimées. Vous pouvez réimporter votre CSV.");
     await fetchAll();
+  };
+
+  /** Sync Revolut API transactions into transactions_bancaires */
+  const handleSyncRevolut = async () => {
+    setSyncingRevolut(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("revolut-transactions");
+      if (fnError) throw new Error(fnError.message);
+      if (data?.error) throw new Error(data.error);
+
+      const revolutTxs: any[] = data?.transactions || [];
+      if (revolutTxs.length === 0) {
+        toast.info("Aucune transaction Revolut récupérée depuis l'API.");
+        setSyncingRevolut(false);
+        return;
+      }
+
+      // Get existing Revolut references to avoid duplicates
+      const { data: existing } = await supabase
+        .from("transactions_bancaires")
+        .select("reference")
+        .eq("banque", "Revolut Pro")
+        .not("reference", "is", null);
+      const existingRefs = new Set((existing || []).map(e => e.reference));
+
+      const inserts = revolutTxs
+        .filter((tx: any) => tx.state === "completed" && tx.legs?.length > 0)
+        .filter((tx: any) => !existingRefs.has(tx.id))
+        .map((tx: any) => {
+          const leg = tx.legs[0];
+          const desc = tx.description || tx.reference || leg.description || "—";
+          const dateStr = (tx.completed_at || tx.created_at || "").slice(0, 10);
+          return {
+            date_operation: dateStr,
+            libelle: desc.slice(0, 100),
+            montant: leg.amount,
+            solde: null as number | null,
+            banque: "Revolut Pro",
+            reference: tx.id,
+            statut: "non_justifie",
+            source: "revolut_api",
+          };
+        });
+
+      if (inserts.length === 0) {
+        toast.info("Toutes les transactions Revolut sont déjà synchronisées.");
+        setSyncingRevolut(false);
+        return;
+      }
+
+      const { error: insertErr } = await supabase.from("transactions_bancaires").insert(inserts);
+      if (insertErr) throw insertErr;
+
+      toast.success(`${inserts.length} transactions Revolut synchronisées !`);
+      await fetchAll();
+    } catch (err) {
+      toast.error("Erreur sync Revolut : " + (err instanceof Error ? err.message : "Erreur"));
+    }
+    setSyncingRevolut(false);
   };
 
   const quickUpdate = async (id: string, updates: Partial<Transaction>) => {
@@ -616,6 +695,16 @@ export function RapprochementBancaire() {
               <Upload className="h-4 w-4 mr-2" />
               {importing ? "Import en cours..." : "Choisir un fichier CSV"}
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={syncingRevolut}
+              className="flex-shrink-0"
+              onClick={(e) => { e.stopPropagation(); handleSyncRevolut(); }}
+            >
+              {syncingRevolut ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+              {syncingRevolut ? "Sync en cours..." : "🟣 Sync Revolut API"}
+            </Button>
           </div>
           <input
             ref={fileInputRef}
@@ -672,24 +761,21 @@ export function RapprochementBancaire() {
             </Button>
           ))}
         </div>
-        {/* Filtre par banque */}
-        {(() => {
-          const banques = [...new Set(transactions.map(t => t.banque))];
-          if (banques.length <= 1) return null;
-          return (
-            <div className="flex gap-2">
-              <Button size="sm" variant={filterBanque === "tous" ? "secondary" : "ghost"} onClick={() => setFilterBanque("tous")}>
-                🏦 Toutes
+        {/* Filtre par banque — toujours visible */}
+        <div className="flex gap-2">
+          <Button size="sm" variant={filterBanque === "tous" ? "secondary" : "ghost"} onClick={() => setFilterBanque("tous")}>
+            🏦 Toutes
+          </Button>
+          {["BNP Paribas", "Revolut Pro"].map(b => {
+            const count = transactions.filter(t => t.banque === b).length;
+            return (
+              <Button key={b} size="sm" variant={filterBanque === b ? "secondary" : "ghost"} onClick={() => setFilterBanque(filterBanque === b ? "tous" : b)}>
+                {b === "BNP Paribas" ? "🔵 BNP" : "🟣 Revolut"}
+                <Badge className="ml-1.5 h-4 px-1 text-[10px]">{count}</Badge>
               </Button>
-              {banques.map(b => (
-                <Button key={b} size="sm" variant={filterBanque === b ? "secondary" : "ghost"} onClick={() => setFilterBanque(filterBanque === b ? "tous" : b)}>
-                  {b === "BNP Paribas" ? "🔵 BNP" : b === "Revolut Pro" ? "🟣 Revolut" : b}
-                  <Badge className="ml-1.5 h-4 px-1 text-[10px]">{transactions.filter(t => t.banque === b).length}</Badge>
-                </Button>
-              ))}
-            </div>
-          );
-        })()}
+            );
+          })}
+        </div>
       </div>
 
       {/* Transactions */}
@@ -764,9 +850,12 @@ export function RapprochementBancaire() {
                                 <p className="font-medium text-sm truncate">{tx.libelle}</p>
                                 <p className="text-xs text-muted-foreground">
                                   {format(new Date(tx.date_operation), "dd MMMM yyyy", { locale: fr })}
-                                  {tx.banque && tx.banque !== "BNP Paribas" && (
-                                    <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-700">
-                                      {tx.banque}
+                                  {tx.banque && (
+                                    <span className={cn(
+                                      "ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium",
+                                      tx.banque === "Revolut Pro" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
+                                    )}>
+                                      {tx.banque === "BNP Paribas" ? "🔵 BNP" : tx.banque === "Revolut Pro" ? "🟣 Revolut" : tx.banque}
                                     </span>
                                   )}
                                   {tx.solde != null && <span className="ml-2">· Solde : {fmt(tx.solde)}</span>}
