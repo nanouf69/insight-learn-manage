@@ -77,6 +77,7 @@ function App() {
                 <Route path="/cours" element={<ErrorBoundary><CoursPublic /></ErrorBoundary>} />
                 <Route path="/cours-public" element={<ErrorBoundary><CoursPublic /></ErrorBoundary>} />
                 <Route path="/reset-password" element={<ErrorBoundary><ResetPassword /></ErrorBoundary>} />
+                <Route path="/auth/callback" element={<ErrorBoundary><AuthCallback /></ErrorBoundary>} />
                 
                 {/* Fournisseur portal - public */}
                 <Route path="/fournisseur/:token" element={<ErrorBoundary><FournisseurPortal /></ErrorBoundary>} />
