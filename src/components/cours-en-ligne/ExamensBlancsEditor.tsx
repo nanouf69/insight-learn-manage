@@ -661,6 +661,15 @@ function MatiereEditor({
       {/* Questions */}
       {expanded && (
         <div className="p-4 space-y-3">
+          {matiere.texteSupport && (
+            <div className="mb-4 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+              <p className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide mb-2">📄 Texte support — Français</p>
+              <p className="text-sm text-foreground whitespace-pre-line leading-relaxed">{matiere.texteSupport}</p>
+              {matiere.texteSource && (
+                <p className="text-xs text-muted-foreground mt-2 italic">Source : {matiere.texteSource}</p>
+              )}
+            </div>
+          )}
           {questionsSafe.map(q => (
             <div key={q.id}>
               {editingQId === q.id ? (
