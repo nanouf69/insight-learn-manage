@@ -3602,6 +3602,7 @@ const eb3Matieres: Matiere[] = [
         id: 2,
         type: "QCM",
         enonce: "Cet emplacement :",
+        image: "/cours/examens/securite_eb3_q2.png",
         choix: [
           { lettre: "A", texte: "est réservé aux véhicules transportant une ou plusieurs personnes handicapées" },
           { lettre: "B", texte: "est réservé aux véhicules portant une carte de stationnement pour personnes handicapées" , correct: true },
