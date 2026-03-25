@@ -535,7 +535,7 @@ function MatiereEditor({
 
   return (
     <>
-    <div className="border rounded-lg overflow-hidden">
+    <div className="border border-border/60 rounded-xl overflow-hidden shadow-sm bg-card">
       {/* En-tête matière */}
       <div
         className="flex items-center justify-between p-3 bg-muted/40 cursor-pointer hover:bg-muted/60 transition-colors"
