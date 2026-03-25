@@ -1,0 +1,2 @@
+ALTER PUBLICATION supabase_realtime ADD TABLE public.apprenant_quiz_results;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.apprenant_module_completion;
