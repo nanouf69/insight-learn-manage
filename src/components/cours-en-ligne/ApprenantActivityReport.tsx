@@ -78,6 +78,7 @@ interface ExerciceComplete {
 interface QuizResult {
   id: string;
   quiz_titre: string;
+  matiere_nom: string | null;
   completed_at: string;
 }
 
