@@ -1187,7 +1187,7 @@ function getInitialModuleDataRaw(
 
   // Bilan Exercices Formation Continue VTC (module 81) — sans Gestion
   if (module.id === 81) {
-    const { BILAN_EXERCICES_FC_VTC } = await import("./bilan-exercices-fc-vtc-data");
+    if (module.id === 81) {
     return {
       id: 81,
       nom: "1.BILAN EXERCICES FORMATION CONTINUE VTC",
