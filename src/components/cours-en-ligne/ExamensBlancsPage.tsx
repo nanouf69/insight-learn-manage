@@ -123,18 +123,14 @@ interface ExamScoreItem {
 function pickBestScoreRow(prev: any, current: any) {
   if (!prev) return current;
 
-  const prevTs = Math.max(toTimestamp(prev.completed_at), toTimestamp(prev.created_at));
-  const currTs = Math.max(toTimestamp(current.completed_at), toTimestamp(current.created_at));
+  // Prendre uniquement la ligne la plus récente par created_at
+  const prevTs = toTimestamp(prev.created_at) || toTimestamp(prev.completed_at);
+  const currTs = toTimestamp(current.created_at) || toTimestamp(current.completed_at);
 
   if (currTs > prevTs) return current;
   if (currTs < prevTs) return prev;
 
-  const prevNote = normalizeNoteSur20(prev.score_obtenu, prev.score_max, prev.note_sur_20);
-  const currNote = normalizeNoteSur20(current.score_obtenu, current.score_max, current.note_sur_20);
-  if (currNote > prevNote) return current;
-  if (currNote < prevNote) return prev;
-
-  if (!prev.matiere_id && current.matiere_id) return current;
+  // En cas d'égalité de timestamp, garder le premier rencontré (le plus récent du ORDER BY DESC)
   return prev;
 }
 
