@@ -1465,6 +1465,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                           <div className="flex-1 min-w-0">
                             <h3 className={`font-bold text-sm transition-colors ${introLockedDone ? "text-muted-foreground" : "text-foreground group-hover:text-emerald-600"}`}>
                               {mod.nom}
+                              {lastMod && !introLockedDone && (
+                                <Badge className="ml-2 text-[10px] px-1.5 py-0 bg-red-500 text-white border-red-500">
+                                  ▶ Reprendre
+                                </Badge>
+                              )}
                             </h3>
                             <p className="text-xs text-emerald-600">
                               {introLockedDone ? "✅ Terminé — Accès verrouillé" : "✅ Terminé"}
