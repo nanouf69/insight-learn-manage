@@ -85,7 +85,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
   const [activeTab, setActiveTab] = useState<"matiere" | "module" | "examens">("matiere");
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [selectedDetail, setSelectedDetail] = useState<{ title: string; date: string; score: number; max: number; details: any[] } | null>(null);
-  const isFetchingRef = useRef(false);
+  const fetchStateRef = useRef({ inFlight: false, pending: false });
   useEffect(() => {
     setModuleCompletions(moduleCompletionsSeed);
   }, [apprenantId, moduleCompletionsSeed]);
@@ -96,32 +96,46 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
       return;
     }
 
-    if (isFetchingRef.current) return;
-    isFetchingRef.current = true;
+    if (fetchStateRef.current.inFlight) {
+      fetchStateRef.current.pending = true;
+      return;
+    }
+
+    fetchStateRef.current.inFlight = true;
 
     try {
-      const [quizRes, moduleRes] = await Promise.all([
-        supabase
-          .from("apprenant_quiz_results")
-          .select("*")
-          .eq("apprenant_id", apprenantId)
-          .order("completed_at", { ascending: true }),
-        supabase
-          .from("apprenant_module_completion")
-          .select("*")
-          .eq("apprenant_id", apprenantId)
-          .order("completed_at", { ascending: true }),
-      ]);
+      do {
+        fetchStateRef.current.pending = false;
 
-      if (quizRes.data) setQuizResults(quizRes.data as any);
+        const [quizRes, moduleRes] = await Promise.all([
+          supabase
+            .from("apprenant_quiz_results")
+            .select("*")
+            .eq("apprenant_id", apprenantId)
+            .order("completed_at", { ascending: true }),
+          supabase
+            .from("apprenant_module_completion")
+            .select("*")
+            .eq("apprenant_id", apprenantId)
+            .order("completed_at", { ascending: true }),
+        ]);
 
-      if (moduleRes.data && moduleRes.data.length > 0) {
-        setModuleCompletions(moduleRes.data as any);
-      } else if (moduleCompletionsSeed.length === 0) {
-        setModuleCompletions([]);
-      }
+        if (quizRes.error) {
+          console.error("NotesView: erreur chargement quiz", quizRes.error);
+        } else {
+          setQuizResults((quizRes.data || []) as any);
+        }
+
+        if (moduleRes.error) {
+          console.error("NotesView: erreur chargement modules", moduleRes.error);
+        } else if (moduleRes.data && moduleRes.data.length > 0) {
+          setModuleCompletions(moduleRes.data as any);
+        } else if (moduleCompletionsSeed.length === 0) {
+          setModuleCompletions([]);
+        }
+      } while (fetchStateRef.current.pending);
     } finally {
-      isFetchingRef.current = false;
+      fetchStateRef.current.inFlight = false;
       setLoading(false);
     }
   }, [apprenantId, moduleCompletionsSeed]);
@@ -163,7 +177,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
 
     const intervalId = window.setInterval(() => {
       fetchAll();
-    }, 5000);
+    }, 2000);
 
     const handleFocus = () => fetchAll();
     const handleVisibility = () => {
