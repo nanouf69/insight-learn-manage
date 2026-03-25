@@ -1795,14 +1795,17 @@ function EcranResultats({
   useEffect(() => {
     if (!apprenantId || !examen?.id) return;
     const checkRevision = async () => {
-      const { data } = await supabase
-        .from("apprenant_quiz_results" as any)
+      const { data, error } = await supabase
+        .from("apprenant_quiz_results")
         .select("id")
         .eq("apprenant_id", apprenantId)
         .eq("quiz_type", "revision_fausses")
         .eq("quiz_id", examen.id)
         .limit(1);
-      if (data && (data as any[]).length > 0) {
+      if (error) {
+        console.error("Erreur vérification révision:", error.message);
+      }
+      if (data && data.length > 0) {
         setRevisionDejaFaite(true);
       }
     };
