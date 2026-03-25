@@ -253,6 +253,9 @@ export const FORMATION_MODULES: Record<string, FormationDefinition> = {
     { id: 8, label: "9.PRATIQUE VTC" },
     { id: 53, label: "10.FIN DE FORMATION VA" },
   ]},
+  "continue-vtc": { label: "Formation Continue VTC", color: "bg-blue-100 text-blue-800 border-blue-300", modules: [
+    { id: 81, label: "1.BILAN EXERCICES FORMATION CONTINUE VTC" },
+  ]},
 };
 
 // ======================================================================
