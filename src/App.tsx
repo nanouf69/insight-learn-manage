@@ -18,6 +18,7 @@ import ResetPassword from "./pages/ResetPassword";
 import PreInformationPublic from "./pages/PreInformationPublic";
 import AuthCallback from "./pages/AuthCallback";
 import RevolutTransactions from "./pages/RevolutTransactions";
+import RevolutConnect from "./pages/RevolutConnect";
 
 // Onboarding pages
 import OnboardingWelcome from "./pages/onboarding/OnboardingWelcome";
@@ -79,6 +80,11 @@ function App() {
                 <Route path="/cours-public" element={<ErrorBoundary><CoursPublic /></ErrorBoundary>} />
                 <Route path="/reset-password" element={<ErrorBoundary><ResetPassword /></ErrorBoundary>} />
                 <Route path="/auth/callback" element={<ErrorBoundary><AuthCallback /></ErrorBoundary>} />
+                <Route path="/revolut-connect" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary><RevolutConnect /></ErrorBoundary>
+                  </ProtectedRoute>
+                } />
                 <Route path="/revolut/transactions" element={
                   <ProtectedRoute>
                     <ErrorBoundary><RevolutTransactions /></ErrorBoundary>
