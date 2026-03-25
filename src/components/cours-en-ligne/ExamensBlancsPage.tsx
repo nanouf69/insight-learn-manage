@@ -1457,13 +1457,16 @@ function PassageMatiere({
 
       {/* Texte support (français) - toujours visible */}
       {(() => {
-        const fallbackMatiere = examenId
-          ? tousLesExamens
-              .find((ex) => ex.id === examenId)
-              ?.matieres.find((m) => m.id === matiere.id)
+        // Always resolve texteSupport from source data to handle saved sessions missing it
+        const sourceExam = examenId
+          ? tousLesExamens.find((ex) => ex.id === examenId)
           : undefined;
-        const texteSupport = matiere.texteSupport ?? fallbackMatiere?.texteSupport;
-        const texteSource = matiere.texteSource ?? fallbackMatiere?.texteSource;
+        const fallbackMatiere = sourceExam
+          ? sourceExam.matieres.find((m) => m.id === matiere.id) ||
+            sourceExam.matieres.find((m) => m.nom === matiere.nom)
+          : undefined;
+        const texteSupport = matiere.texteSupport || fallbackMatiere?.texteSupport || "";
+        const texteSource = matiere.texteSource || fallbackMatiere?.texteSource || "";
 
         if (!texteSupport) return null;
 
