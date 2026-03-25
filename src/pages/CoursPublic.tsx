@@ -17,7 +17,7 @@ import ExamensBlancsPage from "@/components/cours-en-ligne/ExamensBlancsPage";
 import NotesView from "@/components/cours-en-ligne/NotesView";
 import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
 import { FORMATIONS, MODULES_DATA, expandModulesAutorises, type FormationId } from "@/components/cours-en-ligne/formations-data";
-import { EXAMENS_BLANCS_VTC, EXAMENS_BLANCS_TAXI, examenBlanc1TA, examenBlanc1VA } from "@/components/cours-en-ligne/examens-blancs-data";
+import { EXAMENS_BLANCS_VTC, EXAMENS_BLANCS_TAXI, EXAMENS_BLANCS_TA, EXAMENS_BLANCS_VA } from "@/components/cours-en-ligne/examens-blancs-data";
 import { supabase } from "@/integrations/supabase/client";
 import { safeDateParse } from "@/lib/safeDateParse";
 import { useConnexionTracking } from "@/hooks/useConnexionTracking";
@@ -1146,8 +1146,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const EXAMEN_BLANC_EXAM_IDS: Record<number, string[]> = {
     35: EXAMENS_BLANCS_VTC.filter(e => !e.id.startsWith("bilan-")).map(e => e.id),
     36: EXAMENS_BLANCS_TAXI.filter(e => !e.id.startsWith("bilan-")).map(e => e.id),
-    37: [examenBlanc1TA.id],
-    38: [examenBlanc1VA.id],
+    37: EXAMENS_BLANCS_TA.filter(e => !e.id.startsWith("bilan-")).map(e => e.id),
+    38: EXAMENS_BLANCS_VA.filter(e => !e.id.startsWith("bilan-")).map(e => e.id),
   };
 
   const examBlancStatsById = modules.reduce<Record<number, { completed: number; total: number }>>((acc, module) => {
