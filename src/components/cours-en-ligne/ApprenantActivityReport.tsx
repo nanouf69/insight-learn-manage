@@ -217,19 +217,20 @@ export default function ApprenantActivityReport({ onBack }: Props) {
     return Math.max(0, differenceInMinutes(getCappedSessionEnd(connexion), start));
   };
 
-  // Get exercises/quizzes completed during a connexion time window
-  const getExercicesDuringConnexion = (connexion: Connexion) => {
+  // Get exercise/quiz titles completed during a connexion time window
+  const getExerciceNamesDuringConnexion = (connexion: Connexion) => {
     const start = parseISO(connexion.started_at);
     const end = getCappedSessionEnd(connexion);
-    const exCount = exercicesCompletes.filter(e => {
+    const titles: string[] = [];
+    exercicesCompletes.filter(e => {
       const t = parseISO(e.updated_at);
       return t >= start && t <= end;
-    }).length;
-    const qrCount = quizResults.filter(q => {
+    }).forEach(e => titles.push(e.exercice_id));
+    quizResults.filter(q => {
       const t = parseISO(q.completed_at);
       return t >= start && t <= end;
-    }).length;
-    return exCount + qrCount;
+    }).forEach(q => titles.push(q.quiz_titre));
+    return titles;
   };
 
   const getExercicesTitlesDuringConnexion = (connexion: Connexion) => {
@@ -363,7 +364,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
               const h = Math.floor(mins / 60);
               const m = mins % 60;
               const coursNames = getCoursDuringConnexion(c);
-              const exCount = getExercicesDuringConnexion(c);
+              const exNames = getExerciceNamesDuringConnexion(c);
               return `<tr>
                 <td>${format(start, "dd/MM/yyyy", { locale: fr })}</td>
                 <td>${format(start, "HH:mm", { locale: fr })}</td>
@@ -371,7 +372,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
                 <td>${h}h${m.toString().padStart(2, "0")}</td>
                 <td>${c.current_module || "—"}</td>
                 <td>${coursNames.length > 0 ? coursNames.join(", ") : "—"}</td>
-                <td>${exCount > 0 ? exCount + " exercice(s)" : "—"}</td>
+                <td>${exNames.length > 0 ? exNames.join(", ") : "—"}</td>
               </tr>`;
             }).join("")}
             ${connexions.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:#9ca3af;">Aucune connexion</td></tr>' : ""}
@@ -589,7 +590,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
                     const h = Math.floor(mins / 60);
                     const m = mins % 60;
                     const coursNames = getCoursDuringConnexion(c);
-                    const exCount = getExercicesDuringConnexion(c);
+                    const exNames = getExerciceNamesDuringConnexion(c);
                     return (
                       <TableRow key={c.id}>
                         <TableCell>{format(start, "dd/MM/yyyy", { locale: fr })}</TableCell>
@@ -614,8 +615,12 @@ export default function ApprenantActivityReport({ onBack }: Props) {
                           )}
                         </TableCell>
                         <TableCell>
-                          {exCount > 0 ? (
-                            <Badge variant="outline" className="text-xs">{exCount} exercice(s)</Badge>
+                          {exNames.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {exNames.map((name, i) => (
+                                <Badge key={i} variant="outline" className="text-xs">{name}</Badge>
+                              ))}
+                            </div>
                           ) : (
                             <span className="text-muted-foreground">—</span>
                           )}
