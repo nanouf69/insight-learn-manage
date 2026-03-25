@@ -462,7 +462,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
             });
         }
       });
-  }, [apprenantId, examensData]);
+  }, [apprenantId, examensData, refreshKey]);
 
   const examens = examensData.filter(e => {
     const typeOk = typeFiltre === "tous" || e?.type === typeFiltre;
