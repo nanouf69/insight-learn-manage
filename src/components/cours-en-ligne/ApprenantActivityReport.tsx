@@ -119,6 +119,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
   const [selectedId, setSelectedId] = useState<string>("");
   const [connexions, setConnexions] = useState<Connexion[]>([]);
   const [activites, setActivites] = useState<ModuleActivite[]>([]);
+  const [completedModuleIds, setCompletedModuleIds] = useState<Set<number>>(new Set());
   const [exercicesCompletes, setExercicesCompletes] = useState<ExerciceComplete[]>([]);
   const [quizResults, setQuizResults] = useState<QuizResult[]>([]);
   const [loading, setLoading] = useState(false);
