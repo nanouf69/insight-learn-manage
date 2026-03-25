@@ -1462,8 +1462,8 @@ function PassageMatiere({
               .find((ex) => ex.id === examenId)
               ?.matieres.find((m) => m.id === matiere.id)
           : undefined;
-        const texteSupport = matiere.texteSupport ?? fallbackMatiere?.texteSupport;
-        const texteSource = matiere.texteSource ?? fallbackMatiere?.texteSource;
+        const texteSupport = matiere.texteSupport || fallbackMatiere?.texteSupport || "";
+        const texteSource = matiere.texteSource || fallbackMatiere?.texteSource || "";
 
         if (!texteSupport) return null;
 
