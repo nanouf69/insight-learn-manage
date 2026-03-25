@@ -3590,6 +3590,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                                   </div>
                                 );
                               })()}
+
+                              {isPdf && !shouldShowViewers && (() => {
+                                // Hidden: original block replaced by inline iframe below
+                                return null;
+                              })()}
                             </div>
                           );
                         })}
