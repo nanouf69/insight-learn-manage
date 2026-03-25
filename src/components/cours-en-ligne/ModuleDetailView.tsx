@@ -3541,7 +3541,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
                           return (
                             <div key={i} className="space-y-3">
-                              {!secureMode && !isDocx && (
+                              {!secureMode && !isDocx && !isPdf && (
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <a
                                     href={f.url}
@@ -3568,24 +3568,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               )}
 
                               {isPdf && !shouldShowViewers && (() => {
-                                const ficheSlides = FICHE_IMAGE_SLIDES[f.nom];
-                                if (ficheSlides) {
-                                  return (
-                                    <div className="mt-2">
-                                      <ImageCarouselViewer
-                                        images={ficheSlides}
-                                        nom={cours.titre}
-                                        onLastPageReached={() => markPageCompleted(currentPage)}
-                                      />
-                                    </div>
-                                  );
-                                }
+                                const pdfSrc = f.url.startsWith('http')
+                                  ? f.url
+                                  : `${window.location.origin}${f.url.startsWith('/') ? f.url : `/${f.url}`}`;
                                 return (
-                                  <div className="mt-2">
-                                    <PdfSlideViewer
-                                      url={f.url.startsWith("http") ? f.url : f.url.startsWith("/") ? f.url : `/${f.url}`}
-                                      nom={cours.titre}
-                                      onLastPageReached={() => markPageCompleted(currentPage)}
+                                  <div className="mt-2 border rounded-lg overflow-hidden" onContextMenu={e => e.preventDefault()}>
+                                    <iframe
+                                      src={`${pdfSrc}#toolbar=0&navpanes=0`}
+                                      width="100%"
+                                      height="600px"
+                                      className="border-0"
+                                      title={`PDF — ${cours.titre}`}
+                                      style={{ minHeight: '600px' }}
                                     />
                                   </div>
                                 );
