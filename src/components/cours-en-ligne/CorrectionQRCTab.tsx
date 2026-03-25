@@ -34,6 +34,7 @@ interface QrcItem {
   scoreMatiereObtenu: number;
   scoreMatiereMax: number;
   commentaire: string;
+  correctedAt: string | null;
 }
 
 function safeStr(v: unknown): string {
@@ -300,6 +301,7 @@ const CorrectionQRCTab = () => {
           scoreMatiereObtenu: r.score_obtenu ?? 0,
           scoreMatiereMax: r.score_max ?? 20,
           commentaire: correction && typeof correction === "object" ? (correction.commentaire || "") : "",
+          correctedAt: correction && typeof correction === "object" && hasManualCorrection ? (correction.correctedAt || r.completed_at || null) : null,
         });
       }
     }
@@ -341,6 +343,7 @@ const CorrectionQRCTab = () => {
       nombrefautes: 0,
       explication: `Correction manuelle par l'administrateur : ${clamped}/${item.pointsMax} pts`,
       commentaire: commentaire || "",
+      correctedAt: new Date().toISOString(),
     };
 
     // Recalculate total score for this matiere
@@ -394,7 +397,7 @@ const CorrectionQRCTab = () => {
           if (i.resultId === item.resultId) {
             const upd: Partial<QrcItem> = { noteSur20, scoreMatiereObtenu: safeClamped };
             if (i.questionId === item.questionId) {
-              return { ...i, ...upd, pointsObtenus: clamped, corrigeManuel: true, commentaire: commentaire || "" };
+              return { ...i, ...upd, pointsObtenus: clamped, corrigeManuel: true, commentaire: commentaire || "", correctedAt: new Date().toISOString() };
             }
             return { ...i, ...upd };
           }
@@ -447,6 +450,11 @@ const CorrectionQRCTab = () => {
 
   // Sort by exam number (EB1, EB2, ...), then by matiere, then by question
   const sortedFiltered = [...filtered].sort((a, b) => {
+    if (filter === "done") {
+      const dateA = a.correctedAt ? new Date(a.correctedAt).getTime() : 0;
+      const dateB = b.correctedAt ? new Date(b.correctedAt).getTime() : 0;
+      return dateB - dateA;
+    }
     const numA = parseInt((a.quizTitre.match(/N°(\d+)/)?.[1]) || "0", 10);
     const numB = parseInt((b.quizTitre.match(/N°(\d+)/)?.[1]) || "0", 10);
     if (numA !== numB) return numA - numB;
