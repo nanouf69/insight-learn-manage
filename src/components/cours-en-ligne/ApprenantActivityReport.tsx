@@ -293,10 +293,13 @@ export default function ApprenantActivityReport({ onBack }: Props) {
     const start = parseISO(connexion.started_at);
     const end = getCappedSessionEnd(connexion);
     const titles: string[] = [];
-    quizResults.filter(q => {
-      const t = parseISO(q.completed_at);
+    // Use module activites to show which courses were opened
+    activites.filter(a => {
+      const t = parseISO(a.occurred_at);
       return t >= start && t <= end;
-    }).forEach(q => titles.push(q.quiz_titre));
+    }).forEach(a => {
+      if (!titles.includes(a.module_nom)) titles.push(a.module_nom);
+    });
     return titles;
   };
 
