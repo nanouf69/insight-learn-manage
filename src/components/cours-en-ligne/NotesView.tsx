@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts";
 import { Trophy, TrendingUp, Clock, Target, BookOpen, ChevronDown, ChevronUp, GraduationCap, FileText, CheckCircle2, XCircle, ArrowLeft, Eye } from "lucide-react";
@@ -85,15 +85,20 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
   const [activeTab, setActiveTab] = useState<"matiere" | "module" | "examens">("matiere");
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [selectedDetail, setSelectedDetail] = useState<{ title: string; date: string; score: number; max: number; details: any[] } | null>(null);
+  const isFetchingRef = useRef(false);
   useEffect(() => {
     setModuleCompletions(moduleCompletionsSeed);
   }, [apprenantId, moduleCompletionsSeed]);
 
-  const fetchAll = async () => {
+  const fetchAll = useCallback(async () => {
     if (!apprenantId) {
       setLoading(false);
       return;
     }
+
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+
     try {
       const [quizRes, moduleRes] = await Promise.all([
         supabase
@@ -116,13 +121,14 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
         setModuleCompletions([]);
       }
     } finally {
+      isFetchingRef.current = false;
       setLoading(false);
     }
-  };
+  }, [apprenantId, moduleCompletionsSeed]);
 
   useEffect(() => {
     fetchAll();
-  }, [apprenantId, moduleCompletionsSeed]);
+  }, [fetchAll]);
 
   // Realtime subscription to auto-refresh results
   useEffect(() => {
@@ -140,12 +146,41 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
         { event: '*', schema: 'public', table: 'apprenant_module_completion', filter: `apprenant_id=eq.${apprenantId}` },
         () => fetchAll()
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          fetchAll();
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [apprenantId]);
+  }, [apprenantId, fetchAll]);
+
+  // Fallback refresh: keeps notes synced even if realtime is delayed/disconnected
+  useEffect(() => {
+    if (!apprenantId) return;
+
+    const intervalId = window.setInterval(() => {
+      fetchAll();
+    }, 5000);
+
+    const handleFocus = () => fetchAll();
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchAll();
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [apprenantId, fetchAll]);
 
   const toggleGroup = (key: string) => {
     setExpandedGroups(prev => {
