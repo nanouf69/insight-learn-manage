@@ -1820,6 +1820,39 @@ export type Database = {
           },
         ]
       }
+      revolut_tokens: {
+        Row: {
+          access_token: string
+          created_at: string
+          expires_at: string | null
+          expires_in: number | null
+          id: string
+          refresh_token: string | null
+          token_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          expires_at?: string | null
+          expires_in?: number | null
+          id?: string
+          refresh_token?: string | null
+          token_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          expires_at?: string | null
+          expires_in?: number | null
+          id?: string
+          refresh_token?: string | null
+          token_type?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       session_apprenants: {
         Row: {
           apprenant_id: string
