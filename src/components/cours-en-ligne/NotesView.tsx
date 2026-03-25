@@ -89,41 +89,63 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
     setModuleCompletions(moduleCompletionsSeed);
   }, [apprenantId, moduleCompletionsSeed]);
 
-  useEffect(() => {
+  const fetchAll = async () => {
     if (!apprenantId) {
       setLoading(false);
       return;
     }
+    try {
+      const [quizRes, moduleRes] = await Promise.all([
+        supabase
+          .from("apprenant_quiz_results")
+          .select("*")
+          .eq("apprenant_id", apprenantId)
+          .order("completed_at", { ascending: true }),
+        supabase
+          .from("apprenant_module_completion")
+          .select("*")
+          .eq("apprenant_id", apprenantId)
+          .order("completed_at", { ascending: true }),
+      ]);
 
-    const fetchAll = async () => {
-      try {
-        const [quizRes, moduleRes] = await Promise.all([
-          supabase
-            .from("apprenant_quiz_results")
-            .select("*")
-            .eq("apprenant_id", apprenantId)
-            .order("completed_at", { ascending: true }),
-          supabase
-            .from("apprenant_module_completion")
-            .select("*")
-            .eq("apprenant_id", apprenantId)
-            .order("completed_at", { ascending: true }),
-        ]);
+      if (quizRes.data) setQuizResults(quizRes.data as any);
 
-        if (quizRes.data) setQuizResults(quizRes.data as any);
-
-        if (moduleRes.data && moduleRes.data.length > 0) {
-          setModuleCompletions(moduleRes.data as any);
-        } else if (moduleCompletionsSeed.length === 0) {
-          setModuleCompletions([]);
-        }
-      } finally {
-        setLoading(false);
+      if (moduleRes.data && moduleRes.data.length > 0) {
+        setModuleCompletions(moduleRes.data as any);
+      } else if (moduleCompletionsSeed.length === 0) {
+        setModuleCompletions([]);
       }
-    };
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchAll();
   }, [apprenantId, moduleCompletionsSeed]);
+
+  // Realtime subscription to auto-refresh results
+  useEffect(() => {
+    if (!apprenantId) return;
+
+    const channel = supabase
+      .channel(`notes-view-${apprenantId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'apprenant_quiz_results', filter: `apprenant_id=eq.${apprenantId}` },
+        () => fetchAll()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'apprenant_module_completion', filter: `apprenant_id=eq.${apprenantId}` },
+        () => fetchAll()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [apprenantId]);
 
   const toggleGroup = (key: string) => {
     setExpandedGroups(prev => {
