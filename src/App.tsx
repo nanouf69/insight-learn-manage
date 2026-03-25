@@ -16,6 +16,7 @@ import FournisseurPortal from "./pages/FournisseurPortal";
 import CoursPublic from "./pages/CoursPublic";
 import ResetPassword from "./pages/ResetPassword";
 import PreInformationPublic from "./pages/PreInformationPublic";
+import AuthCallback from "./pages/AuthCallback";
 
 // Onboarding pages
 import OnboardingWelcome from "./pages/onboarding/OnboardingWelcome";
