@@ -2518,9 +2518,15 @@ function EcranResultats({
 function RevisionFausses({
   wrongQuestions,
   onTerminer,
+  apprenantId,
+  userId,
+  examenId,
 }: {
   wrongQuestions: { matiere: Matiere; question: Question; matiereNom: string }[];
   onTerminer: () => void;
+  apprenantId?: string | null;
+  userId?: string | null;
+  examenId?: string | null;
 }) {
   const [reponses, setReponses] = useState<Reponses>({});
   const [currentIndex, setCurrentIndex] = useState(0);
