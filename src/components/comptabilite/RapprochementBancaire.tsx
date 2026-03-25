@@ -287,13 +287,32 @@ export function RapprochementBancaire() {
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
-    const [{ data: txs }, { data: just }, { data: apprenantsData }, { data: saData }] = await Promise.all([
-      supabase.from("transactions_bancaires").select("*").order("date_operation", { ascending: false }),
+    // Fetch ALL transactions (bypass 1000-row default limit) by paginating
+    const fetchAllTxs = async (): Promise<Transaction[]> => {
+      const all: Transaction[] = [];
+      let from = 0;
+      const PAGE = 1000;
+      while (true) {
+        const { data, error } = await supabase
+          .from("transactions_bancaires")
+          .select("*")
+          .order("date_operation", { ascending: false })
+          .range(from, from + PAGE - 1);
+        if (error || !data || data.length === 0) break;
+        all.push(...(data as Transaction[]));
+        if (data.length < PAGE) break;
+        from += PAGE;
+      }
+      return all;
+    };
+
+    const [txs, { data: just }, { data: apprenantsData }, { data: saData }] = await Promise.all([
+      fetchAllTxs(),
       supabase.from("justificatifs").select("id, nom_fichier, url, montant_ttc, date_operation, categorie, fournisseur, statut"),
       supabase.from("apprenants").select("id, nom, prenom, date_debut_formation, date_fin_formation"),
       supabase.from("session_apprenants").select("apprenant_id, date_debut, date_fin, sessions(date_debut, date_fin)"),
     ]);
-    if (txs) setTransactions(txs as Transaction[]);
+    if (txs) setTransactions(txs);
     if (just) setJustificatifs(just as Justificatif[]);
     
     // Build apprenants with session dates
