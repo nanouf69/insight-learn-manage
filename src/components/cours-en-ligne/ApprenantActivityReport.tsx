@@ -571,13 +571,14 @@ export default function ApprenantActivityReport({ onBack }: Props) {
                     <TableHead>Heure fin</TableHead>
                     <TableHead>Durée</TableHead>
                     <TableHead>Module consulté</TableHead>
+                    <TableHead>Cours / Parties</TableHead>
                     <TableHead>Exercices effectués</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {connexions.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                         Aucune connexion enregistrée
                       </TableCell>
                     </TableRow>
@@ -588,6 +589,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
                     const mins = getSessionMinutes(c);
                     const h = Math.floor(mins / 60);
                     const m = mins % 60;
+                    const coursNames = getCoursDuringConnexion(c);
                     const exCount = getExercicesDuringConnexion(c);
                     return (
                       <TableRow key={c.id}>
@@ -601,6 +603,17 @@ export default function ApprenantActivityReport({ onBack }: Props) {
                         </TableCell>
                         <TableCell className="font-medium">{h}h{m.toString().padStart(2, "0")}</TableCell>
                         <TableCell className="text-muted-foreground">{c.current_module || "—"}</TableCell>
+                        <TableCell>
+                          {coursNames.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {coursNames.map((name, i) => (
+                                <Badge key={i} variant="secondary" className="text-xs">{name}</Badge>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
                         <TableCell>
                           {exCount > 0 ? (
                             <Badge variant="outline" className="text-xs">{exCount} exercice(s)</Badge>
