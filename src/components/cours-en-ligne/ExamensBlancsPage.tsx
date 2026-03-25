@@ -2513,6 +2513,14 @@ function EcranResultats({
         );
       })()}
 
+      {revisionDejaFaite && (
+        <div className="w-full text-center py-3 px-4 rounded-lg bg-green-50 border border-green-200">
+          <p className="text-sm font-semibold text-green-700 flex items-center justify-center gap-2">
+            <CheckCircle2 className="w-4 h-4" />
+            Questions fausses déjà effectuées ✅
+          </p>
+        </div>
+      )}
 
 
 
