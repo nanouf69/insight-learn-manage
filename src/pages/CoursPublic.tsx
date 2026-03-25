@@ -781,6 +781,15 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           .select("quiz_id")
           .eq("apprenant_id", apprenant.id!)
           .eq("quiz_type", "examen_blanc"),
+        // Primary: use apprenant_module_activites (works even without active connexion)
+        supabase
+          .from("apprenant_module_activites" as any)
+          .select("module_nom")
+          .eq("apprenant_id", apprenant.id!)
+          .eq("action_type", "open_module")
+          .order("occurred_at", { ascending: false })
+          .limit(1),
+        // Fallback: use apprenant_connexions.current_module
         supabase
           .from("apprenant_connexions" as any)
           .select("current_module")
