@@ -1088,16 +1088,6 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return acc;
   }, {});
 
-  const moduleProgressById = modules.reduce<Record<number, { isDone: boolean; hasProgress: boolean }>>((acc, module) => {
-    const rows = completionsByModuleId[module.id] || [];
-    // A module is only "done" when it's in completedModuleIds (truly 100% complete)
-    // This applies to ALL modules: parent modules with children AND simple modules
-    acc[module.id] = {
-      isDone: completedModuleIds.has(module.id),
-      hasProgress: rows.some(hasModuleCompletionProgress),
-    };
-    return acc;
-  }, {});
 
   const moduleRealizedPointsById = modules.reduce<Record<number, string[]>>((acc, module) => {
     const rows = completionsByModuleId[module.id] || [];
@@ -1166,6 +1156,34 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       const completed = examIds.filter(id => examBlancCompletedIds.has(id)).length;
       acc[module.id] = { completed, total: examIds.length };
     }
+    return acc;
+  }, {});
+
+  // A module is truly "done" only if ALL its quizzes/exams are completed
+  const moduleProgressById = modules.reduce<Record<number, { isDone: boolean; hasProgress: boolean }>>((acc, module) => {
+    const rows = completionsByModuleId[module.id] || [];
+    let isDone = completedModuleIds.has(module.id);
+
+    // If module has quiz stats, require ALL quizzes completed
+    const quizStats = moduleQuizStatsById[module.id];
+    if (isDone && quizStats && quizStats.totalQuizzes > 0) {
+      if (quizStats.completedQuizzes < quizStats.totalQuizzes) {
+        isDone = false;
+      }
+    }
+
+    // If module has exam blanc stats, require ALL exams completed
+    const examStats = examBlancStatsById[module.id];
+    if (isDone && examStats && examStats.total > 0) {
+      if (examStats.completed < examStats.total) {
+        isDone = false;
+      }
+    }
+
+    acc[module.id] = {
+      isDone,
+      hasProgress: rows.some(hasModuleCompletionProgress),
+    };
     return acc;
   }, {});
 
