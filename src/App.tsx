@@ -18,6 +18,7 @@ import ResetPassword from "./pages/ResetPassword";
 import PreInformationPublic from "./pages/PreInformationPublic";
 import AuthCallback from "./pages/AuthCallback";
 import RevolutTransactions from "./pages/RevolutTransactions";
+import RevolutConnect from "./pages/RevolutConnect";
 
 // Onboarding pages
 import OnboardingWelcome from "./pages/onboarding/OnboardingWelcome";
