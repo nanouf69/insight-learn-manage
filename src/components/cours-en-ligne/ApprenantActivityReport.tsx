@@ -269,6 +269,19 @@ export default function ApprenantActivityReport({ onBack }: Props) {
     return exerciceId;
   };
 
+  // Shorten matiere_nom: "A - Transport Public..." → "A - T3P"
+  const shortenMatiere = (m: string): string => {
+    const map: Record<string, string> = {
+      "A": "T3P", "B": "Gestion", "C": "Sécurité routière",
+      "D": "Français", "E": "Anglais",
+      "F(V)": "Dév. commercial VTC", "F(T)": "Réglem. TAXI",
+      "G(V)": "Réglem. VTC", "G(T)": "Ville TAXI",
+    };
+    const match = m.match(/^([A-G](?:\([VT]\))?)\s*-/);
+    if (match) return `${match[1]} - ${map[match[1]] || m.split(" - ").slice(1).join(" - ").substring(0, 30)}`;
+    return m.length > 40 ? m.substring(0, 40) + "…" : m;
+  };
+
   // Get exercise/quiz titles completed during a connexion time window
   const getExerciceNamesDuringConnexion = (connexion: Connexion) => {
     const start = parseISO(connexion.started_at);
@@ -278,13 +291,6 @@ export default function ApprenantActivityReport({ onBack }: Props) {
       const t = parseISO(e.updated_at);
       return t >= start && t <= end;
     }).forEach(e => titles.push(resolveExerciceTitle(e.exercice_id)));
-    quizResults.filter(q => {
-      const t = parseISO(q.completed_at);
-      return t >= start && t <= end;
-    }).forEach(q => {
-      const label = q.matiere_nom ? `${q.quiz_titre} — ${q.matiere_nom}` : q.quiz_titre;
-      titles.push(label);
-    });
     return titles;
   };
 
@@ -293,12 +299,12 @@ export default function ApprenantActivityReport({ onBack }: Props) {
     const start = parseISO(connexion.started_at);
     const end = getCappedSessionEnd(connexion);
     const titles: string[] = [];
-    // Use module activites to show which courses were opened
-    activites.filter(a => {
-      const t = parseISO(a.occurred_at);
+    quizResults.filter(q => {
+      const t = parseISO(q.completed_at);
       return t >= start && t <= end;
-    }).forEach(a => {
-      if (!titles.includes(a.module_nom)) titles.push(a.module_nom);
+    }).forEach(q => {
+      const matiere = q.matiere_nom ? ` — ${shortenMatiere(q.matiere_nom)}` : "";
+      titles.push(`${q.quiz_titre}${matiere}`);
     });
     return titles;
   };
