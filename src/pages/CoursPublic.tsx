@@ -53,6 +53,7 @@ const FORMATION_ALIASES: Record<string, FormationId> = {
   "passerelle-vtc-elearning": "vtc-pour-taxi",
   "vtc-s": "vtc-cours-du-soir",
   "vtc-cours-du-soir": "vtc-cours-du-soir",
+  "continue-vtc": "continue-vtc",
 };
 
 const normalizeFormationKey = (value: string | null | undefined): string =>
