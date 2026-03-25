@@ -2724,7 +2724,7 @@ export default function ExamensBlancsPage({
         return;
       }
       setPhase("edition");
-    }} onViewResults={handleViewResults} defaultBilanId={bilanPrefiltre} apprenantType={apprenantType} examensData={liveExamens} apprenantId={apprenantId} isAdmin={isAdmin} />;
+    }} onViewResults={handleViewResults} defaultBilanId={bilanPrefiltre} apprenantType={apprenantType} examensData={liveExamens} apprenantId={apprenantId} isAdmin={isAdmin} refreshKey={selectionRefreshKey} />;
   }
 
   if (phase === "intro" && examenChoisi) {
