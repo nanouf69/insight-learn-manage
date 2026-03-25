@@ -23,7 +23,7 @@ export interface ModuleInfo {
 
 const VTC_FORMATIONS: FormationId[] = ["vtc", "vtc-pour-taxi", "vtc-elearning", "vtc-cours-du-soir"];
 const TAXI_FORMATIONS: FormationId[] = ["taxi", "taxi-pour-vtc", "taxi-elearning", "taxi-pour-vtc-elearning"];
-const ALL_FORMATIONS: FormationId[] = ["vtc", "taxi", "taxi-pour-vtc", "vtc-pour-taxi", "vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning", "vtc-cours-du-soir"];
+const ALL_FORMATIONS: FormationId[] = ["vtc", "taxi", "taxi-pour-vtc", "vtc-pour-taxi", "vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning", "vtc-cours-du-soir", "continue-vtc"];
 const PRESENTIEL_FORMATIONS: FormationId[] = ["vtc", "taxi", "taxi-pour-vtc", "vtc-pour-taxi", "vtc-cours-du-soir"];
 const ELEARNING_FORMATIONS: FormationId[] = ["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"];
 
