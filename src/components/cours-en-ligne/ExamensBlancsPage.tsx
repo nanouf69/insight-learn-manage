@@ -2298,6 +2298,7 @@ export default function ExamensBlancsPage({
   const [isViewingSavedResults, setIsViewingSavedResults] = useState(false);
   const [bilanPrefiltre, setBilanPrefiltre] = useState<string | null>(null);
   const [liveExamens, setLiveExamens] = useState<ExamenBlanc[]>(tousLesExamens);
+  const [selectionRefreshKey, setSelectionRefreshKey] = useState(0);
   const examStartTimeRef = useRef<number>(savedSession?.examStartTime || Date.now());
   const reloadInFlightRef = useRef<Promise<ExamenBlanc[]> | null>(null);
 
