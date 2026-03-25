@@ -43,7 +43,7 @@ const registerModuleExercises = (moduleId: number, exercices: { id: number; titr
 
 // Bilan modules (exercises reused with different module IDs)
 registerModuleExercises(4, BILAN_EXERCICES_VTC);   // 4.BILAN EXERCICES VTC
-registerModuleExercices(9, BILAN_EXERCICES_TAXI);   // 4.BILAN EXERCICES TAXI
+registerModuleExercises(9, BILAN_EXERCICES_TAXI);   // 4.BILAN EXERCICES TAXI
 registerModuleExercises(27, BILAN_EXERCICES_TA);    // 4.BILAN EXERCICES TA
 registerModuleExercises(29, BILAN_EXERCICES_VA);    // 4.BILAN EXERCICES VA
 
