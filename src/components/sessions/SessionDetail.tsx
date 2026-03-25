@@ -482,31 +482,83 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     enabled: open,
   });
 
-  // Charger les convocations envoyées pour les apprenants de cette session
-   const { data: convocationsSent = [] } = useQuery({
-     queryKey: ['convocations-sent', session?.id, apprenantsInSession.map((sa: any) => sa.apprenant?.id).join(',')],
-     queryFn: async () => {
-       const apprenantIds = apprenantsInSession
-         .map((sa: any) => sa.apprenant?.id)
-         .filter(Boolean);
-       if (apprenantIds.length === 0) return [];
-       
-       const { data, error } = await supabase
-         .from('emails')
-         .select('apprenant_id, subject, sent_at')
-          .in('apprenant_id', apprenantIds)
-          .ilike('subject', '%convocation%')
-          .eq('type', 'sent');
-       
-       if (error) throw error;
-       return data || [];
-     },
-     enabled: !!session?.id && open && apprenantsInSession.length > 0,
-   });
+  const normalizeEmailSubject = (value: string) =>
+    value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
 
-    const hasConvocation = (apprenantId: string) => {
-      return convocationsSent.some((c: any) => c.apprenant_id === apprenantId);
-    };
+  const convocationSubjectHints = useMemo(() => {
+    const hintsFromTemplates = (emailTemplates || [])
+      .filter((template: any) => {
+        const id = normalizeEmailSubject(template?.id || '');
+        const label = normalizeEmailSubject(template?.label || '');
+        const subjectTemplate = normalizeEmailSubject(template?.subject_template || '');
+
+        return (
+          id.includes('convocation') ||
+          label.includes('convocation') ||
+          subjectTemplate.includes('convocation') ||
+          id.includes('formation-continue')
+        );
+      })
+      .flatMap((template: any) =>
+        String(template?.subject_template || '')
+          .split(/\{\{\s*[\w.]+\s*\}\}/g)
+          .map((fragment) => normalizeEmailSubject(fragment))
+          .filter((fragment) => fragment.length >= 8)
+      );
+
+    return Array.from(
+      new Set([
+        ...hintsFromTemplates,
+        "confirmation d'inscription formation continue",
+      ])
+    );
+  }, [emailTemplates]);
+
+  const isConvocationSubject = (subject?: string | null) => {
+    const normalizedSubject = normalizeEmailSubject(subject || '');
+    if (!normalizedSubject) return false;
+    if (normalizedSubject.includes('convocation')) return true;
+
+    return convocationSubjectHints.some((hint) => normalizedSubject.includes(hint));
+  };
+
+  // Charger les emails envoyés pour les apprenants de cette session puis détecter les convocations
+  const { data: sentSessionEmails = [] } = useQuery({
+    queryKey: ['convocations-sent', session?.id, apprenantsInSession.map((sa: any) => sa.apprenant?.id).join(',')],
+    queryFn: async () => {
+      const apprenantIds = apprenantsInSession
+        .map((sa: any) => sa.apprenant?.id)
+        .filter(Boolean);
+      if (apprenantIds.length === 0) return [];
+
+      const { data, error } = await supabase
+        .from('emails')
+        .select('apprenant_id, subject, sent_at')
+        .in('apprenant_id', apprenantIds)
+        .eq('type', 'sent');
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!session?.id && open && apprenantsInSession.length > 0,
+  });
+
+  const convocationApprenantIds = useMemo(() => {
+    return new Set(
+      sentSessionEmails
+        .filter((email: any) => isConvocationSubject(email.subject))
+        .map((email: any) => email.apprenant_id)
+        .filter(Boolean)
+    );
+  }, [sentSessionEmails, convocationSubjectHints]);
+
+  const hasConvocation = (apprenantId: string) => {
+    return convocationApprenantIds.has(apprenantId);
+  };
 
    // Charger les identifiants envoyés pour les apprenants de cette session
     const { data: identifiantsSent = [] } = useQuery({
