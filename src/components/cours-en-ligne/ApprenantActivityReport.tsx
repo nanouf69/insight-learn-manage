@@ -161,7 +161,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
       setLoading(true);
       const since = period === "all" ? "2000-01-01" : format(subDays(new Date(), parseInt(period)), "yyyy-MM-dd");
 
-      const [connRes, actRes, complRes] = await Promise.all([
+      const [connRes, actRes, complRes, exRes, qrRes] = await Promise.all([
         supabase
           .from("apprenant_connexions" as any)
           .select("id, started_at, ended_at, last_seen_at, current_module")
@@ -178,11 +178,26 @@ export default function ApprenantActivityReport({ onBack }: Props) {
           .from("apprenant_module_completion")
           .select("module_id")
           .eq("apprenant_id", selectedId),
+        supabase
+          .from("reponses_apprenants")
+          .select("id, exercice_id, completed, updated_at")
+          .eq("apprenant_id", selectedId)
+          .eq("completed", true)
+          .gte("updated_at", since)
+          .order("updated_at", { ascending: false }),
+        supabase
+          .from("apprenant_quiz_results")
+          .select("id, quiz_titre, completed_at")
+          .eq("apprenant_id", selectedId)
+          .gte("completed_at", since)
+          .order("completed_at", { ascending: false }),
       ]);
 
       setConnexions(((connRes.data as any[]) || []) as Connexion[]);
       setActivites(((actRes.data as any[]) || []) as ModuleActivite[]);
       setCompletedModuleIds(new Set(((complRes.data as any[]) || []).map((r: any) => r.module_id as number)));
+      setExercicesCompletes(((exRes.data as any[]) || []) as ExerciceComplete[]);
+      setQuizResults(((qrRes.data as any[]) || []) as QuizResult[]);
       setLoading(false);
     };
     load();
