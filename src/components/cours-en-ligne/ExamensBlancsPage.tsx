@@ -56,6 +56,93 @@ function normalizeNoteSur20(scoreObtenu: unknown, scoreMax: unknown, fallback?: 
   return Number(((safeScore / safeMax) * 20).toFixed(1));
 }
 
+function normalizeMatiereLookupValue(value: unknown): string {
+  return safeStr(value)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function extractMatiereLetter(value: unknown): string | null {
+  const raw = safeStr(value);
+  const match = raw.match(/^\s*([a-g])\s*(?:[-(]|$)/i);
+  return match?.[1]?.toUpperCase() ?? null;
+}
+
+function buildMatiereLookupKeys(matiereId: unknown, matiereNom: unknown): string[] {
+  const keys = new Set<string>();
+  const normalizedId = normalizeMatiereLookupValue(matiereId);
+  const normalizedNom = normalizeMatiereLookupValue(matiereNom);
+  const letter = extractMatiereLetter(matiereNom) ?? extractMatiereLetter(matiereId);
+
+  if (normalizedId) keys.add(`id:${normalizedId}`);
+  if (normalizedNom) keys.add(`nom:${normalizedNom}`);
+  if (letter) keys.add(`letter:${letter}`);
+
+  // Alias historique observé entre anciennes et nouvelles nomenclatures VTC.
+  if (normalizedId === "dev commercial" || normalizedId === "developpement commercial") {
+    keys.add("id:reglementation vtc");
+  }
+  if (normalizedId === "reglementation vtc") {
+    keys.add("id:dev commercial");
+    keys.add("id:developpement commercial");
+  }
+
+  return Array.from(keys);
+}
+
+function getMatiereCanonicalKey(matiereId: unknown, matiereNom: unknown): string {
+  const letter = extractMatiereLetter(matiereNom) ?? extractMatiereLetter(matiereId);
+  if (letter) return `letter:${letter}`;
+  const normalizedId = normalizeMatiereLookupValue(matiereId);
+  if (normalizedId) return `id:${normalizedId}`;
+  const normalizedNom = normalizeMatiereLookupValue(matiereNom);
+  if (normalizedNom) return `nom:${normalizedNom}`;
+  return "unknown";
+}
+
+function shareLookupKey(a: string[], b: string[]): boolean {
+  if (a.length === 0 || b.length === 0) return false;
+  const setB = new Set(b);
+  return a.some((k) => setB.has(k));
+}
+
+interface ExamScoreItem {
+  matiere_id: string;
+  matiere_nom: string;
+  note_sur_20: number;
+  score_obtenu: number;
+  score_max: number;
+  created_at?: string;
+  completed_at?: string;
+  lookupKeys: string[];
+}
+
+function pickBestScoreRow(prev: any, current: any) {
+  if (!prev) return current;
+
+  const prevTs = Math.max(toTimestamp(prev.completed_at), toTimestamp(prev.created_at));
+  const currTs = Math.max(toTimestamp(current.completed_at), toTimestamp(current.created_at));
+
+  if (currTs > prevTs) return current;
+  if (currTs < prevTs) return prev;
+
+  const prevNote = normalizeNoteSur20(prev.score_obtenu, prev.score_max, prev.note_sur_20);
+  const currNote = normalizeNoteSur20(current.score_obtenu, current.score_max, current.note_sur_20);
+  if (currNote > prevNote) return current;
+  if (currNote < prevNote) return prev;
+
+  if (!prev.matiere_id && current.matiere_id) return current;
+  return prev;
+}
+
+function findScoreForMatiere(scores: ExamScoreItem[], matiere: Pick<Matiere, "id" | "nom">): ExamScoreItem | undefined {
+  const expectedKeys = buildMatiereLookupKeys(matiere.id, matiere.nom);
+  return scores.find((score) => shareLookupKey(score.lookupKeys, expectedKeys));
+}
+
 function clampToQuestionMax(pointsObtenus: unknown, questionMax: number): number {
   const safeMax = Math.max(questionMax, 0);
   const safePoints = clamp(toFiniteNumber(pointsObtenus, 0), 0, safeMax);
@@ -384,7 +471,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
   const [typeFiltre, setTypeFiltre] = useState<"tous" | "TAXI" | "VTC" | "TA" | "VA">(forcedType || "tous");
   const [completedExamIds, setCompletedExamIds] = useState<Set<string>>(new Set());
   const [startedNotFinishedIds, setStartedNotFinishedIds] = useState<Set<string>>(new Set());
-  const [examScores, setExamScores] = useState<Record<string, { matiere_id: string; matiere_nom: string; note_sur_20: number }[]>>({});
+  const [examScores, setExamScores] = useState<Record<string, ExamScoreItem[]>>({});
 
   // Fetch completed exams with scores from DB + started-but-not-finished
   useEffect(() => {
@@ -396,15 +483,16 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
       .select("quiz_id, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, completed_at, created_at")
       .eq("apprenant_id", apprenantId)
       .eq("quiz_type", "examen_blanc")
+      .order("completed_at", { ascending: false })
+      .order("created_at", { ascending: false })
       .then(({ data }) => {
         if (data) {
           const latestByQuizMatiere = new Map<string, any>();
           (data as any[]).forEach((r: any) => {
-            const key = `${r.quiz_id}::${r.matiere_id || r.matiere_nom || "unknown"}`;
+            const canonicalMatiereKey = getMatiereCanonicalKey(r.matiere_id, r.matiere_nom);
+            const key = `${r.quiz_id}::${canonicalMatiereKey}`;
             const prev = latestByQuizMatiere.get(key);
-            const prevTs = prev ? Math.max(toTimestamp(prev.completed_at), toTimestamp(prev.created_at)) : 0;
-            const currTs = Math.max(toTimestamp(r.completed_at), toTimestamp(r.created_at));
-            if (!prev || currTs >= prevTs) latestByQuizMatiere.set(key, r);
+            latestByQuizMatiere.set(key, pickBestScoreRow(prev, r));
           });
 
           const latestRows = Array.from(latestByQuizMatiere.values());
@@ -431,15 +519,59 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
 
           setCompletedExamIds(completedIds);
 
-          const scores: Record<string, { matiere_id: string; matiere_nom: string; note_sur_20: number }[]> = {};
+          const scores: Record<string, ExamScoreItem[]> = {};
           latestRows.forEach((r: any) => {
             if (!scores[r.quiz_id]) scores[r.quiz_id] = [];
             scores[r.quiz_id].push({
               matiere_id: r.matiere_id,
               matiere_nom: r.matiere_nom,
               note_sur_20: normalizeNoteSur20(r.score_obtenu, r.score_max, r.note_sur_20),
+              score_obtenu: toFiniteNumber(r.score_obtenu, 0),
+              score_max: toFiniteNumber(r.score_max, 0),
+              completed_at: r.completed_at,
+              created_at: r.created_at,
+              lookupKeys: buildMatiereLookupKeys(r.matiere_id, r.matiere_nom),
             });
           });
+
+          if (import.meta.env.DEV) {
+            console.groupCollapsed(`[ExamensBlancs][Debug mapping] apprenant=${apprenantId}`);
+            console.table(
+              (data as any[]).map((row) => ({
+                quiz_id: row.quiz_id,
+                matiere_id: row.matiere_id,
+                matiere_nom: row.matiere_nom,
+                score_obtenu: row.score_obtenu,
+                score_max: row.score_max,
+                note_sur_20: row.note_sur_20,
+                canonical_key: getMatiereCanonicalKey(row.matiere_id, row.matiere_nom),
+                completed_at: row.completed_at,
+                created_at: row.created_at,
+              }))
+            );
+
+            Object.entries(scores).forEach(([quizId, quizScores]) => {
+              const examDef = examensData.find((exam) => exam.id === quizId);
+              if (!examDef) return;
+              console.groupCollapsed(`[ExamensBlancs][${quizId}] mapping par matière`);
+              console.table(
+                examDef.matieres.map((matiere) => {
+                  const matched = findScoreForMatiere(quizScores, matiere);
+                  return {
+                    matiere_attendue_id: matiere.id,
+                    matiere_attendue_nom: matiere.nom,
+                    lookup_attendu: buildMatiereLookupKeys(matiere.id, matiere.nom).join(" | "),
+                    matched_matiere_id: matched?.matiere_id ?? null,
+                    matched_matiere_nom: matched?.matiere_nom ?? null,
+                    matched_note_sur_20: matched ? matched.note_sur_20.toFixed(1) : null,
+                  };
+                })
+              );
+              console.groupEnd();
+            });
+            console.groupEnd();
+          }
+
           setExamScores(scores);
 
           // 2) Fetch started-but-not-finished exams from reponses_apprenants
@@ -571,7 +703,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                     </div>
                     <div className="space-y-1">
                       {examen.matieres.map(m => {
-                        const scoreData = scores.find(s => s.matiere_id === m.id);
+                        const scoreData = findScoreForMatiere(scores, m);
                         return (
                           <div key={m.id} className="flex justify-between text-xs text-muted-foreground">
                             <span className="truncate pr-2">{m.nom.split(" - ")[0]}</span>
