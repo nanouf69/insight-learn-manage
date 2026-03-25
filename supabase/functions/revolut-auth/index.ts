@@ -103,10 +103,11 @@ Deno.serve(async (req) => {
       throw new Error("REVOLUT_CLIENT_ID is not configured");
     }
 
-    const privateKey = Deno.env.get("REVOLUT_PRIVATE_KEY");
-    if (!privateKey) {
+    const rawPrivateKey = Deno.env.get("REVOLUT_PRIVATE_KEY");
+    if (!rawPrivateKey) {
       throw new Error("REVOLUT_PRIVATE_KEY is not configured");
     }
+    const privateKey = rawPrivateKey.replace(/\\n/g, "\n");
 
     const clientAssertion = await createRevolutJwt(clientId, privateKey);
 
