@@ -3542,6 +3542,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           return (
                             <div key={i} className="space-y-3">
                               {!secureMode && !isDocx && (
+                              {!secureMode && !isDocx && !isPdf && (
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <a
                                     href={f.url}
