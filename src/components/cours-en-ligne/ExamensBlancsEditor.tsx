@@ -669,22 +669,22 @@ function MatiereEditor({
                   </div>
                   {/* Réponses affichées sous la question */}
                   {q?.type === "QCM" && q.choix && (
-                    <div className="ml-10 space-y-1.5">
+                    <div className="ml-10 space-y-1.5 mt-1">
                       {q.choix.map((c, ci) => (
                         <div
                           key={ci}
-                          className={`flex items-start gap-2 text-base px-3 py-1.5 rounded ${c.correct ? "bg-green-100 text-green-800 font-semibold border border-green-300" : "text-muted-foreground"}`}
+                          className={`flex items-start gap-2 text-sm px-3 py-2 rounded-lg transition-colors ${c.correct ? "bg-primary/10 text-primary font-semibold border border-primary/30" : "text-muted-foreground bg-muted/20"}`}
                         >
                           <span className="font-bold shrink-0">{c.lettre}.</span>
-                          <span>{c.texte}</span>
-                          {c.correct && <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />}
+                          <span className="flex-1">{c.texte}</span>
+                          {c.correct && <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />}
                         </div>
                       ))}
                     </div>
                   )}
                   {q?.type === "QRC" && q.reponseQRC && (
-                    <div className="ml-10 px-3 py-2 rounded bg-blue-50 border border-blue-200 text-base text-blue-800">
-                      <span className="font-semibold">Réponse : </span>{q.reponseQRC}
+                    <div className="ml-10 px-4 py-2.5 rounded-lg bg-accent/50 border border-accent text-sm text-accent-foreground">
+                      <span className="font-semibold text-primary">Réponse : </span>{q.reponseQRC}
                     </div>
                   )}
                 </div>
