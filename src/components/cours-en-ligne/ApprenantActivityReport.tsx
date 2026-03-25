@@ -422,7 +422,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
               <th>Durée</th>
               <th>Module consulté</th>
               <th>Quiz / Examens réalisés</th>
-              <th>Exercices effectués</th>
+              <th>Cours & Exercices effectués</th>
             </tr>
           </thead>
           <tbody>
