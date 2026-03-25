@@ -978,6 +978,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
           apprenantType={apprenant?.type_apprenant || null}
           isPresentiel={!["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"].includes(selectedFormation)}
           hideFormulaires={apprenant?.email === "demo-vtc@ftransport.fr"}
+          onTrackCours={(moduleId, coursTitle) => {
+            trackModuleActivity(moduleId, coursTitle, "open_cours");
+          }}
           apprenantInfo={apprenant ? {
             nom: apprenant.nom,
             prenom: apprenant.prenom,
