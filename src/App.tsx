@@ -80,11 +80,7 @@ function App() {
                 <Route path="/cours-public" element={<ErrorBoundary><CoursPublic /></ErrorBoundary>} />
                 <Route path="/reset-password" element={<ErrorBoundary><ResetPassword /></ErrorBoundary>} />
                 <Route path="/auth/callback" element={<ErrorBoundary><AuthCallback /></ErrorBoundary>} />
-                <Route path="/revolut-connect" element={
-                  <ProtectedRoute>
-                    <ErrorBoundary><RevolutConnect /></ErrorBoundary>
-                  </ProtectedRoute>
-                } />
+                <Route path="/revolut-connect" element={<ErrorBoundary><RevolutConnect /></ErrorBoundary>} />
                 <Route path="/revolut/transactions" element={
                   <ProtectedRoute>
                     <ErrorBoundary><RevolutTransactions /></ErrorBoundary>
