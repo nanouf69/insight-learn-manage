@@ -534,43 +534,89 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
             });
           });
 
-          if (import.meta.env.DEV) {
-            console.groupCollapsed(`[ExamensBlancs][Debug mapping] apprenant=${apprenantId}`);
-            console.table(
-              (data as any[]).map((row) => ({
-                quiz_id: row.quiz_id,
-                matiere_id: row.matiere_id,
-                matiere_nom: row.matiere_nom,
-                score_obtenu: row.score_obtenu,
-                score_max: row.score_max,
-                note_sur_20: row.note_sur_20,
-                canonical_key: getMatiereCanonicalKey(row.matiere_id, row.matiere_nom),
-                completed_at: row.completed_at,
-                created_at: row.created_at,
-              }))
-            );
+          const allRows = data as any[];
+          const debugRowsEb1 = allRows.filter((row) => row?.quiz_id === "EB1");
 
-            Object.entries(scores).forEach(([quizId, quizScores]) => {
-              const examDef = examensData.find((exam) => exam.id === quizId);
-              if (!examDef) return;
-              console.groupCollapsed(`[ExamensBlancs][${quizId}] mapping par matière`);
-              console.table(
-                examDef.matieres.map((matiere) => {
-                  const matched = findScoreForMatiere(quizScores, matiere);
-                  return {
-                    matiere_attendue_id: matiere.id,
-                    matiere_attendue_nom: matiere.nom,
-                    lookup_attendu: buildMatiereLookupKeys(matiere.id, matiere.nom).join(" | "),
-                    matched_matiere_id: matched?.matiere_id ?? null,
-                    matched_matiere_nom: matched?.matiere_nom ?? null,
-                    matched_note_sur_20: matched ? matched.note_sur_20.toFixed(1) : null,
-                  };
-                })
-              );
-              console.groupEnd();
-            });
+          console.groupCollapsed(`[ExamensBlancs][RAW Supabase] apprenant=${apprenantId} quiz=EB1 lignes=${debugRowsEb1.length}`);
+          console.table(
+            debugRowsEb1.map((row, index) => ({
+              idx: index + 1,
+              quiz_id: row.quiz_id,
+              matiere_id_exact: JSON.stringify(row.matiere_id),
+              matiere_nom_exact: JSON.stringify(row.matiere_nom),
+              score_obtenu: row.score_obtenu,
+              score_max: row.score_max,
+              note_sur_20: row.note_sur_20,
+              canonical_key: getMatiereCanonicalKey(row.matiere_id, row.matiere_nom),
+              completed_at: row.completed_at,
+              created_at: row.created_at,
+            }))
+          );
+
+          const sampleC = debugRowsEb1.find((row) => {
+            const id = normalizeMatiereLookupValue(row?.matiere_id);
+            const nom = safeStr(row?.matiere_nom);
+            return id === "securite" || /^\s*c\s*-/i.test(nom);
+          });
+
+          const sampleE = debugRowsEb1.find((row) => {
+            const id = normalizeMatiereLookupValue(row?.matiere_id);
+            const nom = safeStr(row?.matiere_nom);
+            return id === "anglais" || /^\s*e\s*-/i.test(nom);
+          });
+
+          const sampleAorFvZero = debugRowsEb1.find((row) => {
+            const id = normalizeMatiereLookupValue(row?.matiere_id);
+            const nom = safeStr(row?.matiere_nom);
+            const normalizedNote = normalizeNoteSur20(row?.score_obtenu, row?.score_max, row?.note_sur_20);
+            const isAorFv = id === "t3p" || id === "reglementation vtc" || /^\s*a\s*-/i.test(nom) || /^\s*f\(v\)/i.test(nom);
+            return isAorFv && normalizedNote === 0;
+          });
+
+          console.log("[ExamensBlancs][RAW sample C]", sampleC ? {
+            matiere_id_exact: JSON.stringify(sampleC.matiere_id),
+            matiere_nom_exact: JSON.stringify(sampleC.matiere_nom),
+            note_sur_20: sampleC.note_sur_20,
+            score_obtenu: sampleC.score_obtenu,
+            score_max: sampleC.score_max,
+          } : "Introuvable");
+
+          console.log("[ExamensBlancs][RAW sample E]", sampleE ? {
+            matiere_id_exact: JSON.stringify(sampleE.matiere_id),
+            matiere_nom_exact: JSON.stringify(sampleE.matiere_nom),
+            note_sur_20: sampleE.note_sur_20,
+            score_obtenu: sampleE.score_obtenu,
+            score_max: sampleE.score_max,
+          } : "Introuvable");
+
+          console.log("[ExamensBlancs][RAW sample A/F(V) note=0]", sampleAorFvZero ? {
+            matiere_id_exact: JSON.stringify(sampleAorFvZero.matiere_id),
+            matiere_nom_exact: JSON.stringify(sampleAorFvZero.matiere_nom),
+            note_sur_20: sampleAorFvZero.note_sur_20,
+            score_obtenu: sampleAorFvZero.score_obtenu,
+            score_max: sampleAorFvZero.score_max,
+          } : "Introuvable");
+
+          Object.entries(scores).forEach(([quizId, quizScores]) => {
+            const examDef = examensData.find((exam) => exam.id === quizId);
+            if (!examDef) return;
+            console.groupCollapsed(`[ExamensBlancs][${quizId}] mapping par matière`);
+            console.table(
+              examDef.matieres.map((matiere) => {
+                const matched = findScoreForMatiere(quizScores, matiere);
+                return {
+                  matiere_attendue_id: matiere.id,
+                  matiere_attendue_nom: matiere.nom,
+                  lookup_attendu: buildMatiereLookupKeys(matiere.id, matiere.nom).join(" | "),
+                  matched_matiere_id: matched?.matiere_id ?? null,
+                  matched_matiere_nom: matched?.matiere_nom ?? null,
+                  matched_note_sur_20: matched ? matched.note_sur_20.toFixed(1) : null,
+                };
+              })
+            );
             console.groupEnd();
-          }
+          });
+          console.groupEnd();
 
           setExamScores(scores);
 
