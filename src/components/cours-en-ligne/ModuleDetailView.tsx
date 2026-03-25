@@ -154,6 +154,7 @@ interface ModuleDetailViewProps {
   apprenantType?: string | null;
   isPresentiel?: boolean;
   hideFormulaires?: boolean;
+  onTrackCours?: (moduleId: number, coursTitle: string) => void;
   apprenantInfo?: {
     nom?: string;
     prenom?: string;
@@ -1952,7 +1953,7 @@ const ContentCard = ({
   );
 };
 
-const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, onModuleCompleted, apprenantType, apprenantInfo, isPresentiel = false, hideFormulaires = false }: ModuleDetailViewProps) => {
+const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, onModuleCompleted, apprenantType, apprenantInfo, isPresentiel = false, hideFormulaires = false, onTrackCours }: ModuleDetailViewProps) => {
   console.log("[ModuleDetailView] Rendering module:", module.id, module.nom, "studentOnly:", studentOnly, "apprenantType:", apprenantType, "isPresentiel:", isPresentiel);
 
   const createInitialSlidesByKey = (): Record<string, Slide[]> => ({
@@ -3355,6 +3356,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     const goToPage = (page: number) => {
       if (page >= 0 && page < totalPages && isPageUnlocked(page)) {
         setCurrentPage(page);
+        // Track individual cours view
+        const targetPage = pages[page];
+        if (targetPage?.type === "cours" && onTrackCours) {
+          onTrackCours(module.id, targetPage.cours.titre);
+        }
         if (pendingResultRestore && page !== pendingResultRestore.page) {
           setPendingResultRestore(null);
         }
