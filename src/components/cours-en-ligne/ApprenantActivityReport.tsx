@@ -555,12 +555,13 @@ export default function ApprenantActivityReport({ onBack }: Props) {
                     <TableHead>Heure fin</TableHead>
                     <TableHead>Durée</TableHead>
                     <TableHead>Module consulté</TableHead>
+                    <TableHead>Exercices effectués</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {connexions.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                         Aucune connexion enregistrée
                       </TableCell>
                     </TableRow>
@@ -571,6 +572,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
                     const mins = getSessionMinutes(c);
                     const h = Math.floor(mins / 60);
                     const m = mins % 60;
+                    const exCount = getExercicesDuringConnexion(c);
                     return (
                       <TableRow key={c.id}>
                         <TableCell>{format(start, "dd/MM/yyyy", { locale: fr })}</TableCell>
@@ -583,6 +585,13 @@ export default function ApprenantActivityReport({ onBack }: Props) {
                         </TableCell>
                         <TableCell className="font-medium">{h}h{m.toString().padStart(2, "0")}</TableCell>
                         <TableCell className="text-muted-foreground">{c.current_module || "—"}</TableCell>
+                        <TableCell>
+                          {exCount > 0 ? (
+                            <Badge variant="outline" className="text-xs">{exCount} exercice(s)</Badge>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
                       </TableRow>
                     );
                   })}
