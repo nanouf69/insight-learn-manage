@@ -110,6 +110,7 @@ export default function ImageCarouselViewer({ images, nom, onLastPageReached }: 
         <img
           src={images[page]}
           alt={`${nom} — Slide ${page + 1}`}
+          loading="lazy"
           draggable={false}
           className="select-none"
           style={{
