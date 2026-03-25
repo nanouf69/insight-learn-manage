@@ -134,6 +134,34 @@ function addCacheBuster(url: string, token: number): string {
   return `${url}${url.includes("?") ? "&" : "?"}cb=${token}`;
 }
 
+function getQuestionImageValue(question: unknown): string | null {
+  if (!question || typeof question !== "object") return null;
+  const raw = safeStr((question as any)?.image ?? (question as any)?.image_url).trim();
+  return raw || null;
+}
+
+function logSecurityImageDebug(examens: ExamenBlanc[], context: string) {
+  const targets = ["EB3", "EB3-TAXI"];
+
+  targets.forEach((examId) => {
+    const exam = examens.find((item) => item.id === examId);
+    const securite = exam?.matieres?.find((m) => m.id === "securite");
+    if (!securite) return;
+
+    const q2 = securite.questions?.find((q) => Number((q as any)?.id) === 2) as any;
+    const q8 = securite.questions?.find((q) => Number((q as any)?.id) === 8) as any;
+
+    console.log(`[ExamImages][${context}] ${examId} Q2/Q8`, {
+      q2_image: q2?.image ?? null,
+      q2_image_url: q2?.image_url ?? null,
+      q8_image: q8?.image ?? null,
+      q8_image_url: q8?.image_url ?? null,
+      q2_resolved: resolveExamQuestionImageUrl(q2?.image ?? q2?.image_url ?? null),
+      q8_resolved: resolveExamQuestionImageUrl(q8?.image ?? q8?.image_url ?? null),
+    });
+  });
+}
+
 function ExamQuestionImage({
   image,
   alt,
@@ -1143,7 +1171,23 @@ function PassageMatiere({
 
   const questionsSafe = (matiere.questions || []).filter((q): q is Question => !!q && q?.type !== undefined);
   const question = questionsSafe[questionIndex] || null;
+  const currentQuestionImage = getQuestionImageValue(question);
   const dureeSecondes = (matiere.duree ?? 30) * 60;
+
+  useEffect(() => {
+    const isSecurite = matiere.id === "securite";
+    if (!isSecurite) return;
+
+    const q2 = questionsSafe.find((q) => Number((q as any)?.id) === 2) as any;
+    const q8 = questionsSafe.find((q) => Number((q as any)?.id) === 8) as any;
+
+    console.log(`[ExamImages][load][${examenId || "unknown"}/${matiere.id}]`, {
+      q2_image: q2?.image ?? null,
+      q2_image_url: q2?.image_url ?? null,
+      q8_image: q8?.image ?? null,
+      q8_image_url: q8?.image_url ?? null,
+    });
+  }, [examenId, matiere.id, questionsSafe]);
 
   // Helper: normalize reponses keys to number (DB JSON keys are strings)
   const normalizeReponses = (raw: any): Reponses => {
@@ -1453,9 +1497,9 @@ function PassageMatiere({
               </Badge>
               <div>
                 <p className="font-medium leading-relaxed">{question?.enonce || "Question indisponible"}</p>
-                {question?.image && (
+                {currentQuestionImage && (
                   <ExamQuestionImage
-                    image={question.image}
+                    image={currentQuestionImage}
                     alt={`Illustration de la question ${question.id}`}
                     className="mt-3 max-h-40 rounded-lg border"
                     fallbackClassName="mt-3 text-xs text-muted-foreground italic"
@@ -2695,14 +2739,16 @@ export default function ExamensBlancsPage({
   const [bilanPrefiltre, setBilanPrefiltre] = useState<string | null>(null);
   const [liveExamens, setLiveExamens] = useState<ExamenBlanc[]>(tousLesExamens);
   const [selectionRefreshKey, setSelectionRefreshKey] = useState(0);
+  const [isReloadingQuestions, setIsReloadingQuestions] = useState(false);
   const examStartTimeRef = useRef<number>(savedSession?.examStartTime || Date.now());
   const reloadInFlightRef = useRef<Promise<ExamenBlanc[]> | null>(null);
 
-  const refreshLiveExamens = useCallback(async () => {
-    if (reloadInFlightRef.current) return reloadInFlightRef.current;
+  const refreshLiveExamens = useCallback(async ({ force = false }: { force?: boolean } = {}) => {
+    if (!force && reloadInFlightRef.current) return reloadInFlightRef.current;
 
     reloadInFlightRef.current = (async () => {
       const saved = await loadSavedExamens();
+      logSecurityImageDebug(saved, force ? "manual-refetch" : "auto-refetch");
       setLiveExamens(saved);
       setExamenChoisi((prev) => {
         if (!prev) return prev;
@@ -2717,6 +2763,19 @@ export default function ExamensBlancsPage({
       reloadInFlightRef.current = null;
     }
   }, []);
+
+  const handleManualReloadQuestions = async () => {
+    setIsReloadingQuestions(true);
+    try {
+      await refreshLiveExamens({ force: true });
+      toast.success("Questions rechargées (réponses conservées).");
+    } catch (error) {
+      console.error("[ExamImages] Échec rechargement manuel", error);
+      toast.error("Impossible de recharger les questions.");
+    } finally {
+      setIsReloadingQuestions(false);
+    }
+  };
 
   // Persist exam session state to sessionStorage
   const persistExamSession = (p: string, exId: string | null, mi: number, resultats?: ResultatMatiere[]) => {
@@ -3317,6 +3376,18 @@ export default function ExamensBlancsPage({
             <span className="text-xs text-muted-foreground">
               Matière {matiereIndex + 1}/{examenChoisi.matieres.length}
             </span>
+            {!isAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleManualReloadQuestions}
+                disabled={isReloadingQuestions}
+                className="ml-auto gap-2"
+              >
+                {isReloadingQuestions ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+                Recharger les questions
+              </Button>
+            )}
           </div>
 
           <PassageMatiere
