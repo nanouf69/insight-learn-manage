@@ -41,9 +41,11 @@ const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {
   "va":                [34, 41, 3, 29, 30, 38, 8],
   "va-e-presentiel":   [34, 41, 3, 29, 30, 38, 8],
   "va-e":              [34, 41, 3, 29, 30, 38, 8],
+  // Formation Continue VTC — bilan exercices uniquement (sans gestion)
+  "continue-vtc":      [81],
 };
 
-const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 41, 50, 51, 52, 53, 60, 61, 62, 63, 64]);
+const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 41, 50, 51, 52, 53, 60, 61, 62, 63, 64, 81]);
 
 interface Apprenant {
   id: string;

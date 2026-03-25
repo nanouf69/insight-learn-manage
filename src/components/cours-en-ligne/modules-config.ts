@@ -45,6 +45,7 @@ export const ALL_MODULES: ModuleDefinition[] = [
   { id: 9, nom: "4.BILAN EXERCICES TAXI" },
   { id: 27, nom: "4.BILAN EXERCICES TA" },
   { id: 29, nom: "4.BILAN EXERCICES VA" },
+  { id: 81, nom: "1.BILAN EXERCICES FORMATION CONTINUE VTC" },
   // 5. EXAMENS BLANCS
   { id: 35, nom: "5.EXAMENS BLANCS VTC" },
   { id: 36, nom: "5.EXAMENS BLANCS TAXI" },
@@ -251,6 +252,9 @@ export const FORMATION_MODULES: Record<string, FormationDefinition> = {
     { id: 73, label: "8.FICHES RÉVISIONS VA" },
     { id: 8, label: "9.PRATIQUE VTC" },
     { id: 53, label: "10.FIN DE FORMATION VA" },
+  ]},
+  "continue-vtc": { label: "Formation Continue VTC", color: "bg-blue-100 text-blue-800 border-blue-300", modules: [
+    { id: 81, label: "1.BILAN EXERCICES FORMATION CONTINUE VTC" },
   ]},
 };
 
