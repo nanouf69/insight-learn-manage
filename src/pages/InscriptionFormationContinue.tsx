@@ -61,7 +61,7 @@ export default function InscriptionFormationContinue() {
       for (const d of datesFormationContinue) {
         const { data: sessions } = await supabase
           .from("sessions")
-          .select("id, places_disponibles, nom")
+          .select("id, nom")
           .eq("date_debut", d.value)
           .eq("date_fin", d.fin)
           .eq("type_session", "theorique");
@@ -70,8 +70,14 @@ export default function InscriptionFormationContinue() {
           s.nom?.toLowerCase().includes("formation continue") &&
           s.nom?.toLowerCase().includes(type)
         );
-        if (matchingSession && (matchingSession.places_disponibles ?? MAX_PLACES) <= 0) {
-          full[d.value] = true;
+        if (matchingSession) {
+          const { count } = await supabase
+            .from("session_apprenants")
+            .select("id", { count: "exact", head: true })
+            .eq("session_id", matchingSession.id);
+          if ((count ?? 0) >= MAX_PLACES) {
+            full[d.value] = true;
+          }
         }
       }
       setFullDates(full);
