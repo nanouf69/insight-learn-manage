@@ -3550,15 +3550,29 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                                 />
                               )}
 
-                              {isPdf && !shouldShowViewers && (
-                                <div className="mt-2">
-                                  <PdfSlideViewer
-                                    url={f.url.startsWith("http") ? f.url : f.url.startsWith("/") ? f.url : `/${f.url}`}
-                                    nom={cours.titre}
-                                    onLastPageReached={() => markPageCompleted(currentPage)}
-                                  />
-                                </div>
-                              )}
+                              {isPdf && !shouldShowViewers && (() => {
+                                const ficheSlides = FICHE_IMAGE_SLIDES[f.nom];
+                                if (ficheSlides) {
+                                  return (
+                                    <div className="mt-2">
+                                      <ImageCarouselViewer
+                                        images={ficheSlides}
+                                        nom={cours.titre}
+                                        onLastPageReached={() => markPageCompleted(currentPage)}
+                                      />
+                                    </div>
+                                  );
+                                }
+                                return (
+                                  <div className="mt-2">
+                                    <PdfSlideViewer
+                                      url={f.url.startsWith("http") ? f.url : f.url.startsWith("/") ? f.url : `/${f.url}`}
+                                      nom={cours.titre}
+                                      onLastPageReached={() => markPageCompleted(currentPage)}
+                                    />
+                                  </div>
+                                );
+                              })()}
                             </div>
                           );
                         })}
