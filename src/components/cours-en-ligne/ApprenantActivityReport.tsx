@@ -12,7 +12,44 @@ import { cn } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format, subDays, differenceInMinutes, parseISO, startOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
-import { FORMATION_MODULES } from "./modules-config";
+import { FORMATION_MODULES, ALL_MODULES } from "./modules-config";
+import { VTC_COURS_DATA } from "./vtc-cours-data";
+import { TAXI_COURS_DATA } from "./taxi-cours-data";
+import { TA_COURS_DATA } from "./ta-cours-data";
+import { VA_COURS_DATA } from "./va-cours-data";
+import { BILAN_EXERCICES_VTC } from "./bilan-exercices-vtc-data";
+import { BILAN_EXERCICES_TAXI } from "./bilan-exercices-taxi-data";
+import { BILAN_EXERCICES_TA } from "./bilan-exercices-ta-data";
+import { BILAN_EXERCICES_VA } from "./bilan-exercices-va-data";
+import { FORMULES_DATA } from "./formules-data";
+import { CONNAISSANCES_VILLE_TAXI_DATA } from "./connaissances-ville-taxi-data";
+import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "./controle-connaissances-taxi-data";
+import { EQUIPEMENTS_TAXI_DATA } from "./equipements-taxi-data";
+
+// Build a static map: exercice_id → human-readable title
+const EXERCICE_TITLE_MAP = new Map<string, string>();
+
+// Helper to register exercises from a module
+const registerModuleExercises = (moduleId: number, exercices: { id: number; titre: string }[]) => {
+  exercices.forEach(exo => {
+    EXERCICE_TITLE_MAP.set(`module_${moduleId}_exo_${exo.id}`, exo.titre);
+  });
+};
+
+// Main course modules
+[VTC_COURS_DATA, TAXI_COURS_DATA, TA_COURS_DATA, VA_COURS_DATA, FORMULES_DATA, CONNAISSANCES_VILLE_TAXI_DATA, CONTROLE_CONNAISSANCES_TAXI_DATA, EQUIPEMENTS_TAXI_DATA].forEach(mod => {
+  registerModuleExercises(mod.id, mod.exercices || []);
+});
+
+// Bilan modules (exercises reused with different module IDs)
+registerModuleExercises(4, BILAN_EXERCICES_VTC);   // 4.BILAN EXERCICES VTC
+registerModuleExercises(9, BILAN_EXERCICES_TAXI);   // 4.BILAN EXERCICES TAXI
+registerModuleExercises(27, BILAN_EXERCICES_TA);    // 4.BILAN EXERCICES TA
+registerModuleExercises(29, BILAN_EXERCICES_VA);    // 4.BILAN EXERCICES VA
+
+// Module name map for fallback
+const MODULE_NAME_MAP = new Map<number, string>();
+ALL_MODULES.forEach(m => MODULE_NAME_MAP.set(m.id, m.nom));
 
 interface Apprenant {
   id: string;
@@ -217,6 +254,20 @@ export default function ApprenantActivityReport({ onBack }: Props) {
     return Math.max(0, differenceInMinutes(getCappedSessionEnd(connexion), start));
   };
 
+  // Resolve exercice_id to human-readable title
+  const resolveExerciceTitle = (exerciceId: string): string => {
+    // Check static map first
+    const mapped = EXERCICE_TITLE_MAP.get(exerciceId);
+    if (mapped) return mapped;
+    // Fallback: parse module_X_exo_Y → module name
+    const match = exerciceId.match(/^module_(\d+)_exo_(\d+)$/);
+    if (match) {
+      const modName = MODULE_NAME_MAP.get(parseInt(match[1]));
+      if (modName) return `${modName} — Exo ${match[2]}`;
+    }
+    return exerciceId;
+  };
+
   // Get exercise/quiz titles completed during a connexion time window
   const getExerciceNamesDuringConnexion = (connexion: Connexion) => {
     const start = parseISO(connexion.started_at);
@@ -225,18 +276,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
     exercicesCompletes.filter(e => {
       const t = parseISO(e.updated_at);
       return t >= start && t <= end;
-    }).forEach(e => titles.push(e.exercice_id));
-    quizResults.filter(q => {
-      const t = parseISO(q.completed_at);
-      return t >= start && t <= end;
-    }).forEach(q => titles.push(q.quiz_titre));
-    return titles;
-  };
-
-  const getExercicesTitlesDuringConnexion = (connexion: Connexion) => {
-    const start = parseISO(connexion.started_at);
-    const end = getCappedSessionEnd(connexion);
-    const titles: string[] = [];
+    }).forEach(e => titles.push(resolveExerciceTitle(e.exercice_id)));
     quizResults.filter(q => {
       const t = parseISO(q.completed_at);
       return t >= start && t <= end;
