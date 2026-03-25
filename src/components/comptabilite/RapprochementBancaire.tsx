@@ -761,24 +761,21 @@ export function RapprochementBancaire() {
             </Button>
           ))}
         </div>
-        {/* Filtre par banque */}
-        {(() => {
-          const banques = [...new Set(transactions.map(t => t.banque))];
-          if (banques.length <= 1) return null;
-          return (
-            <div className="flex gap-2">
-              <Button size="sm" variant={filterBanque === "tous" ? "secondary" : "ghost"} onClick={() => setFilterBanque("tous")}>
-                🏦 Toutes
+        {/* Filtre par banque — toujours visible */}
+        <div className="flex gap-2">
+          <Button size="sm" variant={filterBanque === "tous" ? "secondary" : "ghost"} onClick={() => setFilterBanque("tous")}>
+            🏦 Toutes
+          </Button>
+          {["BNP Paribas", "Revolut Pro"].map(b => {
+            const count = transactions.filter(t => t.banque === b).length;
+            return (
+              <Button key={b} size="sm" variant={filterBanque === b ? "secondary" : "ghost"} onClick={() => setFilterBanque(filterBanque === b ? "tous" : b)}>
+                {b === "BNP Paribas" ? "🔵 BNP" : "🟣 Revolut"}
+                <Badge className="ml-1.5 h-4 px-1 text-[10px]">{count}</Badge>
               </Button>
-              {banques.map(b => (
-                <Button key={b} size="sm" variant={filterBanque === b ? "secondary" : "ghost"} onClick={() => setFilterBanque(filterBanque === b ? "tous" : b)}>
-                  {b === "BNP Paribas" ? "🔵 BNP" : b === "Revolut Pro" ? "🟣 Revolut" : b}
-                  <Badge className="ml-1.5 h-4 px-1 text-[10px]">{transactions.filter(t => t.banque === b).length}</Badge>
-                </Button>
-              ))}
-            </div>
-          );
-        })()}
+            );
+          })}
+        </div>
       </div>
 
       {/* Transactions */}
