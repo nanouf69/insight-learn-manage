@@ -590,7 +590,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
                     const h = Math.floor(mins / 60);
                     const m = mins % 60;
                     const coursNames = getCoursDuringConnexion(c);
-                    const exCount = getExercicesDuringConnexion(c);
+                    const exNames = getExerciceNamesDuringConnexion(c);
                     return (
                       <TableRow key={c.id}>
                         <TableCell>{format(start, "dd/MM/yyyy", { locale: fr })}</TableCell>
@@ -615,8 +615,12 @@ export default function ApprenantActivityReport({ onBack }: Props) {
                           )}
                         </TableCell>
                         <TableCell>
-                          {exCount > 0 ? (
-                            <Badge variant="outline" className="text-xs">{exCount} exercice(s)</Badge>
+                          {exNames.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {exNames.map((name, i) => (
+                                <Badge key={i} variant="outline" className="text-xs">{name}</Badge>
+                              ))}
+                            </div>
                           ) : (
                             <span className="text-muted-foreground">—</span>
                           )}
