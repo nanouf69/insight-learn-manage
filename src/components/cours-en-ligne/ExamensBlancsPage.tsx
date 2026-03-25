@@ -3000,7 +3000,7 @@ export default function ExamensBlancsPage({
           examen={examenChoisi}
           resultats={tousResultats}
           onRecommencer={() => handleStart(examenChoisi)}
-          onRetour={() => setPhase("selection")}
+          onRetour={() => { setSelectionRefreshKey(k => k + 1); setPhase("selection"); }}
           onRefaireFausses={() => setPhase("revision")}
           apprenantId={apprenantId}
           userId={userId}
