@@ -57,7 +57,64 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // 1. Créer l'apprenant
+    // 1. Trouver ou créer la session AVANT de créer l'apprenant
+    const sessionNom = `Formation Continue ${formationType.toUpperCase()} - ${date_label || date_debut}`;
+
+    const { data: existingSessions } = await supabase
+      .from("sessions")
+      .select("*")
+      .eq("date_debut", date_debut)
+      .eq("date_fin", date_fin)
+      .eq("type_session", "theorique");
+
+    let sessionId: string;
+    const matchingSession = existingSessions?.find(
+      (s: any) =>
+        s.nom?.toLowerCase().includes("formation continue") &&
+        s.nom?.toLowerCase().includes(formationType)
+    );
+
+    if (matchingSession) {
+      // Count REAL enrollments instead of trusting the counter
+      const { count: realCount } = await supabase
+        .from("session_apprenants")
+        .select("id", { count: "exact", head: true })
+        .eq("session_id", matchingSession.id);
+
+      const actualEnrolled = realCount ?? 0;
+      if (actualEnrolled >= MAX_PLACES) {
+        return new Response(
+          JSON.stringify({ error: "Cette session est complète. Veuillez choisir une autre date.", complet: true }),
+          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      sessionId = matchingSession.id;
+    } else {
+      const { data: newSession, error: sessionErr } = await supabase
+        .from("sessions")
+        .insert({
+          nom: sessionNom,
+          date_debut,
+          date_fin,
+          types_apprenant: [typeApprenant],
+          places_disponibles: MAX_PLACES,
+          statut: "planifiee",
+          type_session: "theorique",
+          lieu: "86 route de genas 69003 Lyon",
+          heure_debut: "09:00",
+          heure_fin: "17:00",
+        })
+        .select()
+        .single();
+
+      if (sessionErr) {
+        console.error("Erreur création session:", sessionErr);
+        throw new Error(`Erreur création session: ${sessionErr.message}`);
+      }
+      sessionId = newSession.id;
+    }
+
+    // 2. Créer l'apprenant (seulement après vérification de la session)
     const { data: apprenant, error: apprenantErr } = await supabase
       .from("apprenants")
       .insert({
@@ -87,61 +144,6 @@ Deno.serve(async (req) => {
       throw new Error(`Erreur création apprenant: ${apprenantErr.message}`);
     }
 
-    // 2. Trouver ou créer la session
-    const sessionNom = `Formation Continue ${formationType.toUpperCase()} - ${date_label || date_debut}`;
-
-    const { data: existingSessions } = await supabase
-      .from("sessions")
-      .select("*")
-      .eq("date_debut", date_debut)
-      .eq("date_fin", date_fin)
-      .eq("type_session", "theorique");
-
-    let sessionId: string;
-    const matchingSession = existingSessions?.find(
-      (s: any) =>
-        s.nom?.toLowerCase().includes("formation continue") &&
-        s.nom?.toLowerCase().includes(formationType)
-    );
-
-    if (matchingSession) {
-      const remaining = matchingSession.places_disponibles ?? MAX_PLACES;
-      if (remaining <= 0) {
-        return new Response(
-          JSON.stringify({ error: "Cette session est complète. Veuillez choisir une autre date.", complet: true }),
-          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      sessionId = matchingSession.id;
-      await supabase
-        .from("sessions")
-        .update({ places_disponibles: Math.max(0, remaining - 1) })
-        .eq("id", sessionId);
-    } else {
-      const { data: newSession, error: sessionErr } = await supabase
-        .from("sessions")
-        .insert({
-          nom: sessionNom,
-          date_debut,
-          date_fin,
-          types_apprenant: [typeApprenant],
-          places_disponibles: MAX_PLACES - 1,
-          statut: "planifiee",
-          type_session: "theorique",
-          lieu: "86 route de genas 69003 Lyon",
-          heure_debut: "09:00",
-          heure_fin: "17:00",
-        })
-        .select()
-        .single();
-
-      if (sessionErr) {
-        console.error("Erreur création session:", sessionErr);
-        throw new Error(`Erreur création session: ${sessionErr.message}`);
-      }
-      sessionId = newSession.id;
-    }
-
     // 3. Lier l'apprenant à la session
     const { error: linkErr } = await supabase.from("session_apprenants").insert({
       session_id: sessionId,
@@ -157,6 +159,17 @@ Deno.serve(async (req) => {
       console.error("Erreur liaison session:", linkErr);
       throw new Error(`Erreur liaison session: ${linkErr.message}`);
     }
+
+    // 4. Mettre à jour places_disponibles avec le vrai count
+    const { count: updatedCount } = await supabase
+      .from("session_apprenants")
+      .select("id", { count: "exact", head: true })
+      .eq("session_id", sessionId);
+
+    await supabase
+      .from("sessions")
+      .update({ places_disponibles: Math.max(0, MAX_PLACES - (updatedCount ?? 0)) })
+      .eq("id", sessionId);
 
     console.log(`✅ Inscription réussie: ${apprenant.prenom} ${apprenant.nom} -> session ${sessionId}`);
 
