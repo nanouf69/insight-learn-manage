@@ -2572,7 +2572,38 @@ function RevisionFausses({
     if (currentIndex < wrongQuestions.length - 1) {
       setCurrentIndex(currentIndex + 1);
     } else {
-      // Finished all wrong questions
+      // Save revision results to database
+      if (apprenantId && userId && examenId) {
+        const saveRevisionResults = async () => {
+          try {
+            await supabase
+              .from("apprenant_quiz_results" as any)
+              .insert({
+                apprenant_id: apprenantId,
+                user_id: userId,
+                quiz_type: "revision_fausses",
+                quiz_id: examenId,
+                quiz_titre: `Révision questions fausses — ${examenId}`,
+                score_obtenu: correctedCount,
+                score_max: wrongQuestions.length,
+                note_sur_20: Math.round((correctedCount / wrongQuestions.length) * 20 * 2) / 2,
+                reussi: correctedCount === wrongQuestions.length,
+                details: {
+                  reponses,
+                  questions: wrongQuestions.map(wq => ({
+                    questionId: wq.question.id,
+                    matiereId: wq.matiere.id,
+                    matiereNom: wq.matiereNom,
+                    enonce: wq.question.enonce,
+                  })),
+                },
+              } as any);
+          } catch (err) {
+            console.error("Erreur sauvegarde révision:", err);
+          }
+        };
+        saveRevisionResults();
+      }
       toast.success(`Révision terminée ! ${correctedCount}/${wrongQuestions.length} questions corrigées.`);
       onTerminer();
     }
