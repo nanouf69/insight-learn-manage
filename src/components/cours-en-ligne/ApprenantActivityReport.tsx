@@ -78,6 +78,7 @@ interface ExerciceComplete {
 interface QuizResult {
   id: string;
   quiz_titre: string;
+  matiere_nom: string | null;
   completed_at: string;
 }
 
@@ -224,7 +225,7 @@ export default function ApprenantActivityReport({ onBack }: Props) {
           .order("updated_at", { ascending: false }),
         supabase
           .from("apprenant_quiz_results")
-          .select("id, quiz_titre, completed_at")
+          .select("id, quiz_titre, matiere_nom, completed_at")
           .eq("apprenant_id", selectedId)
           .gte("completed_at", since)
           .order("completed_at", { ascending: false }),
@@ -280,7 +281,10 @@ export default function ApprenantActivityReport({ onBack }: Props) {
     quizResults.filter(q => {
       const t = parseISO(q.completed_at);
       return t >= start && t <= end;
-    }).forEach(q => titles.push(q.quiz_titre));
+    }).forEach(q => {
+      const label = q.matiere_nom ? `${q.quiz_titre} — ${q.matiere_nom}` : q.quiz_titre;
+      titles.push(label);
+    });
     return titles;
   };
 
@@ -289,10 +293,13 @@ export default function ApprenantActivityReport({ onBack }: Props) {
     const start = parseISO(connexion.started_at);
     const end = getCappedSessionEnd(connexion);
     const titles: string[] = [];
-    quizResults.filter(q => {
-      const t = parseISO(q.completed_at);
+    // Use module activites to show which courses were opened
+    activites.filter(a => {
+      const t = parseISO(a.occurred_at);
       return t >= start && t <= end;
-    }).forEach(q => titles.push(q.quiz_titre));
+    }).forEach(a => {
+      if (!titles.includes(a.module_nom)) titles.push(a.module_nom);
+    });
     return titles;
   };
 
