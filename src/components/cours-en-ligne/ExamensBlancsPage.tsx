@@ -850,6 +850,47 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
 
           setExamScores(scores);
 
+          // Compute previous attempt averages per exam
+          const prevAvgs: Record<string, number | null> = {};
+          const allRowsByQuiz = new Map<string, any[]>();
+          (data as any[]).forEach((r: any) => {
+            if (!r.quiz_id) return;
+            if (!allRowsByQuiz.has(r.quiz_id)) allRowsByQuiz.set(r.quiz_id, []);
+            allRowsByQuiz.get(r.quiz_id)!.push(r);
+          });
+          allRowsByQuiz.forEach((rows, quizId) => {
+            const examDef = examensData.find(e => e.id === quizId);
+            if (!examDef) return;
+            // Group rows by matiere canonical key, sorted by created_at desc
+            const byMatiere = new Map<string, any[]>();
+            rows.forEach(r => {
+              const key = getMatiereCanonicalKey(r.matiere_id, r.matiere_nom);
+              if (!byMatiere.has(key)) byMatiere.set(key, []);
+              byMatiere.get(key)!.push(r);
+            });
+            // For each matiere, sort by created_at desc, find the second row (previous attempt)
+            let hasPrev = false;
+            let totalCoef = 0;
+            let weightedSum = 0;
+            examDef.matieres.forEach(m => {
+              const mKey = getMatiereCanonicalKey(m.id, m.nom);
+              const mRows = byMatiere.get(mKey) || [];
+              mRows.sort((a: any, b: any) => toTimestamp(b.created_at) - toTimestamp(a.created_at));
+              const coef = m.coefficient || 1;
+              totalCoef += coef;
+              if (mRows.length >= 2) {
+                hasPrev = true;
+                const prev = mRows[1];
+                const note = normalizeNoteSur20(prev.score_obtenu, prev.score_max, prev.note_sur_20);
+                weightedSum += note * coef;
+              }
+            });
+            if (hasPrev && totalCoef > 0) {
+              prevAvgs[quizId] = Math.round((weightedSum / totalCoef) * 10) / 10;
+            }
+          });
+          setPreviousExamAverages(prevAvgs);
+
           // 2) Fetch started-but-not-finished exams from reponses_apprenants
           supabase
             .from("reponses_apprenants" as any)
