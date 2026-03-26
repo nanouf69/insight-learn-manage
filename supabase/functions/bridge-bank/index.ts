@@ -17,8 +17,8 @@ serve(async (req) => {
   const secretKey = Deno.env.get("GOCARDLESS_SECRET_KEY");
 
   if (!secretId || !secretKey) {
-    return new Response(JSON.stringify({ error: "GoCardless credentials not configured. Please add GOCARDLESS_SECRET_ID and GOCARDLESS_SECRET_KEY." }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    return new Response(JSON.stringify({ error: "GoCardless non configuré. Cette fonctionnalité nécessite un compte GoCardless Bank Account Data.", available: false }), {
+      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
