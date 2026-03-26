@@ -879,9 +879,9 @@ export function RapprochementBancaire() {
                                   {tx.banque && (
                                     <span className={cn(
                                       "ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium",
-                                      tx.banque === "Revolut Pro" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
+                                      tx.banque.toLowerCase().includes("revolut") ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
                                     )}>
-                                      {tx.banque === "BNP Paribas" ? "🔵 BNP" : tx.banque === "Revolut Pro" ? "🟣 Revolut" : tx.banque}
+                                       {tx.banque.toLowerCase().includes("bnp") ? "🔵 BNP" : tx.banque.toLowerCase().includes("revolut") ? "🟣 Revolut" : tx.banque}
                                     </span>
                                   )}
                                   {tx.solde != null && <span className="ml-2">· Solde : {fmt(tx.solde)}</span>}
