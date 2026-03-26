@@ -953,25 +953,49 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                       let totalCoef = 0;
                       let weightedSum = 0;
                       let hasScores = false;
+                      const eliminatoiresMatieres: string[] = [];
                       examen.matieres.forEach(m => {
                         const scoreData = findScoreForMatiere(scores, m);
                         const coef = m.coefficient || 1;
                         if (scoreData) {
                           weightedSum += scoreData.note_sur_20 * coef;
                           hasScores = true;
+                          // Check if note is below noteEliminatoire
+                          if (m.noteEliminatoire && scoreData.note_sur_20 < m.noteEliminatoire) {
+                            eliminatoiresMatieres.push(m.nom.split(" - ")[0]);
+                          }
                         }
                         totalCoef += coef;
                       });
                       const moyenne = totalCoef > 0 ? Math.round((weightedSum / totalCoef) * 10) / 10 : 0;
+                      const isReussi = hasScores && moyenne >= 10 && eliminatoiresMatieres.length === 0;
                       return (
-                        <div className="flex flex-col items-center gap-1 mt-2 bg-green-100 border border-green-300 rounded-lg px-3 py-2">
+                        <div className={`flex flex-col items-center gap-1 mt-2 rounded-lg px-3 py-2 border ${
+                          isReussi
+                            ? "bg-green-100 border-green-300"
+                            : "bg-red-50 border-red-400 border-2"
+                        }`}>
                           <div className="flex items-center gap-2">
-                            <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
-                            <span className="text-green-700 font-bold text-lg uppercase tracking-wide">Examen réalisé</span>
+                            {isReussi ? (
+                              <>
+                                <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
+                                <span className="text-green-700 font-bold text-lg uppercase tracking-wide">Examen réussi ✅</span>
+                              </>
+                            ) : (
+                              <>
+                                <XCircle className="w-5 h-5 text-red-500 shrink-0" />
+                                <span className="text-red-600 font-bold text-lg uppercase tracking-wide">Examen échoué ❌</span>
+                              </>
+                            )}
                           </div>
                           {hasScores && (
-                            <span className={`text-2xl font-extrabold ${moyenne >= 10 ? "text-green-700" : "text-red-500"}`}>
+                            <span className={`text-2xl font-extrabold ${isReussi ? "text-green-700" : "text-red-500"}`}>
                               {moyenne.toFixed(1)} / 20
+                            </span>
+                          )}
+                          {eliminatoiresMatieres.length > 0 && (
+                            <span className="text-xs text-red-600 font-medium">
+                              ⚠ Note éliminatoire en : {eliminatoiresMatieres.join(", ")}
                             </span>
                           )}
                         </div>
