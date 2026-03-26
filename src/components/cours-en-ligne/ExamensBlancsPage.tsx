@@ -1040,6 +1040,11 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                               ⚠ Note éliminatoire en : {eliminatoiresMatieres.join(", ")}
                             </span>
                           )}
+                          {previousExamAverages[examen.id] != null && (
+                            <span className="text-xs text-muted-foreground italic">
+                              Précédent essai : {previousExamAverages[examen.id]!.toFixed(1)} / 20
+                            </span>
+                          )}
                         </div>
                       );
                     })()}
