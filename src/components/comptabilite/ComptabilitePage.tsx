@@ -156,6 +156,89 @@ export function ComptabilitePage() {
     if (!error && data) setFournisseurFactures(data);
   };
 
+  const fetchPaiements = async () => {
+    const { data, error } = await supabase
+      .from("fournisseur_paiements")
+      .select("*")
+      .order("date_paiement", { ascending: false });
+    if (!error && data) setPaiements(data as Paiement[]);
+  };
+
+  const getPaiementsForFacture = (factureId: string) => {
+    return paiements.filter(p => p.facture_id === factureId);
+  };
+
+  const getTotalPayeForFacture = (factureId: string) => {
+    return getPaiementsForFacture(factureId).reduce((s, p) => s + Number(p.montant), 0);
+  };
+
+  const handleAjouterPaiement = async (item: APayer) => {
+    const date = paymentDates[item.id];
+    const moyen = paymentMoyens[item.id];
+    const montantStr = partialAmounts[item.id];
+    const montant = parseFloat(montantStr);
+    if (!date) { toast.error("Sélectionnez une date de paiement"); return; }
+    if (!moyen) { toast.error("Sélectionnez un moyen de paiement"); return; }
+    if (!montant || montant <= 0) { toast.error("Saisissez un montant valide"); return; }
+    const reste = item.montant - getTotalPayeForFacture(item.source_id);
+    if (montant > reste + 0.01) { toast.error(`Le montant dépasse le reste à payer (${formatMontant(reste)})`); return; }
+    
+    setSavingPayment(prev => ({ ...prev, [item.id]: true }));
+    try {
+      const dateStr = format(date, "yyyy-MM-dd");
+      const { error } = await supabase.from("fournisseur_paiements").insert({
+        facture_id: item.source_id,
+        montant,
+        date_paiement: dateStr,
+        moyen_paiement: moyen,
+      });
+      if (error) throw error;
+
+      // Check if fully paid
+      const newTotalPaye = getTotalPayeForFacture(item.source_id) + montant;
+      if (newTotalPaye >= item.montant - 0.01) {
+        await supabase.from("fournisseur_factures").update({ 
+          statut: "paye", 
+          date_paiement: dateStr, 
+          moyen_paiement: moyen 
+        }).eq("id", item.source_id);
+      } else {
+        // Update with partial info
+        await supabase.from("fournisseur_factures").update({ 
+          statut: "en_attente",
+          date_paiement: dateStr, 
+          moyen_paiement: moyen 
+        }).eq("id", item.source_id);
+      }
+
+      toast.success(`Paiement de ${formatMontant(montant)} enregistré pour ${item.nom}`);
+      setPartialAmounts(prev => ({ ...prev, [item.id]: "" }));
+      setPaymentDates(prev => ({ ...prev, [item.id]: undefined }));
+      setPaymentMoyens(prev => ({ ...prev, [item.id]: "" }));
+      await Promise.all([fetchFournisseurFactures(), fetchPaiements()]);
+    } catch (err) {
+      toast.error("Erreur lors de l'enregistrement du paiement");
+    }
+    setSavingPayment(prev => ({ ...prev, [item.id]: false }));
+  };
+
+  const handleSupprimerPaiement = async (paiementId: string, factureId: string) => {
+    const { error } = await supabase.from("fournisseur_paiements").delete().eq("id", paiementId);
+    if (error) { toast.error("Erreur lors de la suppression"); return; }
+    // Recalculate status
+    const remaining = paiements.filter(p => p.id !== paiementId && p.facture_id === factureId);
+    const totalPaye = remaining.reduce((s, p) => s + Number(p.montant), 0);
+    const facture = fournisseurFactures.find((f: any) => f.id === factureId);
+    const montantFacture = facture ? Number(facture.montant) : 0;
+    if (totalPaye >= montantFacture - 0.01 && montantFacture > 0) {
+      // still fully paid
+    } else {
+      await supabase.from("fournisseur_factures").update({ statut: "en_attente" }).eq("id", factureId);
+    }
+    toast.success("Paiement supprimé");
+    await Promise.all([fetchFournisseurFactures(), fetchPaiements()]);
+  };
+
   const fetchFactures = async () => {
     setLoading(true);
     const { data, error } = await supabase
