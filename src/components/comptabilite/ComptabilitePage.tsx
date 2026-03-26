@@ -336,6 +336,7 @@ export function ComptabilitePage() {
       body: { action, ...extra },
     });
     if (res.error) throw new Error(res.error.message);
+    if (res.data?.available === false) throw new Error(res.data.error || "GoCardless non configuré");
     if (res.data?.error) throw new Error(res.data.error);
     return res.data;
   };
