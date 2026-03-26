@@ -266,6 +266,7 @@ export function ComptabilitePage() {
   useEffect(() => {
     fetchFactures();
     fetchFournisseurFactures();
+    fetchPaiements();
     fetchReleves();
     const savedRequisition = localStorage.getItem(GC_REQUISITION_KEY);
     if (savedRequisition) {
