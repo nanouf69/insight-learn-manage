@@ -22,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { safeDateParse } from "@/lib/safeDateParse";
 import { useConnexionTracking } from "@/hooks/useConnexionTracking";
 import { usePresenceCheck } from "@/hooks/usePresenceCheck";
+import { useInactivityAlert } from "@/hooks/useInactivityAlert";
 import { PresenceCheckModal } from "@/components/cours-en-ligne/PresenceCheckModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -639,6 +640,16 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     connexionId,
     enabled: isStudentSession,
     onForceDisconnect: handleForceDisconnect,
+  });
+
+  // Client-side inactivity detection: 30min no mouse → modal → 5min auto-disconnect
+  const {
+    showInactivityModal,
+    inactivityCountdown,
+    confirmActivity,
+  } = useInactivityAlert({
+    enabled: isStudentSession,
+    onDisconnect: handleForceDisconnect,
   });
 
   // Fetch apprenant info when user is logged in
@@ -1558,10 +1569,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
       {/* Presence verification modal (non-blocking overlay) */}
       <PresenceCheckModal
-        show={showPresenceModal}
-        countdownSeconds={presenceCountdown}
+        show={showPresenceModal || showInactivityModal}
+        countdownSeconds={showInactivityModal ? inactivityCountdown : presenceCountdown}
         disconnectReason={disconnectReason}
-        onConfirm={confirmPresence}
+        onConfirm={showInactivityModal ? confirmActivity : confirmPresence}
       />
     </div>
   );

@@ -1,43 +1,108 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 
-const INACTIVITY_TIMEOUT = 2 * 60 * 60 * 1000; // 2 hours in ms
+const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+const AUTO_DISCONNECT_TIMEOUT = 5 * 60 * 1000; // 5 minutes
 
 interface UseInactivityAlertParams {
   enabled: boolean;
-  onInactive: () => void;
+  onDisconnect: () => void;
 }
 
-export function useInactivityAlert({ enabled, onInactive }: UseInactivityAlertParams) {
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const firedRef = useRef(false);
+export function useInactivityAlert({ enabled, onDisconnect }: UseInactivityAlertParams) {
+  const [showInactivityModal, setShowInactivityModal] = useState(false);
+  const [inactivityCountdown, setInactivityCountdown] = useState(300); // 5min in seconds
 
-  const resetTimer = useCallback(() => {
-    if (!enabled) return;
-    firedRef.current = false;
+  const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const disconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const disconnectedRef = useRef(false);
 
-    if (timerRef.current) clearTimeout(timerRef.current);
+  const clearAllTimers = useCallback(() => {
+    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+    if (disconnectTimerRef.current) clearTimeout(disconnectTimerRef.current);
+    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+    inactivityTimerRef.current = null;
+    disconnectTimerRef.current = null;
+    countdownIntervalRef.current = null;
+  }, []);
 
-    timerRef.current = setTimeout(() => {
-      if (!firedRef.current) {
-        firedRef.current = true;
-        onInactive();
+  const startDisconnectCountdown = useCallback(() => {
+    setShowInactivityModal(true);
+    setInactivityCountdown(300);
+    const deadline = Date.now() + AUTO_DISCONNECT_TIMEOUT;
+
+    countdownIntervalRef.current = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      setInactivityCountdown(remaining);
+      if (remaining <= 0) {
+        if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
       }
+    }, 1000);
+
+    disconnectTimerRef.current = setTimeout(() => {
+      if (!disconnectedRef.current) {
+        disconnectedRef.current = true;
+        clearAllTimers();
+        setShowInactivityModal(false);
+        onDisconnect();
+      }
+    }, AUTO_DISCONNECT_TIMEOUT);
+  }, [clearAllTimers, onDisconnect]);
+
+  const resetInactivityTimer = useCallback(() => {
+    if (!enabled || disconnectedRef.current) return;
+
+    // If modal is showing, don't reset — user must click the button
+    if (showInactivityModal) return;
+
+    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+
+    inactivityTimerRef.current = setTimeout(() => {
+      startDisconnectCountdown();
     }, INACTIVITY_TIMEOUT);
-  }, [enabled, onInactive]);
+  }, [enabled, showInactivityModal, startDisconnectCountdown]);
+
+  const confirmActivity = useCallback(() => {
+    clearAllTimers();
+    setShowInactivityModal(false);
+    setInactivityCountdown(300);
+    // Restart the 30min inactivity timer
+    if (enabled && !disconnectedRef.current) {
+      inactivityTimerRef.current = setTimeout(() => {
+        startDisconnectCountdown();
+      }, INACTIVITY_TIMEOUT);
+    }
+  }, [clearAllTimers, enabled, startDisconnectCountdown]);
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled) {
+      clearAllTimers();
+      setShowInactivityModal(false);
+      disconnectedRef.current = false;
+      return;
+    }
 
-    const events = ["mousemove", "mousedown", "keydown", "touchstart", "scroll", "click"];
+    disconnectedRef.current = false;
 
-    const handler = () => resetTimer();
+    const events: Array<keyof WindowEventMap> = [
+      "mousemove", "mousedown", "click", "keydown", "touchstart", "scroll", "pointerdown",
+    ];
+
+    const handler = () => resetInactivityTimer();
 
     events.forEach((e) => window.addEventListener(e, handler, { passive: true }));
-    resetTimer(); // start initial timer
+    resetInactivityTimer(); // start initial timer
 
     return () => {
       events.forEach((e) => window.removeEventListener(e, handler));
-      if (timerRef.current) clearTimeout(timerRef.current);
+      clearAllTimers();
     };
-  }, [enabled, resetTimer]);
+  }, [enabled, resetInactivityTimer, clearAllTimers]);
+
+  return {
+    showInactivityModal,
+    inactivityCountdown,
+    confirmActivity,
+  };
 }
