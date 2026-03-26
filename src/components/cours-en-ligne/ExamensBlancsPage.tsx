@@ -948,12 +948,35 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                       <span className="text-xs text-muted-foreground">N°{examen.numero}</span>
                     </div>
                     <CardTitle className="text-base mt-2">{examen.titre}</CardTitle>
-                    {isCompleted && (
-                      <div className="flex items-center gap-2 mt-2 bg-green-100 border border-green-300 rounded-lg px-3 py-2">
-                        <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
-                        <span className="text-green-700 font-bold text-lg uppercase tracking-wide">Examen réalisé</span>
-                      </div>
-                    )}
+                    {isCompleted && (() => {
+                      // Compute weighted average from DB scores
+                      let totalCoef = 0;
+                      let weightedSum = 0;
+                      let hasScores = false;
+                      examen.matieres.forEach(m => {
+                        const scoreData = findScoreForMatiere(scores, m);
+                        const coef = m.coefficient || 1;
+                        if (scoreData) {
+                          weightedSum += scoreData.note_sur_20 * coef;
+                          hasScores = true;
+                        }
+                        totalCoef += coef;
+                      });
+                      const moyenne = totalCoef > 0 ? Math.round((weightedSum / totalCoef) * 10) / 10 : 0;
+                      return (
+                        <div className="flex flex-col items-center gap-1 mt-2 bg-green-100 border border-green-300 rounded-lg px-3 py-2">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
+                            <span className="text-green-700 font-bold text-lg uppercase tracking-wide">Examen réalisé</span>
+                          </div>
+                          {hasScores && (
+                            <span className={`text-2xl font-extrabold ${moyenne >= 10 ? "text-green-700" : "text-red-500"}`}>
+                              {moyenne.toFixed(1)} / 20
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
                     {isStartedNotFinished && (
                       <div className="flex items-center gap-2 mt-2 bg-orange-100 border-2 border-orange-400 rounded-lg px-3 py-3">
                         <AlertTriangle className="w-6 h-6 text-orange-600 shrink-0" />
