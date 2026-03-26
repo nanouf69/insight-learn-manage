@@ -464,7 +464,9 @@ export async function syncSharedExercisesToSiblingModules(
       }
 
       if (hasChanges) {
-        const updatedModuleData = { ...md, exercices: updatedExercices };
+        // Deduplicate questions within each exercise before saving
+        const deduplicatedExercices = deduplicateExerciseQuestions(updatedExercices);
+        const updatedModuleData = { ...md, exercices: deduplicatedExercices };
         const { error: upsertError } = await supabase.from("module_editor_state").upsert(
           [{
             module_id: row.module_id,
