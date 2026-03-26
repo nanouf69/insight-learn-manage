@@ -22,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { safeDateParse } from "@/lib/safeDateParse";
 import { useConnexionTracking } from "@/hooks/useConnexionTracking";
 import { usePresenceCheck } from "@/hooks/usePresenceCheck";
+import { useInactivityAlert } from "@/hooks/useInactivityAlert";
 import { PresenceCheckModal } from "@/components/cours-en-ligne/PresenceCheckModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
