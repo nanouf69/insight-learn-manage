@@ -1042,6 +1042,7 @@ export function RapprochementBancaire() {
                                   <DropdownMenuContent align="end">
                                     <DropdownMenuItem onClick={() => {
                                       setEditingId(tx.id);
+                                      setFournisseurCustomInput(false);
                                       setEditForm({ categorie: tx.categorie, fournisseur_client: tx.fournisseur_client, notes: tx.notes });
                                     }}>
                                       ✏️ Modifier / Catégoriser
