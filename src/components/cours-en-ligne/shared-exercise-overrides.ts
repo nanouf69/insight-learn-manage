@@ -371,3 +371,124 @@ function invalidateOtherModuleCaches(currentModuleId: number): void {
   }
   console.log(`[shared-overrides] Invalidated all module caches except module ${currentModuleId}`);
 }
+
+// ======================================================================
+// FULL CROSS-MODULE EXERCISE SYNC (handles edits, adds, AND deletes)
+// ======================================================================
+
+/**
+ * After saving a module to DB, sync ALL shared exercises to sibling modules.
+ * Matching is by exercise ID — exercises with the same ID across modules are
+ * considered shared and will receive the same questions/state.
+ *
+ * This replaces the partial enonce-based propagation for the common case.
+ */
+export async function syncSharedExercisesToSiblingModules(
+  savedModuleId: number,
+  savedExercices: { id: number; titre?: string; sousTitre?: string; actif?: boolean; questions?: any[] }[],
+  deletedExerciceIds: number[],
+): Promise<void> {
+  try {
+    if (!savedExercices || savedExercices.length === 0) return;
+
+    // Build a map of exercise ID → exercise data from the saved module
+    const savedExoMap = new Map<number, any>();
+    for (const exo of savedExercices) {
+      savedExoMap.set(exo.id, exo);
+    }
+    const deletedSet = new Set(deletedExerciceIds);
+
+    // Fetch ALL other module_editor_state records
+    const { data: siblingRecords, error } = await supabase
+      .from("module_editor_state")
+      .select("module_id, module_data, deleted_cours, deleted_exercices, source_fingerprint")
+      .neq("module_id", savedModuleId);
+
+    if (error) {
+      console.error("[sync-shared] Error fetching sibling modules:", error);
+      return;
+    }
+
+    if (!siblingRecords || siblingRecords.length === 0) return;
+
+    for (const row of siblingRecords) {
+      const md = row.module_data as any;
+      if (!md?.exercices || !Array.isArray(md.exercices)) continue;
+
+      let hasChanges = false;
+      const deletedExos = (row.deleted_exercices as number[]) || [];
+      let updatedDeletedExos = [...deletedExos];
+
+      // Update matching exercises
+      const updatedExercices = md.exercices.map((exo: any) => {
+        const savedVersion = savedExoMap.get(exo.id);
+        if (!savedVersion) return exo; // Not a shared exercise
+
+        // Check if the saved version is different
+        const savedQJson = JSON.stringify(savedVersion.questions || []);
+        const currentQJson = JSON.stringify(exo.questions || []);
+        if (savedQJson !== currentQJson || savedVersion.titre !== exo.titre || savedVersion.actif !== exo.actif) {
+          hasChanges = true;
+          return { ...exo, questions: savedVersion.questions, titre: savedVersion.titre, sousTitre: savedVersion.sousTitre, actif: savedVersion.actif };
+        }
+        return exo;
+      });
+
+      // Propagate deletions: if an exercise was deleted in the source, delete it in siblings too
+      for (const delId of deletedExerciceIds) {
+        // Check if this exercise existed in the sibling (by ID in initial data)
+        if (!updatedDeletedExos.includes(delId)) {
+          const existsInSibling = md.exercices.some((e: any) => e.id === delId);
+          if (existsInSibling) {
+            updatedDeletedExos.push(delId);
+            hasChanges = true;
+          }
+        }
+      }
+
+      // Propagate additions: if a new exercise was added with an ID that doesn't exist in the sibling
+      // but the sibling's source data has it, it'll be handled by the source. For truly new exercises
+      // added by admin, we add them to the sibling if any of its exercises share IDs with the source.
+      const siblingExoIds = new Set(md.exercices.map((e: any) => e.id));
+      for (const [exoId, exoData] of savedExoMap) {
+        if (!siblingExoIds.has(exoId)) {
+          // Check if sibling module shares at least one exercise ID with the saved module
+          // (meaning they're related formations)
+          const sharedCount = md.exercices.filter((e: any) => savedExoMap.has(e.id)).length;
+          if (sharedCount >= 2) {
+            // This sibling shares enough exercises to warrant adding new ones too
+            updatedExercices.push(exoData);
+            hasChanges = true;
+          }
+        }
+      }
+
+      if (hasChanges) {
+        const updatedModuleData = { ...md, exercices: updatedExercices };
+        const { error: upsertError } = await supabase.from("module_editor_state").upsert(
+          [{
+            module_id: row.module_id,
+            module_data: updatedModuleData,
+            deleted_cours: row.deleted_cours,
+            deleted_exercices: updatedDeletedExos as any,
+            source_fingerprint: row.source_fingerprint,
+            updated_at: new Date().toISOString(),
+          }],
+          { onConflict: "module_id" }
+        );
+
+        if (upsertError) {
+          console.error(`[sync-shared] Error updating module ${row.module_id}:`, upsertError);
+        } else {
+          console.log(`[sync-shared] ✅ Synced shared exercises to module ${row.module_id}`);
+        }
+      }
+    }
+
+    // Also sync to modules that DON'T have a DB record yet but share exercises
+    // We need to check source data for all known modules
+    invalidateOtherModuleCaches(savedModuleId);
+  } catch (err) {
+    console.error("[sync-shared] Error in syncSharedExercisesToSiblingModules:", err);
+  }
+}
