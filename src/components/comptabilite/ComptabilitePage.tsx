@@ -127,6 +127,10 @@ export function ComptabilitePage() {
   const [paymentDates, setPaymentDates] = useState<Record<string, Date | undefined>>({});
   const [paymentMoyens, setPaymentMoyens] = useState<Record<string, string>>({});
   const [savingPayment, setSavingPayment] = useState<Record<string, boolean>>({});
+  // Partial payments state
+  const [paiements, setPaiements] = useState<Paiement[]>([]);
+  const [expandedFacture, setExpandedFacture] = useState<string | null>(null);
+  const [partialAmounts, setPartialAmounts] = useState<Record<string, string>>({});
 
   // GoCardless state
   const [gcRequisitionId, setGcRequisitionId] = useState<string | null>(null);
