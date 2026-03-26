@@ -666,7 +666,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     // Guard against infinite fetch loops (e.g. token rate-limiting causing repeated failures)
     fetchAttemptRef.current += 1;
     const currentAttempt = fetchAttemptRef.current;
-    if (currentAttempt > 3) {
+    if (currentAttempt > 8) {
       console.warn("CoursPublic: too many fetch attempts, stopping");
       setApprenantLoading(false);
       setApprenantFetchError("Connexion instable détectée. Cliquez sur Réessayer.");
@@ -684,7 +684,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             _user_id: user.id,
             _role: "admin",
           }),
-          12000,
+          45000,
           "Temps d'attente dépassé pendant la vérification du profil.",
         );
 
@@ -699,7 +699,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, modules_autorises, email, telephone, adresse, code_postal, ville, date_naissance")
             .eq("auth_user_id", user.id)
             .maybeSingle(),
-          12000,
+          45000,
           "Temps d'attente dépassé pendant le chargement du dossier apprenant.",
         );
 
@@ -728,9 +728,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
         const errorMessage = typeof err?.message === "string" ? err.message : "";
         if (errorMessage.includes("Temps d'attente dépassé")) {
-          setApprenantFetchError("Connexion lente détectée sur cet appareil. Cliquez sur Réessayer.");
+          // Auto-retry silently instead of blocking access
+          console.warn("CoursPublic: timeout, auto-retrying...");
+          setTimeout(() => {
+            if (!cancelled) setFetchNonce((v) => v + 1);
+          }, 2000);
+          return; // Don't show error, just retry
         } else {
-          setApprenantFetchError("Une erreur inattendue est survenue.");
+          setApprenantFetchError("Une erreur inattendue est survenue. Cliquez sur Réessayer.");
         }
       } finally {
         if (!cancelled) setApprenantLoading(false);
