@@ -93,6 +93,7 @@ import {
   getOverridesFingerprint,
   loadCrossModuleOverridesFromDb,
   applyCrossModuleOverrides,
+  syncSharedExercisesToSiblingModules,
   type ModuleInitialData,
 } from "./shared-exercise-overrides";
 
@@ -2477,6 +2478,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         if (error) throw error;
         saveErrorShownRef.current = false;
+
+        // Sync shared exercises to ALL sibling modules (handles edits, adds, deletes)
+        await syncSharedExercisesToSiblingModules(
+          module.id,
+          moduleData.exercices,
+          deletedExercices.map(e => e.id),
+        );
       } catch (err) {
         console.error("Erreur sauvegarde DB module_editor_state:", err);
         if (!saveErrorShownRef.current) {
