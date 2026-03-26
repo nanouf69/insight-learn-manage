@@ -490,26 +490,7 @@ export function ComptabilitePage() {
   const totalAPayer = aPayerItems.filter((i: APayer) => i.statut !== "paye").reduce((s: number, i: APayer) => s + i.montant, 0);
   const totalPaye2 = aPayerItems.filter((i: APayer) => i.statut === "paye").reduce((s: number, i: APayer) => s + i.montant, 0);
 
-  const handleMarquerPaye = async (item: APayer) => {
-    const date = paymentDates[item.id];
-    const moyen = paymentMoyens[item.id];
-    if (!date) { toast.error("Veuillez sélectionner une date de paiement"); return; }
-    if (!moyen) { toast.error("Veuillez sélectionner un moyen de paiement"); return; }
-    setSavingPayment(prev => ({ ...prev, [item.id]: true }));
-    const dateStr = format(date, "yyyy-MM-dd");
-    try {
-      const { error } = await supabase
-        .from("fournisseur_factures")
-        .update({ statut: "paye", date_paiement: dateStr, moyen_paiement: moyen })
-        .eq("id", item.source_id);
-      if (error) throw error;
-      toast.success(`Paiement enregistré pour ${item.nom}`);
-      await fetchFournisseurFactures();
-    } catch (err) {
-      toast.error("Erreur lors de l'enregistrement");
-    }
-    setSavingPayment(prev => ({ ...prev, [item.id]: false }));
-  };
+  // handleMarquerPaye removed - using handleAjouterPaiement instead
 
   const nbAPayer = aPayerItems.filter((i: APayer) => i.statut !== "paye").length;
 
