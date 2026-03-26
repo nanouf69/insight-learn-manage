@@ -1334,6 +1334,44 @@ export type Database = {
           },
         ]
       }
+      fournisseur_paiements: {
+        Row: {
+          created_at: string
+          date_paiement: string
+          facture_id: string
+          id: string
+          montant: number
+          moyen_paiement: string
+          notes: string | null
+        }
+        Insert: {
+          created_at?: string
+          date_paiement?: string
+          facture_id: string
+          id?: string
+          montant?: number
+          moyen_paiement?: string
+          notes?: string | null
+        }
+        Update: {
+          created_at?: string
+          date_paiement?: string
+          facture_id?: string
+          id?: string
+          montant?: number
+          moyen_paiement?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fournisseur_paiements_facture_id_fkey"
+            columns: ["facture_id"]
+            isOneToOne: false
+            referencedRelation: "fournisseur_factures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fournisseur_shared_docs: {
         Row: {
           created_at: string
