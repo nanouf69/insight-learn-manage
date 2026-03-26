@@ -905,30 +905,40 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return <StudentLogin onLogin={() => {}} />;
   }
 
-  // Authenticated but apprenant profile not yet loaded (avoid white screen / forced logout)
+  // Authenticated but apprenant profile not yet loaded — show warning banner, NEVER block fully
   if (!embedded && user && !apprenant) {
+    if (apprenantLoading) {
+      return (
+        <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-3">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+          <p className="text-sm text-muted-foreground">Chargement de votre espace apprenant…</p>
+        </div>
+      );
+    }
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="w-full max-w-md rounded-xl border bg-background p-6 shadow-sm text-center space-y-3">
-          <AlertTriangle className="w-10 h-10 text-amber-500 mx-auto" />
-          <h1 className="text-lg font-semibold">Accès modules indisponible</h1>
-          <p className="text-sm text-muted-foreground">
-            {apprenantFetchError || "Nous n’arrivons pas à charger votre dossier apprenant pour le moment."}
-          </p>
-          <div className="flex items-center justify-center gap-2 pt-1">
-            <Button
-              size="sm"
-              onClick={() => {
-                fetchAttemptRef.current = 0;
-                setFetchNonce((value) => value + 1);
-              }}
-            >
-              Réessayer
-            </Button>
-            <Button size="sm" variant="outline" onClick={handleLogout}>
-              Se déconnecter
-            </Button>
+      <div className="min-h-screen bg-slate-50 flex flex-col">
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+            <p className="text-sm text-amber-800">
+              {apprenantFetchError || "Chargement du profil en cours…"}{" "}
+              <button
+                className="underline font-medium"
+                onClick={() => {
+                  fetchAttemptRef.current = 0;
+                  setFetchNonce((value) => value + 1);
+                }}
+              >
+                Réessayer
+              </button>
+            </p>
           </div>
+          <Button size="sm" variant="outline" className="shrink-0 text-xs" onClick={handleLogout}>
+            Se déconnecter
+          </Button>
+        </div>
+        <div className="flex-1 p-4 text-center text-muted-foreground flex items-center justify-center">
+          <p>Vos modules se chargeront automatiquement dès que la connexion sera rétablie.</p>
         </div>
       </div>
     );
