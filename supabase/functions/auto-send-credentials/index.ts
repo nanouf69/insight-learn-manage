@@ -22,14 +22,12 @@ serve(async (req) => {
 
     console.log(`[auto-send-credentials] Running for date: ${today}`);
 
-    // Find apprenants whose e-learning start date is today
-    // They must have an account (auth_user_id) and an email
-    // Check date_debut_cours_en_ligne OR date_debut_formation
+    // Find ALL apprenants whose formation starts today (with or without account)
     const { data: apprenants, error: fetchErr } = await supabaseAdmin
       .from("apprenants")
       .select("id, nom, prenom, email, auth_user_id, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, date_debut_formation, date_fin_formation")
-      .not("auth_user_id", "is", null)
-      .not("email", "is", null);
+      .not("email", "is", null)
+      .is("deleted_at", null);
 
     if (fetchErr) {
       console.error("[auto-send-credentials] Fetch error:", fetchErr);
@@ -63,9 +61,9 @@ serve(async (req) => {
 
     const alreadySent = new Set((existingEmails || []).map((e: any) => e.apprenant_id));
 
-    const toSend = eligibleApprenants.filter((a: any) => !alreadySent.has(a.id));
+    const toProcess = eligibleApprenants.filter((a: any) => !alreadySent.has(a.id));
 
-    console.log(`[auto-send-credentials] ${toSend.length} apprenants to send (${alreadySent.size} already sent)`);
+    console.log(`[auto-send-credentials] ${toProcess.length} apprenants to process (${alreadySent.size} already sent)`);
 
     // Get MS Graph token
     const tenantId = Deno.env.get("MS_GRAPH_TENANT_ID");
@@ -125,33 +123,104 @@ serve(async (req) => {
       "passage-pratique": "Passage examen pratique",
     };
 
-    const results: { id: string; email: string; success: boolean; error?: string }[] = [];
+    const generatePassword = () => {
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+      let pwd = "";
+      const randomBytes = new Uint8Array(8);
+      crypto.getRandomValues(randomBytes);
+      for (let i = 0; i < 8; i++) {
+        pwd += chars[randomBytes[i] % chars.length];
+      }
+      return pwd;
+    };
+
+    const results: { id: string; email: string; success: boolean; accountCreated?: boolean; error?: string }[] = [];
     const senderEmail = "contact@ftransport.fr";
     const coursUrl = "https://insight-learn-manage.lovable.app/cours-public";
 
-    for (const apprenant of toSend) {
+    for (const apprenant of toProcess) {
       try {
-        // Generate new password
-        const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
-        let newPassword = "";
-        const randomBytes = new Uint8Array(8);
-        crypto.getRandomValues(randomBytes);
-        for (let i = 0; i < 8; i++) {
-          newPassword += chars[randomBytes[i] % chars.length];
+        let newPassword = generatePassword();
+        let authUserId = apprenant.auth_user_id;
+
+        // ===== STEP 1: Create account if needed =====
+        if (!authUserId) {
+          console.log(`[auto-send-credentials] Creating account for ${apprenant.email}`);
+
+          const { data: createData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+            email: apprenant.email,
+            password: newPassword,
+            email_confirm: true,
+            user_metadata: {
+              full_name: `${apprenant.prenom || ""} ${apprenant.nom || ""}`.trim(),
+              is_apprenant: true,
+            },
+          });
+
+          if (authError) {
+            // If user already exists, find and reuse
+            if (authError.message.includes("already been registered")) {
+              console.log(`[auto-send-credentials] User already exists for ${apprenant.email}, linking...`);
+              const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
+              const existingUser = listData?.users?.find((u: any) => u.email === apprenant.email);
+
+              if (existingUser) {
+                // Update password
+                await supabaseAdmin.auth.admin.updateUserById(existingUser.id, { password: newPassword });
+                authUserId = existingUser.id;
+              } else {
+                console.error(`[auto-send-credentials] Could not find existing user for ${apprenant.email}`);
+                results.push({ id: apprenant.id, email: apprenant.email, success: false, error: "Utilisateur existant introuvable" });
+                continue;
+              }
+            } else {
+              console.error(`[auto-send-credentials] Account creation failed for ${apprenant.email}:`, authError.message);
+              results.push({ id: apprenant.id, email: apprenant.email, success: false, error: authError.message });
+              continue;
+            }
+          } else {
+            authUserId = createData?.user?.id;
+          }
+
+          if (!authUserId) {
+            results.push({ id: apprenant.id, email: apprenant.email, success: false, error: "ID auth manquant" });
+            continue;
+          }
+
+          // Link auth_user_id to apprenant
+          await supabaseAdmin
+            .from("apprenants")
+            .update({ auth_user_id: authUserId })
+            .eq("id", apprenant.id);
+
+          // Also set cours en ligne dates if missing
+          const updates: Record<string, string> = {};
+          if (!apprenant.date_debut_cours_en_ligne && apprenant.date_debut_formation) {
+            updates.date_debut_cours_en_ligne = apprenant.date_debut_formation;
+          }
+          if (!apprenant.date_fin_cours_en_ligne && apprenant.date_fin_formation) {
+            updates.date_fin_cours_en_ligne = apprenant.date_fin_formation;
+          }
+          if (Object.keys(updates).length > 0) {
+            await supabaseAdmin.from("apprenants").update(updates).eq("id", apprenant.id);
+          }
+
+          console.log(`[auto-send-credentials] ✅ Account created for ${apprenant.email} (${authUserId})`);
+        } else {
+          // ===== Account exists, just reset password =====
+          const { error: updateErr } = await supabaseAdmin.auth.admin.updateUserById(
+            authUserId,
+            { password: newPassword }
+          );
+
+          if (updateErr) {
+            console.error(`[auto-send-credentials] Password reset failed for ${apprenant.email}:`, updateErr);
+            results.push({ id: apprenant.id, email: apprenant.email, success: false, error: updateErr.message });
+            continue;
+          }
         }
 
-        // Reset password
-        const { error: updateErr } = await supabaseAdmin.auth.admin.updateUserById(
-          apprenant.auth_user_id,
-          { password: newPassword }
-        );
-
-        if (updateErr) {
-          console.error(`[auto-send-credentials] Password reset failed for ${apprenant.email}:`, updateErr);
-          results.push({ id: apprenant.id, email: apprenant.email, success: false, error: updateErr.message });
-          continue;
-        }
-
+        // ===== STEP 2: Send email =====
         const rawFormation = apprenant.formation_choisie || "";
         const formationParts = rawFormation.split(" + ").map((p: string) => formationLabels[p.trim()] || p.trim()).filter(Boolean);
         const formation = formationParts.length > 0 ? formationParts.join(" + ") : "Non spécifiée";
@@ -240,8 +309,8 @@ serve(async (req) => {
             has_attachments: false,
             sent_at: new Date().toISOString(),
           });
-          results.push({ id: apprenant.id, email: apprenant.email, success: true });
-          console.log(`[auto-send-credentials] ✅ Sent to ${apprenant.email}`);
+          results.push({ id: apprenant.id, email: apprenant.email, success: true, accountCreated: !apprenant.auth_user_id });
+          console.log(`[auto-send-credentials] ✅ Sent to ${apprenant.email} (account created: ${!apprenant.auth_user_id})`);
         } else {
           const errText = await sendRes.text();
           console.error(`[auto-send-credentials] ❌ Failed for ${apprenant.email}:`, errText);
@@ -255,21 +324,22 @@ serve(async (req) => {
 
     const successCount = results.filter((r) => r.success).length;
     const failCount = results.filter((r) => !r.success).length;
+    const accountsCreated = results.filter((r) => r.accountCreated).length;
 
     // Create admin alert
     if (results.length > 0) {
       await supabaseAdmin.from("alertes_systeme").insert({
         type: "auto_credentials",
         titre: `📧 Envoi automatique des identifiants`,
-        message: `${successCount} identifiant(s) envoyé(s) automatiquement, ${failCount} échec(s)`,
+        message: `${successCount} identifiant(s) envoyé(s), ${accountsCreated} compte(s) créé(s), ${failCount} échec(s)`,
         details: JSON.stringify(results),
       });
     }
 
-    console.log(`[auto-send-credentials] Done: ${successCount} sent, ${failCount} failed`);
+    console.log(`[auto-send-credentials] Done: ${successCount} sent, ${accountsCreated} accounts created, ${failCount} failed`);
 
     return new Response(
-      JSON.stringify({ success: true, sent: successCount, failed: failCount, results }),
+      JSON.stringify({ success: true, sent: successCount, accountsCreated, failed: failCount, results }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
