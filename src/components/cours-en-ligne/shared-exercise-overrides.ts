@@ -372,6 +372,24 @@ function invalidateOtherModuleCaches(currentModuleId: number): void {
   console.log(`[shared-overrides] Invalidated all module caches except module ${currentModuleId}`);
 }
 
+/**
+ * Deduplicate questions within each exercise by enonce text.
+ * Keeps only the first occurrence of each unique enonce.
+ */
+function deduplicateExerciseQuestions(exercices: any[]): any[] {
+  return exercices.map((exo: any) => {
+    if (!exo.questions || !Array.isArray(exo.questions)) return exo;
+    const seen = new Set<string>();
+    const deduped = exo.questions.filter((q: any) => {
+      const key = (q.enonce || "").trim();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    return deduped.length < exo.questions.length ? { ...exo, questions: deduped } : exo;
+  });
+}
+
 // ======================================================================
 // FULL CROSS-MODULE EXERCISE SYNC (handles edits, adds, AND deletes)
 // ======================================================================
