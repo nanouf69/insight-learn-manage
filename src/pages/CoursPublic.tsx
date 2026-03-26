@@ -666,7 +666,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     // Guard against infinite fetch loops (e.g. token rate-limiting causing repeated failures)
     fetchAttemptRef.current += 1;
     const currentAttempt = fetchAttemptRef.current;
-    if (currentAttempt > 3) {
+    if (currentAttempt > 8) {
       console.warn("CoursPublic: too many fetch attempts, stopping");
       setApprenantLoading(false);
       setApprenantFetchError("Connexion instable détectée. Cliquez sur Réessayer.");
