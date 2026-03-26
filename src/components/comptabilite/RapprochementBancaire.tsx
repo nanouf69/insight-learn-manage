@@ -379,6 +379,26 @@ export function RapprochementBancaire() {
   const handleSyncRevolut = async () => {
     setSyncingRevolut(true);
     try {
+      // First check if a valid Revolut token exists
+      const { data: tokenRow, error: tokenErr } = await supabase
+        .from("revolut_tokens")
+        .select("expires_at")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (tokenErr || !tokenRow) {
+        toast.error("Aucun token Revolut trouvé. Allez sur /revolut-connect pour connecter votre compte Revolut.");
+        setSyncingRevolut(false);
+        return;
+      }
+
+      if (tokenRow.expires_at && new Date(tokenRow.expires_at) < new Date()) {
+        toast.error("Le token Revolut a expiré. Reconnectez-vous sur /revolut-connect.");
+        setSyncingRevolut(false);
+        return;
+      }
+
       const { data, error: fnError } = await supabase.functions.invoke("revolut-transactions");
       if (fnError) throw new Error(fnError.message);
       if (data?.error) throw new Error(data.error);

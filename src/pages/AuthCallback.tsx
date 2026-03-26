@@ -1,14 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export default function AuthCallback() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [status, setStatus] = useState<"loading" | "exchanging" | "success" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "waiting_session" | "exchanging" | "success" | "error">("loading");
   const [error, setError] = useState<string | null>(null);
+  const exchangeAttempted = useRef(false);
 
   useEffect(() => {
     const authCode = searchParams.get("code");
@@ -26,17 +29,42 @@ export default function AuthCallback() {
       return;
     }
 
-    // Store code temporarily
-    try {
-      sessionStorage.setItem("revolut_auth_code", authCode);
-      sessionStorage.setItem("revolut_auth_timestamp", Date.now().toString());
-    } catch (e) {
-      console.error("[AuthCallback] sessionStorage write failed", e);
+    // Wait for Supabase session to be restored, then exchange
+    setStatus("waiting_session");
+    waitForSessionAndExchange(authCode);
+  }, [searchParams]);
+
+  const waitForSessionAndExchange = async (code: string) => {
+    if (exchangeAttempted.current) return;
+    exchangeAttempted.current = true;
+
+    // Try to get session immediately
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (sessionData?.session) {
+      await exchangeToken(code);
+      return;
     }
 
-    // Auto-exchange code for token
-    exchangeToken(authCode);
-  }, [searchParams]);
+    // Wait for auth state change (session restoration after redirect)
+    let resolved = false;
+    const timeout = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        setError("Session expirée. Veuillez vous reconnecter puis réessayer la connexion Revolut.");
+        setStatus("error");
+      }
+    }, 10000);
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (resolved) return;
+      if (session && (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION")) {
+        resolved = true;
+        clearTimeout(timeout);
+        subscription.unsubscribe();
+        await exchangeToken(code);
+      }
+    });
+  };
 
   const exchangeToken = async (code: string) => {
     setStatus("exchanging");
@@ -53,13 +81,8 @@ export default function AuthCallback() {
         throw new Error(data.error);
       }
 
-      // Clean up sessionStorage
-      try {
-        sessionStorage.removeItem("revolut_auth_code");
-        sessionStorage.removeItem("revolut_auth_timestamp");
-      } catch {}
-
       setStatus("success");
+      toast.success("Connexion Revolut réussie ! Token enregistré.");
 
       // Redirect to transactions page after 2s
       setTimeout(() => {
@@ -82,6 +105,17 @@ export default function AuthCallback() {
               <p className="text-muted-foreground">Traitement en cours…</p>
             </>
           )}
+          {status === "waiting_session" && (
+            <>
+              <Loader2 className="mx-auto h-16 w-16 text-primary animate-spin" />
+              <h1 className="text-2xl font-bold text-foreground">
+                Restauration de la session…
+              </h1>
+              <p className="text-muted-foreground">
+                Veuillez patienter pendant la restauration de votre session.
+              </p>
+            </>
+          )}
           {status === "exchanging" && (
             <>
               <Loader2 className="mx-auto h-16 w-16 text-primary animate-spin" />
@@ -97,10 +131,10 @@ export default function AuthCallback() {
             <>
               <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
               <h1 className="text-2xl font-bold text-foreground">
-                Connexion Revolut réussie
+                Connexion Revolut réussie ✅
               </h1>
               <p className="text-muted-foreground">
-                Redirection vers les transactions…
+                Le token a été enregistré. Redirection vers les transactions…
               </p>
             </>
           )}
@@ -111,6 +145,14 @@ export default function AuthCallback() {
                 Erreur de connexion
               </h1>
               <p className="text-muted-foreground">{error}</p>
+              <div className="flex gap-2 justify-center pt-2">
+                <Button variant="outline" onClick={() => navigate("/revolut-connect")}>
+                  Réessayer
+                </Button>
+                <Button variant="outline" onClick={() => navigate("/")}>
+                  Retour
+                </Button>
+              </div>
             </>
           )}
         </CardContent>
