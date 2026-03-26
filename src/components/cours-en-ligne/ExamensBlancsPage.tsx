@@ -3544,6 +3544,7 @@ export default function ExamensBlancsPage({
       const r = tousResultats[mi];
       if (!r) return;
       const qSafe = (matiere.questions || []).filter((q): q is Question => !!q && q?.type !== undefined);
+      const savedCorrectionsIA = r.correctionsIA || (r as any).details?.correctionsIA || {};
       qSafe.forEach(q => {
         const rep = r.reponses?.[q.id];
         let isCorrect = false;
@@ -3552,11 +3553,17 @@ export default function ExamensBlancsPage({
            const donnees = safeArray<string>(rep).sort();
            isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
         } else if (q?.type === "QRC") {
-          const repStr = safeStr(rep).toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
-          const motsCles = q.reponses_possibles || [];
-          let nbTrouvees = 0;
-          motsCles.forEach(mc => { const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, ""); if (repStr.includes(mcN)) nbTrouvees++; });
-          isCorrect = nbTrouvees >= motsCles.length;
+          // Check saved IA/manual corrections first
+          const corrIA = savedCorrectionsIA[q.id] || savedCorrectionsIA[String(q.id)];
+          if (corrIA && typeof corrIA === "object" && "pointsObtenus" in corrIA) {
+            isCorrect = (corrIA as any).pointsObtenus > 0;
+          } else {
+            const repStr = safeStr(rep).toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
+            const motsCles = q.reponses_possibles || [];
+            let nbTrouvees = 0;
+            motsCles.forEach(mc => { const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, ""); if (repStr.includes(mcN)) nbTrouvees++; });
+            isCorrect = nbTrouvees >= motsCles.length;
+          }
         }
         if (!isCorrect) {
           wrongQuestions.push({ matiere, question: q, matiereNom: matiere.nom });
