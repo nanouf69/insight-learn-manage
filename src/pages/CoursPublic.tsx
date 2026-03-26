@@ -23,6 +23,7 @@ import { safeDateParse } from "@/lib/safeDateParse";
 import { useConnexionTracking } from "@/hooks/useConnexionTracking";
 import { usePresenceCheck } from "@/hooks/usePresenceCheck";
 import { useInactivityAlert } from "@/hooks/useInactivityAlert";
+import { useSessionKeepAlive } from "@/hooks/useSessionKeepAlive";
 import { PresenceCheckModal } from "@/components/cours-en-ligne/PresenceCheckModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -621,6 +622,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     userId: user?.id || null,
     enabled: isStudentSession,
   });
+
+  // Keep Supabase auth token alive while student is active (prevents expiry during exams/modules)
+  useSessionKeepAlive(isStudentSession);
 
   // Presence verification: every 4h + 7h max session
   const handleForceDisconnect = useCallback(async () => {
