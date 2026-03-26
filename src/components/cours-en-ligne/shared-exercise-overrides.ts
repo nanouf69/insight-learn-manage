@@ -137,7 +137,7 @@ async function propagateOverridesToAllModules(
         const { updatedExercices, hasChanges } = applyOverridesToExercicesArray(md.exercices, changedOverrides);
 
         if (hasChanges) {
-          const updatedModuleData = { ...md, exercices: updatedExercices };
+          const updatedModuleData = { ...md, exercices: deduplicateExerciseQuestions(updatedExercices) };
           await supabase.from("module_editor_state").upsert(
             [{
               module_id: row.module_id,
@@ -162,7 +162,7 @@ async function propagateOverridesToAllModules(
       const { updatedExercices, hasChanges } = applyOverridesToExercicesArray(moduleData.exercices, changedOverrides);
 
       if (hasChanges) {
-        const newModuleData = { ...moduleData, exercices: updatedExercices };
+        const newModuleData = { ...moduleData, exercices: deduplicateExerciseQuestions(updatedExercices) };
         const { error: insertError } = await supabase.from("module_editor_state").upsert(
           [{
             module_id: moduleData.id,
@@ -372,6 +372,24 @@ function invalidateOtherModuleCaches(currentModuleId: number): void {
   console.log(`[shared-overrides] Invalidated all module caches except module ${currentModuleId}`);
 }
 
+/**
+ * Deduplicate questions within each exercise by enonce text.
+ * Keeps only the first occurrence of each unique enonce.
+ */
+function deduplicateExerciseQuestions(exercices: any[]): any[] {
+  return exercices.map((exo: any) => {
+    if (!exo.questions || !Array.isArray(exo.questions)) return exo;
+    const seen = new Set<string>();
+    const deduped = exo.questions.filter((q: any) => {
+      const key = (q.enonce || "").trim();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    return deduped.length < exo.questions.length ? { ...exo, questions: deduped } : exo;
+  });
+}
+
 // ======================================================================
 // FULL CROSS-MODULE EXERCISE SYNC (handles edits, adds, AND deletes)
 // ======================================================================
@@ -464,7 +482,9 @@ export async function syncSharedExercisesToSiblingModules(
       }
 
       if (hasChanges) {
-        const updatedModuleData = { ...md, exercices: updatedExercices };
+        // Deduplicate questions within each exercise before saving
+        const deduplicatedExercices = deduplicateExerciseQuestions(updatedExercices);
+        const updatedModuleData = { ...md, exercices: deduplicatedExercices };
         const { error: upsertError } = await supabase.from("module_editor_state").upsert(
           [{
             module_id: row.module_id,
