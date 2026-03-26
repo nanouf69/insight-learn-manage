@@ -3555,8 +3555,8 @@ export default function ExamensBlancsPage({
         } else if (q?.type === "QRC") {
           // Check saved IA/manual corrections first
           const corrIA = savedCorrectionsIA[q.id] || savedCorrectionsIA[String(q.id)];
-          if (corrIA && typeof corrIA === "object" && "pointsObtenus" in corrIA) {
-            isCorrect = (corrIA as any).pointsObtenus > 0;
+          if (corrIA && typeof corrIA === "object" && ("estCorrect" in corrIA || "pointsObtenus" in corrIA)) {
+            isCorrect = "estCorrect" in corrIA ? !!(corrIA as any).estCorrect : (corrIA as any).pointsObtenus > 0;
           } else {
             const repStr = safeStr(rep).toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
             const motsCles = q.reponses_possibles || [];
