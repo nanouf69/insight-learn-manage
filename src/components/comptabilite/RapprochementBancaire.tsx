@@ -269,6 +269,8 @@ export function RapprochementBancaire() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [justificatifs, setJustificatifs] = useState<Justificatif[]>([]);
   const [apprenants, setApprenants] = useState<ApprenantWithSession[]>([]);
+  const [fournisseursList, setFournisseursList] = useState<{ id: string; nom: string }[]>([]);
+  const [fournisseurCustomInput, setFournisseurCustomInput] = useState(false);
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
   const [filterStatut, setFilterStatut] = useState("tous");
@@ -307,13 +309,15 @@ export function RapprochementBancaire() {
       return all;
     };
 
-    const [txs, { data: just }, { data: apprenantsData }, { data: saData }] = await Promise.all([
+    const [txs, { data: just }, { data: apprenantsData }, { data: saData }, { data: fourData }] = await Promise.all([
       fetchAllTxs(),
       supabase.from("justificatifs").select("id, nom_fichier, url, montant_ttc, date_operation, categorie, fournisseur, statut"),
       supabase.from("apprenants").select("id, nom, prenom, date_debut_formation, date_fin_formation"),
       supabase.from("session_apprenants").select("apprenant_id, date_debut, date_fin, sessions(date_debut, date_fin)"),
+      supabase.from("fournisseurs").select("id, nom").eq("actif", true).order("nom"),
     ]);
     if (txs) setTransactions(txs);
+    if (fourData) setFournisseursList(fourData as { id: string; nom: string }[]);
     if (just) setJustificatifs(just as Justificatif[]);
     
     // Build apprenants with session dates
@@ -910,12 +914,38 @@ export function RapprochementBancaire() {
                                     {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
                                   </SelectContent>
                                 </Select>
-                                <Input
-                                  placeholder="Fournisseur / Client"
-                                  value={editForm.fournisseur_client || ""}
-                                  onChange={e => setEditForm(f => ({ ...f, fournisseur_client: e.target.value }))}
-                                  className="h-8 text-xs"
-                                />
+                                {fournisseurCustomInput ? (
+                                  <div className="flex gap-1">
+                                    <Input
+                                      placeholder="Saisie libre..."
+                                      value={editForm.fournisseur_client || ""}
+                                      onChange={e => setEditForm(f => ({ ...f, fournisseur_client: e.target.value }))}
+                                      className="h-8 text-xs flex-1"
+                                    />
+                                    <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => setFournisseurCustomInput(false)}>Liste</Button>
+                                  </div>
+                                ) : (
+                                  <div className="flex gap-1">
+                                    <Select
+                                      value={editForm.fournisseur_client || ""}
+                                      onValueChange={v => {
+                                        if (v === "__custom__") {
+                                          setFournisseurCustomInput(true);
+                                        } else {
+                                          setEditForm(f => ({ ...f, fournisseur_client: v }));
+                                        }
+                                      }}
+                                    >
+                                      <SelectTrigger className="h-8 text-xs flex-1"><SelectValue placeholder="Fournisseur / Client" /></SelectTrigger>
+                                      <SelectContent>
+                                        {fournisseursList.map(f => (
+                                          <SelectItem key={f.id} value={f.nom}>{f.nom}</SelectItem>
+                                        ))}
+                                        <SelectItem value="__custom__">✏️ Saisie libre...</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                )}
                                 <Input
                                   placeholder="Notes"
                                   value={editForm.notes || ""}
@@ -941,6 +971,7 @@ export function RapprochementBancaire() {
                                       className="text-[10px] text-amber-600 underline underline-offset-2 hover:text-amber-800"
                                       onClick={() => {
                                         setEditingId(tx.id);
+                                        setFournisseurCustomInput(false);
                                         setEditForm({ categorie: tx.categorie, fournisseur_client: tx.fournisseur_client, notes: tx.notes });
                                       }}
                                     >
@@ -1011,6 +1042,7 @@ export function RapprochementBancaire() {
                                   <DropdownMenuContent align="end">
                                     <DropdownMenuItem onClick={() => {
                                       setEditingId(tx.id);
+                                      setFournisseurCustomInput(false);
                                       setEditForm({ categorie: tx.categorie, fournisseur_client: tx.fournisseur_client, notes: tx.notes });
                                     }}>
                                       ✏️ Modifier / Catégoriser
