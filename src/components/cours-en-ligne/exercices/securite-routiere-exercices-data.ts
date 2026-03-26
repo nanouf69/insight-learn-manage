@@ -19,76 +19,76 @@ export const SECURITE_ROUTIERE_EXERCICES: {
     sousTitre: "Panneaux de signalisation, marquages au sol, voies spéciales, stationnement, priorités, feux, éclairage",
     questions: [
       // SECTION 1 — PANNEAUX DE SIGNALISATION
-      { id: 1, enonce: "Ce panneau (triangle pointe en bas) m'annonce :", choix: [
+      { id: 1, enonce: "Ce panneau m'annonce :", image: "/cours/examens/panneaux/panneau-cedez-passage.png", choix: [
         { lettre: "A", texte: "Stop" },
         { lettre: "B", texte: "Cédez le passage", correct: true },
         { lettre: "C", texte: "Interdiction de stationner" },
       ]},
-      { id: 2, enonce: "Ce panneau (losange jaune barré) m'annonce :", choix: [
+      { id: 2, enonce: "Ce panneau m'annonce :", image: "/cours/examens/panneaux/panneau-fin-priorite.png", choix: [
         { lettre: "A", texte: "Sortie de zone à stationnement interdit" },
         { lettre: "B", texte: "Passage pour piétons" },
         { lettre: "C", texte: "Priorité ponctuelle à la prochaine intersection", correct: true },
       ]},
-      { id: 3, enonce: "Ce panneau (triangle avec flèche) m'annonce :", choix: [
+      { id: 3, enonce: "Ce panneau m'annonce :", image: "/cours/examens/panneaux/panneau-priorite-droite.png", choix: [
         { lettre: "A", texte: "Virage à droite" },
         { lettre: "B", texte: "Priorité à droite à la prochaine intersection", correct: true },
         { lettre: "C", texte: "Virage à gauche" },
       ]},
-      { id: 4, enonce: "Ce panneau m'annonce :", choix: [
+      { id: 4, enonce: "Ce panneau m'annonce :", image: "/cours/examens/panneaux/panneau-cedez-passage.png", choix: [
         { lettre: "A", texte: "Cédez le passage", correct: true },
         { lettre: "B", texte: "Priorité ponctuelle à la prochaine intersection" },
         { lettre: "C", texte: "Succession de virages dont le 1er est à droite" },
       ]},
-      { id: 5, enonce: "Ce panneau m'annonce :", choix: [
+      { id: 5, enonce: "Ce panneau m'annonce :", image: "/cours/examens/panneaux/panneau-route-prioritaire.png", choix: [
         { lettre: "A", texte: "Sortie de zone à stationnement interdit" },
         { lettre: "B", texte: "Fin de voie réservée aux véhicules de TC" },
         { lettre: "C", texte: "Route à caractère prioritaire", correct: true },
       ]},
-      { id: 6, enonce: "Ce panneau m'annonce :", choix: [
+      { id: 6, enonce: "Ce panneau m'annonce :", image: "/cours/examens/panneaux/panneau-arret-bus.png", choix: [
         { lettre: "A", texte: "Stationnement interdit" },
         { lettre: "B", texte: "Sens unique" },
         { lettre: "C", texte: "Arrêt d'autobus", correct: true },
       ]},
-      { id: 7, enonce: "Ce panneau m'annonce :", choix: [
+      { id: 7, enonce: "Ce panneau m'annonce :", image: "/cours/examens/panneaux/panneau-impasse.png", choix: [
         { lettre: "A", texte: "Fin de route à accès réglementé" },
         { lettre: "B", texte: "Arrêt et stationnement interdit" },
         { lettre: "C", texte: "Impasse", correct: true },
       ]},
-      { id: 8, enonce: "Ce panneau signifie que le :", choix: [
+      { id: 8, enonce: "Ce panneau signifie que le :", image: "/cours/examens/panneaux/panneau-stationnement-interdit-1-15.png", choix: [
         { lettre: "A", texte: "Stationnement est interdit du 1er au 15 du mois du côté du panneau", correct: true },
         { lettre: "B", texte: "Stationnement est interdit du 16 au 31 du mois" },
         { lettre: "C", texte: "Stationnement interdit" },
       ]},
-      { id: 9, enonce: "Ce panneau signifie que le :", choix: [
+      { id: 9, enonce: "Ce panneau signifie que le :", image: "/cours/examens/panneaux/panneau-stationnement-interdit-16-31.png", choix: [
         { lettre: "A", texte: "Stationnement interdit" },
         { lettre: "B", texte: "Stationnement interdit du 1er au 15 du mois" },
         { lettre: "C", texte: "Stationnement est interdit du 16 au 31 du mois du côté du panneau", correct: true },
       ]},
-      { id: 10, enonce: "Ce panneau signifie :", choix: [
+      { id: 10, enonce: "Ce panneau signifie :", image: "/cours/examens/panneaux/panneau-arret-stationnement-interdit.png", choix: [
         { lettre: "A", texte: "Sortie de zone à stationnement interdit" },
         { lettre: "B", texte: "Arrêt et stationnement interdit", correct: true },
         { lettre: "C", texte: "Proximité d'une chaussée rétrécie" },
       ]},
-      { id: 11, enonce: "Ce panneau signifie :", choix: [
+      { id: 11, enonce: "Ce panneau signifie :", image: "/cours/examens/panneaux/panneau-enfants.png", choix: [
         { lettre: "A", texte: "Passage d'animaux sauvages" },
         { lettre: "B", texte: "Endroit fréquenté par les enfants", correct: true },
         { lettre: "C", texte: "Chemin obligatoire pour cavaliers" },
       ]},
-      { id: 12, enonce: "Ce panneau signifie :", choix: [
+      { id: 12, enonce: "Ce panneau signifie :", image: "/cours/examens/panneaux/panneau-passage-pietons.png", choix: [
         { lettre: "A", texte: "Passage pour piétons", correct: true },
         { lettre: "B", texte: "Endroit fréquenté par les enfants" },
         { lettre: "C", texte: "Chemin obligatoire pour piétons" },
       ]},
-      { id: 13, enonce: "Ce panneau signifie :", choix: [
+      { id: 13, enonce: "Ce panneau signifie :", image: "/cours/examens/panneaux/panneau-voie-bus.png", choix: [
         { lettre: "A", texte: "Voie réservée aux véhicules de transport en commun", correct: true },
         { lettre: "B", texte: "Fin de voie réservée aux véhicules de TC" },
       ]},
-      { id: 14, enonce: "Ce panneau signifie :", choix: [
+      { id: 14, enonce: "Ce panneau signifie :", image: "/cours/examens/panneaux/panneau-vitesse-minimum.png", choix: [
         { lettre: "A", texte: "Vitesse maximum obligatoire" },
         { lettre: "B", texte: "Vitesse minimum obligatoire", correct: true },
         { lettre: "C", texte: "Fin de route à accès réglementé" },
       ]},
-      { id: 15, enonce: "Ce panneau signifie :", choix: [
+      { id: 15, enonce: "Ce panneau signifie :", image: "/cours/examens/panneaux/panneau-piste-cyclable.png", choix: [
         { lettre: "A", texte: "Passage pour piétons" },
         { lettre: "B", texte: "Fin de piste cyclable" },
         { lettre: "C", texte: "Débouchés de cyclistes", correct: true },

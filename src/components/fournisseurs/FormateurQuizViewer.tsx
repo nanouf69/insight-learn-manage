@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp, CheckCircle2 } from "lucide-react";
 interface QuizQuestion {
   id: number;
   enonce: string;
+  image?: string;
   choix: { lettre: string; texte: string; correct?: boolean }[];
 }
 
@@ -69,6 +70,16 @@ export function FormateurQuizViewer({ sections, title, icon = "📝" }: Props) {
                         <span className="text-muted-foreground mr-1">{qi + 1}.</span>
                         {q.enonce}
                       </p>
+                      {q.image && (
+                        <div className="pl-4 py-1">
+                          <img
+                            src={q.image}
+                            alt="Illustration"
+                            className="max-h-24 rounded border object-contain"
+                            loading="lazy"
+                          />
+                        </div>
+                      )}
                       <div className="grid gap-1 pl-4">
                         {q.choix.map(c => (
                           <div
