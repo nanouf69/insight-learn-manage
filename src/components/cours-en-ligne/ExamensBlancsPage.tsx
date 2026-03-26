@@ -1710,8 +1710,8 @@ function PassageMatiere({
         </div>
       )}
 
-      {/* Calculatrice flottante pour Gestion */}
-      {isGestion && showCalculator && (
+      {/* Calculatrice flottante */}
+      {showCalculator && (
         <CalculatriceExamen onClose={() => setShowCalculator(false)} />
       )}
     </div>
