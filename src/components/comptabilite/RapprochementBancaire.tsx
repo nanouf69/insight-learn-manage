@@ -269,6 +269,8 @@ export function RapprochementBancaire() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [justificatifs, setJustificatifs] = useState<Justificatif[]>([]);
   const [apprenants, setApprenants] = useState<ApprenantWithSession[]>([]);
+  const [fournisseursList, setFournisseursList] = useState<{ id: string; nom: string }[]>([]);
+  const [fournisseurCustomInput, setFournisseurCustomInput] = useState(false);
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
   const [filterStatut, setFilterStatut] = useState("tous");
