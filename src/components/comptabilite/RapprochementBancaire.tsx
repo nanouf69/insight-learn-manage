@@ -613,7 +613,8 @@ export function RapprochementBancaire() {
   const filtered = transactions.filter(tx => {
     const matchStatut = filterStatut === "tous" || tx.statut === filterStatut;
     const matchType = filterType === "tous" || (filterType === "debit" ? tx.montant < 0 : tx.montant > 0);
-    const matchBanque = filterBanque === "tous" || tx.banque === filterBanque;
+    const normBanque = (b: string) => b.toLowerCase().replace(/\s+/g, "");
+    const matchBanque = filterBanque === "tous" || normBanque(tx.banque) === normBanque(filterBanque);
     const matchSearch = !search ||
       tx.libelle.toLowerCase().includes(search.toLowerCase()) ||
       (tx.fournisseur_client || "").toLowerCase().includes(search.toLowerCase()) ||
@@ -791,7 +792,8 @@ export function RapprochementBancaire() {
             🏦 Toutes
           </Button>
           {["BNP Paribas", "Revolut Pro"].map(b => {
-            const count = transactions.filter(t => t.banque === b).length;
+            const normB = (s: string) => s.toLowerCase().replace(/\s+/g, "");
+            const count = transactions.filter(t => normB(t.banque) === normB(b)).length;
             return (
               <Button key={b} size="sm" variant={filterBanque === b ? "secondary" : "ghost"} onClick={() => setFilterBanque(filterBanque === b ? "tous" : b)}>
                 {b === "BNP Paribas" ? "🔵 BNP" : "🟣 Revolut"}
@@ -877,9 +879,9 @@ export function RapprochementBancaire() {
                                   {tx.banque && (
                                     <span className={cn(
                                       "ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium",
-                                      tx.banque === "Revolut Pro" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
+                                      tx.banque.toLowerCase().includes("revolut") ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
                                     )}>
-                                      {tx.banque === "BNP Paribas" ? "🔵 BNP" : tx.banque === "Revolut Pro" ? "🟣 Revolut" : tx.banque}
+                                       {tx.banque.toLowerCase().includes("bnp") ? "🔵 BNP" : tx.banque.toLowerCase().includes("revolut") ? "🟣 Revolut" : tx.banque}
                                     </span>
                                   )}
                                   {tx.solde != null && <span className="ml-2">· Solde : {fmt(tx.solde)}</span>}

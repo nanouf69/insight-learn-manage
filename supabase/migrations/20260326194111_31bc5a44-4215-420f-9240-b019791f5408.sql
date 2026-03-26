@@ -1,0 +1,1 @@
+UPDATE transactions_bancaires SET banque = 'BNP Paribas' WHERE banque = 'BNP';
