@@ -1569,10 +1569,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
       {/* Presence verification modal (non-blocking overlay) */}
       <PresenceCheckModal
-        show={showPresenceModal}
-        countdownSeconds={presenceCountdown}
+        show={showPresenceModal || showInactivityModal}
+        countdownSeconds={showInactivityModal ? inactivityCountdown : presenceCountdown}
         disconnectReason={disconnectReason}
-        onConfirm={confirmPresence}
+        onConfirm={showInactivityModal ? confirmActivity : confirmPresence}
       />
     </div>
   );
