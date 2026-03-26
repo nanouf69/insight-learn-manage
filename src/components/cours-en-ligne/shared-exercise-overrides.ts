@@ -137,7 +137,7 @@ async function propagateOverridesToAllModules(
         const { updatedExercices, hasChanges } = applyOverridesToExercicesArray(md.exercices, changedOverrides);
 
         if (hasChanges) {
-          const updatedModuleData = { ...md, exercices: updatedExercices };
+          const updatedModuleData = { ...md, exercices: deduplicateExerciseQuestions(updatedExercices) };
           await supabase.from("module_editor_state").upsert(
             [{
               module_id: row.module_id,
