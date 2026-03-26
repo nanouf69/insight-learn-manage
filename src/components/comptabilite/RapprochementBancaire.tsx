@@ -914,12 +914,38 @@ export function RapprochementBancaire() {
                                     {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
                                   </SelectContent>
                                 </Select>
-                                <Input
-                                  placeholder="Fournisseur / Client"
-                                  value={editForm.fournisseur_client || ""}
-                                  onChange={e => setEditForm(f => ({ ...f, fournisseur_client: e.target.value }))}
-                                  className="h-8 text-xs"
-                                />
+                                {fournisseurCustomInput ? (
+                                  <div className="flex gap-1">
+                                    <Input
+                                      placeholder="Saisie libre..."
+                                      value={editForm.fournisseur_client || ""}
+                                      onChange={e => setEditForm(f => ({ ...f, fournisseur_client: e.target.value }))}
+                                      className="h-8 text-xs flex-1"
+                                    />
+                                    <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => setFournisseurCustomInput(false)}>Liste</Button>
+                                  </div>
+                                ) : (
+                                  <div className="flex gap-1">
+                                    <Select
+                                      value={editForm.fournisseur_client || ""}
+                                      onValueChange={v => {
+                                        if (v === "__custom__") {
+                                          setFournisseurCustomInput(true);
+                                        } else {
+                                          setEditForm(f => ({ ...f, fournisseur_client: v }));
+                                        }
+                                      }}
+                                    >
+                                      <SelectTrigger className="h-8 text-xs flex-1"><SelectValue placeholder="Fournisseur / Client" /></SelectTrigger>
+                                      <SelectContent>
+                                        {fournisseursList.map(f => (
+                                          <SelectItem key={f.id} value={f.nom}>{f.nom}</SelectItem>
+                                        ))}
+                                        <SelectItem value="__custom__">✏️ Saisie libre...</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                )}
                                 <Input
                                   placeholder="Notes"
                                   value={editForm.notes || ""}
