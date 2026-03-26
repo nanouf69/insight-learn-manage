@@ -3982,6 +3982,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 return (
                   <div key={q.id} id={`exo-q-${exo.id}-${qi}`} className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : ''}`}>
                     <p className="font-medium">{qi + 1}. {q.enonce}</p>
+                    {(q as any).image && (
+                      <img src={(q as any).image} alt="Illustration" className="max-h-28 rounded border object-contain ml-2" loading="lazy" />
+                    )}
                     {multi && (
                       <p className="text-xs text-muted-foreground italic ml-2">⚠️ Plusieurs réponses possibles</p>
                     )}
