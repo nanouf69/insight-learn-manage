@@ -656,6 +656,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
   const [completedExamIds, setCompletedExamIds] = useState<Set<string>>(new Set());
   const [startedNotFinishedIds, setStartedNotFinishedIds] = useState<Set<string>>(new Set());
   const [examScores, setExamScores] = useState<Record<string, ExamScoreItem[]>>({});
+  const [previousExamAverages, setPreviousExamAverages] = useState<Record<string, number | null>>({});
 
   // Fetch completed exams with scores from DB + started-but-not-finished
   useEffect(() => {
