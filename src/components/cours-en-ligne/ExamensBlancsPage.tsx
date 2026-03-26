@@ -2585,6 +2585,108 @@ function RevisionFausses({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showCorrection, setShowCorrection] = useState(false);
   const [correctedCount, setCorrectedCount] = useState(0);
+  const [loaded, setLoaded] = useState(false);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const exerciceId = `revision_fausses_${examenId || "unknown"}`;
+
+  // ---- Load saved progress on mount ----
+  useEffect(() => {
+    if (!apprenantId || !userId || !examenId || wrongQuestions.length === 0) {
+      setLoaded(true);
+      return;
+    }
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("reponses_apprenants")
+          .select("reponses, score")
+          .eq("apprenant_id", apprenantId)
+          .eq("exercice_id", exerciceId)
+          .eq("exercice_type", "revision_fausses")
+          .eq("completed", false)
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (data?.reponses && typeof data.reponses === "object") {
+          const saved = data.reponses as any;
+          if (saved.answers && typeof saved.answers === "object") {
+            setReponses(saved.answers);
+          }
+          if (typeof saved.currentIndex === "number" && saved.currentIndex >= 0 && saved.currentIndex < wrongQuestions.length) {
+            setCurrentIndex(saved.currentIndex);
+          }
+          if (typeof saved.correctedCount === "number") {
+            setCorrectedCount(saved.correctedCount);
+          }
+          // If the saved question was already corrected (showCorrection), restore that state
+          if (saved.correctedQuestions && Array.isArray(saved.correctedQuestions)) {
+            const idx = typeof saved.currentIndex === "number" ? saved.currentIndex : 0;
+            if (idx < wrongQuestions.length) {
+              const qId = wrongQuestions[idx]?.question?.id;
+              if (qId && saved.correctedQuestions.includes(qId)) {
+                setShowCorrection(true);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Erreur chargement révision:", err);
+      } finally {
+        setLoaded(true);
+      }
+    })();
+  }, [apprenantId, userId, examenId, exerciceId, wrongQuestions.length]);
+
+  // ---- Persist progress (debounced) ----
+  const correctedQuestionsRef = useRef<string[]>([]);
+
+  const persistProgress = useCallback((
+    newReponses: Reponses,
+    newIndex: number,
+    newCorrectedCount: number,
+    correctedQuestions: string[],
+  ) => {
+    if (!apprenantId || !userId) return;
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        const payload = {
+          apprenant_id: apprenantId,
+          user_id: userId,
+          exercice_id: exerciceId,
+          exercice_type: "revision_fausses",
+          reponses: {
+            answers: newReponses,
+            currentIndex: newIndex,
+            correctedCount: newCorrectedCount,
+            correctedQuestions,
+          },
+          score: newCorrectedCount,
+          completed: false,
+        };
+        // Try upsert
+        const { error } = await supabase
+          .from("reponses_apprenants")
+          .upsert(payload as any, { onConflict: "apprenant_id,exercice_id" });
+        if (error) console.error("Erreur sauvegarde révision progress:", error.message);
+      } catch (err) {
+        console.error("Erreur sauvegarde révision progress:", err);
+      }
+    }, 800);
+  }, [apprenantId, userId, exerciceId]);
+
+  if (!loaded) {
+    return (
+      <Card>
+        <CardContent className="py-8 text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-primary" />
+          <p className="text-sm text-muted-foreground">Chargement de votre progression…</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (wrongQuestions.length === 0) {
     return (
@@ -2616,19 +2718,44 @@ function RevisionFausses({
       motsCles.forEach(mc => { const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, ""); if (repStr.includes(mcN)) nbTrouvees++; });
       isCorrect = nbTrouvees >= motsCles.length;
     }
-    if (isCorrect) setCorrectedCount(prev => prev + 1);
+    const newCorrected = isCorrect ? correctedCount + 1 : correctedCount;
+    if (isCorrect) setCorrectedCount(newCorrected);
     setShowCorrection(true);
+
+    // Track corrected questions
+    correctedQuestionsRef.current = [...new Set([...correctedQuestionsRef.current, String(q.id)])];
+    persistProgress(reponses, currentIndex, newCorrected, correctedQuestionsRef.current);
   };
 
   const goNext = async () => {
     setShowCorrection(false);
     if (currentIndex < wrongQuestions.length - 1) {
-      setCurrentIndex(currentIndex + 1);
+      const newIdx = currentIndex + 1;
+      setCurrentIndex(newIdx);
+      persistProgress(reponses, newIdx, correctedCount, correctedQuestionsRef.current);
     } else {
-      // Save revision results to database — use correctedCount + current correction
-      const finalCorrected = correctedCount; // already updated by handleAnswer before goNext
+      // Save final revision results to database
+      const finalCorrected = correctedCount;
       if (apprenantId && userId && examenId) {
         try {
+          // Mark the in-progress record as completed
+          await supabase
+            .from("reponses_apprenants")
+            .upsert({
+              apprenant_id: apprenantId,
+              user_id: userId,
+              exercice_id: exerciceId,
+              exercice_type: "revision_fausses",
+              reponses: {
+                answers: reponses,
+                currentIndex: wrongQuestions.length - 1,
+                correctedCount: finalCorrected,
+                correctedQuestions: correctedQuestionsRef.current,
+              },
+              score: finalCorrected,
+              completed: true,
+            } as any, { onConflict: "apprenant_id,exercice_id" });
+
           const { error } = await supabase
             .from("apprenant_quiz_results")
             .insert({
@@ -2665,6 +2792,34 @@ function RevisionFausses({
     }
   };
 
+  const handleRecommencer = async () => {
+    if (!apprenantId || !userId) return;
+    // Delete saved progress
+    try {
+      await supabase
+        .from("reponses_apprenants")
+        .delete()
+        .eq("apprenant_id", apprenantId)
+        .eq("exercice_id", exerciceId)
+        .eq("exercice_type", "revision_fausses");
+    } catch (err) {
+      console.error("Erreur suppression progression:", err);
+    }
+    setReponses({});
+    setCurrentIndex(0);
+    setShowCorrection(false);
+    setCorrectedCount(0);
+    correctedQuestionsRef.current = [];
+    toast.info("Révision réinitialisée.");
+  };
+
+  // Update reponses with persistence
+  const updateReponse = (questionId: number | string, value: any) => {
+    const newReponses = { ...reponses, [questionId]: value };
+    setReponses(newReponses);
+    persistProgress(newReponses, currentIndex, correctedCount, correctedQuestionsRef.current);
+  };
+
   return (
     <div className="space-y-4">
       {/* Progress */}
@@ -2672,7 +2827,17 @@ function RevisionFausses({
         <Badge style={{ backgroundColor: '#0D2540', color: '#00B4D8' }}>
           Question {currentIndex + 1} / {wrongQuestions.length}
         </Badge>
-        <span className="text-xs text-muted-foreground">{matiereNom}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">{matiereNom}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs text-muted-foreground hover:text-destructive"
+            onClick={handleRecommencer}
+          >
+            <RotateCcw className="w-3 h-3 mr-1" /> Recommencer
+          </Button>
+        </div>
       </div>
       <Progress value={((currentIndex + 1) / wrongQuestions.length) * 100} className="h-2" />
 
@@ -2716,12 +2881,9 @@ function RevisionFausses({
                           const prev = safeArray<string>(rep);
                           const correctCount = q.choix!.filter(ch => ch.correct).length;
                           if (correctCount <= 1) {
-                            setReponses({ ...reponses, [q.id]: [c.lettre] });
+                            updateReponse(q.id, [c.lettre]);
                           } else {
-                            setReponses({
-                              ...reponses,
-                              [q.id]: prev.includes(c.lettre) ? prev.filter(l => l !== c.lettre) : [...prev, c.lettre],
-                            });
+                            updateReponse(q.id, prev.includes(c.lettre) ? prev.filter(l => l !== c.lettre) : [...prev, c.lettre]);
                           }
                         }}
                       >
@@ -2750,7 +2912,7 @@ function RevisionFausses({
             <div className="space-y-2">
               <Textarea
                 value={(rep as string) || ""}
-                onChange={e => setReponses({ ...reponses, [q.id]: e.target.value })}
+                onChange={e => updateReponse(q.id, e.target.value)}
                 placeholder="Saisissez votre réponse..."
                 disabled={showCorrection}
                 rows={3}
