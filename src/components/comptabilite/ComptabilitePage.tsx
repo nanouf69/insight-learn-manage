@@ -700,125 +700,154 @@ export function ComptabilitePage() {
                     <TableRow>
                       <TableHead>Fournisseur</TableHead>
                       <TableHead>Description</TableHead>
-                      <TableHead className="text-right">Montant</TableHead>
+                      <TableHead className="text-right">Montant total</TableHead>
+                      <TableHead className="text-right">Payé</TableHead>
+                      <TableHead className="text-right">Reste</TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead>Facture</TableHead>
                       <TableHead>Statut</TableHead>
-                      <TableHead>Date de paiement</TableHead>
-                      <TableHead>Moyen</TableHead>
                       <TableHead>Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredAPayerItems.map((item) => {
                       const isPaid = item.statut === "paye";
+                      const totalPayeFacture = getTotalPayeForFacture(item.source_id);
+                      const reste = Math.max(0, item.montant - totalPayeFacture);
+                      const facturePaiements = getPaiementsForFacture(item.source_id);
+                      const isExpanded = expandedFacture === item.id;
                       return (
-                        <TableRow key={item.id} className={isPaid ? "opacity-60" : ""}>
-                          <TableCell className="font-medium">{item.nom}</TableCell>
-                          <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">{item.description}</TableCell>
-                          <TableCell className="text-right font-semibold">{formatMontant(item.montant)}</TableCell>
-                          <TableCell>{formatDate(item.date_emission)}</TableCell>
-                          <TableCell>
-                            {item.url ? (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="gap-1 h-8 text-xs"
-                                onClick={async () => {
-                                  try {
-                                    // Extract storage path from full URL
-                                    const match = item.url!.match(/\/storage\/v1\/object\/public\/(.+)/);
-                                    if (!match) {
-                                      window.open(item.url!, '_blank');
-                                      return;
-                                    }
-                                    const fullPath = decodeURIComponent(match[1]);
-                                    const bucketName = fullPath.split('/')[0];
-                                    const filePath = fullPath.substring(bucketName.length + 1);
-                                    const { data, error } = await supabase.storage
-                                      .from(bucketName)
-                                      .createSignedUrl(filePath, 300);
-                                    if (error || !data?.signedUrl) {
-                                      toast.error("Impossible de générer le lien de téléchargement");
-                                      return;
-                                    }
-                                    window.open(data.signedUrl, '_blank');
-                                  } catch {
-                                    toast.error("Erreur lors du téléchargement");
-                                  }
-                                }}
-                              >
-                                <Download className="h-3 w-3" />
-                                Télécharger
+                        <React.Fragment key={item.id}>
+                          <TableRow className={cn(isPaid ? "opacity-60" : "", "cursor-pointer hover:bg-muted/50")} onClick={() => setExpandedFacture(isExpanded ? null : item.id)}>
+                            <TableCell className="font-medium">{item.nom}</TableCell>
+                            <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">{item.description}</TableCell>
+                            <TableCell className="text-right font-semibold">{formatMontant(item.montant)}</TableCell>
+                            <TableCell className="text-right font-semibold text-emerald-600">{formatMontant(totalPayeFacture)}</TableCell>
+                            <TableCell className="text-right font-semibold text-destructive">{reste > 0 ? formatMontant(reste) : "—"}</TableCell>
+                            <TableCell>{formatDate(item.date_emission)}</TableCell>
+                            <TableCell>
+                              {item.url ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="gap-1 h-8 text-xs"
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    try {
+                                      const match = item.url!.match(/\/storage\/v1\/object\/public\/(.+)/);
+                                      if (!match) { window.open(item.url!, '_blank'); return; }
+                                      const fullPath = decodeURIComponent(match[1]);
+                                      const bucketName = fullPath.split('/')[0];
+                                      const filePath = fullPath.substring(bucketName.length + 1);
+                                      const { data, error } = await supabase.storage.from(bucketName).createSignedUrl(filePath, 300);
+                                      if (error || !data?.signedUrl) { toast.error("Impossible de générer le lien"); return; }
+                                      window.open(data.signedUrl, '_blank');
+                                    } catch { toast.error("Erreur lors du téléchargement"); }
+                                  }}
+                                >
+                                  <Download className="h-3 w-3" /> Télécharger
+                                </Button>
+                              ) : <span className="text-muted-foreground text-xs">—</span>}
+                            </TableCell>
+                            <TableCell>
+                              {isPaid ? (
+                                <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">Payé</Badge>
+                              ) : totalPayeFacture > 0 ? (
+                                <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">Partiel</Badge>
+                              ) : (
+                                <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">En attente</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setExpandedFacture(isExpanded ? null : item.id); }}>
+                                {isExpanded ? "▲ Fermer" : "▼ Paiements"}
                               </Button>
-                            ) : (
-                              <span className="text-muted-foreground text-xs">—</span>
-                            )}
-                          </TableCell>
-                          <TableCell>{getStatutBadge(item.statut)}</TableCell>
-                          <TableCell>
-                            {isPaid ? (
-                              <span className="text-sm">{formatDate(item.date_paiement)}</span>
-                            ) : (
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className={cn("w-[130px] justify-start text-left font-normal", !paymentDates[item.id] && "text-muted-foreground")}
-                                  >
-                                    <CalendarIcon className="mr-2 h-3 w-3" />
-                                    {paymentDates[item.id] ? format(paymentDates[item.id]!, "dd/MM/yyyy") : "Date..."}
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                  <Calendar
-                                    mode="single"
-                                    selected={paymentDates[item.id]}
-                                    onSelect={(d) => setPaymentDates(prev => ({ ...prev, [item.id]: d }))}
-                                    initialFocus
-                                    className="p-3 pointer-events-auto"
-                                    locale={fr}
-                                  />
-                                </PopoverContent>
-                              </Popover>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {isPaid ? (
-                              <span className="text-sm">{item.moyen_paiement || "—"}</span>
-                            ) : (
-                              <Select
-                                value={paymentMoyens[item.id] || ""}
-                                onValueChange={(v) => setPaymentMoyens(prev => ({ ...prev, [item.id]: v }))}
-                              >
-                                <SelectTrigger className="w-[130px] h-8 text-xs">
-                                  <SelectValue placeholder="Moyen..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {moyensPaiement.map(m => (
-                                    <SelectItem key={m} value={m}>{m}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {isPaid ? (
-                              <CheckCircle className="h-5 w-5 text-emerald-500" />
-                            ) : (
-                              <Button
-                                size="sm"
-                                onClick={() => handleMarquerPaye(item)}
-                                disabled={savingPayment[item.id]}
-                                className="gap-1 h-8 text-xs"
-                              >
-                                <CheckCheck className="h-3 w-3" />
-                                {savingPayment[item.id] ? "..." : "Marquer payé"}
-                              </Button>
-                            )}
-                          </TableCell>
-                        </TableRow>
+                            </TableCell>
+                          </TableRow>
+                          {isExpanded && (
+                            <TableRow>
+                              <TableCell colSpan={9} className="bg-muted/30 p-4">
+                                <div className="space-y-3">
+                                  {/* Historique des paiements */}
+                                  {facturePaiements.length > 0 && (
+                                    <div>
+                                      <p className="text-sm font-semibold mb-2">Historique des paiements</p>
+                                      <div className="space-y-1">
+                                        {facturePaiements.map(p => (
+                                          <div key={p.id} className="flex items-center justify-between bg-background rounded-md px-3 py-2 border">
+                                            <div className="flex items-center gap-4">
+                                              <span className="text-sm font-medium">{formatMontant(Number(p.montant))}</span>
+                                              <span className="text-sm text-muted-foreground">{formatDate(p.date_paiement)}</span>
+                                              <Badge variant="outline" className="text-xs">{p.moyen_paiement}</Badge>
+                                            </div>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-7 text-xs text-destructive hover:text-destructive"
+                                              onClick={() => handleSupprimerPaiement(p.id, p.facture_id)}
+                                            >
+                                              <Trash2 className="h-3 w-3 mr-1" /> Supprimer
+                                            </Button>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                  {/* Formulaire d'ajout */}
+                                  {!isPaid && (
+                                    <div className="border-t pt-3">
+                                      <p className="text-sm font-semibold mb-2">Ajouter un paiement (reste : {formatMontant(reste)})</p>
+                                      <div className="flex flex-wrap items-end gap-2">
+                                        <div>
+                                          <label className="text-xs text-muted-foreground">Montant</label>
+                                          <Input
+                                            type="number"
+                                            step="0.01"
+                                            placeholder={formatMontant(reste).replace(/[^\d,.]/g, '')}
+                                            value={partialAmounts[item.id] || ""}
+                                            onChange={e => setPartialAmounts(prev => ({ ...prev, [item.id]: e.target.value }))}
+                                            className="w-[120px] h-8 text-sm"
+                                            onClick={e => e.stopPropagation()}
+                                          />
+                                        </div>
+                                        <div>
+                                          <label className="text-xs text-muted-foreground">Date</label>
+                                          <Popover>
+                                            <PopoverTrigger asChild>
+                                              <Button variant="outline" size="sm" className={cn("w-[130px] justify-start text-left font-normal h-8", !paymentDates[item.id] && "text-muted-foreground")} onClick={e => e.stopPropagation()}>
+                                                <CalendarIcon className="mr-2 h-3 w-3" />
+                                                {paymentDates[item.id] ? format(paymentDates[item.id]!, "dd/MM/yyyy") : "Date..."}
+                                              </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                              <Calendar mode="single" selected={paymentDates[item.id]} onSelect={(d) => setPaymentDates(prev => ({ ...prev, [item.id]: d }))} initialFocus className="p-3 pointer-events-auto" locale={fr} />
+                                            </PopoverContent>
+                                          </Popover>
+                                        </div>
+                                        <div>
+                                          <label className="text-xs text-muted-foreground">Moyen</label>
+                                          <Select value={paymentMoyens[item.id] || ""} onValueChange={(v) => setPaymentMoyens(prev => ({ ...prev, [item.id]: v }))}>
+                                            <SelectTrigger className="w-[130px] h-8 text-xs"><SelectValue placeholder="Moyen..." /></SelectTrigger>
+                                            <SelectContent>
+                                              {moyensPaiement.map(m => (<SelectItem key={m} value={m}>{m}</SelectItem>))}
+                                            </SelectContent>
+                                          </Select>
+                                        </div>
+                                        <Button size="sm" onClick={(e) => { e.stopPropagation(); handleAjouterPaiement(item); }} disabled={savingPayment[item.id]} className="gap-1 h-8 text-xs">
+                                          <CheckCheck className="h-3 w-3" />
+                                          {savingPayment[item.id] ? "..." : "Enregistrer"}
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  )}
+                                  {isPaid && facturePaiements.length === 0 && (
+                                    <p className="text-sm text-muted-foreground italic">Paiement marqué sans détail (ancien système)</p>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </React.Fragment>
                       );
                     })}
                   </TableBody>
