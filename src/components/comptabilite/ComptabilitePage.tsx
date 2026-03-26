@@ -66,6 +66,16 @@ interface BankTransaction {
   debtor: string;
 }
 
+interface Paiement {
+  id: string;
+  facture_id: string;
+  montant: number;
+  date_paiement: string;
+  moyen_paiement: string;
+  notes: string | null;
+  created_at: string;
+}
+
 // Unified "à payer" item
 interface APayer {
   id: string;
