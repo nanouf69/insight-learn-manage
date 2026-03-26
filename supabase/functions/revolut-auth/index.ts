@@ -7,9 +7,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-/**
- * Import a PEM-encoded RSA private key as a CryptoKey for RS256 signing.
- */
 async function importPrivateKey(pem: string): Promise<CryptoKey> {
   const pemContents = pem
     .replace(/-----BEGIN (RSA )?PRIVATE KEY-----/g, "")
@@ -27,9 +24,6 @@ async function importPrivateKey(pem: string): Promise<CryptoKey> {
   );
 }
 
-/**
- * Create a signed JWT (RS256) for Revolut Business API client assertion.
- */
 async function createRevolutJwt(
   clientId: string,
   privateKeyPem: string
@@ -37,19 +31,17 @@ async function createRevolutJwt(
   const cryptoKey = await importPrivateKey(privateKeyPem);
   const now = getNumericDate(new Date());
 
-  const jwt = await create(
+  return await create(
     { alg: "RS256", typ: "JWT" },
     {
       iss: clientId,
       sub: clientId,
       aud: "https://revolut.com",
       iat: now,
-      exp: now + 90, // 90 seconds validity
+      exp: now + 90,
     },
     cryptoKey
   );
-
-  return jwt;
 }
 
 Deno.serve(async (req) => {
@@ -58,60 +50,28 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // --- Auth check ---
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } =
-      await supabaseAuth.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // --- Parse body ---
     const { code } = await req.json();
     if (!code) {
+      console.error("[revolut-auth] Missing authorization code in request body");
       return new Response(
         JSON.stringify({ error: "Missing authorization code" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // --- Build signed JWT for Revolut ---
+    console.log("[revolut-auth] Received code, starting token exchange...");
+
     const clientId = Deno.env.get("REVOLUT_CLIENT_ID");
-    if (!clientId) {
-      throw new Error("REVOLUT_CLIENT_ID is not configured");
-    }
+    if (!clientId) throw new Error("REVOLUT_CLIENT_ID is not configured");
 
     const rawPrivateKey = Deno.env.get("REVOLUT_PRIVATE_KEY");
-    if (!rawPrivateKey) {
-      throw new Error("REVOLUT_PRIVATE_KEY is not configured");
-    }
+    if (!rawPrivateKey) throw new Error("REVOLUT_PRIVATE_KEY is not configured");
     const privateKey = rawPrivateKey.replace(/\\n/g, "\n");
 
     const clientAssertion = await createRevolutJwt(clientId, privateKey);
+    console.log("[revolut-auth] Client assertion JWT created");
 
-    // --- Exchange code for token using client_assertion ---
+    // Exchange code for token
     const tokenResponse = await fetch(
       "https://b2b.revolut.com/api/1.0/auth/token",
       {
@@ -129,29 +89,38 @@ Deno.serve(async (req) => {
     );
 
     const tokenData = await tokenResponse.json();
+    console.log("[revolut-auth] Revolut response status:", tokenResponse.status);
 
     if (!tokenResponse.ok) {
-      console.error("Revolut token exchange failed:", tokenData);
+      console.error("[revolut-auth] Token exchange failed:", JSON.stringify(tokenData));
       return new Response(
-        JSON.stringify({
-          error: "Token exchange failed",
-          details: tokenData,
-        }),
-        {
-          status: tokenResponse.status,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        JSON.stringify({ error: "Token exchange failed", details: tokenData }),
+        { status: tokenResponse.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // --- Store token in DB (service role to bypass RLS) ---
+    console.log("[revolut-auth] Token exchange successful, storing in DB...");
+
+    // Store token using service role (no auth required)
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
     const expiresAt = tokenData.expires_in
       ? new Date(Date.now() + tokenData.expires_in * 1000).toISOString()
       : null;
 
-    const { error: insertError } = await supabaseAdmin
+    // Delete old tokens first, then insert new one
+    const { error: deleteError } = await supabaseAdmin
+      .from("revolut_tokens")
+      .delete()
+      .neq("id", "00000000-0000-0000-0000-000000000000"); // delete all rows
+
+    if (deleteError) {
+      console.error("[revolut-auth] Failed to delete old tokens:", deleteError);
+    }
+
+    const { data: insertedData, error: insertError } = await supabaseAdmin
       .from("revolut_tokens")
       .insert({
         access_token: tokenData.access_token,
@@ -159,26 +128,27 @@ Deno.serve(async (req) => {
         token_type: tokenData.token_type ?? "Bearer",
         expires_in: tokenData.expires_in ?? null,
         expires_at: expiresAt,
-      });
+      })
+      .select()
+      .single();
 
     if (insertError) {
-      console.error("DB insert error:", insertError);
+      console.error("[revolut-auth] DB insert error:", JSON.stringify(insertError));
       throw new Error(`Failed to store token: ${insertError.message}`);
     }
 
+    console.log("[revolut-auth] Token stored successfully, id:", insertedData.id);
+
     return new Response(
       JSON.stringify({ success: true, expires_at: expiresAt }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("revolut-auth error:", error);
+    console.error("[revolut-auth] Unhandled error:", error);
     const msg = error instanceof Error ? error.message : "Unknown error";
-    return new Response(JSON.stringify({ error: msg }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ error: msg }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 });
