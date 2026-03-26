@@ -699,7 +699,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             .select("id, nom, prenom, type_apprenant, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, modules_autorises, email, telephone, adresse, code_postal, ville, date_naissance")
             .eq("auth_user_id", user.id)
             .maybeSingle(),
-          12000,
+          45000,
           "Temps d'attente dépassé pendant le chargement du dossier apprenant.",
         );
 
