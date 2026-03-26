@@ -309,13 +309,15 @@ export function RapprochementBancaire() {
       return all;
     };
 
-    const [txs, { data: just }, { data: apprenantsData }, { data: saData }] = await Promise.all([
+    const [txs, { data: just }, { data: apprenantsData }, { data: saData }, { data: fourData }] = await Promise.all([
       fetchAllTxs(),
       supabase.from("justificatifs").select("id, nom_fichier, url, montant_ttc, date_operation, categorie, fournisseur, statut"),
       supabase.from("apprenants").select("id, nom, prenom, date_debut_formation, date_fin_formation"),
       supabase.from("session_apprenants").select("apprenant_id, date_debut, date_fin, sessions(date_debut, date_fin)"),
+      supabase.from("fournisseurs").select("id, nom").eq("actif", true).order("nom"),
     ]);
     if (txs) setTransactions(txs);
+    if (fourData) setFournisseursList(fourData as { id: string; nom: string }[]);
     if (just) setJustificatifs(just as Justificatif[]);
     
     // Build apprenants with session dates
