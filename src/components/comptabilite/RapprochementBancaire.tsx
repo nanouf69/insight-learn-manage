@@ -971,6 +971,7 @@ export function RapprochementBancaire() {
                                       className="text-[10px] text-amber-600 underline underline-offset-2 hover:text-amber-800"
                                       onClick={() => {
                                         setEditingId(tx.id);
+                                        setFournisseurCustomInput(false);
                                         setEditForm({ categorie: tx.categorie, fournisseur_client: tx.fournisseur_client, notes: tx.notes });
                                       }}
                                     >
