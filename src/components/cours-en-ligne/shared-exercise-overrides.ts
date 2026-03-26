@@ -464,22 +464,9 @@ export async function syncSharedExercisesToSiblingModules(
         }
       }
 
-      // Propagate additions: if a new exercise was added with an ID that doesn't exist in the sibling
-      // but the sibling's source data has it, it'll be handled by the source. For truly new exercises
-      // added by admin, we add them to the sibling if any of its exercises share IDs with the source.
-      const siblingExoIds = new Set(md.exercices.map((e: any) => e.id));
-      for (const [exoId, exoData] of savedExoMap) {
-        if (!siblingExoIds.has(exoId)) {
-          // Check if sibling module shares at least one exercise ID with the saved module
-          // (meaning they're related formations)
-          const sharedCount = md.exercices.filter((e: any) => savedExoMap.has(e.id)).length;
-          if (sharedCount >= 2) {
-            // This sibling shares enough exercises to warrant adding new ones too
-            updatedExercices.push(exoData);
-            hasChanges = true;
-          }
-        }
-      }
+      // Important: no automatic cross-module additions.
+      // We only sync exercises that already exist in both modules to avoid
+      // leaking TAXI-only content into VTC (and inversement).
 
       if (hasChanges) {
         // Deduplicate questions within each exercise before saving
