@@ -684,7 +684,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             _user_id: user.id,
             _role: "admin",
           }),
-          12000,
+          45000,
           "Temps d'attente dépassé pendant la vérification du profil.",
         );
 
