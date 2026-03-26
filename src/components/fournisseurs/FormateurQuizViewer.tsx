@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp, CheckCircle2 } from "lucide-react";
 interface QuizQuestion {
   id: number;
   enonce: string;
+  image?: string;
   choix: { lettre: string; texte: string; correct?: boolean }[];
 }
 

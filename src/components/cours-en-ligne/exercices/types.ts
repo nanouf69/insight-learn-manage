@@ -7,6 +7,7 @@ export interface ExerciceChoix {
 export interface ExerciceQuestion {
   id: number;
   enonce: string;
+  image?: string;
   choix: ExerciceChoix[];
 }
 
