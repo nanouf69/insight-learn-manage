@@ -749,7 +749,7 @@ function MatiereEditor({
                     </div>
                   )}
                   {q?.type === "QRC" && q.reponseQRC && (
-                    <div className="ml-10 px-4 py-2.5 rounded-lg bg-accent/50 border border-accent text-sm text-accent-foreground">
+                    <div className="ml-10 px-4 py-2.5 rounded-lg bg-muted border border-border text-sm text-foreground">
                       <span className="font-semibold text-primary">Réponse : </span>{q.reponseQRC}
                     </div>
                   )}
