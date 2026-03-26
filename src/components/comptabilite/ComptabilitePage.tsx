@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { JustificatifsTab } from "./JustificatifsTab";
 import { NotesFraisTab } from "./NotesFraisTab";
 import { RapprochementBancaire } from "./RapprochementBancaire";
