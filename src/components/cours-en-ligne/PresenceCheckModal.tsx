@@ -40,8 +40,9 @@ export function PresenceCheckModal({
 
   const minutes = Math.floor(countdownSeconds / 60);
   const seconds = countdownSeconds % 60;
-  const progressPercent = (countdownSeconds / 600) * 100;
-  const isUrgent = countdownSeconds <= 120;
+  const maxSeconds = countdownSeconds > 300 ? 600 : 300;
+  const progressPercent = (countdownSeconds / maxSeconds) * 100;
+  const isUrgent = countdownSeconds <= 60;
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none">
