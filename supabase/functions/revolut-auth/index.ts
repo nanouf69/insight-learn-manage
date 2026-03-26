@@ -34,7 +34,7 @@ async function createRevolutJwt(
   return await create(
     { alg: "RS256", typ: "JWT" },
     {
-      iss: clientId,
+      iss: "preview--insight-learn-manage.lovable.app",
       sub: clientId,
       aud: "https://revolut.com",
       iat: now,
