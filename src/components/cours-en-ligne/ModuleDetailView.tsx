@@ -126,6 +126,7 @@ interface ExerciceChoix {
 interface ExerciceQuestion {
   id: number;
   enonce: string;
+  image?: string;
   choix: ExerciceChoix[];
 }
 
