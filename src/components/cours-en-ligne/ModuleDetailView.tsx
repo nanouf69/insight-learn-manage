@@ -93,6 +93,7 @@ import {
   getOverridesFingerprint,
   loadCrossModuleOverridesFromDb,
   applyCrossModuleOverrides,
+  syncSharedExercisesToSiblingModules,
   type ModuleInitialData,
 } from "./shared-exercise-overrides";
 
