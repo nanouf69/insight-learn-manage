@@ -3,13 +3,12 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export default function AuthCallback() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [status, setStatus] = useState<"loading" | "waiting_session" | "exchanging" | "success" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "exchanging" | "success" | "error">("loading");
   const [error, setError] = useState<string | null>(null);
   const exchangeAttempted = useRef(false);
 
@@ -29,64 +28,39 @@ export default function AuthCallback() {
       return;
     }
 
-    // Wait for Supabase session to be restored, then exchange
-    setStatus("waiting_session");
-    waitForSessionAndExchange(authCode);
-  }, [searchParams]);
-
-  const waitForSessionAndExchange = async (code: string) => {
-    if (exchangeAttempted.current) return;
-    exchangeAttempted.current = true;
-
-    // Try to get session immediately
-    const { data: sessionData } = await supabase.auth.getSession();
-    if (sessionData?.session) {
-      await exchangeToken(code);
-      return;
+    if (!exchangeAttempted.current) {
+      exchangeAttempted.current = true;
+      exchangeToken(authCode);
     }
-
-    // Wait for auth state change (session restoration after redirect)
-    let resolved = false;
-    const timeout = setTimeout(() => {
-      if (!resolved) {
-        resolved = true;
-        setError("Session expirée. Veuillez vous reconnecter puis réessayer la connexion Revolut.");
-        setStatus("error");
-      }
-    }, 10000);
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (resolved) return;
-      if (session && (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION")) {
-        resolved = true;
-        clearTimeout(timeout);
-        subscription.unsubscribe();
-        await exchangeToken(code);
-      }
-    });
-  };
+  }, [searchParams]);
 
   const exchangeToken = async (code: string) => {
     setStatus("exchanging");
     try {
-      const { data, error: fnError } = await supabase.functions.invoke("revolut-auth", {
-        body: { code },
+      // Call edge function directly via fetch — no session needed
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/revolut-auth`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": supabaseKey,
+        },
+        body: JSON.stringify({ code }),
       });
 
-      if (fnError) {
-        throw new Error(fnError.message || "Erreur lors de l'échange du token");
-      }
+      const data = await response.json();
 
-      if (data?.error) {
-        throw new Error(data.error);
+      if (!response.ok || data?.error) {
+        throw new Error(data?.error || data?.details?.error_description || `Erreur ${response.status}`);
       }
 
       setStatus("success");
       toast.success("Connexion Revolut réussie ! Token enregistré.");
 
-      // Redirect to transactions page after 2s
       setTimeout(() => {
-        navigate("/revolut/transactions");
+        navigate("/revolut-connect");
       }, 2000);
     } catch (err) {
       console.error("[AuthCallback] Token exchange failed:", err);
@@ -103,17 +77,6 @@ export default function AuthCallback() {
             <>
               <Loader2 className="mx-auto h-16 w-16 text-muted-foreground animate-spin" />
               <p className="text-muted-foreground">Traitement en cours…</p>
-            </>
-          )}
-          {status === "waiting_session" && (
-            <>
-              <Loader2 className="mx-auto h-16 w-16 text-primary animate-spin" />
-              <h1 className="text-2xl font-bold text-foreground">
-                Restauration de la session…
-              </h1>
-              <p className="text-muted-foreground">
-                Veuillez patienter pendant la restauration de votre session.
-              </p>
             </>
           )}
           {status === "exchanging" && (
@@ -134,7 +97,7 @@ export default function AuthCallback() {
                 Connexion Revolut réussie ✅
               </h1>
               <p className="text-muted-foreground">
-                Le token a été enregistré. Redirection vers les transactions…
+                Le token a été enregistré. Redirection…
               </p>
             </>
           )}
