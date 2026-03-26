@@ -623,6 +623,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     enabled: isStudentSession,
   });
 
+  // Keep Supabase auth token alive while student is active (prevents expiry during exams/modules)
+  useSessionKeepAlive(isStudentSession);
+
   // Presence verification: every 4h + 7h max session
   const handleForceDisconnect = useCallback(async () => {
     await supabase.auth.signOut();
