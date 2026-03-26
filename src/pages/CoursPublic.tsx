@@ -728,9 +728,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
         const errorMessage = typeof err?.message === "string" ? err.message : "";
         if (errorMessage.includes("Temps d'attente dépassé")) {
-          setApprenantFetchError("Connexion lente détectée sur cet appareil. Cliquez sur Réessayer.");
+          // Auto-retry silently instead of blocking access
+          console.warn("CoursPublic: timeout, auto-retrying...");
+          setTimeout(() => {
+            if (!cancelled) setFetchNonce((v) => v + 1);
+          }, 2000);
+          return; // Don't show error, just retry
         } else {
-          setApprenantFetchError("Une erreur inattendue est survenue.");
+          setApprenantFetchError("Une erreur inattendue est survenue. Cliquez sur Réessayer.");
         }
       } finally {
         if (!cancelled) setApprenantLoading(false);
