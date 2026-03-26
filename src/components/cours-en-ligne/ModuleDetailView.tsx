@@ -2483,7 +2483,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         await syncSharedExercisesToSiblingModules(
           module.id,
           moduleData.exercices,
-          deletedExercices,
+          deletedExercices.map(e => e.id),
         );
       } catch (err) {
         console.error("Erreur sauvegarde DB module_editor_state:", err);
