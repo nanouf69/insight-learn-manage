@@ -792,7 +792,8 @@ export function RapprochementBancaire() {
             🏦 Toutes
           </Button>
           {["BNP Paribas", "Revolut Pro"].map(b => {
-            const count = transactions.filter(t => t.banque === b).length;
+            const normB = (s: string) => s.toLowerCase().replace(/\s+/g, "");
+            const count = transactions.filter(t => normB(t.banque) === normB(b)).length;
             return (
               <Button key={b} size="sm" variant={filterBanque === b ? "secondary" : "ghost"} onClick={() => setFilterBanque(filterBanque === b ? "tous" : b)}>
                 {b === "BNP Paribas" ? "🔵 BNP" : "🟣 Revolut"}
