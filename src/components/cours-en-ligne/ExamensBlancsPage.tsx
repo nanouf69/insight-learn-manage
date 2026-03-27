@@ -75,6 +75,8 @@ export default function ExamensBlancsPage({
   const reloadInFlightRef = useRef<Promise<ExamenBlanc[]> | null>(null);
   const [loadTimeout, setLoadTimeout] = useState(false);
   const [pausedExamIds, setPausedExamIds] = useState<Set<string>>(new Set());
+  const phaseRef = useRef(phase);
+  useEffect(() => { phaseRef.current = phase; }, [phase]);
 
   const handlePauseToggle = useCallback((examId: string) => {
     setPausedExamIds(prev => {
@@ -99,8 +101,12 @@ export default function ExamensBlancsPage({
         const saved = await loadSavedExamens();
         logSecurityImageDebug(saved, force ? "manual-refetch" : "auto-refetch");
         setLiveExamens(saved);
+        // CRITICAL: Never replace examenChoisi during an active exam (phase=examen/transition)
+        // to prevent question reordering that causes answer mismatches
         setExamenChoisi((prev) => {
           if (!prev) return prev;
+          const currentPhase = phaseRef.current;
+          if (currentPhase === "examen" || currentPhase === "transition") return prev;
           return saved.find((exam) => exam.id === prev.id) ?? prev;
         });
         return saved;
@@ -913,12 +919,7 @@ export default function ExamensBlancsPage({
               })}
             </div>
             <span className="text-xs text-muted-foreground">Matière {matiereIndex + 1}/{examenChoisi.matieres.length}</span>
-            {!isAdmin && (
-              <Button variant="outline" size="sm" onClick={handleManualReloadQuestions} disabled={isReloadingQuestions} className="ml-auto gap-2">
-                {isReloadingQuestions ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
-                Recharger les questions
-              </Button>
-            )}
+            {/* Bouton recharger retiré pendant l'examen pour éviter le décalage des questions */}
           </div>
           <PassageMatiere matiere={matiere} numero={matiereIndex + 1} total={examenChoisi.matieres.length} onTerminer={handleTerminerMatiere} isBilan={examenChoisi.id.startsWith("bilan-")} apprenantId={apprenantId} examenId={examenChoisi.id} />
         </div>
