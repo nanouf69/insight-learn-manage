@@ -288,20 +288,17 @@ export default function ExamensBlancsPage({
         if (savedResponses && (savedResponses as any[]).length > 0) {
           const responsesByMatiere = new Map<string, any>();
           (savedResponses as any[]).forEach((r: any) => {
-            // exercice_id format: EB5_securite → extract matiere part
             const matiereKey = (r.exercice_id || "").replace(`${latestExamen.id}_`, "");
-            if (matiereKey) responsesByMatiere.set(matiereKey, r);
+            // BUG #2 FIX: Only count responses with completed=true
+            if (matiereKey && r.completed === true) responsesByMatiere.set(matiereKey, r);
           });
 
-          // If we have responses for all matières (completed or not), and combined with
-          // quiz_results we cover everything, consider it done
           const totalCoveredMatieres = new Set<string>();
           completedRows.forEach((row: any) => {
             if (row?.matiere_id) totalCoveredMatieres.add(row.matiere_id);
           });
           responsesByMatiere.forEach((_, key) => totalCoveredMatieres.add(key));
 
-          // Check if all valid matières are covered by either results or responses
           const allCovered = validMatieres.every((m) => 
             totalCoveredMatieres.has(m.id) || 
             completedRows.some((row: any) => 
