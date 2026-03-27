@@ -100,7 +100,7 @@ export function useInactivityAlert({ enabled, onDisconnect, pauseDuringExam = fa
       events.forEach((e) => window.removeEventListener(e, handler));
       clearAllTimers();
     };
-  }, [enabled, resetInactivityTimer, clearAllTimers]);
+  }, [enabled, pauseDuringExam, resetInactivityTimer, clearAllTimers]);
 
   return {
     showInactivityModal,
