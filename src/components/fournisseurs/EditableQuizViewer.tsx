@@ -279,7 +279,7 @@ export function EditableQuizViewer({ sections, title, icon = "📝", quizId, fou
                       return (
                         <div key={q.id} className="space-y-3 p-4 border-2 border-primary/30 rounded-lg bg-background">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-muted-foreground">Question {qi + 1}</span>
+                            <span className="text-sm font-medium text-muted-foreground">Question Q{q.id}</span>
                             <div className="flex gap-1">
                               <Button size="sm" variant="ghost" onClick={cancelEdit} disabled={saving}>
                                 <X className="w-4 h-4" />
