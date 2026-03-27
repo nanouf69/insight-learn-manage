@@ -176,7 +176,7 @@ export function usePresenceCheck({
   }, [enabled, apprenantId, userId, connexionId, clearTimers, handleServerValidation, pauseDuringExam]);
 
   useEffect(() => {
-    if (!enabled || !apprenantId || !userId || !connexionId) return;
+    if (!enabled || !apprenantId || !userId || !connexionId || pauseDuringExam) return;
 
     const runHeartbeatCheck = () => {
       void handleServerValidation("heartbeat");
@@ -208,7 +208,7 @@ export function usePresenceCheck({
       document.removeEventListener("visibilitychange", onVisibilityChange);
       activityEvents.forEach((eventName) => window.removeEventListener(eventName, runActionCheck));
     };
-  }, [enabled, apprenantId, userId, connexionId, handleServerValidation]);
+  }, [enabled, apprenantId, userId, connexionId, handleServerValidation, pauseDuringExam]);
 
   useEffect(() => {
     if (!showModal || !modalDeadlineRef.current) {
