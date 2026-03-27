@@ -4629,7 +4629,7 @@ const eb4Matieres: Matiere[] = [
       {
         id: 11,
         type: "QCM",
-        enonce: "Quel acte donne naissance à l'entreprise ?",
+        enonce: "Quel est le capital social minimum requis pour créer une SARL ?",
         choix: [
           { lettre: "A", texte: "3 000 €" },
           { lettre: "B", texte: "7 500 €" },
