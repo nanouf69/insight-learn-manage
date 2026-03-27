@@ -21,6 +21,8 @@ interface UsePresenceCheckParams {
   connexionId: string | null;
   enabled: boolean;
   onForceDisconnect: () => void;
+  /** When true, all automatic heartbeat polling and activity checks are paused (e.g. during an exam) */
+  pauseDuringExam?: boolean;
 }
 
 export function usePresenceCheck({
@@ -29,6 +31,7 @@ export function usePresenceCheck({
   connexionId,
   enabled,
   onForceDisconnect,
+  pauseDuringExam = false,
 }: UsePresenceCheckParams) {
   const [showModal, setShowModal] = useState(false);
   const [countdownSeconds, setCountdownSeconds] = useState(600);
@@ -149,12 +152,14 @@ export function usePresenceCheck({
   }, [endSession, runServerCheck]);
 
   useEffect(() => {
-    if (!enabled || !apprenantId || !userId || !connexionId) {
+    if (!enabled || !apprenantId || !userId || !connexionId || pauseDuringExam) {
       clearTimers();
-      endingRef.current = false;
-      promptLoggedRef.current = false;
-      setShowModal(false);
-      modalDeadlineRef.current = null;
+      if (!pauseDuringExam) {
+        endingRef.current = false;
+        promptLoggedRef.current = false;
+        setShowModal(false);
+        modalDeadlineRef.current = null;
+      }
       return;
     }
 
@@ -168,10 +173,10 @@ export function usePresenceCheck({
     return () => {
       clearTimers();
     };
-  }, [enabled, apprenantId, userId, connexionId, clearTimers, handleServerValidation]);
+  }, [enabled, apprenantId, userId, connexionId, clearTimers, handleServerValidation, pauseDuringExam]);
 
   useEffect(() => {
-    if (!enabled || !apprenantId || !userId || !connexionId) return;
+    if (!enabled || !apprenantId || !userId || !connexionId || pauseDuringExam) return;
 
     const runHeartbeatCheck = () => {
       void handleServerValidation("heartbeat");
@@ -203,7 +208,7 @@ export function usePresenceCheck({
       document.removeEventListener("visibilitychange", onVisibilityChange);
       activityEvents.forEach((eventName) => window.removeEventListener(eventName, runActionCheck));
     };
-  }, [enabled, apprenantId, userId, connexionId, handleServerValidation]);
+  }, [enabled, apprenantId, userId, connexionId, handleServerValidation, pauseDuringExam]);
 
   useEffect(() => {
     if (!showModal || !modalDeadlineRef.current) {
