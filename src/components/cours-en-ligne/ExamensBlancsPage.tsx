@@ -401,6 +401,8 @@ export default function ExamensBlancsPage({
           apprenantId={apprenantId}
           isAdmin={isAdmin}
           refreshKey={selectionRefreshKey}
+          pausedExamIds={pausedExamIds}
+          onPauseToggle={handlePauseToggle}
         />
       </>
     );
