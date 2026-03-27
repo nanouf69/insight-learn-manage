@@ -204,6 +204,60 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
         const saved = row.module_data as unknown as ExamenBlanc;
         if (saved.matieres && Array.isArray(saved.matieres)) {
           const normalizeQuestionType = (value: unknown) => String(value ?? "").trim().toUpperCase();
+          const normalizeQuestionText = (value: unknown) =>
+            String(value ?? "")
+              .trim()
+              .replace(/\s+/g, " ")
+              .toLowerCase();
+
+          const normalizeChoicesSignature = (value: unknown) => {
+            if (!Array.isArray(value)) return "[]";
+            return JSON.stringify(
+              value.map((choice, index) => ({
+                lettre: String(choice?.lettre ?? String.fromCharCode(65 + index)).trim().toUpperCase(),
+                texte: normalizeQuestionText(choice?.texte),
+                correct: Boolean(choice?.correct ?? choice?.correcte),
+              }))
+            );
+          };
+
+          const buildQuestionSignature = (question: any) => {
+            const type = normalizeQuestionType(question?.type);
+            const enonce = normalizeQuestionText(question?.enonce);
+
+            if (type === "QCM") {
+              const choices = normalizeChoicesSignature(question?.choix);
+              if (enonce || choices !== "[]") return `${type}::${enonce}::${choices}`;
+            } else {
+              const reponseQrc = normalizeQuestionText(question?.reponseQRC);
+              const motsCles = Array.isArray(question?.reponses_possibles)
+                ? question.reponses_possibles
+                    .map((item: unknown) => normalizeQuestionText(item))
+                    .filter(Boolean)
+                    .sort()
+                    .join("|")
+                : "";
+              if (enonce || reponseQrc || motsCles) return `${type}::${enonce}::${reponseQrc}::${motsCles}`;
+            }
+
+            const numericId = Number(question?.id);
+            return `${type}::id:${Number.isFinite(numericId) ? numericId : "na"}`;
+          };
+
+          const deduplicateQuestions = (questions: any[]): Question[] => {
+            const seen = new Set<string>();
+            const deduped: Question[] = [];
+
+            questions.forEach((question) => {
+              const signature = buildQuestionSignature(question);
+              if (seen.has(signature)) return;
+              seen.add(signature);
+              deduped.push(question as Question);
+            });
+
+            return deduped;
+          };
+
           const getQuestionKey = (value: any) => `${Number(value?.id)}::${normalizeQuestionType(value?.type)}`;
 
           const sourceMatieres = examens[idx].matieres;
@@ -269,7 +323,7 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
               const merged = {
                 ...sourceMat,
                 ...savedMat,
-                questions: [...mergedQuestions, ...extraSavedQuestions],
+                questions: deduplicateQuestions([...mergedQuestions, ...extraSavedQuestions]),
               };
               // Always preserve texteSupport/texteSource from source (never lose them)
               merged.texteSupport = sourceMat.texteSupport || savedMat.texteSupport;
@@ -279,9 +333,17 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
             // No matching source matiere — still try to find texteSupport from source by nom
             const fallbackSource = sourceMatieres.find((sm: any) => sm.nom === savedMat.nom);
             if (fallbackSource?.texteSupport && !savedMat.texteSupport) {
-              return { ...savedMat, texteSupport: fallbackSource.texteSupport, texteSource: fallbackSource.texteSource };
+              return {
+                ...savedMat,
+                questions: deduplicateQuestions(Array.isArray(savedMat.questions) ? savedMat.questions : []),
+                texteSupport: fallbackSource.texteSupport,
+                texteSource: fallbackSource.texteSource,
+              };
             }
-            return savedMat;
+            return {
+              ...savedMat,
+              questions: deduplicateQuestions(Array.isArray(savedMat.questions) ? savedMat.questions : []),
+            };
           });
           examens[idx] = { ...examens[idx], matieres: mergedMatieres };
         }
