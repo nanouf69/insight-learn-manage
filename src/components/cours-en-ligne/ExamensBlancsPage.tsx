@@ -3183,16 +3183,25 @@ export default function ExamensBlancsPage({
 
   // Fallback: keep learner data synced even if realtime disconnects temporarily
   useEffect(() => {
-    const refreshOnFocus = () => { void refreshLiveExamens(); };
+    let lastRefresh = Date.now();
+    const THROTTLE_MS = 30_000; // 30 seconds minimum between refreshes
+
+    const throttledRefresh = () => {
+      const now = Date.now();
+      if (now - lastRefresh < THROTTLE_MS) return;
+      lastRefresh = now;
+      void refreshLiveExamens();
+    };
+
+    const refreshOnFocus = () => { throttledRefresh(); };
     const refreshOnVisibility = () => {
       if (document.visibilityState === "visible") {
-        void refreshLiveExamens();
+        throttledRefresh();
       }
     };
 
-    const intervalId = window.setInterval(() => {
-      void refreshLiveExamens();
-    }, 5000);
+    // Poll every 120 seconds (was 5s — caused DB overload)
+    const intervalId = window.setInterval(throttledRefresh, 120_000);
 
     window.addEventListener("focus", refreshOnFocus);
     document.addEventListener("visibilitychange", refreshOnVisibility);
