@@ -241,8 +241,12 @@ export default function ExamensBlancsPage({
         return;
       }
 
-      // Fallback for legacy/corrupted rows where matière_id/matière_nom mapping is lost
-      if (completedMatiereCount === 0 && completedRows.length >= matieresTotal) {
+      // Fallback for legacy/corrupted rows where matière_id/matière_nom mapping is partially lost
+      const legacyCompletionFallback =
+        completedRows.length >= matieresTotal &&
+        completedMatiereCount >= Math.max(matieresTotal - 1, 0);
+
+      if (legacyCompletionFallback) {
         toast.info("Examen déjà terminé. Affichage de vos résultats.", { duration: 3000, icon: "✅" });
         handleViewResults(latestExamen);
         return;
