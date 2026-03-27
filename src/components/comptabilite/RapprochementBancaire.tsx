@@ -373,9 +373,6 @@ export function RapprochementBancaire() {
           `${e.date_operation}|${e.montant}|${(e.libelle || "").trim().toLowerCase()}`
         )
       );
-      const existingRefs = new Set(
-        (existingRows || []).filter(e => e.reference).map(e => e.reference)
-      );
 
       const newRows = rows.filter(r => {
         // Dedup by date + montant + libellé
