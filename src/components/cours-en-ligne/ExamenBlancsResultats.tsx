@@ -69,51 +69,97 @@ function EcranResultats({
   const [editingQrc, setEditingQrc] = useState<string | null>(null);
   const [editingPoints, setEditingPoints] = useState<number>(0);
   const [revisionDejaFaite, setRevisionDejaFaite] = useState(false);
-  const [commentaire, setCommentaire] = useState("");
-  const [commentaireSaved, setCommentaireSaved] = useState(false);
-  const [commentaireLoading, setCommentaireLoading] = useState(false);
 
-  // Load existing comment
-  useEffect(() => {
-    if (!apprenantId || !examen?.id) return;
-    (async () => {
-      const { data } = await supabase
-        .from("apprenant_documents_completes")
-        .select("donnees")
-        .eq("apprenant_id", apprenantId)
-        .eq("type_document", "commentaire_examen_blanc")
-        .eq("titre", examen.id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (data?.donnees && typeof data.donnees === "object" && (data.donnees as any).commentaire) {
-        setCommentaire((data.donnees as any).commentaire);
-        setCommentaireSaved(true);
-      }
-    })();
-  }, [apprenantId, examen?.id]);
+  // === BILAN AUTOMATIQUE ===
+  const generateBilanAuto = useCallback(() => {
+    if (!resultats || resultats.length === 0) return null;
 
-  const handleSaveCommentaire = async () => {
-    if (!apprenantId || !userId || !commentaire.trim()) return;
-    setCommentaireLoading(true);
-    try {
-      const { error } = await supabase.from("apprenant_documents_completes").upsert({
-        apprenant_id: apprenantId,
-        user_id: userId,
-        type_document: "commentaire_examen_blanc",
-        titre: examen.id,
-        donnees: { commentaire: commentaire.trim(), examen_titre: examen.titre },
-      } as any, { onConflict: "apprenant_id,type_document,titre" });
-      if (error) throw error;
-      setCommentaireSaved(true);
-      toast.success("Commentaire enregistré ✅");
-    } catch (err: any) {
-      console.error("Erreur sauvegarde commentaire:", err);
-      toast.error("Erreur lors de l'enregistrement du commentaire");
-    } finally {
-      setCommentaireLoading(false);
+    // Compute weighted average
+    let totalCoef = 0;
+    let weightedSum = 0;
+    const matieresDetails: { nom: string; note: number; coef: number; noteElim: number; isElim: boolean }[] = [];
+
+    resultats.forEach((r) => {
+      const coef = examen.matieres.find(m => m.id === r.matiereId)?.coefficient || 1;
+      const noteElim = examen.matieres.find(m => m.id === r.matiereId)?.noteEliminatoire || 6;
+      const note = r.maxPoints > 0 ? Math.round(((r.noteObtenue / r.maxPoints) * 20) * 10) / 10 : 0;
+      weightedSum += note * coef;
+      totalCoef += coef;
+      matieresDetails.push({
+        nom: r.nomMatiere.split(" - ")[0],
+        note,
+        coef,
+        noteElim,
+        isElim: note < noteElim,
+      });
+    });
+
+    const moyenne = totalCoef > 0 ? Math.round((weightedSum / totalCoef) * 10) / 10 : 0;
+    const isReussi = moyenne >= 10 && !matieresDetails.some(m => m.isElim);
+
+    // Sort by note ascending for weakest first
+    const sorted = [...matieresDetails].sort((a, b) => a.note - b.note);
+    const faibles = sorted.filter(m => m.note < 10);
+    const eliminatoires = sorted.filter(m => m.isElim);
+    const forts = sorted.filter(m => m.note >= 14);
+
+    const lines: string[] = [];
+
+    if (isReussi) {
+      lines.push(`✅ Bravo ! Vous avez obtenu une moyenne de ${moyenne.toFixed(1)}/20, vous avez réussi cet examen blanc.`);
+    } else {
+      lines.push(`❌ Votre moyenne est de ${moyenne.toFixed(1)}/20. L'examen n'est pas validé (il faut 10/20 minimum sans note éliminatoire).`);
     }
-  };
+
+    if (eliminatoires.length > 0) {
+      lines.push("");
+      lines.push(`⚠️ Note(s) éliminatoire(s) :`);
+      eliminatoires.forEach(m => {
+        lines.push(`  • ${m.nom} : ${m.note.toFixed(1)}/20 (minimum requis : ${m.noteElim}/20)`);
+      });
+    }
+
+    if (faibles.length > 0) {
+      lines.push("");
+      lines.push(`📚 Matières à réviser en priorité :`);
+      faibles.forEach(m => {
+        lines.push(`  • ${m.nom} : ${m.note.toFixed(1)}/20`);
+      });
+    }
+
+    if (forts.length > 0) {
+      lines.push("");
+      lines.push(`💪 Points forts :`);
+      forts.forEach(m => {
+        lines.push(`  • ${m.nom} : ${m.note.toFixed(1)}/20`);
+      });
+    }
+
+    // Recommendations
+    lines.push("");
+    if (!isReussi) {
+      lines.push(`📝 Conseils :`);
+      if (eliminatoires.length > 0) {
+        lines.push(`  • Concentrez-vous d'abord sur ${eliminatoires.map(m => m.nom).join(", ")} pour dépasser la note éliminatoire.`);
+      }
+      if (faibles.length > 0) {
+        const matieresARevoir = faibles.filter(m => !m.isElim);
+        if (matieresARevoir.length > 0) {
+          lines.push(`  • Renforcez ensuite ${matieresARevoir.map(m => m.nom).join(", ")} pour atteindre la moyenne.`);
+        }
+      }
+      lines.push(`  • Utilisez les fiches de révision et les exercices pour chaque matière faible.`);
+      lines.push(`  • Refaites les questions fausses de cet examen pour consolider vos acquis.`);
+    } else {
+      if (faibles.length > 0) {
+        lines.push(`📝 Même si vous avez réussi, renforcez ${faibles.map(m => m.nom).join(", ")} pour être plus à l'aise le jour de l'examen.`);
+      } else {
+        lines.push(`📝 Continuez vos révisions pour maintenir ce bon niveau. Passez aux examens blancs suivants pour vous entraîner.`);
+      }
+    }
+
+    return lines.join("\n");
+  }, [resultats, examen]);
 
   // Check if revision has already been done for this exam
   useEffect(() => {
@@ -864,56 +910,24 @@ function EcranResultats({
       )}
 
 
-      {/* Commentaire de l'élève */}
-      {apprenantId && userId && !isAdmin && (
-        <Card className="border-2 border-dashed border-muted-foreground/30">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Pencil className="w-4 h-4" />
-              Laissez un commentaire sur cet examen
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Textarea
-              placeholder="Comment avez-vous trouvé cet examen ? Des difficultés particulières ? Des points à revoir ?"
-              value={commentaire}
-              onChange={(e) => { setCommentaire(e.target.value); setCommentaireSaved(false); }}
-              rows={4}
-              className="resize-none"
-            />
-            <div className="flex items-center gap-3">
-              <Button
-                onClick={handleSaveCommentaire}
-                disabled={!commentaire.trim() || commentaireLoading || commentaireSaved}
-                size="sm"
-                className="gap-2"
-              >
-                {commentaireLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : commentaireSaved ? (
-                  <CheckCircle2 className="w-4 h-4" />
-                ) : null}
-                {commentaireSaved ? "Commentaire enregistré ✅" : "Enregistrer mon commentaire"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Commentaire visible par l'admin */}
-      {isAdmin && commentaire && (
-        <Card className="border border-muted">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Pencil className="w-4 h-4" />
-              Commentaire de l'élève
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{commentaire}</p>
-          </CardContent>
-        </Card>
-      )}
+      {/* Bilan automatique */}
+      {(() => {
+        const bilan = generateBilanAuto();
+        if (!bilan) return null;
+        return (
+          <Card className="border-2 border-primary/30 bg-primary/5">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Bot className="w-5 h-5 text-primary" />
+                Bilan de votre examen
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm whitespace-pre-wrap leading-relaxed">{bilan}</p>
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* Boutons */}
       <div className="flex gap-3">
