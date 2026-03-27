@@ -1684,9 +1684,9 @@ function PassageMatiere({
                       ? "bg-green-100 text-green-700 border border-green-300"
                       : "bg-red-50 text-red-500 border border-red-300 animate-pulse"
                 }`}
-                title={isAnswered ? `Q${q.id} — répondue ✓` : `Q${q.id} — NON répondue ✗`}
+                title={isAnswered ? `Q${i + 1} — répondue ✓` : `Q${i + 1} — NON répondue ✗`}
               >
-                {q.id}
+                {i + 1}
               </button>
             );
           })}
@@ -2401,11 +2401,11 @@ function EcranResultats({
                             <div className="flex items-start justify-between gap-2 mb-1">
                               <div className="flex items-center gap-1.5 flex-1">
                                 <Badge variant={q?.type === "QRC" ? "secondary" : "outline"} className="text-xs shrink-0">{q?.type}</Badge>
-                                <p className="text-sm font-bold">Q{q.id}. {q.enonce}</p>
+                                <p className="text-sm font-bold">Q{qIdx + 1}. {q.enonce}</p>
                                 {q?.image && (
                                   <ExamQuestionImage
                                     image={q.image}
-                                    alt={`Illustration de la question Q${q.id}`}
+                                    alt={`Illustration de la question Q${qIdx + 1}`}
                                     className="mt-1 max-h-24 rounded border"
                                     fallbackClassName="mt-1 text-xs text-muted-foreground italic"
                                   />
