@@ -210,7 +210,8 @@ export default function ExamensBlancsPage({
       if (error) { toast.error("Vérification de sécurité impossible. Réessayez."); return; }
 
       const completedRows = (existingResults as any[]) || [];
-      const matieresTotal = Math.max(latestExamen.matieres?.length || 1, 1);
+      const validMatieres = (latestExamen.matieres || []).filter((m): m is Matiere => Boolean(m));
+      const matieresTotal = Math.max(validMatieres.length || 1, 1);
 
       const latestByCanonicalKey = new Map<string, any>();
       completedRows.forEach((row: any) => {
@@ -230,11 +231,22 @@ export default function ExamensBlancsPage({
       const isMatiereDone = (matiere: Matiere) =>
         buildMatiereLookupKeys(matiere?.id, matiere?.nom).some((key) => completedLookupKeys.has(key));
 
-      const completedMatiereCount = latestExamen.matieres.filter((m) => m && isMatiereDone(m)).length;
+      const completedMatiereCount = validMatieres.filter((m) => isMatiereDone(m)).length;
       const allCompleted = completedMatiereCount >= matieresTotal;
 
       if (allCompleted) {
         // Redirect to results view instead of blocking with toast
+        toast.info("Examen déjà terminé. Affichage de vos résultats.", { duration: 3000, icon: "✅" });
+        handleViewResults(latestExamen);
+        return;
+      }
+
+      // Fallback for legacy/corrupted rows where matière_id/matière_nom mapping is partially lost
+      const legacyCompletionFallback =
+        completedRows.length >= matieresTotal &&
+        completedMatiereCount >= Math.max(matieresTotal - 1, 0);
+
+      if (legacyCompletionFallback) {
         toast.info("Examen déjà terminé. Affichage de vos résultats.", { duration: 3000, icon: "✅" });
         handleViewResults(latestExamen);
         return;

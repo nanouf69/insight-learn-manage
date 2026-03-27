@@ -53,22 +53,31 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
 
           const latestRows = Array.from(latestByQuizMatiere.values());
           const completedIds = new Set<string>();
-          const matieresDoneByQuiz = new Map<string, Set<string>>();
+          const rowsByQuiz = new Map<string, any[]>();
 
           latestRows.forEach((row: any) => {
-            const quizId = row.quiz_id;
-            const matiereKey = row.matiere_id || row.matiere_nom || "unknown";
+            const quizId = row?.quiz_id;
             if (!quizId) return;
-            if (!matieresDoneByQuiz.has(quizId)) {
-              matieresDoneByQuiz.set(quizId, new Set<string>());
-            }
-            matieresDoneByQuiz.get(quizId)!.add(matiereKey);
+            if (!rowsByQuiz.has(quizId)) rowsByQuiz.set(quizId, []);
+            rowsByQuiz.get(quizId)!.push(row);
           });
 
-          matieresDoneByQuiz.forEach((doneSet, quizId) => {
+          rowsByQuiz.forEach((rows, quizId) => {
             const examDef = examensData.find((e) => e.id === quizId);
-            const requiredMatieres = examDef?.matieres?.length || 1;
-            if (doneSet.size >= requiredMatieres) {
+            const validMatieres = (examDef?.matieres || []).filter((m): m is Matiere => Boolean(m));
+            const requiredMatieres = Math.max(validMatieres.length || 1, 1);
+
+            const doneLookupKeys = new Set<string>();
+            rows.forEach((row: any) => {
+              buildMatiereLookupKeys(row?.matiere_id, row?.matiere_nom).forEach((key) => doneLookupKeys.add(key));
+            });
+
+            const completedMatiereCount = validMatieres.filter((matiere) =>
+              buildMatiereLookupKeys(matiere.id, matiere.nom).some((key) => doneLookupKeys.has(key))
+            ).length;
+
+            const fallbackCompleted = rows.length >= requiredMatieres && completedMatiereCount >= Math.max(requiredMatieres - 1, 0);
+            if (completedMatiereCount >= requiredMatieres || fallbackCompleted) {
               completedIds.add(quizId);
             }
           });
