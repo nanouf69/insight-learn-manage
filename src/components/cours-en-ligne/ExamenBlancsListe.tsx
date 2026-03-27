@@ -396,7 +396,8 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                         const scoreData = findScoreForMatiere(scores, m);
                         const coef = m.coefficient || 1;
                         if (scoreData) {
-                          weightedSum += scoreData.note_sur_20 * coef;
+                          const noteSur20 = normalizeNoteSur20(scoreData.score_obtenu, scoreData.score_max, scoreData.note_sur_20);
+                          weightedSum += noteSur20 * coef;
                           totalCoef += coef;
                           hasScores = true;
                           // Use computeAdmisForMatiere (same as detail view) to check éliminatoire
