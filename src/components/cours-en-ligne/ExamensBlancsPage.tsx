@@ -2401,7 +2401,7 @@ function EcranResultats({
                             <div className="flex items-start justify-between gap-2 mb-1">
                               <div className="flex items-center gap-1.5 flex-1">
                                 <Badge variant={q?.type === "QRC" ? "secondary" : "outline"} className="text-xs shrink-0">{q?.type}</Badge>
-                                <p className="text-sm font-bold">Q{q.id}. {q.enonce}</p>
+                                <p className="text-sm font-bold">Q{qIdx + 1}. {q.enonce}</p>
                                 {q?.image && (
                                   <ExamQuestionImage
                                     image={q.image}
