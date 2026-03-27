@@ -147,6 +147,7 @@ function PassageMatiere({
   isBilan = false,
   apprenantId,
   examenId,
+  isAdmin = false,
 }: {
   matiere: Matiere;
   numero: number;
@@ -155,6 +156,7 @@ function PassageMatiere({
   isBilan?: boolean;
   apprenantId?: string | null;
   examenId?: string;
+  isAdmin?: boolean;
 }) {
   const [reponses, setReponses] = useState<Reponses>({});
   const [questionIndex, setQuestionIndex] = useState(0);
