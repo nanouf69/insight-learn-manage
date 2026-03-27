@@ -3033,6 +3033,7 @@ export default function ExamensBlancsPage({
   apprenantType,
   isAdmin,
   isPresentiel,
+  onExamStateChange,
 }: {
   defaultBilanId?: string | null;
   onBilanConsumed?: () => void;
@@ -3041,6 +3042,8 @@ export default function ExamensBlancsPage({
   apprenantType?: string | null;
   isAdmin?: boolean;
   isPresentiel?: boolean;
+  /** Called when the learner enters or exits an active exam phase */
+  onExamStateChange?: (isInExam: boolean) => void;
 } = {}) {
   // Restore exam session from sessionStorage
   const EXAM_SESSION_KEY = `exam_session_${apprenantId || "anon"}`;
