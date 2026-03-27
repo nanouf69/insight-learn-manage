@@ -565,9 +565,14 @@ export default function ExamensBlancsPage({
       details: { questions: questionDetails, reponses: resultat.reponses, correctionsIA: Object.keys(frozenCorrections).length > 0 ? frozenCorrections : undefined },
     };
 
-    const { error } = await supabase.from("apprenant_quiz_results" as any).insert([payload] as any);
+    // BUG #1 FIX: Use upsert instead of insert to prevent duplicate rows with score=0
+    // when network retries or double-submissions occur
+    const { error } = await supabase.from("apprenant_quiz_results" as any).upsert([payload] as any, {
+      onConflict: "apprenant_id,quiz_id,matiere_id",
+      ignoreDuplicates: false,
+    } as any);
     if (error) {
-      console.error("[ExamSubmission][EB][InsertError]", error);
+      console.error("[ExamSubmission][EB][UpsertError]", error);
       toast.error("⚠️ Erreur d'enregistrement du résultat. Veuillez contacter l'administration.", { duration: 10000 });
     }
   };
