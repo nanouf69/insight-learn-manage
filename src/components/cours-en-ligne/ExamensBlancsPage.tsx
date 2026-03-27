@@ -303,7 +303,7 @@ export default function ExamensBlancsPage({
     if (defaultBilanId) { setBilanPrefiltre(defaultBilanId); onBilanConsumed?.(); }
   }, [defaultBilanId]);
 
-  const handleStart = async (examen: ExamenBlanc) => {
+  const handleStart = async (examen: ExamenBlanc, forceRetake = false) => {
     const latestExamen = liveExamens.find((live) => live.id === examen.id) ?? examen;
     const quizType = latestExamen.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
 
