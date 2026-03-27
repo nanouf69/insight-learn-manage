@@ -379,7 +379,7 @@ export default function ExamensBlancsPage({
 
   // ===== RENDER =====
   if (phase === "edition") {
-    return <ExamensBlancsEditor onBack={() => setPhase("selection")} />;
+    return <ExamensBlancsEditor onBack={() => setPhase("selection")} pausedExamIds={pausedExamIds} onPauseToggle={handlePauseToggle} />;
   }
 
   if (phase === "selection") {
