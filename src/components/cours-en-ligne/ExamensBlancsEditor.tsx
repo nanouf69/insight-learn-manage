@@ -856,7 +856,7 @@ function MatiereEditor({
 }
 
 // ===== COMPOSANT PRINCIPAL =====
-export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBack: () => void; defaultExamenId?: string | null }) {
+export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExamIds, onPauseToggle }: { onBack: () => void; defaultExamenId?: string | null; pausedExamIds?: Set<string>; onPauseToggle?: (examId: string) => void }) {
   const [examens, setExamens] = useState<ExamenBlanc[]>(
     () => JSON.parse(JSON.stringify(tousLesExamens))
   );
