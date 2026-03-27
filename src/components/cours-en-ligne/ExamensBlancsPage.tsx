@@ -3173,8 +3173,9 @@ export default function ExamensBlancsPage({
 
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
+    const channelName = `examens-blancs-live`;
     const channel = supabase
-      .channel(`examens-blancs-live-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
