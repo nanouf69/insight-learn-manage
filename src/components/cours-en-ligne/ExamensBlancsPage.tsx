@@ -583,9 +583,10 @@ export default function ExamensBlancsPage({
         <div className="flex-1 min-w-0 space-y-4">
           <div className="flex items-center gap-3">
             <div className="flex gap-1.5">
-              {examenChoisi.matieres.map((_, i) => (
-                <div key={i} className={`h-2 rounded-full transition-all ${i < matiereIndex ? "w-8 bg-green-500" : i === matiereIndex ? "w-8 bg-primary" : "w-4 bg-muted"}`} />
-              ))}
+              {examenChoisi.matieres.map((_, i) => {
+                const done = tousResultats[i] != null;
+                return <div key={i} className={`h-2 rounded-full transition-all ${done ? "w-8 bg-green-500" : i === matiereIndex ? "w-8 bg-primary" : "w-4 bg-muted"}`} />;
+              })}
             </div>
             <span className="text-xs text-muted-foreground">Matière {matiereIndex + 1}/{examenChoisi.matieres.length}</span>
             {!isAdmin && (
