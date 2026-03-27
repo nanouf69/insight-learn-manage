@@ -3144,9 +3144,8 @@ export default function ExamensBlancsPage({
     void refreshLiveExamens();
   }, [refreshLiveExamens]);
 
-  // Realtime: reload when admin saves exam changes
+  // Realtime: reload when admin saves exam changes (debounced to avoid cascade)
   useEffect(() => {
-    // Use the actual Set of valid exam module IDs (not a contiguous range)
     const validExamModuleIds = new Set(
       tousLesExamens.map((ex) => getModuleIdForExamId(ex.id))
     );
@@ -3154,6 +3153,8 @@ export default function ExamensBlancsPage({
       const moduleId = Number(payload?.new?.module_id ?? payload?.old?.module_id);
       return Number.isFinite(moduleId) && validExamModuleIds.has(moduleId);
     };
+
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
     const channel = supabase
       .channel(`examens-blancs-live-${Date.now()}-${Math.random().toString(36).slice(2)}`)
@@ -3166,19 +3167,21 @@ export default function ExamensBlancsPage({
         },
         (payload) => {
           if (!isExamModuleEvent(payload)) return;
-          console.log("[Realtime] Exam blanc updated, clearing session & reloading...");
-          // Invalidate any in-progress exam session so the student gets fresh data
-          try { sessionStorage.removeItem(EXAM_SESSION_KEY); } catch {}
-          void refreshLiveExamens();
+          // Debounce: wait 3s after last event before refreshing (admin saves trigger many events)
+          if (debounceTimer) clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => {
+            console.log("[Realtime] Exam blanc updated, reloading...");
+            try { sessionStorage.removeItem(EXAM_SESSION_KEY); } catch {}
+            void refreshLiveExamens();
+          }, 3000);
         }
       )
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          void refreshLiveExamens();
-        }
-      });
+      .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      supabase.removeChannel(channel);
+    };
   }, [refreshLiveExamens, EXAM_SESSION_KEY]);
 
   // Fallback: keep learner data synced even if realtime disconnects temporarily
