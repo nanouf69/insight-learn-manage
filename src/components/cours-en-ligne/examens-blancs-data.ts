@@ -5499,12 +5499,12 @@ L'interaction entre voitures autonomes et véhicule classique est l'autre grand 
       {
         id: 8,
         type: "QCM",
-        enonce: "Quelle est l'ancienneté maximale d'un véhicule utilisé en exploitation VTC ?",
+        enonce: "Quel est le délai de conservation obligatoire du registre de réservation pour un exploitant VTC ?",
         choix: [
-          { lettre: "A", texte: "3 ans", correct: true },
-          { lettre: "B", texte: "4 ans" },
-          { lettre: "C", texte: "Il n'y a pas d'ancienneté maximale" },
-          { lettre: "D", texte: "7 ans" , correct: true },
+          { lettre: "A", texte: "6 mois" },
+          { lettre: "B", texte: "1 an" },
+          { lettre: "C", texte: "2 ans" , correct: true },
+          { lettre: "D", texte: "5 ans" },
         ],
       },
     ],
