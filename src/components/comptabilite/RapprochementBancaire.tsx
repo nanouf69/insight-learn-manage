@@ -346,7 +346,6 @@ export function RapprochementBancaire() {
     setImporting(true);
     try {
       const text = await file.text();
-      // Auto-detect bank format
       const detected = detectBankFromCsv(text);
       let rows: ReturnType<typeof parseBNPCsv>;
       if (detected === "revolut") {
@@ -359,11 +358,49 @@ export function RapprochementBancaire() {
         setImporting(false);
         return;
       }
-      const inserts = rows.map(r => ({ ...r, statut: "non_justifie", source: "import_csv" }));
+
+      // Deduplicate: fetch existing transactions for this bank to compare
+      const bankName = rows[0]?.banque || "inconnue";
+      const dates = [...new Set(rows.map(r => r.date_operation))];
+      const { data: existingRows } = await supabase
+        .from("transactions_bancaires")
+        .select("date_operation, montant, libelle, reference")
+        .in("date_operation", dates)
+        .eq("banque", bankName);
+
+      const existingSet = new Set(
+        (existingRows || []).map(e =>
+          `${e.date_operation}|${e.montant}|${(e.libelle || "").trim().toLowerCase()}`
+        )
+      );
+      const existingRefs = new Set(
+        (existingRows || []).filter(e => e.reference).map(e => e.reference)
+      );
+
+      const newRows = rows.filter(r => {
+        // If row has a reference (e.g. Revolut), dedup by reference
+        if (r.reference && existingRefs.has(r.reference)) return false;
+        // Otherwise dedup by date + montant + libellé
+        const key = `${r.date_operation}|${r.montant}|${(r.libelle || "").trim().toLowerCase()}`;
+        return !existingSet.has(key);
+      });
+
+      const skipped = rows.length - newRows.length;
+
+      if (newRows.length === 0) {
+        toast.info(`Toutes les ${rows.length} transactions sont déjà en base. Aucun doublon importé.`);
+        setImporting(false);
+        return;
+      }
+
+      const inserts = newRows.map(r => ({ ...r, statut: "non_justifie", source: "import_csv" }));
       const { error } = await supabase.from("transactions_bancaires").insert(inserts);
       if (error) throw error;
-      const bankName = rows[0]?.banque || "inconnue";
-      toast.success(`${rows.length} transactions ${bankName} importées !`);
+
+      const msg = skipped > 0
+        ? `${newRows.length} nouvelles transactions importées, ${skipped} déjà présentes ignorées.`
+        : `${newRows.length} transactions ${bankName} importées !`;
+      toast.success(msg);
       await fetchAll();
     } catch (err) {
       toast.error("Erreur import : " + (err instanceof Error ? err.message : "Erreur"));
