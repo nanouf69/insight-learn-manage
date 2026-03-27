@@ -47,6 +47,8 @@ export default function ExamensBlancsPage({
 } = {}) {
   const EXAM_SESSION_KEY = `exam_session_${apprenantId || "anon"}`;
 
+  // BUG #3 FIX: restoreSession is now synchronous for initial state,
+  // but the useEffect below will verify against DB and purge if already completed
   const restoreSession = () => {
     try {
       const saved = sessionStorage.getItem(EXAM_SESSION_KEY);
@@ -288,20 +290,17 @@ export default function ExamensBlancsPage({
         if (savedResponses && (savedResponses as any[]).length > 0) {
           const responsesByMatiere = new Map<string, any>();
           (savedResponses as any[]).forEach((r: any) => {
-            // exercice_id format: EB5_securite → extract matiere part
             const matiereKey = (r.exercice_id || "").replace(`${latestExamen.id}_`, "");
-            if (matiereKey) responsesByMatiere.set(matiereKey, r);
+            // BUG #2 FIX: Only count responses with completed=true
+            if (matiereKey && r.completed === true) responsesByMatiere.set(matiereKey, r);
           });
 
-          // If we have responses for all matières (completed or not), and combined with
-          // quiz_results we cover everything, consider it done
           const totalCoveredMatieres = new Set<string>();
           completedRows.forEach((row: any) => {
             if (row?.matiere_id) totalCoveredMatieres.add(row.matiere_id);
           });
           responsesByMatiere.forEach((_, key) => totalCoveredMatieres.add(key));
 
-          // Check if all valid matières are covered by either results or responses
           const allCovered = validMatieres.every((m) => 
             totalCoveredMatieres.has(m.id) || 
             completedRows.some((row: any) => 
@@ -426,7 +425,72 @@ export default function ExamensBlancsPage({
       .eq("apprenant_id", apprenantId)
       .eq("quiz_id", examReference.id)
       .eq("quiz_type", examReference.id.startsWith("bilan-") ? "bilan" : "examen_blanc");
-    if (!data || (data as any[]).length === 0) { toast.error("Aucun résultat trouvé pour cet examen."); return; }
+    // BUG #4 FIX: if quiz_results is empty, try to rebuild from reponses_apprenants
+    if (!data || (data as any[]).length === 0) {
+      if (!apprenantId || !userId) { toast.error("Aucun résultat trouvé pour cet examen."); return; }
+      const { data: savedResponses } = await supabase
+        .from("reponses_apprenants" as any)
+        .select("exercice_id, reponses, score, completed")
+        .eq("apprenant_id", apprenantId)
+        .eq("exercice_type", "examen_blanc")
+        .like("exercice_id", `${examReference.id}_%`);
+      
+      const completedResponses = ((savedResponses as any[]) || []).filter((r: any) => r.completed === true);
+      if (completedResponses.length === 0) { toast.error("Aucun résultat trouvé pour cet examen."); return; }
+      
+      // Rebuild scores from responses and insert into quiz_results
+      const rebuiltResults: ResultatMatiere[] = [];
+      for (const matiere of examReference.matieres) {
+        if (!matiere) continue;
+        const matiereKey = (examReference.id + "_" + matiere.id);
+        const resp = completedResponses.find((r: any) => r.exercice_id === matiereKey);
+        if (!resp) continue;
+        const reponses = resp.reponses || {};
+        const questionsSafe = (matiere.questions ?? []).filter((q): q is Question => q != null && q?.type != null);
+        const maxPoints = questionsSafe.reduce((acc, q) => acc + getPointsParQuestion(matiere.id, q?.type || "QCM", matiere), 0);
+        const note = questionsSafe.reduce((total, q) => {
+          if (!q || !q?.type) return total;
+          const rep = reponses?.[q.id] ?? reponses?.[String(q.id)];
+          const pts = getPointsParQuestion(matiere.id, q?.type, matiere);
+          if (q?.type === "QCM" && q.choix) {
+            const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
+            const donnees = safeArray<string>(rep).sort();
+            if (JSON.stringify(correctes) === JSON.stringify(donnees)) return total + pts;
+          } else if (q?.type === "QRC") {
+            const correction = evaluateQrcDeterministic(q, rep, pts);
+            return total + correction.pointsObtenus;
+          }
+          return total;
+        }, 0);
+        const safeNote = maxPoints > 0 ? clamp(note, 0, maxPoints) : Math.max(note, 0);
+        const noteSur20 = normalizeNoteSur20(safeNote, maxPoints);
+        const quizType = examReference.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
+        const admis = computeAdmisForMatiere(safeNote, maxPoints, matiere.noteEliminatoire, matiere.noteSur || 20, false);
+        
+        // Insert rebuilt result
+        await supabase.from("apprenant_quiz_results" as any).upsert([{
+          apprenant_id: apprenantId, user_id: userId, quiz_type: quizType, quiz_id: examReference.id,
+          quiz_titre: examReference.titre, matiere_id: matiere.id, matiere_nom: matiere.nom,
+          score_obtenu: safeNote, score_max: maxPoints, note_sur_20: noteSur20, reussi: admis,
+          details: { reponses },
+        }] as any, { onConflict: "apprenant_id,quiz_id,matiere_id", ignoreDuplicates: false } as any);
+        
+        rebuiltResults.push({
+          matiereId: matiere.id, nomMatiere: matiere.nom, noteObtenue: safeNote, maxPoints,
+          noteSur: matiere.noteSur || 20, noteEliminatoire: matiere.noteEliminatoire || 0,
+          coefficient: matiere.coefficient || 1, admis, reponses,
+        });
+      }
+      
+      if (rebuiltResults.length === 0) { toast.error("Aucun résultat exploitable trouvé."); return; }
+      toast.success(`${rebuiltResults.length} résultat(s) recalculé(s) depuis vos réponses.`);
+      setExamenChoisi(examReference);
+      setTousResultats(rebuiltResults);
+      setIsViewingSavedResults(true);
+      setPhase("resultats");
+      persistExamSession("resultats", null, 0);
+      return;
+    }
 
     const latestByMatiere = new Map<string, any>();
     (data as any[]).forEach((row: any, idx: number) => {
@@ -565,9 +629,14 @@ export default function ExamensBlancsPage({
       details: { questions: questionDetails, reponses: resultat.reponses, correctionsIA: Object.keys(frozenCorrections).length > 0 ? frozenCorrections : undefined },
     };
 
-    const { error } = await supabase.from("apprenant_quiz_results" as any).insert([payload] as any);
+    // BUG #1 FIX: Use upsert instead of insert to prevent duplicate rows with score=0
+    // when network retries or double-submissions occur
+    const { error } = await supabase.from("apprenant_quiz_results" as any).upsert([payload] as any, {
+      onConflict: "apprenant_id,quiz_id,matiere_id",
+      ignoreDuplicates: false,
+    } as any);
     if (error) {
-      console.error("[ExamSubmission][EB][InsertError]", error);
+      console.error("[ExamSubmission][EB][UpsertError]", error);
       toast.error("⚠️ Erreur d'enregistrement du résultat. Veuillez contacter l'administration.", { duration: 10000 });
     }
   };
