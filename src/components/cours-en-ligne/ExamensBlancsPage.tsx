@@ -157,12 +157,12 @@ export default function ExamensBlancsPage({
         return;
       }
 
-      // Priority check: if exam already completed, never restore in-progress session
+      // Priority check: if exam already completed in DB, never restore in-progress session
       if (!isAdmin && apprenantId) {
         const quizType = found.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
         const { data, error } = await supabase
           .from("apprenant_quiz_results" as any)
-          .select("matiere_id, matiere_nom, completed_at, created_at")
+          .select("matiere_id, matiere_nom, score_obtenu, completed_at, created_at")
           .eq("apprenant_id", apprenantId)
           .eq("quiz_id", found.id)
           .eq("quiz_type", quizType);
@@ -276,44 +276,32 @@ export default function ExamensBlancsPage({
       const validMatieres = (latestExamen.matieres || []).filter((m): m is Matiere => Boolean(m));
       const matieresTotal = Math.max(validMatieres.length || 1, 1);
 
-      // --- Secondary fallback: also check reponses_apprenants for completed responses ---
-      // This catches cases where responses were saved but quiz_results insert failed
+      // Secondary fallback: ONLY completed=true responses can mark exam as completed
       let responseFallbackCompleted = false;
       if (completedRows.length < validMatieres.length) {
         const { data: savedResponses } = await supabase
           .from("reponses_apprenants" as any)
-          .select("exercice_id, completed, score")
+          .select("exercice_id, completed")
           .eq("apprenant_id", apprenantId)
           .eq("exercice_type", "examen_blanc")
           .like("exercice_id", `${latestExamen.id}_%`);
-        
-        if (savedResponses && (savedResponses as any[]).length > 0) {
-          const responsesByMatiere = new Map<string, any>();
-          (savedResponses as any[]).forEach((r: any) => {
-            const matiereKey = (r.exercice_id || "").replace(`${latestExamen.id}_`, "");
-            // BUG #2 FIX: Only count responses with completed=true
-            if (matiereKey && r.completed === true) responsesByMatiere.set(matiereKey, r);
-          });
 
-          const totalCoveredMatieres = new Set<string>();
-          completedRows.forEach((row: any) => {
-            if (row?.matiere_id) totalCoveredMatieres.add(row.matiere_id);
-          });
-          responsesByMatiere.forEach((_, key) => totalCoveredMatieres.add(key));
+        const completedResponseLookupKeys = new Set<string>();
+        ((savedResponses as any[]) || []).forEach((r: any) => {
+          if (r?.completed !== true) return;
+          const exerciceId = safeStr(r?.exercice_id);
+          const matiereKey = exerciceId.startsWith(`${latestExamen.id}_`)
+            ? exerciceId.slice(`${latestExamen.id}_`.length)
+            : "";
+          if (!matiereKey) return;
+          buildMatiereLookupKeys(matiereKey, matiereKey).forEach((k) => completedResponseLookupKeys.add(k));
+        });
 
-          const allCovered = validMatieres.every((m) => 
-            totalCoveredMatieres.has(m.id) || 
-            completedRows.some((row: any) => 
-              buildMatiereLookupKeys(row?.matiere_id, row?.matiere_nom).some(k => 
-                buildMatiereLookupKeys(m.id, m.nom).includes(k)
-              )
-            )
+        responseFallbackCompleted =
+          validMatieres.length > 0 &&
+          validMatieres.every((m) =>
+            buildMatiereLookupKeys(m.id, m.nom).some((k) => completedResponseLookupKeys.has(k))
           );
-          
-          if (allCovered && totalCoveredMatieres.size >= validMatieres.length) {
-            responseFallbackCompleted = true;
-          }
-        }
       }
 
       const latestByCanonicalKey = new Map<string, any>();
@@ -419,32 +407,41 @@ export default function ExamensBlancsPage({
   const handleViewResults = async (examen: ExamenBlanc) => {
     if (!apprenantId) return;
     const examReference = liveExamens.find((live) => live.id === examen.id) ?? examen;
-    const { data } = await supabase
-      .from("apprenant_quiz_results" as any)
-      .select("*")
-      .eq("apprenant_id", apprenantId)
-      .eq("quiz_id", examReference.id)
-      .eq("quiz_type", examReference.id.startsWith("bilan-") ? "bilan" : "examen_blanc");
-    // BUG #4 FIX: if quiz_results is empty, try to rebuild from reponses_apprenants
-    if (!data || (data as any[]).length === 0) {
-      if (!apprenantId || !userId) { toast.error("Aucun résultat trouvé pour cet examen."); return; }
+    const quizType = examReference.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
+
+    const rebuildResultsFromSavedResponses = async (): Promise<ResultatMatiere[] | null> => {
+      if (!apprenantId || !userId) return null;
+
       const { data: savedResponses } = await supabase
         .from("reponses_apprenants" as any)
         .select("exercice_id, reponses, score, completed")
         .eq("apprenant_id", apprenantId)
         .eq("exercice_type", "examen_blanc")
         .like("exercice_id", `${examReference.id}_%`);
-      
-      const completedResponses = ((savedResponses as any[]) || []).filter((r: any) => r.completed === true);
-      if (completedResponses.length === 0) { toast.error("Aucun résultat trouvé pour cet examen."); return; }
-      
-      // Rebuild scores from responses and insert into quiz_results
+
+      const responseRows = (savedResponses as any[]) || [];
+      const completedResponses = responseRows.filter((r: any) => r?.completed === true);
+      const candidateResponses = completedResponses.length > 0
+        ? completedResponses
+        : responseRows.filter((r: any) => r?.reponses && Object.keys(r.reponses || {}).length > 0);
+
+      if (candidateResponses.length === 0) return null;
+
       const rebuiltResults: ResultatMatiere[] = [];
       for (const matiere of examReference.matieres) {
         if (!matiere) continue;
-        const matiereKey = (examReference.id + "_" + matiere.id);
-        const resp = completedResponses.find((r: any) => r.exercice_id === matiereKey);
+        const expectedKeys = buildMatiereLookupKeys(matiere.id, matiere.nom);
+        const resp = candidateResponses.find((r: any) => {
+          const exerciceId = safeStr(r?.exercice_id);
+          const matiereKey = exerciceId.startsWith(`${examReference.id}_`)
+            ? exerciceId.slice(`${examReference.id}_`.length)
+            : "";
+          if (!matiereKey) return false;
+          const responseKeys = buildMatiereLookupKeys(matiereKey, matiereKey);
+          return shareLookupKey(responseKeys, expectedKeys);
+        });
         if (!resp) continue;
+
         const reponses = resp.reponses || {};
         const questionsSafe = (matiere.questions ?? []).filter((q): q is Question => q != null && q?.type != null);
         const maxPoints = questionsSafe.reduce((acc, q) => acc + getPointsParQuestion(matiere.id, q?.type || "QCM", matiere), 0);
@@ -462,27 +459,58 @@ export default function ExamensBlancsPage({
           }
           return total;
         }, 0);
+
         const safeNote = maxPoints > 0 ? clamp(note, 0, maxPoints) : Math.max(note, 0);
         const noteSur20 = normalizeNoteSur20(safeNote, maxPoints);
-        const quizType = examReference.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
         const admis = computeAdmisForMatiere(safeNote, maxPoints, matiere.noteEliminatoire, matiere.noteSur || 20, false);
-        
-        // Insert rebuilt result
-        await supabase.from("apprenant_quiz_results" as any).upsert([{
-          apprenant_id: apprenantId, user_id: userId, quiz_type: quizType, quiz_id: examReference.id,
-          quiz_titre: examReference.titre, matiere_id: matiere.id, matiere_nom: matiere.nom,
-          score_obtenu: safeNote, score_max: maxPoints, note_sur_20: noteSur20, reussi: admis,
-          details: { reponses },
-        }] as any, { onConflict: "apprenant_id,quiz_id,matiere_id", ignoreDuplicates: false } as any);
-        
+
+        await supabase
+          .from("apprenant_quiz_results" as any)
+          .upsert([{
+            apprenant_id: apprenantId,
+            user_id: userId,
+            quiz_type: quizType,
+            quiz_id: examReference.id,
+            quiz_titre: examReference.titre,
+            matiere_id: matiere.id,
+            matiere_nom: matiere.nom,
+            score_obtenu: safeNote,
+            score_max: maxPoints,
+            note_sur_20: noteSur20,
+            reussi: admis,
+            details: { reponses },
+          }] as any, { onConflict: "apprenant_id,quiz_id,matiere_id" } as any);
+
         rebuiltResults.push({
-          matiereId: matiere.id, nomMatiere: matiere.nom, noteObtenue: safeNote, maxPoints,
-          noteSur: matiere.noteSur || 20, noteEliminatoire: matiere.noteEliminatoire || 0,
-          coefficient: matiere.coefficient || 1, admis, reponses,
+          matiereId: matiere.id,
+          nomMatiere: matiere.nom,
+          noteObtenue: safeNote,
+          maxPoints,
+          noteSur: matiere.noteSur || 20,
+          noteEliminatoire: matiere.noteEliminatoire || 0,
+          coefficient: matiere.coefficient || 1,
+          admis,
+          reponses,
         });
       }
-      
-      if (rebuiltResults.length === 0) { toast.error("Aucun résultat exploitable trouvé."); return; }
+
+      return rebuiltResults.length > 0 ? rebuiltResults : null;
+    };
+
+    const { data } = await supabase
+      .from("apprenant_quiz_results" as any)
+      .select("*")
+      .eq("apprenant_id", apprenantId)
+      .eq("quiz_id", examReference.id)
+      .eq("quiz_type", quizType);
+
+    const rows = (data as any[]) || [];
+    const hasOnlyZeroScores = rows.length > 0 && rows.every((row: any) => toFiniteNumber(row?.score_obtenu, 0) <= 0);
+
+    // Rebuild from stored responses if quiz_results is empty or only zero-score rows
+    if (rows.length === 0 || hasOnlyZeroScores) {
+      const rebuiltResults = await rebuildResultsFromSavedResponses();
+      if (!rebuiltResults) { toast.error("Aucun résultat exploitable trouvé."); return; }
       toast.success(`${rebuiltResults.length} résultat(s) recalculé(s) depuis vos réponses.`);
       setExamenChoisi(examReference);
       setTousResultats(rebuiltResults);
