@@ -307,7 +307,7 @@ export default function ExamensBlancsPage({
     const latestExamen = liveExamens.find((live) => live.id === examen.id) ?? examen;
     const quizType = latestExamen.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
 
-    if (!isAdmin && apprenantId) {
+    if (!isAdmin && apprenantId && !forceRetake) {
       // Check which matières are already completed
       const { data: existingResults, error } = await supabase
         .from("apprenant_quiz_results" as any)
