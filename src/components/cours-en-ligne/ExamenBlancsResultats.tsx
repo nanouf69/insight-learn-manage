@@ -66,9 +66,54 @@ function EcranResultats({
   });
   const [correctionEnCours, setCorrectionEnCours] = useState(false);
   const [expandedMatieres, setExpandedMatieres] = useState<{ [mi: number]: boolean }>({});
-  const [editingQrc, setEditingQrc] = useState<string | null>(null); // "mi-qid" key for admin editing
+  const [editingQrc, setEditingQrc] = useState<string | null>(null);
   const [editingPoints, setEditingPoints] = useState<number>(0);
   const [revisionDejaFaite, setRevisionDejaFaite] = useState(false);
+  const [commentaire, setCommentaire] = useState("");
+  const [commentaireSaved, setCommentaireSaved] = useState(false);
+  const [commentaireLoading, setCommentaireLoading] = useState(false);
+
+  // Load existing comment
+  useEffect(() => {
+    if (!apprenantId || !examen?.id) return;
+    (async () => {
+      const { data } = await supabase
+        .from("apprenant_documents_completes")
+        .select("donnees")
+        .eq("apprenant_id", apprenantId)
+        .eq("type_document", "commentaire_examen_blanc")
+        .eq("titre", examen.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (data?.donnees && typeof data.donnees === "object" && (data.donnees as any).commentaire) {
+        setCommentaire((data.donnees as any).commentaire);
+        setCommentaireSaved(true);
+      }
+    })();
+  }, [apprenantId, examen?.id]);
+
+  const handleSaveCommentaire = async () => {
+    if (!apprenantId || !userId || !commentaire.trim()) return;
+    setCommentaireLoading(true);
+    try {
+      const { error } = await supabase.from("apprenant_documents_completes").upsert({
+        apprenant_id: apprenantId,
+        user_id: userId,
+        type_document: "commentaire_examen_blanc",
+        titre: examen.id,
+        donnees: { commentaire: commentaire.trim(), examen_titre: examen.titre },
+      } as any, { onConflict: "apprenant_id,type_document,titre" });
+      if (error) throw error;
+      setCommentaireSaved(true);
+      toast.success("Commentaire enregistré ✅");
+    } catch (err: any) {
+      console.error("Erreur sauvegarde commentaire:", err);
+      toast.error("Erreur lors de l'enregistrement du commentaire");
+    } finally {
+      setCommentaireLoading(false);
+    }
+  };
 
   // Check if revision has already been done for this exam
   useEffect(() => {
