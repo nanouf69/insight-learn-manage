@@ -157,12 +157,12 @@ export default function ExamensBlancsPage({
         return;
       }
 
-      // Priority check: if exam already completed in DB, never restore in-progress session
+      // Priority check: DB state is source of truth for completed/partial exams
       if (!isAdmin && apprenantId) {
         const quizType = found.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
         const { data, error } = await supabase
           .from("apprenant_quiz_results" as any)
-          .select("matiere_id, matiere_nom, score_obtenu, completed_at, created_at")
+          .select("matiere_id, matiere_nom, score_obtenu, score_max, reussi, details, completed_at, created_at")
           .eq("apprenant_id", apprenantId)
           .eq("quiz_id", found.id)
           .eq("quiz_type", quizType);
@@ -198,6 +198,52 @@ export default function ExamensBlancsPage({
             await handleViewResults(found);
             if (!cancelled) setSessionRestored(true);
             return;
+          }
+
+          // Partial completion: resume directly from DB (ignore potentially stale sessionStorage index)
+          if (doneCount > 0) {
+            const isMatiereDone = (matiere: Matiere) =>
+              buildMatiereLookupKeys(matiere?.id, matiere?.nom).some((key) => doneLookupKeys.has(key));
+
+            const preloadedResults: ResultatMatiere[] = [];
+            for (let i = 0; i < found.matieres.length; i++) {
+              const m = found.matieres[i];
+              if (!m) continue;
+              const expectedKeys = buildMatiereLookupKeys(m.id, m.nom);
+              const row = Array.from(latestByCanonicalKey.values()).find((r: any) =>
+                shareLookupKey(buildMatiereLookupKeys(r?.matiere_id, r?.matiere_nom), expectedKeys)
+              );
+
+              if (row) {
+                const maxPts = calculerMaxPoints(m);
+                const safeScoreMax = toFiniteNumber(row.score_max, maxPts);
+                const safeScoreObtenu = clamp(toFiniteNumber(row.score_obtenu, 0), 0, safeScoreMax || maxPts);
+                preloadedResults.push({
+                  matiereId: m.id,
+                  nomMatiere: m.nom,
+                  noteObtenue: safeScoreObtenu,
+                  maxPoints: safeScoreMax || maxPts,
+                  noteSur: m.noteSur || 20,
+                  noteEliminatoire: m.noteEliminatoire || 0,
+                  coefficient: m.coefficient || 1,
+                  admis: computeAdmisForMatiere(safeScoreObtenu, safeScoreMax || maxPts, m.noteEliminatoire, m.noteSur, Boolean(row.reussi)),
+                  reponses: row.details?.reponses || {},
+                });
+              } else {
+                preloadedResults.push(null as any);
+              }
+            }
+
+            const resumeIndex = found.matieres.findIndex((m) => m && !isMatiereDone(m));
+            if (resumeIndex >= 0) {
+              setExamenChoisi(found);
+              setPhase("examen");
+              setMatiereIndex(resumeIndex);
+              setTousResultats(preloadedResults);
+              persistExamSession("examen", found.id, resumeIndex, preloadedResults);
+              if (!cancelled) setSessionRestored(true);
+              return;
+            }
           }
         }
       }
