@@ -432,7 +432,7 @@ function PassageMatiere({
               <Calculator className="w-4 h-4" />
               <span>Calculatrice</span>
             </button>
-            {!isBilan && (
+            {isAdmin && !isBilan && (
               <button
                 onClick={() => setIsPaused(v => !v)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
