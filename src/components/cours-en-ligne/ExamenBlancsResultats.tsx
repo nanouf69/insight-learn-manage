@@ -455,9 +455,10 @@ function EcranResultats({
     };
   });
 
-  // Auto-save recalculated scores to DB when viewing saved results or admin overrides
+  // Auto-save recalculated scores to DB for ALL users (not just admin)
+  // so the list view averages stay in sync with the detail view
   useEffect(() => {
-    if (!isAdmin || !apprenantId || !examen) return;
+    if (!apprenantId || !examen) return;
     const quizType = examen.id?.startsWith("taxi") ? "examen_blanc_taxi" : "examen_blanc";
     resultatsAvecIA.forEach(async (r, mi) => {
       const matiere = examen.matieres[mi];
