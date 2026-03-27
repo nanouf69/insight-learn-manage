@@ -404,7 +404,9 @@ export function computeAdmisForMatiere(noteObtenue: unknown, maxPoints: unknown,
   const safeMax = Math.max(toFiniteNumber(maxPoints, 0), 0);
   if (safeMax <= 0) return fallback;
   const safeScore = clamp(toFiniteNumber(noteObtenue, 0), 0, safeMax);
-  const safeNoteSur = Math.max(toFiniteNumber(noteSur, 20), 1);
-  const seuil = (Math.max(toFiniteNumber(noteEliminatoire, 0), 0) / safeNoteSur) * safeMax;
-  return safeScore >= seuil;
+  // noteEliminatoire is always expressed /20 (6/20 for all subjects, 4/20 for English)
+  // Convert score to /20 then compare directly
+  const noteSur20 = (safeScore / safeMax) * 20;
+  const seuilSur20 = Math.max(toFiniteNumber(noteEliminatoire, 0), 0);
+  return noteSur20 >= seuilSur20;
 }
