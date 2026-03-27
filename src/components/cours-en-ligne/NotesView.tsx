@@ -723,7 +723,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm text-slate-800 font-medium">
-                                <span className="text-xs text-slate-400 mr-1">Q{q.questionId || qi + 1}.</span>
+                                <span className="text-xs text-slate-400 mr-1">Q{q.questionId ?? q.id ?? "?"}.</span>
                                 {q.enonce}
                               </p>
                               <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs">
