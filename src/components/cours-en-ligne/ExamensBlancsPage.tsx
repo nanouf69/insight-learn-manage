@@ -3070,18 +3070,28 @@ export default function ExamensBlancsPage({
   const examStartTimeRef = useRef<number>(savedSession?.examStartTime || Date.now());
   const reloadInFlightRef = useRef<Promise<ExamenBlanc[]> | null>(null);
 
+  const [loadTimeout, setLoadTimeout] = useState(false);
+
   const refreshLiveExamens = useCallback(async ({ force = false }: { force?: boolean } = {}) => {
     if (!force && reloadInFlightRef.current) return reloadInFlightRef.current;
 
+    setLoadTimeout(false);
+    const timeoutTimer = setTimeout(() => setLoadTimeout(true), 10_000);
+
     reloadInFlightRef.current = (async () => {
-      const saved = await loadSavedExamens();
-      logSecurityImageDebug(saved, force ? "manual-refetch" : "auto-refetch");
-      setLiveExamens(saved);
-      setExamenChoisi((prev) => {
-        if (!prev) return prev;
-        return saved.find((exam) => exam.id === prev.id) ?? prev;
-      });
-      return saved;
+      try {
+        const saved = await loadSavedExamens();
+        logSecurityImageDebug(saved, force ? "manual-refetch" : "auto-refetch");
+        setLiveExamens(saved);
+        setExamenChoisi((prev) => {
+          if (!prev) return prev;
+          return saved.find((exam) => exam.id === prev.id) ?? prev;
+        });
+        return saved;
+      } finally {
+        clearTimeout(timeoutTimer);
+        setLoadTimeout(false);
+      }
     })();
 
     try {
