@@ -195,18 +195,81 @@ export default function ExamensBlancsPage({
 
   const handleStart = async (examen: ExamenBlanc) => {
     const latestExamen = liveExamens.find((live) => live.id === examen.id) ?? examen;
+    const quizType = latestExamen.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
+
     if (!isAdmin && apprenantId) {
-      const quizType = latestExamen.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
-      const { count, error } = await supabase
+      // Check which matières are already completed
+      const { data: existingResults, error } = await supabase
         .from("apprenant_quiz_results" as any)
-        .select("id", { count: "exact", head: true })
+        .select("matiere_id, matiere_nom, score_obtenu, score_max, reussi, details, completed_at, created_at")
         .eq("apprenant_id", apprenantId)
         .eq("quiz_id", latestExamen.id)
         .eq("quiz_type", quizType);
+
       if (error) { toast.error("Vérification de sécurité impossible. Réessayez."); return; }
+
+      const completedRows = existingResults as any[] || [];
       const matieresTotal = Math.max(latestExamen.matieres?.length || 1, 1);
-      if ((count ?? 0) >= matieresTotal) { toast.error("Examen déjà réalisé. Demandez une remise à zéro à l'administration."); return; }
+
+      if (completedRows.length >= matieresTotal) {
+        toast.error("Examen déjà réalisé. Demandez une remise à zéro à l'administration.");
+        return;
+      }
+
+      // If partially completed, resume at first uncompleted matière
+      if (completedRows.length > 0) {
+        const completedMatiereIds = new Set(completedRows.map((r: any) => r.matiere_id));
+
+        // Find first uncompleted matière index
+        let resumeIndex = 0;
+        const preloadedResults: ResultatMatiere[] = [];
+
+        for (let i = 0; i < latestExamen.matieres.length; i++) {
+          const m = latestExamen.matieres[i];
+          if (!m) continue;
+          const row = completedRows.find((r: any) => r.matiere_id === m.id);
+          if (row) {
+            const maxPts = calculerMaxPoints(m);
+            const safeScoreMax = toFiniteNumber(row.score_max, maxPts);
+            const safeScoreObtenu = clamp(toFiniteNumber(row.score_obtenu, 0), 0, safeScoreMax || maxPts);
+            preloadedResults.push({
+              matiereId: m.id,
+              nomMatiere: m.nom,
+              noteObtenue: safeScoreObtenu,
+              maxPoints: safeScoreMax || maxPts,
+              noteSur: m.noteSur || 20,
+              noteEliminatoire: m.noteEliminatoire || 0,
+              coefficient: m.coefficient || 1,
+              admis: computeAdmisForMatiere(safeScoreObtenu, safeScoreMax || maxPts, m.noteEliminatoire, m.noteSur, Boolean(row.reussi)),
+              reponses: row.details?.reponses || {},
+            });
+          } else {
+            if (resumeIndex === 0 && i > 0) resumeIndex = i;
+            // Push null placeholder to keep indices aligned
+            preloadedResults.push(null as any);
+          }
+        }
+
+        // Find actual first uncompleted
+        resumeIndex = latestExamen.matieres.findIndex((m) => m && !completedMatiereIds.has(m.id));
+        if (resumeIndex < 0) {
+          toast.error("Examen déjà réalisé. Demandez une remise à zéro à l'administration.");
+          return;
+        }
+
+        const nbDone = completedRows.length;
+        const nbRemaining = matieresTotal - nbDone;
+        toast.info(`${nbDone} matière${nbDone > 1 ? "s" : ""} déjà terminée${nbDone > 1 ? "s" : ""}. Il reste ${nbRemaining} épreuve${nbRemaining > 1 ? "s" : ""}.`, { duration: 5000, icon: "📋" });
+
+        setBilanPrefiltre(null);
+        setExamenChoisi(latestExamen);
+        setMatiereIndex(resumeIndex);
+        setTousResultats(preloadedResults);
+        setPhase("intro");
+        return;
+      }
     }
+
     setBilanPrefiltre(null);
     setExamenChoisi(latestExamen);
     setMatiereIndex(0);
@@ -353,14 +416,25 @@ export default function ExamensBlancsPage({
         noteSur: matiere.noteSur, noteEliminatoire: matiere.noteEliminatoire, coefficient: matiere.coefficient,
         admis: computeAdmisForMatiere(noteSecurisee, maxPoints, matiere.noteEliminatoire, matiere.noteSur, false), reponses,
       };
-      const newResultats = [...tousResultats, resultat];
+
+      // Place result at the correct index (supports resume with pre-loaded results)
+      const newResultats = [...tousResultats];
+      newResultats[matiereIndex] = resultat;
       setTousResultats(newResultats);
+
       if (apprenantId && userId) {
         const elapsedSeconds = Math.round((Date.now() - examStartTimeRef.current) / 1000);
-        void saveMatiereResult({ examen: examenChoisi, matiere, resultat, dureeSecondes: elapsedSeconds / Math.max(newResultats.length, 1) });
+        const completedCount = newResultats.filter(r => r != null).length;
+        void saveMatiereResult({ examen: examenChoisi, matiere, resultat, dureeSecondes: elapsedSeconds / Math.max(completedCount, 1) });
       }
-      if (matiereIndex < examenChoisi.matieres.length - 1) {
-        const nextIndex = matiereIndex + 1;
+
+      // Find next uncompleted matière (skip already-done ones from resume)
+      let nextIndex = -1;
+      for (let i = matiereIndex + 1; i < examenChoisi.matieres.length; i++) {
+        if (!newResultats[i]) { nextIndex = i; break; }
+      }
+
+      if (nextIndex >= 0) {
         setLastMatiereResult(resultat);
         setMatiereIndex(nextIndex);
         setPhase("transition");
@@ -509,9 +583,10 @@ export default function ExamensBlancsPage({
         <div className="flex-1 min-w-0 space-y-4">
           <div className="flex items-center gap-3">
             <div className="flex gap-1.5">
-              {examenChoisi.matieres.map((_, i) => (
-                <div key={i} className={`h-2 rounded-full transition-all ${i < matiereIndex ? "w-8 bg-green-500" : i === matiereIndex ? "w-8 bg-primary" : "w-4 bg-muted"}`} />
-              ))}
+              {examenChoisi.matieres.map((_, i) => {
+                const done = tousResultats[i] != null;
+                return <div key={i} className={`h-2 rounded-full transition-all ${done ? "w-8 bg-green-500" : i === matiereIndex ? "w-8 bg-primary" : "w-4 bg-muted"}`} />;
+              })}
             </div>
             <span className="text-xs text-muted-foreground">Matière {matiereIndex + 1}/{examenChoisi.matieres.length}</span>
             {!isAdmin && (
@@ -532,7 +607,7 @@ export default function ExamensBlancsPage({
               <div className="space-y-1">
                 {examenChoisi.matieres.map((m, i) => {
                   if (!m) return null;
-                  const isDone = i < matiereIndex;
+                  const isDone = tousResultats[i] != null;
                   const isCurrent = i === matiereIndex;
                   return (
                     <div key={m.id} className={`relative flex items-start gap-3 p-2 rounded-lg transition-all ${isCurrent ? "bg-primary/10 border border-primary/30" : isDone ? "bg-green-50 border border-green-200" : "opacity-50"}`}>
