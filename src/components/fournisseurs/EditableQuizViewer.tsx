@@ -260,7 +260,7 @@ export function EditableQuizViewer({ sections, title, icon = "📝", quizId, fou
                       return (
                         <div key={q.id} className="flex items-center justify-between px-3 py-2 rounded bg-destructive/10 border border-destructive/20">
                           <p className="text-sm text-muted-foreground line-through">
-                            <span className="mr-1">{qi + 1}.</span>{q.enonce}
+                            <span className="mr-1">Q{q.id}.</span>{q.enonce}
                           </p>
                           {editable && (
                             <Button size="sm" variant="ghost" className="text-xs shrink-0 ml-2" onClick={() => resetToOriginal(section.id, q.id)}>
