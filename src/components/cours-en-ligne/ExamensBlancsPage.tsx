@@ -745,7 +745,11 @@ export default function ExamensBlancsPage({
       if (apprenantId && userId) {
         const elapsedSeconds = Math.round((Date.now() - examStartTimeRef.current) / 1000);
         const completedCount = newResultats.filter(r => r != null).length;
-        void saveMatiereResult({ examen: examenChoisi, matiere, resultat, dureeSecondes: elapsedSeconds / Math.max(completedCount, 1) });
+        // Await the save - don't fire-and-forget, to ensure results persist
+        const saved = await saveMatiereResult({ examen: examenChoisi, matiere, resultat, dureeSecondes: elapsedSeconds / Math.max(completedCount, 1) });
+        if (!saved) {
+          console.warn("[ExamenBlanc] Failed to save result for", matiere.id, "- result kept in memory");
+        }
       }
 
       // Find next uncompleted matière (skip already-done ones from resume)
