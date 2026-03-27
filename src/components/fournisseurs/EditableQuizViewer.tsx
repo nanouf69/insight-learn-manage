@@ -337,7 +337,7 @@ export function EditableQuizViewer({ sections, title, icon = "📝", quizId, fou
                       <div key={q.id} className={`space-y-1.5 group ${isOverridden ? "pl-3 border-l-2 border-amber-400" : ""}`}>
                         <div className="flex items-start justify-between">
                           <p className="text-sm font-medium flex-1">
-                            <span className="text-muted-foreground mr-1">{qi + 1}.</span>
+                            <span className="text-muted-foreground mr-1">Q{q.id}.</span>
                             {actual.enonce}
                             {isOverridden && <span className="ml-2 text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">modifiée</span>}
                           </p>

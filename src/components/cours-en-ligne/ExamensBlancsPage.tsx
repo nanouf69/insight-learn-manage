@@ -2405,7 +2405,7 @@ function EcranResultats({
                                 {q?.image && (
                                   <ExamQuestionImage
                                     image={q.image}
-                                    alt={`Illustration de la question ${qIdx + 1}`}
+                                    alt={`Illustration de la question Q${q.id}`}
                                     className="mt-1 max-h-24 rounded border"
                                     fallbackClassName="mt-1 text-xs text-muted-foreground italic"
                                   />
