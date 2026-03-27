@@ -225,6 +225,7 @@ serve(async (req) => {
             Authorization: `Bearer ${accessToken}`,
             "Content-Type": "application/json",
           },
+          signal: AbortSignal.timeout(15000),
           body: JSON.stringify({
             message: {
               subject,
