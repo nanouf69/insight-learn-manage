@@ -3339,6 +3339,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     const isPageUnlocked = (pageIndex: number): boolean => {
       if (pageIndex === 0) return true;
+      // E-learning: navigation libre sans obligation de défiler toutes les slides
+      if (!isPresentiel) return true;
       // Présentiel formations: all pages freely accessible (no slide gate)
       if (isPresentiel) return true;
       // For TAXI présentiel: Réglementation Nationale/Locale pages are freely accessible
@@ -4548,11 +4550,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               onClick={() => {
                 goToPage(currentPage + 1);
               }}
-              disabled={!completedPages.has(currentPage)}
               className="gap-2"
-              title={!completedPages.has(currentPage) ? "Parcourez toutes les slides pour continuer" : ""}
             >
-              {!completedPages.has(currentPage) && <span>🔒</span>}
               Suivant <ArrowDown className="w-4 h-4 -rotate-90" />
             </Button>
           ) : (
