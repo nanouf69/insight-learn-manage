@@ -1521,7 +1521,7 @@ function PassageMatiere({
       {/* Progression questions */}
       <div className="space-y-1">
         <div className="flex justify-between text-xs text-muted-foreground">
-          <span>Question {safeQuestionIndex + 1} / {questionsSafe.length}</span>
+          <span>Question Q{question?.id ?? (safeQuestionIndex + 1)} ({safeQuestionIndex + 1} / {questionsSafe.length})</span>
           <div className="flex items-center gap-3">
             {saveStatus === "saving" && (
               <span className="flex items-center gap-1 text-amber-600 animate-pulse">
