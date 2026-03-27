@@ -408,6 +408,16 @@ function PassageMatiere({
               <Calculator className="w-4 h-4" />
               <span>Calculatrice</span>
             </button>
+            {!isBilan && (
+              <button
+                onClick={() => setIsPaused(v => !v)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                style={{ backgroundColor: isPaused ? '#F4A227' : 'rgba(0,180,216,0.15)', color: isPaused ? '#0D2540' : '#00B4D8' }}
+              >
+                {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+                <span>{isPaused ? "Reprendre" : "Pause"}</span>
+              </button>
+            )}
           <span className="text-xs font-medium px-2 py-1 rounded" style={{ backgroundColor: 'rgba(0,180,216,0.15)', color: '#00B4D8' }}>
             Questions 1 à {questionsSafe.length}
           </span>
@@ -417,7 +427,7 @@ function PassageMatiere({
               <span>Sans chronomètre</span>
             </div>
           ) : (
-            <TimerBadge seconds={dureeSecondes} onExpire={handleExpire} />
+            <TimerBadge seconds={dureeSecondes} onExpire={handleExpire} isPaused={isPaused} />
           )}
         </div>
       </div>
