@@ -504,7 +504,7 @@ export default function ExamensBlancsPage({
               </Button>
             )}
           </div>
-          <PassageMatiere matiere={matiere} numero={matiereIndex + 1} total={examenChoisi.matieres.length} onTerminer={handleTerminerMatiere} isBilan={examenChoisi.id.startsWith("bilan-")} apprenantId={apprenantId} examenId={examenChoisi.id} />
+          <PassageMatiere matiere={matiere} numero={matiereIndex + 1} total={examenChoisi.matieres.length} onTerminer={handleTerminerMatiere} isBilan={examenChoisi.id.startsWith("bilan-")} apprenantId={apprenantId} examenId={examenChoisi.id} isAdmin={!!isAdmin} />
         </div>
         <div className="hidden min-[520px]:block w-36 sm:w-40 md:w-48 lg:w-56 shrink-0">
           <div className="sticky top-4 space-y-2">
