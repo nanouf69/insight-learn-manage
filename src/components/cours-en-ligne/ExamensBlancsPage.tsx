@@ -1001,7 +1001,7 @@ export default function ExamensBlancsPage({
   if (phase === "resultats" && examenChoisi) {
     return (
       <div className="max-w-3xl mx-auto">
-        <EcranResultats examen={examenChoisi} resultats={tousResultats} onRecommencer={() => handleStart(examenChoisi)} onRetour={() => { setSelectionRefreshKey(k => k + 1); setPhase("selection"); }} onRefaireFausses={() => setPhase("revision")} apprenantId={apprenantId} userId={userId} isViewingSaved={isViewingSavedResults} isAdmin={isAdmin} canRetry={Boolean(isAdmin)} isPresentiel={isPresentiel} />
+        <EcranResultats examen={examenChoisi} resultats={tousResultats} onRecommencer={() => handleStart(examenChoisi, true)} onRetour={() => { setSelectionRefreshKey(k => k + 1); setPhase("selection"); }} onRefaireFausses={() => setPhase("revision")} apprenantId={apprenantId} userId={userId} isViewingSaved={isViewingSavedResults} isAdmin={isAdmin} canRetry={true} isPresentiel={isPresentiel} />
       </div>
     );
   }
