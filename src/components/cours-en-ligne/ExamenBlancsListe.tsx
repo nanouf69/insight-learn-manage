@@ -369,8 +369,8 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
               const dureeTotal = examen.matieres.reduce((acc, m) => acc + m.duree, 0);
               const isCompleted = completedExamIds.has(examen.id);
               const isStartedNotFinished = !isCompleted && startedNotFinishedIds.has(examen.id);
-              const canRetake = Boolean(isAdmin);
-              const canStartExam = !isCompleted || canRetake;
+              const canRetake = true;
+              const canStartExam = true;
               const scores = examScores[examen.id] || [];
               return (
                 <Card
