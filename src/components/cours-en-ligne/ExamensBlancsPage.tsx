@@ -70,6 +70,21 @@ export default function ExamensBlancsPage({
   const examStartTimeRef = useRef<number>(savedSession?.examStartTime || Date.now());
   const reloadInFlightRef = useRef<Promise<ExamenBlanc[]> | null>(null);
   const [loadTimeout, setLoadTimeout] = useState(false);
+  const [pausedExamIds, setPausedExamIds] = useState<Set<string>>(new Set());
+
+  const handlePauseToggle = useCallback((examId: string) => {
+    setPausedExamIds(prev => {
+      const next = new Set(prev);
+      if (next.has(examId)) {
+        next.delete(examId);
+        toast.success("Examen repris");
+      } else {
+        next.add(examId);
+        toast.info("Examen mis en pause");
+      }
+      return next;
+    });
+  }, []);
 
   const refreshLiveExamens = useCallback(async ({ force = false }: { force?: boolean } = {}) => {
     if (!force && reloadInFlightRef.current) return reloadInFlightRef.current;
@@ -386,6 +401,8 @@ export default function ExamensBlancsPage({
           apprenantId={apprenantId}
           isAdmin={isAdmin}
           refreshKey={selectionRefreshKey}
+          pausedExamIds={pausedExamIds}
+          onPauseToggle={handlePauseToggle}
         />
       </>
     );
@@ -504,7 +521,7 @@ export default function ExamensBlancsPage({
               </Button>
             )}
           </div>
-          <PassageMatiere matiere={matiere} numero={matiereIndex + 1} total={examenChoisi.matieres.length} onTerminer={handleTerminerMatiere} isBilan={examenChoisi.id.startsWith("bilan-")} apprenantId={apprenantId} examenId={examenChoisi.id} isAdmin={!!isAdmin} />
+          <PassageMatiere matiere={matiere} numero={matiereIndex + 1} total={examenChoisi.matieres.length} onTerminer={handleTerminerMatiere} isBilan={examenChoisi.id.startsWith("bilan-")} apprenantId={apprenantId} examenId={examenChoisi.id} />
         </div>
         <div className="hidden min-[520px]:block w-36 sm:w-40 md:w-48 lg:w-56 shrink-0">
           <div className="sticky top-4 space-y-2">

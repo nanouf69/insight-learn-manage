@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ChevronRight, Pencil, Trophy, FileText, CheckCircle2, XCircle, AlertTriangle, BookOpen, Clock } from "lucide-react";
+import { ChevronRight, Pencil, Trophy, FileText, CheckCircle2, XCircle, AlertTriangle, BookOpen, Clock, Pause, Play } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, type Question } from "./examens-blancs-data";
 import { supabase } from "@/integrations/supabase/client";
 import type { ExamScoreItem } from "./examens-blancs-types";
@@ -14,7 +14,7 @@ import {
   pickBestScoreRow, recoverCorruptedScoreRow, findScoreForMatiere,
 } from "./examens-blancs-utils";
 
-function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, apprenantType, examensData, apprenantId, isAdmin, refreshKey }: { onStart: (examen: ExamenBlanc) => void; onEdit: () => void; onViewResults: (examen: ExamenBlanc) => void; defaultBilanId?: string | null; apprenantType?: string | null; examensData: ExamenBlanc[]; apprenantId?: string | null; isAdmin?: boolean; refreshKey?: number }) {
+function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, apprenantType, examensData, apprenantId, isAdmin, refreshKey, pausedExamIds, onPauseToggle }: { onStart: (examen: ExamenBlanc) => void; onEdit: () => void; onViewResults: (examen: ExamenBlanc) => void; defaultBilanId?: string | null; apprenantType?: string | null; examensData: ExamenBlanc[]; apprenantId?: string | null; isAdmin?: boolean; refreshKey?: number; pausedExamIds?: Set<string>; onPauseToggle?: (examId: string) => void }) {
   // Determine the forced exam type from the student's formation type
   const forcedType = (() => {
     if (!apprenantType) return null;
@@ -467,12 +467,32 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                     <Button
                       className="w-full mt-2 gap-2"
                       variant={isCompleted && !canRetake ? "secondary" : isCompleted ? "outline" : isStartedNotFinished ? "default" : "default"}
-                      disabled={!canStartExam}
+                      disabled={!canStartExam || pausedExamIds?.has(examen.id)}
                       onClick={(e) => { e.stopPropagation(); if (canStartExam) onStart(examen); }}
                     >
-                      {isCompleted ? (canRetake ? "Recommencer l'examen" : "Examen déjà réalisé") : isStartedNotFinished ? "Reprendre l'examen" : "Commencer l'examen"}
+                      {pausedExamIds?.has(examen.id) ? "⏸ Examen en pause" : isCompleted ? (canRetake ? "Recommencer l'examen" : "Examen déjà réalisé") : isStartedNotFinished ? "Reprendre l'examen" : "Commencer l'examen"}
                       <ChevronRight className="w-4 h-4" />
                     </Button>
+                    {isAdmin && onPauseToggle && (
+                      <Button
+                        className="w-full mt-1 gap-2"
+                        variant={pausedExamIds?.has(examen.id) ? "default" : "outline"}
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); onPauseToggle(examen.id); }}
+                      >
+                        {pausedExamIds?.has(examen.id) ? (
+                          <>
+                            <Play className="w-4 h-4" />
+                            Reprendre cet examen
+                          </>
+                        ) : (
+                          <>
+                            <Pause className="w-4 h-4" />
+                            Mettre en pause
+                          </>
+                        )}
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               );
