@@ -6,9 +6,11 @@ const AUTO_DISCONNECT_TIMEOUT = 5 * 60 * 1000; // 5 minutes
 interface UseInactivityAlertParams {
   enabled: boolean;
   onDisconnect: () => void;
+  /** When true, inactivity detection is completely paused (e.g. during an exam) */
+  pauseDuringExam?: boolean;
 }
 
-export function useInactivityAlert({ enabled, onDisconnect }: UseInactivityAlertParams) {
+export function useInactivityAlert({ enabled, onDisconnect, pauseDuringExam = false }: UseInactivityAlertParams) {
   const [showInactivityModal, setShowInactivityModal] = useState(false);
   const [inactivityCountdown, setInactivityCountdown] = useState(300); // 5min in seconds
 
