@@ -27,13 +27,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const lastProfileUserIdRef = useRef<string | null>(null);
   const manualSignOutRef = useRef(false);
 
-  const fetchProfile = useCallback(async (userId: string) => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('full_name, email, role')
-      .eq('user_id', userId)
-      .maybeSingle();
-    setProfile(data);
+  const fetchProfile = useCallback(async (userId: string, retryCount = 0) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('full_name, email, role')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (error) {
+        console.error('Failed to fetch profile:', error.message);
+        // Retry once after 2s on network errors
+        if (retryCount < 1) {
+          setTimeout(() => void fetchProfile(userId, retryCount + 1), 2000);
+          return;
+        }
+      }
+      setProfile(data);
+    } catch (err) {
+      console.error('Profile fetch exception:', err);
+      if (retryCount < 1) {
+        setTimeout(() => void fetchProfile(userId, retryCount + 1), 2000);
+      }
+    }
   }, []);
 
   const clearAuthState = useCallback(() => {
