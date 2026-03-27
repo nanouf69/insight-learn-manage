@@ -3339,6 +3339,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     const isPageUnlocked = (pageIndex: number): boolean => {
       if (pageIndex === 0) return true;
+      // E-learning: navigation libre sans obligation de défiler toutes les slides
+      if (!isPresentiel) return true;
       // Présentiel formations: all pages freely accessible (no slide gate)
       if (isPresentiel) return true;
       // For TAXI présentiel: Réglementation Nationale/Locale pages are freely accessible
