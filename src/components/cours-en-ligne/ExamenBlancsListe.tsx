@@ -397,6 +397,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                         const coef = m.coefficient || 1;
                         if (scoreData) {
                           weightedSum += scoreData.note_sur_20 * coef;
+                          totalCoef += coef;
                           hasScores = true;
                           // Use computeAdmisForMatiere (same as detail view) to check éliminatoire
                           const admisMatiere = computeAdmisForMatiere(
@@ -407,7 +408,6 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                             eliminatoiresMatieres.push(m.nom.split(" - ")[0]);
                           }
                         }
-                        totalCoef += coef;
                       });
                       const moyenne = totalCoef > 0 ? Math.round((weightedSum / totalCoef) * 10) / 10 : 0;
                       const isReussi = hasScores && moyenne >= 10 && eliminatoiresMatieres.length === 0;
