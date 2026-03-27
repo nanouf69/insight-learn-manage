@@ -50,6 +50,7 @@ interface SessionAssignment {
 }
 
 interface QuestionDetail {
+  questionId: number | null;
   enonce: string;
   reponseEleve: string;
   reponseCorrecte: string;
@@ -104,6 +105,7 @@ const extractQuestionDetails = (details: any): QuestionDetail[] => {
 
   return rawRows
     .map((row: any) => ({
+      questionId: Number.isFinite(Number(row?.questionId ?? row?.id)) ? Number(row?.questionId ?? row?.id) : null,
       enonce: String(row?.enonce ?? row?.question ?? "Question"),
       reponseEleve: String(row?.reponseEleve ?? row?.reponse_eleve ?? row?.studentAnswer ?? "-"),
       reponseCorrecte: String(row?.reponseCorrecte ?? row?.reponse_correcte ?? row?.correctAnswer ?? "-"),
@@ -510,7 +512,7 @@ export function FormateurResultsTab({ token }: Props) {
                                             <div className="space-y-2">
                                               {details.map((detail, idx) => (
                                                 <div key={`${attempt.id}-q-${idx}`} className="rounded-md border p-2 text-xs space-y-1">
-                                                  <p className="font-medium">Q{idx + 1}. {detail.enonce}</p>
+                                                  <p className="font-medium">Q{detail.questionId ?? "?"}. {detail.enonce}</p>
                                                   <p>Réponse élève : <span className="font-medium">{detail.reponseEleve}</span></p>
                                                   <p>Bonne réponse : <span className="font-medium">{detail.reponseCorrecte}</span></p>
                                                   <Badge

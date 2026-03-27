@@ -792,12 +792,12 @@ const ResultatsSessionPage = () => {
                                                 <span>Question</span>
                                                 <span className="w-40 text-right">Bonnes / Mauvaises</span>
                                               </div>
-                                              {questionStats.map((q, idx) => {
+                                              {questionStats.map((q) => {
                                                 const tauxBon = q.total > 0 ? Math.round((q.correct / q.total) * 100) : 0;
                                                 return (
                                                   <div key={q.questionId} className="space-y-1">
                                                     <div className="flex items-start gap-2">
-                                                      <span className="text-xs font-bold text-muted-foreground w-6 shrink-0">Q{idx + 1}</span>
+                                                      <span className="text-xs font-bold text-muted-foreground w-6 shrink-0">Q{q.questionId}</span>
                                                       <p className="text-xs flex-1 leading-snug">{q.enonce}</p>
                                                       <div className="flex items-center gap-2 shrink-0 justify-end">
                                                         <span className="text-xs text-emerald-600 font-semibold">{q.correct} ✓</span>
