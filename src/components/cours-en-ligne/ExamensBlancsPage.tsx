@@ -140,17 +140,77 @@ export default function ExamensBlancsPage({
   const [sessionRestored, setSessionRestored] = useState(false);
   useEffect(() => {
     if (sessionRestored || liveExamens.length === 0) return;
-    if (savedSession?.examenId) {
+    let cancelled = false;
+
+    const restore = async () => {
+      if (!savedSession?.examenId) {
+        if (!cancelled) setSessionRestored(true);
+        return;
+      }
+
       const found = liveExamens.find(e => e.id === savedSession.examenId);
-      if (found) {
+      if (!found) {
+        if (!cancelled) setSessionRestored(true);
+        return;
+      }
+
+      // Priority check: if exam already completed, never restore in-progress session
+      if (!isAdmin && apprenantId) {
+        const quizType = found.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
+        const { data, error } = await supabase
+          .from("apprenant_quiz_results" as any)
+          .select("matiere_id, matiere_nom, completed_at, created_at")
+          .eq("apprenant_id", apprenantId)
+          .eq("quiz_id", found.id)
+          .eq("quiz_type", quizType);
+
+        if (!cancelled && !error) {
+          const rows = (data as any[]) || [];
+          const validMatieres = (found.matieres || []).filter((m): m is Matiere => Boolean(m));
+          const required = Math.max(validMatieres.length || 1, 1);
+
+          const latestByCanonicalKey = new Map<string, any>();
+          rows.forEach((row: any) => {
+            const key = getMatiereCanonicalKey(row?.matiere_id, row?.matiere_nom);
+            const prev = latestByCanonicalKey.get(key);
+            const prevTs = prev ? Math.max(toTimestamp(prev.completed_at), toTimestamp(prev.created_at)) : 0;
+            const currTs = Math.max(toTimestamp(row?.completed_at), toTimestamp(row?.created_at));
+            if (!prev || currTs >= prevTs) latestByCanonicalKey.set(key, row);
+          });
+
+          const doneLookupKeys = new Set<string>();
+          Array.from(latestByCanonicalKey.values()).forEach((row: any) => {
+            buildMatiereLookupKeys(row?.matiere_id, row?.matiere_nom).forEach((k) => doneLookupKeys.add(k));
+          });
+
+          const doneCount = validMatieres.filter((m) =>
+            buildMatiereLookupKeys(m.id, m.nom).some((k) => doneLookupKeys.has(k))
+          ).length;
+
+          const isCompleted = doneCount >= required || (rows.length >= required && doneCount >= Math.max(required - 1, 0));
+
+          if (isCompleted) {
+            try { sessionStorage.removeItem(EXAM_SESSION_KEY); } catch {}
+            setExamenChoisi(found);
+            await handleViewResults(found);
+            if (!cancelled) setSessionRestored(true);
+            return;
+          }
+        }
+      }
+
+      if (!cancelled) {
         setExamenChoisi(found);
         setPhase("examen");
         setMatiereIndex(savedSession.matiereIndex || 0);
         if (savedSession.resultats?.length) setTousResultats(savedSession.resultats);
+        setSessionRestored(true);
       }
-    }
-    setSessionRestored(true);
-  }, [liveExamens, sessionRestored]);
+    };
+
+    void restore();
+    return () => { cancelled = true; };
+  }, [liveExamens, sessionRestored, isAdmin, apprenantId]);
 
   const isInExam = phase === "examen" || phase === "intro" || phase === "transition";
 
@@ -416,6 +476,7 @@ export default function ExamensBlancsPage({
     setTousResultats(results);
     setIsViewingSavedResults(true);
     setPhase("resultats");
+    persistExamSession("resultats", null, 0);
   };
 
   const handleDebuterExamen = () => {
