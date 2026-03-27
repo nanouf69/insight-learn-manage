@@ -3556,13 +3556,23 @@ export default function ExamensBlancsPage({
   }
 
   if (phase === "selection") {
-    return <EcranSelection onStart={handleStart} onEdit={() => {
-      if (!isAdmin) {
-        toast.error("Accès réservé à l'administration.");
-        return;
-      }
-      setPhase("edition");
-    }} onViewResults={handleViewResults} defaultBilanId={bilanPrefiltre} apprenantType={apprenantType} examensData={liveExamens} apprenantId={apprenantId} isAdmin={isAdmin} refreshKey={selectionRefreshKey} />;
+    return (
+      <>
+        {loadTimeout && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg mb-4 flex items-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Chargement en cours, veuillez patienter…
+          </div>
+        )}
+        <EcranSelection onStart={handleStart} onEdit={() => {
+          if (!isAdmin) {
+            toast.error("Accès réservé à l'administration.");
+            return;
+          }
+          setPhase("edition");
+        }} onViewResults={handleViewResults} defaultBilanId={bilanPrefiltre} apprenantType={apprenantType} examensData={liveExamens} apprenantId={apprenantId} isAdmin={isAdmin} refreshKey={selectionRefreshKey} />
+      </>
+    );
   }
 
   if (phase === "intro" && examenChoisi) {
