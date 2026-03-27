@@ -631,10 +631,9 @@ export default function ExamensBlancsPage({
 
     // BUG #1 FIX: Use upsert instead of insert to prevent duplicate rows with score=0
     // when network retries or double-submissions occur
-    const { error } = await supabase.from("apprenant_quiz_results" as any).upsert([payload] as any, {
-      onConflict: "apprenant_id,quiz_id,matiere_id",
-      ignoreDuplicates: false,
-    } as any);
+    const { error } = await supabase
+      .from("apprenant_quiz_results" as any)
+      .upsert([payload] as any, { onConflict: "apprenant_id,quiz_id,matiere_id" } as any);
     if (error) {
       console.error("[ExamSubmission][EB][UpsertError]", error);
       toast.error("⚠️ Erreur d'enregistrement du résultat. Veuillez contacter l'administration.", { duration: 10000 });
