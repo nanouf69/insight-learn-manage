@@ -1348,7 +1348,7 @@ function PassageMatiere({
                 resumeIndex = i; // if all answered, stay on last
               }
               setQuestionIndex(resumeIndex);
-              toast.info(`Vous reprenez votre examen à la question ${resumeIndex + 1}/${questionsSafe.length}`, {
+              toast.info(`Vous reprenez votre examen à la question Q${questionsSafe[resumeIndex]?.id ?? (resumeIndex + 1)} (${resumeIndex + 1}/${questionsSafe.length})`, {
                 duration: 4000,
                 icon: "📝",
               });
