@@ -1,3030 +1,29 @@
+// Re-export all sub-components and utilities for backward compatibility
+// This file was split from the original monolithic ExamensBlancsPage.tsx
+
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  ArrowLeft, ArrowRight, Clock, CheckCircle2, XCircle, AlertTriangle,
-  FileText, Timer, Trophy, RotateCcw, ChevronRight, BookOpen, Pencil, Loader2, Bot, Calculator, X, Ban
-} from "lucide-react";
-import { tousLesExamens, getPointsParQuestion, isCalculQuestion, type ExamenBlanc, type Matiere, type Question } from "./examens-blancs-data";
+import { ArrowLeft, ChevronRight, Loader2, RotateCcw, CheckCircle2 } from "lucide-react";
+import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, type Question } from "./examens-blancs-data";
 import { loadSavedExamens, EXAMEN_BLANC_MODULE_BASE, getModuleIdForExamId } from "./ExamensBlancsEditor";
-
-/** Safely coerce any value to string — handles null, undefined, arrays, objects, numbers, booleans */
-function safeStr(v: unknown): string {
-  if (v == null) return "";
-  if (typeof v === "string") return v;
-  if (typeof v === "number" || typeof v === "boolean") return String(v);
-  if (Array.isArray(v)) return v.join(", ");
-  try { return JSON.stringify(v); } catch { return ""; }
-}
-
-function toTimestamp(value: unknown): number {
-  const ts = new Date(String(value ?? "")).getTime();
-  return Number.isFinite(ts) ? ts : 0;
-}
-/** Ensure value is always a proper array — handles null, undefined, objects, strings */
-function safeArray<T = unknown>(v: unknown): T[] {
-  if (Array.isArray(v)) return v as T[];
-  return [];
-}
-
-function toFiniteNumber(value: unknown, fallback = 0): number {
-  const n = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(n) ? n : fallback;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(Math.max(value, min), max);
-}
-
-function roundToHalfStep(value: number): number {
-  return Math.round(value * 2) / 2;
-}
-
-function normalizeNoteSur20(scoreObtenu: unknown, scoreMax: unknown, fallback?: unknown): number {
-  const safeMax = Math.max(toFiniteNumber(scoreMax, 0), 0);
-  if (safeMax <= 0) {
-    return Number(clamp(toFiniteNumber(fallback, 0), 0, 20).toFixed(1));
-  }
-
-  const safeScore = clamp(toFiniteNumber(scoreObtenu, 0), 0, safeMax);
-  return Number(((safeScore / safeMax) * 20).toFixed(1));
-}
-
-function normalizeMatiereLookupValue(value: unknown): string {
-  return safeStr(value)
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
-
-function extractMatiereLetter(value: unknown): string | null {
-  const raw = safeStr(value);
-  const match = raw.match(/^\s*([a-g])\s*(?:[-(]|$)/i);
-  return match?.[1]?.toUpperCase() ?? null;
-}
-
-function buildMatiereLookupKeys(matiereId: unknown, matiereNom: unknown): string[] {
-  const keys = new Set<string>();
-  const normalizedId = normalizeMatiereLookupValue(matiereId);
-  const normalizedNom = normalizeMatiereLookupValue(matiereNom);
-  const letter = extractMatiereLetter(matiereNom) ?? extractMatiereLetter(matiereId);
-
-  if (normalizedId) keys.add(`id:${normalizedId}`);
-  if (normalizedNom) keys.add(`nom:${normalizedNom}`);
-  if (letter) keys.add(`letter:${letter}`);
-
-  // Alias historique observé entre anciennes et nouvelles nomenclatures VTC.
-  if (normalizedId === "dev commercial" || normalizedId === "developpement commercial") {
-    keys.add("id:reglementation vtc");
-  }
-  if (normalizedId === "reglementation vtc") {
-    keys.add("id:dev commercial");
-    keys.add("id:developpement commercial");
-  }
-
-  return Array.from(keys);
-}
-
-function getMatiereCanonicalKey(matiereId: unknown, matiereNom: unknown): string {
-  const letter = extractMatiereLetter(matiereNom) ?? extractMatiereLetter(matiereId);
-  if (letter) return `letter:${letter}`;
-  const normalizedId = normalizeMatiereLookupValue(matiereId);
-  if (normalizedId) return `id:${normalizedId}`;
-  const normalizedNom = normalizeMatiereLookupValue(matiereNom);
-  if (normalizedNom) return `nom:${normalizedNom}`;
-  return "unknown";
-}
-
-function shareLookupKey(a: string[], b: string[]): boolean {
-  if (a.length === 0 || b.length === 0) return false;
-  const setB = new Set(b);
-  return a.some((k) => setB.has(k));
-}
-
-const STORAGE_PUBLIC_PATH = "/storage/v1/object/public/";
-const SUPABASE_PUBLIC_BASE = (import.meta.env.VITE_SUPABASE_URL ?? "").replace(/\/$/, "");
-
-function resolveExamQuestionImageUrl(image: unknown): string | null {
-  const raw = safeStr(image).trim();
-  if (!raw) return null;
-
-  if (/^(https?:|data:|blob:)/i.test(raw)) return raw;
-  if (raw.startsWith(STORAGE_PUBLIC_PATH)) {
-    return SUPABASE_PUBLIC_BASE ? `${SUPABASE_PUBLIC_BASE}${raw}` : raw;
-  }
-  if (raw.startsWith("/")) return raw;
-
-  // bucket/path fallback (ex: cours-fichiers/eb3/q2.png)
-  if (SUPABASE_PUBLIC_BASE && /^[^/]+\/.+/.test(raw)) {
-    return `${SUPABASE_PUBLIC_BASE}${STORAGE_PUBLIC_PATH}${raw}`;
-  }
-
-  return raw;
-}
-
-function addCacheBuster(url: string, token: number): string {
-  return `${url}${url.includes("?") ? "&" : "?"}cb=${token}`;
-}
-
-function getQuestionImageValue(question: unknown): string | null {
-  if (!question || typeof question !== "object") return null;
-  const raw = safeStr((question as any)?.image ?? (question as any)?.image_url).trim();
-  return raw || null;
-}
-
-function logSecurityImageDebug(examens: ExamenBlanc[], context: string) {
-  const targets = ["EB3", "EB3-TAXI"];
-
-  targets.forEach((examId) => {
-    const exam = examens.find((item) => item.id === examId);
-    const securite = exam?.matieres?.find((m) => m.id === "securite");
-    if (!securite) return;
-
-    const q2 = securite.questions?.find((q) => Number((q as any)?.id) === 2) as any;
-    const q8 = securite.questions?.find((q) => Number((q as any)?.id) === 8) as any;
-
-    console.log(`[ExamImages][${context}] ${examId} Q2/Q8`, {
-      q2_image: q2?.image ?? null,
-      q2_image_url: q2?.image_url ?? null,
-      q8_image: q8?.image ?? null,
-      q8_image_url: q8?.image_url ?? null,
-      q2_resolved: resolveExamQuestionImageUrl(q2?.image ?? q2?.image_url ?? null),
-      q8_resolved: resolveExamQuestionImageUrl(q8?.image ?? q8?.image_url ?? null),
-    });
-  });
-}
-
-function ExamQuestionImage({
-  image,
-  alt,
-  className,
-  fallbackClassName,
-}: {
-  image: unknown;
-  alt: string;
-  className?: string;
-  fallbackClassName?: string;
-}) {
-  const resolvedUrl = resolveExamQuestionImageUrl(image);
-  const [cacheToken, setCacheToken] = useState<number>(() => Date.now());
-  const [hasError, setHasError] = useState(false);
-
-  useEffect(() => {
-    setHasError(false);
-    if (resolvedUrl) {
-      setCacheToken(Date.now());
-    }
-  }, [resolvedUrl]);
-
-  if (!resolvedUrl || hasError) {
-    return <p className={fallbackClassName ?? "mt-2 text-xs text-muted-foreground italic"}>Image non disponible</p>;
-  }
-
-  const src = addCacheBuster(resolvedUrl, cacheToken);
-  return (
-    <img
-      src={src}
-      alt={alt}
-      loading="eager"
-      decoding="async"
-      onError={() => setHasError(true)}
-      className={className ?? "mt-2 max-h-40 rounded-lg border"}
-    />
-  );
-}
-
-interface ExamScoreItem {
-  matiere_id: string;
-  matiere_nom: string;
-  note_sur_20: number;
-  score_obtenu: number;
-  score_max: number;
-  created_at?: string;
-  completed_at?: string;
-  lookupKeys: string[];
-}
-
-function pickBestScoreRow(prev: any, current: any) {
-  if (!prev) return current;
-
-  // Détecter les rows corrompues (score 0 avec des réponses existantes = bug de batch save)
-  const prevCorrupted = isCorruptedZeroRow(prev);
-  const currCorrupted = isCorruptedZeroRow(current);
-
-  // Si une seule des deux est corrompue, prendre l'autre
-  if (prevCorrupted && !currCorrupted) return current;
-  if (!prevCorrupted && currCorrupted) return prev;
-
-  // Sinon, prendre la ligne la plus récente par created_at
-  const prevTs = toTimestamp(prev.created_at) || toTimestamp(prev.completed_at);
-  const currTs = toTimestamp(current.created_at) || toTimestamp(current.completed_at);
-
-  if (currTs > prevTs) return current;
-  if (currTs < prevTs) return prev;
-
-  // En cas d'égalité de timestamp, garder le premier rencontré (le plus récent du ORDER BY DESC)
-  return prev;
-}
-
-/** Détecte une row corrompue : score_obtenu = 0 mais des réponses existent dans details */
-function isCorruptedZeroRow(row: any): boolean {
-  if (!row) return false;
-  const score = toFiniteNumber(row.score_obtenu, -1);
-  if (score > 0) return false; // Score valide
-  // Score = 0 : vérifier s'il y a des réponses (indice de corruption)
-  const reponses = row.details?.reponses;
-  if (reponses && typeof reponses === "object" && Object.keys(reponses).length > 0) {
-    return true; // 0 score avec des réponses = corrompu
-  }
-  return false;
-}
-
-function normalizeSelectedChoices(value: unknown): string[] {
-  if (Array.isArray(value)) {
-    return value.map((item) => safeStr(item).trim().toUpperCase()).filter(Boolean).sort();
-  }
-  const single = safeStr(value).trim().toUpperCase();
-  return single ? [single] : [];
-}
-
-function getCorrectQcmChoices(question: Question): string[] {
-  const rawChoices = safeArray<any>(question?.choix);
-  return rawChoices
-    .map((choice, index) => ({
-      isCorrect: Boolean(choice?.correct || choice?.correcte),
-      letter: safeStr(choice?.lettre).trim().toUpperCase() || String.fromCharCode(65 + index),
-    }))
-    .filter((choice) => choice.isCorrect)
-    .map((choice) => choice.letter)
-    .filter(Boolean)
-    .sort();
-}
-
-function recoverCorruptedScoreRow(row: any, examensData: ExamenBlanc[]) {
-  if (!isCorruptedZeroRow(row)) return null;
-
-  const examDef = examensData.find((exam) => exam.id === row?.quiz_id);
-  if (!examDef) return null;
-
-  const rowKey = getMatiereCanonicalKey(row?.matiere_id, row?.matiere_nom);
-  const matiere = examDef.matieres.find((m) => getMatiereCanonicalKey(m?.id, m?.nom) === rowKey);
-  if (!matiere) return null;
-
-  const reponses = row?.details?.reponses;
-  if (!reponses || typeof reponses !== "object") return null;
-
-  const correctionsIA = row?.details?.correctionsIA;
-  let recoveredScore = 0;
-  let recoveredMax = 0;
-
-  safeArray<Question>(matiere.questions).forEach((question) => {
-    if (!question?.type) return;
-    const pointsQuestion = getPointsParQuestion(matiere.id, question.type, matiere);
-    recoveredMax += pointsQuestion;
-
-    const reponseQuestion = (reponses as Record<string, unknown>)[String(question.id)];
-
-    if (question.type === "QCM") {
-      const correctes = getCorrectQcmChoices(question);
-      const donnees = normalizeSelectedChoices(reponseQuestion);
-      if (JSON.stringify(correctes) === JSON.stringify(donnees)) {
-        recoveredScore += pointsQuestion;
-      }
-      return;
-    }
-
-    if (question.type === "QRC") {
-      const correction = correctionsIA?.[String(question.id)] ?? correctionsIA?.[question.id];
-      if (correction && typeof correction === "object" && "pointsObtenus" in correction) {
-        recoveredScore += clampToQuestionMax((correction as any).pointsObtenus, pointsQuestion);
-      } else {
-        const fallback = evaluateQrcDeterministic(question, reponseQuestion, pointsQuestion);
-        recoveredScore += clampToQuestionMax(fallback.pointsObtenus, pointsQuestion);
-      }
-    }
-  });
-
-  if (recoveredMax <= 0) return null;
-
-  const safeRecoveredScore = clamp(recoveredScore, 0, recoveredMax);
-  return {
-    score_obtenu: safeRecoveredScore,
-    score_max: recoveredMax,
-    note_sur_20: normalizeNoteSur20(safeRecoveredScore, recoveredMax),
-  };
-}
-
-function findScoreForMatiere(scores: ExamScoreItem[], matiere: Pick<Matiere, "id" | "nom">): ExamScoreItem | undefined {
-  const expectedKeys = buildMatiereLookupKeys(matiere.id, matiere.nom);
-  return scores.find((score) => shareLookupKey(score.lookupKeys, expectedKeys));
-}
-
-function clampToQuestionMax(pointsObtenus: unknown, questionMax: number): number {
-  const safeMax = Math.max(questionMax, 0);
-  const safePoints = clamp(toFiniteNumber(pointsObtenus, 0), 0, safeMax);
-  return clamp(roundToHalfStep(safePoints), 0, safeMax);
-}
-
-// DÉSACTIVÉ : la correction IA introduisait des variations de notes non déterministes.
-// Seule la correction déterministe (mots-clés + calculs) est utilisée pour garantir
-// qu'une même réponse donne toujours le même score, sans recalcul possible.
-const ENABLE_AI_QRC_CORRECTION = false;
-const AI_ONLY_UPGRADES = true;
-
-function normalizeAnswerText(value: unknown): string {
-  return safeStr(value)
-    .toLowerCase()
-    .replace(/[àâäáã]/g, "a")
-    .replace(/[éèêë]/g, "e")
-    .replace(/[îïí]/g, "i")
-    .replace(/[ôöó]/g, "o")
-    .replace(/[ùûüú]/g, "u")
-    .replace(/[ç]/g, "c")
-    .replace(/[^a-z0-9 ]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-/** Fuzzy match: checks if keyword appears in text, tolerating 1-2 missing/swapped letters */
-function fuzzyContains(text: string, keyword: string): boolean {
-  // Exact match first
-  if (text.includes(keyword)) return true;
-  // For short keywords (<=3 chars), require exact match
-  if (keyword.length <= 3) return false;
-
-  // Check if any substring of text is within edit distance 1-2 of keyword
-  // Simplified: check if keyword with 1 char removed matches anywhere
-  for (let i = 0; i < keyword.length; i++) {
-    const partial = keyword.slice(0, i) + keyword.slice(i + 1);
-    if (partial.length >= 3 && text.includes(partial)) return true;
-  }
-
-  // Also check if text contains a word that starts/ends like the keyword (handles missing first/last letter)
-  const words = text.split(" ");
-  for (const word of words) {
-    if (word.length < 3 || keyword.length < 4) continue;
-    // Same length ±1, and at least 80% chars match in order
-    if (Math.abs(word.length - keyword.length) <= 2) {
-      let ki = 0;
-      for (let wi = 0; wi < word.length && ki < keyword.length; wi++) {
-        if (word[wi] === keyword[ki]) ki++;
-      }
-      if (ki >= keyword.length - 1) return true;
-    }
-  }
-
-  return false;
-}
-
-function hasCalculationDetail(value: unknown): boolean {
-  const raw = safeStr(value);
-  return /\d+\s*[\/×x\*\-\+]\s*\d+/.test(raw) || /=\s*\d/.test(raw);
-}
-
-function extractRequestedElementsCount(enonce: string): number | null {
-  const normalized = normalizeAnswerText(enonce);
-  const digitMatch = normalized.match(/\b(\d{1,2})\b/);
-  if (digitMatch) {
-    const parsed = Number(digitMatch[1]);
-    if (Number.isFinite(parsed) && parsed > 0 && parsed <= 20) return parsed;
-  }
-
-  const numberWords: Record<string, number> = {
-    un: 1,
-    une: 1,
-    deux: 2,
-    trois: 3,
-    quatre: 4,
-    cinq: 5,
-    six: 6,
-    sept: 7,
-    huit: 8,
-    neuf: 9,
-    dix: 10,
-  };
-
-  for (const [word, value] of Object.entries(numberWords)) {
-    if (new RegExp(`\\b${word}\\b`).test(normalized)) return value;
-  }
-
-  return null;
-}
-
-function isEnumerativeQrcQuestion(question: Question): boolean {
-  const normalizedEnonce = normalizeAnswerText(question.enonce || "");
-  if (/\b(citez|donnez|indiquez|listez|enumerez|quels|quelles|nommez|mentionnez)\b/.test(normalizedEnonce)) {
-    return true;
-  }
-
-  const chunks = safeStr(question.reponseQRC)
-    .split(/[\.;]/)
-    .map((chunk) => normalizeAnswerText(chunk))
-    .filter(Boolean);
-
-  return chunks.length >= 3;
-}
-
-function buildExpectedQrcElements(question: Question): string[][] {
-  const explicitEntries = Array.isArray(question.reponses_possibles) ? question.reponses_possibles : [];
-
-  if (explicitEntries.length > 0) {
-    const elements = explicitEntries
-      .map((entry) =>
-        Array.from(
-          new Set(
-            safeStr(entry)
-              .split("|")
-              .map((alt) => normalizeAnswerText(alt))
-              .filter(Boolean)
-          )
-        )
-      )
-      .filter((alts) => alts.length > 0);
-
-    if (elements.length > 0) return elements;
-  }
-
-  const normalizedExpected = normalizeAnswerText(question.reponseQRC || "");
-  if (!normalizedExpected) return [];
-
-  const stopwords = new Set([
-    "avec", "dans", "pour", "sans", "dont", "plus", "moins", "etre", "avoir", "faire", "cette", "votre", "vous", "leur", "leurs", "entre", "sous", "aux", "des", "les", "une", "du", "de", "la", "le", "et", "ou", "au", "il", "elle", "ils", "elles", "son", "ses", "sur", "par", "qui",
-  ]);
-
-  const fallbackKeywords = Array.from(
-    new Set(
-      normalizedExpected
-        .split(" ")
-        .map((word) => word.trim())
-        .filter((word) => word.length >= 3 && !stopwords.has(word))
-    )
-  ).slice(0, 12);
-
-  return fallbackKeywords.map((kw) => [kw]);
-}
-
-function evaluateQrcDeterministic(question: Question, response: unknown, pointsQuestion: number): CorrectionQRC {
-  const maxPoints = Math.max(toFiniteNumber(pointsQuestion, 0), 0);
-  const responseRaw = safeStr(response);
-
-  if (maxPoints <= 0) {
-    return {
-      estCorrect: false,
-      pointsObtenus: 0,
-      nombrefautes: 0,
-      explication: "Barème indisponible pour cette question.",
-    };
-  }
-
-  if (!responseRaw.trim()) {
-    return {
-      estCorrect: false,
-      pointsObtenus: 0,
-      nombrefautes: 0,
-      explication: "Aucune réponse fournie.",
-    };
-  }
-
-  if (isCalculQuestion(question)) {
-    const responseCompact = responseRaw.replace(/\s/g, "").toLowerCase();
-    const expectedResults = (question.reponses_possibles || [question.reponseQRC || ""])
-      .map((r) => safeStr(r).replace(/\s/g, "").toLowerCase())
-      .filter(Boolean);
-    const hasResult = expectedResults.some((expected) => responseCompact.includes(expected));
-    const hasDetail = hasCalculationDetail(responseRaw);
-
-    let points = 0;
-    const partialPoints = clampToQuestionMax(maxPoints / 2, maxPoints);
-    if (hasResult && hasDetail) {
-      points = maxPoints;
-    } else if (hasResult) {
-      points = partialPoints;
-    }
-
-    return {
-      estCorrect: hasResult && hasDetail,
-      pointsObtenus: clampToQuestionMax(points, maxPoints),
-      nombrefautes: 0,
-      explication: hasResult && hasDetail
-        ? "Résultat correct avec détail du calcul."
-        : hasResult
-          ? `Résultat correct mais détail du calcul manquant → ${partialPoints}/${maxPoints} pts`
-          : "Résultat incorrect.",
-    };
-  }
-
-  const normalizedResponse = normalizeAnswerText(responseRaw);
-  const expectedElements = buildExpectedQrcElements(question);
-
-  if (expectedElements.length === 0) {
-    return {
-      estCorrect: false,
-      pointsObtenus: 0,
-      nombrefautes: 0,
-      explication: "Réponse attendue indisponible pour cette question.",
-    };
-  }
-
-  const matched = expectedElements.filter((alternatives) =>
-    alternatives.some((alt) => fuzzyContains(normalizedResponse, alt))
-  ).length;
-  const total = expectedElements.length;
-
-  // Règle : le seuil de 3 ne s'applique QUE si la question a PLUS de 3 réponses possibles.
-  // Si total <= 3, il faut TOUS les éléments, même pour les questions de type liste.
-  const requestedCount = extractRequestedElementsCount(question.enonce || "");
-   // Règle : >3 réponses possibles → 3 trouvées = tous les points
-   //         3 réponses possibles → 2 trouvées (≥80%) = tous les points  
-   //         ≤2 réponses possibles → il faut toutes les trouver
-   const requiredForFullPoints = total > 3 ? 3 : total <= 2 ? total : Math.ceil(total * 0.8);
-
-   const gotFullPoints = matched >= requiredForFullPoints;
-   const points = gotFullPoints
-     ? maxPoints
-     : clampToQuestionMax((matched / requiredForFullPoints) * maxPoints, maxPoints);
-
-   return {
-     estCorrect: gotFullPoints,
-     pointsObtenus: points,
-     nombrefautes: 0,
-     explication: gotFullPoints
-       ? `Correction déterministe : ${matched}/${total} élément(s) trouvés — totalité des points (≥${requiredForFullPoints} requis).`
-       : `Correction déterministe : ${matched}/${total} élément(s) attendu(s) — ${requiredForFullPoints} requis pour tous les points.`,
-   };
-}
-
-function computeAdmisForMatiere(noteObtenue: unknown, maxPoints: unknown, noteEliminatoire: unknown, noteSur: unknown, fallback = false): boolean {
-  const safeMax = Math.max(toFiniteNumber(maxPoints, 0), 0);
-  if (safeMax <= 0) return fallback;
-  const safeScore = clamp(toFiniteNumber(noteObtenue, 0), 0, safeMax);
-  const safeNoteSur = Math.max(toFiniteNumber(noteSur, 20), 1);
-  const seuil = (Math.max(toFiniteNumber(noteEliminatoire, 0), 0) / safeNoteSur) * safeMax;
-  return safeScore >= seuil;
-}
 import ExamensBlancsEditor from "./ExamensBlancsEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertTriangle, Timer, ArrowRight } from "lucide-react";
+
+import type { ResultatMatiere, Reponses } from "./examens-blancs-types";
+import {
+  safeStr, safeArray, toFiniteNumber, toTimestamp, clamp,
+  normalizeNoteSur20, logSecurityImageDebug,
+  evaluateQrcDeterministic, computeAdmisForMatiere,
+} from "./examens-blancs-utils";
+import { EcranSelection } from "./ExamenBlancsListe";
+import { PassageMatiere, TransitionMatiere } from "./ExamenBlancsPassage";
+import { EcranResultats, RevisionFausses } from "./ExamenBlancsResultats";
 
-// ===== COMPOSANT TIMER =====
-function TimerBadge({ seconds, onExpire }: { seconds: number; onExpire: () => void }) {
-  const [remaining, setRemaining] = useState(seconds);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    setRemaining(seconds);
-  }, [seconds]);
-
-  useEffect(() => {
-    if (remaining <= 0) {
-      onExpire();
-      return;
-    }
-    intervalRef.current = setInterval(() => {
-      setRemaining(r => {
-        if (r <= 1) {
-          clearInterval(intervalRef.current!);
-          return 0;
-        }
-        return r - 1;
-      });
-    }, 1000);
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [remaining, onExpire]);
-
-  const mins = Math.floor(remaining / 60);
-  const secs = remaining % 60;
-  const percent = (remaining / seconds) * 100;
-  const isUrgent = remaining < 60;
-
-  return (
-    <div className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 ${isUrgent ? "border-red-500 bg-red-50 text-red-700 animate-pulse" : "border-primary/30 bg-primary/5 text-primary"}`}>
-      <Timer className="w-4 h-4" />
-      <span className="font-mono font-bold text-lg">
-        {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
-      </span>
-    </div>
-  );
-}
-
-// ===== TYPES =====
-type ReponseQCM = string[];
-type ReponseQRC = string;
-type Reponses = { [questionId: number]: ReponseQCM | ReponseQRC };
-
-interface CorrectionQRC {
-  estCorrect: boolean;
-  pointsObtenus: number;
-  nombrefautes: number;
-  explication: string;
-}
-
-// Cache des corrections IA : { [questionId]: CorrectionQRC }
-type CorrectionCache = { [questionId: number]: CorrectionQRC | "loading" | "error" };
-
-interface ResultatMatiere {
-  matiereId: string;
-  nomMatiere: string;
-  noteObtenue: number;     // points réels obtenus
-  maxPoints: number;       // total points possible pour la matière
-  noteSur: number;         // pour affichage référence (noteSur du barème)
-  noteEliminatoire: number;
-  coefficient: number;
-  admis: boolean;
-  reponses: Reponses;
-  correctionsIA?: CorrectionCache; // corrections IA pour les QRC
-}
-
-// ===== ÉCRAN DE SÉLECTION =====
-function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, apprenantType, examensData, apprenantId, isAdmin, refreshKey }: { onStart: (examen: ExamenBlanc) => void; onEdit: () => void; onViewResults: (examen: ExamenBlanc) => void; defaultBilanId?: string | null; apprenantType?: string | null; examensData: ExamenBlanc[]; apprenantId?: string | null; isAdmin?: boolean; refreshKey?: number }) {
-  // Determine the forced exam type from the student's formation type
-  const forcedType = (() => {
-    if (!apprenantType) return null;
-    const t = apprenantType.replace(/-e$/i, "").toUpperCase();
-    if (["TAXI", "VTC", "TA", "VA"].includes(t)) return t as "TAXI" | "VTC" | "TA" | "VA";
-    return null;
-  })();
-
-  const [typeFiltre, setTypeFiltre] = useState<"tous" | "TAXI" | "VTC" | "TA" | "VA">(forcedType || "tous");
-  const [completedExamIds, setCompletedExamIds] = useState<Set<string>>(new Set());
-  const [startedNotFinishedIds, setStartedNotFinishedIds] = useState<Set<string>>(new Set());
-  const [examScores, setExamScores] = useState<Record<string, ExamScoreItem[]>>({});
-  const [previousExamAverages, setPreviousExamAverages] = useState<Record<string, number | null>>({});
-
-  // Fetch completed exams with scores from DB + started-but-not-finished
-  useEffect(() => {
-    if (!apprenantId) return;
-
-    // 1) Fetch completed results
-    supabase
-      .from("apprenant_quiz_results" as any)
-      .select("quiz_id, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, completed_at, created_at, details")
-      .eq("apprenant_id", apprenantId)
-      .eq("quiz_type", "examen_blanc")
-      .order("completed_at", { ascending: false })
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        if (data) {
-          const latestByQuizMatiere = new Map<string, any>();
-          (data as any[]).forEach((r: any) => {
-            const canonicalMatiereKey = getMatiereCanonicalKey(r.matiere_id, r.matiere_nom);
-            const key = `${r.quiz_id}::${canonicalMatiereKey}`;
-            const prev = latestByQuizMatiere.get(key);
-            latestByQuizMatiere.set(key, pickBestScoreRow(prev, r));
-          });
-
-          const latestRows = Array.from(latestByQuizMatiere.values());
-          const completedIds = new Set<string>();
-          const matieresDoneByQuiz = new Map<string, Set<string>>();
-
-          latestRows.forEach((row: any) => {
-            const quizId = row.quiz_id;
-            const matiereKey = row.matiere_id || row.matiere_nom || "unknown";
-            if (!quizId) return;
-            if (!matieresDoneByQuiz.has(quizId)) {
-              matieresDoneByQuiz.set(quizId, new Set<string>());
-            }
-            matieresDoneByQuiz.get(quizId)!.add(matiereKey);
-          });
-
-          matieresDoneByQuiz.forEach((doneSet, quizId) => {
-            const examDef = examensData.find((e) => e.id === quizId);
-            const requiredMatieres = examDef?.matieres?.length || 1;
-            if (doneSet.size >= requiredMatieres) {
-              completedIds.add(quizId);
-            }
-          });
-
-          setCompletedExamIds(completedIds);
-
-          const scores: Record<string, ExamScoreItem[]> = {};
-          latestRows.forEach((r: any) => {
-            const recovered = recoverCorruptedScoreRow(r, examensData);
-            const scoreSource = recovered && recovered.score_obtenu > toFiniteNumber(r.score_obtenu, 0)
-              ? { ...r, ...recovered }
-              : r;
-
-            if (!scores[r.quiz_id]) scores[r.quiz_id] = [];
-            scores[r.quiz_id].push({
-              matiere_id: scoreSource.matiere_id,
-              matiere_nom: scoreSource.matiere_nom,
-              note_sur_20: normalizeNoteSur20(scoreSource.score_obtenu, scoreSource.score_max, scoreSource.note_sur_20),
-              score_obtenu: toFiniteNumber(scoreSource.score_obtenu, 0),
-              score_max: toFiniteNumber(scoreSource.score_max, 0),
-              completed_at: scoreSource.completed_at,
-              created_at: scoreSource.created_at,
-              lookupKeys: buildMatiereLookupKeys(scoreSource.matiere_id, scoreSource.matiere_nom),
-            });
-
-            if (recovered && recovered.score_obtenu > toFiniteNumber(r.score_obtenu, 0)) {
-              console.warn(
-                `[ExamensBlancs][Recovery] Score restauré ${r.quiz_id}/${r.matiere_id}: ${r.score_obtenu}/${r.score_max} -> ${recovered.score_obtenu}/${recovered.score_max}`
-              );
-            }
-          });
-
-          const allRows = data as any[];
-          const debugRowsEb1 = allRows.filter((row) => row?.quiz_id === "EB1");
-          const debugRowsEb2 = allRows.filter((row) => row?.quiz_id === "EB2");
-
-          console.groupCollapsed(`[ExamensBlancs][RAW Supabase] apprenant=${apprenantId} quiz=EB1 lignes=${debugRowsEb1.length}`);
-          console.table(
-            debugRowsEb1.map((row, index) => ({
-              idx: index + 1,
-              quiz_id: row.quiz_id,
-              matiere_id_exact: JSON.stringify(row.matiere_id),
-              matiere_nom_exact: JSON.stringify(row.matiere_nom),
-              score_obtenu: row.score_obtenu,
-              score_max: row.score_max,
-              note_sur_20: row.note_sur_20,
-              canonical_key: getMatiereCanonicalKey(row.matiere_id, row.matiere_nom),
-              completed_at: row.completed_at,
-              created_at: row.created_at,
-            }))
-          );
-
-          const sampleC = debugRowsEb1.find((row) => {
-            const id = normalizeMatiereLookupValue(row?.matiere_id);
-            const nom = safeStr(row?.matiere_nom);
-            return id === "securite" || /^\s*c\s*-/i.test(nom);
-          });
-
-          const sampleE = debugRowsEb1.find((row) => {
-            const id = normalizeMatiereLookupValue(row?.matiere_id);
-            const nom = safeStr(row?.matiere_nom);
-            return id === "anglais" || /^\s*e\s*-/i.test(nom);
-          });
-
-          const sampleAorFvZero = debugRowsEb1.find((row) => {
-            const id = normalizeMatiereLookupValue(row?.matiere_id);
-            const nom = safeStr(row?.matiere_nom);
-            const normalizedNote = normalizeNoteSur20(row?.score_obtenu, row?.score_max, row?.note_sur_20);
-            const isAorFv = id === "t3p" || id === "reglementation vtc" || /^\s*a\s*-/i.test(nom) || /^\s*f\(v\)/i.test(nom);
-            return isAorFv && normalizedNote === 0;
-          });
-
-          console.log("[ExamensBlancs][RAW sample C]", sampleC ? {
-            matiere_id_exact: JSON.stringify(sampleC.matiere_id),
-            matiere_nom_exact: JSON.stringify(sampleC.matiere_nom),
-            note_sur_20: sampleC.note_sur_20,
-            score_obtenu: sampleC.score_obtenu,
-            score_max: sampleC.score_max,
-          } : "Introuvable");
-
-          console.log("[ExamensBlancs][RAW sample E]", sampleE ? {
-            matiere_id_exact: JSON.stringify(sampleE.matiere_id),
-            matiere_nom_exact: JSON.stringify(sampleE.matiere_nom),
-            note_sur_20: sampleE.note_sur_20,
-            score_obtenu: sampleE.score_obtenu,
-            score_max: sampleE.score_max,
-          } : "Introuvable");
-
-          console.log("[ExamensBlancs][RAW sample A/F(V) note=0]", sampleAorFvZero ? {
-            matiere_id_exact: JSON.stringify(sampleAorFvZero.matiere_id),
-            matiere_nom_exact: JSON.stringify(sampleAorFvZero.matiere_nom),
-            note_sur_20: sampleAorFvZero.note_sur_20,
-            score_obtenu: sampleAorFvZero.score_obtenu,
-            score_max: sampleAorFvZero.score_max,
-          } : "Introuvable");
-
-          const latestEb1ByKey = new Map<string, any>();
-          debugRowsEb1.forEach((row) => {
-            const key = getMatiereCanonicalKey(row?.matiere_id, row?.matiere_nom);
-            latestEb1ByKey.set(key, pickBestScoreRow(latestEb1ByKey.get(key), row));
-          });
-
-          const latestEb2ByKey = new Map<string, any>();
-          debugRowsEb2.forEach((row) => {
-            const key = getMatiereCanonicalKey(row?.matiere_id, row?.matiere_nom);
-            latestEb2ByKey.set(key, pickBestScoreRow(latestEb2ByKey.get(key), row));
-          });
-
-          const comparedKeys = Array.from(new Set([...latestEb1ByKey.keys(), ...latestEb2ByKey.keys()]));
-          console.groupCollapsed(`[ExamensBlancs][RAW compare EB1 vs EB2] apprenant=${apprenantId}`);
-          console.log("[ExamensBlancs][RAW compare] EB1 matiere_id exacts:", Array.from(new Set(debugRowsEb1.map((r) => JSON.stringify(r?.matiere_id)))));
-          console.log("[ExamensBlancs][RAW compare] EB2 matiere_id exacts:", Array.from(new Set(debugRowsEb2.map((r) => JSON.stringify(r?.matiere_id)))));
-          console.table(
-            comparedKeys.map((key) => {
-              const eb1 = latestEb1ByKey.get(key);
-              const eb2 = latestEb2ByKey.get(key);
-              return {
-                canonical_key: key,
-                eb1_matiere_id_exact: eb1 ? JSON.stringify(eb1.matiere_id) : null,
-                eb1_matiere_nom_exact: eb1 ? JSON.stringify(eb1.matiere_nom) : null,
-                eb1_note_sur_20: eb1 ? normalizeNoteSur20(eb1.score_obtenu, eb1.score_max, eb1.note_sur_20).toFixed(1) : null,
-                eb2_matiere_id_exact: eb2 ? JSON.stringify(eb2.matiere_id) : null,
-                eb2_matiere_nom_exact: eb2 ? JSON.stringify(eb2.matiere_nom) : null,
-                eb2_note_sur_20: eb2 ? normalizeNoteSur20(eb2.score_obtenu, eb2.score_max, eb2.note_sur_20).toFixed(1) : null,
-              };
-            })
-          );
-          console.groupEnd();
-
-          Object.entries(scores).forEach(([quizId, quizScores]) => {
-            const examDef = examensData.find((exam) => exam.id === quizId);
-            if (!examDef) return;
-            console.groupCollapsed(`[ExamensBlancs][${quizId}] mapping par matière`);
-            console.table(
-              examDef.matieres.map((matiere) => {
-                const matched = findScoreForMatiere(quizScores, matiere);
-                return {
-                  matiere_attendue_id: matiere.id,
-                  matiere_attendue_nom: matiere.nom,
-                  lookup_attendu: buildMatiereLookupKeys(matiere.id, matiere.nom).join(" | "),
-                  matched_matiere_id: matched?.matiere_id ?? null,
-                  matched_matiere_nom: matched?.matiere_nom ?? null,
-                  matched_note_sur_20: matched ? matched.note_sur_20.toFixed(1) : null,
-                };
-              })
-            );
-            console.groupEnd();
-          });
-          console.groupEnd();
-
-          setExamScores(scores);
-
-          // Compute previous attempt averages per exam
-          const prevAvgs: Record<string, number | null> = {};
-          const allRowsByQuiz = new Map<string, any[]>();
-          (data as any[]).forEach((r: any) => {
-            if (!r.quiz_id) return;
-            if (!allRowsByQuiz.has(r.quiz_id)) allRowsByQuiz.set(r.quiz_id, []);
-            allRowsByQuiz.get(r.quiz_id)!.push(r);
-          });
-          allRowsByQuiz.forEach((rows, quizId) => {
-            const examDef = examensData.find(e => e.id === quizId);
-            if (!examDef) return;
-            // Group rows by matiere canonical key, sorted by created_at desc
-            const byMatiere = new Map<string, any[]>();
-            rows.forEach(r => {
-              const key = getMatiereCanonicalKey(r.matiere_id, r.matiere_nom);
-              if (!byMatiere.has(key)) byMatiere.set(key, []);
-              byMatiere.get(key)!.push(r);
-            });
-            // For each matiere, sort by created_at desc, find the second row (previous attempt)
-            let hasPrev = false;
-            let totalCoef = 0;
-            let weightedSum = 0;
-            examDef.matieres.forEach(m => {
-              const mKey = getMatiereCanonicalKey(m.id, m.nom);
-              const mRows = byMatiere.get(mKey) || [];
-              mRows.sort((a: any, b: any) => toTimestamp(b.created_at) - toTimestamp(a.created_at));
-              const coef = m.coefficient || 1;
-              totalCoef += coef;
-              if (mRows.length >= 2) {
-                hasPrev = true;
-                const prev = mRows[1];
-                const note = normalizeNoteSur20(prev.score_obtenu, prev.score_max, prev.note_sur_20);
-                weightedSum += note * coef;
-              }
-            });
-            if (hasPrev && totalCoef > 0) {
-              prevAvgs[quizId] = Math.round((weightedSum / totalCoef) * 10) / 10;
-            }
-          });
-          setPreviousExamAverages(prevAvgs);
-
-          // 2) Fetch started-but-not-finished exams from reponses_apprenants
-          supabase
-            .from("reponses_apprenants" as any)
-            .select("exercice_id, completed")
-            .eq("apprenant_id", apprenantId)
-            .eq("exercice_type", "examen_blanc")
-            .then(({ data: repData }) => {
-              const started = new Set<string>();
-              if (repData) {
-                (repData as any[]).forEach((r: any) => {
-                  // Started but not finished = has a reponse row but not in completedExamIds
-                  if (!completedIds.has(r.exercice_id)) {
-                    started.add(r.exercice_id);
-                  }
-                });
-              }
-              setStartedNotFinishedIds(started);
-            });
-        }
-      });
-  }, [apprenantId, examensData, refreshKey]);
-
-  const examens = examensData.filter(e => {
-    const typeOk = typeFiltre === "tous" || e?.type === typeFiltre;
-    const isBilan = e.id.startsWith("bilan-");
-    return typeOk && !isBilan;
-  });
-
-  const examensBlancs = examensData.filter(e => !e.id.startsWith("bilan-") && (typeFiltre === "tous" || e?.type === typeFiltre));
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold mb-1">Examens Blancs</h2>
-          <p className="text-muted-foreground text-sm">
-            {forcedType
-              ? `${examensBlancs.length} examens blancs ${forcedType}. Chaque test comporte les matières correspondantes chronométrées.`
-              : "24 examens blancs (6 TAXI, 6 VTC, 6 Passerelle TA, 6 Passerelle VA). Chaque test comporte les matières correspondantes chronométrées."
-            }
-          </p>
-        </div>
-        {isAdmin && (
-          <Button variant="outline" size="sm" onClick={onEdit} className="gap-2 shrink-0">
-            <Pencil className="w-4 h-4" />
-            Modifier les examens
-          </Button>
-        )}
-      </div>
-
-      {/* Filtres — masqués si l'apprenant a un type forcé */}
-      {!forcedType && (
-        <div className="flex flex-wrap gap-2">
-          <div className="flex gap-1 border rounded-lg p-1">
-            {(["tous", "TAXI", "VTC", "TA", "VA"] as const).map(t => (
-              <Button
-                key={t}
-                variant={typeFiltre === t ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setTypeFiltre(t)}
-                className="h-7 px-3"
-              >
-                {t === "tous" ? "Tous" : t === "TA" ? "Passerelle TA" : t === "VA" ? "Passerelle VA" : t}
-              </Button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Section Examens blancs */}
-      {examensBlancs.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <FileText className="w-4 h-4 text-primary" />
-            <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">Examens Blancs</h3>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {examensBlancs.map(examen => {
-               const totalQuestions = examen.matieres.reduce((acc, m) => acc + m.questions.length, 0);
-              const dureeTotal = examen.matieres.reduce((acc, m) => acc + m.duree, 0);
-              const isCompleted = completedExamIds.has(examen.id);
-              const isStartedNotFinished = !isCompleted && startedNotFinishedIds.has(examen.id);
-              const canRetake = Boolean(isAdmin);
-              const canStartExam = !isCompleted || canRetake;
-              const scores = examScores[examen.id] || [];
-              return (
-                <Card
-                  key={examen.id}
-                  className={`hover:shadow-md transition-shadow border-2 ${isCompleted ? "border-green-500/60 bg-green-50/30 cursor-pointer" : isStartedNotFinished ? "border-orange-400/60 bg-orange-50/30" : "hover:border-primary/40"}`}
-                  onClick={isCompleted ? () => onViewResults(examen) : undefined}
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <Badge variant={examen?.type === "TAXI" ? "default" : "secondary"} className="text-xs">
-                        {examen?.type}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">N°{examen.numero}</span>
-                    </div>
-                    <CardTitle className="text-base mt-2">{examen.titre}</CardTitle>
-                    {isCompleted && (() => {
-                      // Compute weighted average from DB scores
-                      let totalCoef = 0;
-                      let weightedSum = 0;
-                      let hasScores = false;
-                      const eliminatoiresMatieres: string[] = [];
-                      examen.matieres.forEach(m => {
-                        const scoreData = findScoreForMatiere(scores, m);
-                        const coef = m.coefficient || 1;
-                        if (scoreData) {
-                          weightedSum += scoreData.note_sur_20 * coef;
-                          hasScores = true;
-                          // Check if note is below noteEliminatoire
-                          if (m.noteEliminatoire && scoreData.note_sur_20 < m.noteEliminatoire) {
-                            eliminatoiresMatieres.push(m.nom.split(" - ")[0]);
-                          }
-                        }
-                        totalCoef += coef;
-                      });
-                      const moyenne = totalCoef > 0 ? Math.round((weightedSum / totalCoef) * 10) / 10 : 0;
-                      const isReussi = hasScores && moyenne >= 10 && eliminatoiresMatieres.length === 0;
-                      return (
-                        <div className={`flex flex-col items-center gap-1 mt-2 rounded-lg px-3 py-2 border ${
-                          isReussi
-                            ? "bg-green-100 border-green-300"
-                            : "bg-red-50 border-red-400 border-2"
-                        }`}>
-                          <div className="flex items-center gap-2">
-                            {isReussi ? (
-                              <>
-                                <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
-                                <span className="text-green-700 font-bold text-lg uppercase tracking-wide">Examen réussi ✅</span>
-                              </>
-                            ) : (
-                              <>
-                                <XCircle className="w-5 h-5 text-red-500 shrink-0" />
-                                <span className="text-red-600 font-bold text-lg uppercase tracking-wide">Examen échoué ❌</span>
-                              </>
-                            )}
-                          </div>
-                          {hasScores && (
-                            <span className={`text-2xl font-extrabold ${isReussi ? "text-green-700" : "text-red-500"}`}>
-                              {moyenne.toFixed(1)} / 20
-                            </span>
-                          )}
-                          {eliminatoiresMatieres.length > 0 && (
-                            <span className="text-xs text-red-600 font-medium">
-                              ⚠ Note éliminatoire en : {eliminatoiresMatieres.join(", ")}
-                            </span>
-                          )}
-                          {previousExamAverages[examen.id] != null && (
-                            <span className="text-xs text-muted-foreground italic">
-                              Précédent essai : {previousExamAverages[examen.id]!.toFixed(1)} / 20
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })()}
-                    {isStartedNotFinished && (
-                      <div className="flex items-center gap-2 mt-2 bg-orange-100 border-2 border-orange-400 rounded-lg px-3 py-3">
-                        <AlertTriangle className="w-6 h-6 text-orange-600 shrink-0" />
-                        <span className="text-orange-700 font-extrabold text-lg uppercase tracking-wide">Non terminé</span>
-                      </div>
-                    )}
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <BookOpen className="w-3 h-3" />
-                        <span>{totalQuestions} questions</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <Clock className="w-3 h-3" />
-                        <span>{dureeTotal} min</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <FileText className="w-3 h-3" />
-                        <span>{examen.matieres.length} matière{examen.matieres.length > 1 ? "s" : ""}</span>
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      {examen.matieres.map(m => {
-                        const scoreData = findScoreForMatiere(scores, m);
-                        return (
-                          <div key={m.id} className="flex justify-between text-xs text-muted-foreground">
-                            <span className="truncate pr-2">{m.nom.split(" - ")[0]}</span>
-                            {isCompleted && scoreData ? (
-                              <span className={`shrink-0 font-bold ${scoreData.note_sur_20 >= (m.noteEliminatoire || 6) ? "text-green-600" : "text-red-500"}`}>
-                                {scoreData.note_sur_20.toFixed(1)}/20
-                              </span>
-                            ) : (
-                              <span className="shrink-0">{m.duree}min</span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {isCompleted && (
-                      <Button className="w-full mt-2 gap-2" variant="secondary" onClick={(e) => { e.stopPropagation(); onViewResults(examen); }}>
-                        <Trophy className="w-4 h-4" />
-                        Voir mes résultats
-                      </Button>
-                    )}
-                    <Button
-                      className="w-full mt-2 gap-2"
-                      variant={isCompleted && !canRetake ? "secondary" : isCompleted ? "outline" : isStartedNotFinished ? "default" : "default"}
-                      disabled={!canStartExam}
-                      onClick={(e) => { e.stopPropagation(); if (canStartExam) onStart(examen); }}
-                    >
-                      {isCompleted ? (canRetake ? "Recommencer l'examen" : "Examen déjà réalisé") : isStartedNotFinished ? "Reprendre l'examen" : "Commencer l'examen"}
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ===== CALCULATRICE POUR GESTION =====
-function CalculatriceExamen({ onClose }: { onClose: () => void }) {
-  const [display, setDisplay] = useState("0");
-  const [prevValue, setPrevValue] = useState<number | null>(null);
-  const [operator, setOperator] = useState<string | null>(null);
-  const [waitingForOperand, setWaitingForOperand] = useState(false);
-
-  const inputDigit = (digit: string) => {
-    if (waitingForOperand) {
-      setDisplay(digit);
-      setWaitingForOperand(false);
-    } else {
-      setDisplay(display === "0" ? digit : display + digit);
-    }
-  };
-
-  const inputDot = () => {
-    if (waitingForOperand) {
-      setDisplay("0.");
-      setWaitingForOperand(false);
-      return;
-    }
-    if (!display.includes(".")) setDisplay(display + ".");
-  };
-
-  const calculate = (a: number, op: string, b: number): number => {
-    switch (op) {
-      case "+": return a + b;
-      case "-": return a - b;
-      case "×": return a * b;
-      case "÷": return b !== 0 ? a / b : 0;
-      case "%": return (a * b) / 100;
-      default: return b;
-    }
-  };
-
-  const performOperation = (nextOp: string) => {
-    const current = parseFloat(display);
-    if (prevValue !== null && operator && !waitingForOperand) {
-      const result = calculate(prevValue, operator, current);
-      const rounded = parseFloat(result.toFixed(10));
-      setDisplay(String(rounded));
-      setPrevValue(rounded);
-    } else {
-      setPrevValue(current);
-    }
-    setOperator(nextOp);
-    setWaitingForOperand(true);
-  };
-
-  const handleEquals = () => {
-    const current = parseFloat(display);
-    if (prevValue !== null && operator) {
-      const result = calculate(prevValue, operator, current);
-      const rounded = parseFloat(result.toFixed(10));
-      setDisplay(String(rounded));
-      setPrevValue(null);
-      setOperator(null);
-      setWaitingForOperand(true);
-    }
-  };
-
-  const clear = () => {
-    setDisplay("0");
-    setPrevValue(null);
-    setOperator(null);
-    setWaitingForOperand(false);
-  };
-
-  const toggleSign = () => {
-    const val = parseFloat(display);
-    if (val !== 0) setDisplay(String(-val));
-  };
-
-  const btnBase = "flex items-center justify-center rounded-lg text-base font-semibold h-12 transition-colors active:scale-95";
-  const btnNum = `${btnBase} bg-muted hover:bg-muted/80 text-foreground`;
-  const btnOp = `${btnBase} text-white`;
-  const btnOpStyle = { backgroundColor: '#00B4D8' };
-  const btnEq = `${btnBase} text-white`;
-  const btnEqStyle = { backgroundColor: '#0D2540' };
-  const btnFunc = `${btnBase} bg-muted/50 hover:bg-muted/70 text-muted-foreground`;
-
-  return (
-    <div className="fixed bottom-4 right-4 z-50 w-72 rounded-xl shadow-2xl border bg-card overflow-hidden" style={{ borderColor: '#00B4D8' }}>
-      <div className="flex items-center justify-between px-4 py-2" style={{ backgroundColor: '#0D2540' }}>
-        <div className="flex items-center gap-2">
-          <Calculator className="w-4 h-4" style={{ color: '#00B4D8' }} />
-          <span className="text-sm font-semibold text-white">Calculatrice</span>
-        </div>
-        <button onClick={onClose} className="text-white/70 hover:text-white">
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-      <div className="px-4 py-3 text-right border-b border-border bg-background">
-        <div className="text-xs text-muted-foreground h-4">
-          {prevValue !== null && operator ? `${prevValue} ${operator}` : ""}
-        </div>
-        <div className="text-2xl font-mono font-bold text-foreground truncate">{display}</div>
-      </div>
-      <div className="grid grid-cols-4 gap-1 p-2">
-        <button className={btnFunc} onClick={clear}>C</button>
-        <button className={btnFunc} onClick={toggleSign}>±</button>
-        <button className={btnOp} style={btnOpStyle} onClick={() => performOperation("%")}>%</button>
-        <button className={btnOp} style={btnOpStyle} onClick={() => performOperation("÷")}>÷</button>
-
-        {["7","8","9"].map(d => <button key={d} className={btnNum} onClick={() => inputDigit(d)}>{d}</button>)}
-        <button className={btnOp} style={btnOpStyle} onClick={() => performOperation("×")}>×</button>
-
-        {["4","5","6"].map(d => <button key={d} className={btnNum} onClick={() => inputDigit(d)}>{d}</button>)}
-        <button className={btnOp} style={btnOpStyle} onClick={() => performOperation("-")}>−</button>
-
-        {["1","2","3"].map(d => <button key={d} className={btnNum} onClick={() => inputDigit(d)}>{d}</button>)}
-        <button className={btnOp} style={btnOpStyle} onClick={() => performOperation("+")}>+</button>
-
-        <button className={`${btnNum} col-span-2`} onClick={() => inputDigit("0")}>0</button>
-        <button className={btnNum} onClick={inputDot}>.</button>
-        <button className={btnEq} style={btnEqStyle} onClick={handleEquals}>=</button>
-      </div>
-    </div>
-  );
-}
-
-// ===== PASSAGE D'UNE MATIÈRE =====
-function PassageMatiere({
-  matiere,
-  numero,
-  total,
-  onTerminer,
-  isBilan = false,
-  apprenantId,
-  examenId,
-}: {
-  matiere: Matiere;
-  numero: number;
-  total: number;
-  onTerminer: (reponses: Reponses) => void;
-  isBilan?: boolean;
-  apprenantId?: string | null;
-  examenId?: string;
-}) {
-  const [reponses, setReponses] = useState<Reponses>({});
-  const [questionIndex, setQuestionIndex] = useState(0);
-  const [expire, setExpire] = useState(false);
-  const [initialLoaded, setInitialLoaded] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const [showCalculator, setShowCalculator] = useState(false);
-  const [showInterruptConfirm, setShowInterruptConfirm] = useState(false);
-  const isGestion = matiere.id === "gestion" || matiere.id === "bilan_gestion";
-  const saveStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const questionsSafe = (matiere.questions || []).filter((q): q is Question => !!q && q?.type !== undefined);
-  const question = questionsSafe[questionIndex] || null;
-  const currentQuestionImage = getQuestionImageValue(question);
-  const dureeSecondes = (matiere.duree ?? 30) * 60;
-
-  useEffect(() => {
-    const isSecurite = matiere.id === "securite";
-    if (!isSecurite) return;
-
-    const q2 = questionsSafe.find((q) => Number((q as any)?.id) === 2) as any;
-    const q8 = questionsSafe.find((q) => Number((q as any)?.id) === 8) as any;
-
-    console.log(`[ExamImages][load][${examenId || "unknown"}/${matiere.id}]`, {
-      q2_image: q2?.image ?? null,
-      q2_image_url: q2?.image_url ?? null,
-      q8_image: q8?.image ?? null,
-      q8_image_url: q8?.image_url ?? null,
-    });
-  }, [examenId, matiere.id, questionsSafe]);
-
-  // Helper: normalize reponses keys to number (DB JSON keys are strings)
-  const normalizeReponses = (raw: any): Reponses => {
-    if (!raw || typeof raw !== "object") return {};
-    const normalized: Reponses = {};
-    for (const [key, value] of Object.entries(raw)) {
-      const numKey = Number(key);
-      if (!isNaN(numKey) && value !== undefined && value !== null) {
-        normalized[numKey] = value as ReponseQCM | ReponseQRC;
-      }
-    }
-    return normalized;
-  };
-
-  // Auto-save: get userId once
-  const userIdRef = useRef<string | null>(null);
-  const jwtTokenRef = useRef<string | null>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      userIdRef.current = data?.session?.user?.id ?? null;
-      jwtTokenRef.current = data?.session?.access_token ?? null;
-    });
-  }, []);
-
-  // Load saved responses on mount
-  const exerciceKey = `${examenId || "exam"}_${matiere.id}`;
-  useEffect(() => {
-    if (!apprenantId || initialLoaded) return;
-    (async () => {
-      try {
-        const { data, error } = await supabase
-          .from("reponses_apprenants" as any)
-          .select("reponses, completed")
-          .eq("apprenant_id", apprenantId)
-          .eq("exercice_id", exerciceKey)
-          .maybeSingle();
-        if (error) {
-          console.warn("[AutoSave] Load query error:", error.message);
-        } else if (data) {
-          const completed = (data as any)?.completed ?? false;
-          const rawReponses = (data as any)?.reponses;
-          if (!completed && rawReponses) {
-            const parsed = normalizeReponses(rawReponses);
-            const answeredCount = Object.keys(parsed).length;
-            console.log(`[AutoSave] Loaded ${answeredCount} saved responses for ${exerciceKey}`);
-            setReponses(parsed);
-
-            // Resume at the last answered question (or the next unanswered one)
-            if (answeredCount > 0 && questionsSafe.length > 0) {
-              // Find the first unanswered question index
-              let resumeIndex = 0;
-              for (let i = 0; i < questionsSafe.length; i++) {
-                const q = questionsSafe[i];
-                if (!q) continue;
-                const rep = parsed[q.id] ?? parsed[String(q.id)];
-                const hasAnswer = q?.type === "QCM"
-                  ? Array.isArray(rep) && rep.length > 0
-                  : typeof rep === "string" && rep.trim().length > 0;
-                if (!hasAnswer) {
-                  resumeIndex = i;
-                  break;
-                }
-                resumeIndex = i; // if all answered, stay on last
-              }
-              setQuestionIndex(resumeIndex);
-              toast.info(`Vous reprenez votre examen à la question Q${questionsSafe[resumeIndex]?.id ?? (resumeIndex + 1)} (${resumeIndex + 1}/${questionsSafe.length})`, {
-                duration: 4000,
-                icon: "📝",
-              });
-            }
-          }
-        }
-      } catch (e) { console.error("[AutoSave] Load error:", e); }
-      setInitialLoaded(true);
-    })();
-  }, [apprenantId, exerciceKey, initialLoaded]);
-
-  // Silent auto-save on every change
-  const latestReponsesRef = useRef<Reponses>({});
-  useEffect(() => { latestReponsesRef.current = reponses; }, [reponses]);
-
-  const persistReponses = (updated: Reponses) => {
-    if (!apprenantId || !userIdRef.current) return;
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    setSaveStatus("saving");
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const { error } = await supabase.from("reponses_apprenants" as any).upsert({
-          apprenant_id: apprenantId,
-          user_id: userIdRef.current,
-          exercice_id: exerciceKey,
-          exercice_type: isBilan ? "bilan" : "examen_blanc",
-          reponses: updated,
-          completed: false,
-          updated_at: new Date().toISOString(),
-        } as any, { onConflict: "apprenant_id,exercice_id" });
-        if (error) {
-          console.error("[AutoSave] Save error:", error);
-          setSaveStatus("error");
-        } else {
-          setSaveStatus("saved");
-        }
-        if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
-        saveStatusTimerRef.current = setTimeout(() => setSaveStatus("idle"), 2000);
-      } catch (e) {
-        console.error("[AutoSave] Save error:", e);
-        setSaveStatus("error");
-        if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
-        saveStatusTimerRef.current = setTimeout(() => setSaveStatus("idle"), 3000);
-      }
-    }, 300);
-  };
-
-  // beforeunload: flush pending save immediately
-  useEffect(() => {
-    const flushSave = () => {
-      if (!apprenantId || !userIdRef.current) return;
-      const current = latestReponsesRef.current;
-      if (Object.keys(current).length === 0) return;
-      const row = {
-        apprenant_id: apprenantId,
-        user_id: userIdRef.current,
-        exercice_id: exerciceKey,
-        exercice_type: isBilan ? "bilan" : "examen_blanc",
-        reponses: current,
-        completed: false,
-        updated_at: new Date().toISOString(),
-      };
-      try {
-        const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/reponses_apprenants?on_conflict=apprenant_id,exercice_id`;
-        const token = jwtTokenRef.current || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", url, false);
-        xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.setRequestHeader("apikey", import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
-        xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-        xhr.setRequestHeader("Prefer", "resolution=merge-duplicates");
-        xhr.send(JSON.stringify([row]));
-      } catch (_) {}
-    };
-    window.addEventListener("beforeunload", flushSave);
-    return () => {
-      window.removeEventListener("beforeunload", flushSave);
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [apprenantId, exerciceKey, isBilan]);
-
-  const handleQCMChange = (qId: number, lettre: string, checked: boolean, isMultiple: boolean) => {
-    setReponses(prev => {
-      const current = (prev[qId] as string[]) || [];
-      let next: Reponses;
-      if (!isMultiple) {
-        next = { ...prev, [qId]: [lettre] };
-      } else if (checked) {
-        next = { ...prev, [qId]: [...current, lettre] };
-      } else {
-        next = { ...prev, [qId]: current.filter(l => l !== lettre) };
-      }
-      persistReponses(next);
-      return next;
-    });
-  };
-
-  const handleQRCChange = (qId: number, val: string) => {
-    setReponses(prev => {
-      const next = { ...prev, [qId]: val };
-      persistReponses(next);
-      return next;
-    });
-  };
-
-  // Robust check: question answered? Works with both number and string keys from DB
-  const isQuestionAnswered = (q: Question | null | undefined): boolean => {
-    if (!q || !q.id) return false;
-    const rep = reponses[q.id] ?? reponses[String(q.id)];
-    if (q?.type === "QCM") return Array.isArray(rep) && rep.length > 0;
-    if (q?.type === "QRC") return typeof rep === "string" && rep.trim().length > 0;
-    // Default: check if any value exists
-    return rep !== undefined && rep !== null && rep !== "";
-  };
-
-  const allAnswered = questionsSafe.every(q => isQuestionAnswered(q));
-
-  const handleTerminer = () => {
-    if (!allAnswered) {
-      toast.error("Veuillez répondre à toutes les questions avant de terminer la matière.");
-      return;
-    }
-    onTerminer(reponses);
-  };
-  const handleExpire = () => { setExpire(true); onTerminer(reponses); };
-
-  const isMultiple = (q: Question) =>
-    q?.type === "QCM" && (q.choix?.filter(c => c.correct).length || 0) > 1;
-
-  const safeQuestionsCount = questionsSafe.length || 1;
-  const safeQuestionIndex = Math.min(questionIndex, safeQuestionsCount - 1);
-  const progress = ((safeQuestionIndex + 1) / safeQuestionsCount) * 100;
-
-  return (
-    <div className="space-y-4">
-      {/* Bandeau matière FTRANSPORT */}
-      <div className="rounded-lg px-4 py-3 flex items-center justify-between flex-wrap gap-2" style={{ backgroundColor: '#0D2540' }}>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold" style={{ backgroundColor: '#00B4D8', color: '#0D2540' }}>
-            {numero}
-          </div>
-          <div>
-            <p className="text-xs font-medium" style={{ color: '#00B4D8' }}>Matière {numero}/{total}</p>
-            <h3 className="font-semibold text-base text-white">{matiere.nom}</h3>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowCalculator(v => !v)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
-              style={{ backgroundColor: showCalculator ? '#00B4D8' : 'rgba(0,180,216,0.15)', color: showCalculator ? '#0D2540' : '#00B4D8' }}
-            >
-              <Calculator className="w-4 h-4" />
-              <span>Calculatrice</span>
-            </button>
-          <span className="text-xs font-medium px-2 py-1 rounded" style={{ backgroundColor: 'rgba(0,180,216,0.15)', color: '#00B4D8' }}>
-            Questions 1 à {questionsSafe.length}
-          </span>
-          {isBilan ? (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium" style={{ backgroundColor: 'rgba(0,180,216,0.15)', color: '#00B4D8' }}>
-              <BookOpen className="w-4 h-4" />
-              <span>Sans chronomètre</span>
-            </div>
-          ) : (
-            <TimerBadge seconds={dureeSecondes} onExpire={handleExpire} />
-          )}
-        </div>
-      </div>
-
-      {/* Progression questions */}
-      <div className="space-y-1">
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>Question Q{question?.id ?? (safeQuestionIndex + 1)} ({safeQuestionIndex + 1} / {questionsSafe.length})</span>
-          <div className="flex items-center gap-3">
-            {saveStatus === "saving" && (
-              <span className="flex items-center gap-1 text-amber-600 animate-pulse">
-                <Loader2 className="w-3 h-3 animate-spin" />
-                Sauvegarde...
-              </span>
-            )}
-            {saveStatus === "saved" && (
-              <span className="flex items-center gap-1 text-green-600">
-                <CheckCircle2 className="w-3 h-3" />
-                Sauvegardé ✓
-              </span>
-            )}
-            {saveStatus === "error" && (
-              <span className="flex items-center gap-1 text-red-600">
-                <XCircle className="w-3 h-3" />
-                Erreur de sauvegarde
-              </span>
-            )}
-            <span>{Math.round(progress)}%</span>
-          </div>
-        </div>
-        <Progress value={progress} className="h-2" />
-      </div>
-
-      {/* Texte support (français) - toujours visible */}
-      {(() => {
-        // Always resolve texteSupport from source data to handle saved sessions missing it
-        const sourceExam = examenId
-          ? tousLesExamens.find((ex) => ex.id === examenId)
-          : undefined;
-        const fallbackMatiere = sourceExam
-          ? sourceExam.matieres.find((m) => m.id === matiere.id) ||
-            sourceExam.matieres.find((m) => m.nom === matiere.nom)
-          : undefined;
-        const texteSupport = matiere.texteSupport || fallbackMatiere?.texteSupport || "";
-        const texteSource = matiere.texteSource || fallbackMatiere?.texteSource || "";
-
-        if (!texteSupport) return null;
-
-        return (
-          <Card className="border border-primary/20 bg-primary/5">
-            <div className="flex items-center gap-2 px-4 py-3">
-              <FileText className="w-4 h-4 text-primary" />
-              <span className="font-semibold text-sm text-primary">📄 Texte support — Lisez attentivement avant de répondre</span>
-            </div>
-            <div className="px-4 pb-4">
-              <div className="bg-background rounded-lg border border-border p-4 max-h-[300px] overflow-y-auto">
-                {texteSupport.split("\n\n").map((p, i) => (
-                  <p key={i} className="text-sm leading-relaxed text-foreground mb-3 last:mb-0">{p}</p>
-                ))}
-              </div>
-              {texteSource && (
-                <p className="text-xs text-muted-foreground italic mt-2">Source : {texteSource}</p>
-              )}
-            </div>
-          </Card>
-        );
-      })()}
-
-      {/* Question */}
-      <Card className="border-2 border-primary/10">
-        <CardContent className="pt-5 space-y-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-start gap-3 flex-1">
-              <Badge variant={question?.type === "QRC" ? "secondary" : "outline"} className="shrink-0 mt-0.5">
-                {question?.type || "QCM"}
-              </Badge>
-              <div>
-                <p className="font-medium leading-relaxed">{question?.enonce || "Question indisponible"}</p>
-                {currentQuestionImage && (
-                  <ExamQuestionImage
-                    image={currentQuestionImage}
-                    alt={`Illustration de la question ${question.id}`}
-                    className="mt-3 max-h-40 rounded-lg border"
-                    fallbackClassName="mt-3 text-xs text-muted-foreground italic"
-                  />
-                )}
-              </div>
-            </div>
-            <Badge variant="outline" className="shrink-0 text-xs font-semibold text-primary border-primary/40">
-              {getPointsParQuestion(matiere.id, question?.type || "QCM", matiere)} pt{getPointsParQuestion(matiere.id, question?.type || "QCM", matiere) > 1 ? "s" : ""}
-            </Badge>
-          </div>
-
-          {question?.type === "QCM" && question.choix && (
-            <div className="space-y-2 ml-2">
-              <p className="text-xs text-muted-foreground italic">Vous pouvez sélectionner une ou plusieurs réponses</p>
-              {question.choix.map((choix) => {
-                if (!choix || choix === undefined) return null;
-                const rawRep = reponses[question.id] ?? reponses[String(question.id)];
-                const checked = (Array.isArray(rawRep) ? rawRep : []).includes(choix.lettre);
-                return (
-                  <div
-                    key={choix.lettre}
-                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${checked ? "border-primary bg-primary/5" : "border-muted hover:border-primary/40"}`}
-                    onClick={(e) => { e.preventDefault(); handleQCMChange(question.id, choix.lettre, !checked, true); }}
-                  >
-                    <Checkbox
-                      checked={checked}
-                      onCheckedChange={(value) => handleQCMChange(question.id, choix.lettre, Boolean(value), true)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                    <span className="font-mono text-sm font-bold w-6 shrink-0">{choix.lettre})</span>
-                    <span className="text-sm">{choix.texte}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {question?.type === "QRC" && (
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">Rédigez votre réponse ci-dessous :</p>
-              {isCalculQuestion(question) && (
-                <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800">
-                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <p className="text-xs">
-                    ⚠️ Pour obtenir tous les points, détaillez votre calcul et précisez l'unité dans votre réponse (ex: 21 000 / 3 = 7 000 € HT)
-                  </p>
-                </div>
-              )}
-              <Textarea
-                placeholder={isCalculQuestion(question) ? "Détaillez votre calcul et indiquez le résultat avec l'unité..." : "Votre réponse..."}
-                rows={4}
-                value={String((reponses[question.id] ?? reponses[String(question.id)]) || "")}
-                onChange={e => handleQRCChange(question.id, e.target.value)}
-                className="resize-none"
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Navigation */}
-      <div className="flex justify-between items-center">
-        <Button
-          variant="outline"
-          onClick={() => setQuestionIndex(i => Math.max(0, i - 1))}
-          disabled={safeQuestionIndex === 0}
-          className="gap-2"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Précédente
-        </Button>
-
-        <div className="flex gap-1 flex-wrap justify-center">
-          {questionsSafe.map((q, i) => {
-            if (!q || q === undefined) return null;
-            const isAnswered = isQuestionAnswered(q);
-            const isCurrent = i === safeQuestionIndex;
-            return (
-              <button
-                key={q.id ?? i}
-                onClick={() => setQuestionIndex(i)}
-                className={`w-7 h-7 rounded text-xs font-medium transition-colors ${
-                  isCurrent
-                    ? "bg-primary text-primary-foreground ring-2 ring-primary/50"
-                    : isAnswered
-                      ? "bg-green-100 text-green-700 border border-green-300"
-                      : "bg-red-50 text-red-500 border border-red-300 animate-pulse"
-                }`}
-                title={isAnswered ? `Q${i + 1} — répondue ✓` : `Q${i + 1} — NON répondue ✗`}
-              >
-                {i + 1}
-              </button>
-            );
-          })}
-        </div>
-
-        {safeQuestionIndex < questionsSafe.length - 1 ? (
-          <Button onClick={() => setQuestionIndex(i => i + 1)} className="gap-2">
-            Suivante
-            <ArrowRight className="w-4 h-4" />
-          </Button>
-        ) : (
-          <Button onClick={handleTerminer} disabled={!allAnswered} className="gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-50">
-            <CheckCircle2 className="w-4 h-4" />
-            Terminer la matière
-            {!allAnswered && <span className="text-xs">({questionsSafe.filter(q => isQuestionAnswered(q)).length}/{questionsSafe.length})</span>}
-          </Button>
-        )}
-      </div>
-
-      {/* Bouton interrompre l'épreuve */}
-      <div className="flex justify-start">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowInterruptConfirm(true)}
-          className="gap-2 text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
-        >
-          <Ban className="w-4 h-4" />
-          Interrompre l'épreuve
-        </Button>
-      </div>
-
-      {/* Modal confirmation interruption */}
-      {showInterruptConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <Card className="w-full max-w-md mx-4 shadow-2xl">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-destructive">
-                <AlertTriangle className="w-5 h-5" />
-                Interrompre l'épreuve
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Êtes-vous sûr de vouloir interrompre cette épreuve ? Les questions non répondues seront comptées comme <strong>fausses (0 point)</strong>. L'apprenant passera directement à la matière suivante.
-              </p>
-              <div className="text-sm font-medium bg-destructive/10 text-destructive rounded-lg px-3 py-2">
-                ⚠️ {questionsSafe.filter(q => !isQuestionAnswered(q)).length} question(s) non répondue(s) sur {questionsSafe.length}
-              </div>
-              <div className="flex gap-3 justify-end">
-                <Button variant="outline" onClick={() => setShowInterruptConfirm(false)}>
-                  Annuler
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => {
-                    setShowInterruptConfirm(false);
-                    onTerminer(reponses);
-                  }}
-                  className="gap-2"
-                >
-                  <Ban className="w-4 h-4" />
-                  Confirmer l'interruption
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Calculatrice flottante */}
-      {showCalculator && (
-        <CalculatriceExamen onClose={() => setShowCalculator(false)} />
-      )}
-    </div>
-  );
-}
-
-// ===== ÉCRAN DE TRANSITION ENTRE MATIÈRES =====
-function TransitionMatiere({
-  matiereTerminee,
-  scoreObtenu,
-  maxPoints,
-  noteSur,
-  matiereSuivante,
-  numeroSuivant,
-  total,
-  onContinuer,
-}: {
-  matiereTerminee: string;
-  scoreObtenu: number;
-  maxPoints: number;
-  noteSur: number;
-  matiereSuivante: string;
-  numeroSuivant: number;
-  total: number;
-  onContinuer: () => void;
-}) {
-  return (
-    <div className="max-w-xl mx-auto space-y-6 py-8">
-      {/* Matière terminée — sans afficher le score */}
-      <Card className="border-2 overflow-hidden" style={{ borderColor: '#00B4D8' }}>
-        <div className="px-5 py-3 flex items-center gap-3" style={{ backgroundColor: '#0D2540' }}>
-          <CheckCircle2 className="w-5 h-5" style={{ color: '#00B4D8' }} />
-          <h3 className="font-semibold text-white text-sm">Matière terminée</h3>
-        </div>
-        <CardContent className="pt-4 pb-4 space-y-3">
-          <p className="font-semibold text-lg">{matiereTerminee}</p>
-          <p className="text-sm text-muted-foreground">Épreuve complétée avec succès. Vos résultats seront affichés à la fin de toutes les épreuves.</p>
-        </CardContent>
-      </Card>
-
-      {/* Flèche de transition */}
-      <div className="flex justify-center">
-        <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: '#0D2540' }}>
-          <ArrowRight className="w-5 h-5 text-white" />
-        </div>
-      </div>
-
-      {/* Matière suivante */}
-      <Card className="border-2 border-dashed" style={{ borderColor: '#F4A227' }}>
-        <CardContent className="pt-5 pb-5 text-center space-y-3">
-          <Badge className="text-xs font-semibold" style={{ backgroundColor: '#0D2540', color: '#00B4D8' }}>
-            Matière {numeroSuivant}/{total}
-          </Badge>
-          <h3 className="text-xl font-bold" style={{ color: '#0D2540' }}>{matiereSuivante}</h3>
-          <div className="rounded-lg px-4 py-3 mb-1" style={{ backgroundColor: '#FFF3E0', border: '2px solid #F4A227' }}>
-            <p className="text-base font-bold" style={{ color: '#D84315' }}>
-              ⚠️ VOUS DEVEZ RÉPONDRE À TOUTES LES QUESTIONS AVANT DE VALIDER
-            </p>
-          </div>
-          <p className="text-sm text-muted-foreground">Préparez-vous, le chronomètre démarrera dès que vous cliquerez.</p>
-          <Button
-            className="gap-2 text-base px-8 py-5 font-semibold text-white"
-            style={{ backgroundColor: '#F4A227', borderColor: '#F4A227' }}
-            onClick={onContinuer}
-          >
-            <ArrowRight className="w-5 h-5" />
-            Commencer {matiereSuivante.split(" - ")[0]}
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-
-function EcranResultats({
-  examen,
-  resultats,
-  onRecommencer,
-  onRetour,
-  onRefaireFausses,
-  apprenantId,
-  userId,
-  isViewingSaved,
-  isAdmin,
-  canRetry,
-  isPresentiel,
-}: {
-  examen: ExamenBlanc;
-  resultats: ResultatMatiere[];
-  onRecommencer: () => void;
-  onRetour: () => void;
-  onRefaireFausses: () => void;
-  apprenantId?: string | null;
-  userId?: string | null;
-  isViewingSaved?: boolean;
-  isAdmin?: boolean;
-  canRetry?: boolean;
-  isPresentiel?: boolean;
-}) {
-  // Ensure resultats is always a proper array (DB data can be malformed)
-  resultats = safeArray<ResultatMatiere>(resultats);
-  // Check if corrections are already cached in the resultats (from DB)
-  const hasPreloadedCorrections = resultats.some(
-    (r) => r.correctionsIA && Object.values(r.correctionsIA).some((value) => value && value !== "loading")
-  );
-
-  const [correctionsIA, setCorrectionsIA] = useState<{ [matiereIdx: number]: CorrectionCache }>(() => {
-    if (!hasPreloadedCorrections) return {};
-    // Initialize from preloaded data
-    const initial: { [matiereIdx: number]: CorrectionCache } = {};
-    resultats.forEach((r, mi) => {
-      if (r.correctionsIA && Object.keys(r.correctionsIA).length > 0) {
-        initial[mi] = r.correctionsIA;
-      }
-    });
-    return initial;
-  });
-  const [correctionEnCours, setCorrectionEnCours] = useState(false);
-  const [expandedMatieres, setExpandedMatieres] = useState<{ [mi: number]: boolean }>({});
-  const [editingQrc, setEditingQrc] = useState<string | null>(null); // "mi-qid" key for admin editing
-  const [editingPoints, setEditingPoints] = useState<number>(0);
-  const [revisionDejaFaite, setRevisionDejaFaite] = useState(false);
-
-  // Check if revision has already been done for this exam
-  useEffect(() => {
-    if (!apprenantId || !examen?.id) return;
-    const checkRevision = async () => {
-      const { data, error } = await supabase
-        .from("apprenant_quiz_results")
-        .select("id")
-        .eq("apprenant_id", apprenantId)
-        .eq("quiz_type", "revision_fausses")
-        .eq("quiz_id", examen.id)
-        .limit(1);
-      if (error) {
-        console.error("Erreur vérification révision:", error.message);
-      }
-      if (data && data.length > 0) {
-        setRevisionDejaFaite(true);
-      }
-    };
-    checkRevision();
-  }, [apprenantId, examen?.id]);
-
-  const toggleMatiere = (mi: number) => {
-    setExpandedMatieres(prev => ({ ...prev, [mi]: !prev[mi] }));
-  };
-
-  // Admin manual QRC override
-  const handleAdminOverrideQrc = (mi: number, questionId: number, newPoints: number, pts: number) => {
-    const clamped = clampToQuestionMax(newPoints, pts);
-    const correction: CorrectionQRC = {
-      estCorrect: clamped >= pts,
-      pointsObtenus: clamped,
-      nombrefautes: 0,
-      explication: `Correction manuelle par l'administrateur : ${clamped}/${pts} pts`,
-    };
-    setCorrectionsIA(prev => ({
-      ...prev,
-      [mi]: { ...(prev[mi] || {}), [questionId]: correction },
-    }));
-    setEditingQrc(null);
-    toast.success(`QRC corrigée : ${clamped}/${pts} pts`);
-  };
-
-  // Save AI corrections to DB once complete
-  const saveCorrectionsToDb = async (finalCorrections: { [matiereIdx: number]: CorrectionCache }) => {
-    if (!apprenantId || !userId) return;
-    const quizType = examen.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
-    
-    for (let mi = 0; mi < examen.matieres.length; mi++) {
-      const matiere = examen.matieres[mi];
-      if (!matiere) continue;
-      const cache = finalCorrections[mi];
-      if (!cache) continue;
-      
-      // Only save if all QRC corrections are done (no "loading")
-      const hasLoading = Object.values(cache).some(v => v === "loading");
-      if (hasLoading) continue;
-
-      // Serialize corrections (convert "error" to a proper object)
-      const serializedCache: Record<string, any> = {};
-      for (const [qId, val] of Object.entries(cache)) {
-        if (val === "error") {
-          serializedCache[qId] = { estCorrect: false, pointsObtenus: 0, nombrefautes: 0, explication: "Erreur de correction" };
-        } else if (val !== "loading") {
-          serializedCache[qId] = val;
-        }
-      }
-
-      // Recalculate score with IA corrections
-      const resultat = resultats[mi];
-      if (!resultat) continue;
-      const questionsSafe = (matiere.questions || []).filter(q => q && q?.type !== undefined);
-      let noteRecalculee = 0;
-      questionsSafe.forEach(q => {
-        if (!q) return;
-        if (q?.type === "QCM" && q.choix) {
-          const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
-          const donnees = safeArray<string>(resultat.reponses?.[q.id]).sort();
-          if (JSON.stringify(correctes) === JSON.stringify(donnees)) {
-            noteRecalculee += getPointsParQuestion(matiere.id, q?.type || "QCM", matiere);
-          }
-        } else if (q?.type === "QRC") {
-          const correction = cache[q.id];
-          if (correction && correction !== "loading" && correction !== "error") {
-            noteRecalculee += clampToQuestionMax(
-              correction.pointsObtenus,
-              getPointsParQuestion(matiere.id, q?.type || "QRC", matiere)
-            );
-          }
-        }
-      });
-
-      const safeMax = Math.max(toFiniteNumber(resultat.maxPoints, 0), 0);
-      const noteRecalculeeSecurisee = safeMax > 0 ? clamp(noteRecalculee, 0, safeMax) : Math.max(noteRecalculee, 0);
-      const noteSur20 = normalizeNoteSur20(noteRecalculeeSecurisee, safeMax);
-
-      // Update the existing row with corrections
-      await supabase
-        .from("apprenant_quiz_results" as any)
-        .update({
-          score_obtenu: noteRecalculeeSecurisee,
-          note_sur_20: noteSur20,
-          reussi: computeAdmisForMatiere(
-            noteRecalculeeSecurisee,
-            safeMax,
-            resultat.noteEliminatoire,
-            resultat.noteSur,
-            Boolean(resultat.admis)
-          ),
-          details: {
-            questions: (resultat as any).details?.questions || [],
-            reponses: resultat.reponses,
-            correctionsIA: serializedCache,
-          },
-        } as any)
-        .eq("apprenant_id", apprenantId)
-        .eq("quiz_id", examen.id)
-        .eq("quiz_type", quizType)
-        .eq("matiere_id", matiere.id);
-    }
-  };
-
-  // Mode hybride : correction IA en arrière-plan, ne peut qu'AMÉLIORER le score déterministe
-  useEffect(() => {
-    // Skip AI correction if viewing saved results or already has corrections
-    if (!ENABLE_AI_QRC_CORRECTION || hasPreloadedCorrections || isViewingSaved) return;
-
-    let cancelled = false;
-    const corrigerTout = async () => {
-      // Collect QRC questions that got less than max points with deterministic
-      const qrcToCorrect: { mi: number; q: Question; rep: string; pts: number; deterministicScore: number }[] = [];
-      examen.matieres.forEach((matiere, mi) => {
-        if (!matiere) return;
-        const resultat = resultats[mi];
-        if (!resultat) return;
-        const questionsSafe = (matiere.questions || []).filter(q => q && q?.type !== undefined);
-        questionsSafe.forEach(q => {
-          if (!q || q?.type !== "QRC") return;
-          const rep = safeStr(resultat.reponses?.[q.id]);
-          if (!rep.trim()) return; // skip empty answers
-          const pts = getPointsParQuestion(matiere.id, q?.type || "QRC", matiere);
-          const deterResult = evaluateQrcDeterministic(q, rep, pts);
-          // Only call AI if deterministic didn't give full points
-          if (deterResult.pointsObtenus < pts) {
-            qrcToCorrect.push({ mi, q, rep, pts, deterministicScore: deterResult.pointsObtenus });
-          }
-        });
-      });
-
-      if (qrcToCorrect.length === 0) return;
-
-      // Don't block the UI - show a subtle indicator
-      setCorrectionEnCours(true);
-
-      const finalCorrections: { [matiereIdx: number]: CorrectionCache } = {};
-
-      try {
-        for (const { mi, q, rep, pts, deterministicScore } of qrcToCorrect) {
-          if (cancelled) return;
-          const matiere = examen.matieres[mi];
-          if (!matiere) continue;
-
-          try {
-            const isCalc = isCalculQuestion(q);
-            const invokePromise = supabase.functions.invoke("corriger-qrc", {
-              body: {
-                question: q.enonce,
-                reponseEtudiant: rep,
-                reponsesAttendues: q.reponses_possibles || [q.reponseQRC || ""],
-                matiereId: matiere.id,
-                pointsQuestion: pts,
-                isCalcul: isCalc,
-                reponseQRC: q.reponseQRC || "",
-              },
-            });
-
-            const timeoutPromise = new Promise<never>((_, reject) => {
-              window.setTimeout(() => reject(new Error("IA timeout")), 12000);
-            });
-
-            const { data, error } = await Promise.race([invokePromise, timeoutPromise]);
-
-            if (cancelled) return;
-
-            if (error || !data || (data as any).error) {
-              // AI failed → keep deterministic score, no change
-              continue;
-            }
-
-            const safeData = data as CorrectionQRC;
-            let aiScore = clampToQuestionMax(safeData.pointsObtenus, pts);
-
-            // HYBRID RULE: AI can only UPGRADE the score, never downgrade
-            if (AI_ONLY_UPGRADES && aiScore <= deterministicScore) {
-              // AI didn't improve → keep deterministic
-              continue;
-            }
-
-            const clamped: CorrectionQRC = {
-              ...safeData,
-              pointsObtenus: aiScore,
-            };
-
-            if (!finalCorrections[mi]) finalCorrections[mi] = {};
-            finalCorrections[mi][q.id] = clamped;
-
-            if (!cancelled) {
-              setCorrectionsIA(prev => ({
-                ...prev,
-                [mi]: { ...(prev[mi] || {}), [q.id]: clamped },
-              }));
-            }
-          } catch {
-            // Timeout or network error → keep deterministic, no blocking
-            continue;
-          }
-
-          await new Promise(r => setTimeout(r, 300));
-        }
-
-        if (!cancelled && Object.keys(finalCorrections).length > 0) {
-          saveCorrectionsToDb(finalCorrections);
-        }
-      } finally {
-        if (!cancelled) setCorrectionEnCours(false);
-      }
-    };
-
-    corrigerTout();
-    return () => { cancelled = true; };
-  }, [examen, resultats, hasPreloadedCorrections, isViewingSaved]);
-
-  // Résultats sécurisés + score matière recalculé depuis le détail affiché
-  // pour garder la note principale strictement alignée avec les sous-notes.
-  const resultatsAvecIA = resultats.map((r, mi) => {
-    const safeMaxPoints = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
-    const matiere = examen.matieres[mi];
-    const questionsSafe = matiere ? (matiere.questions || []).filter((q): q is Question => q != null && q?.type !== undefined) : [];
-    const cacheMatiere = correctionsIA[mi] || {};
-
-    const recalculatedFromDetails = questionsSafe.reduce((acc, q) => {
-      const pts = getPointsParQuestion(matiere?.id ?? "", q?.type || "QRC", matiere);
-      const rep = r.reponses?.[q.id];
-
-      if (q?.type === "QCM" && q.choix) {
-        const correctes = safeArray<string>(q.choix.filter(c => c.correct).map(c => c.lettre)).sort();
-        const donnees = safeArray<string>(rep).sort();
-        return acc + (JSON.stringify(correctes) === JSON.stringify(donnees) ? pts : 0);
-      }
-
-      if (q?.type === "QRC") {
-        const corrIA = cacheMatiere[q.id];
-        const fallback = evaluateQrcDeterministic(q, rep, pts);
-        if (corrIA && corrIA !== "loading" && corrIA !== "error") {
-          return acc + clampToQuestionMax(corrIA.pointsObtenus, pts);
-        }
-        return acc + clampToQuestionMax(fallback.pointsObtenus, pts);
-      }
-
-      return acc;
-    }, 0);
-
-    const baseNote = questionsSafe.length > 0 ? recalculatedFromDetails : toFiniteNumber(r.noteObtenue, 0);
-    const safeNote = safeMaxPoints > 0
-      ? clamp(baseNote, 0, safeMaxPoints)
-      : Math.max(baseNote, 0);
-
-    return {
-      ...r,
-      noteObtenue: Number(safeNote.toFixed(1)),
-      admis: computeAdmisForMatiere(safeNote, safeMaxPoints, r.noteEliminatoire, r.noteSur, Boolean(r.admis)),
-    };
-  });
-
-  // Auto-save recalculated scores to DB when viewing saved results or admin overrides
-  useEffect(() => {
-    if (!isAdmin || !apprenantId || !examen) return;
-    const quizType = examen.id?.startsWith("taxi") ? "examen_blanc_taxi" : "examen_blanc";
-    resultatsAvecIA.forEach(async (r, mi) => {
-      const matiere = examen.matieres[mi];
-      if (!matiere) return;
-      const safeMax = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
-      const noteSur20 = normalizeNoteSur20(r.noteObtenue, safeMax);
-      // Also save the correctionsIA in the details column for admin overrides
-      const cacheMatiere = correctionsIA[mi] || {};
-      const serializedCache: Record<string, CorrectionQRC> = {};
-      for (const [k, v] of Object.entries(cacheMatiere)) {
-        if (v && v !== "loading" && v !== "error") serializedCache[k] = v;
-      }
-      await supabase
-        .from("apprenant_quiz_results" as any)
-        .update({
-          score_obtenu: r.noteObtenue,
-          note_sur_20: noteSur20,
-          reussi: r.admis,
-          details: {
-            questions: (resultats[mi] as any)?.details?.questions || [],
-            reponses: r.reponses,
-            correctionsIA: Object.keys(serializedCache).length > 0 ? serializedCache : undefined,
-          },
-        } as any)
-        .eq("apprenant_id", apprenantId)
-        .eq("quiz_id", examen.id)
-        .eq("quiz_type", quizType)
-        .eq("matiere_id", matiere.id);
-    });
-  }, [isViewingSaved, isAdmin, resultatsAvecIA.map(r => r.noteObtenue).join(",")]);
-
-  const totalCoef = resultatsAvecIA.reduce((acc, r) => acc + (r.coefficient || 1), 0) || 1;
-  const noteGlobaleBrute = resultatsAvecIA.reduce((acc, r) => {
-    return acc + normalizeNoteSur20(r.noteObtenue, r.maxPoints) * (r.coefficient || 1);
-  }, 0) / totalCoef;
-  const noteGlobale = clamp(toFiniteNumber(noteGlobaleBrute, 0), 0, 20);
-  const hasNoteEliminatoire = resultatsAvecIA.some(r => !r.admis);
-  const moyenneSuffisante = noteGlobale >= 10;
-  const admisGlobal = moyenneSuffisante && !hasNoteEliminatoire;
-
-  // Matières avec note éliminatoire
-  const matieresEliminatoires = resultatsAvecIA
-    .filter(r => !r.admis)
-    .map(r => r.nomMatiere.split(" - ")[0]);
-
-  // Detect if QRC corrections are pending (for présentiel: formateur must validate)
-  const hasQrcPendingValidation = isPresentiel && !isAdmin && (() => {
-    for (let mi = 0; mi < examen.matieres.length; mi++) {
-      const matiere = examen.matieres[mi];
-      if (!matiere) continue;
-      const questionsSafe = (matiere.questions || []).filter((q): q is Question => q != null && q?.type !== undefined);
-      const qrcQuestions = questionsSafe.filter(q => q?.type === "QRC");
-      if (qrcQuestions.length === 0) continue;
-      const cacheMatiere = correctionsIA[mi] || {};
-      for (const q of qrcQuestions) {
-        const corr = cacheMatiere[q.id];
-        // A QRC is considered validated by formateur if it has a manual correction
-        if (!corr || corr === "loading" || corr === "error") return true;
-        const corrObj = corr as CorrectionQRC;
-        if (!corrObj.explication?.includes("Correction manuelle")) return true;
-      }
-    }
-    return false;
-  })();
-
-  return (
-    <div className="space-y-6">
-      {/* Bandeau correction IA en cours */}
-      {correctionEnCours && (
-        <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-sm">
-          <Bot className="w-4 h-4 shrink-0" />
-          <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-          <span>L'IA affine vos réponses ouvertes (QRC)... Les notes peuvent légèrement s'améliorer.</span>
-        </div>
-      )}
-
-      {/* Header résultats FTRANSPORT */}
-      {hasQrcPendingValidation ? (
-        <div className="rounded-xl overflow-hidden border-2 border-amber-400">
-          <div className="p-8 text-center text-white" style={{ backgroundColor: '#0D2540' }}>
-            <Clock className="w-14 h-14 mx-auto mb-3 text-amber-400" />
-            <h3 className="text-3xl font-black mb-2 text-amber-400">
-              En attente de validation du formateur
-            </h3>
-            <p className="text-lg text-gray-300 mt-2">
-              Vos réponses aux questions ouvertes (QRC) doivent être corrigées par votre formateur avant d'obtenir votre résultat final.
-            </p>
-            <p className="text-sm text-gray-400 mt-3">{examen.titre}</p>
-          </div>
-        </div>
-      ) : (
-      <div className="rounded-xl overflow-hidden border-2" style={{ borderColor: admisGlobal ? '#00B4D8' : '#ef4444' }}>
-        <div className="p-6 text-center text-white" style={{ backgroundColor: '#0D2540' }}>
-          {admisGlobal ? (
-            <Trophy className="w-12 h-12 mx-auto mb-2" style={{ color: '#F4A227' }} />
-          ) : (
-            <XCircle className="w-12 h-12 text-red-400 mx-auto mb-2" />
-          )}
-          <h3 className="text-2xl font-bold mb-1">
-            {admisGlobal
-              ? "Examen blanc réussi ✅"
-              : "Examen blanc échoué ❌"
-            }
-          </h3>
-          <p className="text-4xl font-black mt-2" style={{ color: '#00B4D8' }}>
-            {isFinite(noteGlobale) ? noteGlobale.toFixed(1) : "0.0"} / 20
-            {correctionEnCours && <Loader2 className="w-5 h-5 animate-spin inline ml-2 text-blue-300" />}
-          </p>
-          <p className="text-sm text-gray-300 mt-1">
-            Moyenne pondérée par coefficients sur {resultatsAvecIA.length} matières
-          </p>
-          {!admisGlobal && (
-            <div className="mt-3 space-y-1">
-              {!moyenneSuffisante && (
-                <p className="text-sm text-red-300 font-medium">
-                  <AlertTriangle className="w-4 h-4 inline mr-1" />
-                  Moyenne inférieure à 10/20
-                </p>
-              )}
-              {hasNoteEliminatoire && (
-                <p className="text-sm text-red-300 font-medium">
-                  <AlertTriangle className="w-4 h-4 inline mr-1" />
-                  Note éliminatoire en : {matieresEliminatoires.join(", ")}
-                </p>
-              )}
-            </div>
-          )}
-          <p className="text-sm text-gray-400 mt-1">{examen.titre}</p>
-        </div>
-      </div>
-      )}
-
-      {/* Détail par matière — sous-totaux groupés */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <div className="w-1 h-6 rounded-full" style={{ backgroundColor: '#00B4D8' }} />
-          <h4 className="font-semibold text-lg" style={{ color: '#0D2540' }}>Résultats par matière</h4>
-        </div>
-        {resultatsAvecIA.map((r, mi) => {
-          const safeMaxPoints = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
-          const noteObtenueSafe = safeMaxPoints > 0
-            ? clamp(toFiniteNumber(r.noteObtenue, 0), 0, safeMaxPoints)
-            : Math.max(toFiniteNumber(r.noteObtenue, 0), 0);
-          const noteSur20 = normalizeNoteSur20(noteObtenueSafe, safeMaxPoints);
-          const matiereEnCours = Object.values(correctionsIA[mi] || {}).some(v => v === "loading");
-          const pctScore = safeMaxPoints > 0 ? Math.min((noteObtenueSafe / safeMaxPoints) * 100, 100) : 0;
-          const matiere = examen.matieres[mi];
-          const cacheMatiere = correctionsIA[mi] || {};
-          const questionsSafe = matiere ? (matiere.questions || []).filter(q => q && q?.type !== undefined) : [];
-          const isExpanded = !!expandedMatieres[mi];
-          return (
-            <Card key={r.matiereId} className="border-l-4 overflow-hidden" style={{ borderLeftColor: r.admis ? '#00B4D8' : '#ef4444' }}>
-              <div className="px-4 py-2 flex items-center gap-2" style={{ backgroundColor: '#0D2540' }}>
-                <span className="text-xs font-semibold text-white">Matière {mi + 1}/{resultatsAvecIA.length}</span>
-                <span className="text-xs font-medium" style={{ color: '#00B4D8' }}>— Coeff. {r.coefficient || 1}</span>
-                {!r.admis && <span className="text-xs font-semibold text-red-400 ml-auto">⚠ Note éliminatoire</span>}
-                {matiereEnCours && <span className="text-xs flex items-center gap-1 ml-auto" style={{ color: '#00B4D8' }}><Loader2 className="w-3 h-3 animate-spin" />IA en cours</span>}
-              </div>
-              <div className="cursor-pointer" onClick={() => toggleMatiere(mi)}>
-                <CardContent className="py-3 px-4">
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm" style={{ color: '#0D2540' }}>{r.nomMatiere}</p>
-                      <div className="flex items-center gap-3 mt-1 flex-wrap">
-                        <span className="text-xs text-muted-foreground">Barème : {r.maxPoints} pts</span>
-                        <span className="text-xs text-muted-foreground">Éliminatoire sous {r.noteEliminatoire}/{r.noteSur || 20}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="text-right">
-                        <span className="text-lg font-bold" style={{ color: r.admis ? '#00B4D8' : '#ef4444' }}>
-                          {noteObtenueSafe} / {safeMaxPoints} pts
-                        </span>
-                        <p className="text-xs text-muted-foreground">= {noteSur20.toFixed(1)} / 20</p>
-                      </div>
-                      {r.admis ? (
-                        <CheckCircle2 className="w-5 h-5" style={{ color: '#00B4D8' }} />
-                      ) : (
-                        <XCircle className="w-5 h-5 text-red-500" />
-                      )}
-                      <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-90" : ""}`} />
-                    </div>
-                  </div>
-                  <Progress
-                    value={pctScore}
-                    className={`h-2 mt-2 ${r.admis ? "[&>*]:bg-[#00B4D8]" : "[&>*]:bg-red-500"}`}
-                  />
-                  <p className="text-xs text-muted-foreground mt-2 text-center">
-                    {isExpanded ? "Cliquer pour masquer la correction" : "Cliquer pour voir la correction détaillée"}
-                  </p>
-                </CardContent>
-              </div>
-
-              {/* Correction détaillée inline */}
-              {isExpanded && (
-                <CardContent className="pt-0 px-4 pb-4 space-y-3 border-t">
-                  {questionsSafe.map((q, qIdx) => {
-                    if (!q || !q?.type) return null;
-                    const rep = r.reponses?.[q.id];
-                    const pts = getPointsParQuestion(matiere?.id ?? "", q?.type, matiere);
-                    let isCorrect = false;
-                    let pointsObtenus = 0;
-                    let correctionDetail: string | null = null;
-                    let isLoadingIA = false;
-
-                    if (q?.type === "QCM" && q.choix) {
-                      const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
-                       const donnees = safeArray<string>(rep).sort();
-                       isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
-                       pointsObtenus = isCorrect ? pts : 0;
-                    } else if (q?.type === "QRC") {
-                      const corrIA = cacheMatiere[q.id];
-                      const fallback = evaluateQrcDeterministic(q, rep, pts);
-                      if (corrIA === "loading") {
-                        isLoadingIA = true;
-                      } else if (corrIA && corrIA !== "error") {
-                        pointsObtenus = clampToQuestionMax(corrIA.pointsObtenus, pts);
-                        isCorrect = Boolean(corrIA.estCorrect) && pointsObtenus >= pts;
-                        correctionDetail = corrIA.explication;
-                      } else {
-                        isCorrect = fallback.estCorrect;
-                        pointsObtenus = fallback.pointsObtenus;
-                        correctionDetail = corrIA === "error"
-                          ? `Correction IA indisponible. ${fallback.explication}`
-                          : fallback.explication;
-                      }
-                    }
-
-                    return (
-                      <div key={q.id} className={`p-3 rounded-lg border ${isLoadingIA ? "bg-blue-50 border-blue-200" : isCorrect ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
-                        <div className="flex items-start gap-2">
-                          {isLoadingIA ? (
-                            <Loader2 className="w-4 h-4 text-blue-500 shrink-0 mt-0.5 animate-spin" />
-                          ) : isCorrect ? (
-                            <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
-                          ) : (
-                            <XCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2 mb-1">
-                              <div className="flex items-center gap-1.5 flex-1">
-                                <Badge variant={q?.type === "QRC" ? "secondary" : "outline"} className="text-xs shrink-0">{q?.type}</Badge>
-                                <p className="text-sm font-bold">Q{qIdx + 1}. {q.enonce}</p>
-                                {q?.image && (
-                                  <ExamQuestionImage
-                                    image={q.image}
-                                    alt={`Illustration de la question Q${qIdx + 1}`}
-                                    className="mt-1 max-h-24 rounded border"
-                                    fallbackClassName="mt-1 text-xs text-muted-foreground italic"
-                                  />
-                                )}
-                              </div>
-                              <div className="flex items-center gap-1 shrink-0">
-                                {q?.type === "QRC" && <Bot className="w-3 h-3 text-blue-500" aria-label="Corrigé par IA" />}
-                                {isLoadingIA ? (
-                                  <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-blue-200 text-blue-800">? / {pts} pt{pts > 1 ? "s" : ""}</span>
-                                ) : (
-                                  <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${isCorrect ? "bg-green-200 text-green-800" : pointsObtenus > 0 ? "bg-amber-200 text-amber-800" : "bg-red-200 text-red-800"}`}>+{pointsObtenus} / {pts} pt{pts > 1 ? "s" : ""}</span>
-                                )}
-                              </div>
-                            </div>
-
-                            {q?.type === "QCM" && (
-                              <div className="mt-2 space-y-1.5">
-                                {(q.choix || []).map(c => {
-                                  const isSelected = Array.isArray(rep) && rep.includes(c.lettre);
-                                  const isCorrectChoice = c.correct === true;
-                                  let classes = "text-sm flex items-center gap-2 px-3 py-2 rounded-lg border-2 ";
-                                  if (isCorrectChoice) {
-                                    classes += "bg-green-100 border-green-500 text-green-900 font-semibold";
-                                  } else if (isSelected && !isCorrectChoice) {
-                                    classes += "bg-red-50 border-red-400 text-red-800";
-                                  } else {
-                                    classes += "border-muted bg-muted/30 text-muted-foreground";
-                                  }
-                                    return (
-                                      <div key={c.lettre}>
-                                        <div className={classes}>
-                                          <span className="font-bold shrink-0">{c.lettre})</span>
-                                          <span className="flex-1">{c.texte}</span>
-                                          {isCorrectChoice && <span className="text-green-700 font-bold text-xs bg-green-200 px-2 py-0.5 rounded-full shrink-0">✓ Bonne réponse</span>}
-                                          {isSelected && !isCorrectChoice && <span className="text-red-600 font-bold text-xs bg-red-200 px-2 py-0.5 rounded-full shrink-0">✗ Votre choix</span>}
-                                          {isSelected && isCorrectChoice && <span className="text-green-700 font-bold text-xs bg-green-300 px-2 py-0.5 rounded-full shrink-0">✓ Votre choix</span>}
-                                        </div>
-                                        {c.explication && (isSelected || isCorrectChoice) && (
-                                          <p className="text-xs text-muted-foreground italic ml-8 mt-1">💡 {c.explication}</p>
-                                        )}
-                                      </div>
-                                    );
-                                })}
-                                <div className="mt-2 flex flex-wrap gap-3 text-sm">
-                                  <span className="font-medium text-muted-foreground">Votre réponse : <strong className={isCorrect ? "text-green-700" : "text-red-600"}>{Array.isArray(rep) && rep.length > 0 ? rep.join(", ") : "Aucune"}</strong></span>
-                                  <span className="font-medium text-green-700">Bonne réponse : <strong>{(q.choix || []).filter(c => c.correct).map(c => c.lettre).join(", ") || "—"}</strong></span>
-                                </div>
-                              </div>
-                            )}
-
-                            {q?.type === "QRC" && (
-                              <div className="mt-1 space-y-1">
-                                {rep != null && <p className="text-xs italic text-muted-foreground">Votre réponse : {String(rep) || "Aucune"}</p>}
-                                {isCalculQuestion(q) && !isLoadingIA && pointsObtenus > 0 && !isCorrect && (
-                                  <div className="flex items-start gap-1 text-xs text-amber-700 bg-amber-50 rounded p-1.5 border border-amber-200">
-                                    <AlertTriangle className="w-3 h-3 shrink-0 mt-0.5" />
-                                    <span>Vous avez trouvé le bon résultat mais le détail du calcul est manquant → {pointsObtenus}/{pts} pts</span>
-                                  </div>
-                                )}
-                                {correctionDetail && (
-                                  <div className="flex items-start gap-1 text-xs text-blue-700 bg-blue-50 rounded p-1.5">
-                                    <Bot className="w-3 h-3 shrink-0 mt-0.5" /><span>{correctionDetail}</span>
-                                  </div>
-                                )}
-                                <p className="text-xs text-green-700 font-medium">Réponse attendue : {q.reponseQRC || (q.reponses_possibles || []).join(" / ") || "—"}</p>
-                                {/* Admin manual QRC override */}
-                                {isAdmin && !isLoadingIA && (
-                                  <div className="mt-2">
-                                    {editingQrc === `${mi}-${q.id}` ? (
-                                      <div className="flex items-center gap-2 p-2 bg-amber-50 border border-amber-300 rounded-lg">
-                                        <Pencil className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                                        <span className="text-xs font-medium text-amber-800">Points :</span>
-                                        <input
-                                          type="number"
-                                          min={0}
-                                          max={pts}
-                                          step={0.5}
-                                          value={editingPoints}
-                                          onChange={(e) => setEditingPoints(Number(e.target.value))}
-                                          className="w-16 px-2 py-1 text-xs border rounded text-center font-bold"
-                                          autoFocus
-                                          onKeyDown={(e) => {
-                                            if (e.key === "Enter") handleAdminOverrideQrc(mi, q.id, editingPoints, pts);
-                                            if (e.key === "Escape") setEditingQrc(null);
-                                          }}
-                                        />
-                                        <span className="text-xs text-amber-700">/ {pts}</span>
-                                        <Button
-                                          size="sm"
-                                          variant="default"
-                                          className="h-6 px-2 text-xs"
-                                          onClick={() => handleAdminOverrideQrc(mi, q.id, editingPoints, pts)}
-                                        >
-                                          ✓ Valider
-                                        </Button>
-                                        <Button
-                                          size="sm"
-                                          variant="ghost"
-                                          className="h-6 px-2 text-xs"
-                                          onClick={() => setEditingQrc(null)}
-                                        >
-                                          Annuler
-                                        </Button>
-                                      </div>
-                                    ) : (
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="h-6 px-2 text-xs gap-1 border-amber-300 text-amber-700 hover:bg-amber-50"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setEditingQrc(`${mi}-${q.id}`);
-                                          setEditingPoints(pointsObtenus);
-                                        }}
-                                      >
-                                        <Pencil className="w-3 h-3" />
-                                        Corriger manuellement
-                                      </Button>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </CardContent>
-              )}
-            </Card>
-          );
-        })}
-
-        {/* Score global résumé */}
-        {hasQrcPendingValidation ? (
-          <Card className="border-2 border-amber-400">
-            <CardContent className="py-6 px-5 text-center">
-              <Clock className="w-8 h-8 mx-auto mb-2 text-amber-500" />
-              <p className="text-xl font-black text-amber-600">En attente de validation du formateur</p>
-              <p className="text-sm text-muted-foreground mt-1">Le résultat final sera disponible après correction des QRC par votre formateur.</p>
-            </CardContent>
-          </Card>
-        ) : (
-        <Card className="border-2" style={{ borderColor: '#F4A227' }}>
-          <CardContent className="py-4 px-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold" style={{ color: '#0D2540' }}>Score global pondéré</p>
-                <p className="text-xs text-muted-foreground">{resultatsAvecIA.length} matières • Coefficients appliqués</p>
-              </div>
-              <div className="text-right">
-                <p className="text-2xl font-black" style={{ color: admisGlobal ? '#00B4D8' : '#ef4444' }}>
-                  {isFinite(noteGlobale) ? noteGlobale.toFixed(1) : "0.0"} / 20
-                </p>
-                <p className="text-xs font-semibold" style={{ color: admisGlobal ? '#00B4D8' : '#ef4444' }}>
-                  {admisGlobal ? "ADMIS" : "NON ADMIS"}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        )}
-      </div>
-
-      {/* Bouton refaire les fausses — EN HAUT bien visible */}
-      {!hasQrcPendingValidation && (() => {
-        let nbFaussesTop = 0;
-        resultatsAvecIA.forEach((r, mi) => {
-          if (r.matiereId === "francais" || r.matiereId === "bilan_francais") return;
-          const matiere = examen.matieres[mi];
-          if (!matiere) return;
-          const qSafe = (matiere.questions || []).filter((q): q is Question => !!q && q?.type !== undefined);
-          qSafe.forEach(q => {
-            const rep = r.reponses?.[q.id];
-            if (q?.type === "QCM" && q.choix) {
-              const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
-               const donnees = safeArray<string>(rep).sort();
-               if (JSON.stringify(correctes) !== JSON.stringify(donnees)) nbFaussesTop++;
-            } else if (q?.type === "QRC") {
-              const corrIA = correctionsIA[mi]?.[q.id];
-              if (corrIA && corrIA !== "loading" && corrIA !== "error") {
-                if (!corrIA.estCorrect) nbFaussesTop++;
-              } else {
-                const fallback = evaluateQrcDeterministic(q, rep, getPointsParQuestion(matiere.id, q?.type || "QRC", matiere));
-                if (!fallback.estCorrect) nbFaussesTop++;
-              }
-            }
-          });
-        });
-        if (nbFaussesTop === 0) return null;
-        return (
-          <Button
-            onClick={onRefaireFausses}
-            className="w-full gap-2 text-lg py-6 font-bold shadow-lg"
-            style={{ backgroundColor: '#F4A227', borderColor: '#F4A227', color: 'white', fontSize: '18px' }}
-          >
-            🎯 Refaire uniquement les questions fausses ({nbFaussesTop} questions)
-          </Button>
-        );
-      })()}
-
-      {revisionDejaFaite && (
-        <div className="w-full text-center py-3 px-4 rounded-lg bg-green-50 border border-green-200">
-          <p className="text-sm font-semibold text-green-700 flex items-center justify-center gap-2">
-            <CheckCircle2 className="w-4 h-4" />
-            Questions fausses déjà effectuées ✅
-          </p>
-        </div>
-      )}
-
-
-
-      {/* Boutons */}
-      <div className="flex gap-3">
-        <Button variant="outline" onClick={onRetour} className={`${canRetry ? "flex-1" : "w-full"} gap-2`}>
-          <ArrowLeft className="w-4 h-4" />
-          Retour aux examens
-        </Button>
-        {canRetry && (
-          <Button onClick={onRecommencer} className="flex-1 gap-2">
-            <RotateCcw className="w-4 h-4" />
-            Recommencer
-          </Button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ===== RÉVISION DES QUESTIONS FAUSSES =====
-function RevisionFausses({
-  wrongQuestions,
-  onTerminer,
-  apprenantId,
-  userId,
-  examenId,
-}: {
-  wrongQuestions: { matiere: Matiere; question: Question; matiereNom: string }[];
-  onTerminer: () => void;
-  apprenantId?: string | null;
-  userId?: string | null;
-  examenId?: string | null;
-}) {
-  const [reponses, setReponses] = useState<Reponses>({});
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [showCorrection, setShowCorrection] = useState(false);
-  const [correctedCount, setCorrectedCount] = useState(0);
-  const [loaded, setLoaded] = useState(false);
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const exerciceId = `revision_fausses_${examenId || "unknown"}`;
-
-  // ---- Load saved progress on mount ----
-  useEffect(() => {
-    if (!apprenantId || !userId || !examenId || wrongQuestions.length === 0) {
-      setLoaded(true);
-      return;
-    }
-    (async () => {
-      try {
-        const { data } = await supabase
-          .from("reponses_apprenants")
-          .select("reponses, score")
-          .eq("apprenant_id", apprenantId)
-          .eq("exercice_id", exerciceId)
-          .eq("exercice_type", "revision_fausses")
-          .eq("completed", false)
-          .order("updated_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (data?.reponses && typeof data.reponses === "object") {
-          const saved = data.reponses as any;
-          if (saved.answers && typeof saved.answers === "object") {
-            setReponses(saved.answers);
-          }
-          if (typeof saved.currentIndex === "number" && saved.currentIndex >= 0 && saved.currentIndex < wrongQuestions.length) {
-            setCurrentIndex(saved.currentIndex);
-          }
-          if (typeof saved.correctedCount === "number") {
-            setCorrectedCount(saved.correctedCount);
-          }
-          // If the saved question was already corrected (showCorrection), restore that state
-          if (saved.correctedQuestions && Array.isArray(saved.correctedQuestions)) {
-            const idx = typeof saved.currentIndex === "number" ? saved.currentIndex : 0;
-            if (idx < wrongQuestions.length) {
-              const qId = wrongQuestions[idx]?.question?.id;
-              if (qId && saved.correctedQuestions.includes(qId)) {
-                setShowCorrection(true);
-              }
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Erreur chargement révision:", err);
-      } finally {
-        setLoaded(true);
-      }
-    })();
-  }, [apprenantId, userId, examenId, exerciceId, wrongQuestions.length]);
-
-  // ---- Persist progress (debounced) ----
-  const correctedQuestionsRef = useRef<string[]>([]);
-
-  const persistProgress = useCallback((
-    newReponses: Reponses,
-    newIndex: number,
-    newCorrectedCount: number,
-    correctedQuestions: string[],
-  ) => {
-    if (!apprenantId || !userId) return;
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    saveTimeoutRef.current = setTimeout(async () => {
-      try {
-        const payload = {
-          apprenant_id: apprenantId,
-          user_id: userId,
-          exercice_id: exerciceId,
-          exercice_type: "revision_fausses",
-          reponses: {
-            answers: newReponses,
-            currentIndex: newIndex,
-            correctedCount: newCorrectedCount,
-            correctedQuestions,
-          },
-          score: newCorrectedCount,
-          completed: false,
-        };
-        // Try upsert
-        const { error } = await supabase
-          .from("reponses_apprenants")
-          .upsert(payload as any, { onConflict: "apprenant_id,exercice_id" });
-        if (error) console.error("Erreur sauvegarde révision progress:", error.message);
-      } catch (err) {
-        console.error("Erreur sauvegarde révision progress:", err);
-      }
-    }, 800);
-  }, [apprenantId, userId, exerciceId]);
-
-  if (!loaded) {
-    return (
-      <Card>
-        <CardContent className="py-8 text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-primary" />
-          <p className="text-sm text-muted-foreground">Chargement de votre progression…</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (wrongQuestions.length === 0) {
-    return (
-      <Card>
-        <CardContent className="py-8 text-center">
-          <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-3" />
-          <p className="font-semibold text-lg">Aucune question fausse à réviser !</p>
-          <Button className="mt-4" onClick={onTerminer}>Retour aux résultats</Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const current = wrongQuestions[currentIndex];
-  if (!current) return null;
-  const { question: q, matiereNom } = current;
-  const rep = reponses[q.id];
-
-  const checkAnswer = () => {
-    let isCorrect = false;
-    if (q?.type === "QCM" && q.choix) {
-       const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
-       const donnees = safeArray<string>(rep).sort();
-       isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
-     } else if (q?.type === "QRC") {
-       const repStr = safeStr(rep).toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, "");
-       const motsCles = Array.isArray(q.reponses_possibles) ? q.reponses_possibles : [];
-      let nbTrouvees = 0;
-      motsCles.forEach(mc => { const mcN = mc.toLowerCase().replace(/[àâäáã]/g, "a").replace(/[éèêë]/g, "e").replace(/[îïí]/g, "i").replace(/[ôöó]/g, "o").replace(/[ùûüú]/g, "u").replace(/[ç]/g, "c").replace(/[^a-z0-9 ]/g, ""); if (repStr.includes(mcN)) nbTrouvees++; });
-      isCorrect = nbTrouvees >= motsCles.length;
-    }
-    const newCorrected = isCorrect ? correctedCount + 1 : correctedCount;
-    if (isCorrect) setCorrectedCount(newCorrected);
-    setShowCorrection(true);
-
-    // Track corrected questions
-    correctedQuestionsRef.current = [...new Set([...correctedQuestionsRef.current, String(q.id)])];
-    persistProgress(reponses, currentIndex, newCorrected, correctedQuestionsRef.current);
-  };
-
-  const goNext = async () => {
-    setShowCorrection(false);
-    if (currentIndex < wrongQuestions.length - 1) {
-      const newIdx = currentIndex + 1;
-      setCurrentIndex(newIdx);
-      persistProgress(reponses, newIdx, correctedCount, correctedQuestionsRef.current);
-    } else {
-      // Save final revision results to database
-      const finalCorrected = correctedCount;
-      if (apprenantId && userId && examenId) {
-        try {
-          // Mark the in-progress record as completed
-          await supabase
-            .from("reponses_apprenants")
-            .upsert({
-              apprenant_id: apprenantId,
-              user_id: userId,
-              exercice_id: exerciceId,
-              exercice_type: "revision_fausses",
-              reponses: {
-                answers: reponses,
-                currentIndex: wrongQuestions.length - 1,
-                correctedCount: finalCorrected,
-                correctedQuestions: correctedQuestionsRef.current,
-              },
-              score: finalCorrected,
-              completed: true,
-            } as any, { onConflict: "apprenant_id,exercice_id" });
-
-          const { error } = await supabase
-            .from("apprenant_quiz_results")
-            .insert({
-              apprenant_id: apprenantId,
-              user_id: userId,
-              quiz_type: "revision_fausses",
-              quiz_id: examenId,
-              quiz_titre: `Révision questions fausses — ${examenId}`,
-              score_obtenu: finalCorrected,
-              score_max: wrongQuestions.length,
-              note_sur_20: Math.round((finalCorrected / wrongQuestions.length) * 20 * 2) / 2,
-              reussi: finalCorrected === wrongQuestions.length,
-              details: {
-                reponses,
-                questions: wrongQuestions.map(wq => ({
-                  questionId: wq.question.id,
-                  matiereId: wq.matiere.id,
-                  matiereNom: wq.matiereNom,
-                  enonce: wq.question.enonce,
-                })),
-              } as any,
-            });
-          if (error) {
-            console.error("Erreur sauvegarde révision:", error.message, error.details);
-          } else {
-            console.log("Révision sauvegardée avec succès");
-          }
-        } catch (err) {
-          console.error("Erreur sauvegarde révision:", err);
-        }
-      }
-      toast.success(`Révision terminée ! ${finalCorrected}/${wrongQuestions.length} questions corrigées.`);
-      onTerminer();
-    }
-  };
-
-  const handleRecommencer = async () => {
-    if (!apprenantId || !userId) return;
-    // Delete saved progress
-    try {
-      await supabase
-        .from("reponses_apprenants")
-        .delete()
-        .eq("apprenant_id", apprenantId)
-        .eq("exercice_id", exerciceId)
-        .eq("exercice_type", "revision_fausses");
-    } catch (err) {
-      console.error("Erreur suppression progression:", err);
-    }
-    setReponses({});
-    setCurrentIndex(0);
-    setShowCorrection(false);
-    setCorrectedCount(0);
-    correctedQuestionsRef.current = [];
-    toast.info("Révision réinitialisée.");
-  };
-
-  // Update reponses with persistence
-  const updateReponse = (questionId: number | string, value: any) => {
-    const newReponses = { ...reponses, [questionId]: value };
-    setReponses(newReponses);
-    persistProgress(newReponses, currentIndex, correctedCount, correctedQuestionsRef.current);
-  };
-
-  return (
-    <div className="space-y-4">
-      {/* Progress */}
-      <div className="flex items-center justify-between">
-        <Badge style={{ backgroundColor: '#0D2540', color: '#00B4D8' }}>
-          Question Q{q?.id ?? "?"} ({currentIndex + 1} / {wrongQuestions.length})
-        </Badge>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">{matiereNom}</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs text-muted-foreground hover:text-destructive"
-            onClick={handleRecommencer}
-          >
-            <RotateCcw className="w-3 h-3 mr-1" /> Recommencer
-          </Button>
-        </div>
-      </div>
-      <Progress value={((currentIndex + 1) / wrongQuestions.length) * 100} className="h-2" />
-
-      <Card className="border-2" style={{ borderColor: '#0D2540' }}>
-        <CardContent className="pt-5 pb-5 space-y-4">
-          <div className="flex items-start justify-between gap-3">
-            <p className="font-semibold text-base flex-1" style={{ color: '#0D2540' }}>
-              {q.enonce}
-            </p>
-            <Badge variant="outline" className="shrink-0 text-xs font-semibold text-primary border-primary/40">
-              {getPointsParQuestion(current.matiere.id, q?.type || "QCM", current.matiere)} pt{getPointsParQuestion(current.matiere.id, q?.type || "QCM", current.matiere) > 1 ? "s" : ""}
-            </Badge>
-          </div>
-          {q?.image && (
-            <ExamQuestionImage
-              image={q.image}
-              alt={`Illustration de la question ${q.id}`}
-              className="mt-2 max-h-40 rounded-lg border"
-              fallbackClassName="mt-2 text-xs text-muted-foreground italic"
-            />
-          )}
-
-          {q?.type === "QCM" && q.choix && (
-            <div className="space-y-2">
-              {q.choix.map(c => {
-                const selected = safeArray<string>(rep).includes(c.lettre);
-                const isCorrectChoice = c.correct;
-                let borderColor = selected ? '#0D2540' : '#e5e7eb';
-                let bgColor = 'transparent';
-                if (showCorrection) {
-                  if (isCorrectChoice) { borderColor = '#22c55e'; bgColor = '#f0fdf4'; }
-                  else if (selected && !isCorrectChoice) { borderColor = '#ef4444'; bgColor = '#fef2f2'; }
-                }
-                return (
-                    <div key={c.lettre}>
-                      <div
-                        className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${showCorrection ? 'pointer-events-none' : ''}`}
-                        style={{ borderColor, backgroundColor: bgColor }}
-                        onClick={() => {
-                          if (showCorrection) return;
-                          const prev = safeArray<string>(rep);
-                          const correctCount = q.choix!.filter(ch => ch.correct).length;
-                          if (correctCount <= 1) {
-                            updateReponse(q.id, [c.lettre]);
-                          } else {
-                            updateReponse(q.id, prev.includes(c.lettre) ? prev.filter(l => l !== c.lettre) : [...prev, c.lettre]);
-                          }
-                        }}
-                      >
-                        <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 ${
-                          selected ? 'text-white' : ''
-                        }`} style={{
-                          borderColor: showCorrection && isCorrectChoice ? '#22c55e' : selected ? '#0D2540' : '#d1d5db',
-                          backgroundColor: selected ? '#0D2540' : 'transparent',
-                        }}>
-                          {showCorrection && isCorrectChoice ? <CheckCircle2 className="w-4 h-4 text-green-600" /> :
-                           showCorrection && selected && !isCorrectChoice ? <XCircle className="w-4 h-4 text-red-500" /> :
-                           c.lettre}
-                        </div>
-                        <span className="text-sm">{c.texte}</span>
-                      </div>
-                      {showCorrection && c.explication && (selected || isCorrectChoice) && (
-                        <p className="text-xs text-muted-foreground italic ml-10 mt-1">💡 {c.explication}</p>
-                      )}
-                    </div>
-                  );
-              })}
-            </div>
-          )}
-
-          {q?.type === "QRC" && (
-            <div className="space-y-2">
-              <Textarea
-                value={(rep as string) || ""}
-                onChange={e => updateReponse(q.id, e.target.value)}
-                placeholder="Saisissez votre réponse..."
-                disabled={showCorrection}
-                rows={3}
-              />
-              {showCorrection && (
-                <div className="p-3 rounded-lg bg-green-50 border border-green-200">
-                  <p className="text-sm font-medium text-green-800">
-                    Réponse attendue : {q.reponseQRC || (q.reponses_possibles || []).join(" / ") || "—"}
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {!showCorrection ? (
-            <Button
-              onClick={checkAnswer}
-              disabled={!rep || (Array.isArray(rep) && rep.length === 0)}
-              className="w-full gap-2"
-              style={{ backgroundColor: '#0D2540' }}
-            >
-              Valider ma réponse
-            </Button>
-          ) : (
-            <Button
-              onClick={goNext}
-              className="w-full gap-2"
-              style={{ backgroundColor: '#F4A227' }}
-            >
-              {currentIndex < wrongQuestions.length - 1 ? (
-                <>Question suivante <ArrowRight className="w-4 h-4" /></>
-              ) : (
-                <>Terminer la révision <CheckCircle2 className="w-4 h-4" /></>
-              )}
-            </Button>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-// ===== COMPOSANT PRINCIPAL =====
 export default function ExamensBlancsPage({
   defaultBilanId,
   onBilanConsumed,
@@ -3042,10 +41,8 @@ export default function ExamensBlancsPage({
   apprenantType?: string | null;
   isAdmin?: boolean;
   isPresentiel?: boolean;
-  /** Called when the learner enters or exits an active exam phase */
   onExamStateChange?: (isInExam: boolean) => void;
 } = {}) {
-  // Restore exam session from sessionStorage
   const EXAM_SESSION_KEY = `exam_session_${apprenantId || "anon"}`;
 
   const restoreSession = () => {
@@ -3072,15 +69,12 @@ export default function ExamensBlancsPage({
   const [isReloadingQuestions, setIsReloadingQuestions] = useState(false);
   const examStartTimeRef = useRef<number>(savedSession?.examStartTime || Date.now());
   const reloadInFlightRef = useRef<Promise<ExamenBlanc[]> | null>(null);
-
   const [loadTimeout, setLoadTimeout] = useState(false);
 
   const refreshLiveExamens = useCallback(async ({ force = false }: { force?: boolean } = {}) => {
     if (!force && reloadInFlightRef.current) return reloadInFlightRef.current;
-
     setLoadTimeout(false);
     const timeoutTimer = setTimeout(() => setLoadTimeout(true), 10_000);
-
     reloadInFlightRef.current = (async () => {
       try {
         const saved = await loadSavedExamens();
@@ -3096,12 +90,8 @@ export default function ExamensBlancsPage({
         setLoadTimeout(false);
       }
     })();
-
-    try {
-      return await reloadInFlightRef.current;
-    } finally {
-      reloadInFlightRef.current = null;
-    }
+    try { return await reloadInFlightRef.current; }
+    finally { reloadInFlightRef.current = null; }
   }, []);
 
   const handleManualReloadQuestions = async () => {
@@ -3117,16 +107,12 @@ export default function ExamensBlancsPage({
     }
   };
 
-  // Persist exam session state to sessionStorage
   const persistExamSession = (p: string, exId: string | null, mi: number, resultats?: ResultatMatiere[]) => {
     try {
       if (p === "examen" && exId) {
         sessionStorage.setItem(EXAM_SESSION_KEY, JSON.stringify({
-          phase: p,
-          examenId: exId,
-          matiereIndex: mi,
-          examStartTime: examStartTimeRef.current,
-          resultats: resultats || [],
+          phase: p, examenId: exId, matiereIndex: mi,
+          examStartTime: examStartTimeRef.current, resultats: resultats || [],
         }));
       } else {
         sessionStorage.removeItem(EXAM_SESSION_KEY);
@@ -3134,7 +120,7 @@ export default function ExamensBlancsPage({
     } catch { }
   };
 
-  // Restore the chosen exam once liveExamens are loaded
+  // Restore chosen exam once liveExamens loaded
   const [sessionRestored, setSessionRestored] = useState(false);
   useEffect(() => {
     if (sessionRestored || liveExamens.length === 0) return;
@@ -3144,86 +130,56 @@ export default function ExamensBlancsPage({
         setExamenChoisi(found);
         setPhase("examen");
         setMatiereIndex(savedSession.matiereIndex || 0);
-        if (savedSession.resultats?.length) {
-          setTousResultats(savedSession.resultats);
-        }
+        if (savedSession.resultats?.length) setTousResultats(savedSession.resultats);
       }
     }
     setSessionRestored(true);
   }, [liveExamens, sessionRestored]);
 
-  // Load saved exam overrides from DB on mount
-  // Only load on mount — no polling, no intervals
   const isInExam = phase === "examen" || phase === "intro" || phase === "transition";
 
-  // Notify parent when exam state changes (for pausing presence/inactivity checks)
   useEffect(() => {
     onExamStateChange?.(isInExam);
     return () => { onExamStateChange?.(false); };
   }, [isInExam, onExamStateChange]);
 
   useEffect(() => {
-    if (!isInExam) {
-      void refreshLiveExamens();
-    }
+    if (!isInExam) { void refreshLiveExamens(); }
   }, [refreshLiveExamens, isInExam]);
 
   // Realtime: targeted update when admin saves exam changes — DISABLED during exam
   useEffect(() => {
-    if (isInExam) return; // Zero network during exam
-
-    const validExamModuleIds = new Set(
-      tousLesExamens.map((ex) => getModuleIdForExamId(ex.id))
-    );
+    if (isInExam) return;
+    const validExamModuleIds = new Set(tousLesExamens.map((ex) => getModuleIdForExamId(ex.id)));
     const isExamModuleEvent = (payload: any) => {
       const moduleId = Number(payload?.new?.module_id ?? payload?.old?.module_id);
       return Number.isFinite(moduleId) && validExamModuleIds.has(moduleId);
     };
-
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-
-    const channelName = `examens-blancs-live`;
     const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'module_editor_state',
-        },
-        (payload) => {
-          if (!isExamModuleEvent(payload)) return;
-          // Debounce: wait 5s after last event (admin cascades)
-          if (debounceTimer) clearTimeout(debounceTimer);
-          debounceTimer = setTimeout(() => {
-            console.log("[Realtime] Exam blanc updated, reloading...");
-            try { sessionStorage.removeItem(EXAM_SESSION_KEY); } catch {}
-            void refreshLiveExamens();
-          }, 5000);
-        }
-      )
+      .channel(`examens-blancs-live`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'module_editor_state' }, (payload) => {
+        if (!isExamModuleEvent(payload)) return;
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          console.log("[Realtime] Exam blanc updated, reloading...");
+          try { sessionStorage.removeItem(EXAM_SESSION_KEY); } catch {}
+          void refreshLiveExamens();
+        }, 5000);
+      })
       .subscribe();
-
     return () => {
       if (debounceTimer) clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
   }, [refreshLiveExamens, EXAM_SESSION_KEY, isInExam]);
 
-  // NO polling, NO focus/visibility listeners — realtime only
-
-  // Quand un bilan est demandé depuis les modules, on le met en avant
   useEffect(() => {
-    if (defaultBilanId) {
-      setBilanPrefiltre(defaultBilanId);
-      onBilanConsumed?.();
-    }
+    if (defaultBilanId) { setBilanPrefiltre(defaultBilanId); onBilanConsumed?.(); }
   }, [defaultBilanId]);
 
   const handleStart = async (examen: ExamenBlanc) => {
     const latestExamen = liveExamens.find((live) => live.id === examen.id) ?? examen;
-
     if (!isAdmin && apprenantId) {
       const quizType = latestExamen.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
       const { count, error } = await supabase
@@ -3232,19 +188,10 @@ export default function ExamensBlancsPage({
         .eq("apprenant_id", apprenantId)
         .eq("quiz_id", latestExamen.id)
         .eq("quiz_type", quizType);
-
-      if (error) {
-        toast.error("Vérification de sécurité impossible. Réessayez.");
-        return;
-      }
-
+      if (error) { toast.error("Vérification de sécurité impossible. Réessayez."); return; }
       const matieresTotal = Math.max(latestExamen.matieres?.length || 1, 1);
-      if ((count ?? 0) >= matieresTotal) {
-        toast.error("Examen déjà réalisé. Demandez une remise à zéro à l'administration.");
-        return;
-      }
+      if ((count ?? 0) >= matieresTotal) { toast.error("Examen déjà réalisé. Demandez une remise à zéro à l'administration."); return; }
     }
-
     setBilanPrefiltre(null);
     setExamenChoisi(latestExamen);
     setMatiereIndex(0);
@@ -3254,7 +201,6 @@ export default function ExamensBlancsPage({
 
   const handleViewResults = async (examen: ExamenBlanc) => {
     if (!apprenantId) return;
-
     const examReference = liveExamens.find((live) => live.id === examen.id) ?? examen;
     const { data } = await supabase
       .from("apprenant_quiz_results" as any)
@@ -3262,13 +208,9 @@ export default function ExamensBlancsPage({
       .eq("apprenant_id", apprenantId)
       .eq("quiz_id", examReference.id)
       .eq("quiz_type", examReference.id.startsWith("bilan-") ? "bilan" : "examen_blanc");
+    if (!data || (data as any[]).length === 0) { toast.error("Aucun résultat trouvé pour cet examen."); return; }
 
-    if (!data || (data as any[]).length === 0) {
-      toast.error("Aucun résultat trouvé pour cet examen.");
-      return;
-    }
-
-    // Keep latest row per matière to prevent attempt mixing
+    const { pickBestScoreRow, getMatiereCanonicalKey } = await import("./examens-blancs-utils");
     const latestByMatiere = new Map<string, any>();
     (data as any[]).forEach((row: any, idx: number) => {
       const key = row.matiere_id || row.matiere_nom || `unknown-${idx}`;
@@ -3282,53 +224,40 @@ export default function ExamensBlancsPage({
     const rowsByMatiereId = new Map(latestRows.filter((r: any) => !!r.matiere_id).map((r: any) => [r.matiere_id, r]));
     const rowsByMatiereNom = new Map(latestRows.filter((r: any) => !!r.matiere_nom).map((r: any) => [r.matiere_nom, r]));
 
-    // Rebuild strictly in official exam order (A -> B -> C ...)
-    const results = examReference.matieres
-      .map((matiere): ResultatMatiere | null => {
-        const row = rowsByMatiereId.get(matiere.id) || rowsByMatiereNom.get(matiere.nom);
-        if (!row) return null;
-        const savedCorrections = row.details?.correctionsIA || null;
-        const rawScoreMax = toFiniteNumber(row.score_max, 0);
-        const computedMax = calculerMaxPoints(matiere);
-        const safeScoreMax = rawScoreMax > 0 ? rawScoreMax : computedMax;
-        const safeScoreObtenu = safeScoreMax > 0
-          ? clamp(toFiniteNumber(row.score_obtenu, 0), 0, safeScoreMax)
-          : Math.max(toFiniteNumber(row.score_obtenu, 0), 0);
-        const safeNoteSur = matiere.noteSur || 20;
-        const admisCalcule = computeAdmisForMatiere(
-          safeScoreObtenu,
-          safeScoreMax,
-          matiere.noteEliminatoire,
-          safeNoteSur,
-          Boolean(row.reussi)
-        );
+    const calculerMaxPoints = (matiere: Matiere): number => {
+      const questionsSafe = (matiere.questions ?? []).filter((q): q is Question => q != null && q?.type != null);
+      return questionsSafe.reduce((acc, q) => acc + getPointsParQuestion(matiere.id, q?.type || "QCM", matiere), 0);
+    };
 
-        return {
-          matiereId: row.matiere_id || matiere.id,
-          nomMatiere: row.matiere_nom || matiere.nom,
-          noteObtenue: safeScoreObtenu,
-          maxPoints: safeScoreMax,
-          noteSur: safeNoteSur,
-          noteEliminatoire: matiere.noteEliminatoire || 0,
-          coefficient: matiere.coefficient || 1,
-          admis: admisCalcule,
-          reponses: row.details?.reponses || {},
-          correctionsIA: savedCorrections,
-        };
-      })
-      .filter((r): r is ResultatMatiere => r !== null);
+    const results = examReference.matieres.map((matiere): ResultatMatiere | null => {
+      const row = rowsByMatiereId.get(matiere.id) || rowsByMatiereNom.get(matiere.nom);
+      if (!row) return null;
+      const savedCorrections = row.details?.correctionsIA || null;
+      const rawScoreMax = toFiniteNumber(row.score_max, 0);
+      const computedMax = calculerMaxPoints(matiere);
+      const safeScoreMax = rawScoreMax > 0 ? rawScoreMax : computedMax;
+      const safeScoreObtenu = safeScoreMax > 0 ? clamp(toFiniteNumber(row.score_obtenu, 0), 0, safeScoreMax) : Math.max(toFiniteNumber(row.score_obtenu, 0), 0);
+      const safeNoteSur = matiere.noteSur || 20;
+      return {
+        matiereId: row.matiere_id || matiere.id,
+        nomMatiere: row.matiere_nom || matiere.nom,
+        noteObtenue: safeScoreObtenu,
+        maxPoints: safeScoreMax,
+        noteSur: safeNoteSur,
+        noteEliminatoire: matiere.noteEliminatoire || 0,
+        coefficient: matiere.coefficient || 1,
+        admis: computeAdmisForMatiere(safeScoreObtenu, safeScoreMax, matiere.noteEliminatoire, safeNoteSur, Boolean(row.reussi)),
+        reponses: row.details?.reponses || {},
+        correctionsIA: savedCorrections,
+      };
+    }).filter((r): r is ResultatMatiere => r !== null);
 
-    if (results.length === 0) {
-      toast.error("Résultats introuvables pour les matières de cet examen.");
-      return;
-    }
-
+    if (results.length === 0) { toast.error("Résultats introuvables pour les matières de cet examen."); return; }
     setExamenChoisi(examReference);
     setTousResultats(results);
     setIsViewingSavedResults(true);
     setPhase("resultats");
   };
-
 
   const handleDebuterExamen = () => {
     examStartTimeRef.current = Date.now();
@@ -3349,218 +278,91 @@ export default function ExamensBlancsPage({
       if (!q || !q?.type) return;
       const rep = reponses?.[q.id] ?? reponses?.[String(q.id)];
       const pts = getPointsParQuestion(matiere.id, q?.type, matiere);
-      let correct = false;
       if (q?.type === "QCM" && q.choix) {
         const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
-         const donnees = safeArray<string>(rep).sort();
-         correct = JSON.stringify(correctes) === JSON.stringify(donnees);
+        const donnees = safeArray<string>(rep).sort();
+        if (JSON.stringify(correctes) === JSON.stringify(donnees)) totalPoints += pts;
       } else if (q?.type === "QRC") {
         const correction = evaluateQrcDeterministic(q, rep, pts);
         totalPoints += correction.pointsObtenus;
-        return; // prorata already added, skip the correct check below
       }
-      if (correct) totalPoints += pts;
     });
     return totalPoints;
   };
 
-  const saveMatiereResult = async ({
-    examen,
-    matiere,
-    resultat,
-    dureeSecondes,
-  }: {
-    examen: ExamenBlanc;
-    matiere: Matiere;
-    resultat: ResultatMatiere;
-    dureeSecondes: number;
-  }) => {
+  const saveMatiereResult = async ({ examen, matiere, resultat, dureeSecondes }: { examen: ExamenBlanc; matiere: Matiere; resultat: ResultatMatiere; dureeSecondes: number }) => {
     if (!apprenantId || !userId) return;
-
     const rawQuestions = matiere?.questions || [];
     const questionsSafe = rawQuestions.filter(q => q != null);
-    if (questionsSafe.length === 0 && rawQuestions.length > 0) {
-      console.warn("[saveMatiereResult] All questions filtered out!", { rawCount: rawQuestions.length, sample: rawQuestions[0] });
-    }
     const frozenCorrections: Record<string, any> = {};
     const questionDetails = questionsSafe.map(q => {
       if (!q) return null;
       const rep = resultat.reponses?.[q.id];
-
       if (q?.type === "QRC") {
         const pts = getPointsParQuestion(matiere.id, q?.type || "QRC", matiere);
-        const correction = evaluateQrcDeterministic(q, rep, pts);
-        frozenCorrections[q.id] = correction;
+        frozenCorrections[q.id] = evaluateQrcDeterministic(q, rep, pts);
       }
-
       return {
-        questionId: q.id,
-        enonce: q.enonce || "",
-        type: q?.type || "QCM",
-        reponseEleve: rep ?? null,
-        reponseCorrecte: q?.type === "QCM" && q.choix
-          ? q.choix.filter(c => c.correct).map(c => c.lettre)
-          : (q.reponseQRC || (q.reponses_possibles || []).join(" / ")),
+        questionId: q.id, enonce: q.enonce || "", type: q?.type || "QCM", reponseEleve: rep ?? null,
+        reponseCorrecte: q?.type === "QCM" && q.choix ? q.choix.filter(c => c.correct).map(c => c.lettre) : (q.reponseQRC || (q.reponses_possibles || []).join(" / ")),
       };
     }).filter(Boolean);
 
     const safeScoreMax = Math.max(toFiniteNumber(resultat.maxPoints, 0), 0);
-    const safeScoreObtenu = safeScoreMax > 0
-      ? clamp(toFiniteNumber(resultat.noteObtenue, 0), 0, safeScoreMax)
-      : Math.max(toFiniteNumber(resultat.noteObtenue, 0), 0);
+    const safeScoreObtenu = safeScoreMax > 0 ? clamp(toFiniteNumber(resultat.noteObtenue, 0), 0, safeScoreMax) : Math.max(toFiniteNumber(resultat.noteObtenue, 0), 0);
     const quizType = examen.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
     const noteSur20 = normalizeNoteSur20(safeScoreObtenu, safeScoreMax);
 
     const payload = {
-      apprenant_id: apprenantId,
-      user_id: userId,
-      quiz_type: quizType,
-      quiz_id: examen.id,
-      quiz_titre: examen.titre,
-      matiere_id: resultat.matiereId,
-      matiere_nom: resultat.nomMatiere,
-      score_obtenu: safeScoreObtenu,
-      score_max: safeScoreMax,
-      note_sur_20: noteSur20,
-      reussi: computeAdmisForMatiere(
-        safeScoreObtenu,
-        safeScoreMax,
-        resultat.noteEliminatoire,
-        resultat.noteSur,
-        Boolean(resultat.admis)
-      ),
+      apprenant_id: apprenantId, user_id: userId, quiz_type: quizType, quiz_id: examen.id, quiz_titre: examen.titre,
+      matiere_id: resultat.matiereId, matiere_nom: resultat.nomMatiere, score_obtenu: safeScoreObtenu, score_max: safeScoreMax,
+      note_sur_20: noteSur20, reussi: computeAdmisForMatiere(safeScoreObtenu, safeScoreMax, resultat.noteEliminatoire, resultat.noteSur, Boolean(resultat.admis)),
       duree_secondes: Math.max(Math.round(dureeSecondes), 0),
-      details: {
-        questions: questionDetails,
-        reponses: resultat.reponses,
-        correctionsIA: Object.keys(frozenCorrections).length > 0 ? frozenCorrections : undefined,
-      },
+      details: { questions: questionDetails, reponses: resultat.reponses, correctionsIA: Object.keys(frozenCorrections).length > 0 ? frozenCorrections : undefined },
     };
 
-    console.groupCollapsed(
-      `[ExamSubmission][EB][InsertAttempt] quiz_id=${examen.id} matiere_id=${JSON.stringify(payload.matiere_id)} matiere_nom=${JSON.stringify(payload.matiere_nom)}`
-    );
-    console.table([
-      {
-        quiz_id: payload.quiz_id,
-        quiz_type: payload.quiz_type,
-        matiere_id_exact: JSON.stringify(payload.matiere_id),
-        matiere_nom_exact: JSON.stringify(payload.matiere_nom),
-        score_obtenu: payload.score_obtenu,
-        score_max: payload.score_max,
-        note_sur_20: payload.note_sur_20,
-        reussi: payload.reussi,
-        duree_secondes: payload.duree_secondes,
-        nb_questions: questionDetails.length,
-        nb_reponses: Object.keys(resultat.reponses || {}).length,
-      },
-    ]);
-    console.log("[ExamSubmission][EB][InsertPayload]", payload);
-    console.groupEnd();
-
-    const { error } = await supabase
-      .from("apprenant_quiz_results" as any)
-      .insert([payload] as any);
-
-    if (error) {
-      console.error("[ExamSubmission][EB][InsertError]", {
-        quiz_id: payload.quiz_id,
-        matiere_id: payload.matiere_id,
-        score_obtenu: payload.score_obtenu,
-        score_max: payload.score_max,
-        error,
-      });
-    } else {
-      console.info("[ExamSubmission][EB][InsertSuccess]", {
-        quiz_id: payload.quiz_id,
-        matiere_id: payload.matiere_id,
-        score_obtenu: payload.score_obtenu,
-        score_max: payload.score_max,
-      });
-    }
+    const { error } = await supabase.from("apprenant_quiz_results" as any).insert([payload] as any);
+    if (error) console.error("[ExamSubmission][EB][InsertError]", error);
   };
 
   const handleTerminerMatiere = (reponses: Reponses) => {
     try {
-    if (!examenChoisi) return;
-    const matiere = examenChoisi.matieres[matiereIndex];
-    if (!matiere) {
-      toast.error("Matière introuvable. Veuillez relancer l'examen.");
-      return;
-    }
-    const note = calculerNote(matiere, reponses);
-    const maxPoints = calculerMaxPoints(matiere);
-    const noteSecurisee = maxPoints > 0 ? clamp(note, 0, maxPoints) : Math.max(note, 0);
-    console.log("[ExamSubmission][EB][ComputeMatiere]", {
-      quiz_id: examenChoisi.id,
-      matiere_id: matiere.id,
-      matiere_nom: matiere.nom,
-      reponses_keys: Object.keys(reponses || {}),
-      score_calcule: note,
-      score_securise: noteSecurisee,
-      score_max: maxPoints,
-      note_sur_20: normalizeNoteSur20(noteSecurisee, maxPoints),
-    });
-    // Guard: si le score est 0 mais des réponses existent, loguer un avertissement
-    if (noteSecurisee === 0 && Object.keys(reponses || {}).length > 0) {
-      console.warn("[ExamSubmission][EB][ANOMALY] Score 0 avec des réponses existantes!", {
-        quiz_id: examenChoisi.id,
-        matiere_id: matiere.id,
-        nb_questions: (matiere.questions ?? []).filter(q => q != null && q?.type != null).length,
-        nb_reponses: Object.keys(reponses || {}).length,
-        questions_sample: (matiere.questions ?? []).slice(0, 2).map(q => ({ id: q?.id, type: q?.type })),
-      });
-    }
-    const resultat: ResultatMatiere = {
-      matiereId: matiere.id,
-      nomMatiere: matiere.nom,
-      noteObtenue: noteSecurisee,
-      maxPoints,
-      noteSur: matiere.noteSur,
-      noteEliminatoire: matiere.noteEliminatoire,
-      coefficient: matiere.coefficient,
-      admis: computeAdmisForMatiere(
-        noteSecurisee,
-        maxPoints,
-        matiere.noteEliminatoire,
-        matiere.noteSur,
-        false
-      ),
-      reponses,
-    };
-
-    const newResultats = [...tousResultats, resultat];
-    setTousResultats(newResultats);
-
-    if (apprenantId && userId) {
-      const elapsedSeconds = Math.round((Date.now() - examStartTimeRef.current) / 1000);
-      const avgPerMatiere = elapsedSeconds / Math.max(newResultats.length, 1);
-      void saveMatiereResult({
-        examen: examenChoisi,
-        matiere,
-        resultat,
-        dureeSecondes: avgPerMatiere,
-      });
-    }
-
-    if (matiereIndex < examenChoisi.matieres.length - 1) {
-      const nextIndex = matiereIndex + 1;
-      setLastMatiereResult(resultat);
-      setMatiereIndex(nextIndex);
-      setPhase("transition");
-      persistExamSession("examen", examenChoisi.id, nextIndex, newResultats);
-    } else {
-      setIsViewingSavedResults(false);
-      setPhase("resultats");
-      setSelectionRefreshKey(k => k + 1);
-      persistExamSession("resultats", null, 0); // Clear session
-    }
+      if (!examenChoisi) return;
+      const matiere = examenChoisi.matieres[matiereIndex];
+      if (!matiere) { toast.error("Matière introuvable. Veuillez relancer l'examen."); return; }
+      const note = calculerNote(matiere, reponses);
+      const maxPoints = calculerMaxPoints(matiere);
+      const noteSecurisee = maxPoints > 0 ? clamp(note, 0, maxPoints) : Math.max(note, 0);
+      const resultat: ResultatMatiere = {
+        matiereId: matiere.id, nomMatiere: matiere.nom, noteObtenue: noteSecurisee, maxPoints,
+        noteSur: matiere.noteSur, noteEliminatoire: matiere.noteEliminatoire, coefficient: matiere.coefficient,
+        admis: computeAdmisForMatiere(noteSecurisee, maxPoints, matiere.noteEliminatoire, matiere.noteSur, false), reponses,
+      };
+      const newResultats = [...tousResultats, resultat];
+      setTousResultats(newResultats);
+      if (apprenantId && userId) {
+        const elapsedSeconds = Math.round((Date.now() - examStartTimeRef.current) / 1000);
+        void saveMatiereResult({ examen: examenChoisi, matiere, resultat, dureeSecondes: elapsedSeconds / Math.max(newResultats.length, 1) });
+      }
+      if (matiereIndex < examenChoisi.matieres.length - 1) {
+        const nextIndex = matiereIndex + 1;
+        setLastMatiereResult(resultat);
+        setMatiereIndex(nextIndex);
+        setPhase("transition");
+        persistExamSession("examen", examenChoisi.id, nextIndex, newResultats);
+      } else {
+        setIsViewingSavedResults(false);
+        setPhase("resultats");
+        setSelectionRefreshKey(k => k + 1);
+        persistExamSession("resultats", null, 0);
+      }
     } catch (err) {
       console.error("[ExamenBlanc] Erreur dans handleTerminerMatiere:", err);
       toast.error("Une erreur est survenue lors du calcul des résultats. Veuillez réessayer.");
     }
   };
 
+  // ===== RENDER =====
   if (phase === "edition") {
     return <ExamensBlancsEditor onBack={() => setPhase("selection")} />;
   }
@@ -3574,13 +376,17 @@ export default function ExamensBlancsPage({
             Chargement en cours, veuillez patienter…
           </div>
         )}
-        <EcranSelection onStart={handleStart} onEdit={() => {
-          if (!isAdmin) {
-            toast.error("Accès réservé à l'administration.");
-            return;
-          }
-          setPhase("edition");
-        }} onViewResults={handleViewResults} defaultBilanId={bilanPrefiltre} apprenantType={apprenantType} examensData={liveExamens} apprenantId={apprenantId} isAdmin={isAdmin} refreshKey={selectionRefreshKey} />
+        <EcranSelection
+          onStart={handleStart}
+          onEdit={() => { if (!isAdmin) { toast.error("Accès réservé à l'administration."); return; } setPhase("edition"); }}
+          onViewResults={handleViewResults}
+          defaultBilanId={bilanPrefiltre}
+          apprenantType={apprenantType}
+          examensData={liveExamens}
+          apprenantId={apprenantId}
+          isAdmin={isAdmin}
+          refreshKey={selectionRefreshKey}
+        />
       </>
     );
   }
@@ -3590,24 +396,16 @@ export default function ExamensBlancsPage({
     return (
       <div className="max-w-2xl mx-auto space-y-6">
         <Button variant="ghost" size="sm" onClick={() => setPhase("selection")} className="gap-2">
-          <ArrowLeft className="w-4 h-4" />
-          Retour
+          <ArrowLeft className="w-4 h-4" /> Retour
         </Button>
-
         <Card className="border-2 border-primary/20">
           <CardHeader className="text-center">
-            <Badge className="mx-auto mb-2 w-fit" variant={examenChoisi?.type === "TAXI" ? "default" : "secondary"}>
-              {examenChoisi?.type}
-            </Badge>
+            <Badge className="mx-auto mb-2 w-fit" variant={examenChoisi?.type === "TAXI" ? "default" : "secondary"}>{examenChoisi?.type}</Badge>
             <CardTitle className="text-xl">{examenChoisi.titre}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
-            {/* Consignes */}
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-2">
-              <div className="flex items-center gap-2 font-semibold text-amber-800">
-                <AlertTriangle className="w-4 h-4" />
-                Consignes importantes
-              </div>
+              <div className="flex items-center gap-2 font-semibold text-amber-800"><AlertTriangle className="w-4 h-4" /> Consignes importantes</div>
               <ul className="text-sm text-amber-700 space-y-1 list-disc list-inside">
                 <li>Chaque matière est <strong>chronométrée individuellement</strong></li>
                 <li>Le temps s'écoule dès que vous démarrez la matière</li>
@@ -3617,8 +415,6 @@ export default function ExamensBlancsPage({
                 <li className="text-base font-bold text-red-700">⚠️ VOUS DEVEZ RÉPONDRE À TOUTES LES QUESTIONS AVANT DE VALIDER</li>
               </ul>
             </div>
-
-            {/* Tableau des matières */}
             <div>
               <h4 className="font-semibold mb-3">Matières et durées</h4>
               <div className="border rounded-lg overflow-hidden">
@@ -3635,21 +431,16 @@ export default function ExamensBlancsPage({
                   </thead>
                   <tbody>
                     {examenChoisi.matieres.map((m, i) => {
-                      if (!m || m === undefined) return null;
+                      if (!m) return null;
                       const questionsSafe = (m.questions || []).filter(q => q && q?.type !== undefined);
-                      const maxPts = questionsSafe.reduce((acc, q) => {
-                        if (!q || q === undefined) return acc;
-                        return acc + getPointsParQuestion(m.id, q?.type || "QCM", m);
-                      }, 0);
-                      const ptsQCM = getPointsParQuestion(m.id, "QCM", m);
-                      const ptsQRC = getPointsParQuestion(m.id, "QRC", m);
+                      const maxPts = questionsSafe.reduce((acc, q) => acc + getPointsParQuestion(m.id, q?.type || "QCM", m), 0);
                       return (
                         <tr key={m.id} className={i % 2 === 0 ? "bg-background" : "bg-muted/30"}>
                           <td className="p-2 text-xs">{m.nom}</td>
                           <td className="p-2 text-center">{m.duree} min</td>
                           <td className="p-2 text-center font-semibold">{maxPts} pts</td>
-                          <td className="p-2 text-center text-blue-600">{ptsQCM} pt</td>
-                          <td className="p-2 text-center text-purple-600">{ptsQRC} pts</td>
+                          <td className="p-2 text-center text-blue-600">{getPointsParQuestion(m.id, "QCM", m)} pt</td>
+                          <td className="p-2 text-center text-purple-600">{getPointsParQuestion(m.id, "QRC", m)} pts</td>
                           <td className="p-2 text-center">{m.coefficient}</td>
                         </tr>
                       );
@@ -3658,27 +449,18 @@ export default function ExamensBlancsPage({
                       <td className="p-2">TOTAL</td>
                       <td className="p-2 text-center">{dureeTotal} min</td>
                       <td className="p-2 text-center">{examenChoisi.matieres.reduce((acc, m) => {
-                        if (!m || m === undefined) return acc;
-                        const questionsSafe = (m.questions || []).filter(q => q && q?.type !== undefined);
-                        const totalMatiere = questionsSafe.reduce((a, q) => {
-                          if (!q || q === undefined) return a;
-                          return a + getPointsParQuestion(m.id, q?.type || "QCM", m);
-                        }, 0);
-                        return acc + totalMatiere;
+                        if (!m) return acc;
+                        return acc + (m.questions || []).filter(q => q && q?.type !== undefined).reduce((a, q) => a + getPointsParQuestion(m.id, q?.type || "QCM", m), 0);
                       }, 0)} pts</td>
-                      <td className="p-2"></td>
-                      <td className="p-2"></td>
+                      <td className="p-2"></td><td className="p-2"></td>
                       <td className="p-2 text-center">Note finale /20</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
-
             </div>
-
             <Button className="w-full gap-2 text-base py-5 text-white font-semibold" style={{ backgroundColor: '#F4A227' }} onClick={handleDebuterExamen}>
-              <Timer className="w-5 h-5" />
-              Démarrer l'examen
+              <Timer className="w-5 h-5" /> Démarrer l'examen
             </Button>
           </CardContent>
         </Card>
@@ -3707,95 +489,42 @@ export default function ExamensBlancsPage({
     if (!matiere) return null;
     return (
       <div className="flex gap-6 max-w-[1200px] mx-auto">
-        {/* Contenu principal */}
         <div className="flex-1 min-w-0 space-y-4">
-          {/* Barre de progression globale */}
           <div className="flex items-center gap-3">
             <div className="flex gap-1.5">
               {examenChoisi.matieres.map((_, i) => (
-                <div
-                  key={i}
-                  className={`h-2 rounded-full transition-all ${i < matiereIndex ? "w-8 bg-green-500" : i === matiereIndex ? "w-8 bg-primary" : "w-4 bg-muted"}`}
-                />
+                <div key={i} className={`h-2 rounded-full transition-all ${i < matiereIndex ? "w-8 bg-green-500" : i === matiereIndex ? "w-8 bg-primary" : "w-4 bg-muted"}`} />
               ))}
             </div>
-            <span className="text-xs text-muted-foreground">
-              Matière {matiereIndex + 1}/{examenChoisi.matieres.length}
-            </span>
+            <span className="text-xs text-muted-foreground">Matière {matiereIndex + 1}/{examenChoisi.matieres.length}</span>
             {!isAdmin && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleManualReloadQuestions}
-                disabled={isReloadingQuestions}
-                className="ml-auto gap-2"
-              >
+              <Button variant="outline" size="sm" onClick={handleManualReloadQuestions} disabled={isReloadingQuestions} className="ml-auto gap-2">
                 {isReloadingQuestions ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
                 Recharger les questions
               </Button>
             )}
           </div>
-
-          <PassageMatiere
-            matiere={matiere}
-            numero={matiereIndex + 1}
-            total={examenChoisi.matieres.length}
-            onTerminer={handleTerminerMatiere}
-            isBilan={examenChoisi.id.startsWith("bilan-")}
-            apprenantId={apprenantId}
-            examenId={examenChoisi.id}
-          />
+          <PassageMatiere matiere={matiere} numero={matiereIndex + 1} total={examenChoisi.matieres.length} onTerminer={handleTerminerMatiere} isBilan={examenChoisi.id.startsWith("bilan-")} apprenantId={apprenantId} examenId={examenChoisi.id} />
         </div>
-
-        {/* Barre de progression latérale droite */}
         <div className="hidden min-[520px]:block w-36 sm:w-40 md:w-48 lg:w-56 shrink-0">
           <div className="sticky top-4 space-y-2">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Progression</p>
             <div className="relative">
-              {/* Ligne verticale de fond */}
               <div className="absolute left-4 top-4 bottom-4 w-0.5 bg-muted rounded-full" />
-              {/* Ligne verticale de progression */}
-              <div
-                className="absolute left-4 top-4 w-0.5 bg-primary rounded-full transition-all duration-500"
-                style={{ height: `${examenChoisi.matieres.length > 1 ? (matiereIndex / (examenChoisi.matieres.length - 1)) * 100 : 100}%`, maxHeight: 'calc(100% - 2rem)' }}
-              />
+              <div className="absolute left-4 top-4 w-0.5 bg-primary rounded-full transition-all duration-500" style={{ height: `${examenChoisi.matieres.length > 1 ? (matiereIndex / (examenChoisi.matieres.length - 1)) * 100 : 100}%`, maxHeight: 'calc(100% - 2rem)' }} />
               <div className="space-y-1">
                 {examenChoisi.matieres.map((m, i) => {
                   if (!m) return null;
                   const isDone = i < matiereIndex;
                   const isCurrent = i === matiereIndex;
-                  const isLocked = i > matiereIndex;
                   return (
-                    <div
-                      key={m.id}
-                      className={`relative flex items-start gap-3 p-2 rounded-lg transition-all ${
-                        isCurrent
-                          ? "bg-primary/10 border border-primary/30"
-                          : isDone
-                            ? "bg-green-50 border border-green-200 cursor-default"
-                            : "opacity-50"
-                      }`}
-                    >
-                      {/* Indicateur circulaire */}
-                      <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold border-2 transition-all ${
-                        isDone
-                          ? "bg-green-500 border-green-500 text-white"
-                          : isCurrent
-                            ? "bg-primary border-primary text-primary-foreground ring-4 ring-primary/20"
-                            : "bg-background border-muted text-muted-foreground"
-                      }`}>
+                    <div key={m.id} className={`relative flex items-start gap-3 p-2 rounded-lg transition-all ${isCurrent ? "bg-primary/10 border border-primary/30" : isDone ? "bg-green-50 border border-green-200" : "opacity-50"}`}>
+                      <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold border-2 transition-all ${isDone ? "bg-green-500 border-green-500 text-white" : isCurrent ? "bg-primary border-primary text-primary-foreground ring-4 ring-primary/20" : "bg-background border-muted text-muted-foreground"}`}>
                         {isDone ? <CheckCircle2 className="w-4 h-4" /> : i + 1}
                       </div>
-                      {/* Texte */}
                       <div className="min-w-0 pt-1">
-                        <p className={`text-xs font-medium leading-tight truncate ${
-                          isCurrent ? "text-primary" : isDone ? "text-green-700" : "text-muted-foreground"
-                        }`}>
-                          {m.nom.split(" - ")[0]}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">
-                          {isDone ? "✓ Terminée" : isCurrent ? `En cours • ${m.duree}min` : `${m.duree}min`}
-                        </p>
+                        <p className={`text-xs font-medium leading-tight truncate ${isCurrent ? "text-primary" : isDone ? "text-green-700" : "text-muted-foreground"}`}>{m.nom.split(" - ")[0]}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{isDone ? "✓ Terminée" : isCurrent ? `En cours • ${m.duree}min` : `${m.duree}min`}</p>
                       </div>
                     </div>
                   );
@@ -3809,11 +538,9 @@ export default function ExamensBlancsPage({
   }
 
   if (phase === "revision" && examenChoisi) {
-    // Build wrong questions excluding français
     const wrongQuestions: { matiere: Matiere; question: Question; matiereNom: string }[] = [];
     examenChoisi.matieres.forEach((matiere, mi) => {
-      if (!matiere) return;
-      if (matiere.id === "francais" || matiere.id === "bilan_francais") return;
+      if (!matiere || matiere.id === "francais" || matiere.id === "bilan_francais") return;
       const r = tousResultats[mi];
       if (!r) return;
       const qSafe = (matiere.questions || []).filter((q): q is Question => !!q && q?.type !== undefined);
@@ -3823,10 +550,9 @@ export default function ExamensBlancsPage({
         let isCorrect = false;
         if (q?.type === "QCM" && q.choix) {
           const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
-           const donnees = safeArray<string>(rep).sort();
-           isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
+          const donnees = safeArray<string>(rep).sort();
+          isCorrect = JSON.stringify(correctes) === JSON.stringify(donnees);
         } else if (q?.type === "QRC") {
-          // Check saved IA/manual corrections first
           const corrIA = savedCorrectionsIA[q.id] || savedCorrectionsIA[String(q.id)];
           if (corrIA && typeof corrIA === "object" && ("estCorrect" in corrIA || "pointsObtenus" in corrIA)) {
             isCorrect = "estCorrect" in corrIA ? !!(corrIA as any).estCorrect : (corrIA as any).pointsObtenus > 0;
@@ -3838,37 +564,20 @@ export default function ExamensBlancsPage({
             isCorrect = nbTrouvees >= motsCles.length;
           }
         }
-        if (!isCorrect) {
-          wrongQuestions.push({ matiere, question: q, matiereNom: matiere.nom });
-        }
+        if (!isCorrect) wrongQuestions.push({ matiere, question: q, matiereNom: matiere.nom });
       });
     });
 
     return (
       <div className="max-w-3xl mx-auto space-y-6">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => setPhase("resultats")} className="gap-2">
-            <ArrowLeft className="w-4 h-4" />
-            Retour aux résultats
-          </Button>
-          <h2 className="text-xl font-bold" style={{ color: '#0D2540' }}>
-            🎯 Révision des questions fausses
-          </h2>
+          <Button variant="ghost" size="sm" onClick={() => setPhase("resultats")} className="gap-2"><ArrowLeft className="w-4 h-4" /> Retour aux résultats</Button>
+          <h2 className="text-xl font-bold" style={{ color: '#0D2540' }}>🎯 Révision des questions fausses</h2>
         </div>
-
         <div className="rounded-lg px-4 py-3" style={{ backgroundColor: '#FFF3E0', border: '2px solid #F4A227' }}>
-          <p className="text-sm font-semibold" style={{ color: '#D84315' }}>
-            {wrongQuestions.length} question{wrongQuestions.length > 1 ? "s" : ""} à réviser (hors épreuve de Français)
-          </p>
+          <p className="text-sm font-semibold" style={{ color: '#D84315' }}>{wrongQuestions.length} question{wrongQuestions.length > 1 ? "s" : ""} à réviser (hors épreuve de Français)</p>
         </div>
-
-        <RevisionFausses
-          wrongQuestions={wrongQuestions}
-          onTerminer={() => setPhase("resultats")}
-          apprenantId={apprenantId}
-          userId={userId}
-          examenId={examenChoisi.id}
-        />
+        <RevisionFausses wrongQuestions={wrongQuestions} onTerminer={() => setPhase("resultats")} apprenantId={apprenantId} userId={userId} examenId={examenChoisi.id} />
       </div>
     );
   }
@@ -3876,19 +585,7 @@ export default function ExamensBlancsPage({
   if (phase === "resultats" && examenChoisi) {
     return (
       <div className="max-w-3xl mx-auto">
-        <EcranResultats
-          examen={examenChoisi}
-          resultats={tousResultats}
-          onRecommencer={() => handleStart(examenChoisi)}
-          onRetour={() => { setSelectionRefreshKey(k => k + 1); setPhase("selection"); }}
-          onRefaireFausses={() => setPhase("revision")}
-          apprenantId={apprenantId}
-          userId={userId}
-          isViewingSaved={isViewingSavedResults}
-          isAdmin={isAdmin}
-          canRetry={Boolean(isAdmin)}
-          isPresentiel={isPresentiel}
-        />
+        <EcranResultats examen={examenChoisi} resultats={tousResultats} onRecommencer={() => handleStart(examenChoisi)} onRetour={() => { setSelectionRefreshKey(k => k + 1); setPhase("selection"); }} onRefaireFausses={() => setPhase("revision")} apprenantId={apprenantId} userId={userId} isViewingSaved={isViewingSavedResults} isAdmin={isAdmin} canRetry={Boolean(isAdmin)} isPresentiel={isPresentiel} />
       </div>
     );
   }
