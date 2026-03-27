@@ -210,6 +210,50 @@ export default function ExamensBlancsPage({
       if (error) { toast.error("Vérification de sécurité impossible. Réessayez."); return; }
 
       const completedRows = (existingResults as any[]) || [];
+
+      // --- Secondary fallback: also check reponses_apprenants for completed responses ---
+      // This catches cases where responses were saved but quiz_results insert failed
+      let responseFallbackCompleted = false;
+      if (completedRows.length < validMatieres.length) {
+        const { data: savedResponses } = await supabase
+          .from("reponses_apprenants" as any)
+          .select("exercice_id, completed, score")
+          .eq("apprenant_id", apprenantId)
+          .eq("exercice_type", "examen_blanc")
+          .like("exercice_id", `${latestExamen.id}_%`);
+        
+        if (savedResponses && (savedResponses as any[]).length > 0) {
+          const responsesByMatiere = new Map<string, any>();
+          (savedResponses as any[]).forEach((r: any) => {
+            // exercice_id format: EB5_securite → extract matiere part
+            const matiereKey = (r.exercice_id || "").replace(`${latestExamen.id}_`, "");
+            if (matiereKey) responsesByMatiere.set(matiereKey, r);
+          });
+
+          // If we have responses for all matières (completed or not), and combined with
+          // quiz_results we cover everything, consider it done
+          const totalCoveredMatieres = new Set<string>();
+          completedRows.forEach((row: any) => {
+            if (row?.matiere_id) totalCoveredMatieres.add(row.matiere_id);
+          });
+          responsesByMatiere.forEach((_, key) => totalCoveredMatieres.add(key));
+
+          // Check if all valid matières are covered by either results or responses
+          const allCovered = validMatieres.every((m) => 
+            totalCoveredMatieres.has(m.id) || 
+            completedRows.some((row: any) => 
+              buildMatiereLookupKeys(row?.matiere_id, row?.matiere_nom).some(k => 
+                buildMatiereLookupKeys(m.id, m.nom).includes(k)
+              )
+            )
+          );
+          
+          if (allCovered && totalCoveredMatieres.size >= validMatieres.length) {
+            responseFallbackCompleted = true;
+          }
+        }
+      }
+
       const validMatieres = (latestExamen.matieres || []).filter((m): m is Matiere => Boolean(m));
       const matieresTotal = Math.max(validMatieres.length || 1, 1);
 
@@ -234,7 +278,7 @@ export default function ExamensBlancsPage({
       const completedMatiereCount = validMatieres.filter((m) => isMatiereDone(m)).length;
       const allCompleted = completedMatiereCount >= matieresTotal;
 
-      if (allCompleted) {
+      if (allCompleted || responseFallbackCompleted) {
         // Redirect to results view instead of blocking with toast
         toast.info("Examen déjà terminé. Affichage de vos résultats.", { duration: 3000, icon: "✅" });
         handleViewResults(latestExamen);
@@ -438,7 +482,10 @@ export default function ExamensBlancsPage({
     };
 
     const { error } = await supabase.from("apprenant_quiz_results" as any).insert([payload] as any);
-    if (error) console.error("[ExamSubmission][EB][InsertError]", error);
+    if (error) {
+      console.error("[ExamSubmission][EB][InsertError]", error);
+      toast.error("⚠️ Erreur d'enregistrement du résultat. Veuillez contacter l'administration.", { duration: 10000 });
+    }
   };
 
   const handleTerminerMatiere = (reponses: Reponses) => {
