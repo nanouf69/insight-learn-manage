@@ -3339,8 +3339,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     const isPageUnlocked = (pageIndex: number): boolean => {
       if (pageIndex === 0) return true;
-      // E-learning: navigation libre, sans obligation de terminer/faire défiler les slides
-      if (!isPresentiel) return true;
       // Présentiel formations: all pages freely accessible (no slide gate)
       if (isPresentiel) return true;
       // For TAXI présentiel: Réglementation Nationale/Locale pages are freely accessible
@@ -3352,14 +3350,1209 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }
       return true;
     };
-...
+
+    const goToPage = (page: number) => {
+      if (page >= 0 && page < totalPages && isPageUnlocked(page)) {
+        setCurrentPage(page);
+        // Track individual cours view
+        const targetPage = pages[page];
+        if (targetPage?.type === "cours" && onTrackCours) {
+          onTrackCours(module.id, targetPage.cours.titre);
+        }
+        if (pendingResultRestore && page !== pendingResultRestore.page) {
+          setPendingResultRestore(null);
+        }
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    };
+
+    const renderCoursPage = (cours: ContentItem) => {
+      const hasInteractiveSlides = Boolean(cours.slidesKey && slidesByKey[cours.slidesKey]?.length > 0);
+
+      // --- Interactive checklist types ---
+      if (cours.checklistType === "competences") {
+        const competencesData = getCompetencesForFormation(apprenantType);
+        return (
+          <CompetencesChecklist
+            data={competencesData}
+            apprenantId={apprenantId || undefined}
+            completed={completedPages.has(currentPage)}
+            onComplete={() => {
+              markPageCompleted(currentPage);
+              if (currentPage < totalPages - 1) goToPage(currentPage + 1);
+            }}
+          />
+        );
+      }
+
+      if (cours.checklistType === "analyse-besoin") {
+        return (
+          <AnalyseBesoinForm
+            apprenantNom={apprenantInfo?.nom}
+            apprenantPrenom={apprenantInfo?.prenom}
+            apprenantEmail={apprenantInfo?.email}
+            apprenantTelephone={apprenantInfo?.telephone}
+            apprenantAdresse={apprenantInfo?.adresse}
+            apprenantCodePostal={apprenantInfo?.code_postal}
+            apprenantVille={apprenantInfo?.ville}
+            apprenantType={apprenantType || ""}
+            apprenantId={apprenantId || undefined}
+            completed={completedPages.has(currentPage)}
+            onComplete={() => {
+              markPageCompleted(currentPage);
+              if (currentPage < totalPages - 1) goToPage(currentPage + 1);
+            }}
+          />
+        );
+      }
+
+      if (cours.checklistType === "projet-professionnel") {
+        return (
+          <ProjetProfessionnelForm
+            apprenantNom={apprenantInfo?.nom}
+            apprenantPrenom={apprenantInfo?.prenom}
+            apprenantEmail={apprenantInfo?.email}
+            apprenantTelephone={apprenantInfo?.telephone}
+            apprenantAdresse={apprenantInfo?.adresse}
+            apprenantDateNaissance={apprenantInfo?.date_naissance || ""}
+            apprenantType={apprenantType || ""}
+            apprenantId={apprenantId || undefined}
+            isAdmin={!studentOnly}
+            completed={completedPages.has(currentPage)}
+            onComplete={() => {
+              markPageCompleted(currentPage);
+              if (currentPage < totalPages - 1) goToPage(currentPage + 1);
+            }}
+          />
+        );
+      }
+
+      if (cours.checklistType === "cgv") {
+        return (
+          <CGVAcceptanceForm
+            apprenantId={apprenantId || undefined}
+            completed={completedPages.has(currentPage)}
+            onComplete={() => {
+              markPageCompleted(currentPage);
+              if (currentPage < totalPages - 1) goToPage(currentPage + 1);
+            }}
+          />
+        );
+      }
+
+      if (cours.checklistType === "cgv-reglement") {
+        return (
+          <CGVReglementForm
+            apprenantId={apprenantId || undefined}
+            apprenantNom={apprenantInfo?.nom}
+            apprenantPrenom={apprenantInfo?.prenom}
+            apprenantAdresse={apprenantInfo?.adresse}
+            completed={completedPages.has(currentPage)}
+            onComplete={() => {
+              markPageCompleted(currentPage);
+              if (currentPage < totalPages - 1) goToPage(currentPage + 1);
+            }}
+          />
+        );
+      }
+
+      if (cours.checklistType === "evaluation-acquis") {
+        return (
+          <EvaluationAcquisForm
+            formationType={cours.formationType || "vtc"}
+            apprenantId={apprenantId || undefined}
+            onComplete={() => {
+              markPageCompleted(currentPage);
+              if (currentPage < totalPages - 1) goToPage(currentPage + 1);
+            }}
+          />
+        );
+      }
+
+      if (cours.checklistType === "satisfaction") {
+        return (
+          <SatisfactionForm
+            formationType={cours.formationType || "vtc"}
+            apprenantId={apprenantId || undefined}
+            onComplete={() => {
+              markPageCompleted(currentPage);
+              if (currentPage < totalPages - 1) {
+                goToPage(currentPage + 1);
+              } else {
+                persistModuleCompletion();
+                onBack();
+                toast.success("🎉 Formation terminée ! Merci pour vos retours.");
+              }
+            }}
+          />
+        );
+      }
+
+      return (
+        <div className="space-y-4">
+        <Card key={cours.id} className="overflow-hidden">
+          {cours.image && (
+            <div className="w-full h-48 sm:h-64 overflow-hidden">
+              <img src={cours.image} alt={cours.titre} className="w-full h-full object-cover" />
+            </div>
+          )}
+          <CardContent className="p-5 space-y-2">
+            <h4 className="font-bold text-lg">{cours.titre}</h4>
+            {cours.sousTitre && <p className="text-sm text-muted-foreground">{cours.sousTitre}</p>}
+            {cours.description && (
+              <div className="text-sm whitespace-pre-line leading-relaxed mt-2">
+                {cours.description}
+              </div>
+            )}
+            {(() => {
+              return (
+                <>
+                  {cours.fichiers && cours.fichiers.length > 0 && (() => {
+                    const pdfFile = cours.fichiers!.find(f => f.nom.endsWith(".pdf") || f.url.endsWith(".pdf"));
+                    const pdfLocalUrl = pdfFile ? (pdfFile.url.startsWith("http") ? pdfFile.url : pdfFile.url.startsWith("/") ? pdfFile.url : `/${pdfFile.url}`) : undefined;
+
+                    return (
+                      <div className="space-y-3 mt-3">
+                        {cours.fichiers!.map((f, i) => {
+                          const isPptx = f.nom.endsWith(".pptx") || f.nom.endsWith(".ppt") || f.url.endsWith(".pptx") || f.url.endsWith(".ppt");
+                          const isPdf = f.nom.endsWith(".pdf") || f.url.endsWith(".pdf");
+                          const isDocx = f.nom.endsWith(".docx") || f.nom.endsWith(".doc") || f.url.endsWith(".docx") || f.url.endsWith(".doc");
+                          const absoluteFileUrl = resolvePublicFileUrl(f.url);
+                          const googleViewerUrl = (isPptx || isDocx)
+                            ? `https://docs.google.com/viewer?url=${encodeURIComponent(absoluteFileUrl)}&embedded=true`
+                            : null;
+                          const msViewerUrl = (isPptx || isDocx)
+                            ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(absoluteFileUrl)}`
+                            : null;
+                          const shouldShowViewers = Boolean((isPptx || isDocx) && !hasInteractiveSlides);
+
+                          return (
+                            <div key={i} className="space-y-3">
+                              {!secureMode && !isDocx && !isPdf && (
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <a
+                                    href={f.url}
+                                    download
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
+                                  >
+                                    <FileText className="w-4 h-4" />
+                                    {f.nom}
+                                    <Download className="w-3 h-3" />
+                                  </a>
+                                </div>
+                              )}
+
+                              {shouldShowViewers && (
+                                <PptxViewerComparison
+                                  googleViewerUrl={googleViewerUrl!}
+                                  msViewerUrl={msViewerUrl!}
+                                  absoluteFileUrl={absoluteFileUrl}
+                                  nom={f.nom}
+                                  pdfUrl={pdfLocalUrl}
+                                  onLastPageReached={() => markPageCompleted(currentPage)}
+                                  studentOnly={secureMode}
+                                />
+                              )}
+
+                              {isPdf && !shouldShowViewers && (() => {
+                                const pdfSrc = f.url.startsWith('http')
+                                  ? f.url
+                                  : `${window.location.origin}${f.url.startsWith('/') ? f.url : `/${f.url}`}`;
+                                return (
+                                  <div className="mt-2 border rounded-lg overflow-hidden" onContextMenu={e => e.preventDefault()}>
+                                    <iframe
+                                      src={`${pdfSrc}#toolbar=0&navpanes=0`}
+                                      width="100%"
+                                      height="600px"
+                                      className="border-0"
+                                      title={`PDF — ${cours.titre}`}
+                                      style={{ minHeight: '600px' }}
+                                    />
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+
+                  {hasInteractiveSlides && cours.slidesKey && (
+                    <div className="mt-4" style={{ height: "min(70vh, 600px)" }}>
+                      <SlideViewer
+                        slides={slidesByKey[cours.slidesKey] ?? []}
+                        titre={cours.titre}
+                        brand="FTRANSPORT"
+                        onBack={() => {}}
+                        editable={!secureMode}
+                        onLastSlideReached={() => markPageCompleted(currentPage)}
+                        onSlidesChange={(slides) => updateSlidesForKey(cours.slidesKey!, slides)}
+                      />
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </CardContent>
+        </Card>
+
+        {/* Acknowledgment button for intro modules (text-only pages) */}
+        {isIntroModule && (() => {
+          const hasPdf = cours.fichiers?.some(f => f.nom.endsWith(".pdf") || f.url.endsWith(".pdf"));
+          const hasSlides = cours.slidesKey && slidesByKey[cours.slidesKey]?.length > 0;
+          const hasQuiz = cours.quiz && cours.quiz.length > 0;
+          const isTextOnly = !hasPdf && !hasSlides && !hasQuiz;
+          const isAcknowledged = introAcknowledged.has(cours.id);
+          
+          if (isTextOnly && !completedPages.has(currentPage)) {
+            return (
+              <Card className="border-primary/30 bg-primary/5">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      id={`ack-${cours.id}`}
+                      checked={isAcknowledged}
+                      onChange={(e) => {
+                        setIntroAcknowledged(prev => {
+                          const next = new Set(prev);
+                          if (e.target.checked) next.add(cours.id);
+                          else next.delete(cours.id);
+                          return next;
+                        });
+                      }}
+                      className="mt-1 h-4 w-4 rounded border-primary accent-primary cursor-pointer"
+                    />
+                    <label htmlFor={`ack-${cours.id}`} className="text-sm cursor-pointer select-none">
+                      J'ai lu et compris le contenu ci-dessus.
+                    </label>
+                  </div>
+                  <Button
+                    size="sm"
+                    disabled={!isAcknowledged}
+                    onClick={() => {
+                      markPageCompleted(currentPage);
+                      if (currentPage < totalPages - 1) {
+                        goToPage(currentPage + 1);
+                      }
+                    }}
+                    className="w-full gap-2"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    Valider et continuer
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          }
+          return null;
+        })()}
+
+        {/* Inline Quiz after course content */}
+        {cours.quiz && cours.quiz.length > 0 && (() => {
+          const pageIdx = currentPage;
+          const isValidated = inlineQuizValidated.has(cours.id);
+          const allAnswered = cours.quiz!.every(q => inlineQuizAnswers[`inline-${cours.id}-${q.id}`]);
+          const correctInline = cours.quiz!.filter(q => {
+            const sel = inlineQuizAnswers[`inline-${cours.id}-${q.id}`];
+            const correct = q.choix.find(c => c.correct);
+            return sel && correct && sel === correct.lettre;
+          }).length;
+
+          return (
+            <Card className="border-primary/30 bg-primary/5">
+              <CardContent className="p-5 space-y-4">
+                <h4 className="font-bold text-lg flex items-center gap-2">
+                  🧠 Exercice d'application
+                </h4>
+                {cours.quiz!.map((q, qi) => {
+                  const key = `inline-${cours.id}-${q.id}`;
+                  const selected = inlineQuizAnswers[key];
+                  return (
+                    <div key={q.id} id={`inline-q-${cours.id}-${q.id}`} className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : 'bg-background'}`}>
+                      <p className="font-medium"><span className="inline-flex items-center justify-center bg-primary/10 text-primary text-xs font-bold rounded px-1.5 py-0.5 mr-1.5">Q{qi + 1}</span>{q.enonce}</p>
+                      <div className="space-y-1.5 ml-2">
+                        {q.choix.map(c => {
+                          let bg = "bg-background hover:bg-muted/50 border";
+                          if (selected === c.lettre && !isValidated) bg = "bg-primary/10 border-primary border-2";
+                          if (isValidated && c.correct) bg = "bg-emerald-50 border-emerald-500 border-2 dark:bg-emerald-950";
+                          if (isValidated && selected === c.lettre && !c.correct) bg = "bg-destructive/10 border-destructive border-2";
+                          return (
+                            <button
+                              key={c.lettre}
+                              onClick={() => {
+                                if (isValidated) return;
+                                setInlineQuizAnswers(prev => ({ ...prev, [key]: c.lettre }));
+                                setUnansweredKeys(prev => { if (!prev.has(key)) return prev; const n = new Set(prev); n.delete(key); return n; });
+                              }}
+                              className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-all ${bg}`}
+                            >
+                              <span className="w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0">
+                                {c.lettre}
+                              </span>
+                              <span className="text-sm">{c.texte}</span>
+                              {isValidated && c.correct && <CheckCircle2 className="w-4 h-4 text-emerald-600 ml-auto shrink-0" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {/* Explanation after validation */}
+                      {isValidated && q.explication && (
+                        <div className="mt-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 text-sm">
+                          <p className="font-semibold text-blue-800 dark:text-blue-200 mb-1">💡 Explication :</p>
+                          <p className="text-blue-700 dark:text-blue-300">{q.explication}</p>
+                        </div>
+                      )}
+                      {isValidated && !q.explication && (() => {
+                        const correctChoice = q.choix.find(c => c.correct);
+                        return correctChoice ? (
+                          <div className="mt-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 text-sm">
+                            <p className="font-semibold text-blue-800 dark:text-blue-200">✅ Bonne réponse : {correctChoice.lettre}. {correctChoice.texte}</p>
+                          </div>
+                        ) : null;
+                      })()}
+                    </div>
+                  );
+                })}
+
+                {!isValidated ? (
+                  <Button
+                    onClick={async () => {
+                      if (!allAnswered) {
+                        // Find unanswered inline questions and highlight them
+                        const missing = new Set<string>();
+                        cours.quiz!.forEach(qq => {
+                          const k = `inline-${cours.id}-${qq.id}`;
+                          if (!inlineQuizAnswers[k]) missing.add(k);
+                        });
+                        setUnansweredKeys(missing);
+                        // Scroll to first unanswered
+                        const firstMissing = cours.quiz!.find(qq => !inlineQuizAnswers[`inline-${cours.id}-${qq.id}`]);
+                        if (firstMissing) {
+                          const el = document.getElementById(`inline-q-${cours.id}-${firstMissing.id}`);
+                          el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                        }
+                        toast.error("Répondez à toutes les questions avant de valider");
+                        return;
+                      }
+                      setUnansweredKeys(new Set());
+                      setInlineQuizValidated(prev => {
+                        const next = new Set(prev);
+                        next.add(cours.id);
+                        return next;
+                      });
+                      markPageCompleted(pageIdx);
+
+                      if (correctInline === cours.quiz!.length) {
+                        toast.success("🎉 Parfait ! Toutes les réponses sont correctes !");
+                      } else {
+                        toast("📖 Consultez les corrections ci-dessus");
+                      }
+                    }}
+                    className="gap-2"
+                    
+                  >
+                    <CheckCircle2 className="w-4 h-4" /> Valider mes réponses
+                  </Button>
+                ) : (() => {
+                  const totalInline = cours.quiz!.length;
+                  const pctInline = totalInline > 0 ? Math.round((correctInline / totalInline) * 100) : 0;
+                  const cColor = pctInline >= 80 ? "text-emerald-500" : pctInline >= 50 ? "text-amber-500" : "text-destructive";
+                  const cBg = pctInline >= 80 ? "bg-emerald-50 dark:bg-emerald-950/30" : pctInline >= 50 ? "bg-amber-50 dark:bg-amber-950/30" : "bg-red-50 dark:bg-red-950/30";
+                  const circ = 2 * Math.PI * 40;
+                  const offset = circ - (pctInline / 100) * circ;
+                  return (
+                  <div className="flex flex-col items-center gap-3 py-2">
+                    <div className={`relative w-24 h-24 rounded-full flex items-center justify-center ${cBg}`}>
+                      <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 90 90">
+                        <circle cx="45" cy="45" r="40" fill="none" stroke="currentColor" strokeWidth="6" className="text-muted/20" />
+                        <circle cx="45" cy="45" r="40" fill="none" stroke="currentColor" strokeWidth="6" className={cColor} strokeLinecap="round"
+                          strokeDasharray={circ} strokeDashoffset={offset} style={{ transition: "stroke-dashoffset 1s ease-out" }} />
+                      </svg>
+                      <span className={`text-2xl font-black ${cColor}`}>{pctInline}%</span>
+                    </div>
+                    <p className="text-lg font-bold">Points : {correctInline} / {totalInline}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {correctInline === totalInline ? "🎉 Parfait !" : "📖 Révisez les corrections ci-dessus"}
+                    </p>
+                  </div>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+          );
+        })()}
+      </div>
+    );
+    };
+
+    const renderSingleExercicePage = (exo: ExerciceItem) => {
+      const handleQrcCorrection = async (exoId: number, q: any, key: string) => {
+        const existingAnswer = selectedAnswers[key];
+        const reponse = (qrcAnswers[key] ?? (typeof existingAnswer === "string" ? existingAnswer : "")).trim();
+        if (!reponse) { toast.error("Écrivez une réponse avant de valider"); return; }
+        setQrcResults(prev => ({ ...prev, [key]: "loading" }));
+        try {
+          const { data, error } = await supabase.functions.invoke("corriger-qrc", {
+            body: {
+              question: q.enonce,
+              reponseEtudiant: reponse,
+              reponsesAttendues: q.reponsesAttendues || [],
+              matiereId: "reglementation_taxi",
+              pointsQuestion: 2,
+            },
+          });
+          if (error) throw error;
+          setQrcResults(prev => ({ ...prev, [key]: data }));
+        } catch (e) {
+          console.error(e);
+          setQrcResults(prev => ({ ...prev, [key]: { estCorrect: false, pointsObtenus: 0, explication: "Erreur de correction" } }));
+          toast.error("Erreur lors de la correction IA");
+        }
+      };
+
+      const exoQuestionsNormalized = (exo.questions ?? []).map((q: any) => {
+        if (!q) return q;
+        return {
+          ...q,
+          type: q?.type ?? ((q?.choix?.length ?? 0) > 0 ? "qcm" : "qrc"),
+        };
+      });
+      const questionsSafe = (exoQuestionsNormalized ?? []).filter((q: any) => q != null && q?.type != null);
+      const exoTotalQ = questionsSafe.length;
+      const exoCorrect = questionsSafe.filter((q: any) => {
+        const key = `${exo.id}-${q.id}`;
+        return isAnswerCorrect(selectedAnswers[key], q as any);
+      }).length;
+
+      // File-only exercise (no questions) — show links and auto-complete
+      if (exoTotalQ === 0 && exo.fichiers && exo.fichiers.length > 0) {
+        return (
+          <div className="space-y-4">
+            <Card>
+              <CardContent className="p-6 space-y-4">
+                <h3 className="text-lg font-bold">📝 {exo.titre}</h3>
+                {exo.sousTitre && <p className="text-sm text-muted-foreground">{exo.sousTitre}</p>}
+                <div className="flex flex-col gap-3 mt-4">
+                  {exo.fichiers.map((f, i) => {
+                    const isExternal = f.url.startsWith("http");
+                    const resolvedUrl = isExternal ? f.url : resolvePublicFileUrl(f.url);
+                    return (
+                      <a
+                        key={i}
+                        href={resolvedUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-3 rounded-lg border-2 border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary font-medium transition-all"
+                      >
+                        {isExternal ? <Maximize className="w-4 h-4" /> : <Download className="w-4 h-4" />}
+                        {f.nom}
+                      </a>
+                    );
+                  })}
+                </div>
+                <div className="flex justify-center gap-4 pt-4">
+                  {!completedPages.has(currentPage) && (
+                    <Button
+                      size="lg"
+                      onClick={() => {
+                        markPageCompleted(currentPage);
+                        toast.success("✅ Contenu consulté !");
+                      }}
+                      className="gap-2"
+                    >
+                      <CheckCircle2 className="w-5 h-5" /> J'ai consulté ce contenu
+                    </Button>
+                  )}
+                  {completedPages.has(currentPage) && currentPage < totalPages - 1 && (
+                    <Button size="lg" className="gap-2" onClick={() => goToPage(currentPage + 1)}>
+                      Suivant ➡️
+                    </Button>
+                  )}
+                  {completedPages.has(currentPage) && currentPage === totalPages - 1 && (
+                    <Button size="lg" variant="secondary" className="gap-2" onClick={async () => {
+                      const ok = await persistModuleCompletion();
+                      if (ok) { onBack(); toast.success("🎉 Module terminé !"); }
+                    }}>
+                      <CheckCircle2 className="w-4 h-4" /> Terminé
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+      }
+
+      return (
+      <div className="space-y-4">
+          <Card key={exo.id}>
+            <CardContent className="p-6 space-y-4">
+              <h3 className="text-lg font-bold">📝 {exo.titre}</h3>
+              {exo.sousTitre && <p className="text-sm text-muted-foreground">{exo.sousTitre}</p>}
+              {/* Show file links if present alongside questions */}
+              {exo.fichiers && exo.fichiers.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {exo.fichiers.map((f, i) => {
+                    const isExternal = f.url.startsWith("http");
+                    const resolvedUrl = isExternal ? f.url : resolvePublicFileUrl(f.url);
+                    return (
+                      <a key={i} href={resolvedUrl} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                        {isExternal ? <Maximize className="w-3 h-3" /> : <FileText className="w-3 h-3" />} {f.nom}
+                      </a>
+                    );
+                  })}
+                </div>
+              )}
+              {questionsSafe.map((q: any, qi: number) => {
+                const key = `${exo.id}-${q.id}`;
+                const isQrc = q?.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
+                const selected = selectedAnswers[key];
+                const qrcResult = qrcResults[key];
+
+                if (isQrc) {
+                  return (
+                    <div key={q.id} id={`exo-q-${exo.id}-${qi}`} className="space-y-2 p-4 border rounded-lg scroll-mt-20">
+                      <p className="font-medium"><span className="inline-flex items-center justify-center bg-primary/10 text-primary text-xs font-bold rounded px-1.5 py-0.5 mr-1.5">Q{qi + 1}</span>{q.enonce}</p>
+                      <Badge variant="outline" className="text-xs">QRC — Réponse libre</Badge>
+                      <Textarea
+                        placeholder="Écrivez votre réponse ici..."
+                        value={qrcAnswers[key] ?? (typeof selected === "string" ? selected : "")}
+                        onChange={(e) => handleQrcAnswerChange(key, e.target.value)}
+                        disabled={qrcResult !== undefined && qrcResult !== "loading"}
+                        className="mt-2"
+                      />
+                      {!qrcResult && (
+                        <Button size="sm" onClick={() => handleQrcCorrection(exo.id, q, key)} className="gap-2 mt-1">
+                          🤖 Corriger par IA
+                        </Button>
+                      )}
+                      {qrcResult === "loading" && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Loader2 className="w-4 h-4 animate-spin" /> Correction en cours...
+                        </div>
+                      )}
+                      {qrcResult && qrcResult !== "loading" && (
+                        <div className={`p-3 rounded-lg border-2 mt-2 ${qrcResult.estCorrect ? "bg-emerald-50 border-emerald-500 dark:bg-emerald-950" : qrcResult.pointsObtenus > 0 ? "bg-amber-50 border-amber-500 dark:bg-amber-950" : "bg-destructive/10 border-destructive"}`}>
+                          <p className="font-semibold text-sm">
+                            🤖 {qrcResult.estCorrect ? "✅ Correct" : qrcResult.pointsObtenus > 0 ? "⚠️ Partiellement correct" : "❌ Incorrect"} — {qrcResult.pointsObtenus}/2 pts
+                          </p>
+                          <p className="text-sm mt-1">{qrcResult.explication}</p>
+                          {q.reponsesAttendues && (
+                            <p className="text-xs text-muted-foreground mt-2">
+                              💡 Réponses attendues : {q.reponsesAttendues.join(" / ")}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                const multi = isMultiAnswer(q);
+                const selectedArr = Array.isArray(selected) ? selected : selected ? [selected] : [];
+
+                return (
+                  <div key={q.id} id={`exo-q-${exo.id}-${qi}`} className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : ''}`}>
+                    <p className="font-medium"><span className="inline-flex items-center justify-center bg-primary/10 text-primary text-xs font-bold rounded px-1.5 py-0.5 mr-1.5">Q{qi + 1}</span>{q.enonce}</p>
+                    {q.image && (
+                      <img src={q.image} alt="Illustration" className="max-h-28 rounded border object-contain ml-2" loading="lazy" />
+                    )}
+                    {multi && (
+                      <p className="text-xs text-muted-foreground italic ml-2">⚠️ Plusieurs réponses possibles</p>
+                    )}
+                    <div className="space-y-1.5 ml-2">
+                      {q.choix.map((c: any) => {
+                        const exoShowResults = showResultsFor.has(exo.id);
+                        const isSelected = selectedArr.includes(c.lettre);
+                        let bg = "bg-background hover:bg-muted/50 border";
+                        if (isSelected && !exoShowResults) bg = "bg-primary/10 border-primary border-2";
+                        if (exoShowResults && c.correct) bg = "bg-emerald-50 border-emerald-500 border-2 dark:bg-emerald-950";
+                        if (exoShowResults && isSelected && !c.correct) bg = "bg-destructive/10 border-destructive border-2";
+                        return (
+                          <button
+                            key={c.lettre}
+                            onClick={() => handleAnswer(exo.id, q.id, c.lettre, multi)}
+                            className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-all ${bg}`}
+                          >
+                            {multi ? (
+                              <span className={`w-5 h-5 rounded border-2 flex items-center justify-center text-xs font-bold shrink-0 ${isSelected ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground/40'}`}>
+                                {isSelected ? '✓' : ''}
+                              </span>
+                            ) : (
+                              <span className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 ${isSelected ? 'border-primary bg-primary text-primary-foreground' : ''}`}>
+                                {c.lettre}
+                              </span>
+                            )}
+                            <span className="text-sm">{c.texte}</span>
+                            {exoShowResults && c.correct && <CheckCircle2 className="w-4 h-4 text-emerald-600 ml-auto shrink-0" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {exoTotalQ > 0 && (
+                <div className="flex justify-center gap-4">
+                  {!showResultsFor.has(exo.id) ? (
+                    <Button
+                      size="lg"
+                      onClick={async () => {
+                        // Check all QCM questions are answered (skip QRC)
+                        const unansweredQcmKeys: string[] = [];
+                        questionsSafe.forEach((q: any) => {
+                          const k = `${exo.id}-${q.id}`;
+                          const isQrc = q?.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
+                          const ans = selectedAnswers[k];
+                          const hasAnswer = Array.isArray(ans) ? ans.length > 0 : !!ans;
+                          if (!isQrc && !hasAnswer) {
+                            unansweredQcmKeys.push(k);
+                          }
+                        });
+                        if (unansweredQcmKeys.length > 0) {
+                          setUnansweredKeys(new Set(unansweredQcmKeys));
+                          // Scroll to first unanswered
+                          const firstIdx = questionsSafe.findIndex((q: any) => {
+                            const k = `${exo.id}-${q.id}`;
+                            const isQrc = q?.type === "qrc" || (q.choix?.length === 0 && q.reponsesAttendues);
+                            return !isQrc && !selectedAnswers[k];
+                          });
+                          if (firstIdx >= 0) {
+                            const el = document.getElementById(`exo-q-${exo.id}-${firstIdx}`);
+                            el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                          }
+                          toast.error("Répondez à toutes les questions QCM avant de valider");
+                          return;
+                        }
+                        setUnansweredKeys(new Set());
+                        const validatedResultState = { exoId: exo.id, page: currentPage, validatedAt: Date.now() };
+
+                        const nextShowResults = new Set(showResultsFor);
+                        nextShowResults.add(exo.id);
+                        setShowResultsFor(nextShowResults);
+
+                        const nextCompletedPages = new Set(completedPages);
+                        nextCompletedPages.add(currentPage);
+                        setCompletedPages(nextCompletedPages);
+                        setPendingResultRestore(validatedResultState);
+
+                        try {
+                          window.sessionStorage.setItem(
+                            learnerUiStateKey,
+                            JSON.stringify({
+                              currentPage,
+                              selectedAnswers,
+                              showResultsFor: Array.from(nextShowResults),
+                              completedPages: Array.from(nextCompletedPages),
+                              pendingResultRestore: validatedResultState,
+                            })
+                          );
+                        } catch (error) {
+                          console.error("Erreur snapshot UI module:", error);
+                        }
+
+                        // Persist partiel en DB pour garder les réponses/scores intermédiaires
+                        // sans marquer le module comme terminé.
+                        if (apprenantId) {
+                          try {
+                            const questionDetails = activeExercices.flatMap(e =>
+                              (e.questions || []).map(q => {
+                                const key = `${e.id}-${q.id}`;
+                                const sel = selectedAnswers[key];
+                                const cor = q.choix.find(c => c.correct);
+                                return {
+                                  exerciceId: e.id, exerciceTitre: e.titre,
+                                  questionId: q.id, enonce: q.enonce,
+                                  reponseEleve: sel || null,
+                                  reponseCorrecte: cor?.lettre || null,
+                                  correct: sel != null && cor != null && sel === cor.lettre,
+                                };
+                              })
+                            );
+                            const totalQ = activeExercices.reduce((s, e) => s + (e.questions?.length || 0), 0);
+                            const correctC = questionDetails.filter(d => d.correct).length;
+                            await supabase.from("apprenant_module_completion").upsert({
+                              apprenant_id: apprenantId,
+                              module_id: module.id,
+                              score_obtenu: correctC,
+                              score_max: totalQ,
+                              details: questionDetails,
+                            } as any, { onConflict: "apprenant_id,module_id" });
+                          } catch (e) {
+                            console.error("Erreur sauvegarde quiz:", e);
+                          }
+                        }
+
+                        toast.success("✅ Quiz validé ! Consultez vos résultats puis cliquez sur Suivant.");
+                      }}
+                      className="gap-2"
+                    >
+                      <CheckCircle2 className="w-5 h-5" /> Valider les QCM
+                    </Button>
+                  ) : (() => {
+                    const pct = exoTotalQ > 0 ? Math.round((exoCorrect / exoTotalQ) * 100) : 0;
+                    const circleColor = pct >= 80 ? "text-emerald-500" : pct >= 50 ? "text-amber-500" : "text-destructive";
+                    const circleBg = pct >= 80 ? "bg-emerald-50 dark:bg-emerald-950/30" : pct >= 50 ? "bg-amber-50 dark:bg-amber-950/30" : "bg-red-50 dark:bg-red-950/30";
+                    const circumference = 2 * Math.PI * 54;
+                    const strokeDashoffset = circumference - (pct / 100) * circumference;
+
+                    return (
+                    <div className="w-full space-y-5">
+                      {/* Score circle */}
+                      <div className="flex flex-col items-center gap-3">
+                        <div className={`relative w-36 h-36 rounded-full flex items-center justify-center ${circleBg}`}>
+                          <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 120 120">
+                            <circle cx="60" cy="60" r="54" fill="none" stroke="currentColor" strokeWidth="8" className="text-muted/20" />
+                            <circle cx="60" cy="60" r="54" fill="none" stroke="currentColor" strokeWidth="8" className={circleColor} strokeLinecap="round"
+                              strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} style={{ transition: "stroke-dashoffset 1s ease-out" }} />
+                          </svg>
+                          <span className={`text-4xl font-black ${circleColor}`}>{pct}%</span>
+                        </div>
+                        <p className="text-lg font-bold">Points : {exoCorrect} / {exoTotalQ}</p>
+                      </div>
+
+                      {/* Answer grid */}
+                      <div className="rounded-lg border p-4 space-y-2">
+                        <h4 className="font-semibold text-sm">Réponses</h4>
+                        <p className="text-xs text-muted-foreground">Cliquez sur une question pour revoir la correction</p>
+                        <div className="grid grid-cols-5 sm:grid-cols-8 gap-2">
+                          {questionsSafe.map((q, qi) => {
+                            const key = `${exo.id}-${q.id}`;
+                            const selected = selectedAnswers[key];
+                            const correct = q.choix.find((c: any) => c.correct);
+                            const isCorrect = selected && correct && selected === correct.lettre;
+                            return (
+                              <div key={q.id}
+                                className="flex items-center gap-2 rounded-lg border bg-background p-2 cursor-pointer hover:bg-muted/50 transition-colors"
+                                title={`Q${qi + 1}: ${isCorrect ? "Correct" : "Incorrect"} — Cliquer pour voir`}
+                                onClick={() => {
+                                  const el = document.getElementById(`exo-q-${exo.id}-${qi}`);
+                                  if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+                                }}
+                              >
+                                <span className="text-sm font-bold min-w-[1.2rem] text-center">{qi + 1}</span>
+                                <span className={`w-3.5 h-3.5 rounded-full shrink-0 ${isCorrect ? "bg-emerald-500" : "bg-destructive"}`} />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Progress + Actions */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="rounded-lg border p-4 space-y-2">
+                          <h4 className="font-semibold text-sm">Progrès</h4>
+                          <div className="flex gap-4">
+                            <div className="flex flex-col items-center gap-1">
+                              <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                              </div>
+                              <span className="text-xs text-muted-foreground">Soumis</span>
+                            </div>
+                            <div className="flex flex-col items-center gap-1">
+                              <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                              </div>
+                              <span className="text-xs text-muted-foreground">Noté</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="rounded-lg border p-4 space-y-2">
+                          <h4 className="font-semibold text-sm">Actions</h4>
+                          <div className="flex flex-col gap-2">
+                            <Button variant="outline" size="sm" className="gap-2" onClick={() => {
+                              const exoKeys = questionsSafe.map(q => `${exo.id}-${q.id}`);
+                              setSelectedAnswers(prev => {
+                                const next = { ...prev };
+                                exoKeys.forEach(k => delete next[k]);
+                                return next;
+                              });
+                              setShowResultsFor(prev => { const next = new Set(prev); next.delete(exo.id); return next; });
+                              setPendingResultRestore((prev) => (prev?.exoId === exo.id ? null : prev));
+                            }}>
+                              🔄 Recommencer tout
+                            </Button>
+                            <Button variant="outline" size="sm" className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50" onClick={() => {
+                              // Only clear wrong answers, keep correct ones
+                              const wrongKeys: string[] = [];
+                              questionsSafe.forEach((q: any) => {
+                                const key = `${exo.id}-${q.id}`;
+                                const selected = selectedAnswers[key];
+                                const correct = q.choix.find((c: any) => c.correct);
+                                const isCorrect = selected && correct && selected === correct.lettre;
+                                if (!isCorrect) wrongKeys.push(key);
+                              });
+                              setSelectedAnswers(prev => {
+                                const next = { ...prev };
+                                wrongKeys.forEach(k => delete next[k]);
+                                return next;
+                              });
+                              setShowResultsFor(prev => { const next = new Set(prev); next.delete(exo.id); return next; });
+                              setPendingResultRestore((prev) => (prev?.exoId === exo.id ? null : prev));
+                              const nbWrong = wrongKeys.length;
+                              toast.info(`🎯 ${nbWrong} question${nbWrong > 1 ? "s" : ""} à refaire`);
+                            }}>
+                              🎯 Refaire les fausses ({(() => {
+                                let count = 0;
+                                questionsSafe.forEach((q: any) => {
+                                  const key = `${exo.id}-${q.id}`;
+                                  const selected = selectedAnswers[key];
+                                  const correct = q.choix.find((c: any) => c.correct);
+                                  if (!(selected && correct && selected === correct.lettre)) count++;
+                                });
+                                return count;
+                              })()})
+                            </Button>
+                            {currentPage < totalPages - 1 && completedPages.has(currentPage) && (
+                              <Button size="sm" className="gap-2" onClick={() => {
+                                goToPage(currentPage + 1);
+                              }}>
+                                Suivant ➡️
+                              </Button>
+                            )}
+                            {currentPage === totalPages - 1 && (
+                              <Button size="sm" variant="secondary" className="gap-2" onClick={async () => {
+                                const ok = await persistModuleCompletion();
+                                if (ok) { onBack(); toast.success("🎉 Module terminé !"); }
+                              }}>
+                                <CheckCircle2 className="w-4 h-4" /> Terminé
+                              </Button>
+                            )}
+                            <Button size="sm" variant="outline" className="gap-2 border-primary/30 text-primary hover:bg-primary/5" onClick={async () => {
+                              await persistModuleCompletion();
+                              onBack();
+                            }}>
+                              🏠 Retour à l'accueil
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                  })()}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+      </div>
+    );
+    };
+
+    if (totalPages === 0) {
+      return (
+        <div className="text-center py-12 text-muted-foreground">
+          <p>Aucun contenu disponible pour ce module.</p>
+        </div>
+      );
+    }
+
+    const [mobileProgressOpen, setMobileProgressOpen] = useState(false);
+
+    const renderProgressionSteps = (isMobileView = false) => (
+      <div className={isMobileView ? "space-y-1" : "space-y-1.5"}>
+        {pages.map((p, i) => {
+          const unlocked = isPageUnlocked(i);
+          const isCurrent = i === currentPage;
+          const isCompleted = completedPages.has(i);
+          const isQuizPage = p?.type === "exercice-single" && p.exercice.questions && p.exercice.questions.length > 0;
+          const rawLabel = p?.type === "cours"
+            ? `📖 ${p.cours.titre}`
+            : p?.type === "exercice-single"
+              ? isQuizPage ? `📝 Quiz — ${p.exercice.titre}` : `📝 ${p.exercice.titre}`
+              : "📝 Exercices";
+          const label = hierarchicalLabelsByPage[i]
+            || (subjectInfo
+              ? `${subjectInfo.subjectNum}.${i + 1} ${rawLabel}`
+              : rawLabel);
+
+          return (
+            <div key={i} className="flex items-start gap-3">
+              {/* Vertical line + dot */}
+              <div className="flex flex-col items-center shrink-0">
+                <button
+                  onClick={() => { if (unlocked) { goToPage(i); if (isMobileView) setMobileProgressOpen(false); } }}
+                  disabled={!unlocked}
+                  className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${
+                    isCurrent
+                      ? "border-primary bg-primary text-primary-foreground scale-110 shadow-md shadow-primary/30"
+                      : isCompleted
+                        ? "border-emerald-500 bg-emerald-500 text-white"
+                        : unlocked
+                          ? "border-muted-foreground/30 bg-background hover:border-primary/50"
+                          : "border-muted/50 bg-muted/30 cursor-not-allowed"
+                  }`}
+                >
+                  {isCompleted && !isCurrent && (
+                    <CheckCircle2 className="w-4 h-4" />
+                  )}
+                  {isCurrent && (
+                    <div className="w-2 h-2 rounded-full bg-current" />
+                  )}
+                  {!unlocked && !isCompleted && !isCurrent && (
+                    <Lock className="w-3 h-3 text-muted-foreground/50" />
+                  )}
+                </button>
+                {i < pages.length - 1 && (
+                  <div className={`w-0.5 h-8 ${isCompleted ? "bg-emerald-400" : "bg-muted"}`} />
+                )}
+              </div>
+              {/* Label + Badge */}
+              <button
+                onClick={() => { if (unlocked) { goToPage(i); if (isMobileView) setMobileProgressOpen(false); } }}
+                disabled={!unlocked}
+                className={`text-left text-sm leading-snug pt-1 transition-colors flex items-start gap-1.5 ${
+                  isCurrent
+                    ? "font-bold text-primary"
+                    : isCompleted
+                      ? "text-emerald-600 font-medium"
+                      : unlocked
+                        ? "text-muted-foreground hover:text-foreground"
+                        : "text-muted-foreground/40 cursor-not-allowed"
+                }`}
+              >
+                <span className="line-clamp-2 flex-1">{label}</span>
+                {(() => {
+                  // Extract part number from hierarchical label (e.g. "1.2 ..." → "Partie 2", "3 📖 Cours — ..." → "Partie 3")
+                  const hLabel = hierarchicalLabelsByPage[i] || "";
+                  const partMatch = hLabel.match(/^(\d+)\.(\d+)\s/) || hLabel.match(/^(\d+)\s/);
+                  const partNum = partMatch ? (partMatch[2] || partMatch[1]) : null;
+                  
+                  return isQuizPage ? (
+                    <span className="shrink-0 inline-flex flex-col items-center gap-0.5">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-700 border border-amber-300">Quiz</span>
+                      {partNum && <span className="text-[9px] text-muted-foreground font-medium">Partie {partNum}</span>}
+                    </span>
+                  ) : p?.type === "cours" ? (
+                    <span className="shrink-0 inline-flex flex-col items-center gap-0.5">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-sky-100 text-sky-700 border border-sky-300">Cours</span>
+                      {partNum && <span className="text-[9px] text-muted-foreground font-medium">Partie {partNum}</span>}
+                    </span>
+                  ) : null;
+                })()}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    );
+
+    const renderProgressBar = () => {
+      const coursPages = pages.map((p, i) => ({ p, i })).filter(({ p }) => p?.type === "cours");
+      const quizPages = pages.map((p, i) => ({ p, i })).filter(({ p }) => p?.type === "exercice-single" && p.exercice?.questions?.length > 0);
+      const coursCompleted = coursPages.filter(({ i }) => completedPages.has(i)).length;
+      const quizCompleted = quizPages.filter(({ i }) => completedPages.has(i)).length;
+
+      return (
+        <div className="pt-4 mt-3 border-t space-y-2">
+          <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
+            <span className="font-medium">Avancement</span>
+            <span className="font-bold text-primary text-base">{progressPercent}%</span>
+          </div>
+          <div className="relative h-3 w-full overflow-hidden rounded-full bg-secondary">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500 ease-out"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+          {(coursPages.length > 0 || quizPages.length > 0) && (
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mt-1">
+              {coursPages.length > 0 && (
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2 h-2 rounded-full bg-sky-500" />
+                  {coursCompleted}/{coursPages.length} cours
+                </span>
+              )}
+              {quizPages.length > 0 && (
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2 h-2 rounded-full bg-amber-500" />
+                  {quizCompleted}/{quizPages.length} quiz
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    return (
+      <div className="flex gap-6 max-w-6xl mx-auto">
+        {/* Vertical progress sidebar — desktop */}
+        <div className="hidden lg:block shrink-0 w-72 sticky top-4 self-start max-h-[calc(100vh-2rem)] overflow-y-auto">
+          <div className="rounded-xl border bg-card shadow-sm p-5 space-y-2">
+            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">Progression</h3>
+            {renderProgressionSteps()}
+            {renderProgressBar()}
+          </div>
+        </div>
+
+        {/* Main content */}
+        <div className="flex-1 min-w-0 space-y-6">
+        {/* Header */}
+        <div className="space-y-3">
+          <div className="text-center space-y-1">
+            <h2 className="text-2xl font-bold">{subjectInfo ? subjectInfo.parentTitle : moduleData.nom}</h2>
+            <p className="text-muted-foreground text-sm">{moduleData.description}</p>
+          </div>
+
+          {/* Print all revision sheets button for modules 70-73 */}
+          {[70, 71, 72, 73].includes(module.id) && moduleData.cours && moduleData.cours.length > 0 && (
+            <div className="flex justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 border-primary/30 text-primary hover:bg-primary/5"
+                onClick={() => {
+                  const allFiles = moduleData.cours.flatMap(c => c.fichiers || []);
+                  const printableFiles = allFiles.filter(f => 
+                    f.nom.endsWith(".pdf") || f.url.endsWith(".pdf")
+                  );
+                  const docxFiles = allFiles.filter(f =>
+                    f.nom.endsWith(".docx") || f.nom.endsWith(".doc") || f.url.endsWith(".docx") || f.url.endsWith(".doc")
+                  );
+                  // Open PDFs in new tabs for printing
+                  printableFiles.forEach(f => {
+                    const url = f.url.startsWith("http") ? f.url : f.url.startsWith("/") ? f.url : `/${f.url}`;
+                    window.open(url, "_blank");
+                  });
+                  // Open DOCX files via Google Docs viewer print-friendly mode
+                  docxFiles.forEach(f => {
+                    const absoluteUrl = f.url.startsWith("http") ? f.url : `${window.location.origin}${f.url.startsWith("/") ? f.url : `/${f.url}`}`;
+                    window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(absoluteUrl)}&embedded=false`, "_blank");
+                  });
+                  if (printableFiles.length + docxFiles.length === 0) {
+                    toast.info("Aucune fiche disponible à imprimer");
+                  } else {
+                    toast.success(`${printableFiles.length + docxFiles.length} fiche(s) ouvertes — utilisez Ctrl+P pour imprimer`);
+                  }
+                }}
+              >
+                <Printer className="w-4 h-4" />
+                🖨️ Imprimer toutes les fiches révisions
+              </Button>
+            </div>
+          )}
+
+          {/* Mobile/tablet collapsible progression */}
+          <div className="lg:hidden">
+            <button
+              onClick={() => setMobileProgressOpen(!mobileProgressOpen)}
+              className="w-full flex items-center justify-between rounded-xl border bg-card shadow-sm px-4 py-3"
+            >
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-primary font-bold text-sm">{progressPercent}%</span>
+                  </div>
+                  <div className="text-left">
+                    <span className="text-sm font-semibold text-foreground">Progression</span>
+                    <span className="text-xs text-muted-foreground block">
+                      {currentPageData?.type === "cours" ? "📚 Cours" : "📝 Exercices"} — {currentPage + 1}/{totalPages}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-24 h-2.5 overflow-hidden rounded-full bg-secondary">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+                {mobileProgressOpen ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
+              </div>
+            </button>
+            {mobileProgressOpen && (
+              <div className="mt-2 rounded-xl border bg-card shadow-sm p-4 animate-fade-in max-h-[60vh] overflow-y-auto">
+                {renderProgressionSteps(true)}
+                {renderProgressBar()}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Lock message */}
+        {!completedPages.has(currentPage) && currentPage < totalPages - 1 && (
+          <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-sm">
+            <span>🔒</span>
+            <span>
+              {isIntroModule && currentPageData?.type === "cours" && !currentPageData.cours.quiz?.length
+                ? "Lisez le contenu puis cochez « J'ai lu et compris » pour continuer."
+                : currentPageData?.type === "cours" && currentPageData.cours.quiz?.length
+                  ? "Répondez au QCM ci-dessous pour débloquer les exercices et la partie suivante."
+                  : "Parcourez toutes les slides jusqu'à la dernière pour débloquer les exercices et la partie suivante."}
+            </span>
+          </div>
+        )}
+
+        {/* Current page content */}
+        <div className="animate-fade-in">
+          {currentPageData?.type === "cours" && renderCoursPage(currentPageData.cours)}
+          {currentPageData?.type === "exercice-single" && renderSingleExercicePage(currentPageData.exercice)}
+        </div>
+
+        {/* Quiz completion rate */}
+        {(() => {
+          const totalQ = activeExercices.reduce((s, e) => s + (e.questions?.length || 0), 0);
+          const answeredQ = activeExercices.reduce((s, e) => {
+            if (!e.questions) return s;
+            return s + e.questions.filter(q => selectedAnswers[`${e.id}-${q.id}`]).length;
+          }, 0);
+          if (totalQ === 0) return null;
+          const pctAnswered = Math.round((answeredQ / totalQ) * 100);
+          const remaining = totalQ - answeredQ;
+          return (
+            <div className="flex items-center gap-3 px-4 py-2 rounded-lg border bg-muted/30 text-sm">
+              <div className="flex-1">
+                <div className="flex justify-between mb-1">
+                  <span className="font-medium">📝 Réponses : {answeredQ} / {totalQ}</span>
+                  <span className="text-muted-foreground">{pctAnswered}%</span>
+                </div>
+                <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-primary/60 transition-all duration-500"
+                    style={{ width: `${pctAnswered}%` }}
+                  />
+                </div>
+              </div>
+              {remaining > 0 && (
+                <span className="text-xs text-muted-foreground shrink-0">
+                  {remaining} restante{remaining > 1 ? "s" : ""}
+                </span>
+              )}
+              {remaining === 0 && (
+                <span className="text-xs text-emerald-600 font-semibold shrink-0">✅ Complet</span>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* Navigation buttons */}
+        <div className="flex items-center justify-between pt-2">
+          <Button
+            variant="outline"
+            onClick={() => goToPage(currentPage - 1)}
+            disabled={currentPage === 0}
+            className="gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" /> Précédent
+          </Button>
+          <span className="text-sm text-muted-foreground font-medium">
+            {currentPage + 1} / {totalPages}
+          </span>
           {currentPage < totalPages - 1 ? (
             <Button
               onClick={() => {
                 goToPage(currentPage + 1);
               }}
+              disabled={!completedPages.has(currentPage)}
               className="gap-2"
+              title={!completedPages.has(currentPage) ? "Parcourez toutes les slides pour continuer" : ""}
             >
+              {!completedPages.has(currentPage) && <span>🔒</span>}
               Suivant <ArrowDown className="w-4 h-4 -rotate-90" />
             </Button>
           ) : (
