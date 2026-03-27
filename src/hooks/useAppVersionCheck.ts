@@ -9,8 +9,8 @@ export function useAppVersionCheck(isAuthenticated: boolean, isAdmin: boolean) {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    // Only check for non-admin authenticated users (apprenants)
-    if (!isAuthenticated || isAdmin) return;
+    // Only run for admins/formateurs — never for apprenants
+    if (!isAuthenticated || !isAdmin) return;
 
     const fetchVersion = async (): Promise<string | null> => {
       try {
