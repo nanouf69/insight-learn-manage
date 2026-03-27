@@ -373,12 +373,14 @@ const CorrectionQRCTab = () => {
 
     const scoreMax = (row as any).score_max || 20;
     const safeClamped = Math.min(Math.max(newScore, 0), scoreMax);
-    const noteSur20 = scoreMax > 0 ? Number(((safeClamped / scoreMax) * 20).toFixed(1)) : 0;
+    const existingScore = Math.max(Number((row as any).score_obtenu) || 0, 0);
+    const protectedScore = safeClamped <= 0 && existingScore > 0 ? existingScore : safeClamped;
+    const noteSur20 = scoreMax > 0 ? Number(((protectedScore / scoreMax) * 20).toFixed(1)) : 0;
 
     const { error: updateErr } = await supabase
       .from("apprenant_quiz_results")
       .update({
-        score_obtenu: safeClamped,
+        score_obtenu: protectedScore,
         note_sur_20: noteSur20,
         details: {
           ...details,
@@ -395,7 +397,7 @@ const CorrectionQRCTab = () => {
       setItems(prev => {
         const updated = prev.map(i => {
           if (i.resultId === item.resultId) {
-            const upd: Partial<QrcItem> = { noteSur20, scoreMatiereObtenu: safeClamped };
+            const upd: Partial<QrcItem> = { noteSur20, scoreMatiereObtenu: protectedScore };
             if (i.questionId === item.questionId) {
               return { ...i, ...upd, pointsObtenus: clamped, corrigeManuel: true, commentaire: commentaire || "", correctedAt: new Date().toISOString() };
             }
