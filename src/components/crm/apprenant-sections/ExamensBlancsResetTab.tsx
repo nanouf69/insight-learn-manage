@@ -65,7 +65,7 @@ function typeLabel(type: string): string {
 
 export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetTabProps) {
   const queryClient = useQueryClient();
-  const [confirmTarget, setConfirmTarget] = useState<ExamenGroup | null>(null);
+  const [confirmTarget, setConfirmTarget] = useState<{ group: ExamenGroup; matiere?: ExamenResult } | null>(null);
   const [resetting, setResetting] = useState(false);
   const [expandedExams, setExpandedExams] = useState<Set<string>>(new Set());
 
@@ -81,7 +81,6 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
       if (error) throw error;
       if (!data || data.length === 0) return [];
 
-      // Group by exam number + type
       const grouped = new Map<string, ExamenGroup>();
       for (const row of data) {
         const { num, type } = parseExamenInfo(row.quiz_id);
@@ -132,43 +131,69 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
     });
   };
 
-  const handleReset = async (group: ExamenGroup) => {
+  const handleReset = async (group: ExamenGroup, matiere?: ExamenResult) => {
     setResetting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { toast.error("Session expirée"); return; }
 
-      // Collect all unique quiz_ids for this exam group
-      const quizIds = [...new Set(group.results.map((r) => r.quiz_id))];
-
-      // Delete all results matching these quiz_ids for this apprenant
-      for (const qid of quizIds) {
+      if (matiere) {
+        // Reset single matière
         const { error } = await supabase
           .from("apprenant_quiz_results")
           .delete()
           .eq("apprenant_id", apprenant.id)
           .eq("quiz_type", "examen_blanc")
-          .eq("quiz_id", qid);
+          .eq("quiz_id", matiere.quiz_id)
+          .eq("matiere_id", matiere.matiere_id);
         if (error) throw error;
+
+        await supabase.from("audit_logs").insert({
+          action: "reset_examen_blanc_matiere",
+          admin_user_id: user.id,
+          admin_email: user.email ?? null,
+          apprenant_id: apprenant.id,
+          apprenant_nom: `${apprenant.prenom} ${apprenant.nom}`,
+          details: {
+            examen_label: group.examenLabel,
+            matiere_id: matiere.matiere_id,
+            matiere_nom: matiere.matiere_nom,
+            quiz_id: matiere.quiz_id,
+          },
+        });
+
+        toast.success(`${matiere.matiere_nom} réinitialisée (${group.examenLabel})`);
+      } else {
+        // Reset full exam
+        const quizIds = [...new Set(group.results.map((r) => r.quiz_id))];
+        for (const qid of quizIds) {
+          const { error } = await supabase
+            .from("apprenant_quiz_results")
+            .delete()
+            .eq("apprenant_id", apprenant.id)
+            .eq("quiz_type", "examen_blanc")
+            .eq("quiz_id", qid);
+          if (error) throw error;
+        }
+
+        await supabase.from("audit_logs").insert({
+          action: "reset_examen_blanc",
+          admin_user_id: user.id,
+          admin_email: user.email ?? null,
+          apprenant_id: apprenant.id,
+          apprenant_nom: `${apprenant.prenom} ${apprenant.nom}`,
+          details: {
+            examen_label: group.examenLabel,
+            examen_num: group.examenNum,
+            type: group.type,
+            quiz_ids: quizIds,
+            matieres_supprimees: group.results.length,
+          },
+        });
+
+        toast.success(`${group.examenLabel} réinitialisé pour ${apprenant.prenom} ${apprenant.nom}`);
       }
 
-      // Audit log
-      await supabase.from("audit_logs").insert({
-        action: "reset_examen_blanc",
-        admin_user_id: user.id,
-        admin_email: user.email ?? null,
-        apprenant_id: apprenant.id,
-        apprenant_nom: `${apprenant.prenom} ${apprenant.nom}`,
-        details: {
-          examen_label: group.examenLabel,
-          examen_num: group.examenNum,
-          type: group.type,
-          quiz_ids: quizIds,
-          matieres_supprimees: group.results.length,
-        },
-      });
-
-      toast.success(`${group.examenLabel} réinitialisé pour ${apprenant.prenom} ${apprenant.nom}`);
       queryClient.invalidateQueries({ queryKey: ["examen-blanc-results-admin", apprenant.id] });
     } catch (err: any) {
       console.error("Erreur reset examen blanc:", err);
@@ -179,6 +204,14 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
     }
   };
 
+  const confirmLabel = confirmTarget?.matiere
+    ? confirmTarget.matiere.matiere_nom
+    : confirmTarget?.group.examenLabel;
+
+  const confirmDescription = confirmTarget?.matiere
+    ? `la matière "${confirmTarget.matiere.matiere_nom}" de l'${confirmTarget.group.examenLabel}`
+    : `toutes les ${confirmTarget?.group.results.length} matières de l'${confirmTarget?.group.examenLabel}`;
+
   return (
     <Card>
       <CardHeader>
@@ -187,7 +220,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
           Examens blancs — Remise à zéro
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Réinitialisez les résultats d'examen blanc de <strong>{apprenant.prenom} {apprenant.nom}</strong> par examen.
+          Réinitialisez les résultats d'examen blanc de <strong>{apprenant.prenom} {apprenant.nom}</strong> par examen ou par matière.
           L'action est tracée pour la conformité Qualiopi.
         </p>
       </CardHeader>
@@ -211,7 +244,6 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
 
               return (
                 <div key={key} className="border rounded-lg overflow-hidden">
-                  {/* Header */}
                   <div className="flex items-center justify-between p-3 bg-muted/30">
                     <div
                       className="flex-1 cursor-pointer flex items-center gap-2"
@@ -243,14 +275,13 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
                     <Button
                       variant="destructive"
                       size="sm"
-                      onClick={() => setConfirmTarget(group)}
+                      onClick={() => setConfirmTarget({ group })}
                     >
                       <RotateCcw className="w-4 h-4 mr-1" />
                       Remettre à zéro
                     </Button>
                   </div>
 
-                  {/* Matières détaillées */}
                   {expanded && (
                     <div className="border-t divide-y">
                       {group.results
@@ -262,7 +293,18 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
                           return (
                             <div key={i} className="px-4 py-2 flex items-center justify-between text-sm">
                               <span className="text-muted-foreground">{r.matiere_nom}</span>
-                              <span className="font-mono text-xs">{note}/20</span>
+                              <div className="flex items-center gap-3">
+                                <span className="font-mono text-xs">{note}/20</span>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
+                                  onClick={() => setConfirmTarget({ group, matiere: r })}
+                                >
+                                  <RotateCcw className="w-3 h-3 mr-1" />
+                                  Reset
+                                </Button>
+                              </div>
                             </div>
                           );
                         })}
@@ -280,11 +322,13 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmer la remise à zéro</AlertDialogTitle>
             <AlertDialogDescription>
-              Voulez-vous vraiment réinitialiser <strong>"{confirmTarget?.examenLabel}"</strong> pour{" "}
+              Voulez-vous vraiment réinitialiser <strong>{confirmDescription}</strong> pour{" "}
               <strong>{apprenant.prenom} {apprenant.nom}</strong> ?
               <br /><br />
-              Cette action est <strong>irréversible</strong>. Les résultats des {confirmTarget?.results.length} matière(s) seront supprimés
-              et l'apprenant pourra refaire cet examen depuis zéro.
+              Cette action est <strong>irréversible</strong>.
+              {confirmTarget?.matiere
+                ? " Le résultat de cette matière sera supprimé et l'apprenant pourra la refaire."
+                : ` Les résultats des ${confirmTarget?.group.results.length} matière(s) seront supprimés et l'apprenant pourra refaire cet examen depuis zéro.`}
               <br /><br />
               <em className="text-xs">L'action sera enregistrée dans le journal d'audit (traçabilité Qualiopi/MCF).</em>
             </AlertDialogDescription>
@@ -292,7 +336,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
           <AlertDialogFooter>
             <AlertDialogCancel disabled={resetting}>Annuler</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => confirmTarget && handleReset(confirmTarget)}
+              onClick={() => confirmTarget && handleReset(confirmTarget.group, confirmTarget.matiere)}
               disabled={resetting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
