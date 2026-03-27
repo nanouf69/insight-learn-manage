@@ -1741,7 +1741,7 @@ function ExerciceCard({
                   />
                 ) : (
                   <div className="flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/20 group transition-colors">
-                    <Badge className="text-xs shrink-0 mt-0.5">Q{q.id}</Badge>
+                    <Badge className="text-xs shrink-0 mt-0.5">Q{qi + 1}</Badge>
                     <div className="flex-1">
                       <p className="text-sm text-muted-foreground line-clamp-2">{q.enonce}</p>
                       <div className="flex flex-wrap gap-1 mt-1">
