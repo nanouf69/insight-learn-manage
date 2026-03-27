@@ -260,7 +260,7 @@ export function EditableQuizViewer({ sections, title, icon = "📝", quizId, fou
                       return (
                         <div key={q.id} className="flex items-center justify-between px-3 py-2 rounded bg-destructive/10 border border-destructive/20">
                           <p className="text-sm text-muted-foreground line-through">
-                            <span className="mr-1">{qi + 1}.</span>{q.enonce}
+                            <span className="mr-1">Q{q.id}.</span>{q.enonce}
                           </p>
                           {editable && (
                             <Button size="sm" variant="ghost" className="text-xs shrink-0 ml-2" onClick={() => resetToOriginal(section.id, q.id)}>
@@ -279,7 +279,7 @@ export function EditableQuizViewer({ sections, title, icon = "📝", quizId, fou
                       return (
                         <div key={q.id} className="space-y-3 p-4 border-2 border-primary/30 rounded-lg bg-background">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-muted-foreground">Question {qi + 1}</span>
+                            <span className="text-sm font-medium text-muted-foreground">Question Q{q.id}</span>
                             <div className="flex gap-1">
                               <Button size="sm" variant="ghost" onClick={cancelEdit} disabled={saving}>
                                 <X className="w-4 h-4" />
@@ -337,7 +337,7 @@ export function EditableQuizViewer({ sections, title, icon = "📝", quizId, fou
                       <div key={q.id} className={`space-y-1.5 group ${isOverridden ? "pl-3 border-l-2 border-amber-400" : ""}`}>
                         <div className="flex items-start justify-between">
                           <p className="text-sm font-medium flex-1">
-                            <span className="text-muted-foreground mr-1">{qi + 1}.</span>
+                            <span className="text-muted-foreground mr-1">Q{q.id}.</span>
                             {actual.enonce}
                             {isOverridden && <span className="ml-2 text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">modifiée</span>}
                           </p>

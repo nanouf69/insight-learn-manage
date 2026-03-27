@@ -67,7 +67,7 @@ export function FormateurQuizViewer({ sections, title, icon = "📝" }: Props) {
                   {section.questions.map((q, qi) => (
                     <div key={q.id} className="space-y-1.5">
                       <p className="text-sm font-medium">
-                        <span className="text-muted-foreground mr-1">{qi + 1}.</span>
+                        <span className="text-muted-foreground mr-1">Q{q.id}.</span>
                         {q.enonce}
                       </p>
                       {q.image && (

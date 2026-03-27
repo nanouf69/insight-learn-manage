@@ -1348,7 +1348,7 @@ function PassageMatiere({
                 resumeIndex = i; // if all answered, stay on last
               }
               setQuestionIndex(resumeIndex);
-              toast.info(`Vous reprenez votre examen à la question ${resumeIndex + 1}/${questionsSafe.length}`, {
+              toast.info(`Vous reprenez votre examen à la question Q${questionsSafe[resumeIndex]?.id ?? (resumeIndex + 1)} (${resumeIndex + 1}/${questionsSafe.length})`, {
                 duration: 4000,
                 icon: "📝",
               });
@@ -1521,7 +1521,7 @@ function PassageMatiere({
       {/* Progression questions */}
       <div className="space-y-1">
         <div className="flex justify-between text-xs text-muted-foreground">
-          <span>Question {safeQuestionIndex + 1} / {questionsSafe.length}</span>
+          <span>Question Q{question?.id ?? (safeQuestionIndex + 1)} ({safeQuestionIndex + 1} / {questionsSafe.length})</span>
           <div className="flex items-center gap-3">
             {saveStatus === "saving" && (
               <span className="flex items-center gap-1 text-amber-600 animate-pulse">
@@ -1684,9 +1684,9 @@ function PassageMatiere({
                       ? "bg-green-100 text-green-700 border border-green-300"
                       : "bg-red-50 text-red-500 border border-red-300 animate-pulse"
                 }`}
-                title={isAnswered ? `Question ${i + 1} — répondue ✓` : `Question ${i + 1} — NON répondue ✗`}
+                title={isAnswered ? `Q${q.id} — répondue ✓` : `Q${q.id} — NON répondue ✗`}
               >
-                {i + 1}
+                {q.id}
               </button>
             );
           })}
@@ -2401,11 +2401,11 @@ function EcranResultats({
                             <div className="flex items-start justify-between gap-2 mb-1">
                               <div className="flex items-center gap-1.5 flex-1">
                                 <Badge variant={q?.type === "QRC" ? "secondary" : "outline"} className="text-xs shrink-0">{q?.type}</Badge>
-                                <p className="text-sm font-bold">{qIdx + 1}. {q.enonce}</p>
+                                <p className="text-sm font-bold">Q{q.id}. {q.enonce}</p>
                                 {q?.image && (
                                   <ExamQuestionImage
                                     image={q.image}
-                                    alt={`Illustration de la question ${qIdx + 1}`}
+                                    alt={`Illustration de la question Q${q.id}`}
                                     className="mt-1 max-h-24 rounded border"
                                     fallbackClassName="mt-1 text-xs text-muted-foreground italic"
                                   />
