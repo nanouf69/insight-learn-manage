@@ -415,7 +415,8 @@ function EcranResultats({
   // pour garder la note principale strictement alignée avec les sous-notes.
   const resultatsAvecIA = resultats.map((r, mi) => {
     const safeMaxPoints = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
-    const matiere = examen.matieres[mi];
+    // Find matière by ID instead of relying on index alignment (resultats may have been filtered)
+    const matiere = examen.matieres.find(m => m?.id === r.matiereId) ?? examen.matieres[mi];
     const questionsSafe = matiere ? (matiere.questions || []).filter((q): q is Question => q != null && q?.type !== undefined) : [];
     const cacheMatiere = correctionsIA[mi] || {};
 
