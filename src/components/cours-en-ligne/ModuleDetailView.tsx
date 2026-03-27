@@ -2651,9 +2651,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const LearnerPreview = ({ secureMode = true }: { secureMode?: boolean }) => {
     const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string | string[]>>({});
 
-    // Helper: does a question have multiple correct answers?
-    const isMultiAnswer = (q: { choix: { correct?: boolean }[] }) =>
-      (q.choix?.filter(c => c.correct).length || 0) > 1;
+    // Always allow multiple answers (checkboxes) for all questions
+    const isMultiAnswer = (_q: { choix: { correct?: boolean }[] }) => true;
 
     // Helper: check if answer is correct (works for single and multi)
     const isAnswerCorrect = (selected: string | string[] | undefined, q: { choix: { lettre: string; correct?: boolean }[] }) => {
