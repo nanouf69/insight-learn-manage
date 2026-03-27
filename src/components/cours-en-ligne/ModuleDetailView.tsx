@@ -3704,7 +3704,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   const selected = inlineQuizAnswers[key];
                   return (
                     <div key={q.id} id={`inline-q-${cours.id}-${q.id}`} className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : 'bg-background'}`}>
-                      <p className="font-medium">{qi + 1}. {q.enonce}</p>
+                      <p className="font-medium"><span className="inline-flex items-center justify-center bg-primary/10 text-primary text-xs font-bold rounded px-1.5 py-0.5 mr-1.5">Q{q.id}</span>{q.enonce}</p>
                       <div className="space-y-1.5 ml-2">
                         {q.choix.map(c => {
                           let bg = "bg-background hover:bg-muted/50 border";
@@ -3948,7 +3948,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 if (isQrc) {
                   return (
                     <div key={q.id} id={`exo-q-${exo.id}-${qi}`} className="space-y-2 p-4 border rounded-lg scroll-mt-20">
-                      <p className="font-medium">{qi + 1}. {q.enonce}</p>
+                      <p className="font-medium"><span className="inline-flex items-center justify-center bg-primary/10 text-primary text-xs font-bold rounded px-1.5 py-0.5 mr-1.5">Q{q.id}</span>{q.enonce}</p>
                       <Badge variant="outline" className="text-xs">QRC — Réponse libre</Badge>
                       <Textarea
                         placeholder="Écrivez votre réponse ici..."
@@ -3989,7 +3989,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
                 return (
                   <div key={q.id} id={`exo-q-${exo.id}-${qi}`} className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : ''}`}>
-                    <p className="font-medium">{qi + 1}. {q.enonce}</p>
+                    <p className="font-medium"><span className="inline-flex items-center justify-center bg-primary/10 text-primary text-xs font-bold rounded px-1.5 py-0.5 mr-1.5">Q{q.id}</span>{q.enonce}</p>
                     {q.image && (
                       <img src={q.image} alt="Illustration" className="max-h-28 rounded border object-contain ml-2" loading="lazy" />
                     )}
@@ -4161,13 +4161,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                             return (
                               <div key={q.id}
                                 className="flex items-center gap-2 rounded-lg border bg-background p-2 cursor-pointer hover:bg-muted/50 transition-colors"
-                                title={`Q${qi + 1}: ${isCorrect ? "Correct" : "Incorrect"} — Cliquer pour voir`}
+                                title={`Q${q.id}: ${isCorrect ? "Correct" : "Incorrect"} — Cliquer pour voir`}
                                 onClick={() => {
                                   const el = document.getElementById(`exo-q-${exo.id}-${qi}`);
                                   if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
                                 }}
                               >
-                                <span className="text-sm font-bold min-w-[1.2rem] text-center">{qi + 1}</span>
+                                <span className="text-sm font-bold min-w-[1.2rem] text-center">{q.id}</span>
                                 <span className={`w-3.5 h-3.5 rounded-full shrink-0 ${isCorrect ? "bg-emerald-500" : "bg-destructive"}`} />
                               </div>
                             );
@@ -4791,7 +4791,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                                         ? 'bg-emerald-500 text-white'
                                         : 'bg-red-500 text-white'
                                     }`}>
-                                      {qi + 1}
+                                      {q.questionId}
                                     </span>
                                     <div className="flex-1 min-w-0">
                                       <p className={`text-sm ${q.correct ? 'text-emerald-800 dark:text-emerald-300' : 'text-red-800 dark:text-red-300'}`}>
