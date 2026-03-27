@@ -47,6 +47,8 @@ export default function ExamensBlancsPage({
 } = {}) {
   const EXAM_SESSION_KEY = `exam_session_${apprenantId || "anon"}`;
 
+  // BUG #3 FIX: restoreSession is now synchronous for initial state,
+  // but the useEffect below will verify against DB and purge if already completed
   const restoreSession = () => {
     try {
       const saved = sessionStorage.getItem(EXAM_SESSION_KEY);
