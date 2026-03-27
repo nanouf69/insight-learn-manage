@@ -454,8 +454,8 @@ export function RapprochementBancaire() {
         .not("reference", "is", null);
       const existingRefs = new Set((existing || []).map(e => e.reference));
 
-      const inserts = revolutTxs
-        .filter((tx: any) => tx.state === "completed" && tx.legs?.length > 0)
+      const completedTxs = revolutTxs.filter((tx: any) => tx.state === "completed" && tx.legs?.length > 0);
+      const inserts = completedTxs
         .filter((tx: any) => !existingRefs.has(tx.id))
         .map((tx: any) => {
           const leg = tx.legs[0];
@@ -473,8 +473,10 @@ export function RapprochementBancaire() {
           };
         });
 
+      const skipped = completedTxs.length - inserts.length;
+
       if (inserts.length === 0) {
-        toast.info("Toutes les transactions Revolut sont déjà synchronisées.");
+        toast.info(`Toutes les ${completedTxs.length} transactions Revolut sont déjà synchronisées.`);
         setSyncingRevolut(false);
         return;
       }
@@ -482,7 +484,10 @@ export function RapprochementBancaire() {
       const { error: insertErr } = await supabase.from("transactions_bancaires").insert(inserts);
       if (insertErr) throw insertErr;
 
-      toast.success(`${inserts.length} transactions Revolut synchronisées !`);
+      const msg = skipped > 0
+        ? `${inserts.length} nouvelles transactions Revolut synchronisées, ${skipped} déjà présentes ignorées.`
+        : `${inserts.length} transactions Revolut synchronisées !`;
+      toast.success(msg);
       await fetchAll();
     } catch (err) {
       toast.error("Erreur sync Revolut : " + (err instanceof Error ? err.message : "Erreur"));
