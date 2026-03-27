@@ -825,6 +825,7 @@ function EcranResultats({
 
 // ===== RÉVISION DES QUESTIONS FAUSSES =====
 
+
 function RevisionFausses({
   wrongQuestions,
   onTerminer,
@@ -1075,5 +1076,143 @@ function RevisionFausses({
     const newReponses = { ...reponses, [questionId]: value };
     setReponses(newReponses);
     persistProgress(newReponses, currentIndex, correctedCount, correctedQuestionsRef.current);
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Progress */}
+      <div className="flex items-center justify-between">
+        <Badge style={{ backgroundColor: '#0D2540', color: '#00B4D8' }}>
+          Question Q{q?.id ?? "?"} ({currentIndex + 1} / {wrongQuestions.length})
+        </Badge>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">{matiereNom}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs text-muted-foreground hover:text-destructive"
+            onClick={handleRecommencer}
+          >
+            <RotateCcw className="w-3 h-3 mr-1" /> Recommencer
+          </Button>
+        </div>
+      </div>
+      <Progress value={((currentIndex + 1) / wrongQuestions.length) * 100} className="h-2" />
+
+      <Card className="border-2" style={{ borderColor: '#0D2540' }}>
+        <CardContent className="pt-5 pb-5 space-y-4">
+          <div className="flex items-start justify-between gap-3">
+            <p className="font-semibold text-base flex-1" style={{ color: '#0D2540' }}>
+              {q.enonce}
+            </p>
+            <Badge variant="outline" className="shrink-0 text-xs font-semibold text-primary border-primary/40">
+              {getPointsParQuestion(current.matiere.id, q?.type || "QCM", current.matiere)} pt{getPointsParQuestion(current.matiere.id, q?.type || "QCM", current.matiere) > 1 ? "s" : ""}
+            </Badge>
+          </div>
+          {q?.image && (
+            <ExamQuestionImage
+              image={q.image}
+              alt={`Illustration de la question ${q.id}`}
+              className="mt-2 max-h-40 rounded-lg border"
+              fallbackClassName="mt-2 text-xs text-muted-foreground italic"
+            />
+          )}
+
+          {q?.type === "QCM" && q.choix && (
+            <div className="space-y-2">
+              {q.choix.map(c => {
+                const selected = safeArray<string>(rep).includes(c.lettre);
+                const isCorrectChoice = c.correct;
+                let borderColor = selected ? '#0D2540' : '#e5e7eb';
+                let bgColor = 'transparent';
+                if (showCorrection) {
+                  if (isCorrectChoice) { borderColor = '#22c55e'; bgColor = '#f0fdf4'; }
+                  else if (selected && !isCorrectChoice) { borderColor = '#ef4444'; bgColor = '#fef2f2'; }
+                }
+                return (
+                    <div key={c.lettre}>
+                      <div
+                        className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${showCorrection ? 'pointer-events-none' : ''}`}
+                        style={{ borderColor, backgroundColor: bgColor }}
+                        onClick={() => {
+                          if (showCorrection) return;
+                          const prev = safeArray<string>(rep);
+                          const correctCount = q.choix!.filter(ch => ch.correct).length;
+                          if (correctCount <= 1) {
+                            updateReponse(q.id, [c.lettre]);
+                          } else {
+                            updateReponse(q.id, prev.includes(c.lettre) ? prev.filter(l => l !== c.lettre) : [...prev, c.lettre]);
+                          }
+                        }}
+                      >
+                        <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 ${
+                          selected ? 'text-white' : ''
+                        }`} style={{
+                          borderColor: showCorrection && isCorrectChoice ? '#22c55e' : selected ? '#0D2540' : '#d1d5db',
+                          backgroundColor: selected ? '#0D2540' : 'transparent',
+                        }}>
+                          {showCorrection && isCorrectChoice ? <CheckCircle2 className="w-4 h-4 text-green-600" /> :
+                           showCorrection && selected && !isCorrectChoice ? <XCircle className="w-4 h-4 text-red-500" /> :
+                           c.lettre}
+                        </div>
+                        <span className="text-sm">{c.texte}</span>
+                      </div>
+                      {showCorrection && c.explication && (selected || isCorrectChoice) && (
+                        <p className="text-xs text-muted-foreground italic ml-10 mt-1">💡 {c.explication}</p>
+                      )}
+                    </div>
+                  );
+              })}
+            </div>
+          )}
+
+          {q?.type === "QRC" && (
+            <div className="space-y-2">
+              <Textarea
+                value={(rep as string) || ""}
+                onChange={e => updateReponse(q.id, e.target.value)}
+                placeholder="Saisissez votre réponse..."
+                disabled={showCorrection}
+                rows={3}
+              />
+              {showCorrection && (
+                <div className="p-3 rounded-lg bg-green-50 border border-green-200">
+                  <p className="text-sm font-medium text-green-800">
+                    Réponse attendue : {q.reponseQRC || (q.reponses_possibles || []).join(" / ") || "—"}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {!showCorrection ? (
+            <Button
+              onClick={checkAnswer}
+              disabled={!rep || (Array.isArray(rep) && rep.length === 0)}
+              className="w-full gap-2"
+              style={{ backgroundColor: '#0D2540' }}
+            >
+              Valider ma réponse
+            </Button>
+          ) : (
+            <Button
+              onClick={goNext}
+              className="w-full gap-2"
+              style={{ backgroundColor: '#F4A227' }}
+            >
+              {currentIndex < wrongQuestions.length - 1 ? (
+                <>Question suivante <ArrowRight className="w-4 h-4" /></>
+              ) : (
+                <>Terminer la révision <CheckCircle2 className="w-4 h-4" /></>
+              )}
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+
 
 export { EcranResultats, RevisionFausses };
