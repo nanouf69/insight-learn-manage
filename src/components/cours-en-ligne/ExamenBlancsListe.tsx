@@ -387,7 +387,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                     </div>
                     <CardTitle className="text-base mt-2">{examen.titre}</CardTitle>
                     {isCompleted && (() => {
-                      // Compute weighted average from DB scores
+                      // Compute weighted average from DB scores — uses same logic as EcranResultats
                       let totalCoef = 0;
                       let weightedSum = 0;
                       let hasScores = false;
@@ -398,8 +398,12 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                         if (scoreData) {
                           weightedSum += scoreData.note_sur_20 * coef;
                           hasScores = true;
-                          // Check if note is below noteEliminatoire
-                          if (m.noteEliminatoire && scoreData.note_sur_20 < m.noteEliminatoire) {
+                          // Use computeAdmisForMatiere (same as detail view) to check éliminatoire
+                          const admisMatiere = computeAdmisForMatiere(
+                            scoreData.score_obtenu, scoreData.score_max,
+                            m.noteEliminatoire, m.noteSur || 20, true
+                          );
+                          if (!admisMatiere) {
                             eliminatoiresMatieres.push(m.nom.split(" - ")[0]);
                           }
                         }
