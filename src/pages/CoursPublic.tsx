@@ -1002,6 +1002,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             userId={user?.id || null}
             apprenantType={apprenant?.type_apprenant || null}
             isPresentiel={!["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"].includes(selectedFormation)}
+            onExamStateChange={handleExamStateChange}
           />
         </div>
       );
