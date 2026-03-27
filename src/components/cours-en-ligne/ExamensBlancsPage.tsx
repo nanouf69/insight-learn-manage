@@ -210,18 +210,20 @@ export default function ExamensBlancsPage({
 
       const completedRows = existingResults as any[] || [];
       const matieresTotal = Math.max(latestExamen.matieres?.length || 1, 1);
+      const completedMatiereIds = new Set(completedRows.map((r: any) => r.matiere_id));
 
-      if (completedRows.length >= matieresTotal) {
-        toast.error("Examen déjà réalisé. Demandez une remise à zéro à l'administration.");
+      // Check if ALL matières are completed (by matching IDs, not just count)
+      const allCompleted = latestExamen.matieres.every(m => completedMatiereIds.has(m.id));
+
+      if (allCompleted || completedRows.length >= matieresTotal) {
+        // Redirect to results view instead of blocking with toast
+        toast.info("Examen déjà terminé. Affichage de vos résultats.", { duration: 3000, icon: "✅" });
+        handleViewResults(latestExamen);
         return;
       }
 
       // If partially completed, resume at first uncompleted matière
       if (completedRows.length > 0) {
-        const completedMatiereIds = new Set(completedRows.map((r: any) => r.matiere_id));
-
-        // Find first uncompleted matière index
-        let resumeIndex = 0;
         const preloadedResults: ResultatMatiere[] = [];
 
         for (let i = 0; i < latestExamen.matieres.length; i++) {
@@ -244,16 +246,17 @@ export default function ExamensBlancsPage({
               reponses: row.details?.reponses || {},
             });
           } else {
-            if (resumeIndex === 0 && i > 0) resumeIndex = i;
             // Push null placeholder to keep indices aligned
             preloadedResults.push(null as any);
           }
         }
 
         // Find actual first uncompleted
-        resumeIndex = latestExamen.matieres.findIndex((m) => m && !completedMatiereIds.has(m.id));
+        const resumeIndex = latestExamen.matieres.findIndex((m) => m && !completedMatiereIds.has(m.id));
         if (resumeIndex < 0) {
-          toast.error("Examen déjà réalisé. Demandez une remise à zéro à l'administration.");
+          // All done by ID match — show results
+          toast.info("Examen déjà terminé. Affichage de vos résultats.", { duration: 3000, icon: "✅" });
+          handleViewResults(latestExamen);
           return;
         }
 
