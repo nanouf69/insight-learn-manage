@@ -107,6 +107,21 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
               console.warn(
                 `[ExamensBlancs][Recovery] Score restauré ${r.quiz_id}/${r.matiere_id}: ${r.score_obtenu}/${r.score_max} -> ${recovered.score_obtenu}/${recovered.score_max}`
               );
+              // Auto-heal: persist recovered score back to DB (fire-and-forget)
+              if (r.id) {
+                void supabase
+                  .from("apprenant_quiz_results" as any)
+                  .update({
+                    score_obtenu: recovered.score_obtenu,
+                    score_max: recovered.score_max,
+                    note_sur_20: recovered.note_sur_20,
+                  } as any)
+                  .eq("id", r.id)
+                  .then(({ error: healErr }) => {
+                    if (healErr) console.error("[AutoHeal][Liste] DB update failed:", healErr);
+                    else console.log(`[AutoHeal][Liste] Healed ${r.quiz_id}/${r.matiere_id} -> ${recovered.score_obtenu}`);
+                  });
+              }
             }
           });
 
