@@ -138,6 +138,7 @@ serve(async (req) => {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: params.toString(),
+      signal: AbortSignal.timeout(10000),
     });
     const tokenData = await tokenRes.json();
     const accessToken = tokenData.access_token;
