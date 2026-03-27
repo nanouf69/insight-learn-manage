@@ -492,7 +492,7 @@ function EcranResultats({
         .eq("quiz_type", quizType)
         .eq("matiere_id", matiere.id);
     });
-  }, [isViewingSaved, isAdmin, resultatsAvecIA.map(r => r.noteObtenue).join(",")]);
+  }, [isViewingSaved, resultatsAvecIA.map(r => r.noteObtenue).join(",")]);
 
   const totalCoef = resultatsAvecIA.reduce((acc, r) => acc + (r.coefficient || 1), 0) || 1;
   const noteGlobaleBrute = resultatsAvecIA.reduce((acc, r) => {
