@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import {
   ArrowLeft, ArrowRight, CheckCircle2, XCircle, AlertTriangle,
-  Trophy, RotateCcw, ChevronRight, BookOpen, Loader2, Bot
+  Trophy, RotateCcw, ChevronRight, BookOpen, Loader2, Bot, Clock, Pencil
 } from "lucide-react";
 import { getPointsParQuestion, isCalculQuestion, type ExamenBlanc, type Matiere, type Question } from "./examens-blancs-data";
 import { supabase } from "@/integrations/supabase/client";
