@@ -163,16 +163,18 @@ function EcranResultats({
 
       const safeMax = Math.max(toFiniteNumber(resultat.maxPoints, 0), 0);
       const noteRecalculeeSecurisee = safeMax > 0 ? clamp(noteRecalculee, 0, safeMax) : Math.max(noteRecalculee, 0);
-      const noteSur20 = normalizeNoteSur20(noteRecalculeeSecurisee, safeMax);
+      const scoreInitial = Math.max(toFiniteNumber(resultat.noteObtenue, 0), 0);
+      const scoreProtege = noteRecalculeeSecurisee <= 0 && scoreInitial > 0 ? scoreInitial : noteRecalculeeSecurisee;
+      const noteSur20 = normalizeNoteSur20(scoreProtege, safeMax);
 
       // Update the existing row with corrections
       await supabase
         .from("apprenant_quiz_results" as any)
         .update({
-          score_obtenu: noteRecalculeeSecurisee,
+          score_obtenu: scoreProtege,
           note_sur_20: noteSur20,
           reussi: computeAdmisForMatiere(
-            noteRecalculeeSecurisee,
+            scoreProtege,
             safeMax,
             resultat.noteEliminatoire,
             resultat.noteSur,
@@ -331,10 +333,12 @@ function EcranResultats({
       return acc;
     }, 0);
 
-    const baseNote = questionsSafe.length > 0 ? recalculatedFromDetails : toFiniteNumber(r.noteObtenue, 0);
-    const safeNote = safeMaxPoints > 0
+    const scoreInitial = Math.max(toFiniteNumber(r.noteObtenue, 0), 0);
+    const baseNote = questionsSafe.length > 0 ? recalculatedFromDetails : scoreInitial;
+    const safeNoteCandidate = safeMaxPoints > 0
       ? clamp(baseNote, 0, safeMaxPoints)
       : Math.max(baseNote, 0);
+    const safeNote = safeNoteCandidate <= 0 && scoreInitial > 0 ? scoreInitial : safeNoteCandidate;
 
     return {
       ...r,
@@ -351,7 +355,11 @@ function EcranResultats({
       const matiere = examen.matieres[mi];
       if (!matiere) return;
       const safeMax = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
-      const noteSur20 = normalizeNoteSur20(r.noteObtenue, safeMax);
+      const scoreInitial = Math.max(toFiniteNumber(resultats[mi]?.noteObtenue, 0), 0);
+      const scoreProtege = toFiniteNumber(r.noteObtenue, 0) <= 0 && scoreInitial > 0
+        ? scoreInitial
+        : Math.max(toFiniteNumber(r.noteObtenue, 0), 0);
+      const noteSur20 = normalizeNoteSur20(scoreProtege, safeMax);
       // Also save the correctionsIA in the details column for admin overrides
       const cacheMatiere = correctionsIA[mi] || {};
       const serializedCache: Record<string, CorrectionQRC> = {};
@@ -361,9 +369,9 @@ function EcranResultats({
       await supabase
         .from("apprenant_quiz_results" as any)
         .update({
-          score_obtenu: r.noteObtenue,
+          score_obtenu: scoreProtege,
           note_sur_20: noteSur20,
-          reussi: r.admis,
+          reussi: computeAdmisForMatiere(scoreProtege, safeMax, r.noteEliminatoire, r.noteSur, Boolean(r.admis)),
           details: {
             questions: (resultats[mi] as any)?.details?.questions || [],
             reponses: r.reponses,
