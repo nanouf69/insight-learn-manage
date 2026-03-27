@@ -1,0 +1,1 @@
+DELETE FROM apprenant_quiz_results WHERE matiere_id IS NULL OR matiere_id = '';
