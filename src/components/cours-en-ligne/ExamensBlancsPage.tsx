@@ -3070,18 +3070,28 @@ export default function ExamensBlancsPage({
   const examStartTimeRef = useRef<number>(savedSession?.examStartTime || Date.now());
   const reloadInFlightRef = useRef<Promise<ExamenBlanc[]> | null>(null);
 
+  const [loadTimeout, setLoadTimeout] = useState(false);
+
   const refreshLiveExamens = useCallback(async ({ force = false }: { force?: boolean } = {}) => {
     if (!force && reloadInFlightRef.current) return reloadInFlightRef.current;
 
+    setLoadTimeout(false);
+    const timeoutTimer = setTimeout(() => setLoadTimeout(true), 10_000);
+
     reloadInFlightRef.current = (async () => {
-      const saved = await loadSavedExamens();
-      logSecurityImageDebug(saved, force ? "manual-refetch" : "auto-refetch");
-      setLiveExamens(saved);
-      setExamenChoisi((prev) => {
-        if (!prev) return prev;
-        return saved.find((exam) => exam.id === prev.id) ?? prev;
-      });
-      return saved;
+      try {
+        const saved = await loadSavedExamens();
+        logSecurityImageDebug(saved, force ? "manual-refetch" : "auto-refetch");
+        setLiveExamens(saved);
+        setExamenChoisi((prev) => {
+          if (!prev) return prev;
+          return saved.find((exam) => exam.id === prev.id) ?? prev;
+        });
+        return saved;
+      } finally {
+        clearTimeout(timeoutTimer);
+        setLoadTimeout(false);
+      }
     })();
 
     try {
@@ -3140,7 +3150,7 @@ export default function ExamensBlancsPage({
   }, [liveExamens, sessionRestored]);
 
   // Load saved exam overrides from DB on mount
-  // Only load on mount — no polling during exams
+  // Only load on mount — no polling, no intervals
   const isInExam = phase === "examen" || phase === "intro" || phase === "transition";
 
   useEffect(() => {
@@ -3149,9 +3159,9 @@ export default function ExamensBlancsPage({
     }
   }, [refreshLiveExamens, isInExam]);
 
-  // Realtime: reload when admin saves exam changes — DISABLED during exam
+  // Realtime: targeted update when admin saves exam changes — DISABLED during exam
   useEffect(() => {
-    if (isInExam) return; // No realtime refresh while student is taking an exam
+    if (isInExam) return; // Zero network during exam
 
     const validExamModuleIds = new Set(
       tousLesExamens.map((ex) => getModuleIdForExamId(ex.id))
@@ -3174,12 +3184,13 @@ export default function ExamensBlancsPage({
         },
         (payload) => {
           if (!isExamModuleEvent(payload)) return;
+          // Debounce: wait 5s after last event (admin cascades)
           if (debounceTimer) clearTimeout(debounceTimer);
           debounceTimer = setTimeout(() => {
             console.log("[Realtime] Exam blanc updated, reloading...");
             try { sessionStorage.removeItem(EXAM_SESSION_KEY); } catch {}
             void refreshLiveExamens();
-          }, 3000);
+          }, 5000);
         }
       )
       .subscribe();
@@ -3190,38 +3201,7 @@ export default function ExamensBlancsPage({
     };
   }, [refreshLiveExamens, EXAM_SESSION_KEY, isInExam]);
 
-  // Fallback polling — DISABLED during exam
-  useEffect(() => {
-    if (isInExam) return; // No polling while student is taking an exam
-
-    let lastRefresh = Date.now();
-    const THROTTLE_MS = 30_000;
-
-    const throttledRefresh = () => {
-      const now = Date.now();
-      if (now - lastRefresh < THROTTLE_MS) return;
-      lastRefresh = now;
-      void refreshLiveExamens();
-    };
-
-    const refreshOnFocus = () => { throttledRefresh(); };
-    const refreshOnVisibility = () => {
-      if (document.visibilityState === "visible") {
-        throttledRefresh();
-      }
-    };
-
-    const intervalId = window.setInterval(throttledRefresh, 120_000);
-
-    window.addEventListener("focus", refreshOnFocus);
-    document.addEventListener("visibilitychange", refreshOnVisibility);
-
-    return () => {
-      window.clearInterval(intervalId);
-      window.removeEventListener("focus", refreshOnFocus);
-      document.removeEventListener("visibilitychange", refreshOnVisibility);
-    };
-  }, [refreshLiveExamens, isInExam]);
+  // NO polling, NO focus/visibility listeners — realtime only
 
   // Quand un bilan est demandé depuis les modules, on le met en avant
   useEffect(() => {
@@ -3576,13 +3556,23 @@ export default function ExamensBlancsPage({
   }
 
   if (phase === "selection") {
-    return <EcranSelection onStart={handleStart} onEdit={() => {
-      if (!isAdmin) {
-        toast.error("Accès réservé à l'administration.");
-        return;
-      }
-      setPhase("edition");
-    }} onViewResults={handleViewResults} defaultBilanId={bilanPrefiltre} apprenantType={apprenantType} examensData={liveExamens} apprenantId={apprenantId} isAdmin={isAdmin} refreshKey={selectionRefreshKey} />;
+    return (
+      <>
+        {loadTimeout && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg mb-4 flex items-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Chargement en cours, veuillez patienter…
+          </div>
+        )}
+        <EcranSelection onStart={handleStart} onEdit={() => {
+          if (!isAdmin) {
+            toast.error("Accès réservé à l'administration.");
+            return;
+          }
+          setPhase("edition");
+        }} onViewResults={handleViewResults} defaultBilanId={bilanPrefiltre} apprenantType={apprenantType} examensData={liveExamens} apprenantId={apprenantId} isAdmin={isAdmin} refreshKey={selectionRefreshKey} />
+      </>
+    );
   }
 
   if (phase === "intro" && examenChoisi) {

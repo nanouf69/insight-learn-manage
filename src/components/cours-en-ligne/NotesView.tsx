@@ -171,30 +171,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
     };
   }, [apprenantId, fetchAll]);
 
-  // Fallback refresh: keeps notes synced even if realtime is delayed/disconnected
-  useEffect(() => {
-    if (!apprenantId) return;
-
-    const intervalId = window.setInterval(() => {
-      fetchAll();
-    }, 2000);
-
-    const handleFocus = () => fetchAll();
-    const handleVisibility = () => {
-      if (document.visibilityState === "visible") {
-        fetchAll();
-      }
-    };
-
-    window.addEventListener("focus", handleFocus);
-    document.addEventListener("visibilitychange", handleVisibility);
-
-    return () => {
-      window.clearInterval(intervalId);
-      window.removeEventListener("focus", handleFocus);
-      document.removeEventListener("visibilitychange", handleVisibility);
-    };
-  }, [apprenantId, fetchAll]);
+  // NO polling — realtime subscription above handles updates
 
   const toggleGroup = (key: string) => {
     setExpandedGroups(prev => {
