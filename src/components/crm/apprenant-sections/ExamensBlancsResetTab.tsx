@@ -138,7 +138,9 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
       if (!user) { toast.error("Session expirée"); return; }
 
       if (matiere) {
-        // Reset single matière
+        // Reset single matière — quiz_results + reponses
+        const exerciceId = `${matiere.quiz_id}_${matiere.matiere_id}`;
+
         const { error } = await supabase
           .from("apprenant_quiz_results")
           .delete()
@@ -147,6 +149,13 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
           .eq("quiz_id", matiere.quiz_id)
           .eq("matiere_id", matiere.matiere_id);
         if (error) throw error;
+
+        // Also delete matching reponses_apprenants
+        await supabase
+          .from("reponses_apprenants")
+          .delete()
+          .eq("apprenant_id", apprenant.id)
+          .eq("exercice_id", exerciceId);
 
         await supabase.from("audit_logs").insert({
           action: "reset_examen_blanc_matiere",
@@ -159,13 +168,15 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
             matiere_id: matiere.matiere_id,
             matiere_nom: matiere.matiere_nom,
             quiz_id: matiere.quiz_id,
+            exercice_id: exerciceId,
           },
         });
 
         toast.success(`${matiere.matiere_nom} réinitialisée (${group.examenLabel})`);
       } else {
-        // Reset full exam
+        // Reset full exam — quiz_results + all reponses for each matière
         const quizIds = [...new Set(group.results.map((r) => r.quiz_id))];
+
         for (const qid of quizIds) {
           const { error } = await supabase
             .from("apprenant_quiz_results")
@@ -174,6 +185,16 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
             .eq("quiz_type", "examen_blanc")
             .eq("quiz_id", qid);
           if (error) throw error;
+        }
+
+        // Delete all reponses for each matière of this exam
+        const exerciceIds = group.results.map((r) => `${r.quiz_id}_${r.matiere_id}`);
+        for (const eid of exerciceIds) {
+          await supabase
+            .from("reponses_apprenants")
+            .delete()
+            .eq("apprenant_id", apprenant.id)
+            .eq("exercice_id", eid);
         }
 
         await supabase.from("audit_logs").insert({
@@ -187,6 +208,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
             examen_num: group.examenNum,
             type: group.type,
             quiz_ids: quizIds,
+            exercice_ids: exerciceIds,
             matieres_supprimees: group.results.length,
           },
         });
