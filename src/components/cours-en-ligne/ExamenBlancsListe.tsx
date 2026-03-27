@@ -477,7 +477,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                           <div key={m.id} className="flex justify-between text-xs text-muted-foreground">
                             <span className="truncate pr-2">{m.nom.split(" - ")[0]}</span>
                             {isCompleted && scoreData ? (
-                              <span className={`shrink-0 font-bold ${scoreData.note_sur_20 >= (m.noteEliminatoire || 6) ? "text-green-600" : "text-red-500"}`}>
+                              <span className={`shrink-0 font-bold ${computeAdmisForMatiere(scoreData.score_obtenu, scoreData.score_max, m.noteEliminatoire, m.noteSur || 20, true) ? "text-green-600" : "text-red-500"}`}>
                                 {scoreData.note_sur_20.toFixed(1)}/20
                               </span>
                             ) : (
