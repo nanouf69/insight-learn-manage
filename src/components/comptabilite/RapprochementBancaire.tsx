@@ -378,9 +378,7 @@ export function RapprochementBancaire() {
       );
 
       const newRows = rows.filter(r => {
-        // If row has a reference (e.g. Revolut), dedup by reference
-        if (r.reference && existingRefs.has(r.reference)) return false;
-        // Otherwise dedup by date + montant + libellé
+        // Dedup by date + montant + libellé
         const key = `${r.date_operation}|${r.montant}|${(r.libelle || "").trim().toLowerCase()}`;
         return !existingSet.has(key);
       });
