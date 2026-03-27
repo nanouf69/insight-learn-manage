@@ -31,6 +31,7 @@ export function usePresenceCheck({
   connexionId,
   enabled,
   onForceDisconnect,
+  pauseDuringExam = false,
 }: UsePresenceCheckParams) {
   const [showModal, setShowModal] = useState(false);
   const [countdownSeconds, setCountdownSeconds] = useState(600);
