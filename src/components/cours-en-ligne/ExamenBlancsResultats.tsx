@@ -415,7 +415,8 @@ function EcranResultats({
   // pour garder la note principale strictement alignée avec les sous-notes.
   const resultatsAvecIA = resultats.map((r, mi) => {
     const safeMaxPoints = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
-    const matiere = examen.matieres[mi];
+    // Find matière by ID instead of relying on index alignment (resultats may have been filtered)
+    const matiere = examen.matieres.find(m => m?.id === r.matiereId) ?? examen.matieres[mi];
     const questionsSafe = matiere ? (matiere.questions || []).filter((q): q is Question => q != null && q?.type !== undefined) : [];
     const cacheMatiere = correctionsIA[mi] || {};
 
@@ -455,9 +456,10 @@ function EcranResultats({
     };
   });
 
-  // Auto-save recalculated scores to DB when viewing saved results or admin overrides
+  // Auto-save recalculated scores to DB for ALL users (not just admin)
+  // so the list view averages stay in sync with the detail view
   useEffect(() => {
-    if (!isAdmin || !apprenantId || !examen) return;
+    if (!apprenantId || !examen) return;
     const quizType = examen.id?.startsWith("taxi") ? "examen_blanc_taxi" : "examen_blanc";
     resultatsAvecIA.forEach(async (r, mi) => {
       const matiere = examen.matieres[mi];
@@ -491,7 +493,7 @@ function EcranResultats({
         .eq("quiz_type", quizType)
         .eq("matiere_id", matiere.id);
     });
-  }, [isViewingSaved, isAdmin, resultatsAvecIA.map(r => r.noteObtenue).join(",")]);
+  }, [isViewingSaved, resultatsAvecIA.map(r => r.noteObtenue).join(",")]);
 
   const totalCoef = resultatsAvecIA.reduce((acc, r) => acc + (r.coefficient || 1), 0) || 1;
   const noteGlobaleBrute = resultatsAvecIA.reduce((acc, r) => {
