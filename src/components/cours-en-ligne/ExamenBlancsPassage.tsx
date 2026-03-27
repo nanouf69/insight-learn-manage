@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import {
   ArrowLeft, ArrowRight, CheckCircle2, XCircle, AlertTriangle,
-  FileText, Timer, RotateCcw, Loader2, Calculator, X, Ban, BookOpen
+  FileText, Timer, RotateCcw, Loader2, Calculator, X, Ban, BookOpen, Pause, Play
 } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, isCalculQuestion, type ExamenBlanc, type Matiere, type Question } from "./examens-blancs-data";
 import { supabase } from "@/integrations/supabase/client";
@@ -163,6 +163,7 @@ function PassageMatiere({
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [showCalculator, setShowCalculator] = useState(false);
   const [showInterruptConfirm, setShowInterruptConfirm] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const isGestion = matiere.id === "gestion" || matiere.id === "bilan_gestion";
   const saveStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -386,7 +387,29 @@ function PassageMatiere({
   const progress = ((safeQuestionIndex + 1) / safeQuestionsCount) * 100;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 relative">
+      {/* Overlay PAUSE */}
+      {isPaused && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="text-center space-y-6 p-8 rounded-2xl bg-card shadow-2xl border max-w-sm mx-4">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto" style={{ backgroundColor: '#F4A227' }}>
+              <Pause className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-foreground">Examen en pause</h3>
+              <p className="text-sm text-muted-foreground mt-2">Le chronomètre est arrêté. Les questions sont masquées pendant la pause.</p>
+            </div>
+            <button
+              onClick={() => setIsPaused(false)}
+              className="flex items-center gap-2 mx-auto px-6 py-3 rounded-lg text-base font-semibold text-white transition-colors hover:opacity-90"
+              style={{ backgroundColor: '#00B4D8' }}
+            >
+              <Play className="w-5 h-5" />
+              Reprendre l'examen
+            </button>
+          </div>
+        </div>
+      )}
       {/* Bandeau matière FTRANSPORT */}
       <div className="rounded-lg px-4 py-3 flex items-center justify-between flex-wrap gap-2" style={{ backgroundColor: '#0D2540' }}>
         <div className="flex items-center gap-3">
@@ -407,6 +430,16 @@ function PassageMatiere({
               <Calculator className="w-4 h-4" />
               <span>Calculatrice</span>
             </button>
+            {!isBilan && (
+              <button
+                onClick={() => setIsPaused(v => !v)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                style={{ backgroundColor: isPaused ? '#F4A227' : 'rgba(0,180,216,0.15)', color: isPaused ? '#0D2540' : '#00B4D8' }}
+              >
+                {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+                <span>{isPaused ? "Reprendre" : "Pause"}</span>
+              </button>
+            )}
           <span className="text-xs font-medium px-2 py-1 rounded" style={{ backgroundColor: 'rgba(0,180,216,0.15)', color: '#00B4D8' }}>
             Questions 1 à {questionsSafe.length}
           </span>
@@ -416,7 +449,7 @@ function PassageMatiere({
               <span>Sans chronomètre</span>
             </div>
           ) : (
-            <TimerBadge seconds={dureeSecondes} onExpire={handleExpire} />
+            <TimerBadge seconds={dureeSecondes} onExpire={handleExpire} isPaused={isPaused} />
           )}
         </div>
       </div>
