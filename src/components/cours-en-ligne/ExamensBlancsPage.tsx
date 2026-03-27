@@ -416,14 +416,25 @@ export default function ExamensBlancsPage({
         noteSur: matiere.noteSur, noteEliminatoire: matiere.noteEliminatoire, coefficient: matiere.coefficient,
         admis: computeAdmisForMatiere(noteSecurisee, maxPoints, matiere.noteEliminatoire, matiere.noteSur, false), reponses,
       };
-      const newResultats = [...tousResultats, resultat];
+
+      // Place result at the correct index (supports resume with pre-loaded results)
+      const newResultats = [...tousResultats];
+      newResultats[matiereIndex] = resultat;
       setTousResultats(newResultats);
+
       if (apprenantId && userId) {
         const elapsedSeconds = Math.round((Date.now() - examStartTimeRef.current) / 1000);
-        void saveMatiereResult({ examen: examenChoisi, matiere, resultat, dureeSecondes: elapsedSeconds / Math.max(newResultats.length, 1) });
+        const completedCount = newResultats.filter(r => r != null).length;
+        void saveMatiereResult({ examen: examenChoisi, matiere, resultat, dureeSecondes: elapsedSeconds / Math.max(completedCount, 1) });
       }
-      if (matiereIndex < examenChoisi.matieres.length - 1) {
-        const nextIndex = matiereIndex + 1;
+
+      // Find next uncompleted matière (skip already-done ones from resume)
+      let nextIndex = -1;
+      for (let i = matiereIndex + 1; i < examenChoisi.matieres.length; i++) {
+        if (!newResultats[i]) { nextIndex = i; break; }
+      }
+
+      if (nextIndex >= 0) {
         setLastMatiereResult(resultat);
         setMatiereIndex(nextIndex);
         setPhase("transition");
