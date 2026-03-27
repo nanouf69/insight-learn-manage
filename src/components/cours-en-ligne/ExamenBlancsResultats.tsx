@@ -161,6 +161,23 @@ function EcranResultats({
     return lines.join("\n");
   }, [resultats, examen]);
 
+  // Auto-save bilan to DB
+  useEffect(() => {
+    if (!apprenantId || !userId || !examen?.id) return;
+    const bilan = generateBilanAuto();
+    if (!bilan) return;
+    supabase.from("apprenant_documents_completes").upsert({
+      apprenant_id: apprenantId,
+      user_id: userId,
+      type_document: "bilan_examen_blanc",
+      titre: examen.id,
+      donnees: { bilan, examen_titre: examen.titre, generated_at: new Date().toISOString() },
+    } as any, { onConflict: "apprenant_id,type_document,titre" }).then(({ error }) => {
+      if (error) console.error("[BilanAuto] Save error:", error);
+      else console.log("[BilanAuto] Saved for", examen.id);
+    });
+  }, [apprenantId, userId, examen?.id, generateBilanAuto]);
+
   // Check if revision has already been done for this exam
   useEffect(() => {
     if (!apprenantId || !examen?.id) return;

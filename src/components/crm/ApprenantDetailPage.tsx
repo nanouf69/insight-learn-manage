@@ -28,6 +28,7 @@ import { ResetCoursTab } from "./apprenant-sections/ResetCoursTab";
 import { DocumentsCompletes } from "./apprenant-sections/DocumentsCompletes";
 import { ControleQualiteTab } from "./apprenant-sections/ControleQualiteTab";
 import ExamensBlancsResetTab from "./apprenant-sections/ExamensBlancsResetTab";
+import { ResultatsApprenantTab } from "./apprenant-sections/ResultatsApprenantTab";
 import { ApprenantEditForm } from "@/components/apprenants/ApprenantEditForm";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -839,19 +840,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
 
           {/* Résultats */}
           {activeTab === "resultats" && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5" />
-                  Résultats de l'apprenant
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground text-sm">
-                  Consultez les résultats dans l'onglet "Cours en ligne" → "Rapport d'activité" pour un suivi détaillé des quiz et exercices complétés par cet apprenant.
-                </p>
-              </CardContent>
-            </Card>
+            <ResultatsApprenantTab apprenantId={apprenant.id} />
           )}
 
           {/* Autres onglets */}
