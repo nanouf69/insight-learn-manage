@@ -99,8 +99,12 @@ export default function ExamensBlancsPage({
         const saved = await loadSavedExamens();
         logSecurityImageDebug(saved, force ? "manual-refetch" : "auto-refetch");
         setLiveExamens(saved);
+        // CRITICAL: Never replace examenChoisi during an active exam (phase=examen/transition)
+        // to prevent question reordering that causes answer mismatches
         setExamenChoisi((prev) => {
           if (!prev) return prev;
+          // If exam is in progress, keep the frozen version
+          if (phase === "examen" || phase === "transition") return prev;
           return saved.find((exam) => exam.id === prev.id) ?? prev;
         });
         return saved;
