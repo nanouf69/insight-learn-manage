@@ -303,11 +303,11 @@ export default function ExamensBlancsPage({
     if (defaultBilanId) { setBilanPrefiltre(defaultBilanId); onBilanConsumed?.(); }
   }, [defaultBilanId]);
 
-  const handleStart = async (examen: ExamenBlanc) => {
+  const handleStart = async (examen: ExamenBlanc, forceRetake = false) => {
     const latestExamen = liveExamens.find((live) => live.id === examen.id) ?? examen;
     const quizType = latestExamen.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
 
-    if (!isAdmin && apprenantId) {
+    if (!isAdmin && apprenantId && !forceRetake) {
       // Check which matières are already completed
       const { data: existingResults, error } = await supabase
         .from("apprenant_quiz_results" as any)
@@ -1001,7 +1001,7 @@ export default function ExamensBlancsPage({
   if (phase === "resultats" && examenChoisi) {
     return (
       <div className="max-w-3xl mx-auto">
-        <EcranResultats examen={examenChoisi} resultats={tousResultats} onRecommencer={() => handleStart(examenChoisi)} onRetour={() => { setSelectionRefreshKey(k => k + 1); setPhase("selection"); }} onRefaireFausses={() => setPhase("revision")} apprenantId={apprenantId} userId={userId} isViewingSaved={isViewingSavedResults} isAdmin={isAdmin} canRetry={Boolean(isAdmin)} isPresentiel={isPresentiel} />
+        <EcranResultats examen={examenChoisi} resultats={tousResultats} onRecommencer={() => handleStart(examenChoisi, true)} onRetour={() => { setSelectionRefreshKey(k => k + 1); setPhase("selection"); }} onRefaireFausses={() => setPhase("revision")} apprenantId={apprenantId} userId={userId} isViewingSaved={isViewingSavedResults} isAdmin={isAdmin} canRetry={true} isPresentiel={isPresentiel} />
       </div>
     );
   }

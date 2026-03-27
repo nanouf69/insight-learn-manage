@@ -15,7 +15,7 @@ import {
   computeAdmisForMatiere,
 } from "./examens-blancs-utils";
 
-function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, apprenantType, examensData, apprenantId, isAdmin, refreshKey, pausedExamIds, onPauseToggle }: { onStart: (examen: ExamenBlanc) => void; onEdit: () => void; onViewResults: (examen: ExamenBlanc) => void; defaultBilanId?: string | null; apprenantType?: string | null; examensData: ExamenBlanc[]; apprenantId?: string | null; isAdmin?: boolean; refreshKey?: number; pausedExamIds?: Set<string>; onPauseToggle?: (examId: string) => void }) {
+function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, apprenantType, examensData, apprenantId, isAdmin, refreshKey, pausedExamIds, onPauseToggle }: { onStart: (examen: ExamenBlanc, forceRetake?: boolean) => void; onEdit: () => void; onViewResults: (examen: ExamenBlanc) => void; defaultBilanId?: string | null; apprenantType?: string | null; examensData: ExamenBlanc[]; apprenantId?: string | null; isAdmin?: boolean; refreshKey?: number; pausedExamIds?: Set<string>; onPauseToggle?: (examId: string) => void }) {
   // Determine the forced exam type from the student's formation type
   const forcedType = (() => {
     if (!apprenantType) return null;
@@ -369,8 +369,8 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
               const dureeTotal = examen.matieres.reduce((acc, m) => acc + m.duree, 0);
               const isCompleted = completedExamIds.has(examen.id);
               const isStartedNotFinished = !isCompleted && startedNotFinishedIds.has(examen.id);
-              const canRetake = Boolean(isAdmin);
-              const canStartExam = !isCompleted || canRetake;
+              const canRetake = true;
+              const canStartExam = true;
               const scores = examScores[examen.id] || [];
               return (
                 <Card
@@ -495,11 +495,11 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                     )}
                     <Button
                       className="w-full mt-2 gap-2"
-                      variant={isCompleted && !canRetake ? "secondary" : isCompleted ? "outline" : isStartedNotFinished ? "default" : "default"}
-                      disabled={!canStartExam || pausedExamIds?.has(examen.id)}
-                      onClick={(e) => { e.stopPropagation(); if (canStartExam) onStart(examen); }}
+                      variant={isCompleted ? "outline" : isStartedNotFinished ? "default" : "default"}
+                      disabled={pausedExamIds?.has(examen.id)}
+                      onClick={(e) => { e.stopPropagation(); onStart(examen, isCompleted); }}
                     >
-                      {pausedExamIds?.has(examen.id) ? "⏸ Examen en pause" : isCompleted ? (canRetake ? "Recommencer l'examen" : "Examen déjà réalisé") : isStartedNotFinished ? "Reprendre l'examen" : "Commencer l'examen"}
+                      {pausedExamIds?.has(examen.id) ? "⏸ Examen en pause" : isCompleted ? "🔄 Refaire l'examen" : isStartedNotFinished ? "Reprendre l'examen" : "Commencer l'examen"}
                       <ChevronRight className="w-4 h-4" />
                     </Button>
                     {isAdmin && onPauseToggle && (
