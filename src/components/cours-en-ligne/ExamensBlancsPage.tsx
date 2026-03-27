@@ -210,6 +210,8 @@ export default function ExamensBlancsPage({
       if (error) { toast.error("Vérification de sécurité impossible. Réessayez."); return; }
 
       const completedRows = (existingResults as any[]) || [];
+      const validMatieres = (latestExamen.matieres || []).filter((m): m is Matiere => Boolean(m));
+      const matieresTotal = Math.max(validMatieres.length || 1, 1);
 
       // --- Secondary fallback: also check reponses_apprenants for completed responses ---
       // This catches cases where responses were saved but quiz_results insert failed
@@ -253,9 +255,6 @@ export default function ExamensBlancsPage({
           }
         }
       }
-
-      const validMatieres = (latestExamen.matieres || []).filter((m): m is Matiere => Boolean(m));
-      const matieresTotal = Math.max(validMatieres.length || 1, 1);
 
       const latestByCanonicalKey = new Map<string, any>();
       completedRows.forEach((row: any) => {
