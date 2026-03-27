@@ -607,7 +607,7 @@ export default function ExamensBlancsPage({
               <div className="space-y-1">
                 {examenChoisi.matieres.map((m, i) => {
                   if (!m) return null;
-                  const isDone = i < matiereIndex;
+                  const isDone = tousResultats[i] != null;
                   const isCurrent = i === matiereIndex;
                   return (
                     <div key={m.id} className={`relative flex items-start gap-3 p-2 rounded-lg transition-all ${isCurrent ? "bg-primary/10 border border-primary/30" : isDone ? "bg-green-50 border border-green-200" : "opacity-50"}`}>
