@@ -614,6 +614,12 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [moduleCompletionsForNotes, setModuleCompletionsForNotes] = useState<Array<{ id: string; module_id: number; score_obtenu: number | null; score_max: number | null; completed_at: string; details: any }>>([]);
   const [examBlancCompletedIds, setExamBlancCompletedIds] = useState<Set<string>>(new Set());
   const [lastModuleName, setLastModuleName] = useState<string | null>(null);
+  const [isInExam, setIsInExam] = useState(false);
+
+  // Stable callback for ExamensBlancsPage
+  const handleExamStateChange = useCallback((inExam: boolean) => {
+    setIsInExam(inExam);
+  }, []);
 
   // Tracking connexion élève (only for real student sessions, not admin preview)
   const isStudentSession = !embedded && !!user && !!apprenant?.id;
@@ -644,6 +650,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     connexionId,
     enabled: isStudentSession,
     onForceDisconnect: handleForceDisconnect,
+    pauseDuringExam: isInExam,
   });
 
   // Client-side inactivity detection: 30min no mouse → modal → 5min auto-disconnect
@@ -654,6 +661,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   } = useInactivityAlert({
     enabled: isStudentSession,
     onDisconnect: handleForceDisconnect,
+    pauseDuringExam: isInExam,
   });
 
   // Fetch apprenant info when user is logged in
