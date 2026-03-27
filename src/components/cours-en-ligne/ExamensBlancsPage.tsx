@@ -703,18 +703,27 @@ export default function ExamensBlancsPage({
       details: { questions: questionDetails, reponses: resultat.reponses, correctionsIA: Object.keys(frozenCorrections).length > 0 ? frozenCorrections : undefined },
     };
 
-    // BUG #1 FIX: Use upsert instead of insert to prevent duplicate rows with score=0
-    // when network retries or double-submissions occur
-    const { error } = await supabase
-      .from("apprenant_quiz_results" as any)
-      .upsert([payload] as any, { onConflict: "apprenant_id,quiz_id,matiere_id" } as any);
-    if (error) {
-      console.error("[ExamSubmission][EB][UpsertError]", error);
-      toast.error("⚠️ Erreur d'enregistrement du résultat. Veuillez contacter l'administration.", { duration: 10000 });
+    // Save with retry logic to prevent silent data loss
+    let saved = false;
+    for (let attempt = 0; attempt < 3 && !saved; attempt++) {
+      if (attempt > 0) await new Promise(r => setTimeout(r, 1000 * attempt));
+      const { error } = await supabase
+        .from("apprenant_quiz_results" as any)
+        .upsert([payload] as any, { onConflict: "apprenant_id,quiz_id,matiere_id" } as any);
+      if (!error) {
+        saved = true;
+        console.log(`[ExamSubmission][EB] Saved ${resultat.matiereId} (attempt ${attempt + 1})`);
+      } else {
+        console.error(`[ExamSubmission][EB][UpsertError] attempt ${attempt + 1}:`, error);
+      }
     }
+    if (!saved) {
+      toast.error("⚠️ Erreur d'enregistrement du résultat après 3 tentatives. Vos réponses sont sauvegardées, contactez l'administration.", { duration: 15000 });
+    }
+    return saved;
   };
 
-  const handleTerminerMatiere = (reponses: Reponses) => {
+  const handleTerminerMatiere = async (reponses: Reponses) => {
     try {
       if (!examenChoisi) return;
       const matiere = examenChoisi.matieres[matiereIndex];
@@ -736,7 +745,11 @@ export default function ExamensBlancsPage({
       if (apprenantId && userId) {
         const elapsedSeconds = Math.round((Date.now() - examStartTimeRef.current) / 1000);
         const completedCount = newResultats.filter(r => r != null).length;
-        void saveMatiereResult({ examen: examenChoisi, matiere, resultat, dureeSecondes: elapsedSeconds / Math.max(completedCount, 1) });
+        // Await the save - don't fire-and-forget, to ensure results persist
+        const saved = await saveMatiereResult({ examen: examenChoisi, matiere, resultat, dureeSecondes: elapsedSeconds / Math.max(completedCount, 1) });
+        if (!saved) {
+          console.warn("[ExamenBlanc] Failed to save result for", matiere.id, "- result kept in memory");
+        }
       }
 
       // Find next uncompleted matière (skip already-done ones from resume)
