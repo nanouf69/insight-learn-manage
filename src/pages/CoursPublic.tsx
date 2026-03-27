@@ -630,7 +630,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   });
 
   // Keep Supabase auth token alive while student is active (prevents expiry during exams/modules)
-  useSessionKeepAlive(isStudentSession);
+  // During exams: force-refresh unconditionally (student may be idle >15min thinking)
+  useSessionKeepAlive(isStudentSession, isInExam);
 
   // Presence verification: every 4h + 7h max session
   const handleForceDisconnect = useCallback(async () => {
