@@ -1730,7 +1730,7 @@ function ExerciceCard({
         {/* Questions list */}
         {expanded && hasQuestions && (
           <div className="space-y-2 pt-2 border-t">
-            {item.questions!.map(q => (
+            {item.questions!.map((q, qi) => (
               <div key={q.id}>
                 {editingQId === q.id ? (
                   <QuestionEditor
