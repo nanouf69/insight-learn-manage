@@ -404,16 +404,22 @@ function EcranResultats({
     for (let mi = 0; mi < examen.matieres.length; mi++) {
       const matiere = examen.matieres[mi];
       if (!matiere) continue;
+      const resultatMatiere = resultatsAvecIA[mi];
       const questionsSafe = (matiere.questions || []).filter((q): q is Question => q != null && q?.type !== undefined);
       const qrcQuestions = questionsSafe.filter(q => q?.type === "QRC");
       if (qrcQuestions.length === 0) continue;
       const cacheMatiere = correctionsIA[mi] || {};
       for (const q of qrcQuestions) {
-        const corr = cacheMatiere[q.id];
+        // Skip QRC where student didn't provide any answer — auto-0, no validation needed
+        const reponseEleve = resultatMatiere?.reponses?.[q.id] ?? resultatMatiere?.reponses?.[String(q.id)];
+        const reponseStr = typeof reponseEleve === "string" ? reponseEleve.trim() : "";
+        if (!reponseStr) continue; // No answer = auto 0 pts, no need for formateur validation
+
+        const corr = cacheMatiere[q.id] ?? cacheMatiere[String(q.id)];
         // A QRC is considered validated by formateur if it has a manual correction
         if (!corr || corr === "loading" || corr === "error") return true;
         const corrObj = corr as CorrectionQRC;
-        if (!corrObj.explication?.includes("Correction manuelle")) return true;
+        if (!corrObj.explication?.includes("Correction manuelle") && !corrObj.explication?.includes("manuelle")) return true;
       }
     }
     return false;
