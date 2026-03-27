@@ -864,6 +864,56 @@ function EcranResultats({
       )}
 
 
+      {/* Commentaire de l'élève */}
+      {apprenantId && userId && !isAdmin && (
+        <Card className="border-2 border-dashed border-muted-foreground/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Pencil className="w-4 h-4" />
+              Laissez un commentaire sur cet examen
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Textarea
+              placeholder="Comment avez-vous trouvé cet examen ? Des difficultés particulières ? Des points à revoir ?"
+              value={commentaire}
+              onChange={(e) => { setCommentaire(e.target.value); setCommentaireSaved(false); }}
+              rows={4}
+              className="resize-none"
+            />
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={handleSaveCommentaire}
+                disabled={!commentaire.trim() || commentaireLoading || commentaireSaved}
+                size="sm"
+                className="gap-2"
+              >
+                {commentaireLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : commentaireSaved ? (
+                  <CheckCircle2 className="w-4 h-4" />
+                ) : null}
+                {commentaireSaved ? "Commentaire enregistré ✅" : "Enregistrer mon commentaire"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Commentaire visible par l'admin */}
+      {isAdmin && commentaire && (
+        <Card className="border border-muted">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Pencil className="w-4 h-4" />
+              Commentaire de l'élève
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{commentaire}</p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Boutons */}
       <div className="flex gap-3">
