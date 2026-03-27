@@ -1332,7 +1332,7 @@ const eb1Matieres: Matiere[] = [
     nom: "C - Sécurité routière",
     duree: 30,
     coefficient: 2,
-    noteEliminatoire: 4,
+    noteEliminatoire: 6,
     noteSur: 24,
     questions: [
       {
@@ -2458,7 +2458,7 @@ const eb2Matieres: Matiere[] = [
     nom: "C - Sécurité routière",
     duree: 30,
     coefficient: 2,
-    noteEliminatoire: 4,
+    noteEliminatoire: 6,
     noteSur: 24,
     questions: [
       {
@@ -3584,7 +3584,7 @@ const eb3Matieres: Matiere[] = [
     nom: "C - Sécurité routière",
     duree: 30,
     coefficient: 2,
-    noteEliminatoire: 4,
+    noteEliminatoire: 6,
     noteSur: 24,
     questions: [
       {
@@ -4714,7 +4714,7 @@ const eb4Matieres: Matiere[] = [
     nom: "C - Sécurité routière",
     duree: 30,
     coefficient: 2,
-    noteEliminatoire: 4,
+    noteEliminatoire: 6,
     noteSur: 24,
     questions: [
       {
@@ -5857,7 +5857,7 @@ const eb5Matieres: Matiere[] = [
     nom: "C - Sécurité routière",
     duree: 30,
     coefficient: 2,
-    noteEliminatoire: 4,
+    noteEliminatoire: 6,
     noteSur: 24,
     questions: [
       {
@@ -6968,7 +6968,7 @@ const eb6Matieres: Matiere[] = [
     nom: "C - Sécurité routière",
     duree: 30,
     coefficient: 2,
-    noteEliminatoire: 4,
+    noteEliminatoire: 6,
     noteSur: 24,
     questions: [
       {
