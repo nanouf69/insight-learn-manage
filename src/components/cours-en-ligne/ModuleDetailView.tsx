@@ -4161,7 +4161,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                             return (
                               <div key={q.id}
                                 className="flex items-center gap-2 rounded-lg border bg-background p-2 cursor-pointer hover:bg-muted/50 transition-colors"
-                                title={`Q${qi + 1}: ${isCorrect ? "Correct" : "Incorrect"} — Cliquer pour voir`}
+                                title={`Q${q.id}: ${isCorrect ? "Correct" : "Incorrect"} — Cliquer pour voir`}
                                 onClick={() => {
                                   const el = document.getElementById(`exo-q-${exo.id}-${qi}`);
                                   if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
