@@ -446,8 +446,22 @@ export default function ExamensBlancsPage({
         const resp = completedResponses.find((r: any) => r.exercice_id === matiereKey);
         if (!resp) continue;
         const reponses = resp.reponses || {};
-        const note = calculerNote(matiere, reponses);
-        const maxPoints = calculerMaxPoints(matiere);
+        const questionsSafe = (matiere.questions ?? []).filter((q): q is Question => q != null && q?.type != null);
+        const maxPoints = questionsSafe.reduce((acc, q) => acc + getPointsParQuestion(matiere.id, q?.type || "QCM", matiere), 0);
+        const note = questionsSafe.reduce((total, q) => {
+          if (!q || !q?.type) return total;
+          const rep = reponses?.[q.id] ?? reponses?.[String(q.id)];
+          const pts = getPointsParQuestion(matiere.id, q?.type, matiere);
+          if (q?.type === "QCM" && q.choix) {
+            const correctes = safeArray<string>(q.choix?.filter(c => c.correct).map(c => c.lettre)).sort();
+            const donnees = safeArray<string>(rep).sort();
+            if (JSON.stringify(correctes) === JSON.stringify(donnees)) return total + pts;
+          } else if (q?.type === "QRC") {
+            const correction = evaluateQrcDeterministic(q, rep, pts);
+            return total + correction.pointsObtenus;
+          }
+          return total;
+        }, 0);
         const safeNote = maxPoints > 0 ? clamp(note, 0, maxPoints) : Math.max(note, 0);
         const noteSur20 = normalizeNoteSur20(safeNote, maxPoints);
         const quizType = examReference.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
