@@ -272,30 +272,58 @@ function PassageMatiere({
     if (debounceRef.current) clearTimeout(debounceRef.current);
     setSaveStatus("saving");
     debounceRef.current = setTimeout(async () => {
-      try {
-        const { error } = await supabase.from("reponses_apprenants" as any).upsert({
-          apprenant_id: apprenantId,
-          user_id: userIdRef.current,
-          exercice_id: exerciceKey,
-          exercice_type: isBilan ? "bilan" : "examen_blanc",
-          reponses: updated,
-          completed: false,
-          updated_at: new Date().toISOString(),
-        } as any, { onConflict: "apprenant_id,exercice_id" });
-        if (error) {
-          console.error("[AutoSave] Save error:", error);
-          setSaveStatus("error");
-        } else {
-          setSaveStatus("saved");
+      const MAX_RETRIES = 3;
+      const RETRY_DELAY_MS = 2000;
+      let lastError: any = null;
+
+      for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+          // Refresh token ref in case it was renewed by keep-alive
+          const sessionRes = await supabase.auth.getSession();
+          if (sessionRes.data?.session?.access_token) {
+            jwtTokenRef.current = sessionRes.data.session.access_token;
+          }
+
+          const { error } = await supabase.from("reponses_apprenants" as any).upsert({
+            apprenant_id: apprenantId,
+            user_id: userIdRef.current,
+            exercice_id: exerciceKey,
+            exercice_type: isBilan ? "bilan" : "examen_blanc",
+            reponses: updated,
+            completed: false,
+            updated_at: new Date().toISOString(),
+          } as any, { onConflict: "apprenant_id,exercice_id" });
+
+          if (error) {
+            lastError = error;
+            console.warn(`[AutoSave] Attempt ${attempt}/${MAX_RETRIES} failed:`, error.message);
+            if (attempt < MAX_RETRIES) {
+              await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+              continue;
+            }
+          } else {
+            setSaveStatus("saved");
+            if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
+            saveStatusTimerRef.current = setTimeout(() => setSaveStatus("idle"), 2000);
+            return; // success
+          }
+        } catch (e) {
+          lastError = e;
+          console.warn(`[AutoSave] Attempt ${attempt}/${MAX_RETRIES} exception:`, e);
+          if (attempt < MAX_RETRIES) {
+            await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+            continue;
+          }
         }
-        if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
-        saveStatusTimerRef.current = setTimeout(() => setSaveStatus("idle"), 2000);
-      } catch (e) {
-        console.error("[AutoSave] Save error:", e);
-        setSaveStatus("error");
-        if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
-        saveStatusTimerRef.current = setTimeout(() => setSaveStatus("idle"), 3000);
       }
+
+      // All retries exhausted
+      console.error("[AutoSave] All retries failed:", lastError);
+      setSaveStatus("error");
+      toast.error(
+        "⚠️ Sauvegarde impossible après 3 tentatives. Vos réponses sont conservées localement. Ne fermez pas la page et contactez l'administration.",
+        { duration: Infinity, id: "autosave-error" }
+      );
     }, 300);
   };
 
