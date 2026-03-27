@@ -147,7 +147,6 @@ function PassageMatiere({
   isBilan = false,
   apprenantId,
   examenId,
-  isAdmin = false,
 }: {
   matiere: Matiere;
   numero: number;
@@ -156,7 +155,6 @@ function PassageMatiere({
   isBilan?: boolean;
   apprenantId?: string | null;
   examenId?: string;
-  isAdmin?: boolean;
 }) {
   const [reponses, setReponses] = useState<Reponses>({});
   const [questionIndex, setQuestionIndex] = useState(0);
@@ -165,7 +163,6 @@ function PassageMatiere({
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [showCalculator, setShowCalculator] = useState(false);
   const [showInterruptConfirm, setShowInterruptConfirm] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
   const isGestion = matiere.id === "gestion" || matiere.id === "bilan_gestion";
   const saveStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
