@@ -387,7 +387,29 @@ function PassageMatiere({
   const progress = ((safeQuestionIndex + 1) / safeQuestionsCount) * 100;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 relative">
+      {/* Overlay PAUSE */}
+      {isPaused && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="text-center space-y-6 p-8 rounded-2xl bg-card shadow-2xl border max-w-sm mx-4">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto" style={{ backgroundColor: '#F4A227' }}>
+              <Pause className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-foreground">Examen en pause</h3>
+              <p className="text-sm text-muted-foreground mt-2">Le chronomètre est arrêté. Les questions sont masquées pendant la pause.</p>
+            </div>
+            <button
+              onClick={() => setIsPaused(false)}
+              className="flex items-center gap-2 mx-auto px-6 py-3 rounded-lg text-base font-semibold text-white transition-colors hover:opacity-90"
+              style={{ backgroundColor: '#00B4D8' }}
+            >
+              <Play className="w-5 h-5" />
+              Reprendre l'examen
+            </button>
+          </div>
+        </div>
+      )}
       {/* Bandeau matière FTRANSPORT */}
       <div className="rounded-lg px-4 py-3 flex items-center justify-between flex-wrap gap-2" style={{ backgroundColor: '#0D2540' }}>
         <div className="flex items-center gap-3">
