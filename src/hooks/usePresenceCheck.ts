@@ -152,12 +152,14 @@ export function usePresenceCheck({
   }, [endSession, runServerCheck]);
 
   useEffect(() => {
-    if (!enabled || !apprenantId || !userId || !connexionId) {
+    if (!enabled || !apprenantId || !userId || !connexionId || pauseDuringExam) {
       clearTimers();
-      endingRef.current = false;
-      promptLoggedRef.current = false;
-      setShowModal(false);
-      modalDeadlineRef.current = null;
+      if (!pauseDuringExam) {
+        endingRef.current = false;
+        promptLoggedRef.current = false;
+        setShowModal(false);
+        modalDeadlineRef.current = null;
+      }
       return;
     }
 
@@ -171,7 +173,7 @@ export function usePresenceCheck({
     return () => {
       clearTimers();
     };
-  }, [enabled, apprenantId, userId, connexionId, clearTimers, handleServerValidation]);
+  }, [enabled, apprenantId, userId, connexionId, clearTimers, handleServerValidation, pauseDuringExam]);
 
   useEffect(() => {
     if (!enabled || !apprenantId || !userId || !connexionId) return;
