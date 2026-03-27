@@ -36,7 +36,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
     // 1) Fetch completed results
     supabase
       .from("apprenant_quiz_results" as any)
-      .select("quiz_id, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, completed_at, created_at, details")
+      .select("id, quiz_id, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, completed_at, created_at, details")
       .eq("apprenant_id", apprenantId)
       .eq("quiz_type", "examen_blanc")
       .order("completed_at", { ascending: false })
