@@ -919,12 +919,7 @@ export default function ExamensBlancsPage({
               })}
             </div>
             <span className="text-xs text-muted-foreground">Matière {matiereIndex + 1}/{examenChoisi.matieres.length}</span>
-            {!isAdmin && (
-              <Button variant="outline" size="sm" onClick={handleManualReloadQuestions} disabled={isReloadingQuestions} className="ml-auto gap-2">
-                {isReloadingQuestions ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
-                Recharger les questions
-              </Button>
-            )}
+            {/* Bouton recharger retiré pendant l'examen pour éviter le décalage des questions */}
           </div>
           <PassageMatiere matiere={matiere} numero={matiereIndex + 1} total={examenChoisi.matieres.length} onTerminer={handleTerminerMatiere} isBilan={examenChoisi.id.startsWith("bilan-")} apprenantId={apprenantId} examenId={examenChoisi.id} />
         </div>
