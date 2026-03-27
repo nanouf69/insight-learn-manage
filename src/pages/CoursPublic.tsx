@@ -1021,7 +1021,6 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
             isPresentiel={!["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"].includes(selectedFormation)}
             onExamStateChange={handleExamStateChange}
           />
-          />
         </div>
       );
     }
