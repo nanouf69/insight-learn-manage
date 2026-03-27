@@ -160,11 +160,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
         { event: '*', schema: 'public', table: 'apprenant_module_completion', filter: `apprenant_id=eq.${apprenantId}` },
         () => fetchAll()
       )
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          fetchAll();
-        }
-      });
+      .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
