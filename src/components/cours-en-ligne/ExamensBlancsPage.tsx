@@ -19,6 +19,7 @@ import {
   safeStr, safeArray, toFiniteNumber, toTimestamp, clamp,
   normalizeNoteSur20, logSecurityImageDebug,
   evaluateQrcDeterministic, computeAdmisForMatiere,
+  buildMatiereLookupKeys, shareLookupKey, getMatiereCanonicalKey,
 } from "./examens-blancs-utils";
 import { EcranSelection } from "./ExamenBlancsListe";
 import { PassageMatiere, TransitionMatiere } from "./ExamenBlancsPassage";
@@ -208,14 +209,31 @@ export default function ExamensBlancsPage({
 
       if (error) { toast.error("Vérification de sécurité impossible. Réessayez."); return; }
 
-      const completedRows = existingResults as any[] || [];
+      const completedRows = (existingResults as any[]) || [];
       const matieresTotal = Math.max(latestExamen.matieres?.length || 1, 1);
-      const completedMatiereIds = new Set(completedRows.map((r: any) => r.matiere_id));
 
-      // Check if ALL matières are completed (by matching IDs, not just count)
-      const allCompleted = latestExamen.matieres.every(m => completedMatiereIds.has(m.id));
+      const latestByCanonicalKey = new Map<string, any>();
+      completedRows.forEach((row: any) => {
+        const key = getMatiereCanonicalKey(row?.matiere_id, row?.matiere_nom);
+        const prev = latestByCanonicalKey.get(key);
+        const prevTs = prev ? Math.max(toTimestamp(prev.completed_at), toTimestamp(prev.created_at)) : 0;
+        const currTs = Math.max(toTimestamp(row?.completed_at), toTimestamp(row?.created_at));
+        if (!prev || currTs >= prevTs) latestByCanonicalKey.set(key, row);
+      });
 
-      if (allCompleted || completedRows.length >= matieresTotal) {
+      const latestCompletedRows = Array.from(latestByCanonicalKey.values());
+      const completedLookupKeys = new Set<string>();
+      latestCompletedRows.forEach((row: any) => {
+        buildMatiereLookupKeys(row?.matiere_id, row?.matiere_nom).forEach((key) => completedLookupKeys.add(key));
+      });
+
+      const isMatiereDone = (matiere: Matiere) =>
+        buildMatiereLookupKeys(matiere?.id, matiere?.nom).some((key) => completedLookupKeys.has(key));
+
+      const completedMatiereCount = latestExamen.matieres.filter((m) => m && isMatiereDone(m)).length;
+      const allCompleted = completedMatiereCount >= matieresTotal;
+
+      if (allCompleted) {
         // Redirect to results view instead of blocking with toast
         toast.info("Examen déjà terminé. Affichage de vos résultats.", { duration: 3000, icon: "✅" });
         handleViewResults(latestExamen);
@@ -223,13 +241,16 @@ export default function ExamensBlancsPage({
       }
 
       // If partially completed, resume at first uncompleted matière
-      if (completedRows.length > 0) {
+      if (latestCompletedRows.length > 0) {
         const preloadedResults: ResultatMatiere[] = [];
 
         for (let i = 0; i < latestExamen.matieres.length; i++) {
           const m = latestExamen.matieres[i];
           if (!m) continue;
-          const row = completedRows.find((r: any) => r.matiere_id === m.id);
+          const expectedKeys = buildMatiereLookupKeys(m.id, m.nom);
+          const row = latestCompletedRows.find((r: any) =>
+            shareLookupKey(buildMatiereLookupKeys(r?.matiere_id, r?.matiere_nom), expectedKeys)
+          );
           if (row) {
             const maxPts = calculerMaxPoints(m);
             const safeScoreMax = toFiniteNumber(row.score_max, maxPts);
@@ -252,7 +273,7 @@ export default function ExamensBlancsPage({
         }
 
         // Find actual first uncompleted
-        const resumeIndex = latestExamen.matieres.findIndex((m) => m && !completedMatiereIds.has(m.id));
+        const resumeIndex = latestExamen.matieres.findIndex((m) => m && !isMatiereDone(m));
         if (resumeIndex < 0) {
           // All done by ID match — show results
           toast.info("Examen déjà terminé. Affichage de vos résultats.", { duration: 3000, icon: "✅" });
@@ -260,8 +281,8 @@ export default function ExamensBlancsPage({
           return;
         }
 
-        const nbDone = completedRows.length;
-        const nbRemaining = matieresTotal - nbDone;
+        const nbDone = completedMatiereCount;
+        const nbRemaining = Math.max(matieresTotal - nbDone, 0);
         toast.info(`${nbDone} matière${nbDone > 1 ? "s" : ""} déjà terminée${nbDone > 1 ? "s" : ""}. Il reste ${nbRemaining} épreuve${nbRemaining > 1 ? "s" : ""}.`, { duration: 5000, icon: "📋" });
 
         setBilanPrefiltre(null);
@@ -291,10 +312,9 @@ export default function ExamensBlancsPage({
       .eq("quiz_type", examReference.id.startsWith("bilan-") ? "bilan" : "examen_blanc");
     if (!data || (data as any[]).length === 0) { toast.error("Aucun résultat trouvé pour cet examen."); return; }
 
-    const { pickBestScoreRow, getMatiereCanonicalKey } = await import("./examens-blancs-utils");
     const latestByMatiere = new Map<string, any>();
     (data as any[]).forEach((row: any, idx: number) => {
-      const key = row.matiere_id || row.matiere_nom || `unknown-${idx}`;
+      const key = getMatiereCanonicalKey(row?.matiere_id, row?.matiere_nom) || `unknown-${idx}`;
       const prev = latestByMatiere.get(key);
       const prevTs = prev ? Math.max(toTimestamp(prev.completed_at), toTimestamp(prev.created_at)) : 0;
       const currTs = Math.max(toTimestamp(row.completed_at), toTimestamp(row.created_at));
@@ -302,8 +322,10 @@ export default function ExamensBlancsPage({
     });
 
     const latestRows = Array.from(latestByMatiere.values());
-    const rowsByMatiereId = new Map(latestRows.filter((r: any) => !!r.matiere_id).map((r: any) => [r.matiere_id, r]));
-    const rowsByMatiereNom = new Map(latestRows.filter((r: any) => !!r.matiere_nom).map((r: any) => [r.matiere_nom, r]));
+    const rowsWithLookup = latestRows.map((row: any) => ({
+      row,
+      lookupKeys: buildMatiereLookupKeys(row?.matiere_id, row?.matiere_nom),
+    }));
 
     const calculerMaxPoints = (matiere: Matiere): number => {
       const questionsSafe = (matiere.questions ?? []).filter((q): q is Question => q != null && q?.type != null);
@@ -311,7 +333,8 @@ export default function ExamensBlancsPage({
     };
 
     const results = examReference.matieres.map((matiere): ResultatMatiere | null => {
-      const row = rowsByMatiereId.get(matiere.id) || rowsByMatiereNom.get(matiere.nom);
+      const expectedKeys = buildMatiereLookupKeys(matiere.id, matiere.nom);
+      const row = rowsWithLookup.find((entry) => shareLookupKey(entry.lookupKeys, expectedKeys))?.row;
       if (!row) return null;
       const savedCorrections = row.details?.correctionsIA || null;
       const rawScoreMax = toFiniteNumber(row.score_max, 0);
