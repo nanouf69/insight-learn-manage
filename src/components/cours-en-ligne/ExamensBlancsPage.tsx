@@ -3033,6 +3033,7 @@ export default function ExamensBlancsPage({
   apprenantType,
   isAdmin,
   isPresentiel,
+  onExamStateChange,
 }: {
   defaultBilanId?: string | null;
   onBilanConsumed?: () => void;
@@ -3041,6 +3042,8 @@ export default function ExamensBlancsPage({
   apprenantType?: string | null;
   isAdmin?: boolean;
   isPresentiel?: boolean;
+  /** Called when the learner enters or exits an active exam phase */
+  onExamStateChange?: (isInExam: boolean) => void;
 } = {}) {
   // Restore exam session from sessionStorage
   const EXAM_SESSION_KEY = `exam_session_${apprenantId || "anon"}`;
@@ -3152,6 +3155,12 @@ export default function ExamensBlancsPage({
   // Load saved exam overrides from DB on mount
   // Only load on mount — no polling, no intervals
   const isInExam = phase === "examen" || phase === "intro" || phase === "transition";
+
+  // Notify parent when exam state changes (for pausing presence/inactivity checks)
+  useEffect(() => {
+    onExamStateChange?.(isInExam);
+    return () => { onExamStateChange?.(false); };
+  }, [isInExam, onExamStateChange]);
 
   useEffect(() => {
     if (!isInExam) {
