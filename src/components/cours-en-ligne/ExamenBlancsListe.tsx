@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ChevronRight, Pencil, Trophy, FileText, CheckCircle2, XCircle, AlertTriangle, BookOpen, Clock } from "lucide-react";
+import { ChevronRight, Pencil, Trophy, FileText, CheckCircle2, XCircle, AlertTriangle, BookOpen, Clock, Pause, Play } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, type Question } from "./examens-blancs-data";
 import { supabase } from "@/integrations/supabase/client";
 import type { ExamScoreItem } from "./examens-blancs-types";
