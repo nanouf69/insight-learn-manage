@@ -1332,7 +1332,7 @@ const eb1Matieres: Matiere[] = [
     nom: "C - Sécurité routière",
     duree: 30,
     coefficient: 2,
-    noteEliminatoire: 4,
+    noteEliminatoire: 6,
     noteSur: 24,
     questions: [
       {
@@ -1555,7 +1555,7 @@ const eb1Matieres: Matiere[] = [
     nom: "D - Capacité d'expression et de compréhension en langue française",
     duree: 30,
     coefficient: 2,
-    noteEliminatoire: 5,
+    noteEliminatoire: 6,
     noteSur: 24,
     texteSupport: `Avec la démocratisation de l'automobile survenue en France après la première guerre mondiale, la voiture devint un symbole de liberté individuelle offrant à l'homme la possibilité de se déplacer rapidement et de façon autonome. Elle apparait comme un véritable raccourci du temps, modifiant les rapports spatiotemporels de l'individu.
 
@@ -2458,7 +2458,7 @@ const eb2Matieres: Matiere[] = [
     nom: "C - Sécurité routière",
     duree: 30,
     coefficient: 2,
-    noteEliminatoire: 4,
+    noteEliminatoire: 6,
     noteSur: 24,
     questions: [
       {
@@ -2669,7 +2669,7 @@ const eb2Matieres: Matiere[] = [
     nom: "D - Capacité d'expression et de compréhension en langue française",
     duree: 30,
     coefficient: 2,
-    noteEliminatoire: 5,
+    noteEliminatoire: 6,
     noteSur: 24,
     texteSupport: `Alors que les statistiques de l'accidentalité routière démontrent une conduite plus respectueuse des règles de la part des femmes, les clichés sur les femmes au volant, héritage des débuts de l'automobile cantonnant la femme au rôle de passagère, ont la vie dure. Comment expliquer ce paradoxe?
 
@@ -3584,7 +3584,7 @@ const eb3Matieres: Matiere[] = [
     nom: "C - Sécurité routière",
     duree: 30,
     coefficient: 2,
-    noteEliminatoire: 4,
+    noteEliminatoire: 6,
     noteSur: 24,
     questions: [
       {
@@ -3803,7 +3803,7 @@ const eb3Matieres: Matiere[] = [
     nom: "D - Capacité d'expression et de compréhension en langue française",
     duree: 30,
     coefficient: 2,
-    noteEliminatoire: 5,
+    noteEliminatoire: 6,
     noteSur: 24,
     texteSupport: `Le véhicule automatisé intrigue et fascine. Reste à savoir quand et comment nous allons pouvoir lâcher le volant.
 
@@ -4714,7 +4714,7 @@ const eb4Matieres: Matiere[] = [
     nom: "C - Sécurité routière",
     duree: 30,
     coefficient: 2,
-    noteEliminatoire: 4,
+    noteEliminatoire: 6,
     noteSur: 24,
     questions: [
       {
@@ -4934,7 +4934,7 @@ const eb4Matieres: Matiere[] = [
     nom: "D - Capacité d'expression et de compréhension en langue française",
     duree: 30,
     coefficient: 2,
-    noteEliminatoire: 5,
+    noteEliminatoire: 6,
     noteSur: 24,
     texteSupport: `La voiture 100% autonome, c'est pour demain?
 
@@ -5857,7 +5857,7 @@ const eb5Matieres: Matiere[] = [
     nom: "C - Sécurité routière",
     duree: 30,
     coefficient: 2,
-    noteEliminatoire: 4,
+    noteEliminatoire: 6,
     noteSur: 24,
     questions: [
       {
@@ -6077,7 +6077,7 @@ const eb5Matieres: Matiere[] = [
     nom: "D - Capacité d'expression et de compréhension en langue française",
     duree: 30,
     coefficient: 2,
-    noteEliminatoire: 5,
+    noteEliminatoire: 6,
     noteSur: 24,
     texteSupport: `Gros fail et design douteux... Elon Musk présente le «cybertruck» 100% électrique de Tesla
 
@@ -6968,7 +6968,7 @@ const eb6Matieres: Matiere[] = [
     nom: "C - Sécurité routière",
     duree: 30,
     coefficient: 2,
-    noteEliminatoire: 4,
+    noteEliminatoire: 6,
     noteSur: 24,
     questions: [
       {
@@ -7193,7 +7193,7 @@ const eb6Matieres: Matiere[] = [
     nom: "D - Capacité d'expression et de compréhension en langue française",
     duree: 30,
     coefficient: 2,
-    noteEliminatoire: 5,
+    noteEliminatoire: 6,
     noteSur: 24,
     texteSupport: `A Lyon, des taxis-bateaux sur la Saône et le Rhône pour s'affranchir des bouchons
 
