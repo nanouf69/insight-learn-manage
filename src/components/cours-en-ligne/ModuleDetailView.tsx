@@ -4569,8 +4569,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             </Button>
             );
           })() : (
-            </Button>
-          ) : (
             <Button variant="secondary" className="gap-2" onClick={async () => {
               const ok = await persistModuleCompletion();
               if (ok) {
