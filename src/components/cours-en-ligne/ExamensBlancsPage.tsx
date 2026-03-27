@@ -3156,6 +3156,12 @@ export default function ExamensBlancsPage({
   // Only load on mount — no polling, no intervals
   const isInExam = phase === "examen" || phase === "intro" || phase === "transition";
 
+  // Notify parent when exam state changes (for pausing presence/inactivity checks)
+  useEffect(() => {
+    onExamStateChange?.(isInExam);
+    return () => { onExamStateChange?.(false); };
+  }, [isInExam, onExamStateChange]);
+
   useEffect(() => {
     if (!isInExam) {
       void refreshLiveExamens();
