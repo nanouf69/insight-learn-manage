@@ -21,6 +21,7 @@ import {
   evaluateQrcDeterministic, computeAdmisForMatiere,
   buildMatiereLookupKeys, shareLookupKey, getMatiereCanonicalKey,
 } from "./examens-blancs-utils";
+import { recoverCorruptedScoreRow, isCorruptedZeroRow } from "./examens-blancs-utils";
 import { EcranSelection } from "./ExamenBlancsListe";
 import { PassageMatiere, TransitionMatiere } from "./ExamenBlancsPassage";
 import { EcranResultats, RevisionFausses } from "./ExamenBlancsResultats";
@@ -455,7 +456,30 @@ export default function ExamensBlancsPage({
       const rawScoreMax = toFiniteNumber(row.score_max, 0);
       const computedMax = calculerMaxPoints(matiere);
       const safeScoreMax = rawScoreMax > 0 ? rawScoreMax : computedMax;
-      const safeScoreObtenu = safeScoreMax > 0 ? clamp(toFiniteNumber(row.score_obtenu, 0), 0, safeScoreMax) : Math.max(toFiniteNumber(row.score_obtenu, 0), 0);
+
+      // Auto-heal corrupted zero-score rows
+      let safeScoreObtenu = safeScoreMax > 0 ? clamp(toFiniteNumber(row.score_obtenu, 0), 0, safeScoreMax) : Math.max(toFiniteNumber(row.score_obtenu, 0), 0);
+      if (safeScoreObtenu <= 0 && isCorruptedZeroRow(row)) {
+        const recovered = recoverCorruptedScoreRow(row, liveExamens);
+        if (recovered && recovered.score_obtenu > 0) {
+          safeScoreObtenu = recovered.score_obtenu;
+          console.warn(`[handleViewResults][AutoHeal] ${row.quiz_id}/${row.matiere_id}: 0 -> ${recovered.score_obtenu}/${recovered.score_max}`);
+          // Persist healed score back to DB (fire-and-forget)
+          void supabase
+            .from("apprenant_quiz_results" as any)
+            .update({
+              score_obtenu: recovered.score_obtenu,
+              score_max: recovered.score_max,
+              note_sur_20: recovered.note_sur_20,
+            } as any)
+            .eq("id", row.id)
+            .then(({ error }) => {
+              if (error) console.error("[AutoHeal] DB update failed:", error);
+              else console.log(`[AutoHeal] DB healed ${row.quiz_id}/${row.matiere_id} -> ${recovered.score_obtenu}`);
+            });
+        }
+      }
+
       const safeNoteSur = matiere.noteSur || 20;
       return {
         matiereId: row.matiere_id || matiere.id,

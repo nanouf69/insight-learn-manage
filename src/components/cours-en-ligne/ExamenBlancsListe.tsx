@@ -36,7 +36,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
     // 1) Fetch completed results
     supabase
       .from("apprenant_quiz_results" as any)
-      .select("quiz_id, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, completed_at, created_at, details")
+      .select("id, quiz_id, matiere_id, matiere_nom, note_sur_20, score_obtenu, score_max, completed_at, created_at, details")
       .eq("apprenant_id", apprenantId)
       .eq("quiz_type", "examen_blanc")
       .order("completed_at", { ascending: false })
@@ -107,6 +107,21 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
               console.warn(
                 `[ExamensBlancs][Recovery] Score restauré ${r.quiz_id}/${r.matiere_id}: ${r.score_obtenu}/${r.score_max} -> ${recovered.score_obtenu}/${recovered.score_max}`
               );
+              // Auto-heal: persist recovered score back to DB (fire-and-forget)
+              if (r.id) {
+                void supabase
+                  .from("apprenant_quiz_results" as any)
+                  .update({
+                    score_obtenu: recovered.score_obtenu,
+                    score_max: recovered.score_max,
+                    note_sur_20: recovered.note_sur_20,
+                  } as any)
+                  .eq("id", r.id)
+                  .then(({ error: healErr }) => {
+                    if (healErr) console.error("[AutoHeal][Liste] DB update failed:", healErr);
+                    else console.log(`[AutoHeal][Liste] Healed ${r.quiz_id}/${r.matiere_id} -> ${recovered.score_obtenu}`);
+                  });
+              }
             }
           });
 
