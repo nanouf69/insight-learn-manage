@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
+// Textarea removed - no longer used for student comments
 import { Textarea } from "@/components/ui/textarea";
 import {
   ArrowLeft, ArrowRight, CheckCircle2, XCircle, AlertTriangle,
