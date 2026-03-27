@@ -4545,14 +4545,30 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           <span className="text-sm text-muted-foreground font-medium">
             {currentPage + 1} / {totalPages}
           </span>
-          {currentPage < totalPages - 1 ? (
+          {currentPage < totalPages - 1 ? (() => {
+            // Check if current page has an unvalidated quiz → block navigation
+            const pageData = pages[currentPage];
+            let hasUnvalidatedQuiz = false;
+            if (pageData?.type === "cours" && pageData.cours.quiz && pageData.cours.quiz.length > 0) {
+              hasUnvalidatedQuiz = !inlineQuizValidated.has(pageData.cours.id);
+            }
+            if (pageData?.type === "exercice-single") {
+              hasUnvalidatedQuiz = !showResultsFor.has(pageData.exercice.id);
+            }
+            return (
             <Button
               onClick={() => {
                 goToPage(currentPage + 1);
               }}
+              disabled={hasUnvalidatedQuiz}
               className="gap-2"
+              title={hasUnvalidatedQuiz ? "Validez le quiz avant de continuer" : ""}
             >
+              {hasUnvalidatedQuiz && <span>🔒</span>}
               Suivant <ArrowDown className="w-4 h-4 -rotate-90" />
+            </Button>
+            );
+          })() : (
             </Button>
           ) : (
             <Button variant="secondary" className="gap-2" onClick={async () => {
