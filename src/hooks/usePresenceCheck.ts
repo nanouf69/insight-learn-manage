@@ -21,6 +21,8 @@ interface UsePresenceCheckParams {
   connexionId: string | null;
   enabled: boolean;
   onForceDisconnect: () => void;
+  /** When true, all automatic heartbeat polling and activity checks are paused (e.g. during an exam) */
+  pauseDuringExam?: boolean;
 }
 
 export function usePresenceCheck({
