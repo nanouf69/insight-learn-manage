@@ -70,6 +70,21 @@ export default function ExamensBlancsPage({
   const examStartTimeRef = useRef<number>(savedSession?.examStartTime || Date.now());
   const reloadInFlightRef = useRef<Promise<ExamenBlanc[]> | null>(null);
   const [loadTimeout, setLoadTimeout] = useState(false);
+  const [pausedExamIds, setPausedExamIds] = useState<Set<string>>(new Set());
+
+  const handlePauseToggle = useCallback((examId: string) => {
+    setPausedExamIds(prev => {
+      const next = new Set(prev);
+      if (next.has(examId)) {
+        next.delete(examId);
+        toast.success("Examen repris");
+      } else {
+        next.add(examId);
+        toast.info("Examen mis en pause");
+      }
+      return next;
+    });
+  }, []);
 
   const refreshLiveExamens = useCallback(async ({ force = false }: { force?: boolean } = {}) => {
     if (!force && reloadInFlightRef.current) return reloadInFlightRef.current;
