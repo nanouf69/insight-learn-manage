@@ -8,7 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from "@/components/ui/label";
 import {
   ArrowLeft, ChevronDown, ChevronRight, Pencil, Trash2, Plus,
-  Save, CheckCircle2, X, Clock, Layers, Loader2, ArrowUp, ArrowDown, ArrowLeftRight
+  Save, CheckCircle2, X, Clock, Layers, Loader2, ArrowUp, ArrowDown, ArrowLeftRight, Pause, Play
 } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, type Question, type Choix } from "./examens-blancs-data";
 import { supabase } from "@/integrations/supabase/client";
@@ -856,7 +856,7 @@ function MatiereEditor({
 }
 
 // ===== COMPOSANT PRINCIPAL =====
-export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBack: () => void; defaultExamenId?: string | null }) {
+export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExamIds, onPauseToggle }: { onBack: () => void; defaultExamenId?: string | null; pausedExamIds?: Set<string>; onPauseToggle?: (examId: string) => void }) {
   const [examens, setExamens] = useState<ExamenBlanc[]>(
     () => JSON.parse(JSON.stringify(tousLesExamens))
   );
@@ -1129,6 +1129,22 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId }: { onBac
                   <p className="text-xs text-muted-foreground mt-1">
                     {ex.matieres.reduce((acc, m) => acc + m.questions.length, 0)} questions · {isBilan ? "sans chrono" : `${ex.matieres.reduce((acc, m) => acc + m.duree, 0)}min`}
                   </p>
+                  {onPauseToggle && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onPauseToggle(ex.id); }}
+                      className={`mt-2 w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded text-xs font-medium transition-colors ${
+                        pausedExamIds?.has(ex.id)
+                          ? "bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200"
+                          : "bg-muted/50 text-muted-foreground border border-border hover:bg-muted"
+                      }`}
+                    >
+                      {pausedExamIds?.has(ex.id) ? (
+                        <><Play className="w-3 h-3" /> Reprendre</>
+                      ) : (
+                        <><Pause className="w-3 h-3" /> Pause</>
+                      )}
+                    </button>
+                  )}
                 </button>
               );
             })}
