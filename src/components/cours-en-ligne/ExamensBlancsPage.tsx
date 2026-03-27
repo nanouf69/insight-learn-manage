@@ -3140,12 +3140,19 @@ export default function ExamensBlancsPage({
   }, [liveExamens, sessionRestored]);
 
   // Load saved exam overrides from DB on mount
-  useEffect(() => {
-    void refreshLiveExamens();
-  }, [refreshLiveExamens]);
+  // Only load on mount — no polling during exams
+  const isInExam = phase === "examen" || phase === "intro" || phase === "transition";
 
-  // Realtime: reload when admin saves exam changes (debounced to avoid cascade)
   useEffect(() => {
+    if (!isInExam) {
+      void refreshLiveExamens();
+    }
+  }, [refreshLiveExamens, isInExam]);
+
+  // Realtime: reload when admin saves exam changes — DISABLED during exam
+  useEffect(() => {
+    if (isInExam) return; // No realtime refresh while student is taking an exam
+
     const validExamModuleIds = new Set(
       tousLesExamens.map((ex) => getModuleIdForExamId(ex.id))
     );
@@ -3167,7 +3174,6 @@ export default function ExamensBlancsPage({
         },
         (payload) => {
           if (!isExamModuleEvent(payload)) return;
-          // Debounce: wait 3s after last event before refreshing (admin saves trigger many events)
           if (debounceTimer) clearTimeout(debounceTimer);
           debounceTimer = setTimeout(() => {
             console.log("[Realtime] Exam blanc updated, reloading...");
@@ -3182,12 +3188,14 @@ export default function ExamensBlancsPage({
       if (debounceTimer) clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
-  }, [refreshLiveExamens, EXAM_SESSION_KEY]);
+  }, [refreshLiveExamens, EXAM_SESSION_KEY, isInExam]);
 
-  // Fallback: keep learner data synced even if realtime disconnects temporarily
+  // Fallback polling — DISABLED during exam
   useEffect(() => {
+    if (isInExam) return; // No polling while student is taking an exam
+
     let lastRefresh = Date.now();
-    const THROTTLE_MS = 30_000; // 30 seconds minimum between refreshes
+    const THROTTLE_MS = 30_000;
 
     const throttledRefresh = () => {
       const now = Date.now();
@@ -3203,7 +3211,6 @@ export default function ExamensBlancsPage({
       }
     };
 
-    // Poll every 120 seconds (was 5s — caused DB overload)
     const intervalId = window.setInterval(throttledRefresh, 120_000);
 
     window.addEventListener("focus", refreshOnFocus);
@@ -3214,7 +3221,7 @@ export default function ExamensBlancsPage({
       window.removeEventListener("focus", refreshOnFocus);
       document.removeEventListener("visibilitychange", refreshOnVisibility);
     };
-  }, [refreshLiveExamens]);
+  }, [refreshLiveExamens, isInExam]);
 
   // Quand un bilan est demandé depuis les modules, on le met en avant
   useEffect(() => {
