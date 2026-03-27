@@ -477,11 +477,14 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                         return (
                           <div key={m.id} className="flex justify-between text-xs text-muted-foreground">
                             <span className="truncate pr-2">{m.nom.split(" - ")[0]}</span>
-                            {isCompleted && scoreData ? (
-                              <span className={`shrink-0 font-bold ${computeAdmisForMatiere(scoreData.score_obtenu, scoreData.score_max, m.noteEliminatoire, m.noteSur || 20, true) ? "text-green-600" : "text-red-500"}`}>
-                                {scoreData.note_sur_20.toFixed(1)}/20
-                              </span>
-                            ) : (
+                            {isCompleted && scoreData ? (() => {
+                              const noteSur20 = normalizeNoteSur20(scoreData.score_obtenu, scoreData.score_max, scoreData.note_sur_20);
+                              return (
+                                <span className={`shrink-0 font-bold ${computeAdmisForMatiere(scoreData.score_obtenu, scoreData.score_max, m.noteEliminatoire, m.noteSur || 20, true) ? "text-green-600" : "text-red-500"}`}>
+                                  {noteSur20.toFixed(1)}/20
+                                </span>
+                              );
+                            })() : (
                               <span className="shrink-0">{m.duree}min</span>
                             )}
                           </div>
