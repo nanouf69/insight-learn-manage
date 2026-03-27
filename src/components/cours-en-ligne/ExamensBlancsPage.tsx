@@ -1684,9 +1684,9 @@ function PassageMatiere({
                       ? "bg-green-100 text-green-700 border border-green-300"
                       : "bg-red-50 text-red-500 border border-red-300 animate-pulse"
                 }`}
-                title={isAnswered ? `Q${q.id} — répondue ✓` : `Q${q.id} — NON répondue ✗`}
+                title={isAnswered ? `Q${i + 1} — répondue ✓` : `Q${i + 1} — NON répondue ✗`}
               >
-                {q.id}
+                {i + 1}
               </button>
             );
           })}
