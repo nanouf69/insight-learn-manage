@@ -344,7 +344,7 @@ export default function ExamensBlancsPage({
     examStartTimeRef.current = Date.now();
     setIsViewingSavedResults(false);
     setPhase("examen");
-    if (examenChoisi) persistExamSession("examen", examenChoisi.id, 0);
+    if (examenChoisi) persistExamSession("examen", examenChoisi.id, matiereIndex, tousResultats);
   };
 
   const calculerMaxPoints = (matiere: Matiere): number => {
