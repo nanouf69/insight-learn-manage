@@ -497,7 +497,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                       className="w-full mt-2 gap-2"
                       variant={isCompleted ? "outline" : isStartedNotFinished ? "default" : "default"}
                       disabled={pausedExamIds?.has(examen.id)}
-                      onClick={(e) => { e.stopPropagation(); onStart(examen); }}
+                      onClick={(e) => { e.stopPropagation(); onStart(examen, isCompleted); }}
                     >
                       {pausedExamIds?.has(examen.id) ? "⏸ Examen en pause" : isCompleted ? "🔄 Refaire l'examen" : isStartedNotFinished ? "Reprendre l'examen" : "Commencer l'examen"}
                       <ChevronRight className="w-4 h-4" />
