@@ -12,6 +12,7 @@ import {
   normalizeNoteSur20, normalizeMatiereLookupValue,
   buildMatiereLookupKeys, getMatiereCanonicalKey, shareLookupKey,
   pickBestScoreRow, recoverCorruptedScoreRow, findScoreForMatiere,
+  computeAdmisForMatiere,
 } from "./examens-blancs-utils";
 
 function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, apprenantType, examensData, apprenantId, isAdmin, refreshKey, pausedExamIds, onPauseToggle }: { onStart: (examen: ExamenBlanc) => void; onEdit: () => void; onViewResults: (examen: ExamenBlanc) => void; defaultBilanId?: string | null; apprenantType?: string | null; examensData: ExamenBlanc[]; apprenantId?: string | null; isAdmin?: boolean; refreshKey?: number; pausedExamIds?: Set<string>; onPauseToggle?: (examId: string) => void }) {
@@ -386,7 +387,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                     </div>
                     <CardTitle className="text-base mt-2">{examen.titre}</CardTitle>
                     {isCompleted && (() => {
-                      // Compute weighted average from DB scores
+                      // Compute weighted average from DB scores — uses same logic as EcranResultats
                       let totalCoef = 0;
                       let weightedSum = 0;
                       let hasScores = false;
@@ -397,8 +398,12 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                         if (scoreData) {
                           weightedSum += scoreData.note_sur_20 * coef;
                           hasScores = true;
-                          // Check if note is below noteEliminatoire
-                          if (m.noteEliminatoire && scoreData.note_sur_20 < m.noteEliminatoire) {
+                          // Use computeAdmisForMatiere (same as detail view) to check éliminatoire
+                          const admisMatiere = computeAdmisForMatiere(
+                            scoreData.score_obtenu, scoreData.score_max,
+                            m.noteEliminatoire, m.noteSur || 20, true
+                          );
+                          if (!admisMatiere) {
                             eliminatoiresMatieres.push(m.nom.split(" - ")[0]);
                           }
                         }
@@ -472,7 +477,7 @@ function EcranSelection({ onStart, onEdit, onViewResults, defaultBilanId, appren
                           <div key={m.id} className="flex justify-between text-xs text-muted-foreground">
                             <span className="truncate pr-2">{m.nom.split(" - ")[0]}</span>
                             {isCompleted && scoreData ? (
-                              <span className={`shrink-0 font-bold ${scoreData.note_sur_20 >= (m.noteEliminatoire || 6) ? "text-green-600" : "text-red-500"}`}>
+                              <span className={`shrink-0 font-bold ${computeAdmisForMatiere(scoreData.score_obtenu, scoreData.score_max, m.noteEliminatoire, m.noteSur || 20, true) ? "text-green-600" : "text-red-500"}`}>
                                 {scoreData.note_sur_20.toFixed(1)}/20
                               </span>
                             ) : (
