@@ -723,7 +723,7 @@ export default function ExamensBlancsPage({
     return saved;
   };
 
-  const handleTerminerMatiere = (reponses: Reponses) => {
+  const handleTerminerMatiere = async (reponses: Reponses) => {
     try {
       if (!examenChoisi) return;
       const matiere = examenChoisi.matieres[matiereIndex];
