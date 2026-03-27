@@ -105,8 +105,8 @@ export default function ExamensBlancsPage({
         // to prevent question reordering that causes answer mismatches
         setExamenChoisi((prev) => {
           if (!prev) return prev;
-          // If exam is in progress, keep the frozen version
-          if (phase === "examen" || phase === "transition") return prev;
+          const currentPhase = phaseRef.current;
+          if (currentPhase === "examen" || currentPhase === "transition") return prev;
           return saved.find((exam) => exam.id === prev.id) ?? prev;
         });
         return saved;
