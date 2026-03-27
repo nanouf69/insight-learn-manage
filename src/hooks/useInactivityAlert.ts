@@ -78,7 +78,7 @@ export function useInactivityAlert({ enabled, onDisconnect, pauseDuringExam = fa
   }, [clearAllTimers, enabled, startDisconnectCountdown]);
 
   useEffect(() => {
-    if (!enabled) {
+    if (!enabled || pauseDuringExam) {
       clearAllTimers();
       setShowInactivityModal(false);
       disconnectedRef.current = false;
