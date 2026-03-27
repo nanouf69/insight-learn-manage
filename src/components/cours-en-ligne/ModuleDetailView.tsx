@@ -4167,7 +4167,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                                   if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
                                 }}
                               >
-                                <span className="text-sm font-bold min-w-[1.2rem] text-center">{qi + 1}</span>
+                                <span className="text-sm font-bold min-w-[1.2rem] text-center">{q.id}</span>
                                 <span className={`w-3.5 h-3.5 rounded-full shrink-0 ${isCorrect ? "bg-emerald-500" : "bg-destructive"}`} />
                               </div>
                             );
