@@ -15,6 +15,7 @@ import ExamensBlancsEditor from "./ExamensBlancsEditor";
 import CoursPublic from "@/pages/CoursPublic";
 import ApprenantActivityReport from "./ApprenantActivityReport";
 import CorrectionQRCTab from "./CorrectionQRCTab";
+import CorrectionQCMTab from "./CorrectionQCMTab";
 import ResultatsSessionPage from "./ResultatsSessionPage";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -208,6 +209,10 @@ const ApprenantSearchPreview = () => {
           <TabsTrigger value="resultats-session" className="flex items-center gap-2">
             <TableProperties className="w-4 h-4" />
             Résultats
+          </TabsTrigger>
+          <TabsTrigger value="correction-qcm" className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4" />
+            Correction QCM
           </TabsTrigger>
           <TabsTrigger value="correction-qrc" className="flex items-center gap-2">
             <MessageSquareText className="w-4 h-4" />
@@ -481,6 +486,9 @@ const ApprenantSearchPreview = () => {
         {/* Résultats par session */}
         <TabsContent value="resultats-session" className="mt-6">
           <ResultatsSessionPage />
+        </TabsContent>
+        <TabsContent value="correction-qcm" className="mt-6">
+          <CorrectionQCMTab />
         </TabsContent>
         <TabsContent value="correction-qrc" className="mt-6">
           <CorrectionQRCTab />
