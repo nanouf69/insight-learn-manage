@@ -973,7 +973,34 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
     });
   };
 
-  // Load saved data from DB on mount
+  // Check for active student responses on the selected exam
+  useEffect(() => {
+    if (!examenSelId) { setActiveResponsesCount(0); return; }
+    const checkActiveResponses = async () => {
+      try {
+        // Check reponses_apprenants for in-progress or completed responses
+        const prefix = `${examenSelId}_`;
+        const { count: repCount } = await supabase
+          .from("reponses_apprenants")
+          .select("*", { count: "exact", head: true })
+          .like("exercice_id", `${prefix}%`);
+
+        // Check apprenant_quiz_results for completed results
+        const { count: resCount } = await supabase
+          .from("apprenant_quiz_results")
+          .select("*", { count: "exact", head: true })
+          .like("quiz_id", `${prefix}%`);
+
+        setActiveResponsesCount((repCount ?? 0) + (resCount ?? 0));
+      } catch (err) {
+        console.error("[ExamEditor] Error checking active responses:", err);
+        setActiveResponsesCount(0);
+      }
+    };
+    checkActiveResponses();
+  }, [examenSelId]);
+
+
   useEffect(() => {
     loadSavedExamens().then(loadedExamens => {
       setExamens(loadedExamens);
