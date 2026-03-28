@@ -617,6 +617,7 @@ function MatiereEditor({
   };
 
   const deleteQuestion = (qId: number) => {
+    if (locked) return;
     setConfirmDeleteQId(qId);
   };
 
