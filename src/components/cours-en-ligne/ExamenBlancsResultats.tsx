@@ -948,6 +948,36 @@ function EcranResultats({
         );
       })()}
 
+      {/* Matières à revoir — en rouge */}
+      {(() => {
+        const matieresARevoir = resultatsAvecIA
+          .map((r) => {
+            const safeMax = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
+            const noteSur20 = normalizeNoteSur20(toFiniteNumber(r.noteObtenue, 0), safeMax);
+            return { nom: r.nomMatiere, noteSur20, admis: r.admis, matiereId: r.matiereId };
+          })
+          .filter(m => !m.admis || m.noteSur20 < 10);
+        if (matieresARevoir.length === 0) return null;
+        return (
+          <Card className="border-2 border-red-300 bg-red-50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2 text-red-700">
+                <AlertTriangle className="w-5 h-5 text-red-500" />
+                À revoir
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {matieresARevoir.map(m => (
+                <div key={m.matiereId} className="flex items-center justify-between px-3 py-2 rounded-lg bg-red-100 border border-red-200">
+                  <span className="text-sm font-semibold text-red-800">{m.nom}</span>
+                  <span className="text-sm font-bold text-red-700">{m.noteSur20.toFixed(1)} / 20</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        );
+      })()}
+
       {/* Boutons */}
       <div className="flex gap-3">
         <Button variant="outline" onClick={onRetour} className={`${canRetry ? "flex-1" : "w-full"} gap-2`}>
