@@ -620,9 +620,7 @@ function MatiereEditor({
 
   const confirmDelete = () => {
     if (confirmDeleteQId === null) return;
-    const newQuestions = questionsSafe
-      .filter(q => q.id !== confirmDeleteQId)
-      .map((q, i) => ({ ...q, id: i + 1 }));
+    const newQuestions = questionsSafe.filter(q => q.id !== confirmDeleteQId);
     onChange({ ...matiere, questions: newQuestions });
     setEditingQId(null);
     setConfirmDeleteQId(null);
@@ -649,13 +647,7 @@ function MatiereEditor({
     const newQuestions = [...questionsSafe];
     const swapIdx = direction === "up" ? idx - 1 : idx + 1;
     [newQuestions[idx], newQuestions[swapIdx]] = [newQuestions[swapIdx], newQuestions[idx]];
-    // Re-number IDs sequentially
-    const renumbered = newQuestions.map((q, i) => ({ ...q, id: i + 1 }));
-    onChange({ ...matiere, questions: renumbered });
-    // Track the moved question's new editing id if needed
-    if (editingQId === qId) {
-      setEditingQId(renumbered[swapIdx].id);
-    }
+    onChange({ ...matiere, questions: newQuestions });
   };
 
   return (
