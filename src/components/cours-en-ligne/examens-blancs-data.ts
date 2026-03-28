@@ -6712,11 +6712,10 @@ const eb6Matieres: Matiere[] = [
         type: "QCM",
         enonce: "LA RÉGLEMENTATION DU T3P SE TROUVE DANS LE :",
         choix: [
-          { lettre: "D", texte: "Code du travail" , correct: true },
-          { lettre: "C", texte: "La DREAL" },
+          { lettre: "A", texte: "Code des transports" , correct: true },
           { lettre: "B", texte: "Code préfectoral" },
-          { lettre: "C", texte: "Code penal" },
-          { lettre: "D", texte: "Code du travail" , correct: true },
+          { lettre: "C", texte: "Code pénal" },
+          { lettre: "D", texte: "Code du travail" },
         ],
       },
       {
