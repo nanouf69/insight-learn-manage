@@ -8,7 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from "@/components/ui/label";
 import {
   ArrowLeft, ChevronDown, ChevronRight, Pencil, Trash2, Plus,
-  Save, CheckCircle2, X, Clock, Layers, Loader2, ArrowUp, ArrowDown, ArrowLeftRight, Pause, Play
+  Save, CheckCircle2, X, Clock, Layers, Loader2, ArrowUp, ArrowDown, ArrowLeftRight, Pause, Play, AlertTriangle
 } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, type Question, type Choix } from "./examens-blancs-data";
 import { supabase } from "@/integrations/supabase/client";
