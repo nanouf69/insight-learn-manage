@@ -628,6 +628,62 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
             </>
           )}
         </div>
+
+        {/* À revoir — matières échouées par examen blanc */}
+        {(() => {
+          // Group quiz results by exam (quiz_id)
+          const examGroups: Record<string, QuizResult[]> = {};
+          quizResults.forEach(r => {
+            if (!examGroups[r.quiz_id]) examGroups[r.quiz_id] = [];
+            examGroups[r.quiz_id].push(r);
+          });
+
+          // For each exam, find failed matières
+          const examsWithFailed = Object.entries(examGroups)
+            .map(([quizId, results]) => {
+              const failed = results.filter(r => {
+                const note = normalizeQuizNoteSur20(r);
+                return note != null && (!r.reussi || note < 10);
+              });
+              if (failed.length === 0) return null;
+              // Get exam title from first result
+              const examTitle = results[0]?.quiz_titre?.replace(/\s*-\s*.*$/, '') || quizId;
+              return { quizId, examTitle, failed };
+            })
+            .filter(Boolean) as { quizId: string; examTitle: string; failed: QuizResult[] }[];
+
+          if (examsWithFailed.length === 0) return null;
+
+          return (
+            <div className="mt-6 space-y-4">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-red-500" />
+                <h3 className="font-bold text-red-700 text-lg">À revoir</h3>
+              </div>
+              {examsWithFailed.map(({ quizId, examTitle, failed }) => (
+                <div key={quizId} className="bg-red-50 border-2 border-red-200 rounded-xl overflow-hidden">
+                  <div className="px-5 py-3 bg-red-100 border-b border-red-200">
+                    <h4 className="font-semibold text-red-800 text-sm">{examTitle}</h4>
+                  </div>
+                  <div className="px-5 py-3 space-y-2">
+                    {failed.map(r => {
+                      const note = normalizeQuizNoteSur20(r);
+                      return (
+                        <div key={r.id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-red-100 border border-red-200">
+                          <span className="text-sm font-semibold text-red-800">{r.matiere_nom || r.quiz_titre}</span>
+                          <span className="text-sm font-bold text-red-700">
+                            {note != null ? `${note.toFixed(1)} / 20` : "—"}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+      </div>
       )}
 
       {/* Detail panel overlay */}
