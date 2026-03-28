@@ -573,10 +573,12 @@ function MatiereEditor({
   matiere,
   onChange,
   examTitre,
+  locked,
 }: {
   matiere: Matiere;
   onChange: (m: Matiere) => void;
   examTitre?: string;
+  locked?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [editingQId, setEditingQId] = useState<number | null>(null);
