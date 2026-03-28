@@ -8,7 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from "@/components/ui/label";
 import {
   ArrowLeft, ChevronDown, ChevronRight, Pencil, Trash2, Plus,
-  Save, CheckCircle2, X, Clock, Layers, Loader2, ArrowUp, ArrowDown, ArrowLeftRight, Pause, Play
+  Save, CheckCircle2, X, Clock, Layers, Loader2, ArrowUp, ArrowDown, ArrowLeftRight, Pause, Play, AlertTriangle
 } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, type Question, type Choix } from "./examens-blancs-data";
 import { supabase } from "@/integrations/supabase/client";
@@ -573,10 +573,12 @@ function MatiereEditor({
   matiere,
   onChange,
   examTitre,
+  locked,
 }: {
   matiere: Matiere;
   onChange: (m: Matiere) => void;
   examTitre?: string;
+  locked?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [editingQId, setEditingQId] = useState<number | null>(null);
@@ -615,6 +617,7 @@ function MatiereEditor({
   };
 
   const deleteQuestion = (qId: number) => {
+    if (locked) return;
     setConfirmDeleteQId(qId);
   };
 
@@ -640,6 +643,7 @@ function MatiereEditor({
   };
 
   const moveQuestion = (qId: number, direction: "up" | "down") => {
+    if (locked) return;
     const idx = questionsSafe.findIndex(q => q.id === qId);
     if (idx < 0) return;
     if (direction === "up" && idx === 0) return;
@@ -737,9 +741,9 @@ function MatiereEditor({
                   question={q}
                   onSave={saveQuestion}
                   onDraftChange={saveQuestionDraft}
-                  onDelete={() => deleteQuestion(q.id)}
-                  onCancel={() => setEditingQId(null)}
-                />
+                    onDelete={() => { if (!locked) deleteQuestion(q.id); }}
+                    onCancel={() => setEditingQId(null)}
+                  />
               ) : (
                 <div className="border border-border/40 rounded-xl bg-background hover:bg-muted/10 hover:shadow-md group transition-all duration-200 p-5 space-y-3">
                   {examTitre && (
@@ -770,12 +774,12 @@ function MatiereEditor({
                     >
                       <Pencil className="w-4 h-4" />
                     </Button>
-                    <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className={`flex flex-col ${locked ? 'opacity-30 pointer-events-none' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
                       <Button
                         size="sm"
                         variant="ghost"
                         className="h-6 px-1"
-                        disabled={questionsSafe.indexOf(q) === 0}
+                        disabled={locked || questionsSafe.indexOf(q) === 0}
                         onClick={() => moveQuestion(q.id, "up")}
                         title="Monter"
                       >
@@ -785,7 +789,7 @@ function MatiereEditor({
                         size="sm"
                         variant="ghost"
                         className="h-6 px-1"
-                        disabled={questionsSafe.indexOf(q) === questionsSafe.length - 1}
+                        disabled={locked || questionsSafe.indexOf(q) === questionsSafe.length - 1}
                         onClick={() => moveQuestion(q.id, "down")}
                         title="Descendre"
                       >
@@ -819,6 +823,7 @@ function MatiereEditor({
           ))}
 
           {/* Ajouter question */}
+          {!locked && (
           <div className="flex gap-2 pt-2 border-t">
             <Button size="sm" variant="outline" onClick={() => addQuestion("QCM")} className="gap-1">
               <Plus className="w-3 h-3" />
@@ -829,6 +834,7 @@ function MatiereEditor({
               Ajouter QRC
             </Button>
           </div>
+          )}
         </div>
       )}
     </div>
@@ -863,6 +869,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [autoSaving, setAutoSaving] = useState(false);
+  const [activeResponsesCount, setActiveResponsesCount] = useState(0);
   const initialLoadDoneRef = useRef(false);
   const lastSavedFingerprintRef = useRef("");
   const lastSavedModuleFingerprintsRef = useRef<Record<number, string>>({});
@@ -871,6 +878,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
 
   const examensFiltres = examens.filter(e => typeFiltre === "tous" || e?.type === typeFiltre);
   const examenSel = examens.find(e => e.id === examenSelId) || null;
+  const isLocked = activeResponsesCount > 0;
 
   const persistExamens = async (sourceExamens: ExamenBlanc[], showSuccessToast = false): Promise<boolean> => {
     const snapshot = JSON.parse(JSON.stringify(sourceExamens)) as ExamenBlanc[];
@@ -967,7 +975,34 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
     });
   };
 
-  // Load saved data from DB on mount
+  // Check for active student responses on the selected exam
+  useEffect(() => {
+    if (!examenSelId) { setActiveResponsesCount(0); return; }
+    const checkActiveResponses = async () => {
+      try {
+        // Check reponses_apprenants for in-progress or completed responses
+        const prefix = `${examenSelId}_`;
+        const { count: repCount } = await supabase
+          .from("reponses_apprenants")
+          .select("*", { count: "exact", head: true })
+          .like("exercice_id", `${prefix}%`);
+
+        // Check apprenant_quiz_results for completed results
+        const { count: resCount } = await supabase
+          .from("apprenant_quiz_results")
+          .select("*", { count: "exact", head: true })
+          .like("quiz_id", `${prefix}%`);
+
+        setActiveResponsesCount((repCount ?? 0) + (resCount ?? 0));
+      } catch (err) {
+        console.error("[ExamEditor] Error checking active responses:", err);
+        setActiveResponsesCount(0);
+      }
+    };
+    checkActiveResponses();
+  }, [examenSelId]);
+
+
   useEffect(() => {
     loadSavedExamens().then(loadedExamens => {
       setExamens(loadedExamens);
@@ -1163,7 +1198,21 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
                 <Badge variant={examenSel?.type === "TAXI" ? "default" : "secondary"}>
                   {examenSel?.type} — N°{examenSel.numero}
                 </Badge>
-              </div>
+               </div>
+
+              {isLocked && (
+                <div className="flex items-start gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/30">
+                  <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-destructive">
+                      {activeResponsesCount} réponse(s) élève(s) détectée(s) sur cet examen
+                    </p>
+                    <p className="text-xs text-destructive/80 mt-1">
+                      La suppression et le déplacement de questions sont bloqués pour éviter de corrompre les données des élèves. Vous pouvez uniquement modifier le texte des questions et des choix.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {examenSel.matieres.map(m => (
                 <MatiereEditor
@@ -1171,6 +1220,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
                   matiere={m}
                   examTitre={`${examenSel.type} — Examen Blanc N°${examenSel.numero}`}
                   onChange={updated => handleMatiereChange(m.id, updated)}
+                  locked={isLocked}
                 />
               ))}
             </div>
