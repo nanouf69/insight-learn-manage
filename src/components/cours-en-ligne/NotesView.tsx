@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts";
-import { Trophy, TrendingUp, Clock, Target, BookOpen, ChevronDown, ChevronUp, GraduationCap, FileText, CheckCircle2, XCircle, ArrowLeft, Eye } from "lucide-react";
+import { Trophy, TrendingUp, Clock, Target, BookOpen, ChevronDown, ChevronUp, GraduationCap, FileText, CheckCircle2, XCircle, ArrowLeft, Eye, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { MODULES_DATA } from "./formations-data";
