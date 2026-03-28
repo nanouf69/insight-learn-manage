@@ -612,9 +612,15 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
                         </span>
                       </div>
                       <div className="md:col-span-2 text-center">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${r.reussi ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
-                          {r.reussi ? "✅ Réussi" : "❌ Échoué"}
-                        </span>
+                        {r.quiz_type === "revision_fausses" ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
+                            Révision
+                          </span>
+                        ) : (
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${r.reussi ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
+                            {r.reussi ? "✅ Réussi" : "❌ Échoué"}
+                          </span>
+                        )}
                       </div>
                       <div className="md:col-span-1 text-center text-xs text-slate-500">
                         {r.duree_secondes ? formatDuration(r.duree_secondes) : "—"}
