@@ -643,6 +643,7 @@ function MatiereEditor({
   };
 
   const moveQuestion = (qId: number, direction: "up" | "down") => {
+    if (locked) return;
     const idx = questionsSafe.findIndex(q => q.id === qId);
     if (idx < 0) return;
     if (direction === "up" && idx === 0) return;
