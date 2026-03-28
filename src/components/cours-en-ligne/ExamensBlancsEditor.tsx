@@ -774,12 +774,12 @@ function MatiereEditor({
                     >
                       <Pencil className="w-4 h-4" />
                     </Button>
-                    <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className={`flex flex-col ${locked ? 'opacity-30 pointer-events-none' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
                       <Button
                         size="sm"
                         variant="ghost"
                         className="h-6 px-1"
-                        disabled={questionsSafe.indexOf(q) === 0}
+                        disabled={locked || questionsSafe.indexOf(q) === 0}
                         onClick={() => moveQuestion(q.id, "up")}
                         title="Monter"
                       >
@@ -789,7 +789,7 @@ function MatiereEditor({
                         size="sm"
                         variant="ghost"
                         className="h-6 px-1"
-                        disabled={questionsSafe.indexOf(q) === questionsSafe.length - 1}
+                        disabled={locked || questionsSafe.indexOf(q) === questionsSafe.length - 1}
                         onClick={() => moveQuestion(q.id, "down")}
                         title="Descendre"
                       >
