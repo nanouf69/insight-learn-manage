@@ -823,6 +823,7 @@ function MatiereEditor({
           ))}
 
           {/* Ajouter question */}
+          {!locked && (
           <div className="flex gap-2 pt-2 border-t">
             <Button size="sm" variant="outline" onClick={() => addQuestion("QCM")} className="gap-1">
               <Plus className="w-3 h-3" />
@@ -833,6 +834,7 @@ function MatiereEditor({
               Ajouter QRC
             </Button>
           </div>
+          )}
         </div>
       )}
     </div>
