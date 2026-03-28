@@ -607,7 +607,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
                       <div className="md:col-span-3 font-medium text-slate-800">{r.quiz_titre}</div>
                       <div className="md:col-span-2 text-slate-500 text-xs">{r.matiere_nom || "—"}</div>
                       <div className="md:col-span-2 text-center">
-                        <span className={`font-bold ${r.reussi ? "text-emerald-600" : "text-red-500"}`}>
+                        <span className={`font-bold ${(noteSur20 ?? 0) >= 10 ? "text-emerald-600" : "text-red-500"}`}>
                           {noteSur20 != null ? `${noteSur20.toFixed(1)}/20` : "—"}
                         </span>
                       </div>
