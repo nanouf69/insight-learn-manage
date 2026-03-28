@@ -741,9 +741,9 @@ function MatiereEditor({
                   question={q}
                   onSave={saveQuestion}
                   onDraftChange={saveQuestionDraft}
-                  onDelete={() => deleteQuestion(q.id)}
-                  onCancel={() => setEditingQId(null)}
-                />
+                    onDelete={() => { if (!locked) deleteQuestion(q.id); }}
+                    onCancel={() => setEditingQId(null)}
+                  />
               ) : (
                 <div className="border border-border/40 rounded-xl bg-background hover:bg-muted/10 hover:shadow-md group transition-all duration-200 p-5 space-y-3">
                   {examTitre && (
