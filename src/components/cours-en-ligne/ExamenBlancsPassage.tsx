@@ -166,7 +166,10 @@ function PassageMatiere({
   const isGestion = matiere.id === "gestion" || matiere.id === "bilan_gestion";
   const saveStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const questionsSafe = (matiere.questions || []).filter((q): q is Question => !!q && q?.type !== undefined);
+  // Freeze questions at mount to prevent re-render from changing order/content mid-exam
+  const [questionsSafe] = useState<Question[]>(() =>
+    (matiere.questions || []).filter((q): q is Question => !!q && q?.type !== undefined)
+  );
   const question = questionsSafe[questionIndex] || null;
   const currentQuestionImage = getQuestionImageValue(question);
   const dureeSecondes = (matiere.duree ?? 30) * 60;
