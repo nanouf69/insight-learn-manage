@@ -266,34 +266,43 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
             if (sourceMat) {
               const sourceQuestions = Array.isArray(sourceMat.questions) ? sourceMat.questions : [];
               const savedQuestions = Array.isArray(savedMat.questions) ? savedMat.questions : [];
-              const savedByKey = new Map<string, any>();
-              const savedById = new Map<number, any[]>();
 
-              savedQuestions.forEach((savedQ) => {
-                const key = getQuestionKey(savedQ);
-                savedByKey.set(key, savedQ);
-                const numericId = Number(savedQ?.id);
+              // Build lookup maps from SOURCE questions (keyed by key and by id)
+              const sourceByKey = new Map<string, any>();
+              const sourceById = new Map<number, any[]>();
+
+              sourceQuestions.forEach((srcQ) => {
+                const key = getQuestionKey(srcQ);
+                sourceByKey.set(key, srcQ);
+                const numericId = Number(srcQ?.id);
                 if (!Number.isNaN(numericId)) {
-                  const current = savedById.get(numericId) ?? [];
-                  current.push(savedQ);
-                  savedById.set(numericId, current);
+                  const current = sourceById.get(numericId) ?? [];
+                  current.push(srcQ);
+                  sourceById.set(numericId, current);
                 }
               });
 
-              const consumedSavedQuestions = new Set<any>();
+              const consumedSourceQuestions = new Set<any>();
 
-              const mergedQuestions = sourceQuestions.map((sourceQ) => {
-                const key = getQuestionKey(sourceQ);
-                let savedQ = savedByKey.get(key);
+              // Iterate in SAVED order (preserves admin reordering)
+              const mergedQuestions = savedQuestions.map((savedQ) => {
+                const key = getQuestionKey(savedQ);
+                let sourceQ = sourceByKey.get(key);
 
-                if (!savedQ) {
-                  const sameId = savedById.get(Number(sourceQ?.id)) ?? [];
-                  const sameType = sameId.find((candidate) => normalizeQuestionType(candidate?.type) === normalizeQuestionType(sourceQ?.type));
-                  savedQ = sameType ?? sameId[0];
+                if (!sourceQ) {
+                  const sameId = sourceById.get(Number(savedQ?.id)) ?? [];
+                  const sameType = sameId.find((candidate) => normalizeQuestionType(candidate?.type) === normalizeQuestionType(savedQ?.type));
+                  sourceQ = sameType ?? sameId[0];
                 }
 
-                if (!savedQ) return sourceQ;
-                consumedSavedQuestions.add(savedQ);
+                if (!sourceQ) {
+                  // Saved question with no source match — keep as-is
+                  return {
+                    ...savedQ,
+                    image: savedQ?.image ?? (savedQ as any)?.image_url,
+                  };
+                }
+                consumedSourceQuestions.add(sourceQ);
 
                 const mergedImage = savedQ?.image ?? savedQ?.image_url ?? sourceQ?.image ?? (sourceQ as any)?.image_url;
                 const mergedQuestion: Question = {
@@ -313,17 +322,14 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
                 return mergedQuestion;
               });
 
-              const extraSavedQuestions = savedQuestions
-                .filter((savedQ) => !consumedSavedQuestions.has(savedQ))
-                .map((savedQ) => ({
-                  ...savedQ,
-                  image: savedQ?.image ?? (savedQ as any)?.image_url,
-                }));
+              // Append any NEW source questions not present in saved data
+              const extraSourceQuestions = sourceQuestions
+                .filter((srcQ) => !consumedSourceQuestions.has(srcQ));
 
               const merged = {
                 ...sourceMat,
                 ...savedMat,
-                questions: deduplicateQuestions([...mergedQuestions, ...extraSavedQuestions]),
+                questions: deduplicateQuestions([...mergedQuestions, ...extraSourceQuestions]),
               };
               // Always preserve texteSupport/texteSource from source (never lose them)
               merged.texteSupport = sourceMat.texteSupport || savedMat.texteSupport;
