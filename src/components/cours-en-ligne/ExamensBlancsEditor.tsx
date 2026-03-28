@@ -304,7 +304,7 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
                 }
                 consumedSourceQuestions.add(sourceQ);
 
-                const mergedImage = savedQ?.image ?? savedQ?.image_url ?? sourceQ?.image ?? (sourceQ as any)?.image_url;
+                const mergedImage = savedQ?.image ?? (savedQ as any)?.image_url ?? sourceQ?.image ?? (sourceQ as any)?.image_url;
                 const mergedQuestion: Question = {
                   ...sourceQ,
                   ...savedQ,
