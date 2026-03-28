@@ -14,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { RotateCcw, Trophy, Calendar, Hash, Loader2, ChevronDown, ChevronRight } from "lucide-react";
+import { RotateCcw, Trophy, Calendar, Hash, Loader2, ChevronDown, ChevronRight, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -38,16 +38,19 @@ interface ExamenResult {
 interface ExamenGroup {
   examenNum: number;
   examenLabel: string;
-  type: string; // vtc, taxi, ta, va
+  type: string;
   results: ExamenResult[];
   totalScore: number;
   totalMax: number;
   lastDate: string;
+  /** True if this group was detected from in-progress reponses only (no quiz_results) */
+  inProgressOnly?: boolean;
+  /** exercice_ids found in reponses_apprenants for this exam (for cleanup) */
+  inProgressExerciceIds?: string[];
 }
 
 function parseExamenInfo(quizId: string): { num: number; type: string } {
   const lower = quizId.toLowerCase();
-  // Formats: "EB1", "eb3-vtc", "eb4-taxi", "eb1-ta", "eb2-va"
   const match = lower.match(/eb(\d+)(?:-(vtc|taxi|ta|va))?/);
   if (!match) return { num: 0, type: "vtc" };
   return { num: parseInt(match[1]), type: match[2] || "vtc" };
@@ -72,6 +75,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
   const { data: examGroups = [], isLoading } = useQuery({
     queryKey: ["examen-blanc-results-admin", apprenant.id],
     queryFn: async () => {
+      // 1. Load completed quiz results
       const { data, error } = await supabase
         .from("apprenant_quiz_results")
         .select("*")
@@ -79,10 +83,9 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
         .eq("quiz_type", "examen_blanc");
 
       if (error) throw error;
-      if (!data || data.length === 0) return [];
 
       const grouped = new Map<string, ExamenGroup>();
-      for (const row of data) {
+      for (const row of (data || [])) {
         const { num, type } = parseExamenInfo(row.quiz_id);
         const key = `${num}-${type}`;
         const existing = grouped.get(key);
@@ -112,6 +115,64 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
             totalMax: result.score_max,
             lastDate: result.completed_at,
           });
+        }
+      }
+
+      // 2. Also detect in-progress exams from reponses_apprenants (no quiz_results yet)
+      const { data: inProgressData } = await supabase
+        .from("reponses_apprenants")
+        .select("exercice_id, updated_at, completed")
+        .eq("apprenant_id", apprenant.id)
+        .like("exercice_id", "EB%");
+
+      if (inProgressData && inProgressData.length > 0) {
+        // Group by exam ID (e.g. "EB6" from "EB6_t3p")
+        const inProgressByExam = new Map<string, { exerciceIds: string[]; lastDate: string }>();
+        for (const row of inProgressData) {
+          const parts = (row.exercice_id ?? "").split("_");
+          const examPart = parts[0] ?? ""; // e.g. "EB6"
+          const existing = inProgressByExam.get(examPart);
+          const date = row.updated_at ?? "";
+          if (existing) {
+            existing.exerciceIds.push(row.exercice_id);
+            if (date > existing.lastDate) existing.lastDate = date;
+          } else {
+            inProgressByExam.set(examPart, { exerciceIds: [row.exercice_id], lastDate: date });
+          }
+        }
+
+        for (const [examPart, info] of inProgressByExam) {
+          const { num, type } = parseExamenInfo(examPart);
+          const key = `${num}-${type}`;
+          // Only add if not already present from quiz_results
+          if (!grouped.has(key)) {
+            const matiereNames = info.exerciceIds.map(eid => {
+              const matId = eid.split("_").slice(1).join("_");
+              return matId || "inconnue";
+            });
+            grouped.set(key, {
+              examenNum: num,
+              examenLabel: `Examen Blanc ${num} — ${typeLabel(type)}`,
+              type,
+              results: [],
+              totalScore: 0,
+              totalMax: 0,
+              lastDate: info.lastDate,
+              inProgressOnly: true,
+              inProgressExerciceIds: info.exerciceIds,
+            });
+          } else {
+            // Merge exercice IDs for cleanup
+            const existing = grouped.get(key)!;
+            existing.inProgressExerciceIds = [
+              ...(existing.inProgressExerciceIds || []),
+              ...info.exerciceIds.filter(eid => {
+                // Don't duplicate exercice_ids already covered by results
+                const matId = eid.split("_").slice(1).join("_");
+                return !existing.results.some(r => r.matiere_id === matId);
+              }),
+            ];
+          }
         }
       }
 
@@ -174,7 +235,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
 
         toast.success(`${matiere.matiere_nom} réinitialisée (${group.examenLabel})`);
       } else {
-        // Reset full exam — quiz_results + all reponses for each matière
+        // Reset full exam — quiz_results + ALL reponses (completed + in-progress)
         const quizIds = [...new Set(group.results.map((r) => r.quiz_id))];
 
         for (const qid of quizIds) {
@@ -187,14 +248,38 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
           if (error) throw error;
         }
 
-        // Delete all reponses for each matière of this exam
+        // Delete all reponses for each matière of this exam (from results)
         const exerciceIds = group.results.map((r) => `${r.quiz_id}_${r.matiere_id}`);
-        for (const eid of exerciceIds) {
+        // Also include in-progress exercice IDs not covered by results
+        const allExerciceIds = [...new Set([
+          ...exerciceIds,
+          ...(group.inProgressExerciceIds || []),
+        ])];
+
+        for (const eid of allExerciceIds) {
           await supabase
             .from("reponses_apprenants")
             .delete()
             .eq("apprenant_id", apprenant.id)
             .eq("exercice_id", eid);
+        }
+
+        // Safety net: also delete any remaining reponses matching EB{num}_%
+        // This catches orphaned rows not tracked in results or inProgressExerciceIds
+        const ebPrefix = quizIds[0] || `EB${group.examenNum}`;
+        const { data: orphans } = await supabase
+          .from("reponses_apprenants")
+          .select("exercice_id")
+          .eq("apprenant_id", apprenant.id)
+          .like("exercice_id", `${ebPrefix}_%`);
+        if (orphans && orphans.length > 0) {
+          for (const orphan of orphans) {
+            await supabase
+              .from("reponses_apprenants")
+              .delete()
+              .eq("apprenant_id", apprenant.id)
+              .eq("exercice_id", orphan.exercice_id);
+          }
         }
 
         await supabase.from("audit_logs").insert({
@@ -208,8 +293,9 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
             examen_num: group.examenNum,
             type: group.type,
             quiz_ids: quizIds,
-            exercice_ids: exerciceIds,
+            exercice_ids: allExerciceIds,
             matieres_supprimees: group.results.length,
+            in_progress_cleaned: group.inProgressOnly ?? false,
           },
         });
 
@@ -232,7 +318,9 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
 
   const confirmDescription = confirmTarget?.matiere
     ? `la matière "${confirmTarget.matiere.matiere_nom}" de l'${confirmTarget.group.examenLabel}`
-    : `toutes les ${confirmTarget?.group.results.length} matières de l'${confirmTarget?.group.examenLabel}`;
+    : confirmTarget?.group.inProgressOnly
+      ? `les réponses en cours de l'${confirmTarget?.group.examenLabel}`
+      : `toutes les ${confirmTarget?.group.results.length} matière(s) de l'${confirmTarget?.group.examenLabel}`;
 
   return (
     <Card>
@@ -277,19 +365,36 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
                         <ChevronRight className="w-4 h-4 text-muted-foreground" />
                       )}
                       <div>
-                        <p className="font-medium text-sm">{group.examenLabel}</p>
+                        <p className="font-medium text-sm flex items-center gap-2">
+                          {group.examenLabel}
+                          {group.inProgressOnly && (
+                            <span className="inline-flex items-center gap-1 text-xs font-normal px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                              <Clock className="w-3 h-3" />
+                              En cours
+                            </span>
+                          )}
+                        </p>
                         <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-                          <span className="flex items-center gap-1">
-                            <Trophy className="w-3 h-3" />
-                            Note : {noteGlobale}/20
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Hash className="w-3 h-3" />
-                            {group.results.length} matière{group.results.length > 1 ? "s" : ""}
-                          </span>
+                          {!group.inProgressOnly && (
+                            <>
+                              <span className="flex items-center gap-1">
+                                <Trophy className="w-3 h-3" />
+                                Note : {noteGlobale}/20
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Hash className="w-3 h-3" />
+                                {group.results.length} matière{group.results.length > 1 ? "s" : ""}
+                              </span>
+                            </>
+                          )}
+                          {group.inProgressOnly && (
+                            <span className="flex items-center gap-1">
+                              {group.inProgressExerciceIds?.length ?? 0} matière(s) en cours
+                            </span>
+                          )}
                           <span className="flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
-                            {format(new Date(group.lastDate), "dd/MM/yyyy HH:mm", { locale: fr })}
+                            {group.lastDate ? format(new Date(group.lastDate), "dd/MM/yyyy HH:mm", { locale: fr }) : "—"}
                           </span>
                         </div>
                       </div>
@@ -304,7 +409,7 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
                     </Button>
                   </div>
 
-                  {expanded && (
+                  {expanded && group.results.length > 0 && (
                     <div className="border-t divide-y">
                       {group.results
                         .sort((a, b) => a.matiere_nom.localeCompare(b.matiere_nom))
@@ -332,6 +437,22 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
                         })}
                     </div>
                   )}
+
+                  {expanded && group.inProgressOnly && group.inProgressExerciceIds && (
+                    <div className="border-t divide-y">
+                      {group.inProgressExerciceIds.map((eid, i) => {
+                        const matId = eid.split("_").slice(1).join("_");
+                        return (
+                          <div key={i} className="px-4 py-2 flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground flex items-center gap-2">
+                              {matId}
+                              <span className="text-xs text-amber-600">(en cours)</span>
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -350,7 +471,9 @@ export default function ExamensBlancsResetTab({ apprenant }: ExamensBlancsResetT
               Cette action est <strong>irréversible</strong>.
               {confirmTarget?.matiere
                 ? " Le résultat de cette matière sera supprimé et l'apprenant pourra la refaire."
-                : ` Les résultats des ${confirmTarget?.group.results.length} matière(s) seront supprimés et l'apprenant pourra refaire cet examen depuis zéro.`}
+                : confirmTarget?.group.inProgressOnly
+                  ? " Les réponses en cours seront supprimées et l'apprenant pourra recommencer cet examen."
+                  : ` Les résultats des ${confirmTarget?.group.results.length} matière(s) seront supprimés et l'apprenant pourra refaire cet examen depuis zéro.`}
               <br /><br />
               <em className="text-xs">L'action sera enregistrée dans le journal d'audit (traçabilité Qualiopi/MCF).</em>
             </AlertDialogDescription>
