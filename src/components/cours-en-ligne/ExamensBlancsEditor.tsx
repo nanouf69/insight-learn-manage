@@ -867,6 +867,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [autoSaving, setAutoSaving] = useState(false);
+  const [activeResponsesCount, setActiveResponsesCount] = useState(0);
   const initialLoadDoneRef = useRef(false);
   const lastSavedFingerprintRef = useRef("");
   const lastSavedModuleFingerprintsRef = useRef<Record<number, string>>({});
@@ -875,6 +876,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
 
   const examensFiltres = examens.filter(e => typeFiltre === "tous" || e?.type === typeFiltre);
   const examenSel = examens.find(e => e.id === examenSelId) || null;
+  const isLocked = activeResponsesCount > 0;
 
   const persistExamens = async (sourceExamens: ExamenBlanc[], showSuccessToast = false): Promise<boolean> => {
     const snapshot = JSON.parse(JSON.stringify(sourceExamens)) as ExamenBlanc[];
