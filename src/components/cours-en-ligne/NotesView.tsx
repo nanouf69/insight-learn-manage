@@ -582,6 +582,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
 
       {/* Examens blancs detail */}
       {activeTab === "examens" && (
+        <>
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b">
             <h3 className="font-bold text-slate-800">📝 Résultats des examens blancs</h3>
@@ -631,14 +632,12 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
 
         {/* À revoir — matières échouées par examen blanc */}
         {(() => {
-          // Group quiz results by exam (quiz_id)
           const examGroups: Record<string, QuizResult[]> = {};
           quizResults.forEach(r => {
             if (!examGroups[r.quiz_id]) examGroups[r.quiz_id] = [];
             examGroups[r.quiz_id].push(r);
           });
 
-          // For each exam, find failed matières
           const examsWithFailed = Object.entries(examGroups)
             .map(([quizId, results]) => {
               const failed = results.filter(r => {
@@ -646,7 +645,6 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
                 return note != null && (!r.reussi || note < 10);
               });
               if (failed.length === 0) return null;
-              // Get exam title from first result
               const examTitle = results[0]?.quiz_titre?.replace(/\s*-\s*.*$/, '') || quizId;
               return { quizId, examTitle, failed };
             })
@@ -683,7 +681,7 @@ const NotesView = ({ apprenantId, studentName, moduleCompletionsSeed = [] }: Not
             </div>
           );
         })()}
-      </div>
+        </>
       )}
 
       {/* Detail panel overlay */}
