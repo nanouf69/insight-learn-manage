@@ -1196,7 +1196,21 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
                 <Badge variant={examenSel?.type === "TAXI" ? "default" : "secondary"}>
                   {examenSel?.type} — N°{examenSel.numero}
                 </Badge>
-              </div>
+               </div>
+
+              {isLocked && (
+                <div className="flex items-start gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/30">
+                  <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-destructive">
+                      {activeResponsesCount} réponse(s) élève(s) détectée(s) sur cet examen
+                    </p>
+                    <p className="text-xs text-destructive/80 mt-1">
+                      La suppression et le déplacement de questions sont bloqués pour éviter de corrompre les données des élèves. Vous pouvez uniquement modifier le texte des questions et des choix.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {examenSel.matieres.map(m => (
                 <MatiereEditor
@@ -1204,6 +1218,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
                   matiere={m}
                   examTitre={`${examenSel.type} — Examen Blanc N°${examenSel.numero}`}
                   onChange={updated => handleMatiereChange(m.id, updated)}
+                  locked={isLocked}
                 />
               ))}
             </div>
