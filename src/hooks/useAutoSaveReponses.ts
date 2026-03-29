@@ -97,52 +97,45 @@ export function useAutoSaveReponses<T = Record<string, any>>({
         if (!latest) return;
 
         try {
-          const {
-            data: { user },
-            error: userError,
-          } = await supabase.auth.getUser();
+          const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+          const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-          if (userError || !user?.id) {
-            console.warn("[AutoSaveReponses] session introuvable", {
-              message: userError?.message,
-              exercice_id: exerciceId,
-              apprenant_id: apprenantId,
-            });
+          if (!baseUrl || !apikey) {
+            console.error("[AutoSaveReponses] Missing backend configuration for upsert-reponse-apprenant");
             return;
           }
 
-          userIdRef.current = user.id;
-          const activeUserId = user.id;
+          const payload = {
+            apprenant_id: apprenantId,
+            user_id: apprenantId,
+            exercice_id: exerciceId,
+            exercice_type: exerciceType,
+            reponses: latest.reponses,
+            score: latest.score ?? null,
+            completed: latest.completed ?? false,
+            updated_at: new Date().toISOString(),
+          };
 
-          console.log("[AutoSaveReponses] UPSERT reponses_apprenants — user_id envoyé:", activeUserId, "| auth session uid:", userIdRef.current, "| exercice_id:", exerciceId, "| apprenant_id:", apprenantId);
+          console.log("[AutoSaveReponses] UPSERT reponses_apprenants via Edge Function — user_id envoyé:", payload.user_id, "| auth session uid:", userIdRef.current, "| exercice_id:", exerciceId, "| apprenant_id:", apprenantId);
 
-          const { error } = await supabase
-            .from("reponses_apprenants" as any)
-            .upsert(
-              {
-                apprenant_id: apprenantId,
-                user_id: activeUserId,
-                exercice_id: exerciceId,
-                exercice_type: exerciceType,
-                reponses: latest.reponses,
-                score: latest.score ?? null,
-                completed: latest.completed ?? false,
-                updated_at: new Date().toISOString(),
-              } as any,
-              { onConflict: "apprenant_id,exercice_id" }
-            );
+          const response = await fetch(`${baseUrl}/functions/v1/upsert-reponse-apprenant`, {
+            method: "POST",
+            headers: {
+              apikey,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          });
 
-          if (error) {
+          if (!response.ok) {
+            const body = await response.text();
             console.error("[AutoSaveReponses] Upsert error COMPLET:", {
-              message: error.message,
-              code: error.code,
-              details: error.details,
-              hint: (error as any).hint,
-              status: (error as any).status,
-              statusText: (error as any).statusText,
+              status: response.status,
+              statusText: response.statusText,
+              body,
               exercice_id: exerciceId,
               apprenant_id: apprenantId,
-              user_id: activeUserId,
+              user_id: payload.user_id,
             });
           }
         } catch (e) {
@@ -164,20 +157,20 @@ export function useAutoSaveReponses<T = Record<string, any>>({
   // beforeunload: flush pending save synchronously
   useEffect(() => {
     const flushSave = () => {
-      if (!apprenantId || !userIdRef.current) return;
+      if (!apprenantId) return;
       const latest = latestReponsesRef.current;
       if (!latest) return;
 
-      // Use the latest known token — already kept in sync by onAuthStateChange
-      const token = jwtTokenRef.current;
-      if (!token) {
-        console.warn("[AutoSaveReponses] FLUSH skipped — no JWT token available");
+      const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      if (!baseUrl || !apikey) {
+        console.error("[AutoSaveReponses] Missing backend configuration for upsert-reponse-apprenant flush");
         return;
       }
 
       const row = {
         apprenant_id: apprenantId,
-        user_id: userIdRef.current,
+        user_id: apprenantId,
         exercice_id: exerciceId,
         exercice_type: exerciceType,
         reponses: latest.reponses,
@@ -186,15 +179,13 @@ export function useAutoSaveReponses<T = Record<string, any>>({
         updated_at: new Date().toISOString(),
       };
       try {
-        console.log("[AutoSaveReponses] FLUSH XHR reponses_apprenants — user_id:", userIdRef.current, "| exercice_id:", exerciceId);
-        const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/reponses_apprenants?on_conflict=apprenant_id,exercice_id`;
+        console.log("[AutoSaveReponses] FLUSH XHR reponses_apprenants via Edge Function — user_id:", row.user_id, "| exercice_id:", exerciceId);
+        const url = `${baseUrl}/functions/v1/upsert-reponse-apprenant`;
         const xhr = new XMLHttpRequest();
         xhr.open("POST", url, false);
         xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.setRequestHeader("apikey", import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
-        xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-        xhr.setRequestHeader("Prefer", "resolution=merge-duplicates");
-        xhr.send(JSON.stringify([row]));
+        xhr.setRequestHeader("apikey", apikey);
+        xhr.send(JSON.stringify(row));
       } catch (_) {}
     };
     window.addEventListener("beforeunload", flushSave);
