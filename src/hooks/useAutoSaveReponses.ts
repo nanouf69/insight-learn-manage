@@ -73,6 +73,8 @@ export function useAutoSaveReponses<T = Record<string, any>>({
         if (!latest) return;
 
         try {
+          const { data: sessionData } = await supabase.auth.getSession();
+          console.log("[AutoSaveReponses] UPSERT reponses_apprenants — user_id envoyé:", userIdRef.current, "| auth.uid() actif:", sessionData.session?.user?.id ?? "PAS DE SESSION", "| exercice_id:", exerciceId, "| apprenant_id:", apprenantId);
           const { error } = await supabase
             .from("reponses_apprenants" as any)
             .upsert(
