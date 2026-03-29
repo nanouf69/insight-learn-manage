@@ -3162,6 +3162,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           updated_at: new Date().toISOString(),
         }));
         if (rows.length > 0) {
+          console.log("[ModuleDetailView] FLUSH XHR reponses_apprenants — user_id envoyé:", userIdForSaveRef.current, "| nb rows:", rows.length, "| apprenant_id:", apprenantId);
           const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/reponses_apprenants?on_conflict=apprenant_id,exercice_id`;
           const token = jwtTokenRef.current || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
           try {
