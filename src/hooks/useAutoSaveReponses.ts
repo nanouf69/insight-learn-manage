@@ -92,7 +92,17 @@ export function useAutoSaveReponses<T = Record<string, any>>({
             );
 
           if (error) {
-            console.error("[AutoSaveReponses] Upsert error:", error);
+            console.error("[AutoSaveReponses] Upsert error COMPLET:", {
+              message: error.message,
+              code: error.code,
+              details: error.details,
+              hint: (error as any).hint,
+              status: (error as any).status,
+              statusText: (error as any).statusText,
+              exercice_id: exerciceId,
+              apprenant_id: apprenantId,
+              user_id: userIdRef.current,
+            });
           }
         } catch (e) {
           console.error("[AutoSaveReponses] Save error:", e);
