@@ -73,6 +73,8 @@ export function useAutoSaveReponses<T = Record<string, any>>({
         if (!latest) return;
 
         try {
+          const { data: sessionData } = await supabase.auth.getSession();
+          console.log("[AutoSaveReponses] UPSERT reponses_apprenants — user_id envoyé:", userIdRef.current, "| auth.uid() actif:", sessionData.session?.user?.id ?? "PAS DE SESSION", "| exercice_id:", exerciceId, "| apprenant_id:", apprenantId);
           const { error } = await supabase
             .from("reponses_apprenants" as any)
             .upsert(
@@ -125,6 +127,7 @@ export function useAutoSaveReponses<T = Record<string, any>>({
         updated_at: new Date().toISOString(),
       };
       try {
+        console.log("[AutoSaveReponses] FLUSH XHR reponses_apprenants — user_id envoyé:", userIdRef.current, "| exercice_id:", exerciceId, "| apprenant_id:", apprenantId);
         const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/reponses_apprenants?on_conflict=apprenant_id,exercice_id`;
         const token = jwtTokenRef.current || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
         const xhr = new XMLHttpRequest();
