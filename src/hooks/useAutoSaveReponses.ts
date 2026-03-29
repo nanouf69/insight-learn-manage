@@ -97,29 +97,22 @@ export function useAutoSaveReponses<T = Record<string, any>>({
         if (!latest) return;
 
         try {
-          // Always fetch fresh session before upsert
-          const { data: { session } } = await supabase.auth.getSession();
+          const {
+            data: { user },
+            error: userError,
+          } = await supabase.auth.getUser();
 
-          if (!session?.user?.id) {
-            console.warn("[AutoSaveReponses] Pas de session active, attente…");
-            const freshSession = await waitForSession();
-            if (!freshSession) {
-              console.error("[AutoSaveReponses] ABANDON — impossible d'obtenir une session après 5s", {
-                exercice_id: exerciceId,
-                apprenant_id: apprenantId,
-              });
-              return;
-            }
-            // Update refs with restored session
-            userIdRef.current = freshSession.user.id;
-            jwtTokenRef.current = freshSession.access_token;
-          } else {
-            // Keep refs in sync
-            userIdRef.current = session.user.id;
-            jwtTokenRef.current = session.access_token;
+          if (userError || !user?.id) {
+            console.warn("[AutoSaveReponses] session introuvable", {
+              message: userError?.message,
+              exercice_id: exerciceId,
+              apprenant_id: apprenantId,
+            });
+            return;
           }
 
-          const activeUserId = userIdRef.current!;
+          userIdRef.current = user.id;
+          const activeUserId = user.id;
 
           console.log("[AutoSaveReponses] UPSERT reponses_apprenants — user_id envoyé:", activeUserId, "| auth session uid:", userIdRef.current, "| exercice_id:", exerciceId, "| apprenant_id:", apprenantId);
 
