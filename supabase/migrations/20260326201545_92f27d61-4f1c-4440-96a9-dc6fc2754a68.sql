@@ -13,14 +13,16 @@ BEGIN
   SELECT module_data INTO source_md FROM module_editor_state WHERE module_id = 41;
   
   IF source_md IS NULL THEN
-    RAISE EXCEPTION 'Module 41 not found';
+    RAISE NOTICE 'Module 41 not found — skipping data migration on fresh DB';
+    RETURN;
   END IF;
   
   SELECT e INTO dev_comm FROM jsonb_array_elements(source_md->'exercices') e WHERE (e->>'id')::int = 7;
   SELECT e INTO regl_vtc FROM jsonb_array_elements(source_md->'exercices') e WHERE (e->>'id')::int = 72;
   
   IF dev_comm IS NULL OR regl_vtc IS NULL THEN
-    RAISE EXCEPTION 'Dev Commercial or Réglementation VTC not found in module 41';
+    RAISE NOTICE 'Dev Commercial or Réglementation VTC not found — skipping';
+    RETURN;
   END IF;
 
   -- Add them to modules 2, 14, 15, 20, 21 (VTC-related modules)

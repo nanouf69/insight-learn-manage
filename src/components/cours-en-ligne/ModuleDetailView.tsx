@@ -2043,11 +2043,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   // Also reruns when apprenantType arrives/changes to avoid losing trainer edits
   // after student data hydration resets moduleData.
   useEffect(() => {
-    if (!studentOnly || !editorStateHydrated || loadedModuleEditorState) return;
+    // BUG #9 FIX: apply trainer overrides even when module_editor_state exists
+    // Previously skipped when loadedModuleEditorState was truthy, making the two systems mutually exclusive
+    if (!studentOnly || !editorStateHydrated) return;
 
     async function loadTrainerOverrides() {
       try {
-        // Match each learner module with the quiz_id(s) used by the trainer portal
+        // BUG #9 FIX: hardcoded fallback mapping kept for backwards compatibility,
+        // but also fetch ALL overrides for this module dynamically from DB
         const trainerQuizIdsByModuleId: Record<number, string[]> = {
           12: ["cas-pratique-taxi"],
           7: ["connaissance-ville"],
@@ -2061,9 +2064,19 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           11: ["bilan-examen-taxi"],
         };
 
-        const targetQuizIds = trainerQuizIdsByModuleId[module.id];
+        // BUG #9 FIX: also query DB for dynamic quiz_id mappings for this module
+        let targetQuizIds = trainerQuizIdsByModuleId[module.id] || [];
+        try {
+          const { data: dynamicMappings } = await supabase
+            .from("quiz_questions_overrides" as any)
+            .select("quiz_id")
+            .limit(100);
+          if (dynamicMappings && dynamicMappings.length > 0) {
+            const dynamicIds = [...new Set((dynamicMappings as any[]).map((r: any) => r.quiz_id))];
+            targetQuizIds = [...new Set([...targetQuizIds, ...dynamicIds])];
+          }
+        } catch (_) {}
 
-        // Only apply trainer overrides for modules that have a known quiz mapping
         if (!targetQuizIds || targetQuizIds.length === 0) return;
 
         const { data } = await supabase

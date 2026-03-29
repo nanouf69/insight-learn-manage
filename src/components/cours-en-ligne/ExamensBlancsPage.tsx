@@ -21,7 +21,7 @@ import {
   evaluateQrcDeterministic, computeAdmisForMatiere,
   buildMatiereLookupKeys, shareLookupKey, getMatiereCanonicalKey,
 } from "./examens-blancs-utils";
-import { recoverCorruptedScoreRow, isCorruptedZeroRow } from "./examens-blancs-utils";
+import { recoverCorruptedScoreRow, isCorruptedZeroRow, persistExamSession as persistExamSessionUtil } from "./examens-blancs-utils";
 import { EcranSelection } from "./ExamenBlancsListe";
 import { PassageMatiere, TransitionMatiere } from "./ExamenBlancsPassage";
 import { EcranResultats, RevisionFausses } from "./ExamenBlancsResultats";
@@ -59,11 +59,12 @@ export default function ExamensBlancsPage({
 
   const savedSession = restoreSession();
 
-  const [phase, setPhase] = useState<"selection" | "intro" | "examen" | "transition" | "resultats" | "edition" | "revision">(
-    savedSession?.phase === "examen" ? "examen" : "selection"
-  );
+  // BUG #2 FIX: never trust sessionStorage for initial phase — always start with "selection"
+  // and let the async DB verification (useEffect below) set the correct phase after confirmation
+  const [phase, setPhase] = useState<"selection" | "intro" | "examen" | "transition" | "resultats" | "edition" | "revision">("selection");
   const [examenChoisi, setExamenChoisi] = useState<ExamenBlanc | null>(null);
-  const [matiereIndex, setMatiereIndex] = useState(savedSession?.matiereIndex || 0);
+  // BUG #2 FIX: always start at 0, DB verification will set the correct index
+  const [matiereIndex, setMatiereIndex] = useState(0);
   const [tousResultats, setTousResultats] = useState<ResultatMatiere[]>(safeArray<ResultatMatiere>(savedSession?.resultats));
   const [lastMatiereResult, setLastMatiereResult] = useState<ResultatMatiere | null>(null);
   const [isViewingSavedResults, setIsViewingSavedResults] = useState(false);
@@ -132,17 +133,9 @@ export default function ExamensBlancsPage({
     }
   };
 
-  const persistExamSession = (p: string, exId: string | null, mi: number, resultats?: ResultatMatiere[]) => {
-    try {
-      if (p === "examen" && exId) {
-        sessionStorage.setItem(EXAM_SESSION_KEY, JSON.stringify({
-          phase: p, examenId: exId, matiereIndex: mi,
-          examStartTime: examStartTimeRef.current, resultats: resultats || [],
-        }));
-      } else {
-        sessionStorage.removeItem(EXAM_SESSION_KEY);
-      }
-    } catch { }
+  // Extracted to examens-blancs-utils.ts for testability (BUG #8 FIX)
+  const persistExamSession = (p: string, exId: string | null, mi: number, resultats?: ResultatMatiere[], currentReponses?: Reponses, questionIndex?: number) => {
+    persistExamSessionUtil(EXAM_SESSION_KEY, p, exId, mi, examStartTimeRef.current, resultats, currentReponses, questionIndex);
   };
 
   // Restore chosen exam once liveExamens loaded
@@ -257,7 +250,9 @@ export default function ExamensBlancsPage({
       if (!cancelled) {
         setExamenChoisi(found);
         setPhase("examen");
-        setMatiereIndex(savedSession.matiereIndex || 0);
+        // BUG #2 FIX: validate matiereIndex bounds before using it
+        const maxIndex = Math.max((found.matieres?.length || 1) - 1, 0);
+        setMatiereIndex(Math.min(savedSession.matiereIndex || 0, maxIndex));
         if (savedSession.resultats?.length) setTousResultats(savedSession.resultats);
         setSessionRestored(true);
       }
@@ -267,18 +262,21 @@ export default function ExamensBlancsPage({
     return () => { cancelled = true; };
   }, [liveExamens, sessionRestored, isAdmin, apprenantId]);
 
-  const isInExam = phase === "examen" || phase === "intro" || phase === "transition";
+  // BUG #9 FIX: only block during active exam phase, allow updates during intro/transition
+  const isInExam = phase === "examen";
+  const isInExamBroad = phase === "examen" || phase === "intro" || phase === "transition";
 
   useEffect(() => {
-    onExamStateChange?.(isInExam);
+    onExamStateChange?.(isInExamBroad);
     return () => { onExamStateChange?.(false); };
-  }, [isInExam, onExamStateChange]);
+  }, [isInExamBroad, onExamStateChange]);
 
   useEffect(() => {
-    if (!isInExam) { void refreshLiveExamens(); }
-  }, [refreshLiveExamens, isInExam]);
+    if (!isInExamBroad) { void refreshLiveExamens(); }
+  }, [refreshLiveExamens, isInExamBroad]);
 
-  // Realtime: targeted update when admin saves exam changes — DISABLED during exam
+  // Realtime: targeted update when admin saves exam changes
+  // BUG #9 FIX: only disabled during active exam phase, allowed during intro/transition
   useEffect(() => {
     if (isInExam) return;
     const validExamModuleIds = new Set(tousLesExamens.map((ex) => getModuleIdForExamId(ex.id)));
@@ -734,6 +732,30 @@ export default function ExamensBlancsPage({
       if (!examenChoisi) return;
       const matiere = examenChoisi.matieres[matiereIndex];
       if (!matiere) { toast.error("Matière introuvable. Veuillez relancer l'examen."); return; }
+
+      // BUG #7 FIX: flush responses to DB BEFORE calculating score
+      if (apprenantId && userId) {
+        const exerciceKey = `${examenChoisi.id}__${matiere.id}`;
+        const quizType = examenChoisi.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
+        try {
+          await supabase.from("reponses_apprenants" as any).upsert({
+            apprenant_id: apprenantId,
+            user_id: userId,
+            exercice_id: exerciceKey,
+            exercice_type: quizType,
+            reponses,
+            completed: true,
+            updated_at: new Date().toISOString(),
+          } as any, { onConflict: "apprenant_id,exercice_id" });
+        } catch (flushErr) {
+          console.warn("[ExamenBlanc] Flush before score failed:", flushErr);
+          // BUG #7 FIX: save to localStorage as last resort
+          try {
+            localStorage.setItem(`exam_backup_${exerciceKey}_${apprenantId}`, JSON.stringify(reponses));
+          } catch (_) {}
+        }
+      }
+
       const note = calculerNote(matiere, reponses);
       const maxPoints = calculerMaxPoints(matiere);
       const noteSecurisee = maxPoints > 0 ? clamp(note, 0, maxPoints) : Math.max(note, 0);
@@ -755,6 +777,13 @@ export default function ExamensBlancsPage({
         const saved = await saveMatiereResult({ examen: examenChoisi, matiere, resultat, dureeSecondes: elapsedSeconds / Math.max(completedCount, 1) });
         if (!saved) {
           console.warn("[ExamenBlanc] Failed to save result for", matiere.id, "- result kept in memory");
+          // BUG #7 FIX: backup result to localStorage for recovery
+          try {
+            localStorage.setItem(
+              `exam_result_backup_${examenChoisi.id}_${matiere.id}_${apprenantId}`,
+              JSON.stringify(resultat)
+            );
+          } catch (_) {}
         }
       }
 
