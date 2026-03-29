@@ -3083,6 +3083,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           }));
 
           if (rows.length > 0) {
+            const { data: sessData } = await supabase.auth.getSession();
+            console.log("[ModuleDetailView] UPSERT reponses_apprenants — user_id envoyé:", userIdForSaveRef.current, "| auth.uid() actif:", sessData.session?.user?.id ?? "PAS DE SESSION", "| nb rows:", rows.length, "| apprenant_id:", apprenantId);
             await supabase.from("reponses_apprenants" as any)
               .upsert(rows as any, { onConflict: "apprenant_id,exercice_id" });
           }
