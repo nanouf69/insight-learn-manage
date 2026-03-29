@@ -248,7 +248,14 @@ export function applyDbOverrides<T extends { enonce: string; choix: any[] }>(
   dbOverrides: { enonce: string; choix: { lettre: string; texte: string; correct?: boolean }[] }[],
 ): T[] {
   if (!dbOverrides || dbOverrides.length === 0) return questions;
-  return questions;
+  // BUG #9 FIX: actually apply overrides by matching enonce
+  return questions.map((q) => {
+    const override = dbOverrides.find((o) => normalizeEnonce(o.enonce) === normalizeEnonce(q.enonce));
+    if (override) {
+      return { ...q, enonce: override.enonce, choix: override.choix };
+    }
+    return q;
+  });
 }
 
 /**

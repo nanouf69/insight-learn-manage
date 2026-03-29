@@ -28,6 +28,17 @@ const CoursEnLignePage = () => {
   const [selectedFormation, setSelectedFormation] = useState("vtc");
   const [editingModule, setEditingModule] = useState<{ id: number; nom: string } | null>(null);
   const [bilanActif, setBilanActif] = useState<string | null>(null);
+  // BUG #11 FIX: check admin role dynamically instead of hardcoding
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session?.user?.id) {
+        supabase.rpc("has_role" as any, { _user_id: data.session.user.id, _role: "admin" }).then(({ data: isAdm }) => {
+          setIsAdmin(isAdm === true);
+        });
+      }
+    });
+  }, []);
   const [modules, setModules] = useState(
     ALL_MODULES.map(m => ({ ...m, eleves: 0, progression: "0%", statut: "Actif" }))
   );
@@ -434,7 +445,7 @@ const ApprenantSearchPreview = () => {
 
         {/* Examens Blancs */}
         <TabsContent value="examens-blancs" className="mt-6">
-          <ExamensBlancsPage defaultBilanId={bilanActif} onBilanConsumed={() => setBilanActif(null)} isAdmin={true} />
+          <ExamensBlancsPage defaultBilanId={bilanActif} onBilanConsumed={() => setBilanActif(null)} isAdmin={isAdmin} />
         </TabsContent>
 
         {/* Formations — Mapping modules par formation */}

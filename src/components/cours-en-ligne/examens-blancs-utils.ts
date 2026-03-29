@@ -1,5 +1,5 @@
 import { getPointsParQuestion, isCalculQuestion } from "./examens-blancs-data";
-import type { ExamenBlanc, Matiere, Question, CorrectionQRC, ExamScoreItem } from "./examens-blancs-types";
+import type { ExamenBlanc, Matiere, Question, CorrectionQRC, ExamScoreItem, Reponses, ReponseQCM, ReponseQRC, ResultatMatiere } from "./examens-blancs-types";
 
 /** Safely coerce any value to string */
 export function safeStr(v: unknown): string {
@@ -409,4 +409,68 @@ export function computeAdmisForMatiere(noteObtenue: unknown, maxPoints: unknown,
   const noteSur20 = (safeScore / safeMax) * 20;
   const seuilSur20 = Math.max(toFiniteNumber(noteEliminatoire, 0), 0);
   return noteSur20 >= seuilSur20;
+}
+
+// ─── Extracted pure functions for testability ─────────────────────────
+
+/** Normalize reponses keys — preserves string keys, converts numeric strings to numbers */
+export function normalizeReponses(raw: any): Reponses {
+  if (!raw || typeof raw !== "object") return {};
+  const normalized: Reponses = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (value !== undefined && value !== null) {
+      const numKey = Number(key);
+      normalized[isNaN(numKey) ? (key as any) : numKey] = value as ReponseQCM | ReponseQRC;
+    }
+  }
+  return normalized;
+}
+
+/** Determine if a QCM question has multiple correct answers */
+export function computeIsMultiple(question: Question): boolean {
+  return question?.type === "QCM" && (question.choix?.filter(c => c.correct).length || 0) > 1;
+}
+
+/** Apply a QCM answer change to a reponses object */
+export function applyQCMChange(
+  reponses: Reponses,
+  qId: number,
+  lettre: string,
+  checked: boolean,
+  isMultiple: boolean,
+): Reponses {
+  const current = (reponses[qId] as string[]) || [];
+  if (!isMultiple) {
+    return { ...reponses, [qId]: [lettre] };
+  } else if (checked) {
+    if (current.includes(lettre)) return reponses;
+    return { ...reponses, [qId]: [...current, lettre] };
+  } else {
+    return { ...reponses, [qId]: current.filter(l => l !== lettre) };
+  }
+}
+
+/** Persist exam session to sessionStorage */
+export function persistExamSession(
+  sessionKey: string,
+  p: string,
+  exId: string | null,
+  mi: number,
+  examStartTime: number,
+  resultats: ResultatMatiere[] = [],
+  currentReponses: Reponses = {},
+  questionIndex = 0,
+): void {
+  try {
+    if (p === "examen" && exId) {
+      sessionStorage.setItem(sessionKey, JSON.stringify({
+        phase: p, examenId: exId, matiereIndex: mi,
+        examStartTime, resultats,
+        currentReponses,
+        questionIndex,
+      }));
+    } else {
+      sessionStorage.removeItem(sessionKey);
+    }
+  } catch { }
 }

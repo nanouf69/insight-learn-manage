@@ -42,21 +42,25 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Build the row — only include score if explicitly provided
+    // to avoid overwriting an existing score with null
+    const row: Record<string, any> = {
+      apprenant_id,
+      user_id,
+      exercice_id,
+      exercice_type,
+      reponses: reponses ?? {},
+      completed: completed ?? false,
+      updated_at: updated_at ?? new Date().toISOString(),
+    };
+
+    if (score !== undefined && score !== null) {
+      row.score = score;
+    }
+
     const { error } = await supabase
       .from("reponses_apprenants")
-      .upsert(
-        {
-          apprenant_id,
-          user_id,
-          exercice_id,
-          exercice_type,
-          reponses: reponses ?? {},
-          score: score ?? null,
-          completed: completed ?? false,
-          updated_at: updated_at ?? new Date().toISOString(),
-        },
-        { onConflict: "apprenant_id,exercice_id" }
-      );
+      .upsert(row, { onConflict: "apprenant_id,exercice_id" });
 
     if (error) {
       return new Response(

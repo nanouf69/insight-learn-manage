@@ -66,56 +66,19 @@ async function saveWithRetry(
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      // Try upsert: check if draft exists
-      const { data: existing } = await supabase
+      // BUG #4 FIX: single UPSERT instead of SELECT + INSERT/UPDATE
+      // Avoids race condition where 2 parallel saves both see "no draft" and both INSERT
+      const { error } = await supabase
         .from("apprenant_documents_completes" as any)
-        .select("id")
-        .eq("apprenant_id", params.apprenantId)
-        .eq("type_document", params.typeDocument)
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(1);
-
-      let error;
-      if (existing && (existing as any[]).length > 0) {
-        // Update existing
-        const result = await supabase
-          .from("apprenant_documents_completes" as any)
-          .update({
-            donnees: params.donnees,
-            titre: params.titre,
-            module_id: params.moduleId || null,
-            updated_at: new Date().toISOString(),
-          } as any)
-          .eq("id", (existing as any[])[0].id);
-        error = result.error;
-      } else {
-        // Insert new
-        const result = await supabase
-          .from("apprenant_documents_completes" as any)
-          .insert({
-            apprenant_id: params.apprenantId,
-            user_id: user.id,
-            type_document: params.typeDocument,
-            titre: params.titre,
-            donnees: params.donnees,
-            module_id: params.moduleId || null,
-          } as any);
-
-        if (result.error) {
-          console.error("[AutoSave] Supabase INSERT failed on apprenant_documents_completes", {
-            code: result.error.code,
-            message: result.error.message,
-            details: result.error.details,
-            hint: result.error.hint,
-            apprenantId: params.apprenantId,
-            typeDocument: params.typeDocument,
-            userId: user.id,
-          });
-        }
-
-        error = result.error;
-      }
+        .upsert({
+          apprenant_id: params.apprenantId,
+          user_id: user.id,
+          type_document: params.typeDocument,
+          titre: params.titre,
+          donnees: params.donnees,
+          module_id: params.moduleId || null,
+          updated_at: new Date().toISOString(),
+        } as any, { onConflict: "apprenant_id,type_document,user_id" });
 
       if (error) {
         console.error(`[AutoSave] Attempt ${attempt}/${retries} failed:`, error);
