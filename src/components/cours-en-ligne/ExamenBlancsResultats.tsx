@@ -69,6 +69,21 @@ function EcranResultats({
   const [editingQrc, setEditingQrc] = useState<string | null>(null);
   const [editingPoints, setEditingPoints] = useState<number>(0);
   const [revisionDejaFaite, setRevisionDejaFaite] = useState(false);
+  const [isRetake, setIsRetake] = useState(false);
+
+  // Detect if this is a retake (multiple results exist for same apprenant + quiz)
+  useEffect(() => {
+    if (!apprenantId || !examen?.id) return;
+    const checkRetake = async () => {
+      const { count } = await supabase
+        .from("apprenant_quiz_results")
+        .select("id", { count: "exact", head: true })
+        .eq("apprenant_id", apprenantId)
+        .eq("quiz_id", examen.id);
+      setIsRetake((count || 0) > examen.matieres.length);
+    };
+    checkRetake();
+  }, [apprenantId, examen?.id]);
 
   // === BILAN AUTOMATIQUE ===
   const generateBilanAuto = useCallback(() => {
