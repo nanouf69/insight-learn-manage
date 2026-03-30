@@ -5257,10 +5257,13 @@ const eb4Matieres: Matiere[] = [
       },
       {
         id: 15,
-        type: "QRC",
+        type: "QCM",
         enonce: "Les centres de formation sont agréés par :",
-        reponseQRC: "le préfet du département",
-        reponses_possibles: ["le préfet du département", "le ministère des transports", "le préfet de la région"],
+        choix: [
+          { lettre: "A", texte: "Le préfet du département", correct: true },
+          { lettre: "B", texte: "Le ministère des transports" },
+          { lettre: "C", texte: "Le préfet de la région" },
+        ],
       },
     ],
   },
