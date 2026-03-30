@@ -556,6 +556,7 @@ export default function FournisseurPortal() {
       const { data, error } = await supabase.functions.invoke('upload-fournisseur-document', {
         body: formData,
       });
+      console.log('[upload-facture] response:', { data, error });
       if (error) throw new Error(error.message || "Erreur lors de l'upload");
       if (data?.error) throw new Error(data.error);
 
