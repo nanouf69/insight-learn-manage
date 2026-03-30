@@ -27,6 +27,61 @@ export function buildExamenMap(
   return map;
 }
 
+// ─── From CorrectionQRCTab.tsx: matiere lookup with fallback ─────────────
+
+/**
+ * Find a matiere for a given quiz result row.
+ * 1. Try examenMap first (merged data)
+ * 2. Fall back to tousLesExamens for the same quiz_id
+ * 3. Fall back to any exam that has a matiere with matching id AND questions
+ */
+export function findMatiereWithFallback(
+  examenMap: Record<string, ExamenBlanc>,
+  tousLesExamens: ExamenBlanc[],
+  quizId: string,
+  matiereId: string,
+): Matiere | undefined {
+  // 1. Try examenMap
+  const matiere = examenMap[quizId]?.matieres?.find((m: Matiere) => m.id === matiereId);
+  if (matiere) return matiere;
+  if (!matiereId) return undefined;
+
+  // 2. Try same quiz in source data
+  for (const srcExam of tousLesExamens) {
+    if (srcExam.id === quizId) {
+      const found = srcExam.matieres.find((m: Matiere) => m.id === matiereId);
+      if (found) return found;
+    }
+  }
+
+  // 3. Try any exam that has this matiere WITH questions (avoid empty matches)
+  for (const srcExam of tousLesExamens) {
+    const found = srcExam.matieres.find((m: Matiere) => m.id === matiereId);
+    if (found?.questions?.length) return found;
+  }
+
+  return undefined;
+}
+
+// ─── From CorrectionQRCTab.tsx: reconstruct questions from source ────────
+
+/**
+ * Get source questions for a matiere, falling back to tousLesExamens
+ * when the matiere's own questions array is empty.
+ */
+export function getSourceQuestions(
+  matiere: Matiere,
+  tousLesExamens: ExamenBlanc[],
+): any[] {
+  if (matiere.questions?.length) return matiere.questions;
+  if (!matiere.id) return [];
+  for (const srcExam of tousLesExamens) {
+    const srcMat = srcExam.matieres.find((m: Matiere) => m.id === matiere.id);
+    if (srcMat?.questions?.length) return srcMat.questions;
+  }
+  return [];
+}
+
 // ─── From CorrectionQRCTab.tsx:219 ───────────────────────────────────────
 
 /**

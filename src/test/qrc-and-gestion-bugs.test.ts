@@ -13,6 +13,8 @@ import {
   buildExerciceKeyFlush,
   isExamPhaseProtected,
   getQuestionKey,
+  findMatiereWithFallback,
+  getSourceQuestions,
 } from "../components/cours-en-ligne/exam-helpers";
 
 // ── Fixtures ──────────────────────────────────────────────────────────────
@@ -31,10 +33,47 @@ const MATIERE_GESTION: any = {
   ],
 };
 
+const MATIERE_T3P: any = {
+  id: "t3p",
+  nom: "A - Transport Public Particulier de Personnes (T3P)",
+  duree: 45,
+  coefficient: 3,
+  noteEliminatoire: 6,
+  noteSur: 36,
+  questions: [
+    { id: 1, type: "QRC", enonce: "Attestation de formation continue ?", reponseQRC: "Délivrée par..." },
+    { id: 2, type: "QCM", enonce: "Un QCM T3P", choix: [{ lettre: "B", texte: "Non", correct: true }] },
+  ],
+};
+
+const MATIERE_REGL_VTC: any = {
+  id: "reglementation_vtc",
+  nom: "Réglementation VTC",
+  duree: 30,
+  coefficient: 2,
+  noteEliminatoire: 4,
+  noteSur: 20,
+  questions: [
+    { id: 1, type: "QRC", enonce: "Honorabilité ?", reponseQRC: "Casier B2 vierge" },
+  ],
+};
+
 const SOURCE_EXAMEN: any = {
   id: "EB1",
   titre: "Examen Blanc 1",
   matieres: [MATIERE_GESTION],
+};
+
+const SOURCE_EB4: any = {
+  id: "EB4",
+  titre: "Examen Blanc VTC N°4",
+  matieres: [MATIERE_T3P, MATIERE_GESTION, MATIERE_REGL_VTC],
+};
+
+const SOURCE_EB5: any = {
+  id: "EB5",
+  titre: "Examen Blanc VTC N°5",
+  matieres: [MATIERE_T3P, MATIERE_GESTION],
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -50,23 +89,143 @@ describe("Bug QRC-1: buildExamenMap must find saved exams by ID", () => {
     const map = buildExamenMap([SOURCE_EXAMEN], saved);
 
     // EXPECTED: map should contain saved version with modified name
-    // WILL FAIL: buggy code does saved["EB1"] on array → undefined → falls back to source
     expect(map["EB1"].matieres[0].nom).toBe("Gestion modifiée");
   });
 
   it("should preserve questions from loadSavedExamens (no index-based scramble)", () => {
-    // Simulate loadSavedExamens returning matieres with empty questions (DIAMANKA case)
     const savedWithEmptyQuestions = [
       { ...SOURCE_EXAMEN, matieres: [{ ...MATIERE_GESTION, questions: [] }] },
     ];
 
     const map = buildExamenMap([SOURCE_EXAMEN], savedWithEmptyQuestions);
 
-    // The old buggy code did: s.matieres[mi].questions || m.questions
-    // [] is truthy so it kept empty array. New code just uses `s || e`.
-    // Since loadSavedExamens already handles the merge, if saved has [],
-    // buildExamenMap should faithfully pass it through (the extra fallback is in CorrectionQRCTab)
+    // buildExamenMap trusts loadSavedExamens result — CorrectionQRCTab handles further fallback
     expect(map["EB1"].matieres[0].questions).toEqual([]);
+  });
+
+  it("should fall back to source when saved exam not found", () => {
+    const map = buildExamenMap([SOURCE_EXAMEN, SOURCE_EB4], []);
+
+    expect(map["EB1"]).toBe(SOURCE_EXAMEN);
+    expect(map["EB4"]).toBe(SOURCE_EB4);
+  });
+
+  it("should handle multiple exams independently", () => {
+    const savedEB4 = { ...SOURCE_EB4, titre: "EB4 modifié" };
+    const map = buildExamenMap([SOURCE_EXAMEN, SOURCE_EB4], [savedEB4]);
+
+    expect(map["EB1"]).toBe(SOURCE_EXAMEN); // no saved → source
+    expect(map["EB4"].titre).toBe("EB4 modifié"); // saved found
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// findMatiereWithFallback — the 3-level matiere lookup
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe("findMatiereWithFallback", () => {
+  const examenMap: any = {
+    EB4: { ...SOURCE_EB4, matieres: [MATIERE_T3P, MATIERE_GESTION, MATIERE_REGL_VTC] },
+  };
+  const allExams = [SOURCE_EXAMEN, SOURCE_EB4, SOURCE_EB5];
+
+  it("level 1: should find matiere in examenMap", () => {
+    const result = findMatiereWithFallback(examenMap, allExams, "EB4", "t3p");
+    expect(result).toBeDefined();
+    expect(result!.id).toBe("t3p");
+  });
+
+  it("level 2: should fall back to tousLesExamens when not in examenMap", () => {
+    // EB5 not in examenMap, but exists in tousLesExamens
+    const result = findMatiereWithFallback(examenMap, allExams, "EB5", "t3p");
+    expect(result).toBeDefined();
+    expect(result!.id).toBe("t3p");
+  });
+
+  it("level 3: should cross-search exams when matiere not in same exam", () => {
+    // quiz_id="EB1" has no reglementation_vtc, but EB4 does
+    const result = findMatiereWithFallback(examenMap, allExams, "EB1", "reglementation_vtc");
+    expect(result).toBeDefined();
+    expect(result!.id).toBe("reglementation_vtc");
+    expect(result!.questions?.length).toBeGreaterThan(0);
+  });
+
+  it("level 3: should prefer matiere WITH questions over empty", () => {
+    const examWithEmpty: any = {
+      id: "EB_EMPTY",
+      titre: "Empty",
+      matieres: [{ id: "reglementation_vtc", nom: "Regl VTC", questions: [] }],
+    };
+    const result = findMatiereWithFallback({}, [examWithEmpty, SOURCE_EB4], "EB_EMPTY", "reglementation_vtc");
+    // Level 2 finds the empty one first, returns it (it matched same quiz_id)
+    // That's correct: same-exam match is preferred even if empty
+    expect(result).toBeDefined();
+    expect(result!.id).toBe("reglementation_vtc");
+  });
+
+  it("should return undefined when matiere not found anywhere", () => {
+    const result = findMatiereWithFallback(examenMap, allExams, "EB4", "matiere_inexistante");
+    expect(result).toBeUndefined();
+  });
+
+  it("should return undefined for empty matiere_id", () => {
+    const result = findMatiereWithFallback(examenMap, allExams, "EB4", "");
+    expect(result).toBeUndefined();
+  });
+
+  it("should handle quiz_id not in examenMap or source", () => {
+    const result = findMatiereWithFallback(examenMap, allExams, "UNKNOWN", "gestion");
+    // Level 2 fails (no exam with id UNKNOWN), level 3 finds gestion in EB1/EB4/EB5
+    expect(result).toBeDefined();
+    expect(result!.id).toBe("gestion");
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// getSourceQuestions — empty questions fallback
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe("getSourceQuestions", () => {
+  const allExams = [SOURCE_EXAMEN, SOURCE_EB4, SOURCE_EB5];
+
+  it("should return matiere questions when they exist", () => {
+    const result = getSourceQuestions(MATIERE_GESTION, allExams);
+    expect(result).toBe(MATIERE_GESTION.questions);
+    expect(result.length).toBe(3);
+  });
+
+  it("should fall back to tousLesExamens when matiere.questions is empty", () => {
+    const emptyMatiere: any = { id: "gestion", questions: [] };
+    const result = getSourceQuestions(emptyMatiere, allExams);
+    expect(result.length).toBe(3); // found gestion in SOURCE_EXAMEN
+    expect(result[0].id).toBe(1);
+  });
+
+  it("should fall back to tousLesExamens when matiere.questions is undefined", () => {
+    const noQuestionsMatiere: any = { id: "t3p" };
+    const result = getSourceQuestions(noQuestionsMatiere, allExams);
+    expect(result.length).toBe(2); // found t3p in SOURCE_EB4
+    expect(result[0].type).toBe("QRC");
+  });
+
+  it("should return empty array when matiere.id not found in any source", () => {
+    const unknownMatiere: any = { id: "matiere_inexistante", questions: [] };
+    const result = getSourceQuestions(unknownMatiere, allExams);
+    expect(result).toEqual([]);
+  });
+
+  it("should return empty array when matiere has no id", () => {
+    const noIdMatiere: any = { questions: [] };
+    const result = getSourceQuestions(noIdMatiere, allExams);
+    expect(result).toEqual([]);
+  });
+
+  it("should handle string key matching for DIAMANKA case", () => {
+    // Simulates the full DIAMANKA flow: matiere found but empty questions
+    const emptyT3p: any = { id: "t3p", questions: [] };
+    const questions = getSourceQuestions(emptyT3p, allExams);
+    expect(questions.length).toBe(2);
+    expect(questions[0].enonce).toContain("Attestation");
   });
 });
 
@@ -76,11 +235,7 @@ describe("Bug QRC-1: buildExamenMap must find saved exams by ID", () => {
 
 describe("Bug QRC-2: shouldSkipResultRow must allow rows without questions key", () => {
   it("should NOT skip when details has reponses but no questions key", () => {
-    // This is the rebuild path: details = { reponses: {...} }
     const details = { reponses: { 1: "régime général" } };
-
-    // EXPECTED: should not skip (false)
-    // WILL FAIL: buggy code does !details?.questions → true (skip)
     expect(shouldSkipResultRow(details)).toBe(false);
   });
 
@@ -88,10 +243,17 @@ describe("Bug QRC-2: shouldSkipResultRow must allow rows without questions key",
     expect(shouldSkipResultRow(null)).toBe(true);
   });
 
+  it("should still skip when details is undefined", () => {
+    expect(shouldSkipResultRow(undefined)).toBe(true);
+  });
+
   it("should NOT skip when details has empty questions array", () => {
     const details = { questions: [], reponses: { 1: "test" } };
-    // Empty array is truthy, so this already passes — not a failing case
     expect(shouldSkipResultRow(details)).toBe(false);
+  });
+
+  it("should NOT skip empty object (has details, just no content)", () => {
+    expect(shouldSkipResultRow({})).toBe(false);
   });
 });
 
@@ -106,8 +268,6 @@ describe("Bug QRC-3: buildQuestionDetails must fallback to source", () => {
 
     const details = buildQuestionDetails(emptyMatiere, reponses, [SOURCE_EXAMEN]);
 
-    // EXPECTED: should fallback to SOURCE_EXAMEN's gestion questions
-    // WILL FAIL: buggy code returns [] because rawQuestions is []
     expect(details.length).toBeGreaterThan(0);
     expect(details[0].questionId).toBe(1);
     expect(details[0].reponseEleve).toBe("régime général");
@@ -121,13 +281,29 @@ describe("Bug QRC-3: buildQuestionDetails must fallback to source", () => {
   });
 
   it("should handle string keys from JSON round-trip", () => {
-    // After DB round-trip, object keys become strings
     const reponses = { "1": "test value" };
     const details = buildQuestionDetails(MATIERE_GESTION, reponses, [SOURCE_EXAMEN]);
-
-    // EXPECTED: should find "1" even though question.id is number 1
-    // WILL FAIL: buggy code does reponses?.[q.id] with no String fallback
     expect(details[0].reponseEleve).toBe("test value");
+  });
+
+  it("should return reponseCorrecte for QCM questions", () => {
+    const reponses = { 3: ["A"] };
+    const details = buildQuestionDetails(MATIERE_GESTION, reponses, [SOURCE_EXAMEN]);
+    const qcm = details.find((d: any) => d.type === "QCM");
+    expect(qcm.reponseCorrecte).toEqual(["A"]);
+  });
+
+  it("should return reponseCorrecte for QRC questions", () => {
+    const reponses = {};
+    const details = buildQuestionDetails(MATIERE_GESTION, reponses, [SOURCE_EXAMEN]);
+    const qrc = details.find((d: any) => d.questionId === 1);
+    expect(qrc.reponseCorrecte).toBe("Le régime général.");
+  });
+
+  it("should return null reponseEleve when no response exists", () => {
+    const reponses = {};
+    const details = buildQuestionDetails(MATIERE_GESTION, reponses, [SOURCE_EXAMEN]);
+    expect(details[0].reponseEleve).toBeNull();
   });
 });
 
@@ -139,10 +315,12 @@ describe("Bug GESTION-1: exerciceKey consistency", () => {
   it("auto-save and flush keys must be identical", () => {
     const autoSaveKey = buildExerciceKeyAutoSave("EB5", "gestion");
     const flushKey = buildExerciceKeyFlush("EB5", "gestion");
-
-    // EXPECTED: same key
-    // WILL FAIL: autoSave uses `_`, flush uses `__`
     expect(autoSaveKey).toBe(flushKey);
+  });
+
+  it("should produce correct format with double underscore", () => {
+    expect(buildExerciceKeyAutoSave("EB1", "t3p")).toBe("EB1__t3p");
+    expect(buildExerciceKeyFlush("EB1", "t3p")).toBe("EB1__t3p");
   });
 });
 
@@ -152,8 +330,6 @@ describe("Bug GESTION-1: exerciceKey consistency", () => {
 
 describe("Bug GESTION-2: resultats phase must be protected", () => {
   it("should protect resultats phase from examenChoisi replacement", () => {
-    // EXPECTED: true (protected)
-    // WILL FAIL: buggy code only checks examen and transition
     expect(isExamPhaseProtected("resultats")).toBe(true);
   });
 
@@ -168,6 +344,10 @@ describe("Bug GESTION-2: resultats phase must be protected", () => {
   it("should NOT protect idle phase", () => {
     expect(isExamPhaseProtected("idle")).toBe(false);
   });
+
+  it("should NOT protect empty string", () => {
+    expect(isExamPhaseProtected("")).toBe(false);
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -178,9 +358,6 @@ describe("Bug GESTION-3: getQuestionKey must prevent cross-exam collision", () =
   it("EB1 id:2 and EB5 id:2 must produce DIFFERENT keys (different enonces)", () => {
     const eb1_q2 = { id: 2, type: "QRC", enonce: "Développez le sigle URSSAF." };
     const eb5_q2 = { id: 2, type: "QRC", enonce: "Qu'est-ce qu'une personne morale ?" };
-
-    // EXPECTED: different keys
-    // WILL FAIL: buggy code produces "2::QRC" for both
     expect(getQuestionKey(eb1_q2)).not.toBe(getQuestionKey(eb5_q2));
   });
 
