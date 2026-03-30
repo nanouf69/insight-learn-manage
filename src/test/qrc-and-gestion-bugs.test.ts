@@ -53,6 +53,21 @@ describe("Bug QRC-1: buildExamenMap must find saved exams by ID", () => {
     // WILL FAIL: buggy code does saved["EB1"] on array → undefined → falls back to source
     expect(map["EB1"].matieres[0].nom).toBe("Gestion modifiée");
   });
+
+  it("should preserve questions from loadSavedExamens (no index-based scramble)", () => {
+    // Simulate loadSavedExamens returning matieres with empty questions (DIAMANKA case)
+    const savedWithEmptyQuestions = [
+      { ...SOURCE_EXAMEN, matieres: [{ ...MATIERE_GESTION, questions: [] }] },
+    ];
+
+    const map = buildExamenMap([SOURCE_EXAMEN], savedWithEmptyQuestions);
+
+    // The old buggy code did: s.matieres[mi].questions || m.questions
+    // [] is truthy so it kept empty array. New code just uses `s || e`.
+    // Since loadSavedExamens already handles the merge, if saved has [],
+    // buildExamenMap should faithfully pass it through (the extra fallback is in CorrectionQRCTab)
+    expect(map["EB1"].matieres[0].questions).toEqual([]);
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════

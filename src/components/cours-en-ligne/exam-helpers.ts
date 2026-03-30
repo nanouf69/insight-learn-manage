@@ -12,7 +12,8 @@ import type { ExamenBlanc, Matiere, Question } from "./examens-blancs-data";
 
 /**
  * Build a map of exam ID → ExamenBlanc from source + saved.
- * FIX: uses .find() instead of array[string] indexing.
+ * loadSavedExamens already does a proper merge (source + DB overrides),
+ * so we just use its result and fall back to source if not found.
  */
 export function buildExamenMap(
   sourceExamens: ExamenBlanc[],
@@ -21,9 +22,7 @@ export function buildExamenMap(
   const map: Record<string, ExamenBlanc> = {};
   for (const e of sourceExamens) {
     const s = savedExamens.find((saved) => saved.id === e.id);
-    map[e.id] = s
-      ? { ...e, matieres: e.matieres.map((m, mi) => s.matieres?.[mi] ? { ...m, ...s.matieres[mi], questions: s.matieres[mi].questions || m.questions } : m) }
-      : e;
+    map[e.id] = s || e;
   }
   return map;
 }

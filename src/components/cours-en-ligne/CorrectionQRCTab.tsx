@@ -218,7 +218,24 @@ const CorrectionQRCTab = () => {
       if (details == null) continue;
 
       const examen = examenMap[r.quiz_id];
-      const matiere = examen?.matieres?.find((m: Matiere) => m.id === r.matiere_id);
+      let matiere = examen?.matieres?.find((m: Matiere) => m.id === r.matiere_id);
+
+      // Fallback: if matiere not found in examenMap, search tousLesExamens directly
+      if (!matiere && r.matiere_id) {
+        for (const srcExam of tousLesExamens) {
+          if (srcExam.id === r.quiz_id) {
+            matiere = srcExam.matieres.find((m: Matiere) => m.id === r.matiere_id);
+            if (matiere) break;
+          }
+        }
+        // Also try all exams (matiere_id may match across different exams)
+        if (!matiere) {
+          for (const srcExam of tousLesExamens) {
+            const found = srcExam.matieres.find((m: Matiere) => m.id === r.matiere_id);
+            if (found?.questions?.length) { matiere = found; break; }
+          }
+        }
+      }
 
       const correctionsIA = details.correctionsIA || {};
 
@@ -234,7 +251,15 @@ const CorrectionQRCTab = () => {
       // If questions array is empty, reconstruct from examen definition + reponses/correctionsIA
       const reponses = details.reponses || {};
       if (!questionList && matiere && (Object.keys(correctionsIA).length > 0 || Object.keys(reponses).length > 0)) {
-        questionList = (matiere.questions || []).map((mq: any) => {
+        // Use matiere.questions if available, otherwise search source data directly
+        let sourceQuestions = matiere.questions || [];
+        if (sourceQuestions.length === 0 && r.matiere_id) {
+          for (const srcExam of tousLesExamens) {
+            const srcMat = srcExam.matieres.find((m: Matiere) => m.id === r.matiere_id);
+            if (srcMat?.questions?.length) { sourceQuestions = srcMat.questions; break; }
+          }
+        }
+        questionList = sourceQuestions.map((mq: any) => {
           if (!mq) return null;
           return {
             questionId: mq.id,
