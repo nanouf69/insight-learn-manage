@@ -211,7 +211,8 @@ function PassageMatiere({
   }, []);
 
   // Load saved responses on mount
-  const exerciceKey = `${examenId || "exam"}_${matiere.id}`;
+  // FIX: use double underscore `__` to match handleTerminerMatiere in ExamensBlancsPage.tsx
+  const exerciceKey = `${examenId || "exam"}__${matiere.id}`;
   useEffect(() => {
     if (!apprenantId || initialLoaded) return;
     (async () => {

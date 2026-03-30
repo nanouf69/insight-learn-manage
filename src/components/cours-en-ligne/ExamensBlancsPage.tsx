@@ -102,12 +102,12 @@ export default function ExamensBlancsPage({
         const saved = await loadSavedExamens();
         logSecurityImageDebug(saved, force ? "manual-refetch" : "auto-refetch");
         setLiveExamens(saved);
-        // CRITICAL: Never replace examenChoisi during an active exam (phase=examen/transition)
+        // CRITICAL: Never replace examenChoisi during an active exam or results display
         // to prevent question reordering that causes answer mismatches
         setExamenChoisi((prev) => {
           if (!prev) return prev;
           const currentPhase = phaseRef.current;
-          if (currentPhase === "examen" || currentPhase === "transition") return prev;
+          if (currentPhase === "examen" || currentPhase === "transition" || currentPhase === "resultats") return prev;
           return saved.find((exam) => exam.id === prev.id) ?? prev;
         });
         return saved;
@@ -678,12 +678,19 @@ export default function ExamensBlancsPage({
 
   const saveMatiereResult = async ({ examen, matiere, resultat, dureeSecondes }: { examen: ExamenBlanc; matiere: Matiere; resultat: ResultatMatiere; dureeSecondes: number }) => {
     if (!apprenantId || !userId) return;
-    const rawQuestions = matiere?.questions || [];
+    let rawQuestions = matiere?.questions || [];
+    // FIX: fallback to source data when matiere.questions is empty (frozen examenChoisi)
+    if (rawQuestions.length === 0 && matiere?.id) {
+      for (const srcExam of tousLesExamens) {
+        const srcMat = srcExam.matieres.find(m => m.id === matiere.id);
+        if (srcMat?.questions?.length) { rawQuestions = srcMat.questions; break; }
+      }
+    }
     const questionsSafe = rawQuestions.filter(q => q != null);
     const frozenCorrections: Record<string, any> = {};
     const questionDetails = questionsSafe.map(q => {
       if (!q) return null;
-      const rep = resultat.reponses?.[q.id];
+      const rep = resultat.reponses?.[q.id] ?? resultat.reponses?.[String(q.id)];
       if (q?.type === "QRC") {
         const pts = getPointsParQuestion(matiere.id, q?.type || "QRC", matiere);
         frozenCorrections[q.id] = evaluateQrcDeterministic(q, rep, pts);

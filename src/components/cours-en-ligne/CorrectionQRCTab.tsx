@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere } from "./examens-blancs-data";
 import { loadSavedExamens } from "./ExamensBlancsEditor";
+import { buildExamenMap } from "./exam-helpers";
 
 interface QrcItem {
   resultId: string;
@@ -165,12 +166,7 @@ const CorrectionQRCTab = () => {
   useEffect(() => {
     const load = async () => {
       const saved = await loadSavedExamens();
-      const map: Record<string, ExamenBlanc> = {};
-      for (const e of tousLesExamens) {
-        const s = saved[e.id];
-        map[e.id] = s ? { ...e, matieres: e.matieres.map((m, mi) => s.matieres?.[mi] ? { ...m, ...s.matieres[mi], questions: s.matieres[mi].questions || m.questions } : m) } : e;
-      }
-      setExamenMap(map);
+      setExamenMap(buildExamenMap(tousLesExamens, saved));
     };
     load();
   }, []);
@@ -219,7 +215,7 @@ const CorrectionQRCTab = () => {
       if (seenApprenantQuizMatiere.has(dedupeKey)) continue;
       seenApprenantQuizMatiere.add(dedupeKey);
       const details = r.details as any;
-      if (!details?.questions) continue;
+      if (details == null) continue;
 
       const examen = examenMap[r.quiz_id];
       const matiere = examen?.matieres?.find((m: Matiere) => m.id === r.matiere_id);
@@ -244,7 +240,7 @@ const CorrectionQRCTab = () => {
             questionId: mq.id,
             enonce: mq.enonce || "",
             type: mq.type || "QCM",
-            reponseEleve: reponses[mq.id] ?? null,
+            reponseEleve: reponses[mq.id] ?? reponses[String(mq.id)] ?? null,
             reponseCorrecte: mq.type === "QCM" && mq.choix
               ? mq.choix.filter((c: any) => c.correct).map((c: any) => c.lettre)
               : (mq.reponseQRC || (mq.reponses_possibles || []).join(" / ")),

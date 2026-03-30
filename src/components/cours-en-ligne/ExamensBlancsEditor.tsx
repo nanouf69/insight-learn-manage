@@ -258,7 +258,14 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
             return deduped;
           };
 
-          const getQuestionKey = (value: any) => `${Number(value?.id)}::${normalizeQuestionType(value?.type)}`;
+          // FIX: include enonce to prevent cross-exam collisions
+          const getQuestionKey = (value: any) => {
+            const id = Number(value?.id);
+            const type = normalizeQuestionType(value?.type);
+            const enonce = normalizeQuestionText(value?.enonce);
+            if (enonce) return `${id}::${type}::${enonce}`;
+            return `${id}::${type}`;
+          };
 
           const sourceMatieres = examens[idx].matieres;
           const mergedMatieres = saved.matieres.map((savedMat) => {
