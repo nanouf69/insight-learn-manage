@@ -188,6 +188,12 @@ const CorrectionQRCTab = () => {
       return;
     }
 
+    // DEBUG: trace DIAMANKA rows
+    const DIAMANKA_ID = "39e4f184-72f9-425c-96bd-1c125081be04";
+    const diamankaRows = (results as any[]).filter((r: any) => r.apprenant_id === DIAMANKA_ID);
+    console.log("[DEBUG-QRC] Total results from DB:", results.length);
+    console.log("[DEBUG-QRC] DIAMANKA rows found:", diamankaRows.length, diamankaRows.map((r: any) => ({ quiz_id: r.quiz_id, matiere_id: r.matiere_id, has_details: !!r.details, q_len: r.details?.questions?.length, r_len: Object.keys(r.details?.reponses || {}).length })));
+
     // Fetch apprenant names
     const apprenantIds = [...new Set(results.map((r: any) => r.apprenant_id))];
     const { data: apprenants } = await supabase
@@ -219,6 +225,11 @@ const CorrectionQRCTab = () => {
 
       const matiere = findMatiereWithFallback(examenMap, tousLesExamens, r.quiz_id, r.matiere_id || "");
 
+      // DEBUG: trace DIAMANKA processing
+      if (r.apprenant_id === DIAMANKA_ID) {
+        console.log(`[DEBUG-QRC] DIAMANKA processing: quiz=${r.quiz_id} matiere=${r.matiere_id} found_matiere=${!!matiere} matiere_q=${matiere?.questions?.length ?? "N/A"} details_q=${details.questions?.length ?? "N/A"} reponses_keys=${Object.keys(details.reponses || {}).length} correctionsIA_keys=${Object.keys(details.correctionsIA || {}).length}`);
+      }
+
       const correctionsIA = details.correctionsIA || {};
 
       // Detect if this is a retake (more than one result for same apprenant + quiz)
@@ -234,6 +245,10 @@ const CorrectionQRCTab = () => {
       const reponses = details.reponses || {};
       if (!questionList && matiere && (Object.keys(correctionsIA).length > 0 || Object.keys(reponses).length > 0)) {
         const sourceQuestions = getSourceQuestions(matiere, tousLesExamens);
+        // DEBUG
+        if (r.apprenant_id === DIAMANKA_ID) {
+          console.log(`[DEBUG-QRC] DIAMANKA fallback: sourceQuestions=${sourceQuestions.length} qrc_count=${sourceQuestions.filter((q: any) => q?.type === "QRC").length}`);
+        }
         questionList = sourceQuestions.map((mq: any) => {
           if (!mq) return null;
           return {
