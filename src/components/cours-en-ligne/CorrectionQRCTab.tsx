@@ -224,9 +224,9 @@ const CorrectionQRCTab = () => {
         ? details.questions
         : null;
 
-      // If questions array is empty but correctionsIA exists, reconstruct from examen definition
-      if (!questionList && matiere && Object.keys(correctionsIA).length > 0) {
-        const reponses = details.reponses || {};
+      // If questions array is empty, reconstruct from examen definition + reponses/correctionsIA
+      const reponses = details.reponses || {};
+      if (!questionList && matiere && (Object.keys(correctionsIA).length > 0 || Object.keys(reponses).length > 0)) {
         questionList = (matiere.questions || []).map((mq: any) => {
           if (!mq) return null;
           return {
