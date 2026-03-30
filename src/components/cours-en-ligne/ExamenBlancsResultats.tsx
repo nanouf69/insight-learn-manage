@@ -617,7 +617,20 @@ function EcranResultats({
       </div>
       )}
 
-      {/* Détail par matière — sous-totaux groupés */}
+      {/* Avertissement examen refait — QRC auto-corrigées par mots-clés */}
+      {isRetake && (
+        <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-300 rounded-lg text-amber-800 text-sm">
+          <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5 text-amber-500" />
+          <div>
+            <p className="font-bold">⚠️ Examen refait — Vérifiez vos QRC</p>
+            <p className="mt-1">
+              Cet examen a été passé plusieurs fois. Les réponses aux questions ouvertes (QRC) ont été notées automatiquement par mots-clés.
+              <strong> Veuillez vérifier attentivement la correction de vos QRC</strong>, la note automatique peut différer d'une correction manuelle.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <div className="w-1 h-6 rounded-full" style={{ backgroundColor: '#00B4D8' }} />
