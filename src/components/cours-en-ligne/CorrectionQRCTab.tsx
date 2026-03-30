@@ -188,10 +188,6 @@ const CorrectionQRCTab = () => {
       return;
     }
 
-    // DEBUG: trace all rows
-    console.log("[DEBUG-QRC] Total results from DB:", results.length);
-    console.log("[DEBUG-QRC] examenMap keys:", Object.keys(examenMap));
-
     // Fetch apprenant names
     const apprenantIds = [...new Set(results.map((r: any) => r.apprenant_id))];
     const { data: apprenants } = await supabase
@@ -205,10 +201,11 @@ const CorrectionQRCTab = () => {
     const qrcItems: QrcItem[] = [];
     const seenQrcKeys = new Set<string>();
 
-    // Count how many results exist per apprenant + quiz (to detect retakes)
+    // Count how many results exist per apprenant + quiz + matiere (to detect retakes)
+    // Must include matiere_id because each exam has ~7 matiere rows per attempt
     const attemptCounts: Record<string, number> = {};
     for (const r of results as any[]) {
-      const countKey = `${r.apprenant_id}__${r.quiz_id}`;
+      const countKey = `${r.apprenant_id}__${r.quiz_id}__${r.matiere_id || ""}`;
       attemptCounts[countKey] = (attemptCounts[countKey] || 0) + 1;
     }
 
@@ -223,14 +220,10 @@ const CorrectionQRCTab = () => {
 
       const matiere = findMatiereWithFallback(examenMap, tousLesExamens, r.quiz_id, r.matiere_id || "");
 
-      if (!matiere) {
-        console.log(`[DEBUG-QRC] SKIP no matiere: quiz=${r.quiz_id} matiere_id=${r.matiere_id} apprenant=${r.apprenant_id}`);
-      }
-
       const correctionsIA = details.correctionsIA || {};
 
-      // Detect if this is a retake (more than one result for same apprenant + quiz)
-      const countKey = `${r.apprenant_id}__${r.quiz_id}`;
+      // Detect if this is a retake (more than one result for same apprenant + quiz + matiere)
+      const countKey = `${r.apprenant_id}__${r.quiz_id}__${r.matiere_id || ""}`;
       const isRetake = (attemptCounts[countKey] || 1) > 1;
 
       // Build question list: prefer details.questions, but fall back to examen definition + correctionsIA
@@ -242,7 +235,6 @@ const CorrectionQRCTab = () => {
       const reponses = details.reponses || {};
       if (!questionList && matiere && (Object.keys(correctionsIA).length > 0 || Object.keys(reponses).length > 0)) {
         const sourceQuestions = getSourceQuestions(matiere, tousLesExamens);
-        console.log(`[DEBUG-QRC] FALLBACK: quiz=${r.quiz_id} matiere=${r.matiere_id} srcQ=${sourceQuestions.length} qrc=${sourceQuestions.filter((q: any) => q?.type === "QRC").length} apprenant=${r.apprenant_id}`);
         questionList = sourceQuestions.map((mq: any) => {
           if (!mq) return null;
           return {
@@ -325,7 +317,6 @@ const CorrectionQRCTab = () => {
       }
     }
 
-    console.log(`[DEBUG-QRC] FINAL: ${qrcItems.length} QRC total, ${qrcItems.filter(i => !i.corrigeManuel).length} pending, ${qrcItems.filter(i => i.corrigeManuel).length} done`);
     setItems(qrcItems);
     setLoading(false);
   }, [examenMap]);
