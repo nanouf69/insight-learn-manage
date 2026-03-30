@@ -7709,18 +7709,6 @@ const eb6Matieres: Matiere[] = [
           { lettre: "D", texte: "des représentants des personnes à mobilité réduite", correct: true },
         ],
       },
-      {
-        id: 15,
-        type: "QCM",
-        enonce:
-          "Quelle(s) est (sont) le(s) exemple(s) d'infractions pouvant figurer au Bulletin n°2 du casier judiciaire ?",
-        choix: [
-          { lettre: "A", texte: "Non présentation du permis de conduire" },
-          { lettre: "B", texte: "Escroquerie", correct: true },
-          { lettre: "C", texte: "Extorsion de fonds", correct: true },
-          { lettre: "D", texte: "Non respect d'un feu tricolore" },
-        ],
-      },
     ],
   },
   {
