@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere } from "./examens-blancs-data";
 import { loadSavedExamens } from "./ExamensBlancsEditor";
-import { buildExamenMap } from "./exam-helpers";
+import { buildExamenMap, findMatiereWithFallback, getSourceQuestions } from "./exam-helpers";
 
 interface QrcItem {
   resultId: string;
@@ -217,8 +217,7 @@ const CorrectionQRCTab = () => {
       const details = r.details as any;
       if (details == null) continue;
 
-      const examen = examenMap[r.quiz_id];
-      const matiere = examen?.matieres?.find((m: Matiere) => m.id === r.matiere_id);
+      const matiere = findMatiereWithFallback(examenMap, tousLesExamens, r.quiz_id, r.matiere_id || "");
 
       const correctionsIA = details.correctionsIA || {};
 
@@ -234,7 +233,8 @@ const CorrectionQRCTab = () => {
       // If questions array is empty, reconstruct from examen definition + reponses/correctionsIA
       const reponses = details.reponses || {};
       if (!questionList && matiere && (Object.keys(correctionsIA).length > 0 || Object.keys(reponses).length > 0)) {
-        questionList = (matiere.questions || []).map((mq: any) => {
+        const sourceQuestions = getSourceQuestions(matiere, tousLesExamens);
+        questionList = sourceQuestions.map((mq: any) => {
           if (!mq) return null;
           return {
             questionId: mq.id,
