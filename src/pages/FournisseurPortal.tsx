@@ -553,12 +553,18 @@ export default function FournisseurPortal() {
       if (factureDescription) formData.append('description', factureDescription);
       if (moisValue) formData.append('mois_annee', moisValue);
 
-      const { data, error } = await supabase.functions.invoke('upload-fournisseur-document', {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const response = await fetch(`${supabaseUrl}/functions/v1/upload-fournisseur-document`, {
+        method: 'POST',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+        },
         body: formData,
       });
-      console.log('[upload-facture] response:', { data, error });
-      if (error) throw new Error(error.message || "Erreur lors de l'upload");
-      if (data?.error) throw new Error(data.error);
+      const data = await response.json();
+      if (!response.ok || data?.error) throw new Error(data?.error || `Erreur ${response.status}`);
 
       toast({ title: "Facture envoyée", description: `Facture envoyée avec succès.` });
       setFactureMontant(""); setFactureDescription("Prestation de services"); setFactureMoisAnnee(""); setFactureMoisMultiples([]); fileInput.value = "";
