@@ -67,6 +67,18 @@ export function buildMatiereLookupKeys(matiereId: unknown, matiereNom: unknown):
   if (normalizedNom) keys.add(`nom:${normalizedNom}`);
   if (letter) keys.add(`letter:${letter}`);
 
+  // FIX: also add nom key with letter prefix stripped
+  // so "D - Français" produces both nom:d francais AND nom:francais
+  // This ensures matches survive matiere definition renames
+  const rawNom = safeStr(matiereNom);
+  const strippedNom = rawNom.replace(/^\s*[a-g]\s*[-–(]\s*/i, "").trim();
+  if (strippedNom && strippedNom !== rawNom) {
+    const normalizedStripped = normalizeMatiereLookupValue(strippedNom);
+    if (normalizedStripped && normalizedStripped !== normalizedNom) {
+      keys.add(`nom:${normalizedStripped}`);
+    }
+  }
+
   if (normalizedId === "dev commercial" || normalizedId === "developpement commercial") {
     keys.add("id:reglementation vtc");
   }
@@ -473,4 +485,14 @@ export function persistExamSession(
       sessionStorage.removeItem(sessionKey);
     }
   } catch { }
+}
+
+/**
+ * Extract the matiere key from an exercice_id.
+ * exercice_id format: `${examId}__${matiereId}` (double underscore separator).
+ */
+export function extractMatiereKeyFromExerciceId(exerciceId: string, examId: string): string {
+  const prefix = `${examId}__`;
+  if (!exerciceId.startsWith(prefix)) return "";
+  return exerciceId.slice(prefix.length);
 }

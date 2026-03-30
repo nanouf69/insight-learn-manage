@@ -20,6 +20,7 @@ import {
   normalizeNoteSur20, logSecurityImageDebug,
   evaluateQrcDeterministic, computeAdmisForMatiere,
   buildMatiereLookupKeys, shareLookupKey, getMatiereCanonicalKey,
+  extractMatiereKeyFromExerciceId,
 } from "./examens-blancs-utils";
 import { recoverCorruptedScoreRow, isCorruptedZeroRow, persistExamSession as persistExamSessionUtil } from "./examens-blancs-utils";
 import { EcranSelection } from "./ExamenBlancsListe";
@@ -340,9 +341,7 @@ export default function ExamensBlancsPage({
         ((savedResponses as any[]) || []).forEach((r: any) => {
           if (r?.completed !== true) return;
           const exerciceId = safeStr(r?.exercice_id);
-          const matiereKey = exerciceId.startsWith(`${latestExamen.id}_`)
-            ? exerciceId.slice(`${latestExamen.id}_`.length)
-            : "";
+          const matiereKey = extractMatiereKeyFromExerciceId(exerciceId, latestExamen.id);
           if (!matiereKey) return;
           buildMatiereLookupKeys(matiereKey, matiereKey).forEach((k) => completedResponseLookupKeys.add(k));
         });
@@ -483,9 +482,7 @@ export default function ExamensBlancsPage({
         const expectedKeys = buildMatiereLookupKeys(matiere.id, matiere.nom);
         const resp = candidateResponses.find((r: any) => {
           const exerciceId = safeStr(r?.exercice_id);
-          const matiereKey = exerciceId.startsWith(`${examReference.id}_`)
-            ? exerciceId.slice(`${examReference.id}_`.length)
-            : "";
+          const matiereKey = extractMatiereKeyFromExerciceId(exerciceId, examReference.id);
           if (!matiereKey) return false;
           const responseKeys = buildMatiereLookupKeys(matiereKey, matiereKey);
           return shareLookupKey(responseKeys, expectedKeys);
