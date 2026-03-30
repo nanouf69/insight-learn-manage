@@ -205,6 +205,13 @@ const CorrectionQRCTab = () => {
     const qrcItems: QrcItem[] = [];
     const seenQrcKeys = new Set<string>();
 
+    // Count how many results exist per apprenant + quiz (to detect retakes)
+    const attemptCounts: Record<string, number> = {};
+    for (const r of results as any[]) {
+      const countKey = `${r.apprenant_id}__${r.quiz_id}`;
+      attemptCounts[countKey] = (attemptCounts[countKey] || 0) + 1;
+    }
+
     // Deduplicate: keep only the latest result per apprenant + quiz + matière
     const seenApprenantQuizMatiere = new Set<string>();
     for (const r of results as any[]) {
@@ -218,6 +225,10 @@ const CorrectionQRCTab = () => {
       const matiere = examen?.matieres?.find((m: Matiere) => m.id === r.matiere_id);
 
       const correctionsIA = details.correctionsIA || {};
+
+      // Detect if this is a retake (more than one result for same apprenant + quiz)
+      const countKey = `${r.apprenant_id}__${r.quiz_id}`;
+      const isRetake = (attemptCounts[countKey] || 1) > 1;
 
       // Build question list: prefer details.questions, but fall back to examen definition + correctionsIA
       let questionList = Array.isArray(details.questions) && details.questions.length > 0
@@ -275,6 +286,9 @@ const CorrectionQRCTab = () => {
           autoExplication = correction.explication || null;
         }
 
+        // If this is a retake and no manual correction yet, auto-score with keywords and mark as corrected
+        const isAutoScoredRetake = isRetake && !hasManualCorrection;
+
         qrcItems.push({
           resultId: r.id,
           apprenantId: r.apprenant_id,
@@ -290,18 +304,18 @@ const CorrectionQRCTab = () => {
           reponseEleve: safeStr(q.reponseEleve),
           reponseCorrecte: safeStr(q.reponseCorrecte),
           pointsMax: pts,
-          pointsObtenus: correction && typeof correction === "object" && hasManualCorrection
-            ? clampToHalfStep(correction.pointsObtenus ?? 0, pts)
+          pointsObtenus: (hasManualCorrection || isAutoScoredRetake)
+            ? clampToHalfStep(hasManualCorrection ? (correction.pointsObtenus ?? 0) : autoScore, pts)
             : null,
-          corrigeManuel: !!hasManualCorrection,
+          corrigeManuel: !!(hasManualCorrection || isAutoScoredRetake),
           completedAt: r.completed_at,
           autoScore,
-          autoExplication,
+          autoExplication: isAutoScoredRetake ? `Notation auto (repasse) : ${autoExplication || "mots-clés"}` : autoExplication,
           noteSur20: r.note_sur_20 ?? null,
           scoreMatiereObtenu: r.score_obtenu ?? 0,
           scoreMatiereMax: r.score_max ?? 20,
-          commentaire: correction && typeof correction === "object" ? (correction.commentaire || "") : "",
-          correctedAt: correction && typeof correction === "object" && hasManualCorrection ? (correction.correctedAt || r.completed_at || null) : null,
+          commentaire: isAutoScoredRetake ? "Notation automatique par mots-clés (examen refait)" : (correction && typeof correction === "object" ? (correction.commentaire || "") : ""),
+          correctedAt: (hasManualCorrection || isAutoScoredRetake) ? (correction?.correctedAt || r.completed_at || null) : null,
         });
       }
     }
