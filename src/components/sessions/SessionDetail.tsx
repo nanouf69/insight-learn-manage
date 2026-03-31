@@ -1522,7 +1522,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                     } : {
                                       date: new Date('2026-03-30T00:00:00'),
                                       matinDebut: '09:00', matinFin: '12:00',
-                                      apremDebut: '13:00', apremFin: '16:00',
+                                      apremDebut: '13:00', apremFin: isFCVTC ? '17:00' : '16:00',
                                     });
                                     agendaDays.sort((a, b) => a.date.getTime() - b.date.getTime());
                                   }
