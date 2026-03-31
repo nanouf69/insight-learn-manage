@@ -460,6 +460,16 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   const lastPos = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
+    if (!selectedTemplateConfig) return;
+    setLignes(prev => {
+      if (prev.length === 0) return prev;
+      const [first, ...rest] = prev;
+      if ((first.prixUnitaire ?? 0) === selectedTemplateConfig.prix) return prev;
+      return [{ ...first, prixUnitaire: selectedTemplateConfig.prix }, ...rest];
+    });
+  }, [selectedTemplate]);
+
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
