@@ -842,7 +842,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       doc.setFontSize(8);
       doc.setTextColor(0, 0, 0);
       doc.text(formatEUR(totalHT), totBoxX + totBoxW - 3, y + 5.5, { align: 'right' });
-      doc.text('0,00 EUR', totBoxX + totBoxW - 3, y + 12.5, { align: 'right' });
+      doc.text(formatEUR(montantTVA), totBoxX + totBoxW - 3, y + 12.5, { align: 'right' });
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(9);
