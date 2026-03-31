@@ -219,6 +219,70 @@ Merci de nous renvoyer le devis signé avec vos justificatifs.
 Cordialement,
 L'équipe Ftransport`,
   },
+  "devis-vtc-sans-frais-examen": {
+    subject: "Votre devis Formation VTC sans frais d'examen - {{prenom}} {{nom}}",
+    body: `Bonjour {{prenom}} {{nom}},
+
+Veuillez trouver en pièce jointe votre devis pour la Formation VTC E-learning (sans frais d'examen).
+
+📋 Détails :
+- Intitulé : Formation VTC E-learning
+- Plateforme : www.gestion.ftransport.fr/cours (accès 3 mois)
+- Inclus : Formation pratique VTC + Mise à disposition du véhicule
+- Frais d'examen NON inclus (à votre charge auprès de la CMA)
+- Lieu : LYON (69)
+- Montant : {{montant}} € TTC (non assujetti TVA)
+
+Merci de nous renvoyer le devis signé avec vos justificatifs.
+
+📧 contact@ftransport.fr | 📞 04.28.29.60.91
+
+Cordialement,
+L'équipe Ftransport`,
+  },
+  "devis-vtc-soir-avec-examen": {
+    subject: "Votre devis Formation VTC soir avec examen - {{prenom}} {{nom}}",
+    body: `Bonjour {{prenom}} {{nom}},
+
+Veuillez trouver en pièce jointe votre devis pour la Formation VTC en cours du soir (avec frais d'examen inclus).
+
+📋 Détails :
+- Intitulé : Formation VTC cours du soir
+- Plateforme : www.gestion.ftransport.fr/cours
+- Inclus : Formation pratique VTC + Frais d'examen CMA + Mise à disposition du véhicule
+- Horaires : Cours du soir
+- Lieu : LYON (69)
+- Montant : {{montant}} € TTC (non assujetti TVA)
+
+Merci de nous renvoyer le devis signé avec vos justificatifs.
+
+📧 contact@ftransport.fr | 📞 04.28.29.60.91
+
+Cordialement,
+L'équipe Ftransport`,
+  },
+  "devis-vtc-soir-sans-examen": {
+    subject: "Votre devis Formation VTC soir sans examen - {{prenom}} {{nom}}",
+    body: `Bonjour {{prenom}} {{nom}},
+
+Veuillez trouver en pièce jointe votre devis pour la Formation VTC en cours du soir (sans frais d'examen).
+
+📋 Détails :
+- Intitulé : Formation VTC cours du soir
+- Plateforme : www.gestion.ftransport.fr/cours
+- Inclus : Formation pratique VTC + Mise à disposition du véhicule
+- Frais d'examen NON inclus (à votre charge auprès de la CMA)
+- Horaires : Cours du soir
+- Lieu : LYON (69)
+- Montant : {{montant}} € TTC (non assujetti TVA)
+
+Merci de nous renvoyer le devis signé avec vos justificatifs.
+
+📧 contact@ftransport.fr | 📞 04.28.29.60.91
+
+Cordialement,
+L'équipe Ftransport`,
+  },
 };
 
 const FORMATIONS_CATALOGUE = [
