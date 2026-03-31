@@ -431,12 +431,15 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   };
 
   const [selectedTemplate, setSelectedTemplate] = useState<string>(detectedTemplate || "");
+  const selectedTemplateConfig = DEVIS_TEMPLATES.find(t => t.id === selectedTemplate);
+  const selectedTemplatePrix = selectedTemplateConfig?.prix ?? apprenant.montant_ttc ?? 0;
+  const detectedTemplatePrix = DEVIS_TEMPLATES.find(t => t.id === detectedTemplate)?.prix;
   const [lignes, setLignes] = useState<LigneDevis[]>([
     {
       id: crypto.randomUUID(),
       designation: getDesignationInitiale(),
       quantite: 1,
-      prixUnitaire: apprenant.montant_ttc || 0,
+      prixUnitaire: detectedTemplatePrix ?? apprenant.montant_ttc ?? 0,
     }
   ]);
   const [dateDevis, setDateDevis] = useState(today);
@@ -468,6 +471,13 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
   }, []);
+
+  const formatDateForDevis = (value?: string | null) => {
+    if (!value) return format(new Date(), 'dd/MM/yyyy');
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return value;
+    return format(parsed, 'dd/MM/yyyy');
+  };
 
   const getPos = (e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) => {
     const rect = canvas.getBoundingClientRect();
