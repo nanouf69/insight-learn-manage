@@ -567,35 +567,45 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
     }
     setGeneratingDocx(true);
     try {
-      const tmpl = DEVIS_TEMPLATES.find(t => t.id === selectedTemplate);
+      const tmpl = selectedTemplateConfig;
       if (!tmpl) throw new Error("Template introuvable");
 
       const response = await fetch(`/devis/${tmpl.file}`);
       if (!response.ok) throw new Error("Impossible de charger le modèle DOCX");
       const arrayBuffer = await response.arrayBuffer();
 
-      const zip = new PizZip(arrayBuffer);
-      const doc = new Docxtemplater(zip, {
-        paragraphLoop: true,
-        linebreaks: true,
-        delimiters: { start: "${", end: "}" },
-      });
-
-      const nomComplet = `${apprenant.civilite || ''} ${apprenant.prenom || ''} ${apprenant.nom || ''}`.trim();
-      doc.render({
-        client_nom: nomComplet,
+      const sharedPayload = {
+        client_nom: `${apprenant.civilite || ''} ${apprenant.prenom || ''} ${apprenant.nom || ''}`.trim(),
         client_adresse1: apprenant.adresse || '',
         client_codep: apprenant.code_postal || '',
         client_ville: apprenant.ville || '',
         client_tel: apprenant.telephone || '',
+        client_mail: apprenant.email || '',
         client_email: apprenant.email || '',
-        devis_date: format(new Date(), 'dd/MM/yyyy'),
-        devis_ligne_produit_date1: apprenant.date_debut_formation ? format(new Date(apprenant.date_debut_formation), 'dd/MM/yyyy') : format(new Date(), 'dd/MM/yyyy'),
-        montant: String(tmpl.prix || apprenant.montant_ttc || 0),
+        devis_date: formatDateForDevis(dateDevis),
+        devis_ligne_produit_date1: formatDateForDevis(apprenant.date_formation_catalogue || apprenant.date_debut_formation),
+        montant: String(selectedTemplatePrix),
         formation: apprenant.formation_choisie || '',
-      });
+      };
 
-      const outBuf = doc.getZip().generate({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+      let outBuf: Blob;
+      try {
+        const docLegacy = new Docxtemplater(new PizZip(arrayBuffer), {
+          paragraphLoop: true,
+          linebreaks: true,
+        });
+        docLegacy.render(sharedPayload);
+        outBuf = docLegacy.getZip().generate({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+      } catch {
+        const docDollar = new Docxtemplater(new PizZip(arrayBuffer), {
+          paragraphLoop: true,
+          linebreaks: true,
+          delimiters: { start: "${", end: "}" },
+        });
+        docDollar.render(sharedPayload);
+        outBuf = docDollar.getZip().generate({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+      }
+
       const fileName = `Devis_${apprenant.prenom}_${apprenant.nom}_${tmpl.id}_${format(new Date(), 'ddMMyyyy')}.docx`;
       saveAs(outBuf, fileName);
       toast.success("Devis DOCX téléchargé avec succès !");
