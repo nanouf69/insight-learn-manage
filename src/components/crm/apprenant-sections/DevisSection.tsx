@@ -1049,9 +1049,9 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
                 <div><span className="text-muted-foreground">Ville :</span> <strong>{apprenant.ville || '—'}</strong></div>
                 <div><span className="text-muted-foreground">Tél :</span> <strong>{apprenant.telephone || '—'}</strong></div>
                 <div><span className="text-muted-foreground">Email :</span> <strong>{apprenant.email || '—'}</strong></div>
-                <div><span className="text-muted-foreground">Date devis :</span> <strong>{format(new Date(dateDevis), 'dd/MM/yyyy')}</strong></div>
-                <div><span className="text-muted-foreground">Montant :</span> <strong>{apprenant.montant_ttc || DEVIS_TEMPLATES.find(t => t.id === selectedTemplate)?.prix || 0} €</strong></div>
-                <div><span className="text-muted-foreground">Dates formation :</span> <strong>{apprenant.date_formation_catalogue || apprenant.date_debut_formation || '—'}</strong></div>
+                <div><span className="text-muted-foreground">Date devis :</span> <strong>{formatDateForDevis(dateDevis)}</strong></div>
+                <div><span className="text-muted-foreground">Montant :</span> <strong>{selectedTemplatePrix} €</strong></div>
+                <div><span className="text-muted-foreground">Dates formation :</span> <strong>{formatDateForDevis(apprenant.date_formation_catalogue || apprenant.date_debut_formation || null)}</strong></div>
               </div>
             </div>
           )}
