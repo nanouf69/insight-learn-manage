@@ -13,8 +13,6 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import jsPDF from "jspdf";
-import PizZip from "pizzip";
-import Docxtemplater from "docxtemplater";
 import { saveAs } from "file-saver";
 
 interface DevisSectionProps {
