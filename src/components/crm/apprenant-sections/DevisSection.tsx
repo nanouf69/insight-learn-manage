@@ -650,9 +650,9 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         date_emission: dateDevis,
         date_echeance: dateValidite,
         montant_ht: totalHT,
-        montant_tva: 0,
+        montant_tva: montantTVA,
         montant_ttc: totalTTC,
-        tva_taux: 0,
+        tva_taux: tvaTaux,
         type_financement: apprenant.mode_financement || 'particulier',
         statut: 'en_attente',
       }).select().single();
