@@ -598,23 +598,28 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         formation: apprenant.formation_choisie || '',
       };
 
-      let outBuf: Blob;
-      try {
-        const docLegacy = new Docxtemplater(new PizZip(arrayBuffer), {
-          paragraphLoop: true,
-          linebreaks: true,
-        });
-        docLegacy.render(sharedPayload);
-        outBuf = docLegacy.getZip().generate({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
-      } catch {
-        const docDollar = new Docxtemplater(new PizZip(arrayBuffer), {
-          paragraphLoop: true,
-          linebreaks: true,
-          delimiters: { start: "${", end: "}" },
-        });
-        docDollar.render(sharedPayload);
-        outBuf = docDollar.getZip().generate({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+      // Try ${...} delimiters first (most templates), then {…} fallback
+      let outBuf: Blob | null = null;
+      for (const delims of [
+        { start: "${", end: "}" },
+        { start: "{", end: "}" },
+      ]) {
+        try {
+          const zip = new PizZip(arrayBuffer);
+          const doc = new Docxtemplater(zip, {
+            paragraphLoop: true,
+            linebreaks: true,
+            delimiters: delims,
+            nullGetter() { return ""; },
+          });
+          doc.render(sharedPayload);
+          outBuf = doc.getZip().generate({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+          break;
+        } catch (e) {
+          console.warn(`Docxtemplater with delimiters ${delims.start}…${delims.end} failed:`, e);
+        }
       }
+      if (!outBuf) throw new Error("Aucun format de template reconnu");
 
       const fileName = `Devis_${apprenant.prenom}_${apprenant.nom}_${tmpl.id}_${format(new Date(), 'ddMMyyyy')}.docx`;
       saveAs(outBuf, fileName);
