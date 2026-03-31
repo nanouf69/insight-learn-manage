@@ -1104,6 +1104,149 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   };
 
 
+  const handleBulkEmargement = async (isPrint: boolean) => {
+    const selectedList = apprenantsInSession
+      .filter((sa: any) => sa.apprenant && selectedApprenants.has(sa.apprenant.id))
+      .map((sa: any) => sa.apprenant);
+    if (selectedList.length === 0) {
+      toast({ title: "Aucun apprenant sélectionné", variant: "destructive" });
+      return;
+    }
+    setBulkPrintingEmargement(true);
+    let generated = 0;
+    let failed = 0;
+    for (const apprenant of selectedList) {
+      try {
+        const type = (apprenant.type_apprenant || '').toLowerCase();
+        const isTA = type === 'ta' || type === 'ta-e';
+        const isVA = type === 'va' || type === 'va-e';
+        const isTaxi = type.includes('taxi') || isTA;
+        const isVTC = type === 'vtc' || type === 'vtc-e' || type === 'pa vtc';
+        const isFCVTC = isFormationContinue && isVTC;
+        const formationLabel = isFCVTC ? 'Formation Continue VTC' : isTaxi ? 'Formation TAXI' : 'Formation VTC';
+        const formateurNames = isFCVTC
+          ? ["Naoufal GUENICHI"]
+          : (isTA || isVA)
+            ? ["Rim TOUIL"]
+            : isVTC
+              ? ["Naoufal GUENICHI"]
+              : ["Naoufal GUENICHI", "Rim TOUIL"];
+
+        const dateDebut = new Date(session.dateDebut);
+        const semaineDebutMin = new Date(dateDebut);
+        semaineDebutMin.setDate(semaineDebutMin.getDate() - 6);
+        const semaineDebutMinStr = semaineDebutMin.toISOString().slice(0, 10);
+        const { data: blocs } = await supabase
+          .from('agenda_blocs')
+          .select('*')
+          .gte('semaine_debut', semaineDebutMinStr)
+          .lte('semaine_debut', session.dateFin);
+
+        const matchFormation = (f: string) => {
+          const fl = f.toLowerCase();
+          if (fl.includes('taxi et vtc') || fl.includes('taxi & vtc')) return true;
+          if (isTaxi && fl.includes('taxi')) return true;
+          if (!isTaxi && fl.includes('vtc')) return true;
+          return false;
+        };
+
+        const filteredBlocs = (blocs || []).filter((b: any) => matchFormation(b.formation));
+        const dayMap = new Map<string, { date: Date; slots: { debut: string; fin: string }[] }>();
+        for (const bloc of filteredBlocs) {
+          const weekStart = new Date(bloc.semaine_debut + 'T00:00:00');
+          const actualDate = new Date(weekStart);
+          actualDate.setDate(actualDate.getDate() + bloc.jour);
+          const key = actualDate.toISOString().slice(0, 10);
+          if (key < session.dateDebut || key > session.dateFin) continue;
+          if (!dayMap.has(key)) {
+            dayMap.set(key, { date: actualDate, slots: [] });
+          }
+          dayMap.get(key)!.slots.push({ debut: bloc.heure_debut, fin: bloc.heure_fin });
+        }
+
+        const agendaDays: AgendaDaySlot[] = Array.from(dayMap.entries())
+          .sort(([a], [b]) => a.localeCompare(b))
+          .filter(([key]) => {
+            if (key === '2026-03-20') return false;
+            return true;
+          })
+          .map(([, val]) => {
+            const morningSlots = val.slots.filter(s => s.debut < '12:30');
+            const afternoonSlots = val.slots.filter(s => s.debut >= '12:30');
+            const result: AgendaDaySlot = { date: val.date };
+            if (morningSlots.length > 0) {
+              result.matinDebut = morningSlots.reduce((min, s) => s.debut < min ? s.debut : min, morningSlots[0].debut);
+              result.matinFin = morningSlots.reduce((max, s) => s.fin > max ? s.fin : max, morningSlots[0].fin);
+            }
+            if (afternoonSlots.length > 0) {
+              result.apremDebut = afternoonSlots.reduce((min, s) => s.debut < min ? s.debut : min, afternoonSlots[0].debut);
+              result.apremFin = afternoonSlots.reduce((max, s) => s.fin > max ? s.fin : max, afternoonSlots[0].fin);
+            }
+            if (isVTC) {
+              const isCoursDuSoir = (session.title || '').toLowerCase().includes('soir');
+              if (isCoursDuSoir) {
+                result.matinDebut = undefined;
+                result.matinFin = undefined;
+                result.apremDebut = '17:00';
+                result.apremFin = '21:00';
+              } else {
+                const apremFinHeure = isFCVTC ? '17:00' : '16:00';
+                if (result.matinDebut) { result.matinDebut = '09:00'; result.matinFin = '12:00'; }
+                if (result.apremDebut) { result.apremDebut = '13:00'; result.apremFin = apremFinHeure; }
+              }
+            }
+            return result;
+          });
+
+        if (isVTC && !isFCVTC) {
+          const isCoursDuSoir = (session.title || '').toLowerCase().includes('soir');
+          const march30Key = '2026-03-30';
+          const hasMarch30 = agendaDays.some(d => d.date.toISOString().slice(0, 10) === march30Key);
+          if (!hasMarch30) {
+            agendaDays.push(isCoursDuSoir ? {
+              date: new Date('2026-03-30T00:00:00'),
+              apremDebut: '17:00', apremFin: '21:00',
+            } : {
+              date: new Date('2026-03-30T00:00:00'),
+              matinDebut: '09:00', matinFin: '12:00',
+              apremDebut: '13:00', apremFin: '16:00',
+            });
+            agendaDays.sort((a, b) => a.date.getTime() - b.date.getTime());
+          }
+        }
+
+        if (agendaDays.length === 0) {
+          failed++;
+          continue;
+        }
+
+        generateEmargementIndividuelPDF(
+          {
+            formation: formationLabel,
+            dateDebut: session.dateDebut,
+            dateFin: session.dateFin,
+            lieu: session.lieu,
+            formateurs: formateurNames,
+          },
+          { nom: apprenant.nom, prenom: apprenant.prenom, type_apprenant: apprenant.type_apprenant || '' },
+          agendaDays,
+          { print: isPrint }
+        );
+        generated++;
+        // Small delay between downloads to avoid browser blocking
+        if (!isPrint) await new Promise(r => setTimeout(r, 500));
+      } catch (err) {
+        console.error(`Erreur émargement pour ${apprenant.nom}:`, err);
+        failed++;
+      }
+    }
+    setBulkPrintingEmargement(false);
+    toast({
+      title: `${generated} émargement(s) ${isPrint ? 'imprimé(s)' : 'téléchargé(s)'}`,
+      description: failed > 0 ? `${failed} erreur(s)` : undefined,
+    });
+  };
+
   const countByType = (type: string) => {
     return apprenantsInSession.filter((sa: any) => {
       const t = sa.apprenant?.type_apprenant?.toLowerCase() || "";
