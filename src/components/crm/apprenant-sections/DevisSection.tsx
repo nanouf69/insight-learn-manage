@@ -1164,8 +1164,8 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
                 <span>{totalHT.toLocaleString('fr-FR')} €</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">TVA (0% - Non assujetti)</span>
-                <span>0,00 €</span>
+                <span className="text-muted-foreground">TVA ({tvaTaux}%{tvaTaux === 0 ? ' - Non assujetti' : ''})</span>
+                <span>{montantTVA.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €</span>
               </div>
               <Separator />
               <div className="flex justify-between font-bold text-base">
