@@ -897,7 +897,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   };
 
   // Loading state
-  if ((!embedded && authLoading) || apprenantLoading) {
+  if ((!embedded && (authLoading || (!!user && !session))) || apprenantLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-3">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
