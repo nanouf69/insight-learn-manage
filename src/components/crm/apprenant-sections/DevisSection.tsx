@@ -1156,9 +1156,21 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
 
           <Separator />
 
-          {/* Totaux */}
+          {/* TVA + Totaux */}
           <div className="flex justify-end">
-            <div className="w-64 space-y-2">
+            <div className="w-72 space-y-2">
+              <div className="flex items-center gap-2 mb-2">
+                <Label className="text-sm whitespace-nowrap">TVA :</Label>
+                <Select value={String(tvaTaux)} onValueChange={(v) => setTvaTaux(Number(v))}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">0% - Non assujetti</SelectItem>
+                    <SelectItem value="20">20%</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Total HT</span>
                 <span>{totalHT.toLocaleString('fr-FR')} €</span>
