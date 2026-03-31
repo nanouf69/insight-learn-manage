@@ -1502,8 +1502,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                         result.apremDebut = '17:00';
                                         result.apremFin = '21:00';
                                       } else {
+                                        const apremFinHeure = isFCVTC ? '17:00' : '16:00';
                                         if (result.matinDebut) { result.matinDebut = '09:00'; result.matinFin = '12:00'; }
-                                        if (result.apremDebut) { result.apremDebut = '13:00'; result.apremFin = '16:00'; }
+                                        if (result.apremDebut) { result.apremDebut = '13:00'; result.apremFin = apremFinHeure; }
                                       }
                                     }
                                     return result;
