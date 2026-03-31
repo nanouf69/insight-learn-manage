@@ -4141,8 +4141,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           {questionsSafe.map((q, qi) => {
                             const key = `${exo.id}-${q.id}`;
                             const selected = selectedAnswers[key];
-                            const correct = q.choix.find((c: any) => c.correct);
-                            const isCorrect = selected && correct && selected === correct.lettre;
+                            const isCorrect = isAnswerCorrect(selected, q as any);
                             return (
                               <div key={q.id}
                                 className="flex items-center gap-2 rounded-lg border bg-background p-2 cursor-pointer hover:bg-muted/50 transition-colors"
@@ -4199,10 +4198,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               const wrongKeys: string[] = [];
                               questionsSafe.forEach((q: any) => {
                                 const key = `${exo.id}-${q.id}`;
-                                const selected = selectedAnswers[key];
-                                const correct = q.choix.find((c: any) => c.correct);
-                                const isCorrect = selected && correct && selected === correct.lettre;
-                                if (!isCorrect) wrongKeys.push(key);
+                                if (!isAnswerCorrect(selectedAnswers[key], q)) wrongKeys.push(key);
                               });
                               setSelectedAnswers(prev => {
                                 const next = { ...prev };
@@ -4218,9 +4214,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                                 let count = 0;
                                 questionsSafe.forEach((q: any) => {
                                   const key = `${exo.id}-${q.id}`;
-                                  const selected = selectedAnswers[key];
-                                  const correct = q.choix.find((c: any) => c.correct);
-                                  if (!(selected && correct && selected === correct.lettre)) count++;
+                                  if (!isAnswerCorrect(selectedAnswers[key], q)) count++;
                                 });
                                 return count;
                               })()})

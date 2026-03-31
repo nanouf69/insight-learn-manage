@@ -23,16 +23,14 @@ export function TimerBadge({ seconds, onExpire, isPaused = false }: TimerBadgePr
       intervalRef.current = null;
     }
 
-    if (isPaused || remaining <= 0) {
-      if (remaining <= 0) onExpireRef.current();
-      return;
-    }
+    if (isPaused) return;
 
     intervalRef.current = setInterval(() => {
       setRemaining(r => {
         if (r <= 1) {
           clearInterval(intervalRef.current!);
           intervalRef.current = null;
+          onExpireRef.current();
           return 0;
         }
         return r - 1;
@@ -42,7 +40,7 @@ export function TimerBadge({ seconds, onExpire, isPaused = false }: TimerBadgePr
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [isPaused, remaining]);
+  }, [isPaused]);
 
   const mins = Math.floor(remaining / 60);
   const secs = remaining % 60;

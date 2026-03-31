@@ -524,3 +524,32 @@ export function shouldRepairCorrectFlags(savedQuestions: Question[], sourceQuest
 export function mergeTexteSupport(sourceValue: string | undefined, savedValue: string | undefined): string {
   return savedValue || sourceValue || "";
 }
+
+/**
+ * Check if a bilan answer is correct.
+ * Handles both single-string and array answers, and compares ALL correct choices.
+ */
+export function isBilanAnswerCorrect(
+  selected: string | string[] | undefined,
+  choix: Array<{ lettre: string; correct?: boolean }>,
+): boolean {
+  if (!selected) return false;
+  const correctLetters = choix.filter(c => c.correct).map(c => c.lettre).sort();
+  if (correctLetters.length === 0) return false;
+  if (Array.isArray(selected)) {
+    return JSON.stringify([...selected].sort()) === JSON.stringify(correctLetters);
+  }
+  return correctLetters.length === 1 && selected === correctLetters[0];
+}
+
+/**
+ * BROKEN legacy check (for testing purposes only — reproduces the bug).
+ * Compares array to string, always returns false for multi-answer questions.
+ */
+export function isBilanAnswerCorrectBroken(
+  selected: string | string[] | undefined,
+  choix: Array<{ lettre: string; correct?: boolean }>,
+): boolean {
+  const correct = choix.find(c => c.correct);
+  return !!(selected && correct && selected === correct.lettre);
+}
