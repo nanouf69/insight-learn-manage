@@ -1361,6 +1361,26 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2"
+                disabled={selectedApprenants.size === 0 || bulkPrintingEmargement}
+                onClick={() => handleBulkEmargement(false)}
+              >
+                {bulkPrintingEmargement ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                Émargements ({selectedApprenants.size})
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2"
+                disabled={selectedApprenants.size === 0 || bulkPrintingEmargement}
+                onClick={() => handleBulkEmargement(true)}
+              >
+                <Printer className="w-4 h-4" />
+                Imprimer ({selectedApprenants.size})
+              </Button>
               <Button 
                 size="sm" 
                 variant={showAddApprenant ? "secondary" : "outline"}
