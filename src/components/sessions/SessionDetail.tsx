@@ -1436,10 +1436,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
                                 const dateDebut = new Date(session.dateDebut);
                                 const dateFin = new Date(session.dateFin);
+                                // semaine_debut is the Monday of the week; a session day (e.g. Tue 31/03)
+                                // belongs to a week starting up to 6 days earlier, so widen the lower bound.
+                                const semaineDebutMin = new Date(dateDebut);
+                                semaineDebutMin.setDate(semaineDebutMin.getDate() - 6);
+                                const semaineDebutMinStr = semaineDebutMin.toISOString().slice(0, 10);
                                 const { data: blocs } = await supabase
                                   .from('agenda_blocs')
                                   .select('*')
-                                  .gte('semaine_debut', session.dateDebut)
+                                  .gte('semaine_debut', semaineDebutMinStr)
                                   .lte('semaine_debut', session.dateFin);
 
                                 const matchFormation = (f: string) => {
