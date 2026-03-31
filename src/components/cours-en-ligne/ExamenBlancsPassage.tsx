@@ -278,8 +278,8 @@ function PassageMatiere({
     // BUG #7 FIX: increment generation to cancel any in-flight retry loop
     saveGenerationRef.current++;
     const myGeneration = saveGenerationRef.current;
-    setSaveStatus("saving");
     debounceRef.current = setTimeout(async () => {
+      setSaveStatus("saving");
       const MAX_RETRIES = 3;
       const RETRY_DELAY_MS = 2000;
       let lastError: any = null;
@@ -642,7 +642,7 @@ function PassageMatiere({
                     ? "bg-primary text-primary-foreground ring-2 ring-primary/50"
                     : isAnswered
                       ? "bg-green-100 text-green-700 border border-green-300"
-                      : "bg-red-50 text-red-500 border border-red-300 animate-pulse"
+                      : "bg-red-50 text-red-500 border border-red-300"
                 }`}
                 title={isAnswered ? `Q${i + 1} — répondue ✓` : `Q${i + 1} — NON répondue ✗`}
               >
