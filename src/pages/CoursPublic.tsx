@@ -603,7 +603,7 @@ const ChangePasswordDialog = () => {
 
 const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const navigate = useNavigate();
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, session, loading: authLoading, signOut } = useAuth();
   const [apprenantLoading, setApprenantLoading] = useState(false);
   const [apprenant, setApprenant] = useState<ApprenantInfo | null>(null);
   const [apprenantFetchError, setApprenantFetchError] = useState<string | null>(null);
@@ -618,12 +618,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [lastModuleName, setLastModuleName] = useState<string | null>(null);
   const [isInExam, setIsInExam] = useState(false);
 
-  // Stable callback for ExamensBlancsPage
   const handleExamStateChange = useCallback((inExam: boolean) => {
     setIsInExam(inExam);
   }, []);
 
-  // Tracking connexion élève (only for real student sessions, not admin preview)
   const isStudentSession = !embedded && !!user && !!apprenant?.id;
   const { trackModuleActivity, connexionId, endConnexion } = useConnexionTracking({
     apprenantId: !embedded && apprenant?.id ? apprenant.id : null,
@@ -631,11 +629,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     enabled: isStudentSession,
   });
 
-  // Keep Supabase auth token alive while student is active (prevents expiry during exams/modules)
-  // During exams: force-refresh unconditionally (student may be idle >15min thinking)
   useSessionKeepAlive(isStudentSession, isInExam);
 
-  // Presence verification: every 4h + 7h max session
   const handleForceDisconnect = useCallback(async () => {
     await supabase.auth.signOut();
     navigate("/cours");
@@ -656,7 +651,6 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     pauseDuringExam: isInExam,
   });
 
-  // Client-side inactivity detection: 30min no mouse → modal → 5min auto-disconnect
   const {
     showInactivityModal,
     inactivityCountdown,
@@ -667,18 +661,16 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     pauseDuringExam: isInExam,
   });
 
-  // Fetch apprenant info when user is logged in
   const fetchAttemptRef = useRef(0);
   const lastFetchedUserIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!user || embedded) return;
+    if (!user || !session || embedded) return;
 
     if (lastFetchedUserIdRef.current !== user.id) {
       lastFetchedUserIdRef.current = user.id;
       fetchAttemptRef.current = 0;
     }
 
-    // Guard against infinite fetch loops (e.g. token rate-limiting causing repeated failures)
     fetchAttemptRef.current += 1;
     const currentAttempt = fetchAttemptRef.current;
     if (currentAttempt > 8) {
@@ -743,15 +735,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
         const errorMessage = typeof err?.message === "string" ? err.message : "";
         if (errorMessage.includes("Temps d'attente dépassé")) {
-          // Auto-retry silently instead of blocking access
           console.warn("CoursPublic: timeout, auto-retrying...");
           setTimeout(() => {
             if (!cancelled) setFetchNonce((v) => v + 1);
           }, 2000);
-          return; // Don't show error, just retry
-        } else {
-          setApprenantFetchError("Une erreur inattendue est survenue. Cliquez sur Réessayer.");
+          return;
         }
+
+        setApprenantFetchError("Une erreur inattendue est survenue. Cliquez sur Réessayer.");
       } finally {
         if (!cancelled) setApprenantLoading(false);
       }
@@ -762,7 +753,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return () => {
       cancelled = true;
     };
-  }, [user, embedded, navigate, fetchNonce]);
+  }, [user?.id, session?.access_token, embedded, navigate, fetchNonce]);
 
   // Use apprenantOverride when provided (admin preview of specific student)
   useEffect(() => {
@@ -906,7 +897,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   };
 
   // Loading state
-  if ((!embedded && authLoading) || apprenantLoading) {
+  if ((!embedded && (authLoading || (!!user && !session))) || apprenantLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-3">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />

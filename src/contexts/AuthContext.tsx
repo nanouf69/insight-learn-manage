@@ -26,6 +26,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const lastProfileUserIdRef = useRef<string | null>(null);
   const manualSignOutRef = useRef(false);
+  const authInitializedRef = useRef(false);
+  const pendingSessionRef = useRef<Session | null | undefined>(undefined);
 
   const fetchProfile = useCallback(async (userId: string, retryCount = 0) => {
     try {
@@ -36,7 +38,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
       if (error) {
         console.error('Failed to fetch profile:', error.message);
-        // Retry once after 2s on network errors
         if (retryCount < 1) {
           setTimeout(() => void fetchProfile(userId, retryCount + 1), 2000);
           return;
@@ -89,9 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let isActive = true;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
-      if (!isActive) return;
-
+    const handleResolvedAuthState = (event: string, nextSession: Session | null) => {
       if (nextSession?.user) {
         manualSignOutRef.current = false;
         applySession(nextSession);
@@ -118,16 +117,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       manualSignOutRef.current = false;
       clearAuthState();
       setLoading(false);
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (!isActive) return;
+
+      if (!authInitializedRef.current) {
+        pendingSessionRef.current = nextSession;
+        return;
+      }
+
+      handleResolvedAuthState(event, nextSession);
     });
 
     supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
       if (!isActive) return;
-      applySession(initialSession);
+
+      authInitializedRef.current = true;
+      const restoredSession = pendingSessionRef.current !== undefined ? pendingSessionRef.current : initialSession;
+      pendingSessionRef.current = undefined;
+      applySession(restoredSession ?? null);
       setLoading(false);
     });
 
     return () => {
       isActive = false;
+      authInitializedRef.current = false;
+      pendingSessionRef.current = undefined;
       subscription.unsubscribe();
     };
   }, [applySession, clearAuthState]);
