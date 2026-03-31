@@ -56,6 +56,8 @@ const FORMATION_ALIASES: Record<string, FormationId> = {
   "vtc-s": "vtc-cours-du-soir",
   "vtc-cours-du-soir": "vtc-cours-du-soir",
   "continue-vtc": "continue-vtc",
+  "pa-vtc": "continue-vtc",
+  "formation-continue-vtc": "continue-vtc",
 };
 
 const normalizeFormationKey = (value: string | null | undefined): string =>
