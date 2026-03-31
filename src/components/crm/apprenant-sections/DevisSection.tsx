@@ -579,7 +579,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
     if (!tmpl) return null;
     const emailData = DEVIS_EMAIL_BODIES[tmpl.emailId];
     if (!emailData) return null;
-    const montant = apprenant.montant_ttc || tmpl.prix || 0;
+    const montant = tmpl.prix || apprenant.montant_ttc || 0;
     const subject = emailData.subject
       .replace(/\{\{prenom\}\}/g, apprenant.prenom || '')
       .replace(/\{\{nom\}\}/g, apprenant.nom || '');
