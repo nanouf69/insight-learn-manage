@@ -431,12 +431,15 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   };
 
   const [selectedTemplate, setSelectedTemplate] = useState<string>(detectedTemplate || "");
+  const selectedTemplateConfig = DEVIS_TEMPLATES.find(t => t.id === selectedTemplate);
+  const selectedTemplatePrix = selectedTemplateConfig?.prix ?? apprenant.montant_ttc ?? 0;
+  const detectedTemplatePrix = DEVIS_TEMPLATES.find(t => t.id === detectedTemplate)?.prix;
   const [lignes, setLignes] = useState<LigneDevis[]>([
     {
       id: crypto.randomUUID(),
       designation: getDesignationInitiale(),
       quantite: 1,
-      prixUnitaire: apprenant.montant_ttc || 0,
+      prixUnitaire: detectedTemplatePrix ?? apprenant.montant_ttc ?? 0,
     }
   ]);
   const [dateDevis, setDateDevis] = useState(today);
@@ -457,6 +460,16 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   const lastPos = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
+    if (!selectedTemplateConfig) return;
+    setLignes(prev => {
+      if (prev.length === 0) return prev;
+      const [first, ...rest] = prev;
+      if ((first.prixUnitaire ?? 0) === selectedTemplateConfig.prix) return prev;
+      return [{ ...first, prixUnitaire: selectedTemplateConfig.prix }, ...rest];
+    });
+  }, [selectedTemplate]);
+
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -468,6 +481,13 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
   }, []);
+
+  const formatDateForDevis = (value?: string | null) => {
+    if (!value) return format(new Date(), 'dd/MM/yyyy');
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return value;
+    return format(parsed, 'dd/MM/yyyy');
+  };
 
   const getPos = (e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) => {
     const rect = canvas.getBoundingClientRect();
@@ -557,35 +577,45 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
     }
     setGeneratingDocx(true);
     try {
-      const tmpl = DEVIS_TEMPLATES.find(t => t.id === selectedTemplate);
+      const tmpl = selectedTemplateConfig;
       if (!tmpl) throw new Error("Template introuvable");
 
       const response = await fetch(`/devis/${tmpl.file}`);
       if (!response.ok) throw new Error("Impossible de charger le modèle DOCX");
       const arrayBuffer = await response.arrayBuffer();
 
-      const zip = new PizZip(arrayBuffer);
-      const doc = new Docxtemplater(zip, {
-        paragraphLoop: true,
-        linebreaks: true,
-        delimiters: { start: "${", end: "}" },
-      });
-
-      const nomComplet = `${apprenant.civilite || ''} ${apprenant.prenom || ''} ${apprenant.nom || ''}`.trim();
-      doc.render({
-        client_nom: nomComplet,
+      const sharedPayload = {
+        client_nom: `${apprenant.civilite || ''} ${apprenant.prenom || ''} ${apprenant.nom || ''}`.trim(),
         client_adresse1: apprenant.adresse || '',
         client_codep: apprenant.code_postal || '',
         client_ville: apprenant.ville || '',
         client_tel: apprenant.telephone || '',
+        client_mail: apprenant.email || '',
         client_email: apprenant.email || '',
-        devis_date: format(new Date(), 'dd/MM/yyyy'),
-        devis_ligne_produit_date1: apprenant.date_debut_formation ? format(new Date(apprenant.date_debut_formation), 'dd/MM/yyyy') : format(new Date(), 'dd/MM/yyyy'),
-        montant: String(tmpl.prix || apprenant.montant_ttc || 0),
+        devis_date: formatDateForDevis(dateDevis),
+        devis_ligne_produit_date1: formatDateForDevis(apprenant.date_formation_catalogue || apprenant.date_debut_formation),
+        montant: String(selectedTemplatePrix),
         formation: apprenant.formation_choisie || '',
-      });
+      };
 
-      const outBuf = doc.getZip().generate({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+      let outBuf: Blob;
+      try {
+        const docLegacy = new Docxtemplater(new PizZip(arrayBuffer), {
+          paragraphLoop: true,
+          linebreaks: true,
+        });
+        docLegacy.render(sharedPayload);
+        outBuf = docLegacy.getZip().generate({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+      } catch {
+        const docDollar = new Docxtemplater(new PizZip(arrayBuffer), {
+          paragraphLoop: true,
+          linebreaks: true,
+          delimiters: { start: "${", end: "}" },
+        });
+        docDollar.render(sharedPayload);
+        outBuf = docDollar.getZip().generate({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+      }
+
       const fileName = `Devis_${apprenant.prenom}_${apprenant.nom}_${tmpl.id}_${format(new Date(), 'ddMMyyyy')}.docx`;
       saveAs(outBuf, fileName);
       toast.success("Devis DOCX téléchargé avec succès !");
@@ -599,11 +629,11 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
 
   // ─── EMAIL SEND (via Outlook) ───
   const getEmailContent = () => {
-    const tmpl = DEVIS_TEMPLATES.find(t => t.id === selectedTemplate);
+    const tmpl = selectedTemplateConfig;
     if (!tmpl) return null;
     const emailData = DEVIS_EMAIL_BODIES[tmpl.emailId];
     if (!emailData) return null;
-    const montant = tmpl.prix || apprenant.montant_ttc || 0;
+    const montant = selectedTemplatePrix;
     const subject = emailData.subject
       .replace(/\{\{prenom\}\}/g, apprenant.prenom || '')
       .replace(/\{\{nom\}\}/g, apprenant.nom || '');
@@ -1029,9 +1059,9 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
                 <div><span className="text-muted-foreground">Ville :</span> <strong>{apprenant.ville || '—'}</strong></div>
                 <div><span className="text-muted-foreground">Tél :</span> <strong>{apprenant.telephone || '—'}</strong></div>
                 <div><span className="text-muted-foreground">Email :</span> <strong>{apprenant.email || '—'}</strong></div>
-                <div><span className="text-muted-foreground">Date devis :</span> <strong>{format(new Date(dateDevis), 'dd/MM/yyyy')}</strong></div>
-                <div><span className="text-muted-foreground">Montant :</span> <strong>{apprenant.montant_ttc || DEVIS_TEMPLATES.find(t => t.id === selectedTemplate)?.prix || 0} €</strong></div>
-                <div><span className="text-muted-foreground">Dates formation :</span> <strong>{apprenant.date_formation_catalogue || apprenant.date_debut_formation || '—'}</strong></div>
+                <div><span className="text-muted-foreground">Date devis :</span> <strong>{formatDateForDevis(dateDevis)}</strong></div>
+                <div><span className="text-muted-foreground">Montant :</span> <strong>{selectedTemplatePrix} €</strong></div>
+                <div><span className="text-muted-foreground">Dates formation :</span> <strong>{formatDateForDevis(apprenant.date_formation_catalogue || apprenant.date_debut_formation || null)}</strong></div>
               </div>
             </div>
           )}
