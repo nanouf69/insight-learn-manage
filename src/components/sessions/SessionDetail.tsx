@@ -329,6 +329,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [emailPreviewEditing, setEmailPreviewEditing] = useState(false);
   const [selectedApprenants, setSelectedApprenants] = useState<Set<string>>(new Set());
   const [bulkSending, setBulkSending] = useState(false);
+  const [bulkPrintingEmargement, setBulkPrintingEmargement] = useState(false);
   const [bulkPreview, setBulkPreview] = useState<{ template: any; apprenants: any[]; previewBody: string; previewSubject: string; editedBody?: string; editedSubject?: string } | null>(null);
   const [bulkPreviewEditing, setBulkPreviewEditing] = useState(false);
   const [editingMailType, setEditingMailType] = useState<any | null>(null);
