@@ -439,6 +439,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   const [dateDevis, setDateDevis] = useState(today);
   const [dateValidite, setDateValidite] = useState(validiteDate);
   const [notes, setNotes] = useState("");
+  const [tvaTaux, setTvaTaux] = useState<number>(0);
   const [generating, setGenerating] = useState(false);
   const [generatingDocx, setGeneratingDocx] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -542,7 +543,8 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   };
 
   const totalHT = lignes.reduce((sum, l) => sum + (l.quantite * l.prixUnitaire), 0);
-  const totalTTC = totalHT;
+  const montantTVA = totalHT * (tvaTaux / 100);
+  const totalTTC = totalHT + montantTVA;
 
   // ─── DOCX TEMPLATE DOWNLOAD ───
   const generateDocxFromTemplate = async () => {
@@ -648,9 +650,9 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         date_emission: dateDevis,
         date_echeance: dateValidite,
         montant_ht: totalHT,
-        montant_tva: 0,
+        montant_tva: montantTVA,
         montant_ttc: totalTTC,
-        tva_taux: 0,
+        tva_taux: tvaTaux,
         type_financement: apprenant.mode_financement || 'particulier',
         statut: 'en_attente',
       }).select().single();
@@ -829,7 +831,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       doc.setFontSize(8);
       doc.setTextColor(80, 80, 80);
       doc.text('Total HT :', totSepX - 2, y + 5.5, { align: 'right' });
-      doc.text('TVA (0% - Non assujetti) :', totSepX - 2, y + 12.5, { align: 'right' });
+      doc.text(`TVA (${tvaTaux}%${tvaTaux === 0 ? ' - Non assujetti' : ''}) :`, totSepX - 2, y + 12.5, { align: 'right' });
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8.5);
@@ -840,7 +842,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       doc.setFontSize(8);
       doc.setTextColor(0, 0, 0);
       doc.text(formatEUR(totalHT), totBoxX + totBoxW - 3, y + 5.5, { align: 'right' });
-      doc.text('0,00 EUR', totBoxX + totBoxW - 3, y + 12.5, { align: 'right' });
+      doc.text(formatEUR(montantTVA), totBoxX + totBoxW - 3, y + 12.5, { align: 'right' });
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(9);
@@ -1154,16 +1156,28 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
 
           <Separator />
 
-          {/* Totaux */}
+          {/* TVA + Totaux */}
           <div className="flex justify-end">
-            <div className="w-64 space-y-2">
+            <div className="w-72 space-y-2">
+              <div className="flex items-center gap-2 mb-2">
+                <Label className="text-sm whitespace-nowrap">TVA :</Label>
+                <Select value={String(tvaTaux)} onValueChange={(v) => setTvaTaux(Number(v))}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">0% - Non assujetti</SelectItem>
+                    <SelectItem value="20">20%</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Total HT</span>
                 <span>{totalHT.toLocaleString('fr-FR')} €</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">TVA (0% - Non assujetti)</span>
-                <span>0,00 €</span>
+                <span className="text-muted-foreground">TVA ({tvaTaux}%{tvaTaux === 0 ? ' - Non assujetti' : ''})</span>
+                <span>{montantTVA.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €</span>
               </div>
               <Separator />
               <div className="flex justify-between font-bold text-base">
