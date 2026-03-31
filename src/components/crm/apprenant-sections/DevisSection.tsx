@@ -580,6 +580,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         client_tel: apprenant.telephone || '',
         client_email: apprenant.email || '',
         devis_date: format(new Date(), 'dd/MM/yyyy'),
+        devis_ligne_produit_date1: apprenant.date_debut_formation ? format(new Date(apprenant.date_debut_formation), 'dd/MM/yyyy') : format(new Date(), 'dd/MM/yyyy'),
         montant: String(tmpl.prix || apprenant.montant_ttc || 0),
         formation: apprenant.formation_choisie || '',
       });
