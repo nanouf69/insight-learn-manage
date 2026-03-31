@@ -295,6 +295,7 @@ const FORMATIONS_CATALOGUE = [
   { label: "Formation TAXI E-learning - 1 299 €", prix: 1299, designation: "Formation initiale TAXI en E-learning" },
   { label: "Formation TA E-learning - 999 €", prix: 999, designation: "Formation passerelle TAXI pour chauffeur VTC en E-learning (TA)" },
   { label: "Formation VA E-learning - 499 €", prix: 499, designation: "Formation passerelle VTC pour chauffeur TAXI en E-learning (VA)" },
+  { label: "Formation pratique TAXI - 349 €", prix: 349, designation: "Formation pratique TAXI - Préparation pratique à l'examen taxi" },
 ];
 
 const CGV_TEXT = `CONDITIONS GENERALES DE VENTE - FTRANSPORT
