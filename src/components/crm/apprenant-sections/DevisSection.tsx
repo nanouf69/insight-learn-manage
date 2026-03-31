@@ -543,7 +543,8 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   };
 
   const totalHT = lignes.reduce((sum, l) => sum + (l.quantite * l.prixUnitaire), 0);
-  const totalTTC = totalHT;
+  const montantTVA = totalHT * (tvaTaux / 100);
+  const totalTTC = totalHT + montantTVA;
 
   // ─── DOCX TEMPLATE DOWNLOAD ───
   const generateDocxFromTemplate = async () => {
