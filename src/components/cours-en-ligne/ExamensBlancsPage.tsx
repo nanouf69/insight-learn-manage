@@ -94,8 +94,13 @@ export default function ExamensBlancsPage({
     });
   }, []);
 
+  const pendingReloadRef = useRef(false);
   const refreshLiveExamens = useCallback(async ({ force = false }: { force?: boolean } = {}) => {
-    if (!force && reloadInFlightRef.current) return reloadInFlightRef.current;
+    if (!force && reloadInFlightRef.current) {
+      // Don't drop the reload — mark it pending so it runs after the in-flight one
+      pendingReloadRef.current = true;
+      return reloadInFlightRef.current;
+    }
     setLoadTimeout(false);
     const timeoutTimer = setTimeout(() => setLoadTimeout(true), 10_000);
     reloadInFlightRef.current = (async () => {
@@ -118,7 +123,14 @@ export default function ExamensBlancsPage({
       }
     })();
     try { return await reloadInFlightRef.current; }
-    finally { reloadInFlightRef.current = null; }
+    finally {
+      reloadInFlightRef.current = null;
+      // If a reload was requested while we were in-flight, run it now
+      if (pendingReloadRef.current) {
+        pendingReloadRef.current = false;
+        void refreshLiveExamens({ force: true });
+      }
+    }
   }, []);
 
   const handleManualReloadQuestions = async () => {

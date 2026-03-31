@@ -92,8 +92,8 @@ function repairCorrectFlags(examens: ExamenBlanc[]): void {
       const srcCorrectCount = srcMat.questions.filter(
         q => q?.type === "QCM" && Array.isArray(q.choix) && q.choix.some(c => c.correct === true)
       ).length;
-      // If saved data has significantly fewer correct answers, restore from source
-      if (srcCorrectCount > 0 && savedCorrectCount < srcCorrectCount * 0.5) {
+      // Only repair when ALL correct flags are lost (serialization bug), not admin edits
+      if (srcCorrectCount > 0 && savedCorrectCount === 0) {
         console.log(`[ExamRepair] Restoring correct flags for exam ${ex.id}, matière ${mat.id}: ${savedCorrectCount} → ${srcCorrectCount}`);
         for (const q of mat.questions) {
           if (q?.type !== "QCM" || !Array.isArray(q.choix)) continue;
@@ -338,9 +338,9 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
                 ...savedMat,
                 questions: deduplicateQuestions([...mergedQuestions, ...extraSourceQuestions]),
               };
-              // Always preserve texteSupport/texteSource from source (never lose them)
-              merged.texteSupport = sourceMat.texteSupport || savedMat.texteSupport;
-              merged.texteSource = sourceMat.texteSource || savedMat.texteSource;
+              // Saved (admin edit) takes priority; fall back to source if saved is empty
+              merged.texteSupport = savedMat.texteSupport || sourceMat.texteSupport;
+              merged.texteSource = savedMat.texteSource || sourceMat.texteSource;
               return merged;
             }
             // No matching source matiere — still try to find texteSupport from source by nom

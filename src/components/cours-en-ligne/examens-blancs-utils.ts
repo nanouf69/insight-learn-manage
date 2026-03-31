@@ -496,3 +496,31 @@ export function extractMatiereKeyFromExerciceId(exerciceId: string, examId: stri
   if (!exerciceId.startsWith(prefix)) return "";
   return exerciceId.slice(prefix.length);
 }
+
+/**
+ * Determine if repairCorrectFlags should overwrite saved QCM correct flags.
+ * Should ONLY repair when flags are genuinely lost (serialization bug),
+ * NOT when the admin intentionally changed correct answers.
+ */
+export function shouldRepairCorrectFlags(savedQuestions: Question[], sourceQuestions: Question[]): boolean {
+  const savedCorrectCount = savedQuestions.filter(
+    q => q?.type === "QCM" && Array.isArray(q.choix) && q.choix.some(c => c.correct === true)
+  ).length;
+  const srcCorrectCount = sourceQuestions.filter(
+    q => q?.type === "QCM" && Array.isArray(q.choix) && q.choix.some(c => c.correct === true)
+  ).length;
+  // Only repair when ALL correct flags are lost (savedCorrectCount === 0)
+  // This prevents overwriting intentional admin edits
+  if (srcCorrectCount > 0 && savedCorrectCount === 0) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Merge texteSupport: saved (admin edit) takes priority over source.
+ * Falls back to source only when saved is empty/undefined.
+ */
+export function mergeTexteSupport(sourceValue: string | undefined, savedValue: string | undefined): string {
+  return savedValue || sourceValue || "";
+}
