@@ -406,9 +406,9 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
   };
 
   // Formats acceptés
-  const ACCEPTED_FORMATS = '.pdf,.jpg,.jpeg,.png,.heic,.heif,.webp';
-  const ACCEPTED_FORMATS_DISPLAY = 'PDF, JPG, PNG, HEIC, WebP';
-  const MAX_FILE_SIZE_MB = 4;
+  const ACCEPTED_FORMATS = '.pdf,.jpg,.jpeg,.png,.heic,.heif,.webp,.bmp,.tiff,.tif,.gif';
+  const ACCEPTED_FORMATS_DISPLAY = 'PDF, JPG, PNG, HEIC, WebP, BMP, GIF, TIFF';
+  const MAX_FILE_SIZE_MB = 10;
   const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
   const handleFileChange = (docId: string, event: React.ChangeEvent<HTMLInputElement>, isCustom = false) => {
@@ -422,17 +422,17 @@ export function DocumentsInscription({ apprenant }: DocumentsInscriptionProps) {
       }
       
       // Validate file type
-      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/heic', 'image/heif', 'image/webp'];
+      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/heic', 'image/heif', 'image/webp', 'image/bmp', 'image/tiff', 'image/gif'];
       const fileExtension = file.name.toLowerCase().split('.').pop();
-      const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'heic', 'heif', 'webp'];
+      const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'heic', 'heif', 'webp', 'bmp', 'tiff', 'tif', 'gif'];
       
       // Pour la photo d'identité, seules les images sont acceptées (pas de PDF)
       if (docId === 'photo_identite') {
-        const imageTypes = ['image/jpeg', 'image/png', 'image/heic', 'image/heif', 'image/webp'];
-        const imageExtensions = ['jpg', 'jpeg', 'png', 'heic', 'heif', 'webp'];
+        const imageTypes = ['image/jpeg', 'image/png', 'image/heic', 'image/heif', 'image/webp', 'image/bmp', 'image/tiff', 'image/gif'];
+        const imageExtensions = ['jpg', 'jpeg', 'png', 'heic', 'heif', 'webp', 'bmp', 'tiff', 'tif', 'gif'];
         
         if (!imageTypes.includes(file.type) && !imageExtensions.includes(fileExtension || '')) {
-          toast.error("Pour la photo d'identité, seules les images sont acceptées (JPG, PNG, HEIC, WebP)");
+          toast.error("Pour la photo d'identité, seules les images sont acceptées (JPG, PNG, HEIC, WebP, BMP, GIF, TIFF)");
           event.target.value = '';
           return;
         }
