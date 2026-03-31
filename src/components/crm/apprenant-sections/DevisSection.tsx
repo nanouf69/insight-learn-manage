@@ -562,6 +562,27 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       const arrayBuffer = await response.arrayBuffer();
 
       const zip = new PizZip(arrayBuffer);
+
+      // Nettoyage : remplacer les accolades isolées { } dans le XML
+      // pour éviter que docxtemplater les interprète comme des tags
+      const xmlFiles = Object.keys(zip.files).filter(f => f.endsWith('.xml'));
+      for (const xmlFile of xmlFiles) {
+        let content = zip.file(xmlFile)?.asText();
+        if (!content) continue;
+        // Remplacer les { et } qui ne font pas partie d'un placeholder ${...}
+        // On protège d'abord les vrais placeholders, puis on escape les accolades isolées
+        const placeholders: string[] = [];
+        content = content.replace(/\$\{[^}]+\}/g, (match) => {
+          placeholders.push(match);
+          return `__PLACEHOLDER_${placeholders.length - 1}__`;
+        });
+        // Escape les accolades isolées
+        content = content.replace(/\{/g, '&#123;').replace(/\}/g, '&#125;');
+        // Restaurer les vrais placeholders
+        content = content.replace(/__PLACEHOLDER_(\d+)__/g, (_, idx) => placeholders[parseInt(idx)]);
+        zip.file(xmlFile, content);
+      }
+
       const doc = new Docxtemplater(zip, {
         paragraphLoop: true,
         linebreaks: true,
