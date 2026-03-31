@@ -1510,8 +1510,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                     return result;
                                   });
 
-                                // Pour VTC : ajouter le lundi 30 mars 2026 s'il n'existe pas déjà
-                                if (isVTC) {
+                                // Pour VTC (hors Formation Continue) : ajouter le lundi 30 mars 2026 s'il n'existe pas déjà
+                                if (isVTC && !isFCVTC) {
                                   const isCoursDuSoir = (session.title || '').toLowerCase().includes('soir');
                                   const march30Key = '2026-03-30';
                                   const hasMarch30 = agendaDays.some(d => d.date.toISOString().slice(0, 10) === march30Key);
