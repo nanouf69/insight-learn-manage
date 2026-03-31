@@ -13,8 +13,6 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import jsPDF from "jspdf";
-import PizZip from "pizzip";
-import Docxtemplater from "docxtemplater";
 import { saveAs } from "file-saver";
 
 interface DevisSectionProps {
@@ -559,66 +557,10 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
 
       const response = await fetch(`/devis/${tmpl.file}`);
       if (!response.ok) throw new Error("Impossible de charger le modèle DOCX");
-      const arrayBuffer = await response.arrayBuffer();
-
-      const zip = new PizZip(arrayBuffer);
-
-      // Nettoyage : remplacer les accolades isolées { } dans le XML
-      // pour éviter que docxtemplater les interprète comme des tags
-      const xmlFiles = Object.keys(zip.files).filter(f => f.endsWith('.xml'));
-      for (const xmlFile of xmlFiles) {
-        let content = zip.file(xmlFile)?.asText();
-        if (!content) continue;
-        // Remplacer les { et } qui ne font pas partie d'un placeholder ${...}
-        // On protège d'abord les vrais placeholders, puis on escape les accolades isolées
-        const placeholders: string[] = [];
-        content = content.replace(/\$\{[^}]+\}/g, (match) => {
-          placeholders.push(match);
-          return `__PLACEHOLDER_${placeholders.length - 1}__`;
-        });
-        // Escape les accolades isolées
-        content = content.replace(/\{/g, '&#123;').replace(/\}/g, '&#125;');
-        // Restaurer les vrais placeholders
-        content = content.replace(/__PLACEHOLDER_(\d+)__/g, (_, idx) => placeholders[parseInt(idx)]);
-        zip.file(xmlFile, content);
-      }
-
-      const doc = new Docxtemplater(zip, {
-        paragraphLoop: true,
-        linebreaks: true,
-        delimiters: { start: "${", end: "}" },
-      });
-
-      // Build dates
-      const dateDevisFormatted = format(new Date(dateDevis), 'dd/MM/yyyy');
-      const dateFormation = apprenant.date_formation_catalogue || apprenant.date_debut_formation || "";
-      let dateFormationFormatted = dateFormation;
-      if (dateFormation) {
-        try { dateFormationFormatted = format(new Date(dateFormation + 'T12:00:00'), 'dd/MM/yyyy'); } catch {}
-      }
-
-      const montant = apprenant.montant_ttc || tmpl.prix || 0;
-
-      // Replace all placeholders
-      doc.render({
-        client_nom: `${apprenant.prenom || ''} ${apprenant.nom || ''}`.trim(),
-        client_adresse1: apprenant.adresse || '',
-        client_codep: apprenant.code_postal || '',
-        client_ville: apprenant.ville || '',
-        client_tel: apprenant.telephone || '',
-        client_mail: apprenant.email || '',
-        devis_date: dateDevisFormatted,
-        devis_ht: `${montant} €`,
-        devis_ligne_produit_date1: dateFormationFormatted,
-      });
-
-      const out = doc.getZip().generate({
-        type: "blob",
-        mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      });
+      const blob = await response.blob();
 
       const fileName = `Devis_${apprenant.prenom}_${apprenant.nom}_${tmpl.id}_${format(new Date(), 'ddMMyyyy')}.docx`;
-      saveAs(out, fileName);
+      saveAs(blob, fileName);
       toast.success("Devis DOCX téléchargé avec succès !");
     } catch (err: any) {
       console.error("Erreur génération DOCX:", err);
