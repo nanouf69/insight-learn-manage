@@ -38,6 +38,9 @@ const DEVIS_TEMPLATES = [
   { id: "taxi_pratique", label: "Formation pratique TAXI", file: "Devis_TAXI_pratique.docx", prix: 0, emailId: "devis-taxi-pratique" },
   { id: "fc_vtc", label: "Formation continue VTC", file: "Devis_formation_continue_VTC.docx", prix: 200, emailId: "devis-fc-vtc" },
   { id: "fc_taxi", label: "Formation continue TAXI", file: "Devis_formation_continue_TAXI.docx", prix: 200, emailId: "devis-fc-taxi" },
+  { id: "vtc_sans_frais_examen", label: "Formation VTC sans frais d'examen", file: "Devis_VTC_sans_frais_examen.docx", prix: 1099, emailId: "devis-vtc-sans-frais-examen" },
+  { id: "vtc_soir_avec_examen", label: "Formation VTC soir avec examen", file: "Devis_VTC_soir_avec_examen.docx", prix: 1499, emailId: "devis-vtc-soir-avec-examen" },
+  { id: "vtc_soir_sans_examen", label: "Formation VTC soir sans examen", file: "Devis_VTC_soir_sans_examen.docx", prix: 1099, emailId: "devis-vtc-soir-sans-examen" },
 ];
 
 // ─── EMAIL BODY TEMPLATES (per devis type) ───
