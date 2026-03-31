@@ -831,7 +831,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       doc.setFontSize(8);
       doc.setTextColor(80, 80, 80);
       doc.text('Total HT :', totSepX - 2, y + 5.5, { align: 'right' });
-      doc.text('TVA (0% - Non assujetti) :', totSepX - 2, y + 12.5, { align: 'right' });
+      doc.text(`TVA (${tvaTaux}%${tvaTaux === 0 ? ' - Non assujetti' : ''}) :`, totSepX - 2, y + 12.5, { align: 'right' });
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8.5);
