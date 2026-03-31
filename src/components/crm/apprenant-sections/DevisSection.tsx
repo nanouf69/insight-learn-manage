@@ -562,10 +562,31 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
 
       const response = await fetch(`/devis/${tmpl.file}`);
       if (!response.ok) throw new Error("Impossible de charger le modèle DOCX");
-      const blob = await response.blob();
+      const arrayBuffer = await response.arrayBuffer();
 
+      const zip = new PizZip(arrayBuffer);
+      const doc = new Docxtemplater(zip, {
+        paragraphLoop: true,
+        linebreaks: true,
+        delimiters: { start: "${", end: "}" },
+      });
+
+      const nomComplet = `${apprenant.civilite || ''} ${apprenant.prenom || ''} ${apprenant.nom || ''}`.trim();
+      doc.render({
+        client_nom: nomComplet,
+        client_adresse1: apprenant.adresse || '',
+        client_codep: apprenant.code_postal || '',
+        client_ville: apprenant.ville || '',
+        client_tel: apprenant.telephone || '',
+        client_email: apprenant.email || '',
+        devis_date: format(new Date(), 'dd/MM/yyyy'),
+        montant: String(tmpl.prix || apprenant.montant_ttc || 0),
+        formation: apprenant.formation_choisie || '',
+      });
+
+      const outBuf = doc.getZip().generate({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
       const fileName = `Devis_${apprenant.prenom}_${apprenant.nom}_${tmpl.id}_${format(new Date(), 'ddMMyyyy')}.docx`;
-      saveAs(blob, fileName);
+      saveAs(outBuf, fileName);
       toast.success("Devis DOCX téléchargé avec succès !");
     } catch (err: any) {
       console.error("Erreur génération DOCX:", err);
