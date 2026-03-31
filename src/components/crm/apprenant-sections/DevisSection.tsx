@@ -619,11 +619,11 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
 
   // ─── EMAIL SEND (via Outlook) ───
   const getEmailContent = () => {
-    const tmpl = DEVIS_TEMPLATES.find(t => t.id === selectedTemplate);
+    const tmpl = selectedTemplateConfig;
     if (!tmpl) return null;
     const emailData = DEVIS_EMAIL_BODIES[tmpl.emailId];
     if (!emailData) return null;
-    const montant = tmpl.prix || apprenant.montant_ttc || 0;
+    const montant = selectedTemplatePrix;
     const subject = emailData.subject
       .replace(/\{\{prenom\}\}/g, apprenant.prenom || '')
       .replace(/\{\{nom\}\}/g, apprenant.nom || '');
