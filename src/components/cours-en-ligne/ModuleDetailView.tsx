@@ -2017,7 +2017,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
   const buildSourceFingerprint = (data: ModuleData) =>
     JSON.stringify({
-      v: 7,
+      v: 8,
       overrides: getOverridesFingerprint(),
       coursCount: data.cours.length,
       exercicesCount: data.exercices.length,
@@ -2035,8 +2035,55 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         titre: e.titre,
         sousTitre: e.sousTitre ?? "",
         questionCount: e.questions?.length || 0,
+        questionSignature: (e.questions ?? []).map((q) => ({
+          id: q.id,
+          enonce: q.enonce,
+          image: q.image ?? "",
+          choix: q.choix.map((c) => `${c.lettre}:${c.texte}:${c.correct ? 1 : 0}`),
+        })),
       })),
     });
+
+  const mergeSourceExercices = (loadedExercices: ExerciceItem[], sourceExercices: ExerciceItem[]): ExerciceItem[] => {
+    const loadedExerciseMap = new Map(loadedExercices.map((exo) => [Number(exo.id), exo]));
+
+    const mergedExercices = sourceExercices.map((sourceExo) => {
+      const loadedExo = loadedExerciseMap.get(Number(sourceExo.id));
+      if (!loadedExo) return sourceExo;
+
+      if (!sourceExo.questions || !loadedExo.questions) {
+        return { ...sourceExo, ...loadedExo };
+      }
+
+      const loadedQuestionMap = new Map(loadedExo.questions.map((q) => [Number(q.id), q]));
+      const sourceQuestionIds = new Set(sourceExo.questions.map((q) => Number(q.id)));
+
+      const mergedQuestions = sourceExo.questions.map((sourceQ) => {
+        const loadedQ = loadedQuestionMap.get(Number(sourceQ.id));
+        if (!loadedQ) return sourceQ;
+
+        return {
+          ...sourceQ,
+          ...loadedQ,
+          image: loadedQ.image ?? sourceQ.image,
+          choix: Array.isArray(loadedQ.choix) && loadedQ.choix.length > 0 ? loadedQ.choix : sourceQ.choix,
+        };
+      });
+
+      const extraQuestions = loadedExo.questions.filter((q) => !sourceQuestionIds.has(Number(q.id)));
+
+      return {
+        ...sourceExo,
+        ...loadedExo,
+        questions: [...mergedQuestions, ...extraQuestions],
+      };
+    });
+
+    const sourceExerciseIds = new Set(sourceExercices.map((exo) => Number(exo.id)));
+    const extraExercises = loadedExercices.filter((exo) => !sourceExerciseIds.has(Number(exo.id)));
+
+    return [...mergedExercices, ...extraExercises];
+  };
 
   // Load trainer DB overrides and apply to student view
   // Runs AFTER editorStateHydrated so initial data is already set.
@@ -2164,7 +2211,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         if (!hasValidModuleData) return false;
 
-        setModuleData(parsed.moduleData as ModuleData);
+        const mergedModuleData: ModuleData = {
+          ...parsed.moduleData,
+          exercices: mergeSourceExercices(parsed.moduleData.exercices, initialData.exercices),
+        };
+
+        setModuleData(mergedModuleData);
         setDeletedCours(Array.isArray(parsed.deletedCours) ? parsed.deletedCours : []);
         setDeletedExercices(Array.isArray(parsed.deletedExercices) ? parsed.deletedExercices : []);
         setLoadedModuleEditorState(false);
@@ -2181,7 +2233,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         const requestTimestamp = new Date().toISOString();
         const { data, error } = await supabase
           .from("module_editor_state")
-          .select("module_data, deleted_cours, deleted_exercices, updated_at")
+          .select("module_data, deleted_cours, deleted_exercices, updated_at, source_fingerprint")
           .eq("module_id", module.id)
           .lte("updated_at", requestTimestamp)
           .order("updated_at", { ascending: false })
@@ -2206,19 +2258,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             );
 
           if (hasValidModuleData) {
-            // Merge source images into DB-loaded questions (images may have been added after DB save)
-            const mergedExercices = md.exercices.map((dbExo: any) => {
-              const sourceExo = initialData.exercices.find((s: any) => Number(s.id) === Number(dbExo.id));
-              if (!sourceExo?.questions || !dbExo.questions) return dbExo;
-              const mergedQuestions = dbExo.questions.map((dbQ: any) => {
-                if (dbQ.image) return dbQ; // already has image
-                const sourceQ = sourceExo.questions.find((sq: any) => Number(sq.id) === Number(dbQ.id));
-                if (sourceQ?.image) return { ...dbQ, image: sourceQ.image };
-                return dbQ;
-              });
-              return { ...dbExo, questions: mergedQuestions };
-            });
-            setModuleData({ ...md, exercices: mergedExercices });
+            const mergedModuleData: ModuleData = {
+              ...md,
+              exercices: mergeSourceExercices(md.exercices, initialData.exercices),
+            };
+            setModuleData(mergedModuleData);
             setDeletedCours(Array.isArray(latestState.deleted_cours) ? (latestState.deleted_cours as unknown as ContentItem[]) : []);
             setDeletedExercices(Array.isArray(latestState.deleted_exercices) ? (latestState.deleted_exercices as unknown as ExerciceItem[]) : []);
             setLoadedModuleEditorState(true);
