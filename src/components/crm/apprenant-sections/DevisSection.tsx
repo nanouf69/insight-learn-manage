@@ -653,6 +653,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       const { error } = await supabase.functions.invoke('sync-outlook-emails', {
         body: {
           action: 'send',
+          userEmail: 'contact@ftransport.fr',
           to: apprenant.email,
           subject: emailContent.subject,
           body: bodyHtml,
