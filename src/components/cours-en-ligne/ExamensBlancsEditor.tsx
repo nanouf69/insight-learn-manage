@@ -11,7 +11,7 @@ import {
   Save, CheckCircle2, X, Clock, Layers, Loader2, ArrowUp, ArrowDown, ArrowLeftRight, Pause, Play, AlertTriangle
 } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, type Question, type Choix } from "./examens-blancs-data";
-import { mergeQuestionsForMatiere } from "./examens-blancs-utils";
+import { mergeQuestionsForMatiere, propagateSharedMatiereEdit } from "./examens-blancs-utils";
 import { QuestionImageUpload } from "./QuestionImageUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -329,12 +329,12 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
     // On error, return source data (no stale cache)
   }
   
-  // Repair any missing correct flags, then sync across exam types
+  // Repair any missing correct flags (serialization safety net).
+  // NOTE: sync functions are NOT run here after merge — the saved data in DB
+  // was already synced during persistExamens. Running sync again would overwrite
+  // correctly merged admin edits with stale source data.
   repairCorrectFlags(examens);
-  syncVtcTaxiMatieres(examens);
-  syncVtcVaMatieres(examens);
-  syncTaxiTaMatieres(examens);
-  
+
   return examens;
 }
 
@@ -945,18 +945,9 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
 
   const handleMatiereChange = (matiereId: string, updated: Matiere) => {
     setExamens(prev => {
-      const next = prev.map(ex => {
-        if (ex.id !== examenSelId) return ex;
-        return {
-          ...ex,
-          matieres: ex.matieres.map(m => m.id === matiereId ? updated : m),
-        };
-      });
-      // After any edit, sync VTC → TAXI → TA, VTC → VA
-      syncVtcTaxiMatieres(next);
-      syncVtcVaMatieres(next);
-      syncTaxiTaMatieres(next);
-      return next;
+      // Propagate the edit to ALL exams that share this matière ID.
+      // This replaces the old VTC→TAXI sync that could overwrite saved data.
+      return propagateSharedMatiereEdit(prev, matiereId, updated);
     });
   };
 

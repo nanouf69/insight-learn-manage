@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle2, Clock, Pencil, Search, User, FileText, Filter, MessageSquare, ChevronLeft, ChevronRight } from "lucide-react";
+import { CheckCircle2, Clock, Pencil, Search, User, FileText, Filter, MessageSquare, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere } from "./examens-blancs-data";
@@ -151,6 +151,7 @@ const CorrectionQRCTab = () => {
   const [examenMap, setExamenMap] = useState<Record<string, ExamenBlanc>>({});
   const [editingComments, setEditingComments] = useState<Record<string, string>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
 
   const QUICK_COMMENTS = [
     "Précisez !!!",
@@ -461,11 +462,10 @@ const CorrectionQRCTab = () => {
     return true;
   });
 
-  // Sort by most recent first (completedAt desc), then by exam number, matiere, question
   const sortedFiltered = [...filtered].sort((a, b) => {
     const dateA = new Date(a.completedAt).getTime() || 0;
     const dateB = new Date(b.completedAt).getTime() || 0;
-    if (dateA !== dateB) return dateB - dateA;
+    if (dateA !== dateB) return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
     const numA = parseInt((a.quizTitre.match(/N°(\d+)/)?.[1]) || "0", 10);
     const numB = parseInt((b.quizTitre.match(/N°(\d+)/)?.[1]) || "0", 10);
     if (numA !== numB) return numA - numB;
@@ -473,10 +473,10 @@ const CorrectionQRCTab = () => {
     return a.questionId - b.questionId;
   });
 
-  // Reset index when filter/search changes
+  // Reset index when filter/search/sort changes
   useEffect(() => {
     setCurrentIndex(0);
-  }, [filter, searchQuery]);
+  }, [filter, searchQuery, sortOrder]);
 
   if (loading) {
     return (
@@ -529,6 +529,15 @@ const CorrectionQRCTab = () => {
             <SelectItem value="all">Toutes</SelectItem>
           </SelectContent>
         </Select>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => setSortOrder(prev => prev === "desc" ? "asc" : "desc")}
+        >
+          <ArrowUpDown className="w-4 h-4" />
+          {sortOrder === "desc" ? "Plus récent" : "Plus ancien"}
+        </Button>
       </div>
 
       {sortedFiltered.length === 0 ? (
