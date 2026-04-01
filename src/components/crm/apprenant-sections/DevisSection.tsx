@@ -17,6 +17,72 @@ import { saveAs } from "file-saver";
 import Docxtemplater from "docxtemplater";
 import PizZip from "pizzip";
 
+function DevisHistorique({ apprenantId }: { apprenantId: string }) {
+  const [devisEnvoyes, setDevisEnvoyes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase
+        .from("devis_envois")
+        .select("*")
+        .eq("apprenant_id", apprenantId)
+        .order("created_at", { ascending: false });
+      setDevisEnvoyes(data || []);
+      setLoading(false);
+    };
+    load();
+  }, [apprenantId]);
+
+  if (loading || devisEnvoyes.length === 0) return null;
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <Clock className="w-4 h-4 text-muted-foreground" />
+          Devis envoyés ({devisEnvoyes.length})
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2">
+          {devisEnvoyes.map((d) => (
+            <div key={d.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 text-sm">
+              <div className="flex items-center gap-3">
+                <FileText className="w-4 h-4 text-muted-foreground" />
+                <div>
+                  <p className="font-medium">{d.modele}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {format(new Date(d.created_at), "dd/MM/yyyy à HH:mm", { locale: fr })}
+                    {d.montant && ` — ${d.montant}`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {d.statut === "signe" ? (
+                  <>
+                    <Badge variant="default" className="bg-green-600 text-xs">Signé</Badge>
+                    {d.devis_signe_url && (
+                      <a href={d.devis_signe_url} target="_blank" rel="noopener noreferrer">
+                        <Button variant="ghost" size="sm"><Download className="w-3 h-3" /></Button>
+                      </a>
+                    )}
+                  </>
+                ) : (
+                  <Badge variant="secondary" className="text-xs">En attente</Badge>
+                )}
+                <a href={d.fichier_url} target="_blank" rel="noopener noreferrer">
+                  <Button variant="ghost" size="sm" title="Voir le devis envoyé"><Eye className="w-3 h-3" /></Button>
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 interface DevisSectionProps {
   apprenant: any;
 }
@@ -649,7 +715,72 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
 
     setSendingEmail(true);
     try {
-      const bodyHtml = emailContent.body.replace(/\n/g, '<br/>');
+      // 1. Generate the DOCX
+      const tmpl = selectedTemplateConfig;
+      if (!tmpl) throw new Error("Template introuvable");
+
+      const response = await fetch(`/devis/${tmpl.file}`);
+      if (!response.ok) throw new Error("Impossible de charger le modèle DOCX");
+      const arrayBuffer = await response.arrayBuffer();
+
+      const sharedPayload = {
+        client_nom: `${apprenant.civilite || ''} ${apprenant.prenom || ''} ${apprenant.nom || ''}`.trim(),
+        client_adresse1: apprenant.adresse || '',
+        client_codep: apprenant.code_postal || '',
+        client_ville: apprenant.ville || '',
+        client_tel: apprenant.telephone || '',
+        client_mail: apprenant.email || '',
+        client_email: apprenant.email || '',
+        devis_date: formatDateForDevis(dateDevis),
+        devis_ligne_produit_date1: formatDateForDevis(apprenant.date_formation_catalogue || apprenant.date_debut_formation),
+        montant: String(selectedTemplatePrix),
+        formation: apprenant.formation_choisie || '',
+      };
+
+      const zip = new PizZip(arrayBuffer);
+      const doc = new Docxtemplater(zip, {
+        paragraphLoop: true,
+        linebreaks: true,
+        delimiters: { start: "{", end: "}" },
+        nullGetter() { return ""; },
+      });
+      doc.render(sharedPayload);
+      const outBuf = doc.getZip().generate({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+
+      // 2. Upload DOCX to storage
+      const fileName = `originaux/${apprenant.id}_${tmpl.id}_${format(new Date(), 'yyyyMMddHHmmss')}.docx`;
+      const { error: uploadErr } = await supabase.storage
+        .from("devis")
+        .upload(fileName, outBuf, { contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", upsert: true });
+      if (uploadErr) throw new Error("Erreur upload du devis: " + uploadErr.message);
+
+      const { data: urlData } = supabase.storage.from("devis").getPublicUrl(fileName);
+
+      // 3. Create devis_envois record with unique token
+      const { data: devisRecord, error: insertErr } = await supabase
+        .from("devis_envois")
+        .insert({
+          apprenant_id: apprenant.id,
+          modele: tmpl.label,
+          montant: `${selectedTemplatePrix} €`,
+          formation: apprenant.formation_choisie || tmpl.label,
+          fichier_url: urlData.publicUrl,
+          statut: "envoye",
+        })
+        .select("token")
+        .single();
+      if (insertErr) throw new Error("Erreur création devis: " + insertErr.message);
+
+      // 4. Build email with link to public page
+      const appUrl = window.location.origin;
+      const devisLink = `${appUrl}/devis?token=${devisRecord.token}`;
+
+      const bodyHtml = emailContent.body.replace(/\n/g, '<br/>') +
+        `<br/><br/>📝 <strong>Pour compléter et signer votre devis :</strong><br/>` +
+        `<a href="${devisLink}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;margin-top:8px;">` +
+        `Accéder à mon devis</a><br/><br/>` +
+        `<em style="font-size:12px;color:#888;">Ce lien vous permet de télécharger votre devis, le compléter, le signer et nous le renvoyer directement.</em>`;
+
       const { error } = await supabase.functions.invoke('sync-outlook-emails', {
         body: {
           action: 'send',
@@ -661,11 +792,11 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         }
       });
       if (error) throw error;
-      toast.success(`Email de devis envoyé à ${apprenant.email}`);
+      toast.success(`Email de devis envoyé à ${apprenant.email} avec lien de signature`);
       setShowEmailPreview(false);
     } catch (err: any) {
       console.error(err);
-      toast.error("Erreur lors de l'envoi de l'email");
+      toast.error("Erreur lors de l'envoi de l'email: " + (err.message || ""));
     } finally {
       setSendingEmail(false);
     }
@@ -1114,12 +1245,15 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                ⚠️ Le devis DOCX doit être joint manuellement via Outlook. Cet email sert d'accompagnement.
+                📝 L'apprenant recevra un lien pour télécharger, compléter, signer et renvoyer le devis en ligne.
               </p>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* ═══ SECTION 1b : HISTORIQUE DEVIS ENVOYÉS ═══ */}
+      <DevisHistorique apprenantId={apprenant.id} />
 
       {/* ═══ SECTION 2 : DEVIS PDF PERSONNALISÉ (existant) ═══ */}
       <Card>
