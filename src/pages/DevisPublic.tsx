@@ -318,26 +318,66 @@ export default function DevisPublic() {
     setHasSigned(false);
   };
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 10 * 1024 * 1024) { toast.error("Le fichier ne doit pas dépasser 10 Mo"); return; }
+  const handleSendDevis = async () => {
+    // Validation
+    if (!acceptCGV) { toast.error("Veuillez accepter les CGV"); return; }
+    if (!acceptEarlyStart) { toast.error("Veuillez cocher la clause de renonciation au délai de rétractation"); return; }
+    if (!hasSigned) { toast.error("Veuillez signer le devis"); return; }
+    if (!mentionAccord.toLowerCase().includes("lu et approuvé")) { toast.error("Veuillez écrire « Lu et approuvé, Bon pour accord »"); return; }
+
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append("token", token!);
-      formData.append("file", file);
-      const baseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const apiKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      const res = await fetch(`${baseUrl}/functions/v1/upload-devis-signe`, {
-        method: "POST", headers: { apikey: apiKey }, body: formData,
+      // Capture signature as image
+      const canvas = canvasRef.current;
+      if (!canvas) throw new Error("Signature introuvable");
+      const signatureBlob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Erreur signature")), "image/png");
       });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || "Erreur");
+
+      // Upload signature to storage
+      const fileName = `${devis.id}_signature_${Date.now()}.png`;
+      const { error: uploadErr } = await supabase.storage
+        .from("devis")
+        .upload(fileName, signatureBlob, { contentType: "image/png", upsert: true });
+      if (uploadErr) throw uploadErr;
+
+      const { data: urlData } = supabase.storage.from("devis").getPublicUrl(fileName);
+
+      // Build form data summary
+      const formSummary = {
+        date_permis: datePermis,
+        points_6: points6,
+        sans_permis: sansPermis,
+        refus_restitution: refusRestitution,
+        condamnation: condamnation,
+        casier_vierge: casierVierge,
+        formation_deja: formationDeja,
+        centre_formation: centreFormation,
+        mention_accord: mentionAccord,
+        accept_cgv: acceptCGV,
+        accept_early_start: acceptEarlyStart,
+        signed_at: new Date().toISOString(),
+      };
+
+      // Update devis_envois
+      const { error: updateErr } = await supabase
+        .from("devis_envois")
+        .update({
+          devis_signe_url: urlData.publicUrl,
+          signed_at: new Date().toISOString(),
+          statut: "signe",
+        })
+        .eq("token", token!);
+      if (updateErr) throw updateErr;
+
       setUploaded(true);
       toast.success("Devis signé envoyé avec succès !");
-    } catch (err: any) { console.error(err); toast.error(err.message || "Erreur lors de l'envoi"); }
-    finally { setUploading(false); }
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Erreur lors de l'envoi");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handlePrint = () => window.print();
