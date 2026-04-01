@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from 'react';
+import { createContext, useContext, useEffect, useState, useMemo, ReactNode, useCallback, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppVersionCheck } from '@/hooks/useAppVersionCheck';
@@ -61,7 +61,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const applySession = useCallback((nextSession: Session | null) => {
     setSession(prev => {
-      if (prev?.access_token === nextSession?.access_token) return prev;
+      // Skip update if it's just a token refresh for the same user.
+      // This prevents re-rendering the entire component tree (including active exams)
+      // every 10 minutes when useSessionKeepAlive refreshes the token.
+      if (prev && nextSession && prev.user?.id === nextSession.user?.id) return prev;
       return nextSession;
     });
 
@@ -157,8 +160,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAdmin = profile?.role === 'admin';
   useAppVersionCheck(!!user, isAdmin);
 
+  // Stabilize Provider value: only re-render consumers when user/loading/profile
+  // actually change — NOT when session token refreshes (which happens every 10min).
+  // This prevents exam pages from being remounted during token refresh.
+  const contextValue = useMemo(
+    () => ({ user, session, loading, profile, signOut }),
+    [user, session, loading, profile, signOut],
+  );
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, profile, signOut }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

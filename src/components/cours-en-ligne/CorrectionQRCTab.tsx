@@ -461,13 +461,11 @@ const CorrectionQRCTab = () => {
     return true;
   });
 
-  // Sort by exam number (EB1, EB2, ...), then by matiere, then by question
+  // Sort by most recent first (completedAt desc), then by exam number, matiere, question
   const sortedFiltered = [...filtered].sort((a, b) => {
-    if (filter === "done") {
-      const dateA = a.correctedAt ? new Date(a.correctedAt).getTime() : 0;
-      const dateB = b.correctedAt ? new Date(b.correctedAt).getTime() : 0;
-      return dateB - dateA;
-    }
+    const dateA = new Date(a.completedAt).getTime() || 0;
+    const dateB = new Date(b.completedAt).getTime() || 0;
+    if (dateA !== dateB) return dateB - dateA;
     const numA = parseInt((a.quizTitre.match(/N°(\d+)/)?.[1]) || "0", 10);
     const numB = parseInt((b.quizTitre.match(/N°(\d+)/)?.[1]) || "0", 10);
     if (numA !== numB) return numA - numB;
