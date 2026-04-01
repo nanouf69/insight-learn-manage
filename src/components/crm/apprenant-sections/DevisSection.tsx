@@ -17,6 +17,72 @@ import { saveAs } from "file-saver";
 import Docxtemplater from "docxtemplater";
 import PizZip from "pizzip";
 
+function DevisHistorique({ apprenantId }: { apprenantId: string }) {
+  const [devisEnvoyes, setDevisEnvoyes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase
+        .from("devis_envois")
+        .select("*")
+        .eq("apprenant_id", apprenantId)
+        .order("created_at", { ascending: false });
+      setDevisEnvoyes(data || []);
+      setLoading(false);
+    };
+    load();
+  }, [apprenantId]);
+
+  if (loading || devisEnvoyes.length === 0) return null;
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <Clock className="w-4 h-4 text-muted-foreground" />
+          Devis envoyés ({devisEnvoyes.length})
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2">
+          {devisEnvoyes.map((d) => (
+            <div key={d.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 text-sm">
+              <div className="flex items-center gap-3">
+                <FileText className="w-4 h-4 text-muted-foreground" />
+                <div>
+                  <p className="font-medium">{d.modele}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {format(new Date(d.created_at), "dd/MM/yyyy à HH:mm", { locale: fr })}
+                    {d.montant && ` — ${d.montant}`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {d.statut === "signe" ? (
+                  <>
+                    <Badge variant="default" className="bg-green-600 text-xs">Signé</Badge>
+                    {d.devis_signe_url && (
+                      <a href={d.devis_signe_url} target="_blank" rel="noopener noreferrer">
+                        <Button variant="ghost" size="sm"><Download className="w-3 h-3" /></Button>
+                      </a>
+                    )}
+                  </>
+                ) : (
+                  <Badge variant="secondary" className="text-xs">En attente</Badge>
+                )}
+                <a href={d.fichier_url} target="_blank" rel="noopener noreferrer">
+                  <Button variant="ghost" size="sm" title="Voir le devis envoyé"><Eye className="w-3 h-3" /></Button>
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 interface DevisSectionProps {
   apprenant: any;
 }
