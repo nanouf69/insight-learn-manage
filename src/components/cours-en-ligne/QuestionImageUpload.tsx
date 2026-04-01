@@ -29,7 +29,7 @@ export function QuestionImageUpload({
 
     const validation = validateQuestionImageFile(file);
     if (!validation.valid) {
-      toast.error(validation.error);
+      toast.error((validation as { valid: false; error: string }).error);
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
