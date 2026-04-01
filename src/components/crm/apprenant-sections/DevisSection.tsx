@@ -598,28 +598,15 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         formation: apprenant.formation_choisie || '',
       };
 
-      // Try ${...} delimiters first (most templates), then {…} fallback
-      let outBuf: Blob | null = null;
-      for (const delims of [
-        { start: "${", end: "}" },
-        { start: "{", end: "}" },
-      ]) {
-        try {
-          const zip = new PizZip(arrayBuffer);
-          const doc = new Docxtemplater(zip, {
-            paragraphLoop: true,
-            linebreaks: true,
-            delimiters: delims,
-            nullGetter() { return ""; },
-          });
-          doc.render(sharedPayload);
-          outBuf = doc.getZip().generate({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
-          break;
-        } catch (e) {
-          console.warn(`Docxtemplater with delimiters ${delims.start}…${delims.end} failed:`, e);
-        }
-      }
-      if (!outBuf) throw new Error("Aucun format de template reconnu");
+      const zip = new PizZip(arrayBuffer);
+      const doc = new Docxtemplater(zip, {
+        paragraphLoop: true,
+        linebreaks: true,
+        delimiters: { start: "{", end: "}" },
+        nullGetter() { return ""; },
+      });
+      doc.render(sharedPayload);
+      const outBuf = doc.getZip().generate({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
 
       const fileName = `Devis_${apprenant.prenom}_${apprenant.nom}_${tmpl.id}_${format(new Date(), 'ddMMyyyy')}.docx`;
       saveAs(outBuf, fileName);
