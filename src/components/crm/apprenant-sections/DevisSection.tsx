@@ -649,7 +649,72 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
 
     setSendingEmail(true);
     try {
-      const bodyHtml = emailContent.body.replace(/\n/g, '<br/>');
+      // 1. Generate the DOCX
+      const tmpl = selectedTemplateConfig;
+      if (!tmpl) throw new Error("Template introuvable");
+
+      const response = await fetch(`/devis/${tmpl.file}`);
+      if (!response.ok) throw new Error("Impossible de charger le modèle DOCX");
+      const arrayBuffer = await response.arrayBuffer();
+
+      const sharedPayload = {
+        client_nom: `${apprenant.civilite || ''} ${apprenant.prenom || ''} ${apprenant.nom || ''}`.trim(),
+        client_adresse1: apprenant.adresse || '',
+        client_codep: apprenant.code_postal || '',
+        client_ville: apprenant.ville || '',
+        client_tel: apprenant.telephone || '',
+        client_mail: apprenant.email || '',
+        client_email: apprenant.email || '',
+        devis_date: formatDateForDevis(dateDevis),
+        devis_ligne_produit_date1: formatDateForDevis(apprenant.date_formation_catalogue || apprenant.date_debut_formation),
+        montant: String(selectedTemplatePrix),
+        formation: apprenant.formation_choisie || '',
+      };
+
+      const zip = new PizZip(arrayBuffer);
+      const doc = new Docxtemplater(zip, {
+        paragraphLoop: true,
+        linebreaks: true,
+        delimiters: { start: "{", end: "}" },
+        nullGetter() { return ""; },
+      });
+      doc.render(sharedPayload);
+      const outBuf = doc.getZip().generate({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+
+      // 2. Upload DOCX to storage
+      const fileName = `originaux/${apprenant.id}_${tmpl.id}_${format(new Date(), 'yyyyMMddHHmmss')}.docx`;
+      const { error: uploadErr } = await supabase.storage
+        .from("devis")
+        .upload(fileName, outBuf, { contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", upsert: true });
+      if (uploadErr) throw new Error("Erreur upload du devis: " + uploadErr.message);
+
+      const { data: urlData } = supabase.storage.from("devis").getPublicUrl(fileName);
+
+      // 3. Create devis_envois record with unique token
+      const { data: devisRecord, error: insertErr } = await supabase
+        .from("devis_envois")
+        .insert({
+          apprenant_id: apprenant.id,
+          modele: tmpl.label,
+          montant: `${selectedTemplatePrix} €`,
+          formation: apprenant.formation_choisie || tmpl.label,
+          fichier_url: urlData.publicUrl,
+          statut: "envoye",
+        })
+        .select("token")
+        .single();
+      if (insertErr) throw new Error("Erreur création devis: " + insertErr.message);
+
+      // 4. Build email with link to public page
+      const appUrl = window.location.origin;
+      const devisLink = `${appUrl}/devis?token=${devisRecord.token}`;
+
+      const bodyHtml = emailContent.body.replace(/\n/g, '<br/>') +
+        `<br/><br/>📝 <strong>Pour compléter et signer votre devis :</strong><br/>` +
+        `<a href="${devisLink}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;margin-top:8px;">` +
+        `Accéder à mon devis</a><br/><br/>` +
+        `<em style="font-size:12px;color:#888;">Ce lien vous permet de télécharger votre devis, le compléter, le signer et nous le renvoyer directement.</em>`;
+
       const { error } = await supabase.functions.invoke('sync-outlook-emails', {
         body: {
           action: 'send',
@@ -661,11 +726,11 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         }
       });
       if (error) throw error;
-      toast.success(`Email de devis envoyé à ${apprenant.email}`);
+      toast.success(`Email de devis envoyé à ${apprenant.email} avec lien de signature`);
       setShowEmailPreview(false);
     } catch (err: any) {
       console.error(err);
-      toast.error("Erreur lors de l'envoi de l'email");
+      toast.error("Erreur lors de l'envoi de l'email: " + (err.message || ""));
     } finally {
       setSendingEmail(false);
     }
