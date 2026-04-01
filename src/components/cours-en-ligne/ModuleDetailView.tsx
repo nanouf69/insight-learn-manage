@@ -2047,42 +2047,34 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const mergeSourceExercices = (loadedExercices: ExerciceItem[], sourceExercices: ExerciceItem[]): ExerciceItem[] => {
     const loadedExerciseMap = new Map(loadedExercices.map((exo) => [Number(exo.id), exo]));
 
-    const mergedExercices = sourceExercices.map((sourceExo) => {
+    return sourceExercices.map((sourceExo) => {
       const loadedExo = loadedExerciseMap.get(Number(sourceExo.id));
       if (!loadedExo) return sourceExo;
 
       if (!sourceExo.questions || !loadedExo.questions) {
-        return { ...sourceExo, ...loadedExo };
+        return { ...loadedExo, ...sourceExo };
       }
 
       const loadedQuestionMap = new Map(loadedExo.questions.map((q) => [Number(q.id), q]));
-      const sourceQuestionIds = new Set(sourceExo.questions.map((q) => Number(q.id)));
 
       const mergedQuestions = sourceExo.questions.map((sourceQ) => {
         const loadedQ = loadedQuestionMap.get(Number(sourceQ.id));
         if (!loadedQ) return sourceQ;
 
         return {
-          ...sourceQ,
           ...loadedQ,
-          image: loadedQ.image ?? sourceQ.image,
-          choix: Array.isArray(loadedQ.choix) && loadedQ.choix.length > 0 ? loadedQ.choix : sourceQ.choix,
+          ...sourceQ,
+          image: sourceQ.image ?? loadedQ.image,
+          choix: Array.isArray(sourceQ.choix) && sourceQ.choix.length > 0 ? sourceQ.choix : loadedQ.choix,
         };
       });
 
-      const extraQuestions = loadedExo.questions.filter((q) => !sourceQuestionIds.has(Number(q.id)));
-
       return {
-        ...sourceExo,
         ...loadedExo,
-        questions: [...mergedQuestions, ...extraQuestions],
+        ...sourceExo,
+        questions: mergedQuestions,
       };
     });
-
-    const sourceExerciseIds = new Set(sourceExercices.map((exo) => Number(exo.id)));
-    const extraExercises = loadedExercices.filter((exo) => !sourceExerciseIds.has(Number(exo.id)));
-
-    return [...mergedExercices, ...extraExercises];
   };
 
   // Load trainer DB overrides and apply to student view
@@ -2350,7 +2342,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         if (hasValidModuleData) {
           console.log("[Realtime] Refetched module data from DB for module", module.id);
-          setModuleData(md);
+          const sourceModuleData = getInitialModuleData(module, apprenantType, studentOnly);
+          setModuleData({
+            ...md,
+            exercices: mergeSourceExercices(md.exercices, sourceModuleData.exercices),
+          });
           setDeletedCours(Array.isArray(latest.deleted_cours) ? (latest.deleted_cours as unknown as ContentItem[]) : []);
           setDeletedExercices(Array.isArray(latest.deleted_exercices) ? (latest.deleted_exercices as unknown as ExerciceItem[]) : []);
           setLoadedModuleEditorState(true);
