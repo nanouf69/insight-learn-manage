@@ -21,7 +21,13 @@ interface UsePresenceCheckParams {
   connexionId: string | null;
   enabled: boolean;
   onForceDisconnect: () => void;
-  /** When true, all automatic heartbeat polling and activity checks are paused (e.g. during an exam) */
+  /**
+   * When true, heartbeats continue (to keep last_seen_at fresh for RLS)
+   * but use "heartbeat_exam" event so the server skips presence checks.
+   * On transition from true→false, a "confirm_presence" is sent automatically.
+   */
+  isInExam?: boolean;
+  /** @deprecated Use isInExam instead */
   pauseDuringExam?: boolean;
 }
 
@@ -31,8 +37,12 @@ export function usePresenceCheck({
   connexionId,
   enabled,
   onForceDisconnect,
-  pauseDuringExam = false,
+  isInExam: isInExamProp,
+  pauseDuringExam,
 }: UsePresenceCheckParams) {
+  // Support both isInExam and legacy pauseDuringExam
+  const isInExam = isInExamProp ?? pauseDuringExam ?? false;
+
   const [showModal, setShowModal] = useState(false);
   const [countdownSeconds, setCountdownSeconds] = useState(600);
   const [disconnectReason, setDisconnectReason] = useState<string | null>(null);
@@ -43,6 +53,7 @@ export function usePresenceCheck({
   const endingRef = useRef(false);
   const promptLoggedRef = useRef(false);
   const lastActionCheckAtRef = useRef(0);
+  const wasInExamRef = useRef(isInExam);
 
   const clearTimers = useCallback(() => {
     if (pollRef.current) clearInterval(pollRef.current);
@@ -52,7 +63,7 @@ export function usePresenceCheck({
   }, []);
 
   const runServerCheck = useCallback(
-    async (event: "heartbeat" | "action" | "confirm_presence" = "heartbeat"): Promise<ServerSessionCheck | null> => {
+    async (event: "heartbeat" | "heartbeat_exam" | "action" | "confirm_presence" = "heartbeat"): Promise<ServerSessionCheck | null> => {
       if (!enabled || !apprenantId || !userId || !connexionId) return null;
 
       const { data, error } = await supabase.rpc("check_apprenant_session" as any, {
@@ -93,11 +104,14 @@ export function usePresenceCheck({
   );
 
   const handleServerValidation = useCallback(
-    async (event: "heartbeat" | "action" | "confirm_presence" = "heartbeat") => {
+    async (event: "heartbeat" | "heartbeat_exam" | "action" | "confirm_presence" = "heartbeat") => {
       if (endingRef.current) return;
 
       const validation = await runServerCheck(event);
       if (!validation) return;
+
+      // During exams: ignore disconnect/prompt from server (heartbeat_exam keeps session alive)
+      if (isInExam) return;
 
       if (!validation.is_valid) {
         await endSession(validation.disconnect_reason || "max_duration");
@@ -133,7 +147,7 @@ export function usePresenceCheck({
         promptLoggedRef.current = false;
       }
     },
-    [apprenantId, connexionId, endSession, runServerCheck, userId],
+    [apprenantId, connexionId, endSession, isInExam, runServerCheck, userId],
   );
 
   const confirmPresence = useCallback(async () => {
@@ -151,32 +165,54 @@ export function usePresenceCheck({
     lastActionCheckAtRef.current = Date.now();
   }, [endSession, runServerCheck]);
 
+  // Main heartbeat polling — always runs (even during exams, to keep last_seen_at fresh)
   useEffect(() => {
-    if (!enabled || !apprenantId || !userId || !connexionId || pauseDuringExam) {
+    if (!enabled || !apprenantId || !userId || !connexionId) {
       clearTimers();
-      if (!pauseDuringExam) {
-        endingRef.current = false;
-        promptLoggedRef.current = false;
-        setShowModal(false);
-        modalDeadlineRef.current = null;
-      }
+      endingRef.current = false;
+      promptLoggedRef.current = false;
+      setShowModal(false);
+      modalDeadlineRef.current = null;
       return;
     }
 
     endingRef.current = false;
-    void handleServerValidation("heartbeat");
 
+    // Detect exam→non-exam transition: send confirm_presence to reset rolling window
+    const resumingFromExam = wasInExamRef.current && !isInExam;
+    wasInExamRef.current = isInExam;
+
+    if (resumingFromExam) {
+      // Reset prompt state since we're coming back from exam
+      promptLoggedRef.current = false;
+      setShowModal(false);
+      modalDeadlineRef.current = null;
+      void handleServerValidation("confirm_presence");
+    } else {
+      const eventType = isInExam ? "heartbeat_exam" : "heartbeat";
+      void handleServerValidation(eventType);
+    }
+
+    // During exam: clear modal (exam UI should not show presence prompt)
+    if (isInExam) {
+      setShowModal(false);
+      modalDeadlineRef.current = null;
+    }
+
+    // Continue polling heartbeats (with exam-aware event type)
     pollRef.current = setInterval(() => {
-      void handleServerValidation("heartbeat");
+      const eventType = isInExam ? "heartbeat_exam" : "heartbeat";
+      void handleServerValidation(eventType);
     }, POLL_INTERVAL_MS);
 
     return () => {
       clearTimers();
     };
-  }, [enabled, apprenantId, userId, connexionId, clearTimers, handleServerValidation, pauseDuringExam]);
+  }, [enabled, apprenantId, userId, connexionId, clearTimers, handleServerValidation, isInExam]);
 
+  // Activity event listeners — only active when NOT in exam
   useEffect(() => {
-    if (!enabled || !apprenantId || !userId || !connexionId || pauseDuringExam) return;
+    if (!enabled || !apprenantId || !userId || !connexionId || isInExam) return;
 
     const runHeartbeatCheck = () => {
       void handleServerValidation("heartbeat");
@@ -208,8 +244,9 @@ export function usePresenceCheck({
       document.removeEventListener("visibilitychange", onVisibilityChange);
       activityEvents.forEach((eventName) => window.removeEventListener(eventName, runActionCheck));
     };
-  }, [enabled, apprenantId, userId, connexionId, handleServerValidation, pauseDuringExam]);
+  }, [enabled, apprenantId, userId, connexionId, handleServerValidation, isInExam]);
 
+  // Countdown timer for presence prompt
   useEffect(() => {
     if (!showModal || !modalDeadlineRef.current) {
       if (countdownRef.current) clearInterval(countdownRef.current);

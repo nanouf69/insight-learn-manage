@@ -651,7 +651,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     connexionId,
     enabled: isStudentSession,
     onForceDisconnect: handleForceDisconnect,
-    pauseDuringExam: isInExam,
+    isInExam,
   });
 
   // Client-side inactivity detection: 30min no mouse → modal → 5min auto-disconnect
