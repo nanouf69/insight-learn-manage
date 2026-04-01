@@ -18,7 +18,6 @@ export const SECURITE_ROUTIERE_EXERCICES: {
     titre: "Sécurité Routière — Partie 1 : Signalisation, Marquages & Priorités",
     sousTitre: "Panneaux de signalisation, marquages au sol, voies spéciales, stationnement, priorités, feux, éclairage",
     questions: [
-      // SECTION 1 — PANNEAUX DE SIGNALISATION
       { id: 1, enonce: "Ce panneau m'annonce :", image: "/cours/exercices/securite/image1.png", choix: [
         { lettre: "A", texte: "Stop", correct: true },
         { lettre: "B", texte: "Cédez le passage" },
@@ -203,8 +202,6 @@ export const SECURITE_ROUTIERE_EXERCICES: {
         { lettre: "B", texte: "Sens unique" },
         { lettre: "C", texte: "Stop" },
       ]},
-
-      // SECTION 2 — PANNEAUX AVANCÉS ET INTERDICTIONS
       { id: 38, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image38.png", choix: [
         { lettre: "A", texte: "Lieu aménagé pour le stationnement gratuit" },
         { lettre: "B", texte: "Passage pour piétons" },
@@ -231,16 +228,16 @@ export const SECURITE_ROUTIERE_EXERCICES: {
         { lettre: "C", texte: "Débouché sur un quai ou une berge", correct: true },
       ]},
       { id: 43, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image43.png", choix: [
-        { lettre: "A", texte: "Interdiction aux véhicules > 3,5t de dépasser" },
-        { lettre: "B", texte: "Interdiction aux véhicules < 3,5t de dépasser" },
+        { lettre: "A", texte: "Interdiction aux véhicules > 3.5t de dépasser" },
+        { lettre: "B", texte: "Interdiction aux véhicules < 3.5t de dépasser" },
         { lettre: "C", texte: "Interdiction à tous les véhicules de dépasser", correct: true },
       ]},
       { id: 44, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image44.png", choix: [
-        { lettre: "A", texte: "Accès interdit aux véhicules de matières dangereuses", correct: true },
-        { lettre: "B", texte: "Accès interdit aux véhicules de marchandises" },
+        { lettre: "A", texte: "Accès interdit aux véhicules de matières dangereuses" },
+        { lettre: "B", texte: "Accès interdit aux véhicules de marchandises", correct: true },
         { lettre: "C", texte: "Accès interdit aux véhicules de TC" },
       ]},
-      { id: 45, enonce: "Ce panneau (2,5t) signifie :", image: "/cours/exercices/securite/image45.png", choix: [
+      { id: 45, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image45.png", choix: [
         { lettre: "A", texte: "Accès interdit aux véhicules pesant sur un essieu plus que le nombre indiqué", correct: true },
         { lettre: "B", texte: "Accès réservé aux véhicules pesant sur un essieu plus que le nombre indiqué" },
         { lettre: "C", texte: "Accès interdit aux véhicules pesant plus que le nombre indiqué" },
@@ -298,8 +295,6 @@ export const SECURITE_ROUTIERE_EXERCICES: {
         { lettre: "C", texte: "Les motocyclistes" },
         { lettre: "D", texte: "Les poids-lourds" },
       ]},
-
-      // SECTION 3 — MARQUAGES AU SOL, VOIES SPÉCIALES ET PRIORITÉS
       { id: 57, enonce: "Ce panneau m'interdit l'accès si je conduis une fourgonnette (< 3,5 t) :", image: "/cours/exercices/securite/image57.png", choix: [
         { lettre: "A", texte: "Oui" },
         { lettre: "B", texte: "Non", correct: true },
@@ -329,7 +324,7 @@ export const SECURITE_ROUTIERE_EXERCICES: {
       ]},
       { id: 63, enonce: "Ce panneau annonce un risque temporaire de verglas :", image: "/cours/exercices/securite/image62.png", choix: [
         { lettre: "A", texte: "Oui", correct: true },
-        { lettre: "B", texte: "Faux" },
+        { lettre: "B", texte: "Non" },
       ]},
       { id: 64, enonce: "Que signifie ce panneau (voie verte) ?", image: "/cours/exercices/securite/image63.png", choix: [
         { lettre: "A", texte: "Voie réservée à la circulation des véhicules non motorisés, piétons et cavaliers", correct: true },
@@ -374,8 +369,6 @@ export const SECURITE_ROUTIERE_EXERCICES: {
         { lettre: "A", texte: "Vrai", correct: true },
         { lettre: "B", texte: "Faux" },
       ]},
-
-      // SECTION 4 — FEUX ET ÉCLAIRAGE
       { id: 74, enonce: "Les feux de positions arrière doivent être visibles à :", image: "/cours/exercices/securite/image72.png", choix: [
         { lettre: "A", texte: "100 m" },
         { lettre: "B", texte: "150 m", correct: true },
