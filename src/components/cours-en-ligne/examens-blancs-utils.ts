@@ -555,6 +555,35 @@ export function isBilanAnswerCorrectBroken(
 }
 
 // ────────────────────────────────────────────────────────────
+// Shared matière edit propagation
+// ────────────────────────────────────────────────────────────
+
+/**
+ * When admin edits a matière, propagate the change to ALL exams
+ * that share the same matière ID. This replaces the old VTC→TAXI
+ * sync approach that could overwrite saved data.
+ *
+ * Returns a new array of exams with the updated matière applied
+ * to every exam that has a matière with matching ID.
+ */
+export function propagateSharedMatiereEdit(
+  examens: ExamenBlanc[],
+  matiereId: string,
+  updatedMatiere: Matiere,
+): ExamenBlanc[] {
+  return examens.map((ex) => {
+    const hasMatiere = ex.matieres.some((m) => m.id === matiereId);
+    if (!hasMatiere) return ex;
+    return {
+      ...ex,
+      matieres: ex.matieres.map((m) =>
+        m.id === matiereId ? { ...m, ...updatedMatiere } : m,
+      ),
+    };
+  });
+}
+
+// ────────────────────────────────────────────────────────────
 // Question merge — admin deletions respected
 // ────────────────────────────────────────────────────────────
 
