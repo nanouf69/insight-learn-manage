@@ -6,6 +6,111 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Upload, CheckCircle, AlertCircle, FileText, Loader2, Printer } from "lucide-react";
 import { toast } from "sonner";
 
+/* ─── DEVIS TYPE CONFIG ─── */
+interface DevisTypeConfig {
+  description: string[];
+  duree: string;
+  dureePlateforme?: string;
+  agrement: string;
+  formationDejaLabel: string;
+}
+
+const DEVIS_TYPE_CONFIGS: Record<string, DevisTypeConfig> = {
+  "vtc_complet": {
+    description: ["Formation VTC", "Formation théorique et pratique", "Mise à disposition du véhicule pour l'examen sur Lyon", "Frais d'examen de la chambre des métiers et de l'artisanat"],
+    duree: "Nombre d'heures : 66h",
+    agrement: "n° VTC16-15",
+    formationDejaLabel: "Formation VTC déjà réalisée ?",
+  },
+  "vtc_elearning": {
+    description: ["Formation VTC E-learning", "Frais d'examen de la chambre des métiers et de l'artisanat", "Formation pratique VTC 3h solo ou 6h en groupe", "Mise à disposition du véhicule pour l'examen"],
+    duree: "",
+    dureePlateforme: "3 mois",
+    agrement: "n° VTC16-05",
+    formationDejaLabel: "Formation VTC E-learning déjà réalisée ?",
+  },
+  "taxi_elearning": {
+    description: ["TAXI", "Formation TAXI E-learning", "Frais d'examen à la Chambre des métiers et de l'artisanat", "Mise à disposition du véhicule pour l'examen"],
+    duree: "Nombre d'heures : 96h",
+    dureePlateforme: "3 mois",
+    agrement: "n°69-18-001",
+    formationDejaLabel: "Formation TAXI E-learning déjà réalisée ?",
+  },
+  "taxi_pratique": {
+    description: ["Formation pratique TAXI"],
+    duree: "6 heures en groupe ou 3 heures solo",
+    agrement: "n°69-18-001",
+    formationDejaLabel: "Formation pratique TAXI déjà réalisée ?",
+  },
+  "ta_elearning": {
+    description: ["Formation TA (passerelle VTC→TAXI) E-learning", "Frais d'examen à la Chambre des métiers et de l'artisanat", "Mise à disposition du véhicule pour l'examen"],
+    duree: "",
+    dureePlateforme: "3 mois",
+    agrement: "n°69-18-001",
+    formationDejaLabel: "Formation TA déjà réalisée ?",
+  },
+  "va_elearning": {
+    description: ["Formation VA (passerelle TAXI→VTC) E-learning", "Frais d'examen de la chambre des métiers et de l'artisanat", "Mise à disposition du véhicule pour l'examen"],
+    duree: "",
+    dureePlateforme: "3 mois",
+    agrement: "n° VTC16-05",
+    formationDejaLabel: "Formation VA déjà réalisée ?",
+  },
+  "fc_vtc": {
+    description: ["Formation continue VTC"],
+    duree: "14 heures",
+    agrement: "n° VTC16-15",
+    formationDejaLabel: "Formation continue VTC déjà réalisée ?",
+  },
+  "fc_taxi": {
+    description: ["Formation continue TAXI"],
+    duree: "14 heures",
+    agrement: "n°69-18-001",
+    formationDejaLabel: "Formation continue TAXI déjà réalisée ?",
+  },
+  "vtc_sans_frais_examen": {
+    description: ["Formation VTC", "Formation théorique et pratique", "Mise à disposition du véhicule pour l'examen sur Lyon"],
+    duree: "Nombre d'heures : 66h",
+    agrement: "n° VTC16-15",
+    formationDejaLabel: "Formation VTC déjà réalisée ?",
+  },
+  "vtc_soir_avec_examen": {
+    description: ["Formation VTC soir", "Formation théorique et pratique", "Mise à disposition du véhicule pour l'examen sur Lyon", "Frais d'examen de la chambre des métiers et de l'artisanat"],
+    duree: "Nombre d'heures : 66h",
+    agrement: "n° VTC16-15",
+    formationDejaLabel: "Formation VTC déjà réalisée ?",
+  },
+  "vtc_soir_sans_examen": {
+    description: ["Formation VTC soir", "Formation théorique et pratique", "Mise à disposition du véhicule pour l'examen sur Lyon"],
+    duree: "Nombre d'heures : 66h",
+    agrement: "n° VTC16-15",
+    formationDejaLabel: "Formation VTC déjà réalisée ?",
+  },
+};
+
+/** Detect config from formation/modele text */
+function detectConfig(formation: string): DevisTypeConfig {
+  const f = formation.toLowerCase();
+  if (f.includes("pratique taxi") || f.includes("taxi pratique")) return DEVIS_TYPE_CONFIGS["taxi_pratique"];
+  if (f.includes("taxi e-learning") || f.includes("taxi elearning")) return DEVIS_TYPE_CONFIGS["taxi_elearning"];
+  if (f.includes("ta ") && f.includes("passerelle")) return DEVIS_TYPE_CONFIGS["ta_elearning"];
+  if (f.includes("va ") && (f.includes("passerelle") || f.includes("chauffeurs taxi"))) return DEVIS_TYPE_CONFIGS["va_elearning"];
+  if (f.includes("continue vtc")) return DEVIS_TYPE_CONFIGS["fc_vtc"];
+  if (f.includes("continue taxi")) return DEVIS_TYPE_CONFIGS["fc_taxi"];
+  if (f.includes("vtc soir") && f.includes("sans")) return DEVIS_TYPE_CONFIGS["vtc_soir_sans_examen"];
+  if (f.includes("vtc soir")) return DEVIS_TYPE_CONFIGS["vtc_soir_avec_examen"];
+  if (f.includes("vtc") && f.includes("sans frais")) return DEVIS_TYPE_CONFIGS["vtc_sans_frais_examen"];
+  if (f.includes("vtc e-learning") || f.includes("vtc elearning")) return DEVIS_TYPE_CONFIGS["vtc_elearning"];
+  if (f.includes("vtc")) return DEVIS_TYPE_CONFIGS["vtc_complet"];
+  // Default fallback
+  return {
+    description: [formation],
+    duree: "",
+    agrement: "n°69-18-001",
+    formationDejaLabel: "Formation déjà réalisée ?",
+  };
+}
+
 /* ─── CGV TEXT (version complète) ─── */
 const CGV_SECTIONS = [
   { title: "ARTICLE 1 — OBJET", text: "Les presentes conditions generales de vente s'appliquent a l'ensemble des prestations de formation engagees par FTRANSPORT pour le compte d'un Client. Le fait de s'inscrire ou de passer commande implique l'adhesion entiere et sans reserve du Client aux presentes conditions generales de vente." },
@@ -182,8 +287,7 @@ export default function DevisPublic() {
   const today = new Date().toLocaleDateString("fr-FR");
   const nom = `${apprenant?.civilite || ""} ${apprenant?.prenom || ""} ${apprenant?.nom || ""}`.trim();
   const formationLabel = devis?.formation || devis?.modele || "";
-  const isTaxiPratique = formationLabel.toLowerCase().includes("pratique taxi");
-  const dureeFormation = isTaxiPratique ? "6 heures en groupe ou 3 heures solo" : "";
+  const typeConfig = detectConfig(formationLabel);
 
   /* ═══ YES/NO checkbox helper ═══ */
   const YesNo = ({ label, value, onChange }: { label: string; value: boolean | null; onChange: (v: boolean) => void }) => (
@@ -252,41 +356,53 @@ export default function DevisPublic() {
             <table className="w-full border-collapse border text-sm">
               <thead>
                 <tr className="bg-blue-800 text-white">
-                  <th className="border p-2 text-left w-1/4">Catégorie</th>
                   <th className="border p-2 text-left w-2/4">Description</th>
                   <th className="border p-2 text-center w-1/8">Quantité</th>
-                  <th className="border p-2 text-right w-1/8">Montant HT</th>
+                  <th className="border p-2 text-right w-1/8">Montant en Euros en HT</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td className="border p-2 font-medium">Formation et prestations</td>
-                  <td className="border p-2">{formationLabel}</td>
+                  <td className="border p-2">
+                    <span className="font-medium">Formation et prestations</span><br />
+                    {typeConfig.description.map((line, i) => (
+                      <span key={i}>{line}{i < typeConfig.description.length - 1 && <br />}</span>
+                    ))}
+                  </td>
                   <td className="border p-2 text-center">1</td>
                   <td className="border p-2 text-right font-bold">{devis.montant}</td>
+                </tr>
+                {typeConfig.duree && (
+                  <tr>
+                    <td className="border p-2"><strong>Durée</strong></td>
+                    <td className="border p-2 text-center" colSpan={2}>{typeConfig.duree}</td>
+                  </tr>
+                )}
+                {typeConfig.dureePlateforme && (
+                  <tr>
+                    <td className="border p-2"><strong>Durée de mise à disposition de la plateforme</strong> www.gestion.ftransport.fr/cours</td>
+                    <td className="border p-2 text-center" colSpan={2}>{typeConfig.dureePlateforme}</td>
+                  </tr>
+                )}
+                <tr>
+                  <td className="border p-2"><strong>Lieu</strong></td>
+                  <td className="border p-2 text-center" colSpan={2}>LYON (69)</td>
+                </tr>
+                <tr>
+                  <td className="border p-2"><strong>Dates</strong></td>
+                  <td className="border p-2" colSpan={2}><input type="text" className="border-b border-gray-400 px-1 w-full text-sm" placeholder="À compléter" /></td>
+                </tr>
+                <tr>
+                  <td className="border p-2"><strong>Nom et Prénom du stagiaire</strong></td>
+                  <td className="border p-2" colSpan={2}>{nom || <input type="text" className="border-b border-gray-400 px-1 w-full text-sm" placeholder="À compléter" />}</td>
                 </tr>
               </tbody>
             </table>
 
-            {dureeFormation && (
-              <p className="text-sm">
-                <strong>Durée :</strong> {dureeFormation}
-              </p>
-            )}
-
             <p className="text-xs text-gray-500">
-              Centre de formation agréé par la préfecture : n°69-18-001 — NDA : 84 69 15114 69 — SIRET : 823 461 561 000 18.
+              Centre de formation agréé par la préfecture : {typeConfig.agrement} — NDA : 84 69 15114 69 — SIRET : 823 461 561 000 18.
               Certifié Qualiopi. Ftransport n'est pas assujetti à la TVA. Les prix sont nets de taxe.
             </p>
-
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div><strong>Lieu :</strong> LYON (69)</div>
-              <div><strong>Dates :</strong> <input type="text" className="border-b border-gray-400 px-1 w-40 text-sm" placeholder="À compléter" /></div>
-            </div>
-
-            <div className="text-sm">
-              <strong>Nom et Prénom du stagiaire :</strong> {nom || <input type="text" className="border-b border-gray-400 px-1 w-60 text-sm" placeholder="À compléter" />}
-            </div>
 
             {/* Documents justificatifs */}
             <div className="border-l-4 border-blue-600 pl-4 space-y-2 text-sm">
@@ -355,7 +471,7 @@ export default function DevisPublic() {
               <YesNo label="Avez-vous été condamné pour refus de restitution du permis de conduire malgré l'annulation ou l'invalidation de votre permis de conduire ou l'interdiction de l'obtenir ?" value={refusRestitution} onChange={setRefusRestitution} />
               <YesNo label="Avez-vous déjà été condamné d'au moins 6 mois d'emprisonnement pour vol, escroquerie, abus de confiance, atteinte volontaire à l'intégrité de la personne, agression sexuelle ou infraction à la législation sur les stupéfiants ?" value={condamnation} onChange={setCondamnation} />
               <YesNo label="Avez-vous le casier judiciaire B2 vierge ?" value={casierVierge} onChange={setCasierVierge} />
-              <YesNo label={isTaxiPratique ? "Formation pratique TAXI déjà réalisée ?" : "Formation pratique déjà réalisée ?"} value={formationDeja} onChange={setFormationDeja} />
+              <YesNo label={typeConfig.formationDejaLabel} value={formationDeja} onChange={setFormationDeja} />
             </div>
 
             <div className="text-sm">
