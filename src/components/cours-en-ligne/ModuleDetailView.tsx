@@ -2206,7 +2206,19 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             );
 
           if (hasValidModuleData) {
-            setModuleData(md);
+            // Merge source images into DB-loaded questions (images may have been added after DB save)
+            const mergedExercices = md.exercices.map((dbExo: any) => {
+              const sourceExo = initialData.exercices.find((s: any) => Number(s.id) === Number(dbExo.id));
+              if (!sourceExo?.questions || !dbExo.questions) return dbExo;
+              const mergedQuestions = dbExo.questions.map((dbQ: any) => {
+                if (dbQ.image) return dbQ; // already has image
+                const sourceQ = sourceExo.questions.find((sq: any) => Number(sq.id) === Number(dbQ.id));
+                if (sourceQ?.image) return { ...dbQ, image: sourceQ.image };
+                return dbQ;
+              });
+              return { ...dbExo, questions: mergedQuestions };
+            });
+            setModuleData({ ...md, exercices: mergedExercices });
             setDeletedCours(Array.isArray(latestState.deleted_cours) ? (latestState.deleted_cours as unknown as ContentItem[]) : []);
             setDeletedExercices(Array.isArray(latestState.deleted_exercices) ? (latestState.deleted_exercices as unknown as ExerciceItem[]) : []);
             setLoadedModuleEditorState(true);
@@ -3976,7 +3988,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   <div key={q.id} id={`exo-q-${exo.id}-${qi}`} className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : ''}`}>
                     <p className="font-medium"><span className="inline-flex items-center justify-center bg-primary/10 text-primary text-xs font-bold rounded px-1.5 py-0.5 mr-1.5">Q{qi + 1}</span>{q.enonce}</p>
                     {q.image && (
-                      <img src={q.image} alt="Illustration" className="max-h-28 rounded border object-contain ml-2" loading="lazy" />
+                      <img src={q.image} alt="Illustration" className="max-h-40 rounded border object-contain ml-2" loading="eager" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                     )}
                     {multi && (
                       <p className="text-xs text-muted-foreground italic ml-2">⚠️ Plusieurs réponses possibles</p>
