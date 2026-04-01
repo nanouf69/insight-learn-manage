@@ -126,6 +126,7 @@ export type Database = {
           end_reason: string | null
           ended_at: string | null
           id: string
+          last_action_at: string | null
           last_seen_at: string
           source: string
           started_at: string
@@ -139,6 +140,7 @@ export type Database = {
           end_reason?: string | null
           ended_at?: string | null
           id?: string
+          last_action_at?: string | null
           last_seen_at?: string
           source?: string
           started_at?: string
@@ -152,6 +154,7 @@ export type Database = {
           end_reason?: string | null
           ended_at?: string | null
           id?: string
+          last_action_at?: string | null
           last_seen_at?: string
           source?: string
           started_at?: string

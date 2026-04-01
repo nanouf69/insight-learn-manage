@@ -763,7 +763,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
           apprenant_id: apprenant.id,
           modele: tmpl.label,
           montant: `${selectedTemplatePrix} €`,
-          formation: apprenant.formation_choisie || tmpl.label,
+          formation: tmpl.label,
           fichier_url: urlData.publicUrl,
           statut: "envoye",
         })
