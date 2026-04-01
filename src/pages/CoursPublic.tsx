@@ -648,7 +648,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     connexionId,
     enabled: isStudentSession,
     onForceDisconnect: handleForceDisconnect,
-    pauseDuringExam: isInExam,
+    isInExam,
   });
 
   const {

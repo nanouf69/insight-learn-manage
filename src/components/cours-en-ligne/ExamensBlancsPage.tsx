@@ -22,7 +22,7 @@ import {
   buildMatiereLookupKeys, shareLookupKey, getMatiereCanonicalKey,
   extractMatiereKeyFromExerciceId,
 } from "./examens-blancs-utils";
-import { recoverCorruptedScoreRow, isCorruptedZeroRow, persistExamSession as persistExamSessionUtil } from "./examens-blancs-utils";
+import { recoverCorruptedScoreRow, isCorruptedZeroRow, persistExamSession as persistExamSessionUtil, shouldTriggerPollingRefresh } from "./examens-blancs-utils";
 import { EcranSelection } from "./ExamenBlancsListe";
 import { PassageMatiere, TransitionMatiere } from "./ExamenBlancsPassage";
 import { EcranResultats, RevisionFausses } from "./ExamenBlancsResultats";
@@ -290,6 +290,8 @@ export default function ExamensBlancsPage({
 
   // Realtime: targeted update when admin saves exam changes
   // BUG #9 FIX: only disabled during active exam phase, allowed during intro/transition
+  // Track last Realtime-triggered refresh for polling fallback
+  const lastRealtimeRefreshRef = useRef(Date.now());
   useEffect(() => {
     if (isInExam) return;
     const validExamModuleIds = new Set(tousLesExamens.map((ex) => getModuleIdForExamId(ex.id)));
@@ -298,13 +300,16 @@ export default function ExamensBlancsPage({
       return Number.isFinite(moduleId) && validExamModuleIds.has(moduleId);
     };
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    // Use unique channel name to prevent stale channel references on reconnect
+    const channelName = `examens-blancs-live-${Date.now()}`;
     const channel = supabase
-      .channel(`examens-blancs-live`)
+      .channel(channelName)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'module_editor_state' }, (payload) => {
         if (!isExamModuleEvent(payload)) return;
         if (debounceTimer) clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
           console.log("[Realtime] Exam blanc updated, reloading...");
+          lastRealtimeRefreshRef.current = Date.now();
           try { sessionStorage.removeItem(EXAM_SESSION_KEY); } catch {}
           void refreshLiveExamens();
         }, 5000);
@@ -314,6 +319,48 @@ export default function ExamensBlancsPage({
       if (debounceTimer) clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
+  }, [refreshLiveExamens, EXAM_SESSION_KEY, isInExam]);
+
+  // Polling fallback: when Realtime is silent for > 60s, check for admin changes
+  // This catches cases where Supabase Realtime silently disconnects
+  const POLLING_FALLBACK_INTERVAL = 30_000; // check every 30s
+  const REALTIME_SILENCE_THRESHOLD = 60_000; // consider Realtime stale after 60s
+  const lastKnownUpdatedAtRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (isInExam) return;
+    const validModuleIds = tousLesExamens.map((ex) => getModuleIdForExamId(ex.id));
+
+    const pollTimer = setInterval(async () => {
+      if (!shouldTriggerPollingRefresh({
+        lastRealtimeRefreshAt: lastRealtimeRefreshRef.current,
+        now: Date.now(),
+        pollingIntervalMs: REALTIME_SILENCE_THRESHOLD,
+      })) return;
+
+      // Lightweight check: only fetch max updated_at
+      try {
+        const { data, error } = await supabase
+          .from("module_editor_state")
+          .select("updated_at")
+          .in("module_id", validModuleIds)
+          .order("updated_at", { ascending: false })
+          .limit(1);
+
+        if (error || !data || data.length === 0) return;
+        const remoteUpdatedAt = data[0].updated_at as string;
+
+        if (lastKnownUpdatedAtRef.current && remoteUpdatedAt !== lastKnownUpdatedAtRef.current) {
+          console.log("[PollingFallback] Remote data changed, refreshing...");
+          try { sessionStorage.removeItem(EXAM_SESSION_KEY); } catch {}
+          void refreshLiveExamens();
+        }
+        lastKnownUpdatedAtRef.current = remoteUpdatedAt;
+      } catch {
+        // Silently ignore polling errors
+      }
+    }, POLLING_FALLBACK_INTERVAL);
+
+    return () => clearInterval(pollTimer);
   }, [refreshLiveExamens, EXAM_SESSION_KEY, isInExam]);
 
   useEffect(() => {

@@ -553,3 +553,139 @@ export function isBilanAnswerCorrectBroken(
   const correct = choix.find(c => c.correct);
   return !!(selected && correct && selected === correct.lettre);
 }
+
+// ────────────────────────────────────────────────────────────
+// Presence check — rolling window logic (mirrors SQL function)
+// ────────────────────────────────────────────────────────────
+
+export interface PresenceCheckInput {
+  now: number;            // timestamp ms
+  startedAt: number;
+  lastSeenAt: number;
+  lastActionAt: number;
+  event: "heartbeat" | "heartbeat_exam" | "action" | "confirm_presence";
+  isInExam: boolean;
+  sessionEndedAt: number | null;
+  windowMinutes?: number; // default 30
+  graceMinutes?: number;  // default 5
+  maxHours?: number;      // default 7
+}
+
+export interface PresenceCheckResult {
+  isValid: boolean;
+  disconnectReason: string | null;
+  shouldShowPresencePrompt: boolean;
+  remainingPresenceSeconds: number;
+  updatedLastSeenAt: number;
+  updatedLastActionAt: number;
+}
+
+export function computePresenceCheck(input: PresenceCheckInput): PresenceCheckResult {
+  const {
+    now, startedAt, lastSeenAt, lastActionAt, event, isInExam,
+    sessionEndedAt,
+    windowMinutes = 30,
+    graceMinutes = 5,
+    maxHours = 7,
+  } = input;
+
+  const windowMs = windowMinutes * 60 * 1000;
+  const graceMs = graceMinutes * 60 * 1000;
+  const maxMs = maxHours * 60 * 60 * 1000;
+
+  // Session already ended
+  if (sessionEndedAt !== null) {
+    return {
+      isValid: false,
+      disconnectReason: "already_closed",
+      shouldShowPresencePrompt: false,
+      remainingPresenceSeconds: 0,
+      updatedLastSeenAt: lastSeenAt,
+      updatedLastActionAt: lastActionAt,
+    };
+  }
+
+  // Max duration check (applies even during exams)
+  if (now >= startedAt + maxMs) {
+    return {
+      isValid: false,
+      disconnectReason: "max_duration",
+      shouldShowPresencePrompt: false,
+      remainingPresenceSeconds: 0,
+      updatedLastSeenAt: lastSeenAt,
+      updatedLastActionAt: lastActionAt,
+    };
+  }
+
+  // Update timestamps based on event type
+  let newLastSeenAt = lastSeenAt;
+  let newLastActionAt = lastActionAt;
+
+  if (event === "confirm_presence" || event === "action") {
+    // Real user interaction: update both
+    newLastSeenAt = now;
+    newLastActionAt = now;
+  } else if (event === "heartbeat" || event === "heartbeat_exam") {
+    // Automatic heartbeat: only update last_seen_at (keeps RLS alive)
+    newLastSeenAt = now;
+    // Don't update lastActionAt — heartbeats don't count as real activity
+  }
+
+  // During exam: skip presence check, just keep session alive
+  if (isInExam) {
+    return {
+      isValid: true,
+      disconnectReason: null,
+      shouldShowPresencePrompt: false,
+      remainingPresenceSeconds: 0,
+      updatedLastSeenAt: newLastSeenAt,
+      updatedLastActionAt: newLastActionAt,
+    };
+  }
+
+  // Rolling presence window based on last real user action
+  const presenceDue = newLastActionAt + windowMs;
+  const presenceDeadline = presenceDue + graceMs;
+
+  // Past deadline: close session for inactivity
+  if (now >= presenceDeadline) {
+    return {
+      isValid: false,
+      disconnectReason: "no_response",
+      shouldShowPresencePrompt: false,
+      remainingPresenceSeconds: 0,
+      updatedLastSeenAt: newLastSeenAt,
+      updatedLastActionAt: newLastActionAt,
+    };
+  }
+
+  // Past due but within grace: show prompt
+  const shouldShow = now >= presenceDue;
+  const remaining = shouldShow ? Math.max(0, Math.ceil((presenceDeadline - now) / 1000)) : 0;
+
+  return {
+    isValid: true,
+    disconnectReason: null,
+    shouldShowPresencePrompt: shouldShow,
+    remainingPresenceSeconds: remaining,
+    updatedLastSeenAt: newLastSeenAt,
+    updatedLastActionAt: newLastActionAt,
+  };
+}
+
+// ────────────────────────────────────────────────────────────
+// Admin propagation — polling fallback
+// ────────────────────────────────────────────────────────────
+
+/**
+ * Determines if a polling refresh should be triggered because Realtime
+ * has been silent for too long (possible silent disconnect).
+ */
+export function shouldTriggerPollingRefresh(params: {
+  lastRealtimeRefreshAt: number;
+  now: number;
+  pollingIntervalMs: number;
+}): boolean {
+  const elapsed = params.now - params.lastRealtimeRefreshAt;
+  return elapsed > params.pollingIntervalMs;
+}
