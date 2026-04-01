@@ -19,6 +19,7 @@ import PreInformationPublic from "./pages/PreInformationPublic";
 import AuthCallback from "./pages/AuthCallback";
 import RevolutTransactions from "./pages/RevolutTransactions";
 import RevolutConnect from "./pages/RevolutConnect";
+import DevisPublic from "./pages/DevisPublic";
 
 // Onboarding pages
 import OnboardingWelcome from "./pages/onboarding/OnboardingWelcome";
