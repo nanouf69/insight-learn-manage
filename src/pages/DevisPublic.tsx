@@ -573,24 +573,82 @@ export default function DevisPublic() {
               <p className="text-xs text-gray-500">Spécialiste Formations Transport</p>
             </div>
 
-            <h2 className="text-lg font-bold text-center text-gray-900">CONDITIONS GÉNÉRALES DE VENTE</h2>
+            <h2 className="text-lg font-bold text-center text-gray-900">Conditions générales de vente</h2>
 
-            <p className="text-xs text-gray-600">
-              FTRANSPORT est un organisme de formation professionnelle spécialisé dans le secteur du transport.
-              Siège social : 86 route de Genas, 69003 Lyon — SIRET : 82346156100018 — N° déclaration : 84 69 15114 69 — Non assujetti à la TVA.
-            </p>
+            <p className="text-xs text-gray-700 leading-relaxed whitespace-pre-line">{CGV_INTRO}</p>
 
             <div className="space-y-4">
               {CGV_SECTIONS.map((s, i) => (
                 <div key={i}>
                   <h3 className="font-bold text-xs text-blue-900">{s.title}</h3>
-                  <p className="text-xs text-gray-700 leading-relaxed">{s.text}</p>
+                  <p className="text-xs text-gray-700 leading-relaxed whitespace-pre-line">{s.text}</p>
                 </div>
               ))}
             </div>
 
             <div className="text-center text-xs text-gray-400 border-t pt-3 mt-4">
-              Services Pro — FTransport — SASU au capital social de 5 000 € — 86 route de Genas, 69003 LYON
+              Services Pro — FTransport — SASU au capital social de 5 000 € — 86 route de Genas, 69003 LYON — Tél : 04.28.29.60.91 — contact@ftransport.fr
+            </div>
+          </div>
+
+          {/* ═══ PAGE RÉFÉRENTIEL THÉORIQUE ═══ */}
+          <div className="print-page bg-white rounded-lg shadow-sm border p-6 md:p-10 space-y-5 mb-6">
+            <div className="text-center border-b pb-4">
+              <h1 className="text-2xl font-bold text-blue-900">FTRANSPORT</h1>
+              <p className="text-xs text-gray-500">Spécialiste Formations Transport</p>
+            </div>
+
+            <h2 className="text-lg font-bold text-center text-gray-900">Référentiel de connaissances pour les épreuves théorique</h2>
+
+            {REFERENTIEL_THEORIQUE.map((section, i) => (
+              <div key={i} className="space-y-2">
+                <h3 className="font-bold text-xs text-blue-900">{section.title}</h3>
+                {section.subtitle && <p className="font-semibold text-xs text-gray-800">{section.subtitle}</p>}
+                <ul className="list-disc ml-5 space-y-1">
+                  {section.items.map((item, j) => (
+                    <li key={j} className="text-xs text-gray-700 leading-relaxed">{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+
+            <div className="text-center text-xs text-gray-400 border-t pt-3 mt-4">
+              Ftransport — SASU au capital social de 5 000 € — Email : contact@ftransport.fr — Siège social 86 route de Genas, 69003 LYON — Site web : http://ftransport.fr/
+            </div>
+          </div>
+
+          {/* ═══ PAGE RÉFÉRENTIEL PRATIQUE ═══ */}
+          <div className="print-page bg-white rounded-lg shadow-sm border p-6 md:p-10 space-y-5 mb-6">
+            <div className="text-center border-b pb-4">
+              <h1 className="text-2xl font-bold text-blue-900">FTRANSPORT</h1>
+              <p className="text-xs text-gray-500">Spécialiste Formations Transport</p>
+            </div>
+
+            <h2 className="text-lg font-bold text-center text-gray-900">Référentiel de compétences de l'épreuve pratique</h2>
+
+            {REFERENTIEL_PRATIQUE.map((block, i) => (
+              <div key={i} className="space-y-3">
+                <h3 className="font-bold text-sm text-blue-900">{block.title}</h3>
+                {block.sections.map((sec, j) => (
+                  <div key={j} className="space-y-1">
+                    <h4 className="font-semibold text-xs text-gray-800">{sec.subtitle}</h4>
+                    <ul className="list-disc ml-5 space-y-0.5">
+                      {sec.items.map((item, k) => (
+                        <li key={k} className="text-xs text-gray-700 leading-relaxed">{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            ))}
+
+            {/* Rappel final */}
+            <div className="border-t pt-4 mt-4">
+              <p className="text-xs text-gray-700 leading-relaxed whitespace-pre-line font-medium">{RAPPEL_FINAL}</p>
+            </div>
+
+            <div className="text-center text-xs text-gray-400 border-t pt-3 mt-4">
+              Ftransport — SASU au capital social de 5 000 € — Email : contact@ftransport.fr — Siège social 86 route de Genas, 69003 LYON — Site web : http://ftransport.fr/
             </div>
           </div>
 
