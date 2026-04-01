@@ -55,6 +55,7 @@ export default function DevisPublic() {
   const [formationDeja, setFormationDeja] = useState<boolean | null>(null);
   const [centreFormation, setCentreFormation] = useState("");
   const [mentionAccord, setMentionAccord] = useState("");
+  const [acceptEarlyStart, setAcceptEarlyStart] = useState(false);
   const [acceptCGV, setAcceptCGV] = useState(false);
 
   // Signature canvas
@@ -180,6 +181,9 @@ export default function DevisPublic() {
 
   const today = new Date().toLocaleDateString("fr-FR");
   const nom = `${apprenant?.civilite || ""} ${apprenant?.prenom || ""} ${apprenant?.nom || ""}`.trim();
+  const formationLabel = devis?.formation || devis?.modele || "";
+  const isTaxiPratique = formationLabel.toLowerCase().includes("pratique taxi");
+  const dureeFormation = isTaxiPratique ? "6 heures en groupe ou 3 heures solo" : "";
 
   /* ═══ YES/NO checkbox helper ═══ */
   const YesNo = ({ label, value, onChange }: { label: string; value: boolean | null; onChange: (v: boolean) => void }) => (
@@ -257,12 +261,18 @@ export default function DevisPublic() {
               <tbody>
                 <tr>
                   <td className="border p-2 font-medium">Formation et prestations</td>
-                  <td className="border p-2">{devis.formation || devis.modele}</td>
+                  <td className="border p-2">{formationLabel}</td>
                   <td className="border p-2 text-center">1</td>
                   <td className="border p-2 text-right font-bold">{devis.montant}</td>
                 </tr>
               </tbody>
             </table>
+
+            {dureeFormation && (
+              <p className="text-sm">
+                <strong>Durée :</strong> {dureeFormation}
+              </p>
+            )}
 
             <p className="text-xs text-gray-500">
               Centre de formation agréé par la préfecture : n°69-18-001 — NDA : 84 69 15114 69 — SIRET : 823 461 561 000 18.
@@ -281,12 +291,17 @@ export default function DevisPublic() {
             {/* Documents justificatifs */}
             <div className="border-l-4 border-blue-600 pl-4 space-y-2 text-sm">
               <h3 className="font-bold text-gray-900">Pour réserver votre place, vous devez :</h3>
-              <p>Remplir le devis (fiche actuelle), la fiche d'inscription et les conditions générales de vente en nous les renvoyant avec votre règlement ainsi que les justificatifs demandés :</p>
+              <p>Réserver votre place en remplissant le devis (fiche actuelle), la fiche d'inscription et les conditions générales de vente en nous les renvoyant avec votre règlement ainsi que les justificatifs demandés :</p>
+              <ul className="list-disc ml-5 space-y-1 text-gray-700">
+                <li>par mail (sauf règlement sur place) : contact@ftransport.fr</li>
+                <li>ou par courrier (règlement par chèque possible) : Ftransport, 86 Route de Genas, 69003 LYON</li>
+              </ul>
+              <p>Vous rendre dans les locaux de Ftransport : 86 route de Genas, 69003 LYON avec votre règlement ainsi que les justificatifs demandés.</p>
               <h3 className="font-bold text-gray-900 mt-3">Documents justificatifs à nous envoyer (photocopies) :</h3>
               <ul className="list-disc ml-5 space-y-1 text-gray-700">
                 <li>Justificatif de domicile</li>
                 <li>Pièce d'identité (passeport, carte d'identité, titre de séjour ou permis de conduire)</li>
-                <li>Pour les personnes hébergées : justificatif de domicile de l'hébergeur, copie de sa pièce d'identité, attestation d'hébergement signée.</li>
+                <li>Pour les personnes hébergées uniquement : justificatif de domicile de l'hébergeur (de moins de 3 mois), copie de la pièce d'identité de l'hébergeur (recto/verso), attestation d'hébergement signée par l'hébergeur.</li>
               </ul>
             </div>
 
@@ -310,14 +325,14 @@ export default function DevisPublic() {
             <h2 className="text-xl font-bold text-center text-gray-900">FICHE D'INSCRIPTION</h2>
 
             <div className="space-y-1 text-sm">
-              <p><strong>Intitulé formation :</strong> {devis.formation || devis.modele}</p>
+              <p><strong>Intitulé formation :</strong> {formationLabel}</p>
               <p><strong>Dates de formation :</strong> <input type="text" className="border-b border-gray-400 px-1 w-48 text-sm" placeholder="À compléter" /></p>
             </div>
 
             <h3 className="font-bold text-gray-900 text-sm mt-4">Coordonnées du stagiaire :</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
               <div><strong>Prénom et Nom :</strong> {nom || "—"}</div>
-              <div><strong>Adresse :</strong> {apprenant?.adresse || <input type="text" className="border-b border-gray-400 px-1 w-48" placeholder="À compléter" />}</div>
+              <div><strong>Adresse personnelle :</strong> {apprenant?.adresse || <input type="text" className="border-b border-gray-400 px-1 w-48" placeholder="À compléter" />}</div>
               <div><strong>Code postal :</strong> {apprenant?.code_postal || <input type="text" className="border-b border-gray-400 px-1 w-24" placeholder="..." />}</div>
               <div><strong>Ville :</strong> {apprenant?.ville || <input type="text" className="border-b border-gray-400 px-1 w-32" placeholder="..." />}</div>
               <div><strong>N° téléphone :</strong> {apprenant?.telephone || <input type="text" className="border-b border-gray-400 px-1 w-40" placeholder="..." />}</div>
@@ -340,15 +355,13 @@ export default function DevisPublic() {
               <YesNo label="Avez-vous été condamné pour refus de restitution du permis de conduire malgré l'annulation ou l'invalidation de votre permis de conduire ou l'interdiction de l'obtenir ?" value={refusRestitution} onChange={setRefusRestitution} />
               <YesNo label="Avez-vous déjà été condamné d'au moins 6 mois d'emprisonnement pour vol, escroquerie, abus de confiance, atteinte volontaire à l'intégrité de la personne, agression sexuelle ou infraction à la législation sur les stupéfiants ?" value={condamnation} onChange={setCondamnation} />
               <YesNo label="Avez-vous le casier judiciaire B2 vierge ?" value={casierVierge} onChange={setCasierVierge} />
-              <YesNo label="Formation pratique déjà réalisée ?" value={formationDeja} onChange={setFormationDeja} />
+              <YesNo label={isTaxiPratique ? "Formation pratique TAXI déjà réalisée ?" : "Formation pratique déjà réalisée ?"} value={formationDeja} onChange={setFormationDeja} />
             </div>
 
-            {formationDeja === true && (
-              <div className="text-sm">
-                <label className="block font-medium">Si oui, chez quel centre de formation ?</label>
-                <input type="text" value={centreFormation} onChange={(e) => setCentreFormation(e.target.value)} className="border border-gray-300 rounded px-2 py-1.5 w-full text-sm mt-1" placeholder="Nom du centre de formation..." />
-              </div>
-            )}
+            <div className="text-sm">
+              <label className="block font-medium">Si oui, chez quel centre de formation ?</label>
+              <input type="text" value={centreFormation} onChange={(e) => setCentreFormation(e.target.value)} className="border border-gray-300 rounded px-2 py-1.5 w-full text-sm mt-1" placeholder="À compléter" />
+            </div>
 
             <p className="text-sm mt-4"><strong>Fait à Lyon, le</strong> {today}</p>
 
@@ -392,12 +405,15 @@ export default function DevisPublic() {
               <p className="text-xs text-gray-500">Spécialiste Formations Transport</p>
             </div>
 
+            <p className="text-sm"><strong>Fait à Lyon, le</strong> {today}</p>
+
             {/* Renonciation rétractation */}
-            <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-xs text-gray-700 leading-relaxed">
-              Je reconnais que la date de début de la formation pratique intervient avant l'expiration du délai légal de rétractation de 14 jours.
-              En acceptant ce devis, je demande expressément le démarrage immédiat de la prestation et renonce en conséquence à mon droit de rétractation,
-              conformément à l'article L221-25 du Code de la consommation.
-            </div>
+            <label className="flex items-start gap-3 border border-yellow-200 rounded p-3 bg-yellow-50 cursor-pointer">
+              <input type="checkbox" checked={acceptEarlyStart} onChange={(e) => setAcceptEarlyStart(e.target.checked)} className="w-5 h-5 mt-0.5 accent-blue-600" />
+              <span className="text-sm text-gray-800 leading-relaxed font-medium">
+                Je reconnais que la date de début de la formation pratique intervient avant l'expiration du délai légal de rétractation de 14 jours. En acceptant ce devis, je demande expressément le démarrage immédiat de la prestation et renonce en conséquence à mon droit de rétractation, conformément à l'article L221-25 du Code de la consommation.
+              </span>
+            </label>
 
             {/* Accept CGV */}
             <label className="flex items-start gap-3 cursor-pointer">
@@ -443,8 +459,6 @@ export default function DevisPublic() {
                 )}
               </div>
             </div>
-
-            <p className="text-sm"><strong>Fait à Lyon, le</strong> {today}</p>
 
             {/* RIB */}
             <div className="border rounded-lg p-4 bg-gray-50 space-y-2 mt-6">
