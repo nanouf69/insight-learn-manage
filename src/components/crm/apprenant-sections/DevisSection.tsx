@@ -771,8 +771,8 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         .single();
       if (insertErr) throw new Error("Erreur création devis: " + insertErr.message);
 
-      // 4. Build email with link to public page
-      const appUrl = window.location.origin;
+      // 4. Build email with link to public page (use published URL, not preview)
+      const appUrl = 'https://insight-learn-manage.lovable.app';
       const devisLink = `${appUrl}/devis?token=${devisRecord.token}`;
 
       const bodyHtml = emailContent.body.replace(/\n/g, '<br/>') +
