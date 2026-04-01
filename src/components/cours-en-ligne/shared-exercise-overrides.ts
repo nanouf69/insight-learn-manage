@@ -7,6 +7,11 @@
 import { supabase } from "@/integrations/supabase/client";
 
 const STORAGE_KEY = "shared-exercise-overrides-v1";
+const ENONCE_OVERRIDE_BLOCKED_EXERCISE_IDS = new Set([80]);
+
+function canApplyEnonceBasedOverrides(exerciceId?: number): boolean {
+  return exerciceId == null || !ENONCE_OVERRIDE_BLOCKED_EXERCISE_IDS.has(Number(exerciceId));
+}
 
 interface QuestionOverride {
   enonce: string;
@@ -197,7 +202,7 @@ function applyOverridesToExercicesArray(
   let hasChanges = false;
 
   const updatedExercices = exercices.map((exo: any) => {
-    if (!exo.questions || !Array.isArray(exo.questions)) return exo;
+    if (!exo.questions || !Array.isArray(exo.questions) || !canApplyEnonceBasedOverrides(exo.id)) return exo;
 
     let exoChanged = false;
     const updatedQuestions = exo.questions.map((q: any) => {
@@ -288,13 +293,13 @@ export function applyDbOverridesByKey<T extends { id: number; enonce: string; ch
  * Apply shared overrides to all exercises in a module data structure.
  */
 export function applyOverridesToModuleExercices<T extends { questions?: { enonce: string; choix: any[] }[] }>(
-  exercices: T[],
+  exercices: (T & { id?: number })[],
 ): T[] {
   const overrides = loadSharedOverrides();
   if (Object.keys(overrides).length === 0) return exercices;
 
   return exercices.map((exo) => {
-    if (!exo.questions || exo.questions.length === 0) return exo;
+    if (!exo.questions || exo.questions.length === 0 || !canApplyEnonceBasedOverrides(exo.id)) return exo;
     return {
       ...exo,
       questions: applySharedOverrides(exo.questions),
@@ -344,13 +349,13 @@ export async function loadCrossModuleOverridesFromDb(): Promise<OverridesStore> 
  * Used when a module has no module_editor_state record but other modules have edited shared questions.
  */
 export function applyCrossModuleOverrides<T extends { questions?: { enonce: string; choix: any[] }[] }>(
-  exercices: T[],
+  exercices: (T & { id?: number })[],
   dbOverrides: OverridesStore,
 ): T[] {
   if (Object.keys(dbOverrides).length === 0) return exercices;
 
   return exercices.map((exo) => {
-    if (!exo.questions || exo.questions.length === 0) return exo;
+    if (!exo.questions || exo.questions.length === 0 || !canApplyEnonceBasedOverrides(exo.id)) return exo;
     let changed = false;
     const updatedQuestions = exo.questions.map((q) => {
       const key = normalizeEnonce(q.enonce);
