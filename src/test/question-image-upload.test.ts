@@ -71,7 +71,7 @@ describe("validateQuestionImageFile — accepts images, rejects others", () => {
   it("rejects PDF", () => {
     const result = validateQuestionImageFile(makeFile("doc.pdf", "application/pdf", 100));
     expect(result.valid).toBe(false);
-    expect(result.error).toBeDefined();
+    expect((result as any).error).toBeDefined();
   });
 
   it("rejects SVG (XSS risk)", () => {
@@ -82,7 +82,7 @@ describe("validateQuestionImageFile — accepts images, rejects others", () => {
   it("rejects files > 5MB", () => {
     const result = validateQuestionImageFile(makeFile("huge.png", "image/png", 6000));
     expect(result.valid).toBe(false);
-    expect(result.error).toContain("5");
+    expect((result as any).error).toContain("5");
   });
 
   it("accepts files at exactly 5MB", () => {
