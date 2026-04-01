@@ -1179,7 +1179,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                ⚠️ Le devis DOCX doit être joint manuellement via Outlook. Cet email sert d'accompagnement.
+                📝 L'apprenant recevra un lien pour télécharger, compléter, signer et renvoyer le devis en ligne.
               </p>
             </div>
           )}
