@@ -555,6 +555,91 @@ export function isBilanAnswerCorrectBroken(
 }
 
 // ────────────────────────────────────────────────────────────
+// Question merge — admin deletions respected
+// ────────────────────────────────────────────────────────────
+
+/**
+ * Merge source and saved questions for a matiere.
+ * When saved data exists, it is the source of truth:
+ *   - Saved order is preserved (admin reordering)
+ *   - Source fields are merged into saved (images, reponses_possibles)
+ *   - Questions deleted by admin (in source but not in saved) are NOT re-added
+ *   - Custom admin questions (in saved but not in source) are kept
+ * When no saved data exists, all source questions are returned.
+ */
+export function mergeQuestionsForMatiere(
+  sourceQuestions: Question[],
+  savedQuestions: Question[] | null | undefined,
+): Question[] {
+  const safeSrc = Array.isArray(sourceQuestions) ? sourceQuestions : [];
+  const safeSaved = Array.isArray(savedQuestions) ? savedQuestions : [];
+
+  // No saved data → admin hasn't edited this matiere → return source
+  if (safeSaved.length === 0) return safeSrc;
+
+  const normalizeType = (v: unknown) => String(v ?? "").trim().toUpperCase();
+  const normalizeText = (v: unknown) => String(v ?? "").trim().replace(/\s+/g, " ").toLowerCase();
+
+  const getKey = (q: any) => {
+    const id = Number(q?.id);
+    const type = normalizeType(q?.type);
+    const enonce = normalizeText(q?.enonce);
+    if (enonce) return `${id}::${type}::${enonce}`;
+    return `${id}::${type}`;
+  };
+
+  // Build source lookup
+  const sourceByKey = new Map<string, Question>();
+  const sourceById = new Map<number, Question[]>();
+  safeSrc.forEach((srcQ) => {
+    sourceByKey.set(getKey(srcQ), srcQ);
+    const numId = Number(srcQ?.id);
+    if (!Number.isNaN(numId)) {
+      const arr = sourceById.get(numId) ?? [];
+      arr.push(srcQ);
+      sourceById.set(numId, arr);
+    }
+  });
+
+  // Iterate saved order — merge with source metadata when matched
+  return safeSaved.map((savedQ) => {
+    const key = getKey(savedQ);
+    let sourceQ = sourceByKey.get(key);
+
+    if (!sourceQ) {
+      const sameId = sourceById.get(Number(savedQ?.id)) ?? [];
+      const sameType = sameId.find((c) => normalizeType(c?.type) === normalizeType(savedQ?.type));
+      sourceQ = sameType ?? sameId[0];
+    }
+
+    if (!sourceQ) {
+      // Custom admin question (not in source) — keep as-is
+      return { ...savedQ, image: savedQ?.image ?? (savedQ as any)?.image_url } as Question;
+    }
+
+    // Merge source fields into saved (saved overrides)
+    const merged: Question = {
+      ...sourceQ,
+      ...savedQ,
+      image: savedQ?.image ?? (savedQ as any)?.image_url ?? sourceQ?.image ?? (sourceQ as any)?.image_url,
+    };
+
+    // For QRC: restore source keywords if admin didn't set any
+    if (normalizeType(merged.type) === "QRC") {
+      const hasSavedKw = Array.isArray(savedQ?.reponses_possibles) && savedQ.reponses_possibles.length > 0;
+      const srcKw = Array.isArray(sourceQ?.reponses_possibles) ? sourceQ.reponses_possibles : [];
+      if (!hasSavedKw && srcKw.length > 0) {
+        return { ...merged, reponses_possibles: [...srcKw] };
+      }
+    }
+
+    return merged;
+  });
+  // NOTE: source questions NOT in saved are intentionally NOT appended.
+  // If saved data exists, admin chose which questions to keep.
+}
+
+// ────────────────────────────────────────────────────────────
 // Presence check — rolling window logic (mirrors SQL function)
 // ────────────────────────────────────────────────────────────
 

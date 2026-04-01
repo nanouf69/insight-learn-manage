@@ -22,9 +22,9 @@ interface UsePresenceCheckParams {
   enabled: boolean;
   onForceDisconnect: () => void;
   /**
-   * When true, heartbeats continue (to keep last_seen_at fresh for RLS)
-   * but use "heartbeat_exam" event so the server skips presence checks.
-   * On transition from true→false, a "confirm_presence" is sent automatically.
+   * When true, presence polling is paused (no heartbeats, no prompts).
+   * When transitioning from true→false, a confirm_presence is sent automatically
+   * to reset the rolling window and prevent immediate disconnect.
    */
   isInExam?: boolean;
   /** @deprecated Use isInExam instead */
@@ -110,9 +110,6 @@ export function usePresenceCheck({
       const validation = await runServerCheck(event);
       if (!validation) return;
 
-      // During exams: ignore disconnect/prompt from server (heartbeat_exam keeps session alive)
-      if (isInExam) return;
-
       if (!validation.is_valid) {
         await endSession(validation.disconnect_reason || "max_duration");
         return;
@@ -147,7 +144,7 @@ export function usePresenceCheck({
         promptLoggedRef.current = false;
       }
     },
-    [apprenantId, connexionId, endSession, isInExam, runServerCheck, userId],
+    [apprenantId, connexionId, endSession, runServerCheck, userId],
   );
 
   const confirmPresence = useCallback(async () => {
@@ -165,7 +162,8 @@ export function usePresenceCheck({
     lastActionCheckAtRef.current = Date.now();
   }, [endSession, runServerCheck]);
 
-  // Main heartbeat polling — always runs (even during exams, to keep last_seen_at fresh)
+  // Main heartbeat polling — PAUSED during exams to avoid any re-render/disruption.
+  // On exam→normal transition, sends confirm_presence to reset rolling window.
   useEffect(() => {
     if (!enabled || !apprenantId || !userId || !connexionId) {
       clearTimers();
@@ -176,33 +174,33 @@ export function usePresenceCheck({
       return;
     }
 
-    endingRef.current = false;
-
     // Detect exam→non-exam transition: send confirm_presence to reset rolling window
     const resumingFromExam = wasInExamRef.current && !isInExam;
     wasInExamRef.current = isInExam;
+
+    // During exam: stop all polling, hide modal, do nothing
+    if (isInExam) {
+      clearTimers();
+      setShowModal(false);
+      modalDeadlineRef.current = null;
+      return;
+    }
+
+    endingRef.current = false;
 
     if (resumingFromExam) {
       // Reset prompt state since we're coming back from exam
       promptLoggedRef.current = false;
       setShowModal(false);
       modalDeadlineRef.current = null;
+      // Send confirm_presence to reset rolling window (prevents immediate disconnect)
       void handleServerValidation("confirm_presence");
     } else {
-      const eventType = isInExam ? "heartbeat_exam" : "heartbeat";
-      void handleServerValidation(eventType);
+      void handleServerValidation("heartbeat");
     }
 
-    // During exam: clear modal (exam UI should not show presence prompt)
-    if (isInExam) {
-      setShowModal(false);
-      modalDeadlineRef.current = null;
-    }
-
-    // Continue polling heartbeats (with exam-aware event type)
     pollRef.current = setInterval(() => {
-      const eventType = isInExam ? "heartbeat_exam" : "heartbeat";
-      void handleServerValidation(eventType);
+      void handleServerValidation("heartbeat");
     }, POLL_INTERVAL_MS);
 
     return () => {

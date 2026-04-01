@@ -11,6 +11,7 @@ import {
   Save, CheckCircle2, X, Clock, Layers, Loader2, ArrowUp, ArrowDown, ArrowLeftRight, Pause, Play, AlertTriangle
 } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, type Question, type Choix } from "./examens-blancs-data";
+import { mergeQuestionsForMatiere } from "./examens-blancs-utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -289,54 +290,14 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
                 }
               });
 
-              const consumedSourceQuestions = new Set<any>();
-
-              // Iterate in SAVED order (preserves admin reordering)
-              const mergedQuestions = savedQuestions.map((savedQ) => {
-                const key = getQuestionKey(savedQ);
-                let sourceQ = sourceByKey.get(key);
-
-                if (!sourceQ) {
-                  const sameId = sourceById.get(Number(savedQ?.id)) ?? [];
-                  const sameType = sameId.find((candidate) => normalizeQuestionType(candidate?.type) === normalizeQuestionType(savedQ?.type));
-                  sourceQ = sameType ?? sameId[0];
-                }
-
-                if (!sourceQ) {
-                  // Saved question with no source match — keep as-is
-                  return {
-                    ...savedQ,
-                    image: savedQ?.image ?? (savedQ as any)?.image_url,
-                  };
-                }
-                consumedSourceQuestions.add(sourceQ);
-
-                const mergedImage = savedQ?.image ?? (savedQ as any)?.image_url ?? sourceQ?.image ?? (sourceQ as any)?.image_url;
-                const mergedQuestion: Question = {
-                  ...sourceQ,
-                  ...savedQ,
-                  image: mergedImage,
-                };
-
-                if (normalizeQuestionType(mergedQuestion.type) !== "QRC") return mergedQuestion;
-
-                const hasSavedKeywords = Array.isArray(savedQ?.reponses_possibles) && savedQ.reponses_possibles.length > 0;
-                const sourceKeywords = Array.isArray(sourceQ?.reponses_possibles) ? sourceQ.reponses_possibles : [];
-                if (!hasSavedKeywords && sourceKeywords.length > 0) {
-                  return { ...mergedQuestion, reponses_possibles: [...sourceKeywords] };
-                }
-
-                return mergedQuestion;
-              });
-
-              // Append any NEW source questions not present in saved data
-              const extraSourceQuestions = sourceQuestions
-                .filter((srcQ) => !consumedSourceQuestions.has(srcQ));
+              // Use mergeQuestionsForMatiere: saved is source of truth,
+              // deleted questions are NOT re-added from source.
+              const mergedQuestions = mergeQuestionsForMatiere(sourceQuestions, savedQuestions);
 
               const merged = {
                 ...sourceMat,
                 ...savedMat,
-                questions: deduplicateQuestions([...mergedQuestions, ...extraSourceQuestions]),
+                questions: deduplicateQuestions(mergedQuestions),
               };
               // Saved (admin edit) takes priority; fall back to source if saved is empty
               merged.texteSupport = savedMat.texteSupport || sourceMat.texteSupport;
