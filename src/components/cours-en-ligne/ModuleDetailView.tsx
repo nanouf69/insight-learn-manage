@@ -2017,7 +2017,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
   const buildSourceFingerprint = (data: ModuleData) =>
     JSON.stringify({
-      v: 8,
+      v: 9,
       overrides: getOverridesFingerprint(),
       coursCount: data.cours.length,
       exercicesCount: data.exercices.length,
@@ -2244,6 +2244,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         const latestState = Array.isArray(data) ? data[0] : null;
 
         if (latestState?.module_data) {
+          const hasMatchingSourceFingerprint = latestState.source_fingerprint === sourceFingerprint;
+
+          if (!hasMatchingSourceFingerprint) {
+            if (!studentOnly) {
+              loadLocalState();
+            }
+          } else {
           const md = latestState.module_data as unknown as ModuleData;
           const hasValidModuleData =
             Array.isArray(md.cours) &&
@@ -2257,16 +2264,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               })()
             );
 
-          if (hasValidModuleData) {
-            const mergedModuleData: ModuleData = {
-              ...md,
-              exercices: mergeSourceExercices(md.exercices, initialData.exercices),
-            };
-            setModuleData(mergedModuleData);
-            setDeletedCours(Array.isArray(latestState.deleted_cours) ? (latestState.deleted_cours as unknown as ContentItem[]) : []);
-            setDeletedExercices(Array.isArray(latestState.deleted_exercices) ? (latestState.deleted_exercices as unknown as ExerciceItem[]) : []);
-            setLoadedModuleEditorState(true);
-            return;
+            if (hasValidModuleData) {
+              const mergedModuleData: ModuleData = {
+                ...md,
+                exercices: mergeSourceExercices(md.exercices, initialData.exercices),
+              };
+              setModuleData(mergedModuleData);
+              setDeletedCours(Array.isArray(latestState.deleted_cours) ? (latestState.deleted_cours as unknown as ContentItem[]) : []);
+              setDeletedExercices(Array.isArray(latestState.deleted_exercices) ? (latestState.deleted_exercices as unknown as ExerciceItem[]) : []);
+              setLoadedModuleEditorState(true);
+              return;
+            }
           }
         }
 
