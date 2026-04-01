@@ -40,6 +40,8 @@ import { VILLE_SALLES_SPECTACLES_SLIDES } from "./slides/ville-salles-spectacles
 import { VILLE_VINS_SLIDES } from "./slides/ville-vins-data";
 import { VILLE_ARRONDISSEMENTS_SLIDES } from "./slides/ville-arrondissements-data";
 import { VILLE_STATIONS_TAXI_SLIDES } from "./slides/ville-stations-taxi-data";
+import { QuestionImageUpload } from "./QuestionImageUpload";
+import { ImageLightbox } from "./ImageLightbox";
 
 // Images des monuments et lieux de Lyon
 import imgCathedraleStJean from "@/assets/pratique/cathedrale-st-jean.jpg";
@@ -1553,14 +1555,17 @@ function QuestionEditor({
   onSave,
   onDelete,
   onCancel,
+  moduleId,
 }: {
   question: ExerciceQuestion;
   onSave: (q: ExerciceQuestion) => void;
   onDelete: () => void;
   onCancel: () => void;
+  moduleId: number;
 }) {
   const [enonce, setEnonce] = useState(question.enonce);
   const [choix, setChoix] = useState<ExerciceChoix[]>([...question.choix]);
+  const [image, setImage] = useState<string | undefined>(question.image);
 
   const handleChoixTexte = (i: number, val: string) => {
     setChoix(prev => prev.map((c, idx) => idx === i ? { ...c, texte: val } : c));
@@ -1583,7 +1588,7 @@ function QuestionEditor({
         <div className="flex gap-2">
           <Button size="sm" variant="ghost" onClick={onCancel}><X className="w-4 h-4" /></Button>
           <Button size="sm" variant="destructive" onClick={onDelete}><Trash2 className="w-3 h-3" /></Button>
-          <Button size="sm" onClick={() => onSave({ ...question, enonce, choix })} className="gap-1">
+          <Button size="sm" onClick={() => onSave({ ...question, enonce, choix, image })} className="gap-1">
             <Save className="w-3 h-3" /> Enregistrer
           </Button>
         </div>
@@ -1592,6 +1597,14 @@ function QuestionEditor({
         <label className="text-xs font-semibold">Énoncé</label>
         <Textarea value={enonce} onChange={e => setEnonce(e.target.value)} rows={2} className="text-sm" />
       </div>
+      {/* Image (optionnel) */}
+      <QuestionImageUpload
+        image={image}
+        context="module"
+        contextId={moduleId}
+        questionId={question.id}
+        onImageChange={setImage}
+      />
       <div className="space-y-2">
         <label className="text-xs font-semibold">Réponses (cochez les bonnes réponses — plusieurs possibles)</label>
         {choix.map((c, i) => (
@@ -1628,6 +1641,7 @@ function ExerciceCard({
   onDelete,
   onToggle,
   onUpdateQuestions,
+  moduleId,
 }: {
   item: ExerciceItem;
   index: number;
@@ -1636,6 +1650,7 @@ function ExerciceCard({
   onDelete: (id: number) => void;
   onToggle: (id: number) => void;
   onUpdateQuestions: (id: number, questions: ExerciceQuestion[]) => void;
+  moduleId: number;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [editingQId, setEditingQId] = useState<number | null>(null);
@@ -1738,6 +1753,7 @@ function ExerciceCard({
                     onSave={saveQuestion}
                     onDelete={() => deleteQuestion(q.id)}
                     onCancel={() => setEditingQId(null)}
+                    moduleId={moduleId}
                   />
                 ) : (
                   <div className="flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/20 group transition-colors">
@@ -4036,7 +4052,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   <div key={q.id} id={`exo-q-${exo.id}-${qi}`} className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : ''}`}>
                     <p className="font-medium"><span className="inline-flex items-center justify-center bg-primary/10 text-primary text-xs font-bold rounded px-1.5 py-0.5 mr-1.5">Q{qi + 1}</span>{q.enonce}</p>
                     {q.image && (
-                      <img src={q.image} alt="Illustration" className="max-h-40 rounded border object-contain ml-2" loading="eager" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                      <ImageLightbox src={q.image} alt="Illustration" className="max-h-40 rounded border object-contain ml-2" loading="eager" onError={() => {}} />
                     )}
                     {multi && (
                       <p className="text-xs text-muted-foreground italic ml-2">⚠️ Plusieurs réponses possibles</p>
@@ -4959,6 +4975,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 onDelete={(id) => deleteItem("exercices", id)}
                 onToggle={(id) => toggleItem("exercices", id)}
                 onUpdateQuestions={(id, questions) => updateExerciceQuestions(id, questions)}
+                moduleId={moduleData.id}
               />
             ))}
           </div>

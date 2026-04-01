@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, type Question, type Choix } from "./examens-blancs-data";
 import { mergeQuestionsForMatiere } from "./examens-blancs-utils";
+import { QuestionImageUpload } from "./QuestionImageUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -344,18 +345,21 @@ function QuestionEditor({
   onDraftChange,
   onDelete,
   onCancel,
+  examId,
 }: {
   question: Question;
   onSave: (q: Question) => void;
   onDraftChange: (q: Question) => void;
   onDelete: () => void;
   onCancel: () => void;
+  examId: string;
 }) {
   const [enonce, setEnonce] = useState(question.enonce);
   const [qType, setQType] = useState<"QCM" | "QRC">(question?.type as "QCM" | "QRC" || "QCM");
   const [reponseQRC, setReponseQRC] = useState(question.reponseQRC || "");
   const [motsCles, setMotsCles] = useState((question.reponses_possibles || []).join(", "));
   const [choix, setChoix] = useState<Choix[]>(question.choix ? [...question.choix] : []);
+  const [image, setImage] = useState<string | undefined>(question.image);
 
   const toggleType = () => {
     if (qType === "QCM") {
@@ -379,6 +383,7 @@ function QuestionEditor({
       ...question,
       type: qType,
       enonce,
+      image,
     };
 
     if (qType === "QRC") {
@@ -397,7 +402,7 @@ function QuestionEditor({
   useEffect(() => {
     onDraftChange(buildUpdatedQuestion());
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enonce, reponseQRC, motsCles, choix, qType]);
+  }, [enonce, reponseQRC, motsCles, choix, qType, image]);
 
   const handleChoixTexte = (i: number, val: string) => {
     setChoix(prev => prev.map((c, idx) => idx === i ? { ...c, texte: val } : c));
@@ -460,6 +465,15 @@ function QuestionEditor({
           className="text-sm"
         />
       </div>
+
+      {/* Image (optionnel) */}
+      <QuestionImageUpload
+        image={image}
+        context="exam"
+        contextId={examId}
+        questionId={question.id}
+        onImageChange={setImage}
+      />
 
       {/* QRC */}
       {qType === "QRC" && (
@@ -541,11 +555,13 @@ function MatiereEditor({
   matiere,
   onChange,
   examTitre,
+  examId,
   locked,
 }: {
   matiere: Matiere;
   onChange: (m: Matiere) => void;
   examTitre?: string;
+  examId: string;
   locked?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -711,6 +727,7 @@ function MatiereEditor({
                   onDraftChange={saveQuestionDraft}
                     onDelete={() => { if (!locked) deleteQuestion(q.id); }}
                     onCancel={() => setEditingQId(null)}
+                    examId={examId}
                   />
               ) : (
                 <div className="border border-border/40 rounded-xl bg-background hover:bg-muted/10 hover:shadow-md group transition-all duration-200 p-5 space-y-3">
@@ -1187,6 +1204,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
                   key={m.id}
                   matiere={m}
                   examTitre={`${examenSel.type} — Examen Blanc N°${examenSel.numero}`}
+                  examId={examenSel.id}
                   onChange={updated => handleMatiereChange(m.id, updated)}
                   locked={isLocked}
                 />

@@ -640,6 +640,45 @@ export function mergeQuestionsForMatiere(
 }
 
 // ────────────────────────────────────────────────────────────
+// Question image upload helpers
+// ────────────────────────────────────────────────────────────
+
+const ALLOWED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+
+/**
+ * Build a unique storage path for a question image.
+ * @param context "module" or "exam"
+ * @param contextId module_id (number) or exam_id (string like "EB1")
+ * @param questionId question id
+ * @param fileName original file name
+ */
+export function buildQuestionImagePath(
+  context: "module" | "exam",
+  contextId: number | string,
+  questionId: number | string,
+  fileName: string,
+): string {
+  const sanitized = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const truncated = sanitized.length > 80 ? sanitized.slice(0, 70) + sanitized.slice(sanitized.lastIndexOf(".")) : sanitized;
+  return `question-images/${context}-${contextId}/q${questionId}_${Date.now()}_${truncated}`;
+}
+
+/**
+ * Validate a file before uploading as a question image.
+ * Returns { valid: true } or { valid: false, error: string }.
+ */
+export function validateQuestionImageFile(file: File): { valid: true } | { valid: false; error: string } {
+  if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+    return { valid: false, error: "Format non supporté. Utilisez PNG, JPEG, WebP ou GIF." };
+  }
+  if (file.size > MAX_IMAGE_SIZE_BYTES) {
+    return { valid: false, error: "Fichier trop volumineux (max 5 Mo)." };
+  }
+  return { valid: true };
+}
+
+// ────────────────────────────────────────────────────────────
 // Presence check — rolling window logic (mirrors SQL function)
 // ────────────────────────────────────────────────────────────
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { resolveExamQuestionImageUrl, addCacheBuster } from "./examens-blancs-utils";
+import { ImageLightbox } from "./ImageLightbox";
 
 export function ExamQuestionImage({
   image,
@@ -29,7 +30,7 @@ export function ExamQuestionImage({
 
   const src = addCacheBuster(resolvedUrl, cacheToken);
   return (
-    <img
+    <ImageLightbox
       src={src}
       alt={alt}
       loading="eager"
