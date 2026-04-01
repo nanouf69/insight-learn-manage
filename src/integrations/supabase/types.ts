@@ -734,6 +734,56 @@ export type Database = {
         }
         Relationships: []
       }
+      devis_envois: {
+        Row: {
+          apprenant_id: string
+          created_at: string
+          devis_signe_url: string | null
+          fichier_url: string
+          formation: string | null
+          id: string
+          modele: string
+          montant: string | null
+          signed_at: string | null
+          statut: string
+          token: string
+        }
+        Insert: {
+          apprenant_id: string
+          created_at?: string
+          devis_signe_url?: string | null
+          fichier_url: string
+          formation?: string | null
+          id?: string
+          modele: string
+          montant?: string | null
+          signed_at?: string | null
+          statut?: string
+          token?: string
+        }
+        Update: {
+          apprenant_id?: string
+          created_at?: string
+          devis_signe_url?: string | null
+          fichier_url?: string
+          formation?: string | null
+          id?: string
+          modele?: string
+          montant?: string | null
+          signed_at?: string | null
+          statut?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "devis_envois_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: false
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           apprenant_id: string | null
