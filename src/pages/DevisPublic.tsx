@@ -131,12 +131,9 @@ const CGV_SECTIONS = [
 const RIB_INFO = {
   titulaire: "SERVICES PRO FTRANSPORT",
   adresse: "86 ROUTE DE GENAS, 69003 LYON 3EME",
-  swift: "QNTOFRP1XXX",
-  iban: "FR76 1695 8000 0197 9789 6261 128",
-  banque: "16958",
-  agence: "00001",
-  compte: "97978962611",
-  cle: "28",
+  swift: "REVOFRP2",
+  iban: "FR76 2823 3000 0185 7527 9099 426",
+  banque: "Revolut Bank UAB",
 };
 
 export default function DevisPublic() {
