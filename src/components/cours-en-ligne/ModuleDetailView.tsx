@@ -2206,7 +2206,19 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             );
 
           if (hasValidModuleData) {
-            setModuleData(md);
+            // Merge source images into DB-loaded questions (images may have been added after DB save)
+            const mergedExercices = md.exercices.map((dbExo: any) => {
+              const sourceExo = initialData.exercices.find((s: any) => Number(s.id) === Number(dbExo.id));
+              if (!sourceExo?.questions || !dbExo.questions) return dbExo;
+              const mergedQuestions = dbExo.questions.map((dbQ: any) => {
+                if (dbQ.image) return dbQ; // already has image
+                const sourceQ = sourceExo.questions.find((sq: any) => Number(sq.id) === Number(dbQ.id));
+                if (sourceQ?.image) return { ...dbQ, image: sourceQ.image };
+                return dbQ;
+              });
+              return { ...dbExo, questions: mergedQuestions };
+            });
+            setModuleData({ ...md, exercices: mergedExercices });
             setDeletedCours(Array.isArray(latestState.deleted_cours) ? (latestState.deleted_cours as unknown as ContentItem[]) : []);
             setDeletedExercices(Array.isArray(latestState.deleted_exercices) ? (latestState.deleted_exercices as unknown as ExerciceItem[]) : []);
             setLoadedModuleEditorState(true);
