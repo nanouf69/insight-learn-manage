@@ -771,7 +771,7 @@ export default function DevisPublic() {
           </div>
 
           {/* ═══ ACTIONS (no-print) ═══ */}
-          <div className="no-print bg-white rounded-lg shadow-sm border p-6 md:p-10 space-y-6 mb-6">
+            <div className="no-print bg-white rounded-lg shadow-sm border p-6 md:p-10 space-y-6 mb-6">
             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
               <Printer className="h-5 w-5 text-blue-600" />
               Finaliser votre inscription
@@ -781,45 +781,36 @@ export default function DevisPublic() {
               <p className="font-medium text-blue-900">📋 Comment procéder :</p>
               <ol className="list-decimal ml-5 space-y-1 text-blue-800">
                 <li>Remplissez toutes les informations ci-dessus (cases à cocher, date du permis, etc.)</li>
+                <li>Cochez les deux cases (renonciation et CGV)</li>
                 <li>Écrivez « Lu et approuvé, Bon pour accord » et signez</li>
-                <li>Cliquez sur <strong>« Imprimer / Enregistrer PDF »</strong> pour sauvegarder ou imprimer le document</li>
-                <li>Envoyez-nous le document signé ci-dessous ou par email à contact@ftransport.fr</li>
+                <li>Cliquez sur <strong>« Envoyer le devis signé »</strong></li>
               </ol>
             </div>
 
-            <div className="flex items-center gap-3 flex-wrap">
-              <Button onClick={handlePrint} className="gap-2 bg-blue-600 hover:bg-blue-700">
-                <Printer className="h-4 w-4" /> Imprimer / Enregistrer PDF
-              </Button>
-            </div>
-
-            {/* Upload signed version */}
-            <div className="border-t pt-4 space-y-3">
-              <h3 className="font-semibold text-sm">Ou renvoyez le devis signé directement :</h3>
-              {uploaded ? (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-                  <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                  <p className="font-medium text-green-800">Devis signé reçu !</p>
-                  <p className="text-sm text-green-600 mt-1">Merci, nous avons bien reçu votre devis signé.</p>
-                </div>
-              ) : (
-                <div>
-                  <input type="file" id="devis-file" accept=".pdf,.jpg,.jpeg,.png,.heic,.webp" onChange={handleUpload} className="hidden" disabled={uploading} />
-                  <Button
-                    variant="outline"
-                    className="w-full border-dashed border-2 h-20"
-                    onClick={() => document.getElementById("devis-file")?.click()}
-                    disabled={uploading}
-                  >
-                    {uploading ? (
-                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Envoi en cours...</>
-                    ) : (
-                      <><Upload className="h-4 w-4 mr-2" /> Cliquez pour envoyer le devis signé (PDF, JPG, PNG — Max 10 Mo)</>
-                    )}
-                  </Button>
-                </div>
-              )}
-            </div>
+            {uploaded ? (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                <p className="font-medium text-green-800">Devis signé envoyé !</p>
+                <p className="text-sm text-green-600 mt-1">Merci, nous avons bien reçu votre devis signé. Nous reviendrons vers vous rapidement.</p>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 flex-wrap">
+                <Button
+                  onClick={handleSendDevis}
+                  disabled={uploading || !acceptCGV || !acceptEarlyStart || !hasSigned}
+                  className="gap-2 bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-base"
+                >
+                  {uploading ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Envoi en cours...</>
+                  ) : (
+                    <><CheckCircle className="h-5 w-5" /> Envoyer le devis signé</>
+                  )}
+                </Button>
+                <Button onClick={handlePrint} variant="outline" className="gap-2">
+                  <Printer className="h-4 w-4" /> Imprimer / PDF
+                </Button>
+              </div>
+            )}
 
             <div className="text-center text-xs text-muted-foreground border-t pt-4">
               📧 contact@ftransport.fr — 📞 04.28.29.60.91
