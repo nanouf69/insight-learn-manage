@@ -555,6 +555,29 @@ export function isBilanAnswerCorrectBroken(
 }
 
 // ────────────────────────────────────────────────────────────
+// Question reorder
+// ────────────────────────────────────────────────────────────
+
+/**
+ * Move a question (by ID) to a specific target index.
+ * Returns a new array with the question repositioned.
+ */
+export function moveQuestionToPosition<T extends { id: number }>(
+  questions: T[],
+  questionId: number,
+  targetIndex: number,
+): T[] {
+  const fromIndex = questions.findIndex((q) => q.id === questionId);
+  if (fromIndex < 0) return questions;
+  const clamped = Math.max(0, Math.min(targetIndex, questions.length - 1));
+  if (clamped === fromIndex) return questions;
+  const result = [...questions];
+  const [moved] = result.splice(fromIndex, 1);
+  result.splice(clamped, 0, moved);
+  return result;
+}
+
+// ────────────────────────────────────────────────────────────
 // Shared matière edit propagation
 // ────────────────────────────────────────────────────────────
 

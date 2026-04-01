@@ -11,7 +11,7 @@ import {
   Save, CheckCircle2, X, Clock, Layers, Loader2, ArrowUp, ArrowDown, ArrowLeftRight, Pause, Play, AlertTriangle
 } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, type Question, type Choix } from "./examens-blancs-data";
-import { mergeQuestionsForMatiere, propagateSharedMatiereEdit } from "./examens-blancs-utils";
+import { mergeQuestionsForMatiere, propagateSharedMatiereEdit, moveQuestionToPosition } from "./examens-blancs-utils";
 import { QuestionImageUpload } from "./QuestionImageUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -627,7 +627,6 @@ function MatiereEditor({
   };
 
   const moveQuestion = (qId: number, direction: "up" | "down") => {
-    if (locked) return;
     const idx = questionsSafe.findIndex(q => q.id === qId);
     if (idx < 0) return;
     if (direction === "up" && idx === 0) return;
@@ -636,6 +635,11 @@ function MatiereEditor({
     const swapIdx = direction === "up" ? idx - 1 : idx + 1;
     [newQuestions[idx], newQuestions[swapIdx]] = [newQuestions[swapIdx], newQuestions[idx]];
     onChange({ ...matiere, questions: newQuestions });
+  };
+
+  const moveQuestionTo = (qId: number, targetIndex: number) => {
+    const reordered = moveQuestionToPosition(questionsSafe, qId, targetIndex);
+    onChange({ ...matiere, questions: reordered });
   };
 
   return (
@@ -759,27 +763,41 @@ function MatiereEditor({
                     >
                       <Pencil className="w-4 h-4" />
                     </Button>
-                    <div className={`flex flex-col ${locked ? 'opacity-30 pointer-events-none' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 px-1"
-                        disabled={locked || questionsSafe.indexOf(q) === 0}
-                        onClick={() => moveQuestion(q.id, "up")}
-                        title="Monter"
-                      >
-                        <ArrowUp className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 px-1"
-                        disabled={locked || questionsSafe.indexOf(q) === questionsSafe.length - 1}
-                        onClick={() => moveQuestion(q.id, "down")}
-                        title="Descendre"
-                      >
-                        <ArrowDown className="w-3.5 h-3.5" />
-                      </Button>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex flex-col">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-1"
+                          disabled={questionsSafe.indexOf(q) === 0}
+                          onClick={() => moveQuestion(q.id, "up")}
+                          title="Monter"
+                        >
+                          <ArrowUp className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-1"
+                          disabled={questionsSafe.indexOf(q) === questionsSafe.length - 1}
+                          onClick={() => moveQuestion(q.id, "down")}
+                          title="Descendre"
+                        >
+                          <ArrowDown className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                      {questionsSafe.length > 2 && (
+                        <select
+                          className="h-7 text-xs border rounded px-1 bg-background cursor-pointer"
+                          value={questionsSafe.indexOf(q)}
+                          onChange={(e) => moveQuestionTo(q.id, Number(e.target.value))}
+                          title="Déplacer à la position..."
+                        >
+                          {questionsSafe.map((_, i) => (
+                            <option key={i} value={i}>Pos {i + 1}</option>
+                          ))}
+                        </select>
+                      )}
                     </div>
                   </div>
                   {/* Réponses affichées sous la question */}
