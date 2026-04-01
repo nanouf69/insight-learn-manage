@@ -135,7 +135,10 @@ export default function DevisPublic() {
               Téléchargez votre devis
             </h3>
             <p className="text-sm text-muted-foreground">
-              Téléchargez le document, complétez les informations manquantes, signez-le.
+              Téléchargez le document, ouvrez-le avec <strong>Microsoft Word</strong> (ou imprimez-le), cochez les cases, complétez les informations et signez-le.
+            </p>
+            <p className="text-xs text-amber-600 bg-amber-50 rounded p-2">
+              ⚠️ Les cases à cocher ne fonctionnent que dans Microsoft Word. Si vous n'avez pas Word, imprimez le document, cochez à la main, signez et scannez-le.
             </p>
             <Button asChild className="w-full">
               <a href={devis.fichier_url} download>
