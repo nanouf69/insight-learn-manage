@@ -1817,7 +1817,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                 generateAttestationFCVTC({
                                   nom: apprenant.nom,
                                   prenom: apprenant.prenom,
-                                  dateFin: session.dateFin,
+                                  dateFin: sessionApprenant.date_fin_personnalisee || session.dateFin,
                                 });
                                 toast({ title: "Attestation generee", description: `Attestation FC VTC pour ${apprenant.prenom} ${apprenant.nom} telechargee.` });
                               }}
