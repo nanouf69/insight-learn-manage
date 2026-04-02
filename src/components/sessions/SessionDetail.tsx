@@ -369,6 +369,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           montant_paye,
           moyen_paiement,
           statut_suivi,
+          date_fin_personnalisee,
+          heure_debut_personnalisee,
+          heure_fin_personnalisee,
           apprenant:apprenants (
             id,
             nom,
