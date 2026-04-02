@@ -1950,6 +1950,9 @@ export type Database = {
           created_at: string
           date_debut: string | null
           date_fin: string | null
+          date_fin_personnalisee: string | null
+          heure_debut_personnalisee: string | null
+          heure_fin_personnalisee: string | null
           id: string
           mode_financement: string | null
           montant_paye: number | null
@@ -1965,6 +1968,9 @@ export type Database = {
           created_at?: string
           date_debut?: string | null
           date_fin?: string | null
+          date_fin_personnalisee?: string | null
+          heure_debut_personnalisee?: string | null
+          heure_fin_personnalisee?: string | null
           id?: string
           mode_financement?: string | null
           montant_paye?: number | null
@@ -1980,6 +1986,9 @@ export type Database = {
           created_at?: string
           date_debut?: string | null
           date_fin?: string | null
+          date_fin_personnalisee?: string | null
+          heure_debut_personnalisee?: string | null
+          heure_fin_personnalisee?: string | null
           id?: string
           mode_financement?: string | null
           montant_paye?: number | null
