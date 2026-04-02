@@ -555,6 +555,66 @@ export function isBilanAnswerCorrectBroken(
 }
 
 // ────────────────────────────────────────────────────────────
+// Module exercice merge (saved DB data has priority over source)
+// ────────────────────────────────────────────────────────────
+
+interface MergeExercice {
+  id: number;
+  titre?: string;
+  sousTitre?: string;
+  actif?: boolean;
+  questions?: { id: number; enonce: string; image?: string; choix: { lettre: string; texte: string; correct?: boolean }[] }[];
+  fichiers?: { nom: string; url: string }[];
+  [key: string]: unknown;
+}
+
+/**
+ * Merge saved (DB) exercices with source (hardcoded) exercices.
+ * Saved data takes priority — admin edits to enonce, choix, correct, image
+ * are preserved. Source is used only as a fallback for fields not in saved,
+ * and to surface new questions/exercices not yet in saved.
+ */
+export function mergeSourceExercices<T extends MergeExercice>(
+  loadedExercices: T[],
+  sourceExercices: T[],
+): T[] {
+  const loadedExerciseMap = new Map(loadedExercices.map((exo) => [Number(exo.id), exo]));
+
+  return sourceExercices.map((sourceExo) => {
+    const loadedExo = loadedExerciseMap.get(Number(sourceExo.id));
+    if (!loadedExo) return sourceExo;
+
+    if (!sourceExo.questions || !loadedExo.questions) {
+      // Saved takes priority, source fills gaps
+      return { ...sourceExo, ...loadedExo } as T;
+    }
+
+    const loadedQuestionMap = new Map(loadedExo.questions.map((q) => [Number(q.id), q]));
+
+    const mergedQuestions = sourceExo.questions.map((sourceQ) => {
+      const loadedQ = loadedQuestionMap.get(Number(sourceQ.id));
+      if (!loadedQ) return sourceQ;
+
+      // Saved (admin edit) takes priority over source
+      return {
+        ...sourceQ,
+        ...loadedQ,
+        image: loadedQ.image ?? sourceQ.image,
+        choix: Array.isArray(loadedQ.choix) && loadedQ.choix.length > 0
+          ? loadedQ.choix
+          : sourceQ.choix,
+      };
+    });
+
+    return {
+      ...sourceExo,
+      ...loadedExo,
+      questions: mergedQuestions,
+    } as T;
+  });
+}
+
+// ────────────────────────────────────────────────────────────
 // Question reorder
 // ────────────────────────────────────────────────────────────
 
