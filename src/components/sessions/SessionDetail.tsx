@@ -1106,9 +1106,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
 
   const handleBulkEmargement = async (isPrint: boolean) => {
-    const selectedList = apprenantsInSession
-      .filter((sa: any) => sa.apprenant && selectedApprenants.has(sa.apprenant.id))
-      .map((sa: any) => sa.apprenant);
+    const selectedSAs = apprenantsInSession
+      .filter((sa: any) => sa.apprenant && selectedApprenants.has(sa.apprenant.id));
+    const selectedList = selectedSAs.map((sa: any) => ({ ...sa.apprenant, _sa: sa }));
     if (selectedList.length === 0) {
       toast({ title: "Aucun apprenant sélectionné", variant: "destructive" });
       return;
