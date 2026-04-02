@@ -807,7 +807,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
   const updateSessionApprenant = async (
     sessionApprenantId: string, 
-    updates: { notes?: string; presence_pratique?: string | null; statut_suivi?: string | null }
+    updates: { notes?: string; presence_pratique?: string | null; statut_suivi?: string | null; date_fin_personnalisee?: string | null; heure_debut_personnalisee?: string | null; heure_fin_personnalisee?: string | null }
   ) => {
     try {
       const { error } = await supabase
