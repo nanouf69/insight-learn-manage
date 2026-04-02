@@ -1760,16 +1760,17 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
                                 // Fallback pour FC VTC : si pas de blocs agenda, générer les jours ouvrés de la session
                                 if (agendaDays.length === 0 && isFCVTC) {
+                                  const effectiveDateFin = sessionApprenant.date_fin_personnalisee || session.dateFin;
                                   const fcStart = new Date(session.dateDebut + 'T00:00:00');
-                                  const fcEnd = new Date(session.dateFin + 'T00:00:00');
+                                  const fcEnd = new Date(effectiveDateFin + 'T00:00:00');
                                   for (let d = new Date(fcStart); d <= fcEnd; d.setDate(d.getDate() + 1)) {
                                     const dayOfWeek = d.getDay();
                                     if (dayOfWeek === 0 || dayOfWeek === 6) continue;
                                     const key = d.toISOString().slice(0, 10);
                                     const slot: AgendaDaySlot = { date: new Date(d) };
-                                    if (key === '2026-04-02') {
-                                      slot.apremDebut = '15:00';
-                                      slot.apremFin = '18:00';
+                                    if (sessionApprenant.date_fin_personnalisee && key === sessionApprenant.date_fin_personnalisee && sessionApprenant.heure_debut_personnalisee && sessionApprenant.heure_fin_personnalisee) {
+                                      slot.apremDebut = sessionApprenant.heure_debut_personnalisee;
+                                      slot.apremFin = sessionApprenant.heure_fin_personnalisee;
                                     } else {
                                       slot.matinDebut = '09:00';
                                       slot.matinFin = '12:00';
@@ -1785,11 +1786,13 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                   return;
                                 }
 
+                                const effectiveDateFinEmargement = sessionApprenant.date_fin_personnalisee || session.dateFin;
+
                                 generateEmargementIndividuelPDF(
                                   {
                                     formation: formationLabel,
                                     dateDebut: session.dateDebut,
-                                    dateFin: session.dateFin,
+                                    dateFin: effectiveDateFinEmargement,
                                     lieu: session.lieu,
                                     formateurs: formateurNames,
                                   },
