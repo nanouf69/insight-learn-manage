@@ -42,6 +42,7 @@ import { VILLE_ARRONDISSEMENTS_SLIDES } from "./slides/ville-arrondissements-dat
 import { VILLE_STATIONS_TAXI_SLIDES } from "./slides/ville-stations-taxi-data";
 import { QuestionImageUpload } from "./QuestionImageUpload";
 import { ImageLightbox } from "./ImageLightbox";
+import { mergeSourceExercices } from "./examens-blancs-utils";
 
 // Images des monuments et lieux de Lyon
 import imgCathedraleStJean from "@/assets/pratique/cathedrale-st-jean.jpg";
@@ -2060,38 +2061,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       })),
     });
 
-  const mergeSourceExercices = (loadedExercices: ExerciceItem[], sourceExercices: ExerciceItem[]): ExerciceItem[] => {
-    const loadedExerciseMap = new Map(loadedExercices.map((exo) => [Number(exo.id), exo]));
-
-    return sourceExercices.map((sourceExo) => {
-      const loadedExo = loadedExerciseMap.get(Number(sourceExo.id));
-      if (!loadedExo) return sourceExo;
-
-      if (!sourceExo.questions || !loadedExo.questions) {
-        return { ...loadedExo, ...sourceExo };
-      }
-
-      const loadedQuestionMap = new Map(loadedExo.questions.map((q) => [Number(q.id), q]));
-
-      const mergedQuestions = sourceExo.questions.map((sourceQ) => {
-        const loadedQ = loadedQuestionMap.get(Number(sourceQ.id));
-        if (!loadedQ) return sourceQ;
-
-        return {
-          ...loadedQ,
-          ...sourceQ,
-          image: sourceQ.image ?? loadedQ.image,
-          choix: Array.isArray(sourceQ.choix) && sourceQ.choix.length > 0 ? sourceQ.choix : loadedQ.choix,
-        };
-      });
-
-      return {
-        ...loadedExo,
-        ...sourceExo,
-        questions: mergedQuestions,
-      };
-    });
-  };
+  // mergeSourceExercices is now imported from examens-blancs-utils
+  // with the correct priority: saved (DB) data takes priority over source
 
   // Load trainer DB overrides and apply to student view
   // Runs AFTER editorStateHydrated so initial data is already set.
