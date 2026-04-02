@@ -157,7 +157,8 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
         || (s.lieu || "").toLowerCase().includes(q)
         || (s.types_apprenant || []).some(t => t.toLowerCase().includes(q))
         || (sessionApprenantSearchMap[s.id] || []).some(str => str.includes(q));
-      const matchStatut = filterStatut === "tous" || s.statut === filterStatut;
+      const isTerminee = filterStatut === "terminee" && (s.statut === "terminee" || new Date(s.date_fin) < new Date(new Date().toDateString()));
+      const matchStatut = filterStatut === "tous" || s.statut === filterStatut || isTerminee;
       const matchType = filterType === "tous"
         ? true
         : FORMATION_FILTERS[filterType]
