@@ -1715,6 +1715,28 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                   }
                                 }
 
+                                // Fallback pour FC VTC : si pas de blocs agenda, générer les jours ouvrés de la session
+                                if (agendaDays.length === 0 && isFCVTC) {
+                                  const fcStart = new Date(session.dateDebut + 'T00:00:00');
+                                  const fcEnd = new Date(session.dateFin + 'T00:00:00');
+                                  for (let d = new Date(fcStart); d <= fcEnd; d.setDate(d.getDate() + 1)) {
+                                    const dayOfWeek = d.getDay();
+                                    if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+                                    const key = d.toISOString().slice(0, 10);
+                                    const slot: AgendaDaySlot = { date: new Date(d) };
+                                    if (key === '2026-04-02') {
+                                      slot.apremDebut = '15:00';
+                                      slot.apremFin = '18:00';
+                                    } else {
+                                      slot.matinDebut = '09:00';
+                                      slot.matinFin = '12:00';
+                                      slot.apremDebut = '13:00';
+                                      slot.apremFin = '17:00';
+                                    }
+                                    agendaDays.push(slot);
+                                  }
+                                }
+
                                 if (agendaDays.length === 0) {
                                   toast({ title: "Aucun cours trouvé", description: "Aucun bloc agenda trouvé pour cette session.", variant: "destructive" });
                                   return;
