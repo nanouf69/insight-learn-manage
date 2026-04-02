@@ -807,7 +807,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
   const updateSessionApprenant = async (
     sessionApprenantId: string, 
-    updates: { notes?: string; presence_pratique?: string | null; statut_suivi?: string | null }
+    updates: { notes?: string; presence_pratique?: string | null; statut_suivi?: string | null; date_fin_personnalisee?: string | null; heure_debut_personnalisee?: string | null; heure_fin_personnalisee?: string | null }
   ) => {
     try {
       const { error } = await supabase
@@ -1106,9 +1106,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
 
   const handleBulkEmargement = async (isPrint: boolean) => {
-    const selectedList = apprenantsInSession
-      .filter((sa: any) => sa.apprenant && selectedApprenants.has(sa.apprenant.id))
-      .map((sa: any) => sa.apprenant);
+    const selectedSAs = apprenantsInSession
+      .filter((sa: any) => sa.apprenant && selectedApprenants.has(sa.apprenant.id));
+    const selectedList = selectedSAs.map((sa: any) => ({ ...sa.apprenant, _sa: sa }));
     if (selectedList.length === 0) {
       toast({ title: "Aucun apprenant sélectionné", variant: "destructive" });
       return;
@@ -1218,17 +1218,19 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
         // Fallback pour FC VTC : si pas de blocs agenda, générer les jours ouvrés de la session
         if (agendaDays.length === 0 && isFCVTC) {
+          const sa = apprenant._sa || {};
+          const effectiveDateFin = sa.date_fin_personnalisee || session.dateFin;
           const start = new Date(session.dateDebut + 'T00:00:00');
-          const end = new Date(session.dateFin + 'T00:00:00');
+          const end = new Date(effectiveDateFin + 'T00:00:00');
           for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
             const dayOfWeek = d.getDay();
             if (dayOfWeek === 0 || dayOfWeek === 6) continue;
             const key = d.toISOString().slice(0, 10);
             const slot: AgendaDaySlot = { date: new Date(d) };
-            // 2 avril 2026 : créneau spécial 15h-18h uniquement
-            if (key === '2026-04-02') {
-              slot.apremDebut = '15:00';
-              slot.apremFin = '18:00';
+            // Si c'est le jour personnalisé avec horaires spécifiques
+            if (sa.date_fin_personnalisee && key === sa.date_fin_personnalisee && sa.heure_debut_personnalisee && sa.heure_fin_personnalisee) {
+              slot.apremDebut = sa.heure_debut_personnalisee;
+              slot.apremFin = sa.heure_fin_personnalisee;
             } else {
               slot.matinDebut = '09:00';
               slot.matinFin = '12:00';
@@ -1244,11 +1246,14 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           continue;
         }
 
+        const saForEmargement = apprenant._sa || {};
+        const effectiveDateFinEmargement = saForEmargement.date_fin_personnalisee || session.dateFin;
+
         generateEmargementIndividuelPDF(
           {
             formation: formationLabel,
             dateDebut: session.dateDebut,
-            dateFin: session.dateFin,
+            dateFin: effectiveDateFinEmargement,
             lieu: session.lieu,
             formateurs: formateurNames,
           },
@@ -1596,6 +1601,43 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           )}
                         </div>
 
+                        {/* Ligne 3.5: Date de fin personnalisée */}
+                        {isFormationContinue && (
+                          <div className="flex items-center gap-3 mb-3 pl-[52px] flex-wrap">
+                            <div className="flex items-center gap-2">
+                              <Label className="text-xs text-muted-foreground whitespace-nowrap">Fin perso :</Label>
+                              <Input
+                                type="date"
+                                className="h-7 w-36 text-xs"
+                                value={sessionApprenant.date_fin_personnalisee || ''}
+                                onChange={(e) => {
+                                  updateSessionApprenant(sessionApprenant.id, { date_fin_personnalisee: e.target.value || null });
+                                }}
+                              />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Label className="text-xs text-muted-foreground whitespace-nowrap">De</Label>
+                              <Input
+                                type="time"
+                                className="h-7 w-24 text-xs"
+                                value={sessionApprenant.heure_debut_personnalisee || ''}
+                                onChange={(e) => {
+                                  updateSessionApprenant(sessionApprenant.id, { heure_debut_personnalisee: e.target.value || null });
+                                }}
+                              />
+                              <Label className="text-xs text-muted-foreground">a</Label>
+                              <Input
+                                type="time"
+                                className="h-7 w-24 text-xs"
+                                value={sessionApprenant.heure_fin_personnalisee || ''}
+                                onChange={(e) => {
+                                  updateSessionApprenant(sessionApprenant.id, { heure_fin_personnalisee: e.target.value || null });
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
+
                         {/* Ligne 4: Boutons d'action sur ligne séparée */}
                         <div className="flex items-center gap-2 pt-3 border-t flex-wrap pl-[52px]">
                           {[
@@ -1718,16 +1760,17 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
                                 // Fallback pour FC VTC : si pas de blocs agenda, générer les jours ouvrés de la session
                                 if (agendaDays.length === 0 && isFCVTC) {
+                                  const effectiveDateFin = sessionApprenant.date_fin_personnalisee || session.dateFin;
                                   const fcStart = new Date(session.dateDebut + 'T00:00:00');
-                                  const fcEnd = new Date(session.dateFin + 'T00:00:00');
+                                  const fcEnd = new Date(effectiveDateFin + 'T00:00:00');
                                   for (let d = new Date(fcStart); d <= fcEnd; d.setDate(d.getDate() + 1)) {
                                     const dayOfWeek = d.getDay();
                                     if (dayOfWeek === 0 || dayOfWeek === 6) continue;
                                     const key = d.toISOString().slice(0, 10);
                                     const slot: AgendaDaySlot = { date: new Date(d) };
-                                    if (key === '2026-04-02') {
-                                      slot.apremDebut = '15:00';
-                                      slot.apremFin = '18:00';
+                                    if (sessionApprenant.date_fin_personnalisee && key === sessionApprenant.date_fin_personnalisee && sessionApprenant.heure_debut_personnalisee && sessionApprenant.heure_fin_personnalisee) {
+                                      slot.apremDebut = sessionApprenant.heure_debut_personnalisee;
+                                      slot.apremFin = sessionApprenant.heure_fin_personnalisee;
                                     } else {
                                       slot.matinDebut = '09:00';
                                       slot.matinFin = '12:00';
@@ -1743,11 +1786,13 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                   return;
                                 }
 
+                                const effectiveDateFinEmargement = sessionApprenant.date_fin_personnalisee || session.dateFin;
+
                                 generateEmargementIndividuelPDF(
                                   {
                                     formation: formationLabel,
                                     dateDebut: session.dateDebut,
-                                    dateFin: session.dateFin,
+                                    dateFin: effectiveDateFinEmargement,
                                     lieu: session.lieu,
                                     formateurs: formateurNames,
                                   },
@@ -1772,7 +1817,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                 generateAttestationFCVTC({
                                   nom: apprenant.nom,
                                   prenom: apprenant.prenom,
-                                  dateFin: session.dateFin,
+                                  dateFin: sessionApprenant.date_fin_personnalisee || session.dateFin,
                                 });
                                 toast({ title: "Attestation generee", description: `Attestation FC VTC pour ${apprenant.prenom} ${apprenant.nom} telechargee.` });
                               }}
