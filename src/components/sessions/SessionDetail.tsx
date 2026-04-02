@@ -170,6 +170,13 @@ const buildDefaultFCVTCDay = (date: Date): AgendaDaySlot => ({
   apremFin: '17:00',
 });
 
+const formatLocalDateKey = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const applyFCVTCPersonalizedSchedule = (
   agendaDays: AgendaDaySlot[],
   sessionStart: string,
@@ -188,11 +195,11 @@ const applyFCVTCPersonalizedSchedule = (
 
   agendaDays
     .filter((day) => {
-      const key = day.date.toISOString().slice(0, 10);
+      const key = formatLocalDateKey(day.date);
       return key >= sessionStart && key <= effectiveEnd;
     })
     .forEach((day) => {
-      const key = day.date.toISOString().slice(0, 10);
+      const key = formatLocalDateKey(day.date);
       dayMap.set(key, { ...day, date: new Date(day.date) });
     });
 
@@ -202,7 +209,7 @@ const applyFCVTCPersonalizedSchedule = (
     const dayOfWeek = d.getDay();
     if (dayOfWeek === 0 || dayOfWeek === 6) continue;
 
-    const key = d.toISOString().slice(0, 10);
+    const key = formatLocalDateKey(d);
     const isBeyondSessionEnd = key > sessionEnd;
     const isCustomEndDay = key === schedule?.date_fin_personnalisee;
 
@@ -1231,7 +1238,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           const weekStart = new Date(bloc.semaine_debut + 'T00:00:00');
           const actualDate = new Date(weekStart);
           actualDate.setDate(actualDate.getDate() + bloc.jour);
-          const key = actualDate.toISOString().slice(0, 10);
+          const key = formatLocalDateKey(actualDate);
           if (key < session.dateDebut || key > session.dateFin) continue;
           if (!dayMap.has(key)) {
             dayMap.set(key, { date: actualDate, slots: [] });
@@ -1276,7 +1283,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         if (isVTC && !isFCVTC) {
           const isCoursDuSoir = (session.title || '').toLowerCase().includes('soir');
           const march30Key = '2026-03-30';
-          const hasMarch30 = agendaDays.some(d => d.date.toISOString().slice(0, 10) === march30Key);
+          const hasMarch30 = agendaDays.some(d => formatLocalDateKey(d.date) === march30Key);
           if (!hasMarch30) {
             agendaDays.push(isCoursDuSoir ? {
               date: new Date('2026-03-30T00:00:00'),
@@ -1754,7 +1761,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                   const actualDate = new Date(weekStart);
                                   actualDate.setDate(weekStart.getDate() + bloc.jour);
                                   if (actualDate < dateDebut || actualDate > dateFin) continue;
-                                  const key = actualDate.toISOString().slice(0, 10);
+                                  const key = formatLocalDateKey(actualDate);
                                   if (!dayMap.has(key)) {
                                     dayMap.set(key, { date: actualDate, slots: [] });
                                   }
@@ -1802,7 +1809,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                 if (isVTC && !isFCVTC) {
                                   const isCoursDuSoir = (session.title || '').toLowerCase().includes('soir');
                                   const march30Key = '2026-03-30';
-                                  const hasMarch30 = agendaDays.some(d => d.date.toISOString().slice(0, 10) === march30Key);
+                                  const hasMarch30 = agendaDays.some(d => formatLocalDateKey(d.date) === march30Key);
                                   if (!hasMarch30) {
                                     agendaDays.push(isCoursDuSoir ? {
                                       date: new Date('2026-03-30T00:00:00'),
