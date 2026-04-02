@@ -1596,6 +1596,43 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           )}
                         </div>
 
+                        {/* Ligne 3.5: Date de fin personnalisée */}
+                        {isFormationContinue && (
+                          <div className="flex items-center gap-3 mb-3 pl-[52px] flex-wrap">
+                            <div className="flex items-center gap-2">
+                              <Label className="text-xs text-muted-foreground whitespace-nowrap">Fin perso :</Label>
+                              <Input
+                                type="date"
+                                className="h-7 w-36 text-xs"
+                                value={sessionApprenant.date_fin_personnalisee || ''}
+                                onChange={(e) => {
+                                  updateSessionApprenant(sessionApprenant.id, { date_fin_personnalisee: e.target.value || null });
+                                }}
+                              />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Label className="text-xs text-muted-foreground whitespace-nowrap">De</Label>
+                              <Input
+                                type="time"
+                                className="h-7 w-24 text-xs"
+                                value={sessionApprenant.heure_debut_personnalisee || ''}
+                                onChange={(e) => {
+                                  updateSessionApprenant(sessionApprenant.id, { heure_debut_personnalisee: e.target.value || null });
+                                }}
+                              />
+                              <Label className="text-xs text-muted-foreground">a</Label>
+                              <Input
+                                type="time"
+                                className="h-7 w-24 text-xs"
+                                value={sessionApprenant.heure_fin_personnalisee || ''}
+                                onChange={(e) => {
+                                  updateSessionApprenant(sessionApprenant.id, { heure_fin_personnalisee: e.target.value || null });
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
+
                         {/* Ligne 4: Boutons d'action sur ligne séparée */}
                         <div className="flex items-center gap-2 pt-3 border-t flex-wrap pl-[52px]">
                           {[
