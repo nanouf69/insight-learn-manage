@@ -1218,17 +1218,19 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
         // Fallback pour FC VTC : si pas de blocs agenda, générer les jours ouvrés de la session
         if (agendaDays.length === 0 && isFCVTC) {
+          const sa = apprenant._sa || {};
+          const effectiveDateFin = sa.date_fin_personnalisee || session.dateFin;
           const start = new Date(session.dateDebut + 'T00:00:00');
-          const end = new Date(session.dateFin + 'T00:00:00');
+          const end = new Date(effectiveDateFin + 'T00:00:00');
           for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
             const dayOfWeek = d.getDay();
             if (dayOfWeek === 0 || dayOfWeek === 6) continue;
             const key = d.toISOString().slice(0, 10);
             const slot: AgendaDaySlot = { date: new Date(d) };
-            // 2 avril 2026 : créneau spécial 15h-18h uniquement
-            if (key === '2026-04-02') {
-              slot.apremDebut = '15:00';
-              slot.apremFin = '18:00';
+            // Si c'est le jour personnalisé avec horaires spécifiques
+            if (sa.date_fin_personnalisee && key === sa.date_fin_personnalisee && sa.heure_debut_personnalisee && sa.heure_fin_personnalisee) {
+              slot.apremDebut = sa.heure_debut_personnalisee;
+              slot.apremFin = sa.heure_fin_personnalisee;
             } else {
               slot.matinDebut = '09:00';
               slot.matinFin = '12:00';
@@ -1244,11 +1246,14 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           continue;
         }
 
+        const saForEmargement = apprenant._sa || {};
+        const effectiveDateFinEmargement = saForEmargement.date_fin_personnalisee || session.dateFin;
+
         generateEmargementIndividuelPDF(
           {
             formation: formationLabel,
             dateDebut: session.dateDebut,
-            dateFin: session.dateFin,
+            dateFin: effectiveDateFinEmargement,
             lieu: session.lieu,
             formateurs: formateurNames,
           },
