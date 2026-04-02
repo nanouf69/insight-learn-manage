@@ -156,6 +156,77 @@ const getStatusBadge = (status: string) => {
   }
 };
 
+type SessionApprenantSchedule = {
+  date_fin_personnalisee?: string | null;
+  heure_debut_personnalisee?: string | null;
+  heure_fin_personnalisee?: string | null;
+};
+
+const buildDefaultFCVTCDay = (date: Date): AgendaDaySlot => ({
+  date: new Date(date),
+  matinDebut: '09:00',
+  matinFin: '12:00',
+  apremDebut: '13:00',
+  apremFin: '17:00',
+});
+
+const applyFCVTCPersonalizedSchedule = (
+  agendaDays: AgendaDaySlot[],
+  sessionStart: string,
+  sessionEnd: string,
+  schedule?: SessionApprenantSchedule,
+) => {
+  const effectiveEnd = schedule?.date_fin_personnalisee || sessionEnd;
+  const startDate = new Date(`${sessionStart}T00:00:00`);
+  const endDate = new Date(`${effectiveEnd}T00:00:00`);
+
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()) || endDate < startDate) {
+    return agendaDays;
+  }
+
+  const dayMap = new Map<string, AgendaDaySlot>();
+
+  agendaDays
+    .filter((day) => {
+      const key = day.date.toISOString().slice(0, 10);
+      return key >= sessionStart && key <= effectiveEnd;
+    })
+    .forEach((day) => {
+      const key = day.date.toISOString().slice(0, 10);
+      dayMap.set(key, { ...day, date: new Date(day.date) });
+    });
+
+  const shouldBackfillAllDays = dayMap.size === 0;
+
+  for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+    const dayOfWeek = d.getDay();
+    if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+
+    const key = d.toISOString().slice(0, 10);
+    const isBeyondSessionEnd = key > sessionEnd;
+    const isCustomEndDay = key === schedule?.date_fin_personnalisee;
+
+    if (!dayMap.has(key) && (shouldBackfillAllDays || isBeyondSessionEnd || isCustomEndDay)) {
+      dayMap.set(key, buildDefaultFCVTCDay(new Date(d)));
+    }
+  }
+
+  if (schedule?.date_fin_personnalisee && dayMap.has(schedule.date_fin_personnalisee)) {
+    const customDay = dayMap.get(schedule.date_fin_personnalisee)!;
+
+    if (schedule.heure_debut_personnalisee && schedule.heure_fin_personnalisee) {
+      customDay.matinDebut = undefined;
+      customDay.matinFin = undefined;
+      customDay.apremDebut = schedule.heure_debut_personnalisee;
+      customDay.apremFin = schedule.heure_fin_personnalisee;
+    }
+
+    dayMap.set(schedule.date_fin_personnalisee, customDay);
+  }
+
+  return Array.from(dayMap.values()).sort((a, b) => a.date.getTime() - b.date.getTime());
+};
+
 function NotesPopover({ 
   sessionApprenantId, 
   notes, 
@@ -1219,37 +1290,21 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           }
         }
 
-        // Fallback pour FC VTC : si pas de blocs agenda, générer les jours ouvrés de la session
-        if (agendaDays.length === 0 && isFCVTC) {
-          const sa = apprenant._sa || {};
-          const effectiveDateFin = sa.date_fin_personnalisee || session.dateFin;
-          const start = new Date(session.dateDebut + 'T00:00:00');
-          const end = new Date(effectiveDateFin + 'T00:00:00');
-          for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-            const dayOfWeek = d.getDay();
-            if (dayOfWeek === 0 || dayOfWeek === 6) continue;
-            const key = d.toISOString().slice(0, 10);
-            const slot: AgendaDaySlot = { date: new Date(d) };
-            // Si c'est le jour personnalisé avec horaires spécifiques
-            if (sa.date_fin_personnalisee && key === sa.date_fin_personnalisee && sa.heure_debut_personnalisee && sa.heure_fin_personnalisee) {
-              slot.apremDebut = sa.heure_debut_personnalisee;
-              slot.apremFin = sa.heure_fin_personnalisee;
-            } else {
-              slot.matinDebut = '09:00';
-              slot.matinFin = '12:00';
-              slot.apremDebut = '13:00';
-              slot.apremFin = '17:00';
-            }
-            agendaDays.push(slot);
-          }
-        }
+        const saForEmargement = apprenant._sa || {};
+        const finalAgendaDays = isFCVTC
+          ? applyFCVTCPersonalizedSchedule(
+              agendaDays,
+              session.dateDebut,
+              session.dateFin,
+              saForEmargement,
+            )
+          : agendaDays;
 
-        if (agendaDays.length === 0) {
+        if (finalAgendaDays.length === 0) {
           failed++;
           continue;
         }
 
-        const saForEmargement = apprenant._sa || {};
         const effectiveDateFinEmargement = saForEmargement.date_fin_personnalisee || session.dateFin;
 
         generateEmargementIndividuelPDF(
@@ -1261,7 +1316,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             formateurs: formateurNames,
           },
           { nom: apprenant.nom, prenom: apprenant.prenom, type_apprenant: apprenant.type_apprenant || '' },
-          agendaDays,
+          finalAgendaDays,
           { print: isPrint }
         );
         generated++;
@@ -1761,30 +1816,16 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                   }
                                 }
 
-                                // Fallback pour FC VTC : si pas de blocs agenda, générer les jours ouvrés de la session
-                                if (agendaDays.length === 0 && isFCVTC) {
-                                  const effectiveDateFin = sessionApprenant.date_fin_personnalisee || session.dateFin;
-                                  const fcStart = new Date(session.dateDebut + 'T00:00:00');
-                                  const fcEnd = new Date(effectiveDateFin + 'T00:00:00');
-                                  for (let d = new Date(fcStart); d <= fcEnd; d.setDate(d.getDate() + 1)) {
-                                    const dayOfWeek = d.getDay();
-                                    if (dayOfWeek === 0 || dayOfWeek === 6) continue;
-                                    const key = d.toISOString().slice(0, 10);
-                                    const slot: AgendaDaySlot = { date: new Date(d) };
-                                    if (sessionApprenant.date_fin_personnalisee && key === sessionApprenant.date_fin_personnalisee && sessionApprenant.heure_debut_personnalisee && sessionApprenant.heure_fin_personnalisee) {
-                                      slot.apremDebut = sessionApprenant.heure_debut_personnalisee;
-                                      slot.apremFin = sessionApprenant.heure_fin_personnalisee;
-                                    } else {
-                                      slot.matinDebut = '09:00';
-                                      slot.matinFin = '12:00';
-                                      slot.apremDebut = '13:00';
-                                      slot.apremFin = '17:00';
-                                    }
-                                    agendaDays.push(slot);
-                                  }
-                                }
+                                const finalAgendaDays = isFCVTC
+                                  ? applyFCVTCPersonalizedSchedule(
+                                      agendaDays,
+                                      session.dateDebut,
+                                      session.dateFin,
+                                      sessionApprenant,
+                                    )
+                                  : agendaDays;
 
-                                if (agendaDays.length === 0) {
+                                if (finalAgendaDays.length === 0) {
                                   toast({ title: "Aucun cours trouvé", description: "Aucun bloc agenda trouvé pour cette session.", variant: "destructive" });
                                   return;
                                 }
@@ -1800,7 +1841,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                     formateurs: formateurNames,
                                   },
                                   { nom: apprenant.nom, prenom: apprenant.prenom, type_apprenant: apprenant.type_apprenant || '' },
-                                  agendaDays,
+                                  finalAgendaDays,
                                   { print: isPrint }
                                 );
                                 toast({ title: isPrint ? "Impression lancée" : "Emargement individuel genere", description: `Feuille pour ${apprenant.prenom} ${apprenant.nom} ${isPrint ? 'ouverte pour impression.' : 'telechargee.'}` });
