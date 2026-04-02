@@ -49,6 +49,7 @@ import { useToast } from "@/hooks/use-toast";
 import { generateEmargementPDF } from "./EmargementGenerator";
 import { generateEmargementIndividuelPDF, AgendaDaySlot } from "./EmargementIndividuelGenerator";
 import { supabase } from "@/integrations/supabase/client";
+import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface Session {
@@ -1760,6 +1761,26 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                               <Icon className="w-4 h-4" />
                             </Button>
                           ))}
+
+                          {isFormationContinue && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 gap-1.5 text-muted-foreground hover:text-primary"
+                              title="Attestation Formation Continue VTC"
+                              onClick={() => {
+                                generateAttestationFCVTC({
+                                  nom: apprenant.nom,
+                                  prenom: apprenant.prenom,
+                                  dateFin: session.dateFin,
+                                });
+                                toast({ title: "Attestation generee", description: `Attestation FC VTC pour ${apprenant.prenom} ${apprenant.nom} telechargee.` });
+                              }}
+                            >
+                              <GraduationCap className="w-4 h-4" />
+                              <span className="text-xs">Attestation</span>
+                            </Button>
+                          )}
 
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
