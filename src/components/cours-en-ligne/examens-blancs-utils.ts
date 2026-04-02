@@ -558,14 +558,26 @@ export function isBilanAnswerCorrectBroken(
 // Module exercice merge (saved DB data has priority over source)
 // ────────────────────────────────────────────────────────────
 
-interface MergeExercice {
+interface MergeExerciceQuestionChoice {
+  lettre: string;
+  texte: string;
+  correct?: boolean;
+}
+
+interface MergeExerciceQuestion {
   id: number;
-  titre?: string;
+  enonce: string;
+  image?: string;
+  choix: MergeExerciceQuestionChoice[];
+}
+
+interface MergeExerciceBase {
+  id: number;
+  titre: string;
   sousTitre?: string;
-  actif?: boolean;
-  questions?: { id: number; enonce: string; image?: string; choix: { lettre: string; texte: string; correct?: boolean }[] }[];
+  actif: boolean;
+  questions?: MergeExerciceQuestion[];
   fichiers?: { nom: string; url: string }[];
-  [key: string]: unknown;
 }
 
 /**
@@ -574,7 +586,7 @@ interface MergeExercice {
  * are preserved. Source is used only as a fallback for fields not in saved,
  * and to surface new questions/exercices not yet in saved.
  */
-export function mergeSourceExercices<T extends MergeExercice>(
+export function mergeSourceExercices<T extends MergeExerciceBase>(
   loadedExercices: T[],
   sourceExercices: T[],
 ): T[] {
