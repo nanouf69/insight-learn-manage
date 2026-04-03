@@ -2232,6 +2232,50 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         const latestState = Array.isArray(data) ? data[0] : null;
 
+        // Admin: check if localStorage has NEWER data than DB (covers the case
+        // where admin reloads before the debounced DB save completes)
+        if (!studentOnly && latestState?.module_data) {
+          try {
+            const raw = window.localStorage.getItem(moduleEditorStorageKey);
+            if (raw) {
+              const localParsed = JSON.parse(raw) as {
+                moduleData?: ModuleData;
+                savedAt?: string;
+                sourceFingerprint?: string;
+              };
+              const localSavedAt = localParsed.savedAt ? new Date(localParsed.savedAt).getTime() : 0;
+              const dbUpdatedAt = latestState.updated_at ? new Date(latestState.updated_at).getTime() : 0;
+              if (localSavedAt > dbUpdatedAt && localParsed.moduleData && localParsed.sourceFingerprint === sourceFingerprint) {
+                console.log("[ModuleEditor] localStorage is newer than DB — using local state and re-saving to DB");
+                const localMerged: ModuleData = {
+                  ...localParsed.moduleData,
+                  exercices: mergeSourceExercices(localParsed.moduleData.exercices, initialData.exercices),
+                };
+                setModuleData(localMerged);
+                setDeletedCours([]);
+                setDeletedExercices([]);
+                setLoadedModuleEditorState(true);
+                // Re-save to DB immediately so students see the changes
+                supabase.from("module_editor_state").upsert(
+                  [{
+                    module_id: module.id,
+                    module_data: localMerged as any,
+                    deleted_cours: [] as any,
+                    deleted_exercices: [] as any,
+                    source_fingerprint: sourceFingerprint,
+                    updated_at: new Date().toISOString(),
+                  }],
+                  { onConflict: "module_id" }
+                ).then(({ error: e }) => {
+                  if (e) console.error("[ModuleEditor] Re-save from localStorage error:", e);
+                  else console.log("[ModuleEditor] ✅ Re-saved localStorage data to DB");
+                });
+                return;
+              }
+            }
+          } catch {}
+        }
+
         if (latestState?.module_data) {
           const hasMatchingSourceFingerprint = latestState.source_fingerprint === sourceFingerprint;
 
@@ -2484,9 +2528,60 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     };
   }, [module.id, studentOnly]);
 
-  // === NO visibilitychange refresh — use only data already in memory ===
-  // Previously this refetched module_editor_state on tab focus, causing unnecessary DB load.
-  // Realtime channel above handles live updates from admin edits.
+  // Polling fallback for students: if realtime subscription fails or misses events,
+  // re-fetch from DB when the tab becomes visible again (e.g. student switches back).
+  // This ensures students ALWAYS see the latest admin changes without needing to logout.
+  useEffect(() => {
+    if (!studentOnly || !editorStateHydrated) return;
+
+    let lastCheckedAt = Date.now();
+
+    const handleVisibilityChange = async () => {
+      if (document.hidden) return;
+      // Only re-check if at least 10s have passed since last check
+      if (Date.now() - lastCheckedAt < 10_000) return;
+      lastCheckedAt = Date.now();
+
+      try {
+        const { data, error } = await supabase
+          .from("module_editor_state")
+          .select("module_data, deleted_cours, deleted_exercices, updated_at")
+          .eq("module_id", module.id)
+          .order("updated_at", { ascending: false })
+          .limit(1);
+
+        if (error || !data || data.length === 0) return;
+
+        const latest = data[0];
+        if (!latest?.module_data) return;
+
+        const md = latest.module_data as unknown as ModuleData;
+        if (!Array.isArray(md.cours) || !Array.isArray(md.exercices)) return;
+        if (Number(md.id) !== Number(module.id)) return;
+
+        const sourceModuleData = getInitialModuleData(module, apprenantType, studentOnly);
+        const merged: ModuleData = {
+          ...md,
+          exercices: mergeSourceExercices(md.exercices, sourceModuleData.exercices),
+        };
+
+        // Only update if data actually changed
+        setModuleData((prev) => {
+          if (JSON.stringify(prev.exercices) === JSON.stringify(merged.exercices) &&
+              JSON.stringify(prev.cours) === JSON.stringify(merged.cours)) {
+            return prev;
+          }
+          console.log("[Visibility] Refreshed module data from DB for module", module.id);
+          return merged;
+        });
+      } catch (err) {
+        console.error("[Visibility] Error refreshing module data:", err);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [module.id, studentOnly, editorStateHydrated, apprenantType]);
 
   const performDbSave = async (dataToSave: {
     module_id: number;
@@ -2542,6 +2637,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       deletedCours,
       deletedExercices,
       sourceFingerprint,
+      savedAt: new Date().toISOString(),
     };
 
     // Save to localStorage immediately (synchronous, no race risk)
