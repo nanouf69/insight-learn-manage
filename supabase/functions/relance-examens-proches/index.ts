@@ -266,7 +266,7 @@ serve(async (req) => {
             sent_at: new Date().toISOString(),
           });
           results.push({ id: apprenant.id, email: apprenant.email, success: true });
-          console.log(`[relance-examens] ✅ Sent to ${apprenant.email} (exam in ${daysUntilExam}d, ${pct}%)`);
+          console.log(`[relance-examens] ✅ Sent to ${apprenant.email} (exam in ${daysUntilExam}d)`);
         } else {
           const errText = await sendRes.text();
           console.error(`[relance-examens] ❌ Failed for ${apprenant.email}:`, errText);
