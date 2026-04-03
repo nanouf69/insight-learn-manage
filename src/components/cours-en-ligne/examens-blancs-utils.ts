@@ -602,8 +602,15 @@ export function mergeSourceExercices<T extends MergeExerciceBase>(
     }
 
     const loadedQuestionMap = new Map(loadedExo.questions.map((q) => [Number(q.id), q]));
+    const deletedIds = new Set(
+      Array.isArray((loadedExo as any).deletedQuestionIds)
+        ? (loadedExo as any).deletedQuestionIds.map(Number)
+        : []
+    );
 
-    const mergedQuestions = sourceExo.questions.map((sourceQ) => {
+    const mergedQuestions = sourceExo.questions
+      .filter((sourceQ) => !deletedIds.has(Number(sourceQ.id)))
+      .map((sourceQ) => {
       const loadedQ = loadedQuestionMap.get(Number(sourceQ.id));
       if (!loadedQ) return sourceQ;
 
