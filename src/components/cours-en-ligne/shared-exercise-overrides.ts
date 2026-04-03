@@ -100,8 +100,10 @@ export function detectAndSaveOverrides(
   if (changed) {
     saveSharedOverrides(overrides);
     invalidateOtherModuleCaches(currentModuleId);
-    // Propagate to ALL modules — existing records AND unrecorded modules
-    propagateOverridesToAllModules(changedOverrides, currentModuleId, allModulesInitialData || []);
+    // DB propagation is handled by syncSharedExercisesToSiblingModules (called after
+    // the debounced module save) which uses exercise IDs instead of enonce matching.
+    // Calling propagateOverridesToAllModules here would race with that system and
+    // cause TOCTOU data loss when both write to the same sibling record concurrently.
   }
 }
 

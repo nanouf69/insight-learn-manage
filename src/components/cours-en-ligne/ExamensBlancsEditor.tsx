@@ -877,6 +877,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
   const lastSavedFingerprintRef = useRef("");
   const lastSavedModuleFingerprintsRef = useRef<Record<number, string>>({});
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingExamSaveRef = useRef<ExamenBlanc[] | null>(null);
   const persistChainRef = useRef<Promise<boolean>>(Promise.resolve(true));
 
   const examensFiltres = examens.filter(e => typeFiltre === "tous" || e?.type === typeFiltre);
@@ -1016,10 +1017,13 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
     const currentFingerprint = JSON.stringify(examens);
     if (currentFingerprint === lastSavedFingerprintRef.current) return;
 
+    pendingExamSaveRef.current = examens;
+
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = setTimeout(async () => {
       setAutoSaving(true);
       await persistExamens(examens, false);
+      pendingExamSaveRef.current = null;
       setAutoSaving(false);
     }, 2000);
 
@@ -1027,6 +1031,24 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     };
   }, [examens]);
+
+  // Flush pending debounced save on browser close
+  useEffect(() => {
+    const flushPendingExamSave = () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+        autoSaveTimerRef.current = null;
+      }
+      const pending = pendingExamSaveRef.current;
+      if (pending) {
+        persistExamens(pending, false);
+        pendingExamSaveRef.current = null;
+      }
+    };
+
+    window.addEventListener("beforeunload", flushPendingExamSave);
+    return () => window.removeEventListener("beforeunload", flushPendingExamSave);
+  }, []);
 
   const handleSaveAll = async () => {
     setSaving(true);

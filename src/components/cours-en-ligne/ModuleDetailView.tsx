@@ -2031,6 +2031,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   const moduleEditorStorageKey = `module-editor-state:${module.id}`;
   const skipInitialAutosaveRef = useRef(true);
   const saveErrorShownRef = useRef(false);
+  const dbSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isSavingToDbRef = useRef(false);
+  const dbSaveVersionRef = useRef(0);
+  const pendingDbSaveDataRef = useRef<{
+    module_id: number;
+    module_data: any;
+    deleted_cours: any;
+    deleted_exercices: any;
+    source_fingerprint: string;
+  } | null>(null);
 
   const buildSourceFingerprint = (data: ModuleData) =>
     JSON.stringify({
@@ -2225,11 +2235,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         if (latestState?.module_data) {
           const hasMatchingSourceFingerprint = latestState.source_fingerprint === sourceFingerprint;
 
-          if (!hasMatchingSourceFingerprint) {
-            if (!studentOnly) {
-              loadLocalState();
-            }
-          } else {
           const md = latestState.module_data as unknown as ModuleData;
           const hasValidModuleData =
             Array.isArray(md.cours) &&
@@ -2243,17 +2248,38 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               })()
             );
 
-            if (hasValidModuleData) {
-              const mergedModuleData: ModuleData = {
-                ...md,
-                exercices: mergeSourceExercices(md.exercices, initialData.exercices),
-              };
-              setModuleData(mergedModuleData);
-              setDeletedCours(Array.isArray(latestState.deleted_cours) ? (latestState.deleted_cours as unknown as ContentItem[]) : []);
-              setDeletedExercices(Array.isArray(latestState.deleted_exercices) ? (latestState.deleted_exercices as unknown as ExerciceItem[]) : []);
-              setLoadedModuleEditorState(true);
-              return;
+          if (hasValidModuleData) {
+            // Always load DB data and re-merge with latest source.
+            // Even when fingerprint doesn't match (e.g. source version bumped),
+            // admin edits in DB still take priority — merge picks up new source
+            // questions while preserving saved edits.
+            const mergedModuleData: ModuleData = {
+              ...md,
+              exercices: mergeSourceExercices(md.exercices, initialData.exercices),
+            };
+            setModuleData(mergedModuleData);
+            setDeletedCours(Array.isArray(latestState.deleted_cours) ? (latestState.deleted_cours as unknown as ContentItem[]) : []);
+            setDeletedExercices(Array.isArray(latestState.deleted_exercices) ? (latestState.deleted_exercices as unknown as ExerciceItem[]) : []);
+            setLoadedModuleEditorState(true);
+
+            // Admin: also re-save with updated fingerprint so future loads match
+            if (!studentOnly && !hasMatchingSourceFingerprint) {
+              console.log("[ModuleEditor] Fingerprint mismatch — re-saving with updated fingerprint");
+              supabase.from("module_editor_state").upsert(
+                [{
+                  module_id: module.id,
+                  module_data: mergedModuleData as any,
+                  deleted_cours: (latestState.deleted_cours ?? []) as any,
+                  deleted_exercices: (latestState.deleted_exercices ?? []) as any,
+                  source_fingerprint: sourceFingerprint,
+                  updated_at: new Date().toISOString(),
+                }],
+                { onConflict: "module_id" }
+              ).then(({ error }) => {
+                if (error) console.error("[ModuleEditor] Re-save fingerprint error:", error);
+              });
             }
+            return;
           }
         }
 
@@ -2462,6 +2488,43 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   // Previously this refetched module_editor_state on tab focus, causing unnecessary DB load.
   // Realtime channel above handles live updates from admin edits.
 
+  const performDbSave = async (dataToSave: {
+    module_id: number;
+    module_data: any;
+    deleted_cours: any;
+    deleted_exercices: any;
+    source_fingerprint: string;
+  }) => {
+    isSavingToDbRef.current = true;
+    try {
+      const { error } = await supabase.from("module_editor_state").upsert(
+        [{
+          ...dataToSave,
+          updated_at: new Date().toISOString(),
+        }],
+        { onConflict: "module_id" }
+      );
+
+      if (error) throw error;
+      saveErrorShownRef.current = false;
+
+      // Sync shared exercises to ALL sibling modules (handles edits, adds, deletes)
+      await syncSharedExercisesToSiblingModules(
+        dataToSave.module_id,
+        dataToSave.module_data.exercices ?? [],
+        (dataToSave.deleted_exercices ?? []).map((e: any) => e.id),
+      );
+    } catch (err) {
+      console.error("Erreur sauvegarde DB module_editor_state:", err);
+      if (!saveErrorShownRef.current) {
+        toast.error("Sauvegarde impossible pour ce module. Réessayez ou contactez l'admin.");
+        saveErrorShownRef.current = true;
+      }
+    } finally {
+      isSavingToDbRef.current = false;
+    }
+  };
+
   useEffect(() => {
     if (!editorStateHydrated || studentOnly || typeof window === "undefined") return;
     if (Number(moduleData.id) !== Number(module.id)) return;
@@ -2481,48 +2544,74 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       sourceFingerprint,
     };
 
-    // Save to localStorage
+    // Save to localStorage immediately (synchronous, no race risk)
     try {
       window.localStorage.setItem(moduleEditorStorageKey, JSON.stringify(payload));
     } catch (error) {
       console.error("Erreur sauvegarde état édition module:", error);
     }
 
-    // Save to database so students see admin changes
-    const saveToDb = async () => {
-      try {
-        const { error } = await supabase.from("module_editor_state").upsert(
-          [{
-            module_id: module.id,
-            module_data: moduleData as any,
-            deleted_cours: deletedCours as any,
-            deleted_exercices: deletedExercices as any,
-            source_fingerprint: sourceFingerprint,
-            updated_at: new Date().toISOString(),
-          }],
-          { onConflict: "module_id" }
-        );
+    // Debounced save to database (1.5s after last change)
+    // Prevents race conditions when admin makes many rapid edits
+    const saveVersion = ++dbSaveVersionRef.current;
 
-        if (error) throw error;
-        saveErrorShownRef.current = false;
+    // Capture data for this save (avoids stale closure when timer fires)
+    const dataToSave = {
+      module_id: module.id,
+      module_data: moduleData as any,
+      deleted_cours: deletedCours as any,
+      deleted_exercices: deletedExercices as any,
+      source_fingerprint: sourceFingerprint,
+    };
 
-        // Sync shared exercises to ALL sibling modules (handles edits, adds, deletes)
-        await syncSharedExercisesToSiblingModules(
-          module.id,
-          moduleData.exercices,
-          deletedExercices.map(e => e.id),
-        );
-      } catch (err) {
-        console.error("Erreur sauvegarde DB module_editor_state:", err);
-        if (!saveErrorShownRef.current) {
-          toast.error("Sauvegarde impossible pour ce module. Réessayez ou contactez l'admin.");
-          saveErrorShownRef.current = true;
-        }
+    // Track pending data for beforeunload flush
+    pendingDbSaveDataRef.current = dataToSave;
+
+    if (dbSaveTimerRef.current) clearTimeout(dbSaveTimerRef.current);
+    dbSaveTimerRef.current = setTimeout(async () => {
+      // Skip if a newer save was queued while we waited
+      if (dbSaveVersionRef.current !== saveVersion) return;
+      // If another save is in flight, wait for it then retry
+      if (isSavingToDbRef.current) {
+        dbSaveTimerRef.current = setTimeout(() => {
+          if (dbSaveVersionRef.current === saveVersion && !isSavingToDbRef.current) {
+            performDbSave(dataToSave);
+            pendingDbSaveDataRef.current = null;
+          }
+        }, 500);
+        return;
+      }
+
+      await performDbSave(dataToSave);
+      pendingDbSaveDataRef.current = null;
+    }, 1500);
+
+    return () => {
+      if (dbSaveTimerRef.current) clearTimeout(dbSaveTimerRef.current);
+    };
+  }, [editorStateHydrated, studentOnly, moduleEditorStorageKey, moduleData, deletedCours, deletedExercices]);
+
+  // Flush pending debounced save on browser close / tab close
+  useEffect(() => {
+    if (studentOnly) return;
+
+    const flushPendingSave = () => {
+      if (dbSaveTimerRef.current) {
+        clearTimeout(dbSaveTimerRef.current);
+        dbSaveTimerRef.current = null;
+      }
+      const pending = pendingDbSaveDataRef.current;
+      if (pending && !isSavingToDbRef.current) {
+        // Fire-and-forget: browser is closing, we can't await
+        // but the request will be sent before unload
+        performDbSave(pending);
+        pendingDbSaveDataRef.current = null;
       }
     };
 
-    saveToDb();
-  }, [editorStateHydrated, studentOnly, moduleEditorStorageKey, moduleData, deletedCours, deletedExercices]);
+    window.addEventListener("beforeunload", flushPendingSave);
+    return () => window.removeEventListener("beforeunload", flushPendingSave);
+  }, [studentOnly]);
 
   useEffect(() => {
     setSlidesByKey((current) => {
@@ -2616,26 +2705,25 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
   };
 
   const updateExerciceQuestions = (exerciceId: number, questions: ExerciceQuestion[]) => {
-    // Detect changes vs original source and save to shared overrides store
+    // Save enonce-based overrides to localStorage for same-session cross-module cache invalidation.
+    // DB propagation to sibling modules is handled by syncSharedExercisesToSiblingModules
+    // (called after the debounced DB save) to avoid concurrent write races.
     if (!studentOnly) {
       const sourceData = getInitialModuleDataRaw(module, apprenantType, studentOnly);
       const sourceExo = sourceData.exercices.find(e => e.id === exerciceId);
       if (sourceExo?.questions) {
-        // Pass ALL modules' initial data so propagation can create records for unrecorded modules
-        const allModulesData = getAllModulesInitialData(apprenantType);
         detectAndSaveOverrides(
           sourceExo.questions as { enonce: string; choix: { lettre: string; texte: string; correct?: boolean }[] }[],
           questions,
           module.id,
-          allModulesData,
         );
       }
     }
 
-    setModuleData({
-      ...moduleData,
-      exercices: moduleData.exercices.map(e => e.id === exerciceId ? { ...e, questions } : e),
-    });
+    setModuleData((prev) => ({
+      ...prev,
+      exercices: prev.exercices.map(e => e.id === exerciceId ? { ...e, questions } : e),
+    }));
   };
 
   const handleFileUploaded = (type: "cours" | "exercices", itemId: number, fichier: { nom: string; url: string }) => {
@@ -4902,10 +4990,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   key={cours.id}
                   item={cours}
                   onSave={(updated) => {
-                    setModuleData({
-                      ...moduleData,
-                      cours: moduleData.cours.map(c => c.id === updated.id ? updated : c),
-                    });
+                    setModuleData((prev) => ({
+                      ...prev,
+                      cours: prev.cours.map(c => c.id === updated.id ? updated : c),
+                    }));
                     setEditingCoursId(null);
                   }}
                   onCancel={() => setEditingCoursId(null)}
