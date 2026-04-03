@@ -198,7 +198,7 @@ Ne mets aucune explication, juste le tableau JSON.`
         formation: "Examen pratique CMA",
         formateur_id: null,
         jour,
-        heure_debut: u.heure_passage,
+        heure_debut: (u as any).heure_passage,
         heure_fin: heureFin,
         semaine_debut: semaineDebut,
       });
