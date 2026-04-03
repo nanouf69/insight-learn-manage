@@ -160,9 +160,9 @@ Ne mets aucune explication, juste le tableau JSON.`
           nom: match.nom,
           prenom: match.prenom,
           date_examen: r.date_examen,
-          heure_passage: r.heure_passage || "09:00",
+          heure_passage: (r as any).heure_passage || "09:00",
           matched: !updateErr
-        });
+        } as any);
       } else {
         notFound.push(r);
       }
