@@ -71,6 +71,7 @@ export default function ExamensBlancsPage({
   const [isViewingSavedResults, setIsViewingSavedResults] = useState(false);
   const [bilanPrefiltre, setBilanPrefiltre] = useState<string | null>(null);
   const [liveExamens, setLiveExamens] = useState<ExamenBlanc[]>(tousLesExamens);
+  const [liveExamensLoaded, setLiveExamensLoaded] = useState(false);
   const [selectionRefreshKey, setSelectionRefreshKey] = useState(0);
   const [isReloadingQuestions, setIsReloadingQuestions] = useState(false);
   const examStartTimeRef = useRef<number>(savedSession?.examStartTime || Date.now());
@@ -108,6 +109,7 @@ export default function ExamensBlancsPage({
         const saved = await loadSavedExamens();
         logSecurityImageDebug(saved, force ? "manual-refetch" : "auto-refetch");
         setLiveExamens(saved);
+        setLiveExamensLoaded(true);
         // CRITICAL: Never replace examenChoisi during an active exam or results display
         // to prevent question reordering that causes answer mismatches
         setExamenChoisi((prev) => {
@@ -151,10 +153,12 @@ export default function ExamensBlancsPage({
     persistExamSessionUtil(EXAM_SESSION_KEY, p, exId, mi, examStartTimeRef.current, resultats, currentReponses, questionIndex);
   };
 
-  // Restore chosen exam once liveExamens loaded
+  // Restore chosen exam once liveExamens loaded FROM DB (not hardcoded source).
+  // Without this gate, restore races with refreshLiveExamens() and picks
+  // hardcoded tousLesExamens data — losing all admin edits.
   const [sessionRestored, setSessionRestored] = useState(false);
   useEffect(() => {
-    if (sessionRestored || liveExamens.length === 0) return;
+    if (sessionRestored || !liveExamensLoaded) return;
     let cancelled = false;
 
     const restore = async () => {
@@ -273,7 +277,7 @@ export default function ExamensBlancsPage({
 
     void restore();
     return () => { cancelled = true; };
-  }, [liveExamens, sessionRestored, isAdmin, apprenantId]);
+  }, [liveExamens, liveExamensLoaded, sessionRestored, isAdmin, apprenantId]);
 
   // BUG #9 FIX: only block during active exam phase, allow updates during intro/transition
   const isInExam = phase === "examen";
