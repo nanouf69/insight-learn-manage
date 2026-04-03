@@ -272,9 +272,9 @@ serve(async (req) => {
           console.error(`[relance-examens] ❌ Failed for ${apprenant.email}:`, errText);
           results.push({ id: apprenant.id, email: apprenant.email, success: false, error: errText });
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error(`[relance-examens] Error for ${apprenant.email}:`, err);
-        results.push({ id: apprenant.id, email: apprenant.email, success: false, error: err.message });
+        results.push({ id: apprenant.id, email: apprenant.email, success: false, error: err instanceof Error ? err.message : String(err) });
       }
     }
 
