@@ -607,11 +607,17 @@ export function mergeSourceExercices<T extends MergeExerciceBase>(
       const loadedQ = loadedQuestionMap.get(Number(sourceQ.id));
       if (!loadedQ) return sourceQ;
 
-      // Saved (admin edit) takes priority over source
+      // Saved (admin edit) takes priority over source.
+      // For image: null means "admin explicitly deleted it" (must stay null).
+      // undefined / key absent means "never set" → fall back to source image.
+      const mergedImage = "image" in loadedQ
+        ? (loadedQ.image === null ? null : (loadedQ.image || sourceQ.image))
+        : sourceQ.image;
+
       return {
         ...sourceQ,
         ...loadedQ,
-        image: loadedQ.image ?? sourceQ.image,
+        image: mergedImage,
         choix: Array.isArray(loadedQ.choix) && loadedQ.choix.length > 0
           ? loadedQ.choix
           : sourceQ.choix,
