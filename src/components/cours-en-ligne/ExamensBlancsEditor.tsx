@@ -359,7 +359,7 @@ function QuestionEditor({
   const [reponseQRC, setReponseQRC] = useState(question.reponseQRC || "");
   const [motsCles, setMotsCles] = useState((question.reponses_possibles || []).join(", "));
   const [choix, setChoix] = useState<Choix[]>(question.choix ? [...question.choix] : []);
-  const [image, setImage] = useState<string | undefined>(question.image);
+  const [image, setImage] = useState<string | null>(question.image ?? null);
 
   const toggleType = () => {
     if (qType === "QCM") {

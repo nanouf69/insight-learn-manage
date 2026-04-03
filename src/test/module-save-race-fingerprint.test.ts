@@ -87,14 +87,15 @@ describe("Bug 1: sourceFingerprint mismatch — students must still see admin ed
     expect(merged[0].questions![0].image).toBe("https://cdn.example.com/new-photo.jpg");
   });
 
-  it("should fallback to source image when admin removed image (undefined)", () => {
-    // When admin explicitly removes image, loadedQ.image is undefined → falls back to source
-    const saved = [makeExercice(1, [makeQuestion(1, "Q1", "A", undefined)])];
+  it("should preserve admin image deletion when saved with null", () => {
+    // When admin explicitly removes image, it's saved as null (not undefined)
+    // null survives JSON.stringify and signals "explicitly deleted"
+    const saved = [makeExercice(1, [makeQuestion(1, "Q1", "A", null as any)])];
     const source = [makeExercice(1, [makeQuestion(1, "Q1", "A", "https://cdn.example.com/original.jpg")])];
 
     const merged = mergeSourceExercices(saved, source);
-    // With ?? operator, undefined falls back to source — this is the expected behavior
-    expect(merged[0].questions![0].image).toBe("https://cdn.example.com/original.jpg");
+    // null means "admin deleted it" → must stay null, not fall back to source
+    expect(merged[0].questions![0].image).toBeNull();
   });
 });
 

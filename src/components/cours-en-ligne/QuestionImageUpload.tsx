@@ -6,11 +6,11 @@ import { toast } from "sonner";
 import { buildQuestionImagePath, validateQuestionImageFile } from "./examens-blancs-utils";
 
 interface QuestionImageUploadProps {
-  image: string | undefined;
+  image: string | null | undefined;
   context: "module" | "exam";
   contextId: number | string;
   questionId: number | string;
-  onImageChange: (url: string | undefined) => void;
+  onImageChange: (url: string | null) => void;
 }
 
 export function QuestionImageUpload({
@@ -59,7 +59,7 @@ export function QuestionImageUpload({
   };
 
   const handleRemove = () => {
-    onImageChange(undefined);
+    onImageChange(null);
   };
 
   return (

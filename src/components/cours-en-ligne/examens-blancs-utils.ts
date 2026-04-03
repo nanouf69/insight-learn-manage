@@ -607,11 +607,17 @@ export function mergeSourceExercices<T extends MergeExerciceBase>(
       const loadedQ = loadedQuestionMap.get(Number(sourceQ.id));
       if (!loadedQ) return sourceQ;
 
-      // Saved (admin edit) takes priority over source
+      // Saved (admin edit) takes priority over source.
+      // For image: null means "admin explicitly deleted it" (must stay null).
+      // undefined / key absent means "never set" → fall back to source image.
+      const mergedImage = "image" in loadedQ
+        ? (loadedQ.image === null ? null : (loadedQ.image || sourceQ.image))
+        : sourceQ.image;
+
       return {
         ...sourceQ,
         ...loadedQ,
-        image: loadedQ.image ?? sourceQ.image,
+        image: mergedImage,
         choix: Array.isArray(loadedQ.choix) && loadedQ.choix.length > 0
           ? loadedQ.choix
           : sourceQ.choix,
@@ -737,15 +743,23 @@ export function mergeQuestionsForMatiere(
     }
 
     if (!sourceQ) {
-      // Custom admin question (not in source) — keep as-is
-      return { ...savedQ, image: savedQ?.image ?? (savedQ as any)?.image_url } as Question;
+      // Custom admin question (not in source) — keep as-is.
+      // null means "admin deleted image"; only fall back to image_url when key is absent/undefined.
+      const customImage = savedQ?.image === null ? null : (savedQ?.image || (savedQ as any)?.image_url || undefined);
+      return { ...savedQ, image: customImage } as Question;
     }
 
-    // Merge source fields into saved (saved overrides)
+    // Merge source fields into saved (saved overrides).
+    // For image: null means "admin explicitly deleted it" (must stay null).
+    // undefined / key absent means "never set" → fall back to source image.
+    const mergedImage = savedQ && "image" in savedQ
+      ? (savedQ.image === null ? null : (savedQ.image || (savedQ as any)?.image_url || sourceQ?.image || (sourceQ as any)?.image_url))
+      : (sourceQ?.image ?? (sourceQ as any)?.image_url);
+
     const merged: Question = {
       ...sourceQ,
       ...savedQ,
-      image: savedQ?.image ?? (savedQ as any)?.image_url ?? sourceQ?.image ?? (sourceQ as any)?.image_url,
+      image: mergedImage,
     };
 
     // For QRC: restore source keywords if admin didn't set any
