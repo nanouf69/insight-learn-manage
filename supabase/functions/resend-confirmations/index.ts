@@ -115,8 +115,8 @@ Deno.serve(async (req) => {
         } else {
           results.push({ name: `${apprenant.prenom} ${apprenant.nom}`, email: apprenant.email, status: `error: ${sendData.error || 'unknown'}` });
         }
-      } catch (sendErr) {
-        results.push({ name: `${apprenant.prenom} ${apprenant.nom}`, email: apprenant.email, status: `error: ${sendErr.message}` });
+      } catch (sendErr: unknown) {
+        results.push({ name: `${apprenant.prenom} ${apprenant.nom}`, email: apprenant.email, status: `error: ${sendErr instanceof Error ? sendErr.message : String(sendErr)}` });
       }
     }
 
