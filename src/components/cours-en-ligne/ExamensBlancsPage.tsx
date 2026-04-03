@@ -20,8 +20,9 @@ import {
   normalizeNoteSur20, logSecurityImageDebug,
   evaluateQrcDeterministic, computeAdmisForMatiere,
   buildMatiereLookupKeys, shareLookupKey, getMatiereCanonicalKey,
+  extractMatiereKeyFromExerciceId,
 } from "./examens-blancs-utils";
-import { recoverCorruptedScoreRow, isCorruptedZeroRow } from "./examens-blancs-utils";
+import { recoverCorruptedScoreRow, isCorruptedZeroRow, persistExamSession as persistExamSessionUtil, shouldTriggerPollingRefresh } from "./examens-blancs-utils";
 import { EcranSelection } from "./ExamenBlancsListe";
 import { PassageMatiere, TransitionMatiere } from "./ExamenBlancsPassage";
 import { EcranResultats, RevisionFausses } from "./ExamenBlancsResultats";
@@ -59,11 +60,12 @@ export default function ExamensBlancsPage({
 
   const savedSession = restoreSession();
 
-  const [phase, setPhase] = useState<"selection" | "intro" | "examen" | "transition" | "resultats" | "edition" | "revision">(
-    savedSession?.phase === "examen" ? "examen" : "selection"
-  );
+  // BUG #2 FIX: never trust sessionStorage for initial phase — always start with "selection"
+  // and let the async DB verification (useEffect below) set the correct phase after confirmation
+  const [phase, setPhase] = useState<"selection" | "intro" | "examen" | "transition" | "resultats" | "edition" | "revision">("selection");
   const [examenChoisi, setExamenChoisi] = useState<ExamenBlanc | null>(null);
-  const [matiereIndex, setMatiereIndex] = useState(savedSession?.matiereIndex || 0);
+  // BUG #2 FIX: always start at 0, DB verification will set the correct index
+  const [matiereIndex, setMatiereIndex] = useState(0);
   const [tousResultats, setTousResultats] = useState<ResultatMatiere[]>(safeArray<ResultatMatiere>(savedSession?.resultats));
   const [lastMatiereResult, setLastMatiereResult] = useState<ResultatMatiere | null>(null);
   const [isViewingSavedResults, setIsViewingSavedResults] = useState(false);
@@ -92,8 +94,13 @@ export default function ExamensBlancsPage({
     });
   }, []);
 
+  const pendingReloadRef = useRef(false);
   const refreshLiveExamens = useCallback(async ({ force = false }: { force?: boolean } = {}) => {
-    if (!force && reloadInFlightRef.current) return reloadInFlightRef.current;
+    if (!force && reloadInFlightRef.current) {
+      // Don't drop the reload — mark it pending so it runs after the in-flight one
+      pendingReloadRef.current = true;
+      return reloadInFlightRef.current;
+    }
     setLoadTimeout(false);
     const timeoutTimer = setTimeout(() => setLoadTimeout(true), 10_000);
     reloadInFlightRef.current = (async () => {
@@ -101,12 +108,12 @@ export default function ExamensBlancsPage({
         const saved = await loadSavedExamens();
         logSecurityImageDebug(saved, force ? "manual-refetch" : "auto-refetch");
         setLiveExamens(saved);
-        // CRITICAL: Never replace examenChoisi during an active exam (phase=examen/transition)
+        // CRITICAL: Never replace examenChoisi during an active exam or results display
         // to prevent question reordering that causes answer mismatches
         setExamenChoisi((prev) => {
           if (!prev) return prev;
           const currentPhase = phaseRef.current;
-          if (currentPhase === "examen" || currentPhase === "transition") return prev;
+          if (currentPhase === "examen" || currentPhase === "transition" || currentPhase === "resultats") return prev;
           return saved.find((exam) => exam.id === prev.id) ?? prev;
         });
         return saved;
@@ -116,7 +123,14 @@ export default function ExamensBlancsPage({
       }
     })();
     try { return await reloadInFlightRef.current; }
-    finally { reloadInFlightRef.current = null; }
+    finally {
+      reloadInFlightRef.current = null;
+      // If a reload was requested while we were in-flight, run it now
+      if (pendingReloadRef.current) {
+        pendingReloadRef.current = false;
+        void refreshLiveExamens({ force: true });
+      }
+    }
   }, []);
 
   const handleManualReloadQuestions = async () => {
@@ -132,17 +146,9 @@ export default function ExamensBlancsPage({
     }
   };
 
-  const persistExamSession = (p: string, exId: string | null, mi: number, resultats?: ResultatMatiere[]) => {
-    try {
-      if (p === "examen" && exId) {
-        sessionStorage.setItem(EXAM_SESSION_KEY, JSON.stringify({
-          phase: p, examenId: exId, matiereIndex: mi,
-          examStartTime: examStartTimeRef.current, resultats: resultats || [],
-        }));
-      } else {
-        sessionStorage.removeItem(EXAM_SESSION_KEY);
-      }
-    } catch { }
+  // Extracted to examens-blancs-utils.ts for testability (BUG #8 FIX)
+  const persistExamSession = (p: string, exId: string | null, mi: number, resultats?: ResultatMatiere[], currentReponses?: Reponses, questionIndex?: number) => {
+    persistExamSessionUtil(EXAM_SESSION_KEY, p, exId, mi, examStartTimeRef.current, resultats, currentReponses, questionIndex);
   };
 
   // Restore chosen exam once liveExamens loaded
@@ -257,7 +263,9 @@ export default function ExamensBlancsPage({
       if (!cancelled) {
         setExamenChoisi(found);
         setPhase("examen");
-        setMatiereIndex(savedSession.matiereIndex || 0);
+        // BUG #2 FIX: validate matiereIndex bounds before using it
+        const maxIndex = Math.max((found.matieres?.length || 1) - 1, 0);
+        setMatiereIndex(Math.min(savedSession.matiereIndex || 0, maxIndex));
         if (savedSession.resultats?.length) setTousResultats(savedSession.resultats);
         setSessionRestored(true);
       }
@@ -267,18 +275,23 @@ export default function ExamensBlancsPage({
     return () => { cancelled = true; };
   }, [liveExamens, sessionRestored, isAdmin, apprenantId]);
 
-  const isInExam = phase === "examen" || phase === "intro" || phase === "transition";
+  // BUG #9 FIX: only block during active exam phase, allow updates during intro/transition
+  const isInExam = phase === "examen";
+  const isInExamBroad = phase === "examen" || phase === "intro" || phase === "transition";
 
   useEffect(() => {
-    onExamStateChange?.(isInExam);
+    onExamStateChange?.(isInExamBroad);
     return () => { onExamStateChange?.(false); };
-  }, [isInExam, onExamStateChange]);
+  }, [isInExamBroad, onExamStateChange]);
 
   useEffect(() => {
-    if (!isInExam) { void refreshLiveExamens(); }
-  }, [refreshLiveExamens, isInExam]);
+    if (!isInExamBroad) { void refreshLiveExamens(); }
+  }, [refreshLiveExamens, isInExamBroad]);
 
-  // Realtime: targeted update when admin saves exam changes — DISABLED during exam
+  // Realtime: targeted update when admin saves exam changes
+  // BUG #9 FIX: only disabled during active exam phase, allowed during intro/transition
+  // Track last Realtime-triggered refresh for polling fallback
+  const lastRealtimeRefreshRef = useRef(Date.now());
   useEffect(() => {
     if (isInExam) return;
     const validExamModuleIds = new Set(tousLesExamens.map((ex) => getModuleIdForExamId(ex.id)));
@@ -287,13 +300,16 @@ export default function ExamensBlancsPage({
       return Number.isFinite(moduleId) && validExamModuleIds.has(moduleId);
     };
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    // Use unique channel name to prevent stale channel references on reconnect
+    const channelName = `examens-blancs-live-${Date.now()}`;
     const channel = supabase
-      .channel(`examens-blancs-live`)
+      .channel(channelName)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'module_editor_state' }, (payload) => {
         if (!isExamModuleEvent(payload)) return;
         if (debounceTimer) clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
           console.log("[Realtime] Exam blanc updated, reloading...");
+          lastRealtimeRefreshRef.current = Date.now();
           try { sessionStorage.removeItem(EXAM_SESSION_KEY); } catch {}
           void refreshLiveExamens();
         }, 5000);
@@ -303,6 +319,48 @@ export default function ExamensBlancsPage({
       if (debounceTimer) clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
+  }, [refreshLiveExamens, EXAM_SESSION_KEY, isInExam]);
+
+  // Polling fallback: when Realtime is silent for > 60s, check for admin changes
+  // This catches cases where Supabase Realtime silently disconnects
+  const POLLING_FALLBACK_INTERVAL = 30_000; // check every 30s
+  const REALTIME_SILENCE_THRESHOLD = 60_000; // consider Realtime stale after 60s
+  const lastKnownUpdatedAtRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (isInExam) return;
+    const validModuleIds = tousLesExamens.map((ex) => getModuleIdForExamId(ex.id));
+
+    const pollTimer = setInterval(async () => {
+      if (!shouldTriggerPollingRefresh({
+        lastRealtimeRefreshAt: lastRealtimeRefreshRef.current,
+        now: Date.now(),
+        pollingIntervalMs: REALTIME_SILENCE_THRESHOLD,
+      })) return;
+
+      // Lightweight check: only fetch max updated_at
+      try {
+        const { data, error } = await supabase
+          .from("module_editor_state")
+          .select("updated_at")
+          .in("module_id", validModuleIds)
+          .order("updated_at", { ascending: false })
+          .limit(1);
+
+        if (error || !data || data.length === 0) return;
+        const remoteUpdatedAt = data[0].updated_at as string;
+
+        if (lastKnownUpdatedAtRef.current && remoteUpdatedAt !== lastKnownUpdatedAtRef.current) {
+          console.log("[PollingFallback] Remote data changed, refreshing...");
+          try { sessionStorage.removeItem(EXAM_SESSION_KEY); } catch {}
+          void refreshLiveExamens();
+        }
+        lastKnownUpdatedAtRef.current = remoteUpdatedAt;
+      } catch {
+        // Silently ignore polling errors
+      }
+    }, POLLING_FALLBACK_INTERVAL);
+
+    return () => clearInterval(pollTimer);
   }, [refreshLiveExamens, EXAM_SESSION_KEY, isInExam]);
 
   useEffect(() => {
@@ -342,9 +400,7 @@ export default function ExamensBlancsPage({
         ((savedResponses as any[]) || []).forEach((r: any) => {
           if (r?.completed !== true) return;
           const exerciceId = safeStr(r?.exercice_id);
-          const matiereKey = exerciceId.startsWith(`${latestExamen.id}_`)
-            ? exerciceId.slice(`${latestExamen.id}_`.length)
-            : "";
+          const matiereKey = extractMatiereKeyFromExerciceId(exerciceId, latestExamen.id);
           if (!matiereKey) return;
           buildMatiereLookupKeys(matiereKey, matiereKey).forEach((k) => completedResponseLookupKeys.add(k));
         });
@@ -485,9 +541,7 @@ export default function ExamensBlancsPage({
         const expectedKeys = buildMatiereLookupKeys(matiere.id, matiere.nom);
         const resp = candidateResponses.find((r: any) => {
           const exerciceId = safeStr(r?.exercice_id);
-          const matiereKey = exerciceId.startsWith(`${examReference.id}_`)
-            ? exerciceId.slice(`${examReference.id}_`.length)
-            : "";
+          const matiereKey = extractMatiereKeyFromExerciceId(exerciceId, examReference.id);
           if (!matiereKey) return false;
           const responseKeys = buildMatiereLookupKeys(matiereKey, matiereKey);
           return shareLookupKey(responseKeys, expectedKeys);
@@ -680,12 +734,19 @@ export default function ExamensBlancsPage({
 
   const saveMatiereResult = async ({ examen, matiere, resultat, dureeSecondes }: { examen: ExamenBlanc; matiere: Matiere; resultat: ResultatMatiere; dureeSecondes: number }) => {
     if (!apprenantId || !userId) return;
-    const rawQuestions = matiere?.questions || [];
+    let rawQuestions = matiere?.questions || [];
+    // FIX: fallback to source data when matiere.questions is empty (frozen examenChoisi)
+    if (rawQuestions.length === 0 && matiere?.id) {
+      for (const srcExam of tousLesExamens) {
+        const srcMat = srcExam.matieres.find(m => m.id === matiere.id);
+        if (srcMat?.questions?.length) { rawQuestions = srcMat.questions; break; }
+      }
+    }
     const questionsSafe = rawQuestions.filter(q => q != null);
     const frozenCorrections: Record<string, any> = {};
     const questionDetails = questionsSafe.map(q => {
       if (!q) return null;
-      const rep = resultat.reponses?.[q.id];
+      const rep = resultat.reponses?.[q.id] ?? resultat.reponses?.[String(q.id)];
       if (q?.type === "QRC") {
         const pts = getPointsParQuestion(matiere.id, q?.type || "QRC", matiere);
         frozenCorrections[q.id] = evaluateQrcDeterministic(q, rep, pts);
@@ -734,6 +795,30 @@ export default function ExamensBlancsPage({
       if (!examenChoisi) return;
       const matiere = examenChoisi.matieres[matiereIndex];
       if (!matiere) { toast.error("Matière introuvable. Veuillez relancer l'examen."); return; }
+
+      // BUG #7 FIX: flush responses to DB BEFORE calculating score
+      if (apprenantId && userId) {
+        const exerciceKey = `${examenChoisi.id}__${matiere.id}`;
+        const quizType = examenChoisi.id.startsWith("bilan-") ? "bilan" : "examen_blanc";
+        try {
+          await supabase.from("reponses_apprenants" as any).upsert({
+            apprenant_id: apprenantId,
+            user_id: userId,
+            exercice_id: exerciceKey,
+            exercice_type: quizType,
+            reponses,
+            completed: true,
+            updated_at: new Date().toISOString(),
+          } as any, { onConflict: "apprenant_id,exercice_id" });
+        } catch (flushErr) {
+          console.warn("[ExamenBlanc] Flush before score failed:", flushErr);
+          // BUG #7 FIX: save to localStorage as last resort
+          try {
+            localStorage.setItem(`exam_backup_${exerciceKey}_${apprenantId}`, JSON.stringify(reponses));
+          } catch (_) {}
+        }
+      }
+
       const note = calculerNote(matiere, reponses);
       const maxPoints = calculerMaxPoints(matiere);
       const noteSecurisee = maxPoints > 0 ? clamp(note, 0, maxPoints) : Math.max(note, 0);
@@ -755,6 +840,13 @@ export default function ExamensBlancsPage({
         const saved = await saveMatiereResult({ examen: examenChoisi, matiere, resultat, dureeSecondes: elapsedSeconds / Math.max(completedCount, 1) });
         if (!saved) {
           console.warn("[ExamenBlanc] Failed to save result for", matiere.id, "- result kept in memory");
+          // BUG #7 FIX: backup result to localStorage for recovery
+          try {
+            localStorage.setItem(
+              `exam_result_backup_${examenChoisi.id}_${matiere.id}_${apprenantId}`,
+              JSON.stringify(resultat)
+            );
+          } catch (_) {}
         }
       }
 

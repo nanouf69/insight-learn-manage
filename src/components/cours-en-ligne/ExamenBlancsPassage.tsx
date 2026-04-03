@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { TimerBadge } from "./ExamenBlancsTimer";
 import { ExamQuestionImage } from "./ExamQuestionImage";
 import type { Reponses, ReponseQCM, ReponseQRC } from "./examens-blancs-types";
-import { safeStr, safeArray, getQuestionImageValue } from "./examens-blancs-utils";
+import { safeStr, safeArray, getQuestionImageValue, normalizeReponses as normalizeReponsesUtil, computeIsMultiple, applyQCMChange } from "./examens-blancs-utils";
 
 function CalculatriceExamen({ onClose }: { onClose: () => void }) {
   const [display, setDisplay] = useState("0");
@@ -167,9 +167,14 @@ function PassageMatiere({
   const saveStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Freeze questions at mount to prevent re-render from changing order/content mid-exam
-  const [questionsSafe] = useState<Question[]>(() =>
+  // BUG #9 FIX: allow refresh when matiere prop changes (between matières)
+  const [questionsSafe, setQuestionsSafe] = useState<Question[]>(() =>
     (matiere.questions || []).filter((q): q is Question => !!q && q?.type !== undefined)
   );
+  useEffect(() => {
+    const fresh = (matiere.questions || []).filter((q): q is Question => !!q && q?.type !== undefined);
+    if (fresh.length > 0) setQuestionsSafe(fresh);
+  }, [matiere.id]);
   const question = questionsSafe[questionIndex] || null;
   const currentQuestionImage = getQuestionImageValue(question);
   const dureeSecondes = (matiere.duree ?? 30) * 60;
@@ -189,17 +194,9 @@ function PassageMatiere({
     });
   }, [examenId, matiere.id, questionsSafe]);
 
-  // Helper: normalize reponses keys to number (DB JSON keys are strings)
+  // Extracted to examens-blancs-utils.ts for testability (BUG #10 FIX)
   const normalizeReponses = (raw: any): Reponses => {
-    if (!raw || typeof raw !== "object") return {};
-    const normalized: Reponses = {};
-    for (const [key, value] of Object.entries(raw)) {
-      const numKey = Number(key);
-      if (!isNaN(numKey) && value !== undefined && value !== null) {
-        normalized[numKey] = value as ReponseQCM | ReponseQRC;
-      }
-    }
-    return normalized;
+    return normalizeReponsesUtil(raw);
   };
 
   // Auto-save: get userId once
@@ -214,7 +211,8 @@ function PassageMatiere({
   }, []);
 
   // Load saved responses on mount
-  const exerciceKey = `${examenId || "exam"}_${matiere.id}`;
+  // FIX: use double underscore `__` to match handleTerminerMatiere in ExamensBlancsPage.tsx
+  const exerciceKey = `${examenId || "exam"}__${matiere.id}`;
   useEffect(() => {
     if (!apprenantId || initialLoaded) return;
     (async () => {
@@ -270,16 +268,40 @@ function PassageMatiere({
   const latestReponsesRef = useRef<Reponses>({});
   useEffect(() => { latestReponsesRef.current = reponses; }, [reponses]);
 
+  // BUG #7 FIX: generation counter to cancel stale retry loops when a new save starts
+  const saveGenerationRef = useRef(0);
+
   const persistReponses = (updated: Reponses) => {
-    if (!apprenantId || !userIdRef.current) return;
+    // BUG #7 FIX: don't silently return when userId is null — wait for session inside debounce
+    if (!apprenantId) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    setSaveStatus("saving");
+    // BUG #7 FIX: increment generation to cancel any in-flight retry loop
+    saveGenerationRef.current++;
+    const myGeneration = saveGenerationRef.current;
     debounceRef.current = setTimeout(async () => {
+      setSaveStatus("saving");
       const MAX_RETRIES = 3;
       const RETRY_DELAY_MS = 2000;
       let lastError: any = null;
 
+      // BUG #7 FIX: wait for session if not yet available instead of silent return
+      if (!userIdRef.current) {
+        const sessionRes = await supabase.auth.getSession();
+        if (sessionRes.data?.session?.user?.id) {
+          userIdRef.current = sessionRes.data.session.user.id;
+          jwtTokenRef.current = sessionRes.data.session.access_token;
+        }
+      }
+      if (!userIdRef.current) {
+        console.error("[AutoSave] No user session available after wait, cannot save");
+        setSaveStatus("error");
+        return;
+      }
+
       for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        // BUG #7 FIX: abort if a newer save superseded this one
+        if (saveGenerationRef.current !== myGeneration) return;
+
         try {
           // Refresh token ref in case it was renewed by keep-alive
           const sessionRes = await supabase.auth.getSession();
@@ -323,6 +345,12 @@ function PassageMatiere({
       // All retries exhausted
       console.error("[AutoSave] All retries failed:", lastError);
       setSaveStatus("error");
+      // BUG #7 FIX: save to localStorage as fallback
+      try {
+        const backupKey = `exam_backup_${exerciceKey}_${apprenantId}`;
+        localStorage.setItem(backupKey, JSON.stringify(updated));
+        console.warn("[AutoSave] Saved to localStorage fallback:", backupKey);
+      } catch (_) {}
       toast.error(
         "⚠️ Sauvegarde impossible après 3 tentatives. Vos réponses sont conservées localement. Ne fermez pas la page et contactez l'administration.",
         { duration: Infinity, id: "autosave-error" }
@@ -360,21 +388,19 @@ function PassageMatiere({
     window.addEventListener("beforeunload", flushSave);
     return () => {
       window.removeEventListener("beforeunload", flushSave);
-      if (debounceRef.current) clearTimeout(debounceRef.current);
+      // BUG #8 FIX: flush instead of cancel — don't lose pending saves on unmount
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        flushSave(); // flush pending data instead of discarding
+      }
     };
   }, [apprenantId, exerciceKey, isBilan]);
 
-  const handleQCMChange = (qId: number, lettre: string, checked: boolean, isMultiple: boolean) => {
+  // Core logic extracted to applyQCMChange in examens-blancs-utils.ts (BUG #10 FIX)
+  const handleQCMChange = (qId: number, lettre: string, checked: boolean, isMultipleQ: boolean) => {
     setReponses(prev => {
-      const current = (prev[qId] as string[]) || [];
-      let next: Reponses;
-      if (!isMultiple) {
-        next = { ...prev, [qId]: [lettre] };
-      } else if (checked) {
-        next = { ...prev, [qId]: [...current, lettre] };
-      } else {
-        next = { ...prev, [qId]: current.filter(l => l !== lettre) };
-      }
+      const next = applyQCMChange(prev, qId, lettre, checked, isMultipleQ);
+      if (next === prev) return prev; // dedup guard returned same ref
       persistReponses(next);
       return next;
     });
@@ -409,8 +435,8 @@ function PassageMatiere({
   };
   const handleExpire = () => { setExpire(true); onTerminer(reponses); };
 
-  const isMultiple = (q: Question) =>
-    q?.type === "QCM" && (q.choix?.filter(c => c.correct).length || 0) > 1;
+  // Extracted to examens-blancs-utils.ts for testability (BUG #10 FIX)
+  const isMultiple = computeIsMultiple;
 
   const safeQuestionsCount = questionsSafe.length || 1;
   const safeQuestionIndex = Math.min(questionIndex, safeQuestionsCount - 1);
@@ -552,11 +578,11 @@ function PassageMatiere({
                   <div
                     key={choix.lettre}
                     className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${checked ? "border-primary bg-primary/5" : "border-muted hover:border-primary/40"}`}
-                    onClick={(e) => { e.preventDefault(); handleQCMChange(question.id, choix.lettre, !checked, true); }}
+                    onClick={(e) => { e.preventDefault(); handleQCMChange(question.id, choix.lettre, !checked, isMultiple(question)); }}
                   >
                     <Checkbox
                       checked={checked}
-                      onCheckedChange={(value) => handleQCMChange(question.id, choix.lettre, Boolean(value), true)}
+                      onCheckedChange={(value) => handleQCMChange(question.id, choix.lettre, Boolean(value), isMultiple(question))}
                       onClick={(e) => e.stopPropagation()}
                     />
                     <span className="font-mono text-sm font-bold w-6 shrink-0">{choix.lettre})</span>
@@ -616,7 +642,7 @@ function PassageMatiere({
                     ? "bg-primary text-primary-foreground ring-2 ring-primary/50"
                     : isAnswered
                       ? "bg-green-100 text-green-700 border border-green-300"
-                      : "bg-red-50 text-red-500 border border-red-300 animate-pulse"
+                      : "bg-red-50 text-red-500 border border-red-300"
                 }`}
                 title={isAnswered ? `Q${i + 1} — répondue ✓` : `Q${i + 1} — NON répondue ✗`}
               >

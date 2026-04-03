@@ -18,290 +18,288 @@ export const SECURITE_ROUTIERE_EXERCICES: {
     titre: "Sécurité Routière — Partie 1 : Signalisation, Marquages & Priorités",
     sousTitre: "Panneaux de signalisation, marquages au sol, voies spéciales, stationnement, priorités, feux, éclairage",
     questions: [
-      // SECTION 1 — PANNEAUX DE SIGNALISATION
-      { id: 1, enonce: "Ce panneau m'annonce :", image: "/cours/examens/panneaux/panneau-cedez-passage.png", choix: [
-        { lettre: "A", texte: "Stop" },
-        { lettre: "B", texte: "Cédez le passage", correct: true },
+      { id: 1, enonce: "Ce panneau m'annonce :", image: "/cours/exercices/securite/image1.png", choix: [
+        { lettre: "A", texte: "Stop", correct: true },
+        { lettre: "B", texte: "Cédez le passage" },
         { lettre: "C", texte: "Interdiction de stationner" },
       ]},
-      { id: 2, enonce: "Ce panneau m'annonce :", image: "/cours/examens/panneaux/panneau-fin-priorite.png", choix: [
+      { id: 2, enonce: "Ce panneau m'annonce :", image: "/cours/exercices/securite/image2.png", choix: [
         { lettre: "A", texte: "Sortie de zone à stationnement interdit" },
         { lettre: "B", texte: "Passage pour piétons" },
         { lettre: "C", texte: "Priorité ponctuelle à la prochaine intersection", correct: true },
       ]},
-      { id: 3, enonce: "Ce panneau m'annonce :", image: "/cours/examens/panneaux/panneau-priorite-droite.png", choix: [
+      { id: 3, enonce: "Ce panneau m'annonce :", image: "/cours/exercices/securite/image3.png", choix: [
         { lettre: "A", texte: "Virage à droite" },
         { lettre: "B", texte: "Priorité à droite à la prochaine intersection", correct: true },
         { lettre: "C", texte: "Virage à gauche" },
       ]},
-      { id: 4, enonce: "Ce panneau m'annonce :", image: "/cours/examens/panneaux/panneau-cedez-passage.png", choix: [
-        { lettre: "A", texte: "Cédez le passage", correct: true },
+      { id: 4, enonce: "Ce panneau m'annonce :", image: "/cours/exercices/securite/image4.png", choix: [
+        { lettre: "A", texte: "Cédez le passage" },
         { lettre: "B", texte: "Priorité ponctuelle à la prochaine intersection" },
-        { lettre: "C", texte: "Succession de virages dont le 1er est à droite" },
+        { lettre: "C", texte: "Succession de virages dont le 1er est à droite", correct: true },
       ]},
-      { id: 5, enonce: "Ce panneau m'annonce :", image: "/cours/examens/panneaux/panneau-route-prioritaire.png", choix: [
+      { id: 5, enonce: "Ce panneau m'annonce :", image: "/cours/exercices/securite/image5.png", choix: [
         { lettre: "A", texte: "Sortie de zone à stationnement interdit" },
         { lettre: "B", texte: "Fin de voie réservée aux véhicules de TC" },
         { lettre: "C", texte: "Route à caractère prioritaire", correct: true },
       ]},
-      { id: 6, enonce: "Ce panneau m'annonce :", image: "/cours/examens/panneaux/panneau-arret-bus.png", choix: [
-        { lettre: "A", texte: "Stationnement interdit" },
+      { id: 6, enonce: "Ce panneau m'annonce :", image: "/cours/exercices/securite/image6.png", choix: [
+        { lettre: "A", texte: "Stationnement interdit", correct: true },
         { lettre: "B", texte: "Sens unique" },
-        { lettre: "C", texte: "Arrêt d'autobus", correct: true },
+        { lettre: "C", texte: "Arrêt d'autobus" },
       ]},
-      { id: 7, enonce: "Ce panneau m'annonce :", image: "/cours/examens/panneaux/panneau-impasse.png", choix: [
+      { id: 7, enonce: "Ce panneau m'annonce :", image: "/cours/exercices/securite/image7.png", choix: [
         { lettre: "A", texte: "Fin de route à accès réglementé" },
-        { lettre: "B", texte: "Arrêt et stationnement interdit" },
-        { lettre: "C", texte: "Impasse", correct: true },
+        { lettre: "B", texte: "Arrêt et stationnement interdit", correct: true },
+        { lettre: "C", texte: "Impasse" },
       ]},
-      { id: 8, enonce: "Ce panneau signifie que le :", image: "/cours/examens/panneaux/panneau-stationnement-interdit-1-15.png", choix: [
+      { id: 8, enonce: "Ce panneau signifie que le :", image: "/cours/exercices/securite/image8.png", choix: [
         { lettre: "A", texte: "Stationnement est interdit du 1er au 15 du mois du côté du panneau", correct: true },
         { lettre: "B", texte: "Stationnement est interdit du 16 au 31 du mois" },
         { lettre: "C", texte: "Stationnement interdit" },
       ]},
-      { id: 9, enonce: "Ce panneau signifie que le :", image: "/cours/examens/panneaux/panneau-stationnement-interdit-16-31.png", choix: [
+      { id: 9, enonce: "Ce panneau signifie que le :", image: "/cours/exercices/securite/image9.png", choix: [
         { lettre: "A", texte: "Stationnement interdit" },
         { lettre: "B", texte: "Stationnement interdit du 1er au 15 du mois" },
         { lettre: "C", texte: "Stationnement est interdit du 16 au 31 du mois du côté du panneau", correct: true },
       ]},
-      { id: 10, enonce: "Ce panneau signifie :", image: "/cours/examens/panneaux/panneau-arret-stationnement-interdit.png", choix: [
+      { id: 10, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image10.png", choix: [
         { lettre: "A", texte: "Sortie de zone à stationnement interdit" },
         { lettre: "B", texte: "Arrêt et stationnement interdit", correct: true },
         { lettre: "C", texte: "Proximité d'une chaussée rétrécie" },
       ]},
-      { id: 11, enonce: "Ce panneau signifie :", image: "/cours/examens/panneaux/panneau-enfants.png", choix: [
+      { id: 11, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image11.png", choix: [
         { lettre: "A", texte: "Passage d'animaux sauvages" },
         { lettre: "B", texte: "Endroit fréquenté par les enfants", correct: true },
         { lettre: "C", texte: "Chemin obligatoire pour cavaliers" },
       ]},
-      { id: 12, enonce: "Ce panneau signifie :", image: "/cours/examens/panneaux/panneau-passage-pietons.png", choix: [
+      { id: 12, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image12.png", choix: [
         { lettre: "A", texte: "Passage pour piétons", correct: true },
         { lettre: "B", texte: "Endroit fréquenté par les enfants" },
         { lettre: "C", texte: "Chemin obligatoire pour piétons" },
       ]},
-      { id: 13, enonce: "Ce panneau signifie :", image: "/cours/examens/panneaux/panneau-voie-bus.png", choix: [
+      { id: 13, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image13.png", choix: [
         { lettre: "A", texte: "Voie réservée aux véhicules de transport en commun", correct: true },
         { lettre: "B", texte: "Fin de voie réservée aux véhicules de TC" },
+        { lettre: "C", texte: "Arrêt d'autobus" },
       ]},
-      { id: 14, enonce: "Ce panneau signifie :", image: "/cours/examens/panneaux/panneau-vitesse-minimum.png", choix: [
+      { id: 14, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image14.png", choix: [
         { lettre: "A", texte: "Vitesse maximum obligatoire" },
         { lettre: "B", texte: "Vitesse minimum obligatoire", correct: true },
         { lettre: "C", texte: "Fin de route à accès réglementé" },
       ]},
-      { id: 15, enonce: "Ce panneau signifie :", image: "/cours/examens/panneaux/panneau-piste-cyclable.png", choix: [
+      { id: 15, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image15.png", choix: [
         { lettre: "A", texte: "Passage pour piétons" },
         { lettre: "B", texte: "Fin de piste cyclable" },
         { lettre: "C", texte: "Débouchés de cyclistes", correct: true },
       ]},
-      { id: 16, enonce: "Ce panneau « ALLUMEZ VOS FEUX » signifie :", choix: [
+      { id: 16, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image16.png", choix: [
         { lettre: "A", texte: "Obligation d'allumer ses feux", correct: true },
         { lettre: "B", texte: "Tunnel" },
       ]},
-      { id: 17, enonce: "Ce panneau signifie :", choix: [
-        { lettre: "A", texte: "Accès interdit aux véhicules de matières dangereuses" },
-        { lettre: "B", texte: "Accès interdit aux véhicules de marchandises" },
-        { lettre: "C", texte: "Accès interdit aux véhicules de TC", correct: true },
+      { id: 17, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image17.png", choix: [
+        { lettre: "A", texte: "Virage à gauche" },
+        { lettre: "B", texte: "Direction obligatoire tout droit ou à gauche", correct: true },
+        { lettre: "C", texte: "Proximité d'une chaussée rétrécie" },
       ]},
-      { id: 18, enonce: "Ce panneau signifie :", choix: [
+      { id: 18, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image18.png", choix: [
         { lettre: "A", texte: "Contournement obligatoire par la droite", correct: true },
         { lettre: "B", texte: "Sens unique" },
         { lettre: "C", texte: "Succession de virages" },
       ]},
-      { id: 19, enonce: "Ce panneau signifie :", choix: [
+      { id: 19, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image19.png", choix: [
         { lettre: "A", texte: "Fin de route à accès réglementé" },
         { lettre: "B", texte: "Fin de voie réservée aux véhicules de TC", correct: true },
         { lettre: "C", texte: "Arrêt d'autobus" },
       ]},
-      { id: 20, enonce: "Ce panneau (TAXI) signifie :", choix: [
-        { lettre: "A", texte: "Station de taxis", correct: true },
-        { lettre: "B", texte: "Interdiction aux taxis" },
-        { lettre: "C", texte: "Arrêt d'autobus" },
+      { id: 20, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image20.png", choix: [
+        { lettre: "A", texte: "Endroit fréquenté par les enfants" },
+        { lettre: "B", texte: "Aire piétonne", correct: true },
+        { lettre: "C", texte: "Chemin obligatoire pour piétons" },
       ]},
-      { id: 21, enonce: "Ce panneau signifie :", choix: [
-        { lettre: "A", texte: "Succession de virages", correct: true },
+      { id: 21, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image21.png", choix: [
+        { lettre: "A", texte: "Succession de virages" },
         { lettre: "B", texte: "Virage à gauche" },
-        { lettre: "C", texte: "Virage à droite" },
+        { lettre: "C", texte: "Virage à droite", correct: true },
       ]},
-      { id: 22, enonce: "Ce panneau signifie :", choix: [
-        { lettre: "A", texte: "Route à caractère prioritaire" },
+      { id: 22, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image22.png", choix: [
+        { lettre: "A", texte: "Route à caractère prioritaire", correct: true },
         { lettre: "B", texte: "Arrêt et stationnement interdit" },
-        { lettre: "C", texte: "Passage à niveau muni de barrière", correct: true },
+        { lettre: "C", texte: "Passage à niveau muni de barrière" },
       ]},
-      { id: 23, enonce: "Ce panneau signifie :", choix: [
+      { id: 23, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image23.png", choix: [
         { lettre: "A", texte: "Endroit fréquenté par les enfants" },
         { lettre: "B", texte: "Chemin obligatoire pour piétons" },
         { lettre: "C", texte: "Passage pour piétons", correct: true },
       ]},
-      { id: 24, enonce: "Ce panneau signifie :", choix: [
+      { id: 24, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image24.png", choix: [
         { lettre: "A", texte: "Débouchés de cyclistes" },
         { lettre: "B", texte: "Fin de piste ou de bande cyclable", correct: true },
         { lettre: "C", texte: "Fin de route à accès réglementé" },
       ]},
-      { id: 25, enonce: "Ce panneau signifie :", choix: [
-        { lettre: "A", texte: "Terrain de camping pour caravane" },
-        { lettre: "B", texte: "Passage d'animaux sauvages", correct: true },
+      { id: 25, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image25.png", choix: [
+        { lettre: "A", texte: "Terrain de camping pour caravane", correct: true },
+        { lettre: "B", texte: "Passage d'animaux sauvages" },
         { lettre: "C", texte: "Passage d'animaux domestiques" },
       ]},
-      { id: 26, enonce: "Ce panneau signifie :", choix: [
-        { lettre: "A", texte: "Proximité d'une chaussée rétrécie", correct: true },
+      { id: 26, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image26.png", choix: [
+        { lettre: "A", texte: "Proximité d'une chaussée rétrécie" },
         { lettre: "B", texte: "Arrêt d'autobus" },
-        { lettre: "C", texte: "Impasse" },
+        { lettre: "C", texte: "Impasse", correct: true },
       ]},
-      { id: 27, enonce: "Ce panneau signifie :", choix: [
-        { lettre: "A", texte: "Débouché sur un quai ou une berge", correct: true },
-        { lettre: "B", texte: "Passage pour piétons" },
-        { lettre: "C", texte: "Aire piétonne" },
+      { id: 27, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image27.png", choix: [
+        { lettre: "A", texte: "Virage à droite" },
+        { lettre: "B", texte: "Virage à gauche", correct: true },
+        { lettre: "C", texte: "Sens unique" },
       ]},
-      { id: 28, enonce: "Ce panneau signifie :", choix: [
+      { id: 28, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image28.png", choix: [
         { lettre: "A", texte: "Passage d'animaux domestiques", correct: true },
         { lettre: "B", texte: "Passage d'animaux sauvages" },
         { lettre: "C", texte: "Emplacement pour pique-nique" },
       ]},
-      { id: 29, enonce: "Ce panneau signifie :", choix: [
+      { id: 29, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image29.png", choix: [
         { lettre: "A", texte: "Virage à droite" },
         { lettre: "B", texte: "Succession de virages dont le 1er est à droite", correct: true },
         { lettre: "C", texte: "Virage à gauche" },
       ]},
-      { id: 30, enonce: "Ce panneau signifie :", choix: [
-        { lettre: "A", texte: "Emplacement pour pique-nique", correct: true },
-        { lettre: "B", texte: "Terrain de camping" },
-        { lettre: "C", texte: "Passage d'animaux sauvages" },
+      { id: 30, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image30.png", choix: [
+        { lettre: "A", texte: "Fin de voie réservée aux véhicules de TC" },
+        { lettre: "B", texte: "Voie réservée aux véhicules de transport en commun", correct: true },
+        { lettre: "C", texte: "Arrêt d'autobus" },
       ]},
-      { id: 31, enonce: "Ce panneau signifie :", choix: [
+      { id: 31, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image31.png", choix: [
         { lettre: "A", texte: "Terrain de camping pour caravane" },
         { lettre: "B", texte: "Lieu aménagé pour le stationnement gratuit", correct: true },
         { lettre: "C", texte: "Stationnement interdit" },
       ]},
-      { id: 32, enonce: "Ce panneau signifie :", choix: [
+      { id: 32, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image32.png", choix: [
         { lettre: "A", texte: "Toilettes publiques" },
         { lettre: "B", texte: "Passage pour piétons" },
         { lettre: "C", texte: "Aire piétonne", correct: true },
       ]},
-      { id: 33, enonce: "Ce panneau signifie :", choix: [
+      { id: 33, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image33.png", choix: [
         { lettre: "A", texte: "Passage d'animaux sauvages" },
-        { lettre: "B", texte: "Emplacement pour pique-nique", correct: true },
+        { lettre: "B", texte: "Emplacement pour pique-nique" },
+        { lettre: "C", texte: "Débouché sur un quai ou une berge", correct: true },
       ]},
-      { id: 34, enonce: "Ce panneau signifie :", choix: [
+      { id: 34, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image34.png", choix: [
         { lettre: "A", texte: "Arrêt d'autobus" },
         { lettre: "B", texte: "Lieu aménagé pour le stationnement gratuit" },
         { lettre: "C", texte: "Terrain de camping pour caravane et auto-caravane", correct: true },
       ]},
-      { id: 35, enonce: "Ce panneau signifie :", choix: [
+      { id: 35, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image35.png", choix: [
         { lettre: "A", texte: "Sens unique" },
-        { lettre: "B", texte: "Fin de route à accès réglementé", correct: true },
-        { lettre: "C", texte: "Route à caractère prioritaire" },
+        { lettre: "B", texte: "Fin de route à accès réglementé" },
+        { lettre: "C", texte: "Route à caractère prioritaire", correct: true },
       ]},
-      { id: 36, enonce: "Ce panneau signifie :", choix: [
-        { lettre: "A", texte: "Aire piétonne" },
+      { id: 36, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image36.png", choix: [
+        { lettre: "A", texte: "Aire piétonne", correct: true },
         { lettre: "B", texte: "Passage pour piétons" },
-        { lettre: "C", texte: "Endroit fréquenté par les enfants", correct: true },
+        { lettre: "C", texte: "Endroit fréquenté par les enfants" },
       ]},
-      { id: 37, enonce: "Ce panneau signifie :", choix: [
-        { lettre: "A", texte: "Impasse" },
-        { lettre: "B", texte: "Sens unique", correct: true },
+      { id: 37, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image37.png", choix: [
+        { lettre: "A", texte: "Impasse", correct: true },
+        { lettre: "B", texte: "Sens unique" },
         { lettre: "C", texte: "Stop" },
       ]},
-
-      // SECTION 2 — PANNEAUX AVANCÉS ET INTERDICTIONS
-      { id: 38, enonce: "Ce panneau signifie :", choix: [
+      { id: 38, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image38.png", choix: [
         { lettre: "A", texte: "Lieu aménagé pour le stationnement gratuit" },
         { lettre: "B", texte: "Passage pour piétons" },
         { lettre: "C", texte: "Installations accessibles aux personnes handicapées à mobilité réduite", correct: true },
       ]},
-      { id: 39, enonce: "Ce panneau signifie :", choix: [
+      { id: 39, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image39.png", choix: [
         { lettre: "A", texte: "Voie réservée aux véhicules de TC" },
-        { lettre: "B", texte: "Stationnement interdit", correct: true },
-        { lettre: "C", texte: "Fin de route à accès réglementé" },
+        { lettre: "B", texte: "Stationnement interdit" },
+        { lettre: "C", texte: "Fin de route à accès réglementé", correct: true },
       ]},
-      { id: 40, enonce: "Ce panneau (aire piétonne) signifie :", choix: [
+      { id: 40, enonce: "Ce panneau (aire piétonne) signifie :", image: "/cours/exercices/securite/image40.png", choix: [
         { lettre: "A", texte: "Aire piétonne — piétons, cyclistes et véhicules de desserte autorisés. Piétons toujours prioritaires, rouler au pas.", correct: true },
         { lettre: "B", texte: "Endroit fréquenté par les enfants" },
         { lettre: "C", texte: "Chemin obligatoire pour piétons" },
       ]},
-      { id: 41, enonce: "Ce panneau signifie :", choix: [
+      { id: 41, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image41.png", choix: [
         { lettre: "A", texte: "Impasse" },
         { lettre: "B", texte: "Tunnel", correct: true },
         { lettre: "C", texte: "Obligation d'allumer ses feux" },
       ]},
-      { id: 42, enonce: "Ce panneau signifie :", choix: [
+      { id: 42, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image42.png", choix: [
         { lettre: "A", texte: "Passage interdit aux voitures" },
         { lettre: "B", texte: "Interdit de laver sa voiture" },
         { lettre: "C", texte: "Débouché sur un quai ou une berge", correct: true },
       ]},
-      { id: 43, enonce: "Ce panneau signifie :", choix: [
-        { lettre: "A", texte: "Interdiction aux véhicules > 3,5t de dépasser" },
-        { lettre: "B", texte: "Interdiction aux véhicules < 3,5t de dépasser" },
+      { id: 43, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image43.png", choix: [
+        { lettre: "A", texte: "Interdiction aux véhicules > 3.5t de dépasser" },
+        { lettre: "B", texte: "Interdiction aux véhicules < 3.5t de dépasser" },
         { lettre: "C", texte: "Interdiction à tous les véhicules de dépasser", correct: true },
       ]},
-      { id: 44, enonce: "Ce panneau signifie :", choix: [
-        { lettre: "A", texte: "Accès interdit aux véhicules de matières dangereuses", correct: true },
-        { lettre: "B", texte: "Accès interdit aux véhicules de marchandises" },
+      { id: 44, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image44.png", choix: [
+        { lettre: "A", texte: "Accès interdit aux véhicules de matières dangereuses" },
+        { lettre: "B", texte: "Accès interdit aux véhicules de marchandises", correct: true },
         { lettre: "C", texte: "Accès interdit aux véhicules de TC" },
       ]},
-      { id: 45, enonce: "Ce panneau (2,5t) signifie :", choix: [
+      { id: 45, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image45.png", choix: [
         { lettre: "A", texte: "Accès interdit aux véhicules pesant sur un essieu plus que le nombre indiqué", correct: true },
         { lettre: "B", texte: "Accès réservé aux véhicules pesant sur un essieu plus que le nombre indiqué" },
         { lettre: "C", texte: "Accès interdit aux véhicules pesant plus que le nombre indiqué" },
       ]},
-      { id: 46, enonce: "Ce panneau signifie :", choix: [
+      { id: 46, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image46.png", choix: [
         { lettre: "A", texte: "Accès interdit aux véhicules inflammables" },
         { lettre: "B", texte: "Accès interdit aux véhicules transportant des marchandises explosives ou inflammables", correct: true },
         { lettre: "C", texte: "Interdiction de brûler les véhicules stationnés" },
       ]},
-      { id: 47, enonce: "Ce panneau signifie :", choix: [
-        { lettre: "A", texte: "Accès interdit aux véhicules polluants", correct: true },
-        { lettre: "B", texte: "Zone de contrôle technique" },
-        { lettre: "C", texte: "Zone à faibles émissions" },
+      { id: 47, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image47.png", choix: [
+        { lettre: "A", texte: "Accès interdit aux véhicules transportant des marchandises susceptibles de polluer les eaux", correct: true },
+        { lettre: "B", texte: "Interdit de stationner près des eaux" },
+        { lettre: "C", texte: "Interdit de polluer les eaux" },
       ]},
-      { id: 48, enonce: "Ce panneau signifie :", choix: [
+      { id: 48, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image48.png", choix: [
         { lettre: "A", texte: "Interdit de faire du feu dans la forêt" },
         { lettre: "B", texte: "Accès interdit en périodes de fortes chaleurs" },
         { lettre: "C", texte: "Risque d'incendie", correct: true },
       ]},
-      { id: 49, enonce: "Ce panneau m'annonce :", choix: [
-        { lettre: "A", texte: "Une circulation à sens unique", correct: true },
-        { lettre: "B", texte: "Une obligation d'aller tout droit à la prochaine intersection" },
+      { id: 49, enonce: "Ce panneau m'annonce :", image: "/cours/exercices/securite/image49.png", choix: [
+        { lettre: "A", texte: "Une circulation à sens unique" },
+        { lettre: "B", texte: "Une obligation d'aller tout droit à la prochaine intersection", correct: true },
       ]},
-      { id: 50, enonce: "Ce panneau signifie que :", choix: [
+      { id: 50, enonce: "Ce panneau signifie que :", image: "/cours/exercices/securite/image50.png", choix: [
         { lettre: "A", texte: "J'ai la priorité de passage par rapport à la circulation inverse", correct: true },
         { lettre: "B", texte: "Je dois céder le passage à la circulation inverse" },
       ]},
-      { id: 51, enonce: "Dans une zone de rencontre :", choix: [
+      { id: 51, enonce: "Dans une zone de rencontre :", image: "/cours/exercices/securite/image51.png", choix: [
         { lettre: "A", texte: "Les piétons sont prioritaires sur tous les véhicules" },
         { lettre: "B", texte: "Les piétons sont prioritaires sur tous les véhicules sauf les tramways", correct: true },
         { lettre: "C", texte: "Les piétons doivent marcher sur les trottoirs" },
       ]},
-      { id: 52, enonce: "Ce panneau indique :", choix: [
+      { id: 52, enonce: "Ce panneau indique :", image: "/cours/exercices/securite/image52.png", choix: [
         { lettre: "A", texte: "Une zone à stationnement payant" },
-        { lettre: "B", texte: "Une zone à stationnement à durée limitée avec contrôle par disque", correct: true },
-        { lettre: "C", texte: "Une zone à stationnement unilatéral à alternance semi-mensuelle et à durée limitée avec contrôle par disque" },
+        { lettre: "B", texte: "Une zone à stationnement à durée limitée avec contrôle par disque" },
+        { lettre: "C", texte: "Une zone à stationnement unilatéral à alternance semi-mensuelle et à durée limitée avec contrôle par disque", correct: true },
       ]},
-      { id: 53, enonce: "À partir de ce panneau :", choix: [
-        { lettre: "A", texte: "Stationnement unilatéral" },
-        { lettre: "B", texte: "Stationnement à alternance semi-mensuelle", correct: true },
+      { id: 53, enonce: "À partir de ce panneau :", image: "/cours/exercices/securite/image53.png", choix: [
+        { lettre: "A", texte: "J'entre dans un endroit fréquenté par les enfants" },
+        { lettre: "B", texte: "J'entre dans une zone de rencontre", correct: true },
+        { lettre: "C", texte: "J'entre dans une aire piétonne" },
       ]},
-      { id: 54, enonce: "Ce panneau signale :", choix: [
+      { id: 54, enonce: "Ce panneau signale :", image: "/cours/exercices/securite/image54.png", choix: [
         { lettre: "A", texte: "Un accès interdit aux piétons" },
         { lettre: "B", texte: "Une circulation interdite à tout véhicule dans les deux sens" },
         { lettre: "C", texte: "La fin de toutes les interdictions précédemment signalées", correct: true },
       ]},
-      { id: 55, enonce: "Ce panneau signifie :", choix: [
-        { lettre: "A", texte: "Interdiction de faire demi-tour jusqu'à la prochaine intersection", correct: true },
-        { lettre: "B", texte: "Interdiction de faire demi-tour jusqu'à la prochaine intersection incluse" },
+      { id: 55, enonce: "Ce panneau signifie :", image: "/cours/exercices/securite/image55.png", choix: [
+        { lettre: "A", texte: "Interdiction de faire demi-tour jusqu'à la prochaine intersection" },
+        { lettre: "B", texte: "Interdiction de faire demi-tour jusqu'à la prochaine intersection incluse", correct: true },
       ]},
-      { id: 56, enonce: "Ce panneau interdit l'accès à certains usagers :", choix: [
+      { id: 56, enonce: "Ce panneau interdit l'accès à certains usagers :", image: "/cours/exercices/securite/image56.png", choix: [
         { lettre: "A", texte: "Les piétons", correct: true },
-        { lettre: "B", texte: "Les cyclistes" },
+        { lettre: "B", texte: "Les cyclistes", correct: true },
         { lettre: "C", texte: "Les motocyclistes" },
         { lettre: "D", texte: "Les poids-lourds" },
       ]},
-
-      // SECTION 3 — MARQUAGES AU SOL, VOIES SPÉCIALES ET PRIORITÉS
-      { id: 57, enonce: "Ce panneau m'interdit l'accès si je conduis une fourgonnette (< 3,5 t) :", choix: [
+      { id: 57, enonce: "Ce panneau m'interdit l'accès si je conduis une fourgonnette (< 3,5 t) :", image: "/cours/exercices/securite/image57.png", choix: [
         { lettre: "A", texte: "Oui" },
         { lettre: "B", texte: "Non", correct: true },
       ]},
-      { id: 58, enonce: "Cette signalisation annonce :", choix: [
+      { id: 58, enonce: "Cette signalisation annonce :", image: "/cours/exercices/securite/image58.png", choix: [
         { lettre: "A", texte: "Un virage" },
         { lettre: "B", texte: "Une intersection", correct: true },
       ]},
@@ -311,118 +309,116 @@ export const SECURITE_ROUTIERE_EXERCICES: {
         { lettre: "C", texte: "Une indication", correct: true },
         { lettre: "D", texte: "Un danger" },
       ]},
-      { id: 60, enonce: "Nous sommes le 14 du mois. Avec le stationnement alterné, je stationne du côté :", choix: [
+      { id: 60, enonce: "Nous sommes le 14 du mois. Avec le stationnement alterné, je stationne du côté :", image: "/cours/exercices/securite/image59.png", choix: [
         { lettre: "A", texte: "Des numéros pairs" },
         { lettre: "B", texte: "Des numéros impairs", correct: true },
       ]},
-      { id: 61, enonce: "Ce panneau indique le caractère prioritaire d'une route. Il est répété hors agglomération tous les :", choix: [
+      { id: 61, enonce: "Ce panneau indique le caractère prioritaire d'une route. Il est répété hors agglomération tous les :", image: "/cours/exercices/securite/image60.png", choix: [
         { lettre: "A", texte: "2 km" },
         { lettre: "B", texte: "4 km" },
         { lettre: "C", texte: "5 km", correct: true },
       ]},
-      { id: 62, enonce: "Ce signal annonce un passage à niveau :", choix: [
-        { lettre: "A", texte: "Avec barrières à fonctionnement manuel" },
-        { lettre: "B", texte: "Sans barrières ni demi-barrières", correct: true },
+      { id: 62, enonce: "Ce signal annonce un passage à niveau :", image: "/cours/exercices/securite/image61.png", choix: [
+        { lettre: "A", texte: "Avec barrières à fonctionnement manuel", correct: true },
+        { lettre: "B", texte: "Sans barrières ni demi-barrières" },
       ]},
-      { id: 63, enonce: "Ce panneau annonce un risque temporaire de verglas :", choix: [
-        { lettre: "A", texte: "Vrai", correct: true },
-        { lettre: "B", texte: "Faux" },
+      { id: 63, enonce: "Ce panneau annonce un risque temporaire de verglas :", image: "/cours/exercices/securite/image62.png", choix: [
+        { lettre: "A", texte: "Oui", correct: true },
+        { lettre: "B", texte: "Non" },
       ]},
-      { id: 64, enonce: "Que signifie ce panneau (voie verte) ?", choix: [
+      { id: 64, enonce: "Que signifie ce panneau (voie verte) ?", image: "/cours/exercices/securite/image63.png", choix: [
         { lettre: "A", texte: "Voie réservée à la circulation des véhicules non motorisés, piétons et cavaliers", correct: true },
         { lettre: "B", texte: "Proximité d'une voie verte" },
       ]},
-      { id: 65, enonce: "Que signifie ce panneau (impasse avec issue piétons/cyclistes) ?", choix: [
+      { id: 65, enonce: "Que signifie ce panneau (impasse avec issue piétons/cyclistes) ?", image: "/cours/exercices/securite/image63.png", choix: [
         { lettre: "A", texte: "Impasse comportant une issue pour les piétons et les cyclistes", correct: true },
         { lettre: "B", texte: "Impasse interdit aux piétons" },
       ]},
-      { id: 66, enonce: "Je roule à la vitesse maximale sur autoroute. Je suis seul. Je me place sur la voie :", choix: [
+      { id: 66, enonce: "Je roule à la vitesse maximale sur autoroute. Je suis seul. Je me place sur la voie :", image: "/cours/exercices/securite/image64.png", choix: [
         { lettre: "A", texte: "De gauche" },
         { lettre: "B", texte: "Du milieu" },
         { lettre: "C", texte: "De droite", correct: true },
       ]},
-      { id: 67, enonce: "Le feu vert donne la priorité absolue :", choix: [
+      { id: 67, enonce: "Le feu vert donne la priorité absolue :", image: "/cours/exercices/securite/image65.png", choix: [
         { lettre: "A", texte: "Vrai" },
         { lettre: "B", texte: "Faux", correct: true },
       ]},
-      { id: 68, enonce: "Je peux dépasser par la droite si :", choix: [
-        { lettre: "A", texte: "Le véhicule devant roule sur la voie de gauche" },
+      { id: 68, enonce: "Je peux dépasser par la droite si :", image: "/cours/exercices/securite/image66.png", choix: [
+        { lettre: "A", texte: "Le véhicule devant roule sur la voie de gauche", correct: true },
         { lettre: "B", texte: "Le véhicule devant signale qu'il va tourner à gauche", correct: true },
         { lettre: "C", texte: "Le véhicule devant signale qu'il va tourner à droite" },
       ]},
-      { id: 69, enonce: "La distance de sécurité entre deux véhicules correspond à un délai de :", choix: [
+      { id: 69, enonce: "La distance de sécurité entre deux véhicules correspond à un délai de :", image: "/cours/exercices/securite/image67.png", choix: [
         { lettre: "A", texte: "1 seconde" },
         { lettre: "B", texte: "2 secondes", correct: true },
         { lettre: "C", texte: "3 secondes" },
       ]},
-      { id: 70, enonce: "En présence de deux marquages, un jaune et un blanc, je respecte en priorité :", choix: [
+      { id: 70, enonce: "En présence de deux marquages, un jaune et un blanc, je respecte en priorité :", image: "/cours/exercices/securite/image68.png", choix: [
         { lettre: "A", texte: "Le marquage blanc" },
         { lettre: "B", texte: "Le marquage jaune", correct: true },
       ]},
-      { id: 71, enonce: "Sur une route étroite, un camion arrive en face. Dois-je lui céder le passage ?", choix: [
+      { id: 71, enonce: "Sur une route étroite, un camion arrive en face. Dois-je lui céder le passage ?", image: "/cours/exercices/securite/image69.png", choix: [
         { lettre: "A", texte: "Oui", correct: true },
         { lettre: "B", texte: "Non" },
       ]},
-      { id: 72, enonce: "Dernier d'une file qui ralentit fortement, je dois allumer mes feux de détresse :", choix: [
-        { lettre: "A", texte: "Oui", correct: true },
-        { lettre: "B", texte: "Non" },
-      ]},
-      { id: 73, enonce: "Le stationnement et l'arrêt sont interdits sur la BAU (hors panne) :", choix: [
+      { id: 72, enonce: "Dernier d'une file qui ralentit fortement, je dois allumer mes feux de détresse :", image: "/cours/exercices/securite/image70.png", choix: [
         { lettre: "A", texte: "Vrai", correct: true },
         { lettre: "B", texte: "Faux" },
       ]},
-
-      // SECTION 4 — FEUX ET ÉCLAIRAGE
-      { id: 74, enonce: "Les feux de positions arrière doivent être visibles à :", choix: [
+      { id: 73, enonce: "Le stationnement et l'arrêt sont interdits sur la BAU (hors panne) :", image: "/cours/exercices/securite/image71.png", choix: [
+        { lettre: "A", texte: "Vrai", correct: true },
+        { lettre: "B", texte: "Faux" },
+      ]},
+      { id: 74, enonce: "Les feux de positions arrière doivent être visibles à :", image: "/cours/exercices/securite/image72.png", choix: [
         { lettre: "A", texte: "100 m" },
         { lettre: "B", texte: "150 m", correct: true },
       ]},
-      { id: 75, enonce: "Le chargement d'un véhicule peut dépasser à l'arrière de :", choix: [
+      { id: 75, enonce: "Le chargement d'un véhicule peut dépasser à l'arrière de :", image: "/cours/exercices/securite/image73.png", choix: [
         { lettre: "A", texte: "2 m" },
         { lettre: "B", texte: "3 m", correct: true },
       ]},
-      { id: 76, enonce: "Présente sur les routes étroites, cette ligne autorise le dépassement :", choix: [
+      { id: 76, enonce: "Présente sur les routes étroites, cette ligne autorise le dépassement :", image: "/cours/exercices/securite/image74.png", choix: [
         { lettre: "A", texte: "De tous les véhicules" },
         { lettre: "B", texte: "Seulement des véhicules roulant doucement", correct: true },
       ]},
-      { id: 77, enonce: "Dans une rue à sens unique, une voie de bus peut être à contresens :", choix: [
+      { id: 77, enonce: "Dans une rue à sens unique, une voie de bus peut être à contresens :", image: "/cours/exercices/securite/image75.png", choix: [
         { lettre: "A", texte: "Oui", correct: true },
         { lettre: "B", texte: "Non" },
       ]},
-      { id: 78, enonce: "Sur chaussée à sens unique, véhicule persistant à gauche — dépasser par la droite ?", choix: [
+      { id: 78, enonce: "Sur chaussée à sens unique, véhicule persistant à gauche — dépasser par la droite ?", image: "/cours/exercices/securite/image76.png", choix: [
         { lettre: "A", texte: "Oui", correct: true },
         { lettre: "B", texte: "Non" },
       ]},
-      { id: 79, enonce: "Dans ce tunnel, je peux rouler à :", choix: [
+      { id: 79, enonce: "Dans ce tunnel, je peux rouler à :", image: "/cours/exercices/securite/image77.png", choix: [
         { lettre: "A", texte: "30 km/h" },
         { lettre: "B", texte: "50 km/h", correct: true },
         { lettre: "C", texte: "60 km/h" },
       ]},
-      { id: 80, enonce: "Hors agglomération, visibilité < 50 m, je peux rouler à :", choix: [
+      { id: 80, enonce: "Hors agglomération, visibilité < 50 m, je peux rouler à :", image: "/cours/exercices/securite/image78.png", choix: [
         { lettre: "A", texte: "40 km/h" },
         { lettre: "B", texte: "50 km/h", correct: true },
         { lettre: "C", texte: "60 km/h" },
       ]},
-      { id: 81, enonce: "En bouchon, je dois :", choix: [
-        { lettre: "A", texte: "Rester sur ma file et avancer doucement", correct: true },
-        { lettre: "B", texte: "Changer de file régulièrement" },
-        { lettre: "C", texte: "Utiliser la BAU" },
+      { id: 81, enonce: "En bouchon, je dois :", image: "/cours/exercices/securite/image79.png", choix: [
+        { lettre: "A", texte: "Garder une distance de sécurité suffisante", correct: true },
+        { lettre: "B", texte: "Changer de file pour aller plus vite" },
+        { lettre: "C", texte: "Changer de file pour préparer un changement de direction", correct: true },
       ]},
-      { id: 82, enonce: "Dépassement d'un cycliste hors agglo — distance de sécurité minimum :", choix: [
+      { id: 82, enonce: "Dépassement d'un cycliste hors agglo — distance de sécurité minimum :", image: "/cours/exercices/securite/image80.png", choix: [
         { lettre: "A", texte: "0,5 m" },
         { lettre: "B", texte: "1 m" },
         { lettre: "C", texte: "1,5 m", correct: true },
       ]},
-      { id: 83, enonce: "Hors agglomération, le dépassement d'un cycle est autorisé :", choix: [
+      { id: 83, enonce: "Hors agglomération, le dépassement d'un cycle est autorisé :", image: "/cours/exercices/securite/image81.png", choix: [
         { lettre: "A", texte: "En chevauchant une ligne continue axiale", correct: true },
         { lettre: "B", texte: "En franchissant une ligne continue axiale" },
-        { lettre: "C", texte: "En laissant au moins 1,50 m" },
+        { lettre: "C", texte: "En laissant au moins 1,50 m", correct: true },
       ]},
-      { id: 84, enonce: "Un feu rouge clignotant indique :", choix: [
-        { lettre: "A", texte: "Arrêt absolu", correct: true },
-        { lettre: "B", texte: "Danger — passage autorisé avec précautions" },
+      { id: 84, enonce: "Un feu rouge clignotant indique :", image: "/cours/exercices/securite/image82.png", choix: [
+        { lettre: "A", texte: "Arrêt absolu" },
+        { lettre: "B", texte: "Danger — passage autorisé avec précautions", correct: true },
       ]},
-      { id: 85, enonce: "Un emplacement peint en bleu :", choix: [
+      { id: 85, enonce: "Un emplacement peint en bleu :", image: "/cours/exercices/securite/image83.png", choix: [
         { lettre: "A", texte: "Stationnement sans restriction" },
         { lettre: "B", texte: "Stationnement payant" },
         { lettre: "C", texte: "Stationnement à durée limitée", correct: true },
@@ -433,103 +429,104 @@ export const SECURITE_ROUTIERE_EXERCICES: {
         { lettre: "C", texte: "D'obligation", correct: true },
         { lettre: "D", texte: "D'indication" },
       ]},
-      { id: 87, enonce: "Feu rouge clignotant possible :", choix: [
+      { id: 87, enonce: "Feu rouge clignotant possible :", image: "/cours/exercices/securite/image84.png", choix: [
         { lettre: "A", texte: "Sur un passage à niveau", correct: true },
         { lettre: "B", texte: "Avec un feu tricolore" },
-        { lettre: "C", texte: "Sur une zone de danger aérien" },
+        { lettre: "C", texte: "Sur une zone de danger aérien", correct: true },
       ]},
-      { id: 88, enonce: "Feux tricolores éteints + panneau cédez le passage :", choix: [
+      { id: 88, enonce: "Feux tricolores éteints + panneau cédez le passage :", image: "/cours/exercices/securite/image85.png", choix: [
         { lettre: "A", texte: "Je passe sans ralentir" },
         { lettre: "B", texte: "Je ralentis et cède le passage à droite et à gauche", correct: true },
         { lettre: "C", texte: "Je m'arrête" },
       ]},
-      { id: 89, enonce: "Lorsque je manœuvre :", choix: [
+      { id: 89, enonce: "Lorsque je manœuvre :", image: "/cours/exercices/securite/image86.png", choix: [
         { lettre: "A", texte: "Je suis toujours prioritaire" },
         { lettre: "B", texte: "Je dois la priorité à tous, avant et pendant", correct: true },
       ]},
-      { id: 90, enonce: "L'accès des autoroutes est interdit aux :", choix: [
+      { id: 90, enonce: "L'accès des autoroutes est interdit aux :", image: "/cours/exercices/securite/image87.png", choix: [
         { lettre: "A", texte: "Véhicules à moteur non soumis à immatriculation", correct: true },
         { lettre: "B", texte: "Cyclistes", correct: true },
         { lettre: "C", texte: "Poids lourds" },
       ]},
-      { id: 91, enonce: "Par temps de pluie sur autoroute, la vitesse maximale est de :", choix: [
+      { id: 91, enonce: "Par temps de pluie sur autoroute, la vitesse maximale est de :", image: "/cours/exercices/securite/image88.png", choix: [
         { lettre: "A", texte: "100 km/h" },
         { lettre: "B", texte: "110 km/h", correct: true },
         { lettre: "C", texte: "120 km/h" },
       ]},
-      { id: 92, enonce: "Hors agglomération, les panneaux de danger sont placés à quelle distance ?", choix: [
+      { id: 92, enonce: "Hors agglomération, les panneaux de danger sont placés à quelle distance ?", image: "/cours/exercices/securite/image89.png", choix: [
         { lettre: "A", texte: "50 m" },
         { lettre: "B", texte: "100 m" },
         { lettre: "C", texte: "150 m", correct: true },
       ]},
-      { id: 93, enonce: "Par temps de forte pluie, je peux allumer mes feux antibrouillard arrière ?", choix: [
+      { id: 93, enonce: "Par temps de forte pluie, je peux allumer mes feux antibrouillard arrière ?", image: "/cours/exercices/securite/image90.png", choix: [
         { lettre: "A", texte: "Oui", correct: true },
         { lettre: "B", texte: "Non" },
       ]},
-      { id: 94, enonce: "Les feux arrière de brouillard peuvent être allumés en cas de :", choix: [
+      { id: 94, enonce: "Les feux arrière de brouillard peuvent être allumés en cas de :", image: "/cours/exercices/securite/image91.png", choix: [
         { lettre: "A", texte: "Chute de neige", correct: true },
         { lettre: "B", texte: "Forte pluie", correct: true },
         { lettre: "C", texte: "Brouillard", correct: true },
+        { lettre: "D", texte: "Temps clair" },
       ]},
-      { id: 95, enonce: "Il neige, je peux utiliser les feux de brouillard avant :", choix: [
+      { id: 95, enonce: "Il neige, je peux utiliser les feux de brouillard avant :", image: "/cours/exercices/securite/image92.png", choix: [
         { lettre: "A", texte: "Oui", correct: true },
         { lettre: "B", texte: "Non" },
       ]},
-      { id: 96, enonce: "En agglomération éclairée la nuit, je peux circuler :", choix: [
+      { id: 96, enonce: "En agglomération éclairée la nuit, je peux circuler :", image: "/cours/exercices/securite/image93.png", choix: [
         { lettre: "A", texte: "Sans feux" },
         { lettre: "B", texte: "En feux de croisement", correct: true },
         { lettre: "C", texte: "En feux de route" },
       ]},
-      { id: 97, enonce: "Dans un tunnel éclairé hors agglomération, je circule :", choix: [
+      { id: 97, enonce: "Dans un tunnel éclairé hors agglomération, je circule :", image: "/cours/exercices/securite/image94.png", choix: [
         { lettre: "A", texte: "En feux de croisement", correct: true },
         { lettre: "B", texte: "En feux de route" },
         { lettre: "C", texte: "En feux de brouillard" },
       ]},
-      { id: 98, enonce: "En cas de chute de neige, je circule avec :", choix: [
+      { id: 98, enonce: "En cas de chute de neige, je circule avec :", image: "/cours/exercices/securite/image95.png", choix: [
         { lettre: "A", texte: "Feux de position" },
         { lettre: "B", texte: "Feux de croisement", correct: true },
-        { lettre: "C", texte: "Feux de brouillard avant" },
-        { lettre: "D", texte: "Feux de brouillard arrière" },
+        { lettre: "C", texte: "Feux de brouillard avant", correct: true },
+        { lettre: "D", texte: "Feux de brouillard arrière", correct: true },
       ]},
-      { id: 99, enonce: "Les feux de recul :", choix: [
+      { id: 99, enonce: "Les feux de recul :", image: "/cours/exercices/securite/image96.png", choix: [
         { lettre: "A", texte: "Éclairent la zone de recul la nuit", correct: true },
         { lettre: "B", texte: "Indiquent la manœuvre aux usagers", correct: true },
         { lettre: "C", texte: "Sont de couleur verte" },
       ]},
-      { id: 100, enonce: "Les feux diurnes :", choix: [
+      { id: 100, enonce: "Les feux diurnes :", image: "/cours/exercices/securite/image97.png", choix: [
         { lettre: "A", texte: "Rendent le véhicule plus visible le jour", correct: true },
         { lettre: "B", texte: "Sont de couleur jaune" },
-        { lettre: "C", texte: "Sont obligatoires" },
+        { lettre: "C", texte: "Sont obligatoires", correct: true },
       ]},
-      { id: 101, enonce: "Je circule sur route de montagne par forte pluie, je peux utiliser :", choix: [
+      { id: 101, enonce: "Je circule sur route de montagne par forte pluie, je peux utiliser :", image: "/cours/exercices/securite/image98.png", choix: [
         { lettre: "A", texte: "Les feux de croisement", correct: true },
         { lettre: "B", texte: "Les feux de position seuls" },
-        { lettre: "C", texte: "Les feux de brouillard arrière" },
+        { lettre: "C", texte: "Les feux de brouillard arrière", correct: true },
       ]},
-      { id: 102, enonce: "Je respecte les signaux de priorité si le feu est :", choix: [
+      { id: 102, enonce: "Je respecte les signaux de priorité si le feu est :", image: "/cours/exercices/securite/image99.png", choix: [
         { lettre: "A", texte: "Rouge" },
         { lettre: "B", texte: "Jaune clignotant", correct: true },
         { lettre: "C", texte: "Jaune fixe" },
         { lettre: "D", texte: "Éteint", correct: true },
       ]},
-      { id: 103, enonce: "Les feux de croisement éclairent au moins à :", choix: [
+      { id: 103, enonce: "Les feux de croisement éclairent au moins à :", image: "/cours/exercices/securite/image100.png", choix: [
         { lettre: "A", texte: "30 m sans éblouir", correct: true },
         { lettre: "B", texte: "50 m sans éblouir" },
       ]},
-      { id: 104, enonce: "Les feux de route éclairent à au moins :", choix: [
+      { id: 104, enonce: "Les feux de route éclairent à au moins :", image: "/cours/exercices/securite/image101.png", choix: [
         { lettre: "A", texte: "100 m", correct: true },
         { lettre: "B", texte: "150 m" },
       ]},
-      { id: 105, enonce: "Quelle action ne nécessite PAS les feux de détresse ?", choix: [
+      { id: 105, enonce: "Quelle action ne nécessite PAS les feux de détresse ?", image: "/cours/exercices/securite/image102.png", choix: [
         { lettre: "A", texte: "Attirer l'attention sur soi" },
         { lettre: "B", texte: "Immobilisé sur la chaussée" },
         { lettre: "C", texte: "Quand je veux doubler", correct: true },
       ]},
-      { id: 106, enonce: "En agglomération par temps de pluie, la vitesse max est :", choix: [
+      { id: 106, enonce: "En agglomération par temps de pluie, la vitesse max est :", image: "/cours/exercices/securite/image103.png", choix: [
         { lettre: "A", texte: "40 km/h" },
         { lettre: "B", texte: "50 km/h", correct: true },
       ]},
-      { id: 107, enonce: "Avant de traverser une intersection, regarder en premier :", choix: [
+      { id: 107, enonce: "Avant de traverser une intersection, regarder en premier :", image: "/cours/exercices/securite/image104.png", choix: [
         { lettre: "A", texte: "À droite" },
         { lettre: "B", texte: "À gauche", correct: true },
       ]},

@@ -1,5 +1,5 @@
 import { getPointsParQuestion, isCalculQuestion } from "./examens-blancs-data";
-import type { ExamenBlanc, Matiere, Question, CorrectionQRC, ExamScoreItem } from "./examens-blancs-types";
+import type { ExamenBlanc, Matiere, Question, CorrectionQRC, ExamScoreItem, Reponses, ReponseQCM, ReponseQRC, ResultatMatiere } from "./examens-blancs-types";
 
 /** Safely coerce any value to string */
 export function safeStr(v: unknown): string {
@@ -66,6 +66,18 @@ export function buildMatiereLookupKeys(matiereId: unknown, matiereNom: unknown):
   if (normalizedId) keys.add(`id:${normalizedId}`);
   if (normalizedNom) keys.add(`nom:${normalizedNom}`);
   if (letter) keys.add(`letter:${letter}`);
+
+  // FIX: also add nom key with letter prefix stripped
+  // so "D - Français" produces both nom:d francais AND nom:francais
+  // This ensures matches survive matiere definition renames
+  const rawNom = safeStr(matiereNom);
+  const strippedNom = rawNom.replace(/^\s*[a-g]\s*[-–(]\s*/i, "").trim();
+  if (strippedNom && strippedNom !== rawNom) {
+    const normalizedStripped = normalizeMatiereLookupValue(strippedNom);
+    if (normalizedStripped && normalizedStripped !== normalizedNom) {
+      keys.add(`nom:${normalizedStripped}`);
+    }
+  }
 
   if (normalizedId === "dev commercial" || normalizedId === "developpement commercial") {
     keys.add("id:reglementation vtc");
@@ -409,4 +421,519 @@ export function computeAdmisForMatiere(noteObtenue: unknown, maxPoints: unknown,
   const noteSur20 = (safeScore / safeMax) * 20;
   const seuilSur20 = Math.max(toFiniteNumber(noteEliminatoire, 0), 0);
   return noteSur20 >= seuilSur20;
+}
+
+// ─── Extracted pure functions for testability ─────────────────────────
+
+/** Normalize reponses keys — preserves string keys, converts numeric strings to numbers */
+export function normalizeReponses(raw: any): Reponses {
+  if (!raw || typeof raw !== "object") return {};
+  const normalized: Reponses = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (value !== undefined && value !== null) {
+      const numKey = Number(key);
+      normalized[isNaN(numKey) ? (key as any) : numKey] = value as ReponseQCM | ReponseQRC;
+    }
+  }
+  return normalized;
+}
+
+/** Determine if a QCM question has multiple correct answers */
+export function computeIsMultiple(question: Question): boolean {
+  return question?.type === "QCM" && (question.choix?.filter(c => c.correct).length || 0) > 1;
+}
+
+/** Apply a QCM answer change to a reponses object */
+export function applyQCMChange(
+  reponses: Reponses,
+  qId: number,
+  lettre: string,
+  checked: boolean,
+  isMultiple: boolean,
+): Reponses {
+  const current = (reponses[qId] as string[]) || [];
+  if (!isMultiple) {
+    return { ...reponses, [qId]: [lettre] };
+  } else if (checked) {
+    if (current.includes(lettre)) return reponses;
+    return { ...reponses, [qId]: [...current, lettre] };
+  } else {
+    return { ...reponses, [qId]: current.filter(l => l !== lettre) };
+  }
+}
+
+/** Persist exam session to sessionStorage */
+export function persistExamSession(
+  sessionKey: string,
+  p: string,
+  exId: string | null,
+  mi: number,
+  examStartTime: number,
+  resultats: ResultatMatiere[] = [],
+  currentReponses: Reponses = {},
+  questionIndex = 0,
+): void {
+  try {
+    if (p === "examen" && exId) {
+      sessionStorage.setItem(sessionKey, JSON.stringify({
+        phase: p, examenId: exId, matiereIndex: mi,
+        examStartTime, resultats,
+        currentReponses,
+        questionIndex,
+      }));
+    } else {
+      sessionStorage.removeItem(sessionKey);
+    }
+  } catch { }
+}
+
+/**
+ * Extract the matiere key from an exercice_id.
+ * exercice_id format: `${examId}__${matiereId}` (double underscore separator).
+ */
+export function extractMatiereKeyFromExerciceId(exerciceId: string, examId: string): string {
+  const prefix = `${examId}__`;
+  if (!exerciceId.startsWith(prefix)) return "";
+  return exerciceId.slice(prefix.length);
+}
+
+/**
+ * Determine if repairCorrectFlags should overwrite saved QCM correct flags.
+ * Should ONLY repair when flags are genuinely lost (serialization bug),
+ * NOT when the admin intentionally changed correct answers.
+ */
+export function shouldRepairCorrectFlags(savedQuestions: Question[], sourceQuestions: Question[]): boolean {
+  const savedCorrectCount = savedQuestions.filter(
+    q => q?.type === "QCM" && Array.isArray(q.choix) && q.choix.some(c => c.correct === true)
+  ).length;
+  const srcCorrectCount = sourceQuestions.filter(
+    q => q?.type === "QCM" && Array.isArray(q.choix) && q.choix.some(c => c.correct === true)
+  ).length;
+  // Only repair when ALL correct flags are lost (savedCorrectCount === 0)
+  // This prevents overwriting intentional admin edits
+  if (srcCorrectCount > 0 && savedCorrectCount === 0) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Merge texteSupport: saved (admin edit) takes priority over source.
+ * Falls back to source only when saved is empty/undefined.
+ */
+export function mergeTexteSupport(sourceValue: string | undefined, savedValue: string | undefined): string {
+  return savedValue || sourceValue || "";
+}
+
+/**
+ * Check if a bilan answer is correct.
+ * Handles both single-string and array answers, and compares ALL correct choices.
+ */
+export function isBilanAnswerCorrect(
+  selected: string | string[] | undefined,
+  choix: Array<{ lettre: string; correct?: boolean }>,
+): boolean {
+  if (!selected) return false;
+  const correctLetters = choix.filter(c => c.correct).map(c => c.lettre).sort();
+  if (correctLetters.length === 0) return false;
+  if (Array.isArray(selected)) {
+    return JSON.stringify([...selected].sort()) === JSON.stringify(correctLetters);
+  }
+  return correctLetters.length === 1 && selected === correctLetters[0];
+}
+
+/**
+ * BROKEN legacy check (for testing purposes only — reproduces the bug).
+ * Compares array to string, always returns false for multi-answer questions.
+ */
+export function isBilanAnswerCorrectBroken(
+  selected: string | string[] | undefined,
+  choix: Array<{ lettre: string; correct?: boolean }>,
+): boolean {
+  const correct = choix.find(c => c.correct);
+  return !!(selected && correct && selected === correct.lettre);
+}
+
+// ────────────────────────────────────────────────────────────
+// Module exercice merge (saved DB data has priority over source)
+// ────────────────────────────────────────────────────────────
+
+interface MergeExerciceQuestionChoice {
+  lettre: string;
+  texte: string;
+  correct?: boolean;
+}
+
+interface MergeExerciceQuestion {
+  id: number;
+  enonce: string;
+  image?: string;
+  choix: MergeExerciceQuestionChoice[];
+}
+
+interface MergeExerciceBase {
+  id: number;
+  titre: string;
+  sousTitre?: string;
+  actif: boolean;
+  questions?: MergeExerciceQuestion[];
+  fichiers?: { nom: string; url: string }[];
+}
+
+/**
+ * Merge saved (DB) exercices with source (hardcoded) exercices.
+ * Saved data takes priority — admin edits to enonce, choix, correct, image
+ * are preserved. Source is used only as a fallback for fields not in saved,
+ * and to surface new questions/exercices not yet in saved.
+ */
+export function mergeSourceExercices<T extends MergeExerciceBase>(
+  loadedExercices: T[],
+  sourceExercices: T[],
+): T[] {
+  const loadedExerciseMap = new Map(loadedExercices.map((exo) => [Number(exo.id), exo]));
+
+  return sourceExercices.map((sourceExo) => {
+    const loadedExo = loadedExerciseMap.get(Number(sourceExo.id));
+    if (!loadedExo) return sourceExo;
+
+    if (!sourceExo.questions || !loadedExo.questions) {
+      // Saved takes priority, source fills gaps
+      return { ...sourceExo, ...loadedExo } as T;
+    }
+
+    const loadedQuestionMap = new Map(loadedExo.questions.map((q) => [Number(q.id), q]));
+
+    const mergedQuestions = sourceExo.questions.map((sourceQ) => {
+      const loadedQ = loadedQuestionMap.get(Number(sourceQ.id));
+      if (!loadedQ) return sourceQ;
+
+      // Saved (admin edit) takes priority over source
+      return {
+        ...sourceQ,
+        ...loadedQ,
+        image: loadedQ.image ?? sourceQ.image,
+        choix: Array.isArray(loadedQ.choix) && loadedQ.choix.length > 0
+          ? loadedQ.choix
+          : sourceQ.choix,
+      };
+    });
+
+    return {
+      ...sourceExo,
+      ...loadedExo,
+      questions: mergedQuestions,
+    } as T;
+  });
+}
+
+// ────────────────────────────────────────────────────────────
+// Question reorder
+// ────────────────────────────────────────────────────────────
+
+/**
+ * Move a question (by ID) to a specific target index.
+ * Returns a new array with the question repositioned.
+ */
+export function moveQuestionToPosition<T extends { id: number }>(
+  questions: T[],
+  questionId: number,
+  targetIndex: number,
+): T[] {
+  const fromIndex = questions.findIndex((q) => q.id === questionId);
+  if (fromIndex < 0) return questions;
+  const clamped = Math.max(0, Math.min(targetIndex, questions.length - 1));
+  if (clamped === fromIndex) return questions;
+  const result = [...questions];
+  const [moved] = result.splice(fromIndex, 1);
+  result.splice(clamped, 0, moved);
+  return result;
+}
+
+// ────────────────────────────────────────────────────────────
+// Shared matière edit propagation
+// ────────────────────────────────────────────────────────────
+
+/**
+ * When admin edits a matière, propagate the change to ALL exams
+ * that share the same matière ID. This replaces the old VTC→TAXI
+ * sync approach that could overwrite saved data.
+ *
+ * Returns a new array of exams with the updated matière applied
+ * to every exam that has a matière with matching ID.
+ */
+export function propagateSharedMatiereEdit(
+  examens: ExamenBlanc[],
+  matiereId: string,
+  updatedMatiere: Matiere,
+): ExamenBlanc[] {
+  return examens.map((ex) => {
+    const hasMatiere = ex.matieres.some((m) => m.id === matiereId);
+    if (!hasMatiere) return ex;
+    return {
+      ...ex,
+      matieres: ex.matieres.map((m) =>
+        m.id === matiereId ? { ...m, ...updatedMatiere } : m,
+      ),
+    };
+  });
+}
+
+// ────────────────────────────────────────────────────────────
+// Question merge — admin deletions respected
+// ────────────────────────────────────────────────────────────
+
+/**
+ * Merge source and saved questions for a matiere.
+ * When saved data exists, it is the source of truth:
+ *   - Saved order is preserved (admin reordering)
+ *   - Source fields are merged into saved (images, reponses_possibles)
+ *   - Questions deleted by admin (in source but not in saved) are NOT re-added
+ *   - Custom admin questions (in saved but not in source) are kept
+ * When no saved data exists, all source questions are returned.
+ */
+export function mergeQuestionsForMatiere(
+  sourceQuestions: Question[],
+  savedQuestions: Question[] | null | undefined,
+): Question[] {
+  const safeSrc = Array.isArray(sourceQuestions) ? sourceQuestions : [];
+  const safeSaved = Array.isArray(savedQuestions) ? savedQuestions : [];
+
+  // No saved data → admin hasn't edited this matiere → return source
+  if (safeSaved.length === 0) return safeSrc;
+
+  const normalizeType = (v: unknown) => String(v ?? "").trim().toUpperCase();
+  const normalizeText = (v: unknown) => String(v ?? "").trim().replace(/\s+/g, " ").toLowerCase();
+
+  const getKey = (q: any) => {
+    const id = Number(q?.id);
+    const type = normalizeType(q?.type);
+    const enonce = normalizeText(q?.enonce);
+    if (enonce) return `${id}::${type}::${enonce}`;
+    return `${id}::${type}`;
+  };
+
+  // Build source lookup
+  const sourceByKey = new Map<string, Question>();
+  const sourceById = new Map<number, Question[]>();
+  safeSrc.forEach((srcQ) => {
+    sourceByKey.set(getKey(srcQ), srcQ);
+    const numId = Number(srcQ?.id);
+    if (!Number.isNaN(numId)) {
+      const arr = sourceById.get(numId) ?? [];
+      arr.push(srcQ);
+      sourceById.set(numId, arr);
+    }
+  });
+
+  // Iterate saved order — merge with source metadata when matched
+  return safeSaved.map((savedQ) => {
+    const key = getKey(savedQ);
+    let sourceQ = sourceByKey.get(key);
+
+    if (!sourceQ) {
+      const sameId = sourceById.get(Number(savedQ?.id)) ?? [];
+      const sameType = sameId.find((c) => normalizeType(c?.type) === normalizeType(savedQ?.type));
+      sourceQ = sameType ?? sameId[0];
+    }
+
+    if (!sourceQ) {
+      // Custom admin question (not in source) — keep as-is
+      return { ...savedQ, image: savedQ?.image ?? (savedQ as any)?.image_url } as Question;
+    }
+
+    // Merge source fields into saved (saved overrides)
+    const merged: Question = {
+      ...sourceQ,
+      ...savedQ,
+      image: savedQ?.image ?? (savedQ as any)?.image_url ?? sourceQ?.image ?? (sourceQ as any)?.image_url,
+    };
+
+    // For QRC: restore source keywords if admin didn't set any
+    if (normalizeType(merged.type) === "QRC") {
+      const hasSavedKw = Array.isArray(savedQ?.reponses_possibles) && savedQ.reponses_possibles.length > 0;
+      const srcKw = Array.isArray(sourceQ?.reponses_possibles) ? sourceQ.reponses_possibles : [];
+      if (!hasSavedKw && srcKw.length > 0) {
+        return { ...merged, reponses_possibles: [...srcKw] };
+      }
+    }
+
+    return merged;
+  });
+  // NOTE: source questions NOT in saved are intentionally NOT appended.
+  // If saved data exists, admin chose which questions to keep.
+}
+
+// ────────────────────────────────────────────────────────────
+// Question image upload helpers
+// ────────────────────────────────────────────────────────────
+
+const ALLOWED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+
+/**
+ * Build a unique storage path for a question image.
+ * @param context "module" or "exam"
+ * @param contextId module_id (number) or exam_id (string like "EB1")
+ * @param questionId question id
+ * @param fileName original file name
+ */
+export function buildQuestionImagePath(
+  context: "module" | "exam",
+  contextId: number | string,
+  questionId: number | string,
+  fileName: string,
+): string {
+  const sanitized = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const truncated = sanitized.length > 80 ? sanitized.slice(0, 70) + sanitized.slice(sanitized.lastIndexOf(".")) : sanitized;
+  return `question-images/${context}-${contextId}/q${questionId}_${Date.now()}_${truncated}`;
+}
+
+/**
+ * Validate a file before uploading as a question image.
+ * Returns { valid: true } or { valid: false, error: string }.
+ */
+export function validateQuestionImageFile(file: File): { valid: true } | { valid: false; error: string } {
+  if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+    return { valid: false, error: "Format non supporté. Utilisez PNG, JPEG, WebP ou GIF." };
+  }
+  if (file.size > MAX_IMAGE_SIZE_BYTES) {
+    return { valid: false, error: "Fichier trop volumineux (max 5 Mo)." };
+  }
+  return { valid: true };
+}
+
+// ────────────────────────────────────────────────────────────
+// Presence check — rolling window logic (mirrors SQL function)
+// ────────────────────────────────────────────────────────────
+
+export interface PresenceCheckInput {
+  now: number;            // timestamp ms
+  startedAt: number;
+  lastSeenAt: number;
+  lastActionAt: number;
+  event: "heartbeat" | "heartbeat_exam" | "action" | "confirm_presence";
+  isInExam: boolean;
+  sessionEndedAt: number | null;
+  windowMinutes?: number; // default 30
+  graceMinutes?: number;  // default 5
+  maxHours?: number;      // default 7
+}
+
+export interface PresenceCheckResult {
+  isValid: boolean;
+  disconnectReason: string | null;
+  shouldShowPresencePrompt: boolean;
+  remainingPresenceSeconds: number;
+  updatedLastSeenAt: number;
+  updatedLastActionAt: number;
+}
+
+export function computePresenceCheck(input: PresenceCheckInput): PresenceCheckResult {
+  const {
+    now, startedAt, lastSeenAt, lastActionAt, event, isInExam,
+    sessionEndedAt,
+    windowMinutes = 30,
+    graceMinutes = 5,
+    maxHours = 7,
+  } = input;
+
+  const windowMs = windowMinutes * 60 * 1000;
+  const graceMs = graceMinutes * 60 * 1000;
+  const maxMs = maxHours * 60 * 60 * 1000;
+
+  // Session already ended
+  if (sessionEndedAt !== null) {
+    return {
+      isValid: false,
+      disconnectReason: "already_closed",
+      shouldShowPresencePrompt: false,
+      remainingPresenceSeconds: 0,
+      updatedLastSeenAt: lastSeenAt,
+      updatedLastActionAt: lastActionAt,
+    };
+  }
+
+  // Max duration check (applies even during exams)
+  if (now >= startedAt + maxMs) {
+    return {
+      isValid: false,
+      disconnectReason: "max_duration",
+      shouldShowPresencePrompt: false,
+      remainingPresenceSeconds: 0,
+      updatedLastSeenAt: lastSeenAt,
+      updatedLastActionAt: lastActionAt,
+    };
+  }
+
+  // Update timestamps based on event type
+  let newLastSeenAt = lastSeenAt;
+  let newLastActionAt = lastActionAt;
+
+  if (event === "confirm_presence" || event === "action") {
+    // Real user interaction: update both
+    newLastSeenAt = now;
+    newLastActionAt = now;
+  } else if (event === "heartbeat" || event === "heartbeat_exam") {
+    // Automatic heartbeat: only update last_seen_at (keeps RLS alive)
+    newLastSeenAt = now;
+    // Don't update lastActionAt — heartbeats don't count as real activity
+  }
+
+  // During exam: skip presence check, just keep session alive
+  if (isInExam) {
+    return {
+      isValid: true,
+      disconnectReason: null,
+      shouldShowPresencePrompt: false,
+      remainingPresenceSeconds: 0,
+      updatedLastSeenAt: newLastSeenAt,
+      updatedLastActionAt: newLastActionAt,
+    };
+  }
+
+  // Rolling presence window based on last real user action
+  const presenceDue = newLastActionAt + windowMs;
+  const presenceDeadline = presenceDue + graceMs;
+
+  // Past deadline: close session for inactivity
+  if (now >= presenceDeadline) {
+    return {
+      isValid: false,
+      disconnectReason: "no_response",
+      shouldShowPresencePrompt: false,
+      remainingPresenceSeconds: 0,
+      updatedLastSeenAt: newLastSeenAt,
+      updatedLastActionAt: newLastActionAt,
+    };
+  }
+
+  // Past due but within grace: show prompt
+  const shouldShow = now >= presenceDue;
+  const remaining = shouldShow ? Math.max(0, Math.ceil((presenceDeadline - now) / 1000)) : 0;
+
+  return {
+    isValid: true,
+    disconnectReason: null,
+    shouldShowPresencePrompt: shouldShow,
+    remainingPresenceSeconds: remaining,
+    updatedLastSeenAt: newLastSeenAt,
+    updatedLastActionAt: newLastActionAt,
+  };
+}
+
+// ────────────────────────────────────────────────────────────
+// Admin propagation — polling fallback
+// ────────────────────────────────────────────────────────────
+
+/**
+ * Determines if a polling refresh should be triggered because Realtime
+ * has been silent for too long (possible silent disconnect).
+ */
+export function shouldTriggerPollingRefresh(params: {
+  lastRealtimeRefreshAt: number;
+  now: number;
+  pollingIntervalMs: number;
+}): boolean {
+  const elapsed = params.now - params.lastRealtimeRefreshAt;
+  return elapsed > params.pollingIntervalMs;
 }

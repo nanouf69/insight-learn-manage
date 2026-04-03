@@ -257,7 +257,9 @@ function generatePage(
   // ===== HORAIRES =====
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.text("Horaires : Matin 09h00 - 12h00 / Apres-midi 13h00 - 16h00", margin, yPos);
+  const isFC = session.formation.toLowerCase().includes('continue');
+  const apremFin = isFC ? '17h00' : '16h00';
+  doc.text(`Horaires : Matin 09h00 - 12h00 / Apres-midi 13h00 - ${apremFin}`, margin, yPos);
 
   // ===== ZONE DE SIGNATURE =====
   yPos += 8;

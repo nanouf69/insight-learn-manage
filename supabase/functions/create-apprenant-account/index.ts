@@ -215,17 +215,19 @@ serve(async (req) => {
 
       if (authError.message.includes("already been registered")) {
         console.log(`${LOG_PREFIX}[${requestId}] Step 11 - Existing user flow (start)`);
-        const { data: listData, error: listErr } = await supabaseAdmin.auth.admin.listUsers();
+        // Use getUserByEmail instead of listing all users (pagination issue)
+        const { data: existingUserData, error: getUserErr } = await supabaseAdmin.auth.admin.getUserByEmail(email);
 
-        if (listErr) {
-          return jsonResponse(500, {
-            error: "Impossible de lister les utilisateurs existants",
-            details: listErr.message,
+        if (getUserErr) {
+          console.log(`${LOG_PREFIX}[${requestId}] Step 11 - getUserByEmail failed`, { message: getUserErr.message });
+          return jsonResponse(400, {
+            error: "Utilisateur existant introuvable",
+            details: getUserErr.message,
             requestId,
           });
         }
 
-        const existingUser = listData?.users?.find((u: { id: string; email?: string | null }) => u.email === email);
+        const existingUser = existingUserData?.user;
 
         if (!existingUser) {
           return jsonResponse(400, {

@@ -40,6 +40,9 @@ import { VILLE_SALLES_SPECTACLES_SLIDES } from "./slides/ville-salles-spectacles
 import { VILLE_VINS_SLIDES } from "./slides/ville-vins-data";
 import { VILLE_ARRONDISSEMENTS_SLIDES } from "./slides/ville-arrondissements-data";
 import { VILLE_STATIONS_TAXI_SLIDES } from "./slides/ville-stations-taxi-data";
+import { QuestionImageUpload } from "./QuestionImageUpload";
+import { ImageLightbox } from "./ImageLightbox";
+import { mergeSourceExercices } from "./examens-blancs-utils";
 
 // Images des monuments et lieux de Lyon
 import imgCathedraleStJean from "@/assets/pratique/cathedrale-st-jean.jpg";
@@ -1553,14 +1556,17 @@ function QuestionEditor({
   onSave,
   onDelete,
   onCancel,
+  moduleId,
 }: {
   question: ExerciceQuestion;
   onSave: (q: ExerciceQuestion) => void;
   onDelete: () => void;
   onCancel: () => void;
+  moduleId: number;
 }) {
   const [enonce, setEnonce] = useState(question.enonce);
   const [choix, setChoix] = useState<ExerciceChoix[]>([...question.choix]);
+  const [image, setImage] = useState<string | undefined>(question.image);
 
   const handleChoixTexte = (i: number, val: string) => {
     setChoix(prev => prev.map((c, idx) => idx === i ? { ...c, texte: val } : c));
@@ -1583,7 +1589,7 @@ function QuestionEditor({
         <div className="flex gap-2">
           <Button size="sm" variant="ghost" onClick={onCancel}><X className="w-4 h-4" /></Button>
           <Button size="sm" variant="destructive" onClick={onDelete}><Trash2 className="w-3 h-3" /></Button>
-          <Button size="sm" onClick={() => onSave({ ...question, enonce, choix })} className="gap-1">
+          <Button size="sm" onClick={() => onSave({ ...question, enonce, choix, image })} className="gap-1">
             <Save className="w-3 h-3" /> Enregistrer
           </Button>
         </div>
@@ -1592,6 +1598,14 @@ function QuestionEditor({
         <label className="text-xs font-semibold">Énoncé</label>
         <Textarea value={enonce} onChange={e => setEnonce(e.target.value)} rows={2} className="text-sm" />
       </div>
+      {/* Image (optionnel) */}
+      <QuestionImageUpload
+        image={image}
+        context="module"
+        contextId={moduleId}
+        questionId={question.id}
+        onImageChange={setImage}
+      />
       <div className="space-y-2">
         <label className="text-xs font-semibold">Réponses (cochez les bonnes réponses — plusieurs possibles)</label>
         {choix.map((c, i) => (
@@ -1628,6 +1642,7 @@ function ExerciceCard({
   onDelete,
   onToggle,
   onUpdateQuestions,
+  moduleId,
 }: {
   item: ExerciceItem;
   index: number;
@@ -1636,6 +1651,7 @@ function ExerciceCard({
   onDelete: (id: number) => void;
   onToggle: (id: number) => void;
   onUpdateQuestions: (id: number, questions: ExerciceQuestion[]) => void;
+  moduleId: number;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [editingQId, setEditingQId] = useState<number | null>(null);
@@ -1738,6 +1754,7 @@ function ExerciceCard({
                     onSave={saveQuestion}
                     onDelete={() => deleteQuestion(q.id)}
                     onCancel={() => setEditingQId(null)}
+                    moduleId={moduleId}
                   />
                 ) : (
                   <div className="flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/20 group transition-colors">
@@ -2017,7 +2034,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
   const buildSourceFingerprint = (data: ModuleData) =>
     JSON.stringify({
-      v: 7,
+      v: 10,
       overrides: getOverridesFingerprint(),
       coursCount: data.cours.length,
       exercicesCount: data.exercices.length,
@@ -2035,19 +2052,31 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         titre: e.titre,
         sousTitre: e.sousTitre ?? "",
         questionCount: e.questions?.length || 0,
+        questionSignature: (e.questions ?? []).map((q) => ({
+          id: q.id,
+          enonce: q.enonce,
+          image: q.image ?? "",
+          choix: q.choix.map((c) => `${c.lettre}:${c.texte}:${c.correct ? 1 : 0}`),
+        })),
       })),
     });
+
+  // mergeSourceExercices is now imported from examens-blancs-utils
+  // with the correct priority: saved (DB) data takes priority over source
 
   // Load trainer DB overrides and apply to student view
   // Runs AFTER editorStateHydrated so initial data is already set.
   // Also reruns when apprenantType arrives/changes to avoid losing trainer edits
   // after student data hydration resets moduleData.
   useEffect(() => {
-    if (!studentOnly || !editorStateHydrated || loadedModuleEditorState) return;
+    // BUG #9 FIX: apply trainer overrides even when module_editor_state exists
+    // Previously skipped when loadedModuleEditorState was truthy, making the two systems mutually exclusive
+    if (!studentOnly || !editorStateHydrated) return;
 
     async function loadTrainerOverrides() {
       try {
-        // Match each learner module with the quiz_id(s) used by the trainer portal
+        // BUG #9 FIX: hardcoded fallback mapping kept for backwards compatibility,
+        // but also fetch ALL overrides for this module dynamically from DB
         const trainerQuizIdsByModuleId: Record<number, string[]> = {
           12: ["cas-pratique-taxi"],
           7: ["connaissance-ville"],
@@ -2061,9 +2090,19 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           11: ["bilan-examen-taxi"],
         };
 
-        const targetQuizIds = trainerQuizIdsByModuleId[module.id];
+        // BUG #9 FIX: also query DB for dynamic quiz_id mappings for this module
+        let targetQuizIds = trainerQuizIdsByModuleId[module.id] || [];
+        try {
+          const { data: dynamicMappings } = await supabase
+            .from("quiz_questions_overrides" as any)
+            .select("quiz_id")
+            .limit(100);
+          if (dynamicMappings && dynamicMappings.length > 0) {
+            const dynamicIds = [...new Set((dynamicMappings as any[]).map((r: any) => r.quiz_id))];
+            targetQuizIds = [...new Set([...targetQuizIds, ...dynamicIds])];
+          }
+        } catch (_) {}
 
-        // Only apply trainer overrides for modules that have a known quiz mapping
         if (!targetQuizIds || targetQuizIds.length === 0) return;
 
         const { data } = await supabase
@@ -2151,7 +2190,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         if (!hasValidModuleData) return false;
 
-        setModuleData(parsed.moduleData as ModuleData);
+        const mergedModuleData: ModuleData = {
+          ...parsed.moduleData,
+          exercices: mergeSourceExercices(parsed.moduleData.exercices, initialData.exercices),
+        };
+
+        setModuleData(mergedModuleData);
         setDeletedCours(Array.isArray(parsed.deletedCours) ? parsed.deletedCours : []);
         setDeletedExercices(Array.isArray(parsed.deletedExercices) ? parsed.deletedExercices : []);
         setLoadedModuleEditorState(false);
@@ -2168,7 +2212,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         const requestTimestamp = new Date().toISOString();
         const { data, error } = await supabase
           .from("module_editor_state")
-          .select("module_data, deleted_cours, deleted_exercices, updated_at")
+          .select("module_data, deleted_cours, deleted_exercices, updated_at, source_fingerprint")
           .eq("module_id", module.id)
           .lte("updated_at", requestTimestamp)
           .order("updated_at", { ascending: false })
@@ -2179,6 +2223,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         const latestState = Array.isArray(data) ? data[0] : null;
 
         if (latestState?.module_data) {
+          const hasMatchingSourceFingerprint = latestState.source_fingerprint === sourceFingerprint;
+
+          if (!hasMatchingSourceFingerprint) {
+            if (!studentOnly) {
+              loadLocalState();
+            }
+          } else {
           const md = latestState.module_data as unknown as ModuleData;
           const hasValidModuleData =
             Array.isArray(md.cours) &&
@@ -2192,12 +2243,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               })()
             );
 
-          if (hasValidModuleData) {
-            setModuleData(md);
-            setDeletedCours(Array.isArray(latestState.deleted_cours) ? (latestState.deleted_cours as unknown as ContentItem[]) : []);
-            setDeletedExercices(Array.isArray(latestState.deleted_exercices) ? (latestState.deleted_exercices as unknown as ExerciceItem[]) : []);
-            setLoadedModuleEditorState(true);
-            return;
+            if (hasValidModuleData) {
+              const mergedModuleData: ModuleData = {
+                ...md,
+                exercices: mergeSourceExercices(md.exercices, initialData.exercices),
+              };
+              setModuleData(mergedModuleData);
+              setDeletedCours(Array.isArray(latestState.deleted_cours) ? (latestState.deleted_cours as unknown as ContentItem[]) : []);
+              setDeletedExercices(Array.isArray(latestState.deleted_exercices) ? (latestState.deleted_exercices as unknown as ExerciceItem[]) : []);
+              setLoadedModuleEditorState(true);
+              return;
+            }
           }
         }
 
@@ -2273,7 +2329,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         if (hasValidModuleData) {
           console.log("[Realtime] Refetched module data from DB for module", module.id);
-          setModuleData(md);
+          const sourceModuleData = getInitialModuleData(module, apprenantType, studentOnly);
+          setModuleData({
+            ...md,
+            exercices: mergeSourceExercices(md.exercices, sourceModuleData.exercices),
+          });
           setDeletedCours(Array.isArray(latest.deleted_cours) ? (latest.deleted_cours as unknown as ContentItem[]) : []);
           setDeletedExercices(Array.isArray(latest.deleted_exercices) ? (latest.deleted_exercices as unknown as ExerciceItem[]) : []);
           setLoadedModuleEditorState(true);
@@ -3963,7 +4023,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                   <div key={q.id} id={`exo-q-${exo.id}-${qi}`} className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : ''}`}>
                     <p className="font-medium"><span className="inline-flex items-center justify-center bg-primary/10 text-primary text-xs font-bold rounded px-1.5 py-0.5 mr-1.5">Q{qi + 1}</span>{q.enonce}</p>
                     {q.image && (
-                      <img src={q.image} alt="Illustration" className="max-h-28 rounded border object-contain ml-2" loading="lazy" />
+                      <ImageLightbox src={q.image} alt="Illustration" className="max-h-40 rounded border object-contain ml-2" loading="eager" onError={() => {}} />
                     )}
                     {multi && (
                       <p className="text-xs text-muted-foreground italic ml-2">⚠️ Plusieurs réponses possibles</p>
@@ -4128,8 +4188,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           {questionsSafe.map((q, qi) => {
                             const key = `${exo.id}-${q.id}`;
                             const selected = selectedAnswers[key];
-                            const correct = q.choix.find((c: any) => c.correct);
-                            const isCorrect = selected && correct && selected === correct.lettre;
+                            const isCorrect = isAnswerCorrect(selected, q as any);
                             return (
                               <div key={q.id}
                                 className="flex items-center gap-2 rounded-lg border bg-background p-2 cursor-pointer hover:bg-muted/50 transition-colors"
@@ -4186,10 +4245,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               const wrongKeys: string[] = [];
                               questionsSafe.forEach((q: any) => {
                                 const key = `${exo.id}-${q.id}`;
-                                const selected = selectedAnswers[key];
-                                const correct = q.choix.find((c: any) => c.correct);
-                                const isCorrect = selected && correct && selected === correct.lettre;
-                                if (!isCorrect) wrongKeys.push(key);
+                                if (!isAnswerCorrect(selectedAnswers[key], q)) wrongKeys.push(key);
                               });
                               setSelectedAnswers(prev => {
                                 const next = { ...prev };
@@ -4205,9 +4261,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                                 let count = 0;
                                 questionsSafe.forEach((q: any) => {
                                   const key = `${exo.id}-${q.id}`;
-                                  const selected = selectedAnswers[key];
-                                  const correct = q.choix.find((c: any) => c.correct);
-                                  if (!(selected && correct && selected === correct.lettre)) count++;
+                                  if (!isAnswerCorrect(selectedAnswers[key], q)) count++;
                                 });
                                 return count;
                               })()})
@@ -4892,6 +4946,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 onDelete={(id) => deleteItem("exercices", id)}
                 onToggle={(id) => toggleItem("exercices", id)}
                 onUpdateQuestions={(id, questions) => updateExerciceQuestions(id, questions)}
+                moduleId={moduleData.id}
               />
             ))}
           </div>

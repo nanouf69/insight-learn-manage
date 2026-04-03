@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle2, Clock, Pencil, Search, User, FileText, Filter, MessageSquare, ChevronLeft, ChevronRight } from "lucide-react";
+import { CheckCircle2, Clock, Pencil, Search, User, FileText, Filter, MessageSquare, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere } from "./examens-blancs-data";
 import { loadSavedExamens } from "./ExamensBlancsEditor";
+import { buildExamenMap, findMatiereWithFallback, getSourceQuestions } from "./exam-helpers";
 
 interface QrcItem {
   resultId: string;
@@ -150,6 +151,7 @@ const CorrectionQRCTab = () => {
   const [examenMap, setExamenMap] = useState<Record<string, ExamenBlanc>>({});
   const [editingComments, setEditingComments] = useState<Record<string, string>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
 
   const QUICK_COMMENTS = [
     "Précisez !!!",
@@ -165,12 +167,7 @@ const CorrectionQRCTab = () => {
   useEffect(() => {
     const load = async () => {
       const saved = await loadSavedExamens();
-      const map: Record<string, ExamenBlanc> = {};
-      for (const e of tousLesExamens) {
-        const s = saved[e.id];
-        map[e.id] = s ? { ...e, matieres: e.matieres.map((m, mi) => s.matieres?.[mi] ? { ...m, ...s.matieres[mi], questions: s.matieres[mi].questions || m.questions } : m) } : e;
-      }
-      setExamenMap(map);
+      setExamenMap(buildExamenMap(tousLesExamens, saved));
     };
     load();
   }, []);
@@ -205,6 +202,14 @@ const CorrectionQRCTab = () => {
     const qrcItems: QrcItem[] = [];
     const seenQrcKeys = new Set<string>();
 
+    // Count how many results exist per apprenant + quiz + matiere (to detect retakes)
+    // Must include matiere_id because each exam has ~7 matiere rows per attempt
+    const attemptCounts: Record<string, number> = {};
+    for (const r of results as any[]) {
+      const countKey = `${r.apprenant_id}__${r.quiz_id}__${r.matiere_id || ""}`;
+      attemptCounts[countKey] = (attemptCounts[countKey] || 0) + 1;
+    }
+
     // Deduplicate: keep only the latest result per apprenant + quiz + matière
     const seenApprenantQuizMatiere = new Set<string>();
     for (const r of results as any[]) {
@@ -212,28 +217,32 @@ const CorrectionQRCTab = () => {
       if (seenApprenantQuizMatiere.has(dedupeKey)) continue;
       seenApprenantQuizMatiere.add(dedupeKey);
       const details = r.details as any;
-      if (!details?.questions) continue;
+      if (details == null) continue;
 
-      const examen = examenMap[r.quiz_id];
-      const matiere = examen?.matieres?.find((m: Matiere) => m.id === r.matiere_id);
+      const matiere = findMatiereWithFallback(examenMap, tousLesExamens, r.quiz_id, r.matiere_id || "");
 
       const correctionsIA = details.correctionsIA || {};
+
+      // Detect if this is a retake (more than one result for same apprenant + quiz + matiere)
+      const countKey = `${r.apprenant_id}__${r.quiz_id}__${r.matiere_id || ""}`;
+      const isRetake = (attemptCounts[countKey] || 1) > 1;
 
       // Build question list: prefer details.questions, but fall back to examen definition + correctionsIA
       let questionList = Array.isArray(details.questions) && details.questions.length > 0
         ? details.questions
         : null;
 
-      // If questions array is empty but correctionsIA exists, reconstruct from examen definition
-      if (!questionList && matiere && Object.keys(correctionsIA).length > 0) {
-        const reponses = details.reponses || {};
-        questionList = (matiere.questions || []).map((mq: any) => {
+      // If questions array is empty, reconstruct from examen definition + reponses/correctionsIA
+      const reponses = details.reponses || {};
+      if (!questionList && matiere && (Object.keys(correctionsIA).length > 0 || Object.keys(reponses).length > 0)) {
+        const sourceQuestions = getSourceQuestions(matiere, tousLesExamens);
+        questionList = sourceQuestions.map((mq: any) => {
           if (!mq) return null;
           return {
             questionId: mq.id,
             enonce: mq.enonce || "",
             type: mq.type || "QCM",
-            reponseEleve: reponses[mq.id] ?? null,
+            reponseEleve: reponses[mq.id] ?? reponses[String(mq.id)] ?? null,
             reponseCorrecte: mq.type === "QCM" && mq.choix
               ? mq.choix.filter((c: any) => c.correct).map((c: any) => c.lettre)
               : (mq.reponseQRC || (mq.reponses_possibles || []).join(" / ")),
@@ -275,6 +284,9 @@ const CorrectionQRCTab = () => {
           autoExplication = correction.explication || null;
         }
 
+        // If this is a retake and no manual correction yet, auto-score with keywords and mark as corrected
+        const isAutoScoredRetake = isRetake && !hasManualCorrection;
+
         qrcItems.push({
           resultId: r.id,
           apprenantId: r.apprenant_id,
@@ -290,18 +302,18 @@ const CorrectionQRCTab = () => {
           reponseEleve: safeStr(q.reponseEleve),
           reponseCorrecte: safeStr(q.reponseCorrecte),
           pointsMax: pts,
-          pointsObtenus: correction && typeof correction === "object" && hasManualCorrection
-            ? clampToHalfStep(correction.pointsObtenus ?? 0, pts)
+          pointsObtenus: (hasManualCorrection || isAutoScoredRetake)
+            ? clampToHalfStep(hasManualCorrection ? (correction.pointsObtenus ?? 0) : autoScore, pts)
             : null,
-          corrigeManuel: !!hasManualCorrection,
+          corrigeManuel: !!(hasManualCorrection || isAutoScoredRetake),
           completedAt: r.completed_at,
           autoScore,
-          autoExplication,
+          autoExplication: isAutoScoredRetake ? `Notation auto (repasse) : ${autoExplication || "mots-clés"}` : autoExplication,
           noteSur20: r.note_sur_20 ?? null,
           scoreMatiereObtenu: r.score_obtenu ?? 0,
           scoreMatiereMax: r.score_max ?? 20,
-          commentaire: correction && typeof correction === "object" ? (correction.commentaire || "") : "",
-          correctedAt: correction && typeof correction === "object" && hasManualCorrection ? (correction.correctedAt || r.completed_at || null) : null,
+          commentaire: isAutoScoredRetake ? "Notation automatique par mots-clés (examen refait)" : (correction && typeof correction === "object" ? (correction.commentaire || "") : ""),
+          correctedAt: (hasManualCorrection || isAutoScoredRetake) ? (correction?.correctedAt || r.completed_at || null) : null,
         });
       }
     }
@@ -450,13 +462,10 @@ const CorrectionQRCTab = () => {
     return true;
   });
 
-  // Sort by exam number (EB1, EB2, ...), then by matiere, then by question
   const sortedFiltered = [...filtered].sort((a, b) => {
-    if (filter === "done") {
-      const dateA = a.correctedAt ? new Date(a.correctedAt).getTime() : 0;
-      const dateB = b.correctedAt ? new Date(b.correctedAt).getTime() : 0;
-      return dateB - dateA;
-    }
+    const dateA = new Date(a.completedAt).getTime() || 0;
+    const dateB = new Date(b.completedAt).getTime() || 0;
+    if (dateA !== dateB) return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
     const numA = parseInt((a.quizTitre.match(/N°(\d+)/)?.[1]) || "0", 10);
     const numB = parseInt((b.quizTitre.match(/N°(\d+)/)?.[1]) || "0", 10);
     if (numA !== numB) return numA - numB;
@@ -464,10 +473,10 @@ const CorrectionQRCTab = () => {
     return a.questionId - b.questionId;
   });
 
-  // Reset index when filter/search changes
+  // Reset index when filter/search/sort changes
   useEffect(() => {
     setCurrentIndex(0);
-  }, [filter, searchQuery]);
+  }, [filter, searchQuery, sortOrder]);
 
   if (loading) {
     return (
@@ -520,6 +529,15 @@ const CorrectionQRCTab = () => {
             <SelectItem value="all">Toutes</SelectItem>
           </SelectContent>
         </Select>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => setSortOrder(prev => prev === "desc" ? "asc" : "desc")}
+        >
+          <ArrowUpDown className="w-4 h-4" />
+          {sortOrder === "desc" ? "Plus récent" : "Plus ancien"}
+        </Button>
       </div>
 
       {sortedFiltered.length === 0 ? (

@@ -17,9 +17,9 @@ interface DocumentUploadCardProps {
   onStatusChange?: (docId: string, status: 'pending' | 'valid' | 'rejected', reason?: string) => void;
 }
 
-const ACCEPTED_FORMATS = '.pdf,.jpg,.jpeg,.png,.heic,.heif,.webp';
-const ACCEPTED_IMAGE_FORMATS = '.jpg,.jpeg,.png,.heic,.heif,.webp';
-const MAX_FILE_SIZE_MB = 4;
+const ACCEPTED_FORMATS = '.pdf,.jpg,.jpeg,.png,.heic,.heif,.webp,.bmp,.tiff,.tif,.gif';
+const ACCEPTED_IMAGE_FORMATS = '.jpg,.jpeg,.png,.heic,.heif,.webp,.bmp,.tiff,.tif,.gif';
+const MAX_FILE_SIZE_MB = 10;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 export function DocumentUploadCard({
@@ -116,11 +116,11 @@ export function DocumentUploadCard({
 
     // For photo_identite, only accept image files (no PDF)
     if (docId === 'photo_identite') {
-      const imageTypes = ['image/jpeg', 'image/png', 'image/heic', 'image/heif', 'image/webp'];
-      const imageExtensions = ['jpg', 'jpeg', 'png', 'heic', 'heif', 'webp'];
+      const imageTypes = ['image/jpeg', 'image/png', 'image/heic', 'image/heif', 'image/webp', 'image/bmp', 'image/tiff', 'image/gif'];
+      const imageExtensions = ['jpg', 'jpeg', 'png', 'heic', 'heif', 'webp', 'bmp', 'tiff', 'tif', 'gif'];
       const fileExtension = file.name.toLowerCase().split('.').pop();
       if (!imageTypes.includes(file.type) && !imageExtensions.includes(fileExtension || '')) {
-        toast.error("La photo d'identité doit être une image (JPG, PNG, HEIC, WebP). Les PDF ne sont pas acceptés.");
+        toast.error("La photo d'identité doit être une image (JPG, PNG, HEIC, WebP, BMP, GIF, TIFF). Les PDF ne sont pas acceptés.");
         event.target.value = '';
         return;
       }

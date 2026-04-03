@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { FileText, Download, Plus, Trash2, Eye, CheckCircle2, XCircle, Clock, Receipt, PenLine, RotateCcw } from "lucide-react";
+import { FileText, Download, Plus, Trash2, Eye, CheckCircle2, XCircle, Clock, Receipt, PenLine, RotateCcw, Send, FileDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +13,75 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import jsPDF from "jspdf";
+import { saveAs } from "file-saver";
+import Docxtemplater from "docxtemplater";
+import PizZip from "pizzip";
+
+function DevisHistorique({ apprenantId }: { apprenantId: string }) {
+  const [devisEnvoyes, setDevisEnvoyes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase
+        .from("devis_envois")
+        .select("*")
+        .eq("apprenant_id", apprenantId)
+        .order("created_at", { ascending: false });
+      setDevisEnvoyes(data || []);
+      setLoading(false);
+    };
+    load();
+  }, [apprenantId]);
+
+  if (loading || devisEnvoyes.length === 0) return null;
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <Clock className="w-4 h-4 text-muted-foreground" />
+          Devis envoyés ({devisEnvoyes.length})
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2">
+          {devisEnvoyes.map((d) => (
+            <div key={d.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 text-sm">
+              <div className="flex items-center gap-3">
+                <FileText className="w-4 h-4 text-muted-foreground" />
+                <div>
+                  <p className="font-medium">{d.modele}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {format(new Date(d.created_at), "dd/MM/yyyy à HH:mm", { locale: fr })}
+                    {d.montant && ` — ${d.montant}`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {d.statut === "signe" ? (
+                  <>
+                    <Badge variant="default" className="bg-green-600 text-xs">Signé</Badge>
+                    {d.devis_signe_url && (
+                      <a href={d.devis_signe_url} target="_blank" rel="noopener noreferrer">
+                        <Button variant="ghost" size="sm"><Download className="w-3 h-3" /></Button>
+                      </a>
+                    )}
+                  </>
+                ) : (
+                  <Badge variant="secondary" className="text-xs">En attente</Badge>
+                )}
+                <a href={d.fichier_url} target="_blank" rel="noopener noreferrer">
+                  <Button variant="ghost" size="sm" title="Voir le devis envoyé"><Eye className="w-3 h-3" /></Button>
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 interface DevisSectionProps {
   apprenant: any;
@@ -24,6 +93,263 @@ interface LigneDevis {
   quantite: number;
   prixUnitaire: number;
 }
+
+// ─── DEVIS TEMPLATES DOCX ───
+const DEVIS_TEMPLATES = [
+  { id: "vtc_complet", label: "Formation VTC complète (théorique + pratique)", file: "Devis_VTC_complet.docx", prix: 1499, emailId: "devis-vtc-complet" },
+  { id: "vtc_elearning", label: "Formation VTC E-learning", file: "Devis_VTC_elearning.docx", prix: 1099, emailId: "devis-vtc-elearning" },
+  { id: "taxi_elearning_examen", label: "Formation TAXI E-learning avec examen", file: "Devis_TAXI_elearning_avec_examen.docx", prix: 1299, emailId: "devis-taxi-elearning" },
+  { id: "ta_elearning", label: "Formation TA (passerelle VTC→TAXI) E-learning", file: "Devis_Ta_elearning.docx", prix: 999, emailId: "devis-ta-elearning" },
+  { id: "va_elearning", label: "Formation VA (passerelle TAXI→VTC) E-learning", file: "Devis_VTC_pour_chauffeurs_TAXI.docx", prix: 999, emailId: "devis-va-elearning" },
+  { id: "taxi_pratique", label: "Formation pratique TAXI", file: "Devis_TAXI_pratique.docx", prix: 349, emailId: "devis-taxi-pratique" },
+  { id: "fc_vtc", label: "Formation continue VTC", file: "Devis_formation_continue_VTC.docx", prix: 200, emailId: "devis-fc-vtc" },
+  { id: "fc_taxi", label: "Formation continue TAXI", file: "Devis_formation_continue_TAXI.docx", prix: 200, emailId: "devis-fc-taxi" },
+  { id: "vtc_sans_frais_examen", label: "Formation VTC sans frais d'examen", file: "Devis_VTC_sans_frais_examen.docx", prix: 1099, emailId: "devis-vtc-sans-frais-examen" },
+  { id: "vtc_soir_avec_examen", label: "Formation VTC soir avec examen", file: "Devis_VTC_soir_avec_examen.docx", prix: 1499, emailId: "devis-vtc-soir-avec-examen" },
+  { id: "vtc_soir_sans_examen", label: "Formation VTC soir sans examen", file: "Devis_VTC_soir_sans_examen.docx", prix: 1099, emailId: "devis-vtc-soir-sans-examen" },
+];
+
+// ─── EMAIL BODY TEMPLATES (per devis type) ───
+const DEVIS_EMAIL_BODIES: Record<string, { subject: string; body: string }> = {
+  "devis-vtc-complet": {
+    subject: "Votre devis Formation VTC complète - {{prenom}} {{nom}}",
+    body: `Bonjour {{prenom}} {{nom}},
+
+Nous avons le plaisir de vous transmettre en pièce jointe votre devis pour la Formation VTC complète (théorique et pratique).
+
+📋 Détails de la formation :
+- Intitulé : Formation VTC
+- Durée : 66 heures
+- Lieu : LYON (69)
+- Montant : {{montant}} € TTC (non assujetti TVA)
+
+Pour valider votre inscription, merci de :
+1. Remplir et signer le devis ci-joint
+2. Nous renvoyer la fiche d'inscription complétée
+3. Joindre les documents justificatifs demandés (pièce d'identité, justificatif de domicile)
+
+📧 Par mail : contact@ftransport.fr
+📍 Ou en vous rendant au 86 route de Genas, 69003 Lyon
+
+N'hésitez pas à nous contacter au 04.28.29.60.91 pour toute question.
+
+Cordialement,
+L'équipe Ftransport`,
+  },
+  "devis-vtc-elearning": {
+    subject: "Votre devis Formation VTC E-learning - {{prenom}} {{nom}}",
+    body: `Bonjour {{prenom}} {{nom}},
+
+Nous avons le plaisir de vous transmettre en pièce jointe votre devis pour la Formation VTC E-learning.
+
+📋 Détails de la formation :
+- Intitulé : Formation VTC E-learning
+- Plateforme : www.gestion.ftransport.fr/cours (accès 3 mois)
+- Inclus : Formation pratique VTC 3h solo ou 6h en groupe + Frais d'examen + Mise à disposition du véhicule
+- Lieu : LYON (69)
+- Montant : {{montant}} € TTC (non assujetti TVA)
+
+Pour valider votre inscription, merci de :
+1. Remplir et signer le devis ci-joint
+2. Nous renvoyer la fiche d'inscription complétée
+3. Joindre les documents justificatifs demandés
+
+📧 Par mail : contact@ftransport.fr
+📍 Ou sur place : 86 route de Genas, 69003 Lyon
+
+N'hésitez pas à nous contacter au 04.28.29.60.91 pour toute question.
+
+Cordialement,
+L'équipe Ftransport`,
+  },
+  "devis-taxi-elearning": {
+    subject: "Votre devis Formation TAXI E-learning - {{prenom}} {{nom}}",
+    body: `Bonjour {{prenom}} {{nom}},
+
+Nous avons le plaisir de vous transmettre en pièce jointe votre devis pour la Formation TAXI E-learning avec examen.
+
+📋 Détails de la formation :
+- Intitulé : Formation TAXI E-learning
+- Durée : 96h
+- Plateforme : www.gestion.ftransport.fr/cours (accès 3 mois)
+- Inclus : Frais d'examen CMA + Mise à disposition du véhicule pour l'examen
+- Lieu : LYON
+- Montant : {{montant}} € TTC (non assujetti TVA)
+
+Pour valider votre inscription, merci de nous renvoyer le devis signé avec les justificatifs demandés.
+
+📧 Par mail : contact@ftransport.fr
+📍 Sur place : 86 route de Genas, 69003 Lyon
+📞 04.28.29.60.91
+
+Cordialement,
+L'équipe Ftransport`,
+  },
+  "devis-ta-elearning": {
+    subject: "Votre devis Formation TA (Passerelle VTC→TAXI) - {{prenom}} {{nom}}",
+    body: `Bonjour {{prenom}} {{nom}},
+
+Veuillez trouver en pièce jointe votre devis pour la Formation TAXI pour chauffeurs VTC (TA) en E-learning.
+
+📋 Détails :
+- Intitulé : Formation passerelle TAXI pour chauffeurs VTC
+- Plateforme E-learning : accès 3 mois
+- Inclus : Frais d'examen CMA + Formation pratique TAXI + Mise à disposition du véhicule
+- Montant : {{montant}} € TTC
+
+Merci de nous renvoyer le devis signé avec vos justificatifs.
+
+📧 contact@ftransport.fr | 📞 04.28.29.60.91
+
+Cordialement,
+L'équipe Ftransport`,
+  },
+  "devis-va-elearning": {
+    subject: "Votre devis Formation VA (Passerelle TAXI→VTC) - {{prenom}} {{nom}}",
+    body: `Bonjour {{prenom}} {{nom}},
+
+Veuillez trouver en pièce jointe votre devis pour la Formation VTC pour chauffeurs TAXI (VA) en E-learning.
+
+📋 Détails :
+- Intitulé : Formation VTC pour chauffeurs TAXI
+- Formation théorique et pratique
+- Plateforme E-learning : accès 3 mois
+- Inclus : Entrainement pratique VTC + Mise à disposition du véhicule
+- Montant : {{montant}} € TTC
+
+Merci de nous renvoyer le devis signé avec vos justificatifs.
+
+📧 contact@ftransport.fr | 📞 04.28.29.60.91
+
+Cordialement,
+L'équipe Ftransport`,
+  },
+  "devis-taxi-pratique": {
+    subject: "Votre devis Formation pratique TAXI - {{prenom}} {{nom}}",
+    body: `Bonjour {{prenom}} {{nom}},
+
+Veuillez trouver en pièce jointe votre devis pour la Formation pratique TAXI.
+
+📋 Détails :
+- Intitulé : Formation pratique TAXI
+- Durée : 6h en groupe ou 3h solo
+- Lieu : LYON (69)
+- Montant : {{montant}} € TTC
+
+Merci de nous renvoyer le devis signé avec vos justificatifs.
+
+📧 contact@ftransport.fr | 📞 04.28.29.60.91
+
+Cordialement,
+L'équipe Ftransport`,
+  },
+  "devis-fc-vtc": {
+    subject: "Votre devis Formation continue VTC - {{prenom}} {{nom}}",
+    body: `Bonjour {{prenom}} {{nom}},
+
+Veuillez trouver en pièce jointe votre devis pour la Formation continue obligatoire VTC.
+
+📋 Détails :
+- Intitulé : Formation continue VTC
+- Durée : 14 heures présentielles
+- Lieu : LYON (69)
+- Montant : {{montant}} € TTC
+
+Cette formation est obligatoire pour le renouvellement de votre carte professionnelle VTC (tous les 5 ans).
+
+Merci de nous renvoyer le devis signé avec vos justificatifs.
+
+📧 contact@ftransport.fr | 📞 04.28.29.60.91
+
+Cordialement,
+L'équipe Ftransport`,
+  },
+  "devis-fc-taxi": {
+    subject: "Votre devis Formation continue TAXI - {{prenom}} {{nom}}",
+    body: `Bonjour {{prenom}} {{nom}},
+
+Veuillez trouver en pièce jointe votre devis pour la Formation continue obligatoire TAXI.
+
+📋 Détails :
+- Intitulé : Formation continue TAXI
+- Durée : 14 heures présentielles
+- Lieu : LYON (69)
+- Montant : {{montant}} € TTC
+
+Cette formation est obligatoire pour le renouvellement de votre carte professionnelle TAXI (tous les 5 ans).
+
+Merci de nous renvoyer le devis signé avec vos justificatifs.
+
+📧 contact@ftransport.fr | 📞 04.28.29.60.91
+
+Cordialement,
+L'équipe Ftransport`,
+  },
+  "devis-vtc-sans-frais-examen": {
+    subject: "Votre devis Formation VTC sans frais d'examen - {{prenom}} {{nom}}",
+    body: `Bonjour {{prenom}} {{nom}},
+
+Veuillez trouver en pièce jointe votre devis pour la Formation VTC E-learning (sans frais d'examen).
+
+📋 Détails :
+- Intitulé : Formation VTC E-learning
+- Plateforme : www.gestion.ftransport.fr/cours (accès 3 mois)
+- Inclus : Formation pratique VTC + Mise à disposition du véhicule
+- Frais d'examen NON inclus (à votre charge auprès de la CMA)
+- Lieu : LYON (69)
+- Montant : {{montant}} € TTC (non assujetti TVA)
+
+Merci de nous renvoyer le devis signé avec vos justificatifs.
+
+📧 contact@ftransport.fr | 📞 04.28.29.60.91
+
+Cordialement,
+L'équipe Ftransport`,
+  },
+  "devis-vtc-soir-avec-examen": {
+    subject: "Votre devis Formation VTC soir avec examen - {{prenom}} {{nom}}",
+    body: `Bonjour {{prenom}} {{nom}},
+
+Veuillez trouver en pièce jointe votre devis pour la Formation VTC en cours du soir (avec frais d'examen inclus).
+
+📋 Détails :
+- Intitulé : Formation VTC cours du soir
+- Plateforme : www.gestion.ftransport.fr/cours
+- Inclus : Formation pratique VTC + Frais d'examen CMA + Mise à disposition du véhicule
+- Horaires : Cours du soir
+- Lieu : LYON (69)
+- Montant : {{montant}} € TTC (non assujetti TVA)
+
+Merci de nous renvoyer le devis signé avec vos justificatifs.
+
+📧 contact@ftransport.fr | 📞 04.28.29.60.91
+
+Cordialement,
+L'équipe Ftransport`,
+  },
+  "devis-vtc-soir-sans-examen": {
+    subject: "Votre devis Formation VTC soir sans examen - {{prenom}} {{nom}}",
+    body: `Bonjour {{prenom}} {{nom}},
+
+Veuillez trouver en pièce jointe votre devis pour la Formation VTC en cours du soir (sans frais d'examen).
+
+📋 Détails :
+- Intitulé : Formation VTC cours du soir
+- Plateforme : www.gestion.ftransport.fr/cours
+- Inclus : Formation pratique VTC + Mise à disposition du véhicule
+- Frais d'examen NON inclus (à votre charge auprès de la CMA)
+- Horaires : Cours du soir
+- Lieu : LYON (69)
+- Montant : {{montant}} € TTC (non assujetti TVA)
+
+Merci de nous renvoyer le devis signé avec vos justificatifs.
+
+📧 contact@ftransport.fr | 📞 04.28.29.60.91
+
+Cordialement,
+L'équipe Ftransport`,
+  },
+};
 
 const FORMATIONS_CATALOGUE = [
   { label: "Formation initiale VTC (sans examen) - 1 099 €", prix: 1099, designation: "Formation initiale VTC - Préparation à la carte professionnelle chauffeur VTC (sans frais d'examen)" },
@@ -37,6 +363,7 @@ const FORMATIONS_CATALOGUE = [
   { label: "Formation TAXI E-learning - 1 299 €", prix: 1299, designation: "Formation initiale TAXI en E-learning" },
   { label: "Formation TA E-learning - 999 €", prix: 999, designation: "Formation passerelle TAXI pour chauffeur VTC en E-learning (TA)" },
   { label: "Formation VA E-learning - 499 €", prix: 499, designation: "Formation passerelle VTC pour chauffeur TAXI en E-learning (VA)" },
+  { label: "Formation pratique TAXI - 349 €", prix: 349, designation: "Formation pratique TAXI - Préparation pratique à l'examen taxi" },
 ];
 
 const CGV_TEXT = `CONDITIONS GENERALES DE VENTE - FTRANSPORT
@@ -87,40 +414,15 @@ Seuls les contrats dument renseignes, dates, signes et revetus de la mention "Bo
 
 ARTICLE 5 - CONTRAT DE FORMATION POUR LES PARTICULIERS
 Conformement aux articles L6353-3 et L6353-4 du Code du travail, lorsqu'une personne physique finance elle-meme sa formation, un contrat de formation professionnelle est conclu entre FTRANSPORT et le stagiaire AVANT l'inscription definitive et tout reglement de frais.
-Ce contrat precise obligatoirement :
-- Nature de la formation : Formation continue obligatoire VTC - Prevention des discriminations et des violences sexuelles et sexistes
-- Duree : 14 heures (pouvant etre fractionnees en quatre periodes de 3h30 sur une periode de 2 mois maximum)
-- Programme et objectifs : Conformement a l'arrete du 6 avril 2017 modifie par l'arrete du 20 mars 2024
-- Module A : Reglementation du transport public particulier de personnes et prevention des discriminations et des violences sexuelles et sexistes (3h30)
-- Module B : Reglementation specifique a l'activite de VTC (3h30)
-- Module C : Securite routiere (3h30)
-- Module au choix (3h30) : Anglais, Gestion et developpement commercial, ou Prevention et secours civiques
-- Niveau de connaissances prealables requis : Etre titulaire d'une carte professionnelle de chauffeur VTC de plus de 5 ans
-- Moyens pedagogiques et techniques : Tablettes numeriques et plateforme d'apprentissage en ligne
-- Formateur : M. Guenichi Naoufal, plus de 10 ans d'experience dans la formation professionnelle en transport
-- Modalites d'evaluation : Exercices continus tout au long de la formation
-- Prix : 200 euros TTC
-- Modalites de paiement : Especes ou virement bancaire, conformement a l'article 3 des presentes CGV
 
 ARTICLE 6 - DEDIT ET REMPLACEMENT D'UN PARTICIPANT
 En cas de dedit signifie par le Client a FTRANSPORT au moins 7 jours avant le demarrage de la formation, FTRANSPORT offre au Client la possibilite de repousser l'inscription du Stagiaire a une formation ulterieure ou de le remplacer par un autre participant.
 
 ARTICLE 7 - ANNULATION, ABSENCE OU INTERRUPTION D'UNE FORMATION
 Tout module commence est du dans son integralite.
-7.1 - Annulation par le Client
-- Si l'annulation intervient dans le delai de retractation de 10 jours : aucun frais d'annulation ne sera applique.
-- Si l'annulation intervient apres le delai de retractation mais avant le debut de la formation : les frais d'annulation seront egaux a 30% du prix TTC de la formation.
-- Si l'annulation intervient apres le debut de la formation : les frais d'annulation seront egaux a 100% du prix TTC de la formation.
-7.2 - Cas de force majeure et motifs legitimes
-Les frais d'annulation ne seront pas applicables en cas de : Force majeure dument reconnue, Certificat medical, Accident grave, Deces d'un membre de la famille proche, Mutation professionnelle avec justificatif, Licenciement avec justificatif.
-7.3 - Annulation par FTRANSPORT
-FTRANSPORT se reserve le droit d'annuler ou de reporter une session de formation en cas de force majeure ou d'insuffisance de participants. Dans ce cas, les Clients inscrits en seront informes au plus tot et FTRANSPORT proposera soit un report a une date ulterieure, soit le remboursement integral des sommes versees.
-7.4 - Exclusion du Stagiaire
-FTRANSPORT se reserve le droit d'exclure un Stagiaire de la formation, sans remboursement, dans les cas suivants : retards repetes non justifies, absences injustifiees, comportement inapproprie.
 
 ARTICLE 8 - ASSIDUITE ET CONTROLE DE PRESENCE
-La presence du stagiaire est obligatoire et controlee par une feuille d'emargement signee par demi-journee. En cas d'absence, le stagiaire doit prevenir FTRANSPORT dans les meilleurs delais et fournir un justificatif. Les absences non justifiees peuvent entrainer l'exclusion de la formation sans remboursement.
-A l'issue de la formation, une attestation de formation continue obligatoire sera remise au stagiaire, conformement a l'article R. 3120-8-2 du Code des transports.
+La presence du stagiaire est obligatoire et controlee par une feuille d'emargement signee par demi-journee.
 
 ARTICLE 9 - HORAIRES ET ACCUEIL
 Les formations se deroulent de 09h00 a 12h00 et de 13h00 a 17h00 avec une pause en milieu de chaque demi-journee, sauf indication contraire mentionnee sur la convocation.
@@ -136,7 +438,6 @@ L'ensemble des contenus et supports pedagogiques utilises par FTRANSPORT constit
 
 ARTICLE 13 - ACCESSIBILITE AUX PERSONNES EN SITUATION DE HANDICAP
 FTRANSPORT s'engage a accueillir les personnes en situation de handicap dans les meilleures conditions.
-Reference Handicap : contact@ftransport.fr - 04.28.29.60.91
 
 ARTICLE 14 - PROTECTION DES DONNEES PERSONNELLES
 Conformement au RGPD et a la loi n 78-17 du 6 janvier 1978, le Stagiaire dispose d'un droit d'acces, de rectification, de limitation, d'opposition, de portabilite et d'effacement des donnees personnelles le concernant.
@@ -157,11 +458,35 @@ const formatEUR = (n: number): string => {
   return `${parts[0]},${parts[1]} EUR`;
 };
 
+// Détecte le template de devis le plus adapté selon le type d'apprenant
+function detectDevisTemplate(apprenant: any): string | null {
+  const type = (apprenant.type_apprenant || "").toUpperCase();
+  const formation = (apprenant.formation_choisie || "").toLowerCase();
+
+  if (type.includes("PA") && type.includes("VTC")) return "fc_vtc";
+  if (type.includes("PA") && type.includes("TAXI")) return "fc_taxi";
+  if (formation.includes("continue") && formation.includes("vtc")) return "fc_vtc";
+  if (formation.includes("continue") && formation.includes("taxi")) return "fc_taxi";
+  if (type === "TA" || type === "TA E") return "ta_elearning";
+  if (type === "VA" || type === "VA E") return "va_elearning";
+  if (type === "VTC" || type === "VTC E") {
+    if (formation.includes("e-learning") || formation.includes("elearning") || type.includes("E")) return "vtc_elearning";
+    return "vtc_complet";
+  }
+  if (type === "TAXI" || type === "TAXI E") {
+    if (formation.includes("pratique")) return "taxi_pratique";
+    return "taxi_elearning_examen";
+  }
+  if (type === "RP TAXI") return "taxi_pratique";
+  return null;
+}
+
 export function DevisSection({ apprenant }: DevisSectionProps) {
   const today = format(new Date(), 'yyyy-MM-dd');
   const validiteDate = format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
 
-  // Trouver la désignation correcte depuis le catalogue
+  const detectedTemplate = detectDevisTemplate(apprenant);
+
   const getDesignationInitiale = () => {
     if (!apprenant.formation_choisie) return "Formation professionnelle";
     const found = FORMATIONS_CATALOGUE.find(f =>
@@ -171,26 +496,44 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
     return found?.designation || apprenant.formation_choisie;
   };
 
+  const [selectedTemplate, setSelectedTemplate] = useState<string>(detectedTemplate || "");
+  const selectedTemplateConfig = DEVIS_TEMPLATES.find(t => t.id === selectedTemplate);
+  const selectedTemplatePrix = selectedTemplateConfig?.prix ?? apprenant.montant_ttc ?? 0;
+  const detectedTemplatePrix = DEVIS_TEMPLATES.find(t => t.id === detectedTemplate)?.prix;
   const [lignes, setLignes] = useState<LigneDevis[]>([
     {
       id: crypto.randomUUID(),
       designation: getDesignationInitiale(),
       quantite: 1,
-      prixUnitaire: apprenant.montant_ttc || 0,
+      prixUnitaire: detectedTemplatePrix ?? apprenant.montant_ttc ?? 0,
     }
   ]);
   const [dateDevis, setDateDevis] = useState(today);
   const [dateValidite, setDateValidite] = useState(validiteDate);
   const [notes, setNotes] = useState("");
+  const [tvaTaux, setTvaTaux] = useState<number>(0);
   const [generating, setGenerating] = useState(false);
+  const [generatingDocx, setGeneratingDocx] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [statutDevis, setStatutDevis] = useState<'en_attente' | 'valide' | 'refuse'>('en_attente');
   const [creatingFacture, setCreatingFacture] = useState(false);
   const [factureCreee, setFactureCreee] = useState<string | null>(null);
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [showEmailPreview, setShowEmailPreview] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastPos = useRef<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    if (!selectedTemplateConfig) return;
+    setLignes(prev => {
+      if (prev.length === 0) return prev;
+      const [first, ...rest] = prev;
+      if ((first.prixUnitaire ?? 0) === selectedTemplateConfig.prix) return prev;
+      return [{ ...first, prixUnitaire: selectedTemplateConfig.prix }, ...rest];
+    });
+  }, [selectedTemplate]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -204,6 +547,13 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
   }, []);
+
+  const formatDateForDevis = (value?: string | null) => {
+    if (!value) return format(new Date(), 'dd/MM/yyyy');
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return value;
+    return format(parsed, 'dd/MM/yyyy');
+  };
 
   const getPos = (e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) => {
     const rect = canvas.getBoundingClientRect();
@@ -282,12 +632,179 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   };
 
   const totalHT = lignes.reduce((sum, l) => sum + (l.quantite * l.prixUnitaire), 0);
-  const totalTTC = totalHT; // Non assujetti TVA
+  const montantTVA = totalHT * (tvaTaux / 100);
+  const totalTTC = totalHT + montantTVA;
+
+  // ─── DOCX TEMPLATE DOWNLOAD ───
+  const generateDocxFromTemplate = async () => {
+    if (!selectedTemplate) {
+      toast.error("Veuillez sélectionner un modèle de devis");
+      return;
+    }
+    setGeneratingDocx(true);
+    try {
+      const tmpl = selectedTemplateConfig;
+      if (!tmpl) throw new Error("Template introuvable");
+
+      const response = await fetch(`/devis/${tmpl.file}`);
+      if (!response.ok) throw new Error("Impossible de charger le modèle DOCX");
+      const arrayBuffer = await response.arrayBuffer();
+
+      const sharedPayload = {
+        client_nom: `${apprenant.civilite || ''} ${apprenant.prenom || ''} ${apprenant.nom || ''}`.trim(),
+        client_adresse1: apprenant.adresse || '',
+        client_codep: apprenant.code_postal || '',
+        client_ville: apprenant.ville || '',
+        client_tel: apprenant.telephone || '',
+        client_mail: apprenant.email || '',
+        client_email: apprenant.email || '',
+        devis_date: formatDateForDevis(dateDevis),
+        devis_ligne_produit_date1: formatDateForDevis(apprenant.date_formation_catalogue || apprenant.date_debut_formation),
+        montant: String(selectedTemplatePrix),
+        formation: apprenant.formation_choisie || '',
+      };
+
+      const zip = new PizZip(arrayBuffer);
+      const doc = new Docxtemplater(zip, {
+        paragraphLoop: true,
+        linebreaks: true,
+        delimiters: { start: "{", end: "}" },
+        nullGetter() { return ""; },
+      });
+      doc.render(sharedPayload);
+      const outBuf = doc.getZip().generate({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+
+      const fileName = `Devis_${apprenant.prenom}_${apprenant.nom}_${tmpl.id}_${format(new Date(), 'ddMMyyyy')}.docx`;
+      saveAs(outBuf, fileName);
+      toast.success("Devis DOCX téléchargé avec succès !");
+    } catch (err: any) {
+      console.error("Erreur génération DOCX:", err);
+      toast.error(`Erreur : ${err.message || "Impossible de générer le DOCX"}`);
+    } finally {
+      setGeneratingDocx(false);
+    }
+  };
+
+  // ─── EMAIL SEND (via Outlook) ───
+  const getEmailContent = () => {
+    const tmpl = selectedTemplateConfig;
+    if (!tmpl) return null;
+    const emailData = DEVIS_EMAIL_BODIES[tmpl.emailId];
+    if (!emailData) return null;
+    const montant = selectedTemplatePrix;
+    const subject = emailData.subject
+      .replace(/\{\{prenom\}\}/g, apprenant.prenom || '')
+      .replace(/\{\{nom\}\}/g, apprenant.nom || '');
+    const body = emailData.body
+      .replace(/\{\{prenom\}\}/g, apprenant.prenom || '')
+      .replace(/\{\{nom\}\}/g, apprenant.nom || '')
+      .replace(/\{\{montant\}\}/g, String(montant));
+    return { subject, body };
+  };
+
+  const sendDevisEmail = async () => {
+    if (!apprenant.email) {
+      toast.error("Aucun email renseigné pour cet apprenant");
+      return;
+    }
+    const emailContent = getEmailContent();
+    if (!emailContent) {
+      toast.error("Aucun modèle d'email pour ce type de devis");
+      return;
+    }
+
+    setSendingEmail(true);
+    try {
+      // 1. Generate the DOCX
+      const tmpl = selectedTemplateConfig;
+      if (!tmpl) throw new Error("Template introuvable");
+
+      const response = await fetch(`/devis/${tmpl.file}`);
+      if (!response.ok) throw new Error("Impossible de charger le modèle DOCX");
+      const arrayBuffer = await response.arrayBuffer();
+
+      const sharedPayload = {
+        client_nom: `${apprenant.civilite || ''} ${apprenant.prenom || ''} ${apprenant.nom || ''}`.trim(),
+        client_adresse1: apprenant.adresse || '',
+        client_codep: apprenant.code_postal || '',
+        client_ville: apprenant.ville || '',
+        client_tel: apprenant.telephone || '',
+        client_mail: apprenant.email || '',
+        client_email: apprenant.email || '',
+        devis_date: formatDateForDevis(dateDevis),
+        devis_ligne_produit_date1: formatDateForDevis(apprenant.date_formation_catalogue || apprenant.date_debut_formation),
+        montant: String(selectedTemplatePrix),
+        formation: apprenant.formation_choisie || '',
+      };
+
+      const zip = new PizZip(arrayBuffer);
+      const doc = new Docxtemplater(zip, {
+        paragraphLoop: true,
+        linebreaks: true,
+        delimiters: { start: "{", end: "}" },
+        nullGetter() { return ""; },
+      });
+      doc.render(sharedPayload);
+      const outBuf = doc.getZip().generate({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+
+      // 2. Upload DOCX to storage
+      const fileName = `originaux/${apprenant.id}_${tmpl.id}_${format(new Date(), 'yyyyMMddHHmmss')}.docx`;
+      const { error: uploadErr } = await supabase.storage
+        .from("devis")
+        .upload(fileName, outBuf, { contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", upsert: true });
+      if (uploadErr) throw new Error("Erreur upload du devis: " + uploadErr.message);
+
+      const { data: urlData } = supabase.storage.from("devis").getPublicUrl(fileName);
+
+      // 3. Create devis_envois record with unique token
+      const { data: devisRecord, error: insertErr } = await supabase
+        .from("devis_envois")
+        .insert({
+          apprenant_id: apprenant.id,
+          modele: tmpl.label,
+          montant: `${selectedTemplatePrix} €`,
+          formation: tmpl.label,
+          fichier_url: urlData.publicUrl,
+          statut: "envoye",
+        })
+        .select("token")
+        .single();
+      if (insertErr) throw new Error("Erreur création devis: " + insertErr.message);
+
+      // 4. Build email with link to public page (use published URL, not preview)
+      const appUrl = 'https://insight-learn-manage.lovable.app';
+      const devisLink = `${appUrl}/devis?token=${devisRecord.token}`;
+
+      const bodyHtml = emailContent.body.replace(/\n/g, '<br/>') +
+        `<br/><br/>📝 <strong>Pour compléter et signer votre devis :</strong><br/>` +
+        `<a href="${devisLink}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;margin-top:8px;">` +
+        `Accéder à mon devis</a><br/><br/>` +
+        `<em style="font-size:12px;color:#888;">Ce lien vous permet de télécharger votre devis, le compléter, le signer et nous le renvoyer directement.</em>`;
+
+      const { error } = await supabase.functions.invoke('sync-outlook-emails', {
+        body: {
+          action: 'send',
+          userEmail: 'contact@ftransport.fr',
+          to: apprenant.email,
+          subject: emailContent.subject,
+          body: bodyHtml,
+          apprenantId: apprenant.id,
+        }
+      });
+      if (error) throw error;
+      toast.success(`Email de devis envoyé à ${apprenant.email} avec lien de signature`);
+      setShowEmailPreview(false);
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Erreur lors de l'envoi de l'email: " + (err.message || ""));
+    } finally {
+      setSendingEmail(false);
+    }
+  };
 
   const creerFacture = async () => {
     setCreatingFacture(true);
     try {
-      // Générer un numéro de facture
       const { data: lastFacture } = await supabase
         .from('factures')
         .select('numero')
@@ -312,9 +829,9 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         date_emission: dateDevis,
         date_echeance: dateValidite,
         montant_ht: totalHT,
-        montant_tva: 0,
+        montant_tva: montantTVA,
         montant_ttc: totalTTC,
-        tva_taux: 0,
+        tva_taux: tvaTaux,
         type_financement: apprenant.mode_financement || 'particulier',
         statut: 'en_attente',
       }).select().single();
@@ -340,11 +857,8 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       let y = 15;
 
       // === PAGE 1 : DEVIS ===
-
-      // En-tête fond bleu
       doc.setFillColor(30, 58, 138);
       doc.rect(0, 0, pageW, 38, 'F');
-
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(22);
@@ -368,7 +882,6 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       y = 50;
       doc.setTextColor(0, 0, 0);
 
-      // Bloc CLIENT
       doc.setFillColor(243, 244, 246);
       doc.rect(margin, y, contentW, 28, 'F');
       doc.setFont('helvetica', 'bold');
@@ -388,7 +901,6 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
 
       y += 35;
 
-      // Bloc dates de formation
       const dateDebut = apprenant.date_debut_formation;
       const dateFin = apprenant.date_fin_formation;
       const dateCatalogue = apprenant.date_formation_catalogue;
@@ -421,22 +933,18 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         y += 6;
       }
 
-      // Titre formation
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(11);
       doc.setTextColor(30, 58, 138);
       doc.text('DETAIL DE LA PRESTATION', margin, y);
       y += 6;
 
-      // Colonnes : Designation | Qte | Prix unit. | Total TTC
-      // x de départ de chaque colonne
-      const col0x = margin;           // Designation
-      const col1x = margin + 100;     // Qte (centre à col1x+10)
-      const col2x = margin + 125;     // Prix unitaire (right align à col2x+42)
-      const col3x = margin + 152;     // Total TTC (right align à pageW-margin)
+      const col0x = margin;
+      const col1x = margin + 100;
+      const col2x = margin + 125;
+      const col3x = margin + 152;
       const tableRight = pageW - margin;
 
-      // Header tableau
       doc.setFillColor(30, 58, 138);
       doc.rect(margin, y, contentW, 8, 'F');
       doc.setTextColor(255, 255, 255);
@@ -448,11 +956,9 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       doc.text('Total TTC', tableRight - 2, y + 5.5, { align: 'right' });
       y += 8;
 
-      // Lignes de prestation
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(0, 0, 0);
       lignes.forEach((ligne, idx) => {
-        // Calculer la hauteur de ligne selon le texte de désignation
         const designW = col1x - col0x - 4;
         const designLines = doc.splitTextToSize(ligne.designation, designW);
         const nbLines = Math.max(1, Math.min(designLines.length, 3));
@@ -463,7 +969,6 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         doc.setDrawColor(210, 210, 210);
         doc.line(margin, y, tableRight, y);
         doc.line(margin, y + rowH, tableRight, y + rowH);
-        // Séparateurs verticaux
         doc.line(col1x, y, col1x, y + rowH);
         doc.line(col2x, y, col2x, y + rowH);
         doc.line(col3x, y, col3x, y + rowH);
@@ -472,32 +977,21 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
 
         doc.setFontSize(8);
         const vertCenter = y + rowH / 2 + 1;
-
-        // Designation (texte wrappé, aligné en haut)
         const linesToShow = designLines.slice(0, 3);
         const textStartY = y + 4;
         linesToShow.forEach((l: string, li: number) => {
           doc.text(l, col0x + 2, textStartY + li * 4);
         });
-
-        // Quantité centrée
         doc.text(String(ligne.quantite), col1x + 10, vertCenter, { align: 'center' });
-
-        // Prix unitaire aligné à droite dans sa colonne
         doc.text(formatEUR(ligne.prixUnitaire), col2x + 26, vertCenter, { align: 'right' });
-
-        // Total aligné à droite
         const total = ligne.quantite * ligne.prixUnitaire;
         doc.text(formatEUR(total), tableRight - 2, vertCenter, { align: 'right' });
-
         y += rowH;
       });
 
-      // Ligne de fermeture du tableau
       doc.setDrawColor(210, 210, 210);
       doc.line(margin, y, tableRight, y);
 
-      // Bloc totaux
       y += 6;
       const totBoxX = margin + contentW * 0.55;
       const totBoxW = contentW * 0.45;
@@ -507,10 +1001,8 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       doc.setDrawColor(210, 210, 210);
       doc.rect(totBoxX, y, totBoxW, totBoxH);
 
-      // Séparateur vertical dans le bloc totaux (libellé | montant)
       const totSepX = totBoxX + totBoxW * 0.58;
       doc.line(totSepX, y, totSepX, y + totBoxH);
-      // Séparateurs horizontaux
       doc.line(totBoxX, y + 8, totBoxX + totBoxW, y + 8);
       doc.line(totBoxX, y + 15, totBoxX + totBoxW, y + 15);
 
@@ -518,7 +1010,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       doc.setFontSize(8);
       doc.setTextColor(80, 80, 80);
       doc.text('Total HT :', totSepX - 2, y + 5.5, { align: 'right' });
-      doc.text('TVA (0% - Non assujetti) :', totSepX - 2, y + 12.5, { align: 'right' });
+      doc.text(`TVA (${tvaTaux}%${tvaTaux === 0 ? ' - Non assujetti' : ''}) :`, totSepX - 2, y + 12.5, { align: 'right' });
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8.5);
@@ -529,7 +1021,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       doc.setFontSize(8);
       doc.setTextColor(0, 0, 0);
       doc.text(formatEUR(totalHT), totBoxX + totBoxW - 3, y + 5.5, { align: 'right' });
-      doc.text('0,00 EUR', totBoxX + totBoxW - 3, y + 12.5, { align: 'right' });
+      doc.text(formatEUR(montantTVA), totBoxX + totBoxW - 3, y + 12.5, { align: 'right' });
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(9);
@@ -538,7 +1030,6 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
 
       y += totBoxH + 8;
 
-      // Notes
       if (notes) {
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8);
@@ -550,7 +1041,6 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         y += noteLines.length * 4 + 4;
       }
 
-      // Signature
       y = Math.max(y + 8, 215);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
@@ -558,20 +1048,17 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       doc.text(`A Lyon, le ${format(new Date(dateDevis), 'dd MMMM yyyy', { locale: fr })}`, margin, y);
       y += 6;
 
-      // Bloc signature client (gauche) et ftransport (droite)
       const sigBoxW = 80;
       const sigBoxH = 30;
       const sigClientX = margin;
       const sigFtransX = pageW - margin - sigBoxW;
 
-      // Encadré signature client
       doc.setDrawColor(180, 180, 180);
       doc.rect(sigClientX, y, sigBoxW, sigBoxH);
       doc.setFontSize(7.5);
       doc.setTextColor(100, 100, 100);
       doc.text('Signature client + "Bon pour accord"', sigClientX + 2, y + 5);
 
-      // Injecter la signature électronique si elle existe
       if (signatureDataUrl) {
         doc.addImage(signatureDataUrl, 'PNG', sigClientX + 2, y + 7, sigBoxW - 4, sigBoxH - 9);
         doc.setFontSize(6.5);
@@ -579,7 +1066,6 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         doc.text(`Signe electroniquement le ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, sigClientX + 2, y + sigBoxH - 2);
       }
 
-      // Encadré signature Ftransport
       doc.setDrawColor(180, 180, 180);
       doc.rect(sigFtransX, y, sigBoxW, sigBoxH);
       doc.setFontSize(7.5);
@@ -595,8 +1081,6 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
 
       // === PAGE 2 : CGV ===
       doc.addPage();
-
-      // En-tête
       doc.setFillColor(30, 58, 138);
       doc.rect(0, 0, pageW, 20, 'F');
       doc.setTextColor(255, 255, 255);
@@ -618,11 +1102,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
           doc.setFontSize(7.5);
         }
         const trimmed = line.trim();
-        if (trimmed === '') {
-          y += 2;
-          continue;
-        }
-        // Titres en gras
+        if (trimmed === '') { y += 2; continue; }
         const isTitle = trimmed.startsWith('ARTICLE') || trimmed === 'CONDITIONS GENERALES DE VENTE - FTRANSPORT' || trimmed === 'DEFINITIONS';
         if (isTitle) {
           doc.setFont('helvetica', 'bold');
@@ -638,7 +1118,6 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         y += wrapped.length * (isTitle ? 4.5 : 3.5) + (isTitle ? 1 : 0);
       }
 
-      // Footer CGV
       doc.setFontSize(7);
       doc.setTextColor(120, 120, 120);
       doc.setFont('helvetica', 'italic');
@@ -648,26 +1127,140 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         doc.text(`Page ${i} / ${pageCount}`, pageW / 2, 297, { align: 'center' });
       }
 
-      // Téléchargement
       const fileName = `Devis_${apprenant.prenom}_${apprenant.nom}_${format(new Date(), 'ddMMyyyy')}.pdf`;
       doc.save(fileName);
-      toast.success("Devis généré avec succès !");
+      toast.success("Devis PDF généré avec succès !");
     } catch (err) {
       console.error(err);
-      toast.error("Erreur lors de la génération du devis");
+      toast.error("Erreur lors de la génération du devis PDF");
     } finally {
       setGenerating(false);
     }
   };
 
+  const emailContent = getEmailContent();
+
   return (
     <div className="space-y-6">
-      {/* En-tête */}
+      {/* ═══ SECTION 1 : DEVIS DOCX TEMPLATES ═══ */}
+      <Card className="border-primary/30">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <FileDown className="w-5 h-5 text-primary" />
+            Devis DOCX pré-rempli
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Sélectionner le modèle de devis</Label>
+            <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choisir un modèle de devis..." />
+              </SelectTrigger>
+              <SelectContent>
+                {DEVIS_TEMPLATES.map(t => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.label} {t.prix > 0 ? `- ${t.prix} €` : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {detectedTemplate && selectedTemplate === detectedTemplate && (
+              <p className="text-xs text-green-600 flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" />
+                Détecté automatiquement selon le type d'apprenant ({apprenant.type_apprenant})
+              </p>
+            )}
+          </div>
+
+          {selectedTemplate && (
+            <div className="bg-muted/40 rounded-lg p-4 space-y-2">
+              <p className="text-sm font-medium">Données qui seront injectées dans le DOCX :</p>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+                <div><span className="text-muted-foreground">Nom :</span> <strong>{apprenant.prenom} {apprenant.nom}</strong></div>
+                <div><span className="text-muted-foreground">Adresse :</span> <strong>{apprenant.adresse || '—'}</strong></div>
+                <div><span className="text-muted-foreground">CP :</span> <strong>{apprenant.code_postal || '—'}</strong></div>
+                <div><span className="text-muted-foreground">Ville :</span> <strong>{apprenant.ville || '—'}</strong></div>
+                <div><span className="text-muted-foreground">Tél :</span> <strong>{apprenant.telephone || '—'}</strong></div>
+                <div><span className="text-muted-foreground">Email :</span> <strong>{apprenant.email || '—'}</strong></div>
+                <div><span className="text-muted-foreground">Date devis :</span> <strong>{formatDateForDevis(dateDevis)}</strong></div>
+                <div><span className="text-muted-foreground">Montant :</span> <strong>{selectedTemplatePrix} €</strong></div>
+                <div><span className="text-muted-foreground">Dates formation :</span> <strong>{formatDateForDevis(apprenant.date_formation_catalogue || apprenant.date_debut_formation || null)}</strong></div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center gap-3 flex-wrap">
+            <Button
+              onClick={generateDocxFromTemplate}
+              disabled={generatingDocx || !selectedTemplate}
+              className="flex items-center gap-2"
+            >
+              <FileDown className="w-4 h-4" />
+              {generatingDocx ? "Génération..." : "Télécharger le devis DOCX"}
+            </Button>
+
+            {selectedTemplate && apprenant.email && (
+              <Button
+                variant="outline"
+                onClick={() => setShowEmailPreview(!showEmailPreview)}
+                className="flex items-center gap-2"
+              >
+                <Send className="w-4 h-4" />
+                {showEmailPreview ? "Masquer" : "Envoyer"} l'email de devis
+              </Button>
+            )}
+          </div>
+
+          {/* Email preview */}
+          {showEmailPreview && emailContent && (
+            <div className="border rounded-lg p-4 space-y-3 bg-background">
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Destinataire</p>
+                <p className="text-sm font-medium">{apprenant.email}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Objet</p>
+                <p className="text-sm font-medium">{emailContent.subject}</p>
+              </div>
+              <Separator />
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Corps du message</p>
+                <div className="bg-muted/30 rounded p-3 text-sm whitespace-pre-wrap max-h-[300px] overflow-y-auto">
+                  {emailContent.body}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={sendDevisEmail}
+                  disabled={sendingEmail}
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Send className="w-4 h-4" />
+                  {sendingEmail ? "Envoi en cours..." : "Envoyer l'email"}
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setShowEmailPreview(false)}>
+                  Annuler
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                📝 L'apprenant recevra un lien pour télécharger, compléter, signer et renvoyer le devis en ligne.
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* ═══ SECTION 1b : HISTORIQUE DEVIS ENVOYÉS ═══ */}
+      <DevisHistorique apprenantId={apprenant.id} />
+
+      {/* ═══ SECTION 2 : DEVIS PDF PERSONNALISÉ (existant) ═══ */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <FileText className="w-5 h-5 text-primary" />
-            Création du devis
+            Devis PDF personnalisé
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -675,23 +1268,14 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Date du devis</Label>
-              <Input
-                type="date"
-                value={dateDevis}
-                onChange={(e) => setDateDevis(e.target.value)}
-              />
+              <Input type="date" value={dateDevis} onChange={(e) => setDateDevis(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label>Valable jusqu'au</Label>
-              <Input
-                type="date"
-                value={dateValidite}
-                onChange={(e) => setDateValidite(e.target.value)}
-              />
+              <Input type="date" value={dateValidite} onChange={(e) => setDateValidite(e.target.value)} />
             </div>
           </div>
 
-          {/* Sélecteur formation rapide */}
           <div className="space-y-2">
             <Label>Appliquer une formation catalogue</Label>
             <Select onValueChange={applyFormationCatalogue}>
@@ -717,8 +1301,6 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
                 Ajouter une ligne
               </Button>
             </div>
-
-            {/* En-tête colonnes */}
             <div className="hidden md:grid grid-cols-12 gap-2 text-xs font-medium text-muted-foreground px-1">
               <span className="col-span-6">Désignation</span>
               <span className="col-span-1">Qté</span>
@@ -726,7 +1308,6 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
               <span className="col-span-2 text-right">Total (€)</span>
               <span className="col-span-1"></span>
             </div>
-
             {lignes.map((ligne) => (
               <div key={ligne.id} className="grid grid-cols-12 gap-2 items-start">
                 <div className="col-span-12 md:col-span-6">
@@ -738,37 +1319,16 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
                   />
                 </div>
                 <div className="col-span-4 md:col-span-1">
-                  <Input
-                    type="number"
-                    min={1}
-                    value={ligne.quantite}
-                    onChange={(e) => updateLigne(ligne.id, 'quantite', Number(e.target.value))}
-                    className="text-center"
-                  />
+                  <Input type="number" min={1} value={ligne.quantite} onChange={(e) => updateLigne(ligne.id, 'quantite', Number(e.target.value))} className="text-center" />
                 </div>
                 <div className="col-span-4 md:col-span-2">
-                  <Input
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    value={ligne.prixUnitaire}
-                    onChange={(e) => updateLigne(ligne.id, 'prixUnitaire', Number(e.target.value))}
-                    className="text-right"
-                  />
+                  <Input type="number" min={0} step={0.01} value={ligne.prixUnitaire} onChange={(e) => updateLigne(ligne.id, 'prixUnitaire', Number(e.target.value))} className="text-right" />
                 </div>
                 <div className="col-span-3 md:col-span-2 flex items-center justify-end">
-                  <span className="font-semibold text-sm">
-                    {(ligne.quantite * ligne.prixUnitaire).toLocaleString('fr-FR')} €
-                  </span>
+                  <span className="font-semibold text-sm">{(ligne.quantite * ligne.prixUnitaire).toLocaleString('fr-FR')} €</span>
                 </div>
                 <div className="col-span-1 flex items-center justify-center">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeLigne(ligne.id)}
-                    className="text-destructive hover:text-destructive h-8 w-8"
-                    disabled={lignes.length === 1}
-                  >
+                  <Button variant="ghost" size="icon" onClick={() => removeLigne(ligne.id)} className="text-destructive hover:text-destructive h-8 w-8" disabled={lignes.length === 1}>
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
@@ -778,16 +1338,28 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
 
           <Separator />
 
-          {/* Totaux */}
+          {/* TVA + Totaux */}
           <div className="flex justify-end">
-            <div className="w-64 space-y-2">
+            <div className="w-72 space-y-2">
+              <div className="flex items-center gap-2 mb-2">
+                <Label className="text-sm whitespace-nowrap">TVA :</Label>
+                <Select value={String(tvaTaux)} onValueChange={(v) => setTvaTaux(Number(v))}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">0% - Non assujetti</SelectItem>
+                    <SelectItem value="20">20%</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Total HT</span>
                 <span>{totalHT.toLocaleString('fr-FR')} €</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">TVA (0% - Non assujetti)</span>
-                <span>0,00 €</span>
+                <span className="text-muted-foreground">TVA ({tvaTaux}%{tvaTaux === 0 ? ' - Non assujetti' : ''})</span>
+                <span>{montantTVA.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €</span>
               </div>
               <Separator />
               <div className="flex justify-between font-bold text-base">
@@ -800,12 +1372,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
           {/* Notes */}
           <div className="space-y-2">
             <Label>Notes / Modalités particulières</Label>
-            <Textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Conditions particulières, modalités de paiement, informations complémentaires..."
-              className="min-h-[80px]"
-            />
+            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Conditions particulières, modalités de paiement, informations complémentaires..." className="min-h-[80px]" />
           </div>
 
           <Separator />
@@ -855,69 +1422,31 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
           <div className="space-y-3">
             <Label className="text-sm font-semibold">Statut du devis</Label>
             <div className="flex items-center gap-3 flex-wrap">
-              <button
-                onClick={() => { setStatutDevis('en_attente'); setFactureCreee(null); }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
-                  statutDevis === 'en_attente'
-                    ? 'border-amber-400 bg-amber-50 text-amber-700'
-                    : 'border-border bg-background text-muted-foreground hover:border-amber-200'
-                }`}
-              >
-                <Clock className="w-4 h-4" />
-                En attente
+              <button onClick={() => { setStatutDevis('en_attente'); setFactureCreee(null); }} className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${statutDevis === 'en_attente' ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-border bg-background text-muted-foreground hover:border-amber-200'}`}>
+                <Clock className="w-4 h-4" /> En attente
               </button>
-              <button
-                onClick={() => setStatutDevis('valide')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
-                  statutDevis === 'valide'
-                    ? 'border-green-500 bg-green-50 text-green-700'
-                    : 'border-border bg-background text-muted-foreground hover:border-green-200'
-                }`}
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                Validé
+              <button onClick={() => setStatutDevis('valide')} className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${statutDevis === 'valide' ? 'border-green-500 bg-green-50 text-green-700' : 'border-border bg-background text-muted-foreground hover:border-green-200'}`}>
+                <CheckCircle2 className="w-4 h-4" /> Validé
               </button>
-              <button
-                onClick={() => { setStatutDevis('refuse'); setFactureCreee(null); }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
-                  statutDevis === 'refuse'
-                    ? 'border-red-500 bg-red-50 text-red-700'
-                    : 'border-border bg-background text-muted-foreground hover:border-red-200'
-                }`}
-              >
-                <XCircle className="w-4 h-4" />
-                Refusé
+              <button onClick={() => { setStatutDevis('refuse'); setFactureCreee(null); }} className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${statutDevis === 'refuse' ? 'border-red-500 bg-red-50 text-red-700' : 'border-border bg-background text-muted-foreground hover:border-red-200'}`}>
+                <XCircle className="w-4 h-4" /> Refusé
               </button>
 
-              {/* Badge statut actif */}
-              {statutDevis === 'en_attente' && (
-                <Badge className="bg-amber-100 text-amber-800 border-amber-300">⏳ En attente de réponse client</Badge>
-              )}
-              {statutDevis === 'valide' && (
-                <Badge className="bg-green-100 text-green-800 border-green-300">✅ Devis accepté par le client</Badge>
-              )}
-              {statutDevis === 'refuse' && (
-                <Badge className="bg-red-100 text-red-800 border-red-300">❌ Devis refusé par le client</Badge>
-              )}
+              {statutDevis === 'en_attente' && <Badge className="bg-amber-100 text-amber-800 border-amber-300">En attente de réponse client</Badge>}
+              {statutDevis === 'valide' && <Badge className="bg-green-100 text-green-800 border-green-300">Devis accepté par le client</Badge>}
+              {statutDevis === 'refuse' && <Badge className="bg-red-100 text-red-800 border-red-300">Devis refusé par le client</Badge>}
             </div>
 
-            {/* Zone facturation si validé */}
             {statutDevis === 'valide' && (
               <div className="mt-3 p-4 rounded-lg border-2 border-green-200 bg-green-50/50 space-y-3">
-                <p className="text-sm font-medium text-green-800">
-                  Le devis est validé — vous pouvez générer la facture correspondante.
-                </p>
+                <p className="text-sm font-medium text-green-800">Le devis est validé — vous pouvez générer la facture correspondante.</p>
                 {factureCreee ? (
                   <div className="flex items-center gap-2 text-green-700 font-medium text-sm">
                     <CheckCircle2 className="w-5 h-5" />
                     Facture <strong>{factureCreee}</strong> créée avec succès dans le module Comptabilité.
                   </div>
                 ) : (
-                  <Button
-                    onClick={creerFacture}
-                    disabled={creatingFacture}
-                    className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
-                  >
+                  <Button onClick={creerFacture} disabled={creatingFacture} className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2">
                     <Receipt className="w-4 h-4" />
                     {creatingFacture ? "Création en cours..." : "Générer la facture"}
                   </Button>
@@ -928,19 +1457,11 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
 
           {/* Actions PDF */}
           <div className="flex items-center gap-3 pt-2 flex-wrap">
-            <Button
-              onClick={generateDevisPDF}
-              disabled={generating}
-              className="flex items-center gap-2"
-            >
+            <Button onClick={generateDevisPDF} disabled={generating} className="flex items-center gap-2">
               <Download className="w-4 h-4" />
               {generating ? "Génération..." : "Télécharger le devis PDF"}
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => setShowPreview(!showPreview)}
-              className="flex items-center gap-2"
-            >
+            <Button variant="outline" onClick={() => setShowPreview(!showPreview)} className="flex items-center gap-2">
               <Eye className="w-4 h-4" />
               {showPreview ? "Masquer" : "Aperçu"} les CGV
             </Button>
@@ -987,10 +1508,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
           <CardContent>
             <div className="bg-muted/30 rounded-lg p-4 max-h-[600px] overflow-y-auto">
               <pre className="text-xs leading-relaxed whitespace-pre-wrap font-sans text-foreground">
-                {CGV_TEXT.replace(
-                  /ARTICLE \d+[\s\S]*?(?=\nARTICLE|\n---)/g,
-                  (m) => m
-                )}
+                {CGV_TEXT}
               </pre>
             </div>
           </CardContent>

@@ -126,6 +126,7 @@ export type Database = {
           end_reason: string | null
           ended_at: string | null
           id: string
+          last_action_at: string | null
           last_seen_at: string
           source: string
           started_at: string
@@ -139,6 +140,7 @@ export type Database = {
           end_reason?: string | null
           ended_at?: string | null
           id?: string
+          last_action_at?: string | null
           last_seen_at?: string
           source?: string
           started_at?: string
@@ -152,6 +154,7 @@ export type Database = {
           end_reason?: string | null
           ended_at?: string | null
           id?: string
+          last_action_at?: string | null
           last_seen_at?: string
           source?: string
           started_at?: string
@@ -733,6 +736,56 @@ export type Database = {
           valeur_estimee?: number | null
         }
         Relationships: []
+      }
+      devis_envois: {
+        Row: {
+          apprenant_id: string
+          created_at: string
+          devis_signe_url: string | null
+          fichier_url: string
+          formation: string | null
+          id: string
+          modele: string
+          montant: string | null
+          signed_at: string | null
+          statut: string
+          token: string
+        }
+        Insert: {
+          apprenant_id: string
+          created_at?: string
+          devis_signe_url?: string | null
+          fichier_url: string
+          formation?: string | null
+          id?: string
+          modele: string
+          montant?: string | null
+          signed_at?: string | null
+          statut?: string
+          token?: string
+        }
+        Update: {
+          apprenant_id?: string
+          created_at?: string
+          devis_signe_url?: string | null
+          fichier_url?: string
+          formation?: string | null
+          id?: string
+          modele?: string
+          montant?: string | null
+          signed_at?: string | null
+          statut?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "devis_envois_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: false
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       documents: {
         Row: {
@@ -1897,6 +1950,9 @@ export type Database = {
           created_at: string
           date_debut: string | null
           date_fin: string | null
+          date_fin_personnalisee: string | null
+          heure_debut_personnalisee: string | null
+          heure_fin_personnalisee: string | null
           id: string
           mode_financement: string | null
           montant_paye: number | null
@@ -1912,6 +1968,9 @@ export type Database = {
           created_at?: string
           date_debut?: string | null
           date_fin?: string | null
+          date_fin_personnalisee?: string | null
+          heure_debut_personnalisee?: string | null
+          heure_fin_personnalisee?: string | null
           id?: string
           mode_financement?: string | null
           montant_paye?: number | null
@@ -1927,6 +1986,9 @@ export type Database = {
           created_at?: string
           date_debut?: string | null
           date_fin?: string | null
+          date_fin_personnalisee?: string | null
+          heure_debut_personnalisee?: string | null
+          heure_fin_personnalisee?: string | null
           id?: string
           mode_financement?: string | null
           montant_paye?: number | null

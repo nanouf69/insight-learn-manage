@@ -19,6 +19,7 @@ import PreInformationPublic from "./pages/PreInformationPublic";
 import AuthCallback from "./pages/AuthCallback";
 import RevolutTransactions from "./pages/RevolutTransactions";
 import RevolutConnect from "./pages/RevolutConnect";
+import DevisPublic from "./pages/DevisPublic";
 
 // Onboarding pages
 import OnboardingWelcome from "./pages/onboarding/OnboardingWelcome";
@@ -89,6 +90,7 @@ function App() {
                 
                 {/* Fournisseur portal - public */}
                 <Route path="/fournisseur/:token" element={<ErrorBoundary><FournisseurPortal /></ErrorBoundary>} />
+                <Route path="/devis" element={<ErrorBoundary><DevisPublic /></ErrorBoundary>} />
                 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />

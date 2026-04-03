@@ -96,50 +96,87 @@ export function useAutoSaveReponses<T = Record<string, any>>({
         const latest = latestReponsesRef.current;
         if (!latest) return;
 
-        try {
-          const baseUrl = import.meta.env.VITE_SUPABASE_URL;
-          const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-          if (!baseUrl || !apikey) {
-            console.error("[AutoSaveReponses] Missing backend configuration for upsert-reponse-apprenant");
-            return;
-          }
+        if (!baseUrl || !apikey) {
+          console.error("[AutoSaveReponses] Missing backend configuration for upsert-reponse-apprenant");
+          return;
+        }
 
-          const payload = {
-            apprenant_id: apprenantId,
-            user_id: apprenantId,
-            exercice_id: exerciceId,
-            exercice_type: exerciceType,
-            reponses: latest.reponses,
-            score: latest.score ?? null,
-            completed: latest.completed ?? false,
-            updated_at: new Date().toISOString(),
-          };
+        // BUG #7 FIX: send auth.uid() as user_id, not apprenantId
+        const payload: Record<string, any> = {
+          apprenant_id: apprenantId,
+          user_id: userIdRef.current || apprenantId,
+          exercice_id: exerciceId,
+          exercice_type: exerciceType,
+          reponses: latest.reponses,
+          completed: latest.completed ?? false,
+          updated_at: new Date().toISOString(),
+        };
 
-          console.log("[AutoSaveReponses] UPSERT reponses_apprenants via Edge Function — user_id envoyé:", payload.user_id, "| auth session uid:", userIdRef.current, "| exercice_id:", exerciceId, "| apprenant_id:", apprenantId);
+        // Only include score when explicitly provided — never send null
+        // to avoid overwriting an existing score in the DB
+        if (latest.score !== undefined && latest.score !== null) {
+          payload.score = latest.score;
+        }
 
-          const response = await fetch(`${baseUrl}/functions/v1/upsert-reponse-apprenant`, {
-            method: "POST",
-            headers: {
+        // BUG #6 FIX: retry up to 3 times with delay on failure
+        const MAX_RETRIES = 3;
+        const RETRY_DELAY = 2000;
+        let succeeded = false;
+
+        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+          try {
+            console.log(`[AutoSaveReponses] UPSERT attempt ${attempt}/${MAX_RETRIES} — exercice_id:`, exerciceId, "| apprenant_id:", apprenantId);
+
+            // BUG #7 FIX: include Authorization header
+            const headers: Record<string, string> = {
               apikey,
               "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
-          });
+            };
+            if (jwtTokenRef.current) {
+              headers["Authorization"] = `Bearer ${jwtTokenRef.current}`;
+            }
 
-          if (!response.ok) {
+            const response = await fetch(`${baseUrl}/functions/v1/upsert-reponse-apprenant`, {
+              method: "POST",
+              headers,
+              body: JSON.stringify(payload),
+            });
+
+            if (response.ok) {
+              succeeded = true;
+              break;
+            }
+
             const body = await response.text();
-            console.error("[AutoSaveReponses] Upsert error COMPLET:", {
+            console.error(`[AutoSaveReponses] Attempt ${attempt}/${MAX_RETRIES} failed:`, {
               status: response.status,
               statusText: response.statusText,
               body,
               exercice_id: exerciceId,
               apprenant_id: apprenantId,
-              user_id: payload.user_id,
             });
+
+            if (attempt < MAX_RETRIES) {
+              await new Promise((r) => setTimeout(r, RETRY_DELAY));
+            }
+          } catch (e) {
+            console.error(`[AutoSaveReponses] Attempt ${attempt}/${MAX_RETRIES} exception:`, e);
+            if (attempt < MAX_RETRIES) {
+              await new Promise((r) => setTimeout(r, RETRY_DELAY));
+            }
           }
-        } catch (e) {
-          console.error("[AutoSaveReponses] Save error:", e);
+        }
+
+        // BUG #7 FIX: save to localStorage as fallback when all retries fail
+        if (!succeeded) {
+          try {
+            const backupKey = `exam_backup_${exerciceId}_${apprenantId}`;
+            localStorage.setItem(backupKey, JSON.stringify(payload));
+            console.warn("[AutoSaveReponses] All retries failed — saved to localStorage:", backupKey);
+          } catch (_) {}
         }
       }, 300);
     },
@@ -168,23 +205,29 @@ export function useAutoSaveReponses<T = Record<string, any>>({
         return;
       }
 
-      const row = {
+      // BUG #7 FIX: send auth.uid() as user_id + Authorization header
+      const row: Record<string, any> = {
         apprenant_id: apprenantId,
-        user_id: apprenantId,
+        user_id: userIdRef.current || apprenantId,
         exercice_id: exerciceId,
         exercice_type: exerciceType,
         reponses: latest.reponses,
-        score: latest.score ?? null,
         completed: latest.completed ?? false,
         updated_at: new Date().toISOString(),
       };
+      if (latest.score !== undefined && latest.score !== null) {
+        row.score = latest.score;
+      }
       try {
-        console.log("[AutoSaveReponses] FLUSH XHR reponses_apprenants via Edge Function — user_id:", row.user_id, "| exercice_id:", exerciceId);
+        console.log("[AutoSaveReponses] FLUSH XHR via Edge Function — user_id:", row.user_id, "| exercice_id:", exerciceId);
         const url = `${baseUrl}/functions/v1/upsert-reponse-apprenant`;
         const xhr = new XMLHttpRequest();
         xhr.open("POST", url, false);
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.setRequestHeader("apikey", apikey);
+        if (jwtTokenRef.current) {
+          xhr.setRequestHeader("Authorization", `Bearer ${jwtTokenRef.current}`);
+        }
         xhr.send(JSON.stringify(row));
       } catch (_) {}
     };

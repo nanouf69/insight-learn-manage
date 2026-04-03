@@ -49,6 +49,7 @@ import { useToast } from "@/hooks/use-toast";
 import { generateEmargementPDF } from "./EmargementGenerator";
 import { generateEmargementIndividuelPDF, AgendaDaySlot } from "./EmargementIndividuelGenerator";
 import { supabase } from "@/integrations/supabase/client";
+import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface Session {
@@ -153,6 +154,84 @@ const getStatusBadge = (status: string) => {
     default:
       return <Badge variant="secondary">{status}</Badge>;
   }
+};
+
+type SessionApprenantSchedule = {
+  date_fin_personnalisee?: string | null;
+  heure_debut_personnalisee?: string | null;
+  heure_fin_personnalisee?: string | null;
+};
+
+const buildDefaultFCVTCDay = (date: Date): AgendaDaySlot => ({
+  date: new Date(date),
+  matinDebut: '09:00',
+  matinFin: '12:00',
+  apremDebut: '13:00',
+  apremFin: '17:00',
+});
+
+const formatLocalDateKey = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const applyFCVTCPersonalizedSchedule = (
+  agendaDays: AgendaDaySlot[],
+  sessionStart: string,
+  sessionEnd: string,
+  schedule?: SessionApprenantSchedule,
+) => {
+  const effectiveEnd = schedule?.date_fin_personnalisee || sessionEnd;
+  const startDate = new Date(`${sessionStart}T00:00:00`);
+  const endDate = new Date(`${effectiveEnd}T00:00:00`);
+
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()) || endDate < startDate) {
+    return agendaDays;
+  }
+
+  const dayMap = new Map<string, AgendaDaySlot>();
+
+  agendaDays
+    .filter((day) => {
+      const key = formatLocalDateKey(day.date);
+      return key >= sessionStart && key <= effectiveEnd;
+    })
+    .forEach((day) => {
+      const key = formatLocalDateKey(day.date);
+      dayMap.set(key, { ...day, date: new Date(day.date) });
+    });
+
+  const shouldBackfillAllDays = dayMap.size === 0;
+
+  for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+    const dayOfWeek = d.getDay();
+    if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+
+    const key = formatLocalDateKey(d);
+    const isBeyondSessionEnd = key > sessionEnd;
+    const isCustomEndDay = key === schedule?.date_fin_personnalisee;
+
+    if (!dayMap.has(key) && (shouldBackfillAllDays || isBeyondSessionEnd || isCustomEndDay)) {
+      dayMap.set(key, buildDefaultFCVTCDay(new Date(d)));
+    }
+  }
+
+  if (schedule?.date_fin_personnalisee && dayMap.has(schedule.date_fin_personnalisee)) {
+    const customDay = dayMap.get(schedule.date_fin_personnalisee)!;
+
+    if (schedule.heure_debut_personnalisee && schedule.heure_fin_personnalisee) {
+      customDay.matinDebut = undefined;
+      customDay.matinFin = undefined;
+      customDay.apremDebut = schedule.heure_debut_personnalisee;
+      customDay.apremFin = schedule.heure_fin_personnalisee;
+    }
+
+    dayMap.set(schedule.date_fin_personnalisee, customDay);
+  }
+
+  return Array.from(dayMap.values()).sort((a, b) => a.date.getTime() - b.date.getTime());
 };
 
 function NotesPopover({ 
@@ -329,6 +408,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [emailPreviewEditing, setEmailPreviewEditing] = useState(false);
   const [selectedApprenants, setSelectedApprenants] = useState<Set<string>>(new Set());
   const [bulkSending, setBulkSending] = useState(false);
+  const [bulkPrintingEmargement, setBulkPrintingEmargement] = useState(false);
   const [bulkPreview, setBulkPreview] = useState<{ template: any; apprenants: any[]; previewBody: string; previewSubject: string; editedBody?: string; editedSubject?: string } | null>(null);
   const [bulkPreviewEditing, setBulkPreviewEditing] = useState(false);
   const [editingMailType, setEditingMailType] = useState<any | null>(null);
@@ -367,6 +447,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           montant_paye,
           moyen_paiement,
           statut_suivi,
+          date_fin_personnalisee,
+          heure_debut_personnalisee,
+          heure_fin_personnalisee,
           apprenant:apprenants (
             id,
             nom,
@@ -805,7 +888,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
   const updateSessionApprenant = async (
     sessionApprenantId: string, 
-    updates: { notes?: string; presence_pratique?: string | null; statut_suivi?: string | null }
+    updates: { notes?: string; presence_pratique?: string | null; statut_suivi?: string | null; date_fin_personnalisee?: string | null; heure_debut_personnalisee?: string | null; heure_fin_personnalisee?: string | null }
   ) => {
     try {
       const { error } = await supabase
@@ -1103,6 +1186,161 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   };
 
 
+  const handleBulkEmargement = async (isPrint: boolean) => {
+    const selectedSAs = apprenantsInSession
+      .filter((sa: any) => sa.apprenant && selectedApprenants.has(sa.apprenant.id));
+    const selectedList = selectedSAs.map((sa: any) => ({ ...sa.apprenant, _sa: sa }));
+    if (selectedList.length === 0) {
+      toast({ title: "Aucun apprenant sélectionné", variant: "destructive" });
+      return;
+    }
+    setBulkPrintingEmargement(true);
+    let generated = 0;
+    let failed = 0;
+    for (const apprenant of selectedList) {
+      try {
+        const type = (apprenant.type_apprenant || '').toLowerCase();
+        const isTA = type === 'ta' || type === 'ta-e';
+        const isVA = type === 'va' || type === 'va-e';
+        const isTaxi = type.includes('taxi') || isTA;
+        const isVTC = type === 'vtc' || type === 'vtc-e' || type === 'pa vtc';
+        const isFCVTC = isFormationContinue && isVTC;
+        const formationLabel = isFCVTC ? 'Formation Continue VTC' : isTaxi ? 'Formation TAXI' : 'Formation VTC';
+        const formateurNames = isFCVTC
+          ? ["Naoufal GUENICHI"]
+          : (isTA || isVA)
+            ? ["Rim TOUIL"]
+            : isVTC
+              ? ["Naoufal GUENICHI"]
+              : ["Naoufal GUENICHI", "Rim TOUIL"];
+
+        const dateDebut = new Date(session.dateDebut);
+        const semaineDebutMin = new Date(dateDebut);
+        semaineDebutMin.setDate(semaineDebutMin.getDate() - 6);
+        const semaineDebutMinStr = semaineDebutMin.toISOString().slice(0, 10);
+        const { data: blocs } = await supabase
+          .from('agenda_blocs')
+          .select('*')
+          .gte('semaine_debut', semaineDebutMinStr)
+          .lte('semaine_debut', session.dateFin);
+
+        const matchFormation = (f: string) => {
+          const fl = f.toLowerCase();
+          if (fl.includes('taxi et vtc') || fl.includes('taxi & vtc')) return true;
+          if (isTaxi && fl.includes('taxi')) return true;
+          if (!isTaxi && fl.includes('vtc')) return true;
+          return false;
+        };
+
+        const filteredBlocs = (blocs || []).filter((b: any) => matchFormation(b.formation));
+        const dayMap = new Map<string, { date: Date; slots: { debut: string; fin: string }[] }>();
+        for (const bloc of filteredBlocs) {
+          const weekStart = new Date(bloc.semaine_debut + 'T00:00:00');
+          const actualDate = new Date(weekStart);
+          actualDate.setDate(actualDate.getDate() + bloc.jour);
+          const key = formatLocalDateKey(actualDate);
+          if (key < session.dateDebut || key > session.dateFin) continue;
+          if (!dayMap.has(key)) {
+            dayMap.set(key, { date: actualDate, slots: [] });
+          }
+          dayMap.get(key)!.slots.push({ debut: bloc.heure_debut, fin: bloc.heure_fin });
+        }
+
+        const agendaDays: AgendaDaySlot[] = Array.from(dayMap.entries())
+          .sort(([a], [b]) => a.localeCompare(b))
+          .filter(([key]) => {
+            if (key === '2026-03-20') return false;
+            return true;
+          })
+          .map(([, val]) => {
+            const morningSlots = val.slots.filter(s => s.debut < '12:30');
+            const afternoonSlots = val.slots.filter(s => s.debut >= '12:30');
+            const result: AgendaDaySlot = { date: val.date };
+            if (morningSlots.length > 0) {
+              result.matinDebut = morningSlots.reduce((min, s) => s.debut < min ? s.debut : min, morningSlots[0].debut);
+              result.matinFin = morningSlots.reduce((max, s) => s.fin > max ? s.fin : max, morningSlots[0].fin);
+            }
+            if (afternoonSlots.length > 0) {
+              result.apremDebut = afternoonSlots.reduce((min, s) => s.debut < min ? s.debut : min, afternoonSlots[0].debut);
+              result.apremFin = afternoonSlots.reduce((max, s) => s.fin > max ? s.fin : max, afternoonSlots[0].fin);
+            }
+            if (isVTC) {
+              const isCoursDuSoir = (session.title || '').toLowerCase().includes('soir');
+              if (isCoursDuSoir) {
+                result.matinDebut = undefined;
+                result.matinFin = undefined;
+                result.apremDebut = '17:00';
+                result.apremFin = '21:00';
+              } else {
+                const apremFinHeure = isFCVTC ? '17:00' : '16:00';
+                if (result.matinDebut) { result.matinDebut = '09:00'; result.matinFin = '12:00'; }
+                if (result.apremDebut) { result.apremDebut = '13:00'; result.apremFin = apremFinHeure; }
+              }
+            }
+            return result;
+          });
+
+        if (isVTC && !isFCVTC) {
+          const isCoursDuSoir = (session.title || '').toLowerCase().includes('soir');
+          const march30Key = '2026-03-30';
+          const hasMarch30 = agendaDays.some(d => formatLocalDateKey(d.date) === march30Key);
+          if (!hasMarch30) {
+            agendaDays.push(isCoursDuSoir ? {
+              date: new Date('2026-03-30T00:00:00'),
+              apremDebut: '17:00', apremFin: '21:00',
+            } : {
+              date: new Date('2026-03-30T00:00:00'),
+              matinDebut: '09:00', matinFin: '12:00',
+              apremDebut: '13:00', apremFin: '16:00',
+            });
+            agendaDays.sort((a, b) => a.date.getTime() - b.date.getTime());
+          }
+        }
+
+        const saForEmargement = apprenant._sa || {};
+        const finalAgendaDays = isFCVTC
+          ? applyFCVTCPersonalizedSchedule(
+              agendaDays,
+              session.dateDebut,
+              session.dateFin,
+              saForEmargement,
+            )
+          : agendaDays;
+
+        if (finalAgendaDays.length === 0) {
+          failed++;
+          continue;
+        }
+
+        const effectiveDateFinEmargement = saForEmargement.date_fin_personnalisee || session.dateFin;
+
+        generateEmargementIndividuelPDF(
+          {
+            formation: formationLabel,
+            dateDebut: session.dateDebut,
+            dateFin: effectiveDateFinEmargement,
+            lieu: session.lieu,
+            formateurs: formateurNames,
+          },
+          { nom: apprenant.nom, prenom: apprenant.prenom, type_apprenant: apprenant.type_apprenant || '' },
+          finalAgendaDays,
+          { print: isPrint }
+        );
+        generated++;
+        // Small delay between downloads to avoid browser blocking
+        if (!isPrint) await new Promise(r => setTimeout(r, 500));
+      } catch (err) {
+        console.error(`Erreur émargement pour ${apprenant.nom}:`, err);
+        failed++;
+      }
+    }
+    setBulkPrintingEmargement(false);
+    toast({
+      title: `${generated} émargement(s) ${isPrint ? 'imprimé(s)' : 'téléchargé(s)'}`,
+      description: failed > 0 ? `${failed} erreur(s)` : undefined,
+    });
+  };
+
   const countByType = (type: string) => {
     return apprenantsInSession.filter((sa: any) => {
       const t = sa.apprenant?.type_apprenant?.toLowerCase() || "";
@@ -1217,6 +1455,26 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2"
+                disabled={selectedApprenants.size === 0 || bulkPrintingEmargement}
+                onClick={() => handleBulkEmargement(false)}
+              >
+                {bulkPrintingEmargement ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                Émargements ({selectedApprenants.size})
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2"
+                disabled={selectedApprenants.size === 0 || bulkPrintingEmargement}
+                onClick={() => handleBulkEmargement(true)}
+              >
+                <Printer className="w-4 h-4" />
+                Imprimer ({selectedApprenants.size})
+              </Button>
               <Button 
                 size="sm" 
                 variant={showAddApprenant ? "secondary" : "outline"}
@@ -1408,6 +1666,43 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           )}
                         </div>
 
+                        {/* Ligne 3.5: Date de fin personnalisée */}
+                        {isFormationContinue && (
+                          <div className="flex items-center gap-3 mb-3 pl-[52px] flex-wrap">
+                            <div className="flex items-center gap-2">
+                              <Label className="text-xs text-muted-foreground whitespace-nowrap">Fin perso :</Label>
+                              <Input
+                                type="date"
+                                className="h-7 w-36 text-xs"
+                                value={sessionApprenant.date_fin_personnalisee || ''}
+                                onChange={(e) => {
+                                  updateSessionApprenant(sessionApprenant.id, { date_fin_personnalisee: e.target.value || null });
+                                }}
+                              />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Label className="text-xs text-muted-foreground whitespace-nowrap">De</Label>
+                              <Input
+                                type="time"
+                                className="h-7 w-24 text-xs"
+                                value={sessionApprenant.heure_debut_personnalisee || ''}
+                                onChange={(e) => {
+                                  updateSessionApprenant(sessionApprenant.id, { heure_debut_personnalisee: e.target.value || null });
+                                }}
+                              />
+                              <Label className="text-xs text-muted-foreground">a</Label>
+                              <Input
+                                type="time"
+                                className="h-7 w-24 text-xs"
+                                value={sessionApprenant.heure_fin_personnalisee || ''}
+                                onChange={(e) => {
+                                  updateSessionApprenant(sessionApprenant.id, { heure_fin_personnalisee: e.target.value || null });
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
+
                         {/* Ligne 4: Boutons d'action sur ligne séparée */}
                         <div className="flex items-center gap-2 pt-3 border-t flex-wrap pl-[52px]">
                           {[
@@ -1426,20 +1721,28 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                 const isTA = type === 'ta' || type === 'ta-e';
                                 const isVA = type === 'va' || type === 'va-e';
                                 const isTaxi = type.includes('taxi') || isTA;
-                                const formationLabel = isTaxi ? 'Formation TAXI' : 'Formation VTC';
-                                const isVTC = type === 'vtc' || type === 'vtc-e';
-                                const formateurNames = (isTA || isVA)
-                                  ? ["Rim TOUIL"]
-                                  : isVTC
-                                    ? ["Naoufal GUENICHI"]
-                                    : ["Naoufal GUENICHI", "Rim TOUIL"];
+                                const isVTC = type === 'vtc' || type === 'vtc-e' || type === 'pa vtc';
+                                const isFCVTC = isFormationContinue && isVTC;
+                                const formationLabel = isFCVTC ? 'Formation Continue VTC' : isTaxi ? 'Formation TAXI' : 'Formation VTC';
+                                const formateurNames = isFCVTC
+                                  ? ["Naoufal GUENICHI"]
+                                  : (isTA || isVA)
+                                    ? ["Rim TOUIL"]
+                                    : isVTC
+                                      ? ["Naoufal GUENICHI"]
+                                      : ["Naoufal GUENICHI", "Rim TOUIL"];
 
                                 const dateDebut = new Date(session.dateDebut);
                                 const dateFin = new Date(session.dateFin);
+                                // semaine_debut is the Monday of the week; a session day (e.g. Tue 31/03)
+                                // belongs to a week starting up to 6 days earlier, so widen the lower bound.
+                                const semaineDebutMin = new Date(dateDebut);
+                                semaineDebutMin.setDate(semaineDebutMin.getDate() - 6);
+                                const semaineDebutMinStr = semaineDebutMin.toISOString().slice(0, 10);
                                 const { data: blocs } = await supabase
                                   .from('agenda_blocs')
                                   .select('*')
-                                  .gte('semaine_debut', session.dateDebut)
+                                  .gte('semaine_debut', semaineDebutMinStr)
                                   .lte('semaine_debut', session.dateFin);
 
                                 const matchFormation = (f: string) => {
@@ -1458,7 +1761,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                   const actualDate = new Date(weekStart);
                                   actualDate.setDate(weekStart.getDate() + bloc.jour);
                                   if (actualDate < dateDebut || actualDate > dateFin) continue;
-                                  const key = actualDate.toISOString().slice(0, 10);
+                                  const key = formatLocalDateKey(actualDate);
                                   if (!dayMap.has(key)) {
                                     dayMap.set(key, { date: actualDate, slots: [] });
                                   }
@@ -1494,18 +1797,19 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                         result.apremDebut = '17:00';
                                         result.apremFin = '21:00';
                                       } else {
+                                        const apremFinHeure = isFCVTC ? '17:00' : '16:00';
                                         if (result.matinDebut) { result.matinDebut = '09:00'; result.matinFin = '12:00'; }
-                                        if (result.apremDebut) { result.apremDebut = '13:00'; result.apremFin = '16:00'; }
+                                        if (result.apremDebut) { result.apremDebut = '13:00'; result.apremFin = apremFinHeure; }
                                       }
                                     }
                                     return result;
                                   });
 
-                                // Pour VTC : ajouter le lundi 30 mars 2026 s'il n'existe pas déjà
-                                if (isVTC) {
+                                // Pour VTC (hors Formation Continue) : ajouter le lundi 30 mars 2026 s'il n'existe pas déjà
+                                if (isVTC && !isFCVTC) {
                                   const isCoursDuSoir = (session.title || '').toLowerCase().includes('soir');
                                   const march30Key = '2026-03-30';
-                                  const hasMarch30 = agendaDays.some(d => d.date.toISOString().slice(0, 10) === march30Key);
+                                  const hasMarch30 = agendaDays.some(d => formatLocalDateKey(d.date) === march30Key);
                                   if (!hasMarch30) {
                                     agendaDays.push(isCoursDuSoir ? {
                                       date: new Date('2026-03-30T00:00:00'),
@@ -1513,27 +1817,38 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                     } : {
                                       date: new Date('2026-03-30T00:00:00'),
                                       matinDebut: '09:00', matinFin: '12:00',
-                                      apremDebut: '13:00', apremFin: '16:00',
+                                      apremDebut: '13:00', apremFin: isFCVTC ? '17:00' : '16:00',
                                     });
                                     agendaDays.sort((a, b) => a.date.getTime() - b.date.getTime());
                                   }
                                 }
 
-                                if (agendaDays.length === 0) {
+                                const finalAgendaDays = isFCVTC
+                                  ? applyFCVTCPersonalizedSchedule(
+                                      agendaDays,
+                                      session.dateDebut,
+                                      session.dateFin,
+                                      sessionApprenant,
+                                    )
+                                  : agendaDays;
+
+                                if (finalAgendaDays.length === 0) {
                                   toast({ title: "Aucun cours trouvé", description: "Aucun bloc agenda trouvé pour cette session.", variant: "destructive" });
                                   return;
                                 }
+
+                                const effectiveDateFinEmargement = sessionApprenant.date_fin_personnalisee || session.dateFin;
 
                                 generateEmargementIndividuelPDF(
                                   {
                                     formation: formationLabel,
                                     dateDebut: session.dateDebut,
-                                    dateFin: session.dateFin,
+                                    dateFin: effectiveDateFinEmargement,
                                     lieu: session.lieu,
                                     formateurs: formateurNames,
                                   },
                                   { nom: apprenant.nom, prenom: apprenant.prenom, type_apprenant: apprenant.type_apprenant || '' },
-                                  agendaDays,
+                                  finalAgendaDays,
                                   { print: isPrint }
                                 );
                                 toast({ title: isPrint ? "Impression lancée" : "Emargement individuel genere", description: `Feuille pour ${apprenant.prenom} ${apprenant.nom} ${isPrint ? 'ouverte pour impression.' : 'telechargee.'}` });
@@ -1542,6 +1857,26 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                               <Icon className="w-4 h-4" />
                             </Button>
                           ))}
+
+                          {isFormationContinue && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 gap-1.5 text-muted-foreground hover:text-primary"
+                              title="Attestation Formation Continue VTC"
+                              onClick={() => {
+                                generateAttestationFCVTC({
+                                  nom: apprenant.nom,
+                                  prenom: apprenant.prenom,
+                                  dateFin: sessionApprenant.date_fin_personnalisee || session.dateFin,
+                                });
+                                toast({ title: "Attestation generee", description: `Attestation FC VTC pour ${apprenant.prenom} ${apprenant.nom} telechargee.` });
+                              }}
+                            >
+                              <GraduationCap className="w-4 h-4" />
+                              <span className="text-xs">Attestation</span>
+                            </Button>
+                          )}
 
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>

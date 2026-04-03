@@ -11,6 +11,8 @@ import {
   Save, CheckCircle2, X, Clock, Layers, Loader2, ArrowUp, ArrowDown, ArrowLeftRight, Pause, Play, AlertTriangle
 } from "lucide-react";
 import { tousLesExamens, getPointsParQuestion, type ExamenBlanc, type Matiere, type Question, type Choix } from "./examens-blancs-data";
+import { mergeQuestionsForMatiere, propagateSharedMatiereEdit, moveQuestionToPosition } from "./examens-blancs-utils";
+import { QuestionImageUpload } from "./QuestionImageUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -92,8 +94,8 @@ function repairCorrectFlags(examens: ExamenBlanc[]): void {
       const srcCorrectCount = srcMat.questions.filter(
         q => q?.type === "QCM" && Array.isArray(q.choix) && q.choix.some(c => c.correct === true)
       ).length;
-      // If saved data has significantly fewer correct answers, restore from source
-      if (srcCorrectCount > 0 && savedCorrectCount < srcCorrectCount * 0.5) {
+      // Only repair when ALL correct flags are lost (serialization bug), not admin edits
+      if (srcCorrectCount > 0 && savedCorrectCount === 0) {
         console.log(`[ExamRepair] Restoring correct flags for exam ${ex.id}, matière ${mat.id}: ${savedCorrectCount} → ${srcCorrectCount}`);
         for (const q of mat.questions) {
           if (q?.type !== "QCM" || !Array.isArray(q.choix)) continue;
@@ -258,7 +260,14 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
             return deduped;
           };
 
-          const getQuestionKey = (value: any) => `${Number(value?.id)}::${normalizeQuestionType(value?.type)}`;
+          // FIX: include enonce to prevent cross-exam collisions
+          const getQuestionKey = (value: any) => {
+            const id = Number(value?.id);
+            const type = normalizeQuestionType(value?.type);
+            const enonce = normalizeQuestionText(value?.enonce);
+            if (enonce) return `${id}::${type}::${enonce}`;
+            return `${id}::${type}`;
+          };
 
           const sourceMatieres = examens[idx].matieres;
           const mergedMatieres = saved.matieres.map((savedMat) => {
@@ -282,58 +291,18 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
                 }
               });
 
-              const consumedSourceQuestions = new Set<any>();
-
-              // Iterate in SAVED order (preserves admin reordering)
-              const mergedQuestions = savedQuestions.map((savedQ) => {
-                const key = getQuestionKey(savedQ);
-                let sourceQ = sourceByKey.get(key);
-
-                if (!sourceQ) {
-                  const sameId = sourceById.get(Number(savedQ?.id)) ?? [];
-                  const sameType = sameId.find((candidate) => normalizeQuestionType(candidate?.type) === normalizeQuestionType(savedQ?.type));
-                  sourceQ = sameType ?? sameId[0];
-                }
-
-                if (!sourceQ) {
-                  // Saved question with no source match — keep as-is
-                  return {
-                    ...savedQ,
-                    image: savedQ?.image ?? (savedQ as any)?.image_url,
-                  };
-                }
-                consumedSourceQuestions.add(sourceQ);
-
-                const mergedImage = savedQ?.image ?? (savedQ as any)?.image_url ?? sourceQ?.image ?? (sourceQ as any)?.image_url;
-                const mergedQuestion: Question = {
-                  ...sourceQ,
-                  ...savedQ,
-                  image: mergedImage,
-                };
-
-                if (normalizeQuestionType(mergedQuestion.type) !== "QRC") return mergedQuestion;
-
-                const hasSavedKeywords = Array.isArray(savedQ?.reponses_possibles) && savedQ.reponses_possibles.length > 0;
-                const sourceKeywords = Array.isArray(sourceQ?.reponses_possibles) ? sourceQ.reponses_possibles : [];
-                if (!hasSavedKeywords && sourceKeywords.length > 0) {
-                  return { ...mergedQuestion, reponses_possibles: [...sourceKeywords] };
-                }
-
-                return mergedQuestion;
-              });
-
-              // Append any NEW source questions not present in saved data
-              const extraSourceQuestions = sourceQuestions
-                .filter((srcQ) => !consumedSourceQuestions.has(srcQ));
+              // Use mergeQuestionsForMatiere: saved is source of truth,
+              // deleted questions are NOT re-added from source.
+              const mergedQuestions = mergeQuestionsForMatiere(sourceQuestions, savedQuestions);
 
               const merged = {
                 ...sourceMat,
                 ...savedMat,
-                questions: deduplicateQuestions([...mergedQuestions, ...extraSourceQuestions]),
+                questions: deduplicateQuestions(mergedQuestions),
               };
-              // Always preserve texteSupport/texteSource from source (never lose them)
-              merged.texteSupport = sourceMat.texteSupport || savedMat.texteSupport;
-              merged.texteSource = sourceMat.texteSource || savedMat.texteSource;
+              // Saved (admin edit) takes priority; fall back to source if saved is empty
+              merged.texteSupport = savedMat.texteSupport || sourceMat.texteSupport;
+              merged.texteSource = savedMat.texteSource || sourceMat.texteSource;
               return merged;
             }
             // No matching source matiere — still try to find texteSupport from source by nom
@@ -360,12 +329,12 @@ export async function loadSavedExamens(): Promise<ExamenBlanc[]> {
     // On error, return source data (no stale cache)
   }
   
-  // Repair any missing correct flags, then sync across exam types
+  // Repair any missing correct flags (serialization safety net).
+  // NOTE: sync functions are NOT run here after merge — the saved data in DB
+  // was already synced during persistExamens. Running sync again would overwrite
+  // correctly merged admin edits with stale source data.
   repairCorrectFlags(examens);
-  syncVtcTaxiMatieres(examens);
-  syncVtcVaMatieres(examens);
-  syncTaxiTaMatieres(examens);
-  
+
   return examens;
 }
 
@@ -376,18 +345,21 @@ function QuestionEditor({
   onDraftChange,
   onDelete,
   onCancel,
+  examId,
 }: {
   question: Question;
   onSave: (q: Question) => void;
   onDraftChange: (q: Question) => void;
   onDelete: () => void;
   onCancel: () => void;
+  examId: string;
 }) {
   const [enonce, setEnonce] = useState(question.enonce);
   const [qType, setQType] = useState<"QCM" | "QRC">(question?.type as "QCM" | "QRC" || "QCM");
   const [reponseQRC, setReponseQRC] = useState(question.reponseQRC || "");
   const [motsCles, setMotsCles] = useState((question.reponses_possibles || []).join(", "));
   const [choix, setChoix] = useState<Choix[]>(question.choix ? [...question.choix] : []);
+  const [image, setImage] = useState<string | undefined>(question.image);
 
   const toggleType = () => {
     if (qType === "QCM") {
@@ -411,6 +383,7 @@ function QuestionEditor({
       ...question,
       type: qType,
       enonce,
+      image,
     };
 
     if (qType === "QRC") {
@@ -429,7 +402,7 @@ function QuestionEditor({
   useEffect(() => {
     onDraftChange(buildUpdatedQuestion());
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enonce, reponseQRC, motsCles, choix, qType]);
+  }, [enonce, reponseQRC, motsCles, choix, qType, image]);
 
   const handleChoixTexte = (i: number, val: string) => {
     setChoix(prev => prev.map((c, idx) => idx === i ? { ...c, texte: val } : c));
@@ -492,6 +465,15 @@ function QuestionEditor({
           className="text-sm"
         />
       </div>
+
+      {/* Image (optionnel) */}
+      <QuestionImageUpload
+        image={image}
+        context="exam"
+        contextId={examId}
+        questionId={question.id}
+        onImageChange={setImage}
+      />
 
       {/* QRC */}
       {qType === "QRC" && (
@@ -573,11 +555,13 @@ function MatiereEditor({
   matiere,
   onChange,
   examTitre,
+  examId,
   locked,
 }: {
   matiere: Matiere;
   onChange: (m: Matiere) => void;
   examTitre?: string;
+  examId: string;
   locked?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -643,7 +627,6 @@ function MatiereEditor({
   };
 
   const moveQuestion = (qId: number, direction: "up" | "down") => {
-    if (locked) return;
     const idx = questionsSafe.findIndex(q => q.id === qId);
     if (idx < 0) return;
     if (direction === "up" && idx === 0) return;
@@ -652,6 +635,11 @@ function MatiereEditor({
     const swapIdx = direction === "up" ? idx - 1 : idx + 1;
     [newQuestions[idx], newQuestions[swapIdx]] = [newQuestions[swapIdx], newQuestions[idx]];
     onChange({ ...matiere, questions: newQuestions });
+  };
+
+  const moveQuestionTo = (qId: number, targetIndex: number) => {
+    const reordered = moveQuestionToPosition(questionsSafe, qId, targetIndex);
+    onChange({ ...matiere, questions: reordered });
   };
 
   return (
@@ -743,6 +731,7 @@ function MatiereEditor({
                   onDraftChange={saveQuestionDraft}
                     onDelete={() => { if (!locked) deleteQuestion(q.id); }}
                     onCancel={() => setEditingQId(null)}
+                    examId={examId}
                   />
               ) : (
                 <div className="border border-border/40 rounded-xl bg-background hover:bg-muted/10 hover:shadow-md group transition-all duration-200 p-5 space-y-3">
@@ -774,27 +763,41 @@ function MatiereEditor({
                     >
                       <Pencil className="w-4 h-4" />
                     </Button>
-                    <div className={`flex flex-col ${locked ? 'opacity-30 pointer-events-none' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 px-1"
-                        disabled={locked || questionsSafe.indexOf(q) === 0}
-                        onClick={() => moveQuestion(q.id, "up")}
-                        title="Monter"
-                      >
-                        <ArrowUp className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 px-1"
-                        disabled={locked || questionsSafe.indexOf(q) === questionsSafe.length - 1}
-                        onClick={() => moveQuestion(q.id, "down")}
-                        title="Descendre"
-                      >
-                        <ArrowDown className="w-3.5 h-3.5" />
-                      </Button>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex flex-col">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-1"
+                          disabled={questionsSafe.indexOf(q) === 0}
+                          onClick={() => moveQuestion(q.id, "up")}
+                          title="Monter"
+                        >
+                          <ArrowUp className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-1"
+                          disabled={questionsSafe.indexOf(q) === questionsSafe.length - 1}
+                          onClick={() => moveQuestion(q.id, "down")}
+                          title="Descendre"
+                        >
+                          <ArrowDown className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                      {questionsSafe.length > 2 && (
+                        <select
+                          className="h-7 text-xs border rounded px-1 bg-background cursor-pointer"
+                          value={questionsSafe.indexOf(q)}
+                          onChange={(e) => moveQuestionTo(q.id, Number(e.target.value))}
+                          title="Déplacer à la position..."
+                        >
+                          {questionsSafe.map((_, i) => (
+                            <option key={i} value={i}>Pos {i + 1}</option>
+                          ))}
+                        </select>
+                      )}
                     </div>
                   </div>
                   {/* Réponses affichées sous la question */}
@@ -960,18 +963,9 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
 
   const handleMatiereChange = (matiereId: string, updated: Matiere) => {
     setExamens(prev => {
-      const next = prev.map(ex => {
-        if (ex.id !== examenSelId) return ex;
-        return {
-          ...ex,
-          matieres: ex.matieres.map(m => m.id === matiereId ? updated : m),
-        };
-      });
-      // After any edit, sync VTC → TAXI → TA, VTC → VA
-      syncVtcTaxiMatieres(next);
-      syncVtcVaMatieres(next);
-      syncTaxiTaMatieres(next);
-      return next;
+      // Propagate the edit to ALL exams that share this matière ID.
+      // This replaces the old VTC→TAXI sync that could overwrite saved data.
+      return propagateSharedMatiereEdit(prev, matiereId, updated);
     });
   };
 
@@ -1219,6 +1213,7 @@ export default function ExamensBlancsEditor({ onBack, defaultExamenId, pausedExa
                   key={m.id}
                   matiere={m}
                   examTitre={`${examenSel.type} — Examen Blanc N°${examenSel.numero}`}
+                  examId={examenSel.id}
                   onChange={updated => handleMatiereChange(m.id, updated)}
                   locked={isLocked}
                 />

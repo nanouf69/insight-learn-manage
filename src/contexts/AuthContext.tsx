@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from 'react';
+import { createContext, useContext, useEffect, useState, useMemo, ReactNode, useCallback, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppVersionCheck } from '@/hooks/useAppVersionCheck';
@@ -26,6 +26,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const lastProfileUserIdRef = useRef<string | null>(null);
   const manualSignOutRef = useRef(false);
+  const authInitializedRef = useRef(false);
+  const pendingSessionRef = useRef<Session | null | undefined>(undefined);
 
   const fetchProfile = useCallback(async (userId: string, retryCount = 0) => {
     try {
@@ -36,7 +38,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
       if (error) {
         console.error('Failed to fetch profile:', error.message);
-        // Retry once after 2s on network errors
         if (retryCount < 1) {
           setTimeout(() => void fetchProfile(userId, retryCount + 1), 2000);
           return;
@@ -60,7 +61,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const applySession = useCallback((nextSession: Session | null) => {
     setSession(prev => {
-      if (prev?.access_token === nextSession?.access_token) return prev;
+      // Skip update if it's just a token refresh for the same user.
+      // This prevents re-rendering the entire component tree (including active exams)
+      // every 10 minutes when useSessionKeepAlive refreshes the token.
+      if (prev && nextSession && prev.user?.id === nextSession.user?.id) return prev;
       return nextSession;
     });
 
@@ -89,9 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let isActive = true;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
-      if (!isActive) return;
-
+    const handleResolvedAuthState = (event: string, nextSession: Session | null) => {
       if (nextSession?.user) {
         manualSignOutRef.current = false;
         applySession(nextSession);
@@ -118,16 +120,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       manualSignOutRef.current = false;
       clearAuthState();
       setLoading(false);
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (!isActive) return;
+
+      if (!authInitializedRef.current) {
+        pendingSessionRef.current = nextSession;
+        return;
+      }
+
+      handleResolvedAuthState(event, nextSession);
     });
 
     supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
       if (!isActive) return;
-      applySession(initialSession);
+
+      authInitializedRef.current = true;
+      const restoredSession = pendingSessionRef.current !== undefined ? pendingSessionRef.current : initialSession;
+      pendingSessionRef.current = undefined;
+      applySession(restoredSession ?? null);
       setLoading(false);
     });
 
     return () => {
       isActive = false;
+      authInitializedRef.current = false;
+      pendingSessionRef.current = undefined;
       subscription.unsubscribe();
     };
   }, [applySession, clearAuthState]);
@@ -141,8 +160,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAdmin = profile?.role === 'admin';
   useAppVersionCheck(!!user, isAdmin);
 
+  // Stabilize Provider value: only re-render consumers when user/loading/profile
+  // actually change — NOT when session token refreshes (which happens every 10min).
+  // This prevents exam pages from being remounted during token refresh.
+  const contextValue = useMemo(
+    () => ({ user, session, loading, profile, signOut }),
+    [user, session, loading, profile, signOut],
+  );
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, profile, signOut }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
