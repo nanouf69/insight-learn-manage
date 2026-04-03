@@ -266,15 +266,15 @@ serve(async (req) => {
             sent_at: new Date().toISOString(),
           });
           results.push({ id: apprenant.id, email: apprenant.email, success: true });
-          console.log(`[relance-examens] ✅ Sent to ${apprenant.email} (exam in ${daysUntilExam}d, ${pct}%)`);
+          console.log(`[relance-examens] ✅ Sent to ${apprenant.email} (exam in ${daysUntilExam}d)`);
         } else {
           const errText = await sendRes.text();
           console.error(`[relance-examens] ❌ Failed for ${apprenant.email}:`, errText);
           results.push({ id: apprenant.id, email: apprenant.email, success: false, error: errText });
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error(`[relance-examens] Error for ${apprenant.email}:`, err);
-        results.push({ id: apprenant.id, email: apprenant.email, success: false, error: err.message });
+        results.push({ id: apprenant.id, email: apprenant.email, success: false, error: err instanceof Error ? err.message : String(err) });
       }
     }
 
@@ -294,10 +294,10 @@ serve(async (req) => {
       JSON.stringify({ success: true, sent: successCount, failed: failCount, results }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (err) {
+  } catch (err: unknown) {
     console.error("[relance-examens] Fatal error:", err);
     return new Response(
-      JSON.stringify({ error: err.message }),
+      JSON.stringify({ error: err instanceof Error ? err.message : String(err) }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

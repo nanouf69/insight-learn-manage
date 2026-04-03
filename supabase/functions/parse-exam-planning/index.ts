@@ -160,9 +160,9 @@ Ne mets aucune explication, juste le tableau JSON.`
           nom: match.nom,
           prenom: match.prenom,
           date_examen: r.date_examen,
-          heure_passage: r.heure_passage || "09:00",
+          heure_passage: (r as any).heure_passage || "09:00",
           matched: !updateErr
-        });
+        } as any);
       } else {
         notFound.push(r);
       }
@@ -185,7 +185,7 @@ Ne mets aucune explication, juste le tableau JSON.`
       const jour = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // 0=Mon, 6=Sun
 
       // Compute end hour (1h block)
-      const [hh, mm] = u.heure_passage.split(':').map(Number);
+      const [hh, mm] = (u as any).heure_passage.split(':').map(Number);
       const endMinutes = mm + 60;
       const endH = hh + Math.floor(endMinutes / 60);
       const endM = endMinutes % 60;
@@ -198,7 +198,7 @@ Ne mets aucune explication, juste le tableau JSON.`
         formation: "Examen pratique CMA",
         formateur_id: null,
         jour,
-        heure_debut: u.heure_passage,
+        heure_debut: (u as any).heure_passage,
         heure_fin: heureFin,
         semaine_debut: semaineDebut,
       });
@@ -229,9 +229,9 @@ Ne mets aucune explication, juste le tableau JSON.`
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
-  } catch (err) {
+  } catch (err: unknown) {
     console.error("Error:", err);
-    return new Response(JSON.stringify({ error: err.message }), {
+    return new Response(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

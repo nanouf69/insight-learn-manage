@@ -260,9 +260,9 @@ serve(async (req) => {
           console.error(`[relance-non-connectes] ❌ Failed for ${apprenant.email}:`, errText);
           results.push({ id: apprenant.id, email: apprenant.email, success: false, error: errText });
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error(`[relance-non-connectes] Error for ${apprenant.email}:`, err);
-        results.push({ id: apprenant.id, email: apprenant.email, success: false, error: err.message });
+        results.push({ id: apprenant.id, email: apprenant.email, success: false, error: err instanceof Error ? err.message : String(err) });
       }
     }
 
@@ -284,10 +284,10 @@ serve(async (req) => {
       JSON.stringify({ success: true, sent: successCount, failed: failCount, results }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (err) {
+  } catch (err: unknown) {
     console.error("[relance-non-connectes] Fatal error:", err);
     return new Response(
-      JSON.stringify({ error: err.message }),
+      JSON.stringify({ error: err instanceof Error ? err.message : String(err) }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

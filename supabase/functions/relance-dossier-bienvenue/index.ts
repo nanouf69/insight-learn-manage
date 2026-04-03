@@ -120,8 +120,8 @@ Deno.serve(async (req) => {
         } else {
           results.push({ name: `${apprenant.prenom} ${apprenant.nom}`, email: apprenant.email, status: `error: ${sendData.error || 'unknown'}` });
         }
-      } catch (sendErr) {
-        results.push({ name: `${apprenant.prenom} ${apprenant.nom}`, email: apprenant.email, status: `error: ${sendErr.message}` });
+      } catch (sendErr: unknown) {
+        results.push({ name: `${apprenant.prenom} ${apprenant.nom}`, email: apprenant.email, status: `error: ${sendErr instanceof Error ? sendErr.message : String(sendErr)}` });
       }
     }
 
@@ -137,9 +137,9 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Relance dossier bienvenue error:', error);
-    return new Response(JSON.stringify({ success: false, error: error.message }), {
+    return new Response(JSON.stringify({ success: false, error: error instanceof Error ? error.message : String(error) }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

@@ -215,8 +215,9 @@ serve(async (req) => {
 
       if (authError.message.includes("already been registered")) {
         console.log(`${LOG_PREFIX}[${requestId}] Step 11 - Existing user flow (start)`);
-        // Use getUserByEmail instead of listing all users (pagination issue)
-        const { data: existingUserData, error: getUserErr } = await supabaseAdmin.auth.admin.getUserByEmail(email);
+        // List users filtered by email (getUserByEmail doesn't exist in this SDK version)
+        const { data: listData, error: getUserErr } = await supabaseAdmin.auth.admin.listUsers({ filter: `email.eq.${email}` } as any);
+        const existingUserData = listData?.users?.[0] ? { user: listData.users[0] } : null;
 
         if (getUserErr) {
           console.log(`${LOG_PREFIX}[${requestId}] Step 11 - getUserByEmail failed`, { message: getUserErr.message });
