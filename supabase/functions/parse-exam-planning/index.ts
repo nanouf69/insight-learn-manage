@@ -185,7 +185,7 @@ Ne mets aucune explication, juste le tableau JSON.`
       const jour = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // 0=Mon, 6=Sun
 
       // Compute end hour (1h block)
-      const [hh, mm] = u.heure_passage.split(':').map(Number);
+      const [hh, mm] = (u as any).heure_passage.split(':').map(Number);
       const endMinutes = mm + 60;
       const endH = hh + Math.floor(endMinutes / 60);
       const endM = endMinutes % 60;
