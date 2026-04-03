@@ -1650,7 +1650,7 @@ function ExerciceCard({
   onMove: (index: number, direction: "up" | "down") => void;
   onDelete: (id: number) => void;
   onToggle: (id: number) => void;
-  onUpdateQuestions: (id: number, questions: ExerciceQuestion[]) => void;
+  onUpdateQuestions: (id: number, questions: ExerciceQuestion[], deletedQuestionId?: number) => void;
   moduleId: number;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -1673,7 +1673,7 @@ function ExerciceCard({
 
   const confirmDelete = () => {
     if (confirmDeleteQId === null || !item.questions) return;
-    onUpdateQuestions(item.id, item.questions.filter(q => q.id !== confirmDeleteQId));
+    onUpdateQuestions(item.id, item.questions.filter(q => q.id !== confirmDeleteQId), confirmDeleteQId);
     setEditingQId(null);
     setConfirmDeleteQId(null);
     toast.success("Question supprimée avec succès");
@@ -2800,7 +2800,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     toast.success(`${type === "cours" ? "Cours" : "Exercice"} ajouté`);
   };
 
-  const updateExerciceQuestions = (exerciceId: number, questions: ExerciceQuestion[]) => {
+  const updateExerciceQuestions = (exerciceId: number, questions: ExerciceQuestion[], deletedQuestionId?: number) => {
     // Save enonce-based overrides to localStorage for same-session cross-module cache invalidation.
     // DB propagation to sibling modules is handled by syncSharedExercisesToSiblingModules
     // (called after the debounced DB save) to avoid concurrent write races.
@@ -2818,7 +2818,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     setModuleData((prev) => ({
       ...prev,
-      exercices: prev.exercices.map(e => e.id === exerciceId ? { ...e, questions } : e),
+      exercices: prev.exercices.map(e => {
+        if (e.id !== exerciceId) return e;
+        const updated: any = { ...e, questions };
+        // Track deleted question IDs so mergeSourceExercices won't restore them from source
+        if (deletedQuestionId != null) {
+          const existing = Array.isArray((e as any).deletedQuestionIds) ? (e as any).deletedQuestionIds : [];
+          updated.deletedQuestionIds = [...new Set([...existing, deletedQuestionId])];
+        }
+        return updated;
+      }),
     }));
   };
 
