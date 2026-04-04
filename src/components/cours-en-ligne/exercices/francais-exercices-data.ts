@@ -60,6 +60,31 @@ export const FRANCAIS_EXERCICES: {
         { lettre: "B", texte: "-e, -es, -e, -ons, -ez, -ent", correct: true },
         { lettre: "C", texte: "-s, -s, -t, -ons, -ez, -ent" },
       ]},
+      { id: 12, enonce: "Conjuguez « chercher » au présent avec « nous » :", choix: [
+        { lettre: "A", texte: "nous cherchons", correct: true },
+        { lettre: "B", texte: "nous chercheons" },
+        { lettre: "C", texte: "nous cherchions" },
+      ]},
+      { id: 13, enonce: "Conjuguez « finir » au présent avec « ils » :", choix: [
+        { lettre: "A", texte: "ils finissent", correct: true },
+        { lettre: "B", texte: "ils finent" },
+        { lettre: "C", texte: "ils finisent" },
+      ]},
+      { id: 14, enonce: "Conjuguez « prendre » au présent avec « je » :", choix: [
+        { lettre: "A", texte: "je prends", correct: true },
+        { lettre: "B", texte: "je prend" },
+        { lettre: "C", texte: "je prendes" },
+      ]},
+      { id: 15, enonce: "Conjuguez « vouloir » au présent avec « je » :", choix: [
+        { lettre: "A", texte: "je veux", correct: true },
+        { lettre: "B", texte: "je veus" },
+        { lettre: "C", texte: "je voule" },
+      ]},
+      { id: 16, enonce: "Conjuguez « ouvrir » au présent avec « il » :", choix: [
+        { lettre: "A", texte: "il ouvre", correct: true },
+        { lettre: "B", texte: "il ouvrit" },
+        { lettre: "C", texte: "il ouvris" },
+      ]},
       { id: 11, enonce: "Les terminaisons au présent du 2ème groupe sont :", choix: [
         { lettre: "A", texte: "-e, -es, -e, -ons, -ez, -ent" },
         { lettre: "B", texte: "-is, -is, -it, -issons, -issez, -issent", correct: true },
