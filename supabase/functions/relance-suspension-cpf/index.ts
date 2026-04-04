@@ -62,14 +62,19 @@ serve(async (req) => {
       );
     }
 
-    // Check who has NEVER connected
+    // Check who has NEVER connected — per-apprenant to avoid 1000-row limit
     const ids = eligible.map((a: any) => a.id);
-    const { data: connexions } = await supabaseAdmin
-      .from("apprenant_connexions")
-      .select("apprenant_id")
-      .in("apprenant_id", ids);
-
-    const hasConnected = new Set((connexions || []).map((c: any) => c.apprenant_id));
+    const hasConnected = new Set<string>();
+    for (const id of ids) {
+      const { data } = await supabaseAdmin
+        .from("apprenant_connexions")
+        .select("id")
+        .eq("apprenant_id", id)
+        .limit(1);
+      if (data && data.length > 0) {
+        hasConnected.add(id);
+      }
+    }
     const neverConnected = eligible.filter((a: any) => !hasConnected.has(a.id));
 
     console.log(`[relance-non-connectes-post-credentials] ${neverConnected.length} never connected after 7+ days`);

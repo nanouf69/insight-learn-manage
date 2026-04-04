@@ -62,20 +62,17 @@ serve(async (req) => {
       );
     }
 
-    // Get module completion for these apprenants
+    // Get module completion for these apprenants — per-apprenant to avoid 1000-row limit
     const ids = filteredApprenants.map((a: any) => a.id);
-    const { data: completions } = await supabaseAdmin
-      .from("apprenant_module_completion")
-      .select("apprenant_id, module_id")
-      .in("apprenant_id", ids);
-
-    // Build completion map: apprenant_id -> set of completed module_ids
     const completionMap = new Map<string, Set<number>>();
-    for (const c of completions || []) {
-      if (!completionMap.has(c.apprenant_id)) {
-        completionMap.set(c.apprenant_id, new Set());
+    for (const id of ids) {
+      const { data: rows } = await supabaseAdmin
+        .from("apprenant_module_completion")
+        .select("module_id")
+        .eq("apprenant_id", id);
+      if (rows && rows.length > 0) {
+        completionMap.set(id, new Set(rows.map((r: any) => r.module_id)));
       }
-      completionMap.get(c.apprenant_id)!.add(c.module_id);
     }
 
     // Filter: apprenants who completed less than 50% of their authorized modules
