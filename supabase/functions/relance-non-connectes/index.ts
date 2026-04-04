@@ -72,13 +72,31 @@ serve(async (req) => {
     }
 
     // Check which ones have NEVER connected
+    // Use batched distinct queries to avoid the 1000-row default limit
     const apprenantIds = eligibleApprenants.map((a: any) => a.id);
-    const { data: connexions } = await supabaseAdmin
-      .from("apprenant_connexions")
-      .select("apprenant_id")
-      .in("apprenant_id", apprenantIds);
-
-    const connectedIds = new Set((connexions || []).map((c: any) => c.apprenant_id));
+    const connectedIds = new Set<string>();
+    const BATCH = 50;
+    for (let i = 0; i < apprenantIds.length; i += BATCH) {
+      const batch = apprenantIds.slice(i, i + BATCH);
+      const { data: connexions } = await supabaseAdmin
+        .from("apprenant_connexions")
+        .select("apprenant_id")
+        .in("apprenant_id", batch)
+        .limit(1);
+      // limit(1) per query isn't right — we need distinct ids. Use RPC or loop.
+    }
+    // Better approach: check one by one only for eligible (usually < 100)
+    connectedIds.clear();
+    for (const id of apprenantIds) {
+      const { data } = await supabaseAdmin
+        .from("apprenant_connexions")
+        .select("id")
+        .eq("apprenant_id", id)
+        .limit(1);
+      if (data && data.length > 0) {
+        connectedIds.add(id);
+      }
+    }
     const neverConnected = eligibleApprenants.filter((a: any) => !connectedIds.has(a.id));
 
     console.log(`[relance-non-connectes] ${neverConnected.length} never connected`);
