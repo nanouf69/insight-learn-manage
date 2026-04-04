@@ -2312,12 +2312,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         }
 
         if (latestState?.module_data) {
+          const md = latestState.module_data as unknown as ModuleData;
           const hasMatchingSourceFingerprint = latestState.source_fingerprint === sourceFingerprint;
           const shouldForceSourceExercisesRefresh =
             GENERATED_BILAN_MODULE_IDS.has(Number(module.id)) &&
             (!hasMatchingSourceFingerprint || hasDuplicateGeneratedBilanQuestions(md));
 
-          const md = latestState.module_data as unknown as ModuleData;
           const hasValidModuleData =
             Array.isArray(md.cours) &&
             Array.isArray(md.exercices) &&
