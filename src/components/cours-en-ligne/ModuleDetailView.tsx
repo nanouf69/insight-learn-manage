@@ -2044,7 +2044,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
   const buildSourceFingerprint = (data: ModuleData) =>
     JSON.stringify({
-      v: 10,
+      v: 11,
       overrides: getOverridesFingerprint(),
       coursCount: data.cours.length,
       exercicesCount: data.exercices.length,
