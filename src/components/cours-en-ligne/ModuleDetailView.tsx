@@ -1186,7 +1186,7 @@ function getInitialModuleDataRaw(
       nom: "4.BILAN EXERCICES VTC",
       description: "Tous les exercices regroupés par matière. Refaites-les autant de fois que nécessaire pour maîtriser chaque sujet.",
       cours: [],
-      exercices: BILAN_EXERCICES_VTC,
+      exercices: JSON.parse(JSON.stringify(BILAN_EXERCICES_VTC)),
     };
   }
 
@@ -1197,7 +1197,7 @@ function getInitialModuleDataRaw(
       nom: "1.BILAN EXERCICES FORMATION CONTINUE VTC",
       description: "Tous les exercices regroupés par matière (sans Gestion). Refaites-les autant de fois que nécessaire.",
       cours: [],
-      exercices: BILAN_EXERCICES_FC_VTC,
+      exercices: JSON.parse(JSON.stringify(BILAN_EXERCICES_FC_VTC)),
     };
   }
 
@@ -1208,7 +1208,7 @@ function getInitialModuleDataRaw(
       nom: "4.BILAN EXERCICES TAXI",
       description: "Tous les exercices regroupés par matière. Refaites-les autant de fois que nécessaire pour maîtriser chaque sujet.",
       cours: [],
-      exercices: BILAN_EXERCICES_TAXI,
+      exercices: JSON.parse(JSON.stringify(BILAN_EXERCICES_TAXI)),
     };
   }
 
@@ -1219,7 +1219,7 @@ function getInitialModuleDataRaw(
       nom: "4.BILAN EXERCICES TA",
       description: "Tous les exercices regroupés par matière. Refaites-les autant de fois que nécessaire pour maîtriser chaque sujet.",
       cours: [],
-      exercices: BILAN_EXERCICES_TA,
+      exercices: JSON.parse(JSON.stringify(BILAN_EXERCICES_TA)),
     };
   }
 
@@ -1230,7 +1230,7 @@ function getInitialModuleDataRaw(
       nom: "4.BILAN EXERCICES VA",
       description: "Tous les exercices regroupés par matière. Refaites-les autant de fois que nécessaire pour maîtriser chaque sujet.",
       cours: [],
-      exercices: BILAN_EXERCICES_VA,
+      exercices: JSON.parse(JSON.stringify(BILAN_EXERCICES_VA)),
     };
   }
 
@@ -2278,6 +2278,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         if (latestState?.module_data) {
           const hasMatchingSourceFingerprint = latestState.source_fingerprint === sourceFingerprint;
+          const shouldForceSourceExercisesRefresh =
+            !hasMatchingSourceFingerprint &&
+            [4, 9, 27, 29, 81].includes(Number(module.id));
 
           const md = latestState.module_data as unknown as ModuleData;
           const hasValidModuleData =
@@ -2293,6 +2296,32 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             );
 
           if (hasValidModuleData) {
+            if (shouldForceSourceExercisesRefresh) {
+              const resetModuleData = JSON.parse(JSON.stringify(initialData)) as ModuleData;
+              setModuleData(resetModuleData);
+              setDeletedCours([]);
+              setDeletedExercices([]);
+              setLoadedModuleEditorState(true);
+
+              if (!studentOnly) {
+                console.log("[ModuleEditor] Fingerprint mismatch on generated bilan module — resetting exercises from source");
+                supabase.from("module_editor_state").upsert(
+                  [{
+                    module_id: module.id,
+                    module_data: resetModuleData as any,
+                    deleted_cours: [] as any,
+                    deleted_exercices: [] as any,
+                    source_fingerprint: sourceFingerprint,
+                    updated_at: new Date().toISOString(),
+                  }],
+                  { onConflict: "module_id" }
+                ).then(({ error }) => {
+                  if (error) console.error("[ModuleEditor] Generated bilan reset error:", error);
+                });
+              }
+              return;
+            }
+
             // Always load DB data and re-merge with latest source.
             // Even when fingerprint doesn't match (e.g. source version bumped),
             // admin edits in DB still take priority — merge picks up new source
