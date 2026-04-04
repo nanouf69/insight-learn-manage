@@ -2042,9 +2042,39 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     source_fingerprint: string;
   } | null>(null);
 
+  const GENERATED_BILAN_MODULE_IDS = new Set([4, 9, 27, 29, 81]);
+
+  const hasDuplicateGeneratedBilanQuestions = (data: ModuleData | null | undefined) => {
+    if (!data || !GENERATED_BILAN_MODULE_IDS.has(Number(data.id))) return false;
+
+    return (data.exercices ?? []).some((exercise) => {
+      const seenQuestionKeys = new Set<string>();
+
+      return (exercise.questions ?? []).some((question) => {
+        const key = [
+          Number(exercise.id),
+          String(question.enonce ?? "").trim(),
+          String(question.image ?? "").trim(),
+          JSON.stringify((question.choix ?? []).map((choice) => ({
+            lettre: choice.lettre,
+            texte: choice.texte,
+            correct: Boolean(choice.correct),
+          }))),
+        ].join("::");
+
+        if (seenQuestionKeys.has(key)) {
+          return true;
+        }
+
+        seenQuestionKeys.add(key);
+        return false;
+      });
+    });
+  };
+
   const buildSourceFingerprint = (data: ModuleData) =>
     JSON.stringify({
-      v: 11,
+      v: 12,
       overrides: getOverridesFingerprint(),
       coursCount: data.cours.length,
       exercicesCount: data.exercices.length,
@@ -2200,6 +2230,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         if (!hasValidModuleData) return false;
 
+        if (hasDuplicateGeneratedBilanQuestions(parsed.moduleData)) {
+          window.localStorage.removeItem(moduleEditorStorageKey);
+          return false;
+        }
+
         const mergedModuleData: ModuleData = {
           ...parsed.moduleData,
           exercices: mergeSourceExercices(parsed.moduleData.exercices, initialData.exercices),
@@ -2279,8 +2314,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         if (latestState?.module_data) {
           const hasMatchingSourceFingerprint = latestState.source_fingerprint === sourceFingerprint;
           const shouldForceSourceExercisesRefresh =
-            !hasMatchingSourceFingerprint &&
-            [4, 9, 27, 29, 81].includes(Number(module.id));
+            GENERATED_BILAN_MODULE_IDS.has(Number(module.id)) &&
+            (!hasMatchingSourceFingerprint || hasDuplicateGeneratedBilanQuestions(md));
 
           const md = latestState.module_data as unknown as ModuleData;
           const hasValidModuleData =
