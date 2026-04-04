@@ -61,20 +61,19 @@ serve(async (req) => {
     }
 
     // Get latest connexion for each eligible apprenant
+    // Query per apprenant to avoid 1000-row default limit
     const ids = eligible.map((a: any) => a.id);
-    const { data: connexions } = await supabaseAdmin
-      .from("apprenant_connexions")
-      .select("apprenant_id, last_seen_at, started_at")
-      .in("apprenant_id", ids)
-      .order("started_at", { ascending: false });
-
-    // Build map of latest activity per apprenant
     const latestActivity = new Map<string, Date>();
-    for (const c of connexions || []) {
-      const seen = new Date(c.last_seen_at || c.started_at);
-      const current = latestActivity.get(c.apprenant_id);
-      if (!current || seen > current) {
-        latestActivity.set(c.apprenant_id, seen);
+    for (const id of ids) {
+      const { data: rows } = await supabaseAdmin
+        .from("apprenant_connexions")
+        .select("last_seen_at, started_at")
+        .eq("apprenant_id", id)
+        .order("started_at", { ascending: false })
+        .limit(1);
+      if (rows && rows.length > 0) {
+        const seen = new Date(rows[0].last_seen_at || rows[0].started_at);
+        latestActivity.set(id, seen);
       }
     }
 

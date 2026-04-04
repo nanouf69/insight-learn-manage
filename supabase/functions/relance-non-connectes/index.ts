@@ -72,13 +72,19 @@ serve(async (req) => {
     }
 
     // Check which ones have NEVER connected
+    // Query per apprenant to avoid the 1000-row default limit on apprenant_connexions
     const apprenantIds = eligibleApprenants.map((a: any) => a.id);
-    const { data: connexions } = await supabaseAdmin
-      .from("apprenant_connexions")
-      .select("apprenant_id")
-      .in("apprenant_id", apprenantIds);
-
-    const connectedIds = new Set((connexions || []).map((c: any) => c.apprenant_id));
+    const connectedIds = new Set<string>();
+    for (const id of apprenantIds) {
+      const { data } = await supabaseAdmin
+        .from("apprenant_connexions")
+        .select("id")
+        .eq("apprenant_id", id)
+        .limit(1);
+      if (data && data.length > 0) {
+        connectedIds.add(id);
+      }
+    }
     const neverConnected = eligibleApprenants.filter((a: any) => !connectedIds.has(a.id));
 
     console.log(`[relance-non-connectes] ${neverConnected.length} never connected`);
