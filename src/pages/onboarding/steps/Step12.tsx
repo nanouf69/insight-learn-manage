@@ -519,6 +519,21 @@ export default function Step12() {
             <p className="text-lg font-semibold text-gray-900">{dateExamen || '-'}</p>
           </div>
 
+          {/* Signature du stagiaire */}
+          <div className={`border rounded-xl p-5 mb-6 ${signature ? 'border-green-200 bg-green-50' : 'border-blue-200 bg-blue-50'}`}>
+            <div className="flex items-center gap-3 mb-4">
+              <PenTool className="w-5 h-5 text-blue-500" />
+              <h3 className="font-semibold text-gray-900">
+                Votre signature <span className="text-red-500">*</span>
+              </h3>
+            </div>
+            <SignaturePad
+              value={signature}
+              onChange={setSignature}
+              disabled={isSubmitted}
+            />
+          </div>
+
           {/* Confirmation B2 vierge */}
           <div className={`border rounded-xl p-5 mb-6 ${!b2Vierge && isSubmitted === false ? 'border-gray-200 bg-amber-50' : b2Vierge ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
             <div className="flex items-center gap-3 mb-4">
