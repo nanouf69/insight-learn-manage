@@ -299,6 +299,7 @@ export default function Step12() {
               etape_10_documents: localStorage.getItem('onboarding_step10_confirmed') === 'true',
             },
             date_completion: new Date().toISOString(),
+            signature,
           },
         });
         console.log("Dossier bienvenue sauvegardé dans apprenant_documents_completes");
