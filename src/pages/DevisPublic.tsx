@@ -334,41 +334,22 @@ export default function DevisPublic() {
         canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Erreur signature")), "image/png");
       });
 
-      // Upload signature to storage
-      const fileName = `${devis.id}_signature_${Date.now()}.png`;
-      const { error: uploadErr } = await supabase.storage
-        .from("devis")
-        .upload(fileName, signatureBlob, { contentType: "image/png", upsert: true });
-      if (uploadErr) throw uploadErr;
+      // Use edge function (service_role) to upload & update — avoids RLS issues
+      const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-      const { data: urlData } = supabase.storage.from("devis").getPublicUrl(fileName);
+      const formData = new FormData();
+      formData.append("token", token!);
+      formData.append("file", signatureBlob, `${devis.id}_signature_${Date.now()}.png`);
 
-      // Build form data summary
-      const formSummary = {
-        date_permis: datePermis,
-        points_6: points6,
-        sans_permis: sansPermis,
-        refus_restitution: refusRestitution,
-        condamnation: condamnation,
-        casier_vierge: casierVierge,
-        formation_deja: formationDeja,
-        centre_formation: centreFormation,
-        mention_accord: mentionAccord,
-        accept_cgv: acceptCGV,
-        accept_early_start: acceptEarlyStart,
-        signed_at: new Date().toISOString(),
-      };
+      const response = await fetch(`${baseUrl}/functions/v1/upload-devis-signe`, {
+        method: "POST",
+        headers: { apikey },
+        body: formData,
+      });
 
-      // Update devis_envois
-      const { error: updateErr } = await supabase
-        .from("devis_envois")
-        .update({
-          devis_signe_url: urlData.publicUrl,
-          signed_at: new Date().toISOString(),
-          statut: "signe",
-        })
-        .eq("token", token!);
-      if (updateErr) throw updateErr;
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Erreur lors de l'envoi");
 
       setUploaded(true);
       toast.success("Devis signé envoyé avec succès !");
