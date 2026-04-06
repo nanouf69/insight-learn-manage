@@ -99,6 +99,7 @@ import {
   syncSharedExercisesToSiblingModules,
   type ModuleInitialData,
 } from "./shared-exercise-overrides";
+import { resolveOverrideConflict } from "@/components/fournisseurs/quiz-editor-utils";
 
 interface InlineQuizQuestion {
   id: number;
@@ -2212,7 +2213,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         if (!data || data.length === 0) return;
 
-        const overrideMap = new Map<string, { enonce: string; choix: { lettre: string; texte: string; correct?: boolean }[] }>();
+        const overrideMap = new Map<string, { enonce: string; choix: { lettre: string; texte: string; correct?: boolean }[]; updated_at: string }>();
         for (const ov of data) {
           const key = `${ov.section_id}-${ov.question_id}`;
           // Keep latest override only (query is ordered by updated_at desc)
@@ -2220,6 +2221,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             overrideMap.set(key, {
               enonce: ov.enonce,
               choix: ov.choix as { lettre: string; texte: string; correct?: boolean }[],
+              updated_at: ov.updated_at,
             });
           }
         }
@@ -2233,6 +2235,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 .map((q) => {
                   const override = overrideMap.get(`${exo.id}-${q.id}`);
                   if (!override) return q;
+                  // Dernière modification gagne: comparer _editedAt (admin) vs updated_at (fournisseur)
+                  const winner = resolveOverrideConflict((q as any)._editedAt, override.updated_at);
+                  if (winner === "admin") return q;
                   return { ...q, enonce: override.enonce, choix: override.choix };
                 })
                 .filter((q) => q.enonce !== "__DELETED__");
@@ -2574,8 +2579,22 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         9: ["bilan-exercices-taxi"],
         11: ["bilan-examen-taxi"],
       };
-      const targetQuizIds = trainerQuizIdsByModuleId[module.id];
-      if (!targetQuizIds || targetQuizIds.length === 0) return;
+      let targetQuizIds = trainerQuizIdsByModuleId[module.id] || [];
+
+      // Découverte dynamique: aussi récupérer les quiz_ids depuis la DB
+      // pour les modules pas dans le mapping hardcodé
+      try {
+        const { data: dynamicMappings } = await supabase
+          .from("quiz_questions_overrides" as any)
+          .select("quiz_id")
+          .limit(100);
+        if (dynamicMappings && dynamicMappings.length > 0) {
+          const dynamicIds = [...new Set((dynamicMappings as any[]).map((r: any) => r.quiz_id))];
+          targetQuizIds = [...new Set([...targetQuizIds, ...dynamicIds])];
+        }
+      } catch (_) {}
+
+      if (targetQuizIds.length === 0) return;
 
       const newRow = payload.new as any;
       // Only process if it's for the relevant quiz
@@ -2592,13 +2611,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
       if (!data || data.length === 0) return;
 
-      const overrideMap = new Map<string, { enonce: string; choix: { lettre: string; texte: string; correct?: boolean }[] }>();
+      const overrideMap = new Map<string, { enonce: string; choix: { lettre: string; texte: string; correct?: boolean }[]; updated_at: string }>();
       for (const ov of data) {
         const key = `${ov.section_id}-${ov.question_id}`;
         if (!overrideMap.has(key)) {
           overrideMap.set(key, {
             enonce: ov.enonce,
             choix: ov.choix as { lettre: string; texte: string; correct?: boolean }[],
+            updated_at: ov.updated_at,
           });
         }
       }
@@ -2611,6 +2631,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               .map((q) => {
                 const override = overrideMap.get(`${exo.id}-${q.id}`);
                 if (!override) return q;
+                // Dernière modification gagne: comparer _editedAt (admin) vs updated_at (fournisseur)
+                const winner = resolveOverrideConflict((q as any)._editedAt, override.updated_at);
+                if (winner === "admin") return q;
                 return { ...q, enonce: override.enonce, choix: override.choix };
               })
               .filter((q) => q.enonce !== "__DELETED__");
@@ -2939,11 +2962,21 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       }
     }
 
+    const now = new Date().toISOString();
     setModuleData((prev) => ({
       ...prev,
       exercices: prev.exercices.map(e => {
         if (e.id !== exerciceId) return e;
-        const updated: any = { ...e, questions };
+        // Stamp _editedAt on questions that actually changed (for admin vs fournisseur conflict resolution)
+        const stampedQuestions = questions.map(q => {
+          const prevQ = e.questions?.find(pq => pq.id === q.id);
+          const changed = !prevQ ||
+            prevQ.enonce !== q.enonce ||
+            JSON.stringify(prevQ.choix) !== JSON.stringify(q.choix) ||
+            (prevQ as any).image !== (q as any).image;
+          return changed ? { ...q, _editedAt: now } : (q as any)._editedAt ? q : { ...q };
+        });
+        const updated: any = { ...e, questions: stampedQuestions };
         // Track deleted question IDs so mergeSourceExercices won't restore them from source
         if (deletedQuestionId != null) {
           const existing = Array.isArray((e as any).deletedQuestionIds) ? (e as any).deletedQuestionIds : [];

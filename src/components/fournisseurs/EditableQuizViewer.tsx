@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ChevronDown, ChevronUp, CheckCircle2, Edit2, Save, X, Plus, Trash2, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { toggleCorrect as toggleCorrectUtil, validateQuestionEdit, type QuizChoice as UtilQuizChoice } from "./quiz-editor-utils";
 
 interface QuizChoice {
   lettre: string;
@@ -50,9 +51,14 @@ export function EditableQuizViewer({ sections, title, icon = "📝", quizId, fou
   const [editEnonce, setEditEnonce] = useState("");
   const [editChoix, setEditChoix] = useState<QuizChoice[]>([]);
   const [saving, setSaving] = useState(false);
+  const [confirmDeleteKey, setConfirmDeleteKey] = useState<string | null>(null);
+
+  // Guard: ne pas charger ni permettre d'écrire si fournisseurId est vide
+  const canOperate = !!fournisseurId;
 
   // Load overrides from DB
   useEffect(() => {
+    if (!canOperate) return;
     async function load() {
       const { data } = await supabase
         .from("quiz_questions_overrides")
@@ -101,6 +107,7 @@ export function EditableQuizViewer({ sections, title, icon = "📝", quizId, fou
   };
 
   const deleteQuestion = async (sectionId: number, questionId: number) => {
+    if (!canOperate) return;
     setSaving(true);
     try {
       const { error } = await supabase
@@ -144,6 +151,12 @@ export function EditableQuizViewer({ sections, title, icon = "📝", quizId, fou
   };
 
   const saveEdit = async (sectionId: number, questionId: number) => {
+    if (!canOperate) return;
+    const validationError = validateQuestionEdit(editEnonce, editChoix as UtilQuizChoice[]);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
     setSaving(true);
     try {
       const { error } = await supabase
@@ -177,7 +190,7 @@ export function EditableQuizViewer({ sections, title, icon = "📝", quizId, fou
   };
 
   const toggleCorrect = (index: number) => {
-    setEditChoix(prev => prev.map((c, i) => ({ ...c, correct: i === index ? !c.correct : c.correct })));
+    setEditChoix(prev => toggleCorrectUtil(prev as UtilQuizChoice[], index));
   };
 
   const updateChoixTexte = (index: number, texte: string) => {
@@ -333,6 +346,9 @@ export function EditableQuizViewer({ sections, title, icon = "📝", quizId, fou
                       );
                     }
 
+                    const deleteKey = `${section.id}-${q.id}`;
+                    const isConfirmingDelete = confirmDeleteKey === deleteKey;
+
                     return (
                       <div key={q.id} className={`space-y-1.5 group ${isOverridden ? "pl-3 border-l-2 border-amber-400" : ""}`}>
                         <div className="flex items-start justify-between">
@@ -346,9 +362,20 @@ export function EditableQuizViewer({ sections, title, icon = "📝", quizId, fou
                               <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => startEdit(section.id, q)}>
                                 <Edit2 className="w-3.5 h-3.5" />
                               </Button>
-                              <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteQuestion(section.id, q.id)} title="Supprimer la question">
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
+                              {isConfirmingDelete ? (
+                                <>
+                                  <Button size="sm" variant="destructive" className="h-7 text-xs px-2" onClick={() => { deleteQuestion(section.id, q.id); setConfirmDeleteKey(null); }} disabled={saving}>
+                                    Confirmer
+                                  </Button>
+                                  <Button size="sm" variant="ghost" className="h-7 text-xs px-2" onClick={() => setConfirmDeleteKey(null)}>
+                                    Annuler
+                                  </Button>
+                                </>
+                              ) : (
+                                <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setConfirmDeleteKey(deleteKey)} title="Supprimer la question">
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              )}
                               {isOverridden && (
                                 <Button size="icon" variant="ghost" className="h-7 w-7 text-amber-600" onClick={() => resetToOriginal(section.id, q.id)} title="Restaurer l'original">
                                   <X className="w-3.5 h-3.5" />
