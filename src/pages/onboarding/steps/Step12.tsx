@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { filterFutureExamValues } from "@/lib/filterPastDates";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Phone, CheckCircle, Clock, AlertTriangle, User, FileText, Calendar, GraduationCap, Shield, Edit2, Send, Download } from "lucide-react";
+import { ArrowLeft, Phone, CheckCircle, Clock, AlertTriangle, User, FileText, Calendar, GraduationCap, Shield, Edit2, Send, Download, PenTool } from "lucide-react";
+import { SignaturePad } from "@/components/onboarding/SignaturePad";
 import { OnboardingLayout } from "../OnboardingLayout";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -80,6 +81,7 @@ export default function Step12() {
   const [dateExamen, setDateExamen] = useState('');
   const [typeExamen, setTypeExamen] = useState('');
   const [b2Vierge, setB2Vierge] = useState(false);
+  const [signature, setSignature] = useState('');
   
   // Edit dialogs state
   const [editCoordonneesOpen, setEditCoordonneesOpen] = useState(false);
@@ -205,8 +207,13 @@ export default function Step12() {
   };
 
   const handleSubmit = async () => {
-    if (!b2Vierge) {
+      if (!b2Vierge) {
       toast.error("Veuillez confirmer que votre B2 est vierge");
+      return;
+    }
+
+    if (!signature) {
+      toast.error("Veuillez dessiner votre signature avant d'envoyer le dossier");
       return;
     }
 
@@ -292,6 +299,7 @@ export default function Step12() {
               etape_10_documents: localStorage.getItem('onboarding_step10_confirmed') === 'true',
             },
             date_completion: new Date().toISOString(),
+            signature,
           },
         });
         console.log("Dossier bienvenue sauvegardé dans apprenant_documents_completes");
@@ -511,6 +519,21 @@ export default function Step12() {
             <p className="text-lg font-semibold text-gray-900">{dateExamen || '-'}</p>
           </div>
 
+          {/* Signature du stagiaire */}
+          <div className={`border rounded-xl p-5 mb-6 ${signature ? 'border-green-200 bg-green-50' : 'border-blue-200 bg-blue-50'}`}>
+            <div className="flex items-center gap-3 mb-4">
+              <PenTool className="w-5 h-5 text-blue-500" />
+              <h3 className="font-semibold text-gray-900">
+                Votre signature <span className="text-red-500">*</span>
+              </h3>
+            </div>
+            <SignaturePad
+              value={signature}
+              onChange={setSignature}
+              disabled={isSubmitted}
+            />
+          </div>
+
           {/* Confirmation B2 vierge */}
           <div className={`border rounded-xl p-5 mb-6 ${!b2Vierge && isSubmitted === false ? 'border-gray-200 bg-amber-50' : b2Vierge ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
             <div className="flex items-center gap-3 mb-4">
@@ -535,11 +558,11 @@ export default function Step12() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
             <button
               onClick={handleSubmit}
-              disabled={isSubmitting || isSubmitted || !b2Vierge}
+              disabled={isSubmitting || isSubmitted || !b2Vierge || !signature}
               className={`inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-medium text-lg transition-colors ${
                 isSubmitted 
                   ? "bg-green-500 text-white cursor-default" 
-                  : b2Vierge
+                  : (b2Vierge && signature)
                     ? "bg-blue-600 hover:bg-blue-700 text-white"
                     : "bg-gray-300 text-gray-500 cursor-not-allowed"
               }`}
