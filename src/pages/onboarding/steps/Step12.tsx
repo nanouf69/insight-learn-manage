@@ -81,6 +81,7 @@ export default function Step12() {
   const [dateExamen, setDateExamen] = useState('');
   const [typeExamen, setTypeExamen] = useState('');
   const [b2Vierge, setB2Vierge] = useState(false);
+  const [signature, setSignature] = useState('');
   
   // Edit dialogs state
   const [editCoordonneesOpen, setEditCoordonneesOpen] = useState(false);
