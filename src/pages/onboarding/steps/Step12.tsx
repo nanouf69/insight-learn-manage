@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { filterFutureExamValues } from "@/lib/filterPastDates";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Phone, CheckCircle, Clock, AlertTriangle, User, FileText, Calendar, GraduationCap, Shield, Edit2, Send, Download } from "lucide-react";
+import { ArrowLeft, Phone, CheckCircle, Clock, AlertTriangle, User, FileText, Calendar, GraduationCap, Shield, Edit2, Send, Download, PenTool } from "lucide-react";
+import { SignaturePad } from "@/components/onboarding/SignaturePad";
 import { OnboardingLayout } from "../OnboardingLayout";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
