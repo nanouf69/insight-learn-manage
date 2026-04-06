@@ -204,7 +204,7 @@ export function DocumentUploadCard({
 
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('apprenant_id', apprenantId);
+      formData.append('apprenant_id', effectiveApprenantId);
       formData.append('titre', title);
       formData.append('type_document', docId);
 
