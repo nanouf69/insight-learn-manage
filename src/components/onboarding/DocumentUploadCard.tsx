@@ -163,8 +163,43 @@ export function DocumentUploadCard({
     setFileName(file.name);
 
     try {
-      if (!apprenantId) {
-        throw new Error("Dossier apprenant introuvable");
+      let effectiveApprenantId = apprenantId;
+
+      // Si pas d'apprenantId, essayer de le créer automatiquement à partir du localStorage
+      if (!effectiveApprenantId) {
+        const storedId = localStorage.getItem('onboarding_apprenant_id');
+        if (storedId) {
+          effectiveApprenantId = storedId;
+        } else {
+          // Créer l'apprenant à la volée
+          const nom = localStorage.getItem('onboarding_nom')?.trim();
+          const prenom = localStorage.getItem('onboarding_prenom')?.trim();
+          if (!nom || !prenom) {
+            throw new Error("Veuillez d'abord saisir votre nom et prénom sur la page de bienvenue");
+          }
+          const { data: newApprenant, error: insertError } = await supabase
+            .from('apprenants')
+            .insert({
+              nom,
+              prenom,
+              email: localStorage.getItem('onboarding_email')?.trim() || null,
+              telephone: localStorage.getItem('onboarding_telephone')?.trim() || null,
+              adresse: localStorage.getItem('onboarding_adresse')?.trim() || null,
+              code_postal: localStorage.getItem('onboarding_code_postal')?.trim() || null,
+              ville: localStorage.getItem('onboarding_ville')?.trim() || null,
+            })
+            .select()
+            .single();
+          if (insertError || !newApprenant) {
+            throw new Error("Impossible de créer votre dossier. Veuillez retourner à la page de bienvenue.");
+          }
+          effectiveApprenantId = newApprenant.id;
+          localStorage.setItem('onboarding_apprenant_id', newApprenant.id);
+        }
+      }
+
+      if (!effectiveApprenantId) {
+        throw new Error("Dossier apprenant introuvable. Veuillez retourner à la page de bienvenue.");
       }
 
       const formData = new FormData();
