@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { toggleCorrect, validateQuestionEdit, type QuizChoice } from "@/components/fournisseurs/quiz-editor-utils";
+import { toggleCorrect, validateQuestionEdit, resolveOverrideConflict, type QuizChoice } from "@/components/fournisseurs/quiz-editor-utils";
 
 /**
  * Tests for fournisseur EditableQuizViewer bugs:
@@ -184,5 +184,53 @@ describe("Override application logic", () => {
 
     expect(isDeleted(overrides, 1, 5)).toBe(true);
     expect(isDeleted(overrides, 1, 6)).toBe(false);
+  });
+});
+
+// ─── Résolution conflit admin vs fournisseur ─────────────────────
+describe("resolveOverrideConflict: dernière modification gagne", () => {
+  it("fournisseur gagne si admin n'a pas de _editedAt", () => {
+    const result = resolveOverrideConflict(undefined, "2026-04-06T15:00:00Z");
+    expect(result).toBe("fournisseur");
+  });
+
+  it("fournisseur gagne si sa modif est plus récente", () => {
+    const result = resolveOverrideConflict(
+      "2026-04-06T10:00:00Z", // admin a modifié à 10h
+      "2026-04-06T15:00:00Z", // fournisseur a modifié à 15h
+    );
+    expect(result).toBe("fournisseur");
+  });
+
+  it("admin gagne si sa modif est plus récente", () => {
+    const result = resolveOverrideConflict(
+      "2026-04-06T16:00:00Z", // admin a modifié à 16h
+      "2026-04-06T15:00:00Z", // fournisseur a modifié à 15h
+    );
+    expect(result).toBe("admin");
+  });
+
+  it("fournisseur gagne si même timestamp (ex aequo)", () => {
+    const result = resolveOverrideConflict(
+      "2026-04-06T15:00:00Z",
+      "2026-04-06T15:00:00Z",
+    );
+    expect(result).toBe("fournisseur");
+  });
+
+  it("scénario réel: admin modifie Q1 lundi, fournisseur modifie Q1 mardi → fournisseur gagne", () => {
+    const result = resolveOverrideConflict(
+      "2026-04-01T09:00:00Z", // lundi
+      "2026-04-02T14:30:00Z", // mardi
+    );
+    expect(result).toBe("fournisseur");
+  });
+
+  it("scénario réel: fournisseur modifie Q1 lundi, admin corrige Q1 mardi → admin gagne", () => {
+    const result = resolveOverrideConflict(
+      "2026-04-02T14:30:00Z", // mardi
+      "2026-04-01T09:00:00Z", // lundi
+    );
+    expect(result).toBe("admin");
   });
 });

@@ -31,3 +31,23 @@ export function validateQuestionEdit(enonce: string, choix: QuizChoice[]): strin
   if (hasEmptyChoix) return "Tous les choix doivent avoir un texte";
   return null;
 }
+
+/**
+ * Résout le conflit entre une modification admin et un override fournisseur.
+ * Règle: la dernière modification gagne, basée sur les timestamps.
+ *
+ * @param adminEditedAt - timestamp ISO de la dernière modif admin sur cette question (ou undefined)
+ * @param fournisseurUpdatedAt - timestamp ISO de l'override fournisseur
+ * @returns "admin" si l'admin a modifié plus récemment, "fournisseur" sinon
+ */
+export function resolveOverrideConflict(
+  adminEditedAt: string | undefined,
+  fournisseurUpdatedAt: string,
+): "admin" | "fournisseur" {
+  // Pas de timestamp admin → pas de modif admin → fournisseur gagne
+  if (!adminEditedAt) return "fournisseur";
+  // Comparer les timestamps
+  return new Date(adminEditedAt).getTime() > new Date(fournisseurUpdatedAt).getTime()
+    ? "admin"
+    : "fournisseur";
+}
