@@ -558,11 +558,11 @@ export default function Step12() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
             <button
               onClick={handleSubmit}
-              disabled={isSubmitting || isSubmitted || !b2Vierge}
+              disabled={isSubmitting || isSubmitted || !b2Vierge || !signature}
               className={`inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-medium text-lg transition-colors ${
                 isSubmitted 
                   ? "bg-green-500 text-white cursor-default" 
-                  : b2Vierge
+                  : (b2Vierge && signature)
                     ? "bg-blue-600 hover:bg-blue-700 text-white"
                     : "bg-gray-300 text-gray-500 cursor-not-allowed"
               }`}
