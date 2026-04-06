@@ -207,8 +207,13 @@ export default function Step12() {
   };
 
   const handleSubmit = async () => {
-    if (!b2Vierge) {
+      if (!b2Vierge) {
       toast.error("Veuillez confirmer que votre B2 est vierge");
+      return;
+    }
+
+    if (!signature) {
+      toast.error("Veuillez dessiner votre signature avant d'envoyer le dossier");
       return;
     }
 
