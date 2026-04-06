@@ -151,6 +151,65 @@ interface ModuleData {
   exercices: ExerciceItem[];
 }
 
+interface ExerciseQuestionPrompt {
+  question: string;
+  passageTitle?: string;
+  passageBody?: string;
+}
+
+const EXERCISE_PASSAGE_REGEX = /^(TEXTE\s+\d+\s*[—-][^\n]*)\n\n([\s\S]+?)\n\n([^]+)$/s;
+
+const parseExerciseQuestionPrompt = (enonce: string): ExerciseQuestionPrompt => {
+  const normalized = enonce?.trim() ?? "";
+  const match = normalized.match(EXERCISE_PASSAGE_REGEX);
+
+  if (!match) {
+    return { question: normalized };
+  }
+
+  return {
+    passageTitle: match[1].trim(),
+    passageBody: match[2].trim(),
+    question: match[3].trim(),
+  };
+};
+
+const buildExerciseQuestionPrompts = <T extends { enonce: string }>(questions: T[]): ExerciseQuestionPrompt[] => {
+  let currentPassage: Pick<ExerciseQuestionPrompt, "passageTitle" | "passageBody"> | null = null;
+
+  return questions.map((question) => {
+    const parsed = parseExerciseQuestionPrompt(question.enonce);
+
+    if (parsed.passageTitle && parsed.passageBody) {
+      currentPassage = {
+        passageTitle: parsed.passageTitle,
+        passageBody: parsed.passageBody,
+      };
+      return parsed;
+    }
+
+    return currentPassage ? { ...currentPassage, question: parsed.question } : parsed;
+  });
+};
+
+const renderExerciseQuestionPrompt = (questionNumber: number, prompt: ExerciseQuestionPrompt) => (
+  <div className="space-y-2">
+    <p className="font-medium whitespace-pre-line">
+      <span className="inline-flex items-center justify-center bg-primary/10 text-primary text-xs font-bold rounded px-1.5 py-0.5 mr-1.5">
+        Q{questionNumber}
+      </span>
+      {prompt.question}
+    </p>
+
+    {prompt.passageTitle && prompt.passageBody ? (
+      <div className="rounded-lg border border-border bg-muted/40 p-4 text-sm leading-relaxed">
+        <p className="mb-2 font-semibold text-foreground">{prompt.passageTitle}</p>
+        <p className="whitespace-pre-line text-foreground">{prompt.passageBody}</p>
+      </div>
+    ) : null}
+  </div>
+);
+
 interface ModuleDetailViewProps {
   module: { id: number; nom: string };
   onBack: () => void;
@@ -3975,6 +4034,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         {cours.quiz && cours.quiz.length > 0 && (() => {
           const pageIdx = currentPage;
           const isValidated = inlineQuizValidated.has(cours.id);
+          const inlineQuizPrompts = buildExerciseQuestionPrompts(cours.quiz ?? []);
           const allAnswered = cours.quiz!.every(q => inlineQuizAnswers[`inline-${cours.id}-${q.id}`]);
           const correctInline = cours.quiz!.filter(q => {
             const sel = inlineQuizAnswers[`inline-${cours.id}-${q.id}`];
@@ -3991,9 +4051,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 {cours.quiz!.map((q, qi) => {
                   const key = `inline-${cours.id}-${q.id}`;
                   const selected = inlineQuizAnswers[key];
+                  const prompt = inlineQuizPrompts[qi] ?? parseExerciseQuestionPrompt(q.enonce);
                   return (
                     <div key={q.id} id={`inline-q-${cours.id}-${q.id}`} className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : 'bg-background'}`}>
-                      {(() => { const texteMatch = q.enonce.match(/^(TEXTE\s+\d+\s*—[^\n]*\n\n[\s\S]+?\n)\n*(.+)$/s); if (texteMatch) { return (<><div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-2 whitespace-pre-line text-sm leading-relaxed"><p className="font-bold text-blue-700 dark:text-blue-300 mb-2">{texteMatch[1].split('\n')[0]}</p><p>{texteMatch[1].split('\n').slice(2).join('\n').trim()}</p></div><p className="font-medium"><span className="inline-flex items-center justify-center bg-primary/10 text-primary text-xs font-bold rounded px-1.5 py-0.5 mr-1.5">Q{qi + 1}</span>{texteMatch[2]}</p></>); } return <p className="font-medium whitespace-pre-line"><span className="inline-flex items-center justify-center bg-primary/10 text-primary text-xs font-bold rounded px-1.5 py-0.5 mr-1.5">Q{qi + 1}</span>{q.enonce}</p>; })()}
+                      {renderExerciseQuestionPrompt(qi + 1, prompt)}
                       <div className="space-y-1.5 ml-2">
                         {q.choix.map(c => {
                           let bg = "bg-background hover:bg-muted/50 border";
@@ -4143,6 +4204,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       });
       const questionsSafe = (exoQuestionsNormalized ?? []).filter((q: any) => q != null && q?.type != null);
       const exoTotalQ = questionsSafe.length;
+      const questionPrompts = buildExerciseQuestionPrompts(questionsSafe);
       const exoCorrect = questionsSafe.filter((q: any) => {
         const key = `${exo.id}-${q.id}`;
         return isAnswerCorrect(selectedAnswers[key], q as any);
@@ -4237,7 +4299,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 if (isQrc) {
                   return (
                     <div key={q.id} id={`exo-q-${exo.id}-${qi}`} className="space-y-2 p-4 border rounded-lg scroll-mt-20">
-                      {(() => { const texteMatch = q.enonce.match(/^(TEXTE\s+\d+\s*—[^\n]*\n\n[\s\S]+?\n)\n*(.+)$/s); if (texteMatch) { return (<><div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-2 whitespace-pre-line text-sm leading-relaxed"><p className="font-bold text-blue-700 dark:text-blue-300 mb-2">{texteMatch[1].split('\n')[0]}</p><p>{texteMatch[1].split('\n').slice(2).join('\n').trim()}</p></div><p className="font-medium"><span className="inline-flex items-center justify-center bg-primary/10 text-primary text-xs font-bold rounded px-1.5 py-0.5 mr-1.5">Q{qi + 1}</span>{texteMatch[2]}</p></>); } return <p className="font-medium whitespace-pre-line"><span className="inline-flex items-center justify-center bg-primary/10 text-primary text-xs font-bold rounded px-1.5 py-0.5 mr-1.5">Q{qi + 1}</span>{q.enonce}</p>; })()}
+                      {renderExerciseQuestionPrompt(qi + 1, questionPrompts[qi] ?? parseExerciseQuestionPrompt(q.enonce))}
                       <Badge variant="outline" className="text-xs">QRC — Réponse libre</Badge>
                       <Textarea
                         placeholder="Écrivez votre réponse ici..."
@@ -4278,7 +4340,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
                 return (
                   <div key={q.id} id={`exo-q-${exo.id}-${qi}`} className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : ''}`}>
-                    {(() => { const texteMatch = q.enonce.match(/^(TEXTE\s+\d+\s*—[^\n]*\n\n[\s\S]+?\n)\n*(.+)$/s); if (texteMatch) { return (<><div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-2 whitespace-pre-line text-sm leading-relaxed"><p className="font-bold text-blue-700 dark:text-blue-300 mb-2">{texteMatch[1].split('\n')[0]}</p><p>{texteMatch[1].split('\n').slice(2).join('\n').trim()}</p></div><p className="font-medium"><span className="inline-flex items-center justify-center bg-primary/10 text-primary text-xs font-bold rounded px-1.5 py-0.5 mr-1.5">Q{qi + 1}</span>{texteMatch[2]}</p></>); } return <p className="font-medium whitespace-pre-line"><span className="inline-flex items-center justify-center bg-primary/10 text-primary text-xs font-bold rounded px-1.5 py-0.5 mr-1.5">Q{qi + 1}</span>{q.enonce}</p>; })()}
+                    {renderExerciseQuestionPrompt(qi + 1, questionPrompts[qi] ?? parseExerciseQuestionPrompt(q.enonce))}
                     {q.image && (
                       <ImageLightbox src={q.image} alt="Illustration" className="max-h-40 rounded border object-contain ml-2" loading="eager" onError={() => {}} />
                     )}
