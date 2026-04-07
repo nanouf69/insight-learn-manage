@@ -147,10 +147,10 @@ const datesFormations = {
   }
 };
 
-// Dates centralisées
+// Dates centralisées — on affiche TOUTES les dates (y compris passées) pour le dossier apprenant
 import { ALL_DATES_EXAMEN_THEORIQUE, ALL_DATES_EXAMEN_PRATIQUE } from '@/lib/examDatesConfig';
-const datesExamenTheorique = filterFutureExamDates(ALL_DATES_EXAMEN_THEORIQUE);
-const datesExamenPratique = filterFutureDateStrings(ALL_DATES_EXAMEN_PRATIQUE);
+const datesExamenTheorique = ALL_DATES_EXAMEN_THEORIQUE;
+const datesExamenPratique = ALL_DATES_EXAMEN_PRATIQUE;
 
 // Dates de formation continue 2026
 const datesFormationContinue = filterFutureDateStrings([
