@@ -577,19 +577,13 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
                 </div>
                 <div>
                   <Label>Message</Label>
-                  {newEmailBody.includes('<br>') || newEmailBody.includes('<a ') ? (
-                    <div 
-                      className="border rounded-md p-3 min-h-[200px] max-h-[400px] overflow-y-auto text-sm bg-background"
-                      dangerouslySetInnerHTML={{ __html: newEmailBody }}
-                    />
-                  ) : (
-                    <Textarea 
-                      value={newEmailBody} 
-                      onChange={(e) => setNewEmailBody(e.target.value)}
-                      placeholder="Contenu de l'email..."
-                      rows={12}
-                    />
-                  )}
+                  <div 
+                    className="border rounded-md p-3 min-h-[200px] max-h-[400px] overflow-y-auto text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                    contentEditable
+                    suppressContentEditableWarning
+                    dangerouslySetInnerHTML={{ __html: newEmailBody }}
+                    onBlur={(e) => setNewEmailBody(e.currentTarget.innerHTML)}
+                  />
                 </div>
                 <div className="flex justify-end gap-2">
                   <Button variant="outline" onClick={() => { setIsComposeOpen(false); setIsForwarding(false); setForwardTo(""); }}>
