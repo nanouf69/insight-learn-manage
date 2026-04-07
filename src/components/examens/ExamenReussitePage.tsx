@@ -202,9 +202,9 @@ export function ExamenReussitePage() {
     }
   };
 
-  // Dates centralisées
-  const datesExamenTheorique = filterFutureExamDates(ALL_DATES_EXAMEN_REUSSITE);
-  const datesExamenPratique = filterFutureDateStrings(ALL_DATES_EXAMEN_PRATIQUE_NO_ACCENT);
+  // Dates centralisées — on garde TOUTES les dates (y compris passées) pour consulter les résultats
+  const datesExamenTheorique = ALL_DATES_EXAMEN_REUSSITE;
+  const datesExamenPratique = ALL_DATES_EXAMEN_PRATIQUE_NO_ACCENT;
 
   const handleExamDateChange = (date: string) => {
     setSelectedExamDate(date);
