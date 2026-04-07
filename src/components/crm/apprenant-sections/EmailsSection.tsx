@@ -217,6 +217,19 @@ L'équipe Ftransport
     },
   },
   {
+    id: 'consultation-copies',
+    label: '📝 Demande consultation copies examen',
+    icon: '📝',
+    getSubject: (a) => `Demande de consultation des copies examen - ${a.prenom} ${a.nom}`,
+    getBody: (a) => {
+      const typeExamen = (a.type_apprenant || '').toLowerCase().includes('taxi') ? 'TAXI' : 'VTC';
+      const dateExamen = a.date_examen_theorique || '[date à compléter]';
+      const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+
+      return `${a.prenom} ${a.nom}<br><br>${a.adresse || '[adresse]'}<br>${a.code_postal || '[code postal]'} ${a.ville || '[ville]'}<br>${a.telephone || '[téléphone]'}<br>${a.email || '[email]'}<br><br>A l'attention du président de la chambre des métiers et de l'artisanat de Lyon<br>10 rue Paul Montrochet, 69002 Lyon<br><br>A Lyon, le ${today}<br><br><strong>Objet : demande de consultation des copies examen Taxi/VTC</strong><br><br>Madame, Monsieur,<br><br>Je me permets de vous contacter car je souhaiterais consulter mes copies de l'examen <strong>${typeExamen}</strong> qui a eu lieu le <strong>${dateExamen}</strong>.<br><br>Merci de me communiquer un rendez-vous pour que je puisse répondre à cette requête.<br><br>Je vous prie de bien vouloir agréer, Madame, Monsieur, l'assurance de mes salutations distinguées.`;
+    },
+  },
+  {
     id: 'relance-paiement-fc',
     label: '💸 Relance paiement Formation Continue',
     icon: '💸',
