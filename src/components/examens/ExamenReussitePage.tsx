@@ -2342,12 +2342,12 @@ export function ExamenReussitePage() {
                     <TableHead>Nom</TableHead>
                     <TableHead>Prénom</TableHead>
                     <TableHead>Type</TableHead>
+                    <TableHead className="text-center">Admissibilité (Théorie)</TableHead>
+                    <TableHead className="text-center">Admission (Pratique)</TableHead>
                     <TableHead>N° Dossier CMA</TableHead>
                     <TableHead>Téléphone</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Date d'examen</TableHead>
-                    <TableHead className="text-center">Admissibilité (Théorie)</TableHead>
-                    <TableHead className="text-center">Admission (Pratique)</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
