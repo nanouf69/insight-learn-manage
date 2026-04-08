@@ -275,6 +275,7 @@ export function ExamenReussitePage() {
       const { data, error } = await supabase
         .from('apprenants')
         .select('id, nom, prenom, type_apprenant, telephone, email, date_examen_theorique, date_examen_pratique, heure_examen_pratique, resultat_examen, resultat_examen_pratique, numero_dossier_cma')
+        .is('deleted_at', null)
         .order('nom', { ascending: true });
       if (error) throw error;
       return data;
