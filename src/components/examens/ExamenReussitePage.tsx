@@ -2362,20 +2362,6 @@ export function ExamenReussitePage() {
                         <TableCell className="font-medium">{apprenant.nom}</TableCell>
                         <TableCell>{apprenant.prenom}</TableCell>
                         <TableCell><Badge className={tColor}>{tLabel}</Badge></TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={!apprenant.numero_dossier_cma ? "border-destructive text-destructive" : ""}>
-                            {apprenant.numero_dossier_cma || "-"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className={!apprenant.telephone ? "text-destructive font-medium" : ""}>
-                          {apprenant.telephone || "-"}
-                        </TableCell>
-                        <TableCell className={`max-w-[200px] truncate ${!apprenant.email ? "text-destructive font-medium" : ""}`}>
-                          {apprenant.email || "-"}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className="bg-primary/10 text-primary">{apprenant.date_examen_theorique}</Badge>
-                        </TableCell>
                         <TableCell className="text-center">
                           <Select
                             value={resultat || "non_renseigne"}
@@ -2433,6 +2419,20 @@ export function ExamenReussitePage() {
                               <SelectItem value="deplace">📅 Déplacé</SelectItem>
                             </SelectContent>
                           </Select>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={!apprenant.numero_dossier_cma ? "border-destructive text-destructive" : ""}>
+                            {apprenant.numero_dossier_cma || "-"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className={!apprenant.telephone ? "text-destructive font-medium" : ""}>
+                          {apprenant.telephone || "-"}
+                        </TableCell>
+                        <TableCell className={`max-w-[200px] truncate ${!apprenant.email ? "text-destructive font-medium" : ""}`}>
+                          {apprenant.email || "-"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className="bg-primary/10 text-primary">{apprenant.date_examen_theorique}</Badge>
                         </TableCell>
                       </TableRow>
                     );
