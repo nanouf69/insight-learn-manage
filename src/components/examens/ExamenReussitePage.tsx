@@ -263,6 +263,7 @@ export function ExamenReussitePage() {
         .from('apprenants')
         .select('*')
         .ilike('date_examen_theorique', `%${selectedExamDate}%`)
+        .is('deleted_at', null)
         .order('nom', { ascending: true });
       if (error) throw error;
       return data;
