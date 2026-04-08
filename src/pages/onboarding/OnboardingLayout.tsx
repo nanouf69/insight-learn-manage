@@ -134,6 +134,14 @@ export function OnboardingLayout({ children, currentStep, totalSteps, title }: O
               </div>
             </div>
 
+            {/* Warning banner */}
+            <div className="mb-6 rounded-lg border-2 border-red-500 bg-red-50 p-4">
+              <p className="text-red-700 font-bold text-sm sm:text-base text-center">
+                ⚠️ IMPORTANT : Vous devez compléter TOUTES les étapes jusqu'au bout.
+                Votre inscription ne sera validée qu'une fois le PDF téléchargé à la dernière étape (étape {totalSteps}).
+              </p>
+            </div>
+
             {children}
           </div>
         </main>
