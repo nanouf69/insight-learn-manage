@@ -263,6 +263,7 @@ export function ExamenReussitePage() {
         .from('apprenants')
         .select('*')
         .ilike('date_examen_theorique', `%${selectedExamDate}%`)
+        .is('deleted_at', null)
         .order('nom', { ascending: true });
       if (error) throw error;
       return data;
@@ -2341,12 +2342,12 @@ export function ExamenReussitePage() {
                     <TableHead>Nom</TableHead>
                     <TableHead>Prénom</TableHead>
                     <TableHead>Type</TableHead>
+                    <TableHead className="text-center">Admissibilité (Théorie)</TableHead>
+                    <TableHead className="text-center">Admission (Pratique)</TableHead>
                     <TableHead>N° Dossier CMA</TableHead>
                     <TableHead>Téléphone</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Date d'examen</TableHead>
-                    <TableHead className="text-center">Admissibilité (Théorie)</TableHead>
-                    <TableHead className="text-center">Admission (Pratique)</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -2361,20 +2362,6 @@ export function ExamenReussitePage() {
                         <TableCell className="font-medium">{apprenant.nom}</TableCell>
                         <TableCell>{apprenant.prenom}</TableCell>
                         <TableCell><Badge className={tColor}>{tLabel}</Badge></TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={!apprenant.numero_dossier_cma ? "border-destructive text-destructive" : ""}>
-                            {apprenant.numero_dossier_cma || "-"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className={!apprenant.telephone ? "text-destructive font-medium" : ""}>
-                          {apprenant.telephone || "-"}
-                        </TableCell>
-                        <TableCell className={`max-w-[200px] truncate ${!apprenant.email ? "text-destructive font-medium" : ""}`}>
-                          {apprenant.email || "-"}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className="bg-primary/10 text-primary">{apprenant.date_examen_theorique}</Badge>
-                        </TableCell>
                         <TableCell className="text-center">
                           <Select
                             value={resultat || "non_renseigne"}
@@ -2432,6 +2419,20 @@ export function ExamenReussitePage() {
                               <SelectItem value="deplace">📅 Déplacé</SelectItem>
                             </SelectContent>
                           </Select>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={!apprenant.numero_dossier_cma ? "border-destructive text-destructive" : ""}>
+                            {apprenant.numero_dossier_cma || "-"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className={!apprenant.telephone ? "text-destructive font-medium" : ""}>
+                          {apprenant.telephone || "-"}
+                        </TableCell>
+                        <TableCell className={`max-w-[200px] truncate ${!apprenant.email ? "text-destructive font-medium" : ""}`}>
+                          {apprenant.email || "-"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className="bg-primary/10 text-primary">{apprenant.date_examen_theorique}</Badge>
                         </TableCell>
                       </TableRow>
                     );
