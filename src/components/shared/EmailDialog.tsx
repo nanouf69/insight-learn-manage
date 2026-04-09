@@ -349,6 +349,40 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
                   onChange={(e) => setBody(e.target.value)}
                   rows={6}
                 />
+                {/* Pièces jointes */}
+                <div className="space-y-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    onChange={handleAddAttachment}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Paperclip className="w-4 h-4" />
+                    Ajouter une pièce jointe
+                  </Button>
+                  {attachments.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {attachments.map((att, idx) => (
+                        <div key={idx} className="flex items-center gap-1 bg-muted rounded px-2 py-1 text-xs">
+                          <Paperclip className="w-3 h-3" />
+                          <span className="max-w-[150px] truncate">{att.name}</span>
+                          <span className="text-muted-foreground">({(att.file.size / 1024).toFixed(0)} Ko)</span>
+                          <button onClick={() => handleRemoveAttachment(idx)} className="ml-1 hover:text-destructive">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <div className="border-t border-dashed pt-3 mt-2 text-xs text-muted-foreground space-y-0.5">
                   <p className="font-semibold text-foreground">FTRANSPORT</p>
                   <p>Centre de formation VTC & TAXI</p>
