@@ -2130,6 +2130,28 @@ export function ExamenReussitePage() {
                     ))}
                   </div>
                 )}
+                {/* Show occupied days (sessions existantes) */}
+                {occupiedDays.size > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-1">
+                    <span className="text-xs text-muted-foreground">Jours occupés (sessions existantes) :</span>
+                    {[...occupiedDays].sort().filter(d => {
+                      const dd = new Date(d + 'T00:00:00');
+                      return dd >= new Date(planningStartDate + 'T00:00:00') && dd <= new Date(planningEndDate + 'T00:00:00');
+                    }).map(d => {
+                      const session = existingSessions?.find(s => {
+                        const sd = new Date(s.date_debut + 'T00:00:00');
+                        const ed = new Date(s.date_fin + 'T00:00:00');
+                        const dd = new Date(d + 'T00:00:00');
+                        return dd >= sd && dd <= ed;
+                      });
+                      return (
+                        <Badge key={d} variant="outline" className="text-xs gap-1 border-orange-300 text-orange-700">
+                          {formatDateLabel(d)} {session?.nom ? `(${session.nom})` : ''}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {weeks.map((week, wi) => (
