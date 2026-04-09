@@ -835,6 +835,13 @@ export function ExamenReussitePage() {
 
               <p>Madame,</p>
               <p>Veuillez trouver ci-dessous la liste des candidats de notre centre de formation inscrits aux épreuves pratiques (candidats ayant réussi l'examen théorique du ${selectedExamDate}, candidats décalés de la session précédente et candidats en repassage pratique) :</p>
+
+              <div style="display:flex;gap:20px;margin:20px 0;">
+                <div style="flex:1;">
+                  <table style="width:100%;border-collapse:collapse;">
+                    <thead>
+                      <tr><th style="padding:6px 8px;border:1px solid #ccc;background:#fef3c7;text-align:left;">TAXI (${taxiReussis.length})</th></tr>
+                    </thead>
                     <tbody>${taxiRows}${padTaxi}</tbody>
                     <tfoot>
                       <tr><td style="padding:6px 8px;border:1px solid #ccc;background:#fef9e7;font-weight:bold;">Total : ${taxiReussis.length}</td></tr>
