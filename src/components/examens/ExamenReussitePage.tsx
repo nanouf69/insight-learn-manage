@@ -1255,14 +1255,66 @@ export function ExamenReussitePage() {
         return (
           <Card className="border-l-4 border-l-indigo-500">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <GraduationCap className="h-5 w-5 text-indigo-600" />
-                Candidats à former
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <GraduationCap className="h-5 w-5 text-indigo-600" />
+                  Candidats à former
+                </span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button size="sm" variant="outline" className="gap-1.5 text-xs">
+                      <Plus className="h-3.5 w-3.5" />
+                      Ajouter un candidat
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-3" align="end">
+                    <p className="text-xs font-medium mb-2">Rechercher un apprenant :</p>
+                    <Input
+                      placeholder="Nom ou prénom..."
+                      value={searchFormation}
+                      onChange={(e) => setSearchFormation(e.target.value)}
+                      className="h-8 text-sm mb-2"
+                    />
+                    {searchFormation.trim().length >= 2 && (
+                      <ScrollArea className="max-h-48">
+                        <div className="space-y-1">
+                          {(allApprenants || [])
+                            .filter(a =>
+                              !tousAFormer.some(r => r.id === a.id) &&
+                              !(a as any).deleted_at &&
+                              `${a.nom} ${a.prenom}`.toLowerCase().includes(searchFormation.toLowerCase())
+                            )
+                            .slice(0, 10)
+                            .map(a => (
+                              <Button
+                                key={a.id}
+                                variant="ghost"
+                                size="sm"
+                                className="w-full justify-start text-xs h-auto py-1.5"
+                                onClick={() => {
+                                  setExtraCandidatsFormation(prev => [...prev, a.id]);
+                                  setSearchFormation("");
+                                  toast.success(`${a.nom} ${a.prenom} ajouté aux candidats à former`);
+                                }}
+                              >
+                                <Plus className="h-3 w-3 mr-1.5 text-green-600" />
+                                {a.nom} {a.prenom}
+                                <Badge className="ml-auto text-[10px] bg-muted text-muted-foreground">{a.type_apprenant || '-'}</Badge>
+                              </Button>
+                            ))}
+                          {(allApprenants || []).filter(a =>
+                            !tousAFormer.some(r => r.id === a.id) &&
+                            !(a as any).deleted_at &&
+                            `${a.nom} ${a.prenom}`.toLowerCase().includes(searchFormation.toLowerCase())
+                          ).length === 0 && (
+                            <p className="text-xs text-muted-foreground py-2 text-center">Aucun résultat</p>
+                          )}
+                        </div>
+                      </ScrollArea>
+                    )}
+                  </PopoverContent>
+                </Popover>
               </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-6">
-                {/* VTC */}
                 <div className="space-y-3">
                   <h4 className="text-sm font-bold text-blue-700">VTC (Présentiel, E-learning, VA, PA VTC)</h4>
                   <div className="flex flex-wrap gap-2">
