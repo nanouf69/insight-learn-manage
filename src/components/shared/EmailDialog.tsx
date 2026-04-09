@@ -326,7 +326,7 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
                     {isForwarding ? <Forward className="w-4 h-4" /> : <PenLine className="w-4 h-4" />}
                     {isForwarding ? 'Transférer un email' : `Nouveau message à ${contactEmail}`}
                   </h4>
-                  <Button variant="ghost" size="sm" onClick={() => { setComposing(false); setSubject(""); setBody(""); setIsForwarding(false); setForwardTo(""); }}>
+                  <Button variant="ghost" size="sm" onClick={() => { setComposing(false); setSubject(""); setBody(""); setAttachments([]); setIsForwarding(false); setForwardTo(""); }}>
                     Annuler
                   </Button>
                 </div>
