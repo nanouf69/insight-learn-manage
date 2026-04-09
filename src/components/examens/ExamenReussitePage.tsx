@@ -1951,33 +1951,43 @@ export function ExamenReussitePage() {
         const unreservedVTCCount = tousPlanning.filter(a => isVTCType(a.type_apprenant) && !reservedIds.has(a.id)).length;
         const unreservedTAXICount = tousPlanning.filter(a => isTAXIType(a.type_apprenant) && !reservedIds.has(a.id)).length;
 
-        // Generate weekdays Feb 16 - Mar 6
+        // Generate weekdays from configurable date range
+        const toKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         const weekdays: Date[] = [];
-        const start = new Date(2026, 1, 16);
-        const end = new Date(2026, 2, 7);
+        const start = new Date(planningStartDate + 'T00:00:00');
+        const end = new Date(planningEndDate + 'T00:00:00');
         let cur = new Date(start);
-        while (cur < end) {
-          if (cur.getDay() !== 0 && cur.getDay() !== 6) weekdays.push(new Date(cur));
+        while (cur <= end) {
+          const key = toKey(cur);
+          if (cur.getDay() !== 0 && cur.getDay() !== 6 && !excludedDays.includes(key)) {
+            weekdays.push(new Date(cur));
+          }
           cur.setDate(cur.getDate() + 1);
         }
+        // Add extra days
+        extraDays.forEach(ed => {
+          if (!weekdays.some(d => toKey(d) === ed) && !excludedDays.includes(ed)) {
+            weekdays.push(new Date(ed + 'T00:00:00'));
+          }
+        });
+        weekdays.sort((a, b) => a.getTime() - b.getTime());
 
         const totalVTC = tousPlanning.filter(a => isVTCType(a.type_apprenant)).length;
         const totalTAXI = tousPlanning.filter(a => isTAXIType(a.type_apprenant)).length;
         const totalReserved = (reservationsPratique || []).length;
 
-        // Determine which days are VTC, TAXI, or exams
-        // VTC: Feb 16-24 (indices 0-6), TAXI: Feb 25-27 (indices 7-9), Week 3 (Mar 2-6): exams
-        const dayTypeMap: Record<string, 'vtc' | 'taxi' | 'examen'> = {};
-        weekdays.forEach((d) => {
-          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-          const month = d.getMonth();
-          const date = d.getDate();
-          if (month === 2) { // March = exams
-            dayTypeMap[key] = 'examen';
-          } else if (month === 1 && date >= 25) { // Feb 25+
+        // Auto-assign day types: VTC first, then TAXI based on candidate counts (3 per day)
+        const vtcDaysNeeded = Math.ceil(totalVTC / 3);
+        const taxiDaysNeeded = Math.ceil(totalTAXI / 3);
+        const dayTypeMap: Record<string, 'vtc' | 'taxi' | 'libre'> = {};
+        weekdays.forEach((d, i) => {
+          const key = toKey(d);
+          if (i < vtcDaysNeeded) {
+            dayTypeMap[key] = 'vtc';
+          } else if (i < vtcDaysNeeded + taxiDaysNeeded) {
             dayTypeMap[key] = 'taxi';
           } else {
-            dayTypeMap[key] = 'vtc';
+            dayTypeMap[key] = 'libre';
           }
         });
 
@@ -1992,18 +2002,103 @@ export function ExamenReussitePage() {
           }
         });
 
+        const formatDateLabel = (dateStr: string) => {
+          const d = new Date(dateStr + 'T00:00:00');
+          return `${dayNames[d.getDay()]} ${d.getDate()} ${monthNames[d.getMonth()]}`;
+        };
+
         return (
           <Card className="border-l-4 border-l-emerald-500">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-emerald-600" />
-                  Planning formation pratique — Du 16 février au 6 mars 2026
+                  Planning formation pratique
                 </CardTitle>
               <p className="text-sm text-muted-foreground">
-                VTC : {totalVTC} candidats • TAXI : {totalTAXI} candidats • {totalReserved} réservation(s) confirmée(s)
+                VTC : {totalVTC} candidats ({vtcDaysNeeded}j) • TAXI : {totalTAXI} candidats ({taxiDaysNeeded}j) • {totalReserved} réservation(s) confirmée(s) • 3 candidats/jour
               </p>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Date range controls */}
+              <div className="p-4 bg-muted/30 rounded-lg space-y-3">
+                <p className="text-sm font-semibold flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Configuration des dates de formation
+                </p>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs whitespace-nowrap">Du</Label>
+                    <Input 
+                      type="date" 
+                      value={planningStartDate} 
+                      onChange={(e) => setPlanningStartDate(e.target.value)}
+                      className="h-8 text-sm w-40"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs whitespace-nowrap">Au</Label>
+                    <Input 
+                      type="date" 
+                      value={planningEndDate} 
+                      onChange={(e) => setPlanningEndDate(e.target.value)}
+                      className="h-8 text-sm w-40"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs whitespace-nowrap">Ajouter un jour :</Label>
+                    <Input 
+                      type="date" 
+                      value={newExtraDay} 
+                      onChange={(e) => setNewExtraDay(e.target.value)}
+                      className="h-8 text-sm w-40"
+                    />
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="h-8 text-xs gap-1"
+                      disabled={!newExtraDay}
+                      onClick={() => {
+                        if (newExtraDay && !extraDays.includes(newExtraDay)) {
+                          setExtraDays(prev => [...prev, newExtraDay]);
+                          setNewExtraDay("");
+                          toast.success(`Jour ajouté : ${formatDateLabel(newExtraDay)}`);
+                        }
+                      }}
+                    >
+                      <Plus className="h-3 w-3" /> Ajouter
+                    </Button>
+                  </div>
+                </div>
+                {/* Show excluded days */}
+                {excludedDays.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    <span className="text-xs text-muted-foreground">Jours supprimés :</span>
+                    {excludedDays.map(d => (
+                      <Badge key={d} variant="outline" className="text-xs gap-1 border-red-300 text-red-700">
+                        {formatDateLabel(d)}
+                        <button onClick={() => setExcludedDays(prev => prev.filter(x => x !== d))} className="hover:text-red-900">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                {/* Show extra days */}
+                {extraDays.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-1">
+                    <span className="text-xs text-muted-foreground">Jours ajoutés :</span>
+                    {extraDays.map(d => (
+                      <Badge key={d} variant="outline" className="text-xs gap-1 border-green-300 text-green-700">
+                        {formatDateLabel(d)}
+                        <button onClick={() => setExtraDays(prev => prev.filter(x => x !== d))} className="hover:text-green-900">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {weeks.map((week, wi) => (
                 <div key={wi}>
                   <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Semaine {wi + 1}</h4>
