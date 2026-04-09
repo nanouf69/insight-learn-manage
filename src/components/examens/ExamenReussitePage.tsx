@@ -1992,7 +1992,7 @@ export function ExamenReussitePage() {
         let cur = new Date(start);
         while (cur <= end) {
           const key = toKey(cur);
-          if (cur.getDay() !== 0 && cur.getDay() !== 6 && !excludedDays.includes(key)) {
+          if (cur.getDay() !== 0 && cur.getDay() !== 6 && !excludedDays.includes(key) && !occupiedDays.has(key)) {
             weekdays.push(new Date(cur));
           }
           cur.setDate(cur.getDate() + 1);
