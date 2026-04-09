@@ -105,6 +105,7 @@ export function ExamenReussitePage() {
   const [excludedDays, setExcludedDays] = useState<string[]>([]);
   const [extraDays, setExtraDays] = useState<string[]>([]);
   const [newExtraDay, setNewExtraDay] = useState("");
+  const [planningConfigLoaded, setPlanningConfigLoaded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const planningFileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
