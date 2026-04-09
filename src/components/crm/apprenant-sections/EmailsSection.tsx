@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Mail, Send, Inbox, Clock, Plus, Search, RefreshCw, Loader2, FileText, Forward } from "lucide-react";
+import { useState, useRef, type ChangeEvent } from "react";
+import { Mail, Send, Inbox, Clock, Plus, Search, RefreshCw, Loader2, FileText, Forward, Paperclip, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +34,13 @@ interface EmailRecord {
   received_at: string | null;
   sent_at: string | null;
   created_at: string;
+}
+
+interface AttachmentFile {
+  file: File;
+  name: string;
+  contentType: string;
+  contentBytes: string;
 }
 
 // Email de l'organisme pour la synchronisation Outlook
@@ -253,6 +260,8 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   const [forwardTo, setForwardTo] = useState("");
   const [isForwarding, setIsForwarding] = useState(false);
+  const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -343,9 +352,77 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
     },
   });
 
+  const resetComposeState = () => {
+    setSelectedTemplate("");
+    setNewEmailSubject("");
+    setNewEmailBody("");
+    setIsForwarding(false);
+    setForwardTo("");
+    setAttachments([]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const readFileAsBase64 = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = typeof reader.result === 'string' ? reader.result.split(',')[1] ?? '' : '';
+        resolve(result);
+      };
+      reader.onerror = () => reject(new Error(`Impossible de lire ${file.name}`));
+      reader.readAsDataURL(file);
+    });
+
+  const handleAddAttachment = async (event: ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(event.target.files || []);
+    if (selectedFiles.length === 0) return;
+
+    const maxSize = 10 * 1024 * 1024;
+    const validFiles = selectedFiles.filter((file) => {
+      if (file.size > maxSize) {
+        toast({
+          title: "Fichier trop volumineux",
+          description: `${file.name} dépasse 10 Mo.`,
+          variant: "destructive",
+        });
+        return false;
+      }
+      return true;
+    });
+
+    try {
+      const nextAttachments = await Promise.all(
+        validFiles.map(async (file) => ({
+          file,
+          name: file.name,
+          contentType: file.type || 'application/octet-stream',
+          contentBytes: await readFileAsBase64(file),
+        })),
+      );
+
+      setAttachments((current) => [...current, ...nextAttachments]);
+    } catch (error: any) {
+      toast({
+        title: "Erreur de lecture",
+        description: error.message || "Impossible d'ajouter la pièce jointe",
+        variant: "destructive",
+      });
+    } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleRemoveAttachment = (index: number) => {
+    setAttachments((current) => current.filter((_, currentIndex) => currentIndex !== index));
+  };
+
   // Send email mutation
   const sendMutation = useMutation({
-    mutationFn: async ({ subject, body }: { subject: string; body: string }) => {
+    mutationFn: async ({ subject, body, attachments }: { subject: string; body: string; attachments: AttachmentFile[] }) => {
       if (!apprenant.email) {
         throw new Error("L'apprenant n'a pas d'adresse email");
       }
@@ -358,6 +435,11 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
           to: apprenant.email,
           subject,
           body,
+          attachments: attachments.map((attachment) => ({
+            name: attachment.name,
+            contentType: attachment.contentType,
+            contentBytes: attachment.contentBytes,
+          })),
         },
       });
 
@@ -367,9 +449,7 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['emails', apprenant.id] });
       setIsComposeOpen(false);
-      setNewEmailSubject("");
-      setNewEmailBody("");
-      setSelectedTemplate("");
+      resetComposeState();
       toast({
         title: "Email envoyé",
         description: `Email envoyé à ${apprenant.email}`,
@@ -416,7 +496,7 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
       });
       return;
     }
-    sendMutation.mutate({ subject: newEmailSubject, body: newEmailBody });
+    sendMutation.mutate({ subject: newEmailSubject, body: newEmailBody, attachments });
   };
 
   const handleTemplateSelect = (templateId: string) => {
@@ -456,6 +536,11 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
           to: forwardTo.trim(),
           subject: newEmailSubject,
           body: newEmailBody,
+          attachments: attachments.map((attachment) => ({
+            name: attachment.name,
+            contentType: attachment.contentType,
+            contentBytes: attachment.contentBytes,
+          })),
         },
       });
       if (error) throw error;
@@ -467,15 +552,13 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
         recipients: [forwardTo.trim()],
         type: 'sent',
         is_read: true,
+        has_attachments: attachments.length > 0,
         sent_at: new Date().toISOString(),
         apprenant_id: apprenant.id,
       });
       toast({ title: "Email transféré", description: `Email transféré à ${forwardTo}` });
       setIsComposeOpen(false);
-      setIsForwarding(false);
-      setForwardTo("");
-      setNewEmailSubject("");
-      setNewEmailBody("");
+      resetComposeState();
       queryClient.invalidateQueries({ queryKey: ['emails', apprenant.id] });
     } catch (err: any) {
       toast({ title: "Erreur", description: err.message, variant: "destructive" });
@@ -511,11 +594,7 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
           <Dialog open={isComposeOpen} onOpenChange={(open) => {
             setIsComposeOpen(open);
             if (!open) {
-              setSelectedTemplate("");
-              setNewEmailSubject("");
-              setNewEmailBody("");
-              setIsForwarding(false);
-              setForwardTo("");
+              resetComposeState();
             }
           }}>
             <DialogTrigger asChild>
@@ -585,8 +664,42 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
                     onBlur={(e) => setNewEmailBody(e.currentTarget.innerHTML)}
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label>Pièces jointes</Label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    onChange={handleAddAttachment}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="gap-2"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Paperclip className="w-4 h-4" />
+                    Ajouter une pièce jointe
+                  </Button>
+                  <p className="text-xs text-muted-foreground">Maximum 10 Mo par fichier.</p>
+                  {attachments.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {attachments.map((attachment, index) => (
+                        <div key={`${attachment.name}-${index}`} className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-2 py-1 text-xs">
+                          <Paperclip className="w-3 h-3" />
+                          <span className="max-w-[220px] truncate">{attachment.name}</span>
+                          <span className="text-muted-foreground">({Math.max(1, Math.round(attachment.file.size / 1024))} Ko)</span>
+                          <button type="button" onClick={() => handleRemoveAttachment(index)} className="text-muted-foreground transition-colors hover:text-foreground">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => { setIsComposeOpen(false); setIsForwarding(false); setForwardTo(""); }}>
+                  <Button variant="outline" onClick={() => { setIsComposeOpen(false); resetComposeState(); }}>
                     Annuler
                   </Button>
                   <Button 
