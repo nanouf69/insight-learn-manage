@@ -285,6 +285,7 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
         setComposing(false);
         setSubject("");
         setBody("");
+        setAttachments([]);
         setIsForwarding(false);
         setForwardTo("");
         queryClient.invalidateQueries({ queryKey: [queryKey, contactEmail] });
