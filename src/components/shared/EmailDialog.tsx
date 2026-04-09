@@ -133,7 +133,34 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
     }
   };
 
-  const handleSendDraft = async () => {
+  const handleAddAttachment = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    const maxSize = 10 * 1024 * 1024; // 10MB per file
+    for (const file of Array.from(files)) {
+      if (file.size > maxSize) {
+        toast.error(`${file.name} dépasse 10 Mo`);
+        continue;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = (reader.result as string).split(',')[1];
+        setAttachments(prev => [...prev, {
+          file,
+          name: file.name,
+          contentType: file.type || 'application/octet-stream',
+          contentBytes: base64,
+        }]);
+      };
+      reader.readAsDataURL(file);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleRemoveAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
     await handleSend();
     if (editingDraftId) {
       await supabase.from('emails').delete().eq('id', editingDraftId);
