@@ -779,7 +779,15 @@ export function ExamenReussitePage() {
           !reussisTheorique.some(r => r.id === a.id) &&
           !paRpApprenants.some(r => r.id === a.id)
         );
-        const reussisLettre = [...reussisTheorique, ...paRpApprenants, ...deplacesApprenantsCMA];
+        // Candidats ayant échoué l'examen pratique à la session précédente
+        const echouesPratiqueCMA = (allApprenants || []).filter(a =>
+          (a as any).resultat_examen_pratique === 'non' &&
+          !(a as any).deleted_at &&
+          !reussisTheorique.some(r => r.id === a.id) &&
+          !paRpApprenants.some(r => r.id === a.id) &&
+          !deplacesApprenantsCMA.some(r => r.id === a.id)
+        );
+        const reussisLettre = [...reussisTheorique, ...paRpApprenants, ...deplacesApprenantsCMA, ...echouesPratiqueCMA];
 
 
         const getCategorieCMA = (type: string | null) => {
@@ -821,12 +829,12 @@ export function ExamenReussitePage() {
                 <a href="mailto:audrey.crevier@cma-auvergnerhonealpes.fr">audrey.crevier@cma-auvergnerhonealpes.fr</a></p>
               </div>
 
-              <p><strong>Objet :</strong> Liste des candidats ayant reussi l'examen du ${selectedExamDate}</p>
+              <p><strong>Objet :</strong> Liste des candidats inscrits aux épreuves pratiques — Examen du ${selectedExamDate}</p>
               <p><strong>Dates de passage pratique :</strong> ${selectedDatePratique}</p>
               ${dateDebutText ? `<p><strong>Début souhaité des passages :</strong> à partir du ${dateDebutText}</p>` : ''}
 
               <p>Madame,</p>
-              <p>Veuillez trouver ci-dessous la liste des candidats de notre centre de formation ayant reussi l'examen theorique du ${selectedExamDate} :</p>
+              <p>Veuillez trouver ci-dessous la liste des candidats de notre centre de formation inscrits aux épreuves pratiques (candidats ayant réussi l'examen théorique du ${selectedExamDate}, candidats décalés de la session précédente et candidats en repassage pratique) :</p>
 
               <div style="display:flex;gap:20px;margin:20px 0;">
                 <div style="flex:1;">
@@ -889,7 +897,7 @@ export function ExamenReussitePage() {
                 action: 'send',
                 userEmail: 'contact@ftransport.fr',
                 to: 'audrey.crevier@cma-auvergnerhonealpes.fr',
-                subject: `Liste candidats reçus - Examen du ${selectedExamDate}${dateDebutText}`,
+                subject: `Liste candidats inscrits épreuves pratiques - Examen du ${selectedExamDate}${dateDebutText}`,
                 body: htmlBody,
                 requestReadReceipt: true,
               },
@@ -910,9 +918,9 @@ export function ExamenReussitePage() {
                 ? ` - Début souhaité : ${formatDateFR(dateDebutPratique, { day: 'numeric', month: 'long', year: 'numeric' })}`
                 : '';
               await supabase.from('emails').insert({
-                subject: `Liste candidats reçus - Examen du ${selectedExamDate}${dateDebutTextForSubject}`,
+                subject: `Liste candidats inscrits épreuves pratiques - Examen du ${selectedExamDate}${dateDebutTextForSubject}`,
                 body_html: htmlBody,
-                body_preview: `Liste des ${reussisLettre.length} candidats reçus à l'examen du ${selectedExamDate}`,
+                body_preview: `Liste des ${reussisLettre.length} candidats inscrits aux épreuves pratiques - Examen du ${selectedExamDate}`,
                 sender_email: 'contact@ftransport.fr',
                 recipients: ['audrey.crevier@cma-auvergnerhonealpes.fr'],
                 type: 'sent',
@@ -966,7 +974,7 @@ export function ExamenReussitePage() {
                         <AlertDialogDescription asChild>
                           <div className="space-y-3 text-sm">
                             <p><strong>Destinataire :</strong> audrey.crevier@cma-auvergnerhonealpes.fr</p>
-                            <p><strong>Objet :</strong> Liste candidats reçus - Examen du {selectedExamDate}</p>
+                            <p><strong>Objet :</strong> Liste candidats inscrits épreuves pratiques - Examen du {selectedExamDate}</p>
                             <p><strong>Dates pratique :</strong> {selectedDatePratique}</p>
                             {dateDebutPratique && (
                               <p><strong>Début souhaité des passages :</strong> à partir du {formatDateFR(dateDebutPratique, { day: 'numeric', month: 'long', year: 'numeric' })}</p>
@@ -1126,8 +1134,15 @@ export function ExamenReussitePage() {
           !reussisFormation.some(r => r.id === a.id) &&
           !paFormation.some(r => r.id === a.id)
         );
-        // tousAFormer inclut les déplacés (ils apparaissent aussi dans leur propre section "Décalés")
-        const tousAFormer = [...reussisFormation, ...paFormation, ...deplacesFormation];
+        // Candidats ayant échoué l'examen pratique (repassage pratique)
+        const echouesPratiqueFormation = (allApprenants || []).filter(a =>
+          (a as any).resultat_examen_pratique === 'non' &&
+          !reussisFormation.some(r => r.id === a.id) &&
+          !paFormation.some(r => r.id === a.id) &&
+          !deplacesFormation.some(r => r.id === a.id)
+        );
+        // tousAFormer inclut les déplacés et les échoués pratique
+        const tousAFormer = [...reussisFormation, ...paFormation, ...deplacesFormation, ...echouesPratiqueFormation];
 
         const isVTC = (type: string | null) => {
           if (!type) return false;
