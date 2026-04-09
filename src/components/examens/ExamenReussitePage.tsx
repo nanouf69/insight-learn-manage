@@ -829,7 +829,7 @@ export function ExamenReussitePage() {
                 <a href="mailto:audrey.crevier@cma-auvergnerhonealpes.fr">audrey.crevier@cma-auvergnerhonealpes.fr</a></p>
               </div>
 
-              <p><strong>Objet :</strong> Liste des candidats ayant reussi l'examen du ${selectedExamDate}</p>
+              <p><strong>Objet :</strong> Liste des candidats inscrits aux épreuves pratiques — Examen du ${selectedExamDate}</p>
               <p><strong>Dates de passage pratique :</strong> ${selectedDatePratique}</p>
               ${dateDebutText ? `<p><strong>Début souhaité des passages :</strong> à partir du ${dateDebutText}</p>` : ''}
 
