@@ -1214,25 +1214,30 @@ export function ExamenReussitePage() {
         };
 
         // Tous les candidats à former : réussis (pas les RP) — sans filtre sur la date pratique
+        // Exclure les candidats déjà formés (présents dans une session pratique)
+        const dejaFormesSet = new Set(dejaFormesPratique || []);
         const paTypes = ['pa-vtc', 'pa-taxi'];
         const rpTypes = ['rp-vtc', 'rp-taxi'];
         const reussisFormation = apprenants?.filter(a => 
           (a as any).resultat_examen === 'oui' && 
-          !rpTypes.includes((a.type_apprenant || '').toLowerCase())
+          !rpTypes.includes((a.type_apprenant || '').toLowerCase()) &&
+          !dejaFormesSet.has(a.id)
         ) || [];
         const paFormation = (allApprenants || []).filter(a => 
           paTypes.includes((a.type_apprenant || '').toLowerCase()) && 
           a.date_examen_theorique?.includes(selectedExamDate) &&
           (a as any).resultat_examen === 'oui' &&
-          !reussisFormation.some(r => r.id === a.id)
+          !reussisFormation.some(r => r.id === a.id) &&
+          !dejaFormesSet.has(a.id)
         );
         // Candidats déplacés à la prochaine session (sessions pratiques précédentes)
         const deplacesFormation = (allApprenants || []).filter(a =>
           (deplacesSessionPratique || []).includes(a.id) &&
           !reussisFormation.some(r => r.id === a.id) &&
-          !paFormation.some(r => r.id === a.id)
+          !paFormation.some(r => r.id === a.id) &&
+          !dejaFormesSet.has(a.id)
         );
-        // Candidats ayant échoué l'examen pratique (repassage pratique)
+        // Candidats ayant échoué l'examen pratique (repassage pratique) — ceux-ci doivent repasser, ne pas les exclure
         const echouesPratiqueFormation = (allApprenants || []).filter(a =>
           (a as any).resultat_examen_pratique === 'non' &&
           !reussisFormation.some(r => r.id === a.id) &&
