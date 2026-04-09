@@ -21,14 +21,52 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Eye, Edit } from "lucide-react";
 
+// Trouve la date d'examen la plus récente passée (ou la première à venir)
+function getDefaultExamDate(): string {
+  const MONTH_MAP: Record<string, number> = {
+    janvier: 0, février: 1, fevrier: 1, mars: 2, avril: 3,
+    mai: 4, juin: 5, juillet: 6, août: 7, septembre: 8,
+    octobre: 9, novembre: 10, décembre: 11, decembre: 11,
+  };
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  let lastPast = ALL_DATES_EXAMEN_REUSSITE[0].date;
+  for (const d of ALL_DATES_EXAMEN_REUSSITE) {
+    const m = d.date.match(/(\d{1,2})\s+(\w+)\s+(\d{4})/);
+    if (!m) continue;
+    const dt = new Date(Number(m[3]), MONTH_MAP[m[2].toLowerCase()] ?? 0, Number(m[1]));
+    if (dt <= today) lastPast = d.date;
+  }
+  return lastPast;
+}
+
+function getDefaultPratiqueDate(): string {
+  const MONTH_MAP: Record<string, number> = {
+    janvier: 0, février: 1, fevrier: 1, mars: 2, avril: 3,
+    mai: 4, juin: 5, juillet: 6, août: 7, septembre: 8,
+    octobre: 9, novembre: 10, décembre: 11, decembre: 11,
+  };
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  let lastPast = ALL_DATES_EXAMEN_PRATIQUE_NO_ACCENT[0];
+  for (const str of ALL_DATES_EXAMEN_PRATIQUE_NO_ACCENT) {
+    const matches = [...str.matchAll(/(\d{1,2})\s+(\w+)\s+(\d{4})/gi)];
+    if (matches.length === 0) continue;
+    const last = matches[matches.length - 1];
+    const dt = new Date(Number(last[3]), MONTH_MAP[last[2].toLowerCase()] ?? 0, Number(last[1]));
+    if (dt <= today) lastPast = str;
+  }
+  return lastPast;
+}
+
 export function ExamenReussitePage() {
   const [search, setSearch] = useState("");
   const [repassageSearch, setRepassageSearch] = useState("");
   const [repassageList, setRepassageList] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
-  const [selectedExamDate, setSelectedExamDate] = useState("27 janvier 2026");
-  const [selectedDatePratique, setSelectedDatePratique] = useState("Du 23 fevrier au 6 mars 2026");
+  const [selectedExamDate, setSelectedExamDate] = useState(getDefaultExamDate);
+  const [selectedDatePratique, setSelectedDatePratique] = useState(getDefaultPratiqueDate);
   const [dateDebutPratique, setDateDebutPratique] = useState("");
   const [sendingCMAEmail, setSendingCMAEmail] = useState(false);
   const [sendingVTCPratique, setSendingVTCPratique] = useState(false);
