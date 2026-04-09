@@ -208,6 +208,7 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
         setComposing(false);
         setSubject("");
         setBody("");
+        setAttachments([]);
         queryClient.invalidateQueries({ queryKey: [queryKey, contactEmail] });
       } else {
         throw new Error("Échec de l'envoi");
