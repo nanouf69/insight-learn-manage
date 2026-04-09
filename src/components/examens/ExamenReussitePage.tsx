@@ -57,6 +57,10 @@ export function ExamenReussitePage() {
   const [previewBody, setPreviewBody] = useState('');
   const [previewRecipients, setPreviewRecipients] = useState<any[]>([]);
   const [previewTab, setPreviewTab] = useState<string>('preview');
+  const [extraCandidatsCMA, setExtraCandidatsCMA] = useState<string[]>([]);
+  const [searchCMA, setSearchCMA] = useState("");
+  const [extraCandidatsFormation, setExtraCandidatsFormation] = useState<string[]>([]);
+  const [searchFormation, setSearchFormation] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const planningFileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
@@ -787,7 +791,15 @@ export function ExamenReussitePage() {
           !paRpApprenants.some(r => r.id === a.id) &&
           !deplacesApprenantsCMA.some(r => r.id === a.id)
         );
-        const reussisLettre = [...reussisTheorique, ...paRpApprenants, ...deplacesApprenantsCMA, ...echouesPratiqueCMA];
+        // Extra candidats ajoutés manuellement
+        const extraCMA = (allApprenants || []).filter(a =>
+          extraCandidatsCMA.includes(a.id) &&
+          !reussisTheorique.some(r => r.id === a.id) &&
+          !paRpApprenants.some(r => r.id === a.id) &&
+          !deplacesApprenantsCMA.some(r => r.id === a.id) &&
+          !echouesPratiqueCMA.some(r => r.id === a.id)
+        );
+        const reussisLettre = [...reussisTheorique, ...paRpApprenants, ...deplacesApprenantsCMA, ...echouesPratiqueCMA, ...extraCMA];
 
 
         const getCategorieCMA = (type: string | null) => {
@@ -1044,13 +1056,77 @@ export function ExamenReussitePage() {
                   placeholder="Date de début souhaitée"
                 />
               </div>
+              {/* Ajouter un candidat manuellement */}
+              <div className="mb-4">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button size="sm" variant="outline" className="gap-1.5 text-xs">
+                      <Plus className="h-3.5 w-3.5" />
+                      Ajouter un candidat
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-3" align="start">
+                    <p className="text-xs font-medium mb-2">Rechercher un apprenant :</p>
+                    <Input
+                      placeholder="Nom ou prénom..."
+                      value={searchCMA}
+                      onChange={(e) => setSearchCMA(e.target.value)}
+                      className="h-8 text-sm mb-2"
+                    />
+                    {searchCMA.trim().length >= 2 && (
+                      <ScrollArea className="max-h-48">
+                        <div className="space-y-1">
+                          {(allApprenants || [])
+                            .filter(a =>
+                              !reussisLettre.some(r => r.id === a.id) &&
+                              !(a as any).deleted_at &&
+                              `${a.nom} ${a.prenom}`.toLowerCase().includes(searchCMA.toLowerCase())
+                            )
+                            .slice(0, 10)
+                            .map(a => (
+                              <Button
+                                key={a.id}
+                                variant="ghost"
+                                size="sm"
+                                className="w-full justify-start text-xs h-auto py-1.5"
+                                onClick={() => {
+                                  setExtraCandidatsCMA(prev => [...prev, a.id]);
+                                  setSearchCMA("");
+                                  toast.success(`${a.nom} ${a.prenom} ajouté à la lettre CMA`);
+                                }}
+                              >
+                                <Plus className="h-3 w-3 mr-1.5 text-green-600" />
+                                {a.nom} {a.prenom}
+                                <Badge className="ml-auto text-[10px] bg-muted text-muted-foreground">{a.type_apprenant || '-'}</Badge>
+                              </Button>
+                            ))}
+                          {(allApprenants || []).filter(a =>
+                            !reussisLettre.some(r => r.id === a.id) &&
+                            !(a as any).deleted_at &&
+                            `${a.nom} ${a.prenom}`.toLowerCase().includes(searchCMA.toLowerCase())
+                          ).length === 0 && (
+                            <p className="text-xs text-muted-foreground py-2 text-center">Aucun résultat</p>
+                          )}
+                        </div>
+                      </ScrollArea>
+                    )}
+                  </PopoverContent>
+                </Popover>
+              </div>
               {reussisLettre.length > 0 && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <h4 className="text-sm font-semibold mb-2 text-amber-700">TAXI ({taxiReussis.length})</h4>
                     <div className="space-y-1">
                       {taxiReussis.map(a => (
-                        <div key={a.id} className="text-sm px-2 py-1 bg-amber-50 rounded">{a.nom} {a.prenom}</div>
+                        <div key={a.id} className="text-sm px-2 py-1 bg-amber-50 rounded flex items-center justify-between">
+                          <span>{a.nom} {a.prenom}</span>
+                          {extraCandidatsCMA.includes(a.id) && (
+                            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setExtraCandidatsCMA(prev => prev.filter(id => id !== a.id))}>
+                              <X className="h-3 w-3 text-red-500" />
+                            </Button>
+                          )}
+                        </div>
                       ))}
                       {taxiReussis.length === 0 && <p className="text-xs text-muted-foreground">Aucun</p>}
                     </div>
@@ -1059,7 +1135,14 @@ export function ExamenReussitePage() {
                     <h4 className="text-sm font-semibold mb-2 text-blue-700">VTC ({vtcReussis.length})</h4>
                     <div className="space-y-1">
                       {vtcReussis.map(a => (
-                        <div key={a.id} className="text-sm px-2 py-1 bg-blue-50 rounded">{a.nom} {a.prenom}</div>
+                        <div key={a.id} className="text-sm px-2 py-1 bg-blue-50 rounded flex items-center justify-between">
+                          <span>{a.nom} {a.prenom}</span>
+                          {extraCandidatsCMA.includes(a.id) && (
+                            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setExtraCandidatsCMA(prev => prev.filter(id => id !== a.id))}>
+                              <X className="h-3 w-3 text-red-500" />
+                            </Button>
+                          )}
+                        </div>
                       ))}
                       {vtcReussis.length === 0 && <p className="text-xs text-muted-foreground">Aucun</p>}
                     </div>
@@ -1141,8 +1224,16 @@ export function ExamenReussitePage() {
           !paFormation.some(r => r.id === a.id) &&
           !deplacesFormation.some(r => r.id === a.id)
         );
+        // Extra candidats ajoutés manuellement
+        const extraFormation = (allApprenants || []).filter(a =>
+          extraCandidatsFormation.includes(a.id) &&
+          !reussisFormation.some(r => r.id === a.id) &&
+          !paFormation.some(r => r.id === a.id) &&
+          !deplacesFormation.some(r => r.id === a.id) &&
+          !echouesPratiqueFormation.some(r => r.id === a.id)
+        );
         // tousAFormer inclut les déplacés et les échoués pratique
-        const tousAFormer = [...reussisFormation, ...paFormation, ...deplacesFormation, ...echouesPratiqueFormation];
+        const tousAFormer = [...reussisFormation, ...paFormation, ...deplacesFormation, ...echouesPratiqueFormation, ...extraFormation];
 
         const isVTC = (type: string | null) => {
           if (!type) return false;
@@ -1164,9 +1255,65 @@ export function ExamenReussitePage() {
         return (
           <Card className="border-l-4 border-l-indigo-500">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <GraduationCap className="h-5 w-5 text-indigo-600" />
-                Candidats à former
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <GraduationCap className="h-5 w-5 text-indigo-600" />
+                  Candidats à former
+                </span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button size="sm" variant="outline" className="gap-1.5 text-xs">
+                      <Plus className="h-3.5 w-3.5" />
+                      Ajouter un candidat
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-3" align="end">
+                    <p className="text-xs font-medium mb-2">Rechercher un apprenant :</p>
+                    <Input
+                      placeholder="Nom ou prénom..."
+                      value={searchFormation}
+                      onChange={(e) => setSearchFormation(e.target.value)}
+                      className="h-8 text-sm mb-2"
+                    />
+                    {searchFormation.trim().length >= 2 && (
+                      <ScrollArea className="max-h-48">
+                        <div className="space-y-1">
+                          {(allApprenants || [])
+                            .filter(a =>
+                              !tousAFormer.some(r => r.id === a.id) &&
+                              !(a as any).deleted_at &&
+                              `${a.nom} ${a.prenom}`.toLowerCase().includes(searchFormation.toLowerCase())
+                            )
+                            .slice(0, 10)
+                            .map(a => (
+                              <Button
+                                key={a.id}
+                                variant="ghost"
+                                size="sm"
+                                className="w-full justify-start text-xs h-auto py-1.5"
+                                onClick={() => {
+                                  setExtraCandidatsFormation(prev => [...prev, a.id]);
+                                  setSearchFormation("");
+                                  toast.success(`${a.nom} ${a.prenom} ajouté aux candidats à former`);
+                                }}
+                              >
+                                <Plus className="h-3 w-3 mr-1.5 text-green-600" />
+                                {a.nom} {a.prenom}
+                                <Badge className="ml-auto text-[10px] bg-muted text-muted-foreground">{a.type_apprenant || '-'}</Badge>
+                              </Button>
+                            ))}
+                          {(allApprenants || []).filter(a =>
+                            !tousAFormer.some(r => r.id === a.id) &&
+                            !(a as any).deleted_at &&
+                            `${a.nom} ${a.prenom}`.toLowerCase().includes(searchFormation.toLowerCase())
+                          ).length === 0 && (
+                            <p className="text-xs text-muted-foreground py-2 text-center">Aucun résultat</p>
+                          )}
+                        </div>
+                      </ScrollArea>
+                    )}
+                  </PopoverContent>
+                </Popover>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -1348,6 +1495,11 @@ export function ExamenReussitePage() {
                             </TableCell>
                             <TableCell className="text-center">
                               <div className="flex items-center justify-center gap-1">
+                                {extraCandidatsFormation.includes(a.id) && (
+                                  <Button variant="ghost" size="icon" className="h-7 w-7" title="Retirer" onClick={() => setExtraCandidatsFormation(prev => prev.filter(id => id !== a.id))}>
+                                    <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                                  </Button>
+                                )}
                                 {hasReservation && (
                                   <AlertDialog>
                                     <AlertDialogTrigger asChild>
@@ -1591,6 +1743,11 @@ export function ExamenReussitePage() {
                             </TableCell>
                             <TableCell className="text-center">
                               <div className="flex items-center justify-center gap-1">
+                                {extraCandidatsFormation.includes(a.id) && (
+                                  <Button variant="ghost" size="icon" className="h-7 w-7" title="Retirer" onClick={() => setExtraCandidatsFormation(prev => prev.filter(id => id !== a.id))}>
+                                    <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                                  </Button>
+                                )}
                                 {hasReservation && (
                                   <AlertDialog>
                                     <AlertDialogTrigger asChild>
