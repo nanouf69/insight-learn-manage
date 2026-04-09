@@ -791,7 +791,15 @@ export function ExamenReussitePage() {
           !paRpApprenants.some(r => r.id === a.id) &&
           !deplacesApprenantsCMA.some(r => r.id === a.id)
         );
-        const reussisLettre = [...reussisTheorique, ...paRpApprenants, ...deplacesApprenantsCMA, ...echouesPratiqueCMA];
+        // Extra candidats ajoutés manuellement
+        const extraCMA = (allApprenants || []).filter(a =>
+          extraCandidatsCMA.includes(a.id) &&
+          !reussisTheorique.some(r => r.id === a.id) &&
+          !paRpApprenants.some(r => r.id === a.id) &&
+          !deplacesApprenantsCMA.some(r => r.id === a.id) &&
+          !echouesPratiqueCMA.some(r => r.id === a.id)
+        );
+        const reussisLettre = [...reussisTheorique, ...paRpApprenants, ...deplacesApprenantsCMA, ...echouesPratiqueCMA, ...extraCMA];
 
 
         const getCategorieCMA = (type: string | null) => {
