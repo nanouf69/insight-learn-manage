@@ -1594,7 +1594,7 @@ export function ExamenReussitePage() {
                   </div>
                   <div className="mt-3 p-3 bg-blue-50 rounded-lg space-y-1">
                     <p className="text-sm font-bold text-blue-800">Total VTC à former : {vtcList.length}</p>
-                    <p className="text-sm text-blue-700">4 candidats/jour → <strong>{joursVTC} jour(s)</strong> de formation nécessaires</p>
+                    <p className="text-sm text-blue-700">3 candidats/jour → <strong>{joursVTC} jour(s)</strong> de formation nécessaires</p>
                   </div>
                 </div>
 
