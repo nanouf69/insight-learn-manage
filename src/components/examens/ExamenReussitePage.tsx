@@ -1134,8 +1134,15 @@ export function ExamenReussitePage() {
           !reussisFormation.some(r => r.id === a.id) &&
           !paFormation.some(r => r.id === a.id)
         );
-        // tousAFormer inclut les déplacés (ils apparaissent aussi dans leur propre section "Décalés")
-        const tousAFormer = [...reussisFormation, ...paFormation, ...deplacesFormation];
+        // Candidats ayant échoué l'examen pratique (repassage pratique)
+        const echouesPratiqueFormation = (allApprenants || []).filter(a =>
+          (a as any).resultat_examen_pratique === 'non' &&
+          !reussisFormation.some(r => r.id === a.id) &&
+          !paFormation.some(r => r.id === a.id) &&
+          !deplacesFormation.some(r => r.id === a.id)
+        );
+        // tousAFormer inclut les déplacés et les échoués pratique
+        const tousAFormer = [...reussisFormation, ...paFormation, ...deplacesFormation, ...echouesPratiqueFormation];
 
         const isVTC = (type: string | null) => {
           if (!type) return false;
