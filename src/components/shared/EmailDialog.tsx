@@ -37,6 +37,8 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
   const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
   const [forwardTo, setForwardTo] = useState("");
   const [isForwarding, setIsForwarding] = useState(false);
+  const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
   const { data: emails = [] } = useQuery({
