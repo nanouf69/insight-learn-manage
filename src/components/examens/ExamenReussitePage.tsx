@@ -1315,6 +1315,10 @@ export function ExamenReussitePage() {
                   </PopoverContent>
                 </Popover>
               </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-6">
+                {/* VTC */}
                 <div className="space-y-3">
                   <h4 className="text-sm font-bold text-blue-700">VTC (Présentiel, E-learning, VA, PA VTC)</h4>
                   <div className="flex flex-wrap gap-2">
