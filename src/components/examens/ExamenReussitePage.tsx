@@ -897,7 +897,7 @@ export function ExamenReussitePage() {
                 action: 'send',
                 userEmail: 'contact@ftransport.fr',
                 to: 'audrey.crevier@cma-auvergnerhonealpes.fr',
-                subject: `Liste candidats reçus - Examen du ${selectedExamDate}${dateDebutText}`,
+                subject: `Liste candidats inscrits épreuves pratiques - Examen du ${selectedExamDate}${dateDebutText}`,
                 body: htmlBody,
                 requestReadReceipt: true,
               },
@@ -918,9 +918,9 @@ export function ExamenReussitePage() {
                 ? ` - Début souhaité : ${formatDateFR(dateDebutPratique, { day: 'numeric', month: 'long', year: 'numeric' })}`
                 : '';
               await supabase.from('emails').insert({
-                subject: `Liste candidats reçus - Examen du ${selectedExamDate}${dateDebutTextForSubject}`,
+                subject: `Liste candidats inscrits épreuves pratiques - Examen du ${selectedExamDate}${dateDebutTextForSubject}`,
                 body_html: htmlBody,
-                body_preview: `Liste des ${reussisLettre.length} candidats reçus à l'examen du ${selectedExamDate}`,
+                body_preview: `Liste des ${reussisLettre.length} candidats inscrits aux épreuves pratiques - Examen du ${selectedExamDate}`,
                 sender_email: 'contact@ftransport.fr',
                 recipients: ['audrey.crevier@cma-auvergnerhonealpes.fr'],
                 type: 'sent',
@@ -974,7 +974,7 @@ export function ExamenReussitePage() {
                         <AlertDialogDescription asChild>
                           <div className="space-y-3 text-sm">
                             <p><strong>Destinataire :</strong> audrey.crevier@cma-auvergnerhonealpes.fr</p>
-                            <p><strong>Objet :</strong> Liste candidats reçus - Examen du {selectedExamDate}</p>
+                            <p><strong>Objet :</strong> Liste candidats inscrits épreuves pratiques - Examen du {selectedExamDate}</p>
                             <p><strong>Dates pratique :</strong> {selectedDatePratique}</p>
                             {dateDebutPratique && (
                               <p><strong>Début souhaité des passages :</strong> à partir du {formatDateFR(dateDebutPratique, { day: 'numeric', month: 'long', year: 'numeric' })}</p>
