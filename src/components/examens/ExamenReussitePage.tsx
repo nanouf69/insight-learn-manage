@@ -1079,7 +1079,7 @@ export function ExamenReussitePage() {
                           {(allApprenants || [])
                             .filter(a =>
                               !reussisLettre.some(r => r.id === a.id) &&
-                              !a.deleted_at &&
+                              !(a as any).deleted_at &&
                               `${a.nom} ${a.prenom}`.toLowerCase().includes(searchCMA.toLowerCase())
                             )
                             .slice(0, 10)
@@ -1102,7 +1102,7 @@ export function ExamenReussitePage() {
                             ))}
                           {(allApprenants || []).filter(a =>
                             !reussisLettre.some(r => r.id === a.id) &&
-                            !a.deleted_at &&
+                            !(a as any).deleted_at &&
                             `${a.nom} ${a.prenom}`.toLowerCase().includes(searchCMA.toLowerCase())
                           ).length === 0 && (
                             <p className="text-xs text-muted-foreground py-2 text-center">Aucun résultat</p>
