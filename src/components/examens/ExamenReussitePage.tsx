@@ -2083,6 +2083,12 @@ export function ExamenReussitePage() {
         // Auto-assign day types: VTC first, then TAXI based on candidate counts (3 per day)
         const vtcDaysNeeded = Math.ceil(totalVTC / 3);
         const taxiDaysNeeded = Math.ceil(totalTAXI / 3);
+        const vtcDaysAvailable = Math.min(vtcDaysNeeded, weekdays.length);
+        const taxiDaysAvailable = Math.min(taxiDaysNeeded, Math.max(0, weekdays.length - vtcDaysAvailable));
+        const vtcPlaces = vtcDaysAvailable * 3;
+        const taxiPlaces = taxiDaysAvailable * 3;
+        const vtcRestant = Math.max(0, totalVTC - vtcPlaces);
+        const taxiRestant = Math.max(0, totalTAXI - taxiPlaces);
         const dayTypeMap: Record<string, 'vtc' | 'taxi' | 'libre'> = {};
         weekdays.forEach((d, i) => {
           const key = toKey(d);
@@ -2121,6 +2127,15 @@ export function ExamenReussitePage() {
               <p className="text-sm text-muted-foreground">
                 VTC : {totalVTC} candidats ({vtcDaysNeeded}j) • TAXI : {totalTAXI} candidats ({taxiDaysNeeded}j) • {totalReserved} réservation(s) confirmée(s) • 3 candidats/jour
               </p>
+              {(vtcRestant > 0 || taxiRestant > 0) && (
+                <p className="text-sm font-bold text-destructive mt-1">
+                  ⚠️ Jours insuffisants — 
+                  {vtcRestant > 0 && <span> {vtcRestant} VTC restant(s)</span>}
+                  {vtcRestant > 0 && taxiRestant > 0 && <span> et</span>}
+                  {taxiRestant > 0 && <span> {taxiRestant} TAXI restant(s)</span>}
+                  {' '}ne rentrent pas dans le planning !
+                </p>
+              )}
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Date range controls */}
