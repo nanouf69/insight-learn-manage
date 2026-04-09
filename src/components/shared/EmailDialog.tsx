@@ -177,6 +177,11 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
     setSending(true);
     try {
       const htmlBody = body.replace(/\n/g, '<br>');
+      const graphAttachments = attachments.map(a => ({
+        name: a.name,
+        contentType: a.contentType,
+        contentBytes: a.contentBytes,
+      }));
       const { data, error } = await supabase.functions.invoke('sync-outlook-emails', {
         body: {
           action: 'send',
@@ -184,6 +189,7 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
           to: contactEmail,
           subject,
           body: htmlBody,
+          attachments: graphAttachments,
         },
       });
       if (error) throw error;
