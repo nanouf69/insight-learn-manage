@@ -1237,12 +1237,14 @@ export function ExamenReussitePage() {
           !paFormation.some(r => r.id === a.id) &&
           !dejaFormesSet.has(a.id)
         );
-        // Candidats ayant échoué l'examen pratique (repassage pratique) — ceux-ci doivent repasser, ne pas les exclure
+        // Candidats ayant échoué l'examen pratique (repassage pratique)
+        // Mais s'ils ont déjà été présents en session pratique, on ne les remet pas à former
         const echouesPratiqueFormation = (allApprenants || []).filter(a =>
           (a as any).resultat_examen_pratique === 'non' &&
           !reussisFormation.some(r => r.id === a.id) &&
           !paFormation.some(r => r.id === a.id) &&
-          !deplacesFormation.some(r => r.id === a.id)
+          !deplacesFormation.some(r => r.id === a.id) &&
+          !dejaFormesSet.has(a.id)
         );
         // Extra candidats ajoutés manuellement
         const extraFormation = (allApprenants || []).filter(a =>
@@ -1250,7 +1252,8 @@ export function ExamenReussitePage() {
           !reussisFormation.some(r => r.id === a.id) &&
           !paFormation.some(r => r.id === a.id) &&
           !deplacesFormation.some(r => r.id === a.id) &&
-          !echouesPratiqueFormation.some(r => r.id === a.id)
+          !echouesPratiqueFormation.some(r => r.id === a.id) &&
+          !dejaFormesSet.has(a.id)
         );
         // tousAFormer inclut les déplacés et les échoués pratique
         const tousAFormer = [...reussisFormation, ...paFormation, ...deplacesFormation, ...echouesPratiqueFormation, ...extraFormation];
