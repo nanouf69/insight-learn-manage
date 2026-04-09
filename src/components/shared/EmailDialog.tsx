@@ -224,6 +224,7 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
     setComposing(false);
     setSubject("");
     setBody("");
+    setAttachments([]);
     setSelectedEmail(null);
     setEditingDraftId(null);
     setIsForwarding(false);
@@ -253,6 +254,11 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
     setSending(true);
     try {
       const htmlBody = body.replace(/\n/g, '<br>');
+      const graphAttachments = attachments.map(a => ({
+        name: a.name,
+        contentType: a.contentType,
+        contentBytes: a.contentBytes,
+      }));
       const { data, error } = await supabase.functions.invoke('sync-outlook-emails', {
         body: {
           action: 'send',
@@ -260,6 +266,7 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
           to: forwardTo.trim(),
           subject,
           body: htmlBody,
+          attachments: graphAttachments,
         },
       });
       if (error) throw error;
