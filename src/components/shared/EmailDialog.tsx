@@ -161,6 +161,7 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
     setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
+  const handleSendDraft = async () => {
     await handleSend();
     if (editingDraftId) {
       await supabase.from('emails').delete().eq('id', editingDraftId);
