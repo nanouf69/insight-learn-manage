@@ -1728,6 +1728,45 @@ export type Database = {
         }
         Relationships: []
       }
+      planning_pratique_config: {
+        Row: {
+          created_at: string
+          date_pratique: string
+          exam_date: string
+          excluded_days: string[]
+          extra_candidats: string[]
+          extra_days: string[]
+          id: string
+          planning_end_date: string
+          planning_start_date: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_pratique: string
+          exam_date: string
+          excluded_days?: string[]
+          extra_candidats?: string[]
+          extra_days?: string[]
+          id?: string
+          planning_end_date: string
+          planning_start_date: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_pratique?: string
+          exam_date?: string
+          excluded_days?: string[]
+          extra_candidats?: string[]
+          extra_days?: string[]
+          id?: string
+          planning_end_date?: string
+          planning_start_date?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
