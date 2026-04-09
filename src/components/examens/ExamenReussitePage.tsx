@@ -61,6 +61,12 @@ export function ExamenReussitePage() {
   const [searchCMA, setSearchCMA] = useState("");
   const [extraCandidatsFormation, setExtraCandidatsFormation] = useState<string[]>([]);
   const [searchFormation, setSearchFormation] = useState("");
+  // Planning pratique - dates configurables
+  const [planningStartDate, setPlanningStartDate] = useState("2026-02-16");
+  const [planningEndDate, setPlanningEndDate] = useState("2026-03-06");
+  const [excludedDays, setExcludedDays] = useState<string[]>([]);
+  const [extraDays, setExtraDays] = useState<string[]>([]);
+  const [newExtraDay, setNewExtraDay] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const planningFileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
