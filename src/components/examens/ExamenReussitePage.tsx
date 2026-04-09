@@ -341,6 +341,39 @@ export function ExamenReussitePage() {
     },
   });
 
+  // Fetch existing sessions (théorique = formation continue, etc.) to auto-exclude from planning
+  const { data: existingSessions } = useQuery({
+    queryKey: ['sessions-for-planning-exclusion', planningStartDate, planningEndDate],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('id, date_debut, date_fin, type_session, nom')
+        .gte('date_fin', planningStartDate)
+        .lte('date_debut', planningEndDate);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Compute days occupied by existing sessions (formation continue, théorique, etc.)
+  const occupiedDays = useMemo(() => {
+    if (!existingSessions) return new Set<string>();
+    const days = new Set<string>();
+    for (const session of existingSessions) {
+      const start = new Date(session.date_debut + 'T00:00:00');
+      const end = new Date(session.date_fin + 'T00:00:00');
+      let cur = new Date(start);
+      while (cur <= end) {
+        if (cur.getDay() !== 0 && cur.getDay() !== 6) {
+          const key = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}-${String(cur.getDate()).padStart(2, '0')}`;
+          days.add(key);
+        }
+        cur.setDate(cur.getDate() + 1);
+      }
+    }
+    return days;
+  }, [existingSessions]);
+
   // Fetch uploaded PDF files
   const { data: examFiles, refetch: refetchFiles } = useQuery({
     queryKey: ['exam-result-files'],
