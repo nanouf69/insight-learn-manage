@@ -92,17 +92,31 @@ async function fetchEmails(
   return data.value || [];
 }
 
+interface EmailAttachment {
+  name: string;
+  contentType: string;
+  contentBytes: string; // base64
+}
+
 async function sendEmail(
   accessToken: string,
   userEmail: string,
   to: string,
   subject: string,
   body: string,
-  requestReadReceipt: boolean = false
+  requestReadReceipt: boolean = false,
+  attachments: EmailAttachment[] = []
 ): Promise<boolean> {
   const url = `https://graph.microsoft.com/v1.0/users/${userEmail}/sendMail`;
 
-  const emailData = {
+  const graphAttachments = attachments.map(att => ({
+    "@odata.type": "#microsoft.graph.fileAttachment",
+    name: att.name,
+    contentType: att.contentType,
+    contentBytes: att.contentBytes,
+  }));
+
+  const emailData: any = {
     message: {
       subject,
       body: {
@@ -121,6 +135,10 @@ async function sendEmail(
     },
     saveToSentItems: true,
   };
+
+  if (graphAttachments.length > 0) {
+    emailData.message.attachments = graphAttachments;
+  }
 
   const response = await fetch(url, {
     method: "POST",
@@ -173,8 +191,8 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { action, apprenantId, apprenantEmail, userEmail, to, subject, body, requestReadReceipt } =
-      await req.json();
+    const reqBody = await req.json();
+    const { action, apprenantId, apprenantEmail, userEmail, to, subject, body, requestReadReceipt } = reqBody;
 
     const accessToken = await getAccessToken();
 
@@ -363,7 +381,8 @@ Deno.serve(async (req) => {
       const signatureHtml = `<br><br>---<br><strong>FTRANSPORT</strong><br>Centre de formation VTC &amp; TAXI<br>86 Route de Genas, 69003 Lyon<br>📞 04.28.29.60.91<br>📧 contact@ftransport.fr<br>🕐 Du lundi au vendredi, 9h - 18h<br>🌐 <a href="https://insight-learn-manage.lovable.app">insight-learn-manage.lovable.app</a>`;
       const bodyWithSignature = body.includes("FTRANSPORT") ? body : body + signatureHtml;
 
-      const success = await sendEmail(accessToken, userEmail, to, subject, bodyWithSignature, requestReadReceipt === true);
+      const attachments: EmailAttachment[] = reqBody.attachments || [];
+      const success = await sendEmail(accessToken, userEmail, to, subject, bodyWithSignature, requestReadReceipt === true, attachments);
 
       if (success && apprenantId) {
         await supabase.from("emails").insert({
@@ -375,7 +394,7 @@ Deno.serve(async (req) => {
           recipients: [to],
           type: "sent",
           is_read: true,
-          has_attachments: false,
+          has_attachments: attachments.length > 0,
           sent_at: new Date().toISOString(),
         });
       }

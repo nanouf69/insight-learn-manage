@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -7,10 +7,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Send, Inbox, Eye, PenLine, Loader2, Save, FileEdit, Trash2, Forward } from "lucide-react";
+import { Mail, Send, Inbox, Eye, PenLine, Loader2, Save, FileEdit, Trash2, Forward, Paperclip, X } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
+
+interface AttachmentFile {
+  file: File;
+  name: string;
+  contentType: string;
+  contentBytes: string; // base64
+}
 
 interface EmailDialogProps {
   open: boolean;
@@ -30,6 +37,8 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
   const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
   const [forwardTo, setForwardTo] = useState("");
   const [isForwarding, setIsForwarding] = useState(false);
+  const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
   const { data: emails = [] } = useQuery({
@@ -124,6 +133,34 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
     }
   };
 
+  const handleAddAttachment = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    const maxSize = 10 * 1024 * 1024; // 10MB per file
+    for (const file of Array.from(files)) {
+      if (file.size > maxSize) {
+        toast.error(`${file.name} dépasse 10 Mo`);
+        continue;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = (reader.result as string).split(',')[1];
+        setAttachments(prev => [...prev, {
+          file,
+          name: file.name,
+          contentType: file.type || 'application/octet-stream',
+          contentBytes: base64,
+        }]);
+      };
+      reader.readAsDataURL(file);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleRemoveAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSendDraft = async () => {
     await handleSend();
     if (editingDraftId) {
@@ -140,6 +177,11 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
     setSending(true);
     try {
       const htmlBody = body.replace(/\n/g, '<br>');
+      const graphAttachments = attachments.map(a => ({
+        name: a.name,
+        contentType: a.contentType,
+        contentBytes: a.contentBytes,
+      }));
       const { data, error } = await supabase.functions.invoke('sync-outlook-emails', {
         body: {
           action: 'send',
@@ -147,6 +189,7 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
           to: contactEmail,
           subject,
           body: htmlBody,
+          attachments: graphAttachments,
         },
       });
       if (error) throw error;
@@ -165,6 +208,7 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
         setComposing(false);
         setSubject("");
         setBody("");
+        setAttachments([]);
         queryClient.invalidateQueries({ queryKey: [queryKey, contactEmail] });
       } else {
         throw new Error("Échec de l'envoi");
@@ -180,6 +224,7 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
     setComposing(false);
     setSubject("");
     setBody("");
+    setAttachments([]);
     setSelectedEmail(null);
     setEditingDraftId(null);
     setIsForwarding(false);
@@ -209,6 +254,11 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
     setSending(true);
     try {
       const htmlBody = body.replace(/\n/g, '<br>');
+      const graphAttachments = attachments.map(a => ({
+        name: a.name,
+        contentType: a.contentType,
+        contentBytes: a.contentBytes,
+      }));
       const { data, error } = await supabase.functions.invoke('sync-outlook-emails', {
         body: {
           action: 'send',
@@ -216,6 +266,7 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
           to: forwardTo.trim(),
           subject,
           body: htmlBody,
+          attachments: graphAttachments,
         },
       });
       if (error) throw error;
@@ -234,6 +285,7 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
         setComposing(false);
         setSubject("");
         setBody("");
+        setAttachments([]);
         setIsForwarding(false);
         setForwardTo("");
         queryClient.invalidateQueries({ queryKey: [queryKey, contactEmail] });
@@ -274,7 +326,7 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
                     {isForwarding ? <Forward className="w-4 h-4" /> : <PenLine className="w-4 h-4" />}
                     {isForwarding ? 'Transférer un email' : `Nouveau message à ${contactEmail}`}
                   </h4>
-                  <Button variant="ghost" size="sm" onClick={() => { setComposing(false); setSubject(""); setBody(""); setIsForwarding(false); setForwardTo(""); }}>
+                  <Button variant="ghost" size="sm" onClick={() => { setComposing(false); setSubject(""); setBody(""); setAttachments([]); setIsForwarding(false); setForwardTo(""); }}>
                     Annuler
                   </Button>
                 </div>
@@ -297,6 +349,40 @@ export function EmailDialog({ open, onOpenChange, contactName, contactEmail, que
                   onChange={(e) => setBody(e.target.value)}
                   rows={6}
                 />
+                {/* Pièces jointes */}
+                <div className="space-y-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    onChange={handleAddAttachment}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Paperclip className="w-4 h-4" />
+                    Ajouter une pièce jointe
+                  </Button>
+                  {attachments.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {attachments.map((att, idx) => (
+                        <div key={idx} className="flex items-center gap-1 bg-muted rounded px-2 py-1 text-xs">
+                          <Paperclip className="w-3 h-3" />
+                          <span className="max-w-[150px] truncate">{att.name}</span>
+                          <span className="text-muted-foreground">({(att.file.size / 1024).toFixed(0)} Ko)</span>
+                          <button onClick={() => handleRemoveAttachment(idx)} className="ml-1 hover:text-destructive">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <div className="border-t border-dashed pt-3 mt-2 text-xs text-muted-foreground space-y-0.5">
                   <p className="font-semibold text-foreground">FTRANSPORT</p>
                   <p>Centre de formation VTC & TAXI</p>
