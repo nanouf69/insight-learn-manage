@@ -1277,7 +1277,7 @@ export function ExamenReussitePage() {
 
         const vtcList = tousAFormer.filter(a => isVTC(a.type_apprenant));
         const taxiList = tousAFormer.filter(a => isTAXI(a.type_apprenant));
-        const joursVTC = Math.ceil(vtcList.length / 4);
+        const joursVTC = Math.ceil(vtcList.length / 3);
         const joursTAXI = Math.ceil(taxiList.length / 3);
         const maxRows = Math.max(vtcList.length, taxiList.length);
 
