@@ -191,8 +191,8 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { action, apprenantId, apprenantEmail, userEmail, to, subject, body, requestReadReceipt } =
-      await req.json();
+    const reqBody = await req.json();
+    const { action, apprenantId, apprenantEmail, userEmail, to, subject, body, requestReadReceipt } = reqBody;
 
     const accessToken = await getAccessToken();
 
