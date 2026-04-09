@@ -779,7 +779,15 @@ export function ExamenReussitePage() {
           !reussisTheorique.some(r => r.id === a.id) &&
           !paRpApprenants.some(r => r.id === a.id)
         );
-        const reussisLettre = [...reussisTheorique, ...paRpApprenants, ...deplacesApprenantsCMA];
+        // Candidats ayant échoué l'examen pratique à la session précédente
+        const echouesPratiqueCMA = (allApprenants || []).filter(a =>
+          (a as any).resultat_examen_pratique === 'non' &&
+          !a.deleted_at &&
+          !reussisTheorique.some(r => r.id === a.id) &&
+          !paRpApprenants.some(r => r.id === a.id) &&
+          !deplacesApprenantsCMA.some(r => r.id === a.id)
+        );
+        const reussisLettre = [...reussisTheorique, ...paRpApprenants, ...deplacesApprenantsCMA, ...echouesPratiqueCMA];
 
 
         const getCategorieCMA = (type: string | null) => {
