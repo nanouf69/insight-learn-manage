@@ -310,6 +310,19 @@ export function ExamenReussitePage() {
     },
   });
 
+  // Fetch apprenants déjà formés (présents dans une session pratique)
+  const { data: dejaFormesPratique } = useQuery({
+    queryKey: ['deja-formes-pratique'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('session_apprenants')
+        .select('apprenant_id, presence_pratique, sessions!inner(type_session)')
+        .eq('sessions.type_session', 'pratique')
+        .eq('presence_pratique', 'present');
+      return [...new Set((data || []).map((d: any) => d.apprenant_id))];
+    },
+  });
+
   // Fetch reservations pratique
   const { data: reservationsPratique } = useQuery({
     queryKey: ['reservations-pratique-planning'],
