@@ -57,6 +57,10 @@ export function ExamenReussitePage() {
   const [previewBody, setPreviewBody] = useState('');
   const [previewRecipients, setPreviewRecipients] = useState<any[]>([]);
   const [previewTab, setPreviewTab] = useState<string>('preview');
+  const [extraCandidatsCMA, setExtraCandidatsCMA] = useState<string[]>([]);
+  const [searchCMA, setSearchCMA] = useState("");
+  const [extraCandidatsFormation, setExtraCandidatsFormation] = useState<string[]>([]);
+  const [searchFormation, setSearchFormation] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const planningFileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
