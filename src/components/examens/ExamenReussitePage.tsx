@@ -2174,7 +2174,7 @@ export function ExamenReussitePage() {
               <div className="p-4 bg-emerald-50 rounded-lg flex items-center justify-between">
                 <div className="space-y-1">
                   <p className="text-sm font-bold text-emerald-800">
-                    VTC : {totalVTC} candidats • TAXI : {totalTAXI} candidats • Semaine 3 : Examens
+                    VTC : {totalVTC} candidats ({vtcDaysNeeded}j) • TAXI : {totalTAXI} candidats ({taxiDaysNeeded}j) • {weekdays.length} jour(s) de formation
                   </p>
                   <p className="text-xs text-emerald-700">
                     {totalReserved > 0 ? `${totalReserved} réservation(s) confirmée(s)` : 'Aucune réservation confirmée — les noms apparaîtront quand les candidats choisiront leur date'}
