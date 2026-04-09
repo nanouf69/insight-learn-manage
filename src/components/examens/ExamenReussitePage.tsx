@@ -1224,8 +1224,16 @@ export function ExamenReussitePage() {
           !paFormation.some(r => r.id === a.id) &&
           !deplacesFormation.some(r => r.id === a.id)
         );
+        // Extra candidats ajoutés manuellement
+        const extraFormation = (allApprenants || []).filter(a =>
+          extraCandidatsFormation.includes(a.id) &&
+          !reussisFormation.some(r => r.id === a.id) &&
+          !paFormation.some(r => r.id === a.id) &&
+          !deplacesFormation.some(r => r.id === a.id) &&
+          !echouesPratiqueFormation.some(r => r.id === a.id)
+        );
         // tousAFormer inclut les déplacés et les échoués pratique
-        const tousAFormer = [...reussisFormation, ...paFormation, ...deplacesFormation, ...echouesPratiqueFormation];
+        const tousAFormer = [...reussisFormation, ...paFormation, ...deplacesFormation, ...echouesPratiqueFormation, ...extraFormation];
 
         const isVTC = (type: string | null) => {
           if (!type) return false;
