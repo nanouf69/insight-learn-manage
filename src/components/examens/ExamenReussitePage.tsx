@@ -1959,53 +1959,44 @@ export function ExamenReussitePage() {
           }
         });
 
-        // Compute candidates who should be on the planning but haven't reserved yet
-        const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-        const currentTheorique3 = datesExamenTheorique.find(e => e.date === selectedExamDate);
-        const defaultPratique3 = currentTheorique3 ? datesExamenPratique[currentTheorique3.pratiqueIndex] : null;
-        const parsePeriodRange3 = (period: string): { start: Date; end: Date } | null => {
-          const norm = period.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-          const moisMap: Record<string, number> = { janvier: 0, fevrier: 1, mars: 2, avril: 3, mai: 4, juin: 5, juillet: 6, aout: 7, septembre: 8, octobre: 9, novembre: 10, decembre: 11 };
-          const match2 = norm.match(/du\s+(\d+)(?:er)?\s+(\w+)\s+au\s+(\d+)(?:er)?\s+(\w+)\s+(\d{4})/);
-          if (match2) {
-            const [, d1, m1, d2, m2, y] = match2;
-            return { start: new Date(+y, moisMap[m1] ?? 0, +d1), end: new Date(+y, moisMap[m2] ?? 0, +d2) };
-          }
-          const match1 = norm.match(/du\s+(\d+)(?:er)?\s+au\s+(\d+)(?:er)?\s+(\w+)\s+(\d{4})/);
-          if (match1) {
-            const [, d1, d2, m, y] = match1;
-            return { start: new Date(+y, moisMap[m] ?? 0, +d1), end: new Date(+y, moisMap[m] ?? 0, +d2) };
-          }
-          return null;
-        };
-        const isISODate3 = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s);
-        const periodRange3 = parsePeriodRange3(selectedDatePratique);
-
-        const matchPratiquePlanning = (datePratique: string | null) => {
-          if (!datePratique) {
-            return defaultPratique3 ? normalize(defaultPratique3) === normalize(selectedDatePratique) : false;
-          }
-          if (normalize(datePratique) === normalize(selectedDatePratique)) return true;
-          if (isISODate3(datePratique) && periodRange3) {
-            const d = new Date(datePratique);
-            return d >= periodRange3.start && d <= periodRange3.end;
-          }
-          return false;
-        };
-
-        const paTypes = ['pa-vtc', 'pa-taxi'];
-        const rpTypes = ['rp-vtc', 'rp-taxi'];
-        const reussisPlanning = apprenants?.filter(a => 
+        // Reuse the same candidate list as "Candidats à former" section
+        const dejaFormesSetP = new Set(dejaFormesPratique || []);
+        const paTypesP = ['pa-vtc', 'pa-taxi'];
+        const rpTypesP = ['rp-vtc', 'rp-taxi'];
+        const reussisFormationP = apprenants?.filter(a => 
           (a as any).resultat_examen === 'oui' && 
-          !rpTypes.includes((a.type_apprenant || '').toLowerCase()) &&
-          matchPratiquePlanning((a as any).date_examen_pratique)
+          !rpTypesP.includes((a.type_apprenant || '').toLowerCase()) &&
+          !dejaFormesSetP.has(a.id)
         ) || [];
-        const paPlanning = (allApprenants || []).filter(a => 
-          paTypes.includes((a.type_apprenant || '').toLowerCase()) && 
-          matchPratiquePlanning(a.date_examen_pratique) &&
-          !reussisPlanning.some(r => r.id === a.id)
+        const paFormationP = (allApprenants || []).filter(a => 
+          paTypesP.includes((a.type_apprenant || '').toLowerCase()) && 
+          a.date_examen_theorique?.includes(selectedExamDate) &&
+          (a as any).resultat_examen === 'oui' &&
+          !reussisFormationP.some(r => r.id === a.id) &&
+          !dejaFormesSetP.has(a.id)
         );
-        const tousPlanning = [...reussisPlanning, ...paPlanning];
+        const deplacesFormationP = (allApprenants || []).filter(a =>
+          (deplacesSessionPratique || []).includes(a.id) &&
+          !reussisFormationP.some(r => r.id === a.id) &&
+          !paFormationP.some(r => r.id === a.id) &&
+          !dejaFormesSetP.has(a.id)
+        );
+        const echouesPratiqueFormationP = (allApprenants || []).filter(a =>
+          (a as any).resultat_examen_pratique === 'non' &&
+          !reussisFormationP.some(r => r.id === a.id) &&
+          !paFormationP.some(r => r.id === a.id) &&
+          !deplacesFormationP.some(r => r.id === a.id) &&
+          !dejaFormesSetP.has(a.id)
+        );
+        const extraFormationP = (allApprenants || []).filter(a =>
+          extraCandidatsFormation.includes(a.id) &&
+          !reussisFormationP.some(r => r.id === a.id) &&
+          !paFormationP.some(r => r.id === a.id) &&
+          !deplacesFormationP.some(r => r.id === a.id) &&
+          !echouesPratiqueFormationP.some(r => r.id === a.id) &&
+          !dejaFormesSetP.has(a.id)
+        );
+        const tousPlanning = [...reussisFormationP, ...paFormationP, ...deplacesFormationP, ...echouesPratiqueFormationP, ...extraFormationP];
 
         const isVTCType = (type: string | null) => {
           if (!type) return false;
