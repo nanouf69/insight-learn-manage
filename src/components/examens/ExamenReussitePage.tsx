@@ -2112,9 +2112,19 @@ export function ExamenReussitePage() {
                       const hasReservations = vtcReserved.length > 0 || taxiReserved.length > 0;
 
                       return (
-                        <div key={key} className={`border rounded-lg p-2 min-h-[120px] ${(hasReservations || expectedType) ? 'bg-background' : 'bg-muted/30'}`}>
-                          <div className="text-xs font-bold text-center mb-2 pb-1 border-b">
-                            {dayNames[day.getDay()]} {day.getDate()} {monthNames[day.getMonth()]}
+                        <div key={key} className={`border rounded-lg p-2 min-h-[120px] relative group/day ${(hasReservations || expectedType !== 'libre') ? 'bg-background' : 'bg-muted/30'}`}>
+                          <div className="text-xs font-bold text-center mb-2 pb-1 border-b flex items-center justify-center gap-1">
+                            <span>{dayNames[day.getDay()]} {day.getDate()} {monthNames[day.getMonth()]}</span>
+                            <button 
+                              onClick={() => {
+                                setExcludedDays(prev => [...prev, key]);
+                                toast.success(`Jour supprimé : ${dayNames[day.getDay()]} ${day.getDate()} ${monthNames[day.getMonth()]}`);
+                              }}
+                              className="opacity-0 group-hover/day:opacity-100 text-red-400 hover:text-red-600 transition-opacity"
+                              title="Supprimer ce jour"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
                           </div>
                           
                           {/* Show label for expected type */}
@@ -2129,7 +2139,7 @@ export function ExamenReussitePage() {
                                   </button>
                                 </div>
                               )) : (
-                                <div className="text-[10px] text-muted-foreground italic">En attente de réservations</div>
+                                <div className="text-[10px] text-muted-foreground italic">En attente (max 3)</div>
                               )}
                             </div>
                           )}
@@ -2144,17 +2154,11 @@ export function ExamenReussitePage() {
                                   </button>
                                 </div>
                               )) : (
-                                <div className="text-[10px] text-muted-foreground italic">En attente de réservations</div>
+                                <div className="text-[10px] text-muted-foreground italic">En attente (max 3)</div>
                               )}
                             </div>
                           )}
-                          {expectedType === 'examen' && (
-                            <div>
-                              <div className="text-[10px] font-semibold text-red-700 mb-1">📋 Examens pratiques</div>
-                              <div className="text-[10px] text-muted-foreground italic">Semaine d'examens</div>
-                            </div>
-                          )}
-                          {!expectedType && !hasReservations && (
+                          {expectedType === 'libre' && (
                             <div className="text-[10px] text-muted-foreground text-center mt-4">Libre</div>
                           )}
                         </div>
