@@ -413,6 +413,47 @@ export function ExamenReussitePage() {
     return days;
   }, [existingSessions]);
 
+  // Load saved planning config from DB
+  useEffect(() => {
+    if (!selectedExamDate || !selectedDatePratique) return;
+    setPlanningConfigLoaded(false);
+    (async () => {
+      const { data } = await supabase
+        .from('planning_pratique_config')
+        .select('*')
+        .eq('exam_date', selectedExamDate)
+        .eq('date_pratique', selectedDatePratique)
+        .maybeSingle();
+      if (data) {
+        setPlanningStartDate(data.planning_start_date);
+        setPlanningEndDate(data.planning_end_date);
+        setExcludedDays(data.excluded_days || []);
+        setExtraDays(data.extra_days || []);
+        setExtraCandidatsFormation(data.extra_candidats || []);
+      }
+      setPlanningConfigLoaded(true);
+    })();
+  }, [selectedExamDate, selectedDatePratique]);
+
+  // Auto-save planning config to DB (debounced)
+  useEffect(() => {
+    if (!planningConfigLoaded || !selectedExamDate || !selectedDatePratique) return;
+    const timer = setTimeout(async () => {
+      await supabase
+        .from('planning_pratique_config')
+        .upsert({
+          exam_date: selectedExamDate,
+          date_pratique: selectedDatePratique,
+          planning_start_date: planningStartDate,
+          planning_end_date: planningEndDate,
+          excluded_days: excludedDays,
+          extra_days: extraDays,
+          extra_candidats: extraCandidatsFormation,
+        }, { onConflict: 'exam_date,date_pratique' });
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [planningConfigLoaded, selectedExamDate, selectedDatePratique, planningStartDate, planningEndDate, excludedDays, extraDays, extraCandidatsFormation]);
+
   // Fetch uploaded PDF files
   const { data: examFiles, refetch: refetchFiles } = useQuery({
     queryKey: ['exam-result-files'],
