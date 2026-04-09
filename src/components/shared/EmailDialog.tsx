@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -7,10 +7,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Send, Inbox, Eye, PenLine, Loader2, Save, FileEdit, Trash2, Forward } from "lucide-react";
+import { Mail, Send, Inbox, Eye, PenLine, Loader2, Save, FileEdit, Trash2, Forward, Paperclip, X } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
+
+interface AttachmentFile {
+  file: File;
+  name: string;
+  contentType: string;
+  contentBytes: string; // base64
+}
 
 interface EmailDialogProps {
   open: boolean;
