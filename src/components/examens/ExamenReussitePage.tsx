@@ -1743,6 +1743,11 @@ export function ExamenReussitePage() {
                             </TableCell>
                             <TableCell className="text-center">
                               <div className="flex items-center justify-center gap-1">
+                                {extraCandidatsFormation.includes(a.id) && (
+                                  <Button variant="ghost" size="icon" className="h-7 w-7" title="Retirer" onClick={() => setExtraCandidatsFormation(prev => prev.filter(id => id !== a.id))}>
+                                    <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                                  </Button>
+                                )}
                                 {hasReservation && (
                                   <AlertDialog>
                                     <AlertDialogTrigger asChild>
