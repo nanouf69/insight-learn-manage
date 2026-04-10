@@ -41,7 +41,7 @@ interface DateSlot {
 const DAY_NAMES = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
 const MONTH_NAMES = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
 const TAXI_TYPES = ["taxi", "taxi-e", "taxi-e-presentiel", "ta", "ta-e", "ta-e-presentiel", "pa-taxi", "rp-taxi"];
-const VTC_TYPES = ["vtc", "vtc-e", "vtc-e-presentiel", "va-e", "pa-vtc", "rp-vtc"];
+const VTC_TYPES = ["vtc", "vtc-e", "vtc-e-presentiel", "va", "va-e", "va-e-presentiel", "pa-vtc", "rp-vtc"];
 const PA_TYPES = ["pa-vtc", "pa-taxi"];
 const RP_TYPES = ["rp-vtc", "rp-taxi"];
 
