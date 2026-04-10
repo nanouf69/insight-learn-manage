@@ -515,6 +515,15 @@ export default function ReservationPratique() {
     setSubmitting(false);
   };
 
+  const handleModifyConfirm = async () => {
+    await handleConfirm();
+    if (selectedDate && !error) {
+      setExistingReservation({ date_choisie: selectedDate });
+      setModifying(false);
+      setSelectedDate(null);
+    }
+  };
+
   const formatDate = (d: Date) => {
     return `${DAY_NAMES[d.getDay()]} ${d.getDate()} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
   };
@@ -751,7 +760,7 @@ export default function ReservationPratique() {
                 </div>
               </div>
               <Button
-                onClick={handleConfirm}
+                onClick={modifying ? handleModifyConfirm : handleConfirm}
                 disabled={submitting}
                 className={`w-full text-lg py-6 ${isVTC ? "bg-blue-600 hover:bg-blue-700" : "bg-amber-600 hover:bg-amber-700"}`}
               >
