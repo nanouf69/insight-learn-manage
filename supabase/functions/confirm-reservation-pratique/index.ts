@@ -37,6 +37,78 @@ function formatDateFR(dateStr: string) {
   return `${DAY_NAMES[dt.getDay()]} ${d} ${MONTH_NAMES[m - 1]} ${y}`;
 }
 
+function toIsoDateKey(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function parsePratiquePeriod(period: string | null | undefined): { start: string; end: string } | null {
+  if (!period) return null;
+
+  const norm = period.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  const moisMap: Record<string, number> = {
+    janvier: 0,
+    fevrier: 1,
+    mars: 2,
+    avril: 3,
+    mai: 4,
+    juin: 5,
+    juillet: 6,
+    aout: 7,
+    septembre: 8,
+    octobre: 9,
+    novembre: 10,
+    decembre: 11,
+  };
+
+  const sameMonthMatch = norm.match(/du\s+(\d+)(?:er)?\s+au\s+(\d+)(?:er)?\s+(\w+)\s+(\d{4})/);
+  if (sameMonthMatch) {
+    const [, d1, d2, month, year] = sameMonthMatch;
+    const monthIndex = moisMap[month];
+    if (monthIndex === undefined) return null;
+
+    return {
+      start: toIsoDateKey(new Date(Number(year), monthIndex, Number(d1))),
+      end: toIsoDateKey(new Date(Number(year), monthIndex, Number(d2))),
+    };
+  }
+
+  const multiMonthMatch = norm.match(/du\s+(\d+)(?:er)?\s+(\w+)\s+au\s+(\d+)(?:er)?\s+(\w+)\s+(\d{4})/);
+  if (multiMonthMatch) {
+    const [, d1, month1, d2, month2, year] = multiMonthMatch;
+    const monthIndex1 = moisMap[month1];
+    const monthIndex2 = moisMap[month2];
+    if (monthIndex1 === undefined || monthIndex2 === undefined) return null;
+
+    return {
+      start: toIsoDateKey(new Date(Number(year), monthIndex1, Number(d1))),
+      end: toIsoDateKey(new Date(Number(year), monthIndex2, Number(d2))),
+    };
+  }
+
+  return null;
+}
+
+function normalizePlanningConfig<T extends { date_pratique?: string | null; planning_start_date?: string | null; planning_end_date?: string | null }>(config: T | null): T | null {
+  if (!config) return config;
+
+  const parsedRange = parsePratiquePeriod(config.date_pratique);
+  const storedStart = config.planning_start_date || null;
+  const storedEnd = config.planning_end_date || null;
+
+  if (parsedRange) {
+    const storedRangeMatchesPeriod = !!storedStart && !!storedEnd && storedStart >= parsedRange.start && storedEnd <= parsedRange.end;
+    if (!storedRangeMatchesPeriod) {
+      return {
+        ...config,
+        planning_start_date: parsedRange.start,
+        planning_end_date: parsedRange.end,
+      };
+    }
+  }
+
+  return config;
+}
+
 function getShortDayMonth(dateStr: string) {
   const [, m, d] = dateStr.split("-").map(Number);
   const DAYS_SHORT = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
@@ -112,7 +184,7 @@ Deno.serve(async (req) => {
             .maybeSingle();
 
           if (explicitConfigError) throw explicitConfigError;
-          config = explicitConfig;
+          config = normalizePlanningConfig(explicitConfig);
         }
 
         if (!config) {
@@ -125,7 +197,7 @@ Deno.serve(async (req) => {
             .maybeSingle();
 
           if (latestConfigError) throw latestConfigError;
-          config = latestConfig;
+          config = normalizePlanningConfig(latestConfig);
         }
 
         if (config) {
