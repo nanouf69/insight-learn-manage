@@ -59,6 +59,28 @@ function getDefaultPratiqueDate(): string {
   return lastPast;
 }
 
+const PRACTICE_VTC_TYPES = new Set(['vtc', 'vtc-e', 'vtc-e-presentiel', 'va', 'va-e', 'va-e-presentiel', 'pa-vtc', 'rp-vtc']);
+const PRACTICE_TAXI_TYPES = new Set(['taxi', 'taxi-e', 'taxi-e-presentiel', 'ta', 'ta-e', 'ta-e-presentiel', 'pa-taxi', 'rp-taxi']);
+
+function isPracticeVTCType(type: string | null) {
+  return !!type && PRACTICE_VTC_TYPES.has(type.toLowerCase());
+}
+
+function isPracticeTAXIType(type: string | null) {
+  return !!type && PRACTICE_TAXI_TYPES.has(type.toLowerCase());
+}
+
+function buildPratiqueReservationUrl(apprenantId: string, type: 'vtc' | 'taxi', examDate: string, pratiqueDate: string) {
+  const params = new URLSearchParams({
+    id: apprenantId,
+    type,
+    exam: examDate,
+    pratique: pratiqueDate,
+  });
+
+  return `https://insight-learn-manage.lovable.app/reservation-pratique?${params.toString()}`;
+}
+
 export function ExamenReussitePage() {
   const [search, setSearch] = useState("");
   const [repassageSearch, setRepassageSearch] = useState("");
@@ -1377,19 +1399,8 @@ export function ExamenReussitePage() {
         // tousAFormer inclut les déplacés et les échoués pratique
         const tousAFormer = [...reussisFormation, ...paFormation, ...deplacesFormation, ...echouesPratiqueFormation, ...extraFormation];
 
-        const isVTC = (type: string | null) => {
-          if (!type) return false;
-          const t = type.toLowerCase();
-          return ['vtc', 'vtc-e', 'vtc-e-presentiel', 'va-e', 'pa-vtc'].includes(t);
-        };
-        const isTAXI = (type: string | null) => {
-          if (!type) return false;
-          const t = type.toLowerCase();
-          return ['taxi', 'taxi-e', 'taxi-e-presentiel', 'ta', 'ta-e', 'pa-taxi'].includes(t);
-        };
-
-        const vtcList = tousAFormer.filter(a => isVTC(a.type_apprenant));
-        const taxiList = tousAFormer.filter(a => isTAXI(a.type_apprenant));
+        const vtcList = tousAFormer.filter(a => isPracticeVTCType(a.type_apprenant));
+        const taxiList = tousAFormer.filter(a => isPracticeTAXIType(a.type_apprenant));
         const joursVTC = Math.ceil(vtcList.length / 3);
         const joursTAXI = Math.ceil(taxiList.length / 3);
         const maxRows = Math.max(vtcList.length, taxiList.length);
@@ -1424,6 +1435,12 @@ export function ExamenReussitePage() {
         const taxiDateRange = taxiCalDays.length > 0
           ? `du ${formatDateFr(taxiCalDays[0])} au ${formatDateFr(taxiCalDays[taxiCalDays.length - 1])}`
           : 'dates non définies';
+        const vtcCalendarDates = vtcCalDays.map(d => toKeyF(d));
+        const taxiCalendarDates = taxiCalDays.map(d => toKeyF(d));
+        const getBookingUrl = (apprenantId: string, type: 'vtc' | 'taxi') =>
+          buildPratiqueReservationUrl(apprenantId, type, selectedExamDate, selectedDatePratique);
+        const vtcPreviewBookingUrl = vtcList[0]?.id ? getBookingUrl(vtcList[0].id, 'vtc') : '';
+        const taxiPreviewBookingUrl = taxiList[0]?.id ? getBookingUrl(taxiList[0].id, 'taxi') : '';
 
         return (
           <Card className="border-l-4 border-l-indigo-500">
@@ -1516,7 +1533,7 @@ export function ExamenReussitePage() {
                                 <div className="p-4 bg-white border-t text-xs space-y-1 text-foreground">
                                   <p className="font-semibold text-muted-foreground">Objet : Félicitations - Choix de votre date de formation pratique VTC - {vtcList[0]?.prenom || 'Prénom'} {vtcList[0]?.nom || 'Nom'}</p>
                                   <hr className="my-2" />
-                                  <div className="space-y-2 leading-relaxed" dangerouslySetInnerHTML={{ __html: `Bonjour ${vtcList[0]?.prenom || 'Prénom'},<br><br>Félicitations, vous venez de réussir votre épreuve d'admissibilité, face à l'épreuve d'admission.<br><br>Vous devrez choisir une journée complète d'entraînement pratique (de 9h à 12h puis de 13h à 16h).<br><br>👉 <a href="https://insight-learn-manage.lovable.app/reservation-pratique?id=${vtcList[0]?.id || ''}&type=vtc" target="_blank" style="color:#2563eb;font-weight:bold">CHOISISSEZ VOTRE DATE ICI</a><br><br>⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié.<br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans "Formation Pratique VTC" : Quizz Lyon et Questions à apprendre.<br>Ou cliquez sur le lien suivant : <a href="https://app.formative.com/join/DNFDZS">https://app.formative.com/join/DNFDZS</a><br><br>⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.<br><br>🍽️ Vous aurez une pause à Confluences aux alentours de 12h jusqu'à 13h.<br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous` }} />
+                                  <div className="space-y-2 leading-relaxed" dangerouslySetInnerHTML={{ __html: `Bonjour ${vtcList[0]?.prenom || 'Prénom'},<br><br>Félicitations, vous venez de réussir votre épreuve d'admissibilité, face à l'épreuve d'admission.<br><br>Vous devrez choisir une journée complète d'entraînement pratique de 9h à 16h (de 9h à 12h puis de 13h à 16h).<br><br>👉 <a href="${vtcPreviewBookingUrl}" target="_blank" style="color:#2563eb;font-weight:bold">CHOISISSEZ VOTRE DATE ICI</a><br><br>⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié.<br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans "Formation Pratique VTC" : Quizz Lyon et Questions à apprendre.<br>Ou cliquez sur le lien suivant : <a href="https://app.formative.com/join/DNFDZS">https://app.formative.com/join/DNFDZS</a><br><br>⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.<br><br>🍽️ Vous aurez une pause à Confluences aux alentours de 12h jusqu'à 13h.<br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous` }} />
                                 </div>
                               </details>
                             </div>
@@ -1530,9 +1547,9 @@ export function ExamenReussitePage() {
                             setSendingVTCPratique(true);
                             let sent = 0;
                             for (const a of candidates) {
-                              const bookingUrl = `https://insight-learn-manage.lovable.app/reservation-pratique?id=${a.id}&type=vtc`;
+                              const bookingUrl = getBookingUrl(a.id, 'vtc');
                               const subject = `Félicitations - Choix de votre date de formation pratique VTC - ${a.prenom} ${a.nom}`;
-                              const body = `Bonjour ${a.prenom},<br><br>Félicitations, vous venez de réussir votre épreuve d'admissibilité, face à l'épreuve d'admission.<br><br>Vous devrez choisir une journée complète d'entraînement pratique (de 9h à 12h puis de 13h à 16h).<br><br>👉 <a href="${bookingUrl}">CHOISISSEZ VOTRE DATE ICI</a><br><br>⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié.<br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans "Formation Pratique VTC" : Quizz Lyon et Questions à apprendre.<br>Ou cliquez sur le lien suivant : <a href="https://app.formative.com/join/DNFDZS">https://app.formative.com/join/DNFDZS</a><br><br>⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.<br><br>🍽️ Vous aurez une pause à Confluences aux alentours de 12h jusqu'à 13h.<br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous`;
+                              const body = `Bonjour ${a.prenom},<br><br>Félicitations, vous venez de réussir votre épreuve d'admissibilité, face à l'épreuve d'admission.<br><br>Vous devrez choisir une journée complète d'entraînement pratique de 9h à 16h (de 9h à 12h puis de 13h à 16h).<br><br>👉 <a href="${bookingUrl}">CHOISISSEZ VOTRE DATE ICI</a><br><br>⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié.<br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans "Formation Pratique VTC" : Quizz Lyon et Questions à apprendre.<br>Ou cliquez sur le lien suivant : <a href="https://app.formative.com/join/DNFDZS">https://app.formative.com/join/DNFDZS</a><br><br>⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.<br><br>🍽️ Vous aurez une pause à Confluences aux alentours de 12h jusqu'à 13h.<br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous`;
                               try {
                                 const { error } = await supabase.functions.invoke('sync-outlook-emails', {
                                   body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id }
@@ -1574,9 +1591,9 @@ export function ExamenReussitePage() {
                                 setSendingVTCRelance(true);
                                 let sent = 0;
                                 for (const a of vtcSansResa) {
-                                  const bookingUrl = `https://insight-learn-manage.lovable.app/reservation-pratique?id=${a.id}&type=vtc`;
+                                  const bookingUrl = getBookingUrl(a.id, 'vtc');
                                   const subject = `RAPPEL - Choisissez votre date de formation pratique VTC - ${a.prenom} ${a.nom}`;
-                                  const body = `Bonjour ${a.prenom},<br><br>Nous n'avons pas encore reçu votre choix de date pour la formation pratique VTC.<br><br>⚠️ Il est impératif de réserver votre créneau au plus vite.<br><br>👉 <a href="${bookingUrl}">CHOISISSEZ VOTRE DATE ICI</a><br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans "Formation Pratique VTC" : Quizz Lyon et Questions à apprendre.<br>Ou cliquez sur le lien suivant : <a href="https://app.formative.com/join/DNFDZS">https://app.formative.com/join/DNFDZS</a><br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous`;
+                                  const body = `Bonjour ${a.prenom},<br><br>Nous n'avons pas encore reçu votre choix de date pour la formation pratique VTC.<br><br>⚠️ Il est impératif de réserver votre créneau au plus vite.<br><br>👉 <a href="${bookingUrl}">CHOISISSEZ VOTRE DATE ICI</a><br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans "Formation Pratique VTC" : Quizz Lyon et Questions à apprendre.<br>Ou cliquez sur le lien suivant : <a href="https://app.formative.com/join/DNFDZS">https://app.formative.com/join/DNFDZS</a><br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie (horaire 9h-16h).<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous`;
                                   try {
                                     const { error } = await supabase.functions.invoke('sync-outlook-emails', {
                                       body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id }
@@ -1625,7 +1642,7 @@ export function ExamenReussitePage() {
                                 let sent = 0;
                                 try {
                                   for (const a of vtcSansResa) {
-                                    const bookingUrl = `https://insight-learn-manage.lovable.app/reservation-pratique?id=${a.id}&type=vtc`;
+                                    const bookingUrl = getBookingUrl(a.id, 'vtc');
                                     const message = `FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique VTC. Attention, il n'y aura pas d'autres dates d'entrainement. Reservez ici: ${bookingUrl}`;
                                     const { data, error } = await supabase.functions.invoke('send-sms-ovh', {
                                       body: { receivers: [a.telephone!], message },
@@ -1660,8 +1677,6 @@ export function ExamenReussitePage() {
                         {vtcList.map((a, i) => {
                           const reservation = reservationsPratique?.find(r => r.apprenant_id === a.id);
                           const hasReservation = !!reservation;
-                          // VTC available dates: Feb 16-24, 2026 (weekdays only)
-                          const vtcDates = ['2026-02-16','2026-02-17','2026-02-18','2026-02-19','2026-02-20','2026-02-23','2026-02-24'];
                           return (
                           <TableRow key={a.id}>
                             <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
@@ -1713,7 +1728,7 @@ export function ExamenReussitePage() {
                                   <PopoverContent className="w-auto p-2" align="end">
                                     <p className="text-xs font-medium mb-2">{hasReservation ? 'Changer' : 'Choisir'} la date pour {a.prenom} :</p>
                                     <div className="grid gap-1">
-                                      {vtcDates.map(d => (
+                                      {vtcCalendarDates.map(d => (
                                         <Button key={d} variant={reservation?.date_choisie === d ? "default" : "outline"} size="sm" className="text-xs justify-start" onClick={() => handleAssignDate(a.id, `${a.nom} ${a.prenom}`, d, 'vtc')}>
                                           {formatDateShortFR(d)}
                                         </Button>
@@ -1773,7 +1788,7 @@ export function ExamenReussitePage() {
                                 <div className="p-4 bg-white border-t text-xs space-y-1 text-foreground">
                                   <p className="font-semibold text-muted-foreground">Objet : Félicitations - Choix de votre date de formation pratique TAXI - {taxiList[0]?.prenom || 'Prénom'} {taxiList[0]?.nom || 'Nom'}</p>
                                   <hr className="my-2" />
-                                  <div className="space-y-2 leading-relaxed" dangerouslySetInnerHTML={{ __html: `Bonjour ${taxiList[0]?.prenom || 'Prénom'},<br><br>Félicitations, vous venez de réussir votre épreuve d'admissibilité, face à l'épreuve d'admission.<br><br>Vous devrez choisir une journée complète d'entraînement pratique (jusqu'à 17h au maximum).<br><br>👉 <a href="https://insight-learn-manage.lovable.app/reservation-pratique?id=${taxiList[0]?.id || ''}&type=taxi" target="_blank" style="color:#2563eb;font-weight:bold">CHOISISSEZ VOTRE DATE ICI</a><br><br>⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié.<br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans "Formation Pratique TAXI" : QCM Taximètre, Cas pratique, Quizz Lyon et Questions à apprendre.<br>Ou cliquez ici : <a href="https://app.formative.com/join/ZT924H">https://app.formative.com/join/ZT924H</a><br><br>⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.<br><br>🍽️ Vous aurez une pause à Confluences aux alentours de 12h jusqu'à 13h.<br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous` }} />
+                                  <div className="space-y-2 leading-relaxed" dangerouslySetInnerHTML={{ __html: `Bonjour ${taxiList[0]?.prenom || 'Prénom'},<br><br>Félicitations, vous venez de réussir votre épreuve d'admissibilité, face à l'épreuve d'admission.<br><br>Vous devrez choisir une journée complète d'entraînement pratique de 9h à 17h.<br><br>👉 <a href="${taxiPreviewBookingUrl}" target="_blank" style="color:#2563eb;font-weight:bold">CHOISISSEZ VOTRE DATE ICI</a><br><br>⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié.<br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans "Formation Pratique TAXI" : QCM Taximètre, Cas pratique, Quizz Lyon et Questions à apprendre.<br>Ou cliquez ici : <a href="https://app.formative.com/join/ZT924H">https://app.formative.com/join/ZT924H</a><br><br>⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.<br><br>🍽️ Vous aurez une pause à Confluences aux alentours de 12h jusqu'à 13h.<br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous` }} />
                                 </div>
                               </details>
                             </div>
@@ -1787,9 +1802,9 @@ export function ExamenReussitePage() {
                             setSendingTAXIPratique(true);
                             let sent = 0;
                             for (const a of candidates) {
-                              const bookingUrl = `https://insight-learn-manage.lovable.app/reservation-pratique?id=${a.id}&type=taxi`;
+                              const bookingUrl = getBookingUrl(a.id, 'taxi');
                               const subject = `Félicitations - Choix de votre date de formation pratique TAXI - ${a.prenom} ${a.nom}`;
-                              const body = `Bonjour ${a.prenom},<br><br>Félicitations, vous venez de réussir votre épreuve d'admissibilité, face à l'épreuve d'admission.<br><br>Vous devrez choisir une journée complète d'entraînement pratique (jusqu'à 17h au maximum).<br><br>👉 <a href="${bookingUrl}">CHOISISSEZ VOTRE DATE ICI</a><br><br>⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié.<br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans "Formation Pratique TAXI" : QCM Taximètre, Cas pratique, Quizz Lyon et Questions à apprendre.<br>Ou cliquez ici : <a href="https://app.formative.com/join/ZT924H">https://app.formative.com/join/ZT924H</a><br><br>⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.<br><br>🍽️ Vous aurez une pause à Confluences aux alentours de 12h jusqu'à 13h.<br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous`;
+                              const body = `Bonjour ${a.prenom},<br><br>Félicitations, vous venez de réussir votre épreuve d'admissibilité, face à l'épreuve d'admission.<br><br>Vous devrez choisir une journée complète d'entraînement pratique de 9h à 17h.<br><br>👉 <a href="${bookingUrl}">CHOISISSEZ VOTRE DATE ICI</a><br><br>⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié.<br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans "Formation Pratique TAXI" : QCM Taximètre, Cas pratique, Quizz Lyon et Questions à apprendre.<br>Ou cliquez ici : <a href="https://app.formative.com/join/ZT924H">https://app.formative.com/join/ZT924H</a><br><br>⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.<br><br>🍽️ Vous aurez une pause à Confluences aux alentours de 12h jusqu'à 13h.<br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous`;
                               try {
                                 const { error } = await supabase.functions.invoke('sync-outlook-emails', {
                                   body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id }
@@ -1882,7 +1897,7 @@ export function ExamenReussitePage() {
                                 let sent = 0;
                                 try {
                                   for (const a of taxiSansResa) {
-                                    const bookingUrl = `https://insight-learn-manage.lovable.app/reservation-pratique?id=${a.id}&type=taxi`;
+                                    const bookingUrl = getBookingUrl(a.id, 'taxi');
                                     const message = `FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique TAXI. Attention, il n'y aura pas d'autres dates d'entrainement. Reservez ici: ${bookingUrl}`;
                                     const { data, error } = await supabase.functions.invoke('send-sms-ovh', {
                                       body: { receivers: [a.telephone!], message },
@@ -1917,7 +1932,6 @@ export function ExamenReussitePage() {
                         {taxiList.map((a, i) => {
                           const reservation = reservationsPratique?.find(r => r.apprenant_id === a.id);
                           const hasReservation = !!reservation;
-                          const taxiDates = ['2026-02-25','2026-02-26','2026-02-27'];
                           return (
                           <TableRow key={a.id}>
                             <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
@@ -1969,7 +1983,7 @@ export function ExamenReussitePage() {
                                   <PopoverContent className="w-auto p-2" align="end">
                                     <p className="text-xs font-medium mb-2">{hasReservation ? 'Changer' : 'Choisir'} la date pour {a.prenom} :</p>
                                     <div className="grid gap-1">
-                                      {taxiDates.map(d => (
+                                      {taxiCalendarDates.map(d => (
                                         <Button key={d} variant={reservation?.date_choisie === d ? "default" : "outline"} size="sm" className="text-xs justify-start" onClick={() => handleAssignDate(a.id, `${a.nom} ${a.prenom}`, d, 'taxi')}>
                                           {formatDateShortFR(d)}
                                         </Button>
@@ -2087,20 +2101,9 @@ export function ExamenReussitePage() {
         );
         const tousPlanning = [...reussisFormationP, ...paFormationP, ...deplacesFormationP, ...echouesPratiqueFormationP, ...extraFormationP];
 
-        const isVTCType = (type: string | null) => {
-          if (!type) return false;
-          const t = type.toLowerCase();
-          return ['vtc', 'vtc-e', 'vtc-e-presentiel', 'va-e', 'pa-vtc'].includes(t);
-        };
-        const isTAXIType = (type: string | null) => {
-          if (!type) return false;
-          const t = type.toLowerCase();
-          return ['taxi', 'taxi-e', 'taxi-e-presentiel', 'ta', 'ta-e', 'pa-taxi'].includes(t);
-        };
-
         // Count unreserved candidates
-        const unreservedVTCCount = tousPlanning.filter(a => isVTCType(a.type_apprenant) && !reservedIds.has(a.id)).length;
-        const unreservedTAXICount = tousPlanning.filter(a => isTAXIType(a.type_apprenant) && !reservedIds.has(a.id)).length;
+        const unreservedVTCCount = tousPlanning.filter(a => isPracticeVTCType(a.type_apprenant) && !reservedIds.has(a.id)).length;
+        const unreservedTAXICount = tousPlanning.filter(a => isPracticeTAXIType(a.type_apprenant) && !reservedIds.has(a.id)).length;
 
         // Generate weekdays from configurable date range
         const toKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -2123,8 +2126,8 @@ export function ExamenReussitePage() {
         });
         weekdays.sort((a, b) => a.getTime() - b.getTime());
 
-        const totalVTC = tousPlanning.filter(a => isVTCType(a.type_apprenant)).length;
-        const totalTAXI = tousPlanning.filter(a => isTAXIType(a.type_apprenant)).length;
+        const totalVTC = tousPlanning.filter(a => isPracticeVTCType(a.type_apprenant)).length;
+        const totalTAXI = tousPlanning.filter(a => isPracticeTAXIType(a.type_apprenant)).length;
         const totalReserved = (reservationsPratique || []).length;
 
         // Auto-assign day types: VTC first, then TAXI based on candidate counts (3 per day)
