@@ -89,29 +89,7 @@ function toLocalDateKey(d: Date) {
 }
 
 function buildFallbackPlanningDates(type: "vtc" | "taxi"): { date: Date; capacity: number }[] {
-  const start = new Date(2026, 1, 16);
-  const end = new Date(2026, 2, 7);
-  const allWeekdays: Date[] = [];
-  let current = new Date(start);
-
-  while (current < end) {
-    const dow = current.getDay();
-    if (dow !== 0 && dow !== 6) {
-      allWeekdays.push(new Date(current));
-    }
-    current.setDate(current.getDate() + 1);
-  }
-
-  if (type === "vtc") {
-    return allWeekdays.slice(0, 7).map((date) => ({ date, capacity: 3 }));
-  }
-
-  const taxiStartIdx = allWeekdays.findIndex((d) => d.getDate() === 25 && d.getMonth() === 1);
-  const startIdx = taxiStartIdx >= 0 ? taxiStartIdx : 7;
-  return allWeekdays
-    .slice(startIdx)
-    .filter((d) => d.getMonth() < 2)
-    .map((date) => ({ date, capacity: 3 }));
+  return [];
 }
 
 function getTrainingBadgeText(type: "vtc" | "taxi") {
@@ -200,18 +178,40 @@ export default function ReservationPratique() {
         setReservationCounts(counts);
 
         const inferredExamDate = examParam || detectPlanningExamDate(appData.date_examen_theorique);
-        const inferredPratiqueDate = pratiqueParam || getPratiqueDateFromExam(inferredExamDate);
 
         setResolvedExamDate(inferredExamDate);
-        setResolvedPratiqueDate(inferredPratiqueDate);
 
-        if (inferredExamDate && inferredPratiqueDate) {
-          const { data: config } = await supabase
-            .from("planning_pratique_config")
-            .select("*")
-            .eq("exam_date", inferredExamDate)
-            .eq("date_pratique", inferredPratiqueDate)
-            .maybeSingle();
+        if (inferredExamDate) {
+          let config = null;
+
+          if (pratiqueParam) {
+            const { data: explicitConfig, error: explicitConfigError } = await supabase
+              .from("planning_pratique_config")
+              .select("*")
+              .eq("exam_date", inferredExamDate)
+              .eq("date_pratique", pratiqueParam)
+              .order("updated_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            if (explicitConfigError) throw explicitConfigError;
+            config = explicitConfig;
+          }
+
+          if (!config) {
+            const { data: latestConfig, error: latestConfigError } = await supabase
+              .from("planning_pratique_config")
+              .select("*")
+              .eq("exam_date", inferredExamDate)
+              .order("updated_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            if (latestConfigError) throw latestConfigError;
+            config = latestConfig;
+          }
+
+          setResolvedPratiqueDate(config?.date_pratique || pratiqueParam || getPratiqueDateFromExam(inferredExamDate));
 
           if (config) {
             setPlanningStartDate(config.planning_start_date);
