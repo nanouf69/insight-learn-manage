@@ -408,6 +408,7 @@ export function ExamenReussitePage() {
       const { data, error } = await supabase
         .from('sessions')
         .select('id, date_debut, date_fin, type_session, nom')
+        .neq('type_session', 'pratique')
         .gte('date_fin', planningStartDate)
         .lte('date_debut', planningEndDate);
       if (error) throw error;
