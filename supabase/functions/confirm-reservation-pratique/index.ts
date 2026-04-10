@@ -7,6 +7,29 @@ const corsHeaders = {
 
 const DAY_NAMES = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
 const MONTH_NAMES = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+const KNOWN_EXAM_DATES = [
+  "27 janvier 2026",
+  "31 mars 2026",
+  "26 mai 2026",
+  "21 juillet 2026",
+  "29 septembre 2026",
+  "17 novembre 2026",
+];
+
+function normalizeText(value: string | null | undefined) {
+  return (value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function detectPlanningExamDate(rawDate: string | null) {
+  const normalizedRaw = normalizeText(rawDate);
+  if (!normalizedRaw) return null;
+
+  return KNOWN_EXAM_DATES.find((date) => normalizedRaw.includes(normalizeText(date))) || null;
+}
 
 function formatDateFR(dateStr: string) {
   const [y, m, d] = dateStr.split("-").map(Number);
@@ -29,7 +52,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { apprenantId, selectedDate, type, isModification, mode } = body;
+    const { apprenantId, selectedDate, type, isModification, mode, examDate, pratiqueDate } = body;
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -68,10 +91,104 @@ Deno.serve(async (req) => {
         });
       }
 
+      const resolvedExamDate = examDate || detectPlanningExamDate(appData.date_examen_theorique);
+      let config = null;
+      let allApprenants: unknown[] = [];
+      let examApprenants: unknown[] = [];
+      let deplacesSession: unknown[] = [];
+      let deplacesApprenants: unknown[] = [];
+      let dejaFormes: unknown[] = [];
+      let existingSessions: unknown[] = [];
+
+      if (resolvedExamDate) {
+        if (pratiqueDate) {
+          const { data: explicitConfig, error: explicitConfigError } = await supabase
+            .from("planning_pratique_config")
+            .select("*")
+            .eq("exam_date", resolvedExamDate)
+            .eq("date_pratique", pratiqueDate)
+            .order("updated_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (explicitConfigError) throw explicitConfigError;
+          config = explicitConfig;
+        }
+
+        if (!config) {
+          const { data: latestConfig, error: latestConfigError } = await supabase
+            .from("planning_pratique_config")
+            .select("*")
+            .eq("exam_date", resolvedExamDate)
+            .order("updated_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (latestConfigError) throw latestConfigError;
+          config = latestConfig;
+        }
+
+        if (config) {
+          const [allAppsResult, examAppsResult, deplacesSessionResult, deplacesApprenantsResult, dejaFormesResult, existingSessionsResult] = await Promise.all([
+            supabase
+              .from("apprenants")
+              .select("id, prenom, nom, type_apprenant, date_examen_theorique, resultat_examen, resultat_examen_pratique")
+              .is("deleted_at", null)
+              .order("nom", { ascending: true }),
+            supabase
+              .from("apprenants")
+              .select("id, prenom, nom, type_apprenant, date_examen_theorique, resultat_examen, resultat_examen_pratique")
+              .ilike("date_examen_theorique", `%${resolvedExamDate}%`)
+              .is("deleted_at", null)
+              .order("nom", { ascending: true }),
+            supabase
+              .from("session_apprenants")
+              .select("apprenant_id, sessions!inner(type_session)")
+              .eq("presence_pratique", "deplace")
+              .eq("sessions.type_session", "pratique"),
+            supabase
+              .from("apprenants")
+              .select("id")
+              .eq("resultat_examen_pratique", "deplace")
+              .is("deleted_at", null),
+            supabase
+              .from("session_apprenants")
+              .select("apprenant_id, sessions!inner(type_session)")
+              .eq("sessions.type_session", "pratique")
+              .eq("presence_pratique", "present"),
+            supabase
+              .from("sessions")
+              .select("id, date_debut, date_fin, type_session, nom")
+              .neq("type_session", "pratique")
+              .gte("date_fin", config.planning_start_date)
+              .lte("date_debut", config.planning_end_date),
+          ]);
+
+          if (allAppsResult.error || examAppsResult.error || deplacesSessionResult.error || deplacesApprenantsResult.error || dejaFormesResult.error || existingSessionsResult.error) {
+            throw allAppsResult.error || examAppsResult.error || deplacesSessionResult.error || deplacesApprenantsResult.error || dejaFormesResult.error || existingSessionsResult.error;
+          }
+
+          allApprenants = allAppsResult.data || [];
+          examApprenants = examAppsResult.data || [];
+          deplacesSession = deplacesSessionResult.data || [];
+          deplacesApprenants = deplacesApprenantsResult.data || [];
+          dejaFormes = dejaFormesResult.data || [];
+          existingSessions = existingSessionsResult.data || [];
+        }
+      }
+
       return new Response(JSON.stringify({
         apprenant: appData,
         existingReservation: existingRes || null,
         allReservations: allRes || [],
+        resolvedExamDate,
+        config,
+        allApprenants,
+        examApprenants,
+        deplacesSession,
+        deplacesApprenants,
+        dejaFormes,
+        existingSessions,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

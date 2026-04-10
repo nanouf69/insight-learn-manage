@@ -150,7 +150,7 @@ export default function ReservationPratique() {
         // Use edge function with service_role to bypass RLS on public page
         const { data: loadResult, error: loadErr } = await supabase.functions.invoke(
           "confirm-reservation-pratique",
-          { body: { mode: "load", apprenantId } }
+          { body: { mode: "load", apprenantId, examDate: examParam, pratiqueDate: pratiqueParam } }
         );
 
         if (loadErr || !loadResult?.apprenant) {
@@ -177,39 +177,12 @@ export default function ReservationPratique() {
           });
         setReservationCounts(counts);
 
-        const inferredExamDate = examParam || detectPlanningExamDate(appData.date_examen_theorique);
+        const inferredExamDate = loadResult.resolvedExamDate || examParam || detectPlanningExamDate(appData.date_examen_theorique);
 
         setResolvedExamDate(inferredExamDate);
 
         if (inferredExamDate) {
-          let config = null;
-
-          if (pratiqueParam) {
-            const { data: explicitConfig, error: explicitConfigError } = await supabase
-              .from("planning_pratique_config")
-              .select("*")
-              .eq("exam_date", inferredExamDate)
-              .eq("date_pratique", pratiqueParam)
-              .order("updated_at", { ascending: false })
-              .limit(1)
-              .maybeSingle();
-
-            if (explicitConfigError) throw explicitConfigError;
-            config = explicitConfig;
-          }
-
-          if (!config) {
-            const { data: latestConfig, error: latestConfigError } = await supabase
-              .from("planning_pratique_config")
-              .select("*")
-              .eq("exam_date", inferredExamDate)
-              .order("updated_at", { ascending: false })
-              .limit(1)
-              .maybeSingle();
-
-            if (latestConfigError) throw latestConfigError;
-            config = latestConfig;
-          }
+          const config = loadResult.config;
 
           setResolvedPratiqueDate(config?.date_pratique || pratiqueParam || getPratiqueDateFromExam(inferredExamDate));
 
@@ -220,65 +193,20 @@ export default function ReservationPratique() {
             setExtraDays(config.extra_days || []);
             setExtraCandidats(config.extra_candidats || []);
 
-            const [
-              { data: allApps, error: allAppsErr },
-              { data: examApps, error: examAppsErr },
-              { data: dataSession, error: deplacesSessionErr },
-              { data: dataApprenants, error: deplacesApprenantsErr },
-              { data: dejaFormes, error: dejaFormesErr },
-              { data: existingSessions, error: sessionsErr },
-            ] = await Promise.all([
-              supabase
-                .from("apprenants")
-                .select("id, prenom, nom, type_apprenant, date_examen_theorique, resultat_examen, resultat_examen_pratique")
-                .is("deleted_at", null)
-                .order("nom", { ascending: true }),
-              supabase
-                .from("apprenants")
-                .select("id, prenom, nom, type_apprenant, date_examen_theorique, resultat_examen, resultat_examen_pratique")
-                .ilike("date_examen_theorique", `%${inferredExamDate}%`)
-                .is("deleted_at", null)
-                .order("nom", { ascending: true }),
-              supabase
-                .from("session_apprenants")
-                .select("apprenant_id, sessions!inner(type_session)")
-                .eq("presence_pratique", "deplace")
-                .eq("sessions.type_session", "pratique"),
-              supabase
-                .from("apprenants")
-                .select("id")
-                .eq("resultat_examen_pratique", "deplace")
-                .is("deleted_at", null),
-              supabase
-                .from("session_apprenants")
-                .select("apprenant_id, sessions!inner(type_session)")
-                .eq("sessions.type_session", "pratique")
-                .eq("presence_pratique", "present"),
-              supabase
-                .from("sessions")
-                .select("id, date_debut, date_fin, type_session, nom")
-                .gte("date_fin", config.planning_start_date)
-                .lte("date_debut", config.planning_end_date),
-            ]);
-
-            if (allAppsErr || examAppsErr || deplacesSessionErr || deplacesApprenantsErr || dejaFormesErr || sessionsErr) {
-              throw allAppsErr || examAppsErr || deplacesSessionErr || deplacesApprenantsErr || dejaFormesErr || sessionsErr;
-            }
-
-            setAllApprenants((allApps || []) as PlanningApprenant[]);
-            setExamApprenants((examApps || []) as PlanningApprenant[]);
+            setAllApprenants((loadResult.allApprenants || []) as PlanningApprenant[]);
+            setExamApprenants((loadResult.examApprenants || []) as PlanningApprenant[]);
             setDeplacesIds([
               ...new Set([
-                ...((dataSession || []).map((item: any) => item.apprenant_id)),
-                ...((dataApprenants || []).map((item: any) => item.id)),
+                ...((loadResult.deplacesSession || []).map((item: any) => item.apprenant_id)),
+                ...((loadResult.deplacesApprenants || []).map((item: any) => item.id)),
               ]),
             ]);
             setDejaFormesIds([
-              ...new Set((dejaFormes || []).map((item: any) => item.apprenant_id)),
+              ...new Set((loadResult.dejaFormes || []).map((item: any) => item.apprenant_id)),
             ]);
 
             const occupied = new Set<string>();
-            (existingSessions || []).forEach((session) => {
+            (loadResult.existingSessions || []).forEach((session: any) => {
               const start = new Date(session.date_debut + "T00:00:00");
               const end = new Date(session.date_fin + "T00:00:00");
               let current = new Date(start);
