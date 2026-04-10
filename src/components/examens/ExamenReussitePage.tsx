@@ -1394,6 +1394,37 @@ export function ExamenReussitePage() {
         const joursTAXI = Math.ceil(taxiList.length / 3);
         const maxRows = Math.max(vtcList.length, taxiList.length);
 
+        // Compute VTC/TAXI date ranges from calendar
+        const toKeyF = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const calWeekdays: Date[] = [];
+        {
+          const s = new Date(planningStartDate + 'T00:00:00');
+          const e = new Date(planningEndDate + 'T00:00:00');
+          let c = new Date(s);
+          while (c <= e) {
+            const k = toKeyF(c);
+            if (c.getDay() !== 0 && c.getDay() !== 6 && !excludedDays.includes(k) && !occupiedDays.has(k)) {
+              calWeekdays.push(new Date(c));
+            }
+            c.setDate(c.getDate() + 1);
+          }
+          extraDays.forEach(ed => {
+            if (!calWeekdays.some(d => toKeyF(d) === ed) && !excludedDays.includes(ed)) {
+              calWeekdays.push(new Date(ed + 'T00:00:00'));
+            }
+          });
+          calWeekdays.sort((a, b) => a.getTime() - b.getTime());
+        }
+        const formatDateFr = (d: Date) => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+        const vtcCalDays = calWeekdays.slice(0, joursVTC);
+        const taxiCalDays = calWeekdays.slice(joursVTC, joursVTC + joursTAXI);
+        const vtcDateRange = vtcCalDays.length > 0
+          ? `du ${formatDateFr(vtcCalDays[0])} au ${formatDateFr(vtcCalDays[vtcCalDays.length - 1])}`
+          : 'dates non définies';
+        const taxiDateRange = taxiCalDays.length > 0
+          ? `du ${formatDateFr(taxiCalDays[0])} au ${formatDateFr(taxiCalDays[taxiCalDays.length - 1])}`
+          : 'dates non définies';
+
         return (
           <Card className="border-l-4 border-l-indigo-500">
             <CardHeader>
@@ -1479,7 +1510,7 @@ export function ExamenReussitePage() {
                           <AlertDialogDescription asChild>
                             <div className="space-y-2 text-sm">
                               <p>Envoyer l'email "Félicitations VTC - Choix date pratique" à {vtcList.filter(a => a.email).length} candidat(s) ayant un email renseigné ?</p>
-                              <p className="font-medium text-blue-700">📅 Entraînement VTC : du 16 au 24 février 2026</p>
+                              <p className="font-medium text-blue-700">📅 Entraînement VTC : {vtcDateRange}</p>
                             </div>
                           </AlertDialogDescription>
                         </AlertDialogHeader>
@@ -1728,7 +1759,7 @@ export function ExamenReussitePage() {
                           <AlertDialogDescription asChild>
                             <div className="space-y-2 text-sm">
                               <p>Envoyer l'email "Félicitations TAXI - Choix date pratique" à {taxiList.filter(a => a.email).length} candidat(s) ayant un email renseigné ?</p>
-                              <p className="font-medium text-amber-700">📅 Entraînement TAXI : du 25 au 27 février 2026</p>
+                              <p className="font-medium text-amber-700">📅 Entraînement TAXI : {taxiDateRange}</p>
                             </div>
                           </AlertDialogDescription>
                         </AlertDialogHeader>
