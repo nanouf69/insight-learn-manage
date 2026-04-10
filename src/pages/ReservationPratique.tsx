@@ -640,11 +640,15 @@ export default function ReservationPratique() {
           <CardContent className="pt-6 space-y-4">
             <h2 className="text-lg font-semibold">Bonjour {apprenant?.prenom} 👋</h2>
             <p className="text-muted-foreground text-sm">
-              Félicitations pour votre réussite à l'épreuve d'admissibilité ! Choisissez ci-dessous <strong>une seule journée</strong> d'entraînement pratique.
+              {modifying ? (
+                <>Vous modifiez votre réservation. Votre date actuelle : <strong>{formatDate(safeDateParse(existingReservation!.date_choisie))}</strong>. Choisissez une nouvelle date ci-dessous.</>
+              ) : (
+                <>Félicitations pour votre réussite à l'épreuve d'admissibilité ! Choisissez ci-dessous <strong>une seule journée</strong> d'entraînement pratique.</>
+              )}
             </p>
 
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm space-y-3">
-              <p className="font-semibold text-amber-800">⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié.</p>
+              <p className="font-semibold text-amber-800">⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date.</p>
 
               <div className="text-amber-700 space-y-2">
                 <p>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.</p>
@@ -751,10 +755,18 @@ export default function ReservationPratique() {
                 disabled={submitting}
                 className={`w-full text-lg py-6 ${isVTC ? "bg-blue-600 hover:bg-blue-700" : "bg-amber-600 hover:bg-amber-700"}`}
               >
-                {submitting ? "Réservation en cours..." : `Confirmer le ${formatDate(safeDateParse(selectedDate))}`}
+                {submitting ? "Réservation en cours..." : `${modifying ? "Modifier pour" : "Confirmer"} le ${formatDate(safeDateParse(selectedDate))}`}
               </Button>
             </CardContent>
           </Card>
+        )}
+
+        {modifying && (
+          <div className="text-center">
+            <Button variant="ghost" onClick={() => { setModifying(false); setSelectedDate(null); }}>
+              ← Annuler la modification
+            </Button>
+          </div>
         )}
 
         <div className="text-center text-xs text-muted-foreground pb-6 space-y-1">
