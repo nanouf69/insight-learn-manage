@@ -553,11 +553,11 @@ export default function ReservationPratique() {
               </div>
             </div>
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-left text-sm space-y-2">
-              <p className="font-semibold text-amber-800">⚠️ Rappels importants :</p>
-              <ul className="list-disc pl-5 text-amber-700 space-y-1">
-                <li>Ce créneau <strong>ne pourra pas être modifié</strong></li>
-                <li>Vous ne recevrez <strong>aucune confirmation</strong> supplémentaire</li>
-                <li>Pause déjeuner à Confluences (12h-13h)</li>
+               <p className="font-semibold text-amber-800">⚠️ Rappels importants :</p>
+               <ul className="list-disc pl-5 text-amber-700 space-y-1">
+                 <li>Vous ne pouvez choisir qu'<strong>UNE SEULE date</strong> (modifiable si des places restent disponibles)</li>
+                 <li>Vous recevrez un <strong>email de confirmation</strong> après votre choix</li>
+                 <li>Pause déjeuner à Confluences (12h-13h)</li>
                 {isVTC ? (
                   <li>Révisez : <a href="https://app.formative.com/join/DNFDZS" className="underline text-primary" target="_blank" rel="noreferrer">Formation Pratique VTC</a></li>
                 ) : (
@@ -698,10 +698,10 @@ export default function ReservationPratique() {
               <div className="flex items-start gap-3">
                 <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
                 <div className="text-sm space-y-1">
-                  <p className="font-semibold text-amber-800">Attention — Choix définitif</p>
-                  <p className="text-amber-700">
-                    Tout créneau choisi <strong>ne pourra pas être modifié</strong> et vous ne recevrez <strong>aucune confirmation</strong>.
-                  </p>
+                   <p className="font-semibold text-amber-800">Attention — Confirmation</p>
+                   <p className="text-amber-700">
+                     Un <strong>email de confirmation</strong> vous sera envoyé. Vous pourrez modifier votre date si des places restent disponibles.
+                   </p>
                 </div>
               </div>
               <Button
