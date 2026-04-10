@@ -195,15 +195,15 @@ export default function ReservationPratique() {
 
             setAllApprenants((loadResult.allApprenants || []) as PlanningApprenant[]);
             setExamApprenants((loadResult.examApprenants || []) as PlanningApprenant[]);
-            setDeplacesIds([
-              ...new Set([
-                ...((loadResult.deplacesSession || []).map((item: any) => item.apprenant_id)),
-                ...((loadResult.deplacesApprenants || []).map((item: any) => item.id)),
-              ]),
-            ]);
-            setDejaFormesIds([
-              ...new Set((loadResult.dejaFormes || []).map((item: any) => item.apprenant_id)),
-            ]);
+            setDeplacesIds(
+              [...new Set([
+                ...((loadResult.deplacesSession || []).map((item: any) => item.apprenant_id as string)),
+                ...((loadResult.deplacesApprenants || []).map((item: any) => item.id as string)),
+              ])] as string[]
+            );
+            setDejaFormesIds(
+              [...new Set((loadResult.dejaFormes || []).map((item: any) => item.apprenant_id as string))] as string[]
+            );
 
             const occupied = new Set<string>();
             (loadResult.existingSessions || []).forEach((session: any) => {
