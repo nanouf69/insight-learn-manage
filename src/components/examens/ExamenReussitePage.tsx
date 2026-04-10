@@ -1846,7 +1846,7 @@ export function ExamenReussitePage() {
                                 setSendingTAXIRelance(true);
                                 let sent = 0;
                                 for (const a of taxiSansResa) {
-                                  const bookingUrl = `https://insight-learn-manage.lovable.app/reservation-pratique?id=${a.id}&type=taxi`;
+                                  const bookingUrl = getBookingUrl(a.id, 'taxi');
                                   const subject = `RAPPEL - Choisissez votre date de formation pratique TAXI - ${a.prenom} ${a.nom}`;
                                   const body = `Bonjour ${a.prenom},<br><br>Nous n'avons pas encore reçu votre choix de date pour la formation pratique TAXI.<br><br>⚠️ Il est impératif de réserver votre créneau au plus vite.<br><br>👉 <a href="${bookingUrl}">CHOISISSEZ VOTRE DATE ICI</a><br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans "Formation Pratique TAXI" : QCM Taximètre, Cas pratique, Quizz Lyon et Questions à apprendre.<br>Ou cliquez ici : <a href="https://app.formative.com/join/ZT924H">https://app.formative.com/join/ZT924H</a><br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous`;
                                   try {
