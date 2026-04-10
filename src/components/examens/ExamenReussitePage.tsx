@@ -2125,14 +2125,14 @@ export function ExamenReussitePage() {
                   Planning formation pratique
                 </CardTitle>
               <p className="text-sm text-muted-foreground">
-                VTC : {totalVTC} candidats ({vtcDaysNeeded}j) • TAXI : {totalTAXI} candidats ({taxiDaysNeeded}j) • {totalReserved} réservation(s) confirmée(s) • 3 candidats/jour
+                VTC : {totalVTC} candidats ({vtcDaysNeeded}j nécessaires) • TAXI : {totalTAXI} candidats ({taxiDaysNeeded}j nécessaires) • {weekdays.length} jours disponibles au calendrier • {totalReserved} réservation(s) confirmée(s) • 3 candidats/jour
               </p>
               {(vtcRestant > 0 || taxiRestant > 0) && (
                 <p className="text-sm font-bold text-destructive mt-1">
-                  ⚠️ Jours insuffisants — 
-                  {vtcRestant > 0 && <span> {vtcRestant} VTC restant(s)</span>}
+                  ⚠️ Seulement {weekdays.length} jours au calendrier ({vtcDaysNeeded + taxiDaysNeeded}j nécessaires) — 
+                  {vtcRestant > 0 && <span> {vtcRestant} VTC</span>}
                   {vtcRestant > 0 && taxiRestant > 0 && <span> et</span>}
-                  {taxiRestant > 0 && <span> {taxiRestant} TAXI restant(s)</span>}
+                  {taxiRestant > 0 && <span> {taxiRestant} TAXI</span>}
                   {' '}ne rentrent pas dans le planning !
                 </p>
               )}
