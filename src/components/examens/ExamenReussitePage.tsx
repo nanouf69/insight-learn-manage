@@ -1510,7 +1510,7 @@ export function ExamenReussitePage() {
                           <AlertDialogDescription asChild>
                             <div className="space-y-2 text-sm">
                               <p>Envoyer l'email "Félicitations VTC - Choix date pratique" à {vtcList.filter(a => a.email).length} candidat(s) ayant un email renseigné ?</p>
-                              <p className="font-medium text-blue-700">📅 Entraînement VTC : du 16 au 24 février 2026</p>
+                              <p className="font-medium text-blue-700">📅 Entraînement VTC : {vtcDateRange}</p>
                             </div>
                           </AlertDialogDescription>
                         </AlertDialogHeader>
