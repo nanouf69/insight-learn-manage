@@ -1761,13 +1761,21 @@ export function ExamenReussitePage() {
                           {sendingTAXIPratique ? 'Envoi...' : sentTAXIPratique ? 'Envoyé ✓' : `Email dates (${taxiList.filter(a => a.email).length})`}
                         </Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent>
+                      <AlertDialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                         <AlertDialogHeader>
                           <AlertDialogTitle>Envoyer les emails TAXI - Dates pratique</AlertDialogTitle>
                           <AlertDialogDescription asChild>
-                            <div className="space-y-2 text-sm">
+                            <div className="space-y-3 text-sm">
                               <p>Envoyer l'email "Félicitations TAXI - Choix date pratique" à {taxiList.filter(a => a.email).length} candidat(s) ayant un email renseigné ?</p>
                               <p className="font-medium text-amber-700">📅 Entraînement TAXI : {taxiDateRange}</p>
+                              <details className="border rounded-lg">
+                                <summary className="cursor-pointer px-3 py-2 text-xs font-semibold bg-muted/50 rounded-t-lg hover:bg-muted">👁️ Aperçu de l'email (exemple avec {taxiList[0]?.prenom || 'Prénom'})</summary>
+                                <div className="p-4 bg-white border-t text-xs space-y-1 text-foreground">
+                                  <p className="font-semibold text-muted-foreground">Objet : Félicitations - Choix de votre date de formation pratique TAXI - {taxiList[0]?.prenom || 'Prénom'} {taxiList[0]?.nom || 'Nom'}</p>
+                                  <hr className="my-2" />
+                                  <div className="space-y-2 leading-relaxed" dangerouslySetInnerHTML={{ __html: `Bonjour ${taxiList[0]?.prenom || 'Prénom'},<br><br>Félicitations, vous venez de réussir votre épreuve d'admissibilité, face à l'épreuve d'admission.<br><br>Vous devrez choisir une journée complète d'entraînement pratique (jusqu'à 17h au maximum).<br><br>👉 <strong>CHOISISSEZ VOTRE DATE ICI</strong> (lien personnalisé)<br><br>⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié.<br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans "Formation Pratique TAXI" : QCM Taximètre, Cas pratique, Quizz Lyon et Questions à apprendre.<br>Ou cliquez ici : https://app.formative.com/join/ZT924H<br><br>⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.<br><br>🍽️ Vous aurez une pause à Confluences aux alentours de 12h jusqu'à 13h.<br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous` }} />
+                                </div>
+                              </details>
                             </div>
                           </AlertDialogDescription>
                         </AlertDialogHeader>
