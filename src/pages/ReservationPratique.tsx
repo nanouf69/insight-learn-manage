@@ -443,72 +443,25 @@ export default function ReservationPratique() {
     if (!selectedDate || !apprenantId) return;
     setSubmitting(true);
 
-    if (existingReservation) {
-      // Modification: update existing reservation
-      const { error: updateErr } = await supabase
-        .from("reservations_pratique")
-        .update({ date_choisie: selectedDate, type_formation: type })
-        .eq("apprenant_id", apprenantId);
+    try {
+      const { data, error: fnErr } = await supabase.functions.invoke("confirm-reservation-pratique", {
+        body: {
+          apprenantId,
+          selectedDate,
+          type,
+          isModification: !!existingReservation,
+        },
+      });
 
-      if (updateErr) {
-        setError("Erreur lors de la modification. Veuillez réessayer.");
+      if (fnErr) {
+        setError("Erreur lors de la réservation. Veuillez réessayer.");
         setSubmitting(false);
         return;
       }
-    } else {
-      const { error: insertErr } = await supabase
-        .from("reservations_pratique")
-        .insert({
-          apprenant_id: apprenantId,
-          date_choisie: selectedDate,
-          type_formation: type,
-        });
-
-      if (insertErr) {
-        if (insertErr.message.includes("unique")) {
-          setError("Vous avez déjà réservé une date. Veuillez rafraîchir la page.");
-        } else {
-          setError("Erreur lors de la réservation. Veuillez réessayer.");
-        }
-        setSubmitting(false);
-        return;
-      }
-    }
-
-    await supabase
-      .from("apprenants")
-      .update({ date_examen_pratique: selectedDate })
-      .eq("id", apprenantId);
-
-    if (apprenant?.nom && apprenant?.prenom) {
-      const [yearStr, monthStr, dayStr] = selectedDate.split("-");
-      const dayNum = parseInt(dayStr, 10);
-      const monthIdx = parseInt(monthStr, 10) - 1;
-      const yearNum = parseInt(yearStr, 10);
-      const confDate = new Date(yearNum, monthIdx, dayNum, 12, 0, 0);
-      const dateStr = `${DAY_NAMES[confDate.getDay()]} ${dayNum} ${MONTH_NAMES[monthIdx]} ${yearNum}`;
-      const formationType = isVTC ? "VTC" : "TAXI";
-      const exerciceLink = isVTC ? "https://app.formative.com/join/DNFDZS" : "https://app.formative.com/join/ZT924H";
-      const exerciceNom = isVTC
-        ? '"Formation Pratique VTC" : Quizz Lyon et Questions à apprendre'
-        : '"Formation Pratique TAXI" : QCM Taximètre, Cas pratique, Quizz Lyon et Questions à apprendre';
-
-      const { data: appFull } = await supabase
-        .from("apprenants")
-        .select("email")
-        .eq("id", apprenantId)
-        .single();
-
-      if (appFull?.email) {
-        const subject = `Confirmation de votre date de formation pratique ${formationType} - ${apprenant.prenom} ${apprenant.nom}`;
-        const body = `Bonjour ${apprenant.prenom},\n\nNous confirmons votre inscription à la journée de formation pratique ${formationType} :\n\n📅 Date : ${dateStr}\n🕐 Horaires : ${getTrainingEmailText(type)}\n📍 Lieu : 86 Route de Genas, 69003 Lyon\n🍽️ Pause déjeuner : Confluences (12h - 13h)\n\n📚 Rappel important :\nMerci de bien réviser les exercices suivants dans ${exerciceNom}.\nLien : ${exerciceLink}\n\n⚠️ Ce créneau ne pourra pas être modifié et vous ne recevrez aucune autre confirmation.\n\nCordialement,\n\nFTRANSPORT\nCentre de formation\n86 Route de Genas 69003 Lyon\n📞 04.28.29.60.91\nDe 9h à 17h sur rendez-vous`;
-
-        try {
-          await supabase.functions.invoke("sync-outlook-emails", {
-            body: { action: "send", userEmail: "contact@ftransport.fr", to: appFull.email, subject, body, apprenantId },
-          });
-        } catch {}
-      }
+    } catch (err) {
+      setError("Erreur lors de la réservation. Veuillez réessayer.");
+      setSubmitting(false);
+      return;
     }
 
     setConfirmed(true);
