@@ -1035,7 +1035,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     const dateExamenTheorique = formatDateFr(a.date_examen_theorique);
     const dateExamenPratique = formatDateFr(a.date_examen_pratique);
     const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-    const bookingUrl = `https://insight-learn-manage.lovable.app/reservation-pratique?id=${a.id}&type=${formation.toLowerCase().includes('vtc') ? 'vtc' : 'taxi'}`;
+    const bookingUrl = `https://insight-learn-manage.lovable.app/reservation-pratique?id=${a.id}`;
     const onboardingUrl = 'https://insight-learn-manage.lovable.app/bienvenue';
 
     return template
