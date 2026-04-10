@@ -70,12 +70,11 @@ function isPracticeTAXIType(type: string | null) {
   return !!type && PRACTICE_TAXI_TYPES.has(type.toLowerCase());
 }
 
-function buildPratiqueReservationUrl(apprenantId: string, type: 'vtc' | 'taxi', examDate: string, pratiqueDate: string) {
+function buildPratiqueReservationUrl(apprenantId: string, type: 'vtc' | 'taxi', examDate: string) {
   const params = new URLSearchParams({
     id: apprenantId,
     type,
     exam: examDate,
-    pratique: pratiqueDate,
   });
 
   return `https://insight-learn-manage.lovable.app/reservation-pratique?${params.toString()}`;
@@ -435,7 +434,35 @@ export function ExamenReussitePage() {
     return days;
   }, [existingSessions]);
 
-  // Load saved planning config from DB
+  // Load latest saved planning config for the selected exam date
+  useEffect(() => {
+    if (!selectedExamDate) return;
+    setPlanningConfigLoaded(false);
+    (async () => {
+      const { data } = await supabase
+        .from('planning_pratique_config')
+        .select('*')
+        .eq('exam_date', selectedExamDate)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (data) {
+        if (data.date_pratique && data.date_pratique !== selectedDatePratique) {
+          setSelectedDatePratique(data.date_pratique);
+        }
+        setPlanningStartDate(data.planning_start_date);
+        setPlanningEndDate(data.planning_end_date);
+        setExcludedDays(data.excluded_days || []);
+        setExtraDays(data.extra_days || []);
+        setExtraCandidatsFormation(data.extra_candidats || []);
+      }
+
+      setPlanningConfigLoaded(true);
+    })();
+  }, [selectedExamDate]);
+
+  // Load exact config when the practical period is manually changed
   useEffect(() => {
     if (!selectedExamDate || !selectedDatePratique) return;
     setPlanningConfigLoaded(false);
@@ -1438,7 +1465,7 @@ export function ExamenReussitePage() {
         const vtcCalendarDates = vtcCalDays.map(d => toKeyF(d));
         const taxiCalendarDates = taxiCalDays.map(d => toKeyF(d));
         const getBookingUrl = (apprenantId: string, type: 'vtc' | 'taxi') =>
-          buildPratiqueReservationUrl(apprenantId, type, selectedExamDate, selectedDatePratique);
+          buildPratiqueReservationUrl(apprenantId, type, selectedExamDate);
         const vtcPreviewBookingUrl = vtcList[0]?.id ? getBookingUrl(vtcList[0].id, 'vtc') : '';
         const taxiPreviewBookingUrl = taxiList[0]?.id ? getBookingUrl(taxiList[0].id, 'taxi') : '';
 
