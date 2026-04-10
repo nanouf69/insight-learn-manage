@@ -141,6 +141,7 @@ export default function ReservationPratique() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [modifying, setModifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [detectedType, setDetectedType] = useState<"vtc" | "taxi">("vtc");
   const [resolvedExamDate, setResolvedExamDate] = useState<string | null>(null);
@@ -442,22 +443,36 @@ export default function ReservationPratique() {
     if (!selectedDate || !apprenantId) return;
     setSubmitting(true);
 
-    const { error: insertErr } = await supabase
-      .from("reservations_pratique")
-      .insert({
-        apprenant_id: apprenantId,
-        date_choisie: selectedDate,
-        type_formation: type,
-      });
+    if (existingReservation) {
+      // Modification: update existing reservation
+      const { error: updateErr } = await supabase
+        .from("reservations_pratique")
+        .update({ date_choisie: selectedDate, type_formation: type })
+        .eq("apprenant_id", apprenantId);
 
-    if (insertErr) {
-      if (insertErr.message.includes("unique")) {
-        setError("Vous avez déjà réservé une date. Contactez Ftransport pour toute modification.");
-      } else {
-        setError("Erreur lors de la réservation. Veuillez réessayer.");
+      if (updateErr) {
+        setError("Erreur lors de la modification. Veuillez réessayer.");
+        setSubmitting(false);
+        return;
       }
-      setSubmitting(false);
-      return;
+    } else {
+      const { error: insertErr } = await supabase
+        .from("reservations_pratique")
+        .insert({
+          apprenant_id: apprenantId,
+          date_choisie: selectedDate,
+          type_formation: type,
+        });
+
+      if (insertErr) {
+        if (insertErr.message.includes("unique")) {
+          setError("Vous avez déjà réservé une date. Veuillez rafraîchir la page.");
+        } else {
+          setError("Erreur lors de la réservation. Veuillez réessayer.");
+        }
+        setSubmitting(false);
+        return;
+      }
     }
 
     await supabase
@@ -527,23 +542,35 @@ export default function ReservationPratique() {
     );
   }
 
-  if (existingReservation) {
+  if (existingReservation && !modifying) {
     const resDate = safeDateParse(existingReservation.date_choisie);
+    const hasAvailableSlots = dateSlots.some((s) => s.remaining > 0 && toLocalDateKey(s.date) !== existingReservation.date_choisie);
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
           <CardContent className="pt-8 text-center space-y-4">
             <CheckCircle className="h-16 w-16 text-emerald-500 mx-auto" />
-            <h2 className="text-xl font-bold">Réservation déjà effectuée</h2>
-            <p className="text-muted-foreground">{apprenant?.prenom}, vous avez déjà réservé votre date de formation pratique :</p>
+            <h2 className="text-xl font-bold">Réservation effectuée</h2>
+            <p className="text-muted-foreground">{apprenant?.prenom}, vous avez réservé votre date de formation pratique :</p>
             <div className="bg-primary/10 rounded-lg p-4">
               <p className="text-lg font-bold text-primary">{formatDate(resDate)}</p>
               <p className="text-sm text-muted-foreground">{getTrainingBadgeText(type)}</p>
             </div>
             <div className="text-sm text-muted-foreground space-y-1">
               <p>📍 86 Route de Genas 69003 Lyon</p>
-              <p>Aucune modification possible. Contactez Ftransport si besoin.</p>
             </div>
+            {hasAvailableSlots && (
+              <Button
+                variant="outline"
+                onClick={() => setModifying(true)}
+                className="mt-2"
+              >
+                Modifier ma date
+              </Button>
+            )}
+            {!hasAvailableSlots && (
+              <p className="text-xs text-muted-foreground">Aucune autre date disponible pour modifier votre réservation.</p>
+            )}
           </CardContent>
         </Card>
       </div>
