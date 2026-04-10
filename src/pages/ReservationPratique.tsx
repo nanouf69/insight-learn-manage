@@ -7,12 +7,24 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import logoFtransport from "@/assets/logo-ftransport.png";
+import { ALL_DATES_EXAMEN_REUSSITE, ALL_DATES_EXAMEN_PRATIQUE_NO_ACCENT } from "@/lib/examDatesConfig";
 
 interface ApprenantInfo {
   id: string;
   prenom: string;
   nom: string;
   type_apprenant: string | null;
+  date_examen_theorique: string | null;
+}
+
+interface PlanningApprenant {
+  id: string;
+  prenom: string;
+  nom: string;
+  type_apprenant: string | null;
+  date_examen_theorique: string | null;
+  resultat_examen: string | null;
+  resultat_examen_pratique: string | null;
 }
 
 interface ReservationExistante {
@@ -26,29 +38,62 @@ interface DateSlot {
   remaining: number;
 }
 
-const DAY_NAMES = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
-const MONTH_NAMES = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+const DAY_NAMES = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+const MONTH_NAMES = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+const TAXI_TYPES = ["taxi", "taxi-e", "taxi-e-presentiel", "ta", "ta-e", "ta-e-presentiel", "pa-taxi", "rp-taxi"];
+const VTC_TYPES = ["vtc", "vtc-e", "vtc-e-presentiel", "va-e", "pa-vtc", "rp-vtc"];
+const PA_TYPES = ["pa-vtc", "pa-taxi"];
+const RP_TYPES = ["rp-vtc", "rp-taxi"];
 
-// Determine VTC or TAXI from the apprenant's type_apprenant field
-const TAXI_TYPES = ['taxi', 'taxi-e', 'taxi-e-presentiel', 'ta', 'ta-e', 'ta-e-presentiel', 'pa-taxi', 'rp-taxi'];
-function detectFormationType(typeApprenant: string | null): 'vtc' | 'taxi' {
-  if (!typeApprenant) return 'vtc';
-  return TAXI_TYPES.includes(typeApprenant.toLowerCase()) ? 'taxi' : 'vtc';
+function detectFormationType(typeApprenant: string | null): "vtc" | "taxi" {
+  if (!typeApprenant) return "vtc";
+  return TAXI_TYPES.includes(typeApprenant.toLowerCase()) ? "taxi" : "vtc";
 }
 
-// Helper to get local YYYY-MM-DD without UTC shift
-const toLocalDateKey = (d: Date) => {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-};
+function isVTCType(typeApprenant: string | null) {
+  return !!typeApprenant && VTC_TYPES.includes(typeApprenant.toLowerCase());
+}
 
-function generatePlanningDates(type: 'vtc' | 'taxi'): { date: Date; capacity: number }[] {
-  const start = new Date(2026, 1, 16); // Feb 16, 2026
-  const end = new Date(2026, 2, 7);    // March 7
+function isTAXIType(typeApprenant: string | null) {
+  return !!typeApprenant && TAXI_TYPES.includes(typeApprenant.toLowerCase());
+}
+
+function normalizeText(value: string | null | undefined) {
+  return (value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function detectPlanningExamDate(rawDate: string | null) {
+  const normalizedRaw = normalizeText(rawDate);
+  if (!normalizedRaw) return null;
+
+  const match = ALL_DATES_EXAMEN_REUSSITE.find((item) => normalizedRaw.includes(normalizeText(item.date)));
+  return match?.date || null;
+}
+
+function getPratiqueDateFromExam(examDate: string | null) {
+  if (!examDate) return null;
+  const exam = ALL_DATES_EXAMEN_REUSSITE.find((item) => item.date === examDate);
+  if (!exam) return null;
+  return ALL_DATES_EXAMEN_PRATIQUE_NO_ACCENT[exam.pratiqueIndex] || null;
+}
+
+function toLocalDateKey(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function buildFallbackPlanningDates(type: "vtc" | "taxi"): { date: Date; capacity: number }[] {
+  const start = new Date(2026, 1, 16);
+  const end = new Date(2026, 2, 7);
   const allWeekdays: Date[] = [];
   let current = new Date(start);
+
   while (current < end) {
     const dow = current.getDay();
     if (dow !== 0 && dow !== 6) {
@@ -57,33 +102,37 @@ function generatePlanningDates(type: 'vtc' | 'taxi'): { date: Date; capacity: nu
     current.setDate(current.getDate() + 1);
   }
 
-  if (type === 'vtc') {
-    // VTC: first days, 4/day
-    const vtcDays: { date: Date; capacity: number }[] = [];
-    for (let i = 0; i < Math.min(7, allWeekdays.length); i++) {
-      const d = allWeekdays[i];
-      vtcDays.push({ date: d, capacity: 4 });
-    }
-    return vtcDays;
-  } else {
-    // TAXI: starts from Feb 25, only February days (March = exams), 4/day
-    const taxiStartIdx = allWeekdays.findIndex(d => d.getDate() === 25 && d.getMonth() === 1);
-    const startIdx = taxiStartIdx >= 0 ? taxiStartIdx : 7;
-    const taxiDays: { date: Date; capacity: number }[] = [];
-    for (let i = startIdx; i < allWeekdays.length; i++) {
-      const d = allWeekdays[i];
-      // Stop at March (month === 2) — March is reserved for exams
-      if (d.getMonth() >= 2) break;
-      taxiDays.push({ date: d, capacity: 4 });
-    }
-    return taxiDays;
+  if (type === "vtc") {
+    return allWeekdays.slice(0, 7).map((date) => ({ date, capacity: 3 }));
   }
+
+  const taxiStartIdx = allWeekdays.findIndex((d) => d.getDate() === 25 && d.getMonth() === 1);
+  const startIdx = taxiStartIdx >= 0 ? taxiStartIdx : 7;
+  return allWeekdays
+    .slice(startIdx)
+    .filter((d) => d.getMonth() < 2)
+    .map((date) => ({ date, capacity: 3 }));
+}
+
+function getTrainingBadgeText(type: "vtc" | "taxi") {
+  return type === "vtc" ? "9h - 12h • 13h - 16h" : "9h - 17h";
+}
+
+function getTrainingSlotText(type: "vtc" | "taxi") {
+  return type === "vtc"
+    ? "9h00 - 12h00 • 13h00 - 16h00 • Pause 12h-13h à Confluences"
+    : "9h00 - 17h00 • Pause 12h-13h à Confluences";
+}
+
+function getTrainingEmailText(type: "vtc" | "taxi") {
+  return type === "vtc" ? "9h00 - 12h00 puis 13h00 - 16h00" : "9h00 - 17h00";
 }
 
 export default function ReservationPratique() {
   const [searchParams] = useSearchParams();
   const apprenantId = searchParams.get("id");
-  const typeParam = searchParams.get("type")?.toLowerCase() as 'vtc' | 'taxi' | null;
+  const examParam = searchParams.get("exam");
+  const pratiqueParam = searchParams.get("pratique");
 
   const [apprenant, setApprenant] = useState<ApprenantInfo | null>(null);
   const [existingReservation, setExistingReservation] = useState<ReservationExistante | null>(null);
@@ -93,12 +142,23 @@ export default function ReservationPratique() {
   const [submitting, setSubmitting] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [detectedType, setDetectedType] = useState<'vtc' | 'taxi'>('vtc');
+  const [detectedType, setDetectedType] = useState<"vtc" | "taxi">("vtc");
+  const [resolvedExamDate, setResolvedExamDate] = useState<string | null>(null);
+  const [resolvedPratiqueDate, setResolvedPratiqueDate] = useState<string | null>(null);
+  const [planningStartDate, setPlanningStartDate] = useState<string | null>(null);
+  const [planningEndDate, setPlanningEndDate] = useState<string | null>(null);
+  const [excludedDays, setExcludedDays] = useState<string[]>([]);
+  const [extraDays, setExtraDays] = useState<string[]>([]);
+  const [extraCandidats, setExtraCandidats] = useState<string[]>([]);
+  const [occupiedDays, setOccupiedDays] = useState<string[]>([]);
+  const [allApprenants, setAllApprenants] = useState<PlanningApprenant[]>([]);
+  const [examApprenants, setExamApprenants] = useState<PlanningApprenant[]>([]);
+  const [deplacesIds, setDeplacesIds] = useState<string[]>([]);
+  const [dejaFormesIds, setDejaFormesIds] = useState<string[]>([]);
 
   const type = detectedType;
-  const isVTC = type === 'vtc';
+  const isVTC = type === "vtc";
 
-  // Fetch apprenant info and existing reservations
   useEffect(() => {
     async function load() {
       if (!apprenantId) {
@@ -107,55 +167,266 @@ export default function ReservationPratique() {
         return;
       }
 
-      // Fetch apprenant
-      const { data: appData, error: appErr } = await supabase
-        .from("apprenants")
-        .select("id, prenom, nom, type_apprenant")
-        .eq("id", apprenantId)
-        .single();
+      try {
+        const [{ data: appData, error: appErr }, { data: existingRes }, { data: allRes, error: resErr }] = await Promise.all([
+          supabase
+            .from("apprenants")
+            .select("id, prenom, nom, type_apprenant, date_examen_theorique")
+            .eq("id", apprenantId)
+            .single(),
+          supabase
+            .from("reservations_pratique")
+            .select("date_choisie")
+            .eq("apprenant_id", apprenantId)
+            .maybeSingle(),
+          supabase
+            .from("reservations_pratique")
+            .select("date_choisie, type_formation"),
+        ]);
 
-      if (appErr || !appData) {
-        setError("Apprenant non trouvé. Contactez Ftransport.");
+        if (appErr || !appData) {
+          setError("Apprenant non trouvé. Contactez Ftransport.");
+          setLoading(false);
+          return;
+        }
+
+        if (resErr) throw resErr;
+
+        setApprenant(appData);
+        setExistingReservation(existingRes || null);
+
+        const correctType = detectFormationType(appData.type_apprenant);
+        setDetectedType(correctType);
+
+        const counts: Record<string, number> = {};
+        (allRes || [])
+          .filter((reservation) => reservation.type_formation?.toLowerCase() === correctType)
+          .forEach((reservation) => {
+            counts[reservation.date_choisie] = (counts[reservation.date_choisie] || 0) + 1;
+          });
+        setReservationCounts(counts);
+
+        const inferredExamDate = examParam || detectPlanningExamDate(appData.date_examen_theorique);
+        const inferredPratiqueDate = pratiqueParam || getPratiqueDateFromExam(inferredExamDate);
+
+        setResolvedExamDate(inferredExamDate);
+        setResolvedPratiqueDate(inferredPratiqueDate);
+
+        if (inferredExamDate && inferredPratiqueDate) {
+          const { data: config } = await supabase
+            .from("planning_pratique_config")
+            .select("*")
+            .eq("exam_date", inferredExamDate)
+            .eq("date_pratique", inferredPratiqueDate)
+            .maybeSingle();
+
+          if (config) {
+            setPlanningStartDate(config.planning_start_date);
+            setPlanningEndDate(config.planning_end_date);
+            setExcludedDays(config.excluded_days || []);
+            setExtraDays(config.extra_days || []);
+            setExtraCandidats(config.extra_candidats || []);
+
+            const [
+              { data: allApps, error: allAppsErr },
+              { data: examApps, error: examAppsErr },
+              { data: dataSession, error: deplacesSessionErr },
+              { data: dataApprenants, error: deplacesApprenantsErr },
+              { data: dejaFormes, error: dejaFormesErr },
+              { data: existingSessions, error: sessionsErr },
+            ] = await Promise.all([
+              supabase
+                .from("apprenants")
+                .select("id, prenom, nom, type_apprenant, date_examen_theorique, resultat_examen, resultat_examen_pratique")
+                .is("deleted_at", null)
+                .order("nom", { ascending: true }),
+              supabase
+                .from("apprenants")
+                .select("id, prenom, nom, type_apprenant, date_examen_theorique, resultat_examen, resultat_examen_pratique")
+                .ilike("date_examen_theorique", `%${inferredExamDate}%`)
+                .is("deleted_at", null)
+                .order("nom", { ascending: true }),
+              supabase
+                .from("session_apprenants")
+                .select("apprenant_id, sessions!inner(type_session)")
+                .eq("presence_pratique", "deplace")
+                .eq("sessions.type_session", "pratique"),
+              supabase
+                .from("apprenants")
+                .select("id")
+                .eq("resultat_examen_pratique", "deplace")
+                .is("deleted_at", null),
+              supabase
+                .from("session_apprenants")
+                .select("apprenant_id, sessions!inner(type_session)")
+                .eq("sessions.type_session", "pratique")
+                .eq("presence_pratique", "present"),
+              supabase
+                .from("sessions")
+                .select("id, date_debut, date_fin, type_session, nom")
+                .gte("date_fin", config.planning_start_date)
+                .lte("date_debut", config.planning_end_date),
+            ]);
+
+            if (allAppsErr || examAppsErr || deplacesSessionErr || deplacesApprenantsErr || dejaFormesErr || sessionsErr) {
+              throw allAppsErr || examAppsErr || deplacesSessionErr || deplacesApprenantsErr || dejaFormesErr || sessionsErr;
+            }
+
+            setAllApprenants((allApps || []) as PlanningApprenant[]);
+            setExamApprenants((examApps || []) as PlanningApprenant[]);
+            setDeplacesIds([
+              ...new Set([
+                ...((dataSession || []).map((item: any) => item.apprenant_id)),
+                ...((dataApprenants || []).map((item: any) => item.id)),
+              ]),
+            ]);
+            setDejaFormesIds([
+              ...new Set((dejaFormes || []).map((item: any) => item.apprenant_id)),
+            ]);
+
+            const occupied = new Set<string>();
+            (existingSessions || []).forEach((session) => {
+              const start = new Date(session.date_debut + "T00:00:00");
+              const end = new Date(session.date_fin + "T00:00:00");
+              let current = new Date(start);
+
+              while (current <= end) {
+                if (current.getDay() !== 0 && current.getDay() !== 6) {
+                  occupied.add(toLocalDateKey(current));
+                }
+                current.setDate(current.getDate() + 1);
+              }
+            });
+
+            setOccupiedDays([...occupied]);
+          }
+        }
+      } catch (err) {
+        console.error(err);
+        setError("Impossible de charger les dates du calendrier. Contactez Ftransport.");
+      } finally {
         setLoading(false);
-        return;
       }
-      setApprenant(appData);
-
-      // Detect correct type from apprenant's type_apprenant (ignore URL param)
-      const correctType = detectFormationType(appData.type_apprenant);
-      setDetectedType(correctType);
-
-      // Check existing reservation
-      const { data: existingRes } = await supabase
-        .from("reservations_pratique")
-        .select("date_choisie")
-        .eq("apprenant_id", apprenantId)
-        .maybeSingle();
-
-      if (existingRes) {
-        setExistingReservation(existingRes);
-      }
-
-      // Count reservations per date for this type
-      const { data: allRes } = await supabase
-        .from("reservations_pratique")
-        .select("date_choisie")
-        .eq("type_formation", correctType);
-
-      const counts: Record<string, number> = {};
-      (allRes || []).forEach(r => {
-        counts[r.date_choisie] = (counts[r.date_choisie] || 0) + 1;
-      });
-      setReservationCounts(counts);
-      setLoading(false);
     }
-    load();
-  }, [apprenantId]);
 
-  const planningDates = useMemo(() => generatePlanningDates(type), [type]);
+    load();
+  }, [apprenantId, examParam, pratiqueParam]);
+
+  const planningDates = useMemo(() => {
+    if (!planningStartDate || !planningEndDate || !resolvedExamDate) {
+      return buildFallbackPlanningDates(type);
+    }
+
+    const dejaFormesSet = new Set(dejaFormesIds);
+
+    const reussisFormation = examApprenants.filter(
+      (a) => a.resultat_examen === "oui" && !RP_TYPES.includes((a.type_apprenant || "").toLowerCase()) && !dejaFormesSet.has(a.id)
+    );
+
+    const paFormation = allApprenants.filter(
+      (a) =>
+        PA_TYPES.includes((a.type_apprenant || "").toLowerCase()) &&
+        a.date_examen_theorique?.includes(resolvedExamDate) &&
+        a.resultat_examen === "oui" &&
+        !reussisFormation.some((r) => r.id === a.id) &&
+        !dejaFormesSet.has(a.id)
+    );
+
+    const deplacesFormation = allApprenants.filter(
+      (a) =>
+        deplacesIds.includes(a.id) &&
+        !reussisFormation.some((r) => r.id === a.id) &&
+        !paFormation.some((r) => r.id === a.id) &&
+        !dejaFormesSet.has(a.id)
+    );
+
+    const echouesPratiqueFormation = allApprenants.filter(
+      (a) =>
+        a.resultat_examen_pratique === "non" &&
+        !reussisFormation.some((r) => r.id === a.id) &&
+        !paFormation.some((r) => r.id === a.id) &&
+        !deplacesFormation.some((r) => r.id === a.id) &&
+        !dejaFormesSet.has(a.id)
+    );
+
+    const extraFormation = allApprenants.filter(
+      (a) =>
+        extraCandidats.includes(a.id) &&
+        !reussisFormation.some((r) => r.id === a.id) &&
+        !paFormation.some((r) => r.id === a.id) &&
+        !deplacesFormation.some((r) => r.id === a.id) &&
+        !echouesPratiqueFormation.some((r) => r.id === a.id) &&
+        !dejaFormesSet.has(a.id)
+    );
+
+    const tousPlanning = [
+      ...reussisFormation,
+      ...paFormation,
+      ...deplacesFormation,
+      ...echouesPratiqueFormation,
+      ...extraFormation,
+    ];
+
+    const totalVTC = tousPlanning.filter((a) => isVTCType(a.type_apprenant)).length;
+    const totalTAXI = tousPlanning.filter((a) => isTAXIType(a.type_apprenant)).length;
+
+    const weekdays: Date[] = [];
+    const occupiedSet = new Set(occupiedDays);
+    const start = new Date(planningStartDate + "T00:00:00");
+    const end = new Date(planningEndDate + "T00:00:00");
+    let current = new Date(start);
+
+    while (current <= end) {
+      const key = toLocalDateKey(current);
+      if (current.getDay() !== 0 && current.getDay() !== 6 && !excludedDays.includes(key) && !occupiedSet.has(key)) {
+        weekdays.push(new Date(current));
+      }
+      current.setDate(current.getDate() + 1);
+    }
+
+    extraDays.forEach((dayKey) => {
+      if (!weekdays.some((date) => toLocalDateKey(date) === dayKey) && !excludedDays.includes(dayKey)) {
+        weekdays.push(new Date(dayKey + "T00:00:00"));
+      }
+    });
+
+    weekdays.sort((a, b) => a.getTime() - b.getTime());
+
+    const vtcDaysNeeded = Math.ceil(totalVTC / 3);
+    const taxiDaysNeeded = Math.ceil(totalTAXI / 3);
+    const dayTypeMap: Record<string, "vtc" | "taxi" | "libre"> = {};
+
+    weekdays.forEach((date, index) => {
+      const key = toLocalDateKey(date);
+      if (index < vtcDaysNeeded) {
+        dayTypeMap[key] = "vtc";
+      } else if (index < vtcDaysNeeded + taxiDaysNeeded) {
+        dayTypeMap[key] = "taxi";
+      } else {
+        dayTypeMap[key] = "libre";
+      }
+    });
+
+    return weekdays
+      .filter((date) => dayTypeMap[toLocalDateKey(date)] === type)
+      .map((date) => ({ date, capacity: 3 }));
+  }, [
+    type,
+    planningStartDate,
+    planningEndDate,
+    resolvedExamDate,
+    examApprenants,
+    allApprenants,
+    deplacesIds,
+    dejaFormesIds,
+    extraCandidats,
+    excludedDays,
+    extraDays,
+    occupiedDays,
+  ]);
 
   const dateSlots: DateSlot[] = useMemo(() => {
-    return planningDates.map(d => {
+    return planningDates.map((d) => {
       const key = toLocalDateKey(d.date);
       const reserved = reservationCounts[key] || 0;
       return {
@@ -189,30 +460,24 @@ export default function ReservationPratique() {
       return;
     }
 
-    // Update apprenant's date_examen_pratique
     await supabase
       .from("apprenants")
       .update({ date_examen_pratique: selectedDate })
       .eq("id", apprenantId);
 
-    // Send confirmation email
     if (apprenant?.nom && apprenant?.prenom) {
-      // Parse date manually to avoid any timezone shift
-      const [yearStr, monthStr, dayStr] = selectedDate.split('-');
+      const [yearStr, monthStr, dayStr] = selectedDate.split("-");
       const dayNum = parseInt(dayStr, 10);
       const monthIdx = parseInt(monthStr, 10) - 1;
       const yearNum = parseInt(yearStr, 10);
       const confDate = new Date(yearNum, monthIdx, dayNum, 12, 0, 0);
       const dateStr = `${DAY_NAMES[confDate.getDay()]} ${dayNum} ${MONTH_NAMES[monthIdx]} ${yearNum}`;
-      const formationType = isVTC ? 'VTC' : 'TAXI';
-      const exerciceLink = isVTC 
-        ? 'https://app.formative.com/join/DNFDZS' 
-        : 'https://app.formative.com/join/ZT924H';
+      const formationType = isVTC ? "VTC" : "TAXI";
+      const exerciceLink = isVTC ? "https://app.formative.com/join/DNFDZS" : "https://app.formative.com/join/ZT924H";
       const exerciceNom = isVTC
         ? '"Formation Pratique VTC" : Quizz Lyon et Questions à apprendre'
         : '"Formation Pratique TAXI" : QCM Taximètre, Cas pratique, Quizz Lyon et Questions à apprendre';
 
-      // Fetch email from apprenants table
       const { data: appFull } = await supabase
         .from("apprenants")
         .select("email")
@@ -221,11 +486,11 @@ export default function ReservationPratique() {
 
       if (appFull?.email) {
         const subject = `Confirmation de votre date de formation pratique ${formationType} - ${apprenant.prenom} ${apprenant.nom}`;
-        const body = `Bonjour ${apprenant.prenom},\n\nNous confirmons votre inscription à la journée de formation pratique ${formationType} :\n\n📅 Date : ${dateStr}\n🕐 Horaires : 9h00 - 17h00\n📍 Lieu : 86 Route de Genas, 69003 Lyon\n🍽️ Pause déjeuner : Confluences (12h - 13h)\n\n📚 Rappel important :\nMerci de bien réviser les exercices suivants dans ${exerciceNom}.\nLien : ${exerciceLink}\n\n⚠️ Ce créneau ne pourra pas être modifié et vous ne recevrez aucune autre confirmation.\n\nCordialement,\n\nFTRANSPORT\nCentre de formation\n86 Route de Genas 69003 Lyon\n📞 04.28.29.60.91\nDe 9h à 17h sur rendez-vous`;
+        const body = `Bonjour ${apprenant.prenom},\n\nNous confirmons votre inscription à la journée de formation pratique ${formationType} :\n\n📅 Date : ${dateStr}\n🕐 Horaires : ${getTrainingEmailText(type)}\n📍 Lieu : 86 Route de Genas, 69003 Lyon\n🍽️ Pause déjeuner : Confluences (12h - 13h)\n\n📚 Rappel important :\nMerci de bien réviser les exercices suivants dans ${exerciceNom}.\nLien : ${exerciceLink}\n\n⚠️ Ce créneau ne pourra pas être modifié et vous ne recevrez aucune autre confirmation.\n\nCordialement,\n\nFTRANSPORT\nCentre de formation\n86 Route de Genas 69003 Lyon\n📞 04.28.29.60.91\nDe 9h à 17h sur rendez-vous`;
 
         try {
-          await supabase.functions.invoke('sync-outlook-emails', {
-            body: { action: 'send', userEmail: 'contact@ftransport.fr', to: appFull.email, subject, body, apprenantId }
+          await supabase.functions.invoke("sync-outlook-emails", {
+            body: { action: "send", userEmail: "contact@ftransport.fr", to: appFull.email, subject, body, apprenantId },
           });
         } catch {}
       }
@@ -236,7 +501,7 @@ export default function ReservationPratique() {
   };
 
   const formatDate = (d: Date) => {
-    return `${DAY_NAMES[d.getDay()]} ${d.getDate()} ${MONTH_NAMES[d.getMonth()]} 2026`;
+    return `${DAY_NAMES[d.getDay()]} ${d.getDate()} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
   };
 
   if (loading) {
@@ -255,16 +520,13 @@ export default function ReservationPratique() {
             <AlertTriangle className="h-12 w-12 text-destructive mx-auto" />
             <h2 className="text-xl font-bold text-destructive">Erreur</h2>
             <p className="text-muted-foreground">{error}</p>
-            <p className="text-sm text-muted-foreground">
-              📞 04.28.29.60.91 — 📧 contact@ftransport.fr
-            </p>
+            <p className="text-sm text-muted-foreground">📞 04.28.29.60.91 — 📧 contact@ftransport.fr</p>
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  // Already has a reservation
   if (existingReservation) {
     const resDate = safeDateParse(existingReservation.date_choisie);
     return (
@@ -273,12 +535,10 @@ export default function ReservationPratique() {
           <CardContent className="pt-8 text-center space-y-4">
             <CheckCircle className="h-16 w-16 text-emerald-500 mx-auto" />
             <h2 className="text-xl font-bold">Réservation déjà effectuée</h2>
-            <p className="text-muted-foreground">
-              {apprenant?.prenom}, vous avez déjà réservé votre date de formation pratique :
-            </p>
+            <p className="text-muted-foreground">{apprenant?.prenom}, vous avez déjà réservé votre date de formation pratique :</p>
             <div className="bg-primary/10 rounded-lg p-4">
               <p className="text-lg font-bold text-primary">{formatDate(resDate)}</p>
-              <p className="text-sm text-muted-foreground">de 9h à 17h</p>
+              <p className="text-sm text-muted-foreground">{getTrainingBadgeText(type)}</p>
             </div>
             <div className="text-sm text-muted-foreground space-y-1">
               <p>📍 86 Route de Genas 69003 Lyon</p>
@@ -290,7 +550,6 @@ export default function ReservationPratique() {
     );
   }
 
-  // Confirmed state
   if (confirmed && selectedDate) {
     const confDate = safeDateParse(selectedDate);
     return (
@@ -304,13 +563,11 @@ export default function ReservationPratique() {
               <CheckCircle className="h-20 w-20 text-emerald-500 mx-auto relative z-10" />
             </div>
             <h1 className="text-2xl font-bold">Réservation confirmée !</h1>
-            <p className="text-muted-foreground">
-              {apprenant?.prenom}, votre date de formation pratique {isVTC ? 'VTC' : 'TAXI'} est :
-            </p>
+            <p className="text-muted-foreground">{apprenant?.prenom}, votre date de formation pratique {isVTC ? "VTC" : "TAXI"} est :</p>
             <div className="bg-primary/10 border border-primary/20 rounded-xl p-6">
               <p className="text-2xl font-bold text-primary">{formatDate(confDate)}</p>
-              <div className="flex items-center justify-center gap-4 mt-3 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1"><Clock className="h-4 w-4" /> 9h - 17h</span>
+              <div className="flex items-center justify-center gap-4 mt-3 text-sm text-muted-foreground flex-wrap">
+                <span className="flex items-center gap-1"><Clock className="h-4 w-4" /> {getTrainingBadgeText(type)}</span>
                 <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> Lyon 3e</span>
               </div>
             </div>
@@ -321,9 +578,9 @@ export default function ReservationPratique() {
                 <li>Vous ne recevrez <strong>aucune confirmation</strong> supplémentaire</li>
                 <li>Pause déjeuner à Confluences (12h-13h)</li>
                 {isVTC ? (
-                  <li>Révisez : <a href="https://app.formative.com/join/DNFDZS" className="underline text-primary" target="_blank">Formation Pratique VTC</a></li>
+                  <li>Révisez : <a href="https://app.formative.com/join/DNFDZS" className="underline text-primary" target="_blank" rel="noreferrer">Formation Pratique VTC</a></li>
                 ) : (
-                  <li>Révisez : <a href="https://app.formative.com/join/ZT924H" className="underline text-primary" target="_blank">Formation Pratique TAXI</a></li>
+                  <li>Révisez : <a href="https://app.formative.com/join/ZT924H" className="underline text-primary" target="_blank" rel="noreferrer">Formation Pratique TAXI</a></li>
                 )}
               </ul>
             </div>
@@ -337,16 +594,14 @@ export default function ReservationPratique() {
     );
   }
 
-  // Main booking view
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      {/* Header */}
-      <div className={`${isVTC ? 'bg-blue-600' : 'bg-amber-600'} text-white`}>
+      <div className={`${isVTC ? "bg-blue-600" : "bg-amber-600"} text-white`}>
         <div className="max-w-2xl mx-auto px-4 py-6">
           <div className="flex items-center gap-4">
             <img src={logoFtransport} alt="Ftransport" className="h-12 bg-white rounded-lg p-1" />
             <div>
-              <h1 className="text-xl font-bold">Formation Pratique {isVTC ? 'VTC' : 'TAXI'}</h1>
+              <h1 className="text-xl font-bold">Formation Pratique {isVTC ? "VTC" : "TAXI"}</h1>
               <p className="text-sm opacity-90">Choisissez votre date d'entraînement</p>
             </div>
           </div>
@@ -354,20 +609,16 @@ export default function ReservationPratique() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-        {/* Welcome */}
         <Card>
           <CardContent className="pt-6 space-y-4">
-            <h2 className="text-lg font-semibold">
-              Bonjour {apprenant?.prenom} 👋
-            </h2>
+            <h2 className="text-lg font-semibold">Bonjour {apprenant?.prenom} 👋</h2>
             <p className="text-muted-foreground text-sm">
-              Félicitations pour votre réussite à l'épreuve d'admissibilité ! 
-              Choisissez ci-dessous <strong>une seule journée</strong> d'entraînement pratique.
+              Félicitations pour votre réussite à l'épreuve d'admissibilité ! Choisissez ci-dessous <strong>une seule journée</strong> d'entraînement pratique.
             </p>
 
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm space-y-3">
               <p className="font-semibold text-amber-800">⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié.</p>
-              
+
               <div className="text-amber-700 space-y-2">
                 <p>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.</p>
                 {isVTC ? (
@@ -388,13 +639,12 @@ export default function ReservationPratique() {
             </div>
 
             <div className="flex flex-wrap gap-2 text-xs">
-              <Badge variant="outline" className="gap-1"><Clock className="h-3 w-3" /> 9h - 17h</Badge>
+              <Badge variant="outline" className="gap-1"><Clock className="h-3 w-3" /> {getTrainingBadgeText(type)}</Badge>
               <Badge variant="outline" className="gap-1"><MapPin className="h-3 w-3" /> 86 Route de Genas, 69003 Lyon</Badge>
             </div>
           </CardContent>
         </Card>
 
-        {/* Date selection */}
         <Card>
           <CardContent className="pt-6">
             <h3 className="font-semibold mb-4 flex items-center gap-2">
@@ -402,7 +652,7 @@ export default function ReservationPratique() {
               Dates disponibles
             </h3>
             <div className="grid gap-3">
-              {dateSlots.map(slot => {
+              {dateSlots.map((slot) => {
                 const key = toLocalDateKey(slot.date);
                 const isFull = slot.remaining <= 0;
                 const isSelected = selectedDate === key;
@@ -414,44 +664,49 @@ export default function ReservationPratique() {
                     onClick={() => setSelectedDate(isSelected ? null : key)}
                     className={`
                       w-full text-left rounded-xl border-2 p-4 transition-all
-                      ${isFull 
-                        ? 'border-muted bg-muted/30 opacity-50 cursor-not-allowed' 
-                        : isSelected 
-                          ? `${isVTC ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-amber-500 bg-amber-50 ring-2 ring-amber-200'}` 
-                          : 'border-border hover:border-primary/50 hover:shadow-md cursor-pointer bg-background'
+                      ${isFull
+                        ? "border-muted bg-muted/30 opacity-50 cursor-not-allowed"
+                        : isSelected
+                          ? `${isVTC ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200" : "border-amber-500 bg-amber-50 ring-2 ring-amber-200"}`
+                          : "border-border hover:border-primary/50 hover:shadow-md cursor-pointer bg-background"
                       }
                     `}
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className={`font-semibold ${isSelected ? (isVTC ? 'text-blue-700' : 'text-amber-700') : ''}`}>
+                        <p className={`font-semibold ${isSelected ? (isVTC ? "text-blue-700" : "text-amber-700") : ""}`}>
                           {formatDate(slot.date)}
                         </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">9h00 - 17h00 • Pause 12h-13h à Confluences</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{getTrainingSlotText(type)}</p>
                       </div>
                       <div className="text-right">
                         {isFull ? (
                           <Badge variant="secondary" className="bg-muted text-muted-foreground">Complet</Badge>
                         ) : (
-                          <Badge variant={isSelected ? "default" : "outline"} className={isSelected ? (isVTC ? 'bg-blue-600' : 'bg-amber-600') : ''}>
-                            {slot.remaining} place{slot.remaining > 1 ? 's' : ''}
+                          <Badge variant={isSelected ? "default" : "outline"} className={isSelected ? (isVTC ? "bg-blue-600" : "bg-amber-600") : ""}>
+                            {slot.remaining} place{slot.remaining > 1 ? "s" : ""}
                           </Badge>
                         )}
                       </div>
                     </div>
                     {isSelected && (
-                      <div className={`mt-2 pt-2 border-t text-xs ${isVTC ? 'text-blue-600 border-blue-200' : 'text-amber-600 border-amber-200'}`}>
+                      <div className={`mt-2 pt-2 border-t text-xs ${isVTC ? "text-blue-600 border-blue-200" : "text-amber-600 border-amber-200"}`}>
                         ✓ Date sélectionnée
                       </div>
                     )}
                   </button>
                 );
               })}
+
+              {dateSlots.length === 0 && (
+                <div className="rounded-xl border border-border bg-muted/20 p-4 text-sm text-muted-foreground">
+                  Aucune date n'est disponible pour le moment sur ce calendrier.
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Warning + Confirm */}
         {selectedDate && (
           <Card className="border-amber-300 bg-amber-50/50">
             <CardContent className="pt-6 space-y-4">
@@ -467,7 +722,7 @@ export default function ReservationPratique() {
               <Button
                 onClick={handleConfirm}
                 disabled={submitting}
-                className={`w-full text-lg py-6 ${isVTC ? 'bg-blue-600 hover:bg-blue-700' : 'bg-amber-600 hover:bg-amber-700'}`}
+                className={`w-full text-lg py-6 ${isVTC ? "bg-blue-600 hover:bg-blue-700" : "bg-amber-600 hover:bg-amber-700"}`}
               >
                 {submitting ? "Réservation en cours..." : `Confirmer le ${formatDate(safeDateParse(selectedDate))}`}
               </Button>
@@ -475,7 +730,6 @@ export default function ReservationPratique() {
           </Card>
         )}
 
-        {/* Footer */}
         <div className="text-center text-xs text-muted-foreground pb-6 space-y-1">
           <p>FTRANSPORT — Centre de formation</p>
           <p>86 Route de Genas 69003 Lyon • 📞 04.28.29.60.91</p>
