@@ -169,29 +169,21 @@ export default function ReservationPratique() {
       }
 
       try {
-        const [{ data: appData, error: appErr }, { data: existingRes }, { data: allRes, error: resErr }] = await Promise.all([
-          supabase
-            .from("apprenants")
-            .select("id, prenom, nom, type_apprenant, date_examen_theorique")
-            .eq("id", apprenantId)
-            .single(),
-          supabase
-            .from("reservations_pratique")
-            .select("date_choisie")
-            .eq("apprenant_id", apprenantId)
-            .maybeSingle(),
-          supabase
-            .from("reservations_pratique")
-            .select("date_choisie, type_formation"),
-        ]);
+        // Use edge function with service_role to bypass RLS on public page
+        const { data: loadResult, error: loadErr } = await supabase.functions.invoke(
+          "confirm-reservation-pratique",
+          { body: { mode: "load", apprenantId } }
+        );
 
-        if (appErr || !appData) {
+        if (loadErr || !loadResult?.apprenant) {
           setError("Apprenant non trouvé. Contactez Ftransport.");
           setLoading(false);
           return;
         }
 
-        if (resErr) throw resErr;
+        const appData = loadResult.apprenant;
+        const existingRes = loadResult.existingReservation;
+        const allRes = loadResult.allReservations || [];
 
         setApprenant(appData);
         setExistingReservation(existingRes || null);

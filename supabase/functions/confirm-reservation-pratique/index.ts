@@ -28,8 +28,56 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { apprenantId, selectedDate, type, isModification } = await req.json();
+    const body = await req.json();
+    const { apprenantId, selectedDate, type, isModification, mode } = body;
 
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    // ── LOAD MODE: fetch apprenant + reservation data for the public page ──
+    if (mode === "load") {
+      if (!apprenantId) {
+        return new Response(JSON.stringify({ error: "Missing apprenantId" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const [{ data: appData, error: appErr }, { data: existingRes }, { data: allRes }] = await Promise.all([
+        supabase
+          .from("apprenants")
+          .select("id, prenom, nom, type_apprenant, date_examen_theorique")
+          .eq("id", apprenantId)
+          .is("deleted_at", null)
+          .single(),
+        supabase
+          .from("reservations_pratique")
+          .select("date_choisie")
+          .eq("apprenant_id", apprenantId)
+          .maybeSingle(),
+        supabase
+          .from("reservations_pratique")
+          .select("date_choisie, type_formation"),
+      ]);
+
+      if (appErr || !appData) {
+        return new Response(JSON.stringify({ error: "Apprenant non trouvé" }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({
+        apprenant: appData,
+        existingReservation: existingRes || null,
+        allReservations: allRes || [],
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── CONFIRM MODE ──
     if (!apprenantId || !selectedDate || !type) {
       return new Response(JSON.stringify({ error: "Missing parameters" }), {
         status: 400,
@@ -37,9 +85,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     // 1. Get apprenant info
     const { data: apprenant, error: appErr } = await supabase
