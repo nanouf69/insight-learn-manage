@@ -209,6 +209,7 @@ export function ExamenReussitePage() {
   const [newExtraDay, setNewExtraDay] = useState("");
   const [maxPerDay, setMaxPerDay] = useState(3);
   const [maxPerDayMap, setMaxPerDayMap] = useState<Record<string, number>>({});
+  const [dayTimeSlots, setDayTimeSlots] = useState<Record<string, string>>({});
   const [planningConfigLoaded, setPlanningConfigLoaded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const planningFileInputRef = useRef<HTMLInputElement>(null);
