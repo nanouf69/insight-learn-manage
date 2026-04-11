@@ -132,6 +132,8 @@ export default function ReservationPratique() {
   const [occupiedDays, setOccupiedDays] = useState<string[]>([]);
   const [allApprenants, setAllApprenants] = useState<PlanningApprenant[]>([]);
   const [examApprenants, setExamApprenants] = useState<PlanningApprenant[]>([]);
+  const [maxPerDayMap, setMaxPerDayMap] = useState<Record<string, number>>({});
+  const [dayTimeSlots, setDayTimeSlots] = useState<Record<string, { matin?: string; apresmidi?: string }>>({});
   const [deplacesIds, setDeplacesIds] = useState<string[]>([]);
   const [dejaFormesIds, setDejaFormesIds] = useState<string[]>([]);
 
@@ -192,6 +194,18 @@ export default function ReservationPratique() {
             setExcludedDays(config.excluded_days || []);
             setExtraDays(config.extra_days || []);
             setExtraCandidats(config.extra_candidats || []);
+            setMaxPerDayMap(config.max_per_day_map || {});
+            // Parse day_time_slots - handle both new {matin,apresmidi} and legacy string format
+            const rawSlots = config.day_time_slots || {};
+            const parsedSlots: Record<string, { matin?: string; apresmidi?: string }> = {};
+            Object.entries(rawSlots).forEach(([k, v]) => {
+              if (typeof v === 'string') {
+                parsedSlots[k] = { matin: v };
+              } else if (v && typeof v === 'object') {
+                parsedSlots[k] = v as { matin?: string; apresmidi?: string };
+              }
+            });
+            setDayTimeSlots(parsedSlots);
 
             setAllApprenants((loadResult.allApprenants || []) as PlanningApprenant[]);
             setExamApprenants((loadResult.examApprenants || []) as PlanningApprenant[]);
@@ -341,7 +355,11 @@ export default function ReservationPratique() {
 
     return weekdays
       .filter((date) => dayTypeMap[toLocalDateKey(date)] === type)
-      .map((date) => ({ date, capacity: 3 }));
+      .map((date) => {
+        const key = toLocalDateKey(date);
+        const capacity = maxPerDayMap[key] != null ? Number(maxPerDayMap[key]) : 3;
+        return { date, capacity };
+      });
   }, [
     type,
     planningStartDate,
@@ -355,6 +373,7 @@ export default function ReservationPratique() {
     excludedDays,
     extraDays,
     occupiedDays,
+    maxPerDayMap,
   ]);
 
   const dateSlots: DateSlot[] = useMemo(() => {
