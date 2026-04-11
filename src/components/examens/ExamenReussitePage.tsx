@@ -2951,8 +2951,7 @@ export function ExamenReussitePage() {
                     <strong>{deplacesPratique} candidat(s) déplacé(s)</strong> sont automatiquement inclus dans la lettre CMA et la liste des candidats à former pour la prochaine session.
                   </p>
                 </div>
-                                )}
-                                {a.telephone && !hasReservation && (
+              )}
                                   <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                       <Button variant="ghost" size="icon" className="h-7 w-7" title={`SMS à ${a.prenom}`}>
