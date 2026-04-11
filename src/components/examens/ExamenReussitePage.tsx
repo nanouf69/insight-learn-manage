@@ -2551,7 +2551,7 @@ export function ExamenReussitePage() {
                   Planning formation pratique
                 </CardTitle>
               <p className="text-sm text-muted-foreground">
-                VTC : {totalVTC} candidats ({vtcDaysNeeded}j nécessaires) • TAXI : {totalTAXI} candidats ({taxiDaysNeeded}j nécessaires) • {weekdays.length} jours disponibles au calendrier • {totalReserved} réservation(s) confirmée(s) • {maxPerDay} candidats/jour
+                VTC : {totalVTC} candidats ({vtcDaysNeeded}j) • TAXI : {totalTAXI} candidats ({taxiDaysNeeded}j) • {weekdays.length} jours disponibles • {totalReserved} réservation(s) • {vtcPlaces} places VTC / {taxiPlaces} places TAXI
               </p>
               {(vtcRestant > 0 || taxiRestant > 0) && (
                 <p className="text-sm font-bold text-destructive mt-1">
