@@ -1935,7 +1935,9 @@ export function ExamenReussitePage() {
                                           try {
                                             const { error } = await supabase.from('apprenants').update({ resultat_examen: null }).eq('id', a.id);
                                             if (error) throw error;
+                                            await supabase.from('reservations_pratique').delete().eq('apprenant_id', a.id);
                                             queryClient.invalidateQueries({ queryKey: ['apprenants-examen'] });
+                                            queryClient.invalidateQueries({ queryKey: ['reservations-pratique'] });
                                             toast.success(`${a.prenom} ${a.nom} retiré(e) de la liste`);
                                           } catch (err: any) {
                                             toast.error(`Erreur: ${err.message}`);
@@ -2293,7 +2295,9 @@ export function ExamenReussitePage() {
                                           try {
                                             const { error } = await supabase.from('apprenants').update({ resultat_examen: null }).eq('id', a.id);
                                             if (error) throw error;
+                                            await supabase.from('reservations_pratique').delete().eq('apprenant_id', a.id);
                                             queryClient.invalidateQueries({ queryKey: ['apprenants-examen'] });
+                                            queryClient.invalidateQueries({ queryKey: ['reservations-pratique'] });
                                             toast.success(`${a.prenom} ${a.nom} retiré(e) de la liste`);
                                           } catch (err: any) {
                                             toast.error(`Erreur: ${err.message}`);
@@ -2395,23 +2399,6 @@ export function ExamenReussitePage() {
         const appMap: Record<string, { id: string; nom: string; prenom: string; type_apprenant: string | null }> = {};
         (allApprenants || []).forEach(a => { appMap[a.id] = a; });
 
-        // IDs who have a reservation
-        const reservedIds = new Set((reservationsPratique || []).map(r => r.apprenant_id));
-
-        // Group reservations by date
-        const byDate: Record<string, { vtc: any[]; taxi: any[] }> = {};
-        (reservationsPratique || []).forEach(r => {
-          if (!byDate[r.date_choisie]) byDate[r.date_choisie] = { vtc: [], taxi: [] };
-          const app = appMap[r.apprenant_id];
-          if (app) {
-            if (r.type_formation.toLowerCase() === 'vtc') {
-              byDate[r.date_choisie].vtc.push(app);
-            } else {
-              byDate[r.date_choisie].taxi.push(app);
-            }
-          }
-        });
-
         // Reuse the same candidate list as "Candidats à former" section
         const dejaFormesSetP = new Set(dejaFormesPratique || []);
         const paTypesP = ['pa-vtc', 'pa-taxi'];
@@ -2450,6 +2437,25 @@ export function ExamenReussitePage() {
           !dejaFormesSetP.has(a.id)
         );
         const tousPlanning = [...reussisFormationP, ...paFormationP, ...deplacesFormationP, ...echouesPratiqueFormationP, ...extraFormationP];
+        const tousPlanningIds = new Set(tousPlanning.map(a => a.id));
+
+        // IDs who have a reservation — only keep those still in tousPlanning
+        const filteredReservations = (reservationsPratique || []).filter(r => tousPlanningIds.has(r.apprenant_id));
+        const reservedIds = new Set(filteredReservations.map(r => r.apprenant_id));
+
+        // Group reservations by date
+        const byDate: Record<string, { vtc: any[]; taxi: any[] }> = {};
+        filteredReservations.forEach(r => {
+          if (!byDate[r.date_choisie]) byDate[r.date_choisie] = { vtc: [], taxi: [] };
+          const app = appMap[r.apprenant_id];
+          if (app) {
+            if (r.type_formation.toLowerCase() === 'vtc') {
+              byDate[r.date_choisie].vtc.push(app);
+            } else {
+              byDate[r.date_choisie].taxi.push(app);
+            }
+          }
+        });
 
         // Count unreserved candidates
         const unreservedVTCCount = tousPlanning.filter(a => isPracticeVTCType(a.type_apprenant) && !reservedIds.has(a.id)).length;
