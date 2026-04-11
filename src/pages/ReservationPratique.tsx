@@ -486,7 +486,7 @@ export default function ReservationPratique() {
             <p className="text-muted-foreground">{apprenant?.prenom}, vous avez réservé votre date de formation pratique :</p>
             <div className="bg-primary/10 rounded-lg p-4">
               <p className="text-lg font-bold text-primary">{formatDate(resDate)}</p>
-              <p className="text-sm text-muted-foreground">{getTrainingBadgeText(type)}</p>
+              <p className="text-sm text-muted-foreground">{getDayBadgeText(dayTimeSlots[existingReservation.date_choisie], type)}</p>
             </div>
             <div className="text-sm text-muted-foreground space-y-1">
               <p>📍 86 Route de Genas 69003 Lyon</p>
