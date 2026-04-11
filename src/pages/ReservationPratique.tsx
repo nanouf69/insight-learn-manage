@@ -602,7 +602,6 @@ export default function ReservationPratique() {
             </div>
 
             <div className="flex flex-wrap gap-2 text-xs">
-              <Badge variant="outline" className="gap-1"><Clock className="h-3 w-3" /> {getTrainingBadgeText(type)}</Badge>
               <Badge variant="outline" className="gap-1"><MapPin className="h-3 w-3" /> 86 Route de Genas, 69003 Lyon</Badge>
             </div>
           </CardContent>
