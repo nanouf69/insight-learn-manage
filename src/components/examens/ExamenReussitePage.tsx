@@ -563,6 +563,7 @@ export function ExamenReussitePage() {
         .eq('exam_date', selectedExamDate)
         .eq('date_pratique', selectedDatePratique)
         .maybeSingle();
+
       if (data) {
         const resolvedBounds = resolvePlanningBounds(data);
         setPlanningStartDate(resolvedBounds?.start || data.planning_start_date);
@@ -570,7 +571,15 @@ export function ExamenReussitePage() {
         setExcludedDays(data.excluded_days || []);
         setExtraDays(data.extra_days || []);
         setExtraCandidatsFormation(data.extra_candidats || []);
+      } else {
+        const parsedRange = parsePratiquePeriod(selectedDatePratique);
+        setPlanningStartDate(parsedRange?.start || "");
+        setPlanningEndDate(parsedRange?.end || "");
+        setExcludedDays([]);
+        setExtraDays([]);
+        setExtraCandidatsFormation([]);
       }
+
       setPlanningConfigLoaded(true);
     })();
   }, [selectedExamDate, selectedDatePratique]);
