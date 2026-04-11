@@ -133,23 +133,16 @@ function resolvePlanningBounds(config: {
   planning_start_date?: string | null;
   planning_end_date?: string | null;
 }) {
-  const parsedRange = parsePratiquePeriod(config.date_pratique);
   const storedStart = config.planning_start_date || null;
   const storedEnd = config.planning_end_date || null;
 
-  if (parsedRange) {
-    const storedRangeMatchesPeriod = !!storedStart && !!storedEnd && storedStart >= parsedRange.start && storedEnd <= parsedRange.end;
-
-    if (!storedRangeMatchesPeriod) {
-      return parsedRange;
-    }
-  }
-
+  // If stored dates exist, always use them (admin configured manually)
   if (storedStart && storedEnd) {
     return { start: storedStart, end: storedEnd };
   }
 
-  return parsedRange;
+  // Fallback: parse from date_pratique label
+  return parsePratiquePeriod(config.date_pratique);
 }
 
 function buildPratiqueReservationUrl(apprenantId: string, type: 'vtc' | 'taxi', examDate: string, pratiqueDate?: string | null) {

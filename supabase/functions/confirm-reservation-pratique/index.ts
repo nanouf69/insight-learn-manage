@@ -91,19 +91,22 @@ function parsePratiquePeriod(period: string | null | undefined): { start: string
 function normalizePlanningConfig<T extends { date_pratique?: string | null; planning_start_date?: string | null; planning_end_date?: string | null }>(config: T | null): T | null {
   if (!config) return config;
 
-  const parsedRange = parsePratiquePeriod(config.date_pratique);
   const storedStart = config.planning_start_date || null;
   const storedEnd = config.planning_end_date || null;
 
+  // If stored dates exist, always use them (admin configured manually)
+  if (storedStart && storedEnd) {
+    return config;
+  }
+
+  // Fallback: parse from date_pratique label
+  const parsedRange = parsePratiquePeriod(config.date_pratique);
   if (parsedRange) {
-    const storedRangeMatchesPeriod = !!storedStart && !!storedEnd && storedStart >= parsedRange.start && storedEnd <= parsedRange.end;
-    if (!storedRangeMatchesPeriod) {
-      return {
-        ...config,
-        planning_start_date: parsedRange.start,
-        planning_end_date: parsedRange.end,
-      };
-    }
+    return {
+      ...config,
+      planning_start_date: parsedRange.start,
+      planning_end_date: parsedRange.end,
+    };
   }
 
   return config;
