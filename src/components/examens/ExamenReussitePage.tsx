@@ -1823,6 +1823,40 @@ export function ExamenReussitePage() {
                             </TableCell>
                             <TableCell className="text-center">
                               <div className="flex items-center justify-center gap-1">
+                                {a.email && (
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-7 w-7" title={`Email à ${a.prenom}`}>
+                                        <Mail className="h-3.5 w-3.5 text-blue-600" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent className="max-w-lg">
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Envoyer l'email VTC à {a.prenom} {a.nom}</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Envoyer l'email "Félicitations VTC - Choix date pratique" à <strong>{a.email}</strong> ?
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                        <AlertDialogAction onClick={async () => {
+                                          const bookingUrl = getBookingUrl(a.id, 'vtc');
+                                          const subject = `Félicitations - Choix de votre date de formation pratique VTC - ${a.prenom} ${a.nom}`;
+                                          const body = `Bonjour ${a.prenom},<br><br>Félicitations, vous venez de réussir votre épreuve d'admissibilité, face à l'épreuve d'admission.<br><br>Vous devrez choisir une journée complète d'entraînement pratique de 9h à 16h (de 9h à 12h puis de 13h à 16h).<br><br>👉 <a href="${bookingUrl}">CHOISISSEZ VOTRE DATE ICI</a><br><br>⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié.<br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans "Formation Pratique VTC" : Quizz Lyon et Questions à apprendre.<br>Ou cliquez sur le lien suivant : <a href="https://app.formative.com/join/DNFDZS">https://app.formative.com/join/DNFDZS</a><br><br>⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.<br><br>🍽️ Vous aurez une pause à Confluences aux alentours de 12h jusqu'à 13h.<br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous`;
+                                          try {
+                                            const { error } = await supabase.functions.invoke('sync-outlook-emails', {
+                                              body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id }
+                                            });
+                                            if (error) throw error;
+                                            toast.success(`Email envoyé à ${a.prenom} ${a.nom}`);
+                                          } catch (err: any) {
+                                            toast.error(`Erreur: ${err.message || 'Échec envoi'}`);
+                                          }
+                                        }}>Envoyer</AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                )}
                                 {extraCandidatsFormation.includes(a.id) && (
                                   <Button variant="ghost" size="icon" className="h-7 w-7" title="Retirer" onClick={() => setExtraCandidatsFormation(prev => prev.filter(id => id !== a.id))}>
                                     <Trash2 className="h-3.5 w-3.5 text-red-500" />
@@ -2078,6 +2112,40 @@ export function ExamenReussitePage() {
                             </TableCell>
                             <TableCell className="text-center">
                               <div className="flex items-center justify-center gap-1">
+                                {a.email && (
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-7 w-7" title={`Email à ${a.prenom}`}>
+                                        <Mail className="h-3.5 w-3.5 text-amber-600" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent className="max-w-lg">
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Envoyer l'email TAXI à {a.prenom} {a.nom}</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Envoyer l'email "Félicitations TAXI - Choix date pratique" à <strong>{a.email}</strong> ?
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                        <AlertDialogAction onClick={async () => {
+                                          const bookingUrl = getBookingUrl(a.id, 'taxi');
+                                          const subject = `Félicitations - Choix de votre date de formation pratique TAXI - ${a.prenom} ${a.nom}`;
+                                          const body = `Bonjour ${a.prenom},<br><br>Félicitations, vous venez de réussir votre épreuve d'admissibilité, face à l'épreuve d'admission.<br><br>Vous devrez choisir une journée complète d'entraînement pratique de 9h à 17h.<br><br>👉 <a href="${bookingUrl}">CHOISISSEZ VOTRE DATE ICI</a><br><br>⚠️ Attention : vous ne pouvez choisir qu'UNE SEULE date. Tout créneau choisi ne pourra pas être modifié.<br><br>📚 Merci de bien réviser le cours sur la pratique et d'effectuer les exercices.<br><br>Notamment les exercices suivants dans "Formation Pratique TAXI" : QCM Taximètre, Cas pratique, Quizz Lyon et Questions à apprendre.<br>Ou cliquez ici : <a href="https://app.formative.com/join/ZT924H">https://app.formative.com/join/ZT924H</a><br><br>⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.<br><br>🍽️ Vous aurez une pause à Confluences aux alentours de 12h jusqu'à 13h.<br><br>📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>De 9h à 17h sur rendez-vous`;
+                                          try {
+                                            const { error } = await supabase.functions.invoke('sync-outlook-emails', {
+                                              body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id }
+                                            });
+                                            if (error) throw error;
+                                            toast.success(`Email envoyé à ${a.prenom} ${a.nom}`);
+                                          } catch (err: any) {
+                                            toast.error(`Erreur: ${err.message || 'Échec envoi'}`);
+                                          }
+                                        }}>Envoyer</AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                )}
                                 {extraCandidatsFormation.includes(a.id) && (
                                   <Button variant="ghost" size="icon" className="h-7 w-7" title="Retirer" onClick={() => setExtraCandidatsFormation(prev => prev.filter(id => id !== a.id))}>
                                     <Trash2 className="h-3.5 w-3.5 text-red-500" />
