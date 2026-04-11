@@ -90,13 +90,19 @@ Deno.serve(async (req) => {
       noStopClause: true,
       priority: 'high',
       receivers: formattedReceivers,
-      senderForResponse: true,
       validityPeriod: 2880,
     };
-    // Use custom sender only if explicitly provided
+
+    // Use FTRANSPORT sender if message contains a URL or if sender is explicitly provided
+    const containsUrl = /https?:\/\//i.test(message);
     if (sender) {
       smsPayload.sender = sender;
       smsPayload.senderForResponse = false;
+    } else if (containsUrl) {
+      smsPayload.sender = 'FTRANSPORT';
+      smsPayload.senderForResponse = false;
+    } else {
+      smsPayload.senderForResponse = true;
     }
     const smsBody = JSON.stringify(smsPayload);
 
