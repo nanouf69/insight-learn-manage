@@ -2743,6 +2743,7 @@ export function ExamenReussitePage() {
                                 className="h-5 text-[9px] border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary px-0.5 flex-1 min-w-0"
                               >
                                 <option value="">—</option>
+                                <option value="13h-16h">13h–16h</option>
                                 <option value="13h-17h">13h–17h</option>
                                 <option value="14h-17h">14h–17h</option>
                                 <option value="14h-18h">14h–18h</option>
