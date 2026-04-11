@@ -1525,8 +1525,8 @@ export function ExamenReussitePage() {
 
         const vtcList = tousAFormer.filter(a => isPracticeVTCType(a.type_apprenant));
         const taxiList = tousAFormer.filter(a => isPracticeTAXIType(a.type_apprenant));
-        const joursVTC = Math.ceil(vtcList.length / 3);
-        const joursTAXI = Math.ceil(taxiList.length / 3);
+        const joursVTC = Math.ceil(vtcList.length / maxPerDay);
+        const joursTAXI = Math.ceil(taxiList.length / maxPerDay);
         const maxRows = Math.max(vtcList.length, taxiList.length);
 
         // Compute VTC/TAXI date ranges from calendar
@@ -2481,12 +2481,12 @@ export function ExamenReussitePage() {
         const totalReserved = (reservationsPratique || []).length;
 
         // Auto-assign day types: VTC first, then TAXI based on candidate counts (3 per day)
-        const vtcDaysNeeded = Math.ceil(totalVTC / 3);
-        const taxiDaysNeeded = Math.ceil(totalTAXI / 3);
+        const vtcDaysNeeded = Math.ceil(totalVTC / maxPerDay);
+        const taxiDaysNeeded = Math.ceil(totalTAXI / maxPerDay);
         const vtcDaysAvailable = Math.min(vtcDaysNeeded, weekdays.length);
         const taxiDaysAvailable = Math.min(taxiDaysNeeded, Math.max(0, weekdays.length - vtcDaysAvailable));
-        const vtcPlaces = vtcDaysAvailable * 3;
-        const taxiPlaces = taxiDaysAvailable * 3;
+        const vtcPlaces = vtcDaysAvailable * maxPerDay;
+        const taxiPlaces = taxiDaysAvailable * maxPerDay;
         const vtcRestant = Math.max(0, totalVTC - vtcPlaces);
         const taxiRestant = Math.max(0, totalTAXI - taxiPlaces);
         const dayTypeMap: Record<string, 'vtc' | 'taxi' | 'libre'> = {};
