@@ -2485,13 +2485,45 @@ export function ExamenReussitePage() {
         const totalTAXI = tousPlanning.filter(a => isPracticeTAXIType(a.type_apprenant)).length;
         const totalReserved = (reservationsPratique || []).length;
 
-        // Auto-assign day types: VTC first, then TAXI based on candidate counts (3 per day)
-        const vtcDaysNeeded = Math.ceil(totalVTC / maxPerDay);
-        const taxiDaysNeeded = Math.ceil(totalTAXI / maxPerDay);
-        const vtcDaysAvailable = Math.min(vtcDaysNeeded, weekdays.length);
-        const taxiDaysAvailable = Math.min(taxiDaysNeeded, Math.max(0, weekdays.length - vtcDaysAvailable));
-        const vtcPlaces = vtcDaysAvailable * maxPerDay;
-        const taxiPlaces = taxiDaysAvailable * maxPerDay;
+        // Helper: get max for a specific day
+        const getMax = (key: string) => maxPerDayMap[key] || maxPerDay;
+
+        // Auto-assign day types: VTC first, then TAXI based on candidate counts
+        // With per-day max, we greedily assign days
+        let vtcRemaining = totalVTC;
+        let taxiRemaining = totalTAXI;
+        const dayTypeMap: Record<string, 'vtc' | 'taxi' | 'libre'> = {};
+        const dayCapacity: Record<string, number> = {};
+        let vtcPlaces = 0;
+        let taxiPlaces = 0;
+        
+        // First pass: assign VTC days
+        for (const d of weekdays) {
+          const key = toKey(d);
+          const cap = getMax(key);
+          dayCapacity[key] = cap;
+          if (vtcRemaining > 0) {
+            dayTypeMap[key] = 'vtc';
+            vtcPlaces += cap;
+            vtcRemaining -= cap;
+          }
+        }
+        // Second pass: assign TAXI days from remaining
+        for (const d of weekdays) {
+          const key = toKey(d);
+          if (dayTypeMap[key]) continue;
+          const cap = getMax(key);
+          if (taxiRemaining > 0) {
+            dayTypeMap[key] = 'taxi';
+            taxiPlaces += cap;
+            taxiRemaining -= cap;
+          } else {
+            dayTypeMap[key] = 'libre';
+          }
+        }
+        
+        const vtcDaysNeeded = weekdays.filter(d => dayTypeMap[toKey(d)] === 'vtc').length;
+        const taxiDaysNeeded = weekdays.filter(d => dayTypeMap[toKey(d)] === 'taxi').length;
         const vtcRestant = Math.max(0, totalVTC - vtcPlaces);
         const taxiRestant = Math.max(0, totalTAXI - taxiPlaces);
         const dayTypeMap: Record<string, 'vtc' | 'taxi' | 'libre'> = {};
