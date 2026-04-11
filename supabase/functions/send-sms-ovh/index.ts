@@ -55,7 +55,45 @@ Deno.serve(async (req) => {
       throw new Error('OVH SMS credentials not configured');
     }
 
-    const { receivers, message, sender } = await req.json();
+    const body = await req.json();
+    const { receivers, message, sender, action } = body;
+
+    // Debug: list available senders
+    if (action === 'list_senders') {
+      const timeRes = await fetch(`${OVH_API_URL}/auth/time`);
+      const ts = await timeRes.json();
+      const sendersUrl = `${OVH_API_URL}/sms/${serviceName}/senders`;
+      const sig = await ovhSign(appSecret, consumerKey, 'GET', sendersUrl, '', ts);
+      const res = await fetch(sendersUrl, {
+        headers: {
+          'X-Ovh-Application': appKey,
+          'X-Ovh-Timestamp': String(ts),
+          'X-Ovh-Signature': sig,
+          'X-Ovh-Consumer': consumerKey,
+        },
+      });
+      const sendersList = await res.json();
+      
+      // Get details for each sender
+      const details = [];
+      for (const s of (Array.isArray(sendersList) ? sendersList : [])) {
+        const detailUrl = `${OVH_API_URL}/sms/${serviceName}/senders/${encodeURIComponent(s)}`;
+        const detSig = await ovhSign(appSecret, consumerKey, 'GET', detailUrl, '', ts);
+        const detRes = await fetch(detailUrl, {
+          headers: {
+            'X-Ovh-Application': appKey,
+            'X-Ovh-Timestamp': String(ts),
+            'X-Ovh-Signature': detSig,
+            'X-Ovh-Consumer': consumerKey,
+          },
+        });
+        details.push(await detRes.json());
+      }
+      
+      return new Response(JSON.stringify({ senders: sendersList, details }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     if (!receivers || !Array.isArray(receivers) || receivers.length === 0) {
       throw new Error('receivers array is required');
@@ -93,13 +131,10 @@ Deno.serve(async (req) => {
       validityPeriod: 2880,
     };
 
-    // Use FTRANSPORT sender if message contains a URL or if sender is explicitly provided
-    const containsUrl = /https?:\/\//i.test(message);
+    // FTRANSPORT sender is currently refused by OVH, use shortcode fallback
+    // Shortcodes cannot send URLs, so the message must not contain links
     if (sender) {
       smsPayload.sender = sender;
-      smsPayload.senderForResponse = false;
-    } else if (containsUrl) {
-      smsPayload.sender = 'FTRANSPORT';
       smsPayload.senderForResponse = false;
     } else {
       smsPayload.senderForResponse = true;

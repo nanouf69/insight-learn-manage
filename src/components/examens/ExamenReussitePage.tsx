@@ -1760,7 +1760,7 @@ export function ExamenReussitePage() {
                                   <ul className="list-disc pl-4">{vtcSansResa.map(a => <li key={a.id}>{a.nom} {a.prenom} — {a.telephone}</li>)}</ul>
                                   <div className="bg-muted p-3 rounded text-xs mt-2">
                                     <p className="font-medium mb-1">Message (personnalisé par candidat) :</p>
-                                    <p>FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique VTC. Attention, il n'y aura pas d'autres dates d'entrainement. Reservez ici: [lien personnalise]</p>
+                                    <p>Bonjour, vous n'avez pas encore choisi votre date de formation pratique VTC. Merci de consulter l'email envoye par FTRANSPORT et de cliquer sur le lien pour reserver. Attention, il n'y aura pas d'autres dates. Tel: 04.28.29.60.91</p>
                                   </div>
                                 </div>
                               </AlertDialogDescription>
@@ -1772,8 +1772,7 @@ export function ExamenReussitePage() {
                                 let sent = 0;
                                 try {
                                   for (const a of vtcSansResa) {
-                                    const bookingUrl = getBookingUrl(a.id, 'vtc');
-                                    const message = `FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique VTC. Attention, il n'y aura pas d'autres dates d'entrainement. Reservez ici: ${bookingUrl}`;
+                                    const message = `Bonjour, vous n'avez pas encore choisi votre date de formation pratique VTC. Merci de consulter l'email envoye par FTRANSPORT et de cliquer sur le lien pour reserver. Attention, il n'y aura pas d'autres dates. Tel: 04.28.29.60.91`;
                                     const { data, error } = await supabase.functions.invoke('send-sms-ovh', {
                                       body: { receivers: [a.telephone!], message },
                                     });
@@ -1872,7 +1871,7 @@ export function ExamenReussitePage() {
                                             <p>Envoyer un SMS de relance à <strong>{a.telephone}</strong> ?</p>
                                             <div className="bg-muted p-3 rounded text-xs">
                                               <p className="font-medium mb-1">Message :</p>
-                                              <p>FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique VTC. Attention, il n'y aura pas d'autres dates d'entrainement. Reservez ici: [lien personnalisé]</p>
+                                              <p>Bonjour, vous n'avez pas encore choisi votre date de formation pratique VTC. Merci de consulter l'email envoye par FTRANSPORT et de cliquer sur le lien pour reserver. Attention, il n'y aura pas d'autres dates. Tel: 04.28.29.60.91</p>
                                             </div>
                                           </div>
                                         </AlertDialogDescription>
@@ -1881,8 +1880,7 @@ export function ExamenReussitePage() {
                                         <AlertDialogCancel>Annuler</AlertDialogCancel>
                                         <AlertDialogAction onClick={async () => {
                                           try {
-                                            const bookingUrl = getBookingUrl(a.id, 'vtc');
-                                            const message = `FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique VTC. Attention, il n'y aura pas d'autres dates d'entrainement. Reservez ici: ${bookingUrl}`;
+                                            const message = `Bonjour, vous n'avez pas encore choisi votre date de formation pratique VTC. Merci de consulter l'email envoye par FTRANSPORT et de cliquer sur le lien pour reserver. Attention, il n'y aura pas d'autres dates. Tel: 04.28.29.60.91`;
                                             const { data, error } = await supabase.functions.invoke('send-sms-ovh', {
                                               body: { receivers: [a.telephone!], message },
                                             });
@@ -2088,7 +2086,7 @@ export function ExamenReussitePage() {
                                   <ul className="list-disc pl-4">{taxiSansResa.map(a => <li key={a.id}>{a.nom} {a.prenom} — {a.telephone}</li>)}</ul>
                                   <div className="bg-muted p-3 rounded text-xs mt-2">
                                     <p className="font-medium mb-1">Message (personnalisé par candidat) :</p>
-                                    <p>FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique TAXI. Attention, il n'y aura pas d'autres dates d'entrainement. Reservez ici: [lien personnalise]</p>
+                                    <p>Bonjour, vous n'avez pas encore choisi votre date de formation pratique TAXI. Merci de consulter l'email envoye par FTRANSPORT et de cliquer sur le lien pour reserver. Attention, il n'y aura pas d'autres dates. Tel: 04.28.29.60.91</p>
                                   </div>
                                 </div>
                               </AlertDialogDescription>
@@ -2100,8 +2098,7 @@ export function ExamenReussitePage() {
                                 let sent = 0;
                                 try {
                                   for (const a of taxiSansResa) {
-                                    const bookingUrl = getBookingUrl(a.id, 'taxi');
-                                    const message = `FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique TAXI. Attention, il n'y aura pas d'autres dates d'entrainement. Reservez ici: ${bookingUrl}`;
+                                    const message = `Bonjour, vous n'avez pas encore choisi votre date de formation pratique TAXI. Merci de consulter l'email envoye par FTRANSPORT et de cliquer sur le lien pour reserver. Attention, il n'y aura pas d'autres dates. Tel: 04.28.29.60.91`;
                                     const { data, error } = await supabase.functions.invoke('send-sms-ovh', {
                                       body: { receivers: [a.telephone!], message },
                                     });
@@ -2200,7 +2197,7 @@ export function ExamenReussitePage() {
                                             <p>Envoyer un SMS de relance à <strong>{a.telephone}</strong> ?</p>
                                             <div className="bg-muted p-3 rounded text-xs">
                                               <p className="font-medium mb-1">Message :</p>
-                                              <p>FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique TAXI. Attention, il n'y aura pas d'autres dates d'entrainement. Reservez ici: [lien personnalisé]</p>
+                                              <p>Bonjour, vous n'avez pas encore choisi votre date de formation pratique TAXI. Merci de consulter l'email envoye par FTRANSPORT et de cliquer sur le lien pour reserver. Attention, il n'y aura pas d'autres dates. Tel: 04.28.29.60.91</p>
                                             </div>
                                           </div>
                                         </AlertDialogDescription>
@@ -2209,8 +2206,7 @@ export function ExamenReussitePage() {
                                         <AlertDialogCancel>Annuler</AlertDialogCancel>
                                         <AlertDialogAction onClick={async () => {
                                           try {
-                                            const bookingUrl = getBookingUrl(a.id, 'taxi');
-                                            const message = `FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique TAXI. Attention, il n'y aura pas d'autres dates d'entrainement. Reservez ici: ${bookingUrl}`;
+                                            const message = `Bonjour, vous n'avez pas encore choisi votre date de formation pratique TAXI. Merci de consulter l'email envoye par FTRANSPORT et de cliquer sur le lien pour reserver. Attention, il n'y aura pas d'autres dates. Tel: 04.28.29.60.91`;
                                             const { data, error } = await supabase.functions.invoke('send-sms-ovh', {
                                               body: { receivers: [a.telephone!], message },
                                             });
