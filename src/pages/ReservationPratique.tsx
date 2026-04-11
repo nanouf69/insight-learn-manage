@@ -640,7 +640,7 @@ export default function ReservationPratique() {
                         <p className={`font-semibold ${isSelected ? (isVTC ? "text-blue-700" : "text-amber-700") : ""}`}>
                           {formatDate(slot.date)}
                         </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{getTrainingSlotText(type)}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{getDaySlotText(dayTimeSlots[key], type)}</p>
                       </div>
                       <div className="text-right">
                         {isFull ? (
