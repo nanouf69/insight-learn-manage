@@ -393,6 +393,26 @@ Deno.serve(async (req) => {
       .update({ date_examen_pratique: selectedDate })
       .eq("id", apprenantId);
 
+    // 3b. Load planning config for time slots
+    const { data: appForExam } = await supabase
+      .from("apprenants")
+      .select("date_examen_theorique")
+      .eq("id", apprenantId)
+      .single();
+
+    let planningConfig: { day_time_slots?: Record<string, { am?: string; pm?: string }> } | null = null;
+    const resolvedExam = examDate || detectPlanningExamDate(appForExam?.date_examen_theorique);
+    if (resolvedExam) {
+      const { data: cfgData } = await supabase
+        .from("planning_pratique_config")
+        .select("day_time_slots")
+        .eq("exam_date", resolvedExam)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      planningConfig = cfgData;
+    }
+
     // 4. Find or create the session for this date
     const formationLabel = type === "vtc" ? "VTC" : "TAXI";
     const shortDate = getShortDayMonth(selectedDate);
@@ -432,8 +452,8 @@ Deno.serve(async (req) => {
             type_session: "pratique",
             date_debut: selectedDate,
             date_fin: selectedDate,
-            heure_debut: type === "vtc" ? "09:00" : "09:00",
-            heure_fin: type === "vtc" ? "16:00" : "17:00",
+            heure_debut: "09:00",
+            heure_fin: type === "vtc" ? "17:00" : "17:30",
             places_disponibles: 3,
             statut: "planifiee",
             lieu: "86 Route de Genas, 69003 Lyon",
@@ -464,7 +484,7 @@ Deno.serve(async (req) => {
 
     // 6. Format email content
     const dateStr = formatDateFR(selectedDate);
-    const horaires = type === "vtc" ? "9h00 - 12h00 puis 13h00 - 16h00" : "9h00 - 17h00";
+    const horaires = resolveHoraires(type, selectedDate, planningConfig);
     const exerciceLink = type === "vtc" ? "https://app.formative.com/join/DNFDZS" : "https://app.formative.com/join/ZT924H";
     const exerciceNom = type === "vtc"
       ? '"Formation Pratique VTC" : Quizz Lyon et Questions à apprendre'
