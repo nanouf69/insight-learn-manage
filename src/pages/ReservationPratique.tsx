@@ -526,7 +526,7 @@ export default function ReservationPratique() {
             <div className="bg-primary/10 border border-primary/20 rounded-xl p-6">
               <p className="text-2xl font-bold text-primary">{formatDate(confDate)}</p>
               <div className="flex items-center justify-center gap-4 mt-3 text-sm text-muted-foreground flex-wrap">
-                <span className="flex items-center gap-1"><Clock className="h-4 w-4" /> {getTrainingBadgeText(type)}</span>
+                <span className="flex items-center gap-1"><Clock className="h-4 w-4" /> {getDayBadgeText(dayTimeSlots[selectedDate!], type)}</span>
                 <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> Lyon 3e</span>
               </div>
             </div>
