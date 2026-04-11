@@ -102,6 +102,26 @@ function getTrainingSlotText(type: "vtc" | "taxi") {
     : "9h00 - 17h00 • Pause 12h-13h à Confluences";
 }
 
+function getDaySlotText(daySlots: { matin?: string; apresmidi?: string } | undefined, type: "vtc" | "taxi") {
+  if (!daySlots || (!daySlots.matin && !daySlots.apresmidi)) {
+    return getTrainingSlotText(type);
+  }
+  const parts: string[] = [];
+  if (daySlots.matin) parts.push(daySlots.matin.replace(/-/g, " - "));
+  if (daySlots.apresmidi) parts.push(daySlots.apresmidi.replace(/-/g, " - "));
+  return parts.join(" • ") + " • Pause 12h-13h à Confluences";
+}
+
+function getDayBadgeText(daySlots: { matin?: string; apresmidi?: string } | undefined, type: "vtc" | "taxi") {
+  if (!daySlots || (!daySlots.matin && !daySlots.apresmidi)) {
+    return getTrainingBadgeText(type);
+  }
+  const parts: string[] = [];
+  if (daySlots.matin) parts.push(daySlots.matin.replace(/-/g, " - "));
+  if (daySlots.apresmidi) parts.push(daySlots.apresmidi.replace(/-/g, " - "));
+  return parts.join(" • ");
+}
+
 function getTrainingEmailText(type: "vtc" | "taxi") {
   return type === "vtc" ? "9h00 - 12h00 puis 13h00 - 16h00" : "9h00 - 17h00";
 }
