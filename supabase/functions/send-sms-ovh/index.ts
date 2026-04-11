@@ -72,8 +72,25 @@ Deno.serve(async (req) => {
           'X-Ovh-Consumer': consumerKey,
         },
       });
-      const senders = await res.json();
-      return new Response(JSON.stringify({ senders }), {
+      const sendersList = await res.json();
+      
+      // Get details for each sender
+      const details = [];
+      for (const s of (Array.isArray(sendersList) ? sendersList : [])) {
+        const detailUrl = `${OVH_API_URL}/sms/${serviceName}/senders/${encodeURIComponent(s)}`;
+        const detSig = await ovhSign(appSecret, consumerKey, 'GET', detailUrl, '', ts);
+        const detRes = await fetch(detailUrl, {
+          headers: {
+            'X-Ovh-Application': appKey,
+            'X-Ovh-Timestamp': String(ts),
+            'X-Ovh-Signature': detSig,
+            'X-Ovh-Consumer': consumerKey,
+          },
+        });
+        details.push(await detRes.json());
+      }
+      
+      return new Response(JSON.stringify({ senders: sendersList, details }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
