@@ -2745,6 +2745,7 @@ export function ExamenReussitePage() {
                                 <option value="">—</option>
                                 <option value="13h-16h">13h–16h</option>
                                 <option value="13h-17h">13h–17h</option>
+                                <option value="13h-17h30">13h–17h30</option>
                                 <option value="14h-17h">14h–17h</option>
                                 <option value="14h-18h">14h–18h</option>
                               </select>
