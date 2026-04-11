@@ -208,6 +208,7 @@ export function ExamenReussitePage() {
   const [extraDays, setExtraDays] = useState<string[]>([]);
   const [newExtraDay, setNewExtraDay] = useState("");
   const [maxPerDay, setMaxPerDay] = useState(3);
+  const [maxPerDayMap, setMaxPerDayMap] = useState<Record<string, number>>({});
   const [planningConfigLoaded, setPlanningConfigLoaded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const planningFileInputRef = useRef<HTMLInputElement>(null);
@@ -541,6 +542,7 @@ export function ExamenReussitePage() {
         setExtraDays(data.extra_days || []);
         setExtraCandidatsFormation(data.extra_candidats || []);
         if (data.max_per_day) setMaxPerDay(data.max_per_day);
+        if (data.max_per_day_map) setMaxPerDayMap(data.max_per_day_map as Record<string, number>);
       }
 
       setPlanningConfigLoaded(true);
@@ -567,6 +569,7 @@ export function ExamenReussitePage() {
         setExtraDays(data.extra_days || []);
         setExtraCandidatsFormation(data.extra_candidats || []);
         if (data.max_per_day) setMaxPerDay(data.max_per_day);
+        if (data.max_per_day_map) setMaxPerDayMap(data.max_per_day_map as Record<string, number>);
       } else {
         const parsedRange = parsePratiquePeriod(selectedDatePratique);
         setPlanningStartDate(parsedRange?.start || "");
@@ -574,6 +577,7 @@ export function ExamenReussitePage() {
         setExcludedDays([]);
         setExtraDays([]);
         setExtraCandidatsFormation([]);
+        setMaxPerDayMap({});
       }
 
       setPlanningConfigLoaded(true);
@@ -595,10 +599,11 @@ export function ExamenReussitePage() {
           extra_days: extraDays,
           extra_candidats: extraCandidatsFormation,
           max_per_day: maxPerDay,
+          max_per_day_map: maxPerDayMap,
         }, { onConflict: 'exam_date,date_pratique' });
     }, 1000);
     return () => clearTimeout(timer);
-  }, [planningConfigLoaded, selectedExamDate, selectedDatePratique, planningStartDate, planningEndDate, excludedDays, extraDays, extraCandidatsFormation, maxPerDay]);
+  }, [planningConfigLoaded, selectedExamDate, selectedDatePratique, planningStartDate, planningEndDate, excludedDays, extraDays, extraCandidatsFormation, maxPerDay, maxPerDayMap]);
 
   // Fetch uploaded PDF files
   const { data: examFiles, refetch: refetchFiles } = useQuery({
@@ -2480,26 +2485,47 @@ export function ExamenReussitePage() {
         const totalTAXI = tousPlanning.filter(a => isPracticeTAXIType(a.type_apprenant)).length;
         const totalReserved = (reservationsPratique || []).length;
 
-        // Auto-assign day types: VTC first, then TAXI based on candidate counts (3 per day)
-        const vtcDaysNeeded = Math.ceil(totalVTC / maxPerDay);
-        const taxiDaysNeeded = Math.ceil(totalTAXI / maxPerDay);
-        const vtcDaysAvailable = Math.min(vtcDaysNeeded, weekdays.length);
-        const taxiDaysAvailable = Math.min(taxiDaysNeeded, Math.max(0, weekdays.length - vtcDaysAvailable));
-        const vtcPlaces = vtcDaysAvailable * maxPerDay;
-        const taxiPlaces = taxiDaysAvailable * maxPerDay;
-        const vtcRestant = Math.max(0, totalVTC - vtcPlaces);
-        const taxiRestant = Math.max(0, totalTAXI - taxiPlaces);
+        // Helper: get max for a specific day
+        const getMax = (key: string) => maxPerDayMap[key] || maxPerDay;
+
+        // Auto-assign day types: VTC first, then TAXI based on candidate counts
+        // With per-day max, we greedily assign days
+        let vtcRemaining = totalVTC;
+        let taxiRemaining = totalTAXI;
         const dayTypeMap: Record<string, 'vtc' | 'taxi' | 'libre'> = {};
-        weekdays.forEach((d, i) => {
+        const dayCapacity: Record<string, number> = {};
+        let vtcPlaces = 0;
+        let taxiPlaces = 0;
+        
+        // First pass: assign VTC days
+        for (const d of weekdays) {
           const key = toKey(d);
-          if (i < vtcDaysNeeded) {
+          const cap = getMax(key);
+          dayCapacity[key] = cap;
+          if (vtcRemaining > 0) {
             dayTypeMap[key] = 'vtc';
-          } else if (i < vtcDaysNeeded + taxiDaysNeeded) {
+            vtcPlaces += cap;
+            vtcRemaining -= cap;
+          }
+        }
+        // Second pass: assign TAXI days from remaining
+        for (const d of weekdays) {
+          const key = toKey(d);
+          if (dayTypeMap[key]) continue;
+          const cap = getMax(key);
+          if (taxiRemaining > 0) {
             dayTypeMap[key] = 'taxi';
+            taxiPlaces += cap;
+            taxiRemaining -= cap;
           } else {
             dayTypeMap[key] = 'libre';
           }
-        });
+        }
+        
+        const vtcDaysNeeded = weekdays.filter(d => dayTypeMap[toKey(d)] === 'vtc').length;
+        const taxiDaysNeeded = weekdays.filter(d => dayTypeMap[toKey(d)] === 'taxi').length;
+        const vtcRestant = Math.max(0, totalVTC - vtcPlaces);
+        const taxiRestant = Math.max(0, totalTAXI - taxiPlaces);
 
         // Group by week
         const weeks: Date[][] = [];
@@ -2525,7 +2551,7 @@ export function ExamenReussitePage() {
                   Planning formation pratique
                 </CardTitle>
               <p className="text-sm text-muted-foreground">
-                VTC : {totalVTC} candidats ({vtcDaysNeeded}j nécessaires) • TAXI : {totalTAXI} candidats ({taxiDaysNeeded}j nécessaires) • {weekdays.length} jours disponibles au calendrier • {totalReserved} réservation(s) confirmée(s) • {maxPerDay} candidats/jour
+                VTC : {totalVTC} candidats ({vtcDaysNeeded}j) • TAXI : {totalTAXI} candidats ({taxiDaysNeeded}j) • {weekdays.length} jours disponibles • {totalReserved} réservation(s) • {vtcPlaces} places VTC / {taxiPlaces} places TAXI
               </p>
               {(vtcRestant > 0 || taxiRestant > 0) && (
                 <p className="text-sm font-bold text-destructive mt-1">
@@ -2586,17 +2612,6 @@ export function ExamenReussitePage() {
                     >
                       <Plus className="h-3 w-3" /> Ajouter
                     </Button>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Label className="text-xs whitespace-nowrap">Max/jour :</Label>
-                    <Input 
-                      type="number" 
-                      min={1}
-                      max={10}
-                      value={maxPerDay} 
-                      onChange={(e) => setMaxPerDay(Math.max(1, parseInt(e.target.value) || 1))}
-                      className="h-8 text-sm w-20"
-                    />
                   </div>
                 </div>
                 {/* Show excluded days */}
@@ -2665,7 +2680,7 @@ export function ExamenReussitePage() {
 
                       return (
                         <div key={key} className={`border rounded-lg p-2 min-h-[120px] relative group/day ${(hasReservations || expectedType !== 'libre') ? 'bg-background' : 'bg-muted/30'}`}>
-                          <div className="text-xs font-bold text-center mb-2 pb-1 border-b flex items-center justify-center gap-1">
+                          <div className="text-xs font-bold text-center mb-1 pb-1 border-b flex items-center justify-center gap-1">
                             <span>{dayNames[day.getDay()]} {day.getDate()} {monthNames[day.getMonth()]}</span>
                             <button 
                               onClick={() => {
@@ -2679,6 +2694,22 @@ export function ExamenReussitePage() {
                             </button>
                           </div>
                           
+                          {/* Per-day max input */}
+                          <div className="flex items-center justify-center gap-1 mb-1">
+                            <span className="text-[9px] text-muted-foreground">Max :</span>
+                            <input
+                              type="number"
+                              min={1}
+                              max={10}
+                              value={maxPerDayMap[key] || maxPerDay}
+                              onChange={(e) => {
+                                const val = Math.max(1, parseInt(e.target.value) || 1);
+                                setMaxPerDayMap(prev => ({ ...prev, [key]: val }));
+                              }}
+                              className="w-10 h-5 text-[10px] text-center border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary"
+                            />
+                          </div>
+
                           {/* Show label for expected type */}
                           {expectedType === 'vtc' && (
                             <div className="mb-2">
@@ -2691,7 +2722,7 @@ export function ExamenReussitePage() {
                                   </button>
                                 </div>
                               )) : (
-                                <div className="text-[10px] text-muted-foreground italic">En attente (max {maxPerDay})</div>
+                                <div className="text-[10px] text-muted-foreground italic">En attente (max {maxPerDayMap[key] || maxPerDay})</div>
                               )}
                             </div>
                           )}
@@ -2706,7 +2737,7 @@ export function ExamenReussitePage() {
                                   </button>
                                 </div>
                               )) : (
-                                <div className="text-[10px] text-muted-foreground italic">En attente (max {maxPerDay})</div>
+                                <div className="text-[10px] text-muted-foreground italic">En attente (max {maxPerDayMap[key] || maxPerDay})</div>
                               )}
                             </div>
                           )}
