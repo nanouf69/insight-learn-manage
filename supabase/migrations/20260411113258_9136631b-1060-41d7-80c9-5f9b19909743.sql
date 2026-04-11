@@ -1,0 +1,1 @@
+ALTER TABLE public.planning_pratique_config ADD COLUMN IF NOT EXISTS max_per_day integer NOT NULL DEFAULT 3;
