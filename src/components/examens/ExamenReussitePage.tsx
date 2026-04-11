@@ -2526,17 +2526,6 @@ export function ExamenReussitePage() {
         const taxiDaysNeeded = weekdays.filter(d => dayTypeMap[toKey(d)] === 'taxi').length;
         const vtcRestant = Math.max(0, totalVTC - vtcPlaces);
         const taxiRestant = Math.max(0, totalTAXI - taxiPlaces);
-        const dayTypeMap: Record<string, 'vtc' | 'taxi' | 'libre'> = {};
-        weekdays.forEach((d, i) => {
-          const key = toKey(d);
-          if (i < vtcDaysNeeded) {
-            dayTypeMap[key] = 'vtc';
-          } else if (i < vtcDaysNeeded + taxiDaysNeeded) {
-            dayTypeMap[key] = 'taxi';
-          } else {
-            dayTypeMap[key] = 'libre';
-          }
-        });
 
         // Group by week
         const weeks: Date[][] = [];
