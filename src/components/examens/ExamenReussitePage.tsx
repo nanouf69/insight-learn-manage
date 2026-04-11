@@ -2680,7 +2680,7 @@ export function ExamenReussitePage() {
 
                       return (
                         <div key={key} className={`border rounded-lg p-2 min-h-[120px] relative group/day ${(hasReservations || expectedType !== 'libre') ? 'bg-background' : 'bg-muted/30'}`}>
-                          <div className="text-xs font-bold text-center mb-2 pb-1 border-b flex items-center justify-center gap-1">
+                          <div className="text-xs font-bold text-center mb-1 pb-1 border-b flex items-center justify-center gap-1">
                             <span>{dayNames[day.getDay()]} {day.getDate()} {monthNames[day.getMonth()]}</span>
                             <button 
                               onClick={() => {
@@ -2694,6 +2694,22 @@ export function ExamenReussitePage() {
                             </button>
                           </div>
                           
+                          {/* Per-day max input */}
+                          <div className="flex items-center justify-center gap-1 mb-1">
+                            <span className="text-[9px] text-muted-foreground">Max :</span>
+                            <input
+                              type="number"
+                              min={1}
+                              max={10}
+                              value={maxPerDayMap[key] || maxPerDay}
+                              onChange={(e) => {
+                                const val = Math.max(1, parseInt(e.target.value) || 1);
+                                setMaxPerDayMap(prev => ({ ...prev, [key]: val }));
+                              }}
+                              className="w-10 h-5 text-[10px] text-center border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary"
+                            />
+                          </div>
+
                           {/* Show label for expected type */}
                           {expectedType === 'vtc' && (
                             <div className="mb-2">
@@ -2706,7 +2722,7 @@ export function ExamenReussitePage() {
                                   </button>
                                 </div>
                               )) : (
-                                <div className="text-[10px] text-muted-foreground italic">En attente (max {maxPerDay})</div>
+                                <div className="text-[10px] text-muted-foreground italic">En attente (max {maxPerDayMap[key] || maxPerDay})</div>
                               )}
                             </div>
                           )}
@@ -2721,7 +2737,7 @@ export function ExamenReussitePage() {
                                   </button>
                                 </div>
                               )) : (
-                                <div className="text-[10px] text-muted-foreground italic">En attente (max {maxPerDay})</div>
+                                <div className="text-[10px] text-muted-foreground italic">En attente (max {maxPerDayMap[key] || maxPerDay})</div>
                               )}
                             </div>
                           )}
