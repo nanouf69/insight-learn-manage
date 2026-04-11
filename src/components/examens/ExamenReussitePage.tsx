@@ -2715,30 +2715,39 @@ export function ExamenReussitePage() {
                                 className="w-10 h-5 text-[10px] text-center border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary"
                               />
                             </div>
-                            <select
-                              value={dayTimeSlots[key] || '9h-16h'}
-                              onChange={(e) => setDayTimeSlots(prev => ({ ...prev, [key]: e.target.value }))}
-                              className="h-5 text-[9px] border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary px-1"
-                            >
-                              <optgroup label="Matin">
-                                <option value="8h-12h">8h – 12h</option>
-                                <option value="9h-12h">9h – 12h</option>
-                                <option value="9h-13h">9h – 13h</option>
-                                <option value="10h-12h">10h – 12h</option>
-                              </optgroup>
-                              <optgroup label="Après-midi">
-                                <option value="13h-17h">13h – 17h</option>
-                                <option value="14h-17h">14h – 17h</option>
-                                <option value="14h-18h">14h – 18h</option>
-                              </optgroup>
-                              <optgroup label="Journée">
-                                <option value="9h-16h">9h – 16h</option>
-                                <option value="9h-17h">9h – 17h</option>
-                                <option value="9h-18h">9h – 18h</option>
-                                <option value="10h-16h">10h – 16h</option>
-                                <option value="10h-17h">10h – 17h</option>
-                              </optgroup>
-                            </select>
+                            <div className="flex gap-1 items-center">
+                              <span className="text-[8px] text-muted-foreground">AM:</span>
+                              <select
+                                value={typeof dayTimeSlots[key] === 'object' ? (dayTimeSlots[key] as any)?.matin || '' : ''}
+                                onChange={(e) => setDayTimeSlots(prev => {
+                                  const current = typeof prev[key] === 'object' ? prev[key] as any : {};
+                                  return { ...prev, [key]: { ...current, matin: e.target.value } };
+                                })}
+                                className="h-5 text-[9px] border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary px-0.5 flex-1 min-w-0"
+                              >
+                                <option value="">—</option>
+                                <option value="8h-12h">8h–12h</option>
+                                <option value="9h-12h">9h–12h</option>
+                                <option value="9h-13h">9h–13h</option>
+                                <option value="10h-12h">10h–12h</option>
+                              </select>
+                            </div>
+                            <div className="flex gap-1 items-center">
+                              <span className="text-[8px] text-muted-foreground">PM:</span>
+                              <select
+                                value={typeof dayTimeSlots[key] === 'object' ? (dayTimeSlots[key] as any)?.apresmidi || '' : ''}
+                                onChange={(e) => setDayTimeSlots(prev => {
+                                  const current = typeof prev[key] === 'object' ? prev[key] as any : {};
+                                  return { ...prev, [key]: { ...current, apresmidi: e.target.value } };
+                                })}
+                                className="h-5 text-[9px] border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary px-0.5 flex-1 min-w-0"
+                              >
+                                <option value="">—</option>
+                                <option value="13h-17h">13h–17h</option>
+                                <option value="14h-17h">14h–17h</option>
+                                <option value="14h-18h">14h–18h</option>
+                              </select>
+                            </div>
                           </div>
 
                           {/* Show label for expected type */}
