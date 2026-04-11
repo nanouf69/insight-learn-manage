@@ -102,6 +102,26 @@ function getTrainingSlotText(type: "vtc" | "taxi") {
     : "9h00 - 17h00 • Pause 12h-13h à Confluences";
 }
 
+function getDaySlotText(daySlots: { matin?: string; apresmidi?: string } | undefined, type: "vtc" | "taxi") {
+  if (!daySlots || (!daySlots.matin && !daySlots.apresmidi)) {
+    return getTrainingSlotText(type);
+  }
+  const parts: string[] = [];
+  if (daySlots.matin) parts.push(daySlots.matin.replace(/-/g, " - "));
+  if (daySlots.apresmidi) parts.push(daySlots.apresmidi.replace(/-/g, " - "));
+  return parts.join(" • ") + " • Pause 12h-13h à Confluences";
+}
+
+function getDayBadgeText(daySlots: { matin?: string; apresmidi?: string } | undefined, type: "vtc" | "taxi") {
+  if (!daySlots || (!daySlots.matin && !daySlots.apresmidi)) {
+    return getTrainingBadgeText(type);
+  }
+  const parts: string[] = [];
+  if (daySlots.matin) parts.push(daySlots.matin.replace(/-/g, " - "));
+  if (daySlots.apresmidi) parts.push(daySlots.apresmidi.replace(/-/g, " - "));
+  return parts.join(" • ");
+}
+
 function getTrainingEmailText(type: "vtc" | "taxi") {
   return type === "vtc" ? "9h00 - 12h00 puis 13h00 - 16h00" : "9h00 - 17h00";
 }
@@ -132,6 +152,8 @@ export default function ReservationPratique() {
   const [occupiedDays, setOccupiedDays] = useState<string[]>([]);
   const [allApprenants, setAllApprenants] = useState<PlanningApprenant[]>([]);
   const [examApprenants, setExamApprenants] = useState<PlanningApprenant[]>([]);
+  const [maxPerDayMap, setMaxPerDayMap] = useState<Record<string, number>>({});
+  const [dayTimeSlots, setDayTimeSlots] = useState<Record<string, { matin?: string; apresmidi?: string }>>({});
   const [deplacesIds, setDeplacesIds] = useState<string[]>([]);
   const [dejaFormesIds, setDejaFormesIds] = useState<string[]>([]);
 
@@ -192,6 +214,18 @@ export default function ReservationPratique() {
             setExcludedDays(config.excluded_days || []);
             setExtraDays(config.extra_days || []);
             setExtraCandidats(config.extra_candidats || []);
+            setMaxPerDayMap(config.max_per_day_map || {});
+            // Parse day_time_slots - handle both new {matin,apresmidi} and legacy string format
+            const rawSlots = config.day_time_slots || {};
+            const parsedSlots: Record<string, { matin?: string; apresmidi?: string }> = {};
+            Object.entries(rawSlots).forEach(([k, v]) => {
+              if (typeof v === 'string') {
+                parsedSlots[k] = { matin: v };
+              } else if (v && typeof v === 'object') {
+                parsedSlots[k] = v as { matin?: string; apresmidi?: string };
+              }
+            });
+            setDayTimeSlots(parsedSlots);
 
             setAllApprenants((loadResult.allApprenants || []) as PlanningApprenant[]);
             setExamApprenants((loadResult.examApprenants || []) as PlanningApprenant[]);
@@ -341,7 +375,11 @@ export default function ReservationPratique() {
 
     return weekdays
       .filter((date) => dayTypeMap[toLocalDateKey(date)] === type)
-      .map((date) => ({ date, capacity: 3 }));
+      .map((date) => {
+        const key = toLocalDateKey(date);
+        const capacity = maxPerDayMap[key] != null ? Number(maxPerDayMap[key]) : 3;
+        return { date, capacity };
+      });
   }, [
     type,
     planningStartDate,
@@ -355,6 +393,7 @@ export default function ReservationPratique() {
     excludedDays,
     extraDays,
     occupiedDays,
+    maxPerDayMap,
   ]);
 
   const dateSlots: DateSlot[] = useMemo(() => {
@@ -447,7 +486,7 @@ export default function ReservationPratique() {
             <p className="text-muted-foreground">{apprenant?.prenom}, vous avez réservé votre date de formation pratique :</p>
             <div className="bg-primary/10 rounded-lg p-4">
               <p className="text-lg font-bold text-primary">{formatDate(resDate)}</p>
-              <p className="text-sm text-muted-foreground">{getTrainingBadgeText(type)}</p>
+              <p className="text-sm text-muted-foreground">{getDayBadgeText(dayTimeSlots[existingReservation.date_choisie], type)}</p>
             </div>
             <div className="text-sm text-muted-foreground space-y-1">
               <p>📍 86 Route de Genas 69003 Lyon</p>
@@ -487,7 +526,7 @@ export default function ReservationPratique() {
             <div className="bg-primary/10 border border-primary/20 rounded-xl p-6">
               <p className="text-2xl font-bold text-primary">{formatDate(confDate)}</p>
               <div className="flex items-center justify-center gap-4 mt-3 text-sm text-muted-foreground flex-wrap">
-                <span className="flex items-center gap-1"><Clock className="h-4 w-4" /> {getTrainingBadgeText(type)}</span>
+                <span className="flex items-center gap-1"><Clock className="h-4 w-4" /> {getDayBadgeText(dayTimeSlots[selectedDate!], type)}</span>
                 <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> Lyon 3e</span>
               </div>
             </div>
@@ -601,7 +640,7 @@ export default function ReservationPratique() {
                         <p className={`font-semibold ${isSelected ? (isVTC ? "text-blue-700" : "text-amber-700") : ""}`}>
                           {formatDate(slot.date)}
                         </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{getTrainingSlotText(type)}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{getDaySlotText(dayTimeSlots[key], type)}</p>
                       </div>
                       <div className="text-right">
                         {isFull ? (
