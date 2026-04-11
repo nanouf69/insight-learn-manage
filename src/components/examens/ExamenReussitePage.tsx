@@ -544,6 +544,7 @@ export function ExamenReussitePage() {
         setExtraCandidatsFormation(data.extra_candidats || []);
         if (data.max_per_day) setMaxPerDay(data.max_per_day);
         if (data.max_per_day_map) setMaxPerDayMap(data.max_per_day_map as Record<string, number>);
+        if (data.day_time_slots) setDayTimeSlots(data.day_time_slots as Record<string, string>);
       }
 
       setPlanningConfigLoaded(true);
@@ -571,6 +572,7 @@ export function ExamenReussitePage() {
         setExtraCandidatsFormation(data.extra_candidats || []);
         if (data.max_per_day) setMaxPerDay(data.max_per_day);
         if (data.max_per_day_map) setMaxPerDayMap(data.max_per_day_map as Record<string, number>);
+        if (data.day_time_slots) setDayTimeSlots(data.day_time_slots as Record<string, string>);
       } else {
         const parsedRange = parsePratiquePeriod(selectedDatePratique);
         setPlanningStartDate(parsedRange?.start || "");
@@ -579,6 +581,7 @@ export function ExamenReussitePage() {
         setExtraDays([]);
         setExtraCandidatsFormation([]);
         setMaxPerDayMap({});
+        setDayTimeSlots({});
       }
 
       setPlanningConfigLoaded(true);
@@ -601,10 +604,11 @@ export function ExamenReussitePage() {
           extra_candidats: extraCandidatsFormation,
           max_per_day: maxPerDay,
           max_per_day_map: maxPerDayMap,
+          day_time_slots: dayTimeSlots,
         }, { onConflict: 'exam_date,date_pratique' });
     }, 1000);
     return () => clearTimeout(timer);
-  }, [planningConfigLoaded, selectedExamDate, selectedDatePratique, planningStartDate, planningEndDate, excludedDays, extraDays, extraCandidatsFormation, maxPerDay, maxPerDayMap]);
+  }, [planningConfigLoaded, selectedExamDate, selectedDatePratique, planningStartDate, planningEndDate, excludedDays, extraDays, extraCandidatsFormation, maxPerDay, maxPerDayMap, dayTimeSlots]);
 
   // Fetch uploaded PDF files
   const { data: examFiles, refetch: refetchFiles } = useQuery({
