@@ -2185,6 +2185,45 @@ export function ExamenReussitePage() {
                                     </AlertDialogContent>
                                   </AlertDialog>
                                 )}
+                                {a.telephone && !hasReservation && (
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-7 w-7" title={`SMS à ${a.prenom}`}>
+                                        <MessageSquare className="h-3.5 w-3.5 text-amber-600" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent className="max-w-lg">
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Envoyer un SMS TAXI à {a.prenom} {a.nom}</AlertDialogTitle>
+                                        <AlertDialogDescription asChild>
+                                          <div className="space-y-2 text-sm">
+                                            <p>Envoyer un SMS de relance à <strong>{a.telephone}</strong> ?</p>
+                                            <div className="bg-muted p-3 rounded text-xs">
+                                              <p className="font-medium mb-1">Message :</p>
+                                              <p>FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique TAXI. Attention, il n'y aura pas d'autres dates d'entrainement. Reservez ici: [lien personnalisé]</p>
+                                            </div>
+                                          </div>
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                        <AlertDialogAction onClick={async () => {
+                                          try {
+                                            const bookingUrl = getBookingUrl(a.id, 'taxi');
+                                            const message = `FTRANSPORT: Bonjour, vous n'avez pas encore choisi votre date de formation pratique TAXI. Attention, il n'y aura pas d'autres dates d'entrainement. Reservez ici: ${bookingUrl}`;
+                                            const { data, error } = await supabase.functions.invoke('send-sms-ovh', {
+                                              body: { receivers: [a.telephone!], message },
+                                            });
+                                            if (error || !data?.success) throw new Error(error?.message || 'Échec SMS');
+                                            toast.success(`SMS envoyé à ${a.prenom} ${a.nom}`);
+                                          } catch (err: any) {
+                                            toast.error(`Erreur SMS: ${err.message || 'Échec'}`);
+                                          }
+                                        }}>Envoyer le SMS</AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                )}
                                 {extraCandidatsFormation.includes(a.id) && (
                                   <Button variant="ghost" size="icon" className="h-7 w-7" title="Retirer" onClick={() => setExtraCandidatsFormation(prev => prev.filter(id => id !== a.id))}>
                                     <Trash2 className="h-3.5 w-3.5 text-red-500" />
