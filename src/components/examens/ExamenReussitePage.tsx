@@ -2525,7 +2525,7 @@ export function ExamenReussitePage() {
                   Planning formation pratique
                 </CardTitle>
               <p className="text-sm text-muted-foreground">
-                VTC : {totalVTC} candidats ({vtcDaysNeeded}j nécessaires) • TAXI : {totalTAXI} candidats ({taxiDaysNeeded}j nécessaires) • {weekdays.length} jours disponibles au calendrier • {totalReserved} réservation(s) confirmée(s) • 3 candidats/jour
+                VTC : {totalVTC} candidats ({vtcDaysNeeded}j nécessaires) • TAXI : {totalTAXI} candidats ({taxiDaysNeeded}j nécessaires) • {weekdays.length} jours disponibles au calendrier • {totalReserved} réservation(s) confirmée(s) • {maxPerDay} candidats/jour
               </p>
               {(vtcRestant > 0 || taxiRestant > 0) && (
                 <p className="text-sm font-bold text-destructive mt-1">
@@ -2680,7 +2680,7 @@ export function ExamenReussitePage() {
                                   </button>
                                 </div>
                               )) : (
-                                <div className="text-[10px] text-muted-foreground italic">En attente (max 3)</div>
+                                <div className="text-[10px] text-muted-foreground italic">En attente (max {maxPerDay})</div>
                               )}
                             </div>
                           )}
@@ -2695,7 +2695,7 @@ export function ExamenReussitePage() {
                                   </button>
                                 </div>
                               )) : (
-                                <div className="text-[10px] text-muted-foreground italic">En attente (max 3)</div>
+                                <div className="text-[10px] text-muted-foreground italic">En attente (max {maxPerDay})</div>
                               )}
                             </div>
                           )}
