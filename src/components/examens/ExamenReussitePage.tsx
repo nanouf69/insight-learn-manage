@@ -2716,13 +2716,18 @@ export function ExamenReussitePage() {
                               />
                             </div>
                             <select
-                              value={dayTimeSlots[key] || 'journee'}
+                              value={dayTimeSlots[key] || '9h-16h'}
                               onChange={(e) => setDayTimeSlots(prev => ({ ...prev, [key]: e.target.value }))}
                               className="h-5 text-[9px] border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary px-1"
                             >
-                              <option value="journee">Journée</option>
-                              <option value="matin">Matin</option>
-                              <option value="apres-midi">Après-midi</option>
+                              <option value="9h-12h">9h – 12h</option>
+                              <option value="9h-16h">9h – 16h</option>
+                              <option value="9h-17h">9h – 17h</option>
+                              <option value="9h-18h">9h – 18h</option>
+                              <option value="10h-16h">10h – 16h</option>
+                              <option value="10h-17h">10h – 17h</option>
+                              <option value="14h-17h">14h – 17h</option>
+                              <option value="14h-18h">14h – 18h</option>
                             </select>
                           </div>
 
