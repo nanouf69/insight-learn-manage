@@ -131,13 +131,10 @@ Deno.serve(async (req) => {
       validityPeriod: 2880,
     };
 
-    // Use FTRANSPORT sender if message contains a URL or if sender is explicitly provided
-    const containsUrl = /https?:\/\//i.test(message);
+    // FTRANSPORT sender is currently refused by OVH, use shortcode fallback
+    // Shortcodes cannot send URLs, so the message must not contain links
     if (sender) {
       smsPayload.sender = sender;
-      smsPayload.senderForResponse = false;
-    } else if (containsUrl) {
-      smsPayload.sender = 'FTRANSPORT';
       smsPayload.senderForResponse = false;
     } else {
       smsPayload.senderForResponse = true;
