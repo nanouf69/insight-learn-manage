@@ -2613,17 +2613,6 @@ export function ExamenReussitePage() {
                       <Plus className="h-3 w-3" /> Ajouter
                     </Button>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Label className="text-xs whitespace-nowrap">Max/jour :</Label>
-                    <Input 
-                      type="number" 
-                      min={1}
-                      max={10}
-                      value={maxPerDay} 
-                      onChange={(e) => setMaxPerDay(Math.max(1, parseInt(e.target.value) || 1))}
-                      className="h-8 text-sm w-20"
-                    />
-                  </div>
                 </div>
                 {/* Show excluded days */}
                 {excludedDays.length > 0 && (
