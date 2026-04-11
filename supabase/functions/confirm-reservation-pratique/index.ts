@@ -143,6 +143,22 @@ function getShortDayMonth(dateStr: string) {
   return `${DAYS_SHORT[dt.getDay()]} ${d} ${MONTHS_SHORT[m - 1]}`;
 }
 
+function resolveHoraires(
+  type: string,
+  selectedDate: string,
+  config: { day_time_slots?: Record<string, { am?: string; pm?: string }> } | null,
+): string {
+  const slots = config?.day_time_slots?.[selectedDate];
+  if (slots) {
+    const parts: string[] = [];
+    if (slots.am) parts.push(slots.am);
+    if (slots.pm) parts.push(slots.pm);
+    if (parts.length > 0) return parts.join(" puis ");
+  }
+  // Fallback defaults
+  return type === "vtc" ? "9h00 - 12h00 puis 13h00 - 16h00" : "9h00 - 12h00 puis 13h00 - 17h30";
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
