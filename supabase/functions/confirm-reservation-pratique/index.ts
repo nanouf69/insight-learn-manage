@@ -109,6 +109,29 @@ function normalizePlanningConfig<T extends { date_pratique?: string | null; plan
   return config;
 }
 
+function buildDerivedPlanningConfig<T extends {
+  exam_date?: string | null;
+  date_pratique?: string | null;
+  planning_start_date?: string | null;
+  planning_end_date?: string | null;
+  excluded_days?: string[] | null;
+  extra_days?: string[] | null;
+  extra_candidats?: string[] | null;
+}>(baseConfig: T | null, resolvedExamDate: string, pratiqueDate: string): T {
+  const parsedRange = parsePratiquePeriod(pratiqueDate);
+
+  return {
+    ...(baseConfig || {}),
+    exam_date: resolvedExamDate,
+    date_pratique: pratiqueDate,
+    planning_start_date: parsedRange?.start || baseConfig?.planning_start_date || null,
+    planning_end_date: parsedRange?.end || baseConfig?.planning_end_date || null,
+    excluded_days: parsedRange ? [] : (baseConfig?.excluded_days || []),
+    extra_days: parsedRange ? [] : (baseConfig?.extra_days || []),
+    extra_candidats: parsedRange ? [] : (baseConfig?.extra_candidats || []),
+  } as T;
+}
+
 function getShortDayMonth(dateStr: string) {
   const [, m, d] = dateStr.split("-").map(Number);
   const DAYS_SHORT = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
@@ -173,6 +196,8 @@ Deno.serve(async (req) => {
       let existingSessions: unknown[] = [];
 
       if (resolvedExamDate) {
+        let latestConfig = null;
+
         if (pratiqueDate) {
           const { data: explicitConfig, error: explicitConfigError } = await supabase
             .from("planning_pratique_config")
@@ -187,8 +212,8 @@ Deno.serve(async (req) => {
           config = normalizePlanningConfig(explicitConfig);
         }
 
-        if (!config) {
-          const { data: latestConfig, error: latestConfigError } = await supabase
+        if (!config || pratiqueDate) {
+          const { data: fetchedLatestConfig, error: latestConfigError } = await supabase
             .from("planning_pratique_config")
             .select("*")
             .eq("exam_date", resolvedExamDate)
@@ -197,6 +222,14 @@ Deno.serve(async (req) => {
             .maybeSingle();
 
           if (latestConfigError) throw latestConfigError;
+          latestConfig = fetchedLatestConfig;
+        }
+
+        if (!config && pratiqueDate) {
+          config = normalizePlanningConfig(buildDerivedPlanningConfig(latestConfig, resolvedExamDate, pratiqueDate));
+        }
+
+        if (!config) {
           config = normalizePlanningConfig(latestConfig);
         }
 
