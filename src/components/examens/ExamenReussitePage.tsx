@@ -207,6 +207,7 @@ export function ExamenReussitePage() {
   const [excludedDays, setExcludedDays] = useState<string[]>([]);
   const [extraDays, setExtraDays] = useState<string[]>([]);
   const [newExtraDay, setNewExtraDay] = useState("");
+  const [maxPerDay, setMaxPerDay] = useState(3);
   const [planningConfigLoaded, setPlanningConfigLoaded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const planningFileInputRef = useRef<HTMLInputElement>(null);
@@ -539,6 +540,7 @@ export function ExamenReussitePage() {
         setExcludedDays(data.excluded_days || []);
         setExtraDays(data.extra_days || []);
         setExtraCandidatsFormation(data.extra_candidats || []);
+        if (data.max_per_day) setMaxPerDay(data.max_per_day);
       }
 
       setPlanningConfigLoaded(true);
@@ -564,6 +566,7 @@ export function ExamenReussitePage() {
         setExcludedDays(data.excluded_days || []);
         setExtraDays(data.extra_days || []);
         setExtraCandidatsFormation(data.extra_candidats || []);
+        if (data.max_per_day) setMaxPerDay(data.max_per_day);
       } else {
         const parsedRange = parsePratiquePeriod(selectedDatePratique);
         setPlanningStartDate(parsedRange?.start || "");
@@ -591,10 +594,11 @@ export function ExamenReussitePage() {
           excluded_days: excludedDays,
           extra_days: extraDays,
           extra_candidats: extraCandidatsFormation,
+          max_per_day: maxPerDay,
         }, { onConflict: 'exam_date,date_pratique' });
     }, 1000);
     return () => clearTimeout(timer);
-  }, [planningConfigLoaded, selectedExamDate, selectedDatePratique, planningStartDate, planningEndDate, excludedDays, extraDays, extraCandidatsFormation]);
+  }, [planningConfigLoaded, selectedExamDate, selectedDatePratique, planningStartDate, planningEndDate, excludedDays, extraDays, extraCandidatsFormation, maxPerDay]);
 
   // Fetch uploaded PDF files
   const { data: examFiles, refetch: refetchFiles } = useQuery({
@@ -1521,8 +1525,8 @@ export function ExamenReussitePage() {
 
         const vtcList = tousAFormer.filter(a => isPracticeVTCType(a.type_apprenant));
         const taxiList = tousAFormer.filter(a => isPracticeTAXIType(a.type_apprenant));
-        const joursVTC = Math.ceil(vtcList.length / 3);
-        const joursTAXI = Math.ceil(taxiList.length / 3);
+        const joursVTC = Math.ceil(vtcList.length / maxPerDay);
+        const joursTAXI = Math.ceil(taxiList.length / maxPerDay);
         const maxRows = Math.max(vtcList.length, taxiList.length);
 
         // Compute VTC/TAXI date ranges from calendar
@@ -2477,12 +2481,12 @@ export function ExamenReussitePage() {
         const totalReserved = (reservationsPratique || []).length;
 
         // Auto-assign day types: VTC first, then TAXI based on candidate counts (3 per day)
-        const vtcDaysNeeded = Math.ceil(totalVTC / 3);
-        const taxiDaysNeeded = Math.ceil(totalTAXI / 3);
+        const vtcDaysNeeded = Math.ceil(totalVTC / maxPerDay);
+        const taxiDaysNeeded = Math.ceil(totalTAXI / maxPerDay);
         const vtcDaysAvailable = Math.min(vtcDaysNeeded, weekdays.length);
         const taxiDaysAvailable = Math.min(taxiDaysNeeded, Math.max(0, weekdays.length - vtcDaysAvailable));
-        const vtcPlaces = vtcDaysAvailable * 3;
-        const taxiPlaces = taxiDaysAvailable * 3;
+        const vtcPlaces = vtcDaysAvailable * maxPerDay;
+        const taxiPlaces = taxiDaysAvailable * maxPerDay;
         const vtcRestant = Math.max(0, totalVTC - vtcPlaces);
         const taxiRestant = Math.max(0, totalTAXI - taxiPlaces);
         const dayTypeMap: Record<string, 'vtc' | 'taxi' | 'libre'> = {};
@@ -2521,7 +2525,7 @@ export function ExamenReussitePage() {
                   Planning formation pratique
                 </CardTitle>
               <p className="text-sm text-muted-foreground">
-                VTC : {totalVTC} candidats ({vtcDaysNeeded}j nécessaires) • TAXI : {totalTAXI} candidats ({taxiDaysNeeded}j nécessaires) • {weekdays.length} jours disponibles au calendrier • {totalReserved} réservation(s) confirmée(s) • 3 candidats/jour
+                VTC : {totalVTC} candidats ({vtcDaysNeeded}j nécessaires) • TAXI : {totalTAXI} candidats ({taxiDaysNeeded}j nécessaires) • {weekdays.length} jours disponibles au calendrier • {totalReserved} réservation(s) confirmée(s) • {maxPerDay} candidats/jour
               </p>
               {(vtcRestant > 0 || taxiRestant > 0) && (
                 <p className="text-sm font-bold text-destructive mt-1">
@@ -2582,6 +2586,17 @@ export function ExamenReussitePage() {
                     >
                       <Plus className="h-3 w-3" /> Ajouter
                     </Button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs whitespace-nowrap">Max/jour :</Label>
+                    <Input 
+                      type="number" 
+                      min={1}
+                      max={10}
+                      value={maxPerDay} 
+                      onChange={(e) => setMaxPerDay(Math.max(1, parseInt(e.target.value) || 1))}
+                      className="h-8 text-sm w-20"
+                    />
                   </div>
                 </div>
                 {/* Show excluded days */}
@@ -2676,7 +2691,7 @@ export function ExamenReussitePage() {
                                   </button>
                                 </div>
                               )) : (
-                                <div className="text-[10px] text-muted-foreground italic">En attente (max 3)</div>
+                                <div className="text-[10px] text-muted-foreground italic">En attente (max {maxPerDay})</div>
                               )}
                             </div>
                           )}
@@ -2691,7 +2706,7 @@ export function ExamenReussitePage() {
                                   </button>
                                 </div>
                               )) : (
-                                <div className="text-[10px] text-muted-foreground italic">En attente (max 3)</div>
+                                <div className="text-[10px] text-muted-foreground italic">En attente (max {maxPerDay})</div>
                               )}
                             </div>
                           )}

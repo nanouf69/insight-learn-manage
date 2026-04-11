@@ -1737,6 +1737,7 @@ export type Database = {
           extra_candidats: string[]
           extra_days: string[]
           id: string
+          max_per_day: number
           planning_end_date: string
           planning_start_date: string
           updated_at: string
@@ -1749,6 +1750,7 @@ export type Database = {
           extra_candidats?: string[]
           extra_days?: string[]
           id?: string
+          max_per_day?: number
           planning_end_date: string
           planning_start_date: string
           updated_at?: string
@@ -1761,6 +1763,7 @@ export type Database = {
           extra_candidats?: string[]
           extra_days?: string[]
           id?: string
+          max_per_day?: number
           planning_end_date?: string
           planning_start_date?: string
           updated_at?: string
