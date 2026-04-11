@@ -1935,7 +1935,9 @@ export function ExamenReussitePage() {
                                           try {
                                             const { error } = await supabase.from('apprenants').update({ resultat_examen: null }).eq('id', a.id);
                                             if (error) throw error;
+                                            await supabase.from('reservations_pratique').delete().eq('apprenant_id', a.id);
                                             queryClient.invalidateQueries({ queryKey: ['apprenants-examen'] });
+                                            queryClient.invalidateQueries({ queryKey: ['reservations-pratique'] });
                                             toast.success(`${a.prenom} ${a.nom} retiré(e) de la liste`);
                                           } catch (err: any) {
                                             toast.error(`Erreur: ${err.message}`);
@@ -2293,7 +2295,9 @@ export function ExamenReussitePage() {
                                           try {
                                             const { error } = await supabase.from('apprenants').update({ resultat_examen: null }).eq('id', a.id);
                                             if (error) throw error;
+                                            await supabase.from('reservations_pratique').delete().eq('apprenant_id', a.id);
                                             queryClient.invalidateQueries({ queryKey: ['apprenants-examen'] });
+                                            queryClient.invalidateQueries({ queryKey: ['reservations-pratique'] });
                                             toast.success(`${a.prenom} ${a.nom} retiré(e) de la liste`);
                                           } catch (err: any) {
                                             toast.error(`Erreur: ${err.message}`);
