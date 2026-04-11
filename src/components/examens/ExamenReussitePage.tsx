@@ -544,7 +544,7 @@ export function ExamenReussitePage() {
         setExtraCandidatsFormation(data.extra_candidats || []);
         if (data.max_per_day) setMaxPerDay(data.max_per_day);
         if (data.max_per_day_map) setMaxPerDayMap(data.max_per_day_map as Record<string, number>);
-        if (data.day_time_slots) setDayTimeSlots(data.day_time_slots as Record<string, string>);
+        if (data.day_time_slots) setDayTimeSlots(data.day_time_slots as Record<string, { matin?: string; apresmidi?: string } | string>);
       }
 
       setPlanningConfigLoaded(true);
