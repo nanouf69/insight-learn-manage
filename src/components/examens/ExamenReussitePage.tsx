@@ -1537,6 +1537,16 @@ export function ExamenReussitePage() {
             }
             c.setDate(c.getDate() + 1);
           }
+          if (calWeekdays.length === 0) {
+            c = new Date(s);
+            while (c <= e) {
+              const k = toKeyF(c);
+              if (c.getDay() !== 0 && c.getDay() !== 6 && !excludedDays.includes(k)) {
+                calWeekdays.push(new Date(c));
+              }
+              c.setDate(c.getDate() + 1);
+            }
+          }
           extraDays.forEach(ed => {
             if (!calWeekdays.some(d => toKeyF(d) === ed) && !excludedDays.includes(ed)) {
               calWeekdays.push(new Date(ed + 'T00:00:00'));
@@ -2235,6 +2245,16 @@ export function ExamenReussitePage() {
             weekdays.push(new Date(cur));
           }
           cur.setDate(cur.getDate() + 1);
+        }
+        if (weekdays.length === 0) {
+          cur = new Date(start);
+          while (cur <= end) {
+            const key = toKey(cur);
+            if (cur.getDay() !== 0 && cur.getDay() !== 6 && !excludedDays.includes(key)) {
+              weekdays.push(new Date(cur));
+            }
+            cur.setDate(cur.getDate() + 1);
+          }
         }
         // Add extra days
         extraDays.forEach(ed => {

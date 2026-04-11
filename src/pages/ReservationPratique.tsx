@@ -305,6 +305,17 @@ export default function ReservationPratique() {
       current.setDate(current.getDate() + 1);
     }
 
+    if (weekdays.length === 0) {
+      current = new Date(start);
+      while (current <= end) {
+        const key = toLocalDateKey(current);
+        if (current.getDay() !== 0 && current.getDay() !== 6 && !excludedDays.includes(key)) {
+          weekdays.push(new Date(current));
+        }
+        current.setDate(current.getDate() + 1);
+      }
+    }
+
     extraDays.forEach((dayKey) => {
       if (!weekdays.some((date) => toLocalDateKey(date) === dayKey) && !excludedDays.includes(dayKey)) {
         weekdays.push(new Date(dayKey + "T00:00:00"));
