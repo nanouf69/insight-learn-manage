@@ -1901,6 +1901,36 @@ export function ExamenReussitePage() {
                                     <Trash2 className="h-3.5 w-3.5 text-red-500" />
                                   </Button>
                                 )}
+                                {!extraCandidatsFormation.includes(a.id) && (
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-7 w-7" title={`Retirer ${a.prenom} ${a.nom} de la liste`}>
+                                        <UserX className="h-3.5 w-3.5 text-red-500" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Retirer {a.prenom} {a.nom} ?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Cette action va remettre le résultat d'admissibilité à « non renseigné » pour <strong>{a.nom} {a.prenom}</strong>. L'élève disparaîtra de la liste des reçus.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                        <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={async () => {
+                                          try {
+                                            const { error } = await supabase.from('apprenants').update({ resultat_examen: null }).eq('id', a.id);
+                                            if (error) throw error;
+                                            queryClient.invalidateQueries({ queryKey: ['apprenants-examen'] });
+                                            toast.success(`${a.prenom} ${a.nom} retiré(e) de la liste`);
+                                          } catch (err: any) {
+                                            toast.error(`Erreur: ${err.message}`);
+                                          }
+                                        }}>Retirer</AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                )}
                                 {hasReservation && (
                                   <AlertDialog>
                                     <AlertDialogTrigger asChild>
@@ -2228,6 +2258,36 @@ export function ExamenReussitePage() {
                                   <Button variant="ghost" size="icon" className="h-7 w-7" title="Retirer" onClick={() => setExtraCandidatsFormation(prev => prev.filter(id => id !== a.id))}>
                                     <Trash2 className="h-3.5 w-3.5 text-red-500" />
                                   </Button>
+                                )}
+                                {!extraCandidatsFormation.includes(a.id) && (
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-7 w-7" title={`Retirer ${a.prenom} ${a.nom} de la liste`}>
+                                        <UserX className="h-3.5 w-3.5 text-red-500" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Retirer {a.prenom} {a.nom} ?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Cette action va remettre le résultat d'admissibilité à « non renseigné » pour <strong>{a.nom} {a.prenom}</strong>. L'élève disparaîtra de la liste des reçus.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                        <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={async () => {
+                                          try {
+                                            const { error } = await supabase.from('apprenants').update({ resultat_examen: null }).eq('id', a.id);
+                                            if (error) throw error;
+                                            queryClient.invalidateQueries({ queryKey: ['apprenants-examen'] });
+                                            toast.success(`${a.prenom} ${a.nom} retiré(e) de la liste`);
+                                          } catch (err: any) {
+                                            toast.error(`Erreur: ${err.message}`);
+                                          }
+                                        }}>Retirer</AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
                                 )}
                                 {hasReservation && (
                                   <AlertDialog>
