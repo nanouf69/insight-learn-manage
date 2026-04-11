@@ -462,9 +462,12 @@ Deno.serve(async (req) => {
       const body = `Bonjour ${apprenant.prenom},\n\nNous ${isModification ? "confirmons la modification de" : "confirmons"} votre inscription à la journée de formation pratique ${formationLabel} :\n\n📅 Date : ${dateStr}\n🕐 Horaires : ${horaires}\n📍 Lieu : 86 Route de Genas, 69003 Lyon\n🍽️ Pause déjeuner : Confluences (12h - 13h)\n\n📚 Rappel important :\nMerci de bien réviser les exercices suivants dans ${exerciceNom}.\nLien : ${exerciceLink}\n\nCordialement,\n\nFTRANSPORT\nCentre de formation\n86 Route de Genas 69003 Lyon\n📞 04.28.29.60.91\nDe 9h à 17h sur rendez-vous`;
 
       try {
-        await supabase.functions.invoke("sync-outlook-emails", {
+        const { data: emailResult, error: emailError } = await supabase.functions.invoke("sync-outlook-emails", {
           body: { action: "send", userEmail: "contact@ftransport.fr", to: apprenant.email, subject, body, apprenantId },
         });
+        if (emailError || emailResult?.success === false) {
+          console.error("Email apprenant failed:", emailError || emailResult);
+        }
       } catch (e) {
         console.error("Email apprenant failed:", e);
       }
@@ -475,9 +478,12 @@ Deno.serve(async (req) => {
     const adminBody = `${actionLabel} de réservation pratique :\n\n👤 Apprenant : ${apprenant.prenom} ${apprenant.nom}\n📧 Email : ${apprenant.email || "Non renseigné"}\n🏷️ Formation : ${formationLabel}\n📅 Date choisie : ${dateStr}\n🕐 Horaires : ${horaires}\n\n📌 L'apprenant a été automatiquement ajouté à la session "${sessionName}" dans le planning.`;
 
     try {
-      await supabase.functions.invoke("sync-outlook-emails", {
+      const { data: adminEmailResult, error: adminEmailError } = await supabase.functions.invoke("sync-outlook-emails", {
         body: { action: "send", userEmail: "contact@ftransport.fr", to: "contact@ftransport.fr", subject: adminSubject, body: adminBody },
       });
+      if (adminEmailError || adminEmailResult?.success === false) {
+        console.error("Admin notification email failed:", adminEmailError || adminEmailResult);
+      }
     } catch (e) {
       console.error("Admin notification email failed:", e);
     }
