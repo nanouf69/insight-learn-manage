@@ -1732,6 +1732,7 @@ export type Database = {
         Row: {
           created_at: string
           date_pratique: string
+          day_time_slots: Json
           exam_date: string
           excluded_days: string[]
           extra_candidats: string[]
@@ -1746,6 +1747,7 @@ export type Database = {
         Insert: {
           created_at?: string
           date_pratique: string
+          day_time_slots?: Json
           exam_date: string
           excluded_days?: string[]
           extra_candidats?: string[]
@@ -1760,6 +1762,7 @@ export type Database = {
         Update: {
           created_at?: string
           date_pratique?: string
+          day_time_slots?: Json
           exam_date?: string
           excluded_days?: string[]
           extra_candidats?: string[]
