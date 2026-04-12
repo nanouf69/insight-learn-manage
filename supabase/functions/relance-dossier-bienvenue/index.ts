@@ -26,10 +26,10 @@ Deno.serve(async (req) => {
     if (appError) throw appError;
 
     // Exclude présentiel formations from relances
-    const PRESENTIEL_TYPES = ["vtc", "vtc-exam", "taxi", "taxi-exam", "vtc-e-presentiel", "taxi-e-presentiel", "ta-e-presentiel"];
+    const EXCLUDED_TYPES = ["vtc", "vtc-exam", "taxi", "taxi-exam", "vtc-e-presentiel", "taxi-e-presentiel", "ta-e-presentiel", "formation-continue-vtc", "formation-continue-taxi", "pa-vtc"];
     const elearningApprenants = (apprenants || []).filter((a: any) => {
       const type = (a.type_apprenant || a.formation_choisie || "").toLowerCase();
-      return !PRESENTIEL_TYPES.includes(type);
+      return !EXCLUDED_TYPES.includes(type);
     });
 
     if (elearningApprenants.length === 0) {
