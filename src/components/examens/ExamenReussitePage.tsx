@@ -305,6 +305,43 @@ export function ExamenReussitePage() {
     }
   };
 
+  const handleRemoveFromFormationList = async (apprenant: { id: string; nom: string; prenom: string }) => {
+    try {
+      const [apprenantUpdate, reservationDelete, sessionReset] = await Promise.all([
+        supabase
+          .from('apprenants')
+          .update({ resultat_examen: null, resultat_examen_pratique: null } as any)
+          .eq('id', apprenant.id),
+        supabase
+          .from('reservations_pratique')
+          .delete()
+          .eq('apprenant_id', apprenant.id),
+        supabase
+          .from('session_apprenants')
+          .update({ presence_pratique: null } as any)
+          .eq('apprenant_id', apprenant.id)
+          .eq('presence_pratique', 'deplace'),
+      ]);
+
+      if (apprenantUpdate.error) throw apprenantUpdate.error;
+      if (reservationDelete.error) throw reservationDelete.error;
+      if (sessionReset.error) throw sessionReset.error;
+
+      setExtraCandidatsFormation((prev) => prev.filter((id) => id !== apprenant.id));
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['apprenants-examen', selectedExamDate] }),
+        queryClient.invalidateQueries({ queryKey: ['all-apprenants'] }),
+        queryClient.invalidateQueries({ queryKey: ['deplaces-session-pratique'] }),
+        queryClient.invalidateQueries({ queryKey: ['reservations-pratique-planning'] }),
+      ]);
+
+      toast.success(`${apprenant.prenom} ${apprenant.nom} retiré(e) de la liste`);
+    } catch (err: any) {
+      toast.error(`Erreur: ${err.message || 'Échec'}`);
+    }
+  };
+
   // Cancel a reservation
   const handleCancelReservation = async (apprenantId: string, apprenantNom: string) => {
     try {
@@ -1931,18 +1968,7 @@ export function ExamenReussitePage() {
                                       </AlertDialogHeader>
                                       <AlertDialogFooter>
                                         <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                        <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={async () => {
-                                          try {
-                                            const { error } = await supabase.from('apprenants').update({ resultat_examen: null }).eq('id', a.id);
-                                            if (error) throw error;
-                                            await supabase.from('reservations_pratique').delete().eq('apprenant_id', a.id);
-                                            queryClient.invalidateQueries({ queryKey: ['apprenants-examen'] });
-                                            queryClient.invalidateQueries({ queryKey: ['reservations-pratique'] });
-                                            toast.success(`${a.prenom} ${a.nom} retiré(e) de la liste`);
-                                          } catch (err: any) {
-                                            toast.error(`Erreur: ${err.message}`);
-                                          }
-                                        }}>Retirer</AlertDialogAction>
+                                        <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => handleRemoveFromFormationList(a)}>Retirer</AlertDialogAction>
                                       </AlertDialogFooter>
                                     </AlertDialogContent>
                                   </AlertDialog>
@@ -2291,18 +2317,7 @@ export function ExamenReussitePage() {
                                       </AlertDialogHeader>
                                       <AlertDialogFooter>
                                         <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                        <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={async () => {
-                                          try {
-                                            const { error } = await supabase.from('apprenants').update({ resultat_examen: null }).eq('id', a.id);
-                                            if (error) throw error;
-                                            await supabase.from('reservations_pratique').delete().eq('apprenant_id', a.id);
-                                            queryClient.invalidateQueries({ queryKey: ['apprenants-examen'] });
-                                            queryClient.invalidateQueries({ queryKey: ['reservations-pratique'] });
-                                            toast.success(`${a.prenom} ${a.nom} retiré(e) de la liste`);
-                                          } catch (err: any) {
-                                            toast.error(`Erreur: ${err.message}`);
-                                          }
-                                        }}>Retirer</AlertDialogAction>
+                                        <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => handleRemoveFromFormationList(a)}>Retirer</AlertDialogAction>
                                       </AlertDialogFooter>
                                     </AlertDialogContent>
                                   </AlertDialog>
