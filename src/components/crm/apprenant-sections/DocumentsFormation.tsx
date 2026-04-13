@@ -240,7 +240,7 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
       id: 'fin-formation',
       title: "Attestation de fin de formation",
       description: "Délivrée à la fin du parcours de formation",
-      status: apprenant.date_fin_formation ? 'disponible' : 'en_attente',
+      status: (apprenant.date_fin_formation || apprenant.date_examen_pratique) ? 'disponible' : 'en_attente',
       type: 'fin-formation' as const,
       icon: FileText,
     },
