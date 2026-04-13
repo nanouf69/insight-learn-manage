@@ -1205,7 +1205,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         const isTaxi = type.includes('taxi') || isTA;
         const isVTC = type === 'vtc' || type === 'vtc-e' || type === 'pa vtc';
         const isFCVTC = isFormationContinue && isVTC;
-        const formationLabel = isFCVTC ? 'Formation Continue VTC' : isTaxi ? 'Formation TAXI' : 'Formation VTC';
+        const isPratique = session.type_session === 'pratique';
+        const formationLabel = isFCVTC ? 'Formation Continue VTC' : isPratique ? (isTaxi ? 'Formation pratique TAXI' : 'Formation pratique VTC') : isTaxi ? 'Formation TAXI' : 'Formation VTC';
         const formateurNames = isFCVTC
           ? ["Naoufal GUENICHI"]
           : (isTA || isVA)
@@ -1723,7 +1724,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                 const isTaxi = type.includes('taxi') || isTA;
                                 const isVTC = type === 'vtc' || type === 'vtc-e' || type === 'pa vtc';
                                 const isFCVTC = isFormationContinue && isVTC;
-                                const formationLabel = isFCVTC ? 'Formation Continue VTC' : isTaxi ? 'Formation TAXI' : 'Formation VTC';
+                                const isPratique = session.type_session === 'pratique';
+                                const formationLabel = isFCVTC ? 'Formation Continue VTC' : isPratique ? (isTaxi ? 'Formation pratique TAXI' : 'Formation pratique VTC') : isTaxi ? 'Formation TAXI' : 'Formation VTC';
                                 const formateurNames = isFCVTC
                                   ? ["Naoufal GUENICHI"]
                                   : (isTA || isVA)
