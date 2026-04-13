@@ -3568,7 +3568,7 @@ export function ExamenReussitePage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Mail className="h-5 w-5" />
-              {previewMailType === 'felicitations' ? '📧 Aperçu — Félicitations (Admis)' : '📧 Aperçu — Repassage pratique (Ajourné)'}
+              {previewMailType === 'felicitations' ? '📧 Aperçu — Félicitations (Admis)' : previewMailType === 'derniere_relance' ? '📧 Aperçu — Dernière relance (Repassage)' : '📧 Aperçu — Repassage pratique (Ajourné)'}
             </DialogTitle>
           </DialogHeader>
 
