@@ -29,7 +29,10 @@ Deno.serve(async (req) => {
     const EXCLUDED_TYPES = ["vtc", "vtc-exam", "taxi", "taxi-exam", "vtc-e-presentiel", "taxi-e-presentiel", "ta-e-presentiel", "formation-continue-vtc", "formation-continue-taxi", "pa-vtc"];
     const elearningApprenants = (apprenants || []).filter((a: any) => {
       const type = (a.type_apprenant || a.formation_choisie || "").toLowerCase();
-      return !EXCLUDED_TYPES.includes(type);
+      if (EXCLUDED_TYPES.includes(type)) return false;
+      // Exclure les apprenants ayant déjà réussi la théorie
+      if (a.resultat_examen === 'oui') return false;
+      return true;
     });
 
     if (elearningApprenants.length === 0) {
