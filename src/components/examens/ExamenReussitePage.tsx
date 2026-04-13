@@ -956,6 +956,7 @@ export function ExamenReussitePage() {
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
+              </>
             )}
           </CardContent>
         </Card>
