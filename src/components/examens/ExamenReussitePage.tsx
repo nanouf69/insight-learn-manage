@@ -3627,7 +3627,8 @@ export function ExamenReussitePage() {
             <Button
               disabled={
                 (previewMailType === 'felicitations' && (sendingFelicitations || sentFelicitations)) ||
-                (previewMailType === 'repassage_pratique' && (sendingRepassagePratique || sentRepassagePratique))
+                (previewMailType === 'repassage_pratique' && (sendingRepassagePratique || sentRepassagePratique)) ||
+                (previewMailType === 'derniere_relance' && (sendingDerniereRelance || sentDerniereRelance))
               }
               variant={previewMailType === 'repassage_pratique' ? 'destructive' : 'default'}
               className="gap-1.5"
