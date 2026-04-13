@@ -3630,7 +3630,7 @@ export function ExamenReussitePage() {
                 (previewMailType === 'repassage_pratique' && (sendingRepassagePratique || sentRepassagePratique)) ||
                 (previewMailType === 'derniere_relance' && (sendingDerniereRelance || sentDerniereRelance))
               }
-              variant={previewMailType === 'repassage_pratique' ? 'destructive' : 'default'}
+              variant={previewMailType === 'repassage_pratique' ? 'destructive' : previewMailType === 'derniere_relance' ? 'destructive' : 'default'}
               className="gap-1.5"
               onClick={async () => {
                 const recipients = previewRecipients;
