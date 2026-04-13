@@ -916,6 +916,7 @@ export function ExamenReussitePage() {
             )}
             {nonReussis.length > 0 && (
               <>
+              <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button size="sm" variant="outline" disabled={sendingRepassage || sentRepassage} className={`mt-2 w-full gap-1.5 text-xs ${sentRepassage ? 'text-green-700 border-green-300' : ''}`}>
                     {sentRepassage ? <CheckCircle2 className="h-3 w-3" /> : <Mail className="h-3 w-3" />}
