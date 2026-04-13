@@ -937,21 +937,6 @@ export function ExamenReussitePage() {
                 </AlertDialogContent>
               </AlertDialog>
 
-              <Button size="sm" variant="outline" disabled={sendingDerniereRelance || sentDerniereRelance} className={`mt-1 w-full gap-1.5 text-xs ${sentDerniereRelance ? 'text-green-700 border-green-300' : 'border-orange-300 text-orange-700'}`}
-                onClick={() => {
-                  const echoues = nonReussis.filter(a => a.email);
-                  if (echoues.length === 0) return;
-                  const defaultSubject = `DERNIÈRE RELANCE — Réinscription examen pratique T3P`;
-                  const defaultBody = `Bonjour {{prenom}},\n\nCe message constitue une dernière relance concernant votre réinscription à l'examen pratique T3P.\n\nSi vous souhaitez vous réinscrire, voici les deux options :\n\n📌 Option 1 — En ligne :\n👉 Rendez-vous sur www.exament3p.fr\n• Cliquez sur "Examen VTC" ou "Examen TAXI" selon votre formation\n• Créez un compte\n• Sélectionnez le département 69 - Rhône (⚠️ ATTENTION : choisissez toujours le département 69 même si vous habitez dans un autre département)\n• Cochez la case "J'ai échoué à mon épreuve pratique VTC/TAXI et je souhaite la repasser"\n• Remplissez les informations demandées\n• Cliquez sur "Mot de passe oublié" si vous avez déjà un compte pour réinitialiser votre accès\n\n📌 Option 2 — Sur place :\nRendez-vous à notre bureau dans les 48 heures avec les documents suivants :\n• Votre ancienne convocation\n• Un justificatif de domicile de moins de 3 mois\n• Votre carte bleue (pour le règlement)\n\n🕐 Horaires du bureau : ouvert toute la journée, fermé entre 12h et 13h.\n\n⚠️ Il n'est pas nécessaire d'appeler le bureau, présentez-vous directement.\n\n📍 Si vous êtes déjà réinscrit(e), merci de ne pas tenir compte de ce message.\n\nCordialement,\nL'équipe Ftransport\n86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91 — 📧 contact@ftransport.fr`;
-                  setPreviewMailType('derniere_relance');
-                  setPreviewSubject(defaultSubject);
-                  setPreviewBody(defaultBody);
-                  setPreviewRecipients(echoues);
-                  setPreviewOpen(true);
-                }}>
-                {sentDerniereRelance ? <CheckCircle2 className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                {sendingDerniereRelance ? 'Envoi...' : sentDerniereRelance ? 'Envoyé ✓' : `Dernière relance (${nonReussis.filter(a => a.email).length})`}
-              </Button>
               </>
             )}
           </CardContent>
@@ -3311,6 +3296,37 @@ export function ExamenReussitePage() {
                     );
                   })()}
                 </div>
+
+                {/* Dernière relance — échoués pratique */}
+                {(() => {
+                  const echouesRelance = candidatsPratique.filter(a => (a as any).resultat_examen_pratique === 'non' && a.email);
+                  return (
+                    <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-orange-600" />
+                          <span className="text-sm font-semibold text-orange-800">Dernière relance — Réinscription</span>
+                          <Badge className="bg-orange-100 text-orange-800 text-[10px]">{echouesRelance.length}</Badge>
+                        </div>
+                        <Button size="sm" variant="outline" disabled={echouesRelance.length === 0 || sendingDerniereRelance || sentDerniereRelance} className={`gap-1.5 text-xs ${sentDerniereRelance ? 'text-green-700 border-green-300' : 'border-orange-300 text-orange-700'}`}
+                          onClick={() => {
+                            if (echouesRelance.length === 0) return;
+                            const defaultSubject = `DERNIÈRE RELANCE — Réinscription examen pratique T3P`;
+                            const defaultBody = `Bonjour {{prenom}},\n\nCe message constitue une dernière relance concernant votre réinscription à l'examen pratique T3P.\n\nSi vous souhaitez vous réinscrire, voici les deux options :\n\n📌 Option 1 — En ligne :\n👉 Rendez-vous sur www.exament3p.fr\n• Cliquez sur "Examen VTC" ou "Examen TAXI" selon votre formation\n• Créez un compte\n• Sélectionnez le département 69 - Rhône (⚠️ ATTENTION : choisissez toujours le département 69 même si vous habitez dans un autre département)\n• Cochez la case "J'ai échoué à mon épreuve pratique VTC/TAXI et je souhaite la repasser"\n• Remplissez les informations demandées\n• Cliquez sur "Mot de passe oublié" si vous avez déjà un compte pour réinitialiser votre accès\n\n📌 Option 2 — Sur place :\nRendez-vous à notre bureau dans les 48 heures avec les documents suivants :\n• Votre ancienne convocation\n• Un justificatif de domicile de moins de 3 mois\n• Votre carte bleue (pour le règlement)\n\n🕐 Horaires du bureau : ouvert toute la journée, fermé entre 12h et 13h.\n\n⚠️ Il n'est pas nécessaire d'appeler le bureau, présentez-vous directement.\n\n📍 Si vous êtes déjà réinscrit(e), merci de ne pas tenir compte de ce message.\n\nCordialement,\nL'équipe Ftransport\n86 Route de Genas, 69003 Lyon\n📞 04 28 29 60 91 — 📧 contact@ftransport.fr`;
+                            setPreviewMailType('derniere_relance');
+                            setPreviewSubject(defaultSubject);
+                            setPreviewBody(defaultBody);
+                            setPreviewRecipients(echouesRelance);
+                            setPreviewOpen(true);
+                          }}>
+                          {sentDerniereRelance ? <CheckCircle2 className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                          {sendingDerniereRelance ? 'Envoi...' : sentDerniereRelance ? 'Envoyé ✓' : `Envoyer (${echouesRelance.length})`}
+                        </Button>
+                      </div>
+                      <p className="text-[11px] text-orange-700">Relance réinscription exament3p.fr pour les échoués pratique</p>
+                    </div>
+                  );
+                })()}
               </div>
             </CardContent>
           </Card>
