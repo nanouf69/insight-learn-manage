@@ -3191,20 +3191,35 @@ export function ExamenReussitePage() {
         return candidatsPratique.length > 0 ? (
           <Card className="border-l-4 border-l-rose-500">
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <ClipboardCheck className="h-5 w-5 text-rose-600" />
-                  Résultats examen pratique — Inscrits CMA
-                </span>
-                <div className="flex items-center gap-2">
-                  <Badge className="bg-emerald-100 text-emerald-800">✅ {reussisPratique}</Badge>
-                  <Badge className="bg-red-100 text-red-800">❌ {echouesPratique}</Badge>
-                  {deplacesPratique > 0 && (
-                    <Badge className="bg-orange-100 text-orange-800">📅 {deplacesPratique} déplacé(s)</Badge>
-                  )}
-                  <Badge variant="outline">En attente : {enAttentePratique}</Badge>
-                </div>
-              </CardTitle>
+               <CardTitle className="flex flex-col gap-3">
+                 <div className="flex items-center justify-between">
+                   <span className="flex items-center gap-2">
+                     <ClipboardCheck className="h-5 w-5 text-rose-600" />
+                     Résultats examen pratique — Inscrits CMA
+                   </span>
+                   <div className="flex items-center gap-2">
+                     <Badge className="bg-emerald-100 text-emerald-800">✅ {reussisPratique}</Badge>
+                     <Badge className="bg-red-100 text-red-800">❌ {echouesPratique}</Badge>
+                     {deplacesPratique > 0 && (
+                       <Badge className="bg-orange-100 text-orange-800">📅 {deplacesPratique} déplacé(s)</Badge>
+                     )}
+                     <Badge variant="outline">En attente : {enAttentePratique}</Badge>
+                   </div>
+                 </div>
+                 <div className="flex items-center gap-2">
+                   <Calendar className="h-4 w-4 text-rose-500" />
+                   <Select value={selectedResultsPratiqueDate} onValueChange={setSelectedResultsPratiqueDate}>
+                     <SelectTrigger className="w-[320px] h-8 text-xs">
+                       <SelectValue placeholder="Sélectionner une période" />
+                     </SelectTrigger>
+                     <SelectContent>
+                       {ALL_DATES_EXAMEN_PRATIQUE_NO_ACCENT.map(d => (
+                         <SelectItem key={d} value={d}>{d}</SelectItem>
+                       ))}
+                     </SelectContent>
+                   </Select>
+                 </div>
+               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-6">
