@@ -187,6 +187,8 @@ export function ExamenReussitePage() {
   const [sentTAXISMS, setSentTAXISMS] = useState(false);
   const [sendingRepassage, setSendingRepassage] = useState(false);
   const [sentRepassage, setSentRepassage] = useState(false);
+  const [sendingDerniereRelance, setSendingDerniereRelance] = useState(false);
+  const [sentDerniereRelance, setSentDerniereRelance] = useState(false);
   const [sendingFelicitations, setSendingFelicitations] = useState(false);
   const [sentFelicitations, setSentFelicitations] = useState(false);
   const [sendingRepassagePratique, setSendingRepassagePratique] = useState(false);
@@ -241,6 +243,29 @@ export function ExamenReussitePage() {
     setSendingRepassage(false);
     setSentRepassage(true);
     toast.success(`📧 ${sent}/${echoues.length} email(s) "Repassage examen théorique" envoyé(s)`);
+  };
+
+  const handleSendDerniereRelanceEmails = async () => {
+    const echoues = apprenants?.filter(a => (a as any).resultat_examen === 'non' && a.email) || [];
+    if (echoues.length === 0) return;
+    setSendingDerniereRelance(true);
+    let sent = 0;
+    for (const apprenant of echoues) {
+      const subject = `DERNIÈRE RELANCE — Réinscription examen pratique T3P - ${apprenant.prenom} ${apprenant.nom}`;
+      const body = `Bonjour ${apprenant.prenom},<br><br>Ce message constitue une <strong>dernière relance</strong> concernant votre réinscription à l'examen pratique T3P.<br><br>Si vous souhaitez vous réinscrire, voici les deux options :<br><br>📌 <strong>Option 1 — En ligne :</strong><br>👉 Rendez-vous sur <a href="https://www.exament3p.fr" target="_blank">www.exament3p.fr</a><br>• Cliquez sur <strong>"Mot de passe oublié"</strong> pour réinitialiser votre accès<br>• Puis suivez les instructions pour vous réinscrire<br><br>📌 <strong>Option 2 — Sur place :</strong><br>Rendez-vous à notre bureau <strong>dans les 48 heures</strong> avec les documents suivants :<br>• Votre ancienne convocation<br>• Un justificatif de domicile de moins de 3 mois<br>• Votre carte bleue (pour le règlement)<br><br>🕐 <strong>Horaires du bureau :</strong> ouvert toute la journée, <strong>fermé entre 12h et 13h</strong>.<br><br>⚠️ <strong>Il n'est pas nécessaire d'appeler le bureau</strong>, présentez-vous directement.<br><br>📍 <em>Si vous êtes déjà réinscrit(e), merci de ne pas tenir compte de ce message.</em><br><br>Cordialement,<br><strong>L'équipe Ftransport</strong><br>86 Route de Genas, 69003 Lyon<br>📞 04 28 29 60 91 — 📧 contact@ftransport.fr`;
+
+      try {
+        await supabase.functions.invoke('sync-outlook-emails', {
+          body: { action: 'send', userEmail: 'contact@ftransport.fr', to: apprenant.email, subject, body, apprenantId: apprenant.id }
+        });
+        sent++;
+      } catch (e) {
+        console.error(`Erreur envoi dernière relance à ${apprenant.email}:`, e);
+      }
+    }
+    setSendingDerniereRelance(false);
+    setSentDerniereRelance(true);
+    toast.success(`📧 ${sent}/${echoues.length} email(s) "Dernière relance repassage" envoyé(s)`);
   };
 
   // Déplacer un candidat à la prochaine session d'entraînement
@@ -907,6 +932,27 @@ export function ExamenReussitePage() {
                   <AlertDialogFooter>
                     <AlertDialogCancel>Annuler</AlertDialogCancel>
                     <AlertDialogAction onClick={handleSendRepassageEmails}>Confirmer l'envoi</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" variant="outline" disabled={sendingDerniereRelance || sentDerniereRelance} className={`mt-1 w-full gap-1.5 text-xs ${sentDerniereRelance ? 'text-green-700 border-green-300' : 'border-orange-300 text-orange-700'}`}>
+                    {sentDerniereRelance ? <CheckCircle2 className="h-3 w-3" /> : <Mail className="h-3 w-3" />}
+                    {sendingDerniereRelance ? 'Envoi...' : sentDerniereRelance ? 'Envoyé ✓' : `Dernière relance (${nonReussis.filter(a => a.email).length})`}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Envoyer la dernière relance repassage ?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      L'email "Dernière relance" sera envoyé à {nonReussis.filter(a => a.email).length} apprenant(s) ayant échoué. Il contient les instructions pour se réinscrire en ligne (exament3p.fr + mot de passe oublié) ou se rendre au bureau sous 48h avec convocation, justificatif de domicile et carte bleue. Les personnes déjà inscrites sont invitées à ignorer le message.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleSendDerniereRelanceEmails}>Confirmer l'envoi</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
