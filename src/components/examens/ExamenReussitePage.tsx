@@ -3188,7 +3188,7 @@ export function ExamenReussitePage() {
         const deplacesPratique = candidatsPratique.filter(a => (a as any).resultat_examen_pratique === 'deplace').length;
         const enAttentePratique = candidatsPratique.filter(a => !(a as any).resultat_examen_pratique).length;
 
-        return candidatsPratique.length > 0 ? (
+        return (
           <Card className="border-l-4 border-l-rose-500">
             <CardHeader>
                <CardTitle className="flex flex-col gap-3">
