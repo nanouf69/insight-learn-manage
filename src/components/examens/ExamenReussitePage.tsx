@@ -170,6 +170,9 @@ export function ExamenReussitePage() {
     () => getPratiqueDateForExam(getDefaultExamDate()) || getDefaultPratiqueDate()
   );
   const [dateDebutPratique, setDateDebutPratique] = useState("");
+  const [selectedResultsPratiqueDate, setSelectedResultsPratiqueDate] = useState(
+    () => getPratiqueDateForExam(getDefaultExamDate()) || getDefaultPratiqueDate()
+  );
   const [sendingCMAEmail, setSendingCMAEmail] = useState(false);
   const [sendingVTCPratique, setSendingVTCPratique] = useState(false);
   const [sendingTAXIPratique, setSendingTAXIPratique] = useState(false);
