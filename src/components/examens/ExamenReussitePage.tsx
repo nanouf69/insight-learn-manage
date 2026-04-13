@@ -3652,6 +3652,24 @@ export function ExamenReussitePage() {
                   setSendingFelicitations(false);
                   setSentFelicitations(true);
                   toast.success(`📧 ${sent}/${recipients.length} email(s) "Félicitations" envoyé(s)`);
+                } else if (previewMailType === 'derniere_relance') {
+                  setSendingDerniereRelance(true);
+                  setPreviewOpen(false);
+                  let sent = 0;
+                  for (const a of recipients) {
+                    const subject = `${previewSubject} - ${a.prenom} ${a.nom}`;
+                    const body = previewBody
+                      .replace(/{{prenom}}/g, a.prenom)
+                      .replace(/{{nom}}/g, a.nom)
+                      .replace(/\n/g, '<br>');
+                    try {
+                      await supabase.functions.invoke('sync-outlook-emails', { body: { action: 'send', userEmail: 'contact@ftransport.fr', to: a.email, subject, body, apprenantId: a.id } });
+                      sent++;
+                    } catch (e) { console.error(e); }
+                  }
+                  setSendingDerniereRelance(false);
+                  setSentDerniereRelance(true);
+                  toast.success(`📧 ${sent}/${recipients.length} email(s) "Dernière relance" envoyé(s)`);
                 } else {
                   setSendingRepassagePratique(true);
                   setPreviewOpen(false);
