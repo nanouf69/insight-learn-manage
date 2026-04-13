@@ -3353,7 +3353,7 @@ export function ExamenReussitePage() {
               </div>
             </CardContent>
           </Card>
-        ) : null;
+        );
       })()}
 
       {/* Main table */}
