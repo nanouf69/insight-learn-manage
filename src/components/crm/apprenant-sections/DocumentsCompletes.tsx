@@ -22,6 +22,7 @@ const TYPE_LABELS: Record<string, string> = {
   "cgv-ri-acceptation": "CGV et Règlement intérieur",
   "cgv-acceptation": "Conditions Générales de Vente",
   "dossier-bienvenue": "Dossier de bienvenue",
+  "devis-formation-continue": "Devis Formation Continue",
 };
 
 const TYPE_COLORS: Record<string, string> = {
