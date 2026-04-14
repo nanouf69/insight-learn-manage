@@ -168,37 +168,7 @@ export default function InscriptionFormationContinue() {
         sessionId = newSession.id;
       }
 
-      // 2. If financeur, save to organismes table
-      if (hasFinanceur && financeurNom.trim()) {
-        try {
-          // Check if organisme already exists by SIREN
-          let existingOrg = null;
-          if (financeurSiren.trim()) {
-            const { data } = await supabase
-              .from("organismes")
-              .select("id")
-              .eq("siret", financeurSiren.trim())
-              .maybeSingle();
-            existingOrg = data;
-          }
-
-          if (!existingOrg) {
-            await supabase.from("organismes").insert({
-              nom: financeurNom.trim(),
-              siret: financeurSiren.trim() || null,
-              adresse: financeurAdresse.trim() || null,
-              code_postal: financeurCodePostal.trim() || null,
-              ville: financeurVille.trim() || null,
-              email: financeurEmail.trim() || null,
-              telephone: financeurTelephone.trim() || null,
-            });
-          }
-        } catch (e) {
-          console.warn("Sauvegarde organisme financeur échouée:", e);
-        }
-      }
-
-      // 3. Create apprenant
+      // 2. Create apprenant (organismes will be saved via edge function)
       const { data: apprenant, error: insertErr } = await supabase
         .from("apprenants")
         .insert({
