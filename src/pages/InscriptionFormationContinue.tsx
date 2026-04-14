@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -44,6 +45,16 @@ export default function InscriptionFormationContinue() {
   const [dateNaissance, setDateNaissance] = useState("");
   const [telephone, setTelephone] = useState("");
   const [email, setEmail] = useState("");
+
+  // Financeur fields
+  const [hasFinanceur, setHasFinanceur] = useState(false);
+  const [financeurSiren, setFinanceurSiren] = useState("");
+  const [financeurNom, setFinanceurNom] = useState("");
+  const [financeurAdresse, setFinanceurAdresse] = useState("");
+  const [financeurCodePostal, setFinanceurCodePostal] = useState("");
+  const [financeurVille, setFinanceurVille] = useState("");
+  const [financeurEmail, setFinanceurEmail] = useState("");
+  const [financeurTelephone, setFinanceurTelephone] = useState("");
   
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -92,7 +103,8 @@ export default function InscriptionFormationContinue() {
 
   const details = formationDetails[type];
 
-  const canSubmit = prenom.trim() && nom.trim() && adresse.trim() && telephone.trim() && email.trim() && dateFormation && !fullDates[dateFormation];
+  const financeurValid = !hasFinanceur || (financeurSiren.trim() && financeurNom.trim());
+  const canSubmit = prenom.trim() && nom.trim() && adresse.trim() && telephone.trim() && email.trim() && dateFormation && !fullDates[dateFormation] && financeurValid;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
@@ -105,6 +117,7 @@ export default function InscriptionFormationContinue() {
 
       const formationChoisie = type === "vtc" ? "formation-continue-vtc" : "formation-continue-taxi";
       const typeApprenant = type === "vtc" ? "PA VTC" : "PA TAXI";
+      const modeFinancement = hasFinanceur ? "entreprise" : "personnel";
 
       // 1. Find or create a session FIRST (before creating apprenant)
       const sessionNom = `Formation Continue ${type.toUpperCase()} - ${selectedDate.label}`;
@@ -123,7 +136,6 @@ export default function InscriptionFormationContinue() {
       );
 
       if (matchingSession) {
-        // Count REAL enrollments instead of trusting the counter
         const { count: realCount } = await supabase
           .from("session_apprenants")
           .select("id", { count: "exact", head: true })
@@ -156,7 +168,37 @@ export default function InscriptionFormationContinue() {
         sessionId = newSession.id;
       }
 
-      // 2. Create apprenant (only after session is confirmed available)
+      // 2. If financeur, save to organismes table
+      if (hasFinanceur && financeurNom.trim()) {
+        try {
+          // Check if organisme already exists by SIREN
+          let existingOrg = null;
+          if (financeurSiren.trim()) {
+            const { data } = await supabase
+              .from("organismes")
+              .select("id")
+              .eq("siret", financeurSiren.trim())
+              .maybeSingle();
+            existingOrg = data;
+          }
+
+          if (!existingOrg) {
+            await supabase.from("organismes").insert({
+              nom: financeurNom.trim(),
+              siret: financeurSiren.trim() || null,
+              adresse: financeurAdresse.trim() || null,
+              code_postal: financeurCodePostal.trim() || null,
+              ville: financeurVille.trim() || null,
+              email: financeurEmail.trim() || null,
+              telephone: financeurTelephone.trim() || null,
+            });
+          }
+        } catch (e) {
+          console.warn("Sauvegarde organisme financeur échouée:", e);
+        }
+      }
+
+      // 3. Create apprenant
       const { data: apprenant, error: insertErr } = await supabase
         .from("apprenants")
         .insert({
@@ -172,8 +214,9 @@ export default function InscriptionFormationContinue() {
           type_apprenant: typeApprenant,
           montant_ttc: details.prix,
           montant_paye: 0,
-          mode_financement: "personnel",
-          statut: "particulier",
+          mode_financement: modeFinancement,
+          organisme_financeur: hasFinanceur ? financeurNom.trim() : null,
+          statut: hasFinanceur ? "entreprise" : "particulier",
           date_debut_formation: selectedDate.value,
           date_fin_formation: selectedDate.fin,
           date_formation_catalogue: selectedDate.label,
@@ -183,7 +226,7 @@ export default function InscriptionFormationContinue() {
 
       if (insertErr) throw insertErr;
 
-      // 3. Link apprenant to session
+      // 4. Link apprenant to session
       const { error: linkErr } = await supabase
         .from("session_apprenants")
         .insert({
@@ -191,7 +234,7 @@ export default function InscriptionFormationContinue() {
           apprenant_id: apprenant.id,
           montant_total: details.prix,
           montant_paye: 0,
-          mode_financement: "personnel",
+          mode_financement: modeFinancement,
           date_debut: selectedDate.value,
           date_fin: selectedDate.fin,
         });
@@ -201,7 +244,7 @@ export default function InscriptionFormationContinue() {
         throw new Error("Erreur lors de l'inscription à la session. Veuillez réessayer.");
       }
 
-      // 4. Update places_disponibles to reflect real count
+      // 5. Update places_disponibles
       const { count: updatedCount } = await supabase
         .from("session_apprenants")
         .select("id", { count: "exact", head: true })
@@ -212,7 +255,7 @@ export default function InscriptionFormationContinue() {
         .update({ places_disponibles: Math.max(0, MAX_PLACES - (updatedCount ?? 0)) })
         .eq("id", sessionId);
 
-      // 5. Verify the link was created
+      // 6. Verify the link
       const { data: verifyLink } = await supabase
         .from("session_apprenants")
         .select("id")
@@ -224,30 +267,41 @@ export default function InscriptionFormationContinue() {
         throw new Error("L'inscription n'a pas pu être confirmée. Veuillez réessayer.");
       }
 
-      // 6. Save form data as completed document (devis FC)
+      // 7. Save form data as completed document (devis FC)
       try {
         const selectedDateObj = datesFormationContinue.find(d => d.value === dateFormation);
+        const devisDonnees: Record<string, string> = {
+          type_formation: details.label,
+          prix: `${details.prix}€ net de taxe`,
+          duree: details.duree,
+          date_formation: selectedDateObj?.label || dateFormation,
+          lieu: "86 Route de Genas, 69003 Lyon",
+          prenom: prenom.trim(),
+          nom: nom.trim().toUpperCase(),
+          date_naissance: dateNaissance || "Non renseignée",
+          adresse: adresse.trim(),
+          code_postal: codePostal.trim(),
+          ville: ville.trim(),
+          telephone: telephone.trim(),
+          email: email.trim().toLowerCase(),
+          mode_financement: hasFinanceur ? "Organisme tiers" : "Personnel",
+          date_inscription: new Date().toLocaleDateString("fr-FR"),
+        };
+        if (hasFinanceur) {
+          devisDonnees.financeur_siren = financeurSiren.trim();
+          devisDonnees.financeur_nom = financeurNom.trim();
+          devisDonnees.financeur_adresse = financeurAdresse.trim();
+          devisDonnees.financeur_code_postal = financeurCodePostal.trim();
+          devisDonnees.financeur_ville = financeurVille.trim();
+          devisDonnees.financeur_email = financeurEmail.trim();
+          devisDonnees.financeur_telephone = financeurTelephone.trim();
+        }
         await supabase.functions.invoke("save-public-form", {
           body: {
             apprenantId: apprenant.id,
             typeDocument: "devis-formation-continue",
             titre: `Devis ${details.label} — ${selectedDateObj?.label || dateFormation}`,
-            donnees: {
-              type_formation: details.label,
-              prix: `${details.prix}€ net de taxe`,
-              duree: details.duree,
-              date_formation: selectedDateObj?.label || dateFormation,
-              lieu: "86 Route de Genas, 69003 Lyon",
-              prenom: prenom.trim(),
-              nom: nom.trim().toUpperCase(),
-              date_naissance: dateNaissance || "Non renseignée",
-              adresse: adresse.trim(),
-              code_postal: codePostal.trim(),
-              ville: ville.trim(),
-              telephone: telephone.trim(),
-              email: email.trim().toLowerCase(),
-              date_inscription: new Date().toLocaleDateString("fr-FR"),
-            },
+            donnees: devisDonnees,
           },
         });
       } catch (e) {
@@ -416,6 +470,63 @@ export default function InscriptionFormationContinue() {
                   <Input type="email" placeholder="votre@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
                 </div>
               </div>
+            </div>
+
+            {/* Coordonnées du financeur */}
+            <div className="space-y-4">
+              <h3 className="font-semibold border-b pb-2">Coordonnées du financeur</h3>
+              
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="hasFinanceur"
+                  checked={hasFinanceur}
+                  onCheckedChange={(checked) => setHasFinanceur(checked === true)}
+                />
+                <label htmlFor="hasFinanceur" className="text-sm leading-snug cursor-pointer">
+                  Ma formation est financée par ma société ou un organisme tiers (entreprise, OPCO, France Travail, etc.)
+                </label>
+              </div>
+
+              {hasFinanceur && (
+                <div className="border rounded-xl p-4 space-y-4 bg-slate-50/50">
+                  <div className="space-y-1">
+                    <Label>N° SIREN <span className="text-red-500">*</span></Label>
+                    <Input placeholder="123 456 789" value={financeurSiren} onChange={(e) => setFinanceurSiren(e.target.value)} />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label>Nom de l'entreprise / organisme <span className="text-red-500">*</span></Label>
+                    <Input placeholder="Nom de l'entreprise ou de l'organisme financeur" value={financeurNom} onChange={(e) => setFinanceurNom(e.target.value)} />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label>Adresse postale</Label>
+                    <Input placeholder="Adresse du siège" value={financeurAdresse} onChange={(e) => setFinanceurAdresse(e.target.value)} />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label>Code postal</Label>
+                      <Input placeholder="69000" value={financeurCodePostal} onChange={(e) => setFinanceurCodePostal(e.target.value)} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Ville</Label>
+                      <Input placeholder="Lyon" value={financeurVille} onChange={(e) => setFinanceurVille(e.target.value)} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label>Téléphone</Label>
+                      <Input type="tel" placeholder="01 00 00 00 00" value={financeurTelephone} onChange={(e) => setFinanceurTelephone(e.target.value)} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Email</Label>
+                      <Input type="email" placeholder="contact@entreprise.fr" value={financeurEmail} onChange={(e) => setFinanceurEmail(e.target.value)} />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {error && (
