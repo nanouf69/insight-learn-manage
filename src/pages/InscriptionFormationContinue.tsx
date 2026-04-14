@@ -266,12 +266,22 @@ export default function InscriptionFormationContinue() {
           devisDonnees.financeur_email = financeurEmail.trim();
           devisDonnees.financeur_telephone = financeurTelephone.trim();
         }
+        const financeurPayload = hasFinanceur ? {
+          nom: financeurNom.trim(),
+          siren: financeurSiren.trim(),
+          adresse: financeurAdresse.trim(),
+          code_postal: financeurCodePostal.trim(),
+          ville: financeurVille.trim(),
+          email: financeurEmail.trim(),
+          telephone: financeurTelephone.trim(),
+        } : undefined;
         await supabase.functions.invoke("save-public-form", {
           body: {
             apprenantId: apprenant.id,
             typeDocument: "devis-formation-continue",
             titre: `Devis ${details.label} — ${selectedDateObj?.label || dateFormation}`,
             donnees: devisDonnees,
+            financeur: financeurPayload,
           },
         });
       } catch (e) {
