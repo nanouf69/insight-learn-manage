@@ -1,171 +1,263 @@
 import jsPDF from 'jspdf';
-import logoImage from '@/assets/logo-ftransport.png';
+import logoImage from '@/assets/logo-ftransport-2.png';
 import tamponImage from '@/assets/tampon-entreprise.png';
+import signatureImage from '@/assets/signature-dirigeant.png';
 
-const MOIS_FR = [
-  'janvier', 'fevrier', 'mars', 'avril', 'mai', 'juin',
-  'juillet', 'aout', 'septembre', 'octobre', 'novembre', 'decembre'
-];
+const COMPANY_INFO = {
+  name: 'FTRANSPORT',
+  representant: 'GUENICHI NAOUFAL',
+  address: '86 Route de Genas 69003 Lyon',
+  telephone: '04 78 54 34 86',
+  email: 'contact@ftransport.fr',
+  siren: '535 163 714',
+  agrement: 'VTC-69-16-005',
+};
 
 interface AttestationFCData {
   nom: string;
   prenom: string;
   dateFin: string; // YYYY-MM-DD
+  dateDebut?: string;
+  adresse?: string;
+  codePostal?: string;
+  ville?: string;
+  telephone?: string;
+  email?: string;
+  dateNaissance?: string;
+}
+
+function formatDateFR(dateStr: string): string {
+  if (!dateStr) return '-';
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return dateStr;
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+
+function generateCertificateNumber(dateFin: string, nom: string): string {
+  const year = dateFin.split('-')[0] || '2025';
+  const initials = nom.substring(0, 3).toUpperCase();
+  const num = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0');
+  return `FCOVTC-${year}-LYON-${num}-${initials}`;
 }
 
 export async function generateAttestationFCVTC(data: AttestationFCData) {
-  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-  const pw = doc.internal.pageSize.getWidth();  // ~297
-  const ph = doc.internal.pageSize.getHeight(); // ~210
-  const margin = 8;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const pw = doc.internal.pageSize.getWidth();  // ~210
+  const ph = doc.internal.pageSize.getHeight(); // ~297
+  const marginL = 15;
+  const marginR = pw - 15;
+  const contentW = marginR - marginL;
 
-  // === BORDURE DOUBLE ===
-  // Cadre extérieur marron foncé
-  doc.setDrawColor(80, 60, 40);
-  doc.setLineWidth(1.2);
-  doc.rect(margin, margin, pw - margin * 2, ph - margin * 2);
-  // Cadre intérieur
-  doc.setLineWidth(0.4);
-  doc.rect(margin + 4, margin + 4, pw - margin * 2 - 8, ph - margin * 2 - 8);
-
-  // === ORNEMENTS COINS (simulés avec petits arcs) ===
-  const drawCornerOrnament = (cx: number, cy: number, flipX: number, flipY: number) => {
-    doc.setDrawColor(180, 150, 80); // doré
-    doc.setLineWidth(0.6);
-    // Spirales simplifiées
-    for (let i = 0; i < 3; i++) {
-      const r = 4 + i * 3;
-      const startX = cx + flipX * 2;
-      const startY = cy + flipY * 2;
-      doc.circle(startX, startY, r, 'S');
-    }
-  };
-  
-  // Ornements décoratifs simplifiés aux coins
-  doc.setDrawColor(180, 150, 80);
-  doc.setLineWidth(0.5);
-  // Haut gauche
-  doc.line(margin + 6, margin + 14, margin + 6, margin + 6);
-  doc.line(margin + 6, margin + 6, margin + 14, margin + 6);
-  // Haut droit
-  doc.line(pw - margin - 6, margin + 14, pw - margin - 6, margin + 6);
-  doc.line(pw - margin - 6, margin + 6, pw - margin - 14, margin + 6);
-  // Bas gauche
-  doc.line(margin + 6, ph - margin - 14, margin + 6, ph - margin - 6);
-  doc.line(margin + 6, ph - margin - 6, margin + 14, ph - margin - 6);
-  // Bas droit
-  doc.line(pw - margin - 6, ph - margin - 14, pw - margin - 6, ph - margin - 6);
-  doc.line(pw - margin - 6, ph - margin - 6, pw - margin - 14, ph - margin - 6);
+  // === LOGO ===
+  try {
+    doc.addImage(logoImage, 'PNG', pw / 2 - 30, 8, 60, 22);
+  } catch (e) {
+    console.log('Logo non chargé');
+  }
 
   // === TITRE ===
-  let yPos = margin + 38;
-  doc.setTextColor(60, 45, 30); // marron foncé
-  doc.setFontSize(36);
-  doc.setFont('times', 'bold');
-  doc.text('ATTESTATION DE SUIVI DE FORMATION', pw / 2, yPos, { align: 'center' });
-  yPos += 18;
-  doc.text('CONTINUE', pw / 2, yPos, { align: 'center' });
+  let y = 36;
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(0, 0, 0);
+  doc.text('ATTESTATION DE FORMATION CONTINUE', pw / 2, y, { align: 'center' });
+  y += 7;
+  doc.text('OBLIGATOIRE VTC', pw / 2, y, { align: 'center' });
 
-  // === DESTINEE A ===
-  yPos += 22;
+  // === BARRE DORÉE + numéro certificat ===
+  y += 8;
+  doc.setFillColor(230, 190, 50);
+  doc.rect(marginL, y, contentW, 9, 'F');
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(0, 0, 0);
+  const certNum = generateCertificateNumber(data.dateFin, data.nom);
+  doc.text(`Numéro de certificat : ${certNum}`, pw / 2, y + 6.5, { align: 'center' });
+
+  // === ORGANISME D'ACCUEIL ===
+  y += 16;
   doc.setFontSize(13);
-  doc.setFont('times', 'italic');
-  doc.setTextColor(120, 100, 80);
-  doc.text('DESTINEE A', pw / 2, yPos, { align: 'center' });
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(0, 0, 0);
+  doc.text("L'organisme d'accueil :", marginL, y);
+  y += 2;
+  doc.setLineWidth(0.5);
+  doc.setDrawColor(0, 0, 0);
+  doc.line(marginL, y, marginL + 52, y);
 
-  // === NOM PRENOM ===
-  yPos += 12;
-  doc.setFontSize(20);
-  doc.setFont('times', 'bold');
-  doc.setTextColor(50, 40, 30);
-  doc.text(`${data.nom.toUpperCase()} ${data.prenom.toUpperCase()}`, pw / 2, yPos, { align: 'center' });
-
-  // === ENCADRE LEGAL ===
-  yPos += 16;
-  const boxX = margin + 30;
-  const boxW = pw - margin * 2 - 60;
-  doc.setDrawColor(120, 100, 80);
-  doc.setLineWidth(0.4);
-  doc.rect(boxX, yPos, boxW, 22);
-
+  y += 7;
   doc.setFontSize(9);
-  doc.setFont('times', 'normal');
-  doc.setTextColor(60, 50, 40);
-  const legalText = "Selon l'arrete du 11 aout 2017 relatif a la formation continue des conducteurs de taxi et des conducteurs de voiture de transport avec chauffeur et a la mobilite des conducteurs de taxi.";
-  const splitLines = doc.splitTextToSize(legalText, boxW - 10);
-  doc.text(splitLines, pw / 2, yPos + 8, { align: 'center' });
+  doc.setFont('helvetica', 'bold');
+  doc.text('Nom : ', marginL, y);
+  doc.setFont('helvetica', 'normal');
+  doc.text(COMPANY_INFO.name, marginL + 15, y);
 
-  // === SECTION BASSE ===
-  const [y, m, d] = data.dateFin.split('-').map(Number);
-  const jourMois = `${d} ${MOIS_FR[m - 1]}`.toUpperCase();
-  const annee = String(y);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Représentant légal : ', pw / 2, y);
+  doc.setFont('helvetica', 'normal');
+  doc.text(COMPANY_INFO.representant, pw / 2 + 35, y);
 
-  // === Centre de formation agréé ===
-  const infoX = pw / 2 + 15;
-  const infoY = yPos + 32;
-  doc.setFontSize(13);
-  doc.setFont('times', 'bold');
-  doc.setTextColor(50, 40, 30);
-  doc.text('Centre de formation agree : N VTC 69-16-05', infoX, infoY, { align: 'center' });
+  y += 5;
+  doc.setFont('helvetica', 'bold');
+  doc.text('Adresse : ', marginL, y);
+  doc.setFont('helvetica', 'normal');
+  doc.text(COMPANY_INFO.address, marginL + 18, y);
 
-  // === DOUBLE LIGNE grise ===
-  const lineY = infoY + 10;
-  doc.setDrawColor(100, 100, 100);
-  doc.setLineWidth(1.2);
-  doc.line(infoX - 55, lineY, infoX + 55, lineY);
-  doc.setLineWidth(0.4);
-  doc.line(infoX - 55, lineY + 3, infoX + 55, lineY + 3);
+  y += 5;
+  doc.setFont('helvetica', 'bold');
+  doc.text('Téléphone : ', marginL, y);
+  doc.setFont('helvetica', 'normal');
+  doc.text(COMPANY_INFO.telephone, marginL + 22, y);
 
-  // === SCEAU / BADGE DATE ===
-  const sealX = margin + 55;
-  const sealY = infoY + 10;
-  const sealR = 20;
+  doc.setFont('helvetica', 'bold');
+  doc.text('E-mail : ', pw / 2, y);
+  doc.setFont('helvetica', 'normal');
+  doc.text(COMPANY_INFO.email, pw / 2 + 16, y);
 
-  // Fond circulaire doré (simule le scalloped seal)
-  // Cercle externe doré épais
-  doc.setDrawColor(200, 170, 90);
-  doc.setFillColor(245, 235, 210);
-  doc.setLineWidth(4);
-  doc.circle(sealX, sealY, sealR, 'FD');
-  
-  // Cercle interne blanc
-  doc.setFillColor(255, 255, 255);
-  doc.setDrawColor(180, 150, 80);
-  doc.setLineWidth(1);
-  doc.circle(sealX, sealY, sealR - 5, 'FD');
+  y += 5;
+  doc.setFont('helvetica', 'bold');
+  doc.text('N° Siren : ', marginL, y);
+  doc.setFont('helvetica', 'normal');
+  doc.text(COMPANY_INFO.siren, marginL + 20, y);
 
-  // Texte dans le sceau
-  doc.setFontSize(12);
-  doc.setFont('times', 'bold');
-  doc.setTextColor(80, 60, 30);
-  doc.text(jourMois, sealX, sealY - 2, { align: 'center' });
-  doc.setFontSize(24);
-  doc.setTextColor(180, 120, 40); // doré/ambré
-  doc.text(annee, sealX, sealY + 10, { align: 'center' });
+  doc.setFont('helvetica', 'bold');
+  doc.text('N° Agrément : ', pw / 2, y);
+  doc.setFont('helvetica', 'normal');
+  doc.text(COMPANY_INFO.agrement, pw / 2 + 26, y);
 
-  // === SERVICES PRO / FTRANSPORT / Adresse ===
-  const servY = lineY + 10;
+  y += 8;
   doc.setFontSize(10);
-  doc.setFont('times', 'bold');
-  doc.setTextColor(60, 50, 40);
-  doc.text('SERVICES PRO', infoX, servY, { align: 'center' });
-  doc.text('FTRANSPORT', infoX, servY + 6, { align: 'center' });
-  doc.setFont('times', 'normal');
-  doc.text('86 route de Genas 69003 Lyon', infoX, servY + 12, { align: 'center' });
+  doc.setFont('helvetica', 'normal');
+  doc.text('Certifie que :', marginL, y);
 
-  // Logo FTRANSPORT à droite
+  // === L'APPRENANT ===
+  y += 8;
+  doc.setFontSize(13);
+  doc.setFont('helvetica', 'bold');
+  doc.text("L'apprenant :", marginL, y);
+  y += 2;
+  doc.line(marginL, y, marginL + 32, y);
+
+  y += 4;
+  // Tableau apprenant
+  const tableX = marginL;
+  const col1W = 30;
+  const col2W = 45;
+  const col3W = 30;
+  const col4W = contentW - col1W - col2W - col3W;
+  const rowH = 8;
+  doc.setFontSize(8);
+
+  const drawRow = (label1: string, val1: string, label2: string, val2: string) => {
+    // Bordures
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.3);
+    doc.rect(tableX, y, col1W, rowH);
+    doc.rect(tableX + col1W, y, col2W, rowH);
+    doc.rect(tableX + col1W + col2W, y, col3W, rowH);
+    doc.rect(tableX + col1W + col2W + col3W, y, col4W, rowH);
+
+    // Fond gris clair pour labels
+    doc.setFillColor(240, 240, 240);
+    doc.rect(tableX, y, col1W, rowH, 'F');
+    doc.rect(tableX + col1W + col2W, y, col3W, rowH, 'F');
+    // Rebordures
+    doc.rect(tableX, y, col1W, rowH);
+    doc.rect(tableX + col1W, y, col2W, rowH);
+    doc.rect(tableX + col1W + col2W, y, col3W, rowH);
+    doc.rect(tableX + col1W + col2W + col3W, y, col4W, rowH);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text(label1, tableX + 2, y + 5.5);
+    doc.setFont('helvetica', 'normal');
+    doc.text(val1, tableX + col1W + 2, y + 5.5);
+    doc.setFont('helvetica', 'bold');
+    doc.text(label2, tableX + col1W + col2W + 2, y + 5.5);
+    doc.setFont('helvetica', 'normal');
+    doc.text(val2, tableX + col1W + col2W + col3W + 2, y + 5.5);
+    y += rowH;
+  };
+
+  drawRow('NOM :', data.nom.toUpperCase(), 'ADRESSE :', (data.adresse || '-').toUpperCase());
+  drawRow('PRÉNOM :', data.prenom.toUpperCase(), 'CODE POSTAL :', data.codePostal || '-');
+  drawRow('DATE DE NAISS. :', data.dateNaissance ? formatDateFR(data.dateNaissance) : '-', 'VILLE :', (data.ville || '-').toUpperCase());
+  drawRow('TÉLÉPHONE :', data.telephone || '-', 'MAIL :', data.email || '-');
+
+  // === A effectué une formation ===
+  y += 6;
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text('A effectué une formation :', marginL, y);
+
+  y += 4;
+  const fCol1W = 55;
+  const fCol2W = contentW - fCol1W;
+  doc.setFontSize(9);
+
+  const drawFormRow = (label: string, val: string) => {
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.3);
+    doc.setFillColor(240, 240, 240);
+    doc.rect(tableX, y, fCol1W, rowH, 'F');
+    doc.rect(tableX, y, fCol1W, rowH);
+    doc.rect(tableX + fCol1W, y, fCol2W, rowH);
+    doc.setFont('helvetica', 'bold');
+    doc.text(label, tableX + 2, y + 5.5);
+    doc.setFont('helvetica', 'normal');
+    doc.text(val, tableX + fCol1W + 2, y + 5.5);
+    y += rowH;
+  };
+
+  const dateDebutFR = data.dateDebut ? formatDateFR(data.dateDebut) : formatDateFR(data.dateFin);
+  const dateFinFR = formatDateFR(data.dateFin);
+  drawFormRow('DATE DE LA FORMATION', `Du ${dateDebutFR} AU ${dateFinFR}`);
+  drawFormRow('HORAIRES', 'DE 09H30-12H30 / 13H30-17H30');
+
+  // Date d'expiration = dateFin + 5 ans
+  const finParts = data.dateFin.split('-').map(Number);
+  const expYear = finParts[0] + 5;
+  const dateExpFR = `${String(finParts[2]).padStart(2, '0')}/${String(finParts[1]).padStart(2, '0')}/${expYear}`;
+  drawFormRow('DATE EXPIRATION', dateExpFR);
+
+  // === SIGNATURES ===
+  y += 8;
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(180, 0, 0);
+  doc.text("Signature de l'apprenant précédée", marginL, y);
+  y += 4;
+  doc.text('de la mention « lu et approuvé »', marginL, y);
+
+  doc.setTextColor(0, 0, 0);
+  doc.text('Signature', marginR - 25, y - 4, { align: 'center' });
+  doc.text(COMPANY_INFO.name, marginR - 25, y, { align: 'center' });
+
+  // Zone signature apprenant
+  y += 5;
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(10);
+  doc.setTextColor(100, 100, 100);
+  doc.text('lu et approuvé', marginL + 10, y + 10);
+
+  // Signature dirigeant + Tampon à droite
   try {
-    doc.addImage(logoImage, 'PNG', pw - margin - 65, infoY - 2, 50, 18);
+    doc.addImage(signatureImage, 'PNG', marginR - 50, y, 40, 20);
   } catch (e) {
-    console.log('Logo non charge');
+    console.log('Signature non chargée');
   }
 
-  // Tampon en bas à droite
   try {
-    doc.addImage(tamponImage, 'PNG', pw - margin - 45, servY + 2, 28, 28);
+    doc.addImage(tamponImage, 'PNG', marginR - 50, y + 18, 45, 22);
   } catch (e) {
-    console.log('Tampon non charge');
+    console.log('Tampon non chargé');
   }
+
+  // === PIED DE PAGE ===
+  const footerY = ph - 12;
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(100, 100, 100);
+  doc.text(`(*) Cette attestation peut être vérifiée en contactant ${COMPANY_INFO.email}`, pw / 2, footerY, { align: 'center' });
 
   // === TELECHARGER ===
   doc.save(`Attestation_FC_VTC_${data.nom.toUpperCase()}_${data.prenom}.pdf`);

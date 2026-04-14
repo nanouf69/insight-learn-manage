@@ -1871,6 +1871,13 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                   nom: apprenant.nom,
                                   prenom: apprenant.prenom,
                                   dateFin: sessionApprenant.date_fin_personnalisee || session.dateFin,
+                                  dateDebut: sessionApprenant.date_debut || session.dateDebut,
+                                  adresse: apprenant.adresse || '',
+                                  codePostal: apprenant.code_postal || '',
+                                  ville: apprenant.ville || '',
+                                  telephone: apprenant.telephone || '',
+                                  email: apprenant.email || '',
+                                  dateNaissance: apprenant.date_naissance || '',
                                 });
                                 toast({ title: "Attestation generee", description: `Attestation FC VTC pour ${apprenant.prenom} ${apprenant.nom} telechargee.` });
                               }}
