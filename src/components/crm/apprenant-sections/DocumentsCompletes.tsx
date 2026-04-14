@@ -34,6 +34,7 @@ const TYPE_COLORS: Record<string, string> = {
   "cgv-ri-acceptation": "bg-orange-100 text-orange-800",
   "cgv-acceptation": "bg-teal-100 text-teal-800",
   "dossier-bienvenue": "bg-green-100 text-green-800",
+  "devis-formation-continue": "bg-indigo-100 text-indigo-800",
 };
 
 const FIELD_LABELS: Record<string, string> = {
