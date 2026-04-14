@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
     // POST: save form document
     if (req.method === "POST") {
       const body = await req.json();
-      const { apprenantId, typeDocument, titre, donnees } = body;
+      const { apprenantId, typeDocument, titre, donnees, financeur } = body;
 
       if (!apprenantId || !typeDocument || !titre || !donnees) {
         return new Response(JSON.stringify({ error: "Missing fields" }), {
@@ -70,6 +70,37 @@ Deno.serve(async (req) => {
           status: 404,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
+      }
+
+      // Save financeur to organismes table if provided
+      if (financeur && financeur.nom) {
+        try {
+          let existingOrg = null;
+          if (financeur.siren) {
+            const { data } = await supabase
+              .from("organismes")
+              .select("id")
+              .eq("siret", financeur.siren)
+              .maybeSingle();
+            existingOrg = data;
+          }
+          if (!existingOrg) {
+            await supabase.from("organismes").insert({
+              nom: financeur.nom,
+              siret: financeur.siren || null,
+              adresse: financeur.adresse || null,
+              code_postal: financeur.code_postal || null,
+              ville: financeur.ville || null,
+              email: financeur.email || null,
+              telephone: financeur.telephone || null,
+            });
+            console.log("✅ Organisme financeur créé:", financeur.nom);
+          } else {
+            console.log("ℹ️ Organisme déjà existant (SIREN:", financeur.siren, ")");
+          }
+        } catch (e) {
+          console.warn("Erreur sauvegarde organisme:", e);
+        }
       }
 
       // Use auth_user_id if available, otherwise use a placeholder
