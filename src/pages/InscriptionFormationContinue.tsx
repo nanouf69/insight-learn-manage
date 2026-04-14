@@ -224,6 +224,36 @@ export default function InscriptionFormationContinue() {
         throw new Error("L'inscription n'a pas pu être confirmée. Veuillez réessayer.");
       }
 
+      // 6. Save form data as completed document (devis FC)
+      try {
+        const selectedDateObj = datesFormationContinue.find(d => d.value === dateFormation);
+        await supabase.functions.invoke("save-public-form", {
+          body: {
+            apprenantId: apprenant.id,
+            typeDocument: "devis-formation-continue",
+            titre: `Devis ${details.label} — ${selectedDateObj?.label || dateFormation}`,
+            donnees: {
+              type_formation: details.label,
+              prix: `${details.prix}€ net de taxe`,
+              duree: details.duree,
+              date_formation: selectedDateObj?.label || dateFormation,
+              lieu: "86 Route de Genas, 69003 Lyon",
+              prenom: prenom.trim(),
+              nom: nom.trim().toUpperCase(),
+              date_naissance: dateNaissance || "Non renseignée",
+              adresse: adresse.trim(),
+              code_postal: codePostal.trim(),
+              ville: ville.trim(),
+              telephone: telephone.trim(),
+              email: email.trim().toLowerCase(),
+              date_inscription: new Date().toLocaleDateString("fr-FR"),
+            },
+          },
+        });
+      } catch (e) {
+        console.warn("Sauvegarde devis FC dans formulaires échouée:", e);
+      }
+
       console.log("✅ Inscription réussie:", { apprenantId: apprenant.id, sessionId, linkId: verifyLink.id, placesRestantes: Math.max(0, MAX_PLACES - (updatedCount ?? 0)) });
       setSubmitted(true);
     } catch (err: any) {
