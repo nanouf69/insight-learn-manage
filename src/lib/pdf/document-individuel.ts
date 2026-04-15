@@ -258,7 +258,6 @@ function renderTestCompetences(doc: jsPDF, donnees: any, y: number, margin: numb
         const questionText = sectionItems?.[qIdx] || `Question ${qIdx + 1}`;
         y = renderQA(doc, questionText, String(value), y, margin, pw);
       }
-      }
     }
   }
   return y;
