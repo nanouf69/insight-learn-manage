@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Users, MapPin, Loader2, Copy, Trophy, Trash2, Search, X } from "lucide-react";
+import { Calendar, Users, MapPin, Loader2, Copy, Trophy, Trash2, Search, X, Clock } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { SessionForm } from "./SessionForm";
 import { SessionDetail } from "./SessionDetail";
@@ -468,6 +468,19 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
                           <MapPin className="w-4 h-4" />
                           <span>{session.lieu || "Non défini"}</span>
                         </div>
+                        {session.heure_debut && session.heure_fin && (() => {
+                          const [hd, md] = session.heure_debut!.split(':').map(Number);
+                          const [hf, mf] = session.heure_fin!.split(':').map(Number);
+                          let mins = (hf * 60 + mf) - (hd * 60 + md);
+                          if (mins > 0 && hd < 13 && hf >= 13) mins -= 60;
+                          const hours = Math.max(0, Math.round(mins / 60 * 10) / 10);
+                          return (
+                            <div className="flex items-center gap-1.5">
+                              <Clock className="w-4 h-4" />
+                              <span>{hours}h</span>
+                            </div>
+                          );
+                        })()}
                         <div className="flex items-center gap-1.5">
                           <Users className="w-4 h-4" />
                           <span className={sessionStats[session.id]?.inscrits > (session.places_disponibles || 18) ? "text-red-600 font-medium" : ""}>
