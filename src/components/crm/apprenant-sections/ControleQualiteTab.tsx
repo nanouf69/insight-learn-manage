@@ -256,6 +256,20 @@ export function ControleQualiteTab({ apprenant }: Props) {
     },
   });
 
+  // Fetch connexions for activity report tracking
+  const { data: connexions = [] } = useQuery({
+    queryKey: ["apprenant-connexions-qualite", apprenant.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("apprenant_connexions")
+        .select("id")
+        .eq("apprenant_id", apprenant.id)
+        .limit(1);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   const getDocStatus = (doc: ControleDocument): { found: boolean; details?: any } => {
     if (doc.isStatic) return { found: true };
     if (doc.docType) {
@@ -264,6 +278,9 @@ export function ControleQualiteTab({ apprenant }: Props) {
     }
     if (doc.isProgress) {
       return { found: moduleCompletions.length > 0 };
+    }
+    if (doc.isActivity) {
+      return { found: connexions.length > 0 };
     }
     return { found: false };
   };
