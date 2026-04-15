@@ -53,22 +53,36 @@ function parseTime(t: string): { h: number; m: number } {
   return { h: h || 0, m: m || 0 };
 }
 
+function countWorkingDays(dateDebut: string, dateFin: string): number {
+  const d1 = new Date(dateDebut);
+  const d2 = new Date(dateFin);
+  let count = 0;
+  const cur = new Date(d1);
+  while (cur <= d2) {
+    const dow = cur.getDay();
+    if (dow !== 0 && dow !== 6) count++;
+    cur.setDate(cur.getDate() + 1);
+  }
+  return Math.max(count, 1);
+}
+
 function calculateSessionHours(sessions: SessionInfo[], type: string): number {
   let totalMinutes = 0;
   for (const s of sessions) {
     if (s.type_session?.toLowerCase() !== type) continue;
+    const nbDays = countWorkingDays(s.date_debut, s.date_fin);
     if (s.heure_debut && s.heure_fin) {
       const start = parseTime(s.heure_debut);
       const end = parseTime(s.heure_fin);
-      let mins = (end.h * 60 + end.m) - (start.h * 60 + start.m);
-      // Déduire 1h de pause déjeuner si la session couvre midi (ex: 9h-16h)
-      if (mins > 0 && start.h < 13 && end.h >= 13) {
-        mins -= 60;
+      let dailyMins = (end.h * 60 + end.m) - (start.h * 60 + start.m);
+      // Déduire 1h de pause déjeuner si la session couvre midi
+      if (dailyMins > 0 && start.h < 13 && end.h >= 13) {
+        dailyMins -= 60;
       }
-      if (mins > 0) totalMinutes += mins;
+      if (dailyMins > 0) totalMinutes += dailyMins * nbDays;
     } else {
-      // Fallback: 6h par jour pour pratique (9h-12h + 13h-16h)
-      totalMinutes += 6 * 60;
+      // Fallback: 6h par jour
+      totalMinutes += 6 * 60 * nbDays;
     }
   }
   return Math.round(totalMinutes / 60 * 10) / 10;
