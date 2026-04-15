@@ -136,9 +136,11 @@ export default function Step11() {
               <p className="text-red-500 text-sm mt-2">Ce champ est obligatoire</p>
             )}
             
-            <p className="text-gray-500 text-sm mt-3">
-              Vous trouverez ce numéro dans le mail de confirmation de la CMA.
-            </p>
+             <p className="text-gray-500 text-sm mt-3">
+               Pour trouver votre numéro de dossier : il ne faut pas payer les frais d'examen sauf si cela n'est pas prévu par le CPF. Déconnectez-vous puis reconnectez-vous sur{" "}
+               <a href="https://www.exament3p.fr" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-medium">www.exament3p.fr</a>
+               {" "}et vous trouverez votre numéro de dossier.
+             </p>
           </div>
 
           {/* Sélection du type d'examen */}
