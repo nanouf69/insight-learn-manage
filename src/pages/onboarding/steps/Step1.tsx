@@ -152,10 +152,17 @@ export default function Step1() {
 
   const documents = [
     {
-      id: 'piece_identite',
+      id: 'piece_identite_recto',
       icon: CreditCard,
-      title: "Pièce d'identité",
-      description: "Carte d'identité ou passeport en cours de validité",
+      title: "Pièce d'identité — Recto",
+      description: "Carte d'identité ou passeport en cours de validité (face avant)",
+      optional: false,
+    },
+    {
+      id: 'piece_identite_verso',
+      icon: CreditCard,
+      title: "Pièce d'identité — Verso",
+      description: "Carte d'identité ou passeport (face arrière)",
       optional: false,
     },
     {
@@ -173,10 +180,17 @@ export default function Step1() {
       optional: true,
     },
     {
-      id: 'piece_identite_hebergeant',
+      id: 'piece_identite_hebergeant_recto',
       icon: FileText,
-      title: "Pièce d'identité de l'hébergeant (recto verso)",
-      description: "Carte d'identité ou passeport de la personne qui vous héberge (facultatif)",
+      title: "Pièce d'identité de l'hébergeant — Recto",
+      description: "Face avant de la pièce d'identité de l'hébergeant (facultatif)",
+      optional: true,
+    },
+    {
+      id: 'piece_identite_hebergeant_verso',
+      icon: FileText,
+      title: "Pièce d'identité de l'hébergeant — Verso",
+      description: "Face arrière de la pièce d'identité de l'hébergeant (facultatif)",
       optional: true,
     },
     {
