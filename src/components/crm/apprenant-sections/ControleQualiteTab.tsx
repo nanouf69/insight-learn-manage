@@ -104,6 +104,8 @@ interface ControleDocument {
   docType?: string;
   /** If true, check apprenant_module_completion for progress */
   isProgress?: boolean;
+  /** If true, check apprenant_connexions for activity */
+  isActivity?: boolean;
   /** Static document — always available */
   isStatic?: boolean;
   /** Formation-specific variants */
