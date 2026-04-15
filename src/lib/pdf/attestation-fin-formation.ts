@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import { format } from 'date-fns';
+import { format, differenceInMinutes, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 import signatureImage from '@/assets/signature-dirigeant.png';
@@ -34,7 +34,69 @@ function getFormationName(typeApprenant: string | null): string {
   return 'Formation VTC'; // Défaut
 }
 
-export async function generateAttestationFinFormation(apprenant: any) {
+interface SessionInfo {
+  type_session: string;
+  heure_debut?: string | null;
+  heure_fin?: string | null;
+  date_debut: string;
+  date_fin: string;
+}
+
+interface ConnexionInfo {
+  started_at: string;
+  ended_at?: string | null;
+  last_seen_at?: string | null;
+}
+
+function parseTime(t: string): { h: number; m: number } {
+  const [h, m] = t.split(':').map(Number);
+  return { h: h || 0, m: m || 0 };
+}
+
+function calculateSessionHours(sessions: SessionInfo[], type: string): number {
+  let totalMinutes = 0;
+  for (const s of sessions) {
+    if (s.type_session?.toLowerCase() !== type) continue;
+    if (s.heure_debut && s.heure_fin) {
+      const start = parseTime(s.heure_debut);
+      const end = parseTime(s.heure_fin);
+      const mins = (end.h * 60 + end.m) - (start.h * 60 + start.m);
+      if (mins > 0) totalMinutes += mins;
+    } else {
+      // Fallback: 7h par jour pour pratique, estimation
+      totalMinutes += 7 * 60;
+    }
+  }
+  return Math.round(totalMinutes / 60 * 10) / 10;
+}
+
+function calculateElearningHours(connexions: ConnexionInfo[]): number {
+  let totalMinutes = 0;
+  for (const c of connexions) {
+    const start = new Date(c.started_at);
+    const end = c.ended_at ? new Date(c.ended_at) : (c.last_seen_at ? new Date(c.last_seen_at) : null);
+    if (end) {
+      const mins = differenceInMinutes(end, start);
+      if (mins > 0 && mins <= 420) { // max 7h
+        totalMinutes += mins;
+      }
+    }
+  }
+  return Math.round(totalMinutes / 60 * 10) / 10;
+}
+
+function formatHours(h: number): string {
+  const hours = Math.floor(h);
+  const mins = Math.round((h - hours) * 60);
+  if (mins === 0) return `${hours}h`;
+  return `${hours}h${mins.toString().padStart(2, '0')}`;
+}
+
+export async function generateAttestationFinFormation(
+  apprenant: any,
+  sessions: SessionInfo[] = [],
+  connexions: ConnexionInfo[] = []
+) {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   
@@ -45,7 +107,7 @@ export async function generateAttestationFinFormation(apprenant: any) {
     console.log('Logo non chargé');
   }
   
-  // En-tête (décalé pour le logo)
+  // En-tête
   doc.setFillColor(0, 102, 51);
   doc.rect(0, 30, pageWidth, 25, 'F');
   
@@ -90,9 +152,16 @@ export async function generateAttestationFinFormation(apprenant: any) {
   doc.text('a suivi avec assiduité et a terminé la formation suivante :', 20, y);
   y += 12;
   
-  // Formation
+  // Calcul des heures
+  const practicalSessions = sessions.filter(s => s.type_session?.toLowerCase() === 'pratique');
+  const heuresPratique = calculateSessionHours(sessions, 'pratique');
+  const heuresElearning = calculateElearningHours(connexions);
+  const heuresTotal = heuresPratique + heuresElearning;
+  
+  // Formation box — agrandir pour les heures
+  const boxHeight = 80;
   doc.setFillColor(232, 245, 233);
-  doc.roundedRect(15, y - 5, pageWidth - 30, 50, 3, 3, 'F');
+  doc.roundedRect(15, y - 5, pageWidth - 30, boxHeight, 3, 3, 'F');
   
   const formationName = getFormationName(apprenant.type_apprenant);
   doc.setFont('helvetica', 'bold');
@@ -105,9 +174,20 @@ export async function generateAttestationFinFormation(apprenant: any) {
   doc.text(`Date de fin : ${apprenant.date_fin_formation || '-'}`, 20, y + 5);
   y += 8;
   doc.text(`Lieu : ${COMPANY_INFO.address}`, 20, y + 5);
+  y += 12;
+  
+  // Détail des heures
+  doc.setFont('helvetica', 'bold');
+  doc.text(`Durée de la formation à distance (e-learning) : ${formatHours(heuresElearning)}`, 20, y + 5);
   y += 8;
-  doc.text(`Durée : Formation complète`, 20, y + 5);
-  y += 30;
+  doc.text(`Durée de la formation pratique : ${formatHours(heuresPratique)} (${practicalSessions.length} session${practicalSessions.length > 1 ? 's' : ''})`, 20, y + 5);
+  y += 10;
+  
+  // Total
+  doc.setFontSize(12);
+  doc.text(`Durée totale de la formation : ${formatHours(heuresTotal)}`, 20, y + 5);
+  doc.setFontSize(11);
+  y += boxHeight - 48; // position after box
   
   // Mention
   y += 10;
