@@ -60,6 +60,20 @@ const DOCUMENT_TYPES = [
     needsValidation: true,
   },
   {
+    id: 'piece_identite_recto',
+    title: "Pièce d'identité — Recto",
+    description: "Face avant de la carte d'identité ou passeport",
+    required: true,
+    needsValidation: true,
+  },
+  {
+    id: 'piece_identite_verso',
+    title: "Pièce d'identité — Verso",
+    description: "Face arrière de la carte d'identité ou passeport",
+    required: true,
+    needsValidation: true,
+  },
+  {
     id: 'permis_conduire',
     title: "Permis de conduire",
     description: "Hors période probatoire",
