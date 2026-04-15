@@ -89,7 +89,21 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
         await generateAttestationInscription(apprenant);
         toast.success("Attestation d'inscription générée");
       } else if (type === 'fin-formation') {
-        await generateAttestationFinFormation(apprenant);
+        // Récupérer les sessions de l'apprenant
+        const { data: saRows } = await supabase
+          .from('session_apprenants')
+          .select('session_id, sessions(id, type_session, heure_debut, heure_fin, date_debut, date_fin)')
+          .eq('apprenant_id', apprenant.id);
+        const sessions = (saRows || []).map((r: any) => r.sessions).filter(Boolean);
+
+        // Récupérer les connexions e-learning
+        const { data: connexions } = await supabase
+          .from('apprenant_connexions')
+          .select('started_at, ended_at, last_seen_at')
+          .eq('apprenant_id', apprenant.id)
+          .not('ended_at', 'is', null);
+
+        await generateAttestationFinFormation(apprenant, sessions, connexions || []);
         toast.success("Attestation de fin de formation générée");
       } else if (type === 'france-travail') {
         await generateAttestationFranceTravail(apprenant);
