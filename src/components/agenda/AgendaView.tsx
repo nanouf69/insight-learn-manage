@@ -586,7 +586,11 @@ export function AgendaView() {
               <div className="p-3 text-center font-medium text-muted-foreground text-xs uppercase tracking-wide border-r border-border">
                 Journée
               </div>
-              {weekDays.map((day, index) => (
+              {weekDays.map((day, index) => {
+                const dayBlks = courseBlocks.filter((b) => isSameDay(b.date, day));
+                const dayTotalMins = dayBlks.reduce((sum, b) => sum + (b.endHour - b.startHour) * 60, 0);
+                const dayTotalH = Math.round(dayTotalMins / 60 * 10) / 10;
+                return (
                 <div
                   key={index}
                   className={`p-3 text-center border-r border-border last:border-r-0 ${
@@ -598,8 +602,15 @@ export function AgendaView() {
                   <div className={`font-semibold text-sm ${isSameDay(day, new Date()) ? "text-primary" : "text-foreground"}`}>
                     {format(day, "EEE", { locale: fr })}. {format(day, "dd/MM", { locale: fr })}
                   </div>
+                  {dayTotalH > 0 && (
+                    <div className="text-xs text-muted-foreground mt-0.5 flex items-center justify-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {dayTotalH}h
+                    </div>
+                  )}
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Corps de la grille */}
