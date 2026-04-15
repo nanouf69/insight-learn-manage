@@ -60,6 +60,20 @@ const DOCUMENT_TYPES = [
     needsValidation: true,
   },
   {
+    id: 'piece_identite_recto',
+    title: "Pièce d'identité — Recto",
+    description: "Face avant de la carte d'identité ou passeport",
+    required: true,
+    needsValidation: true,
+  },
+  {
+    id: 'piece_identite_verso',
+    title: "Pièce d'identité — Verso",
+    description: "Face arrière de la carte d'identité ou passeport",
+    required: true,
+    needsValidation: true,
+  },
+  {
     id: 'permis_conduire',
     title: "Permis de conduire",
     description: "Hors période probatoire",
@@ -92,6 +106,24 @@ const DOCUMENT_TYPES = [
 const REJECTION_REASONS: Record<string, { value: string; label: string }[]> = {
   piece_identite: [
     { value: 'expired', label: "Pièce d'identité périmée" },
+    { value: 'unreadable', label: "Document illisible" },
+    { value: 'invalid', label: "Document non conforme" },
+  ],
+  piece_identite_recto: [
+    { value: 'expired', label: "Pièce d'identité périmée" },
+    { value: 'unreadable', label: "Document illisible" },
+    { value: 'invalid', label: "Document non conforme" },
+  ],
+  piece_identite_verso: [
+    { value: 'unreadable', label: "Document illisible" },
+    { value: 'invalid', label: "Document non conforme" },
+  ],
+  piece_identite_hebergeant_recto: [
+    { value: 'expired', label: "Pièce d'identité périmée" },
+    { value: 'unreadable', label: "Document illisible" },
+    { value: 'invalid', label: "Document non conforme" },
+  ],
+  piece_identite_hebergeant_verso: [
     { value: 'unreadable', label: "Document illisible" },
     { value: 'invalid', label: "Document non conforme" },
   ],
