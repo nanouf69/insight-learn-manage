@@ -156,6 +156,13 @@ const CONTROLE_DOCUMENTS: ControleDocument[] = [
     isProgress: true,
   },
   {
+    id: "rapport-activite",
+    label: "Rapport d'activité e-learning",
+    description: "Historique des connexions et activités de l'apprenant",
+    category: "suivi",
+    isActivity: true,
+  },
+  {
     id: "evaluation-pedagogique",
     label: "Évaluation pédagogique",
     description: "Évaluation des acquis de l'apprenant",
