@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import logoImage from '@/assets/logo-ftransport.png';
+import { getCompetencesForFormation } from '@/components/cours-en-ligne/competences-checklist-data';
 
 const COMPANY_INFO = {
   name: 'Ftransport',
