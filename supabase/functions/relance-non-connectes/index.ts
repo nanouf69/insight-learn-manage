@@ -27,7 +27,7 @@ serve(async (req) => {
     // who have an auth account and email
     const { data: apprenants, error: fetchErr } = await supabaseAdmin
       .from("apprenants")
-      .select("id, nom, prenom, email, auth_user_id, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, date_debut_formation, date_fin_formation")
+      .select("id, nom, prenom, email, auth_user_id, formation_choisie, date_debut_cours_en_ligne, date_fin_cours_en_ligne, date_debut_formation, date_fin_formation, resultat_examen_pratique")
       .not("auth_user_id", "is", null)
       .not("email", "is", null);
 
@@ -46,6 +46,8 @@ serve(async (req) => {
     // Filter: course period has started (at least 3 days ago) and not ended yet + e-learning only
     const eligibleApprenants = (apprenants || []).filter((a: any) => {
       if (!isElearning(a)) return false;
+      // Exclure les apprenants ayant échoué à l'examen pratique
+      if (a.resultat_examen_pratique === 'non') return false;
       const startDate = a.date_debut_cours_en_ligne || a.date_debut_formation;
       const endDate = a.date_fin_cours_en_ligne || a.date_fin_formation;
       if (!startDate) return false;

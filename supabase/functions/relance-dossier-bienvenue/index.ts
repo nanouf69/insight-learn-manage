@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
     // 1. Get all apprenants with email
     const { data: apprenants, error: appError } = await supabase
       .from('apprenants')
-      .select('id, nom, prenom, email, formation_choisie, type_apprenant, resultat_examen')
+      .select('id, nom, prenom, email, formation_choisie, type_apprenant, resultat_examen, resultat_examen_pratique')
       .not('email', 'is', null)
       .not('email', 'eq', '');
 
@@ -32,6 +32,8 @@ Deno.serve(async (req) => {
       if (EXCLUDED_TYPES.includes(type)) return false;
       // Exclure les apprenants ayant déjà réussi la théorie
       if (a.resultat_examen === 'oui') return false;
+      // Exclure les apprenants ayant échoué à l'examen pratique
+      if (a.resultat_examen_pratique === 'non') return false;
       return true;
     });
 
