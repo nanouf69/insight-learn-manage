@@ -60,11 +60,15 @@ function calculateSessionHours(sessions: SessionInfo[], type: string): number {
     if (s.heure_debut && s.heure_fin) {
       const start = parseTime(s.heure_debut);
       const end = parseTime(s.heure_fin);
-      const mins = (end.h * 60 + end.m) - (start.h * 60 + start.m);
+      let mins = (end.h * 60 + end.m) - (start.h * 60 + start.m);
+      // Déduire 1h de pause déjeuner si la session couvre midi (ex: 9h-16h)
+      if (mins > 0 && start.h < 13 && end.h >= 13) {
+        mins -= 60;
+      }
       if (mins > 0) totalMinutes += mins;
     } else {
-      // Fallback: 7h par jour pour pratique, estimation
-      totalMinutes += 7 * 60;
+      // Fallback: 6h par jour pour pratique (9h-12h + 13h-16h)
+      totalMinutes += 6 * 60;
     }
   }
   return Math.round(totalMinutes / 60 * 10) / 10;
