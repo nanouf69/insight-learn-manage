@@ -25,7 +25,7 @@ serve(async (req) => {
     // Find apprenants with an account (auth_user_id) and an email
     const { data: apprenants, error: fetchErr } = await supabaseAdmin
       .from("apprenants")
-      .select("id, nom, prenom, email, auth_user_id, formation_choisie, type_apprenant, date_debut_cours_en_ligne, date_debut_formation, created_at")
+      .select("id, nom, prenom, email, auth_user_id, formation_choisie, type_apprenant, date_debut_cours_en_ligne, date_debut_formation, created_at, resultat_examen_pratique")
       .not("auth_user_id", "is", null)
       .not("email", "is", null)
       .is("deleted_at", null);
@@ -45,6 +45,8 @@ serve(async (req) => {
 
     const eligible = (apprenants || []).filter((a: any) => {
       if (!isElearning(a)) return false;
+      // Exclure les apprenants ayant échoué à l'examen pratique
+      if (a.resultat_examen_pratique === 'non') return false;
       const startDate = a.date_debut_cours_en_ligne || a.date_debut_formation;
       if (!startDate) return false;
       const start = new Date(startDate);

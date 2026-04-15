@@ -36,7 +36,7 @@ serve(async (req) => {
     // Find apprenants with upcoming exam in 2-4 weeks
     const { data: apprenants, error: fetchErr } = await supabaseAdmin
       .from("apprenants")
-      .select("id, nom, prenom, email, auth_user_id, formation_choisie, type_apprenant, date_examen_theorique, modules_autorises")
+      .select("id, nom, prenom, email, auth_user_id, formation_choisie, type_apprenant, date_examen_theorique, modules_autorises, resultat_examen_pratique")
       .not("auth_user_id", "is", null)
       .not("email", "is", null)
       .not("date_examen_theorique", "is", null)
@@ -50,7 +50,10 @@ serve(async (req) => {
     const PRESENTIEL_TYPES = ["vtc", "vtc-exam", "taxi", "taxi-exam", "vtc-e-presentiel", "taxi-e-presentiel", "ta-e-presentiel", "formation-continue-vtc", "formation-continue-taxi", "pa-vtc"];
     const filteredApprenants = (apprenants || []).filter((a: any) => {
       const type = (a.type_apprenant || a.formation_choisie || "").toLowerCase();
-      return !PRESENTIEL_TYPES.includes(type);
+      if (PRESENTIEL_TYPES.includes(type)) return false;
+      // Exclure les apprenants ayant échoué à l'examen pratique
+      if (a.resultat_examen_pratique === 'non') return false;
+      return true;
     });
 
     console.log(`[relance-examens] ${filteredApprenants.length} e-learning apprenants with exam in window (excluded ${(apprenants || []).length - filteredApprenants.length} présentiel)`);
