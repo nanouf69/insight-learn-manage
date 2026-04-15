@@ -104,6 +104,8 @@ interface ControleDocument {
   docType?: string;
   /** If true, check apprenant_module_completion for progress */
   isProgress?: boolean;
+  /** If true, check apprenant_connexions for activity */
+  isActivity?: boolean;
   /** Static document — always available */
   isStatic?: boolean;
   /** Formation-specific variants */
@@ -152,6 +154,13 @@ const CONTROLE_DOCUMENTS: ControleDocument[] = [
     description: "Progression des modules et scores obtenus",
     category: "suivi",
     isProgress: true,
+  },
+  {
+    id: "rapport-activite",
+    label: "Rapport d'activité e-learning",
+    description: "Historique des connexions et activités de l'apprenant",
+    category: "suivi",
+    isActivity: true,
   },
   {
     id: "evaluation-pedagogique",
@@ -247,6 +256,20 @@ export function ControleQualiteTab({ apprenant }: Props) {
     },
   });
 
+  // Fetch connexions for activity report tracking
+  const { data: connexions = [] } = useQuery({
+    queryKey: ["apprenant-connexions-qualite", apprenant.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("apprenant_connexions")
+        .select("id")
+        .eq("apprenant_id", apprenant.id)
+        .limit(1);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   const getDocStatus = (doc: ControleDocument): { found: boolean; details?: any } => {
     if (doc.isStatic) return { found: true };
     if (doc.docType) {
@@ -255,6 +278,9 @@ export function ControleQualiteTab({ apprenant }: Props) {
     }
     if (doc.isProgress) {
       return { found: moduleCompletions.length > 0 };
+    }
+    if (doc.isActivity) {
+      return { found: connexions.length > 0 };
     }
     return { found: false };
   };
