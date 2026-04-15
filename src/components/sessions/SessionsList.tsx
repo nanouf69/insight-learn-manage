@@ -471,13 +471,25 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
                         {session.heure_debut && session.heure_fin && (() => {
                           const [hd, md] = session.heure_debut!.split(':').map(Number);
                           const [hf, mf] = session.heure_fin!.split(':').map(Number);
-                          let mins = (hf * 60 + mf) - (hd * 60 + md);
-                          if (mins > 0 && hd < 13 && hf >= 13) mins -= 60;
-                          const hours = Math.max(0, Math.round(mins / 60 * 10) / 10);
+                          let dailyMins = (hf * 60 + mf) - (hd * 60 + md);
+                          if (dailyMins > 0 && hd < 13 && hf >= 13) dailyMins -= 60;
+                          const dailyHours = Math.max(0, dailyMins / 60);
+                          // Count working days between date_debut and date_fin
+                          const d1 = new Date(session.date_debut);
+                          const d2 = new Date(session.date_fin);
+                          let nbDays = 0;
+                          const cur = new Date(d1);
+                          while (cur <= d2) {
+                            const dow = cur.getDay();
+                            if (dow !== 0 && dow !== 6) nbDays++;
+                            cur.setDate(cur.getDate() + 1);
+                          }
+                          if (nbDays === 0) nbDays = 1;
+                          const totalHours = Math.round(dailyHours * nbDays * 10) / 10;
                           return (
                             <div className="flex items-center gap-1.5">
                               <Clock className="w-4 h-4" />
-                              <span>{hours}h</span>
+                              <span>{totalHours}h</span>
                             </div>
                           );
                         })()}
