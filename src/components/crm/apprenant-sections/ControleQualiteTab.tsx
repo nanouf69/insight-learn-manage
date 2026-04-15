@@ -8,20 +8,24 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { generateControleQualitePdf } from "@/lib/pdf/controle-qualite";
+import { getCompetencesForFormation } from "@/components/cours-en-ligne/competences-checklist-data";
 
 /** Renders donnees content with real question texts instead of raw JSON */
 function DonneesRenderer({ donnees }: { donnees: any }) {
   if (!donnees || typeof donnees !== "object") return null;
 
   // Competences / checklist format: { answers: { "0-0": "oui" }, sections: [...], sectionItems: [[...], [...]] }
-  if (donnees.answers && donnees.sections && donnees.sectionItems) {
+  if (donnees.answers && donnees.sections) {
+    // Fallback to reference data when sectionItems not saved
+    const fallbackData = getCompetencesForFormation(donnees.formationLabel);
+    const fallbackItems = fallbackData.sections.map(s => s.items);
     return (
       <div className="bg-muted/50 rounded p-3 max-h-80 overflow-y-auto space-y-3">
         {donnees.formationLabel && (
           <p className="text-xs font-semibold text-muted-foreground">{donnees.formationLabel}</p>
         )}
         {(donnees.sections as string[]).map((sectionTitle: string, sIdx: number) => {
-          const items: string[] = donnees.sectionItems?.[sIdx] || [];
+          const items: string[] = donnees.sectionItems?.[sIdx] || fallbackItems[sIdx] || [];
           return (
             <div key={sIdx}>
               <p className="text-xs font-bold text-primary mb-1">{sectionTitle}</p>
