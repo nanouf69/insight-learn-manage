@@ -109,6 +109,24 @@ const REJECTION_REASONS: Record<string, { value: string; label: string }[]> = {
     { value: 'unreadable', label: "Document illisible" },
     { value: 'invalid', label: "Document non conforme" },
   ],
+  piece_identite_recto: [
+    { value: 'expired', label: "Pièce d'identité périmée" },
+    { value: 'unreadable', label: "Document illisible" },
+    { value: 'invalid', label: "Document non conforme" },
+  ],
+  piece_identite_verso: [
+    { value: 'unreadable', label: "Document illisible" },
+    { value: 'invalid', label: "Document non conforme" },
+  ],
+  piece_identite_hebergeant_recto: [
+    { value: 'expired', label: "Pièce d'identité périmée" },
+    { value: 'unreadable', label: "Document illisible" },
+    { value: 'invalid', label: "Document non conforme" },
+  ],
+  piece_identite_hebergeant_verso: [
+    { value: 'unreadable', label: "Document illisible" },
+    { value: 'invalid', label: "Document non conforme" },
+  ],
   permis_conduire: [
     { value: 'expired', label: "Permis de conduire périmé" },
     { value: 'probatoire', label: "Permis en période probatoire (moins de 3 ans)" },
