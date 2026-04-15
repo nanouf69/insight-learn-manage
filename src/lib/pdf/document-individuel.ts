@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import logoImage from '@/assets/logo-ftransport.png';
+import { getCompetencesForFormation } from '@/components/cours-en-ligne/competences-checklist-data';
 
 const COMPANY_INFO = {
   name: 'Ftransport',
@@ -240,10 +241,14 @@ function renderTestCompetences(doc: jsPDF, donnees: any, y: number, margin: numb
   }
 
   if (donnees.sections && Array.isArray(donnees.sections) && donnees.answers) {
+    // Fallback: use reference competences data when sectionItems not saved
+    const fallbackData = getCompetencesForFormation(donnees.formationLabel);
+    const fallbackItems = fallbackData.sections.map(s => s.items);
+
     for (let si = 0; si < donnees.sections.length; si++) {
       y = renderSectionHeader(doc, donnees.sections[si], y, margin, pw);
 
-      const sectionItems: string[] | undefined = donnees.sectionItems?.[si];
+      const sectionItems: string[] | undefined = donnees.sectionItems?.[si] || fallbackItems[si];
       const sectionAnswers = Object.entries(donnees.answers as Record<string, string>)
         .filter(([key]) => key.startsWith(`${si}-`))
         .sort(([a], [b]) => parseInt(a.split('-')[1]) - parseInt(b.split('-')[1]));
