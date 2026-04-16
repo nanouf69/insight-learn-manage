@@ -3861,6 +3861,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             apprenantNom={apprenantInfo?.nom}
             apprenantPrenom={apprenantInfo?.prenom}
             apprenantAdresse={apprenantInfo?.adresse}
+            apprenantType={apprenantType}
             completed={completedPages.has(currentPage)}
             onComplete={() => {
               markPageCompleted(currentPage);
