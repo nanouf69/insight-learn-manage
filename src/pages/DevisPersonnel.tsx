@@ -402,11 +402,14 @@ export default function DevisPersonnel() {
       doc.setTextColor(0, 0, 0);
       doc.text(`${formation.designation}`, margin + 3, y + 10.5);
       doc.text(`Duree : ${formation.duree}  |  Agrement : ${formation.agrement}`, margin + 3, y + 15);
+      const isElearning = formation.id?.includes("elearning");
       const datesLine: string[] = [];
-      if (dateDebutSouhaitee) {
-        datesLine.push(`Session : ${dateDebutSouhaitee}`);
+      if (isElearning) {
+        datesLine.push("E-learning : plateforme disponible 3 mois a compter de l'inscription");
+      } else {
+        if (dateDebutSouhaitee) datesLine.push(`Session : ${dateDebutSouhaitee}`);
+        if (creneauSouhaite) datesLine.push(`Creneau : ${creneauSouhaite}`);
       }
-      if (creneauSouhaite) datesLine.push(`Creneau : ${creneauSouhaite}`);
       if (datesLine.length) doc.text(datesLine.join("  |  "), margin + 3, y + 19.5);
       doc.setDrawColor(0, 0, 0);
       y += formBoxH + 6;
@@ -711,12 +714,21 @@ export default function DevisPersonnel() {
                 <CalendarDays className="w-4 h-4 text-[#1e3a8a]" />
                 Dates de formation souhaitées
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <Label>Date de formation souhaitée</Label>
-                  {(() => {
-                    const dates = formation?.type === "taxi" ? DATES_TAXI : DATES_VTC;
-                    return (
+              {(() => {
+                const isElearning = formation?.id?.includes("elearning");
+                if (isElearning) {
+                  return (
+                    <div className="p-3 bg-blue-50 rounded-md border border-blue-200">
+                      <p className="text-sm text-blue-800 font-medium">📚 Formation E-learning</p>
+                      <p className="text-sm text-blue-700 mt-1">Plateforme de cours disponible pendant 3 mois à compter de l'inscription. Accès 24h/24 et 7j/7.</p>
+                    </div>
+                  );
+                }
+                const dates = formation?.type === "taxi" ? DATES_TAXI : DATES_VTC;
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <Label>Session de formation *</Label>
                       <Select value={dateDebutSouhaitee} onValueChange={setDateDebutSouhaitee}>
                         <SelectTrigger><SelectValue placeholder="Choisir une session..." /></SelectTrigger>
                         <SelectContent>
@@ -725,22 +737,21 @@ export default function DevisPersonnel() {
                           ))}
                         </SelectContent>
                       </Select>
-                    );
-                  })()}
-                </div>
-                <div>
-                  <Label>Créneau souhaité</Label>
-                  <Select value={creneauSouhaite} onValueChange={setCreneauSouhaite}>
-                    <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Journée (9h-17h)">Journée (9h-17h)</SelectItem>
-                      <SelectItem value="Soirée (17h-21h)">Soirée (17h-21h)</SelectItem>
-                      <SelectItem value="E-learning">E-learning</SelectItem>
-                      <SelectItem value="Samedi">Samedi</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+                    </div>
+                    <div>
+                      <Label>Créneau souhaité</Label>
+                      <Select value={creneauSouhaite} onValueChange={setCreneauSouhaite}>
+                        <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Journée (9h-17h)">Journée (9h-17h)</SelectItem>
+                          <SelectItem value="Soirée (17h-21h)">Soirée (17h-21h)</SelectItem>
+                          <SelectItem value="Samedi">Samedi</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </CardContent>
         </Card>
