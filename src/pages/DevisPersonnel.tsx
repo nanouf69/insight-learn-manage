@@ -774,6 +774,96 @@ export default function DevisPersonnel() {
       doc.save(fileName);
       setGenerated(true);
       toast.success("Votre devis a été téléchargé !");
+
+      // ── Auto-save devis to storage + DB ──
+      try {
+        const pdfBlob = doc.output("blob");
+        const storagePath = `public/${numDevis}_${fileName}`;
+        const { data: uploadData, error: uploadErr } = await supabase.storage
+          .from("devis")
+          .upload(storagePath, pdfBlob, { contentType: "application/pdf", upsert: true });
+
+        if (uploadErr) {
+          console.error("Devis upload error:", uploadErr);
+        } else {
+          const { data: urlData } = supabase.storage.from("devis").getPublicUrl(storagePath);
+          const fichierUrl = urlData?.publicUrl || "";
+
+          // Try to find matching apprenant
+          const { data: matchedApprenant } = await supabase
+            .from("apprenants")
+            .select("id")
+            .ilike("nom", nom.trim())
+            .ilike("prenom", prenom.trim())
+            .limit(1)
+            .maybeSingle();
+
+          if (matchedApprenant?.id) {
+            await supabase.from("devis_envois").insert({
+              apprenant_id: matchedApprenant.id,
+              modele: "devis_personnel",
+              montant: `${formation.prix} €`,
+              formation: formation.label,
+              fichier_url: fichierUrl,
+              statut: "telecharge",
+            } as any);
+            console.log("Devis saved to apprenant:", matchedApprenant.id);
+          } else {
+            // Save as organisation/contact if financeur, or create apprenant-linked record via edge function
+            const contactInfo = {
+              civilite, prenom, nom, email, telephone, adresse, codePostal, ville, dateNaissance,
+              formation: formation.label,
+              montant: `${formation.prix} €`,
+              fichierUrl,
+              numDevis,
+              typeFinancement,
+              ...(typeFinancement === "organisme" ? {
+                financeurNom, financeurAdresse, financeurCodePostal, financeurVille,
+                financeurSiret, financeurEmail, financeurTelephone, financeurContactNom, financeurType,
+              } : {}),
+            };
+            // Create the apprenant automatically
+            const { data: newApprenant, error: insertErr } = await supabase
+              .from("apprenants")
+              .insert({
+                nom: nom.trim(),
+                prenom: prenom.trim(),
+                civilite,
+                email: email.trim(),
+                telephone: telephone.trim(),
+                adresse: adresse.trim() || null,
+                code_postal: codePostal.trim() || null,
+                ville: ville.trim() || null,
+                date_naissance: dateNaissance || null,
+                formation_choisie: formation.label,
+                montant_ttc: formation.prix,
+                mode_financement: typeFinancement === "organisme" ? "organisme" : "personnel",
+                organisme_financeur: typeFinancement === "organisme" ? financeurNom : null,
+                statut: "particulier",
+                type_apprenant: formation.type === "taxi" ? "TAXI" : "VTC",
+                notes: `Devis ${numDevis} généré le ${dateToday}` + (typeFinancement === "organisme" ? `\nFinanceur: ${financeurNom} (${financeurSiret})` : ""),
+              } as any)
+              .select("id")
+              .single();
+
+            if (!insertErr && newApprenant?.id) {
+              await supabase.from("devis_envois").insert({
+                apprenant_id: newApprenant.id,
+                modele: "devis_personnel",
+                montant: `${formation.prix} €`,
+                formation: formation.label,
+                fichier_url: fichierUrl,
+                statut: "telecharge",
+              } as any);
+              console.log("New apprenant + devis saved:", newApprenant.id);
+            } else {
+              console.warn("Could not create apprenant for devis:", insertErr);
+            }
+          }
+        }
+      } catch (saveErr) {
+        console.warn("Auto-save devis failed (non-blocking):", saveErr);
+      }
     } catch (err) {
       console.error(err);
       toast.error("Erreur lors de la génération du devis");
