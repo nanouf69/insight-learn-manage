@@ -715,8 +715,20 @@ export default function DevisPersonnel() {
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <Label>Date de début souhaitée</Label>
-                  <Input type="date" value={dateDebutSouhaitee} onChange={e => setDateDebutSouhaitee(e.target.value)} />
+                  <Label>Date de formation souhaitée</Label>
+                  {(() => {
+                    const dates = formation?.type === "taxi" ? DATES_TAXI : DATES_VTC;
+                    return (
+                      <Select value={dateDebutSouhaitee} onValueChange={setDateDebutSouhaitee}>
+                        <SelectTrigger><SelectValue placeholder="Choisir une session..." /></SelectTrigger>
+                        <SelectContent>
+                          {dates.map(d => (
+                            <SelectItem key={d} value={d}>{d}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    );
+                  })()}
                 </div>
                 <div>
                   <Label>Créneau souhaité</Label>
