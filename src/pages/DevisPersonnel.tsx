@@ -56,7 +56,7 @@ const FORMATIONS = [
 /* ─── CGV TEXT ─── */
 const CGV_TEXT = `CONDITIONS GENERALES DE VENTE - FTRANSPORT
 
-FTRANSPORT est un organisme de formation professionnelle specialise dans le secteur du transport.
+FTRANSPORT est un organisme de formation professionnelle specialise dans le secteur du transport de personnes.
 Siege social : 86 route de Genas, 69003 Lyon
 Numero SIRET : 82346156100018
 Numero de declaration d'activite : 84 69 15114 69
@@ -65,21 +65,23 @@ Organisme non assujetti a la TVA
 Contact : 04.28.29.60.91 | contact@ftransport.fr
 
 DEFINITIONS
-CLIENT : toute personne physique ou morale qui s'inscrit ou passe commande d'une formation aupres de FTRANSPORT
-STAGIAIRE : la personne physique ou morale qui participe a une formation
+CLIENT : toute personne physique ou morale qui s'inscrit ou passe commande d'une formation aupres de FTRANSPORT.
+STAGIAIRE : la personne physique qui participe a une formation dispensee par FTRANSPORT.
 CGV : les conditions generales de vente, detaillees ci-dessous.
 OPCO : les organismes paritaires collecteurs agrees charges de collecter et gerer l'effort de formation des entreprises.
+FORMATION : l'ensemble des actions de formation dispensees par FTRANSPORT dans le cadre de ses agrements.
 
-ARTICLE 1 - OBJET
-Les presentes conditions generales de vente s'appliquent a l'ensemble des prestations de formation engagees par FTRANSPORT pour le compte d'un Client. Le fait de s'inscrire ou de passer commande implique l'adhesion entiere et sans reserve du Client aux presentes conditions generales de vente.
+ARTICLE 1 - OBJET ET CHAMP D'APPLICATION
+Les presentes conditions generales de vente s'appliquent a l'ensemble des prestations de formation engagees par FTRANSPORT pour le compte d'un Client, qu'il s'agisse de formations initiales VTC, TAXI, passerelles (TA, VA), formations continues ou formations pratiques. Le fait de s'inscrire ou de passer commande implique l'adhesion entiere et sans reserve du Client aux presentes conditions generales de vente. Toute condition contraire posee par le Client sera, a defaut d'acceptation expresse, inopposable a FTRANSPORT, quel que soit le moment ou elle aura pu etre portee a sa connaissance.
 
 ARTICLE 2 - DELAI DE RETRACTATION
-Conformement a l'article L6353-5 du Code du travail, le Client beneficie d'un delai de retractation de dix jours a compter de la conclusion du contrat de formation professionnelle.
+Conformement a l'article L6353-5 du Code du travail, le Client beneficie d'un delai de retractation de dix (10) jours a compter de la conclusion du contrat de formation professionnelle.
 Le Client peut exercer son droit de retractation par lettre recommandee avec avis de reception adressee a FTRANSPORT a l'adresse suivante : 86 route de Genas, 69003 Lyon, ou par e-mail a : contact@ftransport.fr
 Aucun paiement ne sera exige du Client avant l'expiration de ce delai de retractation.
+En cas d'exercice du droit de retractation dans le delai imparti, toute somme deja versee sera integralement remboursee dans un delai de 30 jours.
 
 ARTICLE 3 - CONDITIONS FINANCIERES, REGLEMENTS ET MODALITES DE PAIEMENT
-Tous les prix sont indiques en euros, toutes taxes comprises.
+Tous les prix sont indiques en euros, toutes taxes comprises. FTRANSPORT n'est pas assujetti a la TVA.
 
 3.1 - Modalites de paiement pour les particuliers
 Conformement a l'article L6353-6 du Code du travail, lorsque le Client est une personne physique qui finance elle-meme sa formation :
@@ -90,48 +92,78 @@ Toutefois, le Client reste libre de regler l'integralite du montant de la format
 Moyens de paiement acceptes : especes, virement bancaire, cheque.
 
 3.2 - Modalites de paiement pour les entreprises et organismes financeurs
-Lorsque la formation est financee par une entreprise, un OPCO, France Travail (anciennement Pole Emploi) ou tout autre organisme financeur, le paiement integral peut etre demande avant le debut de la formation, conformement aux accords conclus avec ces organismes.
+Lorsque la formation est financee par une entreprise, un OPCO, France Travail (anciennement Pole Emploi) ou tout autre organisme financeur, le paiement integral peut etre demande avant le debut de la formation, conformement aux accords conclus avec ces organismes. En cas de prise en charge partielle, le solde restant a la charge du Client sera facture selon les memes modalites que pour un financement personnel.
 
 3.3 - Retard de paiement
-Toute somme non payee a echeance entraine de plein droit et sans mise en demeure prealable, l'application de penalites d'un montant egal a une fois et demie le taux d'interet legal, ainsi qu'une indemnite forfaitaire pour frais de recouvrement de 40 euros.
+Toute somme non payee a echeance entraine de plein droit et sans mise en demeure prealable, l'application de penalites d'un montant egal a une fois et demie le taux d'interet legal en vigueur, ainsi qu'une indemnite forfaitaire pour frais de recouvrement de 40 euros (article D441-5 du Code de commerce). FTRANSPORT se reserve le droit de suspendre la formation en cas de non-paiement.
+
+3.4 - Frais d'examen
+Lorsque la formation inclut les frais d'examen (inscription a l'examen CMA), ceux-ci sont compris dans le prix total indique sur le devis. Si la formation ne les inclut pas, le stagiaire devra s'inscrire et regler les frais d'examen directement aupres de la Chambre des Metiers et de l'Artisanat (CMA).
 
 ARTICLE 4 - INSCRIPTION ET EFFECTIF
-L'effectif de chaque formation est limite. Les inscriptions sont prises en compte dans leur ordre d'arrivee.
+L'effectif de chaque formation est limite a 18 stagiaires pour les formations theoriques et 3 stagiaires pour les formations pratiques. Les inscriptions sont prises en compte dans leur ordre d'arrivee.
 L'inscription devient definitive apres signature du contrat de formation et expiration du delai de retractation de 10 jours, conformement aux articles L6353-3 et suivants du Code du travail.
 Seuls les contrats dument renseignes, dates, signes et revetus de la mention "Bon pour accord" ont valeur contractuelle.
+FTRANSPORT se reserve le droit d'ajourner ou d'annuler une session de formation si le nombre minimal de participants n'est pas atteint. Le Client en sera informe au moins 7 jours avant la date prevue et pourra reporter son inscription sur une session ulterieure ou demander le remboursement integral des sommes versees.
 
 ARTICLE 5 - CONTRAT DE FORMATION POUR LES PARTICULIERS
-Conformement aux articles L6353-3 et L6353-4 du Code du travail, lorsqu'une personne physique finance elle-meme sa formation, un contrat de formation professionnelle est conclu entre FTRANSPORT et le stagiaire AVANT l'inscription definitive et tout reglement de frais.
+Conformement aux articles L6353-3 et L6353-4 du Code du travail, lorsqu'une personne physique finance elle-meme sa formation, un contrat de formation professionnelle est conclu entre FTRANSPORT et le stagiaire AVANT l'inscription definitive et tout reglement de frais. Ce contrat mentionne notamment :
+- L'intitule, la nature, la duree, les effectifs prevus et les modalites du deroulement de la formation ;
+- Le prix de la formation et les modalites de reglement ;
+- Les conditions financieres prevues en cas de cessation anticipee de la formation ou d'abandon en cours de stage.
 
 ARTICLE 6 - DEDIT ET REMPLACEMENT D'UN PARTICIPANT
-En cas de dedit signifie par le Client a FTRANSPORT au moins 7 jours avant le demarrage de la formation, FTRANSPORT offre au Client la possibilite de repousser l'inscription du Stagiaire a une formation ulterieure ou de le remplacer par un autre participant.
+En cas de dedit signifie par le Client a FTRANSPORT au moins 7 jours ouvrables avant le demarrage de la formation, FTRANSPORT offre au Client la possibilite de repousser l'inscription du Stagiaire a une formation ulterieure ou de le remplacer par un autre participant repondant aux memes criteres d'eligibilite.
+En cas de dedit signifie moins de 7 jours ouvrables avant le debut de la formation, FTRANSPORT se reserve le droit de facturer un dedit forfaitaire de 30% du prix total de la formation. Ce dedit ne s'applique pas en cas de force majeure dument justifiee.
 
 ARTICLE 7 - ANNULATION, ABSENCE OU INTERRUPTION D'UNE FORMATION
-Tout module commence est du dans son integralite.
+7.1 - Annulation par le Client : tout module commence est du dans son integralite. En cas d'abandon ou d'interruption prematuree de la formation par le Client pour un motif autre que la force majeure, le prix de la formation reste integralement du.
+7.2 - Annulation par FTRANSPORT : FTRANSPORT se reserve le droit d'annuler ou de reporter une formation en cas de force majeure, d'insuffisance d'inscriptions, d'absence imprevisible d'un formateur ou de tout autre evenement exceptionnel. Dans ce cas, FTRANSPORT s'engage a :
+  - Informer les stagiaires dans les meilleurs delais par tout moyen (telephone, email, SMS) ;
+  - Proposer une session de remplacement dans un delai raisonnable ;
+  - Rembourser integralement les sommes versees si aucune session de remplacement ne convient au Client.
+7.3 - Absence d'un formateur : en cas d'absence imprevue d'un formateur (maladie, accident, empechement), FTRANSPORT met en oeuvre tous les moyens necessaires pour assurer la continuite de la formation, soit par le remplacement du formateur par un intervenant de competence equivalente, soit par le report de la seance concernee. En aucun cas l'absence ponctuelle d'un formateur ne pourra donner lieu a une annulation de la formation ou a une demande de remboursement, des lors que les heures de formation sont effectivement rattrapees.
 
 ARTICLE 8 - ASSIDUITE ET CONTROLE DE PRESENCE
-La presence du stagiaire est obligatoire et controlee par une feuille d'emargement signee par demi-journee.
+La presence du stagiaire est obligatoire et controlee par une feuille d'emargement signee par demi-journee (matin et apres-midi). Toute absence non justifiee sera signalee a l'organisme financeur le cas echeant.
+Pour les formations en E-learning, le controle de presence est effectue par le biais de la plateforme de cours en ligne (connexion, progression des modules, controles de presence periodiques). Le stagiaire s'engage a se connecter regulierement et a suivre l'integralite des modules dans le delai imparti.
+En cas d'absences repetees ou injustifiees, FTRANSPORT se reserve le droit de mettre fin a la formation sans remboursement.
 
 ARTICLE 9 - HORAIRES ET ACCUEIL
-Les formations se deroulent de 09h00 a 12h00 et de 13h00 a 17h00 avec une pause en milieu de chaque demi-journee, sauf indication contraire mentionnee sur la convocation.
+Les formations en presentiel se deroulent aux horaires suivants, sauf indication contraire mentionnee sur la convocation :
+- Journee : de 09h00 a 12h00 et de 13h00 a 17h00, avec une pause de 15 minutes en milieu de chaque demi-journee.
+- Soiree : de 17h00 a 21h00.
+Le lieu de formation est situe au 86 route de Genas, 69003 Lyon, sauf indication contraire. FTRANSPORT met a disposition des stagiaires une salle de formation equipee et conforme aux normes de securite et d'accessibilite.
+Pour les formations en E-learning, la plateforme de cours est accessible 24h/24 et 7j/7 pendant toute la duree de validite de l'acces (3 mois a compter de l'inscription).
 
 ARTICLE 10 - REGLEMENT INTERIEUR
-Le reglement interieur applicable aux stagiaires est remis a chaque participant avant le debut de la formation.
+Le reglement interieur applicable aux stagiaires est remis a chaque participant avant le debut de la formation et est affiche dans les locaux de FTRANSPORT. Il prevoit notamment les mesures applicables en matiere de sante et de securite, les regles de discipline et la procedure et les sanctions disciplinaires, conformement aux articles L6352-3 et suivants du Code du travail. Tout stagiaire s'engage a respecter le reglement interieur en vigueur.
 
-ARTICLE 11 - OBLIGATIONS ET FORCE MAJEURE
-FTRANSPORT est tenue a une obligation de moyens et non de resultat vis-a-vis de ses Clients ou de ses Stagiaires.
+ARTICLE 11 - OBLIGATIONS, RESPONSABILITES ET FORCE MAJEURE
+11.1 - Obligation de moyens : FTRANSPORT est tenue a une obligation de moyens et non de resultat vis-a-vis de ses Clients ou de ses Stagiaires. FTRANSPORT s'engage a mettre en oeuvre tous les moyens pedagogiques, techniques et d'encadrement necessaires a la bonne execution de la formation.
+11.2 - Responsabilite du stagiaire : le stagiaire s'engage a suivre la formation avec assiduite, a respecter les consignes de securite et le reglement interieur, et a adopter un comportement compatible avec le bon deroulement de la formation.
+11.3 - Force majeure : FTRANSPORT ne pourra etre tenue responsable a l'egard du Client en cas d'inexecution de ses obligations resultant d'un evenement de force majeure au sens de l'article 1218 du Code civil, et notamment en cas d'epidemie, de catastrophe naturelle, d'incendie, d'inondation, de greve, de panne informatique majeure, de decision administrative ou de toute autre circonstance independante de sa volonte.
+11.4 - Assurance : FTRANSPORT dispose d'une assurance responsabilite civile professionnelle couvrant les dommages corporels, materiels et immateriels susceptibles de survenir pendant les formations.
 
 ARTICLE 12 - PROPRIETE INTELLECTUELLE
-L'ensemble des contenus et supports pedagogiques utilises par FTRANSPORT constituent des oeuvres protegees par le droit d'auteur et sont la propriete exclusive de FTRANSPORT ou de ses partenaires.
+L'ensemble des contenus et supports pedagogiques utilises par FTRANSPORT (cours, exercices, examens blancs, fiches de synthese, supports numeriques, videos, etc.) constituent des oeuvres protegees par le droit d'auteur (articles L111-1 et suivants du Code de la propriete intellectuelle) et sont la propriete exclusive de FTRANSPORT ou de ses partenaires. Toute reproduction, representation, diffusion ou utilisation de tout ou partie de ces contenus sans l'accord prealable et ecrit de FTRANSPORT est strictement interdite et constitue un delit de contrefacon passible de sanctions penales.
+Le stagiaire s'interdit notamment de photographier, filmer, enregistrer les cours ou de partager les identifiants d'acces a la plateforme en ligne avec des tiers.
 
 ARTICLE 13 - ACCESSIBILITE AUX PERSONNES EN SITUATION DE HANDICAP
-FTRANSPORT s'engage a accueillir les personnes en situation de handicap dans les meilleures conditions.
+FTRANSPORT s'engage a accueillir les personnes en situation de handicap dans les meilleures conditions possibles. Un referent handicap est disponible pour etudier les besoins specifiques de chaque stagiaire et mettre en place les amenagements necessaires (adaptation des supports, accessibilite des locaux, amenagement des horaires, etc.).
+Contact referent handicap : contact@ftransport.fr ou 04.28.29.60.91.
 
 ARTICLE 14 - PROTECTION DES DONNEES PERSONNELLES
-Conformement au RGPD et a la loi n 78-17 du 6 janvier 1978, le Stagiaire dispose d'un droit d'acces, de rectification, de limitation, d'opposition, de portabilite et d'effacement des donnees personnelles le concernant.
+Conformement au Reglement General sur la Protection des Donnees (RGPD - Reglement UE 2016/679) et a la loi n°78-17 du 6 janvier 1978 modifiee, FTRANSPORT collecte et traite les donnees personnelles des stagiaires aux fins exclusives de la gestion administrative et pedagogique des formations.
+Le Stagiaire dispose d'un droit d'acces, de rectification, de limitation, d'opposition, de portabilite et d'effacement des donnees personnelles le concernant. Il peut exercer ces droits en adressant sa demande par courrier a FTRANSPORT, 86 route de Genas, 69003 Lyon, ou par e-mail a : contact@ftransport.fr.
+Les donnees personnelles sont conservees pour la duree necessaire a la gestion de la formation et aux obligations legales (notamment la conservation des documents pedagogiques pendant 5 ans). Elles ne sont en aucun cas cedees ou vendues a des tiers.
 
-ARTICLE 15 - DROIT APPLICABLE ET REGLEMENT DES LITIGES
-Les presentes conditions generales de vente sont regies par le droit francais. En cas de litige, les parties s'engagent a rechercher une solution amiable. A defaut d'accord, le litige sera porte devant les Tribunaux competents de Lyon.
+ARTICLE 15 - RECLAMATIONS ET MEDIATION
+Toute reclamation relative a la formation peut etre adressee a FTRANSPORT par e-mail (contact@ftransport.fr) ou par courrier. FTRANSPORT s'engage a accuser reception de la reclamation dans un delai de 48 heures et a y repondre dans un delai de 15 jours.
+En cas de litige non resolu, le Client peut recourir gratuitement a un mediateur de la consommation conformement aux articles L611-1 et suivants du Code de la consommation.
+
+ARTICLE 16 - DROIT APPLICABLE ET REGLEMENT DES LITIGES
+Les presentes conditions generales de vente sont regies par le droit francais. En cas de litige, les parties s'engagent a rechercher une solution amiable prealablement a toute action judiciaire. A defaut d'accord amiable dans un delai de 30 jours, le litige sera porte devant les Tribunaux competents de Lyon.
 
 ---
 Numero de declaration d'activite : 84 69 15114 69 - Cet enregistrement ne vaut pas agrement de l'Etat
