@@ -14,23 +14,42 @@ import jsPDF from "jspdf";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
+/* ─── DATES DE FORMATION CATALOGUE ─── */
+const DATES_VTC = [
+  "Du 12 au 25 janvier 2026",
+  "Du 16 au 30 mars 2026",
+  "Du 11 au 24 mai 2026",
+  "Du 6 au 19 juillet 2026",
+  "Du 14 au 27 septembre 2026",
+  "Du 2 au 15 novembre 2026",
+];
+
+const DATES_TAXI = [
+  "Du 5 au 26 janvier 2026",
+  "Du 9 au 30 mars 2026",
+  "Du 4 au 25 mai 2026",
+  "Du 29 juin au 20 juillet 2026",
+  "Du 7 au 28 septembre 2026",
+  "Du 26 octobre au 16 novembre 2026",
+];
+
 /* ─── FORMATIONS CATALOGUE ─── */
 const FORMATIONS = [
-  { id: "vtc_complet", label: "Formation initiale VTC (présentiel journée)", prix: 1099, designation: "Formation initiale VTC - Préparation à la carte professionnelle chauffeur VTC", duree: "66 heures", agrement: "n° VTC16-15" },
-  { id: "vtc_complet_examen", label: "Formation initiale VTC avec frais d'examen", prix: 1599, designation: "Formation initiale VTC avec frais d'examen - Préparation complète à la carte professionnelle chauffeur VTC", duree: "66 heures", agrement: "n° VTC16-15" },
-  { id: "vtc_soir", label: "Formation initiale VTC (présentiel soirée)", prix: 1099, designation: "Formation initiale VTC cours du soir - Préparation à la carte professionnelle chauffeur VTC", duree: "66 heures", agrement: "n° VTC16-15" },
-  { id: "vtc_soir_examen", label: "Formation initiale VTC soirée avec frais d'examen", prix: 1599, designation: "Formation initiale VTC cours du soir avec frais d'examen", duree: "66 heures", agrement: "n° VTC16-15" },
-  { id: "vtc_elearning", label: "Formation VTC E-learning", prix: 1099, designation: "Formation initiale VTC en E-learning - Préparation à la carte professionnelle chauffeur VTC", duree: "Plateforme 3 mois + pratique", agrement: "n° VTC16-05" },
-  { id: "vtc_elearning_examen", label: "Formation VTC E-learning avec frais d'examen", prix: 1599, designation: "Formation initiale VTC en E-learning avec frais d'examen", duree: "Plateforme 3 mois + pratique", agrement: "n° VTC16-05" },
-  { id: "taxi_elearning", label: "Formation TAXI E-learning", prix: 1299, designation: "Formation initiale TAXI en E-learning", duree: "96 heures (plateforme 3 mois)", agrement: "n°69-18-001" },
-  { id: "taxi_elearning_examen", label: "Formation TAXI E-learning avec frais d'examen", prix: 1799, designation: "Formation initiale TAXI en E-learning avec frais d'examen", duree: "96 heures (plateforme 3 mois)", agrement: "n°69-18-001" },
-  { id: "taxi_presential", label: "Formation TAXI présentiel", prix: 1299, designation: "Formation initiale TAXI en présentiel", duree: "96 heures", agrement: "n°69-18-001" },
-  { id: "taxi_presential_examen", label: "Formation TAXI présentiel avec frais d'examen", prix: 1799, designation: "Formation initiale TAXI présentiel avec frais d'examen", duree: "96 heures", agrement: "n°69-18-001" },
-  { id: "ta_elearning", label: "Passerelle VTC → TAXI (TA) E-learning", prix: 999, designation: "Formation passerelle TAXI pour chauffeur VTC (TA) en E-learning", duree: "Plateforme 3 mois + pratique", agrement: "n°69-18-001" },
-  { id: "va_elearning", label: "Passerelle TAXI → VTC (VA) E-learning", prix: 499, designation: "Formation passerelle VTC pour chauffeur TAXI (VA) en E-learning", duree: "Plateforme 3 mois + pratique", agrement: "n° VTC16-05" },
-  { id: "taxi_pratique", label: "Formation pratique TAXI", prix: 349, designation: "Formation pratique TAXI - Préparation pratique à l'examen taxi", duree: "6h en groupe ou 3h solo", agrement: "n°69-18-001" },
-  { id: "fc_vtc", label: "Formation continue VTC", prix: 200, designation: "Formation continue obligatoire VTC - Prévention des discriminations et des violences sexuelles et sexistes (14h)", duree: "14 heures", agrement: "n° VTC16-15" },
-  { id: "fc_taxi", label: "Formation continue TAXI", prix: 299, designation: "Formation continue obligatoire TAXI (14h)", duree: "14 heures", agrement: "n°69-18-001" },
+  { id: "vtc_complet", label: "Formation initiale VTC (présentiel journée)", prix: 1099, designation: "Formation initiale VTC - Préparation à la carte professionnelle chauffeur VTC", duree: "66 heures", agrement: "n° VTC16-15", type: "vtc" },
+  { id: "vtc_complet_examen", label: "Formation initiale VTC avec frais d'examen", prix: 1499, designation: "Formation initiale VTC avec frais d'examen - Préparation complète à la carte professionnelle chauffeur VTC", duree: "66 heures", agrement: "n° VTC16-15", type: "vtc" },
+  { id: "vtc_soir", label: "Formation initiale VTC (présentiel soirée)", prix: 1099, designation: "Formation initiale VTC cours du soir - Préparation à la carte professionnelle chauffeur VTC", duree: "66 heures", agrement: "n° VTC16-15", type: "vtc" },
+  { id: "vtc_soir_examen", label: "Formation initiale VTC soirée avec frais d'examen", prix: 1499, designation: "Formation initiale VTC cours du soir avec frais d'examen", duree: "66 heures", agrement: "n° VTC16-15", type: "vtc" },
+  { id: "vtc_elearning", label: "Formation VTC E-learning", prix: 1099, designation: "Formation initiale VTC en E-learning - Préparation à la carte professionnelle chauffeur VTC", duree: "Plateforme 3 mois + pratique", agrement: "n° VTC16-05", type: "vtc" },
+  { id: "vtc_elearning_examen", label: "Formation VTC E-learning avec frais d'examen", prix: 1499, designation: "Formation initiale VTC en E-learning avec frais d'examen", duree: "Plateforme 3 mois + pratique", agrement: "n° VTC16-05", type: "vtc" },
+  { id: "taxi_elearning", label: "Formation TAXI E-learning", prix: 1299, designation: "Formation initiale TAXI en E-learning", duree: "96 heures (plateforme 3 mois)", agrement: "n°69-18-001", type: "taxi" },
+  { id: "taxi_elearning_examen", label: "Formation TAXI E-learning avec frais d'examen", prix: 1699, designation: "Formation initiale TAXI en E-learning avec frais d'examen", duree: "96 heures (plateforme 3 mois)", agrement: "n°69-18-001", type: "taxi" },
+  { id: "taxi_presential", label: "Formation TAXI présentiel", prix: 1299, designation: "Formation initiale TAXI en présentiel", duree: "96 heures", agrement: "n°69-18-001", type: "taxi" },
+  { id: "taxi_presential_examen", label: "Formation TAXI présentiel avec frais d'examen", prix: 1699, designation: "Formation initiale TAXI présentiel avec frais d'examen", duree: "96 heures", agrement: "n°69-18-001", type: "taxi" },
+  { id: "ta_elearning", label: "Passerelle VTC → TAXI (TA) E-learning", prix: 999, designation: "Formation passerelle TAXI pour chauffeur VTC (TA) en E-learning", duree: "Plateforme 3 mois + pratique", agrement: "n°69-18-001", type: "taxi" },
+  { id: "va_elearning", label: "Passerelle TAXI → VTC (VA) E-learning", prix: 499, designation: "Formation passerelle VTC pour chauffeur TAXI (VA) en E-learning", duree: "Plateforme 3 mois + pratique", agrement: "n° VTC16-05", type: "vtc" },
+  { id: "taxi_pratique", label: "Formation pratique TAXI", prix: 349, designation: "Formation pratique TAXI - Préparation pratique à l'examen taxi", duree: "6h en groupe ou 3h solo", agrement: "n°69-18-001", type: "taxi" },
+  { id: "fc_vtc", label: "Formation continue VTC", prix: 200, designation: "Formation continue obligatoire VTC - Prévention des discriminations et des violences sexuelles et sexistes (14h)", duree: "14 heures", agrement: "n° VTC16-15", type: "vtc" },
+  { id: "fc_taxi", label: "Formation continue TAXI", prix: 299, designation: "Formation continue obligatoire TAXI (14h)", duree: "14 heures", agrement: "n°69-18-001", type: "taxi" },
 ];
 
 /* ─── CGV TEXT ─── */
