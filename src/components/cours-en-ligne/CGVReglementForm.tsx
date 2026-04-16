@@ -14,12 +14,47 @@ interface CGVReglementFormProps {
   apprenantNom?: string;
   apprenantPrenom?: string;
   apprenantAdresse?: string;
+  apprenantType?: string;
   completed?: boolean;
   onComplete: () => void;
 }
 
 // ── CGV ────────────────────────────────────────────────────
-const CGV_SECTIONS = [
+// Helper pour déterminer le label de formation
+const getFormationLabel = (type?: string): string => {
+  const t = (type || "").toUpperCase().replace(/\s*E$/, "");
+  if (t.includes("TAXI")) return "TAXI";
+  if (t.includes("TA") && !t.includes("TAXI")) return "TA (Toutes Activites)";
+  if (t.includes("VA")) return "VA (Voiture Accessible)";
+  return "VTC";
+};
+
+const getFormationObjectifs = (type?: string): string => {
+  const t = (type || "").toUpperCase().replace(/\s*E$/, "");
+  if (t.includes("TAXI")) return `La formation TAXI a pour but de former les stagiaires au metier de chauffeur de taxi et de les preparer au mieux a l'examen TAXI (epreuve d'admissibilite et d'admission) organise par un centre d'examen agree.`;
+  if (t.includes("TA") && !t.includes("TAXI")) return `La formation TA (Toutes Activites) a pour but de former les stagiaires aux metiers de chauffeur VTC et TAXI et de les preparer au mieux aux epreuves d'admissibilite et d'admission organisees par un centre d'examen agree.`;
+  if (t.includes("VA")) return `La formation VA (Voiture Accessible) a pour but de former les stagiaires au transport de personnes a mobilite reduite et de les preparer au mieux a l'examen VA (epreuve d'admissibilite et d'admission) organise par un centre d'examen agree.`;
+  return `La formation VTC a pour but de former les stagiaires au metier de chauffeur VTC et de les preparer au mieux a l'examen VTC (epreuve d'admissibilite et d'admission) organise par un centre d'examen agree.`;
+};
+
+const getFormationFormateurs = (type?: string): string => {
+  const t = (type || "").toUpperCase().replace(/\s*E$/, "");
+  if (t.includes("TAXI")) return `Pour le formateur tronc commun et la gestion specifique TAXI : BTS, transport, Bachelor en Marketing et Master en Metiers de l'Enseignement de l'Education et de la Formation.
+
+Pour le formateur TAXI : Plus de 5 ans d'experiences en tant que chauffeur de taxi.`;
+  if (t.includes("TA") && !t.includes("TAXI")) return `Pour le formateur tronc commun et la gestion specifique TA : BTS, transport, Bachelor en Marketing et Master en Metiers de l'Enseignement de l'Education et de la Formation.
+
+Pour le formateur VTC : Plus de 5 ans d'experiences en tant que chauffeur VTC.
+Pour le formateur TAXI : Plus de 5 ans d'experiences en tant que chauffeur de taxi.`;
+  if (t.includes("VA")) return `Pour le formateur tronc commun et la gestion specifique VA : BTS, transport, Bachelor en Marketing et Master en Metiers de l'Enseignement de l'Education et de la Formation.
+
+Pour le formateur VA : Plus de 5 ans d'experiences dans le transport de personnes a mobilite reduite.`;
+  return `Pour le formateur tronc commun et la gestion specifique VTC : BTS, transport, Bachelor en Marketing et Master en Metiers de l'Enseignement de l'Education et de la Formation.
+
+Pour le formateur VTC : Plus de 5 ans d'experiences en tant que chauffeur VTC.`;
+};
+
+const getCGVSections = (formationType?: string) => [
   {
     titre: "Objet",
     contenu: `Les presentes conditions generales de vente s'appliquent a l'ensemble des prestations de formation engagees par FTRANSPORT pour le compte d'un Client. Le fait de s'inscrire ou de passer commande implique l'adhesion entiere et sans reserve du Client aux presentes conditions generales de vente. Les presentes conditions generales de vente prevalent sur tout autre document du Client, et en particulier sur toutes les conditions generales d'achat du Client.`
@@ -112,7 +147,7 @@ A ce titre, le Client et le Stagiaire s'interdisent d'utiliser, transmettre, rep
   {
     titre: "Descriptifs, objectifs et programme des formations",
     contenu: `Les objectifs de la formation :
-La formation VTC a pour but de former les stagiaires au metier de chauffeur VTC et de les preparer au mieux a l'examen VTC (epreuve d'admissibilite et d'admission) organise par un centre d'examen agree.
+${getFormationObjectifs(formationType)}
 
 Les prerequis :
 La formation demande en amont de savoir lire et ecrire, avoir le casier judiciaire B2 vierge et avoir plus de 3 ans de permis de conduire ou 2 ans, si le stagiaire a reussi son examen en conduite accompagnee.
@@ -134,9 +169,7 @@ Les contenus des programmes, tels qu'ils figurent sur les fiches de presentation
 
 Les diplomes, titres ou references de(s) personne(s) chargee(s) de la formation sont :
 
-Pour le formateur tronc commun et la gestion specifique VTC : BTS, transport, Bachelor en Marketing et Master en Metiers de l'Enseignement de l'Education et de la Formation.
-
-Pour le formateur VTC : Plus de 5 ans d'experiences en tant que chauffeur VTC.`
+${getFormationFormateurs(formationType)}`
   },
   {
     titre: "Confidentialite et communication",
@@ -205,9 +238,11 @@ export default function CGVReglementForm({
   apprenantNom,
   apprenantPrenom,
   apprenantAdresse,
+  apprenantType,
   completed,
   onComplete,
 }: CGVReglementFormProps) {
+  const CGV_SECTIONS = getCGVSections(apprenantType);
   const [cgvAccepted, setCgvAccepted] = useState(false);
   const [riAccepted, setRiAccepted] = useState(false);
   const [nom, setNom] = useState(apprenantNom || "");
