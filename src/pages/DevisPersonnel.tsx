@@ -55,32 +55,63 @@ Les presentes conditions generales de vente s'appliquent a l'ensemble des presta
 
 ARTICLE 2 - DELAI DE RETRACTATION
 Conformement a l'article L6353-5 du Code du travail, le Client beneficie d'un delai de retractation de dix jours a compter de la conclusion du contrat de formation professionnelle.
+Le Client peut exercer son droit de retractation par lettre recommandee avec avis de reception adressee a FTRANSPORT a l'adresse suivante : 86 route de Genas, 69003 Lyon, ou par e-mail a : contact@ftransport.fr
+Aucun paiement ne sera exige du Client avant l'expiration de ce delai de retractation.
 
 ARTICLE 3 - CONDITIONS FINANCIERES, REGLEMENTS ET MODALITES DE PAIEMENT
 Tous les prix sont indiques en euros, toutes taxes comprises.
+
+3.1 - Modalites de paiement pour les particuliers
 Conformement a l'article L6353-6 du Code du travail, lorsque le Client est une personne physique qui finance elle-meme sa formation :
 - Aucune somme ne peut etre exigee avant l'expiration du delai de retractation de 10 jours.
 - A l'expiration de ce delai, un premier versement ne pourra exceder 30% du prix total de la formation.
-- Le solde sera echelonne au fur et a mesure du deroulement de la formation.
+- Le solde sera echelonne au fur et a mesure du deroulement de la formation, selon un echeancier qui sera communique au Client.
+Toutefois, le Client reste libre de regler l'integralite du montant de la formation en avance s'il le souhaite, apres l'expiration du delai de retractation de 10 jours. Ce paiement anticipe ne peut en aucun cas etre impose ou exige par FTRANSPORT.
 Moyens de paiement acceptes : especes, virement bancaire, cheque.
+
+3.2 - Modalites de paiement pour les entreprises et organismes financeurs
+Lorsque la formation est financee par une entreprise, un OPCO, France Travail (anciennement Pole Emploi) ou tout autre organisme financeur, le paiement integral peut etre demande avant le debut de la formation, conformement aux accords conclus avec ces organismes.
+
+3.3 - Retard de paiement
+Toute somme non payee a echeance entraine de plein droit et sans mise en demeure prealable, l'application de penalites d'un montant egal a une fois et demie le taux d'interet legal, ainsi qu'une indemnite forfaitaire pour frais de recouvrement de 40 euros.
 
 ARTICLE 4 - INSCRIPTION ET EFFECTIF
 L'effectif de chaque formation est limite. Les inscriptions sont prises en compte dans leur ordre d'arrivee.
+L'inscription devient definitive apres signature du contrat de formation et expiration du delai de retractation de 10 jours, conformement aux articles L6353-3 et suivants du Code du travail.
+Seuls les contrats dument renseignes, dates, signes et revetus de la mention "Bon pour accord" ont valeur contractuelle.
 
-ARTICLE 5 - ANNULATION, ABSENCE OU INTERRUPTION
+ARTICLE 5 - CONTRAT DE FORMATION POUR LES PARTICULIERS
+Conformement aux articles L6353-3 et L6353-4 du Code du travail, lorsqu'une personne physique finance elle-meme sa formation, un contrat de formation professionnelle est conclu entre FTRANSPORT et le stagiaire AVANT l'inscription definitive et tout reglement de frais.
+
+ARTICLE 6 - DEDIT ET REMPLACEMENT D'UN PARTICIPANT
+En cas de dedit signifie par le Client a FTRANSPORT au moins 7 jours avant le demarrage de la formation, FTRANSPORT offre au Client la possibilite de repousser l'inscription du Stagiaire a une formation ulterieure ou de le remplacer par un autre participant.
+
+ARTICLE 7 - ANNULATION, ABSENCE OU INTERRUPTION D'UNE FORMATION
 Tout module commence est du dans son integralite.
 
-ARTICLE 6 - OBLIGATIONS ET FORCE MAJEURE
+ARTICLE 8 - ASSIDUITE ET CONTROLE DE PRESENCE
+La presence du stagiaire est obligatoire et controlee par une feuille d'emargement signee par demi-journee.
+
+ARTICLE 9 - HORAIRES ET ACCUEIL
+Les formations se deroulent de 09h00 a 12h00 et de 13h00 a 17h00 avec une pause en milieu de chaque demi-journee, sauf indication contraire mentionnee sur la convocation.
+
+ARTICLE 10 - REGLEMENT INTERIEUR
+Le reglement interieur applicable aux stagiaires est remis a chaque participant avant le debut de la formation.
+
+ARTICLE 11 - OBLIGATIONS ET FORCE MAJEURE
 FTRANSPORT est tenue a une obligation de moyens et non de resultat vis-a-vis de ses Clients ou de ses Stagiaires.
 
-ARTICLE 7 - PROPRIETE INTELLECTUELLE
-L'ensemble des contenus et supports pedagogiques utilises par FTRANSPORT constituent des oeuvres protegees par le droit d'auteur.
+ARTICLE 12 - PROPRIETE INTELLECTUELLE
+L'ensemble des contenus et supports pedagogiques utilises par FTRANSPORT constituent des oeuvres protegees par le droit d'auteur et sont la propriete exclusive de FTRANSPORT ou de ses partenaires.
 
-ARTICLE 8 - PROTECTION DES DONNEES PERSONNELLES
-Conformement au RGPD et a la loi n 78-17 du 6 janvier 1978, le Stagiaire dispose d'un droit d'acces, de rectification et d'effacement des donnees personnelles le concernant.
+ARTICLE 13 - ACCESSIBILITE AUX PERSONNES EN SITUATION DE HANDICAP
+FTRANSPORT s'engage a accueillir les personnes en situation de handicap dans les meilleures conditions.
 
-ARTICLE 9 - DROIT APPLICABLE
-Les presentes conditions generales de vente sont regies par le droit francais. En cas de litige, les Tribunaux competents de Lyon seront saisis.
+ARTICLE 14 - PROTECTION DES DONNEES PERSONNELLES
+Conformement au RGPD et a la loi n 78-17 du 6 janvier 1978, le Stagiaire dispose d'un droit d'acces, de rectification, de limitation, d'opposition, de portabilite et d'effacement des donnees personnelles le concernant.
+
+ARTICLE 15 - DROIT APPLICABLE ET REGLEMENT DES LITIGES
+Les presentes conditions generales de vente sont regies par le droit francais. En cas de litige, les parties s'engagent a rechercher une solution amiable. A defaut d'accord, le litige sera porte devant les Tribunaux competents de Lyon.
 
 ---
 Numero de declaration d'activite : 84 69 15114 69 - Cet enregistrement ne vaut pas agrement de l'Etat
