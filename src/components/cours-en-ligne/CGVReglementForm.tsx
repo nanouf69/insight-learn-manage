@@ -238,9 +238,11 @@ export default function CGVReglementForm({
   apprenantNom,
   apprenantPrenom,
   apprenantAdresse,
+  apprenantType,
   completed,
   onComplete,
 }: CGVReglementFormProps) {
+  const CGV_SECTIONS = getCGVSections(apprenantType);
   const [cgvAccepted, setCgvAccepted] = useState(false);
   const [riAccepted, setRiAccepted] = useState(false);
   const [nom, setNom] = useState(apprenantNom || "");
