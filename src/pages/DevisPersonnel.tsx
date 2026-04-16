@@ -230,6 +230,7 @@ export default function DevisPersonnel() {
 
   // Signature
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const ribRef = useRef<HTMLDivElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasSigned, setHasSigned] = useState(false);
   const lastPos = useRef<{ x: number; y: number } | null>(null);
@@ -806,6 +807,7 @@ export default function DevisPersonnel() {
       doc.save(fileName);
       setGenerated(true);
       toast.success("Votre devis a été téléchargé !");
+      setTimeout(() => ribRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 300);
 
       // ── Auto-save devis to storage + DB ──
       try {
@@ -1316,7 +1318,7 @@ export default function DevisPersonnel() {
                 Devis téléchargé avec succès !
               </div>
 
-              <div className="bg-[#1e3a8a]/5 border-2 border-[#1e3a8a] rounded-xl p-6 space-y-4">
+              <div ref={ribRef} className="bg-[#1e3a8a]/5 border-2 border-[#1e3a8a] rounded-xl p-6 space-y-4">
                 <h3 className="text-lg font-bold text-[#1e3a8a] text-center">🏦 Coordonnées bancaires (RIB)</h3>
                 <div className="bg-white rounded-lg p-4 space-y-2 text-sm">
                   <div className="flex justify-between"><span className="text-muted-foreground">Titulaire :</span><span className="font-semibold">{RIB_INFO.titulaire}</span></div>
