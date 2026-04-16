@@ -169,9 +169,7 @@ Les contenus des programmes, tels qu'ils figurent sur les fiches de presentation
 
 Les diplomes, titres ou references de(s) personne(s) chargee(s) de la formation sont :
 
-Pour le formateur tronc commun et la gestion specifique VTC : BTS, transport, Bachelor en Marketing et Master en Metiers de l'Enseignement de l'Education et de la Formation.
-
-Pour le formateur VTC : Plus de 5 ans d'experiences en tant que chauffeur VTC.`
+${getFormationFormateurs(formationType)}`
   },
   {
     titre: "Confidentialite et communication",
