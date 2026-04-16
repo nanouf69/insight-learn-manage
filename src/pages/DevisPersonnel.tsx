@@ -402,11 +402,14 @@ export default function DevisPersonnel() {
       doc.setTextColor(0, 0, 0);
       doc.text(`${formation.designation}`, margin + 3, y + 10.5);
       doc.text(`Duree : ${formation.duree}  |  Agrement : ${formation.agrement}`, margin + 3, y + 15);
+      const isElearning = formation.id?.includes("elearning");
       const datesLine: string[] = [];
-      if (dateDebutSouhaitee) {
-        datesLine.push(`Session : ${dateDebutSouhaitee}`);
+      if (isElearning) {
+        datesLine.push("E-learning : plateforme disponible 3 mois a compter de l'inscription");
+      } else {
+        if (dateDebutSouhaitee) datesLine.push(`Session : ${dateDebutSouhaitee}`);
+        if (creneauSouhaite) datesLine.push(`Creneau : ${creneauSouhaite}`);
       }
-      if (creneauSouhaite) datesLine.push(`Creneau : ${creneauSouhaite}`);
       if (datesLine.length) doc.text(datesLine.join("  |  "), margin + 3, y + 19.5);
       doc.setDrawColor(0, 0, 0);
       y += formBoxH + 6;
