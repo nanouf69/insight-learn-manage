@@ -1177,6 +1177,14 @@ export default function DevisPersonnel() {
                 </RadioGroup>
               </div>
             ))}
+
+            {(q1PerduPoints === "oui" || q2CondamneSansPermis === "oui" || q3RefusRestitution === "oui" || q4Condamne6Mois === "oui") && (
+              <div className="bg-red-50 border-2 border-red-500 rounded-lg p-4 mt-2">
+                <p className="text-red-700 font-bold text-sm">
+                  ⚠️ Attention : au vu de vos réponses, merci de nous recontacter au 04 28 29 60 91 avant de poursuivre votre inscription.
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
