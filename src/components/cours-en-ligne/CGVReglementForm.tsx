@@ -147,7 +147,7 @@ A ce titre, le Client et le Stagiaire s'interdisent d'utiliser, transmettre, rep
   {
     titre: "Descriptifs, objectifs et programme des formations",
     contenu: `Les objectifs de la formation :
-La formation VTC a pour but de former les stagiaires au metier de chauffeur VTC et de les preparer au mieux a l'examen VTC (epreuve d'admissibilite et d'admission) organise par un centre d'examen agree.
+${getFormationObjectifs(formationType)}
 
 Les prerequis :
 La formation demande en amont de savoir lire et ecrire, avoir le casier judiciaire B2 vierge et avoir plus de 3 ans de permis de conduire ou 2 ans, si le stagiaire a reussi son examen en conduite accompagnee.
