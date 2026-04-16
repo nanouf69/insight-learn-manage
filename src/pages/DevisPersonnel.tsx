@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Download, Loader2, Eraser, CheckCircle2 } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
+import { FileText, Download, Loader2, Eraser, CheckCircle2, Building2, User, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import jsPDF from "jspdf";
@@ -14,21 +16,21 @@ import { fr } from "date-fns/locale";
 
 /* ─── FORMATIONS CATALOGUE ─── */
 const FORMATIONS = [
-  { id: "vtc_complet", label: "Formation initiale VTC (présentiel journée)", prix: 1099, designation: "Formation initiale VTC - Préparation à la carte professionnelle chauffeur VTC", duree: "66 heures" },
-  { id: "vtc_complet_examen", label: "Formation initiale VTC avec frais d'examen", prix: 1599, designation: "Formation initiale VTC avec frais d'examen - Préparation complète à la carte professionnelle chauffeur VTC", duree: "66 heures" },
-  { id: "vtc_soir", label: "Formation initiale VTC (présentiel soirée)", prix: 1099, designation: "Formation initiale VTC cours du soir - Préparation à la carte professionnelle chauffeur VTC", duree: "66 heures" },
-  { id: "vtc_soir_examen", label: "Formation initiale VTC soirée avec frais d'examen", prix: 1599, designation: "Formation initiale VTC cours du soir avec frais d'examen", duree: "66 heures" },
-  { id: "vtc_elearning", label: "Formation VTC E-learning", prix: 1099, designation: "Formation initiale VTC en E-learning - Préparation à la carte professionnelle chauffeur VTC", duree: "Plateforme 3 mois + pratique" },
-  { id: "vtc_elearning_examen", label: "Formation VTC E-learning avec frais d'examen", prix: 1599, designation: "Formation initiale VTC en E-learning avec frais d'examen", duree: "Plateforme 3 mois + pratique" },
-  { id: "taxi_elearning", label: "Formation TAXI E-learning", prix: 1299, designation: "Formation initiale TAXI en E-learning", duree: "96 heures (plateforme 3 mois)" },
-  { id: "taxi_elearning_examen", label: "Formation TAXI E-learning avec frais d'examen", prix: 1799, designation: "Formation initiale TAXI en E-learning avec frais d'examen", duree: "96 heures (plateforme 3 mois)" },
-  { id: "taxi_presential", label: "Formation TAXI présentiel", prix: 1299, designation: "Formation initiale TAXI en présentiel", duree: "96 heures" },
-  { id: "taxi_presential_examen", label: "Formation TAXI présentiel avec frais d'examen", prix: 1799, designation: "Formation initiale TAXI présentiel avec frais d'examen", duree: "96 heures" },
-  { id: "ta_elearning", label: "Passerelle VTC → TAXI (TA) E-learning", prix: 999, designation: "Formation passerelle TAXI pour chauffeur VTC (TA) en E-learning", duree: "Plateforme 3 mois + pratique" },
-  { id: "va_elearning", label: "Passerelle TAXI → VTC (VA) E-learning", prix: 499, designation: "Formation passerelle VTC pour chauffeur TAXI (VA) en E-learning", duree: "Plateforme 3 mois + pratique" },
-  { id: "taxi_pratique", label: "Formation pratique TAXI", prix: 349, designation: "Formation pratique TAXI - Préparation pratique à l'examen taxi", duree: "6h en groupe ou 3h solo" },
-  { id: "fc_vtc", label: "Formation continue VTC", prix: 200, designation: "Formation continue obligatoire VTC - Prévention des discriminations et des violences sexuelles et sexistes (14h)", duree: "14 heures" },
-  { id: "fc_taxi", label: "Formation continue TAXI", prix: 299, designation: "Formation continue obligatoire TAXI (14h)", duree: "14 heures" },
+  { id: "vtc_complet", label: "Formation initiale VTC (présentiel journée)", prix: 1099, designation: "Formation initiale VTC - Préparation à la carte professionnelle chauffeur VTC", duree: "66 heures", agrement: "n° VTC16-15" },
+  { id: "vtc_complet_examen", label: "Formation initiale VTC avec frais d'examen", prix: 1599, designation: "Formation initiale VTC avec frais d'examen - Préparation complète à la carte professionnelle chauffeur VTC", duree: "66 heures", agrement: "n° VTC16-15" },
+  { id: "vtc_soir", label: "Formation initiale VTC (présentiel soirée)", prix: 1099, designation: "Formation initiale VTC cours du soir - Préparation à la carte professionnelle chauffeur VTC", duree: "66 heures", agrement: "n° VTC16-15" },
+  { id: "vtc_soir_examen", label: "Formation initiale VTC soirée avec frais d'examen", prix: 1599, designation: "Formation initiale VTC cours du soir avec frais d'examen", duree: "66 heures", agrement: "n° VTC16-15" },
+  { id: "vtc_elearning", label: "Formation VTC E-learning", prix: 1099, designation: "Formation initiale VTC en E-learning - Préparation à la carte professionnelle chauffeur VTC", duree: "Plateforme 3 mois + pratique", agrement: "n° VTC16-05" },
+  { id: "vtc_elearning_examen", label: "Formation VTC E-learning avec frais d'examen", prix: 1599, designation: "Formation initiale VTC en E-learning avec frais d'examen", duree: "Plateforme 3 mois + pratique", agrement: "n° VTC16-05" },
+  { id: "taxi_elearning", label: "Formation TAXI E-learning", prix: 1299, designation: "Formation initiale TAXI en E-learning", duree: "96 heures (plateforme 3 mois)", agrement: "n°69-18-001" },
+  { id: "taxi_elearning_examen", label: "Formation TAXI E-learning avec frais d'examen", prix: 1799, designation: "Formation initiale TAXI en E-learning avec frais d'examen", duree: "96 heures (plateforme 3 mois)", agrement: "n°69-18-001" },
+  { id: "taxi_presential", label: "Formation TAXI présentiel", prix: 1299, designation: "Formation initiale TAXI en présentiel", duree: "96 heures", agrement: "n°69-18-001" },
+  { id: "taxi_presential_examen", label: "Formation TAXI présentiel avec frais d'examen", prix: 1799, designation: "Formation initiale TAXI présentiel avec frais d'examen", duree: "96 heures", agrement: "n°69-18-001" },
+  { id: "ta_elearning", label: "Passerelle VTC → TAXI (TA) E-learning", prix: 999, designation: "Formation passerelle TAXI pour chauffeur VTC (TA) en E-learning", duree: "Plateforme 3 mois + pratique", agrement: "n°69-18-001" },
+  { id: "va_elearning", label: "Passerelle TAXI → VTC (VA) E-learning", prix: 499, designation: "Formation passerelle VTC pour chauffeur TAXI (VA) en E-learning", duree: "Plateforme 3 mois + pratique", agrement: "n° VTC16-05" },
+  { id: "taxi_pratique", label: "Formation pratique TAXI", prix: 349, designation: "Formation pratique TAXI - Préparation pratique à l'examen taxi", duree: "6h en groupe ou 3h solo", agrement: "n°69-18-001" },
+  { id: "fc_vtc", label: "Formation continue VTC", prix: 200, designation: "Formation continue obligatoire VTC - Prévention des discriminations et des violences sexuelles et sexistes (14h)", duree: "14 heures", agrement: "n° VTC16-15" },
+  { id: "fc_taxi", label: "Formation continue TAXI", prix: 299, designation: "Formation continue obligatoire TAXI (14h)", duree: "14 heures", agrement: "n°69-18-001" },
 ];
 
 /* ─── CGV TEXT ─── */
@@ -115,8 +117,31 @@ export default function DevisPersonnel() {
   const [ville, setVille] = useState("");
   const [dateNaissance, setDateNaissance] = useState("");
 
-  // Formation selection
+  // Formation selection & dates
   const [selectedFormation, setSelectedFormation] = useState(formationType);
+  const [dateDebutSouhaitee, setDateDebutSouhaitee] = useState("");
+  const [creneauSouhaite, setCreneauSouhaite] = useState("");
+
+  // Financeur
+  const [typeFinancement, setTypeFinancement] = useState<"personnel" | "organisme">("personnel");
+  const [financeurNom, setFinanceurNom] = useState("");
+  const [financeurAdresse, setFinanceurAdresse] = useState("");
+  const [financeurCodePostal, setFinanceurCodePostal] = useState("");
+  const [financeurVille, setFinanceurVille] = useState("");
+  const [financeurSiret, setFinanceurSiret] = useState("");
+  const [financeurEmail, setFinanceurEmail] = useState("");
+  const [financeurTelephone, setFinanceurTelephone] = useState("");
+  const [financeurContactNom, setFinanceurContactNom] = useState("");
+  const [financeurType, setFinanceurType] = useState("");
+
+  // Questions d'éligibilité
+  const [q1PerduPoints, setQ1PerduPoints] = useState<string>("");
+  const [q2CondamneSansPermis, setQ2CondamneSansPermis] = useState<string>("");
+  const [q3RefusRestitution, setQ3RefusRestitution] = useState<string>("");
+  const [q4Condamne6Mois, setQ4Condamne6Mois] = useState<string>("");
+  const [q5CasierVierge, setQ5CasierVierge] = useState<string>("");
+  const [q6FormationContinueDeja, setQ6FormationContinueDeja] = useState<string>("");
+
   const [generating, setGenerating] = useState(false);
   const [generated, setGenerated] = useState(false);
 
@@ -196,6 +221,14 @@ export default function DevisPersonnel() {
   const generateDevisPDF = async () => {
     if (!prenom || !nom) { toast.error("Veuillez renseigner votre nom et prénom"); return; }
     if (!selectedFormation || !formation) { toast.error("Veuillez sélectionner une formation"); return; }
+    if (!telephone) { toast.error("Veuillez renseigner votre téléphone"); return; }
+    if (!email) { toast.error("Veuillez renseigner votre email"); return; }
+    if (!codePostal || !ville) { toast.error("Veuillez renseigner votre code postal et ville"); return; }
+
+    if (typeFinancement === "organisme" && !financeurNom) {
+      toast.error("Veuillez renseigner le nom de l'organisme financeur");
+      return;
+    }
 
     setGenerating(true);
     try {
@@ -206,8 +239,12 @@ export default function DevisPersonnel() {
       let y = 15;
 
       const signatureDataUrl = hasSigned && canvasRef.current ? canvasRef.current.toDataURL("image/png") : null;
+      const numDevis = `DEV-${format(new Date(), "yyyyMM")}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
+      const dateToday = format(new Date(), "dd MMMM yyyy", { locale: fr });
+      const validite = format(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), "dd MMMM yyyy", { locale: fr });
 
       // === PAGE 1 : DEVIS ===
+      // Header
       doc.setFillColor(30, 58, 138);
       doc.rect(0, 0, pageW, 38, "F");
       doc.setTextColor(255, 255, 255);
@@ -222,43 +259,90 @@ export default function DevisPersonnel() {
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(18);
-      doc.text("DEVIS", pageW - margin - 35, 18, { align: "right" });
+      doc.text("DEVIS", pageW - margin, 18, { align: "right" });
       doc.setFontSize(9);
       doc.setFont("helvetica", "normal");
-      const numDevis = `DEV-${format(new Date(), "yyyyMM")}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
       doc.text(`N° ${numDevis}`, pageW - margin, 25, { align: "right" });
-      doc.text(`Date : ${format(new Date(), "dd MMMM yyyy", { locale: fr })}`, pageW - margin, 30, { align: "right" });
-      const validite = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-      doc.text(`Valide jusqu'au : ${format(validite, "dd MMMM yyyy", { locale: fr })}`, pageW - margin, 35, { align: "right" });
+      doc.text(`Date : ${dateToday}`, pageW - margin, 30, { align: "right" });
+      doc.text(`Valide jusqu'au : ${validite}`, pageW - margin, 35, { align: "right" });
 
-      y = 50;
+      y = 45;
       doc.setTextColor(0, 0, 0);
 
-      // Client info box
+      // === Emetteur + Client side by side ===
+      const halfW = contentW / 2 - 3;
+      // Emetteur
       doc.setFillColor(243, 244, 246);
-      doc.rect(margin, y, contentW, 28, "F");
+      doc.rect(margin, y, halfW, 32, "F");
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(9);
+      doc.setFontSize(8);
       doc.setTextColor(30, 58, 138);
-      doc.text("CLIENT", margin + 3, y + 7);
+      doc.text("EMETTEUR", margin + 3, y + 5);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(0, 0, 0);
-      doc.setFontSize(10);
-      doc.text(`${civilite} ${prenom} ${nom}`.trim(), margin + 3, y + 14);
-      doc.setFontSize(9);
-      if (adresse) doc.text(adresse, margin + 3, y + 19);
-      const villeCP = [codePostal, ville].filter(Boolean).join(" ");
-      if (villeCP) doc.text(villeCP, margin + 3, y + 24);
-      if (email) doc.text(email, margin + contentW / 2, y + 19);
-      if (telephone) doc.text(telephone, margin + contentW / 2, y + 24);
+      doc.setFontSize(8);
+      doc.text("SERVICES PRO FTRANSPORT", margin + 3, y + 10);
+      doc.text("SASU au capital de 5 000 EUR", margin + 3, y + 14);
+      doc.text("SIRET : 82346156100018", margin + 3, y + 18);
+      doc.text("86 route de Genas - 69003 Lyon", margin + 3, y + 22);
+      doc.text("N° decl. activite : 84 69 15114 69", margin + 3, y + 26);
+      doc.setFontSize(7);
+      doc.text("(Cet enregistrement ne vaut pas agrement de l'Etat)", margin + 3, y + 30);
 
-      y += 35;
-
-      // Formation info
+      // Client
+      const clientX = margin + halfW + 6;
       doc.setFillColor(239, 246, 255);
-      doc.rect(margin, y, contentW, 14, "F");
+      doc.rect(clientX, y, halfW, 32, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(30, 58, 138);
+      doc.text("CLIENT / STAGIAIRE", clientX + 3, y + 5);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(8);
+      doc.text(`${civilite} ${prenom} ${nom}`.trim(), clientX + 3, y + 10);
+      if (adresse) doc.text(adresse, clientX + 3, y + 14);
+      doc.text(`${codePostal} ${ville}`.trim(), clientX + 3, y + 18);
+      if (telephone) doc.text(`Tel : ${telephone}`, clientX + 3, y + 22);
+      if (email) doc.text(email, clientX + 3, y + 26);
+      if (dateNaissance) {
+        try {
+          doc.text(`Ne(e) le : ${format(new Date(dateNaissance), "dd/MM/yyyy")}`, clientX + 3, y + 30);
+        } catch { /* ignore */ }
+      }
+
+      y += 38;
+
+      // === Financeur (si organisme) ===
+      if (typeFinancement === "organisme" && financeurNom) {
+        doc.setFillColor(255, 249, 235);
+        doc.setDrawColor(251, 191, 36);
+        doc.rect(margin, y, contentW, 24, "FD");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8);
+        doc.setTextColor(120, 53, 15);
+        doc.text("ORGANISME FINANCEUR / PAYEUR", margin + 3, y + 5);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(8);
+        doc.text(`${financeurNom}${financeurType ? ` (${financeurType})` : ""}`, margin + 3, y + 10);
+        const financeurAddr = [financeurAdresse, `${financeurCodePostal} ${financeurVille}`.trim()].filter(Boolean).join(" - ");
+        if (financeurAddr.trim()) doc.text(financeurAddr, margin + 3, y + 14);
+        const financeurDetails: string[] = [];
+        if (financeurSiret) financeurDetails.push(`SIRET : ${financeurSiret}`);
+        if (financeurEmail) financeurDetails.push(financeurEmail);
+        if (financeurTelephone) financeurDetails.push(financeurTelephone);
+        if (financeurContactNom) financeurDetails.push(`Contact : ${financeurContactNom}`);
+        if (financeurDetails.length) doc.text(financeurDetails.join(" | "), margin + 3, y + 18);
+        doc.setDrawColor(0, 0, 0);
+        y += 30;
+      }
+
+      // === Formation + dates ===
+      doc.setFillColor(239, 246, 255);
       doc.setDrawColor(191, 219, 254);
-      doc.rect(margin, y, contentW, 14);
+      const formBoxH = 22;
+      doc.rect(margin, y, contentW, formBoxH, "FD");
       doc.setFont("helvetica", "bold");
       doc.setFontSize(8.5);
       doc.setTextColor(30, 58, 138);
@@ -266,10 +350,20 @@ export default function DevisPersonnel() {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8);
       doc.setTextColor(0, 0, 0);
-      doc.text(`${formation.label}  |  Durée : ${formation.duree}`, margin + 3, y + 11);
-      y += 20;
+      doc.text(`${formation.designation}`, margin + 3, y + 10.5);
+      doc.text(`Duree : ${formation.duree}  |  Agrement : ${formation.agrement}`, margin + 3, y + 15);
+      const datesLine: string[] = [];
+      if (dateDebutSouhaitee) {
+        try {
+          datesLine.push(`Date de debut souhaitee : ${format(new Date(dateDebutSouhaitee), "dd/MM/yyyy")}`);
+        } catch { datesLine.push(`Date de debut souhaitee : ${dateDebutSouhaitee}`); }
+      }
+      if (creneauSouhaite) datesLine.push(`Creneau : ${creneauSouhaite}`);
+      if (datesLine.length) doc.text(datesLine.join("  |  "), margin + 3, y + 19.5);
+      doc.setDrawColor(0, 0, 0);
+      y += formBoxH + 6;
 
-      // Detail prestation
+      // === Detail prestation ===
       doc.setFont("helvetica", "bold");
       doc.setFontSize(11);
       doc.setTextColor(30, 58, 138);
@@ -324,9 +418,6 @@ export default function DevisPersonnel() {
       doc.text(formatEUR(formation.prix), tableRight - 2, vertCenter, { align: "right" });
       y += rowH;
 
-      doc.setDrawColor(210, 210, 210);
-      doc.line(margin, y, tableRight, y);
-
       // Totals
       y += 6;
       const totBoxX = margin + contentW * 0.55;
@@ -362,6 +453,24 @@ export default function DevisPersonnel() {
       doc.setTextColor(30, 58, 138);
       doc.text(formatEUR(formation.prix), totBoxX + totBoxW - 3, y + 19.5, { align: "right" });
 
+      // Modalites paiement (left side)
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7.5);
+      doc.setTextColor(30, 58, 138);
+      doc.text("MODALITES DE PAIEMENT", margin, y + 3);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(60, 60, 60);
+      if (typeFinancement === "personnel") {
+        doc.text("Financement personnel", margin, y + 7);
+        doc.text("Moyens : especes, virement, cheque", margin, y + 11);
+        doc.text("Acompte 30% puis solde echelonne", margin, y + 15);
+      } else {
+        doc.text(`Prise en charge par : ${financeurNom}`, margin, y + 7);
+        if (financeurType) doc.text(`Type : ${financeurType}`, margin, y + 11);
+        doc.text("Reglement selon convention", margin, y + 15);
+      }
+
       y += totBoxH + 10;
 
       // RIB info
@@ -377,21 +486,39 @@ export default function DevisPersonnel() {
       doc.text(`IBAN : ${RIB_INFO.iban}`, margin, y); y += 3.5;
       doc.text(`BIC / SWIFT : ${RIB_INFO.swift}  |  Banque : ${RIB_INFO.banque}`, margin, y); y += 8;
 
-      // Rappel
+      // Rappel & mentions obligatoires
       doc.setFont("helvetica", "italic");
       doc.setFontSize(7);
       doc.setTextColor(100, 100, 100);
       const rappel = "Ce devis est valable pour une duree d'une semaine sous reserve de places disponibles. Inscription validee : devis + fiche inscription + conditions generales de ventes remplis et signes + documents justificatifs + reglement.";
       const rappelLines = doc.splitTextToSize(rappel, contentW);
       doc.text(rappelLines, margin, y);
-      y += rappelLines.length * 3 + 6;
+      y += rappelLines.length * 3 + 3;
+
+      // Mentions obligatoires
+      doc.setFontSize(6.5);
+      doc.setTextColor(120, 120, 120);
+      const mentions = [
+        "Conformement a l'article L6353-5 du Code du travail, le client beneficie d'un delai de retractation de 10 jours.",
+        "Conformement a l'article L6353-6, aucun paiement ne peut etre exige avant l'expiration du delai de retractation.",
+        `Organisme de formation : SERVICES PRO FTRANSPORT - SASU au capital de 5 000 EUR - SIRET : 82346156100018`,
+        `N° de declaration d'activite : 84 69 15114 69 aupres du Prefet de la region Auvergne-Rhone-Alpes`,
+        "Non assujetti a la TVA (Art. 261-4-4° du CGI).",
+      ];
+      mentions.forEach(m => {
+        const ml = doc.splitTextToSize(m, contentW);
+        doc.text(ml, margin, y);
+        y += ml.length * 2.8 + 0.5;
+      });
+
+      y += 4;
 
       // Signatures
-      y = Math.max(y, 215);
+      y = Math.max(y, 220);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8);
       doc.setTextColor(0, 0, 0);
-      doc.text(`A Lyon, le ${format(new Date(), "dd MMMM yyyy", { locale: fr })}`, margin, y);
+      doc.text(`A Lyon, le ${dateToday}`, margin, y);
       y += 6;
 
       const sigBoxW = 80;
@@ -418,7 +545,7 @@ export default function DevisPersonnel() {
       doc.setFontSize(7);
       doc.text("Le responsable de formation", sigFtransX + 2, y + 9);
 
-      // Footer
+      // Footer page 1
       doc.setFontSize(6.5);
       doc.setTextColor(140, 140, 140);
       doc.text("FTRANSPORT - SASU au capital de 5 000 EUR - SIRET : 82346156100018 - N Decl. : 84 69 15114 69", margin, 288);
@@ -501,14 +628,14 @@ export default function DevisPersonnel() {
       <div className="max-w-3xl mx-auto p-4 md:p-6 space-y-6">
 
         {/* Étape 1 : Formation */}
-        <Card>
+        <Card className="border-l-4 border-l-[#1e3a8a]">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <FileText className="w-5 h-5 text-[#1e3a8a]" />
               1. Sélectionnez votre formation
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <Select value={selectedFormation} onValueChange={setSelectedFormation}>
               <SelectTrigger>
                 <SelectValue placeholder="Choisir une formation..." />
@@ -522,21 +649,47 @@ export default function DevisPersonnel() {
               </SelectContent>
             </Select>
             {formation && (
-              <div className="mt-3 bg-blue-50 rounded-lg p-3 text-sm space-y-1">
+              <div className="bg-blue-50 rounded-lg p-3 text-sm space-y-1">
                 <p className="font-medium text-[#1e3a8a]">{formation.designation}</p>
                 <p className="text-muted-foreground">Durée : {formation.duree}</p>
                 <p className="font-bold text-[#1e3a8a] text-lg mt-1">{formation.prix} € TTC</p>
                 <p className="text-xs text-muted-foreground">Non assujetti à la TVA</p>
               </div>
             )}
+
+            {/* Dates de formation souhaitées */}
+            <div className="pt-2 border-t space-y-3">
+              <p className="text-sm font-medium flex items-center gap-2">
+                <CalendarDays className="w-4 h-4 text-[#1e3a8a]" />
+                Dates de formation souhaitées
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <Label>Date de début souhaitée</Label>
+                  <Input type="date" value={dateDebutSouhaitee} onChange={e => setDateDebutSouhaitee(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Créneau souhaité</Label>
+                  <Select value={creneauSouhaite} onValueChange={setCreneauSouhaite}>
+                    <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Journée (9h-17h)">Journée (9h-17h)</SelectItem>
+                      <SelectItem value="Soirée (17h-21h)">Soirée (17h-21h)</SelectItem>
+                      <SelectItem value="E-learning">E-learning</SelectItem>
+                      <SelectItem value="Samedi">Samedi</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         {/* Étape 2 : Informations personnelles */}
-        <Card>
+        <Card className="border-l-4 border-l-[#1e3a8a]">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
-              <FileText className="w-5 h-5 text-[#1e3a8a]" />
+              <User className="w-5 h-5 text-[#1e3a8a]" />
               2. Vos informations personnelles
             </CardTitle>
           </CardHeader>
@@ -563,12 +716,12 @@ export default function DevisPersonnel() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <Label>Email</Label>
-                <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@exemple.com" />
+                <Label>Téléphone *</Label>
+                <Input value={telephone} onChange={e => setTelephone(e.target.value)} placeholder="06 00 00 00 00" />
               </div>
               <div>
-                <Label>Téléphone</Label>
-                <Input value={telephone} onChange={e => setTelephone(e.target.value)} placeholder="06 XX XX XX XX" />
+                <Label>Email *</Label>
+                <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@exemple.fr" />
               </div>
             </div>
             <div>
@@ -577,11 +730,11 @@ export default function DevisPersonnel() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <Label>Code postal</Label>
-                <Input value={codePostal} onChange={e => setCodePostal(e.target.value)} placeholder="69003" />
+                <Label>Code postal *</Label>
+                <Input value={codePostal} onChange={e => setCodePostal(e.target.value)} placeholder="69000" />
               </div>
               <div>
-                <Label>Ville</Label>
+                <Label>Ville *</Label>
                 <Input value={ville} onChange={e => setVille(e.target.value)} placeholder="Lyon" />
               </div>
             </div>
@@ -592,12 +745,133 @@ export default function DevisPersonnel() {
           </CardContent>
         </Card>
 
-        {/* Étape 3 : Signature (optionnelle) */}
-        <Card>
+        {/* Étape 3 : Coordonnées du financeur */}
+        <Card className="border-l-4 border-l-[#1e3a8a]">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Building2 className="w-5 h-5 text-[#1e3a8a]" />
+              3. Coordonnées du financeur
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <RadioGroup value={typeFinancement} onValueChange={(v) => setTypeFinancement(v as "personnel" | "organisme")} className="space-y-3">
+              <div className="flex items-start gap-3 p-3 rounded-lg border hover:bg-blue-50/50 transition-colors">
+                <RadioGroupItem value="personnel" id="fin-perso" className="mt-0.5" />
+                <label htmlFor="fin-perso" className="cursor-pointer">
+                  <p className="font-medium text-sm">Financement personnel</p>
+                  <p className="text-xs text-muted-foreground">Je finance moi-même ma formation</p>
+                </label>
+              </div>
+              <div className="flex items-start gap-3 p-3 rounded-lg border hover:bg-blue-50/50 transition-colors">
+                <RadioGroupItem value="organisme" id="fin-org" className="mt-0.5" />
+                <label htmlFor="fin-org" className="cursor-pointer">
+                  <p className="font-medium text-sm">Ma formation est financée par ma société ou un organisme tiers</p>
+                  <p className="text-xs text-muted-foreground">(entreprise, OPCO, France Travail, etc.)</p>
+                </label>
+              </div>
+            </RadioGroup>
+
+            {typeFinancement === "organisme" && (
+              <div className="space-y-4 pt-3 border-t mt-3">
+                <p className="text-sm font-semibold text-[#1e3a8a]">Informations sur l'organisme financeur</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <Label>Type de financeur</Label>
+                    <Select value={financeurType} onValueChange={setFinanceurType}>
+                      <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Entreprise">Entreprise</SelectItem>
+                        <SelectItem value="OPCO">OPCO</SelectItem>
+                        <SelectItem value="France Travail">France Travail</SelectItem>
+                        <SelectItem value="Région / Collectivité">Région / Collectivité</SelectItem>
+                        <SelectItem value="Autre organisme">Autre organisme</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Nom de l'organisme / société *</Label>
+                    <Input value={financeurNom} onChange={e => setFinanceurNom(e.target.value)} placeholder="Nom de la société ou organisme" />
+                  </div>
+                </div>
+                <div>
+                  <Label>Adresse</Label>
+                  <Input value={financeurAdresse} onChange={e => setFinanceurAdresse(e.target.value)} placeholder="Adresse" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <Label>Code postal</Label>
+                    <Input value={financeurCodePostal} onChange={e => setFinanceurCodePostal(e.target.value)} placeholder="Code postal" />
+                  </div>
+                  <div>
+                    <Label>Ville</Label>
+                    <Input value={financeurVille} onChange={e => setFinanceurVille(e.target.value)} placeholder="Ville" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <Label>SIRET</Label>
+                    <Input value={financeurSiret} onChange={e => setFinanceurSiret(e.target.value)} placeholder="N° SIRET" />
+                  </div>
+                  <div>
+                    <Label>Nom du contact</Label>
+                    <Input value={financeurContactNom} onChange={e => setFinanceurContactNom(e.target.value)} placeholder="Personne à contacter" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <Label>Email</Label>
+                    <Input type="email" value={financeurEmail} onChange={e => setFinanceurEmail(e.target.value)} placeholder="email@organisme.fr" />
+                  </div>
+                  <div>
+                    <Label>Téléphone</Label>
+                    <Input value={financeurTelephone} onChange={e => setFinanceurTelephone(e.target.value)} placeholder="Téléphone" />
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Étape 4 : Informations vous concernant */}
+        <Card className="border-l-4 border-l-[#1e3a8a]">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <FileText className="w-5 h-5 text-[#1e3a8a]" />
-              3. Signature (optionnelle)
+              4. Informations vous concernant
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            {[
+              { q: "1. Avez-vous déjà perdu 6 points d'un coup sur votre permis ?", val: q1PerduPoints, set: setQ1PerduPoints },
+              { q: "2. Avez-vous déjà été condamné pour conduite sans permis ?", val: q2CondamneSansPermis, set: setQ2CondamneSansPermis },
+              { q: "3. Avez-vous été condamné pour refus de restitution du permis ?", val: q3RefusRestitution, set: setQ3RefusRestitution },
+              { q: "4. Avez-vous été condamné à plus de 6 mois d'emprisonnement pour vol, escroquerie, etc. ?", val: q4Condamne6Mois, set: setQ4Condamne6Mois },
+              { q: "5. Avez-vous le casier judiciaire B3 vierge ?", val: q5CasierVierge, set: setQ5CasierVierge },
+              { q: "6. Formation VTC continue déjà réalisée il y a plus de 5 ans ?", val: q6FormationContinueDeja, set: setQ6FormationContinueDeja },
+            ].map(({ q, val, set }, idx) => (
+              <div key={idx}>
+                <p className="text-sm font-medium mb-2">{q} <span className="text-destructive">*</span></p>
+                <RadioGroup value={val} onValueChange={set} className="flex gap-6">
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value="oui" id={`q${idx}-oui`} />
+                    <label htmlFor={`q${idx}-oui`} className="text-sm cursor-pointer">Oui</label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value="non" id={`q${idx}-non`} />
+                    <label htmlFor={`q${idx}-non`} className="text-sm cursor-pointer">Non</label>
+                  </div>
+                </RadioGroup>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Étape 5 : Signature */}
+        <Card className="border-l-4 border-l-[#1e3a8a]">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <FileText className="w-5 h-5 text-[#1e3a8a]" />
+              5. Signature (optionnelle)
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -626,12 +900,12 @@ export default function DevisPersonnel() {
         </Card>
 
         {/* Download button */}
-        <div className="flex flex-col items-center gap-3">
+        <div className="flex flex-col items-center gap-3 pb-8">
           <Button
             size="lg"
             className="w-full md:w-auto px-8 bg-[#1e3a8a] hover:bg-[#1e3a8a]/90 text-white text-lg"
             onClick={generateDevisPDF}
-            disabled={generating || !prenom || !nom || !selectedFormation}
+            disabled={generating || !prenom || !nom || !selectedFormation || !telephone || !email || !codePostal || !ville}
           >
             {generating ? (
               <><Loader2 className="w-5 h-5 animate-spin mr-2" /> Génération en cours...</>
