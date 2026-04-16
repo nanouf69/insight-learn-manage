@@ -87,7 +87,7 @@ Dans le cas ou le nombre de participants serait insuffisant pour assurer le bon 
     titre: "Obligations et force majeure",
     contenu: `Dans le cadre de ses prestations de formation, FTRANSPORT est tenue a une obligation de moyen et non de resultat vis-a-vis de ses Clients ou de ses Stagiaires.
 
-En cas d'echec a l'epreuve d'admissibilite du stagiaire organisee par la chambre de metiers et de l'artisanat, le candidat pourra disposer d'une plateforme de cours en e-learning apres l'annonce de son echec et jusqu'a la date du prochain examen theorique uniquement sauf si le candidat a deja realise une formation e-learning comme la formation TAXI et VTC pendant les trois mois.
+En cas d'echec a l'epreuve d'admissibilite du stagiaire organisee par la chambre de metiers et de l'artisanat, le candidat devra s'acquitter de la somme de 80 euros pour se reinscrire a l'examen theorique. Le candidat pourra disposer d'une plateforme de cours en e-learning apres l'annonce de son echec et jusqu'a la date du prochain examen theorique uniquement sauf si le candidat a deja realise une formation e-learning comme la formation TAXI et VTC pendant les trois mois.
 
 En cas d'echec a l'epreuve d'admission, le candidat devra s'acquitter de la somme de 50 euros s'il souhaite utiliser le vehicule de FTRANSPORT pour l'epreuve d'admission et uniquement dans ce cadre, il devra le restituer par la suite au local de FTRANSPORT au 86 route de Genas 69003 Lyon.
 
