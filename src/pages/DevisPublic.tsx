@@ -769,10 +769,30 @@ export default function DevisPublic() {
             </div>
 
             {uploaded ? (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-                <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                <p className="font-medium text-green-800">Devis signé envoyé !</p>
-                <p className="text-sm text-green-600 mt-1">Merci, nous avons bien reçu votre devis signé. Nous reviendrons vers vous rapidement.</p>
+              <div className="space-y-4">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                  <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                  <p className="font-medium text-green-800">Devis signé envoyé !</p>
+                  <p className="text-sm text-green-600 mt-1">Merci, nous avons bien reçu votre devis signé. Nous reviendrons vers vous rapidement.</p>
+                </div>
+
+                <div className="bg-blue-50 border-2 border-blue-700 rounded-xl p-6 space-y-4">
+                  <h3 className="text-lg font-bold text-blue-800 text-center">🏦 Coordonnées bancaires (RIB)</h3>
+                  <div className="bg-white rounded-lg p-4 space-y-2 text-sm">
+                    <div className="flex justify-between"><span className="text-gray-500">Titulaire :</span><span className="font-semibold">{RIB_INFO.titulaire}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-500">IBAN :</span><span className="font-bold text-blue-800 tracking-wide">{RIB_INFO.iban}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-500">BIC / SWIFT :</span><span className="font-semibold">{RIB_INFO.swift}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-500">Banque :</span><span className="font-semibold">{RIB_INFO.banque}</span></div>
+                  </div>
+                  <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 text-center space-y-2">
+                    <p className="text-amber-800 font-bold text-base">
+                      ⚠️ Votre devis ne sera pris en compte qu'après avoir effectué le premier virement.
+                    </p>
+                    <p className="text-amber-700 text-sm">
+                      Merci de nous recontacter au <strong className="text-lg">04.28.29.60.91</strong> après l'avoir effectué.
+                    </p>
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="flex items-center gap-3 flex-wrap">
