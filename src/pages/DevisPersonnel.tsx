@@ -1310,20 +1310,38 @@ export default function DevisPersonnel() {
           </Button>
 
           {generated && (
-            <div className="flex items-center gap-2 text-green-600 text-sm">
-              <CheckCircle2 className="w-4 h-4" />
-              Devis téléchargé avec succès !
+            <div className="space-y-4 w-full max-w-lg">
+              <div className="flex items-center gap-2 text-green-600 text-sm justify-center">
+                <CheckCircle2 className="w-4 h-4" />
+                Devis téléchargé avec succès !
+              </div>
+
+              <div className="bg-[#1e3a8a]/5 border-2 border-[#1e3a8a] rounded-xl p-6 space-y-4">
+                <h3 className="text-lg font-bold text-[#1e3a8a] text-center">🏦 Coordonnées bancaires (RIB)</h3>
+                <div className="bg-white rounded-lg p-4 space-y-2 text-sm">
+                  <div className="flex justify-between"><span className="text-muted-foreground">Titulaire :</span><span className="font-semibold">{RIB_INFO.titulaire}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">IBAN :</span><span className="font-bold text-[#1e3a8a] tracking-wide">{RIB_INFO.iban}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">BIC / SWIFT :</span><span className="font-semibold">{RIB_INFO.swift}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Banque :</span><span className="font-semibold">{RIB_INFO.banque}</span></div>
+                </div>
+
+                <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 text-center space-y-2">
+                  <p className="text-amber-800 font-bold text-base">
+                    ⚠️ Votre devis ne sera pris en compte qu'après avoir effectué le premier virement.
+                  </p>
+                  <p className="text-amber-700 text-sm">
+                    Merci de nous recontacter au <strong className="text-lg">04.28.29.60.91</strong> après l'avoir effectué.
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-xs text-muted-foreground text-center max-w-md mx-auto">
+                Après avoir téléchargé votre devis, envoyez-le signé par email à{" "}
+                <a href="mailto:contact@ftransport.fr" className="text-[#1e3a8a] font-medium">contact@ftransport.fr</a>{" "}
+                ou apportez-le au 86 route de Genas, 69003 Lyon.
+              </p>
             </div>
           )}
-
-          <p className="text-xs text-muted-foreground text-center max-w-md">
-            Après avoir téléchargé votre devis, envoyez-le signé par email à{" "}
-            <a href="mailto:contact@ftransport.fr" className="text-[#1e3a8a] font-medium">contact@ftransport.fr</a>{" "}
-            ou apportez-le au 86 route de Genas, 69003 Lyon.
-          </p>
-          <p className="text-xs text-muted-foreground">
-            📞 Pour toute question : <strong>04.28.29.60.91</strong>
-          </p>
         </div>
       </div>
     </div>
