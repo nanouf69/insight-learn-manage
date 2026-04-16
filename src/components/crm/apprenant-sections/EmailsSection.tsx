@@ -248,6 +248,17 @@ L'équipe Ftransport
       return "Bonjour " + a.prenom + ",<br><br>Nous faisons suite à votre demande d'inscription à la <strong>Formation Continue " + formation + "</strong>" + (dateDebut !== "à définir" ? " du <strong>" + dateDebut + "</strong> au <strong>" + dateFin + "</strong>" : "") + ".<br><br><span style=\"color: red; font-size: 16px; font-weight: bold;\">⚠️ ATTENTION : À ce jour, nous n'avons reçu aucun règlement de votre part. Votre inscription n'est donc PAS validée et vous ne pourrez PAS accéder à la Formation Continue.</span><br><br>Si vous souhaitez confirmer votre inscription à la <strong>Formation Continue " + formation + "</strong>, vous devez effectuer un <strong>virement bancaire immédiat</strong> aux coordonnées suivantes :<br><br><strong>RIB - SASU SERVICES PRO F TRANSPORT</strong><br><br>Destinataire : SERVICES PRO<br>Adresse : 86 ROUTE DE GENAS, 69003, LYON, France<br>IBAN : FR76 2823 3000 0185 7527 9099 426<br>BIC : REVOFRP2<br><br>Sans réception du virement, votre place sera automatiquement libérée et attribuée à un autre candidat.<br><br><strong>Si vous avez déjà effectué le virement</strong>, merci de nous envoyer immédiatement la <strong>preuve de virement</strong> (capture d'écran ou justificatif bancaire) par retour de mail à <strong>contact@ftransport.fr</strong> afin que nous puissions valider votre inscription dans les plus brefs délais.<br><br>Cordialement,<br><br>FTRANSPORT<br>Centre de formation<br>86 Route de Genas 69003 Lyon<br>📞 04.28.29.60.91<br>📧 contact@ftransport.fr";
     },
   },
+  {
+    id: 'devis-personnel',
+    label: '📝 Devis personnel à compléter',
+    icon: '📝',
+    getSubject: (a) => `Votre devis de formation - ${a.prenom} ${a.nom}`,
+    getBody: (a) => {
+      const formation = getFormationType(a.type_apprenant);
+      const devisUrl = `https://gestion.ftransport.fr/devis-personnel`;
+      return `Bonjour ${a.prenom},<br><br>Nous faisons suite à notre échange concernant votre inscription à la formation <strong>${formation}</strong>.<br><br>Afin de finaliser votre inscription, merci de compléter et signer votre devis en ligne en cliquant sur le lien ci-dessous :<br><br>👉 <a href="${devisUrl}" style="font-size: 16px; font-weight: bold;">CLIQUEZ ICI POUR COMPLÉTER VOTRE DEVIS</a><br><br>📌 <strong>Étapes à suivre :</strong><br>1️⃣ Remplissez vos coordonnées<br>2️⃣ Signez le devis<br>3️⃣ Téléchargez le document<br>4️⃣ Effectuez le premier virement aux coordonnées bancaires indiquées sur le devis<br>5️⃣ Recontactez-nous au <strong>04 28 29 60 91</strong> après avoir effectué le virement<br><br>⚠️ <strong>IMPORTANT :</strong> Votre inscription ne sera prise en compte qu'après réception du premier virement.<br><br>Pour toute question, n'hésitez pas à nous contacter.<br><br>Cordialement,<br><br><strong>FTRANSPORT</strong><br>Centre de formation VTC & TAXI<br>86 Route de Genas, 69003 Lyon<br>📞 04.28.29.60.91<br>📧 contact@ftransport.fr`;
+    },
+  },
 ];
 
 export function EmailsSection({ apprenant }: EmailsSectionProps) {
