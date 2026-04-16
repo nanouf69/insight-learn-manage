@@ -230,6 +230,7 @@ export default function DevisPersonnel() {
 
   // Signature
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const ribRef = useRef<HTMLDivElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasSigned, setHasSigned] = useState(false);
   const lastPos = useRef<{ x: number; y: number } | null>(null);
