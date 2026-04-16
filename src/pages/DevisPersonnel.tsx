@@ -404,9 +404,7 @@ export default function DevisPersonnel() {
       doc.text(`Duree : ${formation.duree}  |  Agrement : ${formation.agrement}`, margin + 3, y + 15);
       const datesLine: string[] = [];
       if (dateDebutSouhaitee) {
-        try {
-          datesLine.push(`Date de debut souhaitee : ${format(new Date(dateDebutSouhaitee), "dd/MM/yyyy")}`);
-        } catch { datesLine.push(`Date de debut souhaitee : ${dateDebutSouhaitee}`); }
+        datesLine.push(`Session : ${dateDebutSouhaitee}`);
       }
       if (creneauSouhaite) datesLine.push(`Creneau : ${creneauSouhaite}`);
       if (datesLine.length) doc.text(datesLine.join("  |  "), margin + 3, y + 19.5);
