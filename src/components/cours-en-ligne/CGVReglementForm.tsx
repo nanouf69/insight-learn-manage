@@ -14,6 +14,7 @@ interface CGVReglementFormProps {
   apprenantNom?: string;
   apprenantPrenom?: string;
   apprenantAdresse?: string;
+  apprenantType?: string;
   completed?: boolean;
   onComplete: () => void;
 }
