@@ -1146,7 +1146,90 @@ export default function DevisPersonnel() {
           </CardContent>
         </Card>
 
-        {/* Étape 5 : Signature */}
+        {/* Étape 4bis : Aperçu du devis + CGV + Bordereau de renonciation */}
+        {formation && prenom && nom && (
+          <Card className="border-l-4 border-l-green-600">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg text-green-800">
+                <FileText className="w-5 h-5" />
+                Aperçu de votre devis — Veuillez lire attentivement avant de signer
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Récap du devis */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
+                <h3 className="font-bold text-[#1e3a8a] text-base">RÉCAPITULATIF DU DEVIS</h3>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <p className="text-muted-foreground">Client :</p>
+                  <p className="font-medium">{civilite} {prenom} {nom}</p>
+                  {email && <><p className="text-muted-foreground">Email :</p><p>{email}</p></>}
+                  {telephone && <><p className="text-muted-foreground">Téléphone :</p><p>{telephone}</p></>}
+                  {adresse && <><p className="text-muted-foreground">Adresse :</p><p>{adresse}</p></>}
+                  {(codePostal || ville) && <><p className="text-muted-foreground">Ville :</p><p>{codePostal} {ville}</p></>}
+                </div>
+                {typeFinancement === "organisme" && financeurNom && (
+                  <div className="border-t pt-2 mt-2 grid grid-cols-2 gap-2 text-sm">
+                    <p className="text-muted-foreground">Organisme financeur :</p>
+                    <p className="font-medium">{financeurNom}</p>
+                    {financeurSiret && <><p className="text-muted-foreground">SIRET :</p><p>{financeurSiret}</p></>}
+                    {financeurAdresse && <><p className="text-muted-foreground">Adresse :</p><p>{financeurAdresse} {financeurCodePostal} {financeurVille}</p></>}
+                  </div>
+                )}
+                <div className="border-t pt-2 mt-2 space-y-1 text-sm">
+                  <p><span className="text-muted-foreground">Formation :</span> <span className="font-medium">{formation.designation}</span></p>
+                  <p><span className="text-muted-foreground">Agrément :</span> {formation.agrement}</p>
+                  <p><span className="text-muted-foreground">Durée :</span> {formation.duree}</p>
+                  {!formation.id.includes("elearning") && dateDebutSouhaitee && (
+                    <p><span className="text-muted-foreground">Session :</span> {dateDebutSouhaitee} {creneauSouhaite && `— ${creneauSouhaite}`}</p>
+                  )}
+                  {formation.id.includes("elearning") && (
+                    <p><span className="text-muted-foreground">Modalité :</span> E-learning — Plateforme disponible 3 mois à compter de l'inscription</p>
+                  )}
+                  <p className="text-lg font-bold text-[#1e3a8a] mt-2">Montant TTC : {formation.prix} € <span className="text-xs font-normal text-muted-foreground">(Non assujetti à la TVA)</span></p>
+                </div>
+              </div>
+
+              {/* CGV complètes */}
+              <div className="border rounded-lg">
+                <div className="bg-gray-100 px-4 py-2 rounded-t-lg border-b">
+                  <h3 className="font-bold text-sm">CONDITIONS GÉNÉRALES DE VENTE</h3>
+                </div>
+                <div className="p-4 max-h-[400px] overflow-y-auto text-xs leading-relaxed whitespace-pre-line font-mono bg-white">
+                  {CGV_TEXT}
+                </div>
+              </div>
+
+              {/* Bordereau de renonciation */}
+              <div className="border-2 border-[#1e3a8a] rounded-lg p-4 space-y-3 bg-blue-50/30">
+                <h3 className="font-bold text-[#1e3a8a] text-center text-base">BORDEREAU DE RENONCIATION AU DÉLAI DE RÉTRACTATION</h3>
+                <div className="text-sm space-y-2">
+                  <p>
+                    Je soussigné(e), <strong>{civilite} {prenom} {nom}</strong>, déclare avoir pris connaissance des conditions générales de vente de FTRANSPORT 
+                    et du délai de rétractation de dix (10) jours prévu par l'article L6353-5 du Code du travail.
+                  </p>
+                  <p>
+                    <strong>Formation concernée :</strong> {formation.designation}
+                  </p>
+                  <p>
+                    <strong>Montant TTC :</strong> {formation.prix} €
+                  </p>
+                  <p className="italic">
+                    Par la présente, je renonce expressément à l'exercice de mon droit de rétractation et demande que la formation commence 
+                    avant l'expiration du délai de dix jours.
+                  </p>
+                  <p className="italic">
+                    Je reconnais que cette renonciation est faite librement et sans aucune pression.
+                  </p>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  ⚠️ En signant ci-dessous, vous acceptez les conditions générales de vente et renoncez à votre délai de rétractation de 10 jours.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+
         <Card className="border-l-4 border-l-[#1e3a8a]">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
