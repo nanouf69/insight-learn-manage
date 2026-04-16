@@ -641,6 +641,124 @@ export default function DevisPersonnel() {
         y += wrapped.length * (isTitle ? 4.5 : 3.5) + (isTitle ? 1 : 0);
       }
 
+      // === PAGE BORDEREAU DE RENONCIATION AU DELAI DE RETRACTATION ===
+      doc.addPage();
+      doc.setFillColor(30, 58, 138);
+      doc.rect(0, 0, pageW, 20, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.text("BORDEREAU DE RENONCIATION AU DELAI DE RETRACTATION", pageW / 2, 13, { align: "center" });
+
+      y = 30;
+      doc.setTextColor(0, 0, 0);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+
+      const renonciationText = [
+        "Conformement a l'article L6353-5 du Code du travail, tout client beneficie d'un delai de retractation de dix (10) jours a compter de la signature du contrat de formation professionnelle.",
+        "",
+        "Toutefois, si le client souhaite que la formation debute avant l'expiration de ce delai, il peut renoncer expressement a son droit de retractation en remplissant et signant le present bordereau.",
+        "",
+        "Cette renonciation n'emporte aucune consequence financiere pour le client si elle est exercee avant le debut effectif de la formation.",
+      ];
+      for (const line of renonciationText) {
+        if (line === "") { y += 3; continue; }
+        const wrapped = doc.splitTextToSize(line, contentW);
+        doc.text(wrapped, margin, y);
+        y += wrapped.length * 4;
+      }
+
+      y += 8;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(30, 58, 138);
+      doc.text("INFORMATIONS DU CLIENT", margin, y);
+      y += 6;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(0, 0, 0);
+      const clientInfo = [
+        `Nom et prenom : ${civilite} ${prenom} ${nom}`.trim(),
+        `Adresse : ${adresse ? adresse + ", " : ""}${codePostal} ${ville}`.trim(),
+        `Telephone : ${telephone || "_______________"}`,
+        `Email : ${email || "_______________"}`,
+      ];
+      clientInfo.forEach(l => { doc.text(l, margin, y); y += 5; });
+
+      y += 5;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(30, 58, 138);
+      doc.text("FORMATION CONCERNEE", margin, y);
+      y += 6;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Formation : ${formation.designation}`, margin, y); y += 5;
+      doc.text(`Duree : ${formation.duree}`, margin, y); y += 5;
+      doc.text(`Montant TTC : ${formatEUR(formation.prix)}`, margin, y); y += 5;
+      if (!isElearning && dateDebutSouhaitee) {
+        doc.text(`Session : ${dateDebutSouhaitee}`, margin, y); y += 5;
+      }
+      if (isElearning) {
+        doc.text("Modalite : E-learning (plateforme 3 mois)", margin, y); y += 5;
+      }
+
+      y += 8;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(30, 58, 138);
+      doc.text("DECLARATION DE RENONCIATION", margin, y);
+      y += 7;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(0, 0, 0);
+      const declarationLines = [
+        "Je soussigne(e), " + `${civilite} ${prenom} ${nom}`.trim() + ", declare avoir pris connaissance des conditions generales de vente de FTRANSPORT et du delai de retractation de dix (10) jours prevu par l'article L6353-5 du Code du travail.",
+        "",
+        "Par la presente, je renonce expressement a l'exercice de mon droit de retractation et demande que la formation commence avant l'expiration du delai de dix jours.",
+        "",
+        "Je reconnais que cette renonciation est faite librement et sans aucune pression.",
+      ];
+      for (const line of declarationLines) {
+        if (line === "") { y += 3; continue; }
+        const wrapped = doc.splitTextToSize(line, contentW);
+        doc.text(wrapped, margin, y);
+        y += wrapped.length * 4;
+      }
+
+      y += 12;
+      doc.text(`Fait a Lyon, le ${dateToday}`, margin, y);
+      y += 10;
+
+      // Signature boxes
+      doc.setDrawColor(180, 180, 180);
+      doc.rect(margin, y, 80, 30);
+      doc.setFontSize(7.5);
+      doc.setTextColor(100, 100, 100);
+      doc.text('Signature du client', margin + 2, y + 5);
+      doc.text('precedee de la mention', margin + 2, y + 9);
+      doc.text('"Lu et approuve, bon pour renonciation"', margin + 2, y + 13);
+
+      if (signatureDataUrl) {
+        doc.addImage(signatureDataUrl, "PNG", margin + 2, y + 14, 76, 14);
+      }
+
+      const sigFtransX2 = pageW - margin - 80;
+      doc.rect(sigFtransX2, y, 80, 30);
+      doc.text("Pour FTRANSPORT", sigFtransX2 + 2, y + 5);
+      doc.text("Le responsable de formation", sigFtransX2 + 2, y + 9);
+
+      // Footer
+      doc.setFontSize(6.5);
+      doc.setTextColor(140, 140, 140);
+      doc.text("FTRANSPORT - SASU au capital de 5 000 EUR - SIRET : 82346156100018 - N Decl. : 84 69 15114 69", margin, 288);
+      doc.text("Non assujetti TVA | contact@ftransport.fr | 04.28.29.60.91 | 86 route de Genas, 69003 Lyon", margin, 293);
+
       // Page numbers
       doc.setFontSize(7);
       doc.setTextColor(120, 120, 120);
