@@ -986,7 +986,7 @@ export default function DevisPersonnel() {
                         <SelectContent>
                           <SelectItem value="Journée (9h-17h)">Journée (9h-17h)</SelectItem>
                           <SelectItem value="Soirée (17h-21h)">Soirée (17h-21h)</SelectItem>
-                          <SelectItem value="Samedi">Samedi</SelectItem>
+                          
                         </SelectContent>
                       </Select>
                     </div>
