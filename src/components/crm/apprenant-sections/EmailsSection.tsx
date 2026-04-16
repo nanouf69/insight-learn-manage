@@ -255,7 +255,8 @@ L'équipe Ftransport
     getSubject: (a) => `Votre devis de formation - ${a.prenom} ${a.nom}`,
     getBody: (a) => {
       const formation = getFormationType(a.type_apprenant);
-      const devisUrl = `https://gestion.ftransport.fr/devis-personnel`;
+      const typeParam = a.type_apprenant ? `?type=${encodeURIComponent(a.type_apprenant)}` : '';
+      const devisUrl = `https://gestion.ftransport.fr/devis-personnel${typeParam}`;
       return `Bonjour ${a.prenom},<br><br>Nous faisons suite à notre échange concernant votre inscription à la formation <strong>${formation}</strong>.<br><br>Afin de finaliser votre inscription, merci de compléter et signer votre devis en ligne en cliquant sur le lien ci-dessous :<br><br>👉 <a href="${devisUrl}" style="font-size: 16px; font-weight: bold;">CLIQUEZ ICI POUR COMPLÉTER VOTRE DEVIS</a><br><br>📌 <strong>Étapes à suivre :</strong><br>1️⃣ Remplissez vos coordonnées<br>2️⃣ Signez le devis<br>3️⃣ Téléchargez le document<br>4️⃣ Effectuez le premier virement aux coordonnées bancaires indiquées sur le devis<br>5️⃣ Recontactez-nous au <strong>04 28 29 60 91</strong> après avoir effectué le virement<br><br>⚠️ <strong>IMPORTANT :</strong> Votre inscription ne sera prise en compte qu'après réception du premier virement.<br><br>Pour toute question, n'hésitez pas à nous contacter.<br><br>Cordialement,<br><br><strong>FTRANSPORT</strong><br>Centre de formation VTC & TAXI<br>86 Route de Genas, 69003 Lyon<br>📞 04.28.29.60.91<br>📧 contact@ftransport.fr`;
     },
   },
