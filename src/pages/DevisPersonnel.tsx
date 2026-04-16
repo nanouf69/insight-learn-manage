@@ -807,6 +807,7 @@ export default function DevisPersonnel() {
       doc.save(fileName);
       setGenerated(true);
       toast.success("Votre devis a été téléchargé !");
+      setTimeout(() => ribRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 300);
 
       // ── Auto-save devis to storage + DB ──
       try {
