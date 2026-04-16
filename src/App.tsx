@@ -20,6 +20,7 @@ import AuthCallback from "./pages/AuthCallback";
 import RevolutTransactions from "./pages/RevolutTransactions";
 import RevolutConnect from "./pages/RevolutConnect";
 import DevisPublic from "./pages/DevisPublic";
+import DevisPersonnel from "./pages/DevisPersonnel";
 
 // Onboarding pages
 import OnboardingWelcome from "./pages/onboarding/OnboardingWelcome";
