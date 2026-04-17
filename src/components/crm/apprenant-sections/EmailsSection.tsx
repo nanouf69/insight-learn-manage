@@ -1,5 +1,5 @@
 import { useState, useRef, type ChangeEvent } from "react";
-import { Mail, Send, Inbox, Clock, Plus, Search, RefreshCw, Loader2, FileText, Forward, Paperclip, X } from "lucide-react";
+import { Mail, Send, Inbox, Clock, Plus, Search, RefreshCw, Loader2, FileText, Forward, Paperclip, X, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
