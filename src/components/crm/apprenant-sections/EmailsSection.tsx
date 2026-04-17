@@ -935,7 +935,24 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
                     }} 
                   />
                 )}
-                <div className="flex justify-end pt-2 border-t">
+                <div className="flex justify-end gap-2 pt-2 border-t">
+                  {selectedEmail.type === 'sent' && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => resendMutation.mutate(selectedEmail)}
+                      disabled={resendMutation.isPending || !apprenant.email}
+                      className="gap-2"
+                      title={!apprenant.email ? "Renseignez d'abord l'adresse email de l'apprenant" : `Renvoyer à ${apprenant.email}`}
+                    >
+                      {resendMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <RotateCcw className="w-4 h-4" />
+                      )}
+                      Renvoyer à l'adresse actuelle
+                    </Button>
+                  )}
                   <Button size="sm" variant="outline" onClick={() => handleForwardEmail(selectedEmail)} className="gap-2">
                     <Forward className="w-4 h-4" />
                     Transférer
