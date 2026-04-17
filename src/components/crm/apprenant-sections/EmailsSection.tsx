@@ -1,5 +1,5 @@
 import { useState, useRef, type ChangeEvent } from "react";
-import { Mail, Send, Inbox, Clock, Plus, Search, RefreshCw, Loader2, FileText, Forward, Paperclip, X } from "lucide-react";
+import { Mail, Send, Inbox, Clock, Plus, Search, RefreshCw, Loader2, FileText, Forward, Paperclip, X, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -476,7 +476,45 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
     },
   });
 
-  const filteredEmails = emails
+  // Renvoyer un email déjà envoyé à l'adresse actuelle de l'apprenant
+  const resendMutation = useMutation({
+    mutationFn: async (email: EmailRecord) => {
+      if (!apprenant.email) {
+        throw new Error("L'apprenant n'a pas d'adresse email — veuillez d'abord la renseigner");
+      }
+
+      const body = email.body_html || email.body_preview || '';
+      const { data, error } = await supabase.functions.invoke('sync-outlook-emails', {
+        body: {
+          action: 'send',
+          apprenantId: apprenant.id,
+          userEmail: ORGANISME_EMAIL,
+          to: apprenant.email,
+          subject: email.subject,
+          body,
+          attachments: [],
+        },
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['emails', apprenant.id] });
+      setSelectedEmail(null);
+      toast({
+        title: "Email renvoyé",
+        description: `Email renvoyé à ${apprenant.email}`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur de renvoi",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
     .filter(email => {
       if (activeTab === 'sent') return email.type === 'sent';
       if (activeTab === 'received') return email.type === 'received';
@@ -897,7 +935,24 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
                     }} 
                   />
                 )}
-                <div className="flex justify-end pt-2 border-t">
+                <div className="flex justify-end gap-2 pt-2 border-t">
+                  {selectedEmail.type === 'sent' && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => resendMutation.mutate(selectedEmail)}
+                      disabled={resendMutation.isPending || !apprenant.email}
+                      className="gap-2"
+                      title={!apprenant.email ? "Renseignez d'abord l'adresse email de l'apprenant" : `Renvoyer à ${apprenant.email}`}
+                    >
+                      {resendMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <RotateCcw className="w-4 h-4" />
+                      )}
+                      Renvoyer à l'adresse actuelle
+                    </Button>
+                  )}
                   <Button size="sm" variant="outline" onClick={() => handleForwardEmail(selectedEmail)} className="gap-2">
                     <Forward className="w-4 h-4" />
                     Transférer
