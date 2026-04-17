@@ -1,7 +1,8 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Check, ChevronRight, Home } from "lucide-react";
 import logoFtransport from "@/assets/logo-ftransport.png";
+import { useOnboardingPersistence } from "@/hooks/useOnboardingPersistence";
 
 interface OnboardingLayoutProps {
   children: ReactNode;
@@ -28,6 +29,24 @@ const steps = [
 export function OnboardingLayout({ children, currentStep, totalSteps, title }: OnboardingLayoutProps) {
   const location = useLocation();
   const progressPercent = (currentStep / totalSteps) * 100;
+
+  // Récupère l'ID apprenant depuis localStorage et déclenche la persistance BDD
+  const [apprenantId, setApprenantId] = useState<string | null>(
+    () => localStorage.getItem("onboarding_apprenant_id")
+  );
+  useEffect(() => {
+    const refresh = () => setApprenantId(localStorage.getItem("onboarding_apprenant_id"));
+    window.addEventListener("storage", refresh);
+    window.addEventListener("onboarding:restored", refresh);
+    // Petit polling pour capter les writes du même onglet (au cas où le patch setItem n'est pas encore actif)
+    const id = setInterval(refresh, 2000);
+    return () => {
+      window.removeEventListener("storage", refresh);
+      window.removeEventListener("onboarding:restored", refresh);
+      clearInterval(id);
+    };
+  }, []);
+  useOnboardingPersistence(apprenantId);
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
