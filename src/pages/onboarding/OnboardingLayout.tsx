@@ -1,7 +1,8 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Check, ChevronRight, Home } from "lucide-react";
 import logoFtransport from "@/assets/logo-ftransport.png";
+import { useOnboardingPersistence } from "@/hooks/useOnboardingPersistence";
 
 interface OnboardingLayoutProps {
   children: ReactNode;
