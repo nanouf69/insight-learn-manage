@@ -476,7 +476,45 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
     },
   });
 
-  const filteredEmails = emails
+  // Renvoyer un email déjà envoyé à l'adresse actuelle de l'apprenant
+  const resendMutation = useMutation({
+    mutationFn: async (email: EmailRecord) => {
+      if (!apprenant.email) {
+        throw new Error("L'apprenant n'a pas d'adresse email — veuillez d'abord la renseigner");
+      }
+
+      const body = email.body_html || email.body_preview || '';
+      const { data, error } = await supabase.functions.invoke('sync-outlook-emails', {
+        body: {
+          action: 'send',
+          apprenantId: apprenant.id,
+          userEmail: ORGANISME_EMAIL,
+          to: apprenant.email,
+          subject: email.subject,
+          body,
+          attachments: [],
+        },
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['emails', apprenant.id] });
+      setSelectedEmail(null);
+      toast({
+        title: "Email renvoyé",
+        description: `Email renvoyé à ${apprenant.email}`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur de renvoi",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
     .filter(email => {
       if (activeTab === 'sent') return email.type === 'sent';
       if (activeTab === 'received') return email.type === 'received';
