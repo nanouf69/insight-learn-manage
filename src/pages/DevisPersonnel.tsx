@@ -14,6 +14,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import jsPDF from "jspdf";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { sendAdminNotification } from "@/lib/sendAdminNotification";
 
 /* ─── DATES DE FORMATION CATALOGUE ─── */
 const DATES_VTC = [
@@ -808,6 +809,44 @@ export default function DevisPersonnel() {
       setGenerated(true);
       toast.success("Votre devis a été téléchargé !");
       setTimeout(() => ribRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 300);
+
+      // ── Notify admin (email + alerte système) — fire & forget ──
+      const reponsesCritiques = [
+        q1PerduPoints === "oui" && "A perdu tous ses points",
+        q2CondamneSansPermis === "oui" && "Condamné conduite sans permis",
+        q3RefusRestitution === "oui" && "Refus de restitution de permis",
+        q4Condamne6Mois === "oui" && "Condamné +6 mois ferme",
+      ].filter(Boolean);
+
+      sendAdminNotification({
+        type_document: "Devis personnel téléchargé",
+        nom,
+        prenom,
+        email,
+        telephone,
+        donnees: {
+          numero_devis: numDevis,
+          formation: formation.label,
+          montant: `${formation.prix} €`,
+          type_financement: typeFinancement,
+          ...(typeFinancement === "organisme" ? { financeur: financeurNom, siret_financeur: financeurSiret } : {}),
+          ...(reponsesCritiques.length > 0 ? { alertes: reponsesCritiques } : {}),
+        },
+      });
+
+      try {
+        const alerteCritique = reponsesCritiques.length > 0;
+        await supabase.from("alertes_systeme").insert({
+          type: alerteCritique ? "warning" : "info",
+          titre: alerteCritique
+            ? `⚠️ Devis téléchargé avec alertes — ${prenom} ${nom}`
+            : `📄 Nouveau devis téléchargé — ${prenom} ${nom}`,
+          message: `${formation.label} • ${formation.prix} € • ${typeFinancement === "organisme" ? `Financeur : ${financeurNom}` : "Financement personnel"}${alerteCritique ? ` • ⚠️ ${reponsesCritiques.join(", ")}` : ""}`,
+          details: `Devis ${numDevis}\nEmail: ${email}\nTéléphone: ${telephone}`,
+        } as any);
+      } catch (alertErr) {
+        console.warn("Insertion alerte système échouée (non-bloquant):", alertErr);
+      }
 
       // ── Auto-save devis to storage + DB ──
       try {
