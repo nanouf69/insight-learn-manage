@@ -515,6 +515,8 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
       });
     },
   });
+
+  const filteredEmails = emails
     .filter(email => {
       if (activeTab === 'sent') return email.type === 'sent';
       if (activeTab === 'received') return email.type === 'received';
