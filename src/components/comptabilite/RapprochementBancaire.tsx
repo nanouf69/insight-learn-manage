@@ -944,7 +944,8 @@ export function RapprochementBancaire() {
                   {txs.map(tx => {
                     const isEditing = editingId === tx.id;
                     const isDebit = tx.montant < 0;
-                    const statutCfg = getStatut(tx.statut);
+                    const effStatut = effectiveStatut(tx);
+                    const statutCfg = getStatut(effStatut);
                     const StatutIcon = statutCfg.icon;
                     const catCfg = getCat(tx.categorie);
                     const jlié = linkedJustif(tx);
@@ -953,7 +954,7 @@ export function RapprochementBancaire() {
                     return (
                       <div key={tx.id} className={cn(
                         "p-4 transition-colors",
-                        tx.statut === "non_justifie" && isDebit ? "hover:bg-amber-50/50" : "hover:bg-muted/20",
+                        effStatut === "non_justifie" && isDebit ? "hover:bg-amber-50/50" : "hover:bg-muted/20",
                         isEditing && "bg-muted/30"
                       )}>
                         <div className="flex items-start gap-3">
