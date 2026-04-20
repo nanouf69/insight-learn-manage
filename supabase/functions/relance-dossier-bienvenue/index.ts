@@ -25,11 +25,34 @@ Deno.serve(async (req) => {
 
     if (appError) throw appError;
 
-    // Exclude présentiel formations from relances
-    const EXCLUDED_TYPES = ["vtc", "vtc-exam", "taxi", "taxi-exam", "vtc-e-presentiel", "taxi-e-presentiel", "ta-e-presentiel", "formation-continue-vtc", "formation-continue-taxi", "pa-vtc"];
+    // Exclude présentiel formations and continuing education from onboarding reminders
+    const EXCLUDED_TYPES = new Set([
+      "vtc",
+      "vtc-exam",
+      "taxi",
+      "taxi-exam",
+      "vtc-e-presentiel",
+      "taxi-e-presentiel",
+      "ta-e-presentiel",
+      "pa-vtc",
+      "continue-vtc",
+      "continue-taxi",
+      "formation-continue-vtc",
+      "formation-continue-taxi",
+    ]);
+
+    const isFormationContinue = (value: string) => {
+      const normalized = value.toLowerCase().trim();
+      return (
+        EXCLUDED_TYPES.has(normalized) ||
+        normalized.startsWith('continue-') ||
+        normalized.includes('formation continue')
+      );
+    };
+
     const elearningApprenants = (apprenants || []).filter((a: any) => {
       const type = (a.type_apprenant || a.formation_choisie || "").toLowerCase();
-      if (EXCLUDED_TYPES.includes(type)) return false;
+      if (isFormationContinue(type)) return false;
       // Exclure les apprenants ayant déjà réussi la théorie
       if (a.resultat_examen === 'oui') return false;
       // Exclure les apprenants ayant échoué à l'examen pratique
