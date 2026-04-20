@@ -253,6 +253,16 @@ interface ApprenantWithSession {
   id: string;
   nom: string;
   prenom: string;
+  civilite: string | null;
+  email: string | null;
+  adresse: string | null;
+  code_postal: string | null;
+  ville: string | null;
+  formation_choisie: string | null;
+  type_apprenant: string | null;
+  montant_ttc: number | null;
+  montant_paye: number | null;
+  date_paiement: string | null;
   date_debut_formation: string | null;
   date_fin_formation: string | null;
   session_date_debut: string | null;
