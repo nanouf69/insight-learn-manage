@@ -573,12 +573,11 @@ export function RapprochementBancaire() {
 
   const openLinkDialog = async (txId: string) => {
     setLinkDialogId(txId);
-    setAiSuggestion(null);
-    setAiConfirmation(null);
+    setMatchSuggestion(null);
     const tx = transactions.find(t => t.id === txId);
     if (!tx || justificatifs.length === 0) return;
 
-    setAiSuggestionLoading(true);
+    setMatchSuggestionLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("match-justificatif", {
         body: {
@@ -587,41 +586,24 @@ export function RapprochementBancaire() {
           justificatifs: justificatifs.map((j, i) => ({ ...j, _idx: i })),
         },
       });
-      if (!error && data?.scores) setAiSuggestion(data as AiSuggestion);
+      if (!error && data?.scores) setMatchSuggestion(data as MatchSuggestion);
     } catch { /* silently ignore */ }
-    setAiSuggestionLoading(false);
+    setMatchSuggestionLoading(false);
   };
 
   const linkJustificatif = async (txId: string, justId: string) => {
-    const tx = transactions.find(t => t.id === txId);
-    const just = justificatifs.find(j => j.id === justId);
-
     setConfirmingLink(true);
-    setAiConfirmation(null);
 
-    // Step 1: link in DB
     await supabase.from("transactions_bancaires").update({
       justificatif_id: justId,
       statut: "justifie",
     }).eq("id", txId);
     await supabase.from("justificatifs").update({ statut: "traite" }).eq("id", justId);
 
-    // Step 2: AI confirmation
-    if (tx && just) {
-      try {
-        const { data } = await supabase.functions.invoke("match-justificatif", {
-          body: {
-            mode: "confirm",
-            transaction: tx,
-            selected_justificatif: just,
-          },
-        });
-        if (data) setAiConfirmation(data as AiConfirmation);
-      } catch { /* silently ignore */ }
-    }
-
     setConfirmingLink(false);
+    setLinkDialogId(null);
     await fetchAll();
+    toast.success("Justificatif associé");
   };
 
   // Extraire les mots significatifs d'un libellé (>= 3 chars, non génériques)
