@@ -253,6 +253,16 @@ interface ApprenantWithSession {
   id: string;
   nom: string;
   prenom: string;
+  civilite: string | null;
+  email: string | null;
+  adresse: string | null;
+  code_postal: string | null;
+  ville: string | null;
+  formation_choisie: string | null;
+  type_apprenant: string | null;
+  montant_ttc: number | null;
+  montant_paye: number | null;
+  date_paiement: string | null;
   date_debut_formation: string | null;
   date_fin_formation: string | null;
   session_date_debut: string | null;
@@ -304,7 +314,7 @@ export function RapprochementBancaire() {
     const [txs, { data: just }, { data: apprenantsData }, { data: saData }, { data: fourData }] = await Promise.all([
       fetchAllTxs(),
       supabase.from("justificatifs").select("id, nom_fichier, url, montant_ttc, date_operation, categorie, fournisseur, statut"),
-      supabase.from("apprenants").select("id, nom, prenom, date_debut_formation, date_fin_formation"),
+      supabase.from("apprenants").select("id, nom, prenom, civilite, email, adresse, code_postal, ville, formation_choisie, type_apprenant, montant_ttc, montant_paye, date_paiement, date_debut_formation, date_fin_formation").is("deleted_at", null),
       supabase.from("session_apprenants").select("apprenant_id, date_debut, date_fin, sessions(date_debut, date_fin)"),
       supabase.from("fournisseurs").select("id, nom").eq("actif", true).order("nom"),
     ]);
@@ -321,6 +331,16 @@ export function RapprochementBancaire() {
           id: a.id,
           nom: a.nom,
           prenom: a.prenom,
+          civilite: a.civilite,
+          email: a.email,
+          adresse: a.adresse,
+          code_postal: a.code_postal,
+          ville: a.ville,
+          formation_choisie: a.formation_choisie,
+          type_apprenant: a.type_apprenant,
+          montant_ttc: a.montant_ttc,
+          montant_paye: a.montant_paye,
+          date_paiement: a.date_paiement,
           date_debut_formation: a.date_debut_formation,
           date_fin_formation: a.date_fin_formation,
           session_date_debut: sa?.date_debut || session?.date_debut || null,
@@ -333,6 +353,141 @@ export function RapprochementBancaire() {
   }, []);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  // Auto-confirmation des paiements Formation Continue (≥ 50 €)
+  // Détecte les virements créditeurs qui matchent un apprenant FC non encore payé,
+  // marque le paiement sur la fiche apprenant et envoie la convocation FC.
+  const autoProcessedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (loading || transactions.length === 0 || apprenants.length === 0) return;
+
+    const isFC = (a: ApprenantWithSession): boolean => {
+      const fc = (a.formation_choisie || "").toLowerCase();
+      const ta = (a.type_apprenant || "").toLowerCase();
+      return fc.includes("continue") || ta.includes("continue") || ta.startsWith("fc");
+    };
+
+    const findFCApprenantInLibelle = (libelle: string): ApprenantWithSession | null => {
+      const upper = libelle.toUpperCase();
+      // On ne matche QUE les apprenants FC, et exige nom + (prénom ou initiale) pour limiter les faux positifs
+      for (const a of apprenants) {
+        if (!isFC(a)) continue;
+        const nomUpper = (a.nom || "").toUpperCase();
+        const prenomUpper = (a.prenom || "").toUpperCase();
+        if (nomUpper.length < 3) continue;
+        if (!upper.includes(nomUpper)) continue;
+        // Exige aussi le prénom pour éviter les homonymes
+        if (prenomUpper.length >= 2 && !upper.includes(prenomUpper)) continue;
+        return a;
+      }
+      return null;
+    };
+
+    const formatFRDate = (iso: string): string => {
+      try {
+        return format(new Date(iso), "dd MMMM yyyy", { locale: fr });
+      } catch { return iso; }
+    };
+
+    const buildConvocationBody = (
+      a: ApprenantWithSession,
+      bodyTemplate: string,
+    ): string => {
+      const formationLabel =
+        (a.formation_choisie || "").toLowerCase().includes("taxi")
+          ? "Formation continue TAXI"
+          : "Formation continue VTC";
+      const dateDebut = a.session_date_debut || a.date_debut_formation || "";
+      const dateJour = format(new Date(), "dd MMMM yyyy", { locale: fr });
+      const vars: Record<string, string> = {
+        civilite: a.civilite || "",
+        prenom: a.prenom || "",
+        nom: a.nom || "",
+        adresse: a.adresse || "",
+        code_postal: a.code_postal || "",
+        ville: a.ville || "",
+        date_jour: dateJour,
+        formation: formationLabel,
+        date_debut: dateDebut ? formatFRDate(dateDebut) : "à confirmer",
+      };
+      let out = bodyTemplate;
+      for (const [k, v] of Object.entries(vars)) {
+        out = out.replace(new RegExp(`{{\\s*${k}\\s*}}`, "g"), v);
+      }
+      return out;
+    };
+
+    (async () => {
+      // Charger le template UNE SEULE FOIS
+      const { data: tmpl } = await supabase
+        .from("email_templates")
+        .select("subject_template, body_template")
+        .eq("id", "confirmation-formation-continue")
+        .maybeSingle();
+      if (!tmpl) return;
+
+      for (const tx of transactions) {
+        if (tx.montant < 50) continue; // crédit ≥ 50€ uniquement
+        if (autoProcessedRef.current.has(tx.id)) continue;
+        if (tx.categorie === "recette_formation" && tx.fournisseur_client) continue; // déjà traité
+
+        const apprenant = findFCApprenantInLibelle(tx.libelle);
+        if (!apprenant || !apprenant.email) continue;
+        if (apprenant.date_paiement && (apprenant.montant_paye || 0) > 0) continue; // déjà marqué payé
+
+        autoProcessedRef.current.add(tx.id);
+
+        try {
+          // 1) Marquer le paiement sur la fiche apprenant
+          await supabase
+            .from("apprenants")
+            .update({
+              montant_paye: tx.montant,
+              date_paiement: tx.date_operation,
+              moyen_paiement: "Virement",
+            })
+            .eq("id", apprenant.id);
+
+          // 2) Catégoriser la transaction (recette + nom apprenant)
+          await supabase
+            .from("transactions_bancaires")
+            .update({
+              categorie: "recette_formation",
+              fournisseur_client: `${apprenant.prenom} ${apprenant.nom}`,
+              statut: "justifie",
+            })
+            .eq("id", tx.id);
+
+          // 3) Envoyer la convocation FC
+          const subject = (tmpl.subject_template || "")
+            .replace(/{{\s*prenom\s*}}/g, apprenant.prenom)
+            .replace(/{{\s*nom\s*}}/g, apprenant.nom);
+          const body = buildConvocationBody(apprenant, tmpl.body_template || "");
+
+          await supabase.functions.invoke("sync-outlook-emails", {
+            body: {
+              action: "send",
+              userEmail: "contact@ftransport.fr",
+              to: apprenant.email,
+              subject,
+              body,
+              apprenantId: apprenant.id,
+            },
+          });
+
+          toast.success(
+            `💸 Paiement reçu de ${apprenant.prenom} ${apprenant.nom} (${fmt(tx.montant)}) — convocation FC envoyée`,
+            { duration: 6000 }
+          );
+        } catch (err) {
+          console.error("[auto-FC] Erreur traitement", apprenant.id, err);
+          autoProcessedRef.current.delete(tx.id); // permet retry au prochain refresh
+        }
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transactions, apprenants, loading]);
+
 
   const handleImportCSV = async (file: File) => {
     setImporting(true);
