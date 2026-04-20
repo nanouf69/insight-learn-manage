@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Upload, RefreshCw, CheckCircle, AlertCircle, MinusCircle,
   ArrowDownLeft, ArrowUpRight, Search, Tag, FileText,
-  Link2, Trash2, Eye, MoreHorizontal, Filter, Download, Sparkles
+  Link2, Trash2, Eye, MoreHorizontal, Filter, Download
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, parse } from "date-fns";
