@@ -655,9 +655,17 @@ export function RapprochementBancaire() {
     return tx.statut;
   };
 
+  // "Catégorisé non justifié" = a une catégorie mais pas de justificatif lié
+  const isCategoriseSansJustif = (tx: Transaction): boolean =>
+    !!(tx.categorie && tx.categorie.trim() !== "") && !tx.justificatif_id;
+
   const filtered = transactions.filter(tx => {
     const eff = effectiveStatut(tx);
-    const matchStatut = filterStatut === "tous" || eff === filterStatut;
+    const matchStatut =
+      filterStatut === "tous" ||
+      (filterStatut === "categorise_sans_justif"
+        ? isCategoriseSansJustif(tx)
+        : eff === filterStatut);
     const matchType = filterType === "tous" || (filterType === "debit" ? tx.montant < 0 : tx.montant > 0);
     const normBanque = (b: string) => b.toLowerCase().replace(/\s+/g, "");
     const matchBanque = filterBanque === "tous" || normBanque(tx.banque) === normBanque(filterBanque);
