@@ -829,6 +829,17 @@ export function RapprochementBancaire() {
               </Badge>
             </Button>
           ))}
+          <Button
+            size="sm"
+            variant={filterStatut === "categorise_sans_justif" ? "default" : "outline"}
+            onClick={() => setFilterStatut(filterStatut === "categorise_sans_justif" ? "tous" : "categorise_sans_justif")}
+          >
+            <Tag className="h-3.5 w-3.5 mr-1" />
+            Catégorisé sans justif
+            <Badge className="ml-1.5 h-4 px-1 text-[10px]">
+              {transactions.filter(t => isCategoriseSansJustif(t)).length}
+            </Badge>
+          </Button>
           <Button size="sm" variant={filterStatut === "tous" ? "default" : "outline"} onClick={() => setFilterStatut("tous")}>
             Tous
           </Button>
