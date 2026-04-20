@@ -1185,14 +1185,28 @@ export function RapprochementBancaire() {
             </p>
           </div>
 
-          {/* Justificatif list */}
+          {/* Justificatif list — exclut ceux déjà liés à une autre transaction et déduplique */}
+          {(() => {
+            const linkedIds = new Set(
+              transactions
+                .filter(t => t.justificatif_id && t.id !== linkDialogId)
+                .map(t => t.justificatif_id as string)
+            );
+            const seen = new Set<string>();
+            const availableJustifs = justificatifs.filter(j => {
+              if (linkedIds.has(j.id)) return false;
+              if (seen.has(j.id)) return false;
+              seen.add(j.id);
+              return true;
+            });
+            return (
           <div className="space-y-2 mt-1">
-            {justificatifs.length === 0 ? (
+            {availableJustifs.length === 0 ? (
               <p className="text-muted-foreground text-sm text-center py-4">
-                Aucun justificatif existant — utilisez le bouton ci-dessus pour en ajouter un.
+                Aucun justificatif disponible — utilisez le bouton ci-dessus pour en ajouter un.
               </p>
             ) : (
-              justificatifs.map((j, idx) => {
+              availableJustifs.map((j, idx) => {
                 const tx = transactions.find(t => t.id === linkDialogId);
                 const montantProche = tx && j.montant_ttc
                   ? Math.abs(Math.abs(tx.montant) - j.montant_ttc) < 1
@@ -1247,6 +1261,8 @@ export function RapprochementBancaire() {
               })
             )}
           </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>
