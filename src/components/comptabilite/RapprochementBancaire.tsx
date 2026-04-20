@@ -700,8 +700,17 @@ export function RapprochementBancaire() {
     setAiLoadingId(null);
   };
 
+  // Une transaction catégorisée est considérée comme "justifiée" même sans justificatif lié
+  const effectiveStatut = (tx: Transaction): string => {
+    if (tx.categorie && tx.categorie.trim() !== "" && tx.statut === "non_justifie") {
+      return "justifie";
+    }
+    return tx.statut;
+  };
+
   const filtered = transactions.filter(tx => {
-    const matchStatut = filterStatut === "tous" || tx.statut === filterStatut;
+    const eff = effectiveStatut(tx);
+    const matchStatut = filterStatut === "tous" || eff === filterStatut;
     const matchType = filterType === "tous" || (filterType === "debit" ? tx.montant < 0 : tx.montant > 0);
     const normBanque = (b: string) => b.toLowerCase().replace(/\s+/g, "");
     const matchBanque = filterBanque === "tous" || normBanque(tx.banque) === normBanque(filterBanque);
@@ -720,11 +729,11 @@ export function RapprochementBancaire() {
     return acc;
   }, {} as Record<string, Transaction[]>);
 
-  const nonJustifies = transactions.filter(t => t.statut === "non_justifie").length;
+  const nonJustifies = transactions.filter(t => effectiveStatut(t) === "non_justifie").length;
   const totalDebits = transactions.filter(t => t.montant < 0).reduce((s, t) => s + t.montant, 0);
   const totalCredits = transactions.filter(t => t.montant > 0).reduce((s, t) => s + t.montant, 0);
   const pctJustifie = transactions.length > 0
-    ? Math.round(transactions.filter(t => t.statut === "justifie" || t.statut === "ignore").length / transactions.length * 100)
+    ? Math.round(transactions.filter(t => { const e = effectiveStatut(t); return e === "justifie" || e === "ignore"; }).length / transactions.length * 100)
     : 0;
 
   const fmt = (n: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(n);
@@ -912,7 +921,7 @@ export function RapprochementBancaire() {
         Object.entries(grouped).map(([month, txs]) => {
           const monthDebit = txs.filter(t => t.montant < 0).reduce((s, t) => s + t.montant, 0);
           const monthCredit = txs.filter(t => t.montant > 0).reduce((s, t) => s + t.montant, 0);
-          const monthNonJustifies = txs.filter(t => t.statut === "non_justifie").length;
+          const monthNonJustifies = txs.filter(t => effectiveStatut(t) === "non_justifie").length;
 
           return (
             <div key={month} className="space-y-2">
@@ -935,7 +944,8 @@ export function RapprochementBancaire() {
                   {txs.map(tx => {
                     const isEditing = editingId === tx.id;
                     const isDebit = tx.montant < 0;
-                    const statutCfg = getStatut(tx.statut);
+                    const effStatut = effectiveStatut(tx);
+                    const statutCfg = getStatut(effStatut);
                     const StatutIcon = statutCfg.icon;
                     const catCfg = getCat(tx.categorie);
                     const jlié = linkedJustif(tx);
@@ -944,7 +954,7 @@ export function RapprochementBancaire() {
                     return (
                       <div key={tx.id} className={cn(
                         "p-4 transition-colors",
-                        tx.statut === "non_justifie" && isDebit ? "hover:bg-amber-50/50" : "hover:bg-muted/20",
+                        effStatut === "non_justifie" && isDebit ? "hover:bg-amber-50/50" : "hover:bg-muted/20",
                         isEditing && "bg-muted/30"
                       )}>
                         <div className="flex items-start gap-3">
@@ -1118,7 +1128,7 @@ export function RapprochementBancaire() {
                             ) : (
                               <>
                                 {/* Quick: link justif with AI */}
-                                {tx.statut === "non_justifie" && isDebit && (
+                                {effStatut === "non_justifie" && isDebit && (
                                   <Button size="sm" variant="outline" className="h-8 px-2 text-xs gap-1"
                                     onClick={() => openLinkDialog(tx.id)}>
                                     <Link2 className="h-3.5 w-3.5" />
