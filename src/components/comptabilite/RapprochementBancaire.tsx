@@ -369,16 +369,14 @@ export function RapprochementBancaire() {
 
     const findFCApprenantInLibelle = (libelle: string): ApprenantWithSession | null => {
       const upper = libelle.toUpperCase();
-      // On ne matche QUE les apprenants FC, et exige nom + (prénom ou initiale) pour limiter les faux positifs
+      // On ne matche QUE les apprenants FC : nom OU prénom suffit (min 4 car. pour limiter les faux positifs)
       for (const a of apprenants) {
         if (!isFC(a)) continue;
         const nomUpper = (a.nom || "").toUpperCase();
         const prenomUpper = (a.prenom || "").toUpperCase();
-        if (nomUpper.length < 3) continue;
-        if (!upper.includes(nomUpper)) continue;
-        // Exige aussi le prénom pour éviter les homonymes
-        if (prenomUpper.length >= 2 && !upper.includes(prenomUpper)) continue;
-        return a;
+        const nomMatch = nomUpper.length >= 4 && upper.includes(nomUpper);
+        const prenomMatch = prenomUpper.length >= 4 && upper.includes(prenomUpper);
+        if (nomMatch || prenomMatch) return a;
       }
       return null;
     };
