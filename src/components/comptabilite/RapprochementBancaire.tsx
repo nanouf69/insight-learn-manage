@@ -1026,18 +1026,6 @@ export function RapprochementBancaire() {
                                     >
                                       + Catégoriser
                                     </button>
-                                    <button
-                                      className="flex items-center gap-0.5 text-[10px] text-purple-600 hover:text-purple-800 font-medium"
-                                      onClick={() => categorizeWithAI(tx)}
-                                      disabled={aiLoadingId === tx.id}
-                                      title="Catégoriser avec l'IA"
-                                    >
-                                      {aiLoadingId === tx.id
-                                        ? <RefreshCw className="h-3 w-3 animate-spin" />
-                                        : <Sparkles className="h-3 w-3" />
-                                      }
-                                      IA
-                                    </button>
                                   </div>
                                 ) : null}
 
