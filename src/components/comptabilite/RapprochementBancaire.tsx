@@ -1128,7 +1128,7 @@ export function RapprochementBancaire() {
                             ) : (
                               <>
                                 {/* Quick: link justif with AI */}
-                                {tx.statut === "non_justifie" && isDebit && (
+                                {effStatut === "non_justifie" && isDebit && (
                                   <Button size="sm" variant="outline" className="h-8 px-2 text-xs gap-1"
                                     onClick={() => openLinkDialog(tx.id)}>
                                     <Link2 className="h-3.5 w-3.5" />
