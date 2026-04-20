@@ -644,35 +644,8 @@ export function RapprochementBancaire() {
     return toUpdate.length;
   };
 
-  const categorizeWithAI = async (tx: Transaction) => {
-    setAiLoadingId(tx.id);
-    try {
-      const { data, error } = await supabase.functions.invoke("categorize-justificatif", {
-        body: {
-          nom_fichier: tx.libelle,
-          fournisseur: tx.fournisseur_client || "",
-          description: tx.notes || "",
-          montant: Math.abs(tx.montant),
-        },
-      });
-      if (error) throw error;
-      if (data?.categorie) {
-        await supabase.from("transactions_bancaires").update({ categorie: data.categorie }).eq("id", tx.id);
-        const similar = await autoCategorizeSimilar(tx, data.categorie);
-        if (similar > 0) {
-          toast.success(`Catégorie « ${data.categorie} » appliquée + ${similar} transaction(s) similaire(s) auto-catégorisée(s) ✨`);
-        } else {
-          toast.success(`Catégorie détectée : ${data.categorie}`);
-        }
-        await fetchAll();
-      } else {
-        toast.warning("L'IA n'a pas pu déterminer la catégorie");
-      }
-    } catch (err) {
-      toast.error("Erreur IA : " + (err instanceof Error ? err.message : "Erreur"));
-    }
-    setAiLoadingId(null);
-  };
+
+
 
   // Une transaction catégorisée est considérée comme "justifiée" même sans justificatif lié
   const effectiveStatut = (tx: Transaction): string => {
