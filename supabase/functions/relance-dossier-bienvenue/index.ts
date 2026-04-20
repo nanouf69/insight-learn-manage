@@ -41,18 +41,23 @@ Deno.serve(async (req) => {
       "formation-continue-taxi",
     ]);
 
-    const isFormationContinue = (value: string) => {
-      const normalized = value.toLowerCase().trim();
-      return (
-        EXCLUDED_TYPES.has(normalized) ||
-        normalized.startsWith('continue-') ||
-        normalized.includes('formation continue')
-      );
+    const normalize = (value: string) =>
+      (value || '').toLowerCase().trim().replace(/\s+/g, '-');
+
+    const isExcluded = (rawType: string, rawFormation: string) => {
+      const candidates = [normalize(rawType), normalize(rawFormation)];
+      for (const v of candidates) {
+        if (!v) continue;
+        if (EXCLUDED_TYPES.has(v)) return true;
+        if (v.startsWith('continue-')) return true;
+        if (v.includes('formation-continue')) return true;
+        if (v.includes('pa-vtc')) return true;
+      }
+      return false;
     };
 
     const elearningApprenants = (apprenants || []).filter((a: any) => {
-      const type = (a.type_apprenant || a.formation_choisie || "").toLowerCase();
-      if (isFormationContinue(type)) return false;
+      if (isExcluded(a.type_apprenant || '', a.formation_choisie || '')) return false;
       // Exclure les apprenants ayant déjà réussi la théorie
       if (a.resultat_examen === 'oui') return false;
       // Exclure les apprenants ayant échoué à l'examen pratique
