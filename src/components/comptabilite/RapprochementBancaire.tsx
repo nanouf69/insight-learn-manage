@@ -700,8 +700,17 @@ export function RapprochementBancaire() {
     setAiLoadingId(null);
   };
 
+  // Une transaction catégorisée est considérée comme "justifiée" même sans justificatif lié
+  const effectiveStatut = (tx: Transaction): string => {
+    if (tx.categorie && tx.categorie.trim() !== "" && tx.statut === "non_justifie") {
+      return "justifie";
+    }
+    return tx.statut;
+  };
+
   const filtered = transactions.filter(tx => {
-    const matchStatut = filterStatut === "tous" || tx.statut === filterStatut;
+    const eff = effectiveStatut(tx);
+    const matchStatut = filterStatut === "tous" || eff === filterStatut;
     const matchType = filterType === "tous" || (filterType === "debit" ? tx.montant < 0 : tx.montant > 0);
     const normBanque = (b: string) => b.toLowerCase().replace(/\s+/g, "");
     const matchBanque = filterBanque === "tous" || normBanque(tx.banque) === normBanque(filterBanque);
@@ -720,11 +729,11 @@ export function RapprochementBancaire() {
     return acc;
   }, {} as Record<string, Transaction[]>);
 
-  const nonJustifies = transactions.filter(t => t.statut === "non_justifie").length;
+  const nonJustifies = transactions.filter(t => effectiveStatut(t) === "non_justifie").length;
   const totalDebits = transactions.filter(t => t.montant < 0).reduce((s, t) => s + t.montant, 0);
   const totalCredits = transactions.filter(t => t.montant > 0).reduce((s, t) => s + t.montant, 0);
   const pctJustifie = transactions.length > 0
-    ? Math.round(transactions.filter(t => t.statut === "justifie" || t.statut === "ignore").length / transactions.length * 100)
+    ? Math.round(transactions.filter(t => { const e = effectiveStatut(t); return e === "justifie" || e === "ignore"; }).length / transactions.length * 100)
     : 0;
 
   const fmt = (n: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(n);
