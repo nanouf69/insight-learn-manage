@@ -374,8 +374,17 @@ export function JustificatifsTab() {
     await fetchItems();
   };
 
+  // Un justificatif avec catégorie est considéré comme "Traité" même sans rapprochement
+  const effectiveStatut = (item: Justificatif): string => {
+    if (item.categorie && item.categorie.trim() !== "" && item.statut !== "traite") {
+      return "traite";
+    }
+    return item.statut;
+  };
+
   const filtered = items.filter(item => {
-    const matchStatut = filterStatut === "tous" || item.statut === filterStatut;
+    const eff = effectiveStatut(item);
+    const matchStatut = filterStatut === "tous" || eff === filterStatut;
     const matchCat = filterCategorie === "tous" || item.categorie === filterCategorie;
     const matchSearch = !search ||
       item.nom_fichier.toLowerCase().includes(search.toLowerCase()) ||
@@ -394,8 +403,8 @@ export function JustificatifsTab() {
     return acc;
   }, {} as Record<string, Justificatif[]>);
 
-  const nbATraiter = items.filter(i => i.statut === "a_traiter").length;
-  const nbAAssocier = items.filter(i => i.statut === "a_associer").length;
+  const nbATraiter = items.filter(i => effectiveStatut(i) === "a_traiter").length;
+  const nbAAssocier = items.filter(i => effectiveStatut(i) === "a_associer").length;
   const totalDepenses = items.reduce((s, i) => s + (i.montant_ttc || 0), 0);
   const formatMontant = (n: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(n);
 
