@@ -533,7 +533,18 @@ export function RapprochementBancaire() {
     setUploadingJustif(true);
     try {
       const tx = transactions.find(t => t.id === txId);
-      const path = `${Date.now()}_${file.name}`;
+      // Sanitize filename for Supabase Storage (no €, accents, spaces, special chars)
+      const lastDot = file.name.lastIndexOf(".");
+      const ext = lastDot >= 0 ? file.name.slice(lastDot) : "";
+      const base = (lastDot >= 0 ? file.name.slice(0, lastDot) : file.name)
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9._-]+/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_|_$/g, "")
+        .slice(0, 80) || "justificatif";
+      const safeExt = ext.replace(/[^a-zA-Z0-9.]/g, "").toLowerCase();
+      const path = `${Date.now()}_${base}${safeExt}`;
       const { error: upErr } = await supabase.storage
         .from("justificatifs")
         .upload(path, file, { contentType: file.type });
