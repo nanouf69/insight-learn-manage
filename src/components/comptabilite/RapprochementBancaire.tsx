@@ -422,16 +422,29 @@ export function RapprochementBancaire() {
         .select("subject_template, body_template")
         .eq("id", "confirmation-formation-continue")
         .maybeSingle();
-      if (!tmpl) return;
+      if (!tmpl) {
+        console.warn("[auto-FC] Template 'confirmation-formation-continue' introuvable");
+        return;
+      }
 
+      const fcCount = apprenants.filter(isFC).length;
+      console.log(`[auto-FC] Démarrage : ${transactions.length} tx, ${apprenants.length} apprenants (${fcCount} FC)`);
+
+      let matched = 0;
       for (const tx of transactions) {
         if (tx.montant < 50) continue; // crédit ≥ 50€ uniquement
         if (autoProcessedRef.current.has(tx.id)) continue;
         if (tx.categorie === "recette_formation" && tx.fournisseur_client) continue; // déjà traité
 
         const apprenant = findFCApprenantInLibelle(tx.libelle);
-        if (!apprenant || !apprenant.email) continue;
+        if (!apprenant) continue;
+        if (!apprenant.email) {
+          console.warn(`[auto-FC] Match ${apprenant.prenom} ${apprenant.nom} mais sans email — skip`);
+          continue;
+        }
         if (apprenant.date_paiement && (apprenant.montant_paye || 0) > 0) continue; // déjà marqué payé
+        matched++;
+        console.log(`[auto-FC] Match : tx ${tx.id} (${tx.montant}€, ${tx.libelle}) → ${apprenant.prenom} ${apprenant.nom}`);
 
         autoProcessedRef.current.add(tx.id);
 
@@ -482,6 +495,7 @@ export function RapprochementBancaire() {
           autoProcessedRef.current.delete(tx.id); // permet retry au prochain refresh
         }
       }
+      console.log(`[auto-FC] Terminé : ${matched} match(es) traité(s)`);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactions, apprenants, loading]);
