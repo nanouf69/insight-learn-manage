@@ -1208,25 +1208,6 @@ export function RapprochementBancaire() {
 
           {!aiConfirmation && (
             <>
-              {/* PRE-LINK: AI Analysis loading */}
-              {aiSuggestionLoading && (
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-purple-50 border border-purple-200 text-purple-700">
-                  <RefreshCw className="h-4 w-4 animate-spin flex-shrink-0" />
-                  <span className="text-sm">L'IA analyse les correspondances...</span>
-                </div>
-              )}
-
-              {/* PRE-LINK: AI Analysis result */}
-              {aiSuggestion && !aiSuggestionLoading && (
-                <div className="p-3 rounded-lg bg-purple-50 border border-purple-200 space-y-1">
-                  <div className="flex items-center gap-2 text-purple-700">
-                    <Sparkles className="h-4 w-4" />
-                    <span className="text-sm font-semibold">Analyse IA</span>
-                  </div>
-                  <p className="text-xs text-purple-600">{aiSuggestion.analyse}</p>
-                </div>
-              )}
-
               {/* Confirming state */}
               {confirmingLink && (
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-700">
