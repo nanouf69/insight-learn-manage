@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,110 +10,128 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
     const { mode, transaction, justificatifs, selected_justificatif } = await req.json();
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY manquant");
-
-    let prompt = "";
-
+    // Mode 1: Suggest best matches (simple algorithmic matching)
     if (mode === "suggest") {
-      // Mode 1: suggest best matches before linking
-      const justifList = justificatifs.map((j: any, i: number) =>
-        `[${i}] Fichier: ${j.nom_fichier} | Fournisseur: ${j.fournisseur || "?"} | Montant: ${j.montant_ttc != null ? j.montant_ttc + "€" : "?"} | Date: ${j.date_operation || "?"} | Catégorie: ${j.categorie || "?"}`
-      ).join("\n");
+      const scores = justificatifs.map((j: any, index: number) => {
+        let score = 0;
+        const reasons = [];
 
-      prompt = `Tu es un comptable expert. Analyse cette transaction bancaire et classe les justificatifs disponibles par pertinence.
+        const txAmount = Math.abs(transaction.montant);
+        const jAmount = j.montant_ttc != null ? Math.abs(j.montant_ttc) : null;
 
-TRANSACTION:
-- Libellé: ${transaction.libelle}
-- Montant: ${Math.abs(transaction.montant)}€ (${transaction.montant < 0 ? "débit" : "crédit"})
-- Date: ${transaction.date_operation}
-- Fournisseur connu: ${transaction.fournisseur_client || "inconnu"}
+        if (jAmount !== null) {
+          const diff = Math.abs(txAmount - jAmount);
+          if (diff === 0) {
+            score += 40;
+            reasons.push("Montant identique");
+          } else if (diff < 1) {
+            score += 35;
+            reasons.push("Montant quasi identique");
+          } else if (diff / txAmount < 0.1) {
+            score += 25;
+            reasons.push("Montant très proche");
+          }
+        }
 
-JUSTIFICATIFS DISPONIBLES:
-${justifList}
+        const txFourn = (transaction.fournisseur_client || "").toLowerCase().trim();
+        const jFourn = (j.fournisseur || "").toLowerCase().trim();
+        if (txFourn && jFourn && (txFourn.includes(jFourn) || jFourn.includes(txFourn))) {
+          score += 30;
+          reasons.push("Fournisseur correspondant");
+        }
 
-Réponds UNIQUEMENT avec un JSON valide (rien d'autre) :
-{
-  "scores": [
-    { "index": 0, "score": 95, "raison": "Montant identique + même fournisseur" },
-    ...
-  ],
-  "meilleur_index": 0,
-  "analyse": "Explication courte en 1-2 phrases"
-}
+        const txDate = transaction.date_operation;
+        const jDate = j.date_operation;
+        if (txDate && jDate) {
+          const d1 = new Date(txDate);
+          const d2 = new Date(jDate);
+          const diffDays = Math.abs(d1.getTime() - d2.getTime()) / (1000 * 60 * 60 * 24);
+          if (diffDays === 0) {
+            score += 30;
+            reasons.push("Même date");
+          } else if (diffDays <= 1) {
+            score += 20;
+            reasons.push("Date à 1 jour près");
+          } else if (diffDays <= 7) {
+            score += 10;
+            reasons.push("Date dans la semaine");
+          }
+        }
 
-score = 0-100 (100 = match parfait). Si aucun justificatif ne correspond, score < 30.`;
+        let finalScore = score;
+        let raison = "";
+        if (reasons.length > 0) {
+          finalScore = Math.min(score, 95);
+          raison = reasons.slice(0, 3).join(" + ");
+        }
 
-    } else if (mode === "confirm") {
-      // Mode 2: confirm the link after selection
-      prompt = `Tu es un comptable expert. Valide ce rapprochement bancaire.
+        return { index, score: finalScore, raison };
+      });
 
-TRANSACTION:
-- Libellé: ${transaction.libelle}
-- Montant: ${Math.abs(transaction.montant)}€ (${transaction.montant < 0 ? "débit" : "crédit"})
-- Date: ${transaction.date_operation}
+      scores.sort((a: any, b: any) => b.score - a.score);
 
-JUSTIFICATIF ASSOCIÉ:
-- Fichier: ${selected_justificatif.nom_fichier}
-- Fournisseur: ${selected_justificatif.fournisseur || "?"}
-- Montant TTC: ${selected_justificatif.montant_ttc != null ? selected_justificatif.montant_ttc + "€" : "?"}
-- Date: ${selected_justificatif.date_operation || "?"}
-- Catégorie: ${selected_justificatif.categorie || "non catégorisé"}
+      const result = {
+        scores: scores,
+        meilleur_index: scores.length > 0 ? scores[0].index : null,
+        analyse: scores.length > 0 && scores[0].score > 30
+          ? `Meilleur match: ${scores[0].score}/100`
+          : "Aucun justificatif ne correspond significativement"
+      };
 
-Réponds UNIQUEMENT avec un JSON valide :
-{
-  "valide": true,
-  "confiance": 90,
-  "message": "Message de confirmation ou avertissement en 1 phrase",
-  "alerte": null
-}
-
-Si montant divergent ou fournisseur incohérent, valide=false et alerte="raison courte".`;
+      return new Response(JSON.stringify(result), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "openai/gpt-5-mini",
-        messages: [{ role: "user", content: prompt }],
-        response_format: { type: "json_object" },
-      }),
-    });
+    // Mode 2: Confirm the link after selection
+    if (mode === "confirm") {
+      const txAmount = Math.abs(transaction.montant);
+      const jAmount = selected_justificatif.montant_ttc != null ? Math.abs(selected_justificatif.montant_ttc) : null;
 
-    if (!response.ok) {
-      const errBody = await response.text();
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Limite IA atteinte" }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+      let confiance = 80;
+      let alerte = null;
+
+      if (jAmount !== null) {
+        const diff = Math.abs(txAmount - jAmount);
+        if (diff === 0) {
+          confiance = 98;
+        } else if (diff < 1) {
+          confiance = 95;
+        } else if (diff / txAmount < 0.1) {
+          confiance = 85;
+        } else if (diff / txAmount < 0.2) {
+          confiance = 70;
+          alerte = "Montant différent de plus de 10%";
+        } else {
+          confiance = 50;
+          alerte = "Montant très différent, vérifier";
+        }
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Crédits IA insuffisants" }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      throw new Error(`Erreur IA: ${response.status} - ${errBody}`);
+
+      const result = {
+        valide: confiance >= 60,
+        confiance: confiance,
+        message: confiance >= 90
+          ? "Rapprochement validé - Montants et fournisseur cohérents"
+          : confiance >= 70
+          ? "Rapprochement acceptable avec légère différence"
+          : "Rapprochement à vérifier avant validation",
+        alerte: alerte
+      };
+
+      return new Response(JSON.stringify(result), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const data = await response.json();
-    const rawContent = data.choices?.[0]?.message?.content || "{}";
-    console.log("AI match response:", rawContent);
-
-    let result;
-    try {
-      result = JSON.parse(rawContent);
-    } catch {
-      result = { error: "Réponse IA invalide" };
-    }
-
-    return new Response(JSON.stringify(result), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    return new Response(JSON.stringify({ error: "Mode inconnu" }), {
+      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
   } catch (e) {
