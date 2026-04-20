@@ -495,6 +495,7 @@ export function RapprochementBancaire() {
           autoProcessedRef.current.delete(tx.id); // permet retry au prochain refresh
         }
       }
+      console.log(`[auto-FC] Terminé : ${matched} match(es) traité(s)`);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactions, apprenants, loading]);
