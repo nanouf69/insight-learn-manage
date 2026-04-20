@@ -1235,11 +1235,43 @@ export function RapprochementBancaire() {
                 </div>
               )}
 
+              {/* Upload nouveau justificatif (PDF / image) */}
+              <div className="rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 p-3 mt-2">
+                <input
+                  ref={linkUploadInputRef}
+                  type="file"
+                  accept="application/pdf,image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f && linkDialogId) uploadAndLinkJustificatif(linkDialogId, f);
+                    if (e.target) e.target.value = "";
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-2"
+                  disabled={uploadingJustif || confirmingLink}
+                  onClick={() => linkUploadInputRef.current?.click()}
+                >
+                  {uploadingJustif ? (
+                    <><RefreshCw className="h-4 w-4 animate-spin" /> Téléversement…</>
+                  ) : (
+                    <><Upload className="h-4 w-4" /> Téléverser un justificatif (PDF / image)</>
+                  )}
+                </Button>
+                <p className="text-[10px] text-muted-foreground text-center mt-1.5">
+                  Le fichier sera enregistré et associé automatiquement à cette transaction
+                </p>
+              </div>
+
               {/* Justificatif list */}
               <div className="space-y-2 mt-1">
                 {justificatifs.length === 0 ? (
-                  <p className="text-muted-foreground text-sm text-center py-8">
-                    Aucun justificatif disponible. Ajoutez-en dans l'onglet "Justificatifs".
+                  <p className="text-muted-foreground text-sm text-center py-4">
+                    Aucun justificatif existant — utilisez le bouton ci-dessus pour en ajouter un.
                   </p>
                 ) : (
                   justificatifs.map((j, idx) => {
