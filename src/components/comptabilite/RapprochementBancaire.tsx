@@ -242,18 +242,12 @@ function detectBankFromCsv(text: string): "bnp" | "revolut" | null {
   return null;
 }
 
-interface AiSuggestion {
+interface MatchSuggestion {
   scores: { index: number; score: number; raison: string }[];
-  meilleur_index: number;
+  meilleur_index: number | null;
   analyse: string;
 }
 
-interface AiConfirmation {
-  valide: boolean;
-  confiance: number;
-  message: string;
-  alerte: string | null;
-}
 
 interface ApprenantWithSession {
   id: string;
