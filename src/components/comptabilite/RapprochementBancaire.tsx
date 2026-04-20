@@ -526,6 +526,48 @@ export function RapprochementBancaire() {
     await fetchAll();
   };
 
+  const linkUploadInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingJustif, setUploadingJustif] = useState(false);
+
+  const uploadAndLinkJustificatif = async (txId: string, file: File) => {
+    setUploadingJustif(true);
+    try {
+      const tx = transactions.find(t => t.id === txId);
+      const path = `${Date.now()}_${file.name}`;
+      const { error: upErr } = await supabase.storage
+        .from("justificatifs")
+        .upload(path, file, { contentType: file.type });
+      if (upErr) throw upErr;
+
+      const { data: signed } = await supabase.storage
+        .from("justificatifs")
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 5);
+
+      const { data: inserted, error: dbErr } = await supabase
+        .from("justificatifs")
+        .insert({
+          nom_fichier: file.name,
+          url: signed?.signedUrl || "",
+          statut: "traite",
+          date_operation: tx?.date_operation || new Date().toISOString().split("T")[0],
+          montant_ttc: tx ? Math.abs(tx.montant) : null,
+          fournisseur: tx?.fournisseur_client || null,
+          categorie: tx?.categorie || null,
+        })
+        .select()
+        .single();
+      if (dbErr) throw dbErr;
+
+      if (inserted?.id) {
+        await linkJustificatif(txId, inserted.id);
+        toast.success("Justificatif téléversé et associé !");
+      }
+    } catch (err) {
+      toast.error("Erreur upload : " + (err instanceof Error ? err.message : "inconnu"));
+    }
+    setUploadingJustif(false);
+  };
+
   const openLinkDialog = async (txId: string) => {
     setLinkDialogId(txId);
     setAiSuggestion(null);
