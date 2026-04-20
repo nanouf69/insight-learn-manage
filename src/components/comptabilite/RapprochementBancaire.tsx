@@ -921,7 +921,7 @@ export function RapprochementBancaire() {
         Object.entries(grouped).map(([month, txs]) => {
           const monthDebit = txs.filter(t => t.montant < 0).reduce((s, t) => s + t.montant, 0);
           const monthCredit = txs.filter(t => t.montant > 0).reduce((s, t) => s + t.montant, 0);
-          const monthNonJustifies = txs.filter(t => t.statut === "non_justifie").length;
+          const monthNonJustifies = txs.filter(t => effectiveStatut(t) === "non_justifie").length;
 
           return (
             <div key={month} className="space-y-2">
