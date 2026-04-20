@@ -274,10 +274,8 @@ export function RapprochementBancaire() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Transaction>>({});
   const [linkDialogId, setLinkDialogId] = useState<string | null>(null);
-  const [aiLoadingId, setAiLoadingId] = useState<string | null>(null);
-  const [aiSuggestion, setAiSuggestion] = useState<AiSuggestion | null>(null);
-  const [aiSuggestionLoading, setAiSuggestionLoading] = useState(false);
-  const [aiConfirmation, setAiConfirmation] = useState<AiConfirmation | null>(null);
+  const [matchSuggestion, setMatchSuggestion] = useState<MatchSuggestion | null>(null);
+  const [matchSuggestionLoading, setMatchSuggestionLoading] = useState(false);
   const [confirmingLink, setConfirmingLink] = useState(false);
   const [syncingRevolut, setSyncingRevolut] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
