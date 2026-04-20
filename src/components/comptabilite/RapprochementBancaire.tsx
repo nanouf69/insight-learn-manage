@@ -1261,6 +1261,8 @@ export function RapprochementBancaire() {
               })
             )}
           </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>
