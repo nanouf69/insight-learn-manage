@@ -1353,7 +1353,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
               session.dateFin,
               saForEmargement,
             )
-          : agendaDays;
+          : agendaDays.length === 0
+            ? buildFallbackAgendaDays(session.dateDebut, session.dateFin, {
+                isPratique,
+                isVTC,
+                isCoursDuSoir: (session.title || '').toLowerCase().includes('soir'),
+                heureDebutPersonnalisee: saForEmargement.heure_debut_personnalisee,
+                heureFinPersonnalisee: saForEmargement.heure_fin_personnalisee,
+              })
+            : agendaDays;
 
         if (finalAgendaDays.length === 0) {
           failed++;
