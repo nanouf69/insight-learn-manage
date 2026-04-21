@@ -170,6 +170,53 @@ const buildDefaultFCVTCDay = (date: Date): AgendaDaySlot => ({
   apremFin: '17:00',
 });
 
+/**
+ * Fallback : génère une liste de jours d'émargement basés uniquement sur les
+ * dates de la session, sans dépendre de blocs agenda. Utilisé notamment pour
+ * les sessions pratiques (un seul jour) ou lorsque l'agenda n'est pas saisi.
+ */
+const buildFallbackAgendaDays = (
+  dateDebutISO: string,
+  dateFinISO: string,
+  options: {
+    isPratique: boolean;
+    isVTC: boolean;
+    isCoursDuSoir: boolean;
+    heureDebutPersonnalisee?: string | null;
+    heureFinPersonnalisee?: string | null;
+  },
+): AgendaDaySlot[] => {
+  const start = new Date(dateDebutISO + 'T00:00:00');
+  const end = new Date(dateFinISO + 'T00:00:00');
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) return [];
+  const days: AgendaDaySlot[] = [];
+  const cur = new Date(start);
+  while (cur <= end) {
+    const day: AgendaDaySlot = { date: new Date(cur) };
+    if (options.heureDebutPersonnalisee && options.heureFinPersonnalisee) {
+      // Une seule plage personnalisée : on l'affiche en matin
+      day.matinDebut = options.heureDebutPersonnalisee.slice(0, 5);
+      day.matinFin = options.heureFinPersonnalisee.slice(0, 5);
+    } else if (options.isCoursDuSoir) {
+      day.apremDebut = '17:00';
+      day.apremFin = '21:00';
+    } else if (options.isPratique) {
+      day.matinDebut = '09:00';
+      day.matinFin = '12:00';
+      day.apremDebut = '13:00';
+      day.apremFin = '16:00';
+    } else {
+      day.matinDebut = '09:00';
+      day.matinFin = '12:00';
+      day.apremDebut = '13:00';
+      day.apremFin = options.isVTC ? '16:00' : '17:00';
+    }
+    days.push(day);
+    cur.setDate(cur.getDate() + 1);
+  }
+  return days;
+};
+
 const formatLocalDateKey = (date: Date) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -1306,7 +1353,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
               session.dateFin,
               saForEmargement,
             )
-          : agendaDays;
+          : agendaDays.length === 0
+            ? buildFallbackAgendaDays(session.dateDebut, session.dateFin, {
+                isPratique,
+                isVTC,
+                isCoursDuSoir: (session.title || '').toLowerCase().includes('soir'),
+                heureDebutPersonnalisee: saForEmargement.heure_debut_personnalisee,
+                heureFinPersonnalisee: saForEmargement.heure_fin_personnalisee,
+              })
+            : agendaDays;
 
         if (finalAgendaDays.length === 0) {
           failed++;
@@ -1825,6 +1880,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                   }
                                 }
 
+                                const isPratiqueIndiv = session.type_session === 'pratique';
                                 const finalAgendaDays = isFCVTC
                                   ? applyFCVTCPersonalizedSchedule(
                                       agendaDays,
@@ -1832,7 +1888,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                       session.dateFin,
                                       sessionApprenant,
                                     )
-                                  : agendaDays;
+                                  : agendaDays.length === 0
+                                    ? buildFallbackAgendaDays(session.dateDebut, session.dateFin, {
+                                        isPratique: isPratiqueIndiv,
+                                        isVTC,
+                                        isCoursDuSoir: (session.title || '').toLowerCase().includes('soir'),
+                                        heureDebutPersonnalisee: sessionApprenant.heure_debut_personnalisee,
+                                        heureFinPersonnalisee: sessionApprenant.heure_fin_personnalisee,
+                                      })
+                                    : agendaDays;
 
                                 if (finalAgendaDays.length === 0) {
                                   toast({ title: "Aucun cours trouvé", description: "Aucun bloc agenda trouvé pour cette session.", variant: "destructive" });
