@@ -1880,6 +1880,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                   }
                                 }
 
+                                const isPratiqueIndiv = session.type_session === 'pratique';
                                 const finalAgendaDays = isFCVTC
                                   ? applyFCVTCPersonalizedSchedule(
                                       agendaDays,
@@ -1887,7 +1888,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                       session.dateFin,
                                       sessionApprenant,
                                     )
-                                  : agendaDays;
+                                  : agendaDays.length === 0
+                                    ? buildFallbackAgendaDays(session.dateDebut, session.dateFin, {
+                                        isPratique: isPratiqueIndiv,
+                                        isVTC,
+                                        isCoursDuSoir: (session.title || '').toLowerCase().includes('soir'),
+                                        heureDebutPersonnalisee: sessionApprenant.heure_debut_personnalisee,
+                                        heureFinPersonnalisee: sessionApprenant.heure_fin_personnalisee,
+                                      })
+                                    : agendaDays;
 
                                 if (finalAgendaDays.length === 0) {
                                   toast({ title: "Aucun cours trouvé", description: "Aucun bloc agenda trouvé pour cette session.", variant: "destructive" });
