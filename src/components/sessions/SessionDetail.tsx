@@ -1783,13 +1783,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                 const isFCVTC = isFormationContinue && isVTC;
                                 const isPratique = session.type_session === 'pratique';
                                 const formationLabel = isFCVTC ? 'Formation Continue VTC' : isPratique ? (isTaxi ? 'Formation pratique TAXI' : 'Formation pratique VTC') : isTaxi ? 'Formation TAXI' : 'Formation VTC';
-                                const formateurNames = isFCVTC
+                                const formateurNames = isPratique
                                   ? ["Naoufal GUENICHI"]
-                                  : (isTA || isVA)
-                                    ? ["Rim TOUIL"]
-                                    : isVTC
-                                      ? ["Naoufal GUENICHI"]
-                                      : ["Naoufal GUENICHI", "Rim TOUIL"];
+                                  : isFCVTC
+                                    ? ["Naoufal GUENICHI"]
+                                    : (isTA || isVA)
+                                      ? ["Rim TOUIL"]
+                                      : isVTC
+                                        ? ["Naoufal GUENICHI"]
+                                        : ["Naoufal GUENICHI", "Rim TOUIL"];
 
                                 const dateDebut = new Date(session.dateDebut);
                                 const dateFin = new Date(session.dateFin);
