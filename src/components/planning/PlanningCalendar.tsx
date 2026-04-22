@@ -9,17 +9,18 @@ import PlanningMensuelFormateurs from "@/components/agenda/PlanningMensuelFormat
 
 const DAY_NAMES = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 const MONTH_NAMES = ['jan', 'fév', 'mar', 'avr', 'mai', 'jun', 'jul', 'aoû', 'sep', 'oct', 'nov', 'déc'];
+const MONTH_NAMES_FULL = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
-function generateWeekdays(): Date[] {
-  const start = new Date(2026, 1, 16);
-  const end = new Date(2026, 2, 7);
+/**
+ * Génère tous les jours ouvrés (Lun-Ven) du mois donné.
+ */
+function generateWeekdaysForMonth(year: number, month: number): Date[] {
   const days: Date[] = [];
-  let current = new Date(start);
-  while (current < end) {
-    if (current.getDay() !== 0 && current.getDay() !== 6) {
-      days.push(new Date(current));
-    }
-    current.setDate(current.getDate() + 1);
+  const last = new Date(year, month + 1, 0).getDate();
+  for (let d = 1; d <= last; d++) {
+    const date = new Date(year, month, d);
+    const dow = date.getDay();
+    if (dow !== 0 && dow !== 6) days.push(date);
   }
   return days;
 }
@@ -73,12 +74,28 @@ const FORMATION_TO_EXAM_MAP: Record<string, { date: string; heure: string }[]> =
 };
 
 export function PlanningCalendar() {
-  const [currentMonth] = useState("Février 2026");
+  const today = new Date();
+  const [viewYear, setViewYear] = useState(today.getFullYear());
+  const [viewMonth, setViewMonth] = useState(today.getMonth());
+  const currentMonth = `${MONTH_NAMES_FULL[viewMonth]} ${viewYear}`;
   const [weeks, setWeeks] = useState<WeekInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [isPlanningMensuelOpen, setIsPlanningMensuelOpen] = useState(false);
 
+  const goPreviousMonth = () => {
+    if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11); }
+    else setViewMonth(m => m - 1);
+  };
+  const goNextMonth = () => {
+    if (viewMonth === 11) { setViewYear(y => y + 1); setViewMonth(0); }
+    else setViewMonth(m => m + 1);
+  };
+  const goToday = () => {
+    const t = new Date();
+    setViewYear(t.getFullYear());
+    setViewMonth(t.getMonth());
+  };
 
   const toLocalDateKey = (d: Date) => {
     const y = d.getFullYear();
@@ -133,23 +150,47 @@ export function PlanningCalendar() {
 
 
   useEffect(() => {
+    let cancelled = false;
     async function fetchData() {
-      // Fetch reservations
+      setLoading(true);
+
+      // Plage du mois affiché
+      const monthStart = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-01`;
+      const lastDay = new Date(viewYear, viewMonth + 1, 0).getDate();
+      const monthEnd = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+      // Réservations (table reservations_pratique) sur le mois
       const { data: reservations } = await supabase
         .from("reservations_pratique")
-        .select("date_choisie, type_formation, apprenant_id");
+        .select("date_choisie, type_formation, apprenant_id")
+        .gte("date_choisie", monthStart)
+        .lte("date_choisie", monthEnd);
 
-      // Fetch apprenant details (including exam fields)
+      // Sessions pratiques du mois (créées via import planning, etc.) + leurs apprenants
+      const { data: sessionsData } = await supabase
+        .from("sessions")
+        .select("id, nom, type_session, date_debut, date_fin, session_apprenants(apprenant_id, heure_debut_personnalisee)")
+        .eq("type_session", "pratique")
+        .gte("date_debut", monthStart)
+        .lte("date_debut", monthEnd);
+
       const { data: allApprenants } = await supabase
         .from("apprenants")
         .select("id, nom, prenom, telephone, email, date_examen_pratique, heure_examen_pratique, formation_choisie");
 
-      const appMap: Record<string, { nom: string; prenom: string; telephone: string; email: string; hasExam: boolean }> = {};
+      const appMap: Record<string, { nom: string; prenom: string; telephone: string; email: string; hasExam: boolean; formation: string }> = {};
       (allApprenants || []).forEach(a => {
-        appMap[a.id] = { nom: a.nom, prenom: a.prenom, telephone: a.telephone || '', email: a.email || '', hasExam: !!(a.date_examen_pratique) };
+        appMap[a.id] = {
+          nom: a.nom,
+          prenom: a.prenom,
+          telephone: a.telephone || '',
+          email: a.email || '',
+          hasExam: !!(a.date_examen_pratique),
+          formation: (a.formation_choisie || '').toLowerCase(),
+        };
       });
 
-      // Group reservations by date
+      // Réservations groupées par date
       const byDate: Record<string, CandidateInfo[]> = {};
       (reservations || []).forEach(r => {
         if (!byDate[r.date_choisie]) byDate[r.date_choisie] = [];
@@ -167,7 +208,39 @@ export function PlanningCalendar() {
         }
       });
 
-      // Group exam candidates by date
+      // Type attendu par jour basé sur les sessions de la base + ajout des apprenants des sessions
+      const sessionTypeByDate: Record<string, 'vtc' | 'taxi'> = {};
+      (sessionsData || []).forEach((s: any) => {
+        const nom = (s.nom || '').toLowerCase();
+        const type: 'vtc' | 'taxi' = nom.includes('taxi') && !nom.includes('vtc') ? 'taxi' : 'vtc';
+        const start = new Date(s.date_debut + 'T00:00:00');
+        const end = new Date(s.date_fin + 'T00:00:00');
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+          const k = toLocalDateKey(d);
+          sessionTypeByDate[k] = type;
+          // Injecter les apprenants liés à la session si pas déjà présents via reservations
+          (s.session_apprenants || []).forEach((sa: any) => {
+            const app = appMap[sa.apprenant_id];
+            if (!app) return;
+            if (!byDate[k]) byDate[k] = [];
+            const already = byDate[k].some(c => c.nom === app.nom && c.prenom === app.prenom);
+            if (!already) {
+              byDate[k].push({
+                name: `${app.nom} ${app.prenom}`,
+                type,
+                nom: app.nom,
+                prenom: app.prenom,
+                telephone: app.telephone,
+                email: app.email,
+                pasInscritExamen: !app.hasExam,
+                heure: sa.heure_debut_personnalisee || undefined,
+              });
+            }
+          });
+        }
+      });
+
+      // Candidats examen par date
       const examByDate: Record<string, ExamCandidate[]> = {};
       (allApprenants || []).forEach(a => {
         if (a.date_examen_pratique && a.heure_examen_pratique) {
@@ -180,14 +253,26 @@ export function PlanningCalendar() {
           });
         }
       });
-      // Sort exam candidates by time
       Object.values(examByDate).forEach(list => list.sort((a, b) => a.heure.localeCompare(b.heure)));
 
-      // Build day list
-      const weekdays = generateWeekdays();
+      // Construire les semaines pour le mois affiché
+      const weekdays = generateWeekdaysForMonth(viewYear, viewMonth);
       const builtWeeks: WeekInfo[] = [];
       let currentWeek: DayInfo[] = [];
       let weekNum = 1;
+
+      // Heuristique de fallback pour les types de jours (Fév 2026 hardcodé d'origine)
+      const inferType = (d: Date, key: string): 'vtc' | 'taxi' | 'examen' => {
+        if (sessionTypeByDate[key]) return sessionTypeByDate[key];
+        if (examByDate[key]?.length) return 'examen';
+        // Fallback : VTC par défaut, TAXI si réservations TAXI majoritaires
+        const reserved = byDate[key] || [];
+        if (reserved.length > 0) {
+          const taxiCount = reserved.filter(c => (c.type || '').toLowerCase().includes('taxi')).length;
+          return taxiCount > reserved.length / 2 ? 'taxi' : 'vtc';
+        }
+        return 'vtc';
+      };
 
       weekdays.forEach((d, i) => {
         const key = toLocalDateKey(d);
@@ -195,7 +280,7 @@ export function PlanningCalendar() {
           date: d,
           dateKey: key,
           label: `${DAY_NAMES[d.getDay()]} ${d.getDate()} ${MONTH_NAMES[d.getMonth()]}`,
-          expectedType: d.getMonth() === 2 ? 'examen' : (d.getMonth() === 1 && d.getDate() >= 25) ? 'taxi' : 'vtc',
+          expectedType: inferType(d, key),
           reservedCandidates: byDate[key] || [],
           examCandidates: examByDate[key] || [],
         });
@@ -207,11 +292,13 @@ export function PlanningCalendar() {
         }
       });
 
+      if (cancelled) return;
       setWeeks(builtWeeks);
       setLoading(false);
     }
     fetchData();
-  }, []);
+    return () => { cancelled = true; };
+  }, [viewYear, viewMonth]);
 
   if (loading) {
     return <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>;
@@ -221,16 +308,16 @@ export function PlanningCalendar() {
     <div className="space-y-8 animate-fade-in">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h2 className="text-xl font-semibold text-foreground">{currentMonth}</h2>
+          <h2 className="text-xl font-semibold text-foreground capitalize">{currentMonth}</h2>
           <div className="flex items-center gap-1">
-            <Button variant="outline" size="icon" className="h-8 w-8">
+            <Button variant="outline" size="icon" className="h-8 w-8" onClick={goPreviousMonth} aria-label="Mois précédent">
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <Button variant="outline" size="icon" className="h-8 w-8">
+            <Button variant="outline" size="icon" className="h-8 w-8" onClick={goNextMonth} aria-label="Mois suivant">
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
-          <Button variant="outline" size="sm">Aujourd'hui</Button>
+          <Button variant="outline" size="sm" onClick={goToday}>Aujourd'hui</Button>
         </div>
         <div className="flex items-center gap-2">
           <Button
