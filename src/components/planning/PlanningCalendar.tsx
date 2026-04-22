@@ -428,29 +428,40 @@ export function PlanningCalendar() {
                     </>
                   )}
                 </div>
-                {day.expectedType !== 'examen' && day.reservedCandidates.length > 0 && (
+                <div className="mt-2 flex flex-col gap-1">
+                  {day.expectedType !== 'examen' && day.reservedCandidates.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-1 text-xs h-7"
+                      onClick={() => {
+                        generateEmargementPratiquePDF(
+                          day.date,
+                          day.expectedType as 'vtc' | 'taxi',
+                          day.reservedCandidates.map(c => ({
+                            nom: c.nom,
+                            prenom: c.prenom,
+                            telephone: c.telephone,
+                            email: c.email,
+                          }))
+                        );
+                        toast.success("Feuille d'émargement téléchargée");
+                      }}
+                    >
+                      <Download className="h-3 w-3" />
+                      Émargement
+                    </Button>
+                  )}
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    className="mt-2 w-full gap-1 text-xs h-7"
-                    onClick={() => {
-                      generateEmargementPratiquePDF(
-                        day.date,
-                        day.expectedType as 'vtc' | 'taxi',
-                        day.reservedCandidates.map(c => ({
-                          nom: c.nom,
-                          prenom: c.prenom,
-                          telephone: c.telephone,
-                          email: c.email,
-                        }))
-                      );
-                      toast.success("Feuille d'émargement téléchargée");
-                    }}
+                    className="w-full gap-1 text-xs h-7"
+                    onClick={() => setConfigDay(day)}
                   >
-                    <Download className="h-3 w-3" />
-                    Émargement
+                    <Settings2 className="h-3 w-3" />
+                    Configurer
                   </Button>
-                )}
+                </div>
               </div>
             ))}
             {Array.from({ length: 5 - week.days.length }).map((_, i) => (
