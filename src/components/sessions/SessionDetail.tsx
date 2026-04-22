@@ -1380,7 +1380,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             lieu: session.lieu,
             formateurs: formateurNames,
           },
-          { nom: apprenant.nom, prenom: apprenant.prenom, type_apprenant: apprenant.type_apprenant || '' },
+          { nom: apprenant.nom, prenom: apprenant.prenom, type_apprenant: apprenant.type_apprenant || '', telephone: apprenant.telephone || '' },
           finalAgendaDays,
           { print: isPrint }
         );
@@ -1917,7 +1917,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                     lieu: session.lieu,
                                     formateurs: formateurNames,
                                   },
-                                  { nom: apprenant.nom, prenom: apprenant.prenom, type_apprenant: apprenant.type_apprenant || '' },
+                                  { nom: apprenant.nom, prenom: apprenant.prenom, type_apprenant: apprenant.type_apprenant || '', telephone: apprenant.telephone || '' },
                                   finalAgendaDays,
                                   { print: isPrint }
                                 );
