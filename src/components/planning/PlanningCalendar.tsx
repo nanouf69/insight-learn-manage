@@ -203,7 +203,7 @@ export function PlanningCalendar() {
             prenom: app.prenom,
             telephone: app.telephone,
             email: app.email,
-            pasInscritExamen: !app.hasExam,
+            pasInscritExamen: app.dateExam !== r.date_choisie,
           });
         }
       });
@@ -232,7 +232,7 @@ export function PlanningCalendar() {
                 prenom: app.prenom,
                 telephone: app.telephone,
                 email: app.email,
-                pasInscritExamen: !app.hasExam,
+                pasInscritExamen: app.dateExam !== k,
                 heure: sa.heure_debut_personnalisee || undefined,
               });
             }
