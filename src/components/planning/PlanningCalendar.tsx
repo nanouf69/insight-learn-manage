@@ -83,6 +83,8 @@ export function PlanningCalendar() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [isPlanningMensuelOpen, setIsPlanningMensuelOpen] = useState(false);
+  const [configDay, setConfigDay] = useState<DayInfo | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const goPreviousMonth = () => {
     if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11); }
