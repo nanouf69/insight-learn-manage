@@ -388,12 +388,37 @@ export function PlanningCalendar() {
                         Formation pratique {day.expectedType === 'vtc' ? 'VTC' : 'TAXI'}
                       </span>
                       {day.reservedCandidates.length > 0 ? (
-                        day.reservedCandidates.map((c, i) => (
-                          <span key={i} className={`text-xs leading-tight ${c.pasInscritExamen ? 'text-destructive font-bold' : 'text-foreground'}`}>
-                            {c.pasInscritExamen && '⚠️ '}{c.name}
-                            {c.pasInscritExamen && <span className="block text-[10px] text-destructive font-normal">Non inscrit à l'examen</span>}
-                          </span>
-                        ))
+                        (() => {
+                          const withTime = day.reservedCandidates.filter(c => c.heure);
+                          const withoutTime = day.reservedCandidates.filter(c => !c.heure);
+                          const byTime: Record<string, CandidateInfo[]> = {};
+                          withTime.forEach(c => {
+                            const h = (c.heure || '').slice(0, 5);
+                            if (!byTime[h]) byTime[h] = [];
+                            byTime[h].push(c);
+                          });
+                          return (
+                            <>
+                              {Object.entries(byTime).sort(([a], [b]) => a.localeCompare(b)).map(([heure, candidates]) => (
+                                <div key={heure} className="mt-1">
+                                  <span className="text-[10px] font-bold text-muted-foreground uppercase">{heure}</span>
+                                  {candidates.map((c, i) => (
+                                    <span key={i} className={`text-xs leading-tight block ${c.pasInscritExamen ? 'text-destructive font-bold' : 'text-foreground'}`}>
+                                      {c.pasInscritExamen && '⚠️ '}{c.name}
+                                      {c.pasInscritExamen && <span className="block text-[10px] text-destructive font-normal">Non inscrit à l'examen</span>}
+                                    </span>
+                                  ))}
+                                </div>
+                              ))}
+                              {withoutTime.map((c, i) => (
+                                <span key={`nt-${i}`} className={`text-xs leading-tight ${c.pasInscritExamen ? 'text-destructive font-bold' : 'text-foreground'}`}>
+                                  {c.pasInscritExamen && '⚠️ '}{c.name}
+                                  {c.pasInscritExamen && <span className="block text-[10px] text-destructive font-normal">Non inscrit à l'examen</span>}
+                                </span>
+                              ))}
+                            </>
+                          );
+                        })()
                       ) : (
                         <span className="text-xs text-muted-foreground italic mt-1">En attente de réservations</span>
                       )}
