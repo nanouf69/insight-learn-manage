@@ -178,14 +178,14 @@ export function PlanningCalendar() {
         .from("apprenants")
         .select("id, nom, prenom, telephone, email, date_examen_pratique, heure_examen_pratique, formation_choisie");
 
-      const appMap: Record<string, { nom: string; prenom: string; telephone: string; email: string; hasExam: boolean; formation: string }> = {};
+      const appMap: Record<string, { nom: string; prenom: string; telephone: string; email: string; dateExam: string; formation: string }> = {};
       (allApprenants || []).forEach(a => {
         appMap[a.id] = {
           nom: a.nom,
           prenom: a.prenom,
           telephone: a.telephone || '',
           email: a.email || '',
-          hasExam: !!(a.date_examen_pratique),
+          dateExam: a.date_examen_pratique || '',
           formation: (a.formation_choisie || '').toLowerCase(),
         };
       });
