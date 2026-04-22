@@ -136,6 +136,18 @@ function generateIndividualPage(
   doc.setFontSize(12);
   doc.text(`${apprenant.nom.toUpperCase()} ${apprenant.prenom}`, margin + 28, yPos);
 
+  // Téléphone à droite du nom
+  if (apprenant.telephone) {
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(41, 128, 185);
+    const nameWidth = doc.getTextWidth(`${apprenant.nom.toUpperCase()} ${apprenant.prenom}`);
+    doc.text("Tel :", margin + 28 + nameWidth + 6, yPos);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont("helvetica", "normal");
+    doc.text(apprenant.telephone, margin + 28 + nameWidth + 6 + 10, yPos);
+  }
+
   const typeLabel = (apprenant.type_apprenant || '').toUpperCase().replace(/-E$/i, '');
   const formationWithType = typeLabel ? `${session.formation} (${typeLabel})` : session.formation;
 
