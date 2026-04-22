@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Download, RefreshCw, CalendarDays } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, RefreshCw, CalendarDays, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { PlanningForm } from "./PlanningForm";
@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { generateEmargementPratiquePDF } from "@/lib/pdf/emargement-pratique";
 import PlanningMensuelFormateurs from "@/components/agenda/PlanningMensuelFormateurs";
+import { DayConfigDialog, type DayType } from "./DayConfigDialog";
 
 const DAY_NAMES = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 const MONTH_NAMES = ['jan', 'fév', 'mar', 'avr', 'mai', 'jun', 'jul', 'aoû', 'sep', 'oct', 'nov', 'déc'];
