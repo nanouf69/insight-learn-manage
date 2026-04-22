@@ -1784,7 +1784,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                 const isPratique = session.type_session === 'pratique';
                                 const formationLabel = isFCVTC ? 'Formation Continue VTC' : isPratique ? (isTaxi ? 'Formation pratique TAXI' : 'Formation pratique VTC') : isTaxi ? 'Formation TAXI' : 'Formation VTC';
                                 const formateurNames = isPratique
-                                  ? ["Naoufal GUENICHI"]
+                                  ? (isTaxi ? ["Rim TOUIL"] : ["Naoufal GUENICHI"])
                                   : isFCVTC
                                     ? ["Naoufal GUENICHI"]
                                     : (isTA || isVA)
