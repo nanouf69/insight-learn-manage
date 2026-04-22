@@ -486,6 +486,33 @@ export function PlanningCalendar() {
         open={isPlanningMensuelOpen}
         onClose={() => setIsPlanningMensuelOpen(false)}
       />
+
+      {configDay && (
+        <DayConfigDialog
+          open={!!configDay}
+          onClose={() => setConfigDay(null)}
+          date={configDay.date}
+          initialType={
+            configDay.expectedType === 'examen'
+              ? (configDay.examCandidates.some(c => c.type === 'TAXI') ? 'examen_taxi' : 'examen_vtc')
+              : (configDay.expectedType === 'taxi' ? 'formation_taxi' : 'formation_vtc')
+          }
+          initialSlots={
+            configDay.expectedType === 'examen'
+              ? configDay.examCandidates.map(c => {
+                  const parts = c.name.split(' ');
+                  return { apprenant_id: '', nom: parts.slice(1).join(' '), prenom: parts[0], heure: c.heure };
+                })
+              : configDay.reservedCandidates.map(c => ({
+                  apprenant_id: '',
+                  nom: c.nom,
+                  prenom: c.prenom,
+                  heure: (c.heure || '08:30').slice(0, 5),
+                }))
+          }
+          onSaved={() => setRefreshKey(k => k + 1)}
+        />
+      )}
     </div>
   );
 }
