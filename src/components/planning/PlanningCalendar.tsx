@@ -9,17 +9,18 @@ import PlanningMensuelFormateurs from "@/components/agenda/PlanningMensuelFormat
 
 const DAY_NAMES = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 const MONTH_NAMES = ['jan', 'fév', 'mar', 'avr', 'mai', 'jun', 'jul', 'aoû', 'sep', 'oct', 'nov', 'déc'];
+const MONTH_NAMES_FULL = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
-function generateWeekdays(): Date[] {
-  const start = new Date(2026, 1, 16);
-  const end = new Date(2026, 2, 7);
+/**
+ * Génère tous les jours ouvrés (Lun-Ven) du mois donné.
+ */
+function generateWeekdaysForMonth(year: number, month: number): Date[] {
   const days: Date[] = [];
-  let current = new Date(start);
-  while (current < end) {
-    if (current.getDay() !== 0 && current.getDay() !== 6) {
-      days.push(new Date(current));
-    }
-    current.setDate(current.getDate() + 1);
+  const last = new Date(year, month + 1, 0).getDate();
+  for (let d = 1; d <= last; d++) {
+    const date = new Date(year, month, d);
+    const dow = date.getDay();
+    if (dow !== 0 && dow !== 6) days.push(date);
   }
   return days;
 }
