@@ -308,16 +308,16 @@ export function PlanningCalendar() {
     <div className="space-y-8 animate-fade-in">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h2 className="text-xl font-semibold text-foreground">{currentMonth}</h2>
+          <h2 className="text-xl font-semibold text-foreground capitalize">{currentMonth}</h2>
           <div className="flex items-center gap-1">
-            <Button variant="outline" size="icon" className="h-8 w-8">
+            <Button variant="outline" size="icon" className="h-8 w-8" onClick={goPreviousMonth} aria-label="Mois précédent">
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <Button variant="outline" size="icon" className="h-8 w-8">
+            <Button variant="outline" size="icon" className="h-8 w-8" onClick={goNextMonth} aria-label="Mois suivant">
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
-          <Button variant="outline" size="sm">Aujourd'hui</Button>
+          <Button variant="outline" size="sm" onClick={goToday}>Aujourd'hui</Button>
         </div>
         <div className="flex items-center gap-2">
           <Button
