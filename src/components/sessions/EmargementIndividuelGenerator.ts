@@ -8,6 +8,7 @@ interface Apprenant {
   nom: string;
   prenom: string;
   type_apprenant?: string;
+  telephone?: string;
 }
 
 export interface AgendaDaySlot {
