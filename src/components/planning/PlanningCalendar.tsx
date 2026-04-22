@@ -243,16 +243,18 @@ export function PlanningCalendar() {
         }
       });
 
-      // Candidats examen par date
+      // Candidats examen par date — inscription automatique dès qu'une date d'examen pratique
+      // est renseignée (via import planning CMA, saisie manuelle ou document CMA).
+      // L'heure par défaut est "À définir" si elle n'a pas encore été extraite/saisie.
       const examByDate: Record<string, ExamCandidate[]> = {};
       (allApprenants || []).forEach(a => {
-        if (a.date_examen_pratique && a.heure_examen_pratique) {
+        if (a.date_examen_pratique) {
           if (!examByDate[a.date_examen_pratique]) examByDate[a.date_examen_pratique] = [];
           const type = (a.formation_choisie || '').toLowerCase().includes('taxi') ? 'TAXI' : 'VTC';
           examByDate[a.date_examen_pratique].push({
             name: `${a.prenom} ${a.nom}`,
             type,
-            heure: a.heure_examen_pratique,
+            heure: a.heure_examen_pratique || 'À définir',
           });
         }
       });
