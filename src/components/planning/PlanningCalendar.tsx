@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Download, RefreshCw, CalendarDays } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, RefreshCw, CalendarDays, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { PlanningForm } from "./PlanningForm";
@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { generateEmargementPratiquePDF } from "@/lib/pdf/emargement-pratique";
 import PlanningMensuelFormateurs from "@/components/agenda/PlanningMensuelFormateurs";
+import { DayConfigDialog, type DayType } from "./DayConfigDialog";
 
 const DAY_NAMES = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 const MONTH_NAMES = ['jan', 'fév', 'mar', 'avr', 'mai', 'jun', 'jul', 'aoû', 'sep', 'oct', 'nov', 'déc'];
@@ -82,6 +83,8 @@ export function PlanningCalendar() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [isPlanningMensuelOpen, setIsPlanningMensuelOpen] = useState(false);
+  const [configDay, setConfigDay] = useState<DayInfo | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const goPreviousMonth = () => {
     if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11); }
@@ -298,7 +301,7 @@ export function PlanningCalendar() {
     }
     fetchData();
     return () => { cancelled = true; };
-  }, [viewYear, viewMonth]);
+  }, [viewYear, viewMonth, refreshKey]);
 
   if (loading) {
     return <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>;
@@ -425,29 +428,40 @@ export function PlanningCalendar() {
                     </>
                   )}
                 </div>
-                {day.expectedType !== 'examen' && day.reservedCandidates.length > 0 && (
+                <div className="mt-2 flex flex-col gap-1">
+                  {day.expectedType !== 'examen' && day.reservedCandidates.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-1 text-xs h-7"
+                      onClick={() => {
+                        generateEmargementPratiquePDF(
+                          day.date,
+                          day.expectedType as 'vtc' | 'taxi',
+                          day.reservedCandidates.map(c => ({
+                            nom: c.nom,
+                            prenom: c.prenom,
+                            telephone: c.telephone,
+                            email: c.email,
+                          }))
+                        );
+                        toast.success("Feuille d'émargement téléchargée");
+                      }}
+                    >
+                      <Download className="h-3 w-3" />
+                      Émargement
+                    </Button>
+                  )}
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    className="mt-2 w-full gap-1 text-xs h-7"
-                    onClick={() => {
-                      generateEmargementPratiquePDF(
-                        day.date,
-                        day.expectedType as 'vtc' | 'taxi',
-                        day.reservedCandidates.map(c => ({
-                          nom: c.nom,
-                          prenom: c.prenom,
-                          telephone: c.telephone,
-                          email: c.email,
-                        }))
-                      );
-                      toast.success("Feuille d'émargement téléchargée");
-                    }}
+                    className="w-full gap-1 text-xs h-7"
+                    onClick={() => setConfigDay(day)}
                   >
-                    <Download className="h-3 w-3" />
-                    Émargement
+                    <Settings2 className="h-3 w-3" />
+                    Configurer
                   </Button>
-                )}
+                </div>
               </div>
             ))}
             {Array.from({ length: 5 - week.days.length }).map((_, i) => (
@@ -472,6 +486,33 @@ export function PlanningCalendar() {
         open={isPlanningMensuelOpen}
         onClose={() => setIsPlanningMensuelOpen(false)}
       />
+
+      {configDay && (
+        <DayConfigDialog
+          open={!!configDay}
+          onClose={() => setConfigDay(null)}
+          date={configDay.date}
+          initialType={
+            configDay.expectedType === 'examen'
+              ? (configDay.examCandidates.some(c => c.type === 'TAXI') ? 'examen_taxi' : 'examen_vtc')
+              : (configDay.expectedType === 'taxi' ? 'formation_taxi' : 'formation_vtc')
+          }
+          initialSlots={
+            configDay.expectedType === 'examen'
+              ? configDay.examCandidates.map(c => {
+                  const parts = c.name.split(' ');
+                  return { apprenant_id: '', nom: parts.slice(1).join(' '), prenom: parts[0], heure: c.heure };
+                })
+              : configDay.reservedCandidates.map(c => ({
+                  apprenant_id: '',
+                  nom: c.nom,
+                  prenom: c.prenom,
+                  heure: (c.heure || '08:30').slice(0, 5),
+                }))
+          }
+          onSaved={() => setRefreshKey(k => k + 1)}
+        />
+      )}
     </div>
   );
 }
