@@ -74,12 +74,28 @@ const FORMATION_TO_EXAM_MAP: Record<string, { date: string; heure: string }[]> =
 };
 
 export function PlanningCalendar() {
-  const [currentMonth] = useState("Février 2026");
+  const today = new Date();
+  const [viewYear, setViewYear] = useState(today.getFullYear());
+  const [viewMonth, setViewMonth] = useState(today.getMonth());
+  const currentMonth = `${MONTH_NAMES_FULL[viewMonth]} ${viewYear}`;
   const [weeks, setWeeks] = useState<WeekInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [isPlanningMensuelOpen, setIsPlanningMensuelOpen] = useState(false);
 
+  const goPreviousMonth = () => {
+    if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11); }
+    else setViewMonth(m => m - 1);
+  };
+  const goNextMonth = () => {
+    if (viewMonth === 11) { setViewYear(y => y + 1); setViewMonth(0); }
+    else setViewMonth(m => m + 1);
+  };
+  const goToday = () => {
+    const t = new Date();
+    setViewYear(t.getFullYear());
+    setViewMonth(t.getMonth());
+  };
 
   const toLocalDateKey = (d: Date) => {
     const y = d.getFullYear();
