@@ -189,6 +189,9 @@ const formatEUR = (n: number): string => {
 export default function DevisPersonnel() {
   const [searchParams] = useSearchParams();
   const formationType = searchParams.get("type") || "";
+  const focusParam = (searchParams.get("focus") || searchParams.get("financement") || "").toLowerCase();
+  const financementSectionRef = useRef<HTMLDivElement>(null);
+  const [highlightFinancement, setHighlightFinancement] = useState(false);
 
   // Personal info
   const [civilite, setCivilite] = useState("");
