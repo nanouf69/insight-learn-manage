@@ -1298,10 +1298,6 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
         const agendaDays: AgendaDaySlot[] = Array.from(dayMap.entries())
           .sort(([a], [b]) => a.localeCompare(b))
-          .filter(([key]) => {
-            if (key === '2026-03-20') return false;
-            return true;
-          })
           .map(([, val]) => {
             const morningSlots = val.slots.filter(s => s.debut < '12:30');
             const afternoonSlots = val.slots.filter(s => s.debut >= '12:30');
@@ -1329,23 +1325,6 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             }
             return result;
           });
-
-        if (isVTC && !isFCVTC) {
-          const isCoursDuSoir = (session.title || '').toLowerCase().includes('soir');
-          const march30Key = '2026-03-30';
-          const hasMarch30 = agendaDays.some(d => formatLocalDateKey(d.date) === march30Key);
-          if (!hasMarch30) {
-            agendaDays.push(isCoursDuSoir ? {
-              date: new Date('2026-03-30T00:00:00'),
-              apremDebut: '17:00', apremFin: '21:00',
-            } : {
-              date: new Date('2026-03-30T00:00:00'),
-              matinDebut: '09:00', matinFin: '12:00',
-              apremDebut: '13:00', apremFin: '16:00',
-            });
-            agendaDays.sort((a, b) => a.date.getTime() - b.date.getTime());
-          }
-        }
 
         const saForEmargement = apprenant._sa || {};
         const finalAgendaDays = isFCVTC
@@ -1831,11 +1810,6 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
 
                                 const agendaDays: AgendaDaySlot[] = Array.from(dayMap.entries())
                                   .sort(([a], [b]) => a.localeCompare(b))
-                                  .filter(([key, val]) => {
-                                    // Exclure le vendredi 20 mars 2026
-                                    if (key === '2026-03-20') return false;
-                                    return true;
-                                  })
                                   .map(([, val]) => {
                                     const morningSlots = val.slots.filter(s => s.debut < '12:30');
                                     const afternoonSlots = val.slots.filter(s => s.debut >= '12:30');
@@ -1865,24 +1839,6 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                     }
                                     return result;
                                   });
-
-                                // Pour VTC (hors Formation Continue) : ajouter le lundi 30 mars 2026 s'il n'existe pas déjà
-                                if (isVTC && !isFCVTC) {
-                                  const isCoursDuSoir = (session.title || '').toLowerCase().includes('soir');
-                                  const march30Key = '2026-03-30';
-                                  const hasMarch30 = agendaDays.some(d => formatLocalDateKey(d.date) === march30Key);
-                                  if (!hasMarch30) {
-                                    agendaDays.push(isCoursDuSoir ? {
-                                      date: new Date('2026-03-30T00:00:00'),
-                                      apremDebut: '17:00', apremFin: '21:00',
-                                    } : {
-                                      date: new Date('2026-03-30T00:00:00'),
-                                      matinDebut: '09:00', matinFin: '12:00',
-                                      apremDebut: '13:00', apremFin: isFCVTC ? '17:00' : '16:00',
-                                    });
-                                    agendaDays.sort((a, b) => a.date.getTime() - b.date.getTime());
-                                  }
-                                }
 
                                 const isPratiqueIndiv = session.type_session === 'pratique';
                                 const finalAgendaDays = isFCVTC
