@@ -1339,6 +1339,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             ? buildFallbackAgendaDays(session.dateDebut, session.dateFin, {
                 isPratique,
                 isVTC,
+                isTaxi,
                 isCoursDuSoir: (session.title || '').toLowerCase().includes('soir'),
                 heureDebutPersonnalisee: saForEmargement.heure_debut_personnalisee,
                 heureFinPersonnalisee: saForEmargement.heure_fin_personnalisee,
