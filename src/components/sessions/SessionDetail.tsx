@@ -1854,6 +1854,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                     ? buildFallbackAgendaDays(session.dateDebut, session.dateFin, {
                                         isPratique: isPratiqueIndiv,
                                         isVTC,
+                                        isTaxi,
                                         isCoursDuSoir: (session.title || '').toLowerCase().includes('soir'),
                                         heureDebutPersonnalisee: sessionApprenant.heure_debut_personnalisee,
                                         heureFinPersonnalisee: sessionApprenant.heure_fin_personnalisee,
