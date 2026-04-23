@@ -5,6 +5,7 @@ import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Maximize, Minimize } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
 // Promise.withResolvers polyfill for Safari < 17 / Samsung Internet
 if (typeof (Promise as any).withResolvers === 'undefined') {
@@ -19,10 +20,7 @@ if (typeof (Promise as any).withResolvers === 'undefined') {
 // Set up pdf.js worker with maximum mobile compatibility
 // Use Vite's import.meta.url to bundle the worker locally (avoids CORS / CDN issues on mobile)
 try {
-  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-    'pdfjs-dist/build/pdf.worker.min.mjs',
-    import.meta.url,
-  ).toString();
+  pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 } catch {
   // Fallback to CDN
   try {
@@ -59,7 +57,7 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
     const clampedPage = Math.max(1, Math.min(numPages || 1, targetPage));
     setPage(clampedPage);
 
-    const target = document.getElementById(`pdf-page-${clampedPage}`);
+    const target = containerRef.current?.querySelector<HTMLElement>(`[data-pdf-page="${clampedPage}"]`);
     target?.scrollIntoView({ behavior: "smooth", block: "start" });
 
     if (clampedPage === numPages && onLastPageReached) {
@@ -363,12 +361,13 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
 
       {/* PDF Page — scrollable when zoomed, touch-action for mobile */}
       <div
-        className={`flex justify-center overflow-x-auto overflow-y-auto ${isExpanded ? "flex-1" : ""}`}
+        className={`flex justify-center overflow-x-auto overflow-y-scroll ${isExpanded ? "flex-1" : ""}`}
         style={{
           maxHeight: isExpanded ? "none" : "80vh",
           height: isExpanded ? "100%" : "auto",
           touchAction: "pan-x pan-y",
           WebkitOverflowScrolling: "touch",
+          overscrollBehavior: "contain",
         }}
         onTouchStart={renderMode === "react-pdf" ? handleTouchStart : undefined}
         onTouchEnd={renderMode === "react-pdf" ? handleTouchEnd : undefined}
@@ -377,7 +376,7 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
         {renderMode === "native" || loadError ? (
           <div
             ref={nativeScrollRef}
-            className="w-full h-full min-h-[420px] bg-background overflow-x-auto overflow-y-auto"
+            className="w-full h-full min-h-[420px] bg-background overflow-x-auto overflow-y-scroll"
             onContextMenu={e => e.preventDefault()}
             onScroll={(e) => handleNativeBottomCheck(e.currentTarget)}
           >
