@@ -1115,7 +1115,8 @@ export default function DevisPersonnel() {
         </Card>
 
         {/* Étape 3 : Coordonnées du financeur */}
-        <Card className="border-l-4 border-l-[#1e3a8a]">
+        <div ref={financementSectionRef} className="scroll-mt-4">
+        <Card className={`border-l-4 border-l-[#1e3a8a] transition-all duration-500 ${highlightFinancement ? "ring-4 ring-yellow-400 ring-offset-2 shadow-2xl" : ""}`}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Building2 className="w-5 h-5 text-[#1e3a8a]" />
