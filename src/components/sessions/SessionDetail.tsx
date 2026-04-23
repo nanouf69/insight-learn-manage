@@ -1323,6 +1323,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 if (result.matinDebut) { result.matinDebut = '09:00'; result.matinFin = '12:00'; }
                 if (result.apremDebut) { result.apremDebut = '13:00'; result.apremFin = apremFinHeure; }
               }
+            } else if (isTaxi && isPratique) {
+              if (result.matinDebut) { result.matinDebut = '09:00'; result.matinFin = '12:00'; }
+              if (result.apremDebut) { result.apremDebut = '13:00'; result.apremFin = '17:30'; }
             }
             return result;
           });
@@ -1838,6 +1841,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                         if (result.matinDebut) { result.matinDebut = '09:00'; result.matinFin = '12:00'; }
                                         if (result.apremDebut) { result.apremDebut = '13:00'; result.apremFin = apremFinHeure; }
                                       }
+                                    } else if (isTaxi && isPratique) {
+                                      if (result.matinDebut) { result.matinDebut = '09:00'; result.matinFin = '12:00'; }
+                                      if (result.apremDebut) { result.apremDebut = '13:00'; result.apremFin = '17:30'; }
                                     }
                                     return result;
                                   });
