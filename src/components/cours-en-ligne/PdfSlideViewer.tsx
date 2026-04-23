@@ -52,6 +52,20 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
   const touchStartXRef = useRef<number | null>(null);
   const [containerWidth, setContainerWidth] = useState(960);
   const [nativeScrolledToBottom, setNativeScrolledToBottom] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [hasAutoFitMobile, setHasAutoFitMobile] = useState(false);
+
+  // Detect mobile to apply mobile-friendly defaults
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia("(max-width: 768px)");
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => setIsMobile(e.matches);
+    handler(mql);
+    if (typeof mql.addEventListener === "function") {
+      mql.addEventListener("change", handler as (e: MediaQueryListEvent) => void);
+      return () => mql.removeEventListener("change", handler as (e: MediaQueryListEvent) => void);
+    }
+  }, []);
 
   const handleNativeBottomCheck = useCallback((el: HTMLElement) => {
     const remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
@@ -144,7 +158,12 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
     setLoadError(false);
     setRenderMode("react-pdf");
     updateWidth();
-  }, [updateWidth]);
+    // Sur mobile, auto-zoom à 1.6x pour rendre le texte des slides 16:9 lisible (une fois seulement)
+    if (isMobile && !hasAutoFitMobile) {
+      setZoom(1.6);
+      setHasAutoFitMobile(true);
+    }
+  }, [updateWidth, isMobile, hasAutoFitMobile]);
 
   const prev = () => setPage((p) => Math.max(1, p - 1));
   const next = () => setPage((p) => {
@@ -295,6 +314,9 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
         {!isExpanded && (
           <span className="text-xs text-muted-foreground mr-1 hidden sm:inline">Pour agrandir, cliquer ici →</span>
         )}
+        {!isExpanded && isMobile && (
+          <span className="text-[10px] font-medium text-primary mr-1 sm:hidden">👆 Plein écran</span>
+        )}
         <Button variant="ghost" size="sm" onClick={toggleFullscreen} title="Pour agrandir, cliquer ici">
           {isExpanded ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
         </Button>
@@ -349,6 +371,7 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
               width={containerWidth * zoom}
               renderTextLayer={false}
               renderAnnotationLayer={false}
+              devicePixelRatio={typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 3) : 2}
             />
           </Document>
         )}
