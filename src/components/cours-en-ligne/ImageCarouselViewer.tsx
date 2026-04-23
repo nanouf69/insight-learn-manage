@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Maximize } from "lucide-react";
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Maximize, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ImageCarouselViewerProps {
@@ -48,6 +48,36 @@ export default function ImageCarouselViewer({ images, nom, onLastPageReached }: 
   const zoomOut = () => setZoom((z) => Math.max(z - 0.25, 0.5));
   const fullscreen = () => containerRef.current?.requestFullscreen?.();
 
+  const handlePrint = () => {
+    const win = window.open("", "_blank", "width=900,height=700");
+    if (!win) {
+      alert("Veuillez autoriser les pop-ups pour imprimer.");
+      return;
+    }
+    const imgsHtml = images
+      .map(
+        (src, i) =>
+          `<div class="page"><img src="${src}" alt="Slide ${i + 1}" /></div>`
+      )
+      .join("");
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${nom}</title>
+      <style>
+        @page { size: A4 landscape; margin: 8mm; }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: system-ui, sans-serif; background: #fff; }
+        .page { width: 100%; height: 100vh; display: flex; align-items: center; justify-content: center; page-break-after: always; }
+        .page:last-child { page-break-after: auto; }
+        .page img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        @media print { .page { height: auto; min-height: 95vh; } }
+      </style></head><body>${imgsHtml}<script>
+        const imgs = document.images;
+        let loaded = 0;
+        const ready = () => { if (++loaded >= imgs.length) { setTimeout(() => { window.focus(); window.print(); }, 300); } };
+        for (const img of imgs) { if (img.complete) ready(); else { img.onload = ready; img.onerror = ready; } }
+      </script></body></html>`);
+    win.document.close();
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowLeft") prev();
     if (e.key === "ArrowRight") next();
@@ -95,6 +125,10 @@ export default function ImageCarouselViewer({ images, nom, onLastPageReached }: 
         <Button variant="ghost" size="sm" onClick={zoomIn}><ZoomIn className="w-4 h-4" /></Button>
         <Button variant="ghost" size="sm" onClick={() => resetView()}><RotateCcw className="w-4 h-4" /></Button>
         <div className="flex-1" />
+        <Button variant="ghost" size="sm" onClick={handlePrint} title="Imprimer la fiche">
+          <Printer className="w-4 h-4 mr-1" />
+          <span className="hidden sm:inline">Imprimer</span>
+        </Button>
         <Button variant="ghost" size="sm" onClick={fullscreen}><Maximize className="w-4 h-4" /></Button>
       </div>
 
