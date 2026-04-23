@@ -368,6 +368,7 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
               width={containerWidth * zoom}
               renderTextLayer={false}
               renderAnnotationLayer={false}
+              devicePixelRatio={typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 3) : 2}
             />
           </Document>
         )}
