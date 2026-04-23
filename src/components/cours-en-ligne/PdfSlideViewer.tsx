@@ -55,6 +55,18 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
   const [isMobile, setIsMobile] = useState(false);
   const [hasAutoFitMobile, setHasAutoFitMobile] = useState(false);
 
+  const scrollToPage = useCallback((targetPage: number) => {
+    const clampedPage = Math.max(1, Math.min(numPages || 1, targetPage));
+    setPage(clampedPage);
+
+    const target = document.getElementById(`pdf-page-${clampedPage}`);
+    target?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    if (clampedPage === numPages && onLastPageReached) {
+      onLastPageReached();
+    }
+  }, [numPages, onLastPageReached]);
+
   // Detect mobile to apply mobile-friendly defaults
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -155,6 +167,7 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
 
   const onDocumentLoadSuccess = useCallback(({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
+    setPage(1);
     setLoadError(false);
     setRenderMode("react-pdf");
     updateWidth();
@@ -165,17 +178,43 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
     }
   }, [updateWidth, isMobile, hasAutoFitMobile]);
 
-  const prev = () => setPage((p) => Math.max(1, p - 1));
-  const next = () => setPage((p) => {
-    const nextPage = Math.min(numPages, p + 1);
-    if (nextPage === numPages && onLastPageReached) {
-      onLastPageReached();
-    }
-    return nextPage;
-  });
+  const prev = () => scrollToPage(page - 1);
+  const next = () => scrollToPage(page + 1);
   const zoomIn = () => setZoom((z) => Math.min(z + 0.25, 4));
   const zoomOut = () => setZoom((z) => Math.max(z - 0.25, 0.5));
   const resetZoom = () => setZoom(1);
+
+  const handleViewerScroll = useCallback((el: HTMLDivElement) => {
+    if (renderMode === "native" || loadError) {
+      handleNativeBottomCheck(el);
+      return;
+    }
+
+    const pageNodes = Array.from(el.querySelectorAll<HTMLElement>("[data-pdf-page]"));
+    if (!pageNodes.length) return;
+
+    const containerTop = el.getBoundingClientRect().top;
+    let activePage = 1;
+    let minDistance = Number.POSITIVE_INFINITY;
+
+    pageNodes.forEach((node) => {
+      const nodePage = Number(node.dataset.pdfPage);
+      const distance = Math.abs(node.getBoundingClientRect().top - containerTop - 12);
+      if (distance < minDistance) {
+        minDistance = distance;
+        activePage = nodePage;
+      }
+    });
+
+    if (activePage !== page) {
+      setPage(activePage);
+    }
+
+    const remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (remaining <= 48 && onLastPageReached) {
+      onLastPageReached();
+    }
+  }, [handleNativeBottomCheck, loadError, onLastPageReached, page, renderMode]);
 
   const toggleFullscreen = async () => {
     if (!containerRef.current) return;
@@ -324,30 +363,27 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
 
       {/* PDF Page — scrollable when zoomed, touch-action for mobile */}
       <div
-        className={`flex justify-center overflow-auto ${isExpanded ? "flex-1" : ""}`}
+        className={`flex justify-center overflow-x-auto overflow-y-auto ${isExpanded ? "flex-1" : ""}`}
         style={{
           maxHeight: isExpanded ? "none" : "80vh",
           height: isExpanded ? "100%" : "auto",
           touchAction: "pan-x pan-y",
+          WebkitOverflowScrolling: "touch",
         }}
         onTouchStart={renderMode === "react-pdf" ? handleTouchStart : undefined}
         onTouchEnd={renderMode === "react-pdf" ? handleTouchEnd : undefined}
-        onScroll={(e) => {
-          if (renderMode === "native" || loadError) {
-            handleNativeBottomCheck(e.currentTarget);
-          }
-        }}
+        onScroll={(e) => handleViewerScroll(e.currentTarget)}
       >
         {renderMode === "native" || loadError ? (
           <div
             ref={nativeScrollRef}
-            className="w-full h-full min-h-[420px] bg-background overflow-auto"
+            className="w-full h-full min-h-[420px] bg-background overflow-x-auto overflow-y-auto"
             onContextMenu={e => e.preventDefault()}
             onScroll={(e) => handleNativeBottomCheck(e.currentTarget)}
           >
             <div style={{ transform: `scale(${zoom})`, transformOrigin: "top left", width: `${100 / zoom}%` }}>
               <iframe
-                src={`${absoluteUrl}#toolbar=0&navpanes=0&scrollbar=0&statusbar=0&messages=0&download=0`}
+                src={`${absoluteUrl}#toolbar=0&navpanes=0&statusbar=0&messages=0&download=0`}
                 className="w-full border-0"
                 style={{ minHeight: isExpanded ? "300%" : "200vh", height: "200vh" }}
                 title={`PDF — ${nom}`}
@@ -366,13 +402,28 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
             loading={<div className="flex items-center justify-center p-12 text-muted-foreground">Chargement du PDF…</div>}
             error={<div className="flex items-center justify-center p-12 text-destructive">Impossible de charger le PDF.</div>}
           >
-            <Page
-              pageNumber={page}
-              width={containerWidth * zoom}
-              renderTextLayer={false}
-              renderAnnotationLayer={false}
-              devicePixelRatio={typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 3) : 2}
-            />
+            <div className="flex flex-col items-center gap-4 py-4">
+              {Array.from({ length: numPages }, (_, index) => {
+                const pageNumber = index + 1;
+
+                return (
+                  <div
+                    key={pageNumber}
+                    id={`pdf-page-${pageNumber}`}
+                    data-pdf-page={pageNumber}
+                    className="max-w-full"
+                  >
+                    <Page
+                      pageNumber={pageNumber}
+                      width={containerWidth * zoom}
+                      renderTextLayer={false}
+                      renderAnnotationLayer={false}
+                      devicePixelRatio={typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 3) : 2}
+                    />
+                  </div>
+                );
+              })}
+            </div>
           </Document>
         )}
       </div>
