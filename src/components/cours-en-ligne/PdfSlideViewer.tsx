@@ -52,6 +52,20 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
   const touchStartXRef = useRef<number | null>(null);
   const [containerWidth, setContainerWidth] = useState(960);
   const [nativeScrolledToBottom, setNativeScrolledToBottom] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [hasAutoFitMobile, setHasAutoFitMobile] = useState(false);
+
+  // Detect mobile to apply mobile-friendly defaults
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia("(max-width: 768px)");
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => setIsMobile(e.matches);
+    handler(mql);
+    if (typeof mql.addEventListener === "function") {
+      mql.addEventListener("change", handler as (e: MediaQueryListEvent) => void);
+      return () => mql.removeEventListener("change", handler as (e: MediaQueryListEvent) => void);
+    }
+  }, []);
 
   const handleNativeBottomCheck = useCallback((el: HTMLElement) => {
     const remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
