@@ -1556,20 +1556,25 @@ export function ExamenReussitePage() {
           return false;
         };
 
-        // Tous les candidats à former : réussis (pas les RP) — sans filtre sur la date pratique
-        // Exclure les candidats déjà formés (présents dans une session pratique)
+        // Tous les candidats à former : tous les inscrits de la session sélectionnée
+        // tant qu'ils ne sont pas déjà formés et ne sont pas explicitement en échec/absent.
         const dejaFormesSet = new Set(dejaFormesPratique || []);
         const paTypes = ['pa-vtc', 'pa-taxi'];
-        const rpTypes = ['rp-vtc', 'rp-taxi'];
-        const reussisFormation = apprenants?.filter(a => 
-          (a as any).resultat_examen === 'oui' && 
-          !rpTypes.includes((a.type_apprenant || '').toLowerCase()) &&
+        const hasEligibleTheoryStatus = (resultat: string | null | undefined) => {
+          const value = (resultat || '').toLowerCase();
+          return value !== 'non' && value !== 'absent';
+        };
+
+        const reussisFormation = apprenants?.filter(a =>
+          !(a as any).deleted_at &&
+          hasEligibleTheoryStatus((a as any).resultat_examen) &&
           !dejaFormesSet.has(a.id)
         ) || [];
         const paFormation = (allApprenants || []).filter(a => 
           paTypes.includes((a.type_apprenant || '').toLowerCase()) && 
           a.date_examen_theorique?.includes(selectedExamDate) &&
-          (a as any).resultat_examen === 'oui' &&
+          !(a as any).deleted_at &&
+          hasEligibleTheoryStatus((a as any).resultat_examen) &&
           !reussisFormation.some(r => r.id === a.id) &&
           !dejaFormesSet.has(a.id)
         );
