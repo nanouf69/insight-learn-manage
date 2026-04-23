@@ -30,20 +30,22 @@ const mapCreneauToSession = (creneau: string | null): string[] => {
   return [];
 };
 
-// Mapper le type d'apprenant vers les types de session
+// Mapper le type d'apprenant vers les types de session compatibles
+// IMPORTANT : TA et VA sont des passerelles distinctes, ils ne doivent PAS
+// être assignés aux sessions VTC/TAXI standards (uniquement à des sessions TA/VA dédiées).
 const normalizeType = (type: string | null): string[] => {
   if (!type) return [];
-  
+
   const typeLower = type.toLowerCase();
-  // VTC types
-  if (typeLower.includes('vtc')) return ['vtc', 'VTC'];
-  // TAXI types
-  if (typeLower.includes('taxi')) return ['taxi', 'TAXI'];
-  // TA (passerelle TAXI)
-  if (typeLower === 'ta' || typeLower.includes('ta-')) return ['ta', 'TA', 'taxi', 'TAXI'];
-  // VA (passerelle VTC)
-  if (typeLower === 'va' || typeLower.includes('va-')) return ['va', 'VA', 'vtc', 'VTC'];
-  
+  // VTC types (hors VA)
+  if (typeLower === 'vtc' || typeLower.startsWith('vtc-') || typeLower.startsWith('vtc_')) return ['vtc', 'VTC'];
+  // TAXI types (hors TA)
+  if (typeLower === 'taxi' || typeLower.startsWith('taxi-') || typeLower.startsWith('taxi_')) return ['taxi', 'TAXI'];
+  // TA (passerelle TAXI) — session dédiée TA uniquement
+  if (typeLower === 'ta' || typeLower.startsWith('ta-') || typeLower.startsWith('ta_')) return ['ta', 'TA'];
+  // VA (passerelle VTC) — session dédiée VA uniquement
+  if (typeLower === 'va' || typeLower.startsWith('va-') || typeLower.startsWith('va_')) return ['va', 'VA'];
+
   return [type];
 };
 
