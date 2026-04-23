@@ -314,6 +314,9 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
         {!isExpanded && (
           <span className="text-xs text-muted-foreground mr-1 hidden sm:inline">Pour agrandir, cliquer ici →</span>
         )}
+        {!isExpanded && isMobile && (
+          <span className="text-[10px] font-medium text-primary mr-1 sm:hidden">👆 Plein écran</span>
+        )}
         <Button variant="ghost" size="sm" onClick={toggleFullscreen} title="Pour agrandir, cliquer ici">
           {isExpanded ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
         </Button>
