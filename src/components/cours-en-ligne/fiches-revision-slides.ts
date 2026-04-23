@@ -14,7 +14,6 @@ function slides(prefix: string, count: number): string[] {
 export const FICHE_IMAGE_SLIDES: Record<string, string[]> = {
   "Fiches_Revision_Matiere_Commune.pdf": slides("Fiches_Revision_Matiere_Commune", 16),
   "Fiche_Synthese_Specialites_VTC.pdf": slides("Fiche_Synthese_Specialites_VTC", 6),
-  "Fiche_de_Révision_Taxi.pdf": slides("Fiche_de_Revision_Taxi", 12),
-  "Fiche_Revision_Specialites_TAXI.pdf": slides("Fiche_Revision_Specialites_TAXI", 8),
   "Fiche_de_Révision_Taxi.pdf": slides("Fiche_Revision_Specialites_TAXI", 8),
+  "Fiche_Revision_Specialites_TAXI.pdf": slides("Fiche_Revision_Specialites_TAXI", 8),
 };
