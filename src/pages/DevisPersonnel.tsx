@@ -1201,8 +1201,9 @@ export default function DevisPersonnel() {
             )}
           </CardContent>
         </Card>
+        </div>
 
-        {/* Étape 4 : Informations vous concernant */}
+
         <Card className="border-l-4 border-l-[#1e3a8a]">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
