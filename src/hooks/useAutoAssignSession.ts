@@ -60,9 +60,23 @@ export async function autoAssignToSession(
   typeApprenant: string | null,
   creneauHoraire: string | null,
   dateCatalogue: string | null,
-  montantTtc: number | null
+  montantTtc: number | null,
+  formationChoisie?: string | null
 ): Promise<AssignSessionResult> {
   try {
+    // Exclure les apprenants en e-learning des sessions présentielles
+    const typeLower = (typeApprenant || '').toLowerCase();
+    const formationLower = (formationChoisie || '').toLowerCase();
+    const isElearning =
+      typeLower.endsWith('-e') ||
+      typeLower.includes('e-learning') ||
+      typeLower.includes('elearning') ||
+      formationLower.includes('e-learning') ||
+      formationLower.includes('elearning');
+    if (isElearning) {
+      return { success: false, error: "Apprenant e-learning : pas d'assignation automatique en session présentielle" };
+    }
+
     // Si pas de date catalogue, on ne peut pas associer automatiquement
     if (!dateCatalogue || !catalogueDateMapping[dateCatalogue]) {
       return { success: false, error: "Pas de date de formation valide" };

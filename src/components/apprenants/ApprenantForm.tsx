@@ -415,7 +415,8 @@ export function ApprenantForm() {
           formData.type_apprenant,
           formData.creneau_horaire,
           formData.date_formation_catalogue,
-          formData.montant_ttc
+          formData.montant_ttc,
+          formData.formation_choisie
         );
         
         if (result.success && result.sessionName) {
