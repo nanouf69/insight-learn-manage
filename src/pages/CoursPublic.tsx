@@ -1266,15 +1266,32 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     unlockedModuleIds.add(modules[0].id);
   }
 
+  // Effective completion: a module counts as "done" for unlocking purposes if either
+  // (a) it's recorded in apprenant_module_completion, OR
+  // (b) all its quizzes/exams are completed (moduleProgressById.isDone covers both via completedModuleIds,
+  //     so we additionally consider the case where all quizzes are done even without a global completion row).
+  const effectivelyCompletedIds = new Set<number>(completedModuleIds);
+  modules.forEach((m) => {
+    const quizStats = moduleQuizStatsById[m.id];
+    const examStats = examBlancStatsById[m.id];
+    const hasQuizzes = quizStats && quizStats.totalQuizzes > 0;
+    const hasExams = examStats && examStats.total > 0;
+    const allQuizzesDone = hasQuizzes ? quizStats.completedQuizzes >= quizStats.totalQuizzes : true;
+    const allExamsDone = hasExams ? examStats.completed >= examStats.total : true;
+    if ((hasQuizzes || hasExams) && allQuizzesDone && allExamsDone) {
+      effectivelyCompletedIds.add(m.id);
+    }
+  });
+
   // Check if the Introduction (first module) is completed
-  const introCompleted = modules.length > 0 && completedModuleIds.has(modules[0].id);
+  const introCompleted = modules.length > 0 && effectivelyCompletedIds.has(modules[0].id);
 
   if (isElearning) {
     // E-learning: strict sequential unlock + intro lock
     for (let i = 0; i < modules.length; i++) {
       if (i === 0 || ALWAYS_UNLOCKED_IDS.has(modules[i].id)) {
         unlockedModuleIds.add(modules[i].id);
-      } else if (completedModuleIds.has(modules[i - 1].id)) {
+      } else if (effectivelyCompletedIds.has(modules[i - 1].id)) {
         unlockedModuleIds.add(modules[i].id);
       }
     }
@@ -1287,17 +1304,17 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // For e-learning: EXCEPT Introduction modules (locked once done)
   // For présentiel: all completed modules remain accessible including intro
   modules.forEach(m => {
-    if (completedModuleIds.has(m.id)) {
+    if (effectivelyCompletedIds.has(m.id)) {
       if (!isElearning || !INTRO_MODULE_IDS.has(m.id)) {
         unlockedModuleIds.add(m.id);
       }
     }
   });
 
-  const isModuleLocked = (modId: number) => !unlockedModuleIds.has(modId) && !completedModuleIds.has(modId);
+  const isModuleLocked = (modId: number) => !unlockedModuleIds.has(modId) && !effectivelyCompletedIds.has(modId);
 
   // Introduction modules: once completed, they cannot be re-opened (E-LEARNING ONLY)
-  const isIntroLocked = (modId: number) => isElearning && INTRO_MODULE_IDS.has(modId) && completedModuleIds.has(modId);
+  const isIntroLocked = (modId: number) => isElearning && INTRO_MODULE_IDS.has(modId) && effectivelyCompletedIds.has(modId);
 
   return (
     <div className={embedded ? "" : "min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50"}>
