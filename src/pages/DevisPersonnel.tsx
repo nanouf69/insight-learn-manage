@@ -189,6 +189,9 @@ const formatEUR = (n: number): string => {
 export default function DevisPersonnel() {
   const [searchParams] = useSearchParams();
   const formationType = searchParams.get("type") || "";
+  const focusParam = (searchParams.get("focus") || searchParams.get("financement") || "").toLowerCase();
+  const financementSectionRef = useRef<HTMLDivElement>(null);
+  const [highlightFinancement, setHighlightFinancement] = useState(false);
 
   // Personal info
   const [civilite, setCivilite] = useState("");
@@ -247,6 +250,19 @@ export default function DevisPersonnel() {
     ctx.lineWidth = 2;
     ctx.lineCap = "round";
   }, []);
+
+  // Scroll auto vers la section "Mode de financement" si ?focus=financement ou ?financement=personnel
+  useEffect(() => {
+    if (focusParam === "financement" || focusParam === "personnel" || focusParam === "perso") {
+      setTypeFinancement("personnel");
+      const t = setTimeout(() => {
+        financementSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        setHighlightFinancement(true);
+        setTimeout(() => setHighlightFinancement(false), 3500);
+      }, 400);
+      return () => clearTimeout(t);
+    }
+  }, [focusParam]);
 
   const getPos = (e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) => {
     const rect = canvas.getBoundingClientRect();
@@ -1099,7 +1115,8 @@ export default function DevisPersonnel() {
         </Card>
 
         {/* Étape 3 : Coordonnées du financeur */}
-        <Card className="border-l-4 border-l-[#1e3a8a]">
+        <div ref={financementSectionRef} className="scroll-mt-4">
+        <Card className={`border-l-4 border-l-[#1e3a8a] transition-all duration-500 ${highlightFinancement ? "ring-4 ring-yellow-400 ring-offset-2 shadow-2xl" : ""}`}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Building2 className="w-5 h-5 text-[#1e3a8a]" />
@@ -1184,6 +1201,7 @@ export default function DevisPersonnel() {
             )}
           </CardContent>
         </Card>
+        </div>
 
         {/* Étape 4 : Informations vous concernant */}
         <Card className="border-l-4 border-l-[#1e3a8a]">
