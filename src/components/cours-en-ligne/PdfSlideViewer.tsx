@@ -17,11 +17,11 @@ if (typeof (Promise as any).withResolvers === 'undefined') {
 }
 
 // Set up pdf.js worker with maximum mobile compatibility
-// Use Vite's import.meta.url to bundle the worker locally (avoids CORS / CDN issues on mobile)
+// Prefer the bundled worker first; fall back to CDN only if needed.
 try {
-  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
 } catch {
-  // Native iframe mode will be used
+  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
 }
 
 interface PdfSlideViewerProps {
@@ -45,7 +45,7 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
   const [containerWidth, setContainerWidth] = useState(960);
   const [nativeScrolledToBottom, setNativeScrolledToBottom] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [hasAutoFitMobile, setHasAutoFitMobile] = useState(false);
+  const [pageAspectRatio, setPageAspectRatio] = useState(16 / 9);
 
   const scrollToPage = useCallback((targetPage: number) => {
     const clampedPage = Math.max(1, Math.min(numPages || 1, targetPage));
@@ -157,18 +157,32 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
     };
   }, []);
 
-  const onDocumentLoadSuccess = useCallback(({ numPages }: { numPages: number }) => {
-    setNumPages(numPages);
+  const onDocumentLoadSuccess = useCallback(async (pdf: {
+    numPages: number;
+    getPage: (pageNumber: number) => Promise<{
+      getViewport: (params: { scale: number }) => { width: number; height: number };
+    }>;
+  }) => {
+    setNumPages(pdf.numPages);
     setPage(1);
     setLoadError(false);
     setRenderMode("react-pdf");
     updateWidth();
-    // Sur mobile, auto-zoom à 1.6x pour rendre le texte des slides 16:9 lisible (une fois seulement)
-    if (isMobile && !hasAutoFitMobile) {
-      setZoom(1.6);
-      setHasAutoFitMobile(true);
+
+    try {
+      const firstPage = await pdf.getPage(1);
+      const viewport = firstPage.getViewport({ scale: 1 });
+      if (viewport.width > 0 && viewport.height > 0) {
+        setPageAspectRatio(viewport.width / viewport.height);
+      }
+    } catch {
+      setPageAspectRatio(16 / 9);
     }
-  }, [updateWidth, isMobile, hasAutoFitMobile]);
+
+    if (isMobile) {
+      setZoom(1);
+    }
+  }, [updateWidth, isMobile]);
 
   const prev = () => scrollToPage(page - 1);
   const next = () => scrollToPage(page + 1);
@@ -355,11 +369,11 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
 
       {/* PDF Page — scrollable when zoomed, touch-action for mobile */}
       <div
-        className={`flex justify-center overflow-x-auto overflow-y-scroll ${isExpanded ? "flex-1" : ""}`}
+        className={`flex justify-center overflow-x-auto overflow-y-auto ${isExpanded ? "flex-1" : ""}`}
         style={{
           maxHeight: isExpanded ? "none" : "80vh",
           height: isExpanded ? "100%" : "auto",
-          touchAction: "pan-x pan-y",
+          touchAction: renderMode === "react-pdf" ? "pan-y pinch-zoom" : "auto",
           WebkitOverflowScrolling: "touch",
           overscrollBehavior: "contain",
         }}
@@ -398,21 +412,41 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
             <div className="flex flex-col items-center gap-4 py-4">
               {Array.from({ length: numPages }, (_, index) => {
                 const pageNumber = index + 1;
+                const shouldRenderPage = !isMobile || Math.abs(pageNumber - page) <= 1;
+                const pageWidth = Math.max(280, containerWidth * zoom);
+                const placeholderHeight = Math.max(220, pageWidth / pageAspectRatio);
 
                 return (
                   <div
                     key={pageNumber}
                     id={`pdf-page-${pageNumber}`}
                     data-pdf-page={pageNumber}
-                    className="max-w-full"
+                    className="flex justify-center"
+                    style={{ width: pageWidth }}
                   >
-                    <Page
-                      pageNumber={pageNumber}
-                      width={containerWidth * zoom}
-                      renderTextLayer={false}
-                      renderAnnotationLayer={false}
-                      devicePixelRatio={typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 3) : 2}
-                    />
+                    <div
+                      className="overflow-hidden rounded-md bg-background/40"
+                      style={{
+                        width: pageWidth,
+                        minHeight: placeholderHeight,
+                        aspectRatio: pageAspectRatio,
+                      }}
+                    >
+                      {shouldRenderPage ? (
+                        <Page
+                          pageNumber={pageNumber}
+                          width={pageWidth}
+                          renderTextLayer={false}
+                          renderAnnotationLayer={false}
+                          loading={<div className="flex min-h-[220px] items-center justify-center text-sm text-muted-foreground">Chargement de la slide {pageNumber}…</div>}
+                          devicePixelRatio={typeof window !== "undefined" ? (isMobile ? 1.25 : Math.min(window.devicePixelRatio || 1, 2)) : 1.5}
+                        />
+                      ) : (
+                        <div className="flex min-h-[220px] h-full items-center justify-center text-sm text-muted-foreground">
+                          Slide {pageNumber}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })}
