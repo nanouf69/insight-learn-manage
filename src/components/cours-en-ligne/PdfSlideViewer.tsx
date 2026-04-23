@@ -51,13 +51,20 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
     const clampedPage = Math.max(1, Math.min(numPages || 1, targetPage));
     setPage(clampedPage);
 
+    if (isMobile) {
+      if (clampedPage === numPages && onLastPageReached) {
+        onLastPageReached();
+      }
+      return;
+    }
+
     const target = containerRef.current?.querySelector<HTMLElement>(`[data-pdf-page="${clampedPage}"]`);
     target?.scrollIntoView({ behavior: "smooth", block: "start" });
 
     if (clampedPage === numPages && onLastPageReached) {
       onLastPageReached();
     }
-  }, [numPages, onLastPageReached]);
+  }, [isMobile, numPages, onLastPageReached]);
 
   // Detect mobile to apply mobile-friendly defaults
   useEffect(() => {
@@ -196,6 +203,10 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
       return;
     }
 
+    if (isMobile) {
+      return;
+    }
+
     const pageNodes = Array.from(el.querySelectorAll<HTMLElement>("[data-pdf-page]"));
     if (!pageNodes.length) return;
 
@@ -220,7 +231,7 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
     if (remaining <= 48 && onLastPageReached) {
       onLastPageReached();
     }
-  }, [handleNativeBottomCheck, loadError, onLastPageReached, page, renderMode]);
+  }, [handleNativeBottomCheck, isMobile, loadError, onLastPageReached, page, renderMode]);
 
   const toggleFullscreen = async () => {
     if (!containerRef.current) return;
@@ -410,46 +421,74 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
             error={<div className="flex items-center justify-center p-12 text-destructive">Impossible de charger le PDF.</div>}
           >
             <div className="flex flex-col items-center gap-4 py-4">
-              {Array.from({ length: numPages }, (_, index) => {
-                const pageNumber = index + 1;
-                const shouldRenderPage = !isMobile || Math.abs(pageNumber - page) <= 1;
-                const pageWidth = Math.max(280, containerWidth * zoom);
-                const placeholderHeight = Math.max(220, pageWidth / pageAspectRatio);
-
-                return (
+              {isMobile ? (
+                <div
+                  key={page}
+                  id={`pdf-page-${page}`}
+                  data-pdf-page={page}
+                  className="flex justify-center"
+                  style={{ width: Math.max(280, containerWidth * zoom) }}
+                >
                   <div
-                    key={pageNumber}
-                    id={`pdf-page-${pageNumber}`}
-                    data-pdf-page={pageNumber}
-                    className="flex justify-center"
-                    style={{ width: pageWidth }}
+                    className="overflow-hidden rounded-md bg-background/40"
+                    style={{
+                      width: Math.max(280, containerWidth * zoom),
+                      minHeight: Math.max(220, Math.max(280, containerWidth * zoom) / pageAspectRatio),
+                      aspectRatio: pageAspectRatio,
+                    }}
                   >
-                    <div
-                      className="overflow-hidden rounded-md bg-background/40"
-                      style={{
-                        width: pageWidth,
-                        minHeight: placeholderHeight,
-                        aspectRatio: pageAspectRatio,
-                      }}
-                    >
-                      {shouldRenderPage ? (
-                        <Page
-                          pageNumber={pageNumber}
-                          width={pageWidth}
-                          renderTextLayer={false}
-                          renderAnnotationLayer={false}
-                          loading={<div className="flex min-h-[220px] items-center justify-center text-sm text-muted-foreground">Chargement de la slide {pageNumber}…</div>}
-                          devicePixelRatio={typeof window !== "undefined" ? (isMobile ? 1.25 : Math.min(window.devicePixelRatio || 1, 2)) : 1.5}
-                        />
-                      ) : (
-                        <div className="flex min-h-[220px] h-full items-center justify-center text-sm text-muted-foreground">
-                          Slide {pageNumber}
-                        </div>
-                      )}
-                    </div>
+                    <Page
+                      pageNumber={page}
+                      width={Math.max(280, containerWidth * zoom)}
+                      renderTextLayer={false}
+                      renderAnnotationLayer={false}
+                      loading={<div className="flex min-h-[220px] items-center justify-center text-sm text-muted-foreground">Chargement de la slide {page}…</div>}
+                      devicePixelRatio={typeof window !== "undefined" ? 1.25 : 1.5}
+                    />
                   </div>
-                );
-              })}
+                </div>
+              ) : (
+                Array.from({ length: numPages }, (_, index) => {
+                  const pageNumber = index + 1;
+                  const shouldRenderPage = Math.abs(pageNumber - page) <= 1;
+                  const pageWidth = Math.max(280, containerWidth * zoom);
+                  const placeholderHeight = Math.max(220, pageWidth / pageAspectRatio);
+
+                  return (
+                    <div
+                      key={pageNumber}
+                      id={`pdf-page-${pageNumber}`}
+                      data-pdf-page={pageNumber}
+                      className="flex justify-center"
+                      style={{ width: pageWidth }}
+                    >
+                      <div
+                        className="overflow-hidden rounded-md bg-background/40"
+                        style={{
+                          width: pageWidth,
+                          minHeight: placeholderHeight,
+                          aspectRatio: pageAspectRatio,
+                        }}
+                      >
+                        {shouldRenderPage ? (
+                          <Page
+                            pageNumber={pageNumber}
+                            width={pageWidth}
+                            renderTextLayer={false}
+                            renderAnnotationLayer={false}
+                            loading={<div className="flex min-h-[220px] items-center justify-center text-sm text-muted-foreground">Chargement de la slide {pageNumber}…</div>}
+                            devicePixelRatio={typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 2) : 1.5}
+                          />
+                        ) : (
+                          <div className="flex min-h-[220px] h-full items-center justify-center text-sm text-muted-foreground">
+                            Slide {pageNumber}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </Document>
         )}
