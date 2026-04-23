@@ -5,7 +5,6 @@ import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Maximize, Minimize } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
 // Promise.withResolvers polyfill for Safari < 17 / Samsung Internet
 if (typeof (Promise as any).withResolvers === 'undefined') {
@@ -20,14 +19,9 @@ if (typeof (Promise as any).withResolvers === 'undefined') {
 // Set up pdf.js worker with maximum mobile compatibility
 // Use Vite's import.meta.url to bundle the worker locally (avoids CORS / CDN issues on mobile)
 try {
-  pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
 } catch {
-  // Fallback to CDN
-  try {
-    pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
-  } catch {
-    // Native iframe mode will be used
-  }
+  // Native iframe mode will be used
 }
 
 interface PdfSlideViewerProps {
