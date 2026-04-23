@@ -3969,23 +3969,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                                 />
                               )}
 
-                              {isPdf && !shouldShowViewers && (() => {
-                                const pdfSrc = f.url.startsWith('http')
-                                  ? f.url
-                                  : `${window.location.origin}${f.url.startsWith('/') ? f.url : `/${f.url}`}`;
-                                return (
-                                  <div className="mt-2 border rounded-lg overflow-hidden" onContextMenu={e => e.preventDefault()}>
-                                    <iframe
-                                      src={`${pdfSrc}#toolbar=0&navpanes=0`}
-                                      width="100%"
-                                      height="600px"
-                                      className="border-0"
-                                      title={`PDF — ${cours.titre}`}
-                                      style={{ minHeight: '600px' }}
-                                    />
-                                  </div>
-                                );
-                              })()}
+                              {isPdf && !shouldShowViewers && (
+                                <div className="mt-2">
+                                  <PdfSlideViewer
+                                    url={f.url.startsWith("http") ? f.url : (f.url.startsWith("/") ? f.url : `/${f.url}`)}
+                                    nom={f.nom}
+                                    onLastPageReached={() => markPageCompleted(currentPage)}
+                                  />
+                                </div>
+                              )}
                             </div>
                           );
                         })}
