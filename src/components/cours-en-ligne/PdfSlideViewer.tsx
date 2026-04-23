@@ -158,7 +158,12 @@ export default function PdfSlideViewer({ url, nom, onLastPageReached }: PdfSlide
     setLoadError(false);
     setRenderMode("react-pdf");
     updateWidth();
-  }, [updateWidth]);
+    // Sur mobile, auto-zoom à 1.6x pour rendre le texte des slides 16:9 lisible (une fois seulement)
+    if (isMobile && !hasAutoFitMobile) {
+      setZoom(1.6);
+      setHasAutoFitMobile(true);
+    }
+  }, [updateWidth, isMobile, hasAutoFitMobile]);
 
   const prev = () => setPage((p) => Math.max(1, p - 1));
   const next = () => setPage((p) => {
