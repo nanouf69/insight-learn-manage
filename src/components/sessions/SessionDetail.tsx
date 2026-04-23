@@ -181,6 +181,7 @@ const buildFallbackAgendaDays = (
   options: {
     isPratique: boolean;
     isVTC: boolean;
+    isTaxi?: boolean;
     isCoursDuSoir: boolean;
     heureDebutPersonnalisee?: string | null;
     heureFinPersonnalisee?: string | null;
@@ -204,7 +205,7 @@ const buildFallbackAgendaDays = (
       day.matinDebut = '09:00';
       day.matinFin = '12:00';
       day.apremDebut = '13:00';
-      day.apremFin = '16:00';
+      day.apremFin = options.isTaxi ? '17:30' : '16:00';
     } else {
       day.matinDebut = '09:00';
       day.matinFin = '12:00';
@@ -1338,6 +1339,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             ? buildFallbackAgendaDays(session.dateDebut, session.dateFin, {
                 isPratique,
                 isVTC,
+                isTaxi,
                 isCoursDuSoir: (session.title || '').toLowerCase().includes('soir'),
                 heureDebutPersonnalisee: saForEmargement.heure_debut_personnalisee,
                 heureFinPersonnalisee: saForEmargement.heure_fin_personnalisee,
@@ -1852,6 +1854,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                     ? buildFallbackAgendaDays(session.dateDebut, session.dateFin, {
                                         isPratique: isPratiqueIndiv,
                                         isVTC,
+                                        isTaxi,
                                         isCoursDuSoir: (session.title || '').toLowerCase().includes('soir'),
                                         heureDebutPersonnalisee: sessionApprenant.heure_debut_personnalisee,
                                         heureFinPersonnalisee: sessionApprenant.heure_fin_personnalisee,
