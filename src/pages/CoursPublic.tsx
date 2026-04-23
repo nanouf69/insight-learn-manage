@@ -1259,60 +1259,21 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // Modules always unlocked even in e-learning (no sequential gate)
   const ALWAYS_UNLOCKED_IDS = new Set([70, 71, 72, 73]);
 
-  // Build a set of unlocked module IDs
-  const unlockedModuleIds = new Set<number>();
-
-  // The first module (Introduction) is always unlocked
-  if (modules.length > 0) {
-    unlockedModuleIds.add(modules[0].id);
-  }
-
-  // Effective completion: a module counts as "done" for unlocking purposes if either
-  // (a) it's recorded in apprenant_module_completion, OR
-  // (b) all its quizzes/exams are completed (moduleProgressById.isDone covers both via completedModuleIds,
-  //     so we additionally consider the case where all quizzes are done even without a global completion row).
-  const effectivelyCompletedIds = new Set<number>(completedModuleIds);
-  modules.forEach((m) => {
-    const quizStats = moduleQuizStatsById[m.id];
-    const examStats = examBlancStatsById[m.id];
-    const hasQuizzes = quizStats && quizStats.totalQuizzes > 0;
-    const hasExams = examStats && examStats.total > 0;
-    const allQuizzesDone = hasQuizzes ? quizStats.completedQuizzes >= quizStats.totalQuizzes : true;
-    const allExamsDone = hasExams ? examStats.completed >= examStats.total : true;
-    if ((hasQuizzes || hasExams) && allQuizzesDone && allExamsDone) {
-      effectivelyCompletedIds.add(m.id);
-    }
+  const unlockState = computeUnlockState({
+    modules,
+    completedModuleIds,
+    moduleQuizStatsById,
+    examBlancStatsById,
+    isElearning,
+    introModuleIds: INTRO_MODULE_IDS,
+    alwaysUnlockedIds: ALWAYS_UNLOCKED_IDS,
   });
+  const { effectivelyCompletedIds, unlockedModuleIds } = unlockState;
 
   // Check if the Introduction (first module) is completed
   const introCompleted = modules.length > 0 && effectivelyCompletedIds.has(modules[0].id);
 
-  if (isElearning) {
-    // E-learning: strict sequential unlock + intro lock
-    for (let i = 0; i < modules.length; i++) {
-      if (i === 0 || ALWAYS_UNLOCKED_IDS.has(modules[i].id)) {
-        unlockedModuleIds.add(modules[i].id);
-      } else if (effectivelyCompletedIds.has(modules[i - 1].id)) {
-        unlockedModuleIds.add(modules[i].id);
-      }
-    }
-  } else {
-    // Présentiel / E-Présentiel: all modules unlocked, no intro requirement
-    modules.forEach(m => unlockedModuleIds.add(m.id));
-  }
-
-  // Completed modules are always accessible (for review)
-  // For e-learning: EXCEPT Introduction modules (locked once done)
-  // For présentiel: all completed modules remain accessible including intro
-  modules.forEach(m => {
-    if (effectivelyCompletedIds.has(m.id)) {
-      if (!isElearning || !INTRO_MODULE_IDS.has(m.id)) {
-        unlockedModuleIds.add(m.id);
-      }
-    }
-  });
-
-  const isModuleLocked = (modId: number) => !unlockedModuleIds.has(modId) && !effectivelyCompletedIds.has(modId);
+  const isModuleLocked = (modId: number) => computeIsModuleLocked(modId, unlockState);
 
   // Introduction modules: once completed, they cannot be re-opened (E-LEARNING ONLY)
   const isIntroLocked = (modId: number) => isElearning && INTRO_MODULE_IDS.has(modId) && effectivelyCompletedIds.has(modId);
