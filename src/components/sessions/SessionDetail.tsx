@@ -181,6 +181,7 @@ const buildFallbackAgendaDays = (
   options: {
     isPratique: boolean;
     isVTC: boolean;
+    isTaxi?: boolean;
     isCoursDuSoir: boolean;
     heureDebutPersonnalisee?: string | null;
     heureFinPersonnalisee?: string | null;
@@ -204,7 +205,7 @@ const buildFallbackAgendaDays = (
       day.matinDebut = '09:00';
       day.matinFin = '12:00';
       day.apremDebut = '13:00';
-      day.apremFin = '16:00';
+      day.apremFin = options.isTaxi ? '17:30' : '16:00';
     } else {
       day.matinDebut = '09:00';
       day.matinFin = '12:00';
