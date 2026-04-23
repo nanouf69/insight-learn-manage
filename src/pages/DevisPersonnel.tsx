@@ -251,6 +251,19 @@ export default function DevisPersonnel() {
     ctx.lineCap = "round";
   }, []);
 
+  // Scroll auto vers la section "Mode de financement" si ?focus=financement ou ?financement=personnel
+  useEffect(() => {
+    if (focusParam === "financement" || focusParam === "personnel" || focusParam === "perso") {
+      setTypeFinancement("personnel");
+      const t = setTimeout(() => {
+        financementSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        setHighlightFinancement(true);
+        setTimeout(() => setHighlightFinancement(false), 3500);
+      }, 400);
+      return () => clearTimeout(t);
+    }
+  }, [focusParam]);
+
   const getPos = (e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) => {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
