@@ -1050,10 +1050,23 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     });
   };
 
-  const isFormationContinue = session.title?.toLowerCase().includes('continue');
+  const normalizedSessionText = `${session.title || ''} ${session.formation || ''}`.toLowerCase();
+  const isFormationContinue = normalizedSessionText.includes('continue');
+
+  const getSessionTrainingFlags = (typeApprenant: string | null | undefined) => {
+    const type = (typeApprenant || '').toLowerCase();
+    const isTA = type === 'ta' || type === 'ta-e';
+    const isVA = type === 'va' || type === 'va-e';
+    const sessionLooksTaxi = normalizedSessionText.includes('taxi');
+    const sessionLooksVTC = normalizedSessionText.includes('vtc');
+    const isTaxi = type.includes('taxi') || isTA || sessionLooksTaxi;
+    const isVTC = type === 'vtc' || type === 'vtc-e' || type === 'pa vtc' || (!isTaxi && (isVA || sessionLooksVTC));
+
+    return { type, isTA, isVA, isTaxi, isVTC };
+  };
 
   const getFormationTypeLocal = (typeApprenant: string | null | undefined): string => {
-    const type = (typeApprenant || '').toLowerCase();
+    const { type } = getSessionTrainingFlags(typeApprenant);
     if (type.includes('ta-e') || type === 'ta') return 'TAXI (mobilité VTC vers TAXI)';
     if (type.includes('va-e') || type === 'va') return 'VTC (mobilité TAXI vers VTC)';
     if (type.includes('taxi')) return 'TAXI';
@@ -1247,11 +1260,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     let failed = 0;
     for (const apprenant of selectedList) {
       try {
-        const type = (apprenant.type_apprenant || '').toLowerCase();
-        const isTA = type === 'ta' || type === 'ta-e';
-        const isVA = type === 'va' || type === 'va-e';
-        const isTaxi = type.includes('taxi') || isTA;
-        const isVTC = type === 'vtc' || type === 'vtc-e' || type === 'pa vtc';
+        const { isTA, isVA, isTaxi, isVTC } = getSessionTrainingFlags(apprenant.type_apprenant);
         const isFCVTC = isFormationContinue && isVTC;
         const isPratique = session.type_session === 'pratique';
         const formationLabel = isFCVTC ? 'Formation Continue VTC' : isPratique ? (isTaxi ? 'Formation pratique TAXI' : 'Formation pratique VTC') : isTaxi ? 'Formation TAXI' : 'Formation VTC';
@@ -1759,11 +1768,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                               title={title}
                               onClick={async (e) => {
                                 e.stopPropagation();
-                                const type = (apprenant.type_apprenant || '').toLowerCase();
-                                const isTA = type === 'ta' || type === 'ta-e';
-                                const isVA = type === 'va' || type === 'va-e';
-                                const isTaxi = type.includes('taxi') || isTA;
-                                const isVTC = type === 'vtc' || type === 'vtc-e' || type === 'pa vtc';
+                                const { isTA, isVA, isTaxi, isVTC } = getSessionTrainingFlags(apprenant.type_apprenant);
                                 const isFCVTC = isFormationContinue && isVTC;
                                 const isPratique = session.type_session === 'pratique';
                                 const formationLabel = isFCVTC ? 'Formation Continue VTC' : isPratique ? (isTaxi ? 'Formation pratique TAXI' : 'Formation pratique VTC') : isTaxi ? 'Formation TAXI' : 'Formation VTC';
