@@ -224,6 +224,8 @@ export function ApprenantForm() {
       setSelectedDateOption(datesFormations.taxi.dates[0]);
     } else if (value === "passerelle-taxi") {
       setSelectedDateOption(datesFormations.ta.dates[0]);
+    } else if (value === "continue-vtc" || value === "continue-taxi") {
+      setSelectedDateOption(datesFormationContinue[0] || "");
     } else {
       setSelectedDateOption("");
     }
@@ -1202,6 +1204,16 @@ export function ApprenantForm() {
                     <SelectLabel>{datesFormations.ta.label}</SelectLabel>
                     {datesFormations.ta.dates.map((date, idx) => (
                       <SelectItem key={`ta-${idx}`} value={date}>
+                        {date}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+
+                  {/* Formations Continues (VTC / TAXI) */}
+                  <SelectGroup>
+                    <SelectLabel>Formation Continue (VTC / TAXI)</SelectLabel>
+                    {datesFormationContinue.map((date, idx) => (
+                      <SelectItem key={`fc-${idx}`} value={date}>
                         {date}
                       </SelectItem>
                     ))}
