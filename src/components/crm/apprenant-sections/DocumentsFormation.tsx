@@ -110,7 +110,7 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
         await generateAttestationFranceTravail(apprenant);
         toast.success("Attestation France Travail générée");
       } else if (type === 'attestation-fc') {
-        const typeApp = String(apprenant.type_apprenant || '').toUpperCase();
+        const typeApp = `${apprenant.type_apprenant || ''} ${apprenant.formation_choisie || ''}`.toUpperCase();
         const formation: 'VTC' | 'TAXI' = typeApp.includes('TAXI') ? 'TAXI' : 'VTC';
         const dateFin = apprenant.date_fin_formation || apprenant.date_debut_formation || new Date().toISOString().split('T')[0];
         await generateAttestationFCVTC({
