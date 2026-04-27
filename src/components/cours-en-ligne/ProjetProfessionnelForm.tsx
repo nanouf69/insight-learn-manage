@@ -20,6 +20,7 @@ interface Props {
   apprenantDateNaissance?: string;
   apprenantType?: string;
   apprenantId?: string;
+  suppressAdminNotification?: boolean;
   onComplete: () => void;
   completed?: boolean;
   isAdmin?: boolean;
@@ -36,6 +37,7 @@ export default function ProjetProfessionnelForm({
   apprenantDateNaissance = "",
   apprenantType = "",
   apprenantId = "",
+  suppressAdminNotification = false,
   onComplete,
   completed,
   isAdmin = false,
@@ -599,7 +601,7 @@ export default function ProjetProfessionnelForm({
               const saved = await autoTrigger({ ...formData, _status: "completed" });
               if (saved) {
                 toast.success("Questionnaire projet professionnel enregistré !");
-                sendAdminNotification({
+                if (!suppressAdminNotification) sendAdminNotification({
                   type_document: "projet-professionnel",
                   nom: apprenantNom || "",
                   prenom: apprenantPrenom || "",
