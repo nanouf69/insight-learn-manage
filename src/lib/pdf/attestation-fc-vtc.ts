@@ -184,8 +184,8 @@ export async function generateAttestationFCVTC(data: AttestationFCData) {
 
   drawRow('NOM :', data.nom.toUpperCase(), 'ADRESSE :', (data.adresse || '-').toUpperCase());
   drawRow('PRÉNOM :', data.prenom.toUpperCase(), 'CODE POSTAL :', data.codePostal || '-');
-  drawRow('DATE DE NAISS. :', data.dateNaissance ? formatDateFR(data.dateNaissance) : '-', 'VILLE :', (data.ville || '-').toUpperCase());
-  drawRow('TÉLÉPHONE :', data.telephone || '-', 'MAIL :', data.email || '-');
+  drawRow('TÉLÉPHONE :', data.telephone || '-', 'VILLE :', (data.ville || '-').toUpperCase());
+  drawRow('MAIL :', data.email || '-', '', '');
 
   // === A effectué une formation ===
   y += 6;
@@ -227,21 +227,11 @@ export async function generateAttestationFCVTC(data: AttestationFCData) {
   y += 8;
   doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(180, 0, 0);
-  doc.text("Signature de l'apprenant précédée", marginL, y);
-  y += 4;
-  doc.text('de la mention « lu et approuvé »', marginL, y);
-
   doc.setTextColor(0, 0, 0);
-  doc.text('Signature', marginR - 25, y - 4, { align: 'center' });
-  doc.text(COMPANY_INFO.name, marginR - 25, y, { align: 'center' });
+  doc.text('Signature', marginR - 25, y, { align: 'center' });
+  doc.text(COMPANY_INFO.name, marginR - 25, y + 4, { align: 'center' });
 
-  // Zone signature apprenant
   y += 5;
-  doc.setFont('helvetica', 'italic');
-  doc.setFontSize(10);
-  doc.setTextColor(100, 100, 100);
-  doc.text('lu et approuvé', marginL + 10, y + 10);
 
   // Signature dirigeant + Tampon à droite
   try {
