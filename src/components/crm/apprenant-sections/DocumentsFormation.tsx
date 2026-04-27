@@ -10,6 +10,7 @@ import { generateAttestationFranceTravail } from "@/lib/pdf/attestation-france-t
 import { generateBienvenueFtransport } from "@/lib/pdf/bienvenue-ftransport";
 import { generateEmargementPDF } from "@/components/sessions/EmargementGenerator";
 import { generateFicheProgressionGuenichi } from "@/lib/pdf/fiche-progression";
+import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
