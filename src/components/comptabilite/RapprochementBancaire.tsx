@@ -306,8 +306,9 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
   const [syncingRevolut, setSyncingRevolut] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const fetchAll = useCallback(async () => {
-    setLoading(true);
+  const fetchAll = useCallback(async (options?: { silent?: boolean }) => {
+    const showLoader = !options?.silent;
+    if (showLoader) setLoading(true);
 
     // Mode comptable : tout via edge function
     if (isComptableMode) {
@@ -350,7 +351,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
       } catch (err) {
         toast.error("Erreur de chargement : " + (err instanceof Error ? err.message : "inconnu"));
       }
-      setLoading(false);
+      if (showLoader) setLoading(false);
       return;
     }
 
@@ -412,7 +413,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
       });
       setApprenants(enriched);
     }
-    setLoading(false);
+    if (showLoader) setLoading(false);
   }, [isComptableMode, invokeComptable]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
@@ -721,12 +722,13 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
   const preserveScroll = async (fn: () => Promise<void>) => {
     const y = window.scrollY;
     await fn();
-    // Restaure la position de scroll après le re-render (double rAF pour laisser React peindre)
+    const restore = () => window.scrollTo({ top: y, left: 0, behavior: "auto" });
+    restore();
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        window.scrollTo({ top: y, left: 0, behavior: "auto" });
-      });
+      restore();
+      requestAnimationFrame(restore);
     });
+    window.setTimeout(restore, 150);
   };
 
   const quickUpdate = async (id: string, updates: Partial<Transaction>) => {
@@ -738,7 +740,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
       } else {
         await supabase.from("transactions_bancaires").update(updates).eq("id", id);
       }
-      await fetchAll();
+      await fetchAll({ silent: true });
     });
   };
 
@@ -765,7 +767,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
       } else {
         toast.success("Mise à jour !");
       }
-      await fetchAll();
+      await fetchAll({ silent: true });
     });
   };
 
@@ -875,10 +877,14 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
       await supabase.from("justificatifs").update({ statut: "traite" }).eq("id", justId);
     }
 
-    setConfirmingLink(false);
-    setLinkDialogId(null);
-    await fetchAll();
-    toast.success("Justificatif associé");
+    await preserveScroll(async () => {
+      setTransactions(prev => prev.map(t => t.id === txId ? { ...t, justificatif_id: justId, statut: "justifie" } : t));
+      setJustificatifs(prev => prev.map(j => j.id === justId ? { ...j, statut: "traite" } : j));
+      setConfirmingLink(false);
+      setLinkDialogId(null);
+      await fetchAll({ silent: true });
+      toast.success("Justificatif associé");
+    });
   };
 
   // Extraire les mots significatifs d'un libellé (>= 3 chars, non génériques)
