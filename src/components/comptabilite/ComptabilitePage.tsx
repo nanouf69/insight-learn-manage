@@ -16,7 +16,8 @@ import {
   Search, Euro, TrendingUp, Clock, CheckCircle, AlertTriangle,
   Download, Filter, Receipt, CreditCard, Banknote, BarChart3,
   Building2, RefreshCw, Link2, ExternalLink, ArrowDownLeft, ArrowUpRight,
-  CalendarIcon, CheckCheck, FileText, Upload, Trash2, Eye, FolderOpen
+  CalendarIcon, CheckCheck, FileText, Upload, Trash2, Eye, FolderOpen,
+  Pencil, Check, X
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
