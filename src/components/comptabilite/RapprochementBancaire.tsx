@@ -718,36 +718,55 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
     setSyncingRevolut(false);
   };
 
+  const preserveScroll = async (fn: () => Promise<void>) => {
+    const y = window.scrollY;
+    await fn();
+    // Restaure la position de scroll après le re-render (double rAF pour laisser React peindre)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: y, left: 0, behavior: "auto" });
+      });
+    });
+  };
+
   const quickUpdate = async (id: string, updates: Partial<Transaction>) => {
-    if (isComptableMode) {
-      await invokeComptable("update", { id, updates });
-    } else {
-      await supabase.from("transactions_bancaires").update(updates).eq("id", id);
-    }
-    await fetchAll();
+    await preserveScroll(async () => {
+      // Update optimiste local pour éviter le flash de re-render
+      setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...updates } as Transaction : t));
+      if (isComptableMode) {
+        await invokeComptable("update", { id, updates });
+      } else {
+        await supabase.from("transactions_bancaires").update(updates).eq("id", id);
+      }
+      await fetchAll();
+    });
   };
 
   const saveEdit = async (id: string) => {
     const tx = transactions.find(t => t.id === id);
-    if (isComptableMode) {
-      await invokeComptable("update", { id, updates: editForm });
-    } else {
-      await supabase.from("transactions_bancaires").update(editForm).eq("id", id);
-    }
-    setEditingId(null);
-    // Auto-catégoriser les transactions similaires si une catégorie a été choisie
-    if (tx && editForm.categorie) {
-      const updatedTx = { ...tx, ...editForm } as Transaction;
-      const similar = await autoCategorizeSimilar(updatedTx, editForm.categorie);
-      if (similar > 0) {
-        toast.success(`Sauvegardé ! ${similar} transaction(s) similaire(s) auto-catégorisée(s) ✨`);
+    await preserveScroll(async () => {
+      // Update optimiste local
+      setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...editForm } as Transaction : t));
+      if (isComptableMode) {
+        await invokeComptable("update", { id, updates: editForm });
+      } else {
+        await supabase.from("transactions_bancaires").update(editForm).eq("id", id);
+      }
+      setEditingId(null);
+      // Auto-catégoriser les transactions similaires si une catégorie a été choisie
+      if (tx && editForm.categorie) {
+        const updatedTx = { ...tx, ...editForm } as Transaction;
+        const similar = await autoCategorizeSimilar(updatedTx, editForm.categorie);
+        if (similar > 0) {
+          toast.success(`Sauvegardé ! ${similar} transaction(s) similaire(s) auto-catégorisée(s) ✨`);
+        } else {
+          toast.success("Mise à jour !");
+        }
       } else {
         toast.success("Mise à jour !");
       }
-    } else {
-      toast.success("Mise à jour !");
-    }
-    await fetchAll();
+      await fetchAll();
+    });
   };
 
   const handleDelete = async (id: string) => {
