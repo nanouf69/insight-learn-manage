@@ -59,6 +59,7 @@ const CATEGORIES = [
   { value: "loyer", label: "🏢 Loyer", color: "bg-indigo-100 text-indigo-700" },
   { value: "assurance", label: "🛡️ Assurance", color: "bg-green-100 text-green-700" },
   { value: "salaires_formateurs", label: "👨‍🏫 Formateurs", color: "bg-teal-100 text-teal-700" },
+  { value: "salaire", label: "💼 Salaire", color: "bg-lime-100 text-lime-700" },
   { value: "transport", label: "🚌 Transport", color: "bg-sky-100 text-sky-700" },
   { value: "honoraires", label: "⚖️ Honoraires", color: "bg-violet-100 text-violet-700" },
   { value: "publicite", label: "📢 Publicité", color: "bg-pink-100 text-pink-700" },
