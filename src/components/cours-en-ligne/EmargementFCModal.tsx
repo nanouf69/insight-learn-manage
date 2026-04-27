@@ -35,38 +35,13 @@ export const EmargementFCModal = ({
   userId,
   apprenantNom,
   apprenantPrenom,
+  onSigned,
 }: EmargementFCModalProps) => {
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [needsSignature, setNeedsSignature] = useState(false);
   const [signature, setSignature] = useState("");
   const [saving, setSaving] = useState(false);
-  const [demi, setDemi] = useState<DemiJournee>(getCurrentDemiJournee());
-
-  useEffect(() => {
-    let cancelled = false;
-    const check = async () => {
-      const currentDemi = getCurrentDemiJournee();
-      setDemi(currentDemi);
-      const { data, error } = await supabase
-        .from("emargements_fc" as any)
-        .select("id")
-        .eq("apprenant_id", apprenantId)
-        .eq("date_emargement", todayISO())
-        .eq("demi_journee", currentDemi)
-        .maybeSingle();
-      if (cancelled) return;
-      if (error && error.code !== "PGRST116") {
-        console.warn("Emargement check error:", error.message);
-      }
-      setNeedsSignature(!data);
-      setLoading(false);
-    };
-    check();
-    return () => {
-      cancelled = true;
-    };
-  }, [apprenantId]);
+  const [demi] = useState<DemiJournee>(getCurrentDemiJournee());
+  const [done, setDone] = useState(false);
 
   const handleSubmit = async () => {
     if (!signature) {
@@ -90,7 +65,8 @@ export const EmargementFCModal = ({
     if (error) {
       // Si déjà signé entre-temps : on laisse passer
       if (error.code === "23505") {
-        setNeedsSignature(false);
+        setDone(true);
+        onSigned?.();
         return;
       }
       toast({
@@ -104,10 +80,11 @@ export const EmargementFCModal = ({
       title: "Émargement validé",
       description: `Signature ${demi === "matin" ? "du matin" : "de l'après-midi"} enregistrée. Bonne formation !`,
     });
-    setNeedsSignature(false);
+    setDone(true);
+    onSigned?.();
   };
 
-  if (loading || !needsSignature) return null;
+  if (done) return null;
 
   return (
     <Dialog open={true} onOpenChange={() => { /* non-fermable */ }}>
