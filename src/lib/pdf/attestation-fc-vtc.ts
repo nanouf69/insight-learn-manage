@@ -34,11 +34,12 @@ function formatDateFR(dateStr: string): string {
   return `${parts[2]}/${parts[1]}/${parts[0]}`;
 }
 
-function generateCertificateNumber(dateFin: string, nom: string): string {
+function generateCertificateNumber(dateFin: string, nom: string, formation: 'VTC' | 'TAXI' = 'VTC'): string {
   const year = dateFin.split('-')[0] || '2025';
   const initials = nom.substring(0, 3).toUpperCase();
   const num = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0');
-  return `FCOVTC-${year}-LYON-${num}-${initials}`;
+  const prefix = formation === 'TAXI' ? 'FCOTAXI' : 'FCOVTC';
+  return `${prefix}-${year}-LYON-${num}-${initials}`;
 }
 
 export async function generateAttestationFCVTC(data: AttestationFCData) {
