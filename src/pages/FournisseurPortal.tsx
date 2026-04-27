@@ -975,9 +975,9 @@ export default function FournisseurPortal() {
                 <div className="grid gap-3">
                   {factures.map(f => (
                     <Card key={f.id}>
-                      <CardContent className="pt-4 flex justify-between items-center">
-                        <div>
-                          <p className="font-medium">{f.nom_fichier}</p>
+                      <CardContent className="pt-4 flex justify-between items-center gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium truncate">{f.nom_fichier}</p>
                           <p className="text-sm text-muted-foreground">
                             Prestataire : <span className="font-medium">{f.destinataire}</span>
                             {(f as any).mois_annee ? ` • Période : ${(f as any).mois_annee}` : ""}
@@ -985,6 +985,35 @@ export default function FournisseurPortal() {
                             {" • "}{new Date(f.created_at).toLocaleDateString('fr-FR')}
                           </p>
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
+                          onClick={async () => {
+                            if (!confirm(`Supprimer définitivement la facture "${f.nom_fichier}" ?`)) return;
+                            try {
+                              // Tenter de supprimer le fichier du storage (extraire le path depuis l'URL publique)
+                              const url = f.url || "";
+                              const marker = "/fournisseur-documents/";
+                              const idx = url.indexOf(marker);
+                              if (idx !== -1) {
+                                const path = decodeURIComponent(url.slice(idx + marker.length));
+                                await supabase.storage.from("fournisseur-documents").remove([path]);
+                              }
+                              const { error } = await supabase
+                                .from("fournisseur_factures")
+                                .delete()
+                                .eq("id", f.id);
+                              if (error) throw error;
+                              setFactures(prev => prev.filter(x => x.id !== f.id));
+                              toast({ title: "Facture supprimée" });
+                            } catch (err: any) {
+                              toast({ title: "Erreur", description: err.message || "Suppression impossible", variant: "destructive" });
+                            }
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </CardContent>
                     </Card>
                   ))}
