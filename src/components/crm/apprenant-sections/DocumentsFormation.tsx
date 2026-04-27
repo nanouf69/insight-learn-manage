@@ -196,7 +196,84 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
     }
   };
 
-  // Fetch uploaded docs from storage for this learner
+  const handleSendAttestationFCByEmail = async () => {
+    if (!apprenant.email) {
+      toast.error("Cet apprenant n'a pas d'adresse email");
+      return;
+    }
+    setSendingEmail('attestation-fc');
+    try {
+      const typeApp = `${apprenant.type_apprenant || ''} ${apprenant.formation_choisie || ''}`.toUpperCase();
+      const formation: 'VTC' | 'TAXI' = typeApp.includes('TAXI') ? 'TAXI' : 'VTC';
+      const dateFin = apprenant.date_fin_formation || apprenant.date_debut_formation || new Date().toISOString().split('T')[0];
+
+      const result = await generateAttestationFCVTC({
+        nom: apprenant.nom,
+        prenom: apprenant.prenom,
+        dateFin,
+        dateDebut: apprenant.date_debut_formation,
+        adresse: apprenant.adresse,
+        codePostal: apprenant.code_postal,
+        ville: apprenant.ville,
+        telephone: apprenant.telephone,
+        email: apprenant.email,
+        dateNaissance: apprenant.date_naissance,
+        formation,
+      }, { returnBlob: true });
+
+      if (!result?.blob) throw new Error("Impossible de générer le PDF");
+
+      const arrayBuffer = await result.blob.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      let binary = '';
+      const chunkSize = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunkSize)));
+      }
+      const base64 = btoa(binary);
+
+      const subject = `Votre attestation de formation continue ${formation}`;
+      const htmlBody = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background-color: #1a1a2e; padding: 20px; text-align: center;">
+            <h1 style="color: #ffffff; margin: 0;">FTRANSPORT</h1>
+            <p style="color: #e0e0e0; margin: 5px 0 0;">Centre de formation VTC & TAXI</p>
+          </div>
+          <div style="padding: 30px; background-color: #ffffff;">
+            <p>Bonjour ${apprenant.prenom} ${apprenant.nom},</p>
+            <p>Veuillez trouver ci-joint votre <strong>attestation de formation continue ${formation}</strong> (valable 5 ans).</p>
+            <p>Conservez précieusement ce document, il pourra vous être demandé lors d'un contrôle.</p>
+            <p>Cordialement,<br/>L'équipe FTRANSPORT</p>
+          </div>
+          <div style="background-color: #f3f4f6; padding: 20px; text-align: center; font-size: 13px; color: #6b7280;">
+            <p><strong>FTRANSPORT</strong> – 86 Route de Genas, 69003 Lyon</p>
+            <p>📞 04 28 29 60 91 | 📧 contact@ftransport.fr</p>
+          </div>
+        </div>
+      `;
+
+      const { error } = await supabase.functions.invoke('send-document-email', {
+        body: {
+          apprenantId: apprenant.id,
+          recipientEmail: apprenant.email,
+          recipientName: `${apprenant.prenom} ${apprenant.nom}`,
+          subject,
+          htmlBody,
+          attachmentName: result.fileName,
+          attachmentBase64: base64,
+          attachmentContentType: 'application/pdf',
+        },
+      });
+      if (error) throw error;
+      toast.success(`Attestation envoyée par email à ${apprenant.email}`);
+    } catch (error: any) {
+      console.error('Erreur envoi email:', error);
+      toast.error(`Erreur lors de l'envoi : ${error?.message || 'inconnue'}`);
+    } finally {
+      setSendingEmail(null);
+    }
+  };
+
   const { data: uploadedDocs, refetch: refetchDocs } = useQuery({
     queryKey: ['formation-docs-uploaded', apprenant.id],
     queryFn: async () => {
