@@ -983,11 +983,37 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
   // Émargement obligatoire pour les apprenants en formation continue
   // Bloque l'accès aux cours tant que la signature de la demi-journée n'est pas effectuée
-  const showEmargementFC =
+  if (
     !embedded &&
     !!user &&
     !!apprenant?.id &&
-    isFormationContinue(apprenant?.type_apprenant, apprenant?.formation_choisie);
+    isFormationContinue(apprenant?.type_apprenant, apprenant?.formation_choisie)
+  ) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+        <div className="text-center max-w-md mb-6">
+          <div className="text-5xl mb-3">📝</div>
+          <h1 className="text-xl font-bold text-slate-900 mb-1">
+            Bienvenue {apprenant.prenom} {apprenant.nom}
+          </h1>
+          <p className="text-sm text-slate-500">
+            Avant d'accéder à votre formation continue, merci de signer la feuille d'émargement de cette demi-journée.
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={handleLogout}>
+          <LogOut className="w-3.5 h-3.5 mr-1" />
+          Se déconnecter
+        </Button>
+        <EmargementFCModal
+          apprenantId={apprenant.id}
+          userId={user.id}
+          apprenantNom={apprenant.nom}
+          apprenantPrenom={apprenant.prenom}
+        />
+      </div>
+    );
+  }
+
   // Module detail view
   if (selectedModule) {
     const bilanId = BILAN_MODULE_IDS[selectedModule.id];
