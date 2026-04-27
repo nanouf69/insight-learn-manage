@@ -230,8 +230,15 @@ interface ModuleDetailViewProps {
     code_postal?: string;
     ville?: string;
     date_naissance?: string;
+    formation_choisie?: string | null;
   } | null;
 }
+
+const isFormationContinueVtcTaxi = (...values: Array<string | null | undefined>) =>
+  values.some((value) => {
+    const normalized = (value || "").toLowerCase();
+    return normalized.includes("continue-vtc") || normalized.includes("continue-taxi") || normalized.includes("formation-continue-vtc") || normalized.includes("formation-continue-taxi");
+  });
 
 // ===== Données initiales du module INTRODUCTION FORMATION EN PRÉSENTIEL =====
 const INTRODUCTION_PRESENTIEL_DATA: ModuleData = {
@@ -3786,6 +3793,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
     const renderCoursPage = (cours: ContentItem) => {
       const hasInteractiveSlides = Boolean(cours.slidesKey && slidesByKey[cours.slidesKey]?.length > 0);
+      const suppressPreInformationEmails = isFormationContinueVtcTaxi(apprenantType, apprenantInfo?.formation_choisie);
 
       // --- Interactive checklist types ---
       if (cours.checklistType === "competences") {
@@ -3794,6 +3802,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           <CompetencesChecklist
             data={competencesData}
             apprenantId={apprenantId || undefined}
+            suppressAdminNotification={suppressPreInformationEmails}
             completed={completedPages.has(currentPage)}
             onComplete={() => {
               markPageCompleted(currentPage);
@@ -3835,6 +3844,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             apprenantDateNaissance={apprenantInfo?.date_naissance || ""}
             apprenantType={apprenantType || ""}
             apprenantId={apprenantId || undefined}
+            suppressAdminNotification={suppressPreInformationEmails}
             isAdmin={!studentOnly}
             completed={completedPages.has(currentPage)}
             onComplete={() => {
