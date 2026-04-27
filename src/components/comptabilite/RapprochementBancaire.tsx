@@ -304,6 +304,53 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
+
+    // Mode comptable : tout via edge function
+    if (isComptableMode) {
+      try {
+        const data = await invokeComptable("list");
+        const txs = (data.transactions || []) as Transaction[];
+        const just = (data.justificatifs || []) as Justificatif[];
+        const apprenantsData = (data.apprenants || []) as any[];
+        const saData = (data.session_apprenants || []) as any[];
+        const fourData = (data.fournisseurs || []) as { id: string; nom: string }[];
+
+        setTransactions(txs);
+        setJustificatifs(just);
+        setFournisseursList(fourData);
+
+        const enriched: ApprenantWithSession[] = apprenantsData.map((a) => {
+          const sa = saData.find((s: any) => s.apprenant_id === a.id);
+          const session = sa?.sessions;
+          return {
+            id: a.id,
+            nom: a.nom,
+            prenom: a.prenom,
+            civilite: a.civilite,
+            email: a.email,
+            adresse: a.adresse,
+            code_postal: a.code_postal,
+            ville: a.ville,
+            formation_choisie: a.formation_choisie,
+            type_apprenant: a.type_apprenant,
+            montant_ttc: a.montant_ttc,
+            montant_paye: a.montant_paye,
+            date_paiement: a.date_paiement,
+            date_debut_formation: a.date_debut_formation,
+            date_fin_formation: a.date_fin_formation,
+            session_date_debut: sa?.date_debut || session?.date_debut || null,
+            session_date_fin: sa?.date_fin || session?.date_fin || null,
+          };
+        });
+        setApprenants(enriched);
+      } catch (err) {
+        toast.error("Erreur de chargement : " + (err instanceof Error ? err.message : "inconnu"));
+      }
+      setLoading(false);
+      return;
+    }
+
+    // Mode admin : requêtes Supabase directes
     // Fetch ALL transactions (bypass 1000-row default limit) by paginating
     const fetchAllTxs = async (): Promise<Transaction[]> => {
       const all: Transaction[] = [];
@@ -362,7 +409,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
       setApprenants(enriched);
     }
     setLoading(false);
-  }, []);
+  }, [isComptableMode, invokeComptable]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
