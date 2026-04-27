@@ -330,6 +330,41 @@ export function ComptabilitePage() {
     await fetchReleves();
   };
 
+  // Édition inline d'un relevé (nom + banque)
+  const [editingReleveId, setEditingReleveId] = useState<string | null>(null);
+  const [editReleveForm, setEditReleveForm] = useState<{ nom_fichier: string; banque: string }>({ nom_fichier: "", banque: "" });
+
+  const startEditReleve = (r: Releve) => {
+    setEditingReleveId(r.id);
+    setEditReleveForm({ nom_fichier: r.nom_fichier, banque: r.banque });
+  };
+
+  const cancelEditReleve = () => {
+    setEditingReleveId(null);
+    setEditReleveForm({ nom_fichier: "", banque: "" });
+  };
+
+  const saveEditReleve = async (id: string) => {
+    const nom = editReleveForm.nom_fichier.trim();
+    const banque = editReleveForm.banque.trim();
+    if (!nom || !banque) {
+      toast.error("Le nom et la banque sont obligatoires");
+      return;
+    }
+    const { error } = await supabase
+      .from("releves_bancaires")
+      .update({ nom_fichier: nom, banque })
+      .eq("id", id);
+    if (error) {
+      toast.error("Erreur lors de la mise à jour");
+      return;
+    }
+    toast.success("Relevé mis à jour");
+    cancelEditReleve();
+    await fetchReleves();
+  };
+
+
 
 
   const callGC = async (action: string, extra: Record<string, string> = {}) => {
