@@ -7,9 +7,9 @@ const COMPANY_INFO = {
   name: 'FTRANSPORT',
   representant: 'GUENICHI NAOUFAL',
   address: '86 Route de Genas 69003 Lyon',
-  telephone: '04 78 54 34 86',
+  telephone: '04 28 29 60 91',
   email: 'contact@ftransport.fr',
-  siren: '535 163 714',
+  siren: '823 461 561',
   agrement: 'VTC-69-16-005',
 };
 
