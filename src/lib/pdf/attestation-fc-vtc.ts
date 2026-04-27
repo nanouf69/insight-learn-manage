@@ -42,7 +42,7 @@ function generateCertificateNumber(dateFin: string, nom: string, formation: 'VTC
   return `${prefix}-${year}-LYON-${num}-${initials}`;
 }
 
-export async function generateAttestationFCVTC(data: AttestationFCData) {
+export async function generateAttestationFCVTC(data: AttestationFCData, options?: { returnBlob?: boolean }) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pw = doc.internal.pageSize.getWidth();  // ~210
   const ph = doc.internal.pageSize.getHeight(); // ~297
