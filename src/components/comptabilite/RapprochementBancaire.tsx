@@ -307,6 +307,14 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
   const [syncingRevolut, setSyncingRevolut] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Dialog de proposition de catégorisation en masse
+  const [similarPropose, setSimilarPropose] = useState<{
+    sourceTx: Transaction;
+    categorie: string;
+    matches: { tx: Transaction; commonWords: string[] }[];
+  } | null>(null);
+  const [applyingSimilar, setApplyingSimilar] = useState(false);
+
   const fetchAll = useCallback(async (options?: { silent?: boolean }) => {
     const showLoader = !options?.silent;
     if (showLoader) setLoading(true);
