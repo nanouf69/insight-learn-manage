@@ -4479,13 +4479,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               (e.questions || []).map(q => {
                                 const key = `${e.id}-${q.id}`;
                                 const sel = selectedAnswers[key];
-                                const cor = q.choix.find(c => c.correct);
+                                 const correctLetters = getQuestionChoices(q).filter(c => c.correct).map(c => c.lettre);
                                 return {
                                   exerciceId: e.id, exerciceTitre: e.titre,
                                   questionId: q.id, enonce: q.enonce,
                                   reponseEleve: sel || null,
-                                  reponseCorrecte: cor?.lettre || null,
-                                  correct: sel != null && cor != null && sel === cor.lettre,
+                                   reponseCorrecte: correctLetters.length === 1 ? correctLetters[0] : correctLetters,
+                                   correct: isAnswerCorrect(sel, q),
                                 };
                               })
                             );
