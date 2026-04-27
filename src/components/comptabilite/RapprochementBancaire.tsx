@@ -950,36 +950,35 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
     return { categorie: best!.cat, fournisseur_client: best!.fournisseur };
   };
 
-  // Après avoir catégorisé une transaction, auto-catégoriser les similaires
-  const autoCategorizeSimilar = async (sourceTx: Transaction, categorie: string): Promise<number> => {
+  // Trouver les transactions non catégorisées qui partagent un mot significatif
+  const findSimilarUncategorized = (sourceTx: Transaction): { tx: Transaction; commonWords: string[] }[] => {
     const sourceKeywords = extractKeywords(sourceTx.libelle);
-    if (sourceKeywords.length === 0) return 0;
-
-    const uncategorized = transactions.filter(
-      t => t.id !== sourceTx.id && !t.categorie
-    );
-
-    const toUpdate: string[] = [];
-    for (const tx of uncategorized) {
+    if (sourceKeywords.length === 0) return [];
+    const results: { tx: Transaction; commonWords: string[] }[] = [];
+    for (const tx of transactions) {
+      if (tx.id === sourceTx.id) continue;
+      if (tx.categorie && tx.categorie.trim() !== "") continue;
       const txKeywords = extractKeywords(tx.libelle);
       const commonWords = sourceKeywords.filter(w => txKeywords.includes(w));
-      // Au moins 1 mot commun significatif
       if (commonWords.length >= 1) {
-        toUpdate.push(tx.id);
+        results.push({ tx, commonWords: Array.from(new Set(commonWords)) });
       }
     }
+    return results;
+  };
 
-    if (toUpdate.length > 0) {
-      if (isComptableMode) {
-        await invokeComptable("bulk_update_categorie", { ids: toUpdate, categorie });
-      } else {
-        await supabase
-          .from("transactions_bancaires")
-          .update({ categorie })
-          .in("id", toUpdate);
-      }
+  // Appliquer la catégorisation aux transactions sélectionnées
+  const applyCategorieToTransactions = async (ids: string[], categorie: string): Promise<number> => {
+    if (ids.length === 0) return 0;
+    if (isComptableMode) {
+      await invokeComptable("bulk_update_categorie", { ids, categorie });
+    } else {
+      await supabase
+        .from("transactions_bancaires")
+        .update({ categorie })
+        .in("id", ids);
     }
-    return toUpdate.length;
+    return ids.length;
   };
 
 
