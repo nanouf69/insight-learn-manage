@@ -20,7 +20,7 @@ interface DocumentsFormationProps {
   apprenant: any;
 }
 
-type DocType = 'inscription' | 'fin-formation' | 'france-travail' | 'bienvenue' | 'emargement' | 'progression';
+type DocType = 'inscription' | 'fin-formation' | 'france-travail' | 'bienvenue' | 'emargement' | 'progression' | 'attestation-fc';
 
 export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
   const [generatingDoc, setGeneratingDoc] = useState<string | null>(null);
