@@ -489,6 +489,18 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
                         <Download className="w-4 h-4 mr-2" />
                         {generatingDoc === doc.type ? 'Génération...' : 'Générer'}
                       </Button>
+                      {doc.id === 'attestation-fc' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleSendAttestationFCByEmail}
+                          disabled={sendingEmail === 'attestation-fc' || !apprenant.email}
+                          title={!apprenant.email ? "Aucune adresse email" : `Envoyer à ${apprenant.email}`}
+                        >
+                          <Send className="w-4 h-4 mr-2" />
+                          {sendingEmail === 'attestation-fc' ? 'Envoi...' : 'Envoyer par email'}
+                        </Button>
+                      )}
                     </>
                   )}
                   {doc.status === 'en_attente' && (
