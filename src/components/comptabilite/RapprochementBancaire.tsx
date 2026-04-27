@@ -910,6 +910,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
 
   // Extraire les mots significatifs d'un libellé (>= 3 chars, non génériques)
   const extractKeywords = (libelle: string): string[] => {
+    const forcedKeywords = new Set(["cma", "cmar", "cpf"]);
     const stopWords = new Set([
       "les", "des", "une", "par", "sur", "pour", "avec", "dans", "aux", "sans", "son", "ses", "que", "qui",
       "virement", "paiement", "prelevement", "prlv", "sepa", "facture", "carte", "vir", "remise", "cheque",
@@ -919,9 +920,12 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
     ]);
     return libelle
       .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9\s]/g, " ")
       .split(/\s+/)
       .filter(w => {
+        if (forcedKeywords.has(w)) return true;
         if (w.length < 4) return false;
         if (stopWords.has(w)) return false;
         // ignorer tokens purement numériques (références, dates)
@@ -941,7 +945,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
     // Comptage des catégories trouvées sur transactions similaires déjà catégorisées
     const counts = new Map<string, { count: number; fournisseur: string | null }>();
     for (const other of transactions) {
-      if (other.id === tx.id || !other.categorie) continue;
+      if (other.id === tx.id || !other.categorie || other.categorie === "autre") continue;
       const otherKeywords = extractKeywords(other.libelle);
       const common = sourceKeywords.filter(w => otherKeywords.includes(w));
       if (common.length >= 1) {
@@ -962,14 +966,14 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
     return { categorie: best!.cat, fournisseur_client: best!.fournisseur };
   };
 
-  // Trouver les transactions non catégorisées qui partagent un mot significatif
+  // Trouver les transactions sans vraie catégorisation (vide ou "Autre") qui partagent un mot significatif
   const findSimilarUncategorized = (sourceTx: Transaction): { tx: Transaction; commonWords: string[] }[] => {
     const sourceKeywords = extractKeywords(sourceTx.libelle);
     if (sourceKeywords.length === 0) return [];
     const results: { tx: Transaction; commonWords: string[] }[] = [];
     for (const tx of transactions) {
       if (tx.id === sourceTx.id) continue;
-      if (tx.categorie && tx.categorie.trim() !== "") continue;
+      if (tx.categorie && tx.categorie.trim() !== "" && tx.categorie !== "autre") continue;
       const txKeywords = extractKeywords(tx.libelle);
       const commonWords = sourceKeywords.filter(w => txKeywords.includes(w));
       if (commonWords.length >= 1) {
