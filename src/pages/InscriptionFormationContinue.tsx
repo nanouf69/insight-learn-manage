@@ -479,6 +479,9 @@ export default function InscriptionFormationContinue() {
 
               {hasFinanceur && (
                 <div className="border rounded-xl p-4 space-y-4 bg-slate-50/50">
+                  <p className="text-xs text-muted-foreground bg-amber-50 border border-amber-200 rounded-md p-2">
+                    ℹ️ Toutes les coordonnées du financeur sont obligatoires pour l'établissement de la facture.
+                  </p>
                   <div className="space-y-1">
                     <Label>N° SIREN <span className="text-red-500">*</span></Label>
                     <Input placeholder="123 456 789" value={financeurSiren} onChange={(e) => setFinanceurSiren(e.target.value)} />
@@ -490,28 +493,28 @@ export default function InscriptionFormationContinue() {
                   </div>
 
                   <div className="space-y-1">
-                    <Label>Adresse postale</Label>
+                    <Label>Adresse postale <span className="text-red-500">*</span></Label>
                     <Input placeholder="Adresse du siège" value={financeurAdresse} onChange={(e) => setFinanceurAdresse(e.target.value)} />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <Label>Code postal</Label>
+                      <Label>Code postal <span className="text-red-500">*</span></Label>
                       <Input placeholder="69000" value={financeurCodePostal} onChange={(e) => setFinanceurCodePostal(e.target.value)} />
                     </div>
                     <div className="space-y-1">
-                      <Label>Ville</Label>
+                      <Label>Ville <span className="text-red-500">*</span></Label>
                       <Input placeholder="Lyon" value={financeurVille} onChange={(e) => setFinanceurVille(e.target.value)} />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <Label>Téléphone</Label>
+                      <Label>Téléphone <span className="text-red-500">*</span></Label>
                       <Input type="tel" placeholder="01 00 00 00 00" value={financeurTelephone} onChange={(e) => setFinanceurTelephone(e.target.value)} />
                     </div>
                     <div className="space-y-1">
-                      <Label>Email</Label>
+                      <Label>Email <span className="text-red-500">*</span></Label>
                       <Input type="email" placeholder="contact@entreprise.fr" value={financeurEmail} onChange={(e) => setFinanceurEmail(e.target.value)} />
                     </div>
                   </div>
