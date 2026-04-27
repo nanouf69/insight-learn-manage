@@ -751,6 +751,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
     const matches = findSimilarUncategorized(updatedTx);
     if (matches.length > 0) {
       setSimilarPropose({ sourceTx: updatedTx, categorie, matches });
+      setSimilarSelectedIds(new Set(matches.map(m => m.tx.id)));
     }
   };
 
