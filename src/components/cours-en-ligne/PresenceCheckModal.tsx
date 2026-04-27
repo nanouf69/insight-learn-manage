@@ -17,24 +17,89 @@ export function PresenceCheckModal({
 }: PresenceCheckModalProps) {
   // Show disconnect reason message
   if (disconnectReason) {
-    const message =
-      disconnectReason === "max_duration"
-        ? "Vous avez atteint la durée maximale de session. Veuillez vous reconnecter pour continuer."
-        : "Votre session a été fermée pour inactivité. Veuillez vous reconnecter pour continuer.";
+    let title = "Session terminée";
+    let message = "Votre session a été fermée. Veuillez vous reconnecter pour continuer.";
+    let instructions: string[] = [];
+    let icon = <LogOut className="w-8 h-8 text-destructive" />;
+    let bgColor = "bg-destructive/10";
+
+    if (disconnectReason === "max_duration") {
+      title = "Durée maximale atteinte";
+      message = "Vous êtes connecté depuis plus de 7 heures consécutives.";
+      instructions = [
+        "Reconnectez-vous simplement pour continuer votre formation",
+        "Votre progression a été entièrement sauvegardée",
+      ];
+    } else if (disconnectReason === "no_response") {
+      title = "Inactivité détectée";
+      message = "Aucune activité n'a été détectée pendant plus de 35 minutes.";
+      instructions = [
+        "Reconnectez-vous pour reprendre là où vous en étiez",
+        "Pensez à confirmer votre présence quand le message apparaît",
+      ];
+    } else if (
+      disconnectReason === "replaced_by_new_session" ||
+      disconnectReason === "no_active_session"
+    ) {
+      title = "Connexion sur un autre appareil";
+      message =
+        "Votre compte vient d'être ouvert sur un autre appareil ou onglet. Une seule session active est autorisée à la fois.";
+      instructions = [
+        "Fermez l'autre fenêtre/onglet/appareil où votre compte est ouvert",
+        "Reconnectez-vous ici pour reprendre votre formation",
+        "⚠️ N'ouvrez jamais vos cours sur 2 appareils en même temps",
+        "Si personne d'autre n'utilise votre compte, changez votre mot de passe",
+      ];
+      bgColor = "bg-orange-500/10";
+    }
 
     return (
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-        <div className="bg-card border border-border rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 text-center space-y-5 animate-in fade-in zoom-in-95 duration-300">
-          <div className="mx-auto w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center">
-            <LogOut className="w-8 h-8 text-destructive" />
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div className="bg-card border border-border rounded-2xl shadow-2xl p-6 sm:p-8 max-w-md w-full text-center space-y-4 animate-in fade-in zoom-in-95 duration-300">
+          <div className={`mx-auto w-16 h-16 rounded-full ${bgColor} flex items-center justify-center`}>
+            {icon}
           </div>
-          <h2 className="text-xl font-bold text-foreground">Session terminée</h2>
+          <h2 className="text-xl font-bold text-foreground">{title}</h2>
           <p className="text-muted-foreground text-sm leading-relaxed">{message}</p>
-          <p className="text-xs text-muted-foreground">Redirection en cours…</p>
+
+          {instructions.length > 0 && (
+            <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-left space-y-2">
+              <p className="font-semibold text-blue-900 dark:text-blue-200 text-sm">
+                ✅ Que faire maintenant ?
+              </p>
+              <ul className="space-y-1.5 text-sm text-blue-900 dark:text-blue-100">
+                {instructions.map((line, i) => (
+                  <li key={i} className="flex gap-2">
+                    <span className="font-bold shrink-0">{i + 1}.</span>
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <Button
+            size="lg"
+            onClick={() => {
+              window.location.href = "/login";
+            }}
+            className="w-full font-semibold"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Se reconnecter
+          </Button>
+
+          <p className="text-xs text-muted-foreground">
+            Besoin d'aide ?{" "}
+            <a href="mailto:contact@ftransport.fr" className="text-primary font-semibold hover:underline">
+              contact@ftransport.fr
+            </a>
+          </p>
         </div>
       </div>
     );
   }
+
 
   if (!show) return null;
 
