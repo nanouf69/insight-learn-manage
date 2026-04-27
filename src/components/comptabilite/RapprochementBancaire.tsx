@@ -961,8 +961,19 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
       tx.libelle.toLowerCase().includes(search.toLowerCase()) ||
       (tx.fournisseur_client || "").toLowerCase().includes(search.toLowerCase()) ||
       (tx.categorie || "").toLowerCase().includes(search.toLowerCase());
-    return matchStatut && matchType && matchSearch && matchBanque;
+    const d = tx.date_operation ? new Date(tx.date_operation) : null;
+    const matchAnnee = filterAnnee === "tous" || (d && String(d.getFullYear()) === filterAnnee);
+    const matchMois = filterMois === "tous" || (d && String(d.getMonth() + 1) === filterMois);
+    return matchStatut && matchType && matchSearch && matchBanque && matchAnnee && matchMois;
   });
+
+  // Liste des années et mois disponibles dans les transactions
+  const anneesDisponibles = Array.from(new Set(
+    transactions
+      .map(t => t.date_operation ? new Date(t.date_operation).getFullYear() : null)
+      .filter((y): y is number => y !== null)
+  )).sort((a, b) => b - a);
+  const MOIS_LABELS = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
 
   // Group by month
   const grouped = filtered.reduce((acc, tx) => {
