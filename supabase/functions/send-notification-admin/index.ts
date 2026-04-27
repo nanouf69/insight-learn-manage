@@ -34,6 +34,16 @@ function formatDocumentLabel(type: string): string {
   return labels[type] || type;
 }
 
+function isFormationContinueVtcTaxi(payload: NotificationPayload): boolean {
+  const serializedDonnees = JSON.stringify(payload.donnees || {}).toLowerCase();
+  return (
+    serializedDonnees.includes("continue-vtc") ||
+    serializedDonnees.includes("continue-taxi") ||
+    serializedDonnees.includes("formation-continue-vtc") ||
+    serializedDonnees.includes("formation-continue-taxi")
+  );
+}
+
 // ══════════════════════════════════════════════════════
 // QUESTION LABELS PER DOCUMENT TYPE
 // ══════════════════════════════════════════════════════
@@ -487,6 +497,13 @@ serve(async (req) => {
     }
 
     const payload: NotificationPayload = await req.json();
+    if (["analyse-besoin", "projet-professionnel", "test-competences"].includes(payload.type_document) && isFormationContinueVtcTaxi(payload)) {
+      console.log("Notification skipped for formation continue VTC/TAXI:", payload.type_document);
+      return new Response(JSON.stringify({ success: true, skipped: true }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     const docLabel = formatDocumentLabel(payload.type_document);
     const subject = `[FTRANSPORT] ${docLabel} – ${payload.prenom || ""} ${(payload.nom || "").toUpperCase()}`;
     const html = buildEmailHtml(payload);
