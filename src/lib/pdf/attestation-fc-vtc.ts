@@ -206,6 +206,7 @@ export async function generateAttestationFCVTC(data: AttestationFCData, options?
   const dateFinFR = formatDateFR(data.dateFin);
   drawFormRow('DATE DE LA FORMATION', `Du ${dateDebutFR} AU ${dateFinFR}`);
   drawFormRow('HORAIRES', 'DE 09H00-12H00 / 13H00-17H00');
+  drawFormRow('NOMBRE D\'HEURES', '14H');
 
   // Date d'expiration = dateFin + 5 ans
   const finParts = data.dateFin.split('-').map(Number);
