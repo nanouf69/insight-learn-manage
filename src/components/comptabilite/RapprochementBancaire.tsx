@@ -715,13 +715,21 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
   };
 
   const quickUpdate = async (id: string, updates: Partial<Transaction>) => {
-    await supabase.from("transactions_bancaires").update(updates).eq("id", id);
+    if (isComptableMode) {
+      await invokeComptable("update", { id, updates });
+    } else {
+      await supabase.from("transactions_bancaires").update(updates).eq("id", id);
+    }
     await fetchAll();
   };
 
   const saveEdit = async (id: string) => {
     const tx = transactions.find(t => t.id === id);
-    await supabase.from("transactions_bancaires").update(editForm).eq("id", id);
+    if (isComptableMode) {
+      await invokeComptable("update", { id, updates: editForm });
+    } else {
+      await supabase.from("transactions_bancaires").update(editForm).eq("id", id);
+    }
     setEditingId(null);
     // Auto-catégoriser les transactions similaires si une catégorie a été choisie
     if (tx && editForm.categorie) {
@@ -740,7 +748,11 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
 
   const handleDelete = async (id: string) => {
     if (!confirm("Supprimer cette transaction ?")) return;
-    await supabase.from("transactions_bancaires").delete().eq("id", id);
+    if (isComptableMode) {
+      await invokeComptable("delete", { id });
+    } else {
+      await supabase.from("transactions_bancaires").delete().eq("id", id);
+    }
     toast.success("Supprimée");
     await fetchAll();
   };
