@@ -109,6 +109,24 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
       } else if (type === 'france-travail') {
         await generateAttestationFranceTravail(apprenant);
         toast.success("Attestation France Travail générée");
+      } else if (type === 'attestation-fc') {
+        const typeApp = String(apprenant.type_apprenant || '').toUpperCase();
+        const formation: 'VTC' | 'TAXI' = typeApp.includes('TAXI') ? 'TAXI' : 'VTC';
+        const dateFin = apprenant.date_fin_formation || apprenant.date_debut_formation || new Date().toISOString().split('T')[0];
+        await generateAttestationFCVTC({
+          nom: apprenant.nom,
+          prenom: apprenant.prenom,
+          dateFin,
+          dateDebut: apprenant.date_debut_formation,
+          adresse: apprenant.adresse,
+          codePostal: apprenant.code_postal,
+          ville: apprenant.ville,
+          telephone: apprenant.telephone,
+          email: apprenant.email,
+          dateNaissance: apprenant.date_naissance,
+          formation,
+        });
+        toast.success(`Attestation Formation Continue ${formation} générée`);
       } else if (type === 'progression') {
         generateFicheProgressionGuenichi();
         toast.success("Fiche de progression generee");
