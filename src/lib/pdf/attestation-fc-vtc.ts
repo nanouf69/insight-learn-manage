@@ -24,6 +24,7 @@ interface AttestationFCData {
   telephone?: string;
   email?: string;
   dateNaissance?: string;
+  formation?: 'VTC' | 'TAXI';
 }
 
 function formatDateFR(dateStr: string): string {
