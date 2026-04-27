@@ -999,6 +999,42 @@ export type Database = {
           },
         ]
       }
+      emargements_fc: {
+        Row: {
+          apprenant_id: string
+          created_at: string
+          date_emargement: string
+          demi_journee: string
+          id: string
+          signature_data_url: string
+          signed_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          apprenant_id: string
+          created_at?: string
+          date_emargement?: string
+          demi_journee: string
+          id?: string
+          signature_data_url: string
+          signed_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          apprenant_id?: string
+          created_at?: string
+          date_emargement?: string
+          demi_journee?: string
+          id?: string
+          signature_data_url?: string
+          signed_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       factures: {
         Row: {
           apprenant_id: string | null

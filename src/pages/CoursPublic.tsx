@@ -25,6 +25,7 @@ import { usePresenceCheck } from "@/hooks/usePresenceCheck";
 import { useInactivityAlert } from "@/hooks/useInactivityAlert";
 import { useSessionKeepAlive } from "@/hooks/useSessionKeepAlive";
 import { PresenceCheckModal } from "@/components/cours-en-ligne/PresenceCheckModal";
+import { EmargementFCModal, isFormationContinue } from "@/components/cours-en-ligne/EmargementFCModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { computeUnlockState, isModuleLocked as computeIsModuleLocked } from "@/lib/moduleUnlockLogic";
@@ -618,6 +619,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [examBlancCompletedIds, setExamBlancCompletedIds] = useState<Set<string>>(new Set());
   const [lastModuleName, setLastModuleName] = useState<string | null>(null);
   const [isInExam, setIsInExam] = useState(false);
+  const [emargementFCStatus, setEmargementFCStatus] = useState<"checking" | "needed" | "signed" | "n/a">("checking");
 
   const handleExamStateChange = useCallback((inExam: boolean) => {
     setIsInExam(inExam);
@@ -850,6 +852,42 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     fetchCompletions();
   }, [apprenant?.id]);
 
+  // Vérifier si une signature d'émargement est requise pour la demi-journée en cours (formation continue)
+  useEffect(() => {
+    if (embedded || !user || !apprenant?.id) {
+      setEmargementFCStatus("n/a");
+      return;
+    }
+    if (!isFormationContinue(apprenant.type_apprenant, apprenant.formation_choisie)) {
+      setEmargementFCStatus("n/a");
+      return;
+    }
+    let cancelled = false;
+    setEmargementFCStatus("checking");
+    const check = async () => {
+      const now = new Date();
+      const demi = now.getHours() < 13 ? "matin" : "apres_midi";
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      const { data, error } = await supabase
+        .from("emargements_fc" as any)
+        .select("id")
+        .eq("apprenant_id", apprenant.id!)
+        .eq("date_emargement", today)
+        .eq("demi_journee", demi)
+        .maybeSingle();
+      if (cancelled) return;
+      if (error && error.code !== "PGRST116") {
+        console.warn("[Émargement FC] check error:", error.message);
+      }
+      setEmargementFCStatus(data ? "signed" : "needed");
+    };
+    check();
+    return () => {
+      cancelled = true;
+    };
+  }, [embedded, user?.id, apprenant?.id, apprenant?.type_apprenant, apprenant?.formation_choisie]);
+
+
   const handleModuleCompleted = useCallback((moduleId: number) => {
     setCompletedModuleIds(prev => new Set([...prev, moduleId]));
   }, []);
@@ -978,6 +1016,45 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         </div>
       );
     }
+  }
+
+  // Émargement obligatoire pour les apprenants en formation continue
+  // Bloque l'accès aux cours tant que la signature de la demi-journée n'est pas effectuée
+  const isFC =
+    !embedded &&
+    !!user &&
+    !!apprenant?.id &&
+    isFormationContinue(apprenant?.type_apprenant, apprenant?.formation_choisie);
+
+  if (isFC && emargementFCStatus !== "signed") {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+        <div className="text-center max-w-md mb-6">
+          <div className="text-5xl mb-3">📝</div>
+          <h1 className="text-xl font-bold text-slate-900 mb-1">
+            Bienvenue {apprenant!.prenom} {apprenant!.nom}
+          </h1>
+          <p className="text-sm text-slate-500">
+            {emargementFCStatus === "checking"
+              ? "Vérification de votre émargement…"
+              : "Avant d'accéder à votre formation continue, merci de signer la feuille d'émargement de cette demi-journée."}
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={handleLogout}>
+          <LogOut className="w-3.5 h-3.5 mr-1" />
+          Se déconnecter
+        </Button>
+        {emargementFCStatus === "needed" && (
+          <EmargementFCModal
+            apprenantId={apprenant!.id!}
+            userId={user!.id}
+            apprenantNom={apprenant!.nom}
+            apprenantPrenom={apprenant!.prenom}
+            onSigned={() => setEmargementFCStatus("signed")}
+          />
+        )}
+      </div>
+    );
   }
 
   // Module detail view
