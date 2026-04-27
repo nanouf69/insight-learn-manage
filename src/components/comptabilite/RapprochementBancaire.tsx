@@ -1700,6 +1700,80 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
           })()}
         </DialogContent>
       </Dialog>
+
+      {/* Dialog : proposition de catégorisation en masse */}
+      <Dialog open={!!similarPropose} onOpenChange={(open) => { if (!open) setSimilarPropose(null); }}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              ✨ Catégoriser les transactions similaires
+            </DialogTitle>
+          </DialogHeader>
+          {similarPropose && (() => {
+            const catLabel = CATEGORIES.find(c => c.value === similarPropose.categorie)?.label || similarPropose.categorie;
+            return (
+              <div className="space-y-4">
+                <div className="text-sm text-muted-foreground">
+                  Vous venez de catégoriser <span className="font-medium text-foreground">"{similarPropose.sourceTx.libelle}"</span> en <Badge variant="secondary">{catLabel}</Badge>.
+                </div>
+                <div className="text-sm">
+                  <strong>{similarPropose.matches.length}</strong> autre(s) transaction(s) non catégorisée(s) partagent un mot commun. Voulez-vous leur appliquer la même catégorisation ?
+                </div>
+                <div className="border rounded-lg divide-y max-h-80 overflow-y-auto">
+                  {similarPropose.matches.map(({ tx, commonWords }) => (
+                    <div key={tx.id} className="p-3 text-sm flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="truncate" title={tx.libelle}>{tx.libelle}</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {format(parse(tx.date_operation, "yyyy-MM-dd", new Date()), "dd MMM yyyy", { locale: fr })}
+                          {" — "}
+                          <span className="font-medium">
+                            {new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(tx.montant)}
+                          </span>
+                        </div>
+                        <div className="text-xs mt-1 flex flex-wrap gap-1">
+                          {commonWords.map(w => (
+                            <Badge key={w} variant="outline" className="text-[10px]">{w}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button variant="outline" onClick={() => setSimilarPropose(null)} disabled={applyingSimilar}>
+                    Non, garder tel quel
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      if (!similarPropose) return;
+                      setApplyingSimilar(true);
+                      try {
+                        const ids = similarPropose.matches.map(m => m.tx.id);
+                        // Update optimiste
+                        setTransactions(prev => prev.map(t =>
+                          ids.includes(t.id) ? { ...t, categorie: similarPropose.categorie } : t
+                        ));
+                        await applyCategorieToTransactions(ids, similarPropose.categorie);
+                        toast.success(`${ids.length} transaction(s) catégorisée(s) ✨`);
+                        setSimilarPropose(null);
+                        await fetchAll({ silent: true });
+                      } catch (err) {
+                        toast.error("Erreur : " + (err instanceof Error ? err.message : "inconnu"));
+                      } finally {
+                        setApplyingSimilar(false);
+                      }
+                    }}
+                    disabled={applyingSimilar}
+                  >
+                    {applyingSimilar ? "Application..." : `Oui, appliquer aux ${similarPropose.matches.length}`}
+                  </Button>
+                </div>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
