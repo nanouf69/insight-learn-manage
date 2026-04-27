@@ -304,16 +304,12 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
     {
       id: 'attestation-fc',
       title: (() => {
-        const t = String(apprenant.type_apprenant || '').toUpperCase();
+        const t = `${apprenant.type_apprenant || ''} ${apprenant.formation_choisie || ''}`.toUpperCase();
         const f = t.includes('TAXI') ? 'TAXI' : 'VTC';
         return `Attestation Formation Continue ${f}`;
       })(),
       description: "Attestation officielle de formation continue obligatoire (valable 5 ans)",
-      status: (() => {
-        const t = String(apprenant.type_apprenant || '').toUpperCase();
-        const isFC = /\bFC\b|FORMATION\s*CONTINUE/.test(t);
-        return isFC ? 'disponible' : 'non_applicable';
-      })(),
+      status: 'disponible',
       type: 'attestation-fc' as const,
       icon: FileText,
     },
