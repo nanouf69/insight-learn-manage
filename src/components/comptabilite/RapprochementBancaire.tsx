@@ -868,6 +868,35 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
       .filter(w => w.length >= 3 && !stopWords.has(w));
   };
 
+  // Suggérer une catégorie basée sur des transactions similaires déjà catégorisées
+  const suggestCategorieFromSimilar = (tx: Transaction): { categorie: string | null; fournisseur_client: string | null } => {
+    const sourceKeywords = extractKeywords(tx.libelle);
+    if (sourceKeywords.length === 0) return { categorie: null, fournisseur_client: null };
+
+    // Comptage des catégories trouvées sur transactions similaires déjà catégorisées
+    const counts = new Map<string, { count: number; fournisseur: string | null }>();
+    for (const other of transactions) {
+      if (other.id === tx.id || !other.categorie) continue;
+      const otherKeywords = extractKeywords(other.libelle);
+      const common = sourceKeywords.filter(w => otherKeywords.includes(w));
+      if (common.length >= 1) {
+        const existing = counts.get(other.categorie);
+        counts.set(other.categorie, {
+          count: (existing?.count || 0) + 1,
+          fournisseur: existing?.fournisseur || other.fournisseur_client || null,
+        });
+      }
+    }
+    if (counts.size === 0) return { categorie: null, fournisseur_client: null };
+
+    // Catégorie la plus fréquente
+    let best: { cat: string; count: number; fournisseur: string | null } | null = null;
+    counts.forEach((v, cat) => {
+      if (!best || v.count > best.count) best = { cat, count: v.count, fournisseur: v.fournisseur };
+    });
+    return { categorie: best!.cat, fournisseur_client: best!.fournisseur };
+  };
+
   // Après avoir catégorisé une transaction, auto-catégoriser les similaires
   const autoCategorizeSimilar = async (sourceTx: Transaction, categorie: string): Promise<number> => {
     const sourceKeywords = extractKeywords(sourceTx.libelle);
