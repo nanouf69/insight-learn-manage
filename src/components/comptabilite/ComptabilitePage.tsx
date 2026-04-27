@@ -1334,14 +1334,43 @@ export function ComptabilitePage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {releves.map((r) => (
+                    {releves.map((r) => {
+                      const isEditing = editingReleveId === r.id;
+                      return (
                       <TableRow key={r.id}>
-                        <TableCell className="font-medium flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-primary flex-shrink-0" />
-                          <span className="truncate max-w-[200px]">{r.nom_fichier}</span>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-primary flex-shrink-0" />
+                            {isEditing ? (
+                              <Input
+                                value={editReleveForm.nom_fichier}
+                                onChange={e => setEditReleveForm(f => ({ ...f, nom_fichier: e.target.value }))}
+                                className="h-8 text-sm"
+                                autoFocus
+                              />
+                            ) : (
+                              <span className="truncate max-w-[200px]">{r.nom_fichier}</span>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">{r.banque}</Badge>
+                          {isEditing ? (
+                            <Select value={editReleveForm.banque} onValueChange={v => setEditReleveForm(f => ({ ...f, banque: v }))}>
+                              <SelectTrigger className="h-8 text-sm w-[170px]"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Revolut Bank UAB">Revolut Bank UAB</SelectItem>
+                                <SelectItem value="BNP Paribas">BNP Paribas</SelectItem>
+                                <SelectItem value="Société Générale">Société Générale</SelectItem>
+                                <SelectItem value="Crédit Agricole">Crédit Agricole</SelectItem>
+                                <SelectItem value="LCL">LCL</SelectItem>
+                                <SelectItem value="Caisse d'Épargne">Caisse d'Épargne</SelectItem>
+                                <SelectItem value="Banque Postale">Banque Postale</SelectItem>
+                                <SelectItem value="Autre">Autre</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Badge variant="outline">{r.banque}</Badge>
+                          )}
                         </TableCell>
                         <TableCell className="font-mono text-sm">
                           {r.mois_annee ? (() => {
@@ -1354,26 +1383,58 @@ export function ComptabilitePage() {
                         <TableCell>{formatDate(r.created_at)}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="gap-1 h-8"
-                              onClick={() => window.open(r.url, "_blank")}
-                            >
-                              <Eye className="h-3 w-3" /> Voir
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="gap-1 h-8 text-destructive hover:text-destructive"
-                              onClick={() => handleDeleteReleve(r)}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
+                            {isEditing ? (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="gap-1 h-8 text-primary"
+                                  onClick={() => saveEditReleve(r.id)}
+                                >
+                                  <Check className="h-3 w-3" /> Valider
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8"
+                                  onClick={cancelEditReleve}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="gap-1 h-8"
+                                  onClick={() => window.open(r.url, "_blank")}
+                                >
+                                  <Eye className="h-3 w-3" /> Voir
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="gap-1 h-8"
+                                  onClick={() => startEditReleve(r)}
+                                >
+                                  <Pencil className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="gap-1 h-8 text-destructive hover:text-destructive"
+                                  onClick={() => handleDeleteReleve(r)}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))}
+                      );
+                    })}
                   </TableBody>
                 </Table>
               )}
