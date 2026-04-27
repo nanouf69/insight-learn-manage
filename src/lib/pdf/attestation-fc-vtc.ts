@@ -58,13 +58,15 @@ export async function generateAttestationFCVTC(data: AttestationFCData) {
   }
 
   // === TITRE ===
+  const formation = data.formation || 'VTC';
+  const agrement = formation === 'TAXI' ? 'TAXI-69-16-005' : COMPANY_INFO.agrement;
   let y = 36;
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
   doc.text('ATTESTATION DE FORMATION CONTINUE', pw / 2, y, { align: 'center' });
   y += 7;
-  doc.text('OBLIGATOIRE VTC', pw / 2, y, { align: 'center' });
+  doc.text(`OBLIGATOIRE ${formation}`, pw / 2, y, { align: 'center' });
 
   // === BARRE DORÉE + numéro certificat ===
   y += 8;
@@ -73,7 +75,7 @@ export async function generateAttestationFCVTC(data: AttestationFCData) {
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
-  const certNum = generateCertificateNumber(data.dateFin, data.nom);
+  const certNum = generateCertificateNumber(data.dateFin, data.nom, formation);
   doc.text(`Numéro de certificat : ${certNum}`, pw / 2, y + 6.5, { align: 'center' });
 
   // === ORGANISME D'ACCUEIL ===
