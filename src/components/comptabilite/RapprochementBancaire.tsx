@@ -740,7 +740,18 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
     window.setTimeout(restore, 150);
   };
 
+  // Après avoir mis à jour une transaction, propose la même catégorisation pour les similaires
+  const proposeSimilarIfNeeded = (sourceTx: Transaction, categorie: string | null | undefined) => {
+    if (!categorie) return;
+    const updatedTx = { ...sourceTx, categorie } as Transaction;
+    const matches = findSimilarUncategorized(updatedTx);
+    if (matches.length > 0) {
+      setSimilarPropose({ sourceTx: updatedTx, categorie, matches });
+    }
+  };
+
   const quickUpdate = async (id: string, updates: Partial<Transaction>) => {
+    const tx = transactions.find(t => t.id === id);
     await preserveScroll(async () => {
       // Update optimiste local pour éviter le flash de re-render
       setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...updates } as Transaction : t));
@@ -751,10 +762,16 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
       }
       await fetchAll({ silent: true });
     });
+    // Si une catégorie vient d'être posée, proposer la propagation
+    if (tx && updates.categorie && updates.categorie !== tx.categorie) {
+      proposeSimilarIfNeeded(tx, updates.categorie);
+    }
   };
 
   const saveEdit = async (id: string) => {
     const tx = transactions.find(t => t.id === id);
+    const newCategorie = editForm.categorie;
+    const categorieChanged = !!(tx && newCategorie && newCategorie !== tx.categorie);
     await preserveScroll(async () => {
       // Update optimiste local
       setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...editForm } as Transaction : t));
@@ -764,20 +781,13 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
         await supabase.from("transactions_bancaires").update(editForm).eq("id", id);
       }
       setEditingId(null);
-      // Auto-catégoriser les transactions similaires si une catégorie a été choisie
-      if (tx && editForm.categorie) {
-        const updatedTx = { ...tx, ...editForm } as Transaction;
-        const similar = await autoCategorizeSimilar(updatedTx, editForm.categorie);
-        if (similar > 0) {
-          toast.success(`Sauvegardé ! ${similar} transaction(s) similaire(s) auto-catégorisée(s) ✨`);
-        } else {
-          toast.success("Mise à jour !");
-        }
-      } else {
-        toast.success("Mise à jour !");
-      }
+      toast.success("Mise à jour !");
       await fetchAll({ silent: true });
     });
+    // Proposer la propagation après le re-render
+    if (tx && categorieChanged) {
+      proposeSimilarIfNeeded(tx, newCategorie);
+    }
   };
 
   const handleDelete = async (id: string) => {
