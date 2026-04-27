@@ -264,5 +264,5 @@ export async function generateAttestationFCVTC(data: AttestationFCData) {
   doc.text(`(*) Cette attestation peut être vérifiée en contactant ${COMPANY_INFO.email}`, pw / 2, footerY, { align: 'center' });
 
   // === TELECHARGER ===
-  doc.save(`Attestation_FC_VTC_${data.nom.toUpperCase()}_${data.prenom}.pdf`);
+  doc.save(`Attestation_FC_${formation}_${data.nom.toUpperCase()}_${data.prenom}.pdf`);
 }
