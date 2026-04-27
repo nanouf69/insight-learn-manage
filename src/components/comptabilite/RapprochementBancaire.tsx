@@ -293,6 +293,8 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
   const [filterStatut, setFilterStatut] = useState("tous");
   const [filterType, setFilterType] = useState("tous"); // tous, debit, credit
   const [filterBanque, setFilterBanque] = useState("tous"); // tous, BNP Paribas, Revolut Pro
+  const [filterMois, setFilterMois] = useState("tous"); // tous ou "1".."12"
+  const [filterAnnee, setFilterAnnee] = useState("tous"); // tous ou "2025", "2026"...
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Transaction>>({});
@@ -959,8 +961,19 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
       tx.libelle.toLowerCase().includes(search.toLowerCase()) ||
       (tx.fournisseur_client || "").toLowerCase().includes(search.toLowerCase()) ||
       (tx.categorie || "").toLowerCase().includes(search.toLowerCase());
-    return matchStatut && matchType && matchSearch && matchBanque;
+    const d = tx.date_operation ? new Date(tx.date_operation) : null;
+    const matchAnnee = filterAnnee === "tous" || (d && String(d.getFullYear()) === filterAnnee);
+    const matchMois = filterMois === "tous" || (d && String(d.getMonth() + 1) === filterMois);
+    return matchStatut && matchType && matchSearch && matchBanque && matchAnnee && matchMois;
   });
+
+  // Liste des années et mois disponibles dans les transactions
+  const anneesDisponibles = Array.from(new Set(
+    transactions
+      .map(t => t.date_operation ? new Date(t.date_operation).getFullYear() : null)
+      .filter((y): y is number => y !== null)
+  )).sort((a, b) => b - a);
+  const MOIS_LABELS = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
 
   // Group by month
   const grouped = filtered.reduce((acc, tx) => {
@@ -1154,6 +1167,36 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
               </Button>
             );
           })}
+        </div>
+        {/* Filtre par mois et année */}
+        <div className="flex gap-2 items-center flex-wrap">
+          <Select value={filterAnnee} onValueChange={setFilterAnnee}>
+            <SelectTrigger className="h-9 w-[130px]">
+              <SelectValue placeholder="Année" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="tous">📅 Toutes années</SelectItem>
+              {anneesDisponibles.map(y => (
+                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterMois} onValueChange={setFilterMois}>
+            <SelectTrigger className="h-9 w-[150px]">
+              <SelectValue placeholder="Mois" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="tous">🗓️ Tous les mois</SelectItem>
+              {MOIS_LABELS.map((label, idx) => (
+                <SelectItem key={idx} value={String(idx + 1)}>{label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {(filterMois !== "tous" || filterAnnee !== "tous") && (
+            <Button size="sm" variant="ghost" onClick={() => { setFilterMois("tous"); setFilterAnnee("tous"); }}>
+              ✕ Réinitialiser
+            </Button>
+          )}
         </div>
       </div>
 
