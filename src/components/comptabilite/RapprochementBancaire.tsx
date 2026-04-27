@@ -722,12 +722,13 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
   const preserveScroll = async (fn: () => Promise<void>) => {
     const y = window.scrollY;
     await fn();
-    // Restaure la position de scroll après le re-render (double rAF pour laisser React peindre)
+    const restore = () => window.scrollTo({ top: y, left: 0, behavior: "auto" });
+    restore();
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        window.scrollTo({ top: y, left: 0, behavior: "auto" });
-      });
+      restore();
+      requestAnimationFrame(restore);
     });
+    window.setTimeout(restore, 150);
   };
 
   const quickUpdate = async (id: string, updates: Partial<Transaction>) => {
@@ -739,7 +740,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
       } else {
         await supabase.from("transactions_bancaires").update(updates).eq("id", id);
       }
-      await fetchAll();
+      await fetchAll({ silent: true });
     });
   };
 
@@ -766,7 +767,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
       } else {
         toast.success("Mise à jour !");
       }
-      await fetchAll();
+      await fetchAll({ silent: true });
     });
   };
 
