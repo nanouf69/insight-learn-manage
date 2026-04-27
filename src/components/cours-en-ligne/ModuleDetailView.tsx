@@ -4227,9 +4227,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
       const exoQuestionsNormalized = (exo.questions ?? []).map((q: any) => {
         if (!q) return q;
+        const choix = getQuestionChoices(q);
         return {
           ...q,
-          type: q?.type ?? ((q?.choix?.length ?? 0) > 0 ? "qcm" : "qrc"),
+          choix,
+          type: q?.type ?? (choix.length > 0 ? "qcm" : "qrc"),
         };
       });
       const questionsSafe = (exoQuestionsNormalized ?? []).filter((q: any) => q != null && q?.type != null);
@@ -4378,7 +4380,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                       <p className="text-xs text-muted-foreground italic ml-2">⚠️ Plusieurs réponses possibles</p>
                     )}
                     <div className="space-y-1.5 ml-2">
-                      {q.choix.map((c: any) => {
+                      {getQuestionChoices(q).map((c: any) => {
                         const exoShowResults = showResultsFor.has(exo.id);
                         const isSelected = selectedArr.includes(c.lettre);
                         let bg = "bg-background hover:bg-muted/50 border";
