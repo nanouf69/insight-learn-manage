@@ -21,6 +21,7 @@ interface Props {
   apprenantVille?: string;
   apprenantType?: string;
   apprenantId?: string;
+  suppressAdminNotification?: boolean;
   onComplete: () => void;
   completed?: boolean;
 }
@@ -38,6 +39,7 @@ export default function AnalyseBesoinForm({
   apprenantCodePostal = "",
   apprenantVille = "",
   apprenantId = "",
+  suppressAdminNotification = false,
   onComplete,
   completed,
   apprenantType = "",
@@ -222,7 +224,7 @@ export default function AnalyseBesoinForm({
       });
       if (saved) {
         toast.success("Analyse du besoin enregistrée !");
-        sendAdminNotification({
+        if (!suppressAdminNotification) sendAdminNotification({
           type_document: "analyse-besoin",
           nom: apprenantNom,
           prenom: apprenantPrenom,

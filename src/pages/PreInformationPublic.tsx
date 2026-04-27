@@ -47,6 +47,18 @@ function getFormationLabel(type: string | null): string {
   return "Formation";
 }
 
+function isFormationContinueVtcTaxi(...values: Array<string | null | undefined>): boolean {
+  return values.some((value) => {
+    const normalized = (value || "").toLowerCase();
+    return (
+      normalized.includes("continue-vtc") ||
+      normalized.includes("continue-taxi") ||
+      normalized.includes("formation-continue-vtc") ||
+      normalized.includes("formation-continue-taxi")
+    );
+  });
+}
+
 // ========== ANALYSE DU BESOIN — QCM ==========
 const ANALYSE_QUESTIONS: QCMQuestion[] = [
   {
@@ -585,6 +597,11 @@ export default function PreInformationPublic() {
     return result;
   };
 
+  const isFormationContinue = isFormationContinueVtcTaxi(
+    formationType,
+    apprenant?.type_apprenant,
+    apprenant?.formation_choisie,
+  );
   const effectiveType = formationType || apprenant?.type_apprenant || "vtc";
   const formationLabel = getFormationLabel(effectiveType);
   const competencesData = getCompetencesForFormation(effectiveType);
@@ -603,14 +620,16 @@ export default function PreInformationPublic() {
     });
     if (saved) {
       toast.success("Analyse du besoin enregistrée !");
-      sendAdminNotification({
-        type_document: "analyse-besoin",
-        nom: apprenant?.nom || "",
-        prenom: apprenant?.prenom || "",
-        email: apprenant?.email || "",
-        telephone: apprenant?.telephone || "",
-        donnees: { reponses: formatAnswers(analyseAnswers, analyseOther), formation: formationLabel },
-      });
+      if (!isFormationContinue) {
+        sendAdminNotification({
+          type_document: "analyse-besoin",
+          nom: apprenant?.nom || "",
+          prenom: apprenant?.prenom || "",
+          email: apprenant?.email || "",
+          telephone: apprenant?.telephone || "",
+          donnees: { reponses: formatAnswers(analyseAnswers, analyseOther), formation: formationLabel },
+        });
+      }
       setCompletedSteps((prev) => new Set([...prev, "analyse"]));
       setCurrentStep("projet");
       setMissingFields(new Set());
@@ -629,14 +648,16 @@ export default function PreInformationPublic() {
     });
     if (saved) {
       toast.success("Projet professionnel enregistré !");
-      sendAdminNotification({
-        type_document: "projet-professionnel",
-        nom: apprenant?.nom || "",
-        prenom: apprenant?.prenom || "",
-        email: apprenant?.email || "",
-        telephone: apprenant?.telephone || "",
-        donnees: { reponses: formatAnswers(projetAnswers, projetOther), formation: formationLabel },
-      });
+      if (!isFormationContinue) {
+        sendAdminNotification({
+          type_document: "projet-professionnel",
+          nom: apprenant?.nom || "",
+          prenom: apprenant?.prenom || "",
+          email: apprenant?.email || "",
+          telephone: apprenant?.telephone || "",
+          donnees: { reponses: formatAnswers(projetAnswers, projetOther), formation: formationLabel },
+        });
+      }
       setCompletedSteps((prev) => new Set([...prev, "projet"]));
       setCurrentStep("competences");
       setMissingFields(new Set());
@@ -657,14 +678,16 @@ export default function PreInformationPublic() {
     });
     if (saved) {
       toast.success("Test de compétences enregistré !");
-      sendAdminNotification({
-        type_document: "test-competences",
-        nom: apprenant?.nom || "",
-        prenom: apprenant?.prenom || "",
-        email: apprenant?.email || "",
-        telephone: apprenant?.telephone || "",
-        donnees: { answers: competencesAnswers, sections: competencesData.sections.map((s) => s.titre), sectionItems: competencesData.sections.map((s) => s.items), formationLabel: competencesData.formationLabel },
-      });
+      if (!isFormationContinue) {
+        sendAdminNotification({
+          type_document: "test-competences",
+          nom: apprenant?.nom || "",
+          prenom: apprenant?.prenom || "",
+          email: apprenant?.email || "",
+          telephone: apprenant?.telephone || "",
+          donnees: { answers: competencesAnswers, sections: competencesData.sections.map((s) => s.titre), sectionItems: competencesData.sections.map((s) => s.items), formationLabel: competencesData.formationLabel },
+        });
+      }
       setCompletedSteps((prev) => new Set([...prev, "competences"]));
     }
   };

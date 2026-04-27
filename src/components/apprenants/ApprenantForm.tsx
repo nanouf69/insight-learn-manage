@@ -47,6 +47,17 @@ const DEFAULT_MODULES_BY_TYPE: Record<string, number[]> = {
 
 const MANAGED_MODULE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 41, 50, 51, 52, 53, 60, 61, 62, 63, 64, 81]);
 
+const isFormationContinueVtcTaxi = (...values: Array<string | null | undefined>) =>
+  values.some((value) => {
+    const normalized = (value || "").toLowerCase();
+    return (
+      normalized.includes("continue-vtc") ||
+      normalized.includes("continue-taxi") ||
+      normalized.includes("formation-continue-vtc") ||
+      normalized.includes("formation-continue-taxi")
+    );
+  });
+
 interface Apprenant {
   id: string;
   nom: string;
@@ -447,8 +458,15 @@ export function ApprenantForm() {
         };
         const formationLabel = formationLabels[typeApprenantFormation] || typeApprenantFormation.toUpperCase();
 
-        // 1) Email pré-information
-        if (preInfoType) {
+        const isFormationContinue = isFormationContinueVtcTaxi(
+          selectedFormation,
+          secondFormation,
+          formData.formation_choisie,
+          formData.type_apprenant,
+        );
+
+        // 1) Email pré-information — jamais pour formation continue VTC/TAXI
+        if (preInfoType && !isFormationContinue) {
           try {
             const templateId = `pre-information-${preInfoType}-sans-date`;
             const { data: tpl } = await supabase
