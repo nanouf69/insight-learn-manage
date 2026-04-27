@@ -877,10 +877,14 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
       await supabase.from("justificatifs").update({ statut: "traite" }).eq("id", justId);
     }
 
-    setConfirmingLink(false);
-    setLinkDialogId(null);
-    await fetchAll();
-    toast.success("Justificatif associé");
+    await preserveScroll(async () => {
+      setTransactions(prev => prev.map(t => t.id === txId ? { ...t, justificatif_id: justId, statut: "justifie" } : t));
+      setJustificatifs(prev => prev.map(j => j.id === justId ? { ...j, statut: "traite" } : j));
+      setConfirmingLink(false);
+      setLinkDialogId(null);
+      await fetchAll({ silent: true });
+      toast.success("Justificatif associé");
+    });
   };
 
   // Extraire les mots significatifs d'un libellé (>= 3 chars, non génériques)
