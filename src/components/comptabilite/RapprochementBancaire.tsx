@@ -888,10 +888,14 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
     }
 
     if (toUpdate.length > 0) {
-      await supabase
-        .from("transactions_bancaires")
-        .update({ categorie })
-        .in("id", toUpdate);
+      if (isComptableMode) {
+        await invokeComptable("bulk_update_categorie", { ids: toUpdate, categorie });
+      } else {
+        await supabase
+          .from("transactions_bancaires")
+          .update({ categorie })
+          .in("id", toUpdate);
+      }
     }
     return toUpdate.length;
   };
