@@ -25,6 +25,7 @@ type DocType = 'inscription' | 'fin-formation' | 'france-travail' | 'bienvenue' 
 export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
   const [generatingDoc, setGeneratingDoc] = useState<string | null>(null);
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
+  const [sendingEmail, setSendingEmail] = useState<string | null>(null);
   const [selectedSessionId, setSelectedSessionId] = useState<string>('__all__');
   const queryClient = useQueryClient();
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
