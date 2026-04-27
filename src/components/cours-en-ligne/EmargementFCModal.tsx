@@ -12,6 +12,7 @@ interface EmargementFCModalProps {
   userId: string;
   apprenantNom: string;
   apprenantPrenom: string;
+  onSigned?: () => void;
 }
 
 type DemiJournee = "matin" | "apres_midi";
