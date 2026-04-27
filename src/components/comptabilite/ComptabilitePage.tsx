@@ -16,7 +16,8 @@ import {
   Search, Euro, TrendingUp, Clock, CheckCircle, AlertTriangle,
   Download, Filter, Receipt, CreditCard, Banknote, BarChart3,
   Building2, RefreshCw, Link2, ExternalLink, ArrowDownLeft, ArrowUpRight,
-  CalendarIcon, CheckCheck, FileText, Upload, Trash2, Eye, FolderOpen
+  CalendarIcon, CheckCheck, FileText, Upload, Trash2, Eye, FolderOpen,
+  Pencil, Check, X
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -328,6 +329,41 @@ export function ComptabilitePage() {
     toast.success("Relevé supprimé");
     await fetchReleves();
   };
+
+  // Édition inline d'un relevé (nom + banque)
+  const [editingReleveId, setEditingReleveId] = useState<string | null>(null);
+  const [editReleveForm, setEditReleveForm] = useState<{ nom_fichier: string; banque: string }>({ nom_fichier: "", banque: "" });
+
+  const startEditReleve = (r: Releve) => {
+    setEditingReleveId(r.id);
+    setEditReleveForm({ nom_fichier: r.nom_fichier, banque: r.banque });
+  };
+
+  const cancelEditReleve = () => {
+    setEditingReleveId(null);
+    setEditReleveForm({ nom_fichier: "", banque: "" });
+  };
+
+  const saveEditReleve = async (id: string) => {
+    const nom = editReleveForm.nom_fichier.trim();
+    const banque = editReleveForm.banque.trim();
+    if (!nom || !banque) {
+      toast.error("Le nom et la banque sont obligatoires");
+      return;
+    }
+    const { error } = await supabase
+      .from("releves_bancaires")
+      .update({ nom_fichier: nom, banque })
+      .eq("id", id);
+    if (error) {
+      toast.error("Erreur lors de la mise à jour");
+      return;
+    }
+    toast.success("Relevé mis à jour");
+    cancelEditReleve();
+    await fetchReleves();
+  };
+
 
 
 
@@ -1298,14 +1334,43 @@ export function ComptabilitePage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {releves.map((r) => (
+                    {releves.map((r) => {
+                      const isEditing = editingReleveId === r.id;
+                      return (
                       <TableRow key={r.id}>
-                        <TableCell className="font-medium flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-primary flex-shrink-0" />
-                          <span className="truncate max-w-[200px]">{r.nom_fichier}</span>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-primary flex-shrink-0" />
+                            {isEditing ? (
+                              <Input
+                                value={editReleveForm.nom_fichier}
+                                onChange={e => setEditReleveForm(f => ({ ...f, nom_fichier: e.target.value }))}
+                                className="h-8 text-sm"
+                                autoFocus
+                              />
+                            ) : (
+                              <span className="truncate max-w-[200px]">{r.nom_fichier}</span>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">{r.banque}</Badge>
+                          {isEditing ? (
+                            <Select value={editReleveForm.banque} onValueChange={v => setEditReleveForm(f => ({ ...f, banque: v }))}>
+                              <SelectTrigger className="h-8 text-sm w-[170px]"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Revolut Bank UAB">Revolut Bank UAB</SelectItem>
+                                <SelectItem value="BNP Paribas">BNP Paribas</SelectItem>
+                                <SelectItem value="Société Générale">Société Générale</SelectItem>
+                                <SelectItem value="Crédit Agricole">Crédit Agricole</SelectItem>
+                                <SelectItem value="LCL">LCL</SelectItem>
+                                <SelectItem value="Caisse d'Épargne">Caisse d'Épargne</SelectItem>
+                                <SelectItem value="Banque Postale">Banque Postale</SelectItem>
+                                <SelectItem value="Autre">Autre</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Badge variant="outline">{r.banque}</Badge>
+                          )}
                         </TableCell>
                         <TableCell className="font-mono text-sm">
                           {r.mois_annee ? (() => {
@@ -1318,26 +1383,58 @@ export function ComptabilitePage() {
                         <TableCell>{formatDate(r.created_at)}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="gap-1 h-8"
-                              onClick={() => window.open(r.url, "_blank")}
-                            >
-                              <Eye className="h-3 w-3" /> Voir
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="gap-1 h-8 text-destructive hover:text-destructive"
-                              onClick={() => handleDeleteReleve(r)}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
+                            {isEditing ? (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="gap-1 h-8 text-primary"
+                                  onClick={() => saveEditReleve(r.id)}
+                                >
+                                  <Check className="h-3 w-3" /> Valider
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8"
+                                  onClick={cancelEditReleve}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="gap-1 h-8"
+                                  onClick={() => window.open(r.url, "_blank")}
+                                >
+                                  <Eye className="h-3 w-3" /> Voir
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="gap-1 h-8"
+                                  onClick={() => startEditReleve(r)}
+                                >
+                                  <Pencil className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="gap-1 h-8 text-destructive hover:text-destructive"
+                                  onClick={() => handleDeleteReleve(r)}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))}
+                      );
+                    })}
                   </TableBody>
                 </Table>
               )}
