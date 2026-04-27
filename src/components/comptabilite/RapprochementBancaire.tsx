@@ -1006,7 +1006,12 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
     const d = tx.date_operation ? new Date(tx.date_operation) : null;
     const matchAnnee = filterAnnee === "tous" || (d && String(d.getFullYear()) === filterAnnee);
     const matchMois = filterMois === "tous" || (d && String(d.getMonth() + 1) === filterMois);
-    return matchStatut && matchType && matchSearch && matchBanque && matchAnnee && matchMois;
+    const matchCategorie =
+      filterCategorie === "tous" ||
+      (filterCategorie === "sans"
+        ? !tx.categorie || tx.categorie.trim() === ""
+        : tx.categorie === filterCategorie);
+    return matchStatut && matchType && matchSearch && matchBanque && matchAnnee && matchMois && matchCategorie;
   });
 
   // Liste des années et mois disponibles dans les transactions
