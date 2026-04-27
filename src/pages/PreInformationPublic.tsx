@@ -678,14 +678,16 @@ export default function PreInformationPublic() {
     });
     if (saved) {
       toast.success("Test de compétences enregistré !");
-      sendAdminNotification({
-        type_document: "test-competences",
-        nom: apprenant?.nom || "",
-        prenom: apprenant?.prenom || "",
-        email: apprenant?.email || "",
-        telephone: apprenant?.telephone || "",
-        donnees: { answers: competencesAnswers, sections: competencesData.sections.map((s) => s.titre), sectionItems: competencesData.sections.map((s) => s.items), formationLabel: competencesData.formationLabel },
-      });
+      if (!isFormationContinue) {
+        sendAdminNotification({
+          type_document: "test-competences",
+          nom: apprenant?.nom || "",
+          prenom: apprenant?.prenom || "",
+          email: apprenant?.email || "",
+          telephone: apprenant?.telephone || "",
+          donnees: { answers: competencesAnswers, sections: competencesData.sections.map((s) => s.titre), sectionItems: competencesData.sections.map((s) => s.items), formationLabel: competencesData.formationLabel },
+        });
+      }
       setCompletedSteps((prev) => new Set([...prev, "competences"]));
     }
   };
