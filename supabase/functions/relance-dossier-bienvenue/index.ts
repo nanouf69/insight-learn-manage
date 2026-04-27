@@ -39,6 +39,10 @@ Deno.serve(async (req) => {
       "continue-taxi",
       "formation-continue-vtc",
       "formation-continue-taxi",
+      "anglais",
+      "anglais-35h",
+      "langues",
+      "fle",
     ]);
 
     const normalize = (value: string) =>
@@ -52,6 +56,8 @@ Deno.serve(async (req) => {
         if (v.startsWith('continue-')) return true;
         if (v.includes('formation-continue')) return true;
         if (v.includes('pa-vtc')) return true;
+        if (v.includes('anglais')) return true;
+        if (v.includes('langue')) return true;
       }
       return false;
     };
