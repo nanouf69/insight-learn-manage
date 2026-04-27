@@ -29,6 +29,7 @@ import { DocumentsCompletes } from "./apprenant-sections/DocumentsCompletes";
 import { ControleQualiteTab } from "./apprenant-sections/ControleQualiteTab";
 import ExamensBlancsResetTab from "./apprenant-sections/ExamensBlancsResetTab";
 import { ResultatsApprenantTab } from "./apprenant-sections/ResultatsApprenantTab";
+import { AccessDiagnosticTab } from "./apprenant-sections/AccessDiagnosticTab";
 import { ApprenantEditForm } from "@/components/apprenants/ApprenantEditForm";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -759,6 +760,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           <TabsTrigger value="emails" className="text-sm">Emails</TabsTrigger>
           <TabsTrigger value="devis" className="text-sm">Devis</TabsTrigger>
           <TabsTrigger value="examens-blancs-reset" className="text-sm">Examens blancs</TabsTrigger>
+          <TabsTrigger value="diagnostic-acces" className="text-sm">Diagnostic accès</TabsTrigger>
           <TabsTrigger value="reset-cours" className="text-sm text-destructive">Remise à zéro</TabsTrigger>
           <TabsTrigger value="delete-account" className="text-sm text-destructive">Supprimer compte cours</TabsTrigger>
         </TabsList>
@@ -853,6 +855,7 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
           {activeTab === "emails" && <EmailsSection apprenant={apprenant} />}
           {activeTab === "devis" && <DevisSection apprenant={apprenant} />}
           {activeTab === "examens-blancs-reset" && <ExamensBlancsResetTab apprenant={apprenant} />}
+          {activeTab === "diagnostic-acces" && <AccessDiagnosticTab apprenant={apprenant} />}
           {activeTab === "reset-cours" && <ResetCoursTab apprenant={apprenant} queryClient={queryClient} />}
           {activeTab === "delete-account" && (
             <Card className="border-destructive">
