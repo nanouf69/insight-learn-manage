@@ -3030,14 +3030,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     // Always allow multiple answers (checkboxes) for all questions
     const isMultiAnswer = (_q: { choix: { correct?: boolean }[] }) => true;
 
+    const getQuestionChoices = (q: { choix?: { lettre: string; correct?: boolean }[] } | null | undefined) =>
+      Array.isArray(q?.choix) ? q.choix : [];
+
     // Helper: check if answer is correct (works for single and multi)
-    const isAnswerCorrect = (selected: string | string[] | undefined, q: { choix: { lettre: string; correct?: boolean }[] }) => {
-      if (!selected) return false;
-      const correctLetters = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
-      if (Array.isArray(selected)) {
-        return JSON.stringify([...selected].sort()) === JSON.stringify(correctLetters);
-      }
-      return correctLetters.length === 1 && selected === correctLetters[0];
+    const isAnswerCorrect = (selected: string | string[] | undefined, q: { choix?: { lettre: string; correct?: boolean }[] } | null | undefined) => {
+      const selectedLetters = Array.isArray(selected) ? selected.filter(Boolean) : selected ? [selected] : [];
+      if (selectedLetters.length === 0) return false;
+
+      const correctLetters = getQuestionChoices(q).filter(c => c.correct).map(c => c.lettre).sort();
+      if (correctLetters.length === 0) return false;
+
+      return JSON.stringify([...selectedLetters].sort()) === JSON.stringify(correctLetters);
     };
     const [showResultsFor, setShowResultsFor] = useState<Set<number>>(new Set());
     const [currentPage, setCurrentPage] = useState(0);
