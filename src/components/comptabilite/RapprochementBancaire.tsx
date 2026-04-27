@@ -269,7 +269,19 @@ interface ApprenantWithSession {
   session_date_fin: string | null;
 }
 
-export function RapprochementBancaire() {
+export function RapprochementBancaire({ comptableToken }: { comptableToken?: string } = {}) {
+  const isComptableMode = !!comptableToken;
+
+  // Helper : invoque l'edge function comptable-rapprochement avec le token
+  const invokeComptable = useCallback(async (action: string, payload: Record<string, unknown> = {}) => {
+    const { data, error } = await supabase.functions.invoke("comptable-rapprochement", {
+      body: { token: comptableToken, action, ...payload },
+    });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    return data;
+  }, [comptableToken]);
+
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [justificatifs, setJustificatifs] = useState<Justificatif[]>([]);
   const [apprenants, setApprenants] = useState<ApprenantWithSession[]>([]);
@@ -292,6 +304,53 @@ export function RapprochementBancaire() {
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
+
+    // Mode comptable : tout via edge function
+    if (isComptableMode) {
+      try {
+        const data = await invokeComptable("list");
+        const txs = (data.transactions || []) as Transaction[];
+        const just = (data.justificatifs || []) as Justificatif[];
+        const apprenantsData = (data.apprenants || []) as any[];
+        const saData = (data.session_apprenants || []) as any[];
+        const fourData = (data.fournisseurs || []) as { id: string; nom: string }[];
+
+        setTransactions(txs);
+        setJustificatifs(just);
+        setFournisseursList(fourData);
+
+        const enriched: ApprenantWithSession[] = apprenantsData.map((a) => {
+          const sa = saData.find((s: any) => s.apprenant_id === a.id);
+          const session = sa?.sessions;
+          return {
+            id: a.id,
+            nom: a.nom,
+            prenom: a.prenom,
+            civilite: a.civilite,
+            email: a.email,
+            adresse: a.adresse,
+            code_postal: a.code_postal,
+            ville: a.ville,
+            formation_choisie: a.formation_choisie,
+            type_apprenant: a.type_apprenant,
+            montant_ttc: a.montant_ttc,
+            montant_paye: a.montant_paye,
+            date_paiement: a.date_paiement,
+            date_debut_formation: a.date_debut_formation,
+            date_fin_formation: a.date_fin_formation,
+            session_date_debut: sa?.date_debut || session?.date_debut || null,
+            session_date_fin: sa?.date_fin || session?.date_fin || null,
+          };
+        });
+        setApprenants(enriched);
+      } catch (err) {
+        toast.error("Erreur de chargement : " + (err instanceof Error ? err.message : "inconnu"));
+      }
+      setLoading(false);
+      return;
+    }
+
+    // Mode admin : requêtes Supabase directes
     // Fetch ALL transactions (bypass 1000-row default limit) by paginating
     const fetchAllTxs = async (): Promise<Transaction[]> => {
       const all: Transaction[] = [];
@@ -350,7 +409,7 @@ export function RapprochementBancaire() {
       setApprenants(enriched);
     }
     setLoading(false);
-  }, []);
+  }, [isComptableMode, invokeComptable]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
@@ -360,6 +419,7 @@ export function RapprochementBancaire() {
   const autoProcessedRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (loading || transactions.length === 0 || apprenants.length === 0) return;
+    if (isComptableMode) return; // Mode comptable : pas d'auto-traitement (réservé admin)
 
     const isFC = (a: ApprenantWithSession): boolean => {
       const fc = (a.formation_choisie || "").toLowerCase();
@@ -655,13 +715,21 @@ export function RapprochementBancaire() {
   };
 
   const quickUpdate = async (id: string, updates: Partial<Transaction>) => {
-    await supabase.from("transactions_bancaires").update(updates).eq("id", id);
+    if (isComptableMode) {
+      await invokeComptable("update", { id, updates });
+    } else {
+      await supabase.from("transactions_bancaires").update(updates).eq("id", id);
+    }
     await fetchAll();
   };
 
   const saveEdit = async (id: string) => {
     const tx = transactions.find(t => t.id === id);
-    await supabase.from("transactions_bancaires").update(editForm).eq("id", id);
+    if (isComptableMode) {
+      await invokeComptable("update", { id, updates: editForm });
+    } else {
+      await supabase.from("transactions_bancaires").update(editForm).eq("id", id);
+    }
     setEditingId(null);
     // Auto-catégoriser les transactions similaires si une catégorie a été choisie
     if (tx && editForm.categorie) {
@@ -680,7 +748,11 @@ export function RapprochementBancaire() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Supprimer cette transaction ?")) return;
-    await supabase.from("transactions_bancaires").delete().eq("id", id);
+    if (isComptableMode) {
+      await invokeComptable("delete", { id });
+    } else {
+      await supabase.from("transactions_bancaires").delete().eq("id", id);
+    }
     toast.success("Supprimée");
     await fetchAll();
   };
@@ -761,11 +833,24 @@ export function RapprochementBancaire() {
   const linkJustificatif = async (txId: string, justId: string) => {
     setConfirmingLink(true);
 
-    await supabase.from("transactions_bancaires").update({
-      justificatif_id: justId,
-      statut: "justifie",
-    }).eq("id", txId);
-    await supabase.from("justificatifs").update({ statut: "traite" }).eq("id", justId);
+    if (isComptableMode) {
+      try {
+        await invokeComptable("link_justificatif", {
+          transaction_id: txId,
+          justificatif_id: justId,
+        });
+      } catch (err) {
+        toast.error("Erreur : " + (err instanceof Error ? err.message : "inconnu"));
+        setConfirmingLink(false);
+        return;
+      }
+    } else {
+      await supabase.from("transactions_bancaires").update({
+        justificatif_id: justId,
+        statut: "justifie",
+      }).eq("id", txId);
+      await supabase.from("justificatifs").update({ statut: "traite" }).eq("id", justId);
+    }
 
     setConfirmingLink(false);
     setLinkDialogId(null);
@@ -803,10 +888,14 @@ export function RapprochementBancaire() {
     }
 
     if (toUpdate.length > 0) {
-      await supabase
-        .from("transactions_bancaires")
-        .update({ categorie })
-        .in("id", toUpdate);
+      if (isComptableMode) {
+        await invokeComptable("bulk_update_categorie", { ids: toUpdate, categorie });
+      } else {
+        await supabase
+          .from("transactions_bancaires")
+          .update({ categorie })
+          .in("id", toUpdate);
+      }
     }
     return toUpdate.length;
   };
@@ -918,7 +1007,8 @@ export function RapprochementBancaire() {
         </Card>
       </div>
 
-      {/* Import zone */}
+      {/* Import zone — uniquement pour les admins */}
+      {!isComptableMode && (
       <Card>
         <CardContent className="pt-4">
           <div
@@ -974,6 +1064,7 @@ export function RapprochementBancaire() {
           )}
         </CardContent>
       </Card>
+      )}
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center">
