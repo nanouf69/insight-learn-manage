@@ -864,12 +864,27 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
 
   // Extraire les mots significatifs d'un libellé (>= 3 chars, non génériques)
   const extractKeywords = (libelle: string): string[] => {
-    const stopWords = new Set(["les", "des", "une", "par", "sur", "pour", "avec", "dans", "virement", "paiement", "prelevement", "prlv", "sepa", "facture", "carte", "vir", "remise", "cheque", "fra", "com"]);
+    const stopWords = new Set([
+      "les", "des", "une", "par", "sur", "pour", "avec", "dans", "aux", "sans", "son", "ses", "que", "qui",
+      "virement", "paiement", "prelevement", "prlv", "sepa", "facture", "carte", "vir", "remise", "cheque",
+      "fra", "com", "ech", "ref", "mdt", "emetteur", "id", "rum", "icr", "ics", "rib", "iban", "bic",
+      "achat", "retrait", "depot", "frais", "commission", "interets", "interet", "valeur",
+      "date", "mois", "annee", "jour", "the", "and", "from", "via",
+    ]);
     return libelle
       .toLowerCase()
       .replace(/[^a-z0-9\s]/g, " ")
       .split(/\s+/)
-      .filter(w => w.length >= 3 && !stopWords.has(w));
+      .filter(w => {
+        if (w.length < 4) return false;
+        if (stopWords.has(w)) return false;
+        // ignorer tokens purement numériques (références, dates)
+        if (/^\d+$/.test(w)) return false;
+        // ignorer tokens ressemblant à des références (chiffres + lettres mélangés, peu lisibles)
+        const digits = (w.match(/\d/g) || []).length;
+        if (digits > 0 && digits >= w.length / 2) return false;
+        return true;
+      });
   };
 
   // Suggérer une catégorie basée sur des transactions similaires déjà catégorisées
