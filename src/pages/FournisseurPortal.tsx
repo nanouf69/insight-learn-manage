@@ -1502,7 +1502,7 @@ export default function FournisseurPortal() {
                     <p className="text-sm text-muted-foreground">Importez les relevés CSV BNP et associez vos justificatifs</p>
                   </div>
                 </div>
-                <RapprochementBancaire />
+                <RapprochementBancaire comptableToken={token || undefined} />
               </div>
             </TabsContent>
           )}
