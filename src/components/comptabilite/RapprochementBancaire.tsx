@@ -833,11 +833,24 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
   const linkJustificatif = async (txId: string, justId: string) => {
     setConfirmingLink(true);
 
-    await supabase.from("transactions_bancaires").update({
-      justificatif_id: justId,
-      statut: "justifie",
-    }).eq("id", txId);
-    await supabase.from("justificatifs").update({ statut: "traite" }).eq("id", justId);
+    if (isComptableMode) {
+      try {
+        await invokeComptable("link_justificatif", {
+          transaction_id: txId,
+          justificatif_id: justId,
+        });
+      } catch (err) {
+        toast.error("Erreur : " + (err instanceof Error ? err.message : "inconnu"));
+        setConfirmingLink(false);
+        return;
+      }
+    } else {
+      await supabase.from("transactions_bancaires").update({
+        justificatif_id: justId,
+        statut: "justifie",
+      }).eq("id", txId);
+      await supabase.from("justificatifs").update({ statut: "traite" }).eq("id", justId);
+    }
 
     setConfirmingLink(false);
     setLinkDialogId(null);
