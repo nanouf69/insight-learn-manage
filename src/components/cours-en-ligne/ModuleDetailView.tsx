@@ -4580,10 +4580,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           <h4 className="font-semibold text-sm">Actions</h4>
                           <div className="flex flex-col gap-2">
                             <Button variant="outline" size="sm" className="gap-2" onClick={() => {
-                              const exoKeys = questionsSafe.map(q => `${exo.id}-${q.id}`);
+              const exoKeys = questionsSafe.map((q: any) => `${exo.id}-${q.id}`);
                               setSelectedAnswers(prev => {
                                 const next = { ...prev };
                                 exoKeys.forEach(k => delete next[k]);
+                autoSaveAnswers(next);
                                 return next;
                               });
                               setShowResultsFor(prev => { const next = new Set(prev); next.delete(exo.id); return next; });
@@ -4601,6 +4602,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               setSelectedAnswers(prev => {
                                 const next = { ...prev };
                                 wrongKeys.forEach(k => delete next[k]);
+                autoSaveAnswers(next);
                                 return next;
                               });
                               setShowResultsFor(prev => { const next = new Set(prev); next.delete(exo.id); return next; });
