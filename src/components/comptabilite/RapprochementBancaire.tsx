@@ -296,6 +296,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
   const [filterBanque, setFilterBanque] = useState("tous"); // tous, BNP Paribas, Revolut Pro
   const [filterMois, setFilterMois] = useState("tous"); // tous ou "1".."12"
   const [filterAnnee, setFilterAnnee] = useState("tous"); // tous ou "2025", "2026"...
+  const [filterCategorie, setFilterCategorie] = useState("tous"); // tous, sans, ou value de CATEGORIES
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Transaction>>({});
