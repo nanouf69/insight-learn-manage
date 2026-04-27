@@ -55,7 +55,7 @@ const CATEGORIES = [
   { value: "repas", label: "🍽️ Repas", color: "bg-yellow-100 text-yellow-700" },
   { value: "materiel", label: "🖥️ Matériel", color: "bg-blue-100 text-blue-700" },
   { value: "fournitures", label: "📎 Fournitures", color: "bg-cyan-100 text-cyan-700" },
-  { value: "telephonie", label: "📱 Téléphonie", color: "bg-purple-100 text-purple-700" },
+  { value: "telephonie", label: "📱 Téléphonie & Internet", color: "bg-purple-100 text-purple-700" },
   { value: "loyer", label: "🏢 Loyer", color: "bg-indigo-100 text-indigo-700" },
   { value: "assurance", label: "🛡️ Assurance", color: "bg-green-100 text-green-700" },
   { value: "salaires_formateurs", label: "👨‍🏫 Formateurs", color: "bg-teal-100 text-teal-700" },
