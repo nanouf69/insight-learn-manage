@@ -1378,7 +1378,14 @@ export function ComptabilitePage() {
                           )}
                         </TableCell>
                         <TableCell className="font-mono text-sm">
-                          {r.mois_annee ? (() => {
+                          {isEditing ? (
+                            <Input
+                              type="month"
+                              value={editReleveForm.mois_annee}
+                              onChange={e => setEditReleveForm(f => ({ ...f, mois_annee: e.target.value }))}
+                              className="h-8 text-sm w-[150px]"
+                            />
+                          ) : r.mois_annee ? (() => {
                             const [y, m] = r.mois_annee.split("-");
                             const d = new Date(parseInt(y), parseInt(m) - 1, 1);
                             return format(d, "MMMM yyyy", { locale: fr });
