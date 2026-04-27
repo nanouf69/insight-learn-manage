@@ -999,6 +999,11 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
     return acc;
   }, {} as Record<string, Transaction[]>);
 
+  // Numérotation globale des lignes filtrées (1-indexée) pour affichage "n / total"
+  const filteredIndexById = new Map<string, number>();
+  filtered.forEach((t, i) => filteredIndexById.set(t.id, i + 1));
+  const filteredTotal = filtered.length;
+
   const nonJustifies = transactions.filter(t => effectiveStatut(t) === "non_justifie").length;
   const totalDebits = transactions.filter(t => t.montant < 0).reduce((s, t) => s + t.montant, 0);
   const totalCredits = transactions.filter(t => t.montant > 0).reduce((s, t) => s + t.montant, 0);
