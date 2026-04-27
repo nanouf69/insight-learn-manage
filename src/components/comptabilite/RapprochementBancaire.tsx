@@ -51,6 +51,7 @@ interface Justificatif {
 
 const CATEGORIES = [
   { value: "recette_formation", label: "📚 Recette formation", color: "bg-emerald-100 text-emerald-700" },
+  { value: "cpf", label: "🎓 CPF", color: "bg-emerald-100 text-emerald-700" },
   { value: "carburant", label: "⛽ Carburant", color: "bg-orange-100 text-orange-700" },
   { value: "repas", label: "🍽️ Repas", color: "bg-yellow-100 text-yellow-700" },
   { value: "materiel", label: "🖥️ Matériel", color: "bg-blue-100 text-blue-700" },
