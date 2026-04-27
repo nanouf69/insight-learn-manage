@@ -1711,8 +1711,8 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
       </Dialog>
 
       {/* Dialog : proposition de catégorisation en masse */}
-      <Dialog open={!!similarPropose} onOpenChange={(open) => { if (!open) setSimilarPropose(null); }}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <Dialog open={!!similarPropose} onOpenChange={(open) => { if (!open) { setSimilarPropose(null); setSimilarSelectedIds(new Set()); } }}>
+        <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               ✨ Catégoriser les transactions similaires
@@ -1720,45 +1720,80 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
           </DialogHeader>
           {similarPropose && (() => {
             const catLabel = CATEGORIES.find(c => c.value === similarPropose.categorie)?.label || similarPropose.categorie;
+            const allIds = similarPropose.matches.map(m => m.tx.id);
+            const allChecked = allIds.length > 0 && allIds.every(id => similarSelectedIds.has(id));
+            const someChecked = allIds.some(id => similarSelectedIds.has(id));
+            const selectedCount = similarSelectedIds.size;
+            const toggleAll = () => {
+              if (allChecked) setSimilarSelectedIds(new Set());
+              else setSimilarSelectedIds(new Set(allIds));
+            };
+            const toggleOne = (id: string) => {
+              setSimilarSelectedIds(prev => {
+                const next = new Set(prev);
+                if (next.has(id)) next.delete(id); else next.add(id);
+                return next;
+              });
+            };
             return (
               <div className="space-y-4">
                 <div className="text-sm text-muted-foreground">
                   Vous venez de catégoriser <span className="font-medium text-foreground">"{similarPropose.sourceTx.libelle}"</span> en <Badge variant="secondary">{catLabel}</Badge>.
                 </div>
-                <div className="text-sm">
-                  <strong>{similarPropose.matches.length}</strong> autre(s) transaction(s) non catégorisée(s) partagent un mot commun. Voulez-vous leur appliquer la même catégorisation ?
+                <div className="text-sm flex items-center justify-between gap-3 flex-wrap">
+                  <div>
+                    <strong>{similarPropose.matches.length}</strong> autre(s) transaction(s) non catégorisée(s) partagent un mot commun. Décochez celles à exclure.
+                  </div>
+                  <Button variant="outline" size="sm" onClick={toggleAll}>
+                    {allChecked ? "Tout décocher" : "Tout cocher"}
+                  </Button>
                 </div>
-                <div className="border rounded-lg divide-y max-h-80 overflow-y-auto">
-                  {similarPropose.matches.map(({ tx, commonWords }) => (
-                    <div key={tx.id} className="p-3 text-sm flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="truncate" title={tx.libelle}>{tx.libelle}</div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {format(parse(tx.date_operation, "yyyy-MM-dd", new Date()), "dd MMM yyyy", { locale: fr })}
-                          {" — "}
-                          <span className="font-medium">
-                            {new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(tx.montant)}
-                          </span>
+                <div className="border rounded-lg divide-y max-h-[60vh] overflow-y-auto">
+                  {similarPropose.matches.map(({ tx, commonWords }) => {
+                    const checked = similarSelectedIds.has(tx.id);
+                    return (
+                      <label
+                        key={tx.id}
+                        className={`p-3 text-sm flex items-start gap-3 cursor-pointer hover:bg-muted/50 transition-colors ${checked ? "" : "opacity-50"}`}
+                      >
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={() => toggleOne(tx.id)}
+                          className="mt-1"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="break-words" title={tx.libelle}>{tx.libelle}</div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {format(parse(tx.date_operation, "yyyy-MM-dd", new Date()), "dd MMM yyyy", { locale: fr })}
+                            {" — "}
+                            <span className="font-medium">
+                              {new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(tx.montant)}
+                            </span>
+                          </div>
+                          <div className="text-xs mt-1 flex flex-wrap gap-1">
+                            {commonWords.map(w => (
+                              <Badge key={w} variant="outline" className="text-[10px]">{w}</Badge>
+                            ))}
+                          </div>
                         </div>
-                        <div className="text-xs mt-1 flex flex-wrap gap-1">
-                          {commonWords.map(w => (
-                            <Badge key={w} variant="outline" className="text-[10px]">{w}</Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                      </label>
+                    );
+                  })}
                 </div>
                 <div className="flex justify-end gap-2 pt-2">
-                  <Button variant="outline" onClick={() => setSimilarPropose(null)} disabled={applyingSimilar}>
+                  <Button variant="outline" onClick={() => { setSimilarPropose(null); setSimilarSelectedIds(new Set()); }} disabled={applyingSimilar}>
                     Non, garder tel quel
                   </Button>
                   <Button
                     onClick={async () => {
                       if (!similarPropose) return;
+                      const ids = Array.from(similarSelectedIds);
+                      if (ids.length === 0) {
+                        toast.error("Aucune transaction sélectionnée");
+                        return;
+                      }
                       setApplyingSimilar(true);
                       try {
-                        const ids = similarPropose.matches.map(m => m.tx.id);
                         // Update optimiste
                         setTransactions(prev => prev.map(t =>
                           ids.includes(t.id) ? { ...t, categorie: similarPropose.categorie } : t
@@ -1766,6 +1801,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
                         await applyCategorieToTransactions(ids, similarPropose.categorie);
                         toast.success(`${ids.length} transaction(s) catégorisée(s) ✨`);
                         setSimilarPropose(null);
+                        setSimilarSelectedIds(new Set());
                         await fetchAll({ silent: true });
                       } catch (err) {
                         toast.error("Erreur : " + (err instanceof Error ? err.message : "inconnu"));
@@ -1773,9 +1809,9 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
                         setApplyingSimilar(false);
                       }
                     }}
-                    disabled={applyingSimilar}
+                    disabled={applyingSimilar || selectedCount === 0}
                   >
-                    {applyingSimilar ? "Application..." : `Oui, appliquer aux ${similarPropose.matches.length}`}
+                    {applyingSimilar ? "Application..." : `Oui, appliquer aux ${selectedCount}`}
                   </Button>
                 </div>
               </div>
