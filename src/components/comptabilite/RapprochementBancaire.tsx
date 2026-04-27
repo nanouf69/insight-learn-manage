@@ -307,6 +307,14 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
   const [syncingRevolut, setSyncingRevolut] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Dialog de proposition de catégorisation en masse
+  const [similarPropose, setSimilarPropose] = useState<{
+    sourceTx: Transaction;
+    categorie: string;
+    matches: { tx: Transaction; commonWords: string[] }[];
+  } | null>(null);
+  const [applyingSimilar, setApplyingSimilar] = useState(false);
+
   const fetchAll = useCallback(async (options?: { silent?: boolean }) => {
     const showLoader = !options?.silent;
     if (showLoader) setLoading(true);
@@ -732,7 +740,18 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
     window.setTimeout(restore, 150);
   };
 
+  // Après avoir mis à jour une transaction, propose la même catégorisation pour les similaires
+  const proposeSimilarIfNeeded = (sourceTx: Transaction, categorie: string | null | undefined) => {
+    if (!categorie) return;
+    const updatedTx = { ...sourceTx, categorie } as Transaction;
+    const matches = findSimilarUncategorized(updatedTx);
+    if (matches.length > 0) {
+      setSimilarPropose({ sourceTx: updatedTx, categorie, matches });
+    }
+  };
+
   const quickUpdate = async (id: string, updates: Partial<Transaction>) => {
+    const tx = transactions.find(t => t.id === id);
     await preserveScroll(async () => {
       // Update optimiste local pour éviter le flash de re-render
       setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...updates } as Transaction : t));
@@ -743,10 +762,16 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
       }
       await fetchAll({ silent: true });
     });
+    // Si une catégorie vient d'être posée, proposer la propagation
+    if (tx && updates.categorie && updates.categorie !== tx.categorie) {
+      proposeSimilarIfNeeded(tx, updates.categorie);
+    }
   };
 
   const saveEdit = async (id: string) => {
     const tx = transactions.find(t => t.id === id);
+    const newCategorie = editForm.categorie;
+    const categorieChanged = !!(tx && newCategorie && newCategorie !== tx.categorie);
     await preserveScroll(async () => {
       // Update optimiste local
       setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...editForm } as Transaction : t));
@@ -756,20 +781,13 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
         await supabase.from("transactions_bancaires").update(editForm).eq("id", id);
       }
       setEditingId(null);
-      // Auto-catégoriser les transactions similaires si une catégorie a été choisie
-      if (tx && editForm.categorie) {
-        const updatedTx = { ...tx, ...editForm } as Transaction;
-        const similar = await autoCategorizeSimilar(updatedTx, editForm.categorie);
-        if (similar > 0) {
-          toast.success(`Sauvegardé ! ${similar} transaction(s) similaire(s) auto-catégorisée(s) ✨`);
-        } else {
-          toast.success("Mise à jour !");
-        }
-      } else {
-        toast.success("Mise à jour !");
-      }
+      toast.success("Mise à jour !");
       await fetchAll({ silent: true });
     });
+    // Proposer la propagation après le re-render
+    if (tx && categorieChanged) {
+      proposeSimilarIfNeeded(tx, newCategorie);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -942,36 +960,35 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
     return { categorie: best!.cat, fournisseur_client: best!.fournisseur };
   };
 
-  // Après avoir catégorisé une transaction, auto-catégoriser les similaires
-  const autoCategorizeSimilar = async (sourceTx: Transaction, categorie: string): Promise<number> => {
+  // Trouver les transactions non catégorisées qui partagent un mot significatif
+  const findSimilarUncategorized = (sourceTx: Transaction): { tx: Transaction; commonWords: string[] }[] => {
     const sourceKeywords = extractKeywords(sourceTx.libelle);
-    if (sourceKeywords.length === 0) return 0;
-
-    const uncategorized = transactions.filter(
-      t => t.id !== sourceTx.id && !t.categorie
-    );
-
-    const toUpdate: string[] = [];
-    for (const tx of uncategorized) {
+    if (sourceKeywords.length === 0) return [];
+    const results: { tx: Transaction; commonWords: string[] }[] = [];
+    for (const tx of transactions) {
+      if (tx.id === sourceTx.id) continue;
+      if (tx.categorie && tx.categorie.trim() !== "") continue;
       const txKeywords = extractKeywords(tx.libelle);
       const commonWords = sourceKeywords.filter(w => txKeywords.includes(w));
-      // Au moins 1 mot commun significatif
       if (commonWords.length >= 1) {
-        toUpdate.push(tx.id);
+        results.push({ tx, commonWords: Array.from(new Set(commonWords)) });
       }
     }
+    return results;
+  };
 
-    if (toUpdate.length > 0) {
-      if (isComptableMode) {
-        await invokeComptable("bulk_update_categorie", { ids: toUpdate, categorie });
-      } else {
-        await supabase
-          .from("transactions_bancaires")
-          .update({ categorie })
-          .in("id", toUpdate);
-      }
+  // Appliquer la catégorisation aux transactions sélectionnées
+  const applyCategorieToTransactions = async (ids: string[], categorie: string): Promise<number> => {
+    if (ids.length === 0) return 0;
+    if (isComptableMode) {
+      await invokeComptable("bulk_update_categorie", { ids, categorie });
+    } else {
+      await supabase
+        .from("transactions_bancaires")
+        .update({ categorie })
+        .in("id", ids);
     }
-    return toUpdate.length;
+    return ids.length;
   };
 
 
@@ -1679,6 +1696,80 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
               })
             )}
           </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog : proposition de catégorisation en masse */}
+      <Dialog open={!!similarPropose} onOpenChange={(open) => { if (!open) setSimilarPropose(null); }}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              ✨ Catégoriser les transactions similaires
+            </DialogTitle>
+          </DialogHeader>
+          {similarPropose && (() => {
+            const catLabel = CATEGORIES.find(c => c.value === similarPropose.categorie)?.label || similarPropose.categorie;
+            return (
+              <div className="space-y-4">
+                <div className="text-sm text-muted-foreground">
+                  Vous venez de catégoriser <span className="font-medium text-foreground">"{similarPropose.sourceTx.libelle}"</span> en <Badge variant="secondary">{catLabel}</Badge>.
+                </div>
+                <div className="text-sm">
+                  <strong>{similarPropose.matches.length}</strong> autre(s) transaction(s) non catégorisée(s) partagent un mot commun. Voulez-vous leur appliquer la même catégorisation ?
+                </div>
+                <div className="border rounded-lg divide-y max-h-80 overflow-y-auto">
+                  {similarPropose.matches.map(({ tx, commonWords }) => (
+                    <div key={tx.id} className="p-3 text-sm flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="truncate" title={tx.libelle}>{tx.libelle}</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {format(parse(tx.date_operation, "yyyy-MM-dd", new Date()), "dd MMM yyyy", { locale: fr })}
+                          {" — "}
+                          <span className="font-medium">
+                            {new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(tx.montant)}
+                          </span>
+                        </div>
+                        <div className="text-xs mt-1 flex flex-wrap gap-1">
+                          {commonWords.map(w => (
+                            <Badge key={w} variant="outline" className="text-[10px]">{w}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button variant="outline" onClick={() => setSimilarPropose(null)} disabled={applyingSimilar}>
+                    Non, garder tel quel
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      if (!similarPropose) return;
+                      setApplyingSimilar(true);
+                      try {
+                        const ids = similarPropose.matches.map(m => m.tx.id);
+                        // Update optimiste
+                        setTransactions(prev => prev.map(t =>
+                          ids.includes(t.id) ? { ...t, categorie: similarPropose.categorie } : t
+                        ));
+                        await applyCategorieToTransactions(ids, similarPropose.categorie);
+                        toast.success(`${ids.length} transaction(s) catégorisée(s) ✨`);
+                        setSimilarPropose(null);
+                        await fetchAll({ silent: true });
+                      } catch (err) {
+                        toast.error("Erreur : " + (err instanceof Error ? err.message : "inconnu"));
+                      } finally {
+                        setApplyingSimilar(false);
+                      }
+                    }}
+                    disabled={applyingSimilar}
+                  >
+                    {applyingSimilar ? "Application..." : `Oui, appliquer aux ${similarPropose.matches.length}`}
+                  </Button>
+                </div>
+              </div>
             );
           })()}
         </DialogContent>
