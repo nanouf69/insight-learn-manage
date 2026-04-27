@@ -39,6 +39,10 @@ Deno.serve(async (req) => {
       "continue-taxi",
       "formation-continue-vtc",
       "formation-continue-taxi",
+      "anglais",
+      "anglais-35h",
+      "langues",
+      "fle",
     ]);
 
     const normalize = (value: string) =>
