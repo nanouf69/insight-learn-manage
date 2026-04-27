@@ -25,6 +25,7 @@ import { ExamenReussitePage } from "@/components/examens/ExamenReussitePage";
 import CoursEnLignePage from "@/components/cours-en-ligne/CoursEnLignePage";
 import { FournisseursPage } from "@/components/fournisseurs/FournisseursPage";
 import { ApprenantsCorbeille } from "@/components/apprenants/ApprenantsCorbeille";
+import { DiagnosticAccesGlobal } from "@/components/diagnostic/DiagnosticAccesGlobal";
 import { FournisseurInvoiceAlerts } from "@/components/dashboard/FournisseurInvoiceAlerts";
 import { SmallTransfersTable } from "@/components/dashboard/SmallTransfersTable";
 import { GraduationCap, Users, ArrowDownCircle, ArrowUpCircle, Menu, X, Send, Loader2 } from "lucide-react";
@@ -52,6 +53,7 @@ const pageConfig = {
   "cours-en-ligne": { title: "Cours en ligne", subtitle: "Gérez vos formations e-learning" },
   fournisseurs: { title: "Fournisseurs", subtitle: "Gérez vos fournisseurs et leurs espaces" },
   corbeille: { title: "Corbeille", subtitle: "Éléments supprimés — restaurer ou supprimer définitivement" },
+  "diagnostic-acces": { title: "Diagnostic accès", subtitle: "État d'accès e-learning de tous les apprenants" },
 };
 
 const fmt = (n: number) =>
@@ -276,6 +278,8 @@ const Index = () => {
         return <FournisseursPage />;
       case "corbeille":
         return <ApprenantsCorbeille />;
+      case "diagnostic-acces":
+        return <DiagnosticAccesGlobal onOpenApprenant={handleNavigateToApprenant} />;
       case "settings":
         return <SettingsPage />;
       default:
