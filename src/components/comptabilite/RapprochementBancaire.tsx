@@ -1007,7 +1007,8 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
         </Card>
       </div>
 
-      {/* Import zone */}
+      {/* Import zone — uniquement pour les admins */}
+      {!isComptableMode && (
       <Card>
         <CardContent className="pt-4">
           <div
