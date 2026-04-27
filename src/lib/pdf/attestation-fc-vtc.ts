@@ -184,8 +184,8 @@ export async function generateAttestationFCVTC(data: AttestationFCData) {
 
   drawRow('NOM :', data.nom.toUpperCase(), 'ADRESSE :', (data.adresse || '-').toUpperCase());
   drawRow('PRÉNOM :', data.prenom.toUpperCase(), 'CODE POSTAL :', data.codePostal || '-');
-  drawRow('DATE DE NAISS. :', data.dateNaissance ? formatDateFR(data.dateNaissance) : '-', 'VILLE :', (data.ville || '-').toUpperCase());
-  drawRow('TÉLÉPHONE :', data.telephone || '-', 'MAIL :', data.email || '-');
+  drawRow('TÉLÉPHONE :', data.telephone || '-', 'VILLE :', (data.ville || '-').toUpperCase());
+  drawRow('MAIL :', data.email || '-', '', '');
 
   // === A effectué une formation ===
   y += 6;
