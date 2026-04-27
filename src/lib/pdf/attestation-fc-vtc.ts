@@ -68,18 +68,8 @@ export async function generateAttestationFCVTC(data: AttestationFCData) {
   y += 7;
   doc.text(`OBLIGATOIRE ${formation}`, pw / 2, y, { align: 'center' });
 
-  // === BARRE DORÉE + numéro certificat ===
-  y += 8;
-  doc.setFillColor(230, 190, 50);
-  doc.rect(marginL, y, contentW, 9, 'F');
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(0, 0, 0);
-  const certNum = generateCertificateNumber(data.dateFin, data.nom, formation);
-  doc.text(`Numéro de certificat : ${certNum}`, pw / 2, y + 6.5, { align: 'center' });
-
   // === ORGANISME D'ACCUEIL ===
-  y += 16;
+  y += 10;
   doc.setFontSize(13);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
@@ -215,7 +205,7 @@ export async function generateAttestationFCVTC(data: AttestationFCData) {
   const dateDebutFR = data.dateDebut ? formatDateFR(data.dateDebut) : formatDateFR(data.dateFin);
   const dateFinFR = formatDateFR(data.dateFin);
   drawFormRow('DATE DE LA FORMATION', `Du ${dateDebutFR} AU ${dateFinFR}`);
-  drawFormRow('HORAIRES', 'DE 09H30-12H30 / 13H30-17H30');
+  drawFormRow('HORAIRES', 'DE 09H00-12H00 / 13H00-17H00');
 
   // Date d'expiration = dateFin + 5 ans
   const finParts = data.dateFin.split('-').map(Number);
