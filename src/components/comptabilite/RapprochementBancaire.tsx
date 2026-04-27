@@ -1393,9 +1393,18 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
                                     <DropdownMenuItem onClick={() => {
+                                      const suggestion = !tx.categorie ? suggestCategorieFromSimilar(tx) : { categorie: null, fournisseur_client: null };
                                       setEditingId(tx.id);
                                       setFournisseurCustomInput(false);
-                                      setEditForm({ categorie: tx.categorie, fournisseur_client: tx.fournisseur_client, notes: tx.notes });
+                                      setEditForm({
+                                        categorie: tx.categorie || suggestion.categorie,
+                                        fournisseur_client: tx.fournisseur_client || suggestion.fournisseur_client,
+                                        notes: tx.notes,
+                                      });
+                                      if (!tx.categorie && suggestion.categorie) {
+                                        const catLabel = CATEGORIES.find(c => c.value === suggestion.categorie)?.label || suggestion.categorie;
+                                        toast.info(`Catégorie suggérée : ${catLabel} (libellé similaire détecté)`);
+                                      }
                                     }}>
                                       ✏️ Modifier / Catégoriser
                                     </DropdownMenuItem>
