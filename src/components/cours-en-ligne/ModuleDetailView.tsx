@@ -3030,14 +3030,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     // Always allow multiple answers (checkboxes) for all questions
     const isMultiAnswer = (_q: { choix: { correct?: boolean }[] }) => true;
 
+    const getQuestionChoices = (q: { choix?: { lettre: string; correct?: boolean }[] } | null | undefined) =>
+      Array.isArray(q?.choix) ? q.choix : [];
+
     // Helper: check if answer is correct (works for single and multi)
-    const isAnswerCorrect = (selected: string | string[] | undefined, q: { choix: { lettre: string; correct?: boolean }[] }) => {
-      if (!selected) return false;
-      const correctLetters = q.choix.filter(c => c.correct).map(c => c.lettre).sort();
-      if (Array.isArray(selected)) {
-        return JSON.stringify([...selected].sort()) === JSON.stringify(correctLetters);
-      }
-      return correctLetters.length === 1 && selected === correctLetters[0];
+    const isAnswerCorrect = (selected: string | string[] | undefined, q: { choix?: { lettre: string; correct?: boolean }[] } | null | undefined) => {
+      const selectedLetters = Array.isArray(selected) ? selected.filter(Boolean) : selected ? [selected] : [];
+      if (selectedLetters.length === 0) return false;
+
+      const correctLetters = getQuestionChoices(q).filter(c => c.correct).map(c => c.lettre).sort();
+      if (correctLetters.length === 0) return false;
+
+      return JSON.stringify([...selectedLetters].sort()) === JSON.stringify(correctLetters);
     };
     const [showResultsFor, setShowResultsFor] = useState<Set<number>>(new Set());
     const [currentPage, setCurrentPage] = useState(0);
@@ -4223,9 +4227,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
       const exoQuestionsNormalized = (exo.questions ?? []).map((q: any) => {
         if (!q) return q;
+        const choix = getQuestionChoices(q);
         return {
           ...q,
-          type: q?.type ?? ((q?.choix?.length ?? 0) > 0 ? "qcm" : "qrc"),
+          choix,
+          type: q?.type ?? (choix.length > 0 ? "qcm" : "qrc"),
         };
       });
       const questionsSafe = (exoQuestionsNormalized ?? []).filter((q: any) => q != null && q?.type != null);
@@ -4374,7 +4380,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                       <p className="text-xs text-muted-foreground italic ml-2">⚠️ Plusieurs réponses possibles</p>
                     )}
                     <div className="space-y-1.5 ml-2">
-                      {q.choix.map((c: any) => {
+                      {getQuestionChoices(q).map((c: any) => {
                         const exoShowResults = showResultsFor.has(exo.id);
                         const isSelected = selectedArr.includes(c.lettre);
                         let bg = "bg-background hover:bg-muted/50 border";
@@ -4473,13 +4479,13 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               (e.questions || []).map(q => {
                                 const key = `${e.id}-${q.id}`;
                                 const sel = selectedAnswers[key];
-                                const cor = q.choix.find(c => c.correct);
+                                 const correctLetters = getQuestionChoices(q).filter(c => c.correct).map(c => c.lettre);
                                 return {
                                   exerciceId: e.id, exerciceTitre: e.titre,
                                   questionId: q.id, enonce: q.enonce,
                                   reponseEleve: sel || null,
-                                  reponseCorrecte: cor?.lettre || null,
-                                  correct: sel != null && cor != null && sel === cor.lettre,
+                                   reponseCorrecte: correctLetters.length === 1 ? correctLetters[0] : correctLetters,
+                                   correct: isAnswerCorrect(sel, q),
                                 };
                               })
                             );
@@ -4574,10 +4580,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                           <h4 className="font-semibold text-sm">Actions</h4>
                           <div className="flex flex-col gap-2">
                             <Button variant="outline" size="sm" className="gap-2" onClick={() => {
-                              const exoKeys = questionsSafe.map(q => `${exo.id}-${q.id}`);
+              const exoKeys = questionsSafe.map((q: any) => `${exo.id}-${q.id}`);
                               setSelectedAnswers(prev => {
                                 const next = { ...prev };
                                 exoKeys.forEach(k => delete next[k]);
+                autoSaveAnswers(next);
                                 return next;
                               });
                               setShowResultsFor(prev => { const next = new Set(prev); next.delete(exo.id); return next; });
@@ -4595,6 +4602,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               setSelectedAnswers(prev => {
                                 const next = { ...prev };
                                 wrongKeys.forEach(k => delete next[k]);
+                autoSaveAnswers(next);
                                 return next;
                               });
                               setShowResultsFor(prev => { const next = new Set(prev); next.delete(exo.id); return next; });
