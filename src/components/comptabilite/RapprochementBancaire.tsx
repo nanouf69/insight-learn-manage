@@ -296,6 +296,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
   const [filterBanque, setFilterBanque] = useState("tous"); // tous, BNP Paribas, Revolut Pro
   const [filterMois, setFilterMois] = useState("tous"); // tous ou "1".."12"
   const [filterAnnee, setFilterAnnee] = useState("tous"); // tous ou "2025", "2026"...
+  const [filterCategorie, setFilterCategorie] = useState("tous"); // tous, sans, ou value de CATEGORIES
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Transaction>>({});
@@ -1005,7 +1006,12 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
     const d = tx.date_operation ? new Date(tx.date_operation) : null;
     const matchAnnee = filterAnnee === "tous" || (d && String(d.getFullYear()) === filterAnnee);
     const matchMois = filterMois === "tous" || (d && String(d.getMonth() + 1) === filterMois);
-    return matchStatut && matchType && matchSearch && matchBanque && matchAnnee && matchMois;
+    const matchCategorie =
+      filterCategorie === "tous" ||
+      (filterCategorie === "sans"
+        ? !tx.categorie || tx.categorie.trim() === ""
+        : tx.categorie === filterCategorie);
+    return matchStatut && matchType && matchSearch && matchBanque && matchAnnee && matchMois && matchCategorie;
   });
 
   // Liste des années et mois disponibles dans les transactions
@@ -1238,8 +1244,20 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
               ))}
             </SelectContent>
           </Select>
-          {(filterMois !== "tous" || filterAnnee !== "tous") && (
-            <Button size="sm" variant="ghost" onClick={() => { setFilterMois("tous"); setFilterAnnee("tous"); }}>
+          <Select value={filterCategorie} onValueChange={setFilterCategorie}>
+            <SelectTrigger className="h-9 w-[200px]">
+              <SelectValue placeholder="Catégorie" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="tous">🏷️ Toutes catégories</SelectItem>
+              <SelectItem value="sans">⚪ Sans catégorie</SelectItem>
+              {CATEGORIES.map(c => (
+                <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {(filterMois !== "tous" || filterAnnee !== "tous" || filterCategorie !== "tous") && (
+            <Button size="sm" variant="ghost" onClick={() => { setFilterMois("tous"); setFilterAnnee("tous"); setFilterCategorie("tous"); }}>
               ✕ Réinitialiser
             </Button>
           )}
