@@ -81,33 +81,18 @@ export function useConnexionTracking({ apprenantId, userId, enabled }: UseConnex
     let cancelled = false;
 
     const startConnexion = async () => {
-      const { data: activeSessions } = await supabase
-        .from("apprenant_connexions" as any)
-        .select("id")
-        .eq("apprenant_id", apprenantId)
-        .eq("user_id", userId)
-        .is("ended_at", null);
-
-      if (activeSessions?.length) {
-        await Promise.all(
-          activeSessions.map((session: any) => closeConnexionServerSide(session.id)),
-        );
-      }
-
-      const { data, error } = await supabase
-        .from("apprenant_connexions" as any)
-        .insert({
-          apprenant_id: apprenantId,
-          user_id: userId,
-          source: "cours",
-        })
-        .select("id, started_at")
-        .single();
+      const { data, error } = await supabase.rpc("start_apprenant_connexion" as any, {
+        _apprenant_id: apprenantId,
+        _source: "cours",
+      });
 
       if (cancelled || error || !data) return;
 
-      connexionIdRef.current = (data as any).id;
-      setConnexionId((data as any).id);
+      const startedConnexion = Array.isArray(data) ? data[0] : data;
+      if (!startedConnexion?.id) return;
+
+      connexionIdRef.current = startedConnexion.id;
+      setConnexionId(startedConnexion.id);
 
       const { data: apprenantData } = await supabase
         .from("apprenants")
