@@ -852,6 +852,42 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     fetchCompletions();
   }, [apprenant?.id]);
 
+  // Vérifier si une signature d'émargement est requise pour la demi-journée en cours (formation continue)
+  useEffect(() => {
+    if (embedded || !user || !apprenant?.id) {
+      setEmargementFCStatus("n/a");
+      return;
+    }
+    if (!isFormationContinue(apprenant.type_apprenant, apprenant.formation_choisie)) {
+      setEmargementFCStatus("n/a");
+      return;
+    }
+    let cancelled = false;
+    setEmargementFCStatus("checking");
+    const check = async () => {
+      const now = new Date();
+      const demi = now.getHours() < 13 ? "matin" : "apres_midi";
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      const { data, error } = await supabase
+        .from("emargements_fc" as any)
+        .select("id")
+        .eq("apprenant_id", apprenant.id!)
+        .eq("date_emargement", today)
+        .eq("demi_journee", demi)
+        .maybeSingle();
+      if (cancelled) return;
+      if (error && error.code !== "PGRST116") {
+        console.warn("[Émargement FC] check error:", error.message);
+      }
+      setEmargementFCStatus(data ? "signed" : "needed");
+    };
+    check();
+    return () => {
+      cancelled = true;
+    };
+  }, [embedded, user?.id, apprenant?.id, apprenant?.type_apprenant, apprenant?.formation_choisie]);
+
+
   const handleModuleCompleted = useCallback((moduleId: number) => {
     setCompletedModuleIds(prev => new Set([...prev, moduleId]));
   }, []);
