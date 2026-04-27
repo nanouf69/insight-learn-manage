@@ -306,8 +306,9 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
   const [syncingRevolut, setSyncingRevolut] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const fetchAll = useCallback(async () => {
-    setLoading(true);
+  const fetchAll = useCallback(async (options?: { silent?: boolean }) => {
+    const showLoader = !options?.silent;
+    if (showLoader) setLoading(true);
 
     // Mode comptable : tout via edge function
     if (isComptableMode) {
@@ -350,7 +351,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
       } catch (err) {
         toast.error("Erreur de chargement : " + (err instanceof Error ? err.message : "inconnu"));
       }
-      setLoading(false);
+      if (showLoader) setLoading(false);
       return;
     }
 
@@ -412,7 +413,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
       });
       setApprenants(enriched);
     }
-    setLoading(false);
+    if (showLoader) setLoading(false);
   }, [isComptableMode, invokeComptable]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
