@@ -3824,6 +3824,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             apprenantVille={apprenantInfo?.ville}
             apprenantType={apprenantType || ""}
             apprenantId={apprenantId || undefined}
+            suppressAdminNotification={suppressPreInformationEmails}
             completed={completedPages.has(currentPage)}
             onComplete={() => {
               markPageCompleted(currentPage);
