@@ -2320,6 +2320,13 @@ export type Database = {
         }[]
       }
       soundex: { Args: { "": string }; Returns: string }
+      start_apprenant_connexion: {
+        Args: { _apprenant_id: string; _source?: string }
+        Returns: {
+          id: string
+          started_at: string
+        }[]
+      }
       text_soundex: { Args: { "": string }; Returns: string }
       unaccent: { Args: { "": string }; Returns: string }
     }
