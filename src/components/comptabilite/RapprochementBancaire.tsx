@@ -419,6 +419,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
   const autoProcessedRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (loading || transactions.length === 0 || apprenants.length === 0) return;
+    if (isComptableMode) return; // Mode comptable : pas d'auto-traitement (réservé admin)
 
     const isFC = (a: ApprenantWithSession): boolean => {
       const fc = (a.formation_choisie || "").toLowerCase();
