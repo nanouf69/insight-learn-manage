@@ -619,6 +619,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [examBlancCompletedIds, setExamBlancCompletedIds] = useState<Set<string>>(new Set());
   const [lastModuleName, setLastModuleName] = useState<string | null>(null);
   const [isInExam, setIsInExam] = useState(false);
+  const [emargementFCStatus, setEmargementFCStatus] = useState<"checking" | "needed" | "signed" | "n/a">("checking");
 
   const handleExamStateChange = useCallback((inExam: boolean) => {
     setIsInExam(inExam);
