@@ -317,6 +317,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
     matches: { tx: Transaction; commonWords: string[] }[];
   } | null>(null);
   const [applyingSimilar, setApplyingSimilar] = useState(false);
+  const [similarSelectedIds, setSimilarSelectedIds] = useState<Set<string>>(new Set());
 
   const fetchAll = useCallback(async (options?: { silent?: boolean }) => {
     const showLoader = !options?.silent;
