@@ -1276,15 +1276,20 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
                         isEditing && "bg-muted/30"
                       )}>
                         <div className="flex items-start gap-3">
-                          {/* Direction icon */}
-                          <div className={cn(
-                            "h-9 w-9 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
-                            isDebit ? "bg-destructive/10" : "bg-emerald-100"
-                          )}>
-                            {isDebit
-                              ? <ArrowUpRight className="h-4 w-4 text-destructive" />
-                              : <ArrowDownLeft className="h-4 w-4 text-emerald-600" />
-                            }
+                          {/* Direction icon + line number */}
+                          <div className="flex flex-col items-center gap-1 flex-shrink-0 mt-0.5">
+                            <div className={cn(
+                              "h-9 w-9 rounded-full flex items-center justify-center",
+                              isDebit ? "bg-destructive/10" : "bg-emerald-100"
+                            )}>
+                              {isDebit
+                                ? <ArrowUpRight className="h-4 w-4 text-destructive" />
+                                : <ArrowDownLeft className="h-4 w-4 text-emerald-600" />
+                              }
+                            </div>
+                            <span className="text-[9px] text-muted-foreground tabular-nums leading-none">
+                              {filteredIndexById.get(tx.id)}/{filteredTotal}
+                            </span>
                           </div>
 
                           {/* Main content */}
