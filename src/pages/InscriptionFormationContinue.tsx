@@ -103,7 +103,17 @@ export default function InscriptionFormationContinue() {
 
   const details = formationDetails[type];
 
-  const financeurValid = !hasFinanceur || (financeurSiren.trim() && financeurNom.trim());
+  const financeurValid =
+    !hasFinanceur ||
+    (
+      financeurSiren.trim() &&
+      financeurNom.trim() &&
+      financeurAdresse.trim() &&
+      financeurCodePostal.trim() &&
+      financeurVille.trim() &&
+      financeurEmail.trim() &&
+      financeurTelephone.trim()
+    );
   const canSubmit = prenom.trim() && nom.trim() && adresse.trim() && telephone.trim() && email.trim() && dateFormation && !fullDates[dateFormation] && financeurValid;
 
   const handleSubmit = async () => {
