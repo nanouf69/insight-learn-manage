@@ -981,6 +981,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     }
   }
 
+  // Émargement obligatoire pour les apprenants en formation continue
+  // Bloque l'accès aux cours tant que la signature de la demi-journée n'est pas effectuée
+  const showEmargementFC =
+    !embedded &&
+    !!user &&
+    !!apprenant?.id &&
+    isFormationContinue(apprenant?.type_apprenant, apprenant?.formation_choisie);
   // Module detail view
   if (selectedModule) {
     const bilanId = BILAN_MODULE_IDS[selectedModule.id];
