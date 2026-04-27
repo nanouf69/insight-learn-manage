@@ -14,11 +14,12 @@ interface Props {
   data: CompetencesData;
   apprenantNom?: string;
   apprenantId?: string;
+  suppressAdminNotification?: boolean;
   onComplete: () => void;
   completed?: boolean;
 }
 
-export default function CompetencesChecklist({ data, apprenantNom, apprenantId, onComplete, completed }: Props) {
+export default function CompetencesChecklist({ data, apprenantNom, apprenantId, suppressAdminNotification = false, onComplete, completed }: Props) {
   const [answers, setAnswers] = useState<Record<string, "oui" | "non">>({});
   const [invalidKeys, setInvalidKeys] = useState<Set<string>>(new Set());
   const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -101,7 +102,7 @@ export default function CompetencesChecklist({ data, apprenantNom, apprenantId, 
       const saved = await autoTrigger({ ...collectData(), _status: "completed" });
       if (saved) {
         toast.success("Test de compétences enregistré !");
-        sendAdminNotification({
+        if (!suppressAdminNotification) sendAdminNotification({
           type_document: "test-competences",
           nom: apprenantNom || "",
           prenom: "",
