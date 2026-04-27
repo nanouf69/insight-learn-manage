@@ -1244,8 +1244,20 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
               ))}
             </SelectContent>
           </Select>
-          {(filterMois !== "tous" || filterAnnee !== "tous") && (
-            <Button size="sm" variant="ghost" onClick={() => { setFilterMois("tous"); setFilterAnnee("tous"); }}>
+          <Select value={filterCategorie} onValueChange={setFilterCategorie}>
+            <SelectTrigger className="h-9 w-[200px]">
+              <SelectValue placeholder="Catégorie" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="tous">🏷️ Toutes catégories</SelectItem>
+              <SelectItem value="sans">⚪ Sans catégorie</SelectItem>
+              {CATEGORIES.map(c => (
+                <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {(filterMois !== "tous" || filterAnnee !== "tous" || filterCategorie !== "tous") && (
+            <Button size="sm" variant="ghost" onClick={() => { setFilterMois("tous"); setFilterAnnee("tous"); setFilterCategorie("tous"); }}>
               ✕ Réinitialiser
             </Button>
           )}
