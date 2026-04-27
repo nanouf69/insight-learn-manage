@@ -10,6 +10,7 @@ import { generateAttestationFranceTravail } from "@/lib/pdf/attestation-france-t
 import { generateBienvenueFtransport } from "@/lib/pdf/bienvenue-ftransport";
 import { generateEmargementPDF } from "@/components/sessions/EmargementGenerator";
 import { generateFicheProgressionGuenichi } from "@/lib/pdf/fiche-progression";
+import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -19,7 +20,7 @@ interface DocumentsFormationProps {
   apprenant: any;
 }
 
-type DocType = 'inscription' | 'fin-formation' | 'france-travail' | 'bienvenue' | 'emargement' | 'progression';
+type DocType = 'inscription' | 'fin-formation' | 'france-travail' | 'bienvenue' | 'emargement' | 'progression' | 'attestation-fc';
 
 export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
   const [generatingDoc, setGeneratingDoc] = useState<string | null>(null);
@@ -108,6 +109,24 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
       } else if (type === 'france-travail') {
         await generateAttestationFranceTravail(apprenant);
         toast.success("Attestation France Travail générée");
+      } else if (type === 'attestation-fc') {
+        const typeApp = String(apprenant.type_apprenant || '').toUpperCase();
+        const formation: 'VTC' | 'TAXI' = typeApp.includes('TAXI') ? 'TAXI' : 'VTC';
+        const dateFin = apprenant.date_fin_formation || apprenant.date_debut_formation || new Date().toISOString().split('T')[0];
+        await generateAttestationFCVTC({
+          nom: apprenant.nom,
+          prenom: apprenant.prenom,
+          dateFin,
+          dateDebut: apprenant.date_debut_formation,
+          adresse: apprenant.adresse,
+          codePostal: apprenant.code_postal,
+          ville: apprenant.ville,
+          telephone: apprenant.telephone,
+          email: apprenant.email,
+          dateNaissance: apprenant.date_naissance,
+          formation,
+        });
+        toast.success(`Attestation Formation Continue ${formation} générée`);
       } else if (type === 'progression') {
         generateFicheProgressionGuenichi();
         toast.success("Fiche de progression generee");
@@ -281,6 +300,22 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
       status: 'disponible',
       type: 'progression' as const,
       icon: BarChart3,
+    },
+    {
+      id: 'attestation-fc',
+      title: (() => {
+        const t = String(apprenant.type_apprenant || '').toUpperCase();
+        const f = t.includes('TAXI') ? 'TAXI' : 'VTC';
+        return `Attestation Formation Continue ${f}`;
+      })(),
+      description: "Attestation officielle de formation continue obligatoire (valable 5 ans)",
+      status: (() => {
+        const t = String(apprenant.type_apprenant || '').toUpperCase();
+        const isFC = /\bFC\b|FORMATION\s*CONTINUE/.test(t);
+        return isFC ? 'disponible' : 'non_applicable';
+      })(),
+      type: 'attestation-fc' as const,
+      icon: FileText,
     },
   ];
 

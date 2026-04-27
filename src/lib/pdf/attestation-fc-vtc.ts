@@ -24,6 +24,7 @@ interface AttestationFCData {
   telephone?: string;
   email?: string;
   dateNaissance?: string;
+  formation?: 'VTC' | 'TAXI';
 }
 
 function formatDateFR(dateStr: string): string {
@@ -33,11 +34,12 @@ function formatDateFR(dateStr: string): string {
   return `${parts[2]}/${parts[1]}/${parts[0]}`;
 }
 
-function generateCertificateNumber(dateFin: string, nom: string): string {
+function generateCertificateNumber(dateFin: string, nom: string, formation: 'VTC' | 'TAXI' = 'VTC'): string {
   const year = dateFin.split('-')[0] || '2025';
   const initials = nom.substring(0, 3).toUpperCase();
   const num = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0');
-  return `FCOVTC-${year}-LYON-${num}-${initials}`;
+  const prefix = formation === 'TAXI' ? 'FCOTAXI' : 'FCOVTC';
+  return `${prefix}-${year}-LYON-${num}-${initials}`;
 }
 
 export async function generateAttestationFCVTC(data: AttestationFCData) {
@@ -56,13 +58,15 @@ export async function generateAttestationFCVTC(data: AttestationFCData) {
   }
 
   // === TITRE ===
+  const formation = data.formation || 'VTC';
+  const agrement = formation === 'TAXI' ? 'TAXI-69-16-005' : COMPANY_INFO.agrement;
   let y = 36;
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
   doc.text('ATTESTATION DE FORMATION CONTINUE', pw / 2, y, { align: 'center' });
   y += 7;
-  doc.text('OBLIGATOIRE VTC', pw / 2, y, { align: 'center' });
+  doc.text(`OBLIGATOIRE ${formation}`, pw / 2, y, { align: 'center' });
 
   // === BARRE DORÉE + numéro certificat ===
   y += 8;
@@ -71,7 +75,7 @@ export async function generateAttestationFCVTC(data: AttestationFCData) {
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
-  const certNum = generateCertificateNumber(data.dateFin, data.nom);
+  const certNum = generateCertificateNumber(data.dateFin, data.nom, formation);
   doc.text(`Numéro de certificat : ${certNum}`, pw / 2, y + 6.5, { align: 'center' });
 
   // === ORGANISME D'ACCUEIL ===
@@ -123,7 +127,7 @@ export async function generateAttestationFCVTC(data: AttestationFCData) {
   doc.setFont('helvetica', 'bold');
   doc.text('N° Agrément : ', pw / 2, y);
   doc.setFont('helvetica', 'normal');
-  doc.text(COMPANY_INFO.agrement, pw / 2 + 26, y);
+  doc.text(agrement, pw / 2 + 26, y);
 
   y += 8;
   doc.setFontSize(10);
@@ -260,5 +264,5 @@ export async function generateAttestationFCVTC(data: AttestationFCData) {
   doc.text(`(*) Cette attestation peut être vérifiée en contactant ${COMPANY_INFO.email}`, pw / 2, footerY, { align: 'center' });
 
   // === TELECHARGER ===
-  doc.save(`Attestation_FC_VTC_${data.nom.toUpperCase()}_${data.prenom}.pdf`);
+  doc.save(`Attestation_FC_${formation}_${data.nom.toUpperCase()}_${data.prenom}.pdf`);
 }
