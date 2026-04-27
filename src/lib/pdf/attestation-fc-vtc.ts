@@ -243,6 +243,12 @@ export async function generateAttestationFCVTC(data: AttestationFCData, options?
   doc.setTextColor(100, 100, 100);
   doc.text(`(*) Cette attestation peut être vérifiée en contactant ${COMPANY_INFO.email}`, pw / 2, footerY, { align: 'center' });
 
+  const fileName = `Attestation_FC_${data.formation || 'VTC'}_${data.nom.toUpperCase()}_${data.prenom}.pdf`;
+  if (options?.returnBlob) {
+    const blob = doc.output('blob');
+    return { blob, fileName };
+  }
   // === TELECHARGER ===
-  doc.save(`Attestation_FC_${formation}_${data.nom.toUpperCase()}_${data.prenom}.pdf`);
+  doc.save(fileName);
+  return { fileName };
 }
