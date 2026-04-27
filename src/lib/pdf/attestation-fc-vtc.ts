@@ -127,7 +127,7 @@ export async function generateAttestationFCVTC(data: AttestationFCData) {
   doc.setFont('helvetica', 'bold');
   doc.text('N° Agrément : ', pw / 2, y);
   doc.setFont('helvetica', 'normal');
-  doc.text(COMPANY_INFO.agrement, pw / 2 + 26, y);
+  doc.text(agrement, pw / 2 + 26, y);
 
   y += 8;
   doc.setFontSize(10);
