@@ -1064,6 +1064,7 @@ export function RapprochementBancaire({ comptableToken }: { comptableToken?: str
           )}
         </CardContent>
       </Card>
+      )}
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center">
