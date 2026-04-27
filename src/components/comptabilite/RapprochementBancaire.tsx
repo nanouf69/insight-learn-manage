@@ -269,7 +269,19 @@ interface ApprenantWithSession {
   session_date_fin: string | null;
 }
 
-export function RapprochementBancaire() {
+export function RapprochementBancaire({ comptableToken }: { comptableToken?: string } = {}) {
+  const isComptableMode = !!comptableToken;
+
+  // Helper : invoque l'edge function comptable-rapprochement avec le token
+  const invokeComptable = useCallback(async (action: string, payload: Record<string, unknown> = {}) => {
+    const { data, error } = await supabase.functions.invoke("comptable-rapprochement", {
+      body: { token: comptableToken, action, ...payload },
+    });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    return data;
+  }, [comptableToken]);
+
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [justificatifs, setJustificatifs] = useState<Justificatif[]>([]);
   const [apprenants, setApprenants] = useState<ApprenantWithSession[]>([]);
