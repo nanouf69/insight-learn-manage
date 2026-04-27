@@ -332,28 +332,33 @@ export function ComptabilitePage() {
 
   // Édition inline d'un relevé (nom + banque)
   const [editingReleveId, setEditingReleveId] = useState<string | null>(null);
-  const [editReleveForm, setEditReleveForm] = useState<{ nom_fichier: string; banque: string }>({ nom_fichier: "", banque: "" });
+  const [editReleveForm, setEditReleveForm] = useState<{ nom_fichier: string; banque: string; mois_annee: string }>({ nom_fichier: "", banque: "", mois_annee: "" });
 
   const startEditReleve = (r: Releve) => {
     setEditingReleveId(r.id);
-    setEditReleveForm({ nom_fichier: r.nom_fichier, banque: r.banque });
+    setEditReleveForm({ nom_fichier: r.nom_fichier, banque: r.banque, mois_annee: r.mois_annee || "" });
   };
 
   const cancelEditReleve = () => {
     setEditingReleveId(null);
-    setEditReleveForm({ nom_fichier: "", banque: "" });
+    setEditReleveForm({ nom_fichier: "", banque: "", mois_annee: "" });
   };
 
   const saveEditReleve = async (id: string) => {
     const nom = editReleveForm.nom_fichier.trim();
     const banque = editReleveForm.banque.trim();
+    const moisAnnee = editReleveForm.mois_annee.trim();
     if (!nom || !banque) {
       toast.error("Le nom et la banque sont obligatoires");
       return;
     }
+    if (moisAnnee && !/^\d{4}-\d{2}$/.test(moisAnnee)) {
+      toast.error("La période doit être au format AAAA-MM");
+      return;
+    }
     const { error } = await supabase
       .from("releves_bancaires")
-      .update({ nom_fichier: nom, banque })
+      .update({ nom_fichier: nom, banque, mois_annee: moisAnnee || null })
       .eq("id", id);
     if (error) {
       toast.error("Erreur lors de la mise à jour");
