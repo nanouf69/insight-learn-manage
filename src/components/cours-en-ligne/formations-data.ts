@@ -98,7 +98,7 @@ export const MODULES_DATA: ModuleInfo[] = [
     id: 3,
     nom: "3.FORMULES",
     description: "Il s'agit de l'ensemble des calculs qui peuvent tomber à l'examen théorique",
-    formations: ALL_FORMATIONS,
+    formations: ALL_FORMATIONS.filter(f => f !== "continue-vtc" && f !== "continue-taxi"),
   },
   {
     id: 4,
