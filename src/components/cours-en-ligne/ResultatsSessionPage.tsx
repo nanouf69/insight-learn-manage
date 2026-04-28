@@ -7,8 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import {
   Loader2, Users, TrendingUp, CheckCircle2, XCircle, BarChart3,
-  BookOpen, FileText, ChevronDown, ChevronRight, Award,
+  BookOpen, FileText, ChevronDown, ChevronRight, Award, Maximize2, Minimize2,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { MODULES_DATA } from "./formations-data";
 
