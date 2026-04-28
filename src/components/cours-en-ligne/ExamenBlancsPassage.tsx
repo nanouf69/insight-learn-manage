@@ -443,7 +443,8 @@ function PassageMatiere({
   const progress = ((safeQuestionIndex + 1) / safeQuestionsCount) * 100;
 
   return (
-    <div className="space-y-4">
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_88px] gap-4">
+      <div className="space-y-4 min-w-0">
       {/* Bandeau matière FTRANSPORT */}
       <div className="rounded-lg px-4 py-3 flex items-center justify-between flex-wrap gap-2" style={{ backgroundColor: '#0D2540' }}>
         <div className="flex items-center gap-3">
