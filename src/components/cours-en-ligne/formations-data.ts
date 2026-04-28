@@ -382,6 +382,18 @@ export const MODULES_DATA: ModuleInfo[] = [
     description: "Bilan exercices TAXI sans Gestion — Formation continue",
     formations: ["continue-taxi"],
   },
+  {
+    id: 83,
+    nom: "2.FEUILLES D'ÉMARGEMENT SIGNÉES VTC",
+    description: "Historique des feuilles d'émargement signées — Formation continue VTC",
+    formations: ["continue-vtc"],
+  },
+  {
+    id: 84,
+    nom: "2.FEUILLES D'ÉMARGEMENT SIGNÉES TAXI",
+    description: "Historique des feuilles d'émargement signées — Formation continue TAXI",
+    formations: ["continue-taxi"],
+  },
 ];
 
 // Expansion des modules_autorises :
