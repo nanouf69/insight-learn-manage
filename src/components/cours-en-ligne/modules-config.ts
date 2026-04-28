@@ -47,6 +47,8 @@ export const ALL_MODULES: ModuleDefinition[] = [
   { id: 29, nom: "4.BILAN EXERCICES VA" },
   { id: 81, nom: "1.BILAN EXERCICES FORMATION CONTINUE VTC" },
   { id: 82, nom: "1.BILAN EXERCICES FORMATION CONTINUE TAXI" },
+  { id: 83, nom: "2.FEUILLES D'ÉMARGEMENT SIGNÉES VTC" },
+  { id: 84, nom: "2.FEUILLES D'ÉMARGEMENT SIGNÉES TAXI" },
   // 5. EXAMENS BLANCS
   { id: 35, nom: "5.EXAMENS BLANCS VTC" },
   { id: 36, nom: "5.EXAMENS BLANCS TAXI" },
