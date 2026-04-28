@@ -128,6 +128,11 @@ const FIELD_LABELS: Record<string, string> = {
   devis_signe_url: 'Devis signé',
   fichier_url: 'Fichier signé',
   statut: 'Statut',
+  date_emargement: "Date d'émargement",
+  demi_journee: 'Demi-journée',
+  modele: 'Modèle de devis',
+  formation: 'Formation',
+  montant: 'Montant',
 };
 
 function getLabel(key: string): string {
