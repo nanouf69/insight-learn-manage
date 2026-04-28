@@ -58,6 +58,7 @@ const FIELD_LABELS: Record<string, string> = {
   pointsAmeliorer: 'Points a ameliorer', suggestions: 'Suggestions',
   formationType: 'Type de formation', commentaires: 'Commentaires',
   cgv_accepted: 'CGV acceptees', ri_accepted: 'Reglement interieur accepte',
+  cgv_accepted_at: "Date d'acceptation des CGV", cgv_version: 'Version des CGV',
   accepted: 'Accepte', accepted_at: 'Date acceptation',
   signed_at: 'Date de signature', formationLabel: 'Formation',
   type_formation: 'Type de formation', prix: 'Prix', duree: 'Duree',
@@ -98,6 +99,7 @@ const TYPE_TITLES: Record<string, string> = {
   'satisfaction': 'ENQUETE DE SATISFACTION',
   'cgv-acceptation': 'CONDITIONS GENERALES DE VENTE',
   'cgv-ri-acceptation': 'CGV ET REGLEMENT INTERIEUR',
+  'devis-formation-continue': 'DEVIS DE FORMATION CONTINUE',
 };
 
 function getLabel(key: string): string {
@@ -528,6 +530,37 @@ export function generateDocumentIndividuelPdf(
     doc.setTextColor(200, 60, 60);
     doc.text('Aucune donnee disponible pour ce document.', margin + 6, y);
     y += 10;
+  }
+
+  // ---- CGV acceptation block (always shown when accepted) ----
+  if (document.donnees && typeof document.donnees === 'object' && document.donnees.cgv_accepted) {
+    y = ensureSpace(doc, y, 38);
+    y += 6;
+    y = renderSectionHeader(doc, 'ACCEPTATION DES CONDITIONS GENERALES DE VENTE', y, margin, pw);
+    doc.setFillColor(245, 250, 245);
+    doc.setDrawColor(34, 150, 60);
+    const boxY = y - 2;
+    const boxH = 26;
+    doc.rect(margin, boxY, pw - margin * 2, boxH, 'FD');
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(30, 60, 30);
+    const acceptedAt = document.donnees.cgv_accepted_at
+      ? (() => { try { return format(new Date(document.donnees.cgv_accepted_at), "dd/MM/yyyy a HH:mm", { locale: fr }); } catch { return String(document.donnees.cgv_accepted_at); } })()
+      : '-';
+    const version = document.donnees.cgv_version || 'CGV Ftransport';
+    const lines = [
+      `Le stagiaire reconnait avoir pris connaissance et accepte sans reserve les Conditions Generales`,
+      `de Vente de Ftransport (${version}).`,
+      `Acceptation electronique enregistree le : ${acceptedAt}`,
+      `Cette acceptation est confirmee par la signature electronique apposee ci-dessous.`,
+    ];
+    let ly = boxY + 5;
+    for (const line of lines) {
+      doc.text(line, margin + 4, ly);
+      ly += 5;
+    }
+    y = boxY + boxH + 4;
   }
 
   // ---- Signatures section ----

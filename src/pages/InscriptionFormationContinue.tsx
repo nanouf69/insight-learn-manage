@@ -58,7 +58,8 @@ export default function InscriptionFormationContinue() {
   const [financeurEmail, setFinanceurEmail] = useState("");
   const [financeurTelephone, setFinanceurTelephone] = useState("");
   const [signature, setSignature] = useState("");
-  
+  const [cgvAccepted, setCgvAccepted] = useState(false);
+
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -117,7 +118,7 @@ export default function InscriptionFormationContinue() {
       financeurEmail.trim() &&
       financeurTelephone.trim()
     );
-  const canSubmit = prenom.trim() && nom.trim() && adresse.trim() && telephone.trim() && email.trim() && dateFormation && signature && !fullDates[dateFormation] && financeurValid;
+  const canSubmit = prenom.trim() && nom.trim() && adresse.trim() && telephone.trim() && email.trim() && dateFormation && signature && cgvAccepted && !fullDates[dateFormation] && financeurValid;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
@@ -271,6 +272,9 @@ export default function InscriptionFormationContinue() {
           date_inscription: new Date().toLocaleDateString("fr-FR"),
           signature,
           signed_at: new Date().toISOString(),
+          cgv_accepted: "Oui",
+          cgv_accepted_at: new Date().toISOString(),
+          cgv_version: "CGV Ftransport - 2026",
         };
         if (hasFinanceur) {
           devisDonnees.financeur_siren = financeurSiren.trim();
@@ -528,9 +532,33 @@ export default function InscriptionFormationContinue() {
             </div>
 
             <div className="space-y-3">
+              <h3 className="font-semibold border-b pb-2">Conditions générales de vente <span className="text-red-500">*</span></h3>
+              <div className="flex items-start gap-3 p-3 rounded-lg border bg-muted/40">
+                <Checkbox
+                  id="cgv-fc"
+                  checked={cgvAccepted}
+                  onCheckedChange={(v) => setCgvAccepted(v === true)}
+                  className="mt-1"
+                />
+                <Label htmlFor="cgv-fc" className="text-sm leading-relaxed cursor-pointer">
+                  Je reconnais avoir pris connaissance et accepté les{" "}
+                  <a
+                    href="/cgv-ftransport.pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline text-primary"
+                  >
+                    Conditions Générales de Vente
+                  </a>{" "}
+                  de Ftransport. Mon acceptation sera enregistrée et signée électroniquement avec ma signature ci-dessous.
+                </Label>
+              </div>
+            </div>
+
+            <div className="space-y-3">
               <h3 className="font-semibold border-b pb-2">Signature du stagiaire <span className="text-red-500">*</span></h3>
               <p className="text-sm text-muted-foreground">
-                La signature est obligatoire pour valider le devis et l'inscription.
+                La signature est obligatoire pour valider le devis, l'inscription et l'acceptation des CGV.
               </p>
               <SignaturePad value={signature} onChange={setSignature} />
             </div>
