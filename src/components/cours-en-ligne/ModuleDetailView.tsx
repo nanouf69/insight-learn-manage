@@ -4583,12 +4583,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               (e.questions || []).map(q => {
                                 const key = `${e.id}-${q.id}`;
                                 const sel = selectedAnswers[key];
-                                 const correctLetters = getQuestionChoices(q).filter(c => c.correct).map(c => c.lettre);
+                                 const correctChoix = getQuestionChoices(q).filter(c => c.correct);
+                                 const correctLetters = correctChoix.map(c => c.lettre);
+                                 const correctTexts = correctChoix.map(c => c.texte);
                                 return {
                                   exerciceId: e.id, exerciceTitre: e.titre,
                                   questionId: q.id, enonce: q.enonce,
                                   reponseEleve: sel || null,
                                    reponseCorrecte: correctLetters.length === 1 ? correctLetters[0] : correctLetters,
+                                   reponseCorrecteTexte: correctTexts.length === 1 ? correctTexts[0] : correctTexts,
                                    correct: isAnswerCorrect(sel, q),
                                 };
                               })
