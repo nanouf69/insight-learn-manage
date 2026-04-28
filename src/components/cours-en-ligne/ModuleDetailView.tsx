@@ -103,6 +103,11 @@ import {
   type ModuleInitialData,
 } from "./shared-exercise-overrides";
 import { resolveOverrideConflict } from "@/components/fournisseurs/quiz-editor-utils";
+import {
+  GENERATED_BILAN_MODULE_IDS as GENERATED_BILAN_IDS_UTIL,
+  hasDuplicateGeneratedBilanQuestions as hasDuplicateBilanUtil,
+  shouldForceBilanReset,
+} from "./bilan-reset-utils";
 
 interface InlineQuizQuestion {
   id: number;
@@ -2360,9 +2365,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           return false;
         }
 
+        const deletedExerciceIdsLocal = Array.isArray(parsed.deletedExercices)
+          ? parsed.deletedExercices.map((e: any) => Number(e?.id)).filter((n: number) => !Number.isNaN(n))
+          : [];
         const mergedModuleData: ModuleData = {
           ...parsed.moduleData,
-          exercices: mergeSourceExercices(parsed.moduleData.exercices, initialData.exercices),
+          exercices: mergeSourceExercices(parsed.moduleData.exercices, initialData.exercices, deletedExerciceIdsLocal),
         };
 
         setModuleData(mergedModuleData);
@@ -2439,9 +2447,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         if (latestState?.module_data) {
           const md = latestState.module_data as unknown as ModuleData;
           const hasMatchingSourceFingerprint = latestState.source_fingerprint === sourceFingerprint;
-          const shouldForceSourceExercisesRefresh =
-            GENERATED_BILAN_MODULE_IDS.has(Number(module.id)) &&
-            (!hasMatchingSourceFingerprint || hasDuplicateGeneratedBilanQuestions(md));
+          // Reset uniquement sur doublons réels (corruption de données).
+          // Ne PAS reset sur fingerprint mismatch car le fingerprint inclut les
+          // shared overrides (localStorage) qui changent indépendamment de la source.
+          const shouldForceSourceExercisesRefresh = shouldForceBilanReset(module.id, md);
 
           const hasValidModuleData =
             Array.isArray(md.cours) &&
@@ -2486,9 +2495,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             // Even when fingerprint doesn't match (e.g. source version bumped),
             // admin edits in DB still take priority — merge picks up new source
             // questions while preserving saved edits.
+            const deletedExerciceIdsFromDb = (Array.isArray(latestState.deleted_exercices)
+              ? (latestState.deleted_exercices as any[]).map((e: any) => Number(e?.id)).filter((n) => !Number.isNaN(n))
+              : []);
             const mergedModuleData: ModuleData = {
               ...md,
-              exercices: mergeSourceExercices(md.exercices, initialData.exercices),
+              exercices: mergeSourceExercices(md.exercices, initialData.exercices, deletedExerciceIdsFromDb),
             };
             setModuleData(mergedModuleData);
             setDeletedCours(Array.isArray(latestState.deleted_cours) ? (latestState.deleted_cours as unknown as ContentItem[]) : []);
@@ -2589,9 +2601,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         if (hasValidModuleData) {
           console.log("[Realtime] Refetched module data from DB for module", module.id);
           const sourceModuleData = getInitialModuleData(module, apprenantType, studentOnly);
+          const deletedExoIdsRt = Array.isArray(latest.deleted_exercices)
+            ? (latest.deleted_exercices as any[]).map((e: any) => Number(e?.id)).filter((n) => !Number.isNaN(n))
+            : [];
           setModuleData({
             ...md,
-            exercices: mergeSourceExercices(md.exercices, sourceModuleData.exercices),
+            exercices: mergeSourceExercices(md.exercices, sourceModuleData.exercices, deletedExoIdsRt),
           });
           setDeletedCours(Array.isArray(latest.deleted_cours) ? (latest.deleted_cours as unknown as ContentItem[]) : []);
           setDeletedExercices(Array.isArray(latest.deleted_exercices) ? (latest.deleted_exercices as unknown as ExerciceItem[]) : []);
@@ -2767,9 +2782,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         if (Number(md.id) !== Number(module.id)) return;
 
         const sourceModuleData = getInitialModuleData(module, apprenantType, studentOnly);
+        const deletedExoIdsPoll = Array.isArray(latest.deleted_exercices)
+          ? (latest.deleted_exercices as any[]).map((e: any) => Number(e?.id)).filter((n) => !Number.isNaN(n))
+          : [];
         const merged: ModuleData = {
           ...md,
-          exercices: mergeSourceExercices(md.exercices, sourceModuleData.exercices),
+          exercices: mergeSourceExercices(md.exercices, sourceModuleData.exercices, deletedExoIdsPoll),
         };
 
         // Only update if data actually changed
