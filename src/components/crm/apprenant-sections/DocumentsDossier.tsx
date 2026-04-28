@@ -7,6 +7,7 @@ import { generateReglementInterieurSigne } from "@/lib/pdf/reglement-interieur";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import EmargementsSignesViewer from "@/components/cours-en-ligne/EmargementsSignesViewer";
 
 interface DocumentsDossierProps {
   apprenant: any;
@@ -61,9 +62,15 @@ export function DocumentsDossier({ apprenant }: DocumentsDossierProps) {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          {/* Feuilles d'émargement */}
+          {/* Feuilles d'émargement signées (signatures apprenant) */}
           <div>
-            <h4 className="font-medium mb-3">Feuilles d'émargement</h4>
+            <h4 className="font-medium mb-3">Feuilles d'émargement signées</h4>
+            <EmargementsSignesViewer apprenantId={apprenant.id} completed={true} onComplete={() => {}} />
+          </div>
+
+          {/* Sessions liées */}
+          <div className="pt-4 border-t">
+            <h4 className="font-medium mb-3">Sessions de formation</h4>
             {sessionApprenants.length === 0 ? (
               <p className="text-sm text-muted-foreground">Aucune session associée</p>
             ) : (
