@@ -98,14 +98,20 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                   Signé le {new Date(r.signed_at).toLocaleString("fr-FR")}
                 </span>
               </div>
-              {r.signature_data_url && (
-                <div className="border rounded bg-white p-2 flex items-center justify-center">
+              {r.signature_data_url ? (
+                <div className="border rounded bg-slate-50 p-2 flex items-center justify-center min-h-[140px]">
                   <img
                     src={r.signature_data_url}
                     alt="Signature"
-                    className="max-h-32 object-contain"
+                    style={{ maxHeight: 140, width: "auto", display: "block" }}
+                    className="object-contain"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.opacity = "0.3";
+                    }}
                   />
                 </div>
+              ) : (
+                <div className="text-xs text-muted-foreground italic">Aucune image de signature</div>
               )}
             </Card>
           ))}
