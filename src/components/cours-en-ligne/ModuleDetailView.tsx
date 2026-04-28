@@ -3740,7 +3740,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           (e.questions || []).map(q => {
             const key = `${e.id}-${q.id}`;
             const selected = selectedAnswers[key];
-            const correctLetters = q.choix.filter(c => c.correct).map(c => c.lettre);
+            const correctChoix = q.choix.filter(c => c.correct);
+            const correctLetters = correctChoix.map(c => c.lettre);
+            const correctTexts = correctChoix.map(c => c.texte);
             return {
               exerciceId: e.id,
               exerciceTitre: e.titre,
@@ -3748,6 +3750,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               enonce: q.enonce,
               reponseEleve: selected || null,
               reponseCorrecte: correctLetters.length === 1 ? correctLetters[0] : correctLetters,
+              reponseCorrecteTexte: correctTexts.length === 1 ? correctTexts[0] : correctTexts,
               correct: isAnswerCorrect(selected, q),
             };
           })
