@@ -380,11 +380,18 @@ const ResultatsSessionPage = () => {
     type QStat = {
       questionId: number | string;
       enonce: string;
+      reponseCorrecte: string;
       correct: number;
       incorrect: number;
       total: number;
     };
     const exoMap: Record<string, { titre: string; questions: Record<string, QStat> }> = {};
+
+    const formatReponse = (r: any): string => {
+      if (r == null) return "";
+      if (Array.isArray(r)) return r.join(", ");
+      return String(r);
+    };
 
     for (const a of apprenants) {
       const c = completions.find(x => x.apprenant_id === a.id && x.module_id === moduleId);
@@ -400,10 +407,13 @@ const ResultatsSessionPage = () => {
           exoMap[exoKey].questions[qKey] = {
             questionId: d?.questionId ?? qKey,
             enonce: d?.enonce || `Question ${qKey}`,
+            reponseCorrecte: formatReponse(d?.reponseCorrecte),
             correct: 0,
             incorrect: 0,
             total: 0,
           };
+        } else if (!exoMap[exoKey].questions[qKey].reponseCorrecte && d?.reponseCorrecte) {
+          exoMap[exoKey].questions[qKey].reponseCorrecte = formatReponse(d.reponseCorrecte);
         }
         exoMap[exoKey].questions[qKey].total++;
         if (d?.correct) exoMap[exoKey].questions[qKey].correct++;
