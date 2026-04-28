@@ -84,6 +84,7 @@ const ResultatsSessionPage = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [expandedExam, setExpandedExam] = useState<string | null>(null);
   const [expandedMatiere, setExpandedMatiere] = useState<string | null>(null);
+  const [expandedModule, setExpandedModule] = useState<number | null>(null);
 
   // Load sessions
   useEffect(() => {
