@@ -7,8 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import {
   Loader2, Users, TrendingUp, CheckCircle2, XCircle, BarChart3,
-  BookOpen, FileText, ChevronDown, ChevronRight, Award,
+  BookOpen, FileText, ChevronDown, ChevronRight, Award, Maximize2, Minimize2,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { MODULES_DATA } from "./formations-data";
 
@@ -86,6 +87,16 @@ const ResultatsSessionPage = () => {
   const [expandedExam, setExpandedExam] = useState<string | null>(null);
   const [expandedMatiere, setExpandedMatiere] = useState<string | null>(null);
   const [expandedModule, setExpandedModule] = useState<number | null>(null);
+  const [fullscreen, setFullscreen] = useState(false);
+
+  useEffect(() => {
+    if (fullscreen) {
+      document.body.classList.add("app-fullscreen");
+    } else {
+      document.body.classList.remove("app-fullscreen");
+    }
+    return () => document.body.classList.remove("app-fullscreen");
+  }, [fullscreen]);
 
   // Load sessions
   useEffect(() => {
@@ -489,30 +500,41 @@ const ResultatsSessionPage = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className={fullscreen ? "fixed inset-0 z-50 bg-background overflow-auto p-6 space-y-6" : "space-y-6"}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
         <div>
           <h2 className="text-xl font-bold">Résultats par session</h2>
           <p className="text-sm text-muted-foreground">Analyse détaillée des modules, examens blancs et taux de réussite</p>
         </div>
-        <Select value={selectedSessionId} onValueChange={setSelectedSessionId}>
-          <SelectTrigger className="w-80">
-            <SelectValue placeholder="Sélectionner une session" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="e-learning">🖥️ E-Learning (tous)</SelectItem>
-            {sessions.map(s => {
-              const now = new Date();
-              const isActive = now >= new Date(s.date_debut) && now <= new Date(s.date_fin);
-              return (
-                <SelectItem key={s.id} value={s.id} className={isActive ? "text-red-600 font-bold" : ""}>
-                  {isActive ? "🔴 " : ""}{s.nom || `Session ${s.type_session}`} — {formatDate(s.date_debut)} au {formatDate(s.date_fin)}
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setFullscreen(f => !f)}
+            title={fullscreen ? "Quitter le plein écran" : "Plein écran"}
+          >
+            {fullscreen ? <Minimize2 className="w-4 h-4 mr-2" /> : <Maximize2 className="w-4 h-4 mr-2" />}
+            {fullscreen ? "Réduire" : "Plein écran"}
+          </Button>
+          <Select value={selectedSessionId} onValueChange={setSelectedSessionId}>
+            <SelectTrigger className="w-80">
+              <SelectValue placeholder="Sélectionner une session" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="e-learning">🖥️ E-Learning (tous)</SelectItem>
+              {sessions.map(s => {
+                const now = new Date();
+                const isActive = now >= new Date(s.date_debut) && now <= new Date(s.date_fin);
+                return (
+                  <SelectItem key={s.id} value={s.id} className={isActive ? "text-red-600 font-bold" : ""}>
+                    {isActive ? "🔴 " : ""}{s.nom || `Session ${s.type_session}`} — {formatDate(s.date_debut)} au {formatDate(s.date_fin)}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Session label */}
