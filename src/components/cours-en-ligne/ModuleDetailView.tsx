@@ -85,6 +85,7 @@ import { BILAN_EXAMEN_TA } from "./bilan-examen-ta-data";
 import { EQUIPEMENTS_TAXI_DATA } from "./equipements-taxi-data";
 import CompetencesChecklist from "./CompetencesChecklist";
 import EmargementsSignesViewer from "./EmargementsSignesViewer";
+import FinanceurFCForm from "./FinanceurFCForm";
 import AnalyseBesoinForm from "./AnalyseBesoinForm";
 import ProjetProfessionnelForm from "./ProjetProfessionnelForm";
 import EvaluationAcquisForm from "./EvaluationAcquisForm";
@@ -120,7 +121,7 @@ interface ContentItem {
   fichiers?: { nom: string; url: string }[];
   slidesKey?: string;
   quiz?: InlineQuizQuestion[];
-  checklistType?: "competences" | "analyse-besoin" | "evaluation-acquis" | "satisfaction" | "projet-professionnel" | "cgv" | "cgv-reglement" | "emargements-fc";
+  checklistType?: "competences" | "analyse-besoin" | "evaluation-acquis" | "satisfaction" | "projet-professionnel" | "cgv" | "cgv-reglement" | "emargements-fc" | "financeur-fc";
   formationType?: string;
 }
 
@@ -1295,6 +1296,26 @@ function getInitialModuleDataRaw(
           description: "Historique des signatures matin / après-midi",
           actif: true,
           checklistType: "emargements-fc" as const,
+        },
+      ],
+      exercices: [],
+    };
+  }
+
+  // Informations financeur — Formation Continue VTC (85) / TAXI (86)
+  if (module.id === 85 || module.id === 86) {
+    const isTaxi = module.id === 86;
+    return {
+      id: module.id,
+      nom: `3.INFORMATIONS FINANCEUR${isTaxi ? " TAXI" : " VTC"}`,
+      description: "Renseignez les informations de facturation pour permettre l'émission rapide de votre facture.",
+      cours: [
+        {
+          id: 1,
+          titre: "Informations du financeur (facturation)",
+          description: "Particulier ou professionnel — données pour la facture",
+          actif: true,
+          checklistType: "financeur-fc" as const,
         },
       ],
       exercices: [],
@@ -3849,6 +3870,26 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         return (
           <EmargementsSignesViewer
             apprenantId={apprenantId || undefined}
+            completed={completedPages.has(currentPage)}
+            onComplete={() => {
+              markPageCompleted(currentPage);
+              if (currentPage < totalPages - 1) goToPage(currentPage + 1);
+            }}
+          />
+        );
+      }
+
+      if (cours.checklistType === "financeur-fc") {
+        return (
+          <FinanceurFCForm
+            apprenantId={apprenantId || undefined}
+            apprenantNom={apprenantInfo?.nom}
+            apprenantPrenom={apprenantInfo?.prenom}
+            apprenantEmail={apprenantInfo?.email}
+            apprenantTelephone={apprenantInfo?.telephone}
+            apprenantAdresse={apprenantInfo?.adresse}
+            apprenantCodePostal={apprenantInfo?.code_postal}
+            apprenantVille={apprenantInfo?.ville}
             completed={completedPages.has(currentPage)}
             onComplete={() => {
               markPageCompleted(currentPage);

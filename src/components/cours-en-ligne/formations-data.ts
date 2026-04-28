@@ -394,6 +394,18 @@ export const MODULES_DATA: ModuleInfo[] = [
     description: "Historique des feuilles d'émargement signées — Formation continue TAXI",
     formations: ["continue-taxi"],
   },
+  {
+    id: 85,
+    nom: "3.INFORMATIONS FINANCEUR VTC",
+    description: "Saisie des informations de facturation — Formation continue VTC",
+    formations: ["continue-vtc"],
+  },
+  {
+    id: 86,
+    nom: "3.INFORMATIONS FINANCEUR TAXI",
+    description: "Saisie des informations de facturation — Formation continue TAXI",
+    formations: ["continue-taxi"],
+  },
 ];
 
 // Expansion des modules_autorises :
