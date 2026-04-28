@@ -375,6 +375,52 @@ const ResultatsSessionPage = () => {
       .map(([id, data]) => ({ questionId: Number(id), ...data }));
   };
 
+  // Per-question stats (failure rate) for a given module, grouped by exercise
+  const getModuleQuestionStats = (moduleId: number) => {
+    type QStat = {
+      questionId: number | string;
+      enonce: string;
+      correct: number;
+      incorrect: number;
+      total: number;
+    };
+    const exoMap: Record<string, { titre: string; questions: Record<string, QStat> }> = {};
+
+    for (const a of apprenants) {
+      const c = completions.find(x => x.apprenant_id === a.id && x.module_id === moduleId);
+      const details = Array.isArray(c?.details) ? c!.details! : [];
+      for (const d of details) {
+        const exoKey = String(d?.exerciceId ?? d?.exerciceTitre ?? "exo");
+        const exoTitre = d?.exerciceTitre || `Exercice ${d?.exerciceId ?? ""}`;
+        if (!exoMap[exoKey]) exoMap[exoKey] = { titre: exoTitre, questions: {} };
+
+        const qKey = String(d?.questionId ?? "");
+        if (!qKey) continue;
+        if (!exoMap[exoKey].questions[qKey]) {
+          exoMap[exoKey].questions[qKey] = {
+            questionId: d?.questionId ?? qKey,
+            enonce: d?.enonce || `Question ${qKey}`,
+            correct: 0,
+            incorrect: 0,
+            total: 0,
+          };
+        }
+        exoMap[exoKey].questions[qKey].total++;
+        if (d?.correct) exoMap[exoKey].questions[qKey].correct++;
+        else exoMap[exoKey].questions[qKey].incorrect++;
+      }
+    }
+
+    return Object.entries(exoMap)
+      .map(([key, exo]) => ({
+        exoKey: key,
+        titre: exo.titre,
+        questions: Object.values(exo.questions).sort((a, b) => Number(a.questionId) - Number(b.questionId)),
+      }))
+      .filter(e => e.questions.length > 0)
+      .sort((a, b) => a.titre.localeCompare(b.titre));
+  };
+
   // Module pass/fail global
   const globalModuleStats = useMemo(() => {
     let pass = 0, fail = 0;
