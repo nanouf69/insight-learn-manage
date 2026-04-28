@@ -256,14 +256,26 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <FileSignature className="h-6 w-6 text-primary" />
-        <div>
-          <h2 className="text-xl font-bold">Mes feuilles d'émargement signées</h2>
-          <p className="text-xs text-muted-foreground">
-            Regroupées par journée — matin et après-midi sur la même feuille.
-          </p>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <FileSignature className="h-6 w-6 text-primary" />
+          <div>
+            <h2 className="text-xl font-bold">Mes feuilles d'émargement signées</h2>
+            <p className="text-xs text-muted-foreground">
+              Regroupées par journée — matin et après-midi sur la même feuille.
+            </p>
+          </div>
         </div>
+        {groupedByDay.length > 0 && (
+          <Button
+            size="sm"
+            onClick={() => downloadAllJournees(groupedByDay, apprenant)}
+            className="bg-[#6b7fc7] hover:bg-[#5a6fb8] text-white"
+          >
+            <Download className="h-4 w-4 mr-1" />
+            Télécharger la feuille complète
+          </Button>
+        )}
       </div>
 
       {/* Carte coordonnées stagiaire */}
