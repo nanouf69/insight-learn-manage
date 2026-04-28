@@ -27,11 +27,22 @@ interface ApprenantRow {
   formation_choisie: string | null;
 }
 
+interface ModuleQuestionDetail {
+  questionId?: number | string;
+  exerciceId?: number | string;
+  exerciceTitre?: string;
+  enonce?: string;
+  correct?: boolean;
+  reponseEleve?: string | string[];
+  reponseCorrecte?: string | string[];
+}
+
 interface CompletionRow {
   apprenant_id: string;
   module_id: number;
   score_obtenu: number | null;
   score_max: number | null;
+  details: ModuleQuestionDetail[] | null;
 }
 
 interface QuestionDetail {
