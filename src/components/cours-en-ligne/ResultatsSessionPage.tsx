@@ -500,30 +500,41 @@ const ResultatsSessionPage = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className={fullscreen ? "fixed inset-0 z-50 bg-background overflow-auto p-6 space-y-6" : "space-y-6"}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
         <div>
           <h2 className="text-xl font-bold">Résultats par session</h2>
           <p className="text-sm text-muted-foreground">Analyse détaillée des modules, examens blancs et taux de réussite</p>
         </div>
-        <Select value={selectedSessionId} onValueChange={setSelectedSessionId}>
-          <SelectTrigger className="w-80">
-            <SelectValue placeholder="Sélectionner une session" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="e-learning">🖥️ E-Learning (tous)</SelectItem>
-            {sessions.map(s => {
-              const now = new Date();
-              const isActive = now >= new Date(s.date_debut) && now <= new Date(s.date_fin);
-              return (
-                <SelectItem key={s.id} value={s.id} className={isActive ? "text-red-600 font-bold" : ""}>
-                  {isActive ? "🔴 " : ""}{s.nom || `Session ${s.type_session}`} — {formatDate(s.date_debut)} au {formatDate(s.date_fin)}
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setFullscreen(f => !f)}
+            title={fullscreen ? "Quitter le plein écran" : "Plein écran"}
+          >
+            {fullscreen ? <Minimize2 className="w-4 h-4 mr-2" /> : <Maximize2 className="w-4 h-4 mr-2" />}
+            {fullscreen ? "Réduire" : "Plein écran"}
+          </Button>
+          <Select value={selectedSessionId} onValueChange={setSelectedSessionId}>
+            <SelectTrigger className="w-80">
+              <SelectValue placeholder="Sélectionner une session" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="e-learning">🖥️ E-Learning (tous)</SelectItem>
+              {sessions.map(s => {
+                const now = new Date();
+                const isActive = now >= new Date(s.date_debut) && now <= new Date(s.date_fin);
+                return (
+                  <SelectItem key={s.id} value={s.id} className={isActive ? "text-red-600 font-bold" : ""}>
+                    {isActive ? "🔴 " : ""}{s.nom || `Session ${s.type_session}`} — {formatDate(s.date_debut)} au {formatDate(s.date_fin)}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Session label */}
