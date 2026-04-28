@@ -148,13 +148,69 @@ export function DocumentsCompletes({ apprenant }: Props) {
   const { data: documents, isLoading } = useQuery({
     queryKey: ["apprenant-documents-completes", apprenant.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("apprenant_documents_completes" as any)
-        .select("*")
-        .eq("apprenant_id", apprenant.id)
-        .order("completed_at", { ascending: false });
-      if (error) throw error;
-      return data as any[];
+      const [docsRes, devisRes, emargRes] = await Promise.all([
+        supabase
+          .from("apprenant_documents_completes" as any)
+          .select("*")
+          .eq("apprenant_id", apprenant.id)
+          .order("completed_at", { ascending: false }),
+        supabase
+          .from("devis_envois" as any)
+          .select("*")
+          .eq("apprenant_id", apprenant.id)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("emargements_fc" as any)
+          .select("*")
+          .eq("apprenant_id", apprenant.id)
+          .order("signed_at", { ascending: false }),
+      ]);
+
+      if (docsRes.error) throw docsRes.error;
+
+      const baseDocs = ((docsRes.data as any[]) || []).map((d) => ({
+        id: d.id,
+        type_document: d.type_document,
+        titre: d.titre,
+        donnees: d.donnees,
+        completed_at: d.completed_at,
+      }));
+
+      const devisDocs = ((devisRes.data as any[]) || []).map((d) => {
+        const isSigned = !!d.devis_signe_url;
+        return {
+          id: `devis-envoi-${d.id}`,
+          type_document: "devis-envoi",
+          titre: `Devis ${d.modele || ""}${d.formation ? ` — ${d.formation}` : ""}${isSigned ? " (signé)" : " (envoyé)"}`,
+          donnees: {
+            modele: d.modele,
+            formation: d.formation,
+            montant: d.montant,
+            statut: isSigned ? "Signé" : (d.statut || "Envoyé"),
+            fichier_url: d.fichier_url,
+            devis_signe_url: d.devis_signe_url,
+            signed_at: d.signed_at,
+          },
+          completed_at: d.signed_at || d.created_at,
+        };
+      });
+
+      const emargDocs = ((emargRes.data as any[]) || []).map((e) => ({
+        id: `emarg-${e.id}`,
+        type_document: "emargement-fc",
+        titre: `Émargement — ${e.date_emargement} (${e.demi_journee})`,
+        donnees: {
+          date_emargement: e.date_emargement,
+          demi_journee: e.demi_journee,
+          signed_at: e.signed_at,
+          signature: e.signature_data_url,
+        },
+        completed_at: e.signed_at,
+      }));
+
+      const all = [...baseDocs, ...devisDocs, ...emargDocs];
+      all.sort((a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime());
+      return all;
     },
   });
 
