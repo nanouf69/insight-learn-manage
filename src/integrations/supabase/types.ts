@@ -1116,6 +1116,78 @@ export type Database = {
           },
         ]
       }
+      financeurs_fc: {
+        Row: {
+          adresse: string | null
+          apprenant_id: string
+          code_postal: string | null
+          contact_email: string | null
+          contact_nom: string | null
+          contact_telephone: string | null
+          created_at: string
+          email_facturation: string | null
+          id: string
+          notes: string | null
+          numero_dossier: string | null
+          numero_tva: string | null
+          organisme_financeur: string | null
+          pays: string | null
+          raison_sociale: string | null
+          siren: string | null
+          siret: string | null
+          type_financeur: string
+          updated_at: string
+          user_id: string
+          ville: string | null
+        }
+        Insert: {
+          adresse?: string | null
+          apprenant_id: string
+          code_postal?: string | null
+          contact_email?: string | null
+          contact_nom?: string | null
+          contact_telephone?: string | null
+          created_at?: string
+          email_facturation?: string | null
+          id?: string
+          notes?: string | null
+          numero_dossier?: string | null
+          numero_tva?: string | null
+          organisme_financeur?: string | null
+          pays?: string | null
+          raison_sociale?: string | null
+          siren?: string | null
+          siret?: string | null
+          type_financeur?: string
+          updated_at?: string
+          user_id: string
+          ville?: string | null
+        }
+        Update: {
+          adresse?: string | null
+          apprenant_id?: string
+          code_postal?: string | null
+          contact_email?: string | null
+          contact_nom?: string | null
+          contact_telephone?: string | null
+          created_at?: string
+          email_facturation?: string | null
+          id?: string
+          notes?: string | null
+          numero_dossier?: string | null
+          numero_tva?: string | null
+          organisme_financeur?: string | null
+          pays?: string | null
+          raison_sociale?: string | null
+          siren?: string | null
+          siret?: string | null
+          type_financeur?: string
+          updated_at?: string
+          user_id?: string
+          ville?: string | null
+        }
+        Relationships: []
+      }
       formateurs: {
         Row: {
           adresse: string | null
