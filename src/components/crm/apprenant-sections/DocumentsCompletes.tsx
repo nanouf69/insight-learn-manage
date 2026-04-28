@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText, Download, Eye, ChevronDown, ChevronUp, FileDown } from "lucide-react";
+import { FileText, Download, Eye, ChevronDown, ChevronUp, FileDown, ExternalLink } from "lucide-react";
 import { generateDocumentIndividuelPdf } from "@/lib/pdf/document-individuel";
 import { useState } from "react";
 import { format } from "date-fns";
@@ -121,6 +121,9 @@ const FIELD_LABELS: Record<string, string> = {
   financeur_email: 'Email du financeur',
   financeur_telephone: 'Téléphone du financeur',
   signed_at: 'Date de signature',
+  devis_signe_url: 'Devis signé',
+  fichier_url: 'Fichier signé',
+  statut: 'Statut',
 };
 
 function getLabel(key: string): string {
@@ -288,6 +291,19 @@ export function DocumentsCompletes({ apprenant }: Props) {
             );
           }
           if (value === null || value === undefined || value === "") return null;
+          if ((key === "devis_signe_url" || key === "fichier_url") && typeof value === "string") {
+            return (
+              <div key={key} className="flex items-center gap-2 pl-3">
+                <span className="font-medium text-muted-foreground shrink-0">{getLabel(key)} :</span>
+                <Button variant="outline" size="sm" asChild className="h-8 gap-1">
+                  <a href={value} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    Ouvrir / télécharger
+                  </a>
+                </Button>
+              </div>
+            );
+          }
           if (typeof value === 'boolean') {
             return (
               <div key={key} className="flex gap-2 pl-3">
