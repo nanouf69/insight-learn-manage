@@ -272,6 +272,9 @@ export default function InscriptionFormationContinue() {
           date_inscription: new Date().toLocaleDateString("fr-FR"),
           signature,
           signed_at: new Date().toISOString(),
+          cgv_accepted: "Oui",
+          cgv_accepted_at: new Date().toISOString(),
+          cgv_version: "CGV Ftransport - 2026",
         };
         if (hasFinanceur) {
           devisDonnees.financeur_siren = financeurSiren.trim();
