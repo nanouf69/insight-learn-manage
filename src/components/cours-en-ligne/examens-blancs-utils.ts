@@ -589,10 +589,15 @@ interface MergeExerciceBase {
 export function mergeSourceExercices<T extends MergeExerciceBase>(
   loadedExercices: T[],
   sourceExercices: T[],
+  deletedExerciceIds?: number[],
 ): T[] {
   const loadedExerciseMap = new Map(loadedExercices.map((exo) => [Number(exo.id), exo]));
+  const sourceExerciseIds = new Set(sourceExercices.map((exo) => Number(exo.id)));
+  const deletedSet = new Set((deletedExerciceIds ?? []).map(Number));
 
-  return sourceExercices.map((sourceExo) => {
+  const mergedFromSource = sourceExercices
+    .filter((sourceExo) => !deletedSet.has(Number(sourceExo.id)))
+    .map((sourceExo) => {
     const loadedExo = loadedExerciseMap.get(Number(sourceExo.id));
     if (!loadedExo) return sourceExo;
 
@@ -631,12 +636,27 @@ export function mergeSourceExercices<T extends MergeExerciceBase>(
       };
     });
 
+    // Préserver les questions ajoutées par l'admin (IDs présents dans loaded mais pas dans source)
+    const sourceQuestionIds = new Set(sourceExo.questions.map((q) => Number(q.id)));
+    const adminAddedQuestions = loadedExo.questions.filter(
+      (loadedQ) => !sourceQuestionIds.has(Number(loadedQ.id)) && !deletedIds.has(Number(loadedQ.id)),
+    );
+
     return {
       ...sourceExo,
       ...loadedExo,
-      questions: mergedQuestions,
+      questions: [...mergedQuestions, ...adminAddedQuestions],
     } as T;
   });
+
+  // Préserver les exercices ajoutés par l'admin (IDs présents dans loaded mais pas dans source)
+  // Filtrer aussi ceux qui ont été supprimés
+  const adminAddedExercices = loadedExercices.filter(
+    (loadedExo) =>
+      !sourceExerciseIds.has(Number(loadedExo.id)) && !deletedSet.has(Number(loadedExo.id)),
+  );
+
+  return [...mergedFromSource, ...adminAddedExercices];
 }
 
 // ────────────────────────────────────────────────────────────
