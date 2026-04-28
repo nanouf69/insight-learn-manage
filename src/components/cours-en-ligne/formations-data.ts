@@ -10,6 +10,7 @@ export const FORMATIONS = [
   { id: "taxi-pour-vtc-elearning", label: "Formation TAXI pour VTC E-learning" },
   { id: "vtc-cours-du-soir", label: "Formation VTC cours du soir" },
   { id: "continue-vtc", label: "Formation continue VTC" },
+  { id: "continue-taxi", label: "Formation continue TAXI" },
 ] as const;
 
 export type FormationId = (typeof FORMATIONS)[number]["id"];
@@ -23,7 +24,7 @@ export interface ModuleInfo {
 
 const VTC_FORMATIONS: FormationId[] = ["vtc", "vtc-pour-taxi", "vtc-elearning", "vtc-cours-du-soir"];
 const TAXI_FORMATIONS: FormationId[] = ["taxi", "taxi-pour-vtc", "taxi-elearning", "taxi-pour-vtc-elearning"];
-const ALL_FORMATIONS: FormationId[] = ["vtc", "taxi", "taxi-pour-vtc", "vtc-pour-taxi", "vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning", "vtc-cours-du-soir", "continue-vtc"];
+const ALL_FORMATIONS: FormationId[] = ["vtc", "taxi", "taxi-pour-vtc", "vtc-pour-taxi", "vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning", "vtc-cours-du-soir", "continue-vtc", "continue-taxi"];
 const PRESENTIEL_FORMATIONS: FormationId[] = ["vtc", "taxi", "taxi-pour-vtc", "vtc-pour-taxi", "vtc-cours-du-soir"];
 const ELEARNING_FORMATIONS: FormationId[] = ["vtc-elearning", "taxi-elearning", "taxi-pour-vtc-elearning"];
 
@@ -374,6 +375,12 @@ export const MODULES_DATA: ModuleInfo[] = [
     nom: "1.BILAN EXERCICES FORMATION CONTINUE VTC",
     description: "Bilan exercices VTC sans Gestion — Formation continue",
     formations: ["continue-vtc"],
+  },
+  {
+    id: 82,
+    nom: "1.BILAN EXERCICES FORMATION CONTINUE TAXI",
+    description: "Bilan exercices TAXI sans Gestion — Formation continue",
+    formations: ["continue-taxi"],
   },
 ];
 

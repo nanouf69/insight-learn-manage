@@ -77,6 +77,7 @@ import { BILAN_EXERCICES_TAXI } from "./bilan-exercices-taxi-data";
 import { BILAN_EXERCICES_TA } from "./bilan-exercices-ta-data";
 import { BILAN_EXERCICES_VA } from "./bilan-exercices-va-data";
 import { BILAN_EXERCICES_FC_VTC } from "./bilan-exercices-fc-vtc-data";
+import { BILAN_EXERCICES_FC_TAXI } from "./bilan-exercices-fc-taxi-data";
 import { BILAN_EXAMEN_VTC } from "./bilan-examen-vtc-data";
 import { BILAN_EXAMEN_TAXI } from "./bilan-examen-taxi-data";
 import { BILAN_EXAMEN_VA } from "./bilan-examen-va-data";
@@ -1268,6 +1269,17 @@ function getInitialModuleDataRaw(
     };
   }
 
+  // Bilan Exercices Formation Continue TAXI (module 82) — sans Gestion
+  if (module.id === 82) {
+    return {
+      id: 82,
+      nom: "1.BILAN EXERCICES FORMATION CONTINUE TAXI",
+      description: "Tous les exercices regroupés par matière (sans Gestion). Refaites-les autant de fois que nécessaire.",
+      cours: [],
+      exercices: JSON.parse(JSON.stringify(BILAN_EXERCICES_FC_TAXI)),
+    };
+  }
+
   // Bilan Exercices TAXI (module 9) — toutes les matières
   if (module.id === 9) {
     return {
@@ -2109,7 +2121,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     source_fingerprint: string;
   } | null>(null);
 
-  const GENERATED_BILAN_MODULE_IDS = new Set([4, 9, 27, 29, 81]);
+  const GENERATED_BILAN_MODULE_IDS = new Set([4, 9, 27, 29, 81, 82]);
 
   const hasDuplicateGeneratedBilanQuestions = (data: ModuleData | null | undefined) => {
     if (!data || !GENERATED_BILAN_MODULE_IDS.has(Number(data.id))) return false;
