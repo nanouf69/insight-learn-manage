@@ -3091,7 +3091,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     // Always allow multiple answers (checkboxes) for all questions
     const isMultiAnswer = (_q: { choix: { correct?: boolean }[] }) => true;
 
-    const getQuestionChoices = (q: { choix?: { lettre: string; correct?: boolean }[] } | null | undefined) =>
+    const getQuestionChoices = (q: { choix?: { lettre: string; texte?: string; correct?: boolean }[] } | null | undefined) =>
       Array.isArray(q?.choix) ? q.choix : [];
 
     // Helper: check if answer is correct (works for single and multi)
