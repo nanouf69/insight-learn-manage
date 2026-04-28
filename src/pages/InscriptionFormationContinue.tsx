@@ -58,7 +58,8 @@ export default function InscriptionFormationContinue() {
   const [financeurEmail, setFinanceurEmail] = useState("");
   const [financeurTelephone, setFinanceurTelephone] = useState("");
   const [signature, setSignature] = useState("");
-  
+  const [cgvAccepted, setCgvAccepted] = useState(false);
+
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
