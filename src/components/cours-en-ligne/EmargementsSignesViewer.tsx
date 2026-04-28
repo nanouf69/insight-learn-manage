@@ -140,10 +140,16 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                   <p className="font-semibold capitalize">{formatDateFR(r.date_emargement)}</p>
                   <p className="text-sm text-muted-foreground">{labelDemi(r.demi_journee)}</p>
                 </div>
-                <span className="inline-flex items-center gap-1 text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded">
-                  <CheckCircle2 className="h-3 w-3" />
-                  Signé le {new Date(r.signed_at).toLocaleString("fr-FR")}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1 text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Signé le {new Date(r.signed_at).toLocaleString("fr-FR")}
+                  </span>
+                  <Button size="sm" variant="outline" onClick={() => downloadEmargement(r)}>
+                    <Download className="h-4 w-4 mr-1" />
+                    Télécharger
+                  </Button>
+                </div>
               </div>
               {r.signature_data_url ? (
                 <div className="border rounded bg-slate-50 p-2 flex items-center justify-center min-h-[140px]">
