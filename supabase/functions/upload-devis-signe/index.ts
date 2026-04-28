@@ -115,10 +115,12 @@ Deno.serve(async (req) => {
       .select("id, donnees")
       .eq("apprenant_id", devis.apprenant_id)
       .eq("type_document", "devis-formation-continue")
+      .order("completed_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
 
     if (existingSignedDocument) {
-      await supabase
+      const { error: formUpdateError } = await supabase
         .from("apprenant_documents_completes")
         .update({
           titre: `Devis signé — ${signedDocumentData.formation}`,
@@ -130,14 +132,16 @@ Deno.serve(async (req) => {
           updated_at: signedDocumentData.signed_at,
         })
         .eq("id", existingSignedDocument.id);
+      if (formUpdateError) console.error("CRM form update error:", formUpdateError);
     } else {
-      await supabase.from("apprenant_documents_completes").insert({
+      const { error: formInsertError } = await supabase.from("apprenant_documents_completes").insert({
         apprenant_id: devis.apprenant_id,
         user_id: apprenant?.auth_user_id || "00000000-0000-0000-0000-000000000000",
         type_document: "devis-formation-continue",
         titre: `Devis signé — ${signedDocumentData.formation}`,
         donnees: signedDocumentData,
       });
+      if (formInsertError) console.error("CRM form insert error:", formInsertError);
     }
 
     // Create system alert for admin
