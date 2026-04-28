@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { filterFutureByFin } from "@/lib/filterPastDates";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { savePublicFormDocument } from "@/lib/savePublicFormDocument";
 import { CheckCircle, FileText, AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -285,17 +286,17 @@ export default function InscriptionFormationContinue() {
           email: financeurEmail.trim(),
           telephone: financeurTelephone.trim(),
         } : undefined;
-        await supabase.functions.invoke("save-public-form", {
-          body: {
-            apprenantId: apprenant.id,
-            typeDocument: "devis-formation-continue",
-            titre: `Devis ${details.label} — ${selectedDateObj?.label || dateFormation}`,
-            donnees: devisDonnees,
-            financeur: financeurPayload,
-          },
+        const saved = await savePublicFormDocument({
+          apprenantId: apprenant.id,
+          typeDocument: "devis-formation-continue",
+          titre: `Devis ${details.label} — ${selectedDateObj?.label || dateFormation}`,
+          donnees: devisDonnees,
+          financeur: financeurPayload,
         });
+        if (!saved) throw new Error("Le devis n'a pas été enregistré dans les formulaires CRM");
       } catch (e) {
         console.warn("Sauvegarde devis FC dans formulaires échouée:", e);
+        throw e;
       }
 
       console.log("✅ Inscription réussie:", { apprenantId: apprenant.id, sessionId, linkId: verifyLink.id, placesRestantes: Math.max(0, MAX_PLACES - (updatedCount ?? 0)) });
