@@ -702,6 +702,49 @@ function PassageMatiere({
       {showCalculator && (
         <CalculatriceExamen onClose={() => setShowCalculator(false)} />
       )}
+      </div>
+
+      {/* Sidebar verticale des questions */}
+      <aside className="hidden lg:block">
+        <div className="sticky top-4 rounded-lg border bg-card p-2 max-h-[calc(100vh-2rem)] overflow-y-auto">
+          <div className="text-[10px] font-semibold text-muted-foreground text-center mb-2 uppercase tracking-wide">
+            Questions
+          </div>
+          <div className="grid grid-cols-2 gap-1.5">
+            {questionsSafe.map((q, i) => {
+              if (!q) return null;
+              const isAnswered = isQuestionAnswered(q);
+              const isCurrent = i === safeQuestionIndex;
+              return (
+                <button
+                  key={q.id ?? i}
+                  onClick={() => setQuestionIndex(i)}
+                  className={`w-9 h-9 rounded text-xs font-semibold transition-colors ${
+                    isCurrent
+                      ? "bg-primary text-primary-foreground ring-2 ring-primary/50"
+                      : isAnswered
+                        ? "bg-green-100 text-green-700 border border-green-300 hover:bg-green-200"
+                        : "bg-red-50 text-red-500 border border-red-300 hover:bg-red-100"
+                  }`}
+                  title={isAnswered ? `Q${i + 1} — répondue ✓` : `Q${i + 1} — non répondue ✗`}
+                >
+                  {i + 1}
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-3 space-y-1 text-[10px] text-muted-foreground border-t pt-2">
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded bg-green-100 border border-green-300" />
+              <span>Répondu</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded bg-red-50 border border-red-300" />
+              <span>À faire</span>
+            </div>
+          </div>
+        </div>
+      </aside>
     </div>
   );
 }
