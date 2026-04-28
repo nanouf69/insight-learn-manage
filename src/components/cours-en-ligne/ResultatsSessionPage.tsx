@@ -87,6 +87,16 @@ const ResultatsSessionPage = () => {
   const [expandedExam, setExpandedExam] = useState<string | null>(null);
   const [expandedMatiere, setExpandedMatiere] = useState<string | null>(null);
   const [expandedModule, setExpandedModule] = useState<number | null>(null);
+  const [fullscreen, setFullscreen] = useState(false);
+
+  useEffect(() => {
+    if (fullscreen) {
+      document.body.classList.add("app-fullscreen");
+    } else {
+      document.body.classList.remove("app-fullscreen");
+    }
+    return () => document.body.classList.remove("app-fullscreen");
+  }, [fullscreen]);
 
   // Load sessions
   useEffect(() => {
