@@ -10,7 +10,7 @@ const COMPANY_INFO = {
   telephone: '04 28 29 60 91',
   email: 'contact@ftransport.fr',
   siren: '823 461 561',
-  agrement: 'VTC-69-16-005',
+  agrement: '69-16-15',
 };
 
 interface AttestationFCData {
@@ -59,7 +59,7 @@ export async function generateAttestationFCVTC(data: AttestationFCData, options?
 
   // === TITRE ===
   const formation = data.formation || 'VTC';
-  const agrement = formation === 'TAXI' ? 'TAXI-69-16-005' : COMPANY_INFO.agrement;
+  const agrement = formation === 'TAXI' ? '69-18-001' : COMPANY_INFO.agrement;
   let y = 36;
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
