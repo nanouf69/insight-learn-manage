@@ -60,6 +60,9 @@ const FIELD_LABELS: Record<string, string> = {
   cgv_accepted: 'CGV acceptees', ri_accepted: 'Reglement interieur accepte',
   accepted: 'Accepte', accepted_at: 'Date acceptation',
   signed_at: 'Date de signature', formationLabel: 'Formation',
+  type_formation: 'Type de formation', prix: 'Prix', duree: 'Duree',
+  date_formation: 'Date de formation', date_inscription: "Date d'inscription",
+  mode_financement: 'Mode de financement', code_postal: 'Code postal',
   // Pre-information publique - Analyse du besoin
   situation_actuelle: 'Quelle est votre situation actuelle ?',
   niveau_etude: "Quel est votre niveau d'etudes ?",
@@ -402,7 +405,7 @@ function renderDocContent(doc: jsPDF, typeDocument: string, donnees: any, y: num
 }
 
 function renderGenericContent(doc: jsPDF, donnees: any, y: number, margin: number, pw: number): number {
-  const SKIP = new Set(['id', 'apprenant_id', 'user_id', 'module_id', 'created_at', 'updated_at', 'signature', 'signatureResponsable']);
+  const SKIP = new Set(['id', 'apprenant_id', 'user_id', 'module_id', 'created_at', 'updated_at', 'signature', 'signatureResponsable', 'signed_at']);
 
   if (Array.isArray(donnees)) {
     for (const item of donnees) {
