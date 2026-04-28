@@ -3859,6 +3859,26 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         );
       }
 
+      if (cours.checklistType === "financeur-fc") {
+        return (
+          <FinanceurFCForm
+            apprenantId={apprenantId || undefined}
+            apprenantNom={apprenantInfo?.nom}
+            apprenantPrenom={apprenantInfo?.prenom}
+            apprenantEmail={apprenantInfo?.email}
+            apprenantTelephone={apprenantInfo?.telephone}
+            apprenantAdresse={apprenantInfo?.adresse}
+            apprenantCodePostal={apprenantInfo?.code_postal}
+            apprenantVille={apprenantInfo?.ville}
+            completed={completedPages.has(currentPage)}
+            onComplete={() => {
+              markPageCompleted(currentPage);
+              if (currentPage < totalPages - 1) goToPage(currentPage + 1);
+            }}
+          />
+        );
+      }
+
       if (cours.checklistType === "analyse-besoin") {
         return (
           <AnalyseBesoinForm
