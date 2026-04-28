@@ -1302,6 +1302,26 @@ function getInitialModuleDataRaw(
     };
   }
 
+  // Informations financeur — Formation Continue VTC (85) / TAXI (86)
+  if (module.id === 85 || module.id === 86) {
+    const isTaxi = module.id === 86;
+    return {
+      id: module.id,
+      nom: `3.INFORMATIONS FINANCEUR${isTaxi ? " TAXI" : " VTC"}`,
+      description: "Renseignez les informations de facturation pour permettre l'émission rapide de votre facture.",
+      cours: [
+        {
+          id: 1,
+          titre: "Informations du financeur (facturation)",
+          description: "Particulier ou professionnel — données pour la facture",
+          actif: true,
+          checklistType: "financeur-fc" as const,
+        },
+      ],
+      exercices: [],
+    };
+  }
+
   // Bilan Exercices TAXI (module 9) — toutes les matières
   if (module.id === 9) {
     return {
