@@ -532,9 +532,33 @@ export default function InscriptionFormationContinue() {
             </div>
 
             <div className="space-y-3">
+              <h3 className="font-semibold border-b pb-2">Conditions générales de vente <span className="text-red-500">*</span></h3>
+              <div className="flex items-start gap-3 p-3 rounded-lg border bg-muted/40">
+                <Checkbox
+                  id="cgv-fc"
+                  checked={cgvAccepted}
+                  onCheckedChange={(v) => setCgvAccepted(v === true)}
+                  className="mt-1"
+                />
+                <Label htmlFor="cgv-fc" className="text-sm leading-relaxed cursor-pointer">
+                  Je reconnais avoir pris connaissance et accepté les{" "}
+                  <a
+                    href="/cgv-ftransport.pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline text-primary"
+                  >
+                    Conditions Générales de Vente
+                  </a>{" "}
+                  de Ftransport. Mon acceptation sera enregistrée et signée électroniquement avec ma signature ci-dessous.
+                </Label>
+              </div>
+            </div>
+
+            <div className="space-y-3">
               <h3 className="font-semibold border-b pb-2">Signature du stagiaire <span className="text-red-500">*</span></h3>
               <p className="text-sm text-muted-foreground">
-                La signature est obligatoire pour valider le devis et l'inscription.
+                La signature est obligatoire pour valider le devis, l'inscription et l'acceptation des CGV.
               </p>
               <SignaturePad value={signature} onChange={setSignature} />
             </div>
