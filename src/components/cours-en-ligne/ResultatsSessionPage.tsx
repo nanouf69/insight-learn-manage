@@ -380,11 +380,18 @@ const ResultatsSessionPage = () => {
     type QStat = {
       questionId: number | string;
       enonce: string;
+      reponseCorrecte: string;
       correct: number;
       incorrect: number;
       total: number;
     };
     const exoMap: Record<string, { titre: string; questions: Record<string, QStat> }> = {};
+
+    const formatReponse = (r: any): string => {
+      if (r == null) return "";
+      if (Array.isArray(r)) return r.join(", ");
+      return String(r);
+    };
 
     for (const a of apprenants) {
       const c = completions.find(x => x.apprenant_id === a.id && x.module_id === moduleId);
@@ -400,10 +407,13 @@ const ResultatsSessionPage = () => {
           exoMap[exoKey].questions[qKey] = {
             questionId: d?.questionId ?? qKey,
             enonce: d?.enonce || `Question ${qKey}`,
+            reponseCorrecte: formatReponse(d?.reponseCorrecte),
             correct: 0,
             incorrect: 0,
             total: 0,
           };
+        } else if (!exoMap[exoKey].questions[qKey].reponseCorrecte && d?.reponseCorrecte) {
+          exoMap[exoKey].questions[qKey].reponseCorrecte = formatReponse(d.reponseCorrecte);
         }
         exoMap[exoKey].questions[qKey].total++;
         if (d?.correct) exoMap[exoKey].questions[qKey].correct++;
@@ -796,7 +806,14 @@ const ResultatsSessionPage = () => {
                                           <div key={String(q.questionId)} className="space-y-1">
                                             <div className="flex items-start gap-2">
                                               <span className="text-xs font-bold text-muted-foreground w-8 shrink-0">Q{q.questionId}</span>
-                                              <p className="text-xs flex-1 leading-snug">{q.enonce}</p>
+                                              <p className="text-xs flex-1 leading-snug">
+                                                {q.enonce}
+                                                {q.reponseCorrecte && (
+                                                  <span className="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold text-[11px] align-middle">
+                                                    ✓ Bonne réponse : {q.reponseCorrecte}
+                                                  </span>
+                                                )}
+                                              </p>
                                               <div className="flex items-center gap-2 shrink-0 justify-end">
                                                 <span className="text-xs text-emerald-600 font-semibold">{q.correct} ✓</span>
                                                 <span className="text-xs text-destructive font-semibold">{q.incorrect} ✗</span>
