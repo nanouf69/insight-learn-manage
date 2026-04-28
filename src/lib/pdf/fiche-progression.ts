@@ -126,7 +126,7 @@ export function generateFicheProgression(data: FicheProgressionData) {
     y += 12;
 
     const tableBody = mod.lignes.map(l => {
-      const typeIcon = l.type === 'cours' ? '📖 Cours' : l.type === 'examen' ? '📝 Examen' : '📝 Quiz';
+      const typeIcon = l.type === 'cours' ? 'Cours' : l.type === 'examen' ? 'Examen' : 'Quiz';
       return [
         typeIcon,
         l.label,
