@@ -1044,22 +1044,12 @@ function RevisionFausses({
           if (saved.answers && typeof saved.answers === "object") {
             setReponses(saved.answers);
           }
-          if (typeof saved.currentIndex === "number" && saved.currentIndex >= 0 && saved.currentIndex < wrongQuestions.length) {
-            setCurrentIndex(saved.currentIndex);
-          }
           if (typeof saved.correctedCount === "number") {
             setCorrectedCount(saved.correctedCount);
           }
-          // If the saved question was already corrected (showCorrection), restore that state
-          if (saved.correctedQuestions && Array.isArray(saved.correctedQuestions)) {
-            const idx = typeof saved.currentIndex === "number" ? saved.currentIndex : 0;
-            if (idx < wrongQuestions.length) {
-              const qId = wrongQuestions[idx]?.question?.id;
-              if (qId && saved.correctedQuestions.includes(qId)) {
-                setShowCorrection(true);
-              }
-            }
-          }
+          // Toujours repartir de la 1ère question lors d'un "Refaire les fausses"
+          setCurrentIndex(0);
+          setShowCorrection(false);
         }
       } catch (err) {
         console.error("Erreur chargement révision:", err);
