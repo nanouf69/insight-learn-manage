@@ -376,6 +376,12 @@ export const MODULES_DATA: ModuleInfo[] = [
     description: "Bilan exercices VTC sans Gestion — Formation continue",
     formations: ["continue-vtc"],
   },
+  {
+    id: 82,
+    nom: "1.BILAN EXERCICES FORMATION CONTINUE TAXI",
+    description: "Bilan exercices TAXI sans Gestion — Formation continue",
+    formations: ["continue-taxi"],
+  },
 ];
 
 // Expansion des modules_autorises :
