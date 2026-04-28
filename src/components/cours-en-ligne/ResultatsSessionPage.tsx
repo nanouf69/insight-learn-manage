@@ -27,11 +27,22 @@ interface ApprenantRow {
   formation_choisie: string | null;
 }
 
+interface ModuleQuestionDetail {
+  questionId?: number | string;
+  exerciceId?: number | string;
+  exerciceTitre?: string;
+  enonce?: string;
+  correct?: boolean;
+  reponseEleve?: string | string[];
+  reponseCorrecte?: string | string[];
+}
+
 interface CompletionRow {
   apprenant_id: string;
   module_id: number;
   score_obtenu: number | null;
   score_max: number | null;
+  details: ModuleQuestionDetail[] | null;
 }
 
 interface QuestionDetail {
@@ -73,6 +84,7 @@ const ResultatsSessionPage = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [expandedExam, setExpandedExam] = useState<string | null>(null);
   const [expandedMatiere, setExpandedMatiere] = useState<string | null>(null);
+  const [expandedModule, setExpandedModule] = useState<number | null>(null);
 
   // Load sessions
   useEffect(() => {
@@ -128,7 +140,7 @@ const ResultatsSessionPage = () => {
         const [completionRes, quizRes] = await Promise.all([
           supabase
             .from("apprenant_module_completion")
-            .select("apprenant_id, module_id, score_obtenu, score_max")
+            .select("apprenant_id, module_id, score_obtenu, score_max, details")
             .in("apprenant_id", apprenantIds),
           supabase
             .from("apprenant_quiz_results")
@@ -361,6 +373,52 @@ const ResultatsSessionPage = () => {
     return Object.entries(questionMap)
       .sort(([a], [b]) => Number(a) - Number(b))
       .map(([id, data]) => ({ questionId: Number(id), ...data }));
+  };
+
+  // Per-question stats (failure rate) for a given module, grouped by exercise
+  const getModuleQuestionStats = (moduleId: number) => {
+    type QStat = {
+      questionId: number | string;
+      enonce: string;
+      correct: number;
+      incorrect: number;
+      total: number;
+    };
+    const exoMap: Record<string, { titre: string; questions: Record<string, QStat> }> = {};
+
+    for (const a of apprenants) {
+      const c = completions.find(x => x.apprenant_id === a.id && x.module_id === moduleId);
+      const details = Array.isArray(c?.details) ? c!.details! : [];
+      for (const d of details) {
+        const exoKey = String(d?.exerciceId ?? d?.exerciceTitre ?? "exo");
+        const exoTitre = d?.exerciceTitre || `Exercice ${d?.exerciceId ?? ""}`;
+        if (!exoMap[exoKey]) exoMap[exoKey] = { titre: exoTitre, questions: {} };
+
+        const qKey = String(d?.questionId ?? "");
+        if (!qKey) continue;
+        if (!exoMap[exoKey].questions[qKey]) {
+          exoMap[exoKey].questions[qKey] = {
+            questionId: d?.questionId ?? qKey,
+            enonce: d?.enonce || `Question ${qKey}`,
+            correct: 0,
+            incorrect: 0,
+            total: 0,
+          };
+        }
+        exoMap[exoKey].questions[qKey].total++;
+        if (d?.correct) exoMap[exoKey].questions[qKey].correct++;
+        else exoMap[exoKey].questions[qKey].incorrect++;
+      }
+    }
+
+    return Object.entries(exoMap)
+      .map(([key, exo]) => ({
+        exoKey: key,
+        titre: exo.titre,
+        questions: Object.values(exo.questions).sort((a, b) => Number(a.questionId) - Number(b.questionId)),
+      }))
+      .filter(e => e.questions.length > 0)
+      .sort((a, b) => a.titre.localeCompare(b.titre));
   };
 
   // Module pass/fail global
@@ -693,6 +751,86 @@ const ResultatsSessionPage = () => {
                   </Table>
                 </div>
               </Card>
+
+              {/* Taux d'échec par question, par module */}
+              {relevantModules.length > 0 && (
+                <Card className="mt-4">
+                  <CardContent className="pt-6">
+                    <h3 className="font-semibold text-base mb-4 flex items-center gap-2">
+                      <XCircle className="w-4 h-4 text-destructive" />
+                      Taux d'échec par question (par module)
+                    </h3>
+                    <div className="space-y-2">
+                      {relevantModules.map(mod => {
+                        const isOpen = expandedModule === mod.id;
+                        const exos = isOpen ? getModuleQuestionStats(mod.id) : [];
+                        const stats = moduleAverages[mod.id];
+                        return (
+                          <div key={mod.id} className="border rounded-lg overflow-hidden">
+                            <div
+                              className="px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-muted/30 transition-colors"
+                              onClick={() => setExpandedModule(isOpen ? null : mod.id)}
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                {isOpen ? <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
+                                <span className="font-medium text-sm truncate">{mod.nom}</span>
+                              </div>
+                              <div className="flex items-center gap-3 shrink-0">
+                                <span className="text-xs text-muted-foreground">{stats?.total || 0} élèves</span>
+                                <Badge variant={(stats?.avg || 0) >= PASS_THRESHOLD ? "default" : "destructive"} className="text-xs">
+                                  {stats?.avg || 0}%
+                                </Badge>
+                              </div>
+                            </div>
+                            {isOpen && (
+                              <div className="border-t bg-muted/5 px-4 py-3 space-y-4">
+                                {exos.length === 0 ? (
+                                  <p className="text-xs text-muted-foreground text-center py-2">Aucun détail par question disponible pour ce module.</p>
+                                ) : (
+                                  exos.map(exo => (
+                                    <div key={exo.exoKey} className="space-y-2">
+                                      <div className="text-xs font-semibold text-muted-foreground border-b pb-1">{exo.titre}</div>
+                                      {exo.questions.map(q => {
+                                        const tauxEchec = q.total > 0 ? Math.round((q.incorrect / q.total) * 100) : 0;
+                                        return (
+                                          <div key={String(q.questionId)} className="space-y-1">
+                                            <div className="flex items-start gap-2">
+                                              <span className="text-xs font-bold text-muted-foreground w-8 shrink-0">Q{q.questionId}</span>
+                                              <p className="text-xs flex-1 leading-snug">{q.enonce}</p>
+                                              <div className="flex items-center gap-2 shrink-0 justify-end">
+                                                <span className="text-xs text-emerald-600 font-semibold">{q.correct} ✓</span>
+                                                <span className="text-xs text-destructive font-semibold">{q.incorrect} ✗</span>
+                                                <Badge
+                                                  variant={tauxEchec <= 40 ? "default" : "destructive"}
+                                                  className="text-xs px-2 py-0.5 min-w-[60px] text-center"
+                                                >
+                                                  {tauxEchec}% échec
+                                                </Badge>
+                                              </div>
+                                            </div>
+                                            <div className="ml-10">
+                                              <div className="w-full h-2 rounded-full bg-muted/30 overflow-hidden">
+                                                <div
+                                                  className={`h-full rounded-full transition-all ${tauxEchec <= 20 ? 'bg-emerald-500' : tauxEchec <= 40 ? 'bg-amber-400' : 'bg-destructive'}`}
+                                                  style={{ width: `${tauxEchec}%` }}
+                                                />
+                                              </div>
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  ))
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             {/* ── TAB: Examens blancs ── */}
