@@ -382,6 +382,7 @@ const ResultatsSessionPage = () => {
       questionId: number | string;
       enonce: string;
       reponseCorrecte: string;
+      reponseCorrecteTexte: string;
       correct: number;
       incorrect: number;
       total: number;
@@ -409,12 +410,18 @@ const ResultatsSessionPage = () => {
             questionId: d?.questionId ?? qKey,
             enonce: d?.enonce || `Question ${qKey}`,
             reponseCorrecte: formatReponse(d?.reponseCorrecte),
+            reponseCorrecteTexte: formatReponse((d as any)?.reponseCorrecteTexte),
             correct: 0,
             incorrect: 0,
             total: 0,
           };
-        } else if (!exoMap[exoKey].questions[qKey].reponseCorrecte && d?.reponseCorrecte) {
-          exoMap[exoKey].questions[qKey].reponseCorrecte = formatReponse(d.reponseCorrecte);
+        } else {
+          if (!exoMap[exoKey].questions[qKey].reponseCorrecte && d?.reponseCorrecte) {
+            exoMap[exoKey].questions[qKey].reponseCorrecte = formatReponse(d.reponseCorrecte);
+          }
+          if (!exoMap[exoKey].questions[qKey].reponseCorrecteTexte && (d as any)?.reponseCorrecteTexte) {
+            exoMap[exoKey].questions[qKey].reponseCorrecteTexte = formatReponse((d as any).reponseCorrecteTexte);
+          }
         }
         exoMap[exoKey].questions[qKey].total++;
         if (d?.correct) exoMap[exoKey].questions[qKey].correct++;
