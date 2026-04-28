@@ -1281,6 +1281,26 @@ function getInitialModuleDataRaw(
     };
   }
 
+  // Feuilles d'émargement signées — Formation Continue VTC (83) / TAXI (84)
+  if (module.id === 83 || module.id === 84) {
+    const isTaxi = module.id === 84;
+    return {
+      id: module.id,
+      nom: `2.FEUILLES D'ÉMARGEMENT SIGNÉES${isTaxi ? " TAXI" : " VTC"}`,
+      description: "Consultez l'historique de vos émargements signés durant la formation continue.",
+      cours: [
+        {
+          id: 1,
+          titre: "Mes feuilles d'émargement signées",
+          description: "Historique des signatures matin / après-midi",
+          actif: true,
+          checklistType: "emargements-fc" as const,
+        },
+      ],
+      exercices: [],
+    };
+  }
+
   // Bilan Exercices TAXI (module 9) — toutes les matières
   if (module.id === 9) {
     return {
