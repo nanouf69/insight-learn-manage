@@ -59,7 +59,7 @@ export async function generateAttestationFCVTC(data: AttestationFCData, options?
 
   // === TITRE ===
   const formation = data.formation || 'VTC';
-  const agrement = formation === 'TAXI' ? 'TAXI-69-16-005' : COMPANY_INFO.agrement;
+  const agrement = formation === 'TAXI' ? '69-18-001' : COMPANY_INFO.agrement;
   let y = 36;
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
