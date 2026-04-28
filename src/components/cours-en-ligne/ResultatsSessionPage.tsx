@@ -816,9 +816,9 @@ const ResultatsSessionPage = () => {
                                               <span className="text-xs font-bold text-muted-foreground w-8 shrink-0">Q{q.questionId}</span>
                                               <p className="text-xs flex-1 leading-snug">
                                                 {q.enonce}
-                                                {q.reponseCorrecte && (
+                                                {(q.reponseCorrecte || q.reponseCorrecteTexte) && (
                                                   <span className="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold text-[11px] align-middle">
-                                                    ✓ Bonne réponse : {q.reponseCorrecte}
+                                                    ✓ Bonne réponse : {q.reponseCorrecte}{q.reponseCorrecteTexte ? ` — ${q.reponseCorrecteTexte}` : ""}
                                                   </span>
                                                 )}
                                               </p>
