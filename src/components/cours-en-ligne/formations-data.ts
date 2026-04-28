@@ -10,6 +10,7 @@ export const FORMATIONS = [
   { id: "taxi-pour-vtc-elearning", label: "Formation TAXI pour VTC E-learning" },
   { id: "vtc-cours-du-soir", label: "Formation VTC cours du soir" },
   { id: "continue-vtc", label: "Formation continue VTC" },
+  { id: "continue-taxi", label: "Formation continue TAXI" },
 ] as const;
 
 export type FormationId = (typeof FORMATIONS)[number]["id"];
