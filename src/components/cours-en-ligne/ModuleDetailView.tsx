@@ -3091,7 +3091,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     // Always allow multiple answers (checkboxes) for all questions
     const isMultiAnswer = (_q: { choix: { correct?: boolean }[] }) => true;
 
-    const getQuestionChoices = (q: { choix?: { lettre: string; correct?: boolean }[] } | null | undefined) =>
+    const getQuestionChoices = (q: { choix?: { lettre: string; texte?: string; correct?: boolean }[] } | null | undefined) =>
       Array.isArray(q?.choix) ? q.choix : [];
 
     // Helper: check if answer is correct (works for single and multi)
@@ -3575,7 +3575,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             (e.questions || []).map(q => {
               const key = `${e.id}-${q.id}`;
               const selected = answers[key];
-              const correctLetters = q.choix.filter(c => c.correct).map(c => c.lettre);
+              const correctChoix = q.choix.filter(c => c.correct);
+              const correctLetters = correctChoix.map(c => c.lettre);
+              const correctTexts = correctChoix.map(c => c.texte);
               return {
                 exerciceId: e.id,
                 exerciceTitre: e.titre,
@@ -3583,6 +3585,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 enonce: q.enonce,
                 reponseEleve: selected || null,
                 reponseCorrecte: correctLetters.length === 1 ? correctLetters[0] : correctLetters,
+                reponseCorrecteTexte: correctTexts.length === 1 ? correctTexts[0] : correctTexts,
                 correct: isAnswerCorrect(selected, q),
               };
             })
@@ -3737,7 +3740,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           (e.questions || []).map(q => {
             const key = `${e.id}-${q.id}`;
             const selected = selectedAnswers[key];
-            const correctLetters = q.choix.filter(c => c.correct).map(c => c.lettre);
+            const correctChoix = q.choix.filter(c => c.correct);
+            const correctLetters = correctChoix.map(c => c.lettre);
+            const correctTexts = correctChoix.map(c => c.texte);
             return {
               exerciceId: e.id,
               exerciceTitre: e.titre,
@@ -3745,6 +3750,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
               enonce: q.enonce,
               reponseEleve: selected || null,
               reponseCorrecte: correctLetters.length === 1 ? correctLetters[0] : correctLetters,
+              reponseCorrecteTexte: correctTexts.length === 1 ? correctTexts[0] : correctTexts,
               correct: isAnswerCorrect(selected, q),
             };
           })
@@ -4577,12 +4583,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                               (e.questions || []).map(q => {
                                 const key = `${e.id}-${q.id}`;
                                 const sel = selectedAnswers[key];
-                                 const correctLetters = getQuestionChoices(q).filter(c => c.correct).map(c => c.lettre);
+                                 const correctChoix = getQuestionChoices(q).filter(c => c.correct);
+                                 const correctLetters = correctChoix.map(c => c.lettre);
+                                 const correctTexts = correctChoix.map(c => c.texte);
                                 return {
                                   exerciceId: e.id, exerciceTitre: e.titre,
                                   questionId: q.id, enonce: q.enonce,
                                   reponseEleve: sel || null,
                                    reponseCorrecte: correctLetters.length === 1 ? correctLetters[0] : correctLetters,
+                                   reponseCorrecteTexte: correctTexts.length === 1 ? correctTexts[0] : correctTexts,
                                    correct: isAnswerCorrect(sel, q),
                                 };
                               })
