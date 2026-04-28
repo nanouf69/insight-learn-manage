@@ -118,7 +118,7 @@ export default function InscriptionFormationContinue() {
       financeurEmail.trim() &&
       financeurTelephone.trim()
     );
-  const canSubmit = prenom.trim() && nom.trim() && adresse.trim() && telephone.trim() && email.trim() && dateFormation && signature && !fullDates[dateFormation] && financeurValid;
+  const canSubmit = prenom.trim() && nom.trim() && adresse.trim() && telephone.trim() && email.trim() && dateFormation && signature && cgvAccepted && !fullDates[dateFormation] && financeurValid;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
