@@ -22,6 +22,8 @@ interface ApprenantInfo {
   ville?: string | null;
   formation_choisie?: string | null;
   type_apprenant?: string | null;
+  date_debut_formation?: string | null;
+  date_fin_formation?: string | null;
 }
 
 interface Props {
