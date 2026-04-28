@@ -1269,6 +1269,17 @@ function getInitialModuleDataRaw(
     };
   }
 
+  // Bilan Exercices Formation Continue TAXI (module 82) — sans Gestion
+  if (module.id === 82) {
+    return {
+      id: 82,
+      nom: "1.BILAN EXERCICES FORMATION CONTINUE TAXI",
+      description: "Tous les exercices regroupés par matière (sans Gestion). Refaites-les autant de fois que nécessaire.",
+      cours: [],
+      exercices: JSON.parse(JSON.stringify(BILAN_EXERCICES_FC_TAXI)),
+    };
+  }
+
   // Bilan Exercices TAXI (module 9) — toutes les matières
   if (module.id === 9) {
     return {
