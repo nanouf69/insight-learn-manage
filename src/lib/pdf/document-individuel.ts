@@ -58,6 +58,7 @@ const FIELD_LABELS: Record<string, string> = {
   pointsAmeliorer: 'Points a ameliorer', suggestions: 'Suggestions',
   formationType: 'Type de formation', commentaires: 'Commentaires',
   cgv_accepted: 'CGV acceptees', ri_accepted: 'Reglement interieur accepte',
+  cgv_accepted_at: "Date d'acceptation des CGV", cgv_version: 'Version des CGV',
   accepted: 'Accepte', accepted_at: 'Date acceptation',
   signed_at: 'Date de signature', formationLabel: 'Formation',
   type_formation: 'Type de formation', prix: 'Prix', duree: 'Duree',
