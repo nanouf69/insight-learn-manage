@@ -23,6 +23,8 @@ const TYPE_LABELS: Record<string, string> = {
   "cgv-acceptation": "Conditions Générales de Vente",
   "dossier-bienvenue": "Dossier de bienvenue",
   "devis-formation-continue": "Devis Formation Continue",
+  "devis-envoi": "Devis envoyé / signé",
+  "emargement-fc": "Feuille d'émargement",
 };
 
 const TYPE_COLORS: Record<string, string> = {
@@ -35,6 +37,8 @@ const TYPE_COLORS: Record<string, string> = {
   "cgv-acceptation": "bg-teal-100 text-teal-800",
   "dossier-bienvenue": "bg-green-100 text-green-800",
   "devis-formation-continue": "bg-indigo-100 text-indigo-800",
+  "devis-envoi": "bg-cyan-100 text-cyan-800",
+  "emargement-fc": "bg-rose-100 text-rose-800",
 };
 
 const FIELD_LABELS: Record<string, string> = {
