@@ -269,6 +269,8 @@ export default function InscriptionFormationContinue() {
           email: email.trim().toLowerCase(),
           mode_financement: hasFinanceur ? "Organisme tiers" : "Personnel",
           date_inscription: new Date().toLocaleDateString("fr-FR"),
+          signature,
+          signed_at: new Date().toISOString(),
         };
         if (hasFinanceur) {
           devisDonnees.financeur_siren = financeurSiren.trim();
