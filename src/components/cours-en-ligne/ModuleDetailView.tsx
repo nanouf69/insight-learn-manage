@@ -84,6 +84,7 @@ import { BILAN_EXAMEN_VA } from "./bilan-examen-va-data";
 import { BILAN_EXAMEN_TA } from "./bilan-examen-ta-data";
 import { EQUIPEMENTS_TAXI_DATA } from "./equipements-taxi-data";
 import CompetencesChecklist from "./CompetencesChecklist";
+import EmargementsSignesViewer from "./EmargementsSignesViewer";
 import AnalyseBesoinForm from "./AnalyseBesoinForm";
 import ProjetProfessionnelForm from "./ProjetProfessionnelForm";
 import EvaluationAcquisForm from "./EvaluationAcquisForm";
@@ -119,7 +120,7 @@ interface ContentItem {
   fichiers?: { nom: string; url: string }[];
   slidesKey?: string;
   quiz?: InlineQuizQuestion[];
-  checklistType?: "competences" | "analyse-besoin" | "evaluation-acquis" | "satisfaction" | "projet-professionnel" | "cgv" | "cgv-reglement";
+  checklistType?: "competences" | "analyse-besoin" | "evaluation-acquis" | "satisfaction" | "projet-professionnel" | "cgv" | "cgv-reglement" | "emargements-fc";
   formationType?: string;
 }
 
@@ -1277,6 +1278,26 @@ function getInitialModuleDataRaw(
       description: "Tous les exercices regroupés par matière (sans Gestion). Refaites-les autant de fois que nécessaire.",
       cours: [],
       exercices: JSON.parse(JSON.stringify(BILAN_EXERCICES_FC_TAXI)),
+    };
+  }
+
+  // Feuilles d'émargement signées — Formation Continue VTC (83) / TAXI (84)
+  if (module.id === 83 || module.id === 84) {
+    const isTaxi = module.id === 84;
+    return {
+      id: module.id,
+      nom: `2.FEUILLES D'ÉMARGEMENT SIGNÉES${isTaxi ? " TAXI" : " VTC"}`,
+      description: "Consultez l'historique de vos émargements signés durant la formation continue.",
+      cours: [
+        {
+          id: 1,
+          titre: "Mes feuilles d'émargement signées",
+          description: "Historique des signatures matin / après-midi",
+          actif: true,
+          checklistType: "emargements-fc" as const,
+        },
+      ],
+      exercices: [],
     };
   }
 
@@ -3815,6 +3836,19 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
             data={competencesData}
             apprenantId={apprenantId || undefined}
             suppressAdminNotification={suppressPreInformationEmails}
+            completed={completedPages.has(currentPage)}
+            onComplete={() => {
+              markPageCompleted(currentPage);
+              if (currentPage < totalPages - 1) goToPage(currentPage + 1);
+            }}
+          />
+        );
+      }
+
+      if (cours.checklistType === "emargements-fc") {
+        return (
+          <EmargementsSignesViewer
+            apprenantId={apprenantId || undefined}
             completed={completedPages.has(currentPage)}
             onComplete={() => {
               markPageCompleted(currentPage);
