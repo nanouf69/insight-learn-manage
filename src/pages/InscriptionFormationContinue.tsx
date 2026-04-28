@@ -527,6 +527,14 @@ export default function InscriptionFormationContinue() {
               )}
             </div>
 
+            <div className="space-y-3">
+              <h3 className="font-semibold border-b pb-2">Signature du stagiaire <span className="text-red-500">*</span></h3>
+              <p className="text-sm text-muted-foreground">
+                La signature est obligatoire pour valider le devis et l'inscription.
+              </p>
+              <SignaturePad value={signature} onChange={setSignature} />
+            </div>
+
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
                 <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
