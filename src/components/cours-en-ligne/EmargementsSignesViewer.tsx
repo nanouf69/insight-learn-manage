@@ -22,6 +22,8 @@ interface ApprenantInfo {
   ville?: string | null;
   formation_choisie?: string | null;
   type_apprenant?: string | null;
+  date_debut_formation?: string | null;
+  date_fin_formation?: string | null;
 }
 
 interface Props {
@@ -55,84 +57,144 @@ const labelDemi = (d: string) => {
 const fullName = (a?: ApprenantInfo | null) =>
   [a?.prenom, a?.nom].filter(Boolean).join(" ").trim() || "—";
 
+const formatShortDate = (iso?: string | null) => {
+  if (!iso) return "—";
+  // Accept DD/MM/YYYY or YYYY-MM-DD
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(iso)) return iso;
+  try {
+    const d = new Date(iso.length === 10 ? iso + "T00:00:00" : iso);
+    if (isNaN(d.getTime())) return iso;
+    return d.toLocaleDateString("fr-FR");
+  } catch {
+    return iso;
+  }
+};
+
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+const buildEmargementHTML = (
+  groupedByDay: Array<[string, { matin?: EmargementRow; apresMidi?: EmargementRow }]>,
+  apprenant: ApprenantInfo | null
+) => {
+  const formation = apprenant?.formation_choisie || apprenant?.type_apprenant || "Formation continue";
+  const adresse = [apprenant?.adresse, [apprenant?.code_postal, apprenant?.ville].filter(Boolean).join(" ")]
+    .filter(Boolean)
+    .join(" ");
+  const lieu = "86 route de Genas 69003 Lyon";
+  const formateur = "Naoufal GUENICHI";
+  const datesFormation =
+    apprenant?.date_debut_formation || apprenant?.date_fin_formation
+      ? `du ${formatShortDate(apprenant?.date_debut_formation)} au ${formatShortDate(apprenant?.date_fin_formation)}`
+      : "—";
+
+  const rowsHtml = groupedByDay
+    .map(([date, { matin, apresMidi }]) => {
+      const jourLabel = capitalize(formatDateFR(date));
+      const sigImg = (r?: EmargementRow) =>
+        r?.signature_data_url
+          ? `<img src="${r.signature_data_url}" alt="Signature" style="max-height:55px;max-width:95%;"/>`
+          : "";
+      return `
+        <tr>
+          <td class="jour">${jourLabel}</td>
+          <td class="horaire">09:00 - 12:00</td>
+          <td class="sig">${sigImg(matin)}</td>
+          <td class="horaire">13:00 - 17:00</td>
+          <td class="sig">${sigImg(apresMidi)}</td>
+        </tr>`;
+    })
+    .join("");
+
+  return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"/>
+<title>Feuille d'émargement individuelle</title>
+<style>
+  @page { size: A4 landscape; margin: 10mm; }
+  * { box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; color: #1a1a1a; font-size: 11px; margin: 0; }
+  .header { background: #6b7fc7; color: #fff; padding: 14px 18px; display:flex; justify-content:space-between; align-items:center; border-radius: 4px 4px 0 0; }
+  .brand { font-size: 22px; font-weight: bold; letter-spacing: 0.5px; }
+  .brand small { display:block; font-size:10px; font-weight:normal; opacity:0.9; margin-top:2px; }
+  .title { font-size: 16px; font-weight: bold; letter-spacing: 0.5px; }
+  .infos { border: 1.5px solid #6b7fc7; border-top: none; padding: 12px 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; border-radius: 0 0 4px 4px; margin-bottom: 14px; }
+  .infos .item { display:flex; gap:8px; align-items:baseline; }
+  .infos .label { color: #6b7fc7; font-weight: bold; min-width: 90px; }
+  .infos .value { color: #1a1a1a; }
+  table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  thead .top th { background: #6b7fc7; color: #fff; font-weight: bold; padding: 8px 6px; text-align: center; border: 1px solid #6b7fc7; font-size: 12px; }
+  thead .sub th { background: #8a9bd4; color: #fff; font-weight: normal; padding: 6px; text-align: center; border: 1px solid #6b7fc7; font-size: 10px; }
+  tbody td { border: 1px solid #6b7fc7; padding: 10px 8px; text-align: center; height: 70px; vertical-align: middle; }
+  tbody td.jour { font-weight: bold; text-align: left; padding-left: 12px; background: #fff; }
+  tbody td.horaire { font-size: 10px; color: #444; width: 90px; }
+  tbody td.sig { background: #fff; }
+  .cachet { margin-top: 18px; }
+  .cachet .label { font-weight: bold; font-size: 11px; margin-bottom: 4px; }
+  .cachet .box { border: 1px solid #6b7fc7; border-radius: 4px; padding: 14px; min-height: 90px; width: 50%; font-size: 10px; color: #555; }
+  @media print { .noprint { display:none; } }
+</style></head><body>
+  <div class="header">
+    <div class="brand">FTRANSPORT<small>Specialiste Formations Transport</small></div>
+    <div class="title">FEUILLE D'EMARGEMENT INDIVIDUELLE</div>
+  </div>
+
+  <div class="infos">
+    <div class="item"><span class="label">Stagiaire :</span><span class="value"><strong>${fullName(apprenant)}</strong></span></div>
+    <div class="item"><span class="label">Formation :</span><span class="value">${formation}</span></div>
+    <div class="item"><span class="label">Tél :</span><span class="value">${apprenant?.telephone || "—"}</span></div>
+    <div class="item"><span class="label">Lieu :</span><span class="value">${lieu}</span></div>
+    <div class="item"><span class="label">Dates :</span><span class="value">${datesFormation}</span></div>
+    <div class="item"><span class="label">Formateur(s) :</span><span class="value">${formateur}</span></div>
+  </div>
+
+  <table>
+    <thead>
+      <tr class="top">
+        <th rowspan="2" style="width:160px;">Jour</th>
+        <th colspan="2">Matin</th>
+        <th colspan="2">Apres-midi</th>
+      </tr>
+      <tr class="sub">
+        <th>Horaire</th>
+        <th>Signature du stagiaire</th>
+        <th>Horaire</th>
+        <th>Signature du stagiaire</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rowsHtml || `<tr><td colspan="5" style="padding:20px;color:#999;">Aucune signature enregistrée</td></tr>`}
+    </tbody>
+  </table>
+
+  <div class="cachet">
+    <div class="label">Cachet et signature du centre</div>
+    <div class="box">Fait à Lyon, le ______________</div>
+  </div>
+
+  <div class="noprint" style="margin-top:18px;text-align:center;">
+    <button onclick="window.print()" style="padding:10px 20px;font-size:13px;cursor:pointer;background:#6b7fc7;color:#fff;border:none;border-radius:4px;">Imprimer / Enregistrer en PDF</button>
+  </div>
+  <script>window.onload=()=>setTimeout(()=>window.print(),300);</script>
+</body></html>`;
+};
+
+const downloadAllJournees = (
+  groupedByDay: Array<[string, { matin?: EmargementRow; apresMidi?: EmargementRow }]>,
+  apprenant: ApprenantInfo | null
+) => {
+  const html = buildEmargementHTML(groupedByDay, apprenant);
+  const w = window.open("", "_blank");
+  if (w) {
+    w.document.write(html);
+    w.document.close();
+  }
+};
+
 const downloadJournee = (
   date: string,
   matin: EmargementRow | undefined,
   apresMidi: EmargementRow | undefined,
   apprenant: ApprenantInfo | null
 ) => {
-  const dateLabel = formatDateFR(date);
-  const formation = apprenant?.formation_choisie || apprenant?.type_apprenant || "Formation continue";
-  const adresse = [apprenant?.adresse, [apprenant?.code_postal, apprenant?.ville].filter(Boolean).join(" ")]
-    .filter(Boolean)
-    .join(", ");
-
-  const sigBlock = (label: string, r: EmargementRow | undefined) => `
-    <div class="sig-cell">
-      <div class="sig-label">${label}</div>
-      <div class="sig-box">
-        ${r?.signature_data_url ? `<img src="${r.signature_data_url}" alt="Signature ${label}"/>` : `<div class="empty">Non signé</div>`}
-      </div>
-      <div class="sig-foot">${r?.signed_at ? "Signé le " + new Date(r.signed_at).toLocaleString("fr-FR") : "—"}</div>
-    </div>`;
-
-  const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"/>
-<title>Émargement - ${dateLabel}</title>
-<style>
-  @page { size: A4; margin: 15mm; }
-  * { box-sizing: border-box; }
-  body { font-family: Arial, sans-serif; color: #111; font-size: 12px; }
-  .header { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #111; padding-bottom:10px; margin-bottom:14px; }
-  .brand { font-size:18px; font-weight:bold; }
-  .brand small { display:block; font-size:11px; font-weight:normal; color:#555; }
-  h1 { font-size: 16px; margin: 0 0 4px; }
-  .meta { font-size:11px; color:#444; text-align:right; }
-  .infos { border:1px solid #ddd; border-radius:6px; padding:10px 12px; margin-bottom:14px; background:#fafafa; }
-  .infos .row { display:flex; gap:24px; margin-bottom:4px; }
-  .infos .label { font-weight:bold; min-width:90px; color:#333; }
-  .formation { font-weight:bold; font-size:13px; margin-bottom:8px; }
-  .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  .sig-cell { border:1px solid #ccc; border-radius:6px; padding:8px; text-align:center; }
-  .sig-label { font-weight:bold; font-size:12px; margin-bottom:6px; }
-  .sig-box { border:1px dashed #999; border-radius:4px; min-height:140px; display:flex; align-items:center; justify-content:center; background:#fff; }
-  .sig-box img { max-height:140px; max-width:100%; }
-  .empty { color:#999; font-style:italic; font-size:11px; }
-  .sig-foot { font-size:10px; color:#666; margin-top:4px; }
-  .footer { margin-top:20px; font-size:10px; color:#666; text-align:center; border-top:1px solid #eee; padding-top:8px; }
-  @media print { .noprint { display:none; } }
-</style></head><body>
-  <div class="header">
-    <div class="brand">F TRANSPORT<small>Centre de formation agréé</small></div>
-    <div class="meta">
-      <strong>Feuille d'émargement</strong><br/>
-      ${dateLabel}
-    </div>
-  </div>
-
-  <div class="infos">
-    <div class="formation">${formation}</div>
-    <div class="row"><span class="label">Stagiaire :</span><span>${fullName(apprenant)}</span></div>
-    ${apprenant?.email ? `<div class="row"><span class="label">Email :</span><span>${apprenant.email}</span></div>` : ""}
-    ${apprenant?.telephone ? `<div class="row"><span class="label">Téléphone :</span><span>${apprenant.telephone}</span></div>` : ""}
-    ${adresse ? `<div class="row"><span class="label">Adresse :</span><span>${adresse}</span></div>` : ""}
-  </div>
-
-  <div class="grid">
-    ${sigBlock("Matin (09h00 — 12h00)", matin)}
-    ${sigBlock("Après-midi (13h00 — 17h00)", apresMidi)}
-  </div>
-
-  <div class="footer">Document généré automatiquement depuis la plateforme F TRANSPORT.</div>
-  <div class="noprint" style="margin-top:20px;text-align:center;">
-    <button onclick="window.print()" style="padding:10px 20px;font-size:13px;cursor:pointer;">Imprimer / Enregistrer en PDF</button>
-  </div>
-  <script>window.onload=()=>setTimeout(()=>window.print(),300);</script>
-</body></html>`;
-  const w = window.open("", "_blank");
-  if (w) {
-    w.document.write(html);
-    w.document.close();
-  }
+  downloadAllJournees([[date, { matin, apresMidi }]], apprenant);
 };
 
 export default function EmargementsSignesViewer({ apprenantId, completed, onComplete }: Props) {
@@ -156,7 +218,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
           .order("demi_journee", { ascending: true }),
         supabase
           .from("apprenants")
-          .select("nom, prenom, email, telephone, adresse, code_postal, ville, formation_choisie, type_apprenant")
+          .select("nom, prenom, email, telephone, adresse, code_postal, ville, formation_choisie, type_apprenant, date_debut_formation, date_fin_formation")
           .eq("id", apprenantId)
           .maybeSingle(),
       ]);
@@ -194,14 +256,26 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <FileSignature className="h-6 w-6 text-primary" />
-        <div>
-          <h2 className="text-xl font-bold">Mes feuilles d'émargement signées</h2>
-          <p className="text-xs text-muted-foreground">
-            Regroupées par journée — matin et après-midi sur la même feuille.
-          </p>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <FileSignature className="h-6 w-6 text-primary" />
+          <div>
+            <h2 className="text-xl font-bold">Mes feuilles d'émargement signées</h2>
+            <p className="text-xs text-muted-foreground">
+              Regroupées par journée — matin et après-midi sur la même feuille.
+            </p>
+          </div>
         </div>
+        {groupedByDay.length > 0 && (
+          <Button
+            size="sm"
+            onClick={() => downloadAllJournees(groupedByDay, apprenant)}
+            className="bg-[#6b7fc7] hover:bg-[#5a6fb8] text-white"
+          >
+            <Download className="h-4 w-4 mr-1" />
+            Télécharger la feuille complète
+          </Button>
+        )}
       </div>
 
       {/* Carte coordonnées stagiaire */}
