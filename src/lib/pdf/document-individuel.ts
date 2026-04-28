@@ -98,6 +98,7 @@ const TYPE_TITLES: Record<string, string> = {
   'satisfaction': 'ENQUETE DE SATISFACTION',
   'cgv-acceptation': 'CONDITIONS GENERALES DE VENTE',
   'cgv-ri-acceptation': 'CGV ET REGLEMENT INTERIEUR',
+  'devis-formation-continue': 'DEVIS DE FORMATION CONTINUE',
 };
 
 function getLabel(key: string): string {
