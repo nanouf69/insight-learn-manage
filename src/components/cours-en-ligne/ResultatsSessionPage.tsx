@@ -139,7 +139,7 @@ const ResultatsSessionPage = () => {
         const [completionRes, quizRes] = await Promise.all([
           supabase
             .from("apprenant_module_completion")
-            .select("apprenant_id, module_id, score_obtenu, score_max")
+            .select("apprenant_id, module_id, score_obtenu, score_max, details")
             .in("apprenant_id", apprenantIds),
           supabase
             .from("apprenant_quiz_results")
