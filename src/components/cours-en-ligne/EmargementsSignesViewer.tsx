@@ -218,7 +218,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
           .order("demi_journee", { ascending: true }),
         supabase
           .from("apprenants")
-          .select("nom, prenom, email, telephone, adresse, code_postal, ville, formation_choisie, type_apprenant")
+          .select("nom, prenom, email, telephone, adresse, code_postal, ville, formation_choisie, type_apprenant, date_debut_formation, date_fin_formation")
           .eq("id", apprenantId)
           .maybeSingle(),
       ]);
