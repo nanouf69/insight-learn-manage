@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { SignaturePad } from "@/components/onboarding/SignaturePad";
 import {
   Select,
   SelectContent,
@@ -56,6 +57,7 @@ export default function InscriptionFormationContinue() {
   const [financeurVille, setFinanceurVille] = useState("");
   const [financeurEmail, setFinanceurEmail] = useState("");
   const [financeurTelephone, setFinanceurTelephone] = useState("");
+  const [signature, setSignature] = useState("");
   
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -115,7 +117,7 @@ export default function InscriptionFormationContinue() {
       financeurEmail.trim() &&
       financeurTelephone.trim()
     );
-  const canSubmit = prenom.trim() && nom.trim() && adresse.trim() && telephone.trim() && email.trim() && dateFormation && !fullDates[dateFormation] && financeurValid;
+  const canSubmit = prenom.trim() && nom.trim() && adresse.trim() && telephone.trim() && email.trim() && dateFormation && signature && !fullDates[dateFormation] && financeurValid;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
@@ -267,6 +269,8 @@ export default function InscriptionFormationContinue() {
           email: email.trim().toLowerCase(),
           mode_financement: hasFinanceur ? "Organisme tiers" : "Personnel",
           date_inscription: new Date().toLocaleDateString("fr-FR"),
+          signature,
+          signed_at: new Date().toISOString(),
         };
         if (hasFinanceur) {
           devisDonnees.financeur_siren = financeurSiren.trim();
@@ -521,6 +525,14 @@ export default function InscriptionFormationContinue() {
                   </div>
                 </div>
               )}
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="font-semibold border-b pb-2">Signature du stagiaire <span className="text-red-500">*</span></h3>
+              <p className="text-sm text-muted-foreground">
+                La signature est obligatoire pour valider le devis et l'inscription.
+              </p>
+              <SignaturePad value={signature} onChange={setSignature} />
             </div>
 
             {error && (
