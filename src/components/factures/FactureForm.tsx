@@ -128,11 +128,20 @@ interface FactureData {
   notes: string;
 }
 
+// Compteur séquentiel persistant - démarre à 202604207
+const FACTURE_COUNTER_KEY = "facture_numero_interne_counter";
+const FACTURE_COUNTER_START = 202604207;
+
 const generateNumeroFacture = () => {
-  const year = new Date().getFullYear();
-  const month = String(new Date().getMonth() + 1).padStart(2, '0');
-  const num = String(Math.floor(Math.random() * 1000)).padStart(3, '0');
-  return `${year}${month}${num}`;
+  try {
+    const stored = localStorage.getItem(FACTURE_COUNTER_KEY);
+    const current = stored ? parseInt(stored, 10) : FACTURE_COUNTER_START;
+    const next = isNaN(current) || current < FACTURE_COUNTER_START ? FACTURE_COUNTER_START : current;
+    localStorage.setItem(FACTURE_COUNTER_KEY, String(next + 1));
+    return String(next);
+  } catch {
+    return String(FACTURE_COUNTER_START);
+  }
 };
 
 const defaultFactureData: FactureData = {
