@@ -35,6 +35,7 @@ interface ModuleQuestionDetail {
   correct?: boolean;
   reponseEleve?: string | string[];
   reponseCorrecte?: string | string[];
+  reponseCorrecteTexte?: string | string[];
 }
 
 interface CompletionRow {
