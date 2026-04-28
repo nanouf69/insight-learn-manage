@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { SignaturePad } from "@/components/onboarding/SignaturePad";
 import {
   Select,
   SelectContent,
@@ -56,6 +57,7 @@ export default function InscriptionFormationContinue() {
   const [financeurVille, setFinanceurVille] = useState("");
   const [financeurEmail, setFinanceurEmail] = useState("");
   const [financeurTelephone, setFinanceurTelephone] = useState("");
+  const [signature, setSignature] = useState("");
   
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -115,7 +117,7 @@ export default function InscriptionFormationContinue() {
       financeurEmail.trim() &&
       financeurTelephone.trim()
     );
-  const canSubmit = prenom.trim() && nom.trim() && adresse.trim() && telephone.trim() && email.trim() && dateFormation && !fullDates[dateFormation] && financeurValid;
+  const canSubmit = prenom.trim() && nom.trim() && adresse.trim() && telephone.trim() && email.trim() && dateFormation && signature && !fullDates[dateFormation] && financeurValid;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
