@@ -2121,7 +2121,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     source_fingerprint: string;
   } | null>(null);
 
-  const GENERATED_BILAN_MODULE_IDS = new Set([4, 9, 27, 29, 81]);
+  const GENERATED_BILAN_MODULE_IDS = new Set([4, 9, 27, 29, 81, 82]);
 
   const hasDuplicateGeneratedBilanQuestions = (data: ModuleData | null | undefined) => {
     if (!data || !GENERATED_BILAN_MODULE_IDS.has(Number(data.id))) return false;
