@@ -455,6 +455,16 @@ export function FactureForm() {
     return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
+  const handleSaveDraft = () => {
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+      toast.success("Brouillon enregistré");
+    } catch (e) {
+      console.error(e);
+      toast.error("Impossible d'enregistrer le brouillon");
+    }
+  };
+
   const handlePrint = () => {
     window.print();
     toast.success("Impression lancée");
