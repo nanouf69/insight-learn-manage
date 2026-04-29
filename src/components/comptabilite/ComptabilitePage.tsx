@@ -282,6 +282,100 @@ export function ComptabilitePage() {
     }
   };
 
+  const generateDraftHTML = (d: any): string => {
+    const fmtDate = (s?: string) => {
+      if (!s) return "";
+      try { return new Date(s).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" }); } catch { return s; }
+    };
+    const lignes: any[] = Array.isArray(d?.lignes) ? d.lignes : [];
+    const calcLigneHT = (l: any) => (Number(l.prixUnitaire) || 0) * (Number(l.quantite) || 1) * (1 - (Number(l.remise) || 0) / 100);
+    const totalHT = lignes.reduce((s, l) => s + calcLigneHT(l), 0);
+    const totalTVA = lignes.reduce((s, l) => {
+      const taux = l.tvaType === "EXO" ? 0 : (Number(l.tvaTaux) || 20);
+      return s + calcLigneHT(l) * (taux / 100);
+    }, 0);
+    const totalTTC = totalHT + totalTVA;
+
+    const lignesHTML = lignes.map((l: any) => `
+      <tr>
+        <td style="padding:8px;border:1px solid #ddd;">${l.stagiaire || ""}</td>
+        <td style="padding:8px;border:1px solid #ddd;">${l.designation || ""}${l.dateDebut ? `<br><small>Du ${fmtDate(l.dateDebut)} au ${fmtDate(l.dateFin)}</small>` : ""}${l.lieu ? `<br><small>Lieu : ${l.lieu}</small>` : ""}</td>
+        <td style="padding:8px;border:1px solid #ddd;text-align:center;">${l.tvaType || ""}</td>
+        <td style="padding:8px;border:1px solid #ddd;text-align:right;">${(Number(l.prixUnitaire)||0).toFixed(2)}</td>
+        <td style="padding:8px;border:1px solid #ddd;text-align:center;">${(Number(l.quantite)||1).toFixed(2)}</td>
+        <td style="padding:8px;border:1px solid #ddd;text-align:center;">${l.remise || ""}</td>
+        <td style="padding:8px;border:1px solid #ddd;text-align:right;">${calcLigneHT(l).toFixed(2)}</td>
+      </tr>
+    `).join("");
+
+    const clientHTML = d?.refDossier ? d.refDossier : "(client non défini)";
+
+    return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Facture ${d?.numeroInterne || ""}</title><style>body{font-family:Arial,sans-serif;font-size:12px;margin:20px;color:#111}.header{display:flex;justify-content:space-between;margin-bottom:30px}.logo{font-size:24px;font-weight:bold;color:#2563eb}.title{text-align:right}.title h1{font-size:18px;margin:0}.info-row{display:flex;justify-content:space-between;margin-bottom:20px}.info-box{width:48%}table{width:100%;border-collapse:collapse;margin:20px 0}th{background:#f3f4f6;padding:10px;border:1px solid #ddd;text-align:left}.totals{text-align:right;margin-top:20px}.bank-info{margin-top:30px;padding:15px;background:#f9fafb;border:1px solid #e5e7eb}.conditions{margin-top:20px;padding:15px;background:#fefce8;border:1px solid #fde68a;font-size:11px;line-height:1.5}.conditions h4{margin:0 0 8px 0;font-size:12px;color:#92400e}.footer{margin-top:30px;font-size:10px;color:#666;text-align:center;border-top:1px solid #ddd;padding-top:15px}.draft-banner{background:#fde68a;color:#92400e;padding:8px 12px;text-align:center;font-weight:bold;margin-bottom:12px;border-radius:4px}</style></head><body>
+      <div class="draft-banner">⚠ BROUILLON — Facture non validée</div>
+      <div class="header"><div><div class="logo">🚌 FTRANSPORT</div><div>Spécialiste Formations Transport</div></div><div class="title"><h1>FACTURE ${d?.duplicata ? "DUPLICATA " : ""}N°${d?.numero || ""}</h1><p>Numéro : ${d?.numeroInterne || ""}</p><p>Date de facturation : ${fmtDate(d?.date)}</p><p>Date d'échéance : ${fmtDate(d?.dateEcheance)}</p></div></div>
+      <div class="info-row"><div class="info-box"><strong>Émetteur :</strong><br>FTRANSPORT<br>86 route de genas<br>69003 Lyon<br>SIRET : 82346156100016<br>Tél.: 0428296091<br>Email: contact@ftransport.fr</div><div class="info-box"><strong>Adressée à :</strong><br>${clientHTML}${d?.refConvention ? `<br>Réf à rappeler : ${d.refConvention}` : ""}</div></div>
+      <h3>Désignation</h3>
+      <table><thead><tr><th>Stagiaire</th><th>Désignation</th><th>TVA</th><th>P.U. HT</th><th>Qté</th><th>Rem</th><th>Total HT</th></tr></thead><tbody>${lignesHTML || `<tr><td colspan="7" style="padding:12px;text-align:center;color:#888;border:1px solid #ddd;">Aucune prestation</td></tr>`}</tbody></table>
+      <div class="totals"><p><strong>Total HT :</strong> ${totalHT.toFixed(2)} €</p><p><strong>Total TVA :</strong> ${totalTVA.toFixed(2)} €</p><p style="font-size:16px;"><strong>Total TTC :</strong> ${totalTTC.toFixed(2)} €</p></div>
+      <div class="bank-info"><h4>Règlement par virement :</h4><p>Banque : Revolut Bank UAB | IBAN : FR76 2823 3000 0185 7527 9099 426 | BIC : REVOFRP2</p></div>
+      <div class="conditions"><h4>Conditions de règlement</h4><p>Paiement par virement bancaire ou en espèces à réception de facture. Date d'échéance : ${fmtDate(d?.dateEcheance)}. Aucun escompte accordé pour paiement anticipé. En cas de retard de paiement, des pénalités de retard au taux de 3 fois le taux d'intérêt légal en vigueur seront appliquées, ainsi qu'une indemnité forfaitaire de recouvrement de 40,00 €, conformément aux articles L441-10 et D441-5 du Code de commerce.</p></div>
+      <div class="footer"><p>SASU FTRANSPORT - SIRET : 82346156100016 - TVA non applicable - article 293 B du CGI</p></div>
+    </body></html>`;
+  };
+
+  const validateDraft = async (draft: Facture) => {
+    const d = draft._draftRaw;
+    if (!d) {
+      toast.error("Brouillon introuvable");
+      return;
+    }
+    const lignes: any[] = Array.isArray(d.lignes) ? d.lignes : [];
+    if (lignes.length === 0) {
+      toast.error("Le brouillon ne contient aucune prestation");
+      return;
+    }
+    setValidatingDraft(true);
+    try {
+      const calcLigneHT = (l: any) => (Number(l.prixUnitaire) || 0) * (Number(l.quantite) || 1) * (1 - (Number(l.remise) || 0) / 100);
+      const montantHT = lignes.reduce((s, l) => s + calcLigneHT(l), 0);
+      const montantTVA = lignes.reduce((s, l) => {
+        const taux = l.tvaType === "EXO" ? 0 : (Number(l.tvaTaux) || 20);
+        return s + calcLigneHT(l) * (taux / 100);
+      }, 0);
+      const montantTTC = montantHT + montantTVA;
+      const tvaTaux = montantHT > 0 ? Math.round((montantTVA / montantHT) * 100) : 0;
+      const sessionLine: any = lignes.find((l: any) => l.type === "session" && l.sessionId);
+
+      const payload: any = {
+        numero: d.numeroInterne || d.numero,
+        date_emission: d.date,
+        date_echeance: d.dateEcheance || null,
+        type_financement: d.typeFinanceur === "particulier" ? "particulier" : "professionnel",
+        client_nom: d.refDossier || "(client non défini)",
+        montant_ht: montantHT,
+        tva_taux: tvaTaux,
+        montant_tva: montantTVA,
+        montant_ttc: montantTTC,
+        statut: "en_attente",
+        apprenant_id: d.typeFinanceur === "particulier" ? d.selectedApprenantId : null,
+        session_id: sessionLine?.sessionId || null,
+      };
+
+      const { error } = await supabase.from("factures").insert(payload);
+      if (error) throw error;
+
+      try { localStorage.removeItem("facture_draft_v1"); } catch {}
+      toast.success("Facture validée et enregistrée définitivement");
+      setDraftPreview(null);
+      await fetchFactures();
+    } catch (e: any) {
+      console.error(e);
+      toast.error(`Erreur lors de la validation : ${e.message ?? e}`);
+    } finally {
+      setValidatingDraft(false);
+    }
+  };
+
   const fetchFactures = async () => {
     setLoading(true);
     const { data, error } = await supabase
