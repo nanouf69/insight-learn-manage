@@ -1737,7 +1737,7 @@ function QuestionEditor({
         <div className="flex gap-2">
           <Button size="sm" variant="ghost" onClick={onCancel}><X className="w-4 h-4" /></Button>
           <Button size="sm" variant="destructive" onClick={onDelete}><Trash2 className="w-3 h-3" /></Button>
-          <Button size="sm" onClick={() => onSave({ ...question, enonce, choix, image })} className="gap-1">
+          <Button size="sm" onClick={() => onSave({ ...question, enonce, choix, image: image ?? undefined, imageSize })} className="gap-1">
             <Save className="w-3 h-3" /> Enregistrer
           </Button>
         </div>
@@ -1749,6 +1749,8 @@ function QuestionEditor({
       {/* Image (optionnel) */}
       <QuestionImageUpload
         image={image}
+        imageSize={imageSize}
+        onImageSizeChange={setImageSize}
         context="module"
         contextId={moduleId}
         questionId={question.id}
