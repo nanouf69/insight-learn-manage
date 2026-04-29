@@ -2639,6 +2639,100 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
               </ScrollArea>
             )}
           </TabsContent>
+
+          {/* Factures Tab (Formation Continue uniquement) */}
+          {isFormationContinue && (
+            <TabsContent value="factures" className="flex-1 overflow-auto flex flex-col mt-4">
+              <div className="shrink-0 flex flex-wrap items-center gap-3 mb-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                <div className="text-sm">
+                  <div className="font-medium">Factures Formation Continue</div>
+                  <div className="text-muted-foreground text-xs">
+                    Le destinataire est le financeur saisi dans "Informations Financeur" — sinon l'apprenant.
+                  </div>
+                </div>
+                <div className="flex-1" />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleBulkDownloadFactures}
+                  disabled={bulkDownloadingFactures || apprenantsInSession.length === 0}
+                  className="gap-2"
+                >
+                  {bulkDownloadingFactures ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  Toutes les factures (PDF)
+                </Button>
+                <Button
+                  size="sm"
+                  variant="default"
+                  onClick={handleBulkSendFactures}
+                  disabled={bulkSendingFactures || apprenantsInSession.length === 0}
+                  className="gap-2"
+                >
+                  {bulkSendingFactures ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  Envoyer aux financeurs
+                </Button>
+              </div>
+
+              <ScrollArea className="flex-1">
+                <div className="space-y-2 pr-2">
+                  {apprenantsInSession.length === 0 && (
+                    <div className="text-center text-muted-foreground py-12">
+                      <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                      <p>Aucun apprenant dans cette session</p>
+                    </div>
+                  )}
+                  {apprenantsInSession.map((sa: any, idx: number) => {
+                    const a = sa.apprenant;
+                    if (!a) return null;
+                    const fc: any = (financeursFCMap as any)?.[a.id] || null;
+                    const isPro = fc?.type_financeur === 'professionnel';
+                    const recipient = getFactureRecipientEmail(a);
+                    const montantTTC = Number(sa?.montant_total ?? a.montant_ttc ?? 0) || 0;
+                    return (
+                      <div key={a.id} className="flex items-center gap-3 p-3 rounded-lg border bg-card">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium truncate">
+                            {a.prenom} {a.nom?.toUpperCase()}
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate">
+                            Financeur :{' '}
+                            {isPro ? (
+                              <span className="font-medium text-foreground">
+                                {fc.raison_sociale || '(pro sans raison sociale)'}
+                                {fc.siret ? ` — SIRET ${fc.siret}` : fc.siren ? ` — SIREN ${fc.siren}` : ''}
+                              </span>
+                            ) : fc ? (
+                              <span>Particulier ({fc.contact_nom || `${a.prenom} ${a.nom}`})</span>
+                            ) : (
+                              <span className="text-orange-600">Aucun financeur saisi — facturation à l'apprenant</span>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate">
+                            Email facturation : {recipient || <span className="text-destructive">manquant</span>}
+                            {' • '}Montant TTC : <span className="font-medium text-foreground">{montantTTC.toFixed(2)} €</span>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-2 shrink-0"
+                          onClick={() => handleDownloadSingleFacture(a, sa, idx)}
+                          disabled={singleFactureLoading === a.id}
+                        >
+                          {singleFactureLoading === a.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Download className="w-4 h-4" />
+                          )}
+                          PDF
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+            </TabsContent>
+          )}
         </Tabs>
       </DialogContent>
     </Dialog>
