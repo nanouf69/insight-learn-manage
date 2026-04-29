@@ -1614,6 +1614,56 @@ export function ComptabilitePage() {
           <RapprochementBancaire />
         </TabsContent>
       </Tabs>
+
+      {/* Aperçu et validation d'un brouillon de facture */}
+      <Dialog open={!!draftPreview} onOpenChange={(open) => { if (!open) setDraftPreview(null); }}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+          <DialogHeader className="px-6 pt-6">
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Brouillon — Facture {draftPreview?.numero} ({draftPreview?.client_nom})
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden border-y bg-muted">
+            {draftPreview && (
+              <iframe
+                title="Aperçu facture brouillon"
+                srcDoc={generateDraftHTML(draftPreview._draftRaw)}
+                className="w-full h-[65vh] bg-white"
+              />
+            )}
+          </div>
+          <DialogFooter className="px-6 py-4 gap-2">
+            <Button variant="outline" onClick={() => setDraftPreview(null)} disabled={validatingDraft}>
+              Fermer
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (!draftPreview?._draftRaw) return;
+                const html = generateDraftHTML(draftPreview._draftRaw);
+                const w = window.open("", "_blank");
+                if (!w) { toast.error("Popup bloquée"); return; }
+                w.document.write(html);
+                w.document.close();
+                w.onload = () => { setTimeout(() => { w.focus(); w.print(); }, 300); };
+              }}
+              disabled={validatingDraft}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Télécharger PDF
+            </Button>
+            <Button
+              onClick={() => draftPreview && validateDraft(draftPreview)}
+              disabled={validatingDraft}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              <CheckCheck className="w-4 h-4 mr-2" />
+              {validatingDraft ? "Validation..." : "Valider la facture définitivement"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
