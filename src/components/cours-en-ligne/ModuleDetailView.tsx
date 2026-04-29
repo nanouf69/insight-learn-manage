@@ -136,10 +136,13 @@ interface ExerciceChoix {
   correct?: boolean;
 }
 
+type ImageSize = "sm" | "md" | "lg" | "xl" | "2xl";
+
 interface ExerciceQuestion {
   id: number;
   enonce: string;
   image?: string;
+  imageSize?: ImageSize;
   choix: ExerciceChoix[];
 }
 
