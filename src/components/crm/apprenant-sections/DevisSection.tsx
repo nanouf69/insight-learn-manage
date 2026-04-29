@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ContratLocationSection } from "./ContratLocationSection";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -1253,14 +1255,21 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
 
   return (
     <div className="space-y-6">
-      {/* ═══ SECTION 1 : DEVIS DOCX TEMPLATES ═══ */}
-      <Card className="border-primary/30">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <FileDown className="w-5 h-5 text-primary" />
-            Devis DOCX pré-rempli
-          </CardTitle>
-        </CardHeader>
+      <Tabs defaultValue="devis" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="devis">📄 Devis</TabsTrigger>
+          <TabsTrigger value="location">🚗 Contrat de location</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="devis" className="space-y-6 mt-4">
+          {/* ═══ SECTION 1 : DEVIS DOCX TEMPLATES ═══ */}
+          <Card className="border-primary/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <FileDown className="w-5 h-5 text-primary" />
+                Devis DOCX pré-rempli
+              </CardTitle>
+            </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>Sélectionner le modèle de devis</Label>
@@ -1625,6 +1634,12 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
           </CardContent>
         </Card>
       )}
+        </TabsContent>
+
+        <TabsContent value="location" className="mt-4">
+          <ContratLocationSection apprenant={apprenant} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
