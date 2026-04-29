@@ -1543,7 +1543,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
               {session.title}
               {getStatusBadge(session.status)}
             </DialogTitle>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Button
                 size="sm"
                 variant="outline"
@@ -1553,6 +1553,32 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 <Download className="w-4 h-4" />
                 Feuilles d'émargement
               </Button>
+              {isFormationContinue && (
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleBulkDownloadAttestations}
+                    disabled={bulkDownloadingAttestations || apprenantsInSession.length === 0}
+                    className="gap-2"
+                    title="Télécharger toutes les attestations de formation continue dans un ZIP"
+                  >
+                    {bulkDownloadingAttestations ? <Loader2 className="w-4 h-4 animate-spin" /> : <GraduationCap className="w-4 h-4" />}
+                    Toutes les attestations
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="default"
+                    onClick={handleBulkSendAttestations}
+                    disabled={bulkSendingAttestations || apprenantsInSession.length === 0}
+                    className="gap-2"
+                    title="Envoyer l'attestation par email à chaque élève"
+                  >
+                    {bulkSendingAttestations ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    Envoyer attestations
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </DialogHeader>
