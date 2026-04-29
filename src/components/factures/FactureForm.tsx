@@ -74,6 +74,16 @@ interface ApprenantItem {
   dateDebutFormation: string;
   dateFinFormation: string;
   montantTtc: number;
+  organismeFinanceur?: string | null;
+  societeNom?: string | null;
+  societeSiret?: string | null;
+  societeTvaIntra?: string | null;
+  societeAdresse?: string | null;
+  societeCodePostal?: string | null;
+  societeVille?: string | null;
+  factureContactNom?: string | null;
+  factureContactEmail?: string | null;
+  factureContactTelephone?: string | null;
 }
 
 // Liste des organisations
