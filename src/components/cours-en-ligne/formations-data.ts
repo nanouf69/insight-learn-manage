@@ -406,6 +406,12 @@ export const MODULES_DATA: ModuleInfo[] = [
     description: "Saisie des informations de facturation — Formation continue TAXI",
     formations: ["continue-taxi"],
   },
+  {
+    id: 87,
+    nom: "2.📋 BILAN FIN DE FORMATION CONTINUE VTC",
+    description: "Bilan fin de formation — Formation Continue VTC",
+    formations: ["continue-vtc"],
+  },
 ];
 
 // Expansion des modules_autorises :
