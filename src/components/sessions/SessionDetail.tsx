@@ -1258,7 +1258,155 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     }
   };
 
-  const normalizedSessionText = `${session.title || ''} ${session.formation || ''}`.toLowerCase();
+  // ===== FACTURES FORMATION CONTINUE =====
+  const buildFactureDataForApprenant = (apprenant: any, sessionApprenant: any, indexInSession: number) => {
+    const fc: any = (financeursFCMap as any)?.[apprenant.id] || null;
+    const typeApp = `${apprenant.type_apprenant || ''} ${apprenant.formation_choisie || ''}`.toUpperCase();
+    const formation: 'VTC' | 'TAXI' = typeApp.includes('TAXI') ? 'TAXI' : 'VTC';
+    const montantTTC = Number(sessionApprenant?.montant_total ?? apprenant.montant_ttc ?? 0) || 0;
+    const tva = 0; // TVA non applicable - art 293 B
+    const montantHT = montantTTC / (1 + tva / 100);
+    const yyyymmdd = new Date().toISOString().split('T')[0];
+    const sessionShort = (session.id || '').toString().slice(0, 6).toUpperCase();
+    const numero = `FC-${formation}-${yyyymmdd.replace(/-/g, '')}-${sessionShort}-${String(indexInSession + 1).padStart(2, '0')}`;
+    const dueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    return {
+      numero,
+      dateEmission: yyyymmdd,
+      dateEcheance: dueDate,
+      apprenant: {
+        nom: apprenant.nom,
+        prenom: apprenant.prenom,
+        adresse: apprenant.adresse || fc?.adresse,
+        code_postal: apprenant.code_postal || fc?.code_postal,
+        ville: apprenant.ville || fc?.ville,
+        email: apprenant.email,
+        telephone: apprenant.telephone,
+      },
+      financeur: fc,
+      formation,
+      designation: `Formation Continue Obligatoire ${formation} - 14h`,
+      montantHT,
+      tvaTaux: tva,
+      duree: '14h',
+      refDossier: fc?.numero_dossier || apprenant.numero_dossier_cma || undefined,
+    };
+  };
+
+  const getFactureRecipientEmail = (apprenant: any): string | null => {
+    const fc: any = (financeursFCMap as any)?.[apprenant.id] || null;
+    return (fc?.email_facturation || fc?.contact_email || apprenant.email || '').trim() || null;
+  };
+
+  const handleDownloadSingleFacture = async (apprenant: any, sessionApprenant: any, idx: number) => {
+    try {
+      setSingleFactureLoading(apprenant.id);
+      const data = buildFactureDataForApprenant(apprenant, sessionApprenant, idx);
+      await generateFactureFC(data);
+      toast({ title: "Facture téléchargée", description: `${apprenant.prenom} ${apprenant.nom}` });
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e?.message || "Impossible de générer la facture.", variant: "destructive" });
+    } finally {
+      setSingleFactureLoading(null);
+    }
+  };
+
+  const handleBulkDownloadFactures = async () => {
+    if (!apprenantsInSession.length) {
+      toast({ title: "Aucun apprenant", variant: "destructive" });
+      return;
+    }
+    setBulkDownloadingFactures(true);
+    try {
+      let mergedDoc: any = null;
+      let count = 0;
+      for (let i = 0; i < apprenantsInSession.length; i++) {
+        const sa = apprenantsInSession[i];
+        if (!sa.apprenant) continue;
+        const data = buildFactureDataForApprenant(sa.apprenant, sa, i);
+        const result: any = await generateFactureFC(data, {
+          returnDoc: true,
+          existingDoc: mergedDoc ?? undefined,
+          addPage: !!mergedDoc,
+        });
+        if (result?.doc) { mergedDoc = result.doc; count++; }
+      }
+      if (!mergedDoc || !count) {
+        toast({ title: "Aucune facture", variant: "destructive" });
+        return;
+      }
+      const safeTitle = (session.title || 'session').replace(/[^a-zA-Z0-9_-]+/g, '_');
+      mergedDoc.save(`Factures_FC_${safeTitle}.pdf`);
+      toast({ title: "Factures téléchargées", description: `${count} facture(s) regroupée(s) dans un seul PDF.` });
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e?.message || "Échec génération factures.", variant: "destructive" });
+    } finally {
+      setBulkDownloadingFactures(false);
+    }
+  };
+
+  const handleBulkSendFactures = async () => {
+    if (!apprenantsInSession.length) {
+      toast({ title: "Aucun apprenant", variant: "destructive" });
+      return;
+    }
+    setBulkSendingFactures(true);
+    let sent = 0, skipped = 0, failed = 0;
+    try {
+      for (let i = 0; i < apprenantsInSession.length; i++) {
+        const sa = apprenantsInSession[i];
+        const apprenant = sa.apprenant;
+        if (!apprenant) continue;
+        const recipient = getFactureRecipientEmail(apprenant);
+        if (!recipient) { skipped++; continue; }
+        try {
+          const data = buildFactureDataForApprenant(apprenant, sa, i);
+          const result: any = await generateFactureFC(data, { returnBlob: true });
+          if (!result?.blob) { failed++; continue; }
+          const arrayBuffer = await result.blob.arrayBuffer();
+          const bytes = new Uint8Array(arrayBuffer);
+          let binary = '';
+          const chunkSize = 0x8000;
+          for (let i2 = 0; i2 < bytes.length; i2 += chunkSize) {
+            binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i2, i2 + chunkSize)));
+          }
+          const base64 = btoa(binary);
+          const subject = `Votre facture ${data.numero} - Formation Continue ${data.formation}`;
+          const htmlBody = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <p>Bonjour,</p>
+              <p>Veuillez trouver ci-joint la facture <strong>${data.numero}</strong> concernant la formation continue ${data.formation} de <strong>${apprenant.prenom} ${apprenant.nom}</strong>.</p>
+              <p>Pour tout règlement par virement, merci de nous indiquer le numéro de facture en référence.</p>
+              <p>Cordialement,<br/>Services pro Ftransport<br/>contact@ftransport.fr</p>
+            </div>`;
+          const { error } = await supabase.functions.invoke('send-document-email', {
+            body: {
+              recipientEmail: recipient,
+              recipientName: `${apprenant.prenom} ${apprenant.nom}`,
+              subject,
+              htmlBody,
+              attachmentBase64: base64,
+              attachmentFileName: result.fileName,
+            },
+          });
+          if (error) { failed++; continue; }
+          sent++;
+        } catch (e) {
+          console.error('Erreur envoi facture', e);
+          failed++;
+        }
+      }
+      toast({
+        title: "Envoi terminé",
+        description: `${sent} envoyée(s)${skipped ? `, ${skipped} sans email financeur` : ''}${failed ? `, ${failed} échec(s)` : ''}.`,
+      });
+    } finally {
+      setBulkSendingFactures(false);
+    }
+  };
+
+
   const isFormationContinue = normalizedSessionText.includes('continue');
 
   const getSessionTrainingFlags = (typeApprenant: string | null | undefined) => {
