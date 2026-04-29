@@ -154,9 +154,9 @@ interface FactureData {
   moyenPaiement: string;
 }
 
-// Compteur séquentiel persistant - démarre à 202604207
+// Compteur séquentiel persistant - démarre à 20260423037
 const FACTURE_COUNTER_KEY = "facture_numero_interne_counter";
-const FACTURE_COUNTER_START = 202604207;
+const FACTURE_COUNTER_START = 20260423037;
 
 const generateNumeroFacture = () => {
   try {
@@ -170,9 +170,11 @@ const generateNumeroFacture = () => {
   }
 };
 
+const __initialNumero = generateNumeroFacture();
+
 const defaultFactureData: FactureData = {
-  numero: "7",
-  numeroInterne: generateNumeroFacture(),
+  numero: __initialNumero,
+  numeroInterne: __initialNumero,
   date: new Date().toISOString().split('T')[0],
   dateEcheance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
   duplicata: false,
