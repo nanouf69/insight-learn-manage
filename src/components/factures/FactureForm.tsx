@@ -537,6 +537,7 @@ export function FactureForm() {
           <p className="text-muted-foreground">Format conforme à votre modèle de facturation</p>
         </div>
         <div className="flex gap-2">
+          <Button onClick={handleSaveDraft} variant="outline"><Save className="w-4 h-4 mr-2" />Enregistrer comme brouillon</Button>
           <Button onClick={handleEnvoyer} variant="outline"><Send className="w-4 h-4 mr-2" />Envoyer</Button>
           <Button onClick={handlePrint} variant="outline"><Printer className="w-4 h-4 mr-2" />Imprimer</Button>
           <Button onClick={handleExport}><Download className="w-4 h-4 mr-2" />Télécharger PDF</Button>
