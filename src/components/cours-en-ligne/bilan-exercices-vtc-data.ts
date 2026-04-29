@@ -1,61 +1,76 @@
-// Bilan Exercices VTC — Regroupe TOUS les exercices par matière (sauf Français et Anglais)
-// Chaque matière combine toutes ses parties en un seul grand quiz
+// Bilan Exercices VTC — reprend les exercices du module "2.COURS ET EXERCICES VTC"
+// et les regroupe par matière pour garder exactement les mêmes questions/réponses.
 
-import { T3P_EXERCICE_PARTIE_1, T3P_EXERCICE_PARTIE_2 } from "./exercices/t3p-exercices-data";
-import { GESTION_EXERCICES } from "./exercices/gestion-exercices-data";
-import { SECURITE_ROUTIERE_EXERCICES } from "./exercices/securite-routiere-exercices-data";
-import {
-  REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES,
-} from "./exercices/reglementation-exercices-data";
-import { DEV_COMMERCIAL_EXERCICE } from "./exercices/dev-commercial-exercices-data";
+import { VTC_COURS_DATA } from "./vtc-cours-data";
+import type { ExerciceItem, ExerciceQuestion } from "./exercices/types";
 
-function renumberQuestions(questions: { id: number; enonce: string; choix: any[] }[]) {
-  return questions.map((q, i) => ({ ...q, id: i + 1 }));
-}
-
-export const BILAN_EXERCICES_VTC = [
+const BILAN_VTC_GROUPS = [
   {
     id: 100,
     titre: "📘 Bilan T3P — Partie 1 + Partie 2",
-    sousTitre: `${(T3P_EXERCICE_PARTIE_1.questions?.length || 0) + (T3P_EXERCICE_PARTIE_2.questions?.length || 0)} questions — Réglementation du Transport Public Particulier de Personnes`,
-    actif: true,
-    questions: renumberQuestions([
-      ...(T3P_EXERCICE_PARTIE_1.questions || []),
-      ...(T3P_EXERCICE_PARTIE_2.questions || []),
-    ]),
+    sourceIds: [1, 2],
+    description: "Réglementation du Transport Public Particulier de Personnes",
   },
   {
     id: 101,
     titre: "📗 Bilan Gestion — Partie 1 + 2 + 3",
-    sousTitre: `${GESTION_EXERCICES.reduce((acc, e) => acc + (e.questions?.length || 0), 0)} questions — Entrepreneurs, Fiscalité, Comptabilité, Organismes`,
-    actif: true,
-    questions: renumberQuestions(
-      GESTION_EXERCICES.flatMap(e => e.questions || [])
-    ),
+    sourceIds: [60, 61, 62],
+    description: "Entrepreneurs, Fiscalité, Comptabilité, Organismes",
   },
   {
     id: 102,
     titre: "📙 Bilan Sécurité Routière — Partie 1 + 2 + 3",
-    sousTitre: `${SECURITE_ROUTIERE_EXERCICES.reduce((acc, e) => acc + (e.questions?.length || 0), 0)} questions — Signalisation, Vitesses, Distances, Infractions`,
-    actif: true,
-    questions: renumberQuestions(
-      SECURITE_ROUTIERE_EXERCICES.flatMap(e => e.questions || [])
-    ),
+    sourceIds: [80, 81, 82],
+    description: "Signalisation, Vitesses, Distances, Infractions",
+  },
+  {
+    id: 103,
+    titre: "📒 Bilan Français",
+    sourceIds: [50],
+    description: "Compréhension et expression écrite",
+  },
+  {
+    id: 105,
+    titre: "📔 Bilan Anglais — Partie 1 + 2 + 3 + 4",
+    sourceIds: [3, 4, 5, 6],
+    description: "Expression et compréhension en anglais",
   },
   {
     id: 104,
     titre: "📓 Bilan Développement Commercial",
-    sousTitre: `${DEV_COMMERCIAL_EXERCICE.questions?.length || 0} questions — Marketing, SWOT, PESTEL, Fidélisation, Devis & Facture`,
-    actif: true,
-    questions: renumberQuestions(DEV_COMMERCIAL_EXERCICE.questions || []),
+    sourceIds: [7],
+    description: "Marketing, SWOT, PESTEL, Fidélisation, Devis & Facture",
   },
   {
     id: 106,
     titre: "📕 Bilan Réglementation Spécifique VTC",
-    sousTitre: `${REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES.reduce((acc, e) => acc + (e.questions?.length || 0), 0)} questions — Registre VTC, Garantie financière, Vignettes, Véhicule, Sanctions`,
-    actif: true,
-    questions: renumberQuestions(
-      REGLEMENTATION_SPECIFIQUE_VTC_EXERCICES.flatMap(e => e.questions || [])
-    ),
+    sourceIds: [72],
+    description: "Registre VTC, Garantie financière, Vignettes, Véhicule, Sanctions",
   },
-];
+] as const;
+
+function renumberQuestions(questions: ExerciceQuestion[]) {
+  return questions.map((question, index) => ({
+    ...question,
+    id: index + 1,
+    choix: (question.choix || []).map((choice) => ({ ...choice })),
+  }));
+}
+
+export function buildBilanExercicesVtcFromCours(sourceExercices: ExerciceItem[] = VTC_COURS_DATA.exercices): ExerciceItem[] {
+  const sourceById = new Map(sourceExercices.map((exercise) => [Number(exercise.id), exercise]));
+
+  return BILAN_VTC_GROUPS.map((group) => {
+    const questions = group.sourceIds.flatMap((sourceId) => sourceById.get(sourceId)?.questions || []);
+
+    return {
+      id: group.id,
+      titre: group.titre,
+      sousTitre: `${questions.length} questions — ${group.description}`,
+      actif: true,
+      questions: renumberQuestions(questions),
+    };
+  });
+}
+
+export const BILAN_EXERCICES_VTC = buildBilanExercicesVtcFromCours();

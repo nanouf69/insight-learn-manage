@@ -72,7 +72,7 @@ import { TA_COURS_DATA, TA_SECTIONS } from "./ta-cours-data";
 import { VA_COURS_DATA, VA_SECTIONS } from "./va-cours-data";
 import { CONTROLE_CONNAISSANCES_TAXI_DATA } from "./controle-connaissances-taxi-data";
 import { CONNAISSANCES_VILLE_TAXI_DATA } from "./connaissances-ville-taxi-data";
-import { BILAN_EXERCICES_VTC } from "./bilan-exercices-vtc-data";
+import { BILAN_EXERCICES_VTC, buildBilanExercicesVtcFromCours } from "./bilan-exercices-vtc-data";
 import { BILAN_EXERCICES_TAXI } from "./bilan-exercices-taxi-data";
 import { BILAN_EXERCICES_TA } from "./bilan-exercices-ta-data";
 import { BILAN_EXERCICES_VA } from "./bilan-exercices-va-data";
@@ -159,6 +159,24 @@ interface ModuleData {
   cours: ContentItem[];
   exercices: ExerciceItem[];
 }
+
+const BILAN_VTC_SOURCE_MODULE_ID = 2;
+
+const shouldSyncVtcBilanFromCours = (moduleId: number | string) => [4, 81].includes(Number(moduleId));
+
+const getSyncedBilanVtcModuleData = (
+  initialData: ModuleData,
+  sourceExercices: ExerciceItem[],
+  includeGestion: boolean,
+): ModuleData => {
+  const groupedExercices = buildBilanExercicesVtcFromCours(sourceExercices);
+  return {
+    ...initialData,
+    exercices: includeGestion
+      ? groupedExercices
+      : groupedExercices.filter((exercise) => Number(exercise.id) !== 101),
+  };
+};
 
 interface ExerciseQuestionPrompt {
   question: string;
@@ -2447,6 +2465,36 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         const FC_BILAN_PARENT: Record<number, number> = { 81: 4, 82: 9 };
         const parentModuleId = FC_BILAN_PARENT[Number(module.id)];
 
+        if (shouldSyncVtcBilanFromCours(module.id) && initialData.exercices.length > 0) {
+          try {
+            const { data: sourceState } = await supabase
+              .from("module_editor_state")
+              .select("module_data, deleted_exercices")
+              .eq("module_id", BILAN_VTC_SOURCE_MODULE_ID)
+              .order("updated_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            const sourceMd = sourceState?.module_data as unknown as ModuleData | undefined;
+            if (sourceMd?.exercices && Array.isArray(sourceMd.exercices)) {
+              const sourceInitial = JSON.parse(JSON.stringify(VTC_COURS_DATA)) as ModuleData;
+              const deletedSourceIds = Array.isArray(sourceState?.deleted_exercices)
+                ? (sourceState.deleted_exercices as any[]).map((e: any) => Number(e?.id)).filter((n) => !Number.isNaN(n))
+                : [];
+              const sourceExercices = mergeSourceExercices(sourceMd.exercices, sourceInitial.exercices, deletedSourceIds);
+              const syncedModuleData = getSyncedBilanVtcModuleData(initialData, sourceExercices, Number(module.id) === 4);
+
+              setModuleData(syncedModuleData);
+              setDeletedCours([]);
+              setDeletedExercices([]);
+              setLoadedModuleEditorState(true);
+              return;
+            }
+          } catch (e) {
+            console.error(`[Bilan VTC] Erreur synchronisation depuis module ${BILAN_VTC_SOURCE_MODULE_ID}:`, e);
+          }
+        }
+
         // Modules FC: toujours refléter le bilan parent (4 VTC / 9 TAXI), même si
         // un ancien état propre au module 81/82 existe en base. Sinon les élèves
         // FC gardent des questions/réponses obsolètes.
@@ -2645,6 +2693,29 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     // Refetch from DB instead of trusting the payload (which can be truncated for large JSONB)
     const refetchModuleFromDb = async () => {
       try {
+        if (shouldSyncVtcBilanFromCours(module.id)) {
+          const { data: sourceState } = await supabase
+            .from("module_editor_state")
+            .select("module_data, deleted_exercices")
+            .eq("module_id", BILAN_VTC_SOURCE_MODULE_ID)
+            .order("updated_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          const sourceMd = sourceState?.module_data as unknown as ModuleData | undefined;
+          if (sourceMd?.exercices && Array.isArray(sourceMd.exercices)) {
+            const sourceInitial = JSON.parse(JSON.stringify(VTC_COURS_DATA)) as ModuleData;
+            const deletedSourceIds = Array.isArray(sourceState?.deleted_exercices)
+              ? (sourceState.deleted_exercices as any[]).map((e: any) => Number(e?.id)).filter((n) => !Number.isNaN(n))
+              : [];
+            const sourceExercices = mergeSourceExercices(sourceMd.exercices, sourceInitial.exercices, deletedSourceIds);
+            setModuleData((prev) => getSyncedBilanVtcModuleData(prev, sourceExercices, Number(module.id) === 4));
+            setDeletedCours([]);
+            setDeletedExercices([]);
+            setLoadedModuleEditorState(true);
+            return;
+          }
+        }
+
         const { data, error } = await supabase
           .from("module_editor_state")
           .select("module_data, deleted_cours, deleted_exercices, updated_at")
@@ -2692,7 +2763,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       const newData = payload.new as any;
       const eventModule = newData?.module_id != null ? Number(newData.module_id) : null;
 
-      if (eventModule === Number(module.id)) {
+        if (eventModule === Number(module.id) || (shouldSyncVtcBilanFromCours(module.id) && eventModule === BILAN_VTC_SOURCE_MODULE_ID)) {
         // Direct module match — refetch full data from DB (payload may be truncated)
         await refetchModuleFromDb();
       } else {
