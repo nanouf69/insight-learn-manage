@@ -1839,7 +1839,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         </div>
 
         <Tabs defaultValue="apprenants" className="flex-1 flex flex-col overflow-auto">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className={`grid w-full ${isFormationContinue ? 'grid-cols-3' : 'grid-cols-2'}`}>
             <TabsTrigger value="apprenants" className="gap-2">
               <Users className="w-4 h-4" />
               Apprenants ({totalCount})
@@ -1848,6 +1848,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
               <UserCog className="w-4 h-4" />
               Formateurs ({formateursCount})
             </TabsTrigger>
+            {isFormationContinue && (
+              <TabsTrigger value="factures" className="gap-2">
+                <FileText className="w-4 h-4" />
+                Factures ({totalCount})
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Apprenants Tab */}
