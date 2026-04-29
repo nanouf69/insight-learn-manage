@@ -1048,6 +1048,66 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
               </Select>
             </div>
 
+            {/* Informations société (financement par société/entreprise) */}
+            {formData.organisme_financeur === "societe" && (
+              <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
+                <h3 className="text-sm font-semibold">Informations de la société (facturation)</h3>
+                <p className="text-xs text-muted-foreground">La facture sera émise au nom de cette société.</p>
+
+                <div className="space-y-2">
+                  <Label htmlFor="societe_nom">Raison sociale *</Label>
+                  <Input id="societe_nom" value={formData.societe_nom} onChange={(e) => setFormData({ ...formData, societe_nom: e.target.value })} placeholder="Ex: TRANSPORT SAS" />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="societe_siret">SIRET</Label>
+                    <Input id="societe_siret" value={formData.societe_siret} onChange={(e) => setFormData({ ...formData, societe_siret: e.target.value })} placeholder="14 chiffres" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="societe_tva_intra">TVA intracommunautaire</Label>
+                    <Input id="societe_tva_intra" value={formData.societe_tva_intra} onChange={(e) => setFormData({ ...formData, societe_tva_intra: e.target.value })} placeholder="FR..." />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="societe_adresse">Adresse</Label>
+                  <Input id="societe_adresse" value={formData.societe_adresse} onChange={(e) => setFormData({ ...formData, societe_adresse: e.target.value })} placeholder="N° et nom de rue" />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="societe_code_postal">Code postal</Label>
+                    <Input id="societe_code_postal" value={formData.societe_code_postal} onChange={(e) => setFormData({ ...formData, societe_code_postal: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="societe_ville">Ville</Label>
+                    <Input id="societe_ville" value={formData.societe_ville} onChange={(e) => setFormData({ ...formData, societe_ville: e.target.value })} />
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t">
+                  <h4 className="text-sm font-semibold mb-3">Contact pour la facture</h4>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="facture_contact_nom">Nom du contact *</Label>
+                  <Input id="facture_contact_nom" value={formData.facture_contact_nom} onChange={(e) => setFormData({ ...formData, facture_contact_nom: e.target.value })} placeholder="Ex: Soumia TOUNSI" />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="facture_contact_email">Email du contact *</Label>
+                    <Input id="facture_contact_email" type="email" value={formData.facture_contact_email} onChange={(e) => setFormData({ ...formData, facture_contact_email: e.target.value })} placeholder="contact@societe.fr" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="facture_contact_telephone">Téléphone</Label>
+                    <Input id="facture_contact_telephone" value={formData.facture_contact_telephone} onChange={(e) => setFormData({ ...formData, facture_contact_telephone: e.target.value })} placeholder="07 XX XX XX XX" />
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Dates de formation */}
             <div className="space-y-4">
               <Label>Dates de formation</Label>
