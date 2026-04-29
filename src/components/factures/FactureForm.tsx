@@ -67,6 +67,11 @@ interface ApprenantItem {
   phone: string;
   address: string;
   avatar: string;
+  formationChoisie: string;
+  typeApprenant: string;
+  dateDebutFormation: string;
+  dateFinFormation: string;
+  montantTtc: number;
 }
 
 // Liste des organisations
@@ -219,17 +224,22 @@ export function FactureForm() {
       while (hasMore) {
         const { data, error } = await supabase
           .from('apprenants')
-          .select('id, nom, prenom, email, telephone, adresse, ville, code_postal, civilite')
+          .select('id, nom, prenom, email, telephone, adresse, ville, code_postal, civilite, formation_choisie, type_apprenant, date_debut_formation, date_fin_formation, montant_ttc')
           .range(offset, offset + batchSize - 1);
         if (error) break;
         if (data && data.length > 0) {
-          const mapped = data.map(a => ({
+          const mapped: ApprenantItem[] = data.map((a: any) => ({
             id: a.id,
             name: `${a.prenom} ${a.nom}`,
             email: a.email || '',
             phone: a.telephone || '',
             address: [a.adresse, a.code_postal, a.ville].filter(Boolean).join(', '),
             avatar: getAvatarUrl(a.prenom, a.nom, a.civilite),
+            formationChoisie: a.formation_choisie || '',
+            typeApprenant: a.type_apprenant || '',
+            dateDebutFormation: a.date_debut_formation || a.date_debut_cours_en_ligne || '',
+            dateFinFormation: a.date_fin_formation || a.date_fin_cours_en_ligne || '',
+            montantTtc: Number(a.montant_ttc ?? 0),
           }));
           allData.push(...mapped);
           offset += batchSize;
@@ -249,6 +259,48 @@ export function FactureForm() {
 
   const selectedApprenant = apprenants.find(a => a.id === data.selectedApprenantId);
   const selectedOrganisation = organisations.find(o => o.id === data.selectedOrganisationId);
+
+  // Auto-remplit la facture (réf dossier + ligne formation) à la sélection d'un apprenant
+  useEffect(() => {
+    if (!selectedApprenant) return;
+    setData(prev => {
+      // Évite la double-injection : déjà une ligne "session" auto-créée pour cet apprenant ?
+      const dejaInjecte = prev.lignes.some(
+        l => l.type === "session" && l.stagiaire === selectedApprenant.name
+      );
+      const designation = selectedApprenant.formationChoisie || selectedApprenant.typeApprenant || "Formation";
+      const newLignes = dejaInjecte ? prev.lignes : [
+        ...prev.lignes,
+        {
+          id: crypto.randomUUID(),
+          type: "session" as const,
+          stagiaire: selectedApprenant.name,
+          designation,
+          dateDebut: selectedApprenant.dateDebutFormation || "",
+          dateFin: selectedApprenant.dateFinFormation || "",
+          lieu: "86 route de genas 69003 Lyon",
+          quantite: 1,
+          prixUnitaire: selectedApprenant.montantTtc || 0,
+          tvaType: "EXO" as const,
+          remise: 0,
+        },
+      ];
+      return {
+        ...prev,
+        refDossier: prev.refDossier || selectedApprenant.name,
+        lignes: newLignes,
+      };
+    });
+  }, [selectedApprenant?.id]);
+
+  // Auto-remplit la réf dossier à la sélection d'une organisation (sans nom de stagiaire)
+  useEffect(() => {
+    if (!selectedOrganisation) return;
+    setData(prev => ({
+      ...prev,
+      refDossier: prev.refDossier || selectedOrganisation.name,
+    }));
+  }, [selectedOrganisation?.id]);
 
   const filteredApprenants = apprenants.filter(a => 
     a.name.toLowerCase().includes(searchApprenant.toLowerCase()) ||
