@@ -1075,9 +1075,38 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     };
   };
 
+  const checkApprenantsCompleteness = (): { ok: boolean; missing: string[] } => {
+    const missing: string[] = [];
+    for (const sa of apprenantsInSession) {
+      const a = sa.apprenant;
+      if (!a) continue;
+      const fields: string[] = [];
+      if (!a.nom?.trim()) fields.push('nom');
+      if (!a.prenom?.trim()) fields.push('prénom');
+      if (!a.adresse?.trim()) fields.push('adresse');
+      if (!a.code_postal?.trim()) fields.push('code postal');
+      if (!a.ville?.trim()) fields.push('ville');
+      if (!a.telephone?.trim()) fields.push('téléphone');
+      if (!a.email?.trim()) fields.push('email');
+      if (fields.length) {
+        missing.push(`${a.prenom || ''} ${a.nom || ''} → ${fields.join(', ')}`);
+      }
+    }
+    return { ok: missing.length === 0, missing };
+  };
+
   const handleBulkDownloadAttestations = async () => {
     if (!apprenantsInSession.length) {
       toast({ title: "Aucun apprenant", description: "Cette session ne contient aucun apprenant.", variant: "destructive" });
+      return;
+    }
+    const check = checkApprenantsCompleteness();
+    if (!check.ok) {
+      toast({
+        title: "Informations manquantes",
+        description: `Veuillez compléter la fiche apprenant avant de générer :\n${check.missing.join('\n')}`,
+        variant: "destructive",
+      });
       return;
     }
     setBulkDownloadingAttestations(true);
