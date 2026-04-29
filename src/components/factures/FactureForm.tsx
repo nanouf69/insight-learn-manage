@@ -198,6 +198,7 @@ export function FactureForm() {
   const [isAddLineDialogOpen, setIsAddLineDialogOpen] = useState(false);
   const [addLineType, setAddLineType] = useState<"session" | "produit">("session");
   const [apprenants, setApprenants] = useState<ApprenantItem[]>([]);
+  const [apprenantFinanceur, setApprenantFinanceur] = useState<any | null>(null);
   const [sessions, setSessions] = useState<SessionItem[]>([]);
 
   const DRAFT_KEY = 'facture_draft_v1';
@@ -305,6 +306,26 @@ export function FactureForm() {
 
   const selectedApprenant = apprenants.find(a => a.id === data.selectedApprenantId);
   const selectedOrganisation = organisations.find(o => o.id === data.selectedOrganisationId);
+
+  // Charge le financeur (table financeurs_fc) pour l'apprenant sélectionné — fallback société
+  useEffect(() => {
+    if (!data.selectedApprenantId) {
+      setApprenantFinanceur(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data: fin } = await supabase
+        .from('financeurs_fc')
+        .select('*')
+        .eq('apprenant_id', data.selectedApprenantId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!cancelled) setApprenantFinanceur(fin || null);
+    })();
+    return () => { cancelled = true; };
+  }, [data.selectedApprenantId]);
 
   // Auto-remplit la facture (réf dossier + ligne formation) à la sélection d'un apprenant
   useEffect(() => {
@@ -551,20 +572,31 @@ export function FactureForm() {
 
   const getClientInfo = () => {
     if (data.typeFinanceur === "particulier" && selectedApprenant) {
+      // Fallback: si la fiche apprenant n'a pas les infos société, on utilise financeurs_fc
+      const fin = apprenantFinanceur;
+      const isSociete =
+        selectedApprenant.organismeFinanceur === "societe" ||
+        (fin && (fin.type_financeur === "professionnel" || fin.type_financeur === "societe" || fin.raison_sociale));
+
+      const societeNom = selectedApprenant.societeNom || fin?.raison_sociale || null;
+
       // Si l'apprenant est financé par sa société → facture au nom de la société
-      if (selectedApprenant.organismeFinanceur === "societe" && selectedApprenant.societeNom) {
+      if (isSociete && societeNom) {
+        const societeAdresse = selectedApprenant.societeAdresse || fin?.adresse || "";
+        const societeCP = selectedApprenant.societeCodePostal || fin?.code_postal || "";
+        const societeVille = selectedApprenant.societeVille || fin?.ville || "";
         const adresseSociete = [
-          selectedApprenant.societeAdresse,
-          [selectedApprenant.societeCodePostal, selectedApprenant.societeVille].filter(Boolean).join(' '),
+          societeAdresse,
+          [societeCP, societeVille].filter(Boolean).join(' '),
         ].filter(Boolean).join(', ');
         return {
-          nom: selectedApprenant.societeNom,
+          nom: societeNom,
           adresse: adresseSociete || selectedApprenant.address,
-          email: selectedApprenant.factureContactEmail || selectedApprenant.email,
-          telephone: selectedApprenant.factureContactTelephone || selectedApprenant.phone,
-          siret: selectedApprenant.societeSiret || "",
-          tvaIntra: selectedApprenant.societeTvaIntra || "",
-          contactNom: selectedApprenant.factureContactNom || "",
+          email: selectedApprenant.factureContactEmail || fin?.email_facturation || fin?.contact_email || selectedApprenant.email,
+          telephone: selectedApprenant.factureContactTelephone || fin?.contact_telephone || selectedApprenant.phone,
+          siret: selectedApprenant.societeSiret || fin?.siret || "",
+          tvaIntra: selectedApprenant.societeTvaIntra || fin?.numero_tva || "",
+          contactNom: selectedApprenant.factureContactNom || fin?.contact_nom || "",
           stagiaire: selectedApprenant.name,
         };
       }
