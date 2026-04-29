@@ -127,6 +127,121 @@ export function ComptabilitePage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [draftPreview, setDraftPreview] = useState<Facture | null>(null);
   const [validatingDraft, setValidatingDraft] = useState(false);
+  const [editingFacture, setEditingFacture] = useState<Facture | null>(null);
+  const [editFactureForm, setEditFactureForm] = useState<{
+    numero: string;
+    client_nom: string;
+    type_financement: string;
+    montant_ht: string;
+    tva_taux: string;
+    statut: string;
+    date_emission: string;
+    date_echeance: string;
+    date_paiement: string;
+  }>({
+    numero: "", client_nom: "", type_financement: "particulier",
+    montant_ht: "0", tva_taux: "20", statut: "en_attente",
+    date_emission: "", date_echeance: "", date_paiement: "",
+  });
+  const [savingFactureEdit, setSavingFactureEdit] = useState(false);
+  const [creatingAvoir, setCreatingAvoir] = useState<string | null>(null);
+
+  const openEditFacture = (f: Facture) => {
+    if (String(f.id).startsWith("draft-")) {
+      toast.info("Ouvrez le brouillon pour le modifier");
+      return;
+    }
+    const ht = Number(f.montant_ht) || 0;
+    const tva = Number(f.montant_tva) || 0;
+    const taux = ht > 0 ? Math.round((tva / ht) * 100) : 20;
+    setEditingFacture(f);
+    setEditFactureForm({
+      numero: f.numero,
+      client_nom: f.client_nom,
+      type_financement: f.type_financement,
+      montant_ht: String(ht),
+      tva_taux: String(taux),
+      statut: f.statut || "en_attente",
+      date_emission: f.date_emission || "",
+      date_echeance: f.date_echeance || "",
+      date_paiement: f.date_paiement || "",
+    });
+  };
+
+  const saveFactureEdit = async () => {
+    if (!editingFacture) return;
+    setSavingFactureEdit(true);
+    try {
+      const ht = Number(editFactureForm.montant_ht) || 0;
+      const taux = Number(editFactureForm.tva_taux) || 0;
+      const tva = +(ht * (taux / 100)).toFixed(2);
+      const ttc = +(ht + tva).toFixed(2);
+      const payload: any = {
+        numero: editFactureForm.numero,
+        client_nom: editFactureForm.client_nom,
+        type_financement: editFactureForm.type_financement,
+        montant_ht: ht,
+        tva_taux: taux,
+        montant_tva: tva,
+        montant_ttc: ttc,
+        statut: editFactureForm.statut,
+        date_emission: editFactureForm.date_emission || null,
+        date_echeance: editFactureForm.date_echeance || null,
+        date_paiement: editFactureForm.date_paiement || null,
+      };
+      const { error } = await supabase.from("factures").update(payload).eq("id", editingFacture.id);
+      if (error) throw error;
+      toast.success("Facture mise à jour");
+      setEditingFacture(null);
+      await fetchFactures();
+    } catch (e: any) {
+      console.error(e);
+      toast.error(`Erreur : ${e.message ?? e}`);
+    } finally {
+      setSavingFactureEdit(false);
+    }
+  };
+
+  const createAvoir = async (f: Facture) => {
+    if (String(f.id).startsWith("draft-")) {
+      toast.error("Impossible de créer un avoir sur un brouillon");
+      return;
+    }
+    if (!confirm(`Créer un avoir pour la facture ${f.numero} (montants négatifs) ?`)) return;
+    setCreatingAvoir(f.id);
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      const avoirNumero = `AV-${f.numero}-${Date.now().toString().slice(-5)}`;
+      const ht = -Math.abs(Number(f.montant_ht) || 0);
+      const tva = -Math.abs(Number(f.montant_tva) || 0);
+      const ttc = -Math.abs(Number(f.montant_ttc) || 0);
+      const taux = (Number(f.montant_ht) || 0) > 0
+        ? Math.round((Number(f.montant_tva) / Number(f.montant_ht)) * 100)
+        : 0;
+      const payload: any = {
+        numero: avoirNumero,
+        client_nom: f.client_nom,
+        type_financement: f.type_financement,
+        montant_ht: ht,
+        tva_taux: taux,
+        montant_tva: tva,
+        montant_ttc: ttc,
+        statut: "payee",
+        date_emission: today,
+        date_echeance: today,
+        date_paiement: today,
+      };
+      const { error } = await supabase.from("factures").insert(payload);
+      if (error) throw error;
+      toast.success(`Avoir ${avoirNumero} créé`);
+      await fetchFactures();
+    } catch (e: any) {
+      console.error(e);
+      toast.error(`Erreur : ${e.message ?? e}`);
+    } finally {
+      setCreatingAvoir(null);
+    }
+  };
 
   // À payer state
   const [payerFilter, setPayerFilter] = useState<"tous" | "en_attente" | "paye">("tous");
