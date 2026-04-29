@@ -1634,6 +1634,12 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
           </CardContent>
         </Card>
       )}
+        </TabsContent>
+
+        <TabsContent value="location" className="mt-4">
+          <ContratLocationSection apprenant={apprenant} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
