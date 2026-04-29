@@ -222,6 +222,15 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
     montant_paye: "0",
     moyen_paiement: "",
     notes: "",
+    societe_nom: "",
+    societe_siret: "",
+    societe_tva_intra: "",
+    societe_adresse: "",
+    societe_code_postal: "",
+    societe_ville: "",
+    facture_contact_nom: "",
+    facture_contact_email: "",
+    facture_contact_telephone: "",
   });
   const queryClient = useQueryClient();
 
