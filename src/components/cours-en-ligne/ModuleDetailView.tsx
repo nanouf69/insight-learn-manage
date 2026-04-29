@@ -1309,6 +1309,17 @@ function getInitialModuleDataRaw(
     };
   }
 
+  // Bilan fin de formation — Formation Continue VTC (module 87) — quiz interactif
+  if (module.id === 87) {
+    return {
+      id: 87,
+      nom: "2.📋 BILAN FIN DE FORMATION CONTINUE VTC",
+      description: "Bilan final de la formation continue VTC. Répondez aux questions puis validez pour voir votre score.",
+      cours: [],
+      exercices: JSON.parse(JSON.stringify(BILAN_FIN_FORMATION_FC_VTC_EXERCICE)),
+    };
+  }
+
   // Feuilles d'émargement signées — Formation Continue VTC (83) / TAXI (84)
   if (module.id === 83 || module.id === 84) {
     const isTaxi = module.id === 84;
