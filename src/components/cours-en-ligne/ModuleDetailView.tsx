@@ -77,6 +77,7 @@ import { BILAN_EXERCICES_TAXI } from "./bilan-exercices-taxi-data";
 import { BILAN_EXERCICES_TA } from "./bilan-exercices-ta-data";
 import { BILAN_EXERCICES_VA } from "./bilan-exercices-va-data";
 import { BILAN_EXERCICES_FC_VTC } from "./bilan-exercices-fc-vtc-data";
+import { BILAN_FIN_FORMATION_FC_VTC_EXERCICE } from "./bilan-fin-formation-fc-vtc-exercice";
 import { BILAN_EXERCICES_FC_TAXI } from "./bilan-exercices-fc-taxi-data";
 import { BILAN_EXAMEN_VTC } from "./bilan-examen-vtc-data";
 import { BILAN_EXAMEN_TAXI } from "./bilan-examen-taxi-data";
