@@ -558,7 +558,7 @@ export function FactureForm() {
     const clientHTML = client ? `${client.nom}<br>${client.adresse || ''}${client.contactNom ? `<br>À l'attention de : ${client.contactNom}` : ''}${client.email ? `<br>Email : ${client.email}` : ''}${client.telephone ? `<br>Tél : ${client.telephone}` : ''}${client.siret ? `<br>SIRET : ${client.siret}` : ''}${client.tvaIntra ? `<br>TVA Intracommunautaire : ${client.tvaIntra}` : ''}${client.stagiaire && client.stagiaire !== client.nom ? `<br><em>Stagiaire : ${client.stagiaire}</em>` : ''}` : 'Aucun client sélectionné';
 
     const moyenLabels: Record<string, string> = {
-      virement: "Virement bancaire", cheque: "Chèque", especes: "Espèces",
+      virement: "Virement bancaire", virement_especes: "Virement + Espèces", cheque: "Chèque", especes: "Espèces",
       cb: "Carte bancaire", cpf: "CPF", opco: "OPCO",
       france_travail: "France Travail", autre: "Autre",
     };
@@ -1069,6 +1069,7 @@ export function FactureForm() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="virement">Virement bancaire</SelectItem>
+                    <SelectItem value="virement_especes">Virement + Espèces</SelectItem>
                     <SelectItem value="cheque">Chèque</SelectItem>
                     <SelectItem value="especes">Espèces</SelectItem>
                     <SelectItem value="cb">Carte bancaire</SelectItem>
