@@ -50,6 +50,7 @@ import { generateEmargementPDF } from "./EmargementGenerator";
 import { generateEmargementIndividuelPDF, AgendaDaySlot } from "./EmargementIndividuelGenerator";
 import { supabase } from "@/integrations/supabase/client";
 import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
+import { generateFactureFC } from "@/lib/pdf/facture-fc";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -461,6 +462,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [bulkPrintingEmargement, setBulkPrintingEmargement] = useState(false);
   const [bulkDownloadingAttestations, setBulkDownloadingAttestations] = useState(false);
   const [bulkSendingAttestations, setBulkSendingAttestations] = useState(false);
+  const [bulkDownloadingFactures, setBulkDownloadingFactures] = useState(false);
+  const [bulkSendingFactures, setBulkSendingFactures] = useState(false);
+  const [singleFactureLoading, setSingleFactureLoading] = useState<string | null>(null);
   const [bulkPreview, setBulkPreview] = useState<{ template: any; apprenants: any[]; previewBody: string; previewSubject: string; editedBody?: string; editedSubject?: string } | null>(null);
   const [bulkPreviewEditing, setBulkPreviewEditing] = useState(false);
   const [editingMailType, setEditingMailType] = useState<any | null>(null);
@@ -1254,6 +1258,155 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     }
   };
 
+  // ===== FACTURES FORMATION CONTINUE =====
+  const buildFactureDataForApprenant = (apprenant: any, sessionApprenant: any, indexInSession: number) => {
+    const fc: any = (financeursFCMap as any)?.[apprenant.id] || null;
+    const typeApp = `${apprenant.type_apprenant || ''} ${apprenant.formation_choisie || ''}`.toUpperCase();
+    const formation: 'VTC' | 'TAXI' = typeApp.includes('TAXI') ? 'TAXI' : 'VTC';
+    const montantTTC = Number(sessionApprenant?.montant_total ?? apprenant.montant_ttc ?? 0) || 0;
+    const tva = 0; // TVA non applicable - art 293 B
+    const montantHT = montantTTC / (1 + tva / 100);
+    const yyyymmdd = new Date().toISOString().split('T')[0];
+    const sessionShort = (session.id || '').toString().slice(0, 6).toUpperCase();
+    const numero = `FC-${formation}-${yyyymmdd.replace(/-/g, '')}-${sessionShort}-${String(indexInSession + 1).padStart(2, '0')}`;
+    const dueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    return {
+      numero,
+      dateEmission: yyyymmdd,
+      dateEcheance: dueDate,
+      apprenant: {
+        nom: apprenant.nom,
+        prenom: apprenant.prenom,
+        adresse: apprenant.adresse || fc?.adresse,
+        code_postal: apprenant.code_postal || fc?.code_postal,
+        ville: apprenant.ville || fc?.ville,
+        email: apprenant.email,
+        telephone: apprenant.telephone,
+      },
+      financeur: fc,
+      formation,
+      designation: `Formation Continue Obligatoire ${formation} - 14h`,
+      montantHT,
+      tvaTaux: tva,
+      duree: '14h',
+      refDossier: fc?.numero_dossier || apprenant.numero_dossier_cma || undefined,
+    };
+  };
+
+  const getFactureRecipientEmail = (apprenant: any): string | null => {
+    const fc: any = (financeursFCMap as any)?.[apprenant.id] || null;
+    return (fc?.email_facturation || fc?.contact_email || apprenant.email || '').trim() || null;
+  };
+
+  const handleDownloadSingleFacture = async (apprenant: any, sessionApprenant: any, idx: number) => {
+    try {
+      setSingleFactureLoading(apprenant.id);
+      const data = buildFactureDataForApprenant(apprenant, sessionApprenant, idx);
+      await generateFactureFC(data);
+      toast({ title: "Facture téléchargée", description: `${apprenant.prenom} ${apprenant.nom}` });
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e?.message || "Impossible de générer la facture.", variant: "destructive" });
+    } finally {
+      setSingleFactureLoading(null);
+    }
+  };
+
+  const handleBulkDownloadFactures = async () => {
+    if (!apprenantsInSession.length) {
+      toast({ title: "Aucun apprenant", variant: "destructive" });
+      return;
+    }
+    setBulkDownloadingFactures(true);
+    try {
+      let mergedDoc: any = null;
+      let count = 0;
+      for (let i = 0; i < apprenantsInSession.length; i++) {
+        const sa = apprenantsInSession[i];
+        if (!sa.apprenant) continue;
+        const data = buildFactureDataForApprenant(sa.apprenant, sa, i);
+        const result: any = await generateFactureFC(data, {
+          returnDoc: true,
+          existingDoc: mergedDoc ?? undefined,
+          addPage: !!mergedDoc,
+        });
+        if (result?.doc) { mergedDoc = result.doc; count++; }
+      }
+      if (!mergedDoc || !count) {
+        toast({ title: "Aucune facture", variant: "destructive" });
+        return;
+      }
+      const safeTitle = (session.title || 'session').replace(/[^a-zA-Z0-9_-]+/g, '_');
+      mergedDoc.save(`Factures_FC_${safeTitle}.pdf`);
+      toast({ title: "Factures téléchargées", description: `${count} facture(s) regroupée(s) dans un seul PDF.` });
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e?.message || "Échec génération factures.", variant: "destructive" });
+    } finally {
+      setBulkDownloadingFactures(false);
+    }
+  };
+
+  const handleBulkSendFactures = async () => {
+    if (!apprenantsInSession.length) {
+      toast({ title: "Aucun apprenant", variant: "destructive" });
+      return;
+    }
+    setBulkSendingFactures(true);
+    let sent = 0, skipped = 0, failed = 0;
+    try {
+      for (let i = 0; i < apprenantsInSession.length; i++) {
+        const sa = apprenantsInSession[i];
+        const apprenant = sa.apprenant;
+        if (!apprenant) continue;
+        const recipient = getFactureRecipientEmail(apprenant);
+        if (!recipient) { skipped++; continue; }
+        try {
+          const data = buildFactureDataForApprenant(apprenant, sa, i);
+          const result: any = await generateFactureFC(data, { returnBlob: true });
+          if (!result?.blob) { failed++; continue; }
+          const arrayBuffer = await result.blob.arrayBuffer();
+          const bytes = new Uint8Array(arrayBuffer);
+          let binary = '';
+          const chunkSize = 0x8000;
+          for (let i2 = 0; i2 < bytes.length; i2 += chunkSize) {
+            binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i2, i2 + chunkSize)));
+          }
+          const base64 = btoa(binary);
+          const subject = `Votre facture ${data.numero} - Formation Continue ${data.formation}`;
+          const htmlBody = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <p>Bonjour,</p>
+              <p>Veuillez trouver ci-joint la facture <strong>${data.numero}</strong> concernant la formation continue ${data.formation} de <strong>${apprenant.prenom} ${apprenant.nom}</strong>.</p>
+              <p>Pour tout règlement par virement, merci de nous indiquer le numéro de facture en référence.</p>
+              <p>Cordialement,<br/>Services pro Ftransport<br/>contact@ftransport.fr</p>
+            </div>`;
+          const { error } = await supabase.functions.invoke('send-document-email', {
+            body: {
+              recipientEmail: recipient,
+              recipientName: `${apprenant.prenom} ${apprenant.nom}`,
+              subject,
+              htmlBody,
+              attachmentBase64: base64,
+              attachmentFileName: result.fileName,
+            },
+          });
+          if (error) { failed++; continue; }
+          sent++;
+        } catch (e) {
+          console.error('Erreur envoi facture', e);
+          failed++;
+        }
+      }
+      toast({
+        title: "Envoi terminé",
+        description: `${sent} envoyée(s)${skipped ? `, ${skipped} sans email financeur` : ''}${failed ? `, ${failed} échec(s)` : ''}.`,
+      });
+    } finally {
+      setBulkSendingFactures(false);
+    }
+  };
+
+
   const normalizedSessionText = `${session.title || ''} ${session.formation || ''}`.toLowerCase();
   const isFormationContinue = normalizedSessionText.includes('continue');
 
@@ -1686,7 +1839,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         </div>
 
         <Tabs defaultValue="apprenants" className="flex-1 flex flex-col overflow-auto">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className={`grid w-full ${isFormationContinue ? 'grid-cols-3' : 'grid-cols-2'}`}>
             <TabsTrigger value="apprenants" className="gap-2">
               <Users className="w-4 h-4" />
               Apprenants ({totalCount})
@@ -1695,6 +1848,12 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
               <UserCog className="w-4 h-4" />
               Formateurs ({formateursCount})
             </TabsTrigger>
+            {isFormationContinue && (
+              <TabsTrigger value="factures" className="gap-2">
+                <FileText className="w-4 h-4" />
+                Factures ({totalCount})
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Apprenants Tab */}
@@ -2480,6 +2639,100 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
               </ScrollArea>
             )}
           </TabsContent>
+
+          {/* Factures Tab (Formation Continue uniquement) */}
+          {isFormationContinue && (
+            <TabsContent value="factures" className="flex-1 overflow-auto flex flex-col mt-4">
+              <div className="shrink-0 flex flex-wrap items-center gap-3 mb-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                <div className="text-sm">
+                  <div className="font-medium">Factures Formation Continue</div>
+                  <div className="text-muted-foreground text-xs">
+                    Le destinataire est le financeur saisi dans "Informations Financeur" — sinon l'apprenant.
+                  </div>
+                </div>
+                <div className="flex-1" />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleBulkDownloadFactures}
+                  disabled={bulkDownloadingFactures || apprenantsInSession.length === 0}
+                  className="gap-2"
+                >
+                  {bulkDownloadingFactures ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  Toutes les factures (PDF)
+                </Button>
+                <Button
+                  size="sm"
+                  variant="default"
+                  onClick={handleBulkSendFactures}
+                  disabled={bulkSendingFactures || apprenantsInSession.length === 0}
+                  className="gap-2"
+                >
+                  {bulkSendingFactures ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  Envoyer aux financeurs
+                </Button>
+              </div>
+
+              <ScrollArea className="flex-1">
+                <div className="space-y-2 pr-2">
+                  {apprenantsInSession.length === 0 && (
+                    <div className="text-center text-muted-foreground py-12">
+                      <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                      <p>Aucun apprenant dans cette session</p>
+                    </div>
+                  )}
+                  {apprenantsInSession.map((sa: any, idx: number) => {
+                    const a = sa.apprenant;
+                    if (!a) return null;
+                    const fc: any = (financeursFCMap as any)?.[a.id] || null;
+                    const isPro = fc?.type_financeur === 'professionnel';
+                    const recipient = getFactureRecipientEmail(a);
+                    const montantTTC = Number(sa?.montant_total ?? a.montant_ttc ?? 0) || 0;
+                    return (
+                      <div key={a.id} className="flex items-center gap-3 p-3 rounded-lg border bg-card">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium truncate">
+                            {a.prenom} {a.nom?.toUpperCase()}
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate">
+                            Financeur :{' '}
+                            {isPro ? (
+                              <span className="font-medium text-foreground">
+                                {fc.raison_sociale || '(pro sans raison sociale)'}
+                                {fc.siret ? ` — SIRET ${fc.siret}` : fc.siren ? ` — SIREN ${fc.siren}` : ''}
+                              </span>
+                            ) : fc ? (
+                              <span>Particulier ({fc.contact_nom || `${a.prenom} ${a.nom}`})</span>
+                            ) : (
+                              <span className="text-orange-600">Aucun financeur saisi — facturation à l'apprenant</span>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate">
+                            Email facturation : {recipient || <span className="text-destructive">manquant</span>}
+                            {' • '}Montant TTC : <span className="font-medium text-foreground">{montantTTC.toFixed(2)} €</span>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-2 shrink-0"
+                          onClick={() => handleDownloadSingleFacture(a, sa, idx)}
+                          disabled={singleFactureLoading === a.id}
+                        >
+                          {singleFactureLoading === a.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Download className="w-4 h-4" />
+                          )}
+                          PDF
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+            </TabsContent>
+          )}
         </Tabs>
       </DialogContent>
     </Dialog>
