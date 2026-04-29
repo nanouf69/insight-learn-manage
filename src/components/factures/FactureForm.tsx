@@ -34,7 +34,8 @@ import {
   Calendar,
   Clock,
   ShoppingCart,
-  Save
+  Save,
+  BookCheck
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -516,6 +517,52 @@ export function FactureForm() {
     return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Facture ${data.numeroInterne}</title><style>body{font-family:Arial,sans-serif;font-size:12px;margin:20px}.header{display:flex;justify-content:space-between;margin-bottom:30px}.logo{font-size:24px;font-weight:bold;color:#2563eb}.logo-sub{font-size:14px;color:#666}.title{text-align:right}.title h1{font-size:18px;margin:0}.info-row{display:flex;justify-content:space-between;margin-bottom:20px}.info-box{width:48%}table{width:100%;border-collapse:collapse;margin:20px 0}th{background:#f3f4f6;padding:10px;border:1px solid #ddd;text-align:left}.totals{text-align:right;margin-top:20px}.bank-info{margin-top:30px;padding:15px;background:#f9fafb;border:1px solid #e5e7eb}.footer{margin-top:30px;font-size:10px;color:#666;text-align:center;border-top:1px solid #ddd;padding-top:15px}</style></head><body><div class="header"><div><div class="logo">🚌 ${entrepriseEmettrice.nom}</div><div class="logo-sub">${entrepriseEmettrice.slogan}</div></div><div class="title"><h1>FACTURE ${data.duplicata ? 'DUPLICATA ' : ''}N°${data.numero}</h1><p>Numéro : ${data.numeroInterne}</p><p>Date de facturation : ${formatDate(data.date)}</p><p>Date d'échéance : ${formatDate(data.dateEcheance)}</p></div></div><div class="info-row"><div class="info-box"><strong>Émetteur :</strong><br>${entrepriseEmettrice.nom}<br>${entrepriseEmettrice.adresse}<br>${entrepriseEmettrice.codePostal} ${entrepriseEmettrice.ville}<br>SIRET : ${entrepriseEmettrice.siret}<br>Tél.: ${entrepriseEmettrice.telephone}<br>Email: ${entrepriseEmettrice.email}<br>Déclaration d'activité n° ${entrepriseEmettrice.declarationActivite}${data.refDossier ? `<br>Réf dossier : ${data.refDossier}` : ''}</div><div class="info-box"><strong>Adressée à :</strong><br>${clientHTML}${data.refConvention ? `<br>Réf à rappeler : ${data.refConvention}` : ''}</div></div><h3>Désignation</h3><table><thead><tr><th>Stagiaire</th><th>Désignation</th><th>TVA</th><th>P.U. HT</th><th>Qté</th><th>Rem</th><th>Total HT</th></tr></thead><tbody>${lignesHTML}</tbody></table><div class="totals"><p><strong>Total HT :</strong> ${calculerTotalHT().toFixed(2)} €</p><p><strong>Total TVA :</strong> ${calculerTotalTVA().toFixed(2)} €</p><p style="font-size:16px;"><strong>Total TTC :</strong> ${calculerTotalTTC().toFixed(2)} €</p></div><div class="bank-info"><h4>Règlement par virement :</h4><p>Banque : ${entrepriseEmettrice.banque} | IBAN : ${entrepriseEmettrice.iban} | BIC : ${entrepriseEmettrice.bic}</p></div><div class="footer"><p>Centre de formation agrée par la préfecture n°${entrepriseEmettrice.prefectures}</p><p>TVA non applicable - article 293 B du CGI</p><p>SASU FTRANSPORT - Capital de ${entrepriseEmettrice.capital} € - SIRET : ${entrepriseEmettrice.siret}</p></div></body></html>`;
   };
 
+  const handleSaveToAccounting = async () => {
+    const client = getClientInfo();
+    if (!client) {
+      toast.error("Veuillez sélectionner un client (apprenant ou organisation)");
+      return;
+    }
+    if (data.lignes.length === 0) {
+      toast.error("Veuillez ajouter au moins une prestation");
+      return;
+    }
+    try {
+      const montantHT = calculerTotalHT();
+      const montantTVA = calculerTotalTVA();
+      const montantTTC = calculerTotalTTC();
+      const tvaTaux = montantHT > 0 ? Math.round((montantTVA / montantHT) * 100) : 0;
+
+      const sessionLine: any = data.lignes.find((l: any) => l.type === "session" && l.sessionId);
+      const payload: any = {
+        numero: data.numeroInterne || data.numero,
+        date_emission: data.date,
+        date_echeance: data.dateEcheance || null,
+        type_financement: data.typeFinanceur === "particulier" ? "particulier" : "professionnel",
+        client_nom: client.nom,
+        client_adresse: client.adresse || null,
+        client_siret: client.siret || null,
+        montant_ht: montantHT,
+        tva_taux: tvaTaux,
+        montant_tva: montantTVA,
+        montant_ttc: montantTTC,
+        statut: "en_attente",
+        apprenant_id: data.typeFinanceur === "particulier" ? data.selectedApprenantId : null,
+        session_id: sessionLine?.sessionId || null,
+      };
+
+      const { error } = await supabase.from("factures").insert(payload);
+      if (error) throw error;
+
+      toast.success("Facture enregistrée en comptabilité");
+      // Nettoyer le brouillon une fois la facture validée
+      try { localStorage.removeItem(DRAFT_KEY); } catch {}
+    } catch (e: any) {
+      console.error(e);
+      toast.error(`Erreur lors de l'enregistrement : ${e.message ?? e}`);
+    }
+  };
+
   const handleEnvoyer = () => {
     const client = getClientInfo();
     if (!client?.email) {
@@ -537,7 +584,8 @@ export function FactureForm() {
           <p className="text-muted-foreground">Format conforme à votre modèle de facturation</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleSaveDraft} variant="outline"><Save className="w-4 h-4 mr-2" />Enregistrer comme brouillon</Button>
+          <Button onClick={handleSaveDraft} variant="outline"><Save className="w-4 h-4 mr-2" />Brouillon</Button>
+          <Button onClick={handleSaveToAccounting} variant="secondary"><BookCheck className="w-4 h-4 mr-2" />Enregistrer en comptabilité</Button>
           <Button onClick={handleEnvoyer} variant="outline"><Send className="w-4 h-4 mr-2" />Envoyer</Button>
           <Button onClick={handlePrint} variant="outline"><Printer className="w-4 h-4 mr-2" />Imprimer</Button>
           <Button onClick={handleExport}><Download className="w-4 h-4 mr-2" />Télécharger PDF</Button>
