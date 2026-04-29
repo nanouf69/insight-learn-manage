@@ -533,7 +533,7 @@ export function FactureForm() {
       const montantTTC = calculerTotalTTC();
       const tvaTaux = montantHT > 0 ? Math.round((montantTVA / montantHT) * 100) : 0;
 
-      const sessionLine = data.lignes.find((l: any) => l.type === "session" && l.sessionId);
+      const sessionLine: any = data.lignes.find((l: any) => l.type === "session" && l.sessionId);
       const payload: any = {
         numero: data.numeroInterne || data.numero,
         date_emission: data.date,
