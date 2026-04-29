@@ -511,9 +511,26 @@ export function FactureForm() {
 
   const getClientInfo = () => {
     if (data.typeFinanceur === "particulier" && selectedApprenant) {
-      return { nom: selectedApprenant.name, adresse: selectedApprenant.address, email: selectedApprenant.email, telephone: selectedApprenant.phone, siret: "", tvaIntra: "" };
+      // Si l'apprenant est financé par sa société → facture au nom de la société
+      if (selectedApprenant.organismeFinanceur === "societe" && selectedApprenant.societeNom) {
+        const adresseSociete = [
+          selectedApprenant.societeAdresse,
+          [selectedApprenant.societeCodePostal, selectedApprenant.societeVille].filter(Boolean).join(' '),
+        ].filter(Boolean).join(', ');
+        return {
+          nom: selectedApprenant.societeNom,
+          adresse: adresseSociete || selectedApprenant.address,
+          email: selectedApprenant.factureContactEmail || selectedApprenant.email,
+          telephone: selectedApprenant.factureContactTelephone || selectedApprenant.phone,
+          siret: selectedApprenant.societeSiret || "",
+          tvaIntra: selectedApprenant.societeTvaIntra || "",
+          contactNom: selectedApprenant.factureContactNom || "",
+          stagiaire: selectedApprenant.name,
+        };
+      }
+      return { nom: selectedApprenant.name, adresse: selectedApprenant.address, email: selectedApprenant.email, telephone: selectedApprenant.phone, siret: "", tvaIntra: "", contactNom: "", stagiaire: selectedApprenant.name };
     } else if (data.typeFinanceur === "professionnel" && selectedOrganisation) {
-      return { nom: selectedOrganisation.name, adresse: selectedOrganisation.address, email: selectedOrganisation.email, telephone: selectedOrganisation.phone, siret: selectedOrganisation.siret, tvaIntra: selectedOrganisation.tvaIntra };
+      return { nom: selectedOrganisation.name, adresse: selectedOrganisation.address, email: selectedOrganisation.email, telephone: selectedOrganisation.phone, siret: selectedOrganisation.siret, tvaIntra: selectedOrganisation.tvaIntra, contactNom: "", stagiaire: "" };
     }
     return null;
   };
