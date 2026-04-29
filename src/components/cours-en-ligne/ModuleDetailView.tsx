@@ -136,10 +136,13 @@ interface ExerciceChoix {
   correct?: boolean;
 }
 
+type ImageSize = "sm" | "md" | "lg" | "xl" | "2xl";
+
 interface ExerciceQuestion {
   id: number;
   enonce: string;
   image?: string;
+  imageSize?: ImageSize;
   choix: ExerciceChoix[];
 }
 
@@ -1711,6 +1714,7 @@ function QuestionEditor({
   const [enonce, setEnonce] = useState(question.enonce);
   const [choix, setChoix] = useState<ExerciceChoix[]>([...question.choix]);
   const [image, setImage] = useState<string | null>(question.image ?? null);
+  const [imageSize, setImageSize] = useState<ImageSize>((question.imageSize as ImageSize) ?? "sm");
 
   const handleChoixTexte = (i: number, val: string) => {
     setChoix(prev => prev.map((c, idx) => idx === i ? { ...c, texte: val } : c));
@@ -1733,7 +1737,7 @@ function QuestionEditor({
         <div className="flex gap-2">
           <Button size="sm" variant="ghost" onClick={onCancel}><X className="w-4 h-4" /></Button>
           <Button size="sm" variant="destructive" onClick={onDelete}><Trash2 className="w-3 h-3" /></Button>
-          <Button size="sm" onClick={() => onSave({ ...question, enonce, choix, image })} className="gap-1">
+          <Button size="sm" onClick={() => onSave({ ...question, enonce, choix, image: image ?? undefined, imageSize })} className="gap-1">
             <Save className="w-3 h-3" /> Enregistrer
           </Button>
         </div>
@@ -1745,6 +1749,8 @@ function QuestionEditor({
       {/* Image (optionnel) */}
       <QuestionImageUpload
         image={image}
+        imageSize={imageSize}
+        onImageSizeChange={setImageSize}
         context="module"
         contextId={moduleId}
         questionId={question.id}
@@ -4637,9 +4643,19 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 return (
                   <div key={q.id} id={`exo-q-${exo.id}-${qi}`} className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : ''}`}>
                     {renderExerciseQuestionPrompt(qi + 1, questionPrompts[qi] ?? parseExerciseQuestionPrompt(q.enonce))}
-                    {q.image && (
-                      <ImageLightbox src={q.image} alt="Illustration" className="max-h-40 rounded border object-contain ml-2" loading="eager" onError={() => {}} />
-                    )}
+                    {q.image && (() => {
+                      const sizeMap: Record<string, string> = {
+                        sm: "max-h-40",
+                        md: "max-h-64",
+                        lg: "max-h-96",
+                        xl: "max-h-[32rem]",
+                        "2xl": "max-h-[48rem]",
+                      };
+                      const sizeClass = sizeMap[q.imageSize ?? "sm"] ?? "max-h-40";
+                      return (
+                        <ImageLightbox src={q.image} alt="Illustration" className={`${sizeClass} rounded border object-contain ml-2`} loading="eager" onError={() => {}} />
+                      );
+                    })()}
                     {multi && (
                       <p className="text-xs text-muted-foreground italic ml-2">⚠️ Plusieurs réponses possibles</p>
                     )}
