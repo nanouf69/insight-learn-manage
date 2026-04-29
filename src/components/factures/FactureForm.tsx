@@ -601,7 +601,8 @@ export function FactureForm() {
         tva_taux: tvaTaux,
         montant_tva: montantTVA,
         montant_ttc: montantTTC,
-        statut: "en_attente",
+        statut: data.acquittee ? "payee" : "en_attente",
+        date_paiement: data.acquittee && data.datePaiement ? data.datePaiement : null,
         apprenant_id: data.typeFinanceur === "particulier" ? data.selectedApprenantId : null,
         session_id: sessionLine?.sessionId || null,
       };
