@@ -1412,7 +1412,11 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       for (let i = 0; i < apprenantsInSession.length; i++) {
         const sa = apprenantsInSession[i];
         if (!sa.apprenant) continue;
-        const data = buildFactureDataForApprenant(sa.apprenant, sa, i);
+        const facture = await ensureFactureBrouillon(sa.apprenant, sa);
+        const data = buildFactureDataForApprenant(sa.apprenant, sa, i, {
+          numero: facture.numero,
+          dateEmission: facture.date_emission,
+        });
         const result: any = await generateFactureFC(data, {
           returnDoc: true,
           existingDoc: mergedDoc ?? undefined,
@@ -1420,6 +1424,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         });
         if (result?.doc) { mergedDoc = result.doc; count++; }
       }
+      await refetchFacturesFC();
       if (!mergedDoc || !count) {
         toast({ title: "Aucune facture", variant: "destructive" });
         return;
@@ -1449,7 +1454,11 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         const recipient = getFactureRecipientEmail(apprenant);
         if (!recipient) { skipped++; continue; }
         try {
-          const data = buildFactureDataForApprenant(apprenant, sa, i);
+          const facture = await ensureFactureBrouillon(apprenant, sa);
+          const data = buildFactureDataForApprenant(apprenant, sa, i, {
+            numero: facture.numero,
+            dateEmission: facture.date_emission,
+          });
           const result: any = await generateFactureFC(data, { returnBlob: true });
           if (!result?.blob) { failed++; continue; }
           const arrayBuffer = await result.blob.arrayBuffer();
@@ -1485,12 +1494,87 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           failed++;
         }
       }
+      await refetchFacturesFC();
       toast({
         title: "Envoi terminé",
         description: `${sent} envoyée(s)${skipped ? `, ${skipped} sans email financeur` : ''}${failed ? `, ${failed} échec(s)` : ''}.`,
       });
     } finally {
       setBulkSendingFactures(false);
+    }
+  };
+
+  // Valider définitivement une facture (brouillon → en_attente)
+  const handleValidateFacture = async (apprenant: any, sa: any) => {
+    try {
+      const facture = await ensureFactureBrouillon(apprenant, sa);
+      if (facture.statut !== 'brouillon') {
+        toast({ title: "Déjà validée", description: `Statut : ${facture.statut}` });
+        return;
+      }
+      const { error } = await supabase
+        .from('factures')
+        .update({ statut: 'en_attente' })
+        .eq('id', facture.id);
+      if (error) throw error;
+      await refetchFacturesFC();
+      toast({ title: "Facture validée", description: `${facture.numero} • ${apprenant.prenom} ${apprenant.nom}` });
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e?.message || "Validation impossible", variant: "destructive" });
+    }
+  };
+
+  // Valider toutes les brouillons en bloc
+  const handleBulkValidateFactures = async () => {
+    if (!apprenantsInSession.length) return;
+    setBulkValidatingFactures(true);
+    let validated = 0, skipped = 0;
+    try {
+      for (const sa of apprenantsInSession) {
+        if (!sa.apprenant) continue;
+        const facture = await ensureFactureBrouillon(sa.apprenant, sa);
+        if (facture.statut === 'brouillon') {
+          const { error } = await supabase
+            .from('factures')
+            .update({ statut: 'en_attente' })
+            .eq('id', facture.id);
+          if (!error) validated++; else skipped++;
+        } else {
+          skipped++;
+        }
+      }
+      await refetchFacturesFC();
+      toast({ title: "Validation terminée", description: `${validated} validée(s)${skipped ? `, ${skipped} déjà validée(s)` : ''}.` });
+    } finally {
+      setBulkValidatingFactures(false);
+    }
+  };
+
+  // Marquer une facture comme acquittée
+  const handleSaveAcquittement = async () => {
+    if (!acquittementApprenant) return;
+    setAcquittementSaving(true);
+    try {
+      const facture = (facturesFCMap as any)?.[acquittementApprenant.id];
+      if (!facture) {
+        toast({ title: "Aucune facture", description: "Téléchargez d'abord la facture pour la créer.", variant: "destructive" });
+        return;
+      }
+      const { error } = await supabase
+        .from('factures')
+        .update({
+          statut: 'payee',
+          date_paiement: acquittementDate,
+        })
+        .eq('id', facture.id);
+      if (error) throw error;
+      await refetchFacturesFC();
+      toast({ title: "Facture acquittée", description: `Payée le ${acquittementDate} • ${acquittementMoyen}` });
+      setAcquittementApprenant(null);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e?.message || "Acquittement impossible", variant: "destructive" });
+    } finally {
+      setAcquittementSaving(false);
     }
   };
 
