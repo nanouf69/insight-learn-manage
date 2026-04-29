@@ -1906,6 +1906,122 @@ export function ComptabilitePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog d'édition d'une facture */}
+      <Dialog open={!!editingFacture} onOpenChange={(open) => { if (!open) setEditingFacture(null); }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-4 w-4" />
+              Modifier la facture {editingFacture?.numero}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4 py-2">
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Numéro</label>
+              <Input
+                value={editFactureForm.numero}
+                onChange={(e) => setEditFactureForm(f => ({ ...f, numero: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Statut</label>
+              <Select value={editFactureForm.statut} onValueChange={(v) => setEditFactureForm(f => ({ ...f, statut: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="brouillon">Brouillon</SelectItem>
+                  <SelectItem value="en_attente">En attente</SelectItem>
+                  <SelectItem value="payee">Payée</SelectItem>
+                  <SelectItem value="en_retard">En retard</SelectItem>
+                  <SelectItem value="annulee">Annulée</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2 space-y-1">
+              <label className="text-xs text-muted-foreground">Client / Désignation</label>
+              <Input
+                value={editFactureForm.client_nom}
+                onChange={(e) => setEditFactureForm(f => ({ ...f, client_nom: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Type de financement</label>
+              <Select value={editFactureForm.type_financement} onValueChange={(v) => setEditFactureForm(f => ({ ...f, type_financement: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="particulier">Particulier</SelectItem>
+                  <SelectItem value="professionnel">Professionnel</SelectItem>
+                  <SelectItem value="opco">OPCO</SelectItem>
+                  <SelectItem value="france_travail">France Travail</SelectItem>
+                  <SelectItem value="cpf">CPF</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Montant HT (€)</label>
+              <Input
+                type="number"
+                step="0.01"
+                value={editFactureForm.montant_ht}
+                onChange={(e) => setEditFactureForm(f => ({ ...f, montant_ht: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Taux TVA (%)</label>
+              <Input
+                type="number"
+                step="0.01"
+                value={editFactureForm.tva_taux}
+                onChange={(e) => setEditFactureForm(f => ({ ...f, tva_taux: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">TTC calculé</label>
+              <Input
+                disabled
+                value={(() => {
+                  const ht = Number(editFactureForm.montant_ht) || 0;
+                  const tx = Number(editFactureForm.tva_taux) || 0;
+                  return (ht + ht * tx / 100).toFixed(2) + " €";
+                })()}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Date émission</label>
+              <Input
+                type="date"
+                value={editFactureForm.date_emission}
+                onChange={(e) => setEditFactureForm(f => ({ ...f, date_emission: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Date échéance</label>
+              <Input
+                type="date"
+                value={editFactureForm.date_echeance}
+                onChange={(e) => setEditFactureForm(f => ({ ...f, date_echeance: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Date paiement</label>
+              <Input
+                type="date"
+                value={editFactureForm.date_paiement}
+                onChange={(e) => setEditFactureForm(f => ({ ...f, date_paiement: e.target.value }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingFacture(null)} disabled={savingFactureEdit}>
+              Annuler
+            </Button>
+            <Button onClick={saveFactureEdit} disabled={savingFactureEdit}>
+              <Check className="h-4 w-4 mr-2" />
+              {savingFactureEdit ? "Enregistrement..." : "Enregistrer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
