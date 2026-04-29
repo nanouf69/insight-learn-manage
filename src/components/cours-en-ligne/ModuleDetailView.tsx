@@ -2530,6 +2530,42 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
         if (!studentOnly && loadLocalState()) return;
 
+        // FC Bilan fallback: modules 81 (FC VTC) and 82 (FC TAXI) doivent refléter
+        // exactement le bilan complet 4 (VTC) / 9 (TAXI) — sans Gestion (exo id 101).
+        // Sans ce fallback, les élèves FC voient la source statique alors que l'admin
+        // a modifié le bilan principal.
+        const FC_BILAN_PARENT: Record<number, number> = { 81: 4, 82: 9 };
+        const parentModuleId = FC_BILAN_PARENT[Number(module.id)];
+        if (parentModuleId && initialData.exercices.length > 0) {
+          try {
+            const { data: parentData } = await supabase
+              .from("module_editor_state")
+              .select("module_data")
+              .eq("module_id", parentModuleId)
+              .order("updated_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            const parentMd = parentData?.module_data as any;
+            if (parentMd?.exercices && Array.isArray(parentMd.exercices)) {
+              const filtered = parentMd.exercices.filter((exo: any) => Number(exo?.id) !== 101);
+              if (filtered.length > 0) {
+                const fcMerged: ModuleData = {
+                  ...initialData,
+                  exercices: mergeSourceExercices(filtered, initialData.exercices),
+                };
+                console.log(`[FC-Bilan] Module ${module.id} hydraté depuis module ${parentModuleId} (sans Gestion)`);
+                setModuleData(fcMerged);
+                setDeletedCours([]);
+                setDeletedExercices([]);
+                setLoadedModuleEditorState(false);
+                return;
+              }
+            }
+          } catch (e) {
+            console.error(`[FC-Bilan] Erreur hydratation module ${module.id} depuis ${parentModuleId}:`, e);
+          }
+        }
+
         // No record for this module — apply cross-module overrides from other modules' records
         // This ensures that question edits made in sibling modules (e.g., module 11 → module 28) are visible
         if (studentOnly && initialData.exercices.length > 0) {
