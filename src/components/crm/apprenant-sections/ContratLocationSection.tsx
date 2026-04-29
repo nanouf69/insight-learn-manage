@@ -52,6 +52,7 @@ export function ContratLocationSection({ apprenant }: Props) {
   const [formationIncluse, setFormationIncluse] = useState(false);
 
   // Caution
+  const [cautionRequise, setCautionRequise] = useState(true);
   const [numCheque, setNumCheque] = useState("");
   const [banque, setBanque] = useState("");
 
@@ -233,16 +234,25 @@ export function ContratLocationSection({ apprenant }: Props) {
 
       // ── Article 5 ──
       h1("ARTICLE 5 – DÉPÔT DE CAUTION");
-      para(
-        "Le locataire remet au loueur, préalablement à la prise en charge du véhicule, un chèque de caution d'un montant de 500 € (cinq cents euros)."
-      );
-      para("Ce chèque :");
-      para("• sera encaissé en cas d'accident responsable ou semi-responsable, de dégradation, de perte de document du véhicule, de contravention restant à la charge du locataire, ou de non-restitution du véhicule à l'échéance ;");
-      para("• sera restitué ou détruit dans un délai de 5 jours ouvrés suivant la restitution du véhicule en bon état et sans réserve.");
-      para("En cas de dommage supérieur au montant de la caution, le locataire reste redevable du solde.");
-      y += 1;
-      kv("N° du chèque de caution :", numCheque);
-      kv("Banque :", banque);
+      if (cautionRequise) {
+        para(
+          "Le locataire remet au loueur, préalablement à la prise en charge du véhicule, un chèque de caution d'un montant de 500 € (cinq cents euros)."
+        );
+        para("Ce chèque :");
+        para("• sera encaissé en cas d'accident responsable ou semi-responsable, de dégradation, de perte de document du véhicule, de contravention restant à la charge du locataire, ou de non-restitution du véhicule à l'échéance ;");
+        para("• sera restitué ou détruit dans un délai de 5 jours ouvrés suivant la restitution du véhicule en bon état et sans réserve.");
+        para("En cas de dommage supérieur au montant de la caution, le locataire reste redevable du solde.");
+        y += 1;
+        kv("N° du chèque de caution :", numCheque);
+        kv("Banque :", banque);
+      } else {
+        para(
+          "Aucun dépôt de caution n'est exigé dans le cadre du présent contrat de location."
+        );
+        para(
+          "Le locataire demeure néanmoins responsable, dans les conditions prévues aux articles 7 et suivants, de tout dommage, dégradation, perte de document, contravention ou non-restitution du véhicule à l'échéance."
+        );
+      }
       y += 4;
 
       // ── Article 6 ──
@@ -549,14 +559,22 @@ export function ContratLocationSection({ apprenant }: Props) {
             <Checkbox id="formationIncluse" checked={formationIncluse} onCheckedChange={(c) => setFormationIncluse(!!c)} />
             <Label htmlFor="formationIncluse" className="cursor-pointer">Formation incluse</Label>
           </div>
-          <div className="space-y-2">
-            <Label>N° du chèque de caution (500 €)</Label>
-            <Input value={numCheque} onChange={(e) => setNumCheque(e.target.value)} />
+          <div className="flex items-center gap-2 pt-2">
+            <Checkbox id="cautionRequise" checked={cautionRequise} onCheckedChange={(c) => setCautionRequise(!!c)} />
+            <Label htmlFor="cautionRequise" className="cursor-pointer">Caution requise (chèque de 500 €)</Label>
           </div>
-          <div className="space-y-2">
-            <Label>Banque</Label>
-            <Input value={banque} onChange={(e) => setBanque(e.target.value)} />
-          </div>
+          {cautionRequise && (
+            <>
+              <div className="space-y-2">
+                <Label>N° du chèque de caution (500 €)</Label>
+                <Input value={numCheque} onChange={(e) => setNumCheque(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Banque</Label>
+                <Input value={banque} onChange={(e) => setBanque(e.target.value)} />
+              </div>
+            </>
+          )}
         </div>
 
         <Separator />
