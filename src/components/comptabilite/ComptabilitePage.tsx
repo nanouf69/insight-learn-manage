@@ -109,6 +109,7 @@ const financementLabels: Record<string, string> = {
   opco: "OPCO",
   france_travail: "France Travail",
   cpf: "CPF",
+  fournisseur: "Fournisseur",
 };
 
 const moyensPaiement = ["Virement", "Chèque", "Espèces", "Carte bancaire", "Prélèvement"];
