@@ -4643,9 +4643,19 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
                 return (
                   <div key={q.id} id={`exo-q-${exo.id}-${qi}`} className={`space-y-2 p-4 border rounded-lg scroll-mt-20 transition-all ${unansweredKeys.has(key) ? 'border-destructive border-2 bg-destructive/5' : ''}`}>
                     {renderExerciseQuestionPrompt(qi + 1, questionPrompts[qi] ?? parseExerciseQuestionPrompt(q.enonce))}
-                    {q.image && (
-                      <ImageLightbox src={q.image} alt="Illustration" className="max-h-40 rounded border object-contain ml-2" loading="eager" onError={() => {}} />
-                    )}
+                    {q.image && (() => {
+                      const sizeMap: Record<string, string> = {
+                        sm: "max-h-40",
+                        md: "max-h-64",
+                        lg: "max-h-96",
+                        xl: "max-h-[32rem]",
+                        "2xl": "max-h-[48rem]",
+                      };
+                      const sizeClass = sizeMap[q.imageSize ?? "sm"] ?? "max-h-40";
+                      return (
+                        <ImageLightbox src={q.image} alt="Illustration" className={`${sizeClass} rounded border object-contain ml-2`} loading="eager" onError={() => {}} />
+                      );
+                    })()}
                     {multi && (
                       <p className="text-xs text-muted-foreground italic ml-2">⚠️ Plusieurs réponses possibles</p>
                     )}
