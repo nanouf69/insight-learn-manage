@@ -1013,6 +1013,95 @@ export function FactureForm() {
         </CardContent>
       </Card>
 
+      {/* Acquittement de la facture */}
+      <Card className={data.acquittee ? "border-emerald-500 bg-emerald-50/50" : ""}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Check className="w-5 h-5 text-emerald-600" />
+            Acquittement
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={data.acquittee}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                updateField('acquittee', checked);
+                if (checked && !data.datePaiement) {
+                  updateField('datePaiement', new Date().toISOString().split('T')[0]);
+                }
+              }}
+              className="w-4 h-4"
+            />
+            <span className="text-sm font-medium">Marquer cette facture comme acquittée (payée)</span>
+          </label>
+          {data.acquittee && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="datePaiement">Date de paiement</Label>
+                <Input
+                  id="datePaiement"
+                  type="date"
+                  value={data.datePaiement}
+                  onChange={(e) => updateField('datePaiement', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="moyenPaiement">Moyen de paiement</Label>
+                <Select value={data.moyenPaiement} onValueChange={(v) => updateField('moyenPaiement', v)}>
+                  <SelectTrigger id="moyenPaiement">
+                    <SelectValue placeholder="Choisir..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="virement">Virement bancaire</SelectItem>
+                    <SelectItem value="cheque">Chèque</SelectItem>
+                    <SelectItem value="especes">Espèces</SelectItem>
+                    <SelectItem value="cb">Carte bancaire</SelectItem>
+                    <SelectItem value="cpf">CPF</SelectItem>
+                    <SelectItem value="opco">OPCO</SelectItem>
+                    <SelectItem value="france_travail">France Travail</SelectItem>
+                    <SelectItem value="autre">Autre</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Aperçu de l'en-tête (déplacé en bas) */}
+      <Card className="bg-gradient-to-r from-primary/10 to-transparent border-primary/20">
+        <CardContent className="pt-6">
+          <div className="flex justify-between items-start">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-3xl">🚌</span>
+                <div>
+                  <h3 className="text-2xl font-bold text-primary">{entrepriseEmettrice.nom}</h3>
+                  <p className="text-muted-foreground italic">{entrepriseEmettrice.slogan}</p>
+                </div>
+              </div>
+              <div className="mt-4 text-sm space-y-1">
+                <p>{entrepriseEmettrice.adresse}</p>
+                <p>{entrepriseEmettrice.codePostal} {entrepriseEmettrice.ville}</p>
+                <p>SIRET : {entrepriseEmettrice.siret}</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <h2 className="text-xl font-bold">FACTURE {data.duplicata && <span className="text-orange-500">DUPLICATA</span>} N°{data.numero}</h2>
+              <p className="text-muted-foreground">Numéro : {data.numeroInterne}</p>
+              {data.acquittee && (
+                <div className="mt-2 inline-block bg-emerald-600 text-white px-3 py-1 rounded font-bold text-sm">
+                  ✓ ACQUITTÉE
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Notes et mentions légales */}
       <Card>
         <CardHeader><CardTitle>Notes et mentions légales</CardTitle></CardHeader>
