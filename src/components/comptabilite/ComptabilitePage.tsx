@@ -93,6 +93,7 @@ interface APayer {
 }
 
 const statutConfig: Record<string, { label: string; color: string }> = {
+  brouillon: { label: "Brouillon", color: "bg-slate-200 text-slate-700" },
   payee: { label: "Payée", color: "bg-emerald-100 text-emerald-700" },
   paye: { label: "Payé", color: "bg-emerald-100 text-emerald-700" },
   en_attente: { label: "En attente", color: "bg-amber-100 text-amber-700" },
