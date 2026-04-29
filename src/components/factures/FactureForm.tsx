@@ -1057,14 +1057,10 @@ export function FactureForm() {
           <CardTitle className="flex items-center gap-2"><FileText className="w-5 h-5" />Informations de la facture</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="numero">N° Facture</Label>
               <Input id="numero" value={data.numero} onChange={(e) => updateField('numero', e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="numeroInterne">Numéro interne</Label>
-              <Input id="numeroInterne" value={data.numeroInterne} onChange={(e) => updateField('numeroInterne', e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="date">Date de facturation</Label>
