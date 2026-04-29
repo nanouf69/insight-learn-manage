@@ -50,6 +50,8 @@ import { generateEmargementPDF } from "./EmargementGenerator";
 import { generateEmargementIndividuelPDF, AgendaDaySlot } from "./EmargementIndividuelGenerator";
 import { supabase } from "@/integrations/supabase/client";
 import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface Session {
@@ -457,6 +459,8 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [selectedApprenants, setSelectedApprenants] = useState<Set<string>>(new Set());
   const [bulkSending, setBulkSending] = useState(false);
   const [bulkPrintingEmargement, setBulkPrintingEmargement] = useState(false);
+  const [bulkDownloadingAttestations, setBulkDownloadingAttestations] = useState(false);
+  const [bulkSendingAttestations, setBulkSendingAttestations] = useState(false);
   const [bulkPreview, setBulkPreview] = useState<{ template: any; apprenants: any[]; previewBody: string; previewSubject: string; editedBody?: string; editedSubject?: string } | null>(null);
   const [bulkPreviewEditing, setBulkPreviewEditing] = useState(false);
   const [editingMailType, setEditingMailType] = useState<any | null>(null);
@@ -1050,6 +1054,131 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     });
   };
 
+  const buildAttestationDataForApprenant = (apprenant: any, sessionApprenant: any) => {
+    const typeApp = `${apprenant.type_apprenant || ''} ${apprenant.formation_choisie || ''}`.toUpperCase();
+    const formation: 'VTC' | 'TAXI' = typeApp.includes('TAXI') ? 'TAXI' : 'VTC';
+    return {
+      data: {
+        nom: apprenant.nom,
+        prenom: apprenant.prenom,
+        dateFin: sessionApprenant?.date_fin_personnalisee || session.dateFin || apprenant.date_fin_formation || apprenant.date_debut_formation || new Date().toISOString().split('T')[0],
+        dateDebut: sessionApprenant?.date_debut || session.dateDebut || apprenant.date_debut_formation,
+        adresse: apprenant.adresse || '',
+        codePostal: apprenant.code_postal || '',
+        ville: apprenant.ville || '',
+        telephone: apprenant.telephone || '',
+        email: apprenant.email || '',
+        dateNaissance: apprenant.date_naissance || '',
+        formation,
+      },
+      formation,
+    };
+  };
+
+  const handleBulkDownloadAttestations = async () => {
+    if (!apprenantsInSession.length) {
+      toast({ title: "Aucun apprenant", description: "Cette session ne contient aucun apprenant.", variant: "destructive" });
+      return;
+    }
+    setBulkDownloadingAttestations(true);
+    try {
+      const zip = new JSZip();
+      let count = 0;
+      for (const sa of apprenantsInSession) {
+        const apprenant = sa.apprenant;
+        if (!apprenant) continue;
+        const { data } = buildAttestationDataForApprenant(apprenant, sa);
+        const result = await generateAttestationFCVTC(data, { returnBlob: true });
+        if (result?.blob) {
+          zip.file(result.fileName, result.blob);
+          count++;
+        }
+      }
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const safeTitle = (session.title || 'session').replace(/[^a-zA-Z0-9_-]+/g, '_');
+      saveAs(blob, `Attestations_FC_${safeTitle}.zip`);
+      toast({ title: "Attestations téléchargées", description: `${count} attestation(s) regroupée(s) dans le ZIP.` });
+    } catch (err: any) {
+      console.error(err);
+      toast({ title: "Erreur", description: err?.message || "Impossible de générer les attestations.", variant: "destructive" });
+    } finally {
+      setBulkDownloadingAttestations(false);
+    }
+  };
+
+  const handleBulkSendAttestations = async () => {
+    if (!apprenantsInSession.length) {
+      toast({ title: "Aucun apprenant", description: "Cette session ne contient aucun apprenant.", variant: "destructive" });
+      return;
+    }
+    setBulkSendingAttestations(true);
+    let sent = 0;
+    let skipped = 0;
+    let failed = 0;
+    try {
+      for (const sa of apprenantsInSession) {
+        const apprenant = sa.apprenant;
+        if (!apprenant) continue;
+        if (!apprenant.email) { skipped++; continue; }
+        try {
+          const { data, formation } = buildAttestationDataForApprenant(apprenant, sa);
+          const result = await generateAttestationFCVTC(data, { returnBlob: true });
+          if (!result?.blob) { failed++; continue; }
+          const arrayBuffer = await result.blob.arrayBuffer();
+          const bytes = new Uint8Array(arrayBuffer);
+          let binary = '';
+          const chunkSize = 0x8000;
+          for (let i = 0; i < bytes.length; i += chunkSize) {
+            binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunkSize)));
+          }
+          const base64 = btoa(binary);
+          const subject = `Votre attestation de formation continue ${formation}`;
+          const htmlBody = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <div style="background-color: #1a1a2e; padding: 20px; text-align: center;">
+                <h1 style="color: #ffffff; margin: 0;">FTRANSPORT</h1>
+                <p style="color: #e0e0e0; margin: 5px 0 0;">Centre de formation VTC & TAXI</p>
+              </div>
+              <div style="padding: 30px; background-color: #ffffff;">
+                <p>Bonjour ${apprenant.prenom} ${apprenant.nom},</p>
+                <p>Veuillez trouver ci-joint votre <strong>attestation de formation continue ${formation}</strong> (valable 5 ans).</p>
+                <p>Conservez précieusement ce document, il pourra vous être demandé lors d'un contrôle.</p>
+                <p>Cordialement,<br/>L'équipe FTRANSPORT</p>
+              </div>
+              <div style="background-color: #f3f4f6; padding: 20px; text-align: center; font-size: 13px; color: #6b7280;">
+                <p><strong>FTRANSPORT</strong> – 86 Route de Genas, 69003 Lyon</p>
+                <p>📞 04 28 29 60 91 | 📧 contact@ftransport.fr</p>
+              </div>
+            </div>
+          `;
+          const { error } = await supabase.functions.invoke('send-document-email', {
+            body: {
+              apprenantId: apprenant.id,
+              recipientEmail: apprenant.email,
+              recipientName: `${apprenant.prenom} ${apprenant.nom}`,
+              subject,
+              htmlBody,
+              attachmentName: result.fileName,
+              attachmentBase64: base64,
+              attachmentContentType: 'application/pdf',
+            },
+          });
+          if (error) { failed++; continue; }
+          sent++;
+        } catch (e) {
+          console.error('Erreur envoi attestation', e);
+          failed++;
+        }
+      }
+      toast({
+        title: "Envoi terminé",
+        description: `${sent} envoyée(s)${skipped ? `, ${skipped} sans email` : ''}${failed ? `, ${failed} échec(s)` : ''}.`,
+      });
+    } finally {
+      setBulkSendingAttestations(false);
+    }
+  };
+
   const normalizedSessionText = `${session.title || ''} ${session.formation || ''}`.toLowerCase();
   const isFormationContinue = normalizedSessionText.includes('continue');
 
@@ -1414,7 +1543,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
               {session.title}
               {getStatusBadge(session.status)}
             </DialogTitle>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Button
                 size="sm"
                 variant="outline"
@@ -1424,6 +1553,32 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 <Download className="w-4 h-4" />
                 Feuilles d'émargement
               </Button>
+              {isFormationContinue && (
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleBulkDownloadAttestations}
+                    disabled={bulkDownloadingAttestations || apprenantsInSession.length === 0}
+                    className="gap-2"
+                    title="Télécharger toutes les attestations de formation continue dans un ZIP"
+                  >
+                    {bulkDownloadingAttestations ? <Loader2 className="w-4 h-4 animate-spin" /> : <GraduationCap className="w-4 h-4" />}
+                    Toutes les attestations
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="default"
+                    onClick={handleBulkSendAttestations}
+                    disabled={bulkSendingAttestations || apprenantsInSession.length === 0}
+                    className="gap-2"
+                    title="Envoyer l'attestation par email à chaque élève"
+                  >
+                    {bulkSendingAttestations ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    Envoyer attestations
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </DialogHeader>
