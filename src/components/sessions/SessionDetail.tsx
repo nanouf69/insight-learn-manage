@@ -462,6 +462,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [bulkPrintingEmargement, setBulkPrintingEmargement] = useState(false);
   const [bulkDownloadingAttestations, setBulkDownloadingAttestations] = useState(false);
   const [bulkSendingAttestations, setBulkSendingAttestations] = useState(false);
+  const [bulkDownloadingFactures, setBulkDownloadingFactures] = useState(false);
+  const [bulkSendingFactures, setBulkSendingFactures] = useState(false);
+  const [singleFactureLoading, setSingleFactureLoading] = useState<string | null>(null);
   const [bulkPreview, setBulkPreview] = useState<{ template: any; apprenants: any[]; previewBody: string; previewSubject: string; editedBody?: string; editedSubject?: string } | null>(null);
   const [bulkPreviewEditing, setBulkPreviewEditing] = useState(false);
   const [editingMailType, setEditingMailType] = useState<any | null>(null);
