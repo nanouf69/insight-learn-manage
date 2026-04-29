@@ -222,6 +222,15 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
     montant_paye: "0",
     moyen_paiement: "",
     notes: "",
+    societe_nom: "",
+    societe_siret: "",
+    societe_tva_intra: "",
+    societe_adresse: "",
+    societe_code_postal: "",
+    societe_ville: "",
+    facture_contact_nom: "",
+    facture_contact_email: "",
+    facture_contact_telephone: "",
   });
   const queryClient = useQueryClient();
 
@@ -252,6 +261,15 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
         montant_paye: apprenant.montant_paye?.toString() || "0",
         moyen_paiement: apprenant.moyen_paiement || "",
         notes: apprenant.notes || "",
+        societe_nom: (apprenant as any).societe_nom || "",
+        societe_siret: (apprenant as any).societe_siret || "",
+        societe_tva_intra: (apprenant as any).societe_tva_intra || "",
+        societe_adresse: (apprenant as any).societe_adresse || "",
+        societe_code_postal: (apprenant as any).societe_code_postal || "",
+        societe_ville: (apprenant as any).societe_ville || "",
+        facture_contact_nom: (apprenant as any).facture_contact_nom || "",
+        facture_contact_email: (apprenant as any).facture_contact_email || "",
+        facture_contact_telephone: (apprenant as any).facture_contact_telephone || "",
       });
       
       // Restaurer la date de formation du catalogue si elle existe
@@ -443,6 +461,15 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
       date_debut_cours_en_ligne: dateDebutCours ? format(dateDebutCours, 'yyyy-MM-dd') : null,
       date_fin_cours_en_ligne: dateFinCours ? format(dateFinCours, 'yyyy-MM-dd') : null,
       modules_autorises: effectiveModulesAutorises.length > 0 ? effectiveModulesAutorises : null,
+      societe_nom: formData.societe_nom?.trim() || null,
+      societe_siret: formData.societe_siret?.trim() || null,
+      societe_tva_intra: formData.societe_tva_intra?.trim() || null,
+      societe_adresse: formData.societe_adresse?.trim() || null,
+      societe_code_postal: formData.societe_code_postal?.trim() || null,
+      societe_ville: formData.societe_ville?.trim() || null,
+      facture_contact_nom: formData.facture_contact_nom?.trim() || null,
+      facture_contact_email: formData.facture_contact_email?.trim() || null,
+      facture_contact_telephone: formData.facture_contact_telephone?.trim() || null,
     };
 
     try {
@@ -1020,6 +1047,66 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Informations société (financement par société/entreprise) */}
+            {formData.organisme_financeur === "societe" && (
+              <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
+                <h3 className="text-sm font-semibold">Informations de la société (facturation)</h3>
+                <p className="text-xs text-muted-foreground">La facture sera émise au nom de cette société.</p>
+
+                <div className="space-y-2">
+                  <Label htmlFor="societe_nom">Raison sociale *</Label>
+                  <Input id="societe_nom" value={formData.societe_nom} onChange={(e) => setFormData({ ...formData, societe_nom: e.target.value })} placeholder="Ex: TRANSPORT SAS" />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="societe_siret">SIRET</Label>
+                    <Input id="societe_siret" value={formData.societe_siret} onChange={(e) => setFormData({ ...formData, societe_siret: e.target.value })} placeholder="14 chiffres" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="societe_tva_intra">TVA intracommunautaire</Label>
+                    <Input id="societe_tva_intra" value={formData.societe_tva_intra} onChange={(e) => setFormData({ ...formData, societe_tva_intra: e.target.value })} placeholder="FR..." />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="societe_adresse">Adresse</Label>
+                  <Input id="societe_adresse" value={formData.societe_adresse} onChange={(e) => setFormData({ ...formData, societe_adresse: e.target.value })} placeholder="N° et nom de rue" />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="societe_code_postal">Code postal</Label>
+                    <Input id="societe_code_postal" value={formData.societe_code_postal} onChange={(e) => setFormData({ ...formData, societe_code_postal: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="societe_ville">Ville</Label>
+                    <Input id="societe_ville" value={formData.societe_ville} onChange={(e) => setFormData({ ...formData, societe_ville: e.target.value })} />
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t">
+                  <h4 className="text-sm font-semibold mb-3">Contact pour la facture</h4>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="facture_contact_nom">Nom du contact *</Label>
+                  <Input id="facture_contact_nom" value={formData.facture_contact_nom} onChange={(e) => setFormData({ ...formData, facture_contact_nom: e.target.value })} placeholder="Ex: Soumia TOUNSI" />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="facture_contact_email">Email du contact *</Label>
+                    <Input id="facture_contact_email" type="email" value={formData.facture_contact_email} onChange={(e) => setFormData({ ...formData, facture_contact_email: e.target.value })} placeholder="contact@societe.fr" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="facture_contact_telephone">Téléphone</Label>
+                    <Input id="facture_contact_telephone" value={formData.facture_contact_telephone} onChange={(e) => setFormData({ ...formData, facture_contact_telephone: e.target.value })} placeholder="07 XX XX XX XX" />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Dates de formation */}
             <div className="space-y-4">

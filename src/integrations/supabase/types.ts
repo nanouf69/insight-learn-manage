@@ -399,6 +399,9 @@ export type Database = {
           deleted_at: string | null
           documents_complets: boolean | null
           email: string | null
+          facture_contact_email: string | null
+          facture_contact_nom: string | null
+          facture_contact_telephone: string | null
           formation_choisie: string | null
           heure_examen_pratique: string | null
           id: string
@@ -417,6 +420,12 @@ export type Database = {
           prenom: string
           resultat_examen: string | null
           resultat_examen_pratique: string | null
+          societe_adresse: string | null
+          societe_code_postal: string | null
+          societe_nom: string | null
+          societe_siret: string | null
+          societe_tva_intra: string | null
+          societe_ville: string | null
           statut: string | null
           telephone: string | null
           type_apprenant: string | null
@@ -444,6 +453,9 @@ export type Database = {
           deleted_at?: string | null
           documents_complets?: boolean | null
           email?: string | null
+          facture_contact_email?: string | null
+          facture_contact_nom?: string | null
+          facture_contact_telephone?: string | null
           formation_choisie?: string | null
           heure_examen_pratique?: string | null
           id?: string
@@ -462,6 +474,12 @@ export type Database = {
           prenom: string
           resultat_examen?: string | null
           resultat_examen_pratique?: string | null
+          societe_adresse?: string | null
+          societe_code_postal?: string | null
+          societe_nom?: string | null
+          societe_siret?: string | null
+          societe_tva_intra?: string | null
+          societe_ville?: string | null
           statut?: string | null
           telephone?: string | null
           type_apprenant?: string | null
@@ -489,6 +507,9 @@ export type Database = {
           deleted_at?: string | null
           documents_complets?: boolean | null
           email?: string | null
+          facture_contact_email?: string | null
+          facture_contact_nom?: string | null
+          facture_contact_telephone?: string | null
           formation_choisie?: string | null
           heure_examen_pratique?: string | null
           id?: string
@@ -507,6 +528,12 @@ export type Database = {
           prenom?: string
           resultat_examen?: string | null
           resultat_examen_pratique?: string | null
+          societe_adresse?: string | null
+          societe_code_postal?: string | null
+          societe_nom?: string | null
+          societe_siret?: string | null
+          societe_tva_intra?: string | null
+          societe_ville?: string | null
           statut?: string | null
           telephone?: string | null
           type_apprenant?: string | null

@@ -74,6 +74,16 @@ interface ApprenantItem {
   dateDebutFormation: string;
   dateFinFormation: string;
   montantTtc: number;
+  organismeFinanceur?: string | null;
+  societeNom?: string | null;
+  societeSiret?: string | null;
+  societeTvaIntra?: string | null;
+  societeAdresse?: string | null;
+  societeCodePostal?: string | null;
+  societeVille?: string | null;
+  factureContactNom?: string | null;
+  factureContactEmail?: string | null;
+  factureContactTelephone?: string | null;
 }
 
 // Liste des organisations
@@ -244,7 +254,7 @@ export function FactureForm() {
       while (hasMore) {
         const { data, error } = await supabase
           .from('apprenants')
-          .select('id, nom, prenom, email, telephone, adresse, ville, code_postal, civilite, formation_choisie, type_apprenant, date_debut_formation, date_fin_formation, montant_ttc')
+          .select('id, nom, prenom, email, telephone, adresse, ville, code_postal, civilite, formation_choisie, type_apprenant, date_debut_formation, date_fin_formation, montant_ttc, organisme_financeur, societe_nom, societe_siret, societe_tva_intra, societe_adresse, societe_code_postal, societe_ville, facture_contact_nom, facture_contact_email, facture_contact_telephone')
           .range(offset, offset + batchSize - 1);
         if (error) break;
         if (data && data.length > 0) {
@@ -260,6 +270,16 @@ export function FactureForm() {
             dateDebutFormation: a.date_debut_formation || a.date_debut_cours_en_ligne || '',
             dateFinFormation: a.date_fin_formation || a.date_fin_cours_en_ligne || '',
             montantTtc: Number(a.montant_ttc ?? 0),
+            organismeFinanceur: a.organisme_financeur ?? null,
+            societeNom: a.societe_nom ?? null,
+            societeSiret: a.societe_siret ?? null,
+            societeTvaIntra: a.societe_tva_intra ?? null,
+            societeAdresse: a.societe_adresse ?? null,
+            societeCodePostal: a.societe_code_postal ?? null,
+            societeVille: a.societe_ville ?? null,
+            factureContactNom: a.facture_contact_nom ?? null,
+            factureContactEmail: a.facture_contact_email ?? null,
+            factureContactTelephone: a.facture_contact_telephone ?? null,
           }));
           allData.push(...mapped);
           offset += batchSize;
@@ -491,9 +511,26 @@ export function FactureForm() {
 
   const getClientInfo = () => {
     if (data.typeFinanceur === "particulier" && selectedApprenant) {
-      return { nom: selectedApprenant.name, adresse: selectedApprenant.address, email: selectedApprenant.email, telephone: selectedApprenant.phone, siret: "", tvaIntra: "" };
+      // Si l'apprenant est financé par sa société → facture au nom de la société
+      if (selectedApprenant.organismeFinanceur === "societe" && selectedApprenant.societeNom) {
+        const adresseSociete = [
+          selectedApprenant.societeAdresse,
+          [selectedApprenant.societeCodePostal, selectedApprenant.societeVille].filter(Boolean).join(' '),
+        ].filter(Boolean).join(', ');
+        return {
+          nom: selectedApprenant.societeNom,
+          adresse: adresseSociete || selectedApprenant.address,
+          email: selectedApprenant.factureContactEmail || selectedApprenant.email,
+          telephone: selectedApprenant.factureContactTelephone || selectedApprenant.phone,
+          siret: selectedApprenant.societeSiret || "",
+          tvaIntra: selectedApprenant.societeTvaIntra || "",
+          contactNom: selectedApprenant.factureContactNom || "",
+          stagiaire: selectedApprenant.name,
+        };
+      }
+      return { nom: selectedApprenant.name, adresse: selectedApprenant.address, email: selectedApprenant.email, telephone: selectedApprenant.phone, siret: "", tvaIntra: "", contactNom: "", stagiaire: selectedApprenant.name };
     } else if (data.typeFinanceur === "professionnel" && selectedOrganisation) {
-      return { nom: selectedOrganisation.name, adresse: selectedOrganisation.address, email: selectedOrganisation.email, telephone: selectedOrganisation.phone, siret: selectedOrganisation.siret, tvaIntra: selectedOrganisation.tvaIntra };
+      return { nom: selectedOrganisation.name, adresse: selectedOrganisation.address, email: selectedOrganisation.email, telephone: selectedOrganisation.phone, siret: selectedOrganisation.siret, tvaIntra: selectedOrganisation.tvaIntra, contactNom: "", stagiaire: "" };
     }
     return null;
   };
@@ -512,7 +549,7 @@ export function FactureForm() {
       </tr>
     `).join('');
 
-    const clientHTML = client ? `${client.nom}<br>${client.adresse}<br>${client.siret ? `SIRET : ${client.siret}<br>` : ''}${client.tvaIntra ? `TVA Intracommunautaire : ${client.tvaIntra}` : ''}` : 'Aucun client sélectionné';
+    const clientHTML = client ? `${client.nom}<br>${client.adresse || ''}${client.contactNom ? `<br>À l'attention de : ${client.contactNom}` : ''}${client.email ? `<br>Email : ${client.email}` : ''}${client.telephone ? `<br>Tél : ${client.telephone}` : ''}${client.siret ? `<br>SIRET : ${client.siret}` : ''}${client.tvaIntra ? `<br>TVA Intracommunautaire : ${client.tvaIntra}` : ''}${client.stagiaire && client.stagiaire !== client.nom ? `<br><em>Stagiaire : ${client.stagiaire}</em>` : ''}` : 'Aucun client sélectionné';
 
     return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Facture ${data.numeroInterne}</title><style>body{font-family:Arial,sans-serif;font-size:12px;margin:20px}.header{display:flex;justify-content:space-between;margin-bottom:30px}.logo{font-size:24px;font-weight:bold;color:#2563eb}.logo-sub{font-size:14px;color:#666}.title{text-align:right}.title h1{font-size:18px;margin:0}.info-row{display:flex;justify-content:space-between;margin-bottom:20px}.info-box{width:48%}table{width:100%;border-collapse:collapse;margin:20px 0}th{background:#f3f4f6;padding:10px;border:1px solid #ddd;text-align:left}.totals{text-align:right;margin-top:20px}.bank-info{margin-top:30px;padding:15px;background:#f9fafb;border:1px solid #e5e7eb}.conditions{margin-top:20px;padding:15px;background:#fefce8;border:1px solid #fde68a;font-size:11px;line-height:1.5}.conditions h4{margin:0 0 8px 0;font-size:12px;color:#92400e}.footer{margin-top:30px;font-size:10px;color:#666;text-align:center;border-top:1px solid #ddd;padding-top:15px}</style></head><body><div class="header"><div><div class="logo">🚌 ${entrepriseEmettrice.nom}</div><div class="logo-sub">${entrepriseEmettrice.slogan}</div></div><div class="title"><h1>FACTURE ${data.duplicata ? 'DUPLICATA ' : ''}N°${data.numero}</h1><p>Numéro : ${data.numeroInterne}</p><p>Date de facturation : ${formatDate(data.date)}</p><p>Date d'échéance : ${formatDate(data.dateEcheance)}</p></div></div><div class="info-row"><div class="info-box"><strong>Émetteur :</strong><br>${entrepriseEmettrice.nom}<br>${entrepriseEmettrice.adresse}<br>${entrepriseEmettrice.codePostal} ${entrepriseEmettrice.ville}<br>SIRET : ${entrepriseEmettrice.siret}<br>Tél.: ${entrepriseEmettrice.telephone}<br>Email: ${entrepriseEmettrice.email}<br>Déclaration d'activité n° ${entrepriseEmettrice.declarationActivite}${data.refDossier ? `<br>Réf dossier : ${data.refDossier}` : ''}</div><div class="info-box"><strong>Adressée à :</strong><br>${clientHTML}${data.refConvention ? `<br>Réf à rappeler : ${data.refConvention}` : ''}</div></div><h3>Désignation</h3><table><thead><tr><th>Stagiaire</th><th>Désignation</th><th>TVA</th><th>P.U. HT</th><th>Qté</th><th>Rem</th><th>Total HT</th></tr></thead><tbody>${lignesHTML}</tbody></table><div class="totals"><p><strong>Total HT :</strong> ${calculerTotalHT().toFixed(2)} €</p><p><strong>Total TVA :</strong> ${calculerTotalTVA().toFixed(2)} €</p><p style="font-size:16px;"><strong>Total TTC :</strong> ${calculerTotalTTC().toFixed(2)} €</p></div><div class="bank-info"><h4>Règlement par virement :</h4><p>Banque : ${entrepriseEmettrice.banque} | IBAN : ${entrepriseEmettrice.iban} | BIC : ${entrepriseEmettrice.bic}</p></div><div class="conditions"><h4>Conditions de règlement</h4><p>Paiement par virement bancaire ou en espèces à réception de facture. Date d'échéance : ${formatDate(data.dateEcheance)}. Aucun escompte accordé pour paiement anticipé. En cas de retard de paiement, des pénalités de retard au taux de 3 fois le taux d'intérêt légal en vigueur seront appliquées, ainsi qu'une indemnité forfaitaire de recouvrement de 40,00 €, conformément aux articles L441-10 et D441-5 du Code de commerce.</p></div><div class="footer"><p>Centre de formation agrée par la préfecture n°${entrepriseEmettrice.prefectures}</p><p>TVA non applicable - article 293 B du CGI</p><p>SASU FTRANSPORT - Capital de ${entrepriseEmettrice.capital} € - SIRET : ${entrepriseEmettrice.siret}</p></div></body></html>`;
   };
