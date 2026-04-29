@@ -610,9 +610,14 @@ export function ComptabilitePage() {
         f.client_nom.toLowerCase().includes(search.toLowerCase());
       const matchStatut = filterStatut === "all" || f.statut === filterStatut;
       const matchFinancement = filterFinancement === "all" || f.type_financement === filterFinancement;
-      return matchSearch && matchStatut && matchFinancement;
+      const isAchat = f.type_financement === "fournisseur";
+      const matchTypeFlux =
+        filterTypeFlux === "all" ||
+        (filterTypeFlux === "achats" && isAchat) ||
+        (filterTypeFlux === "ventes" && !isAchat);
+      return matchSearch && matchStatut && matchFinancement && matchTypeFlux;
     });
-  }, [allFactures, search, filterStatut, filterFinancement]);
+  }, [allFactures, search, filterStatut, filterFinancement, filterTypeFlux]);
 
   const totalCA = useMemo(() => factures.reduce((s, f) => (f.statut !== "annulee" && f.statut !== "brouillon") ? s + Number(f.montant_ttc) : s, 0), [factures]);
   const totalPaye = useMemo(() => factures.filter(f => f.statut === "payee").reduce((s, f) => s + Number(f.montant_ttc), 0), [factures]);
