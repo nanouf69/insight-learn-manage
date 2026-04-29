@@ -293,7 +293,7 @@ export function FactureForm() {
     }
   };
 
-  const ajouterLigneSession = (session: typeof sessions[0]) => {
+  const ajouterLigneSession = (session: SessionItem) => {
     const nouvelleLigne: LigneFacture = {
       id: crypto.randomUUID(),
       type: "session",
