@@ -5,13 +5,25 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { buildQuestionImagePath, validateQuestionImageFile } from "./examens-blancs-utils";
 
+type ImageSize = "sm" | "md" | "lg" | "xl" | "2xl";
+
 interface QuestionImageUploadProps {
   image: string | null | undefined;
   context: "module" | "exam";
   contextId: number | string;
   questionId: number | string;
   onImageChange: (url: string | null) => void;
+  imageSize?: ImageSize;
+  onImageSizeChange?: (size: ImageSize) => void;
 }
+
+const SIZE_OPTIONS: { value: ImageSize; label: string; previewClass: string }[] = [
+  { value: "sm", label: "Petite", previewClass: "max-h-32" },
+  { value: "md", label: "Moyenne", previewClass: "max-h-56" },
+  { value: "lg", label: "Grande", previewClass: "max-h-80" },
+  { value: "xl", label: "Très grande", previewClass: "max-h-[28rem]" },
+  { value: "2xl", label: "Maximale", previewClass: "max-h-[40rem]" },
+];
 
 export function QuestionImageUpload({
   image,
@@ -19,6 +31,8 @@ export function QuestionImageUpload({
   contextId,
   questionId,
   onImageChange,
+  imageSize = "sm",
+  onImageSizeChange,
 }: QuestionImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
