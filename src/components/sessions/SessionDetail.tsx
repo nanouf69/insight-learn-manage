@@ -542,6 +542,29 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     enabled: !!session?.id && open,
   });
 
+  // Charger les infos financeur FC (saisies dans le portail Informations Financeur VTC/TAXI)
+  const apprenantIdsForFinanceur = (apprenantsInSession || [])
+    .map((sa: any) => sa.apprenant?.id)
+    .filter(Boolean);
+  const { data: financeursFCMap = {} } = useQuery({
+    queryKey: ['session-financeurs-fc', session?.id, apprenantIdsForFinanceur.join(',')],
+    queryFn: async () => {
+      if (!apprenantIdsForFinanceur.length) return {} as Record<string, any>;
+      const { data, error } = await supabase
+        .from('financeurs_fc' as any)
+        .select('apprenant_id, adresse, code_postal, ville, contact_telephone, contact_email, email_facturation')
+        .in('apprenant_id', apprenantIdsForFinanceur);
+      if (error) {
+        console.error('[SessionDetail] Erreur chargement financeurs_fc:', error);
+        return {} as Record<string, any>;
+      }
+      const map: Record<string, any> = {};
+      (data || []).forEach((row: any) => { map[row.apprenant_id] = row; });
+      return map;
+    },
+    enabled: !!session?.id && open && apprenantIdsForFinanceur.length > 0,
+  });
+
   // Charger les formateurs de cette session
   const { data: formateursInSession = [], isLoading: loadingFormateurs, refetch: refetchFormateurs } = useQuery({
     queryKey: ['session-formateurs', session?.id],
