@@ -489,7 +489,7 @@ export function ComptabilitePage() {
     });
   }, [factures, search, filterStatut, filterFinancement]);
 
-  const totalCA = useMemo(() => factures.reduce((s, f) => f.statut !== "annulee" ? s + Number(f.montant_ttc) : s, 0), [factures]);
+  const totalCA = useMemo(() => factures.reduce((s, f) => (f.statut !== "annulee" && f.statut !== "brouillon") ? s + Number(f.montant_ttc) : s, 0), [factures]);
   const totalPaye = useMemo(() => factures.filter(f => f.statut === "payee").reduce((s, f) => s + Number(f.montant_ttc), 0), [factures]);
   const totalEnAttente = useMemo(() => factures.filter(f => f.statut === "en_attente").reduce((s, f) => s + Number(f.montant_ttc), 0), [factures]);
   const totalEnRetard = useMemo(() => {
