@@ -78,14 +78,20 @@ const organisations = [
   { id: 5, name: "Mairie de Lyon", type: "client", contact: "Jean-Pierre Martin", email: "formation@mairie-lyon.fr", phone: "04 72 10 30 30", address: "Place de la Comédie, 69001 Lyon", siret: "21690123800019", tvaIntra: "FR21690123800" },
 ];
 
-// Sessions de formation
-const sessions = [
-  { id: 1, title: "Formation VTC cours du soir", formation: "Formation VTC", dateDebut: "2026-02-14", dateFin: "2026-02-25", horaire: "18:00 - 21:00", lieu: "86 route de genas 69003 Lyon", formateur: "Ahmed Benali", participants: 8, maxParticipants: 12, prix: 1599, status: "confirmed" },
-  { id: 2, title: "FIMO Voyageurs - Session Février", formation: "FIMO Voyageurs", dateDebut: "2026-02-01", dateFin: "2026-02-28", horaire: "09:00 - 17:00", lieu: "86 route de genas 69003 Lyon", formateur: "Jean Dupont", participants: 10, maxParticipants: 15, prix: 2500, status: "confirmed" },
-  { id: 3, title: "FCO Voyageurs - Recyclage", formation: "FCO Voyageurs", dateDebut: "2026-03-03", dateFin: "2026-03-07", horaire: "09:00 - 17:00", lieu: "86 route de genas 69003 Lyon", formateur: "Marie Martin", participants: 6, maxParticipants: 10, prix: 450, status: "pending" },
-  { id: 4, title: "Formation TAXI Initiale", formation: "Formation TAXI", dateDebut: "2026-03-10", dateFin: "2026-03-21", horaire: "09:00 - 17:00", lieu: "86 route de genas 69003 Lyon", formateur: "Pierre Bernard", participants: 5, maxParticipants: 12, prix: 1599, status: "confirmed" },
-  { id: 5, title: "Titre Pro Conducteur TC", formation: "Titre Professionnel", dateDebut: "2026-04-01", dateFin: "2026-06-30", horaire: "09:00 - 17:00", lieu: "86 route de genas 69003 Lyon", formateur: "Sophie Lefebvre", participants: 12, maxParticipants: 15, prix: 8500, status: "confirmed" },
-];
+// Sessions de formation — chargées depuis Supabase
+interface SessionItem {
+  id: string;
+  title: string;
+  formation: string;
+  dateDebut: string;
+  dateFin: string;
+  horaire: string;
+  lieu: string;
+  participants: number;
+  maxParticipants: number;
+  prix: number;
+  status: string;
+}
 
 // Liste des produits/services (basée sur l'image fournie)
 const produits = [
@@ -168,6 +174,41 @@ export function FactureForm() {
   const [isAddLineDialogOpen, setIsAddLineDialogOpen] = useState(false);
   const [addLineType, setAddLineType] = useState<"session" | "produit">("session");
   const [apprenants, setApprenants] = useState<ApprenantItem[]>([]);
+  const [sessions, setSessions] = useState<SessionItem[]>([]);
+
+  useEffect(() => {
+    const fetchSessions = async () => {
+      const allRows: any[] = [];
+      let offset = 0;
+      const batchSize = 1000;
+      while (true) {
+        const { data, error } = await supabase
+          .from('sessions')
+          .select('id, nom, date_debut, date_fin, heure_debut, heure_fin, lieu, places_disponibles, statut, type_session, formation_id, formations:formation_id(nom, prix_ht)')
+          .order('date_debut', { ascending: false })
+          .range(offset, offset + batchSize - 1);
+        if (error || !data || data.length === 0) break;
+        allRows.push(...data);
+        if (data.length < batchSize) break;
+        offset += batchSize;
+      }
+      const mapped: SessionItem[] = allRows.map((s: any) => ({
+        id: s.id,
+        title: s.nom || 'Session sans nom',
+        formation: s.formations?.nom || s.type_session || '',
+        dateDebut: s.date_debut || '',
+        dateFin: s.date_fin || s.date_debut || '',
+        horaire: s.heure_debut && s.heure_fin ? `${s.heure_debut} - ${s.heure_fin}` : '',
+        lieu: s.lieu || '',
+        participants: 0,
+        maxParticipants: s.places_disponibles ?? 0,
+        prix: Number(s.formations?.prix_ht ?? 0),
+        status: s.statut === 'confirmee' ? 'confirmed' : (s.statut === 'planifiee' ? 'pending' : (s.statut || 'pending')),
+      }));
+      setSessions(mapped);
+    };
+    fetchSessions();
+  }, []);
 
   useEffect(() => {
     const fetchApprenants = async () => {
@@ -252,7 +293,7 @@ export function FactureForm() {
     }
   };
 
-  const ajouterLigneSession = (session: typeof sessions[0]) => {
+  const ajouterLigneSession = (session: SessionItem) => {
     const nouvelleLigne: LigneFacture = {
       id: crypto.randomUUID(),
       type: "session",
