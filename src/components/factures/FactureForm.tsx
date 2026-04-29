@@ -482,13 +482,47 @@ export function FactureForm() {
     return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
-  const handleSaveDraft = () => {
+  const handleSaveDraft = async () => {
+    // 1) Sauvegarde locale (toujours)
     try {
       localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
-      toast.success("Brouillon enregistré");
     } catch (e) {
+      console.warn("localStorage indisponible", e);
+    }
+
+    // 2) Sauvegarde en base avec statut "brouillon" (sans validations strictes)
+    try {
+      const client = getClientInfo();
+      const montantHT = calculerTotalHT();
+      const montantTVA = calculerTotalTVA();
+      const montantTTC = calculerTotalTTC();
+      const tvaTaux = montantHT > 0 ? Math.round((montantTVA / montantHT) * 100) : 0;
+      const sessionLine: any = data.lignes.find((l: any) => l.type === "session" && (l as any).sessionId);
+
+      const payload: any = {
+        numero: data.numeroInterne || data.numero || `BR-${Date.now()}`,
+        date_emission: data.date || new Date().toISOString().split('T')[0],
+        date_echeance: data.dateEcheance || null,
+        type_financement: data.typeFinanceur === "particulier" ? "particulier" : "professionnel",
+        client_nom: client?.nom || "Brouillon sans client",
+        client_adresse: client?.adresse || null,
+        client_siret: client?.siret || null,
+        montant_ht: montantHT,
+        tva_taux: tvaTaux,
+        montant_tva: montantTVA,
+        montant_ttc: montantTTC,
+        statut: "brouillon",
+        date_paiement: null,
+        apprenant_id: data.typeFinanceur === "particulier" ? data.selectedApprenantId : null,
+        session_id: sessionLine?.sessionId || null,
+      };
+
+      const { error } = await supabase.from("factures").insert(payload);
+      if (error) throw error;
+      toast.success("Brouillon enregistré (visible en comptabilité)");
+    } catch (e: any) {
       console.error(e);
-      toast.error("Impossible d'enregistrer le brouillon");
+      toast.error(`Erreur d'enregistrement du brouillon : ${e.message ?? e}`);
     }
   };
 
