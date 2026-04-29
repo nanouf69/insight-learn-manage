@@ -50,6 +50,8 @@ import { generateEmargementPDF } from "./EmargementGenerator";
 import { generateEmargementIndividuelPDF, AgendaDaySlot } from "./EmargementIndividuelGenerator";
 import { supabase } from "@/integrations/supabase/client";
 import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface Session {
