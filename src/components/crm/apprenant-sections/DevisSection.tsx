@@ -1255,14 +1255,21 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
 
   return (
     <div className="space-y-6">
-      {/* ═══ SECTION 1 : DEVIS DOCX TEMPLATES ═══ */}
-      <Card className="border-primary/30">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <FileDown className="w-5 h-5 text-primary" />
-            Devis DOCX pré-rempli
-          </CardTitle>
-        </CardHeader>
+      <Tabs defaultValue="devis" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="devis">📄 Devis</TabsTrigger>
+          <TabsTrigger value="location">🚗 Contrat de location</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="devis" className="space-y-6 mt-4">
+          {/* ═══ SECTION 1 : DEVIS DOCX TEMPLATES ═══ */}
+          <Card className="border-primary/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <FileDown className="w-5 h-5 text-primary" />
+                Devis DOCX pré-rempli
+              </CardTitle>
+            </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>Sélectionner le modèle de devis</Label>
