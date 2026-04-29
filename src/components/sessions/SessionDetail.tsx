@@ -1147,6 +1147,15 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       toast({ title: "Aucun apprenant", description: "Cette session ne contient aucun apprenant.", variant: "destructive" });
       return;
     }
+    const check = checkApprenantsCompleteness();
+    if (!check.ok) {
+      toast({
+        title: "Informations manquantes",
+        description: `Veuillez compléter la fiche apprenant avant d'envoyer :\n${check.missing.join('\n')}`,
+        variant: "destructive",
+      });
+      return;
+    }
     setBulkSendingAttestations(true);
     let sent = 0;
     let skipped = 0;
