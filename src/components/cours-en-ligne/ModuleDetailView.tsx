@@ -2693,6 +2693,29 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
     // Refetch from DB instead of trusting the payload (which can be truncated for large JSONB)
     const refetchModuleFromDb = async () => {
       try {
+        if (shouldSyncVtcBilanFromCours(module.id)) {
+          const { data: sourceState } = await supabase
+            .from("module_editor_state")
+            .select("module_data, deleted_exercices")
+            .eq("module_id", BILAN_VTC_SOURCE_MODULE_ID)
+            .order("updated_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          const sourceMd = sourceState?.module_data as unknown as ModuleData | undefined;
+          if (sourceMd?.exercices && Array.isArray(sourceMd.exercices)) {
+            const sourceInitial = JSON.parse(JSON.stringify(VTC_COURS_DATA)) as ModuleData;
+            const deletedSourceIds = Array.isArray(sourceState?.deleted_exercices)
+              ? (sourceState.deleted_exercices as any[]).map((e: any) => Number(e?.id)).filter((n) => !Number.isNaN(n))
+              : [];
+            const sourceExercices = mergeSourceExercices(sourceMd.exercices, sourceInitial.exercices, deletedSourceIds);
+            setModuleData((prev) => getSyncedBilanVtcModuleData(prev, sourceExercices, Number(module.id) === 4));
+            setDeletedCours([]);
+            setDeletedExercices([]);
+            setLoadedModuleEditorState(true);
+            return;
+          }
+        }
+
         const { data, error } = await supabase
           .from("module_editor_state")
           .select("module_data, deleted_cours, deleted_exercices, updated_at")
@@ -2740,7 +2763,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
       const newData = payload.new as any;
       const eventModule = newData?.module_id != null ? Number(newData.module_id) : null;
 
-      if (eventModule === Number(module.id)) {
+        if (eventModule === Number(module.id) || (shouldSyncVtcBilanFromCours(module.id) && eventModule === BILAN_VTC_SOURCE_MODULE_ID)) {
         // Direct module match — refetch full data from DB (payload may be truncated)
         await refetchModuleFromDb();
       } else {
