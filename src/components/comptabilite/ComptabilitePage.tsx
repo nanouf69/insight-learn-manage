@@ -1072,6 +1072,7 @@ export function ComptabilitePage() {
               <SelectTrigger className="w-[160px]"><SelectValue placeholder="Statut" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tous les statuts</SelectItem>
+                <SelectItem value="brouillon">Brouillon</SelectItem>
                 <SelectItem value="en_attente">En attente</SelectItem>
                 <SelectItem value="payee">Payée</SelectItem>
                 <SelectItem value="en_retard">En retard</SelectItem>
