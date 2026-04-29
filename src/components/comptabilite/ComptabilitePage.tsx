@@ -1331,8 +1331,8 @@ export function ComptabilitePage() {
                           <p className="text-sm text-muted-foreground p-4">Aucune facture de vente</p>
                         ) : (
                           <Table>
-                            <TableHeader>{headerRow}</TableHeader>
-                            <TableBody>{renderRows(ventes)}</TableBody>
+                            <TableHeader>{headerRow(true)}</TableHeader>
+                            <TableBody>{renderRows(ventes, true)}</TableBody>
                           </Table>
                         )}
                       </div>
