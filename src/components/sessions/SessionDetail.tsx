@@ -1082,22 +1082,29 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     }
     setBulkDownloadingAttestations(true);
     try {
-      const zip = new JSZip();
+      let mergedDoc: any = null;
       let count = 0;
       for (const sa of apprenantsInSession) {
         const apprenant = sa.apprenant;
         if (!apprenant) continue;
         const { data } = buildAttestationDataForApprenant(apprenant, sa);
-        const result = await generateAttestationFCVTC(data, { returnBlob: true });
-        if (result?.blob) {
-          zip.file(result.fileName, result.blob);
+        const result: any = await generateAttestationFCVTC(data, {
+          returnDoc: true,
+          existingDoc: mergedDoc ?? undefined,
+          addPage: !!mergedDoc,
+        });
+        if (result?.doc) {
+          mergedDoc = result.doc;
           count++;
         }
       }
-      const blob = await zip.generateAsync({ type: 'blob' });
+      if (!mergedDoc || count === 0) {
+        toast({ title: "Aucune attestation", description: "Aucune attestation n'a pu être générée.", variant: "destructive" });
+        return;
+      }
       const safeTitle = (session.title || 'session').replace(/[^a-zA-Z0-9_-]+/g, '_');
-      saveAs(blob, `Attestations_FC_${safeTitle}.zip`);
-      toast({ title: "Attestations téléchargées", description: `${count} attestation(s) regroupée(s) dans le ZIP.` });
+      mergedDoc.save(`Attestations_FC_${safeTitle}.pdf`);
+      toast({ title: "Attestations téléchargées", description: `${count} attestation(s) regroupée(s) dans un seul PDF.` });
     } catch (err: any) {
       console.error(err);
       toast({ title: "Erreur", description: err?.message || "Impossible de générer les attestations.", variant: "destructive" });
