@@ -261,6 +261,15 @@ export function ApprenantEditForm({ apprenant, open, onOpenChange }: ApprenantEd
         montant_paye: apprenant.montant_paye?.toString() || "0",
         moyen_paiement: apprenant.moyen_paiement || "",
         notes: apprenant.notes || "",
+        societe_nom: (apprenant as any).societe_nom || "",
+        societe_siret: (apprenant as any).societe_siret || "",
+        societe_tva_intra: (apprenant as any).societe_tva_intra || "",
+        societe_adresse: (apprenant as any).societe_adresse || "",
+        societe_code_postal: (apprenant as any).societe_code_postal || "",
+        societe_ville: (apprenant as any).societe_ville || "",
+        facture_contact_nom: (apprenant as any).facture_contact_nom || "",
+        facture_contact_email: (apprenant as any).facture_contact_email || "",
+        facture_contact_telephone: (apprenant as any).facture_contact_telephone || "",
       });
       
       // Restaurer la date de formation du catalogue si elle existe
