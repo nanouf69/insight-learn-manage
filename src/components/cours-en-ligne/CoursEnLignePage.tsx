@@ -72,13 +72,6 @@ const CoursEnLignePage = () => {
   }
 
   if (editingModule) {
-    if (editingModule.id === 87) {
-      return (
-        <div className="p-4 md:p-8">
-          <BilanFinFormationFCVtc onBack={() => setEditingModule(null)} />
-        </div>
-      );
-    }
     return <ModuleDetailView module={editingModule} onBack={() => setEditingModule(null)} />;
   }
 // ---------- Apprenant Search + Preview subcomponent ----------
