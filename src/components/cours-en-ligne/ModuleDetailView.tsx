@@ -2444,6 +2444,43 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
           } catch {}
         }
 
+        const FC_BILAN_PARENT: Record<number, number> = { 81: 4, 82: 9 };
+        const parentModuleId = FC_BILAN_PARENT[Number(module.id)];
+
+        // Modules FC: toujours refléter le bilan parent (4 VTC / 9 TAXI), même si
+        // un ancien état propre au module 81/82 existe en base. Sinon les élèves
+        // FC gardent des questions/réponses obsolètes.
+        if (studentOnly && parentModuleId && initialData.exercices.length > 0) {
+          try {
+            const { data: parentData } = await supabase
+              .from("module_editor_state")
+              .select("module_data")
+              .eq("module_id", parentModuleId)
+              .order("updated_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            const parentMd = parentData?.module_data as any;
+            if (parentMd?.exercices && Array.isArray(parentMd.exercices)) {
+              const filtered = parentMd.exercices.filter((exo: any) => Number(exo?.id) !== 101);
+              if (filtered.length > 0) {
+                const fcMerged: ModuleData = {
+                  ...initialData,
+                  exercices: mergeSourceExercices(filtered, initialData.exercices),
+                };
+                console.log(`[FC-Bilan] Module ${module.id} forcé depuis module ${parentModuleId} (sans Gestion)`);
+                setModuleData(fcMerged);
+                setDeletedCours([]);
+                setDeletedExercices([]);
+                setLoadedModuleEditorState(true);
+                return;
+              }
+            }
+          } catch (e) {
+            console.error(`[FC-Bilan] Erreur hydratation forcée module ${module.id} depuis ${parentModuleId}:`, e);
+          }
+        }
+
         if (latestState?.module_data) {
           const md = latestState.module_data as unknown as ModuleData;
           const hasMatchingSourceFingerprint = latestState.source_fingerprint === sourceFingerprint;
@@ -2534,8 +2571,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
         // exactement le bilan complet 4 (VTC) / 9 (TAXI) — sans Gestion (exo id 101).
         // Sans ce fallback, les élèves FC voient la source statique alors que l'admin
         // a modifié le bilan principal.
-        const FC_BILAN_PARENT: Record<number, number> = { 81: 4, 82: 9 };
-        const parentModuleId = FC_BILAN_PARENT[Number(module.id)];
         if (parentModuleId && initialData.exercices.length > 0) {
           try {
             const { data: parentData } = await supabase
@@ -3233,7 +3268,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
 
 
-    const BILAN_MODULE_IDS_SET = new Set([4, 5, 9, 11, 27, 28, 29, 30]);
+    const BILAN_MODULE_IDS_SET = new Set([4, 5, 9, 11, 27, 28, 29, 30, 81, 82]);
     const isBilanModule = BILAN_MODULE_IDS_SET.has(Number(moduleData.id));
     const hierarchicalLabelsByPage = useMemo<Record<number, string>>(() => {
 
