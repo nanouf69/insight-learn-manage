@@ -384,7 +384,7 @@ export const MODULES_DATA: ModuleInfo[] = [
   },
   {
     id: 83,
-    nom: "2.FEUILLES D'ÉMARGEMENT SIGNÉES VTC",
+    nom: "3.FEUILLES D'ÉMARGEMENT SIGNÉES VTC",
     description: "Historique des feuilles d'émargement signées — Formation continue VTC",
     formations: ["continue-vtc"],
   },
@@ -396,7 +396,7 @@ export const MODULES_DATA: ModuleInfo[] = [
   },
   {
     id: 85,
-    nom: "3.INFORMATIONS FINANCEUR VTC",
+    nom: "4.INFORMATIONS FINANCEUR VTC",
     description: "Saisie des informations de facturation — Formation continue VTC",
     formations: ["continue-vtc"],
   },
