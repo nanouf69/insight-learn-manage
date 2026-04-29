@@ -511,7 +511,7 @@ export function FactureForm() {
         <div className="flex gap-2">
           <Button onClick={handleEnvoyer} variant="outline"><Send className="w-4 h-4 mr-2" />Envoyer</Button>
           <Button onClick={handlePrint} variant="outline"><Printer className="w-4 h-4 mr-2" />Imprimer</Button>
-          <Button onClick={handleExport}><Download className="w-4 h-4 mr-2" />Exporter</Button>
+          <Button onClick={handleExport}><Download className="w-4 h-4 mr-2" />Télécharger PDF</Button>
         </div>
       </div>
 
