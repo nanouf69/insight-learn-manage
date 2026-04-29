@@ -1107,8 +1107,36 @@ export function ComptabilitePage() {
                   <p className="text-muted-foreground">Aucune facture trouvée</p>
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
+                (() => {
+                  const ventes = filteredFactures.filter(f => f.type_financement !== "fournisseur");
+                  const achats = filteredFactures.filter(f => f.type_financement === "fournisseur");
+                  const totalVentes = ventes.reduce((s, f) => s + Number(f.montant_ttc), 0);
+                  const totalAchats = achats.reduce((s, f) => s + Number(f.montant_ttc), 0);
+
+                  const renderRows = (list: Facture[]) => list.map((f) => {
+                    const isDraft = f.statut === "brouillon";
+                    return (
+                      <TableRow
+                        key={f.id}
+                        className={isDraft ? "cursor-pointer hover:bg-amber-50" : ""}
+                        onClick={isDraft ? () => setDraftPreview(f) : undefined}
+                        title={isDraft ? "Cliquer pour prévisualiser et valider la facture" : undefined}
+                      >
+                        <TableCell className="font-medium">{f.numero}</TableCell>
+                        <TableCell>{f.client_nom}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{financementLabels[f.type_financement] || f.type_financement}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-semibold">{formatMontant(Number(f.montant_ttc))}</TableCell>
+                        <TableCell>{getStatutBadge(f.statut)}</TableCell>
+                        <TableCell>{formatDate(f.date_emission)}</TableCell>
+                        <TableCell>{formatDate(f.date_echeance)}</TableCell>
+                        <TableCell>{formatDate(f.date_paiement)}</TableCell>
+                      </TableRow>
+                    );
+                  });
+
+                  const headerRow = (
                     <TableRow>
                       <TableHead>N°</TableHead>
                       <TableHead>Client</TableHead>
@@ -1119,32 +1147,56 @@ export function ComptabilitePage() {
                       <TableHead>Échéance</TableHead>
                       <TableHead>Paiement</TableHead>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredFactures.map((f) => {
-                      const isDraft = f.statut === "brouillon";
-                      return (
-                        <TableRow
-                          key={f.id}
-                          className={isDraft ? "cursor-pointer hover:bg-amber-50" : ""}
-                          onClick={isDraft ? () => setDraftPreview(f) : undefined}
-                          title={isDraft ? "Cliquer pour prévisualiser et valider la facture" : undefined}
-                        >
-                          <TableCell className="font-medium">{f.numero}</TableCell>
-                          <TableCell>{f.client_nom}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{financementLabels[f.type_financement] || f.type_financement}</Badge>
-                          </TableCell>
-                          <TableCell className="text-right font-semibold">{formatMontant(Number(f.montant_ttc))}</TableCell>
-                          <TableCell>{getStatutBadge(f.statut)}</TableCell>
-                          <TableCell>{formatDate(f.date_emission)}</TableCell>
-                          <TableCell>{formatDate(f.date_echeance)}</TableCell>
-                          <TableCell>{formatDate(f.date_paiement)}</TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                  );
+
+                  return (
+                    <div className="space-y-6 p-2">
+                      {/* VENTES */}
+                      <div>
+                        <div className="flex items-center justify-between px-3 py-2 bg-emerald-50 border-l-4 border-emerald-500 rounded-t">
+                          <div className="flex items-center gap-2">
+                            <Receipt className="h-4 w-4 text-emerald-700" />
+                            <h3 className="font-semibold text-emerald-900">Factures de ventes (clients)</h3>
+                            <Badge variant="secondary">{ventes.length}</Badge>
+                          </div>
+                          <div className="text-sm font-semibold text-emerald-900">
+                            Total : {formatMontant(totalVentes)}
+                          </div>
+                        </div>
+                        {ventes.length === 0 ? (
+                          <p className="text-sm text-muted-foreground p-4">Aucune facture de vente</p>
+                        ) : (
+                          <Table>
+                            <TableHeader>{headerRow}</TableHeader>
+                            <TableBody>{renderRows(ventes)}</TableBody>
+                          </Table>
+                        )}
+                      </div>
+
+                      {/* ACHATS */}
+                      <div>
+                        <div className="flex items-center justify-between px-3 py-2 bg-orange-50 border-l-4 border-orange-500 rounded-t">
+                          <div className="flex items-center gap-2">
+                            <Receipt className="h-4 w-4 text-orange-700" />
+                            <h3 className="font-semibold text-orange-900">Factures d'achats (fournisseurs)</h3>
+                            <Badge variant="secondary">{achats.length}</Badge>
+                          </div>
+                          <div className="text-sm font-semibold text-orange-900">
+                            Total : {formatMontant(totalAchats)}
+                          </div>
+                        </div>
+                        {achats.length === 0 ? (
+                          <p className="text-sm text-muted-foreground p-4">Aucune facture d'achat</p>
+                        ) : (
+                          <Table>
+                            <TableHeader>{headerRow}</TableHeader>
+                            <TableBody>{renderRows(achats)}</TableBody>
+                          </Table>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()
               )}
             </CardContent>
           </Card>
