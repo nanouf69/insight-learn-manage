@@ -67,6 +67,11 @@ interface ApprenantItem {
   phone: string;
   address: string;
   avatar: string;
+  formationChoisie: string;
+  typeApprenant: string;
+  dateDebutFormation: string;
+  dateFinFormation: string;
+  montantTtc: number;
 }
 
 // Liste des organisations
