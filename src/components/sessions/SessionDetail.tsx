@@ -465,6 +465,11 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   const [bulkDownloadingFactures, setBulkDownloadingFactures] = useState(false);
   const [bulkSendingFactures, setBulkSendingFactures] = useState(false);
   const [singleFactureLoading, setSingleFactureLoading] = useState<string | null>(null);
+  const [bulkValidatingFactures, setBulkValidatingFactures] = useState(false);
+  const [acquittementApprenant, setAcquittementApprenant] = useState<any | null>(null);
+  const [acquittementDate, setAcquittementDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [acquittementMoyen, setAcquittementMoyen] = useState<string>('virement');
+  const [acquittementSaving, setAcquittementSaving] = useState(false);
   const [bulkPreview, setBulkPreview] = useState<{ template: any; apprenants: any[]; previewBody: string; previewSubject: string; editedBody?: string; editedSubject?: string } | null>(null);
   const [bulkPreviewEditing, setBulkPreviewEditing] = useState(false);
   const [editingMailType, setEditingMailType] = useState<any | null>(null);
@@ -556,7 +561,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       if (!apprenantIdsForFinanceur.length) return {} as Record<string, any>;
       const { data, error } = await supabase
         .from('financeurs_fc' as any)
-        .select('apprenant_id, adresse, code_postal, ville, contact_telephone, contact_email, email_facturation')
+        .select('apprenant_id, type_financeur, raison_sociale, siren, siret, numero_tva, adresse, code_postal, ville, contact_nom, contact_telephone, contact_email, email_facturation, organisme_financeur, numero_dossier')
         .in('apprenant_id', apprenantIdsForFinanceur);
       if (error) {
         console.error('[SessionDetail] Erreur chargement financeurs_fc:', error);
@@ -567,6 +572,29 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       return map;
     },
     enabled: !!session?.id && open && apprenantIdsForFinanceur.length > 0,
+  });
+
+  // Charger les factures FC déjà créées pour cette session (brouillons + validées)
+  const { data: facturesFCMap = {}, refetch: refetchFacturesFC } = useQuery({
+    queryKey: ['session-factures-fc', session?.id],
+    queryFn: async () => {
+      if (!session?.id) return {} as Record<string, any>;
+      const { data, error } = await supabase
+        .from('factures')
+        .select('*')
+        .eq('session_id', session.id)
+        .order('created_at', { ascending: true });
+      if (error) {
+        console.error('[SessionDetail] Erreur chargement factures session:', error);
+        return {} as Record<string, any>;
+      }
+      const map: Record<string, any> = {};
+      (data || []).forEach((row: any) => {
+        if (row.apprenant_id) map[row.apprenant_id] = row;
+      });
+      return map;
+    },
+    enabled: !!session?.id && open,
   });
 
   // Charger les formateurs de cette session
@@ -1259,16 +1287,36 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
   };
 
   // ===== FACTURES FORMATION CONTINUE =====
-  const buildFactureDataForApprenant = (apprenant: any, sessionApprenant: any, indexInSession: number) => {
+  const FC_MONTANT_TTC = 200; // Formation continue VTC/TAXI : 200 €
+
+  // Génère le prochain numéro YYYYMMDD### selon la BDD
+  const generateNextNumeroFacture = async (): Promise<string> => {
+    const today = new Date();
+    const yyyymmdd = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
+    const { data, error } = await supabase
+      .from('factures')
+      .select('numero')
+      .like('numero', `${yyyymmdd}%`)
+      .order('numero', { ascending: false })
+      .limit(1);
+    if (error) console.warn('numero seq error', error);
+    let next = 1;
+    if (data && data[0]?.numero) {
+      const seq = parseInt(String(data[0].numero).slice(8)) || 0;
+      next = seq + 1;
+    }
+    return `${yyyymmdd}${String(next).padStart(3, '0')}`;
+  };
+
+  const buildFactureDataForApprenant = (apprenant: any, sessionApprenant: any, indexInSession: number, overrides?: { numero?: string; dateEmission?: string }) => {
     const fc: any = (financeursFCMap as any)?.[apprenant.id] || null;
     const typeApp = `${apprenant.type_apprenant || ''} ${apprenant.formation_choisie || ''}`.toUpperCase();
     const formation: 'VTC' | 'TAXI' = typeApp.includes('TAXI') ? 'TAXI' : 'VTC';
-    const montantTTC = Number(sessionApprenant?.montant_total ?? apprenant.montant_ttc ?? 0) || 0;
+    const montantTTC = FC_MONTANT_TTC; // forcé à 200 €
     const tva = 0; // TVA non applicable - art 293 B
     const montantHT = montantTTC / (1 + tva / 100);
-    const yyyymmdd = new Date().toISOString().split('T')[0];
-    const sessionShort = (session.id || '').toString().slice(0, 6).toUpperCase();
-    const numero = `FC-${formation}-${yyyymmdd.replace(/-/g, '')}-${sessionShort}-${String(indexInSession + 1).padStart(2, '0')}`;
+    const yyyymmdd = overrides?.dateEmission || new Date().toISOString().split('T')[0];
+    const numero = overrides?.numero || `BR-${apprenant.id.slice(0, 6)}`;
     const dueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
     return {
@@ -1299,12 +1347,52 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     return (fc?.email_facturation || fc?.contact_email || apprenant.email || '').trim() || null;
   };
 
+  // Upsert d'une facture en BDD comme brouillon (créée si absente, sinon retournée)
+  const ensureFactureBrouillon = async (apprenant: any, sessionApprenant: any): Promise<any> => {
+    const existing = (facturesFCMap as any)?.[apprenant.id];
+    if (existing) return existing;
+    const fc: any = (financeursFCMap as any)?.[apprenant.id] || null;
+    const isPro = fc?.type_financeur === 'professionnel';
+    const numero = await generateNextNumeroFacture();
+    const clientNom = isPro
+      ? (fc?.raison_sociale || `${apprenant.prenom} ${apprenant.nom}`)
+      : `${apprenant.prenom} ${apprenant.nom}`;
+    const clientAdresse = [
+      (apprenant.adresse || fc?.adresse) || '',
+      [(apprenant.code_postal || fc?.code_postal) || '', (apprenant.ville || fc?.ville) || ''].filter(Boolean).join(' ')
+    ].filter(Boolean).join(', ');
+    const payload: any = {
+      numero,
+      date_emission: new Date().toISOString().split('T')[0],
+      date_echeance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      type_financement: isPro ? 'professionnel' : 'particulier',
+      client_nom: clientNom,
+      client_adresse: clientAdresse || null,
+      client_siret: isPro ? (fc?.siret || fc?.siren || null) : null,
+      montant_ht: FC_MONTANT_TTC,
+      tva_taux: 0,
+      montant_tva: 0,
+      montant_ttc: FC_MONTANT_TTC,
+      statut: 'brouillon',
+      session_id: session.id,
+      apprenant_id: apprenant.id,
+    };
+    const { data, error } = await supabase.from('factures').insert(payload).select().single();
+    if (error) throw error;
+    return data;
+  };
+
   const handleDownloadSingleFacture = async (apprenant: any, sessionApprenant: any, idx: number) => {
     try {
       setSingleFactureLoading(apprenant.id);
-      const data = buildFactureDataForApprenant(apprenant, sessionApprenant, idx);
+      const facture = await ensureFactureBrouillon(apprenant, sessionApprenant);
+      const data = buildFactureDataForApprenant(apprenant, sessionApprenant, idx, {
+        numero: facture.numero,
+        dateEmission: facture.date_emission,
+      });
       await generateFactureFC(data);
-      toast({ title: "Facture téléchargée", description: `${apprenant.prenom} ${apprenant.nom}` });
+      await refetchFacturesFC();
+      toast({ title: "Facture téléchargée", description: `${apprenant.prenom} ${apprenant.nom} (Brouillon ${facture.numero})` });
     } catch (e: any) {
       toast({ title: "Erreur", description: e?.message || "Impossible de générer la facture.", variant: "destructive" });
     } finally {
@@ -1324,7 +1412,11 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       for (let i = 0; i < apprenantsInSession.length; i++) {
         const sa = apprenantsInSession[i];
         if (!sa.apprenant) continue;
-        const data = buildFactureDataForApprenant(sa.apprenant, sa, i);
+        const facture = await ensureFactureBrouillon(sa.apprenant, sa);
+        const data = buildFactureDataForApprenant(sa.apprenant, sa, i, {
+          numero: facture.numero,
+          dateEmission: facture.date_emission,
+        });
         const result: any = await generateFactureFC(data, {
           returnDoc: true,
           existingDoc: mergedDoc ?? undefined,
@@ -1332,6 +1424,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         });
         if (result?.doc) { mergedDoc = result.doc; count++; }
       }
+      await refetchFacturesFC();
       if (!mergedDoc || !count) {
         toast({ title: "Aucune facture", variant: "destructive" });
         return;
@@ -1361,7 +1454,11 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         const recipient = getFactureRecipientEmail(apprenant);
         if (!recipient) { skipped++; continue; }
         try {
-          const data = buildFactureDataForApprenant(apprenant, sa, i);
+          const facture = await ensureFactureBrouillon(apprenant, sa);
+          const data = buildFactureDataForApprenant(apprenant, sa, i, {
+            numero: facture.numero,
+            dateEmission: facture.date_emission,
+          });
           const result: any = await generateFactureFC(data, { returnBlob: true });
           if (!result?.blob) { failed++; continue; }
           const arrayBuffer = await result.blob.arrayBuffer();
@@ -1397,12 +1494,87 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           failed++;
         }
       }
+      await refetchFacturesFC();
       toast({
         title: "Envoi terminé",
         description: `${sent} envoyée(s)${skipped ? `, ${skipped} sans email financeur` : ''}${failed ? `, ${failed} échec(s)` : ''}.`,
       });
     } finally {
       setBulkSendingFactures(false);
+    }
+  };
+
+  // Valider définitivement une facture (brouillon → en_attente)
+  const handleValidateFacture = async (apprenant: any, sa: any) => {
+    try {
+      const facture = await ensureFactureBrouillon(apprenant, sa);
+      if (facture.statut !== 'brouillon') {
+        toast({ title: "Déjà validée", description: `Statut : ${facture.statut}` });
+        return;
+      }
+      const { error } = await supabase
+        .from('factures')
+        .update({ statut: 'en_attente' })
+        .eq('id', facture.id);
+      if (error) throw error;
+      await refetchFacturesFC();
+      toast({ title: "Facture validée", description: `${facture.numero} • ${apprenant.prenom} ${apprenant.nom}` });
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e?.message || "Validation impossible", variant: "destructive" });
+    }
+  };
+
+  // Valider toutes les brouillons en bloc
+  const handleBulkValidateFactures = async () => {
+    if (!apprenantsInSession.length) return;
+    setBulkValidatingFactures(true);
+    let validated = 0, skipped = 0;
+    try {
+      for (const sa of apprenantsInSession) {
+        if (!sa.apprenant) continue;
+        const facture = await ensureFactureBrouillon(sa.apprenant, sa);
+        if (facture.statut === 'brouillon') {
+          const { error } = await supabase
+            .from('factures')
+            .update({ statut: 'en_attente' })
+            .eq('id', facture.id);
+          if (!error) validated++; else skipped++;
+        } else {
+          skipped++;
+        }
+      }
+      await refetchFacturesFC();
+      toast({ title: "Validation terminée", description: `${validated} validée(s)${skipped ? `, ${skipped} déjà validée(s)` : ''}.` });
+    } finally {
+      setBulkValidatingFactures(false);
+    }
+  };
+
+  // Marquer une facture comme acquittée
+  const handleSaveAcquittement = async () => {
+    if (!acquittementApprenant) return;
+    setAcquittementSaving(true);
+    try {
+      const facture = (facturesFCMap as any)?.[acquittementApprenant.id];
+      if (!facture) {
+        toast({ title: "Aucune facture", description: "Téléchargez d'abord la facture pour la créer.", variant: "destructive" });
+        return;
+      }
+      const { error } = await supabase
+        .from('factures')
+        .update({
+          statut: 'payee',
+          date_paiement: acquittementDate,
+        })
+        .eq('id', facture.id);
+      if (error) throw error;
+      await refetchFacturesFC();
+      toast({ title: "Facture acquittée", description: `Payée le ${acquittementDate} • ${acquittementMoyen}` });
+      setAcquittementApprenant(null);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e?.message || "Acquittement impossible", variant: "destructive" });
+    } finally {
+      setAcquittementSaving(false);
     }
   };
 
@@ -2645,9 +2817,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             <TabsContent value="factures" className="flex-1 overflow-auto flex flex-col mt-4">
               <div className="shrink-0 flex flex-wrap items-center gap-3 mb-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
                 <div className="text-sm">
-                  <div className="font-medium">Factures Formation Continue</div>
+                  <div className="font-medium">Factures Formation Continue — 200 € TTC</div>
                   <div className="text-muted-foreground text-xs">
-                    Le destinataire est le financeur saisi dans "Informations Financeur" — sinon l'apprenant.
+                    Les factures sont créées en <strong>brouillon</strong>. Validez-les définitivement pour figer le numéro et le statut comptable.
                   </div>
                 </div>
                 <div className="flex-1" />
@@ -2660,6 +2832,16 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 >
                   {bulkDownloadingFactures ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                   Toutes les factures (PDF)
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={handleBulkValidateFactures}
+                  disabled={bulkValidatingFactures || apprenantsInSession.length === 0}
+                  className="gap-2"
+                >
+                  {bulkValidatingFactures ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                  Tout valider définitivement
                 </Button>
                 <Button
                   size="sm"
@@ -2687,12 +2869,20 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                     const fc: any = (financeursFCMap as any)?.[a.id] || null;
                     const isPro = fc?.type_financeur === 'professionnel';
                     const recipient = getFactureRecipientEmail(a);
-                    const montantTTC = Number(sa?.montant_total ?? a.montant_ttc ?? 0) || 0;
+                    const facture: any = (facturesFCMap as any)?.[a.id] || null;
+                    const statut = facture?.statut || null;
+                    const statutLabel = statut === 'payee' ? 'Acquittée' : statut === 'en_attente' ? 'Validée' : statut === 'brouillon' ? 'Brouillon' : 'Non générée';
+                    const statutVariant: any = statut === 'payee' ? 'default' : statut === 'en_attente' ? 'secondary' : statut === 'brouillon' ? 'outline' : 'outline';
                     return (
                       <div key={a.id} className="flex items-center gap-3 p-3 rounded-lg border bg-card">
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium truncate">
-                            {a.prenom} {a.nom?.toUpperCase()}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-medium truncate">{a.prenom} {a.nom?.toUpperCase()}</span>
+                            <Badge variant={statutVariant} className="text-xs">{statutLabel}</Badge>
+                            {facture?.numero && <span className="text-xs text-muted-foreground">N° {facture.numero}</span>}
+                            {statut === 'payee' && facture?.date_paiement && (
+                              <span className="text-xs text-emerald-600">payée le {facture.date_paiement}</span>
+                            )}
                           </div>
                           <div className="text-xs text-muted-foreground truncate">
                             Financeur :{' '}
@@ -2709,23 +2899,51 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           </div>
                           <div className="text-xs text-muted-foreground truncate">
                             Email facturation : {recipient || <span className="text-destructive">manquant</span>}
-                            {' • '}Montant TTC : <span className="font-medium text-foreground">{montantTTC.toFixed(2)} €</span>
+                            {' • '}Montant TTC : <span className="font-medium text-foreground">200,00 €</span>
                           </div>
                         </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="gap-2 shrink-0"
-                          onClick={() => handleDownloadSingleFacture(a, sa, idx)}
-                          disabled={singleFactureLoading === a.id}
-                        >
-                          {singleFactureLoading === a.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Download className="w-4 h-4" />
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-2"
+                            onClick={() => handleDownloadSingleFacture(a, sa, idx)}
+                            disabled={singleFactureLoading === a.id}
+                          >
+                            {singleFactureLoading === a.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Download className="w-4 h-4" />
+                            )}
+                            PDF
+                          </Button>
+                          {statut === 'brouillon' && (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              className="gap-2"
+                              onClick={() => handleValidateFacture(a, sa)}
+                            >
+                              <CheckCircle2 className="w-4 h-4" />
+                              Valider
+                            </Button>
                           )}
-                          PDF
-                        </Button>
+                          {statut && statut !== 'payee' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-2"
+                              onClick={() => {
+                                setAcquittementApprenant(a);
+                                setAcquittementDate(new Date().toISOString().split('T')[0]);
+                                setAcquittementMoyen('virement');
+                              }}
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                              Acquitter
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
@@ -2734,6 +2952,63 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             </TabsContent>
           )}
         </Tabs>
+      </DialogContent>
+    </Dialog>
+
+    {/* Modale d'acquittement */}
+    <Dialog open={!!acquittementApprenant} onOpenChange={(open) => !open && setAcquittementApprenant(null)}>
+      <DialogContent className="sm:max-w-[480px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <CheckCircle className="w-5 h-5 text-emerald-600" />
+            Acquittement de la facture
+          </DialogTitle>
+        </DialogHeader>
+        {acquittementApprenant && (
+          <div className="space-y-4">
+            <div className="text-sm text-muted-foreground">
+              Marquer comme payée la facture de{' '}
+              <span className="font-medium text-foreground">
+                {acquittementApprenant.prenom} {acquittementApprenant.nom}
+              </span>{' '}
+              ({(facturesFCMap as any)?.[acquittementApprenant.id]?.numero || '—'})
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="acq-date">Date de paiement</Label>
+              <Input
+                id="acq-date"
+                type="date"
+                value={acquittementDate}
+                onChange={(e) => setAcquittementDate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="acq-moyen">Moyen de paiement</Label>
+              <Select value={acquittementMoyen} onValueChange={setAcquittementMoyen}>
+                <SelectTrigger id="acq-moyen">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="virement">Virement bancaire</SelectItem>
+                  <SelectItem value="cb">Carte bancaire</SelectItem>
+                  <SelectItem value="especes">Espèces</SelectItem>
+                  <SelectItem value="cheque">Chèque</SelectItem>
+                  <SelectItem value="cpf">CPF</SelectItem>
+                  <SelectItem value="opco">OPCO</SelectItem>
+                  <SelectItem value="france_travail">France Travail</SelectItem>
+                  <SelectItem value="autre">Autre</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setAcquittementApprenant(null)}>Annuler</Button>
+              <Button onClick={handleSaveAcquittement} disabled={acquittementSaving} className="gap-2">
+                {acquittementSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                Confirmer l'acquittement
+              </Button>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
 
