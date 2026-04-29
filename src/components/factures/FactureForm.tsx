@@ -260,6 +260,48 @@ export function FactureForm() {
   const selectedApprenant = apprenants.find(a => a.id === data.selectedApprenantId);
   const selectedOrganisation = organisations.find(o => o.id === data.selectedOrganisationId);
 
+  // Auto-remplit la facture (réf dossier + ligne formation) à la sélection d'un apprenant
+  useEffect(() => {
+    if (!selectedApprenant) return;
+    setData(prev => {
+      // Évite la double-injection : déjà une ligne "session" auto-créée pour cet apprenant ?
+      const dejaInjecte = prev.lignes.some(
+        l => l.type === "session" && l.stagiaire === selectedApprenant.name
+      );
+      const designation = selectedApprenant.formationChoisie || selectedApprenant.typeApprenant || "Formation";
+      const newLignes = dejaInjecte ? prev.lignes : [
+        ...prev.lignes,
+        {
+          id: crypto.randomUUID(),
+          type: "session" as const,
+          stagiaire: selectedApprenant.name,
+          designation,
+          dateDebut: selectedApprenant.dateDebutFormation || "",
+          dateFin: selectedApprenant.dateFinFormation || "",
+          lieu: "86 route de genas 69003 Lyon",
+          quantite: 1,
+          prixUnitaire: selectedApprenant.montantTtc || 0,
+          tvaType: "EXO" as const,
+          remise: 0,
+        },
+      ];
+      return {
+        ...prev,
+        refDossier: prev.refDossier || selectedApprenant.name,
+        lignes: newLignes,
+      };
+    });
+  }, [selectedApprenant?.id]);
+
+  // Auto-remplit la réf dossier à la sélection d'une organisation (sans nom de stagiaire)
+  useEffect(() => {
+    if (!selectedOrganisation) return;
+    setData(prev => ({
+      ...prev,
+      refDossier: prev.refDossier || selectedOrganisation.name,
+    }));
+  }, [selectedOrganisation?.id]);
+
   const filteredApprenants = apprenants.filter(a => 
     a.name.toLowerCase().includes(searchApprenant.toLowerCase()) ||
     a.email.toLowerCase().includes(searchApprenant.toLowerCase())
