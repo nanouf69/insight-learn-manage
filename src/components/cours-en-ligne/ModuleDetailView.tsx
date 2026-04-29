@@ -1714,6 +1714,7 @@ function QuestionEditor({
   const [enonce, setEnonce] = useState(question.enonce);
   const [choix, setChoix] = useState<ExerciceChoix[]>([...question.choix]);
   const [image, setImage] = useState<string | null>(question.image ?? null);
+  const [imageSize, setImageSize] = useState<ImageSize>((question.imageSize as ImageSize) ?? "sm");
 
   const handleChoixTexte = (i: number, val: string) => {
     setChoix(prev => prev.map((c, idx) => idx === i ? { ...c, texte: val } : c));
