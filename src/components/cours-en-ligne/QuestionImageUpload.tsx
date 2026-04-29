@@ -76,24 +76,45 @@ export function QuestionImageUpload({
     onImageChange(null);
   };
 
+  const currentSizeOption = SIZE_OPTIONS.find((o) => o.value === imageSize) ?? SIZE_OPTIONS[0];
+
   return (
     <div className="space-y-2">
       {image ? (
-        <div className="relative inline-block">
-          <img
-            src={image}
-            alt="Image question"
-            className="max-h-32 rounded border object-contain"
-          />
-          <Button
-            size="sm"
-            variant="destructive"
-            className="absolute -top-2 -right-2 h-6 w-6 p-0 rounded-full"
-            onClick={handleRemove}
-            title="Supprimer l'image"
-          >
-            <X className="w-3 h-3" />
-          </Button>
+        <div className="space-y-2">
+          <div className="relative inline-block">
+            <img
+              src={image}
+              alt="Image question"
+              className={`${currentSizeOption.previewClass} rounded border object-contain`}
+            />
+            <Button
+              size="sm"
+              variant="destructive"
+              className="absolute -top-2 -right-2 h-6 w-6 p-0 rounded-full"
+              onClick={handleRemove}
+              title="Supprimer l'image"
+            >
+              <X className="w-3 h-3" />
+            </Button>
+          </div>
+          {onImageSizeChange && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-semibold text-muted-foreground">Taille d'affichage :</span>
+              {SIZE_OPTIONS.map((opt) => (
+                <Button
+                  key={opt.value}
+                  type="button"
+                  size="sm"
+                  variant={imageSize === opt.value ? "default" : "outline"}
+                  className="h-7 text-xs px-2"
+                  onClick={() => onImageSizeChange(opt.value)}
+                >
+                  {opt.label}
+                </Button>
+              ))}
+            </div>
+          )}
         </div>
       ) : null}
       <div>
