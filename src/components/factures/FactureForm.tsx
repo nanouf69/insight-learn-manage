@@ -1169,7 +1169,6 @@ export function FactureForm() {
             </div>
             <div className="text-right">
               <h2 className="text-xl font-bold">FACTURE {data.duplicata && <span className="text-orange-500">DUPLICATA</span>} N°{data.numero}</h2>
-              <p className="text-muted-foreground">Numéro : {data.numeroInterne}</p>
               {data.acquittee && (
                 <div className="mt-2 inline-block bg-emerald-600 text-white px-3 py-1 rounded font-bold text-sm">
                   ✓ ACQUITTÉE
