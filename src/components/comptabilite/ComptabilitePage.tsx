@@ -123,6 +123,7 @@ export function ComptabilitePage() {
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState<string>("all");
   const [filterFinancement, setFilterFinancement] = useState<string>("all");
+  const [filterTypeFlux, setFilterTypeFlux] = useState<"all" | "ventes" | "achats">("all");
   const [activeTab, setActiveTab] = useState("overview");
   const [draftPreview, setDraftPreview] = useState<Facture | null>(null);
   const [validatingDraft, setValidatingDraft] = useState(false);
@@ -609,9 +610,14 @@ export function ComptabilitePage() {
         f.client_nom.toLowerCase().includes(search.toLowerCase());
       const matchStatut = filterStatut === "all" || f.statut === filterStatut;
       const matchFinancement = filterFinancement === "all" || f.type_financement === filterFinancement;
-      return matchSearch && matchStatut && matchFinancement;
+      const isAchat = f.type_financement === "fournisseur";
+      const matchTypeFlux =
+        filterTypeFlux === "all" ||
+        (filterTypeFlux === "achats" && isAchat) ||
+        (filterTypeFlux === "ventes" && !isAchat);
+      return matchSearch && matchStatut && matchFinancement && matchTypeFlux;
     });
-  }, [allFactures, search, filterStatut, filterFinancement]);
+  }, [allFactures, search, filterStatut, filterFinancement, filterTypeFlux]);
 
   const totalCA = useMemo(() => factures.reduce((s, f) => (f.statut !== "annulee" && f.statut !== "brouillon") ? s + Number(f.montant_ttc) : s, 0), [factures]);
   const totalPaye = useMemo(() => factures.filter(f => f.statut === "payee").reduce((s, f) => s + Number(f.montant_ttc), 0), [factures]);
@@ -1068,6 +1074,14 @@ export function ComptabilitePage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Rechercher par numéro ou client..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
             </div>
+            <Select value={filterTypeFlux} onValueChange={(v) => setFilterTypeFlux(v as "all" | "ventes" | "achats")}>
+              <SelectTrigger className="w-[150px]"><SelectValue placeholder="Type" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Ventes & Achats</SelectItem>
+                <SelectItem value="ventes">Ventes uniquement</SelectItem>
+                <SelectItem value="achats">Achats uniquement</SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={filterStatut} onValueChange={setFilterStatut}>
               <SelectTrigger className="w-[160px]"><SelectValue placeholder="Statut" /></SelectTrigger>
               <SelectContent>
