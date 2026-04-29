@@ -2817,9 +2817,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             <TabsContent value="factures" className="flex-1 overflow-auto flex flex-col mt-4">
               <div className="shrink-0 flex flex-wrap items-center gap-3 mb-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
                 <div className="text-sm">
-                  <div className="font-medium">Factures Formation Continue</div>
+                  <div className="font-medium">Factures Formation Continue — 200 € TTC</div>
                   <div className="text-muted-foreground text-xs">
-                    Le destinataire est le financeur saisi dans "Informations Financeur" — sinon l'apprenant.
+                    Les factures sont créées en <strong>brouillon</strong>. Validez-les définitivement pour figer le numéro et le statut comptable.
                   </div>
                 </div>
                 <div className="flex-1" />
@@ -2832,6 +2832,16 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 >
                   {bulkDownloadingFactures ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                   Toutes les factures (PDF)
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={handleBulkValidateFactures}
+                  disabled={bulkValidatingFactures || apprenantsInSession.length === 0}
+                  className="gap-2"
+                >
+                  {bulkValidatingFactures ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                  Tout valider définitivement
                 </Button>
                 <Button
                   size="sm"
@@ -2859,12 +2869,20 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                     const fc: any = (financeursFCMap as any)?.[a.id] || null;
                     const isPro = fc?.type_financeur === 'professionnel';
                     const recipient = getFactureRecipientEmail(a);
-                    const montantTTC = Number(sa?.montant_total ?? a.montant_ttc ?? 0) || 0;
+                    const facture: any = (facturesFCMap as any)?.[a.id] || null;
+                    const statut = facture?.statut || null;
+                    const statutLabel = statut === 'payee' ? 'Acquittée' : statut === 'en_attente' ? 'Validée' : statut === 'brouillon' ? 'Brouillon' : 'Non générée';
+                    const statutVariant: any = statut === 'payee' ? 'default' : statut === 'en_attente' ? 'secondary' : statut === 'brouillon' ? 'outline' : 'outline';
                     return (
                       <div key={a.id} className="flex items-center gap-3 p-3 rounded-lg border bg-card">
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium truncate">
-                            {a.prenom} {a.nom?.toUpperCase()}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-medium truncate">{a.prenom} {a.nom?.toUpperCase()}</span>
+                            <Badge variant={statutVariant} className="text-xs">{statutLabel}</Badge>
+                            {facture?.numero && <span className="text-xs text-muted-foreground">N° {facture.numero}</span>}
+                            {statut === 'payee' && facture?.date_paiement && (
+                              <span className="text-xs text-emerald-600">payée le {facture.date_paiement}</span>
+                            )}
                           </div>
                           <div className="text-xs text-muted-foreground truncate">
                             Financeur :{' '}
@@ -2881,23 +2899,51 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                           </div>
                           <div className="text-xs text-muted-foreground truncate">
                             Email facturation : {recipient || <span className="text-destructive">manquant</span>}
-                            {' • '}Montant TTC : <span className="font-medium text-foreground">{montantTTC.toFixed(2)} €</span>
+                            {' • '}Montant TTC : <span className="font-medium text-foreground">200,00 €</span>
                           </div>
                         </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="gap-2 shrink-0"
-                          onClick={() => handleDownloadSingleFacture(a, sa, idx)}
-                          disabled={singleFactureLoading === a.id}
-                        >
-                          {singleFactureLoading === a.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Download className="w-4 h-4" />
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-2"
+                            onClick={() => handleDownloadSingleFacture(a, sa, idx)}
+                            disabled={singleFactureLoading === a.id}
+                          >
+                            {singleFactureLoading === a.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Download className="w-4 h-4" />
+                            )}
+                            PDF
+                          </Button>
+                          {statut === 'brouillon' && (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              className="gap-2"
+                              onClick={() => handleValidateFacture(a, sa)}
+                            >
+                              <CheckCircle2 className="w-4 h-4" />
+                              Valider
+                            </Button>
                           )}
-                          PDF
-                        </Button>
+                          {statut && statut !== 'payee' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-2"
+                              onClick={() => {
+                                setAcquittementApprenant(a);
+                                setAcquittementDate(new Date().toISOString().split('T')[0]);
+                                setAcquittementMoyen('virement');
+                              }}
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                              Acquitter
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
@@ -2906,6 +2952,63 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             </TabsContent>
           )}
         </Tabs>
+      </DialogContent>
+    </Dialog>
+
+    {/* Modale d'acquittement */}
+    <Dialog open={!!acquittementApprenant} onOpenChange={(open) => !open && setAcquittementApprenant(null)}>
+      <DialogContent className="sm:max-w-[480px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <CheckCircle className="w-5 h-5 text-emerald-600" />
+            Acquittement de la facture
+          </DialogTitle>
+        </DialogHeader>
+        {acquittementApprenant && (
+          <div className="space-y-4">
+            <div className="text-sm text-muted-foreground">
+              Marquer comme payée la facture de{' '}
+              <span className="font-medium text-foreground">
+                {acquittementApprenant.prenom} {acquittementApprenant.nom}
+              </span>{' '}
+              ({(facturesFCMap as any)?.[acquittementApprenant.id]?.numero || '—'})
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="acq-date">Date de paiement</Label>
+              <Input
+                id="acq-date"
+                type="date"
+                value={acquittementDate}
+                onChange={(e) => setAcquittementDate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="acq-moyen">Moyen de paiement</Label>
+              <Select value={acquittementMoyen} onValueChange={setAcquittementMoyen}>
+                <SelectTrigger id="acq-moyen">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="virement">Virement bancaire</SelectItem>
+                  <SelectItem value="cb">Carte bancaire</SelectItem>
+                  <SelectItem value="especes">Espèces</SelectItem>
+                  <SelectItem value="cheque">Chèque</SelectItem>
+                  <SelectItem value="cpf">CPF</SelectItem>
+                  <SelectItem value="opco">OPCO</SelectItem>
+                  <SelectItem value="france_travail">France Travail</SelectItem>
+                  <SelectItem value="autre">Autre</SelectItem>
+                </Select>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setAcquittementApprenant(null)}>Annuler</Button>
+              <Button onClick={handleSaveAcquittement} disabled={acquittementSaving} className="gap-2">
+                {acquittementSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                Confirmer l'acquittement
+              </Button>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
 
