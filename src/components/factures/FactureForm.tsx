@@ -183,6 +183,9 @@ const defaultFactureData: FactureData = {
   refConvention: "",
   lignes: [],
   notes: "",
+  acquittee: false,
+  datePaiement: "",
+  moyenPaiement: "virement",
 };
 
 export function FactureForm() {
