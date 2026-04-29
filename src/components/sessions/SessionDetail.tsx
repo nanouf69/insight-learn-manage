@@ -2997,7 +2997,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                   <SelectItem value="opco">OPCO</SelectItem>
                   <SelectItem value="france_travail">France Travail</SelectItem>
                   <SelectItem value="autre">Autre</SelectItem>
-                </Select>
+                </SelectContent>
               </Select>
             </div>
             <div className="flex justify-end gap-2 pt-2">
