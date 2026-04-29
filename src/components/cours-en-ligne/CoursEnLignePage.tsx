@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import ModuleDetailView from "./ModuleDetailView";
+import BilanFinFormationFCVtc from "./BilanFinFormationFCVtc";
 import ExamensBlancsPage from "./ExamensBlancsPage";
 import ExamensBlancsEditor from "./ExamensBlancsEditor";
 import CoursPublic from "@/pages/CoursPublic";
@@ -71,6 +72,13 @@ const CoursEnLignePage = () => {
   }
 
   if (editingModule) {
+    if (editingModule.id === 87) {
+      return (
+        <div className="p-4 md:p-8">
+          <BilanFinFormationFCVtc onBack={() => setEditingModule(null)} />
+        </div>
+      );
+    }
     return <ModuleDetailView module={editingModule} onBack={() => setEditingModule(null)} />;
   }
 // ---------- Apprenant Search + Preview subcomponent ----------
