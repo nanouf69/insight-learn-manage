@@ -93,6 +93,7 @@ interface APayer {
 }
 
 const statutConfig: Record<string, { label: string; color: string }> = {
+  brouillon: { label: "Brouillon", color: "bg-slate-200 text-slate-700" },
   payee: { label: "Payée", color: "bg-emerald-100 text-emerald-700" },
   paye: { label: "Payé", color: "bg-emerald-100 text-emerald-700" },
   en_attente: { label: "En attente", color: "bg-amber-100 text-amber-700" },
@@ -240,6 +241,42 @@ export function ComptabilitePage() {
     await Promise.all([fetchFournisseurFactures(), fetchPaiements()]);
   };
 
+  const loadDrafts = (): Facture[] => {
+    try {
+      const drafts: Facture[] = [];
+      // Brouillon courant (clé legacy)
+      const raw = localStorage.getItem("facture_draft_v1");
+      if (raw) {
+        const d = JSON.parse(raw);
+        const lignes: any[] = Array.isArray(d.lignes) ? d.lignes : [];
+        const montantHT = lignes.reduce((s, l) => s + (Number(l.prixUnitaire) || 0) * (Number(l.quantite) || 1) * (1 - (Number(l.remise) || 0) / 100), 0);
+        const montantTVA = lignes.reduce((s, l) => {
+          const ht = (Number(l.prixUnitaire) || 0) * (Number(l.quantite) || 1) * (1 - (Number(l.remise) || 0) / 100);
+          const taux = l.tvaType === "EXO" ? 0 : (Number(l.tvaTaux) || 20);
+          return s + ht * (taux / 100);
+        }, 0);
+        drafts.push({
+          id: `draft-${d.numeroInterne || "current"}`,
+          numero: d.numeroInterne || d.numero || "BROUILLON",
+          client_nom: d.refDossier || "(client non défini)",
+          type_financement: d.typeFinanceur === "particulier" ? "particulier" : "professionnel",
+          montant_ht: montantHT,
+          montant_tva: montantTVA,
+          montant_ttc: montantHT + montantTVA,
+          statut: "brouillon",
+          date_emission: d.date || new Date().toISOString().split("T")[0],
+          date_echeance: d.dateEcheance || null,
+          date_paiement: null,
+          client_opco: null,
+        });
+      }
+      return drafts;
+    } catch (e) {
+      console.warn("Erreur chargement brouillons", e);
+      return [];
+    }
+  };
+
   const fetchFactures = async () => {
     setLoading(true);
     const { data, error } = await supabase
@@ -249,7 +286,8 @@ export function ComptabilitePage() {
     if (error) {
       toast.error("Erreur lors du chargement des factures");
     } else {
-      setFactures(data || []);
+      const drafts = loadDrafts();
+      setFactures([...drafts, ...(data || [])]);
     }
     setLoading(false);
   };
@@ -451,7 +489,7 @@ export function ComptabilitePage() {
     });
   }, [factures, search, filterStatut, filterFinancement]);
 
-  const totalCA = useMemo(() => factures.reduce((s, f) => f.statut !== "annulee" ? s + Number(f.montant_ttc) : s, 0), [factures]);
+  const totalCA = useMemo(() => factures.reduce((s, f) => (f.statut !== "annulee" && f.statut !== "brouillon") ? s + Number(f.montant_ttc) : s, 0), [factures]);
   const totalPaye = useMemo(() => factures.filter(f => f.statut === "payee").reduce((s, f) => s + Number(f.montant_ttc), 0), [factures]);
   const totalEnAttente = useMemo(() => factures.filter(f => f.statut === "en_attente").reduce((s, f) => s + Number(f.montant_ttc), 0), [factures]);
   const totalEnRetard = useMemo(() => {
