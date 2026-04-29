@@ -3268,7 +3268,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, on
 
 
 
-    const BILAN_MODULE_IDS_SET = new Set([4, 5, 9, 11, 27, 28, 29, 30]);
+    const BILAN_MODULE_IDS_SET = new Set([4, 5, 9, 11, 27, 28, 29, 30, 81, 82]);
     const isBilanModule = BILAN_MODULE_IDS_SET.has(Number(moduleData.id));
     const hierarchicalLabelsByPage = useMemo<Record<number, string>>(() => {
 
