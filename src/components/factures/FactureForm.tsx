@@ -183,6 +183,23 @@ export function FactureForm() {
   const [apprenants, setApprenants] = useState<ApprenantItem[]>([]);
   const [sessions, setSessions] = useState<SessionItem[]>([]);
 
+  const DRAFT_KEY = 'facture_draft_v1';
+
+  // Recharger le brouillon au montage (s'il existe)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) {
+        const draft = JSON.parse(raw);
+        setData((prev) => ({ ...prev, ...draft }));
+        toast.info("Brouillon précédent restauré");
+      }
+    } catch (e) {
+      console.warn("Impossible de charger le brouillon", e);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     const fetchSessions = async () => {
       const allRows: any[] = [];
